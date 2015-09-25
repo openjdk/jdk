@@ -26,7 +26,7 @@ package org.omg.CORBA;
 
 
 /**
-* The Helper for <tt>VersionSpec</tt>.  For more information on
+* The Helper for {@code VersionSpec}.  For more information on
 * Helper files, see <a href="doc-files/generatedfiles.html#helper">
 * "Generated Files: Helper Files"</a>.<P>
 * org/omg/CORBA/VersionSpecHelper.java

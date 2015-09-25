@@ -49,8 +49,8 @@ import resources.ListBundle;
  */
 public class TestSetResourceBundle {
 
-    final static String LIST_BUNDLE_NAME = "resources.ListBundle";
-    final static String PROPERTY_BUNDLE_NAME = "resources.PropertyBundle";
+    static final String LIST_BUNDLE_NAME = "resources.ListBundle";
+    static final String PROPERTY_BUNDLE_NAME = "resources.PropertyBundle";
 
     /**
      * A dummy handler class that we can use to check the bundle/bundle name

@@ -50,23 +50,23 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
     // magic constants and utility functions, also used by other files
     // in this package
 
-    private final static byte[] B0 = new byte[0];
+    private static final byte[] B0 = new byte[0];
 
-    final static byte[] LABEL_MASTER_SECRET = // "master secret"
+    static final byte[] LABEL_MASTER_SECRET = // "master secret"
         { 109, 97, 115, 116, 101, 114, 32, 115, 101, 99, 114, 101, 116 };
 
-    final static byte[] LABEL_KEY_EXPANSION = // "key expansion"
+    static final byte[] LABEL_KEY_EXPANSION = // "key expansion"
         { 107, 101, 121, 32, 101, 120, 112, 97, 110, 115, 105, 111, 110 };
 
-    final static byte[] LABEL_CLIENT_WRITE_KEY = // "client write key"
+    static final byte[] LABEL_CLIENT_WRITE_KEY = // "client write key"
         { 99, 108, 105, 101, 110, 116, 32, 119, 114, 105, 116, 101, 32,
           107, 101, 121 };
 
-    final static byte[] LABEL_SERVER_WRITE_KEY = // "server write key"
+    static final byte[] LABEL_SERVER_WRITE_KEY = // "server write key"
         { 115, 101, 114, 118, 101, 114, 32, 119, 114, 105, 116, 101, 32,
           107, 101, 121 };
 
-    final static byte[] LABEL_IV_BLOCK = // "IV block"
+    static final byte[] LABEL_IV_BLOCK = // "IV block"
         { 73, 86, 32, 98, 108, 111, 99, 107 };
 
     /*
@@ -79,7 +79,7 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
     private static final byte[] HMAC_opad128 = genPad((byte)0x5c, 128);
 
     // SSL3 magic mix constants ("A", "BB", "CCC", ...)
-    final static byte[][] SSL3_CONST = genConst();
+    static final byte[][] SSL3_CONST = genConst();
 
     static byte[] genPad(byte b, int count) {
         byte[] padding = new byte[count];
@@ -109,7 +109,7 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
 
     // PRF implementation
 
-    private final static String MSG = "TlsPrfGenerator must be "
+    private static final String MSG = "TlsPrfGenerator must be "
         + "initialized using a TlsPrfParameterSpec";
 
     @SuppressWarnings("deprecation")
@@ -368,7 +368,7 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
      * appropriate supportsParamters() checks into KeyGenerators (not
      * currently there).
      */
-    static public class V12 extends TlsPrfGenerator {
+    public static class V12 extends TlsPrfGenerator {
         protected SecretKey engineGenerateKey() {
             return engineGenerateKey0(true);
         }
@@ -377,7 +377,7 @@ abstract class TlsPrfGenerator extends KeyGeneratorSpi {
     /**
      * A KeyGenerator implementation that supports TLS 1.0/1.1.
      */
-    static public class V10 extends TlsPrfGenerator {
+    public static class V10 extends TlsPrfGenerator {
         protected SecretKey engineGenerateKey() {
             return engineGenerateKey0(false);
         }

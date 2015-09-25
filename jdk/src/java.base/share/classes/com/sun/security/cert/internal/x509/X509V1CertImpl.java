@@ -56,7 +56,7 @@ public class X509V1CertImpl extends X509Certificate implements Serializable {
     static final long serialVersionUID = -2048442350420423405L;
     private java.security.cert.X509Certificate wrappedCert;
 
-    synchronized private static java.security.cert.CertificateFactory
+    private static synchronized java.security.cert.CertificateFactory
     getFactory()
     throws java.security.cert.CertificateException
     {

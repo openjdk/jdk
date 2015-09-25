@@ -49,7 +49,7 @@ public final class JCAUtil {
 
     // size of the temporary arrays we use. Should fit into the CPU's 1st
     // level cache and could be adjusted based on the platform
-    private final static int ARRAY_SIZE = 4096;
+    private static final int ARRAY_SIZE = 4096;
 
     /**
      * Get the size of a temporary buffer array to use in order to be

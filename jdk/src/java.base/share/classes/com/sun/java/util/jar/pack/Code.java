@@ -56,7 +56,7 @@ class Code extends Attribute.Holder {
         return m.getCPMap();
     }
 
-    static private final ConstantPool.Entry[] noRefs = ConstantPool.noRefs;
+    private static final ConstantPool.Entry[] noRefs = ConstantPool.noRefs;
 
     // The following fields are used directly by the ClassReader, etc.
     int max_stack;

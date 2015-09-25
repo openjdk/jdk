@@ -39,9 +39,9 @@ public abstract class LRUCache<N,V> {
         this.size = size;
     }
 
-    abstract protected V create(N name);
+    protected abstract V create(N name);
 
-    abstract protected boolean hasName(V ob, N name);
+    protected abstract boolean hasName(V ob, N name);
 
     public static void moveToFront(Object[] oa, int i) {
         Object ob = oa[i];

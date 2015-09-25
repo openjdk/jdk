@@ -875,7 +875,7 @@ public class ObjectOutputStream
      *
      * @since 1.2
      */
-    public static abstract class PutField {
+    public abstract static class PutField {
 
         /**
          * Put the value of the named boolean field into the persistent field.

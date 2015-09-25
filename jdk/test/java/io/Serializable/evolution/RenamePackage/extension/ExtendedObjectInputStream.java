@@ -28,7 +28,7 @@ import java.io.*;
 
 public class ExtendedObjectInputStream extends ObjectInputStream {
 
-    static private Hashtable renamedClassMap;
+    private static Hashtable renamedClassMap;
 
     public ExtendedObjectInputStream(InputStream si)
         throws IOException, StreamCorruptedException
@@ -49,7 +49,7 @@ public class ExtendedObjectInputStream extends ObjectInputStream {
         return super.resolveClass(v);
     }
 
-    static public void addRenamedClassName(String oldName, String newName)
+    public static void addRenamedClassName(String oldName, String newName)
         throws ClassNotFoundException
     {
         Class cl = null;

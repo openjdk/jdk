@@ -192,7 +192,7 @@ public class TestLoggerBundleSync {
 
     }
 
-    final static class GetRB extends Thread {
+    static final class GetRB extends Thread {
         final class MyHandler extends Handler {
             volatile ResourceBundle rb;
             volatile String rbName;
@@ -327,10 +327,10 @@ public class TestLoggerBundleSync {
         }
     }
 
-    final static class SetRB extends Thread {
+    static final class SetRB extends Thread {
         final Class<? extends ResourceBundle> type;
-        final static ExecutorService executor = Executors.newSingleThreadExecutor();
-        final static class CheckRBTask implements Callable<Exception> {
+        static final ExecutorService executor = Executors.newSingleThreadExecutor();
+        static final class CheckRBTask implements Callable<Exception> {
             final Logger logger;
             volatile String rbName;
             volatile ResourceBundle rb;
@@ -431,11 +431,11 @@ public class TestLoggerBundleSync {
         }
     }
 
-    final static class SetRBName extends Thread {
+    static final class SetRBName extends Thread {
         int nexti = 0;
         final Class<? extends ResourceBundle> type;
-        final static ExecutorService executor = Executors.newSingleThreadExecutor();
-        final static class CheckRBNameTask implements Callable<Exception> {
+        static final ExecutorService executor = Executors.newSingleThreadExecutor();
+        static final class CheckRBNameTask implements Callable<Exception> {
             final Logger logger;
             volatile String rbName;
 
@@ -535,7 +535,7 @@ public class TestLoggerBundleSync {
         }
     }
 
-    final static class DeadlockDetector extends Thread {
+    static final class DeadlockDetector extends Thread {
 
         @Override
         public void run() {

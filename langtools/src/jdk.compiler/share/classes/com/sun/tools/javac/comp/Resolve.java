@@ -588,7 +588,8 @@ public class Resolve {
         MethodResolutionContext prevContext = currentResolutionContext;
         try {
             currentResolutionContext = new MethodResolutionContext();
-            currentResolutionContext.attrMode = DeferredAttr.AttrMode.CHECK;
+            currentResolutionContext.attrMode = (resultInfo.pt == Infer.anyPoly) ?
+                    AttrMode.SPECULATIVE : DeferredAttr.AttrMode.CHECK;
             if (env.tree.hasTag(JCTree.Tag.REFERENCE)) {
                 //method/constructor references need special check class
                 //to handle inference variables in 'argtypes' (might happen
@@ -1032,6 +1033,11 @@ public class Resolve {
         protected ResultInfo dup(CheckContext newContext) {
             return new MethodResultInfo(pt, newContext);
         }
+
+        @Override
+        protected ResultInfo dup(Type newPt, CheckContext newContext) {
+            return new MethodResultInfo(newPt, newContext);
+        }
     }
 
     /**
@@ -1092,10 +1098,9 @@ public class Resolve {
                         unrelatedFunctionalInterfaces(found, req) &&
                         (actual != null && actual.getTag() == DEFERRED)) {
                     DeferredType dt = (DeferredType) actual;
-                    DeferredType.SpeculativeCache.Entry e =
-                            dt.speculativeCache.get(deferredAttrContext.msym, deferredAttrContext.phase);
-                    if (e != null && e.speculativeTree != deferredAttr.stuckTree) {
-                        return functionalInterfaceMostSpecific(found, req, e.speculativeTree);
+                    JCTree speculativeTree = dt.speculativeTree(deferredAttrContext);
+                    if (speculativeTree != deferredAttr.stuckTree) {
+                        return functionalInterfaceMostSpecific(found, req, speculativeTree);
                     }
                 }
                 return compatibleBySubtyping(found, req);
@@ -1147,8 +1152,8 @@ public class Resolve {
 
                 @Override
                 public void visitConditional(JCConditional tree) {
-                    scan(tree.truepart);
-                    scan(tree.falsepart);
+                    scan(asExpr(tree.truepart));
+                    scan(asExpr(tree.falsepart));
                 }
 
                 @Override
@@ -1177,6 +1182,11 @@ public class Resolve {
                             result &= compatibleBySubtyping(ret_t, ret_s);
                         }
                     }
+                }
+
+                @Override
+                public void visitParens(JCParens tree) {
+                    scan(asExpr(tree.expr));
                 }
 
                 @Override
@@ -1214,7 +1224,7 @@ public class Resolve {
 
                 private List<JCExpression> lambdaResults(JCLambda lambda) {
                     if (lambda.getBodyKind() == JCTree.JCLambda.BodyKind.EXPRESSION) {
-                        return List.of((JCExpression) lambda.body);
+                        return List.of(asExpr((JCExpression) lambda.body));
                     } else {
                         final ListBuffer<JCExpression> buffer = new ListBuffer<>();
                         DeferredAttr.LambdaReturnScanner lambdaScanner =
@@ -1222,13 +1232,23 @@ public class Resolve {
                                     @Override
                                     public void visitReturn(JCReturn tree) {
                                         if (tree.expr != null) {
-                                            buffer.append(tree.expr);
+                                            buffer.append(asExpr(tree.expr));
                                         }
                                     }
                                 };
                         lambdaScanner.scan(lambda.body);
                         return buffer.toList();
                     }
+                }
+
+                private JCExpression asExpr(JCExpression expr) {
+                    if (expr.type.hasTag(DEFERRED)) {
+                        JCTree speculativeTree = ((DeferredType)expr.type).speculativeTree(deferredAttrContext);
+                        if (speculativeTree != deferredAttr.stuckTree) {
+                            expr = (JCExpression)speculativeTree;
+                        }
+                    }
+                    return expr;
                 }
             }
 

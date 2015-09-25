@@ -45,7 +45,7 @@ import java.security.PrivilegedAction;
 
 class DefaultDatagramSocketImplFactory
 {
-    private final static Class<?> prefixImplClass;
+    private static final Class<?> prefixImplClass;
 
     /* the windows version. */
     private static float version;
@@ -54,13 +54,13 @@ class DefaultDatagramSocketImplFactory
     private static boolean preferIPv4Stack = false;
 
     /* If the version supports a dual stack TCP implementation */
-    private final static boolean useDualStackImpl;
+    private static final boolean useDualStackImpl;
 
     /* sun.net.useExclusiveBind */
     private static String exclBindProp;
 
     /* True if exclusive binding is on for Windows */
-    private final static boolean exclusiveBind;
+    private static final boolean exclusiveBind;
 
     static {
         Class<?> prefixImplClassLocal = null;

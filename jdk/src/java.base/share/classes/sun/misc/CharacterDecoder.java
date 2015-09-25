@@ -88,10 +88,10 @@ import java.nio.ByteBuffer;
 public abstract class CharacterDecoder {
 
     /** Return the number of bytes per atom of decoding */
-    abstract protected int bytesPerAtom();
+    protected abstract int bytesPerAtom();
 
     /** Return the maximum number of bytes that can be encoded per line */
-    abstract protected int bytesPerLine();
+    protected abstract int bytesPerLine();
 
     /** decode the beginning of the buffer, by default this is a NOP. */
     protected void decodeBufferPrefix(PushbackInputStream aStream, OutputStream bStream) throws IOException { }

@@ -124,7 +124,7 @@ final class ProcessEnvironment
 
     // A class hiding the byteArray-String duality of
     // text data on Unixoid operating systems.
-    private static abstract class ExternalData {
+    private abstract static class ExternalData {
         protected final String str;
         protected final byte[] bytes;
 

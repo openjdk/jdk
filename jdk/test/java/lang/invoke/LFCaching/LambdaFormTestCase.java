@@ -50,9 +50,9 @@ public abstract class LambdaFormTestCase {
      * Reflection link to {@code j.l.i.MethodHandle.internalForm} method. It is
      * used to get a lambda form from a method handle.
      */
-    protected final static Method INTERNAL_FORM;
-    protected final static Field DEBUG_NAME;
-    protected final static Field REF_FIELD;
+    protected static final Method INTERNAL_FORM;
+    protected static final Field DEBUG_NAME;
+    protected static final Field REF_FIELD;
     private static final List<GarbageCollectorMXBean> gcInfo;
 
     private static long gcCount() {

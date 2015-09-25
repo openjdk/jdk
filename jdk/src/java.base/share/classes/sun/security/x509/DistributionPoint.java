@@ -97,14 +97,14 @@ public class DistributionPoint {
 
     // reason flag bits
     // NOTE that these are NOT quite the same as the CRL reason code extension
-    public final static int KEY_COMPROMISE         = 1;
-    public final static int CA_COMPROMISE          = 2;
-    public final static int AFFILIATION_CHANGED    = 3;
-    public final static int SUPERSEDED             = 4;
-    public final static int CESSATION_OF_OPERATION = 5;
-    public final static int CERTIFICATE_HOLD       = 6;
-    public final static int PRIVILEGE_WITHDRAWN    = 7;
-    public final static int AA_COMPROMISE          = 8;
+    public static final int KEY_COMPROMISE         = 1;
+    public static final int CA_COMPROMISE          = 2;
+    public static final int AFFILIATION_CHANGED    = 3;
+    public static final int SUPERSEDED             = 4;
+    public static final int CESSATION_OF_OPERATION = 5;
+    public static final int CERTIFICATE_HOLD       = 6;
+    public static final int PRIVILEGE_WITHDRAWN    = 7;
+    public static final int AA_COMPROMISE          = 8;
 
     private static final String[] REASON_STRINGS = {
         null,

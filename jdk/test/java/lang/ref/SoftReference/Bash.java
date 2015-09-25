@@ -49,8 +49,8 @@ public class Bash {
     }
 
 
-    final static int NUM_BLOCKS = 2048;
-    final static int BLOCK_SIZE = 32768;
+    static final int NUM_BLOCKS = 2048;
+    static final int BLOCK_SIZE = 32768;
 
 
     public static void main(String[] args) throws Exception {

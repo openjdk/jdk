@@ -57,11 +57,11 @@ final class JceSecurity {
     // Map<Provider,?> of the providers we already have verified
     // value == PROVIDER_VERIFIED is successfully verified
     // value is failure cause Exception in error case
-    private final static Map<Provider, Object> verificationResults =
+    private static final Map<Provider, Object> verificationResults =
             new IdentityHashMap<>();
 
     // Map<Provider,?> of the providers currently being verified
-    private final static Map<Provider, Object> verifyingProviders =
+    private static final Map<Provider, Object> verifyingProviders =
             new IdentityHashMap<>();
 
     // Set the default value. May be changed in the static initializer.
@@ -162,7 +162,7 @@ final class JceSecurity {
         pv.verify();
     }
 
-    private final static Object PROVIDER_VERIFIED = Boolean.TRUE;
+    private static final Object PROVIDER_VERIFIED = Boolean.TRUE;
 
     /*
      * Verify that the provider JAR files are signed properly, which

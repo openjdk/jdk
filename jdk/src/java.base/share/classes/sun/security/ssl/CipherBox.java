@@ -93,7 +93,7 @@ import sun.misc.HexDumpEncoder;
 final class CipherBox {
 
     // A CipherBox that implements the identity operation
-    final static CipherBox NULL = new CipherBox();
+    static final CipherBox NULL = new CipherBox();
 
     /* Class and subclass dynamic debugging support */
     private static final Debug debug = Debug.getInstance("ssl");

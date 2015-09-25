@@ -232,10 +232,17 @@ JVM_OBJ_FILES = $(Obj_Files)
 
 vm_version.o: $(filter-out vm_version.o,$(JVM_OBJ_FILES))
 
-mapfile : $(MAPFILE) vm.def mapfile_ext
+MAPFILE_SHARE  := $(GAMMADIR)/make/share/makefiles/mapfile-vers
+
+MAPFILE_EXT_SRC := $(HS_ALT_MAKE)/share/makefiles/mapfile-ext
+ifneq ("$(wildcard $(MAPFILE_EXT_SRC))","")
+MAPFILE_EXT     := $(MAPFILE_EXT_SRC)
+endif
+
+mapfile : $(MAPFILE) $(MAPFILE_SHARE) vm.def $(MAPFILE_EXT)
 	rm -f $@
 	awk '{ if ($$0 ~ "INSERT VTABLE SYMBOLS HERE")	\
-                 { system ("cat mapfile_ext"); system ("cat vm.def"); } \
+                 { system ("cat ${MAPFILE_SHARE} $(MAPFILE_EXT) vm.def"); } \
                else					\
                  { print $$0 }				\
              }' > $@ < $(MAPFILE)
@@ -258,13 +265,6 @@ vm.def: $(Res_Files) $(Obj_Files) $(VM_DEF_EXT)
 ifneq ($(VM_DEF_EXT),)
 	cat $(VM_DEF_EXT) >> $@
 endif        
-
-mapfile_ext:
-	rm -f $@
-	touch $@
-	if [ -f $(HS_ALT_MAKE)/linux/makefiles/mapfile-ext ]; then \
-	  cat $(HS_ALT_MAKE)/linux/makefiles/mapfile-ext > $@; \
-	fi
 
 ifeq ($(JVM_VARIANT_ZEROSHARK), true)
   STATIC_CXX = false

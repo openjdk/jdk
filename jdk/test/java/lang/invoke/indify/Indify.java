@@ -1220,7 +1220,7 @@ public class Indify {
         for (Object x : data)  writeOutput(out, x);
     }
 
-    public static abstract class Outer {
+    public abstract static class Outer {
         public abstract List<? extends Inner> inners();
         protected void linkInners() {
             for (Inner i : inners()) {
@@ -1250,7 +1250,7 @@ public class Indify {
         }
     }
     public interface Inner { Outer outer(); void linkOuter(Outer o); }
-    public static abstract class InnerOuter extends Outer implements Inner {
+    public abstract static class InnerOuter extends Outer implements Inner {
         public Outer outer;
         public Outer outer() { return outer; }
         public void linkOuter(Outer o) { assert(outer == null); outer = o; }
