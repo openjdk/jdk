@@ -1634,7 +1634,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
                     @Override
                     void consumeStack() {
-                        dynamicCall(2 + argsCount, getCallSiteFlags(), origCallee.getName());
+                        dynamicCall(2 + argsCount, getCallSiteFlags(), null);
                     }
                 }.emit();
                 return false;

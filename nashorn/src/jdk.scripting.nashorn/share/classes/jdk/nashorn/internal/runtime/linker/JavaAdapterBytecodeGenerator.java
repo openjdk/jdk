@@ -203,6 +203,8 @@ final class JavaAdapterBytecodeGenerator {
 
     // This is the superclass for our generated adapter.
     private final Class<?> superClass;
+    // Interfaces implemented by our generated adapter.
+    private final List<Class<?>> interfaces;
     // Class loader used as the parent for the class loader we'll create to load the generated class. It will be a class
     // loader that has the visibility of all original types (class to extend and interfaces to implement) and of the
     // Nashorn classes.
@@ -254,6 +256,7 @@ final class JavaAdapterBytecodeGenerator {
         assert interfaces != null;
 
         this.superClass = superClass;
+        this.interfaces = interfaces;
         this.classOverride = classOverride;
         this.commonLoader = commonLoader;
         cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS) {
@@ -1031,6 +1034,24 @@ final class JavaAdapterBytecodeGenerator {
         endMethod(mv);
     }
 
+    // find the appropriate super type to use for invokespecial on the given interface
+    private Class<?> findInvokespecialOwnerFor(final Class<?> cl) {
+        assert Modifier.isInterface(cl.getModifiers()) : cl + " is not an interface";
+
+        if (cl.isAssignableFrom(superClass)) {
+            return superClass;
+        }
+
+        for (final Class<?> iface : interfaces) {
+             if (cl.isAssignableFrom(iface)) {
+                 return iface;
+             }
+        }
+
+        // we better that interface that extends the given interface!
+        throw new AssertionError("can't find the class/interface that extends " + cl);
+    }
+
     private void emitSuperCall(final InstructionAdapter mv, final Class<?> owner, final String name, final String methodDesc) {
         mv.visitVarInsn(ALOAD, 0);
         int nextParam = 1;
@@ -1042,7 +1063,9 @@ final class JavaAdapterBytecodeGenerator {
 
         // default method - non-abstract, interface method
         if (Modifier.isInterface(owner.getModifiers())) {
-            mv.invokespecial(Type.getInternalName(owner), name, methodDesc, false);
+            // we should call default method on the immediate "super" type - not on (possibly)
+            // the indirectly inherited interface class!
+            mv.invokespecial(Type.getInternalName(findInvokespecialOwnerFor(owner)), name, methodDesc, false);
         } else {
             mv.invokespecial(superClassName, name, methodDesc, false);
         }
