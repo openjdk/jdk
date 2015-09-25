@@ -159,7 +159,8 @@ public class NativeRSACipher extends CipherSpi {
     @Override
     protected int engineGetKeySize(Key key) throws InvalidKeyException {
         if (!(key instanceof RSAKey)) {
-            throw new InvalidKeyException("RSAKey required");
+            throw new InvalidKeyException("RSAKey required. Got: " +
+                key.getClass().getName());
         }
         int n = ((RSAKey)key).getModulus().bitLength();
         // strip off the leading extra 0x00 byte prefix
@@ -206,9 +207,11 @@ public class NativeRSACipher extends CipherSpi {
 
         // Make sure the proper opmode uses the proper key
         if (doEncrypt && (!(newKey instanceof RSAPublicKey))) {
-            throw new InvalidKeyException("RSAPublicKey required for encryption");
+            throw new InvalidKeyException("RSAPublicKey required for encryption." +
+                " Received: " + newKey.getClass().getName());
         } else if (!doEncrypt && (!(newKey instanceof RSAPrivateKey))) {
-            throw new InvalidKeyException("RSAPrivateKey required for decryption");
+            throw new InvalidKeyException("RSAPrivateKey required for decryption." +
+                " Received: " + newKey.getClass().getName());
         }
 
         NativeKey nativeKey = null;
@@ -237,13 +240,14 @@ public class NativeRSACipher extends CipherSpi {
                                                       privateKey.getPrimeExponentP(),
                                                       privateKey.getPrimeExponentQ(),
                                                       privateKey.getCrtCoefficient()));
-                   } else if (newKey instanceof RSAPrivateKey) {
+                    } else if (newKey instanceof RSAPrivateKey) {
                         RSAPrivateKey privateKey = (RSAPrivateKey) newKey;
                         nativeKey = (NativeKey) keyFactory.engineGeneratePrivate
                             (new RSAPrivateKeySpec(privateKey.getModulus(),
                                                    privateKey.getPrivateExponent()));
                     } else {
-                        throw new InvalidKeyException("Unsupported type of RSAPrivateKey");
+                        throw new InvalidKeyException("Unsupported type of RSAPrivateKey." +
+                            " Received: " + newKey.getClass().getName());
                     }
                 } catch (InvalidKeySpecException ikse) {
                     throw new InvalidKeyException(ikse);
@@ -282,7 +286,8 @@ public class NativeRSACipher extends CipherSpi {
     protected synchronized int engineUpdate(byte[] in, int inOfs, int inLen, byte[] out,
             int outOfs) throws ShortBufferException {
         if (out.length - outOfs < outputSize) {
-            throw new ShortBufferException("Output buffer too small");
+            throw new ShortBufferException("Output buffer too small. outputSize: " +
+                outputSize + ". out.length: " + out.length + ". outOfs: " + outOfs);
         }
         if (inLen > 0) {
             update(in, inOfs, inLen);
@@ -332,7 +337,9 @@ public class NativeRSACipher extends CipherSpi {
                                               "the key to be wrapped");
             }
             if (encodedKey.length > buffer.length) {
-                throw new InvalidKeyException("Key is too long for wrapping");
+                throw new InvalidKeyException("Key is too long for wrapping. " +
+                    "encodedKey.length: " + encodedKey.length +
+                    ". buffer.length: " + buffer.length);
             }
             return engineDoFinal(encodedKey, 0, encodedKey.length);
         } catch (BadPaddingException e) {
@@ -349,7 +356,9 @@ public class NativeRSACipher extends CipherSpi {
             throws InvalidKeyException, NoSuchAlgorithmException {
 
         if (wrappedKey.length > buffer.length) {
-            throw new InvalidKeyException("Key is too long for unwrapping");
+            throw new InvalidKeyException("Key is too long for unwrapping." +
+                " wrappedKey.length: " + wrappedKey.length +
+                ". buffer.length: " + buffer.length);
         }
 
         boolean isTlsRsaPremasterSecret =

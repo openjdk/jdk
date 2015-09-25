@@ -68,53 +68,53 @@ class EndEntityChecker {
     // extended key usage OIDs for TLS server, TLS client, code signing
     // and any usage
 
-    private final static String OID_EXTENDED_KEY_USAGE =
+    private static final String OID_EXTENDED_KEY_USAGE =
                                 SimpleValidator.OID_EXTENDED_KEY_USAGE;
 
-    private final static String OID_EKU_TLS_SERVER = "1.3.6.1.5.5.7.3.1";
+    private static final String OID_EKU_TLS_SERVER = "1.3.6.1.5.5.7.3.1";
 
-    private final static String OID_EKU_TLS_CLIENT = "1.3.6.1.5.5.7.3.2";
+    private static final String OID_EKU_TLS_CLIENT = "1.3.6.1.5.5.7.3.2";
 
-    private final static String OID_EKU_CODE_SIGNING = "1.3.6.1.5.5.7.3.3";
+    private static final String OID_EKU_CODE_SIGNING = "1.3.6.1.5.5.7.3.3";
 
-    private final static String OID_EKU_TIME_STAMPING = "1.3.6.1.5.5.7.3.8";
+    private static final String OID_EKU_TIME_STAMPING = "1.3.6.1.5.5.7.3.8";
 
-    private final static String OID_EKU_ANY_USAGE = "2.5.29.37.0";
+    private static final String OID_EKU_ANY_USAGE = "2.5.29.37.0";
 
     // the Netscape Server-Gated-Cryptography EKU extension OID
-    private final static String OID_EKU_NS_SGC = "2.16.840.1.113730.4.1";
+    private static final String OID_EKU_NS_SGC = "2.16.840.1.113730.4.1";
 
     // the Microsoft Server-Gated-Cryptography EKU extension OID
-    private final static String OID_EKU_MS_SGC = "1.3.6.1.4.1.311.10.3.3";
+    private static final String OID_EKU_MS_SGC = "1.3.6.1.4.1.311.10.3.3";
 
     // the recognized extension OIDs
-    private final static String OID_SUBJECT_ALT_NAME = "2.5.29.17";
+    private static final String OID_SUBJECT_ALT_NAME = "2.5.29.17";
 
-    private final static String NSCT_SSL_CLIENT =
+    private static final String NSCT_SSL_CLIENT =
                                 NetscapeCertTypeExtension.SSL_CLIENT;
 
-    private final static String NSCT_SSL_SERVER =
+    private static final String NSCT_SSL_SERVER =
                                 NetscapeCertTypeExtension.SSL_SERVER;
 
-    private final static String NSCT_CODE_SIGNING =
+    private static final String NSCT_CODE_SIGNING =
                                 NetscapeCertTypeExtension.OBJECT_SIGNING;
 
     // bit numbers in the key usage extension
-    private final static int KU_SIGNATURE = 0;
-    private final static int KU_KEY_ENCIPHERMENT = 2;
-    private final static int KU_KEY_AGREEMENT = 4;
+    private static final int KU_SIGNATURE = 0;
+    private static final int KU_KEY_ENCIPHERMENT = 2;
+    private static final int KU_KEY_AGREEMENT = 4;
 
     // TLS key exchange algorithms requiring digitalSignature key usage
-    private final static Collection<String> KU_SERVER_SIGNATURE =
+    private static final Collection<String> KU_SERVER_SIGNATURE =
         Arrays.asList("DHE_DSS", "DHE_RSA", "ECDHE_ECDSA", "ECDHE_RSA",
             "RSA_EXPORT", "UNKNOWN");
 
     // TLS key exchange algorithms requiring keyEncipherment key usage
-    private final static Collection<String> KU_SERVER_ENCRYPTION =
+    private static final Collection<String> KU_SERVER_ENCRYPTION =
         Arrays.asList("RSA");
 
     // TLS key exchange algorithms requiring keyAgreement key usage
-    private final static Collection<String> KU_SERVER_KEY_AGREEMENT =
+    private static final Collection<String> KU_SERVER_KEY_AGREEMENT =
         Arrays.asList("DH_DSS", "DH_RSA", "ECDH_ECDSA", "ECDH_RSA");
 
     // variant of this end entity cert checker

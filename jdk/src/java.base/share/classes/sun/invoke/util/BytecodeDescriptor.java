@@ -67,11 +67,11 @@ public class BytecodeDescriptor {
         return ptypes;
     }
 
-    static private void parseError(String str, String msg) {
+    private static void parseError(String str, String msg) {
         throw new IllegalArgumentException("bad signature: "+str+": "+msg);
     }
 
-    static private Class<?> parseSig(String str, int[] i, int end, ClassLoader loader) {
+    private static Class<?> parseSig(String str, int[] i, int end, ClassLoader loader) {
         if (i[0] == end)  return null;
         char c = str.charAt(i[0]++);
         if (c == 'L') {
@@ -122,7 +122,7 @@ public class BytecodeDescriptor {
         return sb.toString();
     }
 
-    static private void unparseSig(Class<?> t, StringBuilder sb) {
+    private static void unparseSig(Class<?> t, StringBuilder sb) {
         char c = Wrapper.forBasicType(t).basicTypeChar();
         if (c != 'L') {
             sb.append(c);

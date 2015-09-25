@@ -25,7 +25,7 @@
 package org.omg.CORBA;
 
 /**
-* The Helper for <tt>WrongTransaction</tt>.  For more information on
+* The Helper for {@code WrongTransaction}. For more information on
 * Helper files, see <a href="doc-files/generatedfiles.html#helper">
 * "Generated Files: Helper Files"</a>.<P>
 * org/omg/CORBA/WrongTransactionHelper.java

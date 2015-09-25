@@ -36,8 +36,8 @@ import static org.testng.Assert.fail;
 
 @Test
 public class MergeTest {
-    private final static String[] PREFIXES = {"", "{", "@#$%"};
-    private final static String[] SUFFIXES = {"", "}", "*&%$"};
+    private static final String[] PREFIXES = {"", "{", "@#$%"};
+    private static final String[] SUFFIXES = {"", "}", "*&%$"};
 
     private static class Fixes {
         public String pre0, suf0;

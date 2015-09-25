@@ -63,8 +63,8 @@
     <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~ -->
     <!-- Call rmic-jmx subtargets -->
 
-    <target name="-rmic-jmx" depends="-init,-rmic-jmx-jrmp,-rmic-jmx-iiop"
-	    description="Calls -init,-rmic-jmx-jrmp,-rmic-jmx-iiop"
+    <target name="-rmic-jmx" depends="-init,-rmic-jmx-jrmp"
+	    description="Calls -init,-rmic-jmx-jrmp"
     />
 
 
@@ -87,44 +87,6 @@
 	    <include name="javax/management/remote/rmi/RMIConnectionImpl.class" />
 	    <include name="javax/management/remote/rmi/RMIServerImpl.class" />
 	</rmic>
-
-    </target>
-
-
-    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-    <!-- Generate RMI IIOP stub class files for remote objects -->
-
-    <target name="-rmic-jmx-iiop" depends="-init,-check-jmx-iiop-uptodate" unless="jmx-iiop-uptodate"
-            description="Generate RMI IIOP stub class files for remote objects. Do not keep generated java files." >
-
-	<rmic 	base="${classes.dir}"
-		includeAntRuntime="no"
-		includeJavaRuntime="no"
-		stubversion="1.2"
-		iiop="yes"
-		>
-	    <include name="javax/management/remote/rmi/RMIConnectionImpl.class" />
-	    <include name="javax/management/remote/rmi/RMIServerImpl.class" />
-	</rmic>
-
-    </target>
-
-
-    <!-- ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ -->
-    <!-- Check if jmx rmic generated IIOP stub and tie class files are up to date -->
-
-    <target name="-check-jmx-iiop-uptodate" depends="-init">
-
-	<uptodate property="jmx-iiop-uptodate"
-		   srcfile="${classes.dir}/javax/management/remote/rmi/RMIConnectionImpl.class"
-		targetfile="${classes.dir}/org/omg/stub/javax/management/remote/rmi/_RMIConnectionImpl_Tie.class"
-	/>
-	<uptodate property="jmx-iiop-uptodate"
-		   srcfile="${classes.dir}/javax/management/remote/rmi/RMIServerImpl.class"
-		targetfile="${classes.dir}/org/omg/stub/javax/management/remote/rmi/_RMIServerImpl_Tie.class"
-	/>
-
-	<echo message="jmx-iiop-uptodate=${jmx-iiop-uptodate}" />
 
     </target>
 

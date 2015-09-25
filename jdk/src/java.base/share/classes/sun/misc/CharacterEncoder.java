@@ -79,10 +79,10 @@ public abstract class CharacterEncoder {
     protected PrintStream pStream;
 
     /** Return the number of bytes per atom of encoding */
-    abstract protected int bytesPerAtom();
+    protected abstract int bytesPerAtom();
 
     /** Return the number of bytes that can be encoded per line */
-    abstract protected int bytesPerLine();
+    protected abstract int bytesPerLine();
 
     /**
      * Encode the prefix for the entire buffer. By default is simply
@@ -114,7 +114,7 @@ public abstract class CharacterEncoder {
     }
 
     /** Encode one "atom" of information into characters. */
-    abstract protected void encodeAtom(OutputStream aStream, byte someBytes[],
+    protected abstract void encodeAtom(OutputStream aStream, byte someBytes[],
                 int anOffset, int aLength) throws IOException;
 
     /**

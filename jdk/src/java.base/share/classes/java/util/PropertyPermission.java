@@ -90,20 +90,20 @@ public final class PropertyPermission extends BasicPermission {
     /**
      * Read action.
      */
-    private final static int READ    = 0x1;
+    private static final int READ    = 0x1;
 
     /**
      * Write action.
      */
-    private final static int WRITE   = 0x2;
+    private static final int WRITE   = 0x2;
     /**
      * All actions (read,write);
      */
-    private final static int ALL     = READ|WRITE;
+    private static final int ALL     = READ|WRITE;
     /**
      * No actions.
      */
-    private final static int NONE    = 0x0;
+    private static final int NONE    = 0x0;
 
     /**
      * The actions mask.

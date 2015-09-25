@@ -94,5 +94,5 @@ public class GetAnnotatedSuperclass {
 
     interface If {}
 
-    static abstract class Clz {}
+    abstract static class Clz {}
 }

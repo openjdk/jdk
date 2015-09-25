@@ -37,6 +37,7 @@ import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.DeferredAttr.AttrMode;
+import com.sun.tools.javac.comp.DeferredAttr.DeferredAttrContext;
 import com.sun.tools.javac.comp.Infer.GraphSolver.InferenceGraph;
 import com.sun.tools.javac.comp.Infer.GraphSolver.InferenceGraph.Node;
 import com.sun.tools.javac.comp.Resolve.InapplicableMethodException;
@@ -179,7 +180,11 @@ public class Infer {
 
             resolveContext.methodCheck.argumentsAcceptable(env, deferredAttrContext,   //B2
                     argtypes, mt.getParameterTypes(), warn);
-            if (allowGraphInference &&
+
+            if (allowGraphInference && resultInfo != null && resultInfo.pt == anyPoly) {
+                //we are inside method attribution - just return a partially inferred type
+                return new PartiallyInferredMethodType(mt, inferenceContext, env, warn);
+            } else if (allowGraphInference &&
                     resultInfo != null &&
                     !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
                 //inject return constraints earlier
@@ -235,6 +240,73 @@ public class Infer {
                 inferenceContext.captureTypeCache.clear();
             }
             dumpGraphsIfNeeded(env.tree, msym, resolveContext);
+        }
+    }
+
+    /**
+     * A partially infered method/constructor type; such a type can be checked multiple times
+     * against different targets.
+     */
+    public class PartiallyInferredMethodType extends MethodType {
+        public PartiallyInferredMethodType(MethodType mtype, InferenceContext inferenceContext, Env<AttrContext> env, Warner warn) {
+            super(mtype.getParameterTypes(), mtype.getReturnType(), mtype.getThrownTypes(), mtype.tsym);
+            this.inferenceContext = inferenceContext;
+            this.env = env;
+            this.warn = warn;
+        }
+
+        /** The inference context. */
+        final InferenceContext inferenceContext;
+
+        /** The attribution environment. */
+        Env<AttrContext> env;
+
+        /** The warner. */
+        final Warner warn;
+
+        @Override
+        public boolean isPartial() {
+            return true;
+        }
+
+        /**
+         * Checks this type against a target; this means generating return type constraints, solve
+         * and then roll back the results (to avoid poolluting the context).
+         */
+        Type check(Attr.ResultInfo resultInfo) {
+            Warner noWarnings = new Warner(null);
+            inferenceException.clear();
+            List<Type> saved_undet = null;
+            try {
+                /** we need to save the inference context before generating target type constraints.
+                 *  This constraints may pollute the inference context and make it useless in case we
+                 *  need to use it several times: with several targets.
+                 */
+                saved_undet = inferenceContext.save();
+                if (allowGraphInference && !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
+                    //inject return constraints earlier
+                    checkWithinBounds(inferenceContext, noWarnings); //propagation
+                    Type res = generateReturnConstraints(env.tree, resultInfo,  //B3
+                        this, inferenceContext);
+
+                    if (resultInfo.checkContext.inferenceContext().free(resultInfo.pt)) {
+                        //propagate inference context outwards and exit
+                        inferenceContext.dupTo(resultInfo.checkContext.inferenceContext(),
+                                resultInfo.checkContext.deferredAttrContext().insideOverloadPhase());
+                        return res;
+                    }
+                }
+                inferenceContext.solve(noWarnings);
+                return inferenceContext.asInstType(this).getReturnType();
+            } catch (InferenceException ex) {
+                resultInfo.checkContext.report(null, ex.getDiagnostic());
+                Assert.error(); //cannot get here (the above should throw)
+                return null;
+            } finally {
+                if (saved_undet != null) {
+                    inferenceContext.rollback(saved_undet);
+                }
+            }
         }
     }
 

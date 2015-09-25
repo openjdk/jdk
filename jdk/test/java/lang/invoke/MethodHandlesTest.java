@@ -497,7 +497,7 @@ public class MethodHandlesTest {
     }
 
     /** Is findVirtual (etc.) of "&lt;init&lt;" supposed to elicit a NoSuchMethodException? */
-    final static boolean INIT_REF_CAUSES_NSME = true;
+    static final boolean INIT_REF_CAUSES_NSME = true;
 
     @Test
     public void testFindStatic() throws Throwable {

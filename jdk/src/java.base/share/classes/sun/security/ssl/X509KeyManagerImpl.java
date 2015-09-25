@@ -62,7 +62,7 @@ final class X509KeyManagerImpl extends X509ExtendedKeyManager
 
     private static final Debug debug = Debug.getInstance("ssl");
 
-    private final static boolean useDebug =
+    private static final boolean useDebug =
                             (debug != null) && Debug.isOn("keymanager");
 
     // for unit testing only, set via privileged reflection

@@ -62,67 +62,146 @@ function createDeep() {
     return new C();
 }
 
+function createDeeper() {
+    function C() {
+        this.i1 = 1;
+        this.i2 = 2;
+        this.i3 = 3;
+        return this;
+    }
+    function D() {
+        this.p1 = 1;
+        this.p2 = 2;
+        this.p3 = 3;
+        return this;
+    }
+    function E() {
+        this.e1 = 1;
+        this.e2 = 2;
+        this.e3 = 3;
+        return this;
+    }
+    D.prototype = new E();
+    C.prototype = new D();
+    return new C();
+}
+
 function createEval() {
     return eval("Object.create({})");
 }
 
 function p(o) { print(o.x) }
 
-var a, b;
+function e(o) { print(o.e1) }
+
+var a, b, c;
 
 create();
 a = create();
 b = create();
+c = create();
 a.__proto__.x = 123;
 
 p(a);
 p(b);
+p(c);
 
 a = create();
 b = create();
+c = create();
 b.__proto__.x = 123;
 
 p(a);
 p(b);
+p(c);
 
 a = createEmpty();
 b = createEmpty();
+c = createEmpty();
 a.__proto__.x = 123;
 
 p(a);
 p(b);
+p(c);
 
 a = createEmpty();
 b = createEmpty();
+c = createEmpty();
 b.__proto__.x = 123;
 
 p(a);
 p(b);
+p(c);
 
 a = createDeep();
 b = createDeep();
+c = createDeep();
 a.__proto__.__proto__.x = 123;
 
 p(a);
 p(b);
+p(c);
 
 a = createDeep();
 b = createDeep();
+c = createDeep();
 b.__proto__.__proto__.x = 123;
 
 p(a);
 p(b);
+p(c);
+
+a = createDeeper();
+b = createDeeper();
+c = createDeeper();
+a.__proto__.__proto__.__proto__.x = 123;
+
+p(a);
+p(b);
+p(c);
+
+a = createDeeper();
+b = createDeeper();
+c = createDeeper();
+b.__proto__.__proto__.__proto__.x = 123;
+
+p(a);
+p(b);
+p(c);
+
+a = createDeeper();
+b = createDeeper();
+c = createDeeper();
+a.__proto__.__proto__ = null;
+
+e(a);
+e(b);
+e(c);
+
+a = createDeeper();
+b = createDeeper();
+c = createDeeper();
+b.__proto__.__proto__ = null;
+
+e(a);
+e(b);
+e(c);
+
 
 a = createEval();
 b = createEval();
+c = createEval();
 a.__proto__.x = 123;
 
 p(a);
 p(b);
+p(c);
 
 a = createEval();
 b = createEval();
+c = createEval();
 b.__proto__.x = 123;
 
 p(a);
 p(b);
+p(c);

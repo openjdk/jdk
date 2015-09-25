@@ -67,6 +67,7 @@ jdk_lang = \
     sun/misc \
     sun/reflect \
     jdk/lambda \
+    jdk/internal/jimage \
     vm
 
 # All of the java.util package
@@ -210,13 +211,13 @@ jdk_native_sanity = \
 
 # java launcher specific tests, Note: do not include this group into any groups
 # that potentially could be included into a jprt test rule, as the complementary
-# closed  group includes awt SplashScreen and these tests may not run 
-# satisfacotorily on all platforms and  profiles thus this group must always 
+# closed  group includes awt SplashScreen and these tests may not run
+# satisfactorily on all platforms and  profiles thus this group must always
 # be a stand-alone group
 jdk_launcher = \
     tools/launcher \
     sun/tools
-    
+
 #
 # Tool (and tool API) tests are split into core and svc groups
 #
@@ -473,7 +474,7 @@ needs_jdk = \
   sun/reflect/CallerSensitive/MissingCallerSensitive.java \
   sun/security/util/Resources/NewNamesFormat.java \
   vm/verifier/defaultMethods/DefaultMethodRegressionTestsRun.java \
-  javax/xml/ws/clientjar/TestWsImport.java 
+  javax/xml/ws/clientjar/TestWsImport.java
 
 # JRE adds further tests to compact3
 #

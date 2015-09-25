@@ -47,7 +47,6 @@ import jdk.nashorn.internal.ir.ContinueNode;
 import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.GetSplitState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
@@ -176,11 +175,9 @@ final class SplitIntoFunctions extends NodeVisitor<BlockLexicalContext> {
                 // we still use IS_SPLIT as the criteria in CompilationPhase.SERIALIZE_SPLIT_PHASE.
                 FunctionNode.IS_ANONYMOUS | FunctionNode.USES_ANCESTOR_SCOPE | FunctionNode.IS_SPLIT,
                 body,
-                CompilationState.INITIALIZED,
                 null
         )
-        .setCompileUnit(lc, splitNode.getCompileUnit())
-        .copyCompilationState(lc, originalFn);
+        .setCompileUnit(lc, splitNode.getCompileUnit());
 
         // Call the function:
         //     either "(function () { ... }).call(this)"

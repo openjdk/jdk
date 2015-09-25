@@ -136,7 +136,7 @@ public abstract class Collator
      * @see java.text.Collator#setStrength
      * @see java.text.Collator#getStrength
      */
-    public final static int PRIMARY = 0;
+    public static final int PRIMARY = 0;
     /**
      * Collator strength value.  When set, only SECONDARY and above differences are
      * considered significant during comparison. The assignment of strengths
@@ -146,7 +146,7 @@ public abstract class Collator
      * @see java.text.Collator#setStrength
      * @see java.text.Collator#getStrength
      */
-    public final static int SECONDARY = 1;
+    public static final int SECONDARY = 1;
     /**
      * Collator strength value.  When set, only TERTIARY and above differences are
      * considered significant during comparison. The assignment of strengths
@@ -155,7 +155,7 @@ public abstract class Collator
      * @see java.text.Collator#setStrength
      * @see java.text.Collator#getStrength
      */
-    public final static int TERTIARY = 2;
+    public static final int TERTIARY = 2;
 
     /**
      * Collator strength value.  When set, all differences are
@@ -168,7 +168,7 @@ public abstract class Collator
      * (A, combining-grave) will be considered significant at the IDENTICAL
      * level if decomposition is set to NO_DECOMPOSITION.
      */
-    public final static int IDENTICAL = 3;
+    public static final int IDENTICAL = 3;
 
     /**
      * Decomposition mode value. With NO_DECOMPOSITION
@@ -178,7 +178,7 @@ public abstract class Collator
      * @see java.text.Collator#getDecomposition
      * @see java.text.Collator#setDecomposition
      */
-    public final static int NO_DECOMPOSITION = 0;
+    public static final int NO_DECOMPOSITION = 0;
 
     /**
      * Decomposition mode value. With CANONICAL_DECOMPOSITION
@@ -193,7 +193,7 @@ public abstract class Collator
      * @see java.text.Collator#getDecomposition
      * @see java.text.Collator#setDecomposition
      */
-    public final static int CANONICAL_DECOMPOSITION = 1;
+    public static final int CANONICAL_DECOMPOSITION = 1;
 
     /**
      * Decomposition mode value. With FULL_DECOMPOSITION
@@ -212,7 +212,7 @@ public abstract class Collator
      * @see java.text.Collator#getDecomposition
      * @see java.text.Collator#setDecomposition
      */
-    public final static int FULL_DECOMPOSITION = 2;
+    public static final int FULL_DECOMPOSITION = 2;
 
     /**
      * Gets the Collator for the current default locale.
@@ -472,7 +472,7 @@ public abstract class Collator
      * Generates the hash code for this Collator.
      */
     @Override
-    abstract public int hashCode();
+    public abstract int hashCode();
 
     /**
      * Default constructor.  This constructor is
@@ -499,17 +499,17 @@ public abstract class Collator
      * string in the compare() method.
      * @see java.text.Collator#compare
      */
-    final static int LESS = -1;
+    static final int LESS = -1;
     /**
      * EQUAL is returned if source string is compared to be equal to target
      * string in the compare() method.
      * @see java.text.Collator#compare
      */
-    final static int EQUAL = 0;
+    static final int EQUAL = 0;
     /**
      * GREATER is returned if source string is compared to be greater than
      * target string in the compare() method.
      * @see java.text.Collator#compare
      */
-    final static int GREATER = 1;
+    static final int GREATER = 1;
  }

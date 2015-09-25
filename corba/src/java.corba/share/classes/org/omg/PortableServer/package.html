@@ -2,7 +2,7 @@
 <html>
 <head>
 <!--
- 
+
  Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
@@ -34,46 +34,46 @@
 Provides classes and interfaces for making the server side of your applications 
 portable across multivendor ORBs.
 
-<P>In Java, Portable Object Adaptor (POA)-based Dynamic Skeleton Interface (DSI) 
-servants inherit from the  standard <TT>DynamicImplementation</TT> class, which 
-inherits from the <TT>Servant</TT> class. The native <TT>Servant</TT> type is 
-defined by the <TT>PortableServer</TT> module for the POA. In Java, the 
-  <TT>Servant</TT> type is mapped to the Java 
-  <TT>org.omg.PortableServer.Servant</TT> class.
-  It serves as the base class for all POA servant 
-  implementations and provides a number of methods that may 
-  be invoked by the application programmer, as well as methods 
-  which are invoked by the POA itself and may be overridden by 
-  the user to control aspects of servant behavior. 
+<P>In Java, Portable Object Adaptor (POA)-based Dynamic Skeleton Interface (DSI)
+servants inherit from the  standard <code>DynamicImplementation</code> class, which
+inherits from the <code>Servant</code> class. The native <code>Servant</code> type is
+defined by the <code>PortableServer</code> module for the POA. In Java, the
+  <code>Servant</code> type is mapped to the Java
+  <code>org.omg.PortableServer.Servant</code> class.
+  It serves as the base class for all POA servant
+  implementations and provides a number of methods that may
+  be invoked by the application programmer, as well as methods
+  which are invoked by the POA itself and may be overridden by
+  the user to control aspects of servant behavior.
   
 <H2>Package Specification</H2>
  
-<P>For a precise list of supported sections of official OMG specifications with which 
-the Java[tm] Platform, Standard Edition 6 complies, see <A 
-HREF="../CORBA/doc-files/compliance.html">Official Specifications for CORBA 
+<P>For a precise list of supported sections of official OMG specifications with which
+the Java[tm] Platform, Standard Edition 6 complies, see <A
+HREF="../CORBA/doc-files/compliance.html">Official Specifications for CORBA
 support in Java[tm] SE 6</A>.
 
 <H2>POA-related Interfaces</H2>
 
-<P>The <TT>PortableServer</TT> module defines the following POA-related interfaces:
+<P>The <code>PortableServer</code> module defines the following POA-related interfaces:
 <UL>
-	<LI><TT>POA</TT>
-	<LI><TT>POAManager</TT>
-	<LI><TT>ServantManager</TT>
-	<LI><TT>ServantActivator</TT>
-	<LI><TT>ServantLocator</TT>
-	<LI><TT>AdapterActivator</TT>
-	<LI><TT>ThreadPolicy</TT>
-	<LI><TT>LifespanPolicy</TT>
-	<LI><TT>IdUniquenessPolicy</TT>
-	<LI><TT>IdAssignmentPolicy</TT>
-	<LI><TT>ImplicitActivationPolicy</TT>
-	<LI><TT>ServantRetentionPolicy</TT>
-	<LI><TT>RequestProcessingPolicy</TT>
-	<LI><TT>Current</TT>
+	<LI><code>POA</code>
+	<LI><code>POAManager</code>
+	<LI><code>ServantManager</code>
+	<LI><code>ServantActivator</code>
+	<LI><code>ServantLocator</code>
+	<LI><code>AdapterActivator</code>
+	<LI><code>ThreadPolicy</code>
+	<LI><code>LifespanPolicy</code>
+	<LI><code>IdUniquenessPolicy</code>
+	<LI><code>IdAssignmentPolicy</code>
+	<LI><code>ImplicitActivationPolicy</code>
+	<LI><code>ServantRetentionPolicy</code>
+	<LI><code>RequestProcessingPolicy</code>
+	<LI><code>Current</code>
 </UL>
 
-<P>In addition, the POA defines the <TT>Servant</TT> native type.
+<P>In addition, the POA defines the <code>Servant</code> native type.
 
 <H3>Operations classes</H3>
 
@@ -87,10 +87,10 @@ while its associated interface can only be called by the client.
 
 Classes ending in the suffix <code>PolicyValue</code> provide the values used
 for the <code>create_POA</code> call, which sets the policy for the POA. See
-the <a href="#sampleserver">sample code</a> below for a demonstration. 
+the <a href="#sampleserver">sample code</a> below for a demonstration.
 <code>PolicyValue</code> files include the following:
 <UL>
-<LI><code>IdAssignmentPolicyValue</code> 
+<LI><code>IdAssignmentPolicyValue</code>
 <LI><code>IdUniquenessPolicyValue</code>
 <LI><code>ImplicitActivationPolicyValue</code>
 <LI><code>LifespanPolicyValue</code>
@@ -101,10 +101,10 @@ the <a href="#sampleserver">sample code</a> below for a demonstration.
 
 <H3>Helper Classes</H3>
 
-<P>Helper classes, which are generated for all user-defined types in an OMG IDL 
+<P>Helper classes, which are generated for all user-defined types in an OMG IDL
 interface, supply static methods needed to manipulate those types.
-There is only one method in a helper class that an application programmer uses: 
-the  <code>narrow</code> method.  Only Java interfaces mapped from IDL interfaces 
+There is only one method in a helper class that an application programmer uses:
+the  <code>narrow</code> method.  Only Java interfaces mapped from IDL interfaces
 will have a helper class that includes a <code>narrow</code> method, so in
 the <code>PortableServer</code> package, only the following classes have a <code>narrow</code> method:
 <UL>
@@ -119,7 +119,7 @@ the <code>PortableServer</code> package, only the following classes have a <code
 
 <H3>Exceptions</H3>
 
-<P>The <code>ForwardRequest</code> exception indicates to the ORB 
+<P>The <code>ForwardRequest</code> exception indicates to the ORB
 that it is responsible for delivering the current request and
 subsequent <code>ForwardRequest</code> requests to the object denoted in the
 <code>forward_reference</code> member of the exception.
@@ -132,7 +132,7 @@ The remaining interfaces will be provided by the ORB implementation.
 The interfaces of interest to application programmers are the following:
 <ul>
   <LI><code>AdapterActivator</code>
-  <P>Adapter activators are associated with POAs. 
+  <P>Adapter activators are associated with POAs.
   An adapter activator supplies a POA with the ability to create child POAs on demand,
   as a side-effect of receiving a request that names the child POA (or one of its children),
   or when <code>find_POA</code> is called with an activate parameter value of <code>TRUE</code>.
@@ -148,10 +148,10 @@ The interfaces of interest to application programmers are the following:
 </ul>
 
 
-<H2>Package <TT>org.omg.PortableServer.ServantLocatorPackage</TT></H2>
+<H2>Package <code>org.omg.PortableServer.ServantLocatorPackage</code></H2>
 
-<P>This package supplies a <TT>CookieHolder</TT> class for passing 
-the <TT>Cookie</TT> type as an <code>out</code> parameter. The <code>CookieHolder</code> class 
+<P>This package supplies a <code>CookieHolder</code> class for passing
+the <code>Cookie</code> type as an <code>out</code> parameter. The <code>CookieHolder</code> class
 follows exactly the same pattern as the other holder classes for basic types.
 
 <H2>Related Documentation</H2>

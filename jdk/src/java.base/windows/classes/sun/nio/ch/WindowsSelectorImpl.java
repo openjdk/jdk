@@ -54,7 +54,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
     private final int INIT_CAP = 8;
     // Maximum number of sockets for select().
     // Should be INIT_CAP times a power of 2
-    private final static int MAX_SELECTABLE_FDS = 1024;
+    private static final int MAX_SELECTABLE_FDS = 1024;
 
     // The list of SelectableChannels serviced by this Selector. Every mod
     // MAX_SELECTABLE_FDS entry is bogus, to align this array with the poll
@@ -85,7 +85,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
     private Object closeLock = new Object();
 
     // Maps file descriptors to their indices in  pollArray
-    private final static class FdMap extends HashMap<Integer, MapEntry> {
+    private static final class FdMap extends HashMap<Integer, MapEntry> {
         static final long serialVersionUID = 0L;
         private MapEntry get(int desc) {
             return get(new Integer(desc));
@@ -103,7 +103,7 @@ final class WindowsSelectorImpl extends SelectorImpl {
     }
 
     // class for fdMap entries
-    private final static class MapEntry {
+    private static final class MapEntry {
         SelectionKeyImpl ski;
         long updateCount = 0;
         long clearedCount = 0;
