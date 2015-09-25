@@ -121,22 +121,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
                             terminated = true;
                         }
                     } else {
-                        statement.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
-                            @Override
-                            public boolean enterVarNode(final VarNode varNode) {
-                                // We can't entirely eliminate dead statements, as var declarations are scoped
-                                // to the whole function so we need to preserve them although without
-                                // initializers.
-                                newStatements.add(varNode.setInit(null));
-                                return false;
-                            }
-
-                            @Override
-                            public boolean enterFunctionNode(final FunctionNode functionNode) {
-                                // Don't descend into nested functions when searching for VarNodes, though.
-                                return false;
-                            }
-                        });
+                        FoldConstants.extractVarNodesFromDeadCode(statement, newStatements);
                     }
                 }
                 return newStatements;
