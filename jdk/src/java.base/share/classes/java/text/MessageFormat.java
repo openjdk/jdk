@@ -1168,7 +1168,7 @@ public class MessageFormat extends Format {
          * indicating the index in the <code>arguments</code> array of the
          * argument from which the text was generated.
          */
-        public final static Field ARGUMENT =
+        public static final Field ARGUMENT =
                            new Field("message argument field");
     }
 

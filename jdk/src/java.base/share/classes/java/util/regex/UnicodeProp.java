@@ -202,8 +202,8 @@ enum UnicodeProp {
         }
     };
 
-    private final static HashMap<String, String> posix = new HashMap<>();
-    private final static HashMap<String, String> aliases = new HashMap<>();
+    private static final HashMap<String, String> posix = new HashMap<>();
+    private static final HashMap<String, String> aliases = new HashMap<>();
     static {
         posix.put("ALPHA", "ALPHABETIC");
         posix.put("LOWER", "LOWERCASE");

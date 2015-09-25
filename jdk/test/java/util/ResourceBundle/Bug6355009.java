@@ -32,7 +32,7 @@ import java.util.MissingResourceException;
 public final strictfp class Bug6355009 {
     private final ResourceBundle bundle = ResourceBundle.getBundle(Bug6355009.class.getName());
 
-    public final static void main(String[] args) {
+    public static final void main(String[] args) {
         try {
             new Bug6355009();
         } catch (MissingResourceException e) {

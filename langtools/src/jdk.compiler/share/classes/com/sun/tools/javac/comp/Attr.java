@@ -108,6 +108,7 @@ public class Attr extends JCTree.Visitor {
     final TypeEnvs typeEnvs;
     final Dependencies dependencies;
     final Annotate annotate;
+    final ArgumentAttr argumentAttr;
 
     public static Attr instance(Context context) {
         Attr instance = context.get(attrKey);
@@ -142,6 +143,7 @@ public class Attr extends JCTree.Visitor {
         deferredLintHandler = DeferredLintHandler.instance(context);
         typeEnvs = TypeEnvs.instance(context);
         dependencies = Dependencies.instance(context);
+        argumentAttr = ArgumentAttr.instance(context);
 
         Options options = Options.instance(context);
 
@@ -160,7 +162,7 @@ public class Attr extends JCTree.Visitor {
         statInfo = new ResultInfo(KindSelector.NIL, Type.noType);
         varAssignmentInfo = new ResultInfo(KindSelector.ASG, Type.noType);
         unknownExprInfo = new ResultInfo(KindSelector.VAL, Type.noType);
-        unknownAnyPolyInfo = new ResultInfo(KindSelector.VAL, Infer.anyPoly);
+        methodAttrInfo = new MethodAttrInfo();
         unknownTypeInfo = new ResultInfo(KindSelector.TYP, Type.noType);
         unknownTypeExprInfo = new ResultInfo(KindSelector.VAL_TYP, Type.noType);
         recoveryInfo = new RecoveryInfo(deferredAttr.emptyDeferredAttrContext);
@@ -488,6 +490,10 @@ public class Attr extends JCTree.Visitor {
             this.checkMode = checkMode;
         }
 
+        protected void attr(JCTree tree, Env<AttrContext> env) {
+            tree.accept(Attr.this);
+        }
+
         protected Type check(final DiagnosticPosition pos, final Type found) {
             return chk.checkType(pos, found, pt, checkContext);
         }
@@ -522,6 +528,41 @@ public class Attr extends JCTree.Visitor {
         }
     }
 
+    class MethodAttrInfo extends ResultInfo {
+        public MethodAttrInfo() {
+            this(chk.basicHandler);
+        }
+
+        public MethodAttrInfo(CheckContext checkContext) {
+            super(KindSelector.VAL, Infer.anyPoly, checkContext);
+        }
+
+        @Override
+        protected void attr(JCTree tree, Env<AttrContext> env) {
+            result = argumentAttr.attribArg(tree, env);
+        }
+
+        protected ResultInfo dup(Type newPt) {
+            throw new IllegalStateException();
+        }
+
+        protected ResultInfo dup(CheckContext newContext) {
+            return new MethodAttrInfo(newContext);
+        }
+
+        protected ResultInfo dup(Type newPt, CheckContext newContext) {
+            throw new IllegalStateException();
+        }
+
+        protected ResultInfo dup(Type newPt, CheckContext newContext, CheckMode newMode) {
+            throw new IllegalStateException();
+        }
+
+        protected ResultInfo dup(CheckMode newMode) {
+            throw new IllegalStateException();
+        }
+    }
+
     class RecoveryInfo extends ResultInfo {
 
         public RecoveryInfo(final DeferredAttr.DeferredAttrContext deferredAttrContext) {
@@ -545,7 +586,7 @@ public class Attr extends JCTree.Visitor {
 
     final ResultInfo statInfo;
     final ResultInfo varAssignmentInfo;
-    final ResultInfo unknownAnyPolyInfo;
+    final ResultInfo methodAttrInfo;
     final ResultInfo unknownExprInfo;
     final ResultInfo unknownTypeInfo;
     final ResultInfo unknownTypeExprInfo;
@@ -588,7 +629,7 @@ public class Attr extends JCTree.Visitor {
         try {
             this.env = env;
             this.resultInfo = resultInfo;
-            tree.accept(this);
+            resultInfo.attr(tree, env);
             if (tree == breakTree &&
                     resultInfo.checkContext.deferredAttrContext().mode == AttrMode.CHECK) {
                 throw new BreakAttr(copyEnv(env));
@@ -684,12 +725,9 @@ public class Attr extends JCTree.Visitor {
     KindSelector attribArgs(KindSelector initialKind, List<JCExpression> trees, Env<AttrContext> env, ListBuffer<Type> argtypes) {
         KindSelector kind = initialKind;
         for (JCExpression arg : trees) {
-            Type argtype;
-            if (allowPoly && deferredAttr.isDeferred(env, arg)) {
-                argtype = deferredAttr.new DeferredType(arg, env);
+            Type argtype = chk.checkNonVoid(arg, attribTree(arg, env, allowPoly ? methodAttrInfo : unknownExprInfo));
+            if (argtype.hasTag(DEFERRED)) {
                 kind = KindSelector.of(KindSelector.POLY, kind);
-            } else {
-                argtype = chk.checkNonVoid(arg, attribTree(arg, env, unknownAnyPolyInfo));
             }
             argtypes.append(argtype);
         }
@@ -1426,12 +1464,12 @@ public class Attr extends JCTree.Visitor {
         Type condtype = attribExpr(tree.cond, env, syms.booleanType);
 
         tree.polyKind = (!allowPoly ||
-                pt().hasTag(NONE) && pt() != Type.recoveryType ||
+                pt().hasTag(NONE) && pt() != Type.recoveryType && pt() != Infer.anyPoly ||
                 isBooleanOrNumeric(env, tree)) ?
                 PolyKind.STANDALONE : PolyKind.POLY;
 
         if (tree.polyKind == PolyKind.POLY && resultInfo.pt.hasTag(VOID)) {
-            //cannot get here (i.e. it means we are returning from void method - which is already an error)
+            //this means we are returning a poly conditional from void-compatible lambda expression
             resultInfo.checkContext.report(tree, diags.fragment("conditional.target.cant.be.void"));
             result = tree.type = types.createErrorType(resultInfo.pt);
             return;
@@ -1439,15 +1477,7 @@ public class Attr extends JCTree.Visitor {
 
         ResultInfo condInfo = tree.polyKind == PolyKind.STANDALONE ?
                 unknownExprInfo :
-                resultInfo.dup(new Check.NestedCheckContext(resultInfo.checkContext) {
-                    //this will use enclosing check context to check compatibility of
-                    //subexpression against target type; if we are in a method check context,
-                    //depending on whether boxing is allowed, we could have incompatibilities
-                    @Override
-                    public void report(DiagnosticPosition pos, JCDiagnostic details) {
-                        enclosingContext.report(pos, diags.fragment("incompatible.type.in.conditional", details));
-                    }
-                });
+                resultInfo.dup(conditionalContext(resultInfo.checkContext));
 
         Type truetype = attribTree(tree.truepart, env, condInfo);
         Type falsetype = attribTree(tree.falsepart, env, condInfo);
@@ -1505,6 +1535,18 @@ public class Attr extends JCTree.Visitor {
                     result = translate(tree.clazz);
                 }
             };
+
+        CheckContext conditionalContext(CheckContext checkContext) {
+            return new Check.NestedCheckContext(checkContext) {
+                //this will use enclosing check context to check compatibility of
+                //subexpression against target type; if we are in a method check context,
+                //depending on whether boxing is allowed, we could have incompatibilities
+                @Override
+                public void report(DiagnosticPosition pos, JCDiagnostic details) {
+                    enclosingContext.report(pos, diags.fragment("incompatible.type.in.conditional", details));
+                }
+            };
+        }
 
         /** Compute the type of a conditional expression, after
          *  checking that it exists.  See JLS 15.25. Does not take into
@@ -2070,13 +2112,8 @@ public class Attr extends JCTree.Visitor {
                 tree.constructor = constructor.baseSymbol();
 
                 final TypeSymbol csym = clazztype.tsym;
-                ResultInfo diamondResult = new ResultInfo(pkind, newMethodTemplate(resultInfo.pt, argtypes, typeargtypes), new Check.NestedCheckContext(resultInfo.checkContext) {
-                    @Override
-                    public void report(DiagnosticPosition _unused, JCDiagnostic details) {
-                        enclosingContext.report(tree.clazz,
-                                diags.fragment("cant.apply.diamond.1", diags.fragment("diamond", csym), details));
-                    }
-                }, CheckMode.NO_TREE_UPDATE);
+                ResultInfo diamondResult = new ResultInfo(pkind, newMethodTemplate(resultInfo.pt, argtypes, typeargtypes),
+                        diamondContext(tree, csym, resultInfo.checkContext), CheckMode.NO_TREE_UPDATE);
                 Type constructorType = tree.constructorType = types.createErrorType(clazztype);
                 constructorType = checkId(tree, site,
                         constructor,
@@ -2261,6 +2298,16 @@ public class Attr extends JCTree.Visitor {
             chk.validate(tree.typeargs, localEnv);
         }
 
+        CheckContext diamondContext(JCNewClass clazz, TypeSymbol tsym, CheckContext checkContext) {
+            return new Check.NestedCheckContext(checkContext) {
+                @Override
+                public void report(DiagnosticPosition _unused, JCDiagnostic details) {
+                    enclosingContext.report(clazz.clazz,
+                            diags.fragment("cant.apply.diamond.1", diags.fragment("diamond", tsym), details));
+                }
+            };
+        }
+
     /** Make an attributed null check tree.
      */
     public JCExpression makeNullCheck(JCExpression arg) {
@@ -2330,8 +2377,7 @@ public class Attr extends JCTree.Visitor {
         boolean needsRecovery =
                 resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK;
         try {
-            Type currentTarget = pt();
-            if (needsRecovery && isSerializable(currentTarget)) {
+            if (needsRecovery && isSerializable(pt())) {
                 localEnv.info.isSerializable = true;
             }
             List<Type> explicitParamTypes = null;
@@ -2341,22 +2387,13 @@ public class Attr extends JCTree.Visitor {
                 explicitParamTypes = TreeInfo.types(that.params);
             }
 
-            Type lambdaType;
-            if (pt() != Type.recoveryType) {
-                /* We need to adjust the target. If the target is an
-                 * intersection type, for example: SAM & I1 & I2 ...
-                 * the target will be updated to SAM
-                 */
-                currentTarget = targetChecker.visit(currentTarget, that);
-                if (explicitParamTypes != null) {
-                    currentTarget = infer.instantiateFunctionalInterface(that,
-                            currentTarget, explicitParamTypes, resultInfo.checkContext);
-                }
-                currentTarget = types.removeWildcards(currentTarget);
-                lambdaType = types.findDescriptorType(currentTarget);
-            } else {
-                currentTarget = Type.recoveryType;
-                lambdaType = fallbackDescriptorType(that);
+            TargetInfo targetInfo = getTargetInfo(that, resultInfo, explicitParamTypes);
+            Type currentTarget = targetInfo.target;
+            Type lambdaType = targetInfo.descriptor;
+
+            if (currentTarget.isErroneous()) {
+                result = that.type = currentTarget;
+                return;
             }
 
             setFunctionalInfo(localEnv, that, pt(), lambdaType, currentTarget, resultInfo.checkContext);
@@ -2409,15 +2446,8 @@ public class Attr extends JCTree.Visitor {
             //with the target-type, it will be recovered anyway in Attr.checkId
             needsRecovery = false;
 
-            FunctionalReturnContext funcContext = that.getBodyKind() == JCLambda.BodyKind.EXPRESSION ?
-                    new ExpressionLambdaReturnContext((JCExpression)that.getBody(), resultInfo.checkContext) :
-                    new FunctionalReturnContext(resultInfo.checkContext);
-
-            ResultInfo bodyResultInfo = lambdaType.getReturnType() == Type.recoveryType ?
-                recoveryInfo :
-                new ResultInfo(KindSelector.VAL,
-                               lambdaType.getReturnType(), funcContext);
-            localEnv.info.returnResult = bodyResultInfo;
+            ResultInfo bodyResultInfo = localEnv.info.returnResult =
+                    lambdaBodyResult(that, lambdaType, resultInfo);
 
             if (that.getBodyKind() == JCLambda.BodyKind.EXPRESSION) {
                 attribTree(that.getBody(), localEnv, bodyResultInfo);
@@ -2467,6 +2497,44 @@ public class Attr extends JCTree.Visitor {
         }
     }
     //where
+        class TargetInfo {
+            Type target;
+            Type descriptor;
+
+            public TargetInfo(Type target, Type descriptor) {
+                this.target = target;
+                this.descriptor = descriptor;
+            }
+        }
+
+        TargetInfo getTargetInfo(JCPolyExpression that, ResultInfo resultInfo, List<Type> explicitParamTypes) {
+            Type lambdaType;
+            Type currentTarget = resultInfo.pt;
+            if (resultInfo.pt != Type.recoveryType) {
+                /* We need to adjust the target. If the target is an
+                 * intersection type, for example: SAM & I1 & I2 ...
+                 * the target will be updated to SAM
+                 */
+                currentTarget = targetChecker.visit(currentTarget, that);
+                if (explicitParamTypes != null) {
+                    currentTarget = infer.instantiateFunctionalInterface(that,
+                            currentTarget, explicitParamTypes, resultInfo.checkContext);
+                }
+                currentTarget = types.removeWildcards(currentTarget);
+                lambdaType = types.findDescriptorType(currentTarget);
+            } else {
+                currentTarget = Type.recoveryType;
+                lambdaType = fallbackDescriptorType(that);
+            }
+            if (that.hasTag(LAMBDA) && lambdaType.hasTag(FORALL)) {
+                //lambda expression target desc cannot be a generic method
+                resultInfo.checkContext.report(that, diags.fragment("invalid.generic.lambda.target",
+                        lambdaType, kindName(currentTarget.tsym), currentTarget.tsym));
+                currentTarget = types.createErrorType(pt());
+            }
+            return new TargetInfo(currentTarget, lambdaType);
+        }
+
         void preFlow(JCLambda tree) {
             new PostAttrAnalyzer() {
                 @Override
@@ -2612,13 +2680,24 @@ public class Attr extends JCTree.Visitor {
             }
         }
 
+        ResultInfo lambdaBodyResult(JCLambda that, Type descriptor, ResultInfo resultInfo) {
+            FunctionalReturnContext funcContext = that.getBodyKind() == JCLambda.BodyKind.EXPRESSION ?
+                    new ExpressionLambdaReturnContext((JCExpression)that.getBody(), resultInfo.checkContext) :
+                    new FunctionalReturnContext(resultInfo.checkContext);
+
+            return descriptor.getReturnType() == Type.recoveryType ?
+                    recoveryInfo :
+                    new ResultInfo(KindSelector.VAL,
+                            descriptor.getReturnType(), funcContext);
+        }
+
         /**
         * Lambda compatibility. Check that given return types, thrown types, parameter types
         * are compatible with the expected functional interface descriptor. This means that:
         * (i) parameter types must be identical to those of the target descriptor; (ii) return
         * types must be compatible with the return type of the expected descriptor.
         */
-        private void checkLambdaCompatible(JCLambda tree, Type descriptor, CheckContext checkContext) {
+        void checkLambdaCompatible(JCLambda tree, Type descriptor, CheckContext checkContext) {
             Type returnType = checkContext.inferenceContext().asUndetVar(descriptor.getReturnType());
 
             //return values have already been checked - but if lambda has no return
@@ -2746,18 +2825,12 @@ public class Attr extends JCTree.Visitor {
                 typeargtypes = attribTypes(that.typeargs, localEnv);
             }
 
-            Type desc;
-            Type currentTarget = pt();
             boolean isTargetSerializable =
                     resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK &&
-                    isSerializable(currentTarget);
-            if (currentTarget != Type.recoveryType) {
-                currentTarget = types.removeWildcards(targetChecker.visit(currentTarget, that));
-                desc = types.findDescriptorType(currentTarget);
-            } else {
-                currentTarget = Type.recoveryType;
-                desc = fallbackDescriptorType(that);
-            }
+                    isSerializable(pt());
+            TargetInfo targetInfo = getTargetInfo(that, resultInfo, null);
+            Type currentTarget = targetInfo.target;
+            Type desc = targetInfo.descriptor;
 
             setFunctionalInfo(localEnv, that, pt(), desc, currentTarget, resultInfo.checkContext);
             List<Type> argtypes = desc.getParameterTypes();
@@ -3279,7 +3352,7 @@ public class Attr extends JCTree.Visitor {
         }
 
         // Attribute the qualifier expression, and determine its symbol (if any).
-        Type site = attribTree(tree.selected, env, new ResultInfo(skind, Infer.anyPoly));
+        Type site = attribTree(tree.selected, env, new ResultInfo(skind, Type.noType));
         if (!pkind().contains(KindSelector.TYP_PCK))
             site = capture(site); // Capture field access
 
@@ -3884,8 +3957,15 @@ public class Attr extends JCTree.Visitor {
                        syms.methodClass);
             }
 
-            return chk.checkMethod(owntype, sym, env, argtrees, argtypes, env.info.lastResolveVarargs(),
-                    resultInfo.checkContext.inferenceContext());
+            PolyKind pkind = (sym.type.hasTag(FORALL) &&
+                 sym.type.getReturnType().containsAny(((ForAll)sym.type).tvars)) ?
+                 PolyKind.POLY : PolyKind.STANDALONE;
+            TreeInfo.setPolyKind(env.tree, pkind);
+
+            return (resultInfo.pt == Infer.anyPoly) ?
+                    owntype :
+                    chk.checkMethod(owntype, sym, env, argtrees, argtypes, env.info.lastResolveVarargs(),
+                            resultInfo.checkContext.inferenceContext());
         } catch (Infer.InferenceException ex) {
             //invalid target type - propagate exception outwards or report error
             //depending on the current check context

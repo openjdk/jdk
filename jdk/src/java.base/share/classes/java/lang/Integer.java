@@ -76,7 +76,7 @@ public final class Integer extends Number implements Comparable<Integer> {
     /**
      * All possible chars for representing a number as a String
      */
-    final static char[] digits = {
+    static final char[] digits = {
         '0' , '1' , '2' , '3' , '4' , '5' ,
         '6' , '7' , '8' , '9' , 'a' , 'b' ,
         'c' , 'd' , 'e' , 'f' , 'g' , 'h' ,
@@ -344,7 +344,7 @@ public final class Integer extends Number implements Comparable<Integer> {
         } while (charPos > offset);
     }
 
-    final static char [] DigitTens = {
+    static final char [] DigitTens = {
         '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
         '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
         '2', '2', '2', '2', '2', '2', '2', '2', '2', '2',
@@ -357,7 +357,7 @@ public final class Integer extends Number implements Comparable<Integer> {
         '9', '9', '9', '9', '9', '9', '9', '9', '9', '9',
         } ;
 
-    final static char [] DigitOnes = {
+    static final char [] DigitOnes = {
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
         '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
@@ -467,7 +467,7 @@ public final class Integer extends Number implements Comparable<Integer> {
         }
     }
 
-    final static int [] sizeTable = { 9, 99, 999, 9999, 99999, 999999, 9999999,
+    static final int [] sizeTable = { 9, 99, 999, 9999, 99999, 999999, 9999999,
                                       99999999, 999999999, Integer.MAX_VALUE };
 
     // Requires positive x

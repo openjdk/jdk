@@ -274,13 +274,14 @@ class NativeCipher extends CipherSpi {
             if (params != null) {
                 if (!(params instanceof IvParameterSpec)) {
                     throw new InvalidAlgorithmParameterException
-                            ("IvParameterSpec required");
+                            ("IvParameterSpec required. Received: " +
+                            params.getClass().getName());
                 } else {
                     ivBytes = ((IvParameterSpec) params).getIV();
                     if (ivBytes.length != blockSize) {
                         throw new InvalidAlgorithmParameterException
                              ("Wrong IV length: must be " + blockSize +
-                              " bytes long");
+                              " bytes long. Received length:" + ivBytes.length);
                     }
                 }
             } else {
@@ -442,12 +443,13 @@ class NativeCipher extends CipherSpi {
             if (fixedKeySize == -1) {
                 // all 3 AES key lengths are allowed
                 if (keyLen != 16 && keyLen != 24 && keyLen != 32) {
-                    throw new InvalidKeyException("Key size is not valid");
+                    throw new InvalidKeyException("Key size is not valid." +
+                        " Got key length of: " + keyLen);
                 }
             } else {
                 if (keyLen != fixedKeySize) {
                     throw new InvalidKeyException("Only " + fixedKeySize +
-                        "-byte keys are accepted");
+                        "-byte keys are accepted. Got: " + keyLen);
                 }
             }
             // return the validated key length in bytes

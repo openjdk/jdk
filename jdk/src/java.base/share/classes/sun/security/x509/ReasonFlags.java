@@ -69,7 +69,7 @@ public class ReasonFlags {
     public static final String PRIVILEGE_WITHDRAWN = "privilege_withdrawn";
     public static final String AA_COMPROMISE = "aa_compromise";
 
-    private final static String[] NAMES = {
+    private static final String[] NAMES = {
         UNUSED,
         KEY_COMPROMISE,
         CA_COMPROMISE,

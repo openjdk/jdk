@@ -42,7 +42,7 @@ import sun.security.action.GetPropertyAction;
 class UnixAsynchronousSocketChannelImpl
     extends AsynchronousSocketChannelImpl implements Port.PollableChannel
 {
-    private final static NativeDispatcher nd = new SocketDispatcher();
+    private static final NativeDispatcher nd = new SocketDispatcher();
     private static enum OpType { CONNECT, READ, WRITE };
 
     private static final boolean disableSynchronousRead;

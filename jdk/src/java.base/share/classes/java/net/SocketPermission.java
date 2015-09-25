@@ -154,32 +154,32 @@ public final class SocketPermission extends Permission
     /**
      * Connect to host:port
      */
-    private final static int CONNECT    = 0x1;
+    private static final int CONNECT    = 0x1;
 
     /**
      * Listen on host:port
      */
-    private final static int LISTEN     = 0x2;
+    private static final int LISTEN     = 0x2;
 
     /**
      * Accept a connection from host:port
      */
-    private final static int ACCEPT     = 0x4;
+    private static final int ACCEPT     = 0x4;
 
     /**
      * Resolve DNS queries
      */
-    private final static int RESOLVE    = 0x8;
+    private static final int RESOLVE    = 0x8;
 
     /**
      * No actions
      */
-    private final static int NONE               = 0x0;
+    private static final int NONE               = 0x0;
 
     /**
      * All actions
      */
-    private final static int ALL        = CONNECT|LISTEN|ACCEPT|RESOLVE;
+    private static final int ALL        = CONNECT|LISTEN|ACCEPT|RESOLVE;
 
     // various port constants
     private static final int PORT_MIN = 0;

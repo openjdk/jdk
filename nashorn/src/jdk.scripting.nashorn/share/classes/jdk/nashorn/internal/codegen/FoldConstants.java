@@ -37,7 +37,6 @@ import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.EmptyNode;
 import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
@@ -101,7 +100,7 @@ final class FoldConstants extends NodeVisitor<LexicalContext> implements Loggabl
 
     @Override
     public Node leaveFunctionNode(final FunctionNode functionNode) {
-        return functionNode.setState(lc, CompilationState.CONSTANT_FOLDED);
+        return functionNode;
     }
 
     @Override

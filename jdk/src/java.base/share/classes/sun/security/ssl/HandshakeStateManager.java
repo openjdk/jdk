@@ -218,9 +218,9 @@ final class HandshakeStateManager {
 
     private boolean isDTLS;
 
-    private final static boolean debugIsOn;
+    private static final boolean debugIsOn;
 
-    private final static HashMap<Byte, String> handshakeTypes;
+    private static final HashMap<Byte, String> handshakeTypes;
 
     static {
         debugIsOn = (Handshaker.debug != null) &&

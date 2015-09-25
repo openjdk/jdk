@@ -108,12 +108,12 @@ public class Util {
     }
 
     /**
-     * Writes a java.lang.Object as a CORBA Object. If <code>obj</code> is
+     * Writes a java.lang.Object as a CORBA Object. If {@code obj} is
      * an exported RMI-IIOP server object, the tie is found
-     * and wired to <code>obj</code>, then written to
-<code>out.write_Object(org.omg.CORBA.Object)</code>.
-     * If <code>obj</code> is a CORBA Object, it is written to
-     * <code>out.write_Object(org.omg.CORBA.Object)</code>.
+     * and wired to {@code obj}, then written to
+     * {@code out.write_Object(org.omg.CORBA.Object)}.
+     * If {@code obj} is a CORBA Object, it is written to
+     * {@code out.write_Object(org.omg.CORBA.Object)}.
      * @param out the stream in which to write the object.
      * @param obj the object to write.
      */
@@ -128,12 +128,11 @@ public class Util {
 
     /**
      * Writes a java.lang.Object as either a value or a CORBA Object.
-     * If <code>obj</code> is a value object or a stub object, it is written to
-     * <code>out.write_abstract_interface(java.lang.Object)</code>. If <code>obj</code>
-is
-an exported
-     * RMI-IIOP server object, the tie is found and wired to <code>obj</code>,
-     * then written to <code>out.write_abstract_interface(java.lang.Object)</code>.
+     * If {@code obj} is a value object or a stub object, it is written to
+     * {@code out.write_abstract_interface(java.lang.Object)}.
+     * If {@code obj} is an exported
+     * RMI-IIOP server object, the tie is found and wired to {@code obj},
+     * then written to {@code out.write_abstract_interface(java.lang.Object)}.
      * @param out the stream in which to write the object.
      * @param obj the object to write.
      */
@@ -161,8 +160,8 @@ an exported
     }
 
     /**
-     * Removes the associated tie from an internal table and calls {@link
-Tie#deactivate}
+     * Removes the associated tie from an internal table
+     * and calls {@link Tie#deactivate}
      * to deactivate the object.
      * @param target the object to unexport.
      */
@@ -219,27 +218,27 @@ Tie#deactivate}
      * <P>The spec for this method is the "Java to IDL language
      * mapping", ptc/00-01-06.
      * <P>In Java SE Platform, this method works as follows:
-     * <UL><LI>Find the first non-null <tt>ClassLoader</tt> on the
+     * <UL><LI>Find the first non-null {@code ClassLoader} on the
      * call stack and attempt to load the class using this
-     * <tt>ClassLoader</tt>.
-     * <LI>If the first step fails, and if <tt>remoteCodebase</tt>
+     * {@code ClassLoader}.
+     * <LI>If the first step fails, and if {@code remoteCodebase}
      * is non-null and
-     * <tt>useCodebaseOnly</tt> is false, then call
-     * <tt>java.rmi.server.RMIClassLoader.loadClass(remoteCodebase, className)</tt>.
-     * <LI>If <tt>remoteCodebase</tt> is null or <tt>useCodebaseOnly</tt>
-     * is true, then call <tt>java.rmi.server.RMIClassLoader.loadClass(className)</tt>.
+     * {@code useCodebaseOnly} is false, then call
+     * {@code java.rmi.server.RMIClassLoader.loadClass(remoteCodebase, className)}.
+     * <LI>If {@code remoteCodebase} is null or {@code useCodebaseOnly}
+     * is true, then call {@code java.rmi.server.RMIClassLoader.loadClass(className)}.
      * <LI>If a class was not successfully loaded by step 1, 2, or 3,
-     * and <tt>loader</tt> is non-null, then call <tt>loader.loadClass(className)</tt>.
+     * and {@code loader} is non-null, then call {@code loader.loadClass(className)}.
      * <LI>If a class was successfully loaded by step 1, 2, 3, or 4, then
-     *  return the loaded class, else throw <tt>ClassNotFoundException</tt>.
+     *  return the loaded class, else throw {@code ClassNotFoundException}.
      * </UL>
      *
      * @param className the name of the class.
      * @param remoteCodebase a space-separated list of URLs at which
      * the class might be found. May be null.
-     * @param loader a <tt>ClassLoader</tt> that may be used to
+     * @param loader a {@code ClassLoader} that may be used to
      * load the class if all other methods fail.
-     * @return the <code>Class</code> object representing the loaded class.
+     * @return the {@code Class} object representing the loaded class.
      * @exception ClassNotFoundException if class cannot be loaded.
      */
     public static Class loadClass(String className,
@@ -254,24 +253,24 @@ Tie#deactivate}
 
 
     /**
-     * The <tt>isLocal</tt> method has the same semantics as the
-     * <tt>ObjectImpl._is_local</tt>
-     * method, except that it can throw a <tt>RemoteException</tt>.
+     * The {@code isLocal} method has the same semantics as the
+     * {@code ObjectImpl._is_local}
+     * method, except that it can throw a {@code RemoteException}.
      *
-     * The <tt>_is_local()</tt> method is provided so that stubs may determine if a
+     * The {@code _is_local()} method is provided so that stubs may determine if a
      * particular object is implemented by a local servant and hence local
      * invocation APIs may be used.
      *
      * @param stub the stub to test.
      *
-     * @return The <tt>_is_local()</tt> method returns true if
+     * @return The {@code _is_local()} method returns true if
      * the servant incarnating the object is located in the same process as
-     * the stub and they both share the same ORB instance.  The <tt>_is_local()</tt>
-     * method returns false otherwise. The default behavior of <tt>_is_local()</tt> is
+     * the stub and they both share the same ORB instance.  The {@code _is_local()}
+     * method returns false otherwise. The default behavior of {@code _is_local()} is
      * to return false.
      *
      * @throws RemoteException The Java to IDL specification does not
-     * specify the conditions that cause a <tt>RemoteException</tt> to be thrown.
+     * specify the conditions that cause a {@code RemoteException} to be thrown.
      */
     public static boolean isLocal(Stub stub) throws RemoteException {
 

@@ -1677,6 +1677,9 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
     if (klass == env->String_klass() &&
         adr->is_AddP() && off != Type::OffsetBot) {
       // For constant Strings treat the final fields as compile time constants.
+      // While we can list what field types java.lang.String has, it is more
+      // future-proof to handle all possible field types, anticipating future
+      // changes and experiments in String code.
       Node* base = adr->in(AddPNode::Base);
       const TypeOopPtr* t = phase->type(base)->isa_oopptr();
       if (t != NULL && t->singleton()) {
@@ -1684,14 +1687,13 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
         if (field != NULL && field->is_final()) {
           ciObject* string = t->const_oop();
           ciConstant constant = string->as_instance()->field_value(field);
-          if (constant.basic_type() == T_INT) {
-            return TypeInt::make(constant.as_int());
-          } else if (constant.basic_type() == T_ARRAY) {
-            if (adr->bottom_type()->is_ptr_to_narrowoop()) {
-              return TypeNarrowOop::make_from_constant(constant.as_object(), true);
-            } else {
-              return TypeOopPtr::make_from_constant(constant.as_object(), true);
-            }
+          // Type::make_from_constant does not handle narrow oops, so handle it here.
+          // Everything else can use the factory method.
+          if ((constant.basic_type() == T_ARRAY || constant.basic_type() == T_OBJECT)
+                  && adr->bottom_type()->is_ptr_to_narrowoop()) {
+            return TypeNarrowOop::make_from_constant(constant.as_object(), true);
+          } else {
+            return Type::make_from_constant(constant, true);
           }
         }
       }

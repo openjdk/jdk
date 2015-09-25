@@ -206,7 +206,7 @@ public final class ZoneInfoFile {
     }
 
     private static String versionId;
-    private final static Map<String, ZoneInfo> zones = new ConcurrentHashMap<>();
+    private static final Map<String, ZoneInfo> zones = new ConcurrentHashMap<>();
     private static Map<String, String> aliases = new HashMap<>();
 
     private static byte[][] ruleArray;

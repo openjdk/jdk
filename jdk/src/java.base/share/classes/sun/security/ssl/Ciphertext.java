@@ -32,7 +32,7 @@ import static sun.security.ssl.HandshakeMessage.*;
  * enumeration of record type
  */
 final class Ciphertext {
-    final static Ciphertext CIPHERTEXT_NULL = new Ciphertext();
+    static final Ciphertext CIPHERTEXT_NULL = new Ciphertext();
 
     RecordType recordType;
     long recordSN;

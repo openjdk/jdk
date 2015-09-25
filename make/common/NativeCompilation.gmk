@@ -102,7 +102,7 @@ $(eval $(call DefineNativeToolchain, TOOLCHAIN_BUILD, \
 ################################################################################
 
 # Extensions of files handled by this macro.
-NATIVE_SOURCE_EXTENSIONS := %.s %.c %.cpp %.m %.mm
+NATIVE_SOURCE_EXTENSIONS := %.s %.c %.cpp %.cc %.m %.mm
 
 # Replaces native source extensions with the object file extension in a string.
 # Param 1: the string containing source file names with extensions
@@ -167,7 +167,7 @@ define add_native_source
     $1_$2_FLAGS=$8 -DTHIS_FILE='"$$(<F)"'
     $1_$2_COMP=$(AS)
     $1_$2_DEP_FLAG:=
-  else ifneq (,$$(filter %.cpp,$2)$$(filter %.mm,$2))
+  else ifneq (,$$(filter %.cpp,$2)$$(filter %.cc,$2)$$(filter %.mm,$2))
     # Compile as a C++ or Objective-C++ file
     $1_$2_FLAGS=$(CFLAGS_CCACHE) $6 $$($1_$(notdir $2)_CXXFLAGS) -DTHIS_FILE='"$$(<F)"' -c
     $1_$2_COMP=$7

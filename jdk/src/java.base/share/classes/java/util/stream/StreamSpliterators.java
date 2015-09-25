@@ -57,7 +57,7 @@ class StreamSpliterators {
      * <p>A wrapping spliterator produced from a sequential stream
      * cannot be split if there are stateful operations present.
      */
-    private static abstract class AbstractWrappingSpliterator<P_IN, P_OUT,
+    private abstract static class AbstractWrappingSpliterator<P_IN, P_OUT,
                                                               T_BUFFER extends AbstractSpinedBuffer>
             implements Spliterator<P_OUT> {
 
@@ -607,7 +607,7 @@ class StreamSpliterators {
      * {@code SUBSIZED}.
      *
      */
-    static abstract class SliceSpliterator<T, T_SPLITR extends Spliterator<T>> {
+    abstract static class SliceSpliterator<T, T_SPLITR extends Spliterator<T>> {
         // The start index of the slice
         final long sliceOrigin;
         // One past the last index of the slice
@@ -753,7 +753,7 @@ class StreamSpliterators {
             }
         }
 
-        static abstract class OfPrimitive<T,
+        abstract static class OfPrimitive<T,
                 T_SPLITR extends Spliterator.OfPrimitive<T, T_CONS, T_SPLITR>,
                 T_CONS>
                 extends SliceSpliterator<T, T_SPLITR>
@@ -899,7 +899,7 @@ class StreamSpliterators {
      * collected to a {@code Node}. It is the order of the pipeline stage
      * that governs whether the this slice spliterator is to be used or not.
      */
-    static abstract class UnorderedSliceSpliterator<T, T_SPLITR extends Spliterator<T>> {
+    abstract static class UnorderedSliceSpliterator<T, T_SPLITR extends Spliterator<T>> {
         static final int CHUNK_SIZE = 1 << 7;
 
         // The spliterator to slice
@@ -1060,7 +1060,7 @@ class StreamSpliterators {
          * @param <T_BUFF> the type of the spined buffer. Must also be a type of
          *        {@code T_CONS}.
          */
-        static abstract class OfPrimitive<
+        abstract static class OfPrimitive<
                 T,
                 T_CONS,
                 T_BUFF extends ArrayBuffer.OfPrimitive<T_CONS>,
@@ -1324,7 +1324,7 @@ class StreamSpliterators {
      * The {@code tryAdvance} method always returns true.
      *
      */
-    static abstract class InfiniteSupplyingSpliterator<T> implements Spliterator<T> {
+    abstract static class InfiniteSupplyingSpliterator<T> implements Spliterator<T> {
         long estimate;
 
         protected InfiniteSupplyingSpliterator(long estimate) {
@@ -1442,7 +1442,7 @@ class StreamSpliterators {
     }
 
     // @@@ Consolidate with Node.Builder
-    static abstract class ArrayBuffer {
+    abstract static class ArrayBuffer {
         int index;
 
         void reset() {
@@ -1470,7 +1470,7 @@ class StreamSpliterators {
             }
         }
 
-        static abstract class OfPrimitive<T_CONS> extends ArrayBuffer {
+        abstract static class OfPrimitive<T_CONS> extends ArrayBuffer {
             int index;
 
             @Override

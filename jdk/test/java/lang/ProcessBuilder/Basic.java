@@ -653,7 +653,7 @@ public class Basic {
     }
 
     static class EnglishUnix {
-        private final static Boolean is =
+        private static final Boolean is =
             (! Windows.is() && isEnglish("LANG") && isEnglish("LC_ALL"));
 
         private static boolean isEnglish(String envvar) {

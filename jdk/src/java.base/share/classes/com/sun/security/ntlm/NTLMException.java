@@ -36,13 +36,13 @@ public final class NTLMException extends GeneralSecurityException {
     /**
      * If the incoming packet is invalid.
      */
-    public final static int PACKET_READ_ERROR = 1;
+    public static final int PACKET_READ_ERROR = 1;
 
     /**
      * If the client cannot get a domain value from the server and the
      * caller has not provided one.
      */
-    public final static int NO_DOMAIN_INFO = 2;
+    public static final int NO_DOMAIN_INFO = 2;
 
     /**
      * If the domain provided by the client does not match the one received
@@ -53,22 +53,22 @@ public final class NTLMException extends GeneralSecurityException {
     /**
      * If the client name is not found on server's user database.
      */
-    public final static int USER_UNKNOWN = 3;
+    public static final int USER_UNKNOWN = 3;
 
     /**
      * If authentication fails.
      */
-    public final static int AUTH_FAILED = 4;
+    public static final int AUTH_FAILED = 4;
 
     /**
      * If an illegal version string is provided.
      */
-    public final static int BAD_VERSION = 5;
+    public static final int BAD_VERSION = 5;
 
     /**
      * Protocol errors.
      */
-    public final static int PROTOCOL = 6;
+    public static final int PROTOCOL = 6;
 
     private int errorCode;
 
