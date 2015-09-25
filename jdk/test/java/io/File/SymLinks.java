@@ -34,22 +34,22 @@ import java.nio.file.attribute.*;
 import static java.nio.file.LinkOption.*;
 
 public class SymLinks {
-    final static PrintStream out = System.out;
+    static final PrintStream out = System.out;
 
-    final static File top = new File(System.getProperty("test.dir", "."));
+    static final File top = new File(System.getProperty("test.dir", "."));
 
     // files used by the test
 
-    final static File file              = new File(top, "foofile");
-    final static File link2file         = new File(top, "link2file");
-    final static File link2link2file    = new File(top, "link2link2file");
+    static final File file              = new File(top, "foofile");
+    static final File link2file         = new File(top, "link2file");
+    static final File link2link2file    = new File(top, "link2link2file");
 
-    final static File dir               = new File(top, "foodir");
-    final static File link2dir          = new File(top, "link2dir");
-    final static File link2link2dir     = new File(top, "link2link2dir");
+    static final File dir               = new File(top, "foodir");
+    static final File link2dir          = new File(top, "link2dir");
+    static final File link2link2dir     = new File(top, "link2link2dir");
 
-    final static File link2nobody       = new File(top, "link2nobody");
-    final static File link2link2nobody  = new File(top, "link2link2nobody");
+    static final File link2nobody       = new File(top, "link2nobody");
+    static final File link2link2nobody  = new File(top, "link2link2nobody");
 
     /**
      * Setup files, directories, and sym links used by test.

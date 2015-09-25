@@ -93,7 +93,7 @@ public class JNDIStateFactoryImpl implements StateFactory
      * @param name Ignored
      * @param ctx The non-null CNCtx whose ORB to use.
      * @param env Ignored
-     * @return The CORBA object for <tt>orig</tt> or null.
+     * @return The CORBA object for {@code orig} or null.
      * @exception ConfigurationException If the CORBA object cannot be obtained
      *    due to configuration problems
      * @exception NamingException If some other problem prevented a CORBA

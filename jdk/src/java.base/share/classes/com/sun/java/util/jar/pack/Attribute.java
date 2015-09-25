@@ -342,7 +342,7 @@ class Attribute implements Comparable<Attribute> {
      *  presence of attributes.  That is, flags are a mix of modifier
      *  bits and attribute indicators.
      */
-    public static abstract
+    public abstract static
     class Holder {
 
         // We need this abstract method to interpret embedded CP refs.
@@ -461,7 +461,7 @@ class Attribute implements Comparable<Attribute> {
 
     // Lightweight interface to hide details of band structure.
     // Also used for testing.
-    public static abstract
+    public abstract static
     class ValueStream {
         public int getInt(int bandIndex) { throw undef(); }
         public void putInt(int bandIndex, int value) { throw undef(); }
@@ -667,7 +667,7 @@ class Attribute implements Comparable<Attribute> {
         public boolean hasCallables() {
             return (elems.length > 0 && elems[0].kind == EK_CBLE);
         }
-        static private final Element[] noElems = {};
+        private static final Element[] noElems = {};
         public Element[] getCallables() {
             if (hasCallables()) {
                 Element[] nelems = Arrays.copyOf(elems, elems.length);
@@ -783,7 +783,7 @@ class Attribute implements Comparable<Attribute> {
      *  Replaces '\c' by the decimal code of the character c.
      *  Replaces '0xNNN' by the decimal code of the hex number NNN.
      */
-    static public
+    public static
     String normalizeLayoutString(String layout) {
         StringBuilder buf = new StringBuilder();
         for (int i = 0, len = layout.length(); i < len; ) {
@@ -1139,7 +1139,7 @@ class Attribute implements Comparable<Attribute> {
         bodies.toArray(res);
         return res;
     }
-    static private
+    private static
     int skipBody(String layout, int i) {
         assert(layout.charAt(i-1) == '[');
         if (layout.charAt(i) == ']')
@@ -1156,7 +1156,7 @@ class Attribute implements Comparable<Attribute> {
         assert(layout.charAt(i) == ']');
         return i;  // return closing bracket
     }
-    static private
+    private static
     int tokenizeUInt(Layout.Element e, String layout, int i) {
         switch (layout.charAt(i++)) {
         case 'V': e.len = 0; break;
@@ -1167,7 +1167,7 @@ class Attribute implements Comparable<Attribute> {
         }
         return i;
     }
-    static private
+    private static
     int tokenizeSInt(Layout.Element e, String layout, int i) {
         if (layout.charAt(i) == 'S') {
             e.flags |= EF_SIGN;
@@ -1176,7 +1176,7 @@ class Attribute implements Comparable<Attribute> {
         return tokenizeUInt(e, layout, i);
     }
 
-    static private
+    private static
     boolean isDigit(char c) {
         return c >= '0' && c <= '9';
     }
@@ -1383,7 +1383,7 @@ class Attribute implements Comparable<Attribute> {
         return e.body[lastj];
     }
 
-    static private
+    private static
     int parseInt(Layout.Element e, byte[] bytes, int pos, int[] buf) {
         int value = 0;
         int loBits = e.len * 8;
@@ -1483,7 +1483,7 @@ class Attribute implements Comparable<Attribute> {
         }
     }
 
-    static private
+    private static
     void unparseInt(Layout.Element e, int value, ByteArrayOutputStream out) {
         int loBits = e.len * 8;
         if (loBits == 0) {

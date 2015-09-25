@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@ public class AquaTextFieldUI extends BasicTextFieldUI {
     protected JComponentPainter delegate;
     protected AquaFocusHandler handler;
 
+    @Override
     protected void installListeners() {
         super.installListeners();
 
@@ -55,6 +56,7 @@ public class AquaTextFieldUI extends BasicTextFieldUI {
         AquaTextFieldSearch.installSearchFieldListener(c);
     }
 
+    @Override
     protected void uninstallListeners() {
         final JTextComponent c = getComponent();
         AquaTextFieldSearch.uninstallSearchFieldListener(c);
@@ -67,6 +69,7 @@ public class AquaTextFieldUI extends BasicTextFieldUI {
     }
 
     boolean oldDragState = false;
+    @Override
     protected void installDefaults() {
         if (!GraphicsEnvironment.isHeadless()) {
             oldDragState = getComponent().getDragEnabled();
@@ -76,6 +79,7 @@ public class AquaTextFieldUI extends BasicTextFieldUI {
         super.installDefaults();
     }
 
+    @Override
     protected void uninstallDefaults() {
         super.uninstallDefaults();
 
@@ -84,12 +88,15 @@ public class AquaTextFieldUI extends BasicTextFieldUI {
         }
     }
 
-    // Install a default keypress action which handles Cmd and Option keys properly
+    // Install a default keypress action which handles Cmd and Option keys
+    // properly
+    @Override
     protected void installKeyboardActions() {
         super.installKeyboardActions();
         AquaKeyBindings.instance().setDefaultAction(getKeymapName());
     }
 
+    @Override
     protected Rectangle getVisibleEditorRect() {
         final Rectangle rect = super.getVisibleEditorRect();
         if (rect == null) return null;
@@ -102,6 +109,7 @@ public class AquaTextFieldUI extends BasicTextFieldUI {
         return rect;
     }
 
+    @Override
     protected void paintSafely(final Graphics g) {
         paintBackgroundSafely(g);
         super.paintSafely(g);
@@ -149,20 +157,23 @@ public class AquaTextFieldUI extends BasicTextFieldUI {
 
         // the common case
         final int shrinkage = AquaTextFieldBorder.getShrinkageFor(c, height);
-        g.fillRect(insets.left - 2, insets.top - shrinkage - 1, width - insets.right - insets.left + 4, height - insets.bottom - insets.top + shrinkage * 2 + 2);
+        g.fillRect(insets.left - 2, insets.top - shrinkage - 1,
+                   width - insets.right - insets.left + 4,
+                   height - insets.bottom - insets.top + shrinkage * 2 + 2);
     }
 
+    @Override
     protected void paintBackground(final Graphics g) {
         // we have already ensured that the background is painted to our liking
         // by paintBackgroundSafely(), called from paintSafely().
     }
 
+    @Override
     protected Caret createCaret() {
-        final JTextComponent c = getComponent();
-        final Window owningWindow = SwingUtilities.getWindowAncestor(c);
-        return new AquaCaret(owningWindow, c);
+        return new AquaCaret();
     }
 
+    @Override
     protected Highlighter createHighlighter() {
         return new AquaHighlighter();
     }

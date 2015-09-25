@@ -46,7 +46,7 @@ import javax.net.ssl.SSLPeerUnverifiedException;
  *      replaced by {@link javax.net.ssl.HttpsURLConnection}.
  */
 @Deprecated
-abstract public
+public abstract
 class HttpsURLConnection extends HttpURLConnection
 {
     /*

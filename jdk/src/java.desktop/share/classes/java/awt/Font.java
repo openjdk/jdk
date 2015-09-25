@@ -128,7 +128,9 @@ import static sun.font.EAttribute.*;
  * <p>
  * For a discussion of the relative advantages and disadvantages of using
  * physical or logical fonts, see the
- * <a href="http://www.oracle.com/technetwork/java/javase/tech/faq-jsp-138165.html">Internationalization FAQ</a>
+ * <a href="https://docs.oracle.com/javase/tutorial/2d/text/fonts.html#advantages-and-disadvantages">
+ *    Physical and Logical Fonts</a>
+ * in <a href="https://docs.oracle.com/javase/tutorial/index.html">The Java Tutorials</a>
  * document.
  *
  * <h3>Font Faces and Names</h3>

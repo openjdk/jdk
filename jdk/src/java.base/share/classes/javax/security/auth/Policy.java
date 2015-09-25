@@ -159,7 +159,7 @@ import sun.security.util.Debug;
 public abstract class Policy {
 
     private static Policy policy;
-    private final static String AUTH_POLICY =
+    private static final String AUTH_POLICY =
         "sun.security.provider.AuthPolicyFile";
 
     private final java.security.AccessControlContext acc =

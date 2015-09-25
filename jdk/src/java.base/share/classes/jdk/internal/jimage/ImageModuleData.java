@@ -63,19 +63,19 @@ import java.util.Set;
  *        Offset to package name in string table
  */
 
-final public class ImageModuleData {
-    public final static String META_DATA_EXTENSION = ".jdata";
-    public final static String SEPARATOR = "\t";
-    public final static int NOT_FOUND = -1;
-    private final static int ptmCountOffset = 0;
-    private final static int mtpCountOffset = 1;
-    private final static int ptmRedirectOffset = 2;
-    private final static int dataNameOffset = 0;
-    private final static int ptmDataWidth = 2;
-    private final static int ptmDataModuleOffset = 1;
-    private final static int mtpDataWidth = 3;
-    private final static int mtpDataCountOffset = 1;
-    private final static int mtpDataOffsetOffset = 2;
+public final class ImageModuleData {
+    public static final String META_DATA_EXTENSION = ".jdata";
+    public static final String SEPARATOR = "\t";
+    public static final int NOT_FOUND = -1;
+    private static final int ptmCountOffset = 0;
+    private static final int mtpCountOffset = 1;
+    private static final int ptmRedirectOffset = 2;
+    private static final int dataNameOffset = 0;
+    private static final int ptmDataWidth = 2;
+    private static final int ptmDataModuleOffset = 1;
+    private static final int mtpDataWidth = 3;
+    private static final int mtpDataCountOffset = 1;
+    private static final int mtpDataOffsetOffset = 2;
 
     private final BasicImageReader reader;
     private final IntBuffer intBuffer;

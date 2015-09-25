@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,6 +93,17 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
     protected void assureRectsCreated(final int tabCount) {
         visibleTabState.init(tabCount);
         super.assureRectsCreated(tabCount);
+    }
+
+    @Override
+    protected void uninstallListeners() {
+        // We're not just a mouseListener, we're a mouseMotionListener
+        if (mouseListener instanceof  MouseHandler) {
+            final MouseHandler mh = (MouseHandler) mouseListener;
+            mh.dispose();
+            tabPane.removeMouseMotionListener(mh);
+        }
+        super.uninstallListeners();
     }
 
     protected void uninstallDefaults() {
@@ -409,7 +420,15 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         paintTabNormalFromRect(g, tabPlacement, rects[tabIndex], tabIndex, fIconRect, fTextRect, active, frameActive, isLeftToRight);
     }
 
-    protected void paintTabNormalFromRect(final Graphics g, final int tabPlacement, final Rectangle tabRect, final int nonRectIndex, final Rectangle iconRect, final Rectangle textRect, final boolean active, final boolean frameActive, final boolean isLeftToRight) {
+    protected void paintTabNormalFromRect(final Graphics g,
+                                          final int tabPlacement,
+                                          final Rectangle tabRect,
+                                          final int nonRectIndex,
+                                          final Rectangle iconRect,
+                                          final Rectangle textRect,
+                                          final boolean active,
+                                          final boolean frameActive,
+                                          final boolean isLeftToRight) {
         final int selectedIndex = tabPane.getSelectedIndex();
         final boolean isSelected = selectedIndex == nonRectIndex;
 
@@ -420,7 +439,12 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         paintContents(g, tabPlacement, nonRectIndex, tabRect, iconRect, textRect, isSelected);
     }
 
-    protected void paintCUITab(final Graphics g, final int tabPlacement, final Rectangle tabRect, final boolean isSelected, final boolean frameActive, final boolean isLeftToRight, final int nonRectIndex) {
+    protected void paintCUITab(final Graphics g, final int tabPlacement,
+                               final Rectangle tabRect,
+                               final boolean isSelected,
+                               final boolean frameActive,
+                               final boolean isLeftToRight,
+                               final int nonRectIndex) {
         final int tabCount = tabPane.getTabCount();
 
         final boolean needsLeftScrollTab = visibleTabState.needsLeftScrollTab();
@@ -835,12 +859,18 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         }
     }
 
-    public class MouseHandler extends MouseInputAdapter implements ActionListener {
-        protected int trackingTab = -3;
-        protected Timer popupTimer = new Timer(500, this);
+    class MouseHandler extends MouseInputAdapter implements ActionListener {
 
-        public MouseHandler() {
+        int trackingTab = -3;
+        private final Timer popupTimer = new Timer(500, this);
+
+        MouseHandler() {
             popupTimer.setRepeats(false);
+        }
+
+        void dispose (){
+            popupTimer.removeActionListener(this);
+            popupTimer.stop();
         }
 
         public void mousePressed(final MouseEvent e) {

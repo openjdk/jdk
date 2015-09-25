@@ -575,6 +575,7 @@ define SetupJavaCompilationBody
 	        --permit-sources-without-package \
 	        --compare-found-sources $$($1_BIN)/_the.$1_batch.tmp \
 	        --log=$(LOG_LEVEL) \
+	        --state-dir=$$($1_BIN) \
 	        $$($1_SJAVAC_ARGS) \
 	        $$($1_FLAGS) \
 	        $$($1_HEADERS_ARG) \

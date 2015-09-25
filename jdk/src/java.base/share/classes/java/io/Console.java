@@ -554,7 +554,7 @@ public final class Console implements Flushable
         });
     }
     private static Console cons;
-    private native static boolean istty();
+    private static native boolean istty();
     private Console() {
         readLock = new Object();
         writeLock = new Object();

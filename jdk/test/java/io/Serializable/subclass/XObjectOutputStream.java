@@ -53,7 +53,7 @@ public class XObjectOutputStream extends AbstractObjectOutputStream {
         super.writeStreamHeader();
     }
 
-    final protected void writeObjectOverride(Object obj) throws IOException {
+    protected final void writeObjectOverride(Object obj) throws IOException {
         Object prevCurrentObject = currentObject;
         currentObject = obj;
         System.out.println("writeObjectOverride(" + obj.toString() + ")");
@@ -300,7 +300,7 @@ public class XObjectOutputStream extends AbstractObjectOutputStream {
      * Set the accessible flag on it here.
      * Subclass of AbstractObjectOutputStream will call it as necessary.
      */
-    static public Method getWriteObjectMethod(final Class cl) {
+    public static Method getWriteObjectMethod(final Class cl) {
 
         Method writeObjectMethod = (Method)
             java.security.AccessController.doPrivileged
@@ -330,7 +330,7 @@ public class XObjectOutputStream extends AbstractObjectOutputStream {
     /*************************************************************/
 
     /* CODE LIFTED FROM ObjectOutputStream. */
-    static private void invokeMethod(final Object obj, final Method m,
+    private static void invokeMethod(final Object obj, final Method m,
                                         final Object[] argList)
         throws IOException
     {

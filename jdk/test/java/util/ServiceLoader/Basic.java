@@ -44,7 +44,7 @@ public class Basic {
                                                      eq, s1, s2));
     }
 
-    static abstract class TestLoader {
+    abstract static class TestLoader {
         String name;
 
         TestLoader(String name) { this.name = name; }

@@ -71,11 +71,7 @@ class ParScanThreadState {
   ParScanWithoutBarrierClosure         _to_space_closure; // scan_without_gc_barrier
   ParScanWithBarrierClosure            _old_gen_closure; // scan_with_gc_barrier
   ParRootScanWithoutBarrierClosure     _to_space_root_closure; // scan_root_without_gc_barrier
-  // One of these two will be passed to process_roots, which will
-  // set its generation.  The first is for two-gen configs where the
-  // old gen collects the perm gen; the second is for arbitrary configs.
-  // The second isn't used right now (it used to be used for the train, an
-  // incremental collector) but the declaration has been left as a reminder.
+  // Will be passed to process_roots to set its generation.
   ParRootScanWithBarrierTwoGensClosure _older_gen_closure;
   // This closure will always be bound to the old gen; it will be used
   // in evacuate_followers.
@@ -84,7 +80,6 @@ class ParScanThreadState {
   DefNewGeneration::IsAliveClosure     _is_alive_closure;
   ParScanWeakRefClosure                _scan_weak_ref_closure;
   ParKeepAliveClosure                  _keep_alive_closure;
-
 
   Space* _to_space;
   Space* to_space() { return _to_space; }

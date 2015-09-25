@@ -104,10 +104,10 @@ public final class SHA extends DigestBase {
     }
 
     // Constants for each round
-    private final static int round1_kt = 0x5a827999;
-    private final static int round2_kt = 0x6ed9eba1;
-    private final static int round3_kt = 0x8f1bbcdc;
-    private final static int round4_kt = 0xca62c1d6;
+    private static final int round1_kt = 0x5a827999;
+    private static final int round2_kt = 0x6ed9eba1;
+    private static final int round3_kt = 0x8f1bbcdc;
+    private static final int round4_kt = 0xca62c1d6;
 
     /**
      * Compute a the hash for the current block.

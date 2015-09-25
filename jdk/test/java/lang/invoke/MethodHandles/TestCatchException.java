@@ -35,8 +35,8 @@ import org.junit.*;
 import static org.junit.Assert.*;
 
 public class TestCatchException {
-    final static MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
-    final static MethodType M_TYPE = MethodType.methodType(int.class, Object.class, Object.class, int.class, int.class, int.class, int.class, int.class, int.class, int.class);
+    static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    static final MethodType M_TYPE = MethodType.methodType(int.class, Object.class, Object.class, int.class, int.class, int.class, int.class, int.class, int.class, int.class);
 
     private static int noThrow(Object o1, Object o2, int i1, int i2, int i3, int i4, int i5, int i6, int i7) {
         return 42;
@@ -72,8 +72,8 @@ public class TestCatchException {
         assertEquals(x, 17);
     }
 
-    final static Object masterParam = new Object();
-    final static Object[] masterTail = new Object[] { "str" };
+    static final Object masterParam = new Object();
+    static final Object[] masterTail = new Object[] { "str" };
     static Exception masterEx = new Exception();
 
     public static Object m1(Object o1, Object o2, Object o3, Object o4, Object o5,

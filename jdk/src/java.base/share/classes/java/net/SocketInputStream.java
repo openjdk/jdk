@@ -287,5 +287,5 @@ class SocketInputStream extends FileInputStream
     /**
      * Perform class load-time initializations.
      */
-    private native static void init();
+    private static native void init();
 }

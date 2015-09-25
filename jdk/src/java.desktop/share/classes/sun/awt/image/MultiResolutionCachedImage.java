@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
+import java.awt.image.AbstractMultiResolutionImage;
 
 public class MultiResolutionCachedImage extends AbstractMultiResolutionImage {
 
@@ -58,7 +59,10 @@ public class MultiResolutionCachedImage extends AbstractMultiResolutionImage {
     }
 
     @Override
-    public Image getResolutionVariant(int width, int height) {
+    public Image getResolutionVariant(double destWidth, double destHeight) {
+        checkSize(destWidth, destHeight);
+        int width = (int) Math.ceil(destWidth);
+        int height = (int) Math.ceil(destHeight);
         ImageCache cache = ImageCache.getInstance();
         ImageCacheKey key = new ImageCacheKey(this, width, height);
         Image resolutionVariant = cache.getImage(key);
@@ -70,11 +74,23 @@ public class MultiResolutionCachedImage extends AbstractMultiResolutionImage {
         return resolutionVariant;
     }
 
+    private static void checkSize(double width, double height) {
+        if (width <= 0 || height <= 0) {
+            throw new IllegalArgumentException(String.format(
+                    "Width (%s) or height (%s) cannot be <= 0", width, height));
+        }
+
+        if (!Double.isFinite(width) || !Double.isFinite(height)) {
+            throw new IllegalArgumentException(String.format(
+                    "Width (%s) or height (%s) is not finite", width, height));
+        }
+    }
+
     @Override
     public List<Image> getResolutionVariants() {
         return Arrays.stream(sizes).map((Function<Dimension2D, Image>) size
-                -> getResolutionVariant((int) size.getWidth(),
-                        (int) size.getHeight())).collect(Collectors.toList());
+                -> getResolutionVariant(size.getWidth(), size.getHeight()))
+                .collect(Collectors.toList());
     }
 
     public MultiResolutionCachedImage map(Function<Image, Image> mapper) {

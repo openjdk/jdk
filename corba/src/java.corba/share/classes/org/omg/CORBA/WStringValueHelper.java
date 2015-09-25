@@ -24,7 +24,7 @@
  */
 
 /**
-* The Helper for <tt>WStringValue</tt>.  For more information on
+* The Helper for {@code WStringValue}. For more information on
 * Helper files, see <a href="doc-files/generatedfiles.html#helper">
 * "Generated Files: Helper Files"</a>.<P>
 */

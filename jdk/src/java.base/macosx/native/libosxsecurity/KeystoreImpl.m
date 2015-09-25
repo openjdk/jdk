@@ -508,7 +508,7 @@ JNF_COCOA_ENTER(env);
     SecKeychainRef defaultKeychain = NULL;
     SecKeychainCopyDefault(&defaultKeychain);
 
-    SecExternalItemType dataType = (isCertificate == JNI_TRUE ? kSecFormatX509Cert : kSecFormatWrappedPKCS8);
+    SecExternalFormat dataFormat = (isCertificate == JNI_TRUE ? kSecFormatX509Cert : kSecFormatWrappedPKCS8);
 
     // Convert the password obj into a CFStringRef that the keychain importer can use for encryption.
     SecKeyImportExportParameters paramBlock;
@@ -533,7 +533,7 @@ JNF_COCOA_ENTER(env);
     paramBlock.keyUsage = CSSM_KEYUSE_ANY;
     paramBlock.keyAttributes = CSSM_KEYATTR_RETURN_DEFAULT;
 
-    err = SecKeychainItemImport(cfDataToImport, NULL, &dataType, NULL,
+    err = SecKeychainItemImport(cfDataToImport, NULL, &dataFormat, NULL,
                                 0, &paramBlock, defaultKeychain, &createdItems);
 
     if (err == noErr) {
