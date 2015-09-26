@@ -153,7 +153,7 @@ public interface TypeInfoSet<T,C,F,M> {
      *      A map from namespace URI to the value of the location.
      *      If the entry is missing, that means a schema should be generated for that namespace.
      *      If the value is "", that means the schema location is implied
-     *      (&lt;xs:schema namespace="..."/> w/o schemaLocation.)
+     *      ({@code <xs:schema namespace="..."/>} w/o schemaLocation.)
      */
     Map<String,String> getSchemaLocations();
 

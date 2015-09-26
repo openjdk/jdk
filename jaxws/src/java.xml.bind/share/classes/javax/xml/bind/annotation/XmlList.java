@@ -37,7 +37,7 @@ import static java.lang.annotation.ElementType.PARAMETER;
  *
  * <p><b>Usage</b> </p>
  * <p>
- * The <tt>@XmlList</tt> annotation can be used with the
+ * The {@code @XmlList} annotation can be used with the
  * following program elements:
  * <ul>
  *   <li> JavaBean property </li>
@@ -92,12 +92,12 @@ import static java.lang.annotation.ElementType.PARAMETER;
  *        {@link XmlValue},
  *        {@link XmlIDREF}.
  *  <ul>
- *    <li> The use of <tt>@XmlList</tt> with {@link XmlValue} while
+ *    <li> The use of {@code @XmlList} with {@link XmlValue} while
  *         allowed, is redundant since  {@link XmlList} maps a
  *         collection type to a simple schema type that derives by
  *         list just as {@link XmlValue} would. </li>
  *
- *    <li> The use of <tt>@XmlList</tt> with {@link XmlAttribute} while
+ *    <li> The use of {@code @XmlList} with {@link XmlAttribute} while
  *         allowed, is redundant since  {@link XmlList} maps a
  *         collection type to a simple schema type that derives by
  *         list just as {@link XmlAttribute} would. </li>

@@ -188,7 +188,7 @@ public abstract class Stub implements WSBindingProvider, ResponseContextReceiver
      * @param epr                    To create a stub that sends out reference parameters
      *                               of a specific EPR, give that instance. Otherwise null.
      *                               Its address field will not be used, and that should be given
-     *                               separately as the <tt>defaultEndPointAddress</tt>.
+     *                               separately as the {@code defaultEndPointAddress}.
      */
     @Deprecated
     protected Stub(WSServiceDelegate owner, Tube master, BindingImpl binding, WSDLPort wsdlPort, EndpointAddress defaultEndPointAddress, @Nullable WSEndpointReference epr) {
@@ -205,7 +205,7 @@ public abstract class Stub implements WSBindingProvider, ResponseContextReceiver
      * @param epr                    To create a stub that sends out reference parameters
      *                               of a specific EPR, give that instance. Otherwise null.
      *                               Its address field will not be used, and that should be given
-     *                               separately as the <tt>defaultEndPointAddress</tt>.
+     *                               separately as the {@code defaultEndPointAddress}.
      */
     @Deprecated
     protected Stub(QName portname, WSServiceDelegate owner, Tube master, BindingImpl binding, WSDLPort wsdlPort, EndpointAddress defaultEndPointAddress, @Nullable WSEndpointReference epr) {
@@ -222,7 +222,7 @@ public abstract class Stub implements WSBindingProvider, ResponseContextReceiver
      * @param epr                    To create a stub that sends out reference parameters
      *                               of a specific EPR, give that instance. Otherwise null.
      *                               Its address field will not be used, and that should be given
-     *                               separately as the <tt>defaultEndPointAddress</tt>.
+     *                               separately as the {@code defaultEndPointAddress}.
      */
     protected Stub(WSPortInfo portInfo, BindingImpl binding, Tube master,EndpointAddress defaultEndPointAddress, @Nullable WSEndpointReference epr) {
          this((WSServiceDelegate) portInfo.getOwner(), master, portInfo, null, binding,portInfo.getPort(), defaultEndPointAddress, epr);
@@ -237,7 +237,7 @@ public abstract class Stub implements WSBindingProvider, ResponseContextReceiver
    * @param epr                    To create a stub that sends out reference parameters
    *                               of a specific EPR, give that instance. Otherwise null.
    *                               Its address field will not be used, and that should be given
-   *                               separately as the <tt>defaultEndPointAddress</tt>.
+   *                               separately as the {@code defaultEndPointAddress}.
    */
   protected Stub(WSPortInfo portInfo, BindingImpl binding, EndpointAddress defaultEndPointAddress, @Nullable WSEndpointReference epr) {
        this(portInfo,binding,null, defaultEndPointAddress,epr);

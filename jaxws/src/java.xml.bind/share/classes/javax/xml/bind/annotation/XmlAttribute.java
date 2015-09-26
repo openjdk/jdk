@@ -37,7 +37,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  *
  * <p> <b>Usage</b> </p>
  * <p>
- * The <tt>@XmlAttribute</tt> annotation can be used with the
+ * The {@code @XmlAttribute} annotation can be used with the
  * following program elements:
  * <ul>
  *   <li> JavaBean property </li>

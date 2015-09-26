@@ -182,8 +182,8 @@ public class SchemaGenerator {
     }
 
     /**
-     * Computes the file system path of <tt>jaxb-api.jar</tt> so that
-     * Annotation Processing will see them in the <tt>-cp</tt> option.
+     * Computes the file system path of {@code jaxb-api.jar} so that
+     * Annotation Processing will see them in the {@code -cp} option.
      *
      * <p>
      * In Java, you can't do this reliably (for that matter there's no guarantee

@@ -150,9 +150,9 @@ public final class UnmarshallingContext extends Coordinator
      *
      * <p>
      * This flag is unused when {@link #assoc}==null.
-     * If it's non-null, then <tt>true</tt> indicates
+     * If it's non-null, then {@code true} indicates
      * that we are doing in-place associative unmarshalling.
-     * If <tt>false</tt>, then we are doing associative unmarshalling
+     * If {@code false}, then we are doing associative unmarshalling
      * without object reuse.
      */
     private boolean isInplaceMode;

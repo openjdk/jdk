@@ -119,7 +119,7 @@ public class IllegalAnnotationException extends JAXBException {
      * annotation, in which case this method returns a list that
      * contains another list, which in turn contains the location
      * information that leads to the error location
-     * (IOW, <tt>[ [pos1,pos2,...,posN] ]</tt>)
+     * (IOW, {@code [ [pos1,pos2,...,posN] ]})
      *
      * <p>
      * Sometimes, an error could occur because of two or more conflicting
@@ -127,12 +127,12 @@ public class IllegalAnnotationException extends JAXBException {
      * that contains many lists, where each list contains
      * the location information that leads to each of the conflicting
      * annotations
-     * (IOW, <tt>[ [pos11,pos12,...,pos1N],[pos21,pos22,...,pos2M], ... ]</tt>)
+     * (IOW, {@code [ [pos11,pos12,...,pos1N],[pos21,pos22,...,pos2M], ... ]})
      *
      * <p>
      * Yet some other time, the runtime can fail to provide any
      * error location, in which case this method returns an empty list.
-     * (IOW, <tt>[]</tt>). We do try hard to make sure this won't happen,
+     * (IOW, {@code []}). We do try hard to make sure this won't happen,
      * so please <a href="http://jaxb.dev.java.net/">let us know</a>
      * if you see this behavior.
      *
@@ -146,13 +146,13 @@ public class IllegalAnnotationException extends JAXBException {
      * to the first in the list, sort of like a stack trace.
      *
      * <p>
-     * For example, suppose you specify class <tt>Foo</tt> to {@link JAXBContext},
-     * <tt>Foo</tt> derives from <tt>Bar</tt>, <tt>Bar</tt> has a field <tt>pea</tt>
-     * that points to <tt>Zot</tt>, <tt>Zot</tt> contains a <tt>gum</tt>
+     * For example, suppose you specify class {@code Foo} to {@link JAXBContext},
+     * {@code Foo} derives from {@code Bar}, {@code Bar} has a field {@code pea}
+     * that points to {@code Zot}, {@code Zot} contains a {@code gum}
      * property, and this property has an errornous annotation.
      * Then when this exception is thrown, the list of {@link Location}s
      * will look something like
-     * <tt>[ "gum property", "Zot class", "pea property", "Bar class", "Foo class" ]</tt>
+     * {@code [ "gum property", "Zot class", "pea property", "Bar class", "Foo class" ]}
      *
      *
      * @return
