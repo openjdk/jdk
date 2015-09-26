@@ -68,6 +68,7 @@ public class CompileWithOverrideSources extends SJavacTester {
                 GENSRC.toString(),
                 GENSRC2.toString(),
                 "-d", BIN.toString(),
+                "--state-dir=" + BIN,
                 "-h", HEADERS.toString(),
                 "-j", "1",
                 SERVER_ARG);
@@ -83,6 +84,7 @@ public class CompileWithOverrideSources extends SJavacTester {
         compileExpectFailure(GENSRC.toString(),
                              GENSRC2.toString(),
                              "-d", BIN.toString(),
+                             "--state-dir=" + BIN,
                              "-h", HEADERS.toString(),
                              "-j", "1",
                              SERVER_ARG);

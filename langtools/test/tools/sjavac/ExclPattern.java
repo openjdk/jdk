@@ -61,6 +61,7 @@ public class ExclPattern {
                 "-x", "pkg/excl-dir/*",
                 "-src", "srcdir",
                 "-d", "dest",
+                "--state-dir=dest",
                 "-j", "1",
                 "-copy", ".txt",
                 "--server:portfile=testserver,background=false",

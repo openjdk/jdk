@@ -76,6 +76,7 @@ public class IncCompileUpdateNative extends SJavacTester {
 
         compile(GENSRC.toString(),
                 "-d", BIN.toString(),
+                "--state-dir=" + BIN,
                 "-h", HEADERS.toString(),
                 "-j", "1",
                 SERVER_ARG,
