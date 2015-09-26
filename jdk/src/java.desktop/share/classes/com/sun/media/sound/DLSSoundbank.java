@@ -548,7 +548,7 @@ public final class DLSSoundbank implements Soundbank {
         long count = riff.readUnsignedInt();
 
         if (size - 8 != 0)
-            riff.skipBytes(size - 8);
+            riff.skip(size - 8);
 
         for (int i = 0; i < count; i++) {
             DLSModulator modulator = new DLSModulator();
@@ -568,7 +568,7 @@ public final class DLSSoundbank implements Soundbank {
         long count = riff.readUnsignedInt();
 
         if (size - 8 != 0)
-            riff.skipBytes(size - 8);
+            riff.skip(size - 8);
 
         for (int i = 0; i < count; i++) {
             DLSModulator modulator = new DLSModulator();
@@ -661,7 +661,7 @@ public final class DLSSoundbank implements Soundbank {
         long loops = riff.readInt();
 
         if (size > 20)
-            riff.skipBytes(size - 20);
+            riff.skip(size - 20);
 
         for (int i = 0; i < loops; i++) {
             DLSSampleLoop loop = new DLSSampleLoop();
@@ -671,7 +671,7 @@ public final class DLSSoundbank implements Soundbank {
             loop.length = riff.readUnsignedInt();
             sampleOptions.loops.add(loop);
             if (size2 > 16)
-                riff.skipBytes(size2 - 16);
+                riff.skip(size2 - 16);
         }
     }
 
