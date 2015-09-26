@@ -56,11 +56,20 @@ public class IgnoreSymbolFile {
         new File("classes").mkdirs();
 
         String server = "--server:portfile=testserver,background=false";
-        int rc1 = compile(server, "-d", "classes", "-Werror", "src");
+        int rc1 = compile(server,
+                          "-d", "classes",
+                          "--state-dir=classes",
+                          "-Werror",
+                          "src");
         if (rc1 == 0)
             error("compilation succeeded unexpectedly");
 
-        int rc2 = compile(server, "-d", "classes", "-Werror", "-XDignore.symbol.file=true", "src");
+        int rc2 = compile(server,
+                          "-d", "classes",
+                          "--state-dir=classes",
+                          "-Werror",
+                          "-XDignore.symbol.file=true",
+                          "src");
         if (rc2 != 0)
             error("compilation failed unexpectedly: rc=" + rc2);
 

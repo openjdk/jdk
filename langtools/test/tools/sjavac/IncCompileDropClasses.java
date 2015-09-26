@@ -71,6 +71,7 @@ public class IncCompileDropClasses extends SJavacTester {
         removeFrom(GENSRC, "alfa/omega/AA.java");
         compile(GENSRC.toString(),
                 "-d", BIN.toString(),
+                "--state-dir=" + BIN,
                 "-h", HEADERS.toString(),
                 "-j", "1",
                 SERVER_ARG,

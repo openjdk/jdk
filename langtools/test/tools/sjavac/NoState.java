@@ -23,45 +23,41 @@
 
 /*
  * @test
- * @summary Test to check that -j option works with more than one value
- * @bug 8071629
- * @author sogoel
- * @library /tools/lib
+ * @summary Test --no-state option
+ * @bug 8135131
+  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.compiler/com.sun.tools.sjavac
  * @build Wrapper ToolBox
- * @run main Wrapper ParallelCompilations
+ * @run main Wrapper NoState
  */
 
-import java.io.*;
+import com.sun.tools.javac.util.Assert;
+
+import java.util.*;
 import java.nio.file.*;
-import com.sun.tools.sjavac.Main;
 
-class ParallelCompilations extends SJavacTester {
-  public static void main(String[] args) throws Exception {
-    new ParallelCompilations().run();
-  }
-
-  public void run() throws Exception {
-    ToolBox tb = new ToolBox();
-
-    // Generate 10 files
-    for (int i = 0; i < 10; i++) {
-      String content = "package foo"+ i + ";\n" +
-                       "public class Test" + i + "{\n" +
-                       "  public static void main(String[] args) {}\n" +
-                       "\n}";
-      Path srcDir = Paths.get("src");
-      tb.writeJavaFiles(srcDir, content);
+public class NoState extends SJavacTester {
+    public static void main(String... args) throws Exception {
+        new NoState().run();
     }
-    // Method will throw an exception if compilation fails
-    compile("src",
-            "-d", BIN.toString(),
-            "--state-dir=" + BIN,
-            "-j", "10",
-            SERVER_ARG,
-            "--log=debug");
-  }
+
+    public void run() throws Exception {
+        clean(TEST_ROOT);
+        ToolBox tb = new ToolBox();
+        tb.writeFile(GENSRC.resolve("pkg/A.java"), "package pkg; class A {}");
+        Files.createDirectory(BIN);
+        compile("-d", BIN.toString(),
+                "--server:portfile=testserver,background=false",
+                GENSRC + "/pkg/A.java");
+
+        // Make sure file was compiled
+        Assert.check(Files.exists(BIN.resolve("pkg/A.class")));
+
+        // Make sure we have no other files (such as a javac_state file) in the bin directory
+        Assert.check(Files.list(BIN).count() == 1);
+        Assert.check(Files.list(BIN.resolve("pkg")).count() == 1);
+    }
 }
