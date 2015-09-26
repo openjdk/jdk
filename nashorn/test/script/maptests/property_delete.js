@@ -45,4 +45,4 @@ function deleteX(obj) {
 deleteX(obj1);
 deleteX(obj2);
 
-assertSameMap(obj1, obj2);
+assertEqualWithoutTypeMap(obj1, obj2);
