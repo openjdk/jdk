@@ -367,16 +367,12 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     __ movl(rcx, VM_Version::ymm_test_value());
     __ movdl(xmm0, rcx);
     __ movl(rcx, 0xffff);
-#ifdef _LP64
-    __ kmovql(k1, rcx);
-#else
-    __ kmovdl(k1, rcx);
-#endif
+    __ kmovwl(k1, rcx);
     __ evpbroadcastd(xmm0, xmm0, Assembler::AVX_512bit);
-    __ evmovdqu(xmm7, xmm0, Assembler::AVX_512bit);
+    __ evmovdqul(xmm7, xmm0, Assembler::AVX_512bit);
 #ifdef _LP64
-    __ evmovdqu(xmm8, xmm0, Assembler::AVX_512bit);
-    __ evmovdqu(xmm31, xmm0, Assembler::AVX_512bit);
+    __ evmovdqul(xmm8, xmm0, Assembler::AVX_512bit);
+    __ evmovdqul(xmm31, xmm0, Assembler::AVX_512bit);
 #endif
     VM_Version::clean_cpuFeatures();
     __ jmp(save_restore_except);
@@ -427,11 +423,11 @@ class VM_Version_StubGenerator: public StubCodeGenerator {
     UseAVX = 3;
     UseSSE = 2;
     __ lea(rsi, Address(rbp, in_bytes(VM_Version::zmm_save_offset())));
-    __ evmovdqu(Address(rsi, 0), xmm0, Assembler::AVX_512bit);
-    __ evmovdqu(Address(rsi, 64), xmm7, Assembler::AVX_512bit);
+    __ evmovdqul(Address(rsi, 0), xmm0, Assembler::AVX_512bit);
+    __ evmovdqul(Address(rsi, 64), xmm7, Assembler::AVX_512bit);
 #ifdef _LP64
-    __ evmovdqu(Address(rsi, 128), xmm8, Assembler::AVX_512bit);
-    __ evmovdqu(Address(rsi, 192), xmm31, Assembler::AVX_512bit);
+    __ evmovdqul(Address(rsi, 128), xmm8, Assembler::AVX_512bit);
+    __ evmovdqul(Address(rsi, 192), xmm31, Assembler::AVX_512bit);
 #endif
     VM_Version::clean_cpuFeatures();
     UseAVX = saved_useavx;

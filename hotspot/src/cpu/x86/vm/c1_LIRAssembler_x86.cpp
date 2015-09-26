@@ -3798,16 +3798,24 @@ void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest) {
     if (left->as_xmm_float_reg() != dest->as_xmm_float_reg()) {
       __ movflt(dest->as_xmm_float_reg(), left->as_xmm_float_reg());
     }
-    __ xorps(dest->as_xmm_float_reg(),
-             ExternalAddress((address)float_signflip_pool));
-
+    if (UseAVX > 1) {
+      __ vnegatess(dest->as_xmm_float_reg(), dest->as_xmm_float_reg(),
+                   ExternalAddress((address)float_signflip_pool));
+    } else {
+      __ xorps(dest->as_xmm_float_reg(),
+               ExternalAddress((address)float_signflip_pool));
+    }
   } else if (dest->is_double_xmm()) {
     if (left->as_xmm_double_reg() != dest->as_xmm_double_reg()) {
       __ movdbl(dest->as_xmm_double_reg(), left->as_xmm_double_reg());
     }
-    __ xorpd(dest->as_xmm_double_reg(),
-             ExternalAddress((address)double_signflip_pool));
-
+    if (UseAVX > 1) {
+      __ vnegatesd(dest->as_xmm_double_reg(), dest->as_xmm_double_reg(),
+                   ExternalAddress((address)double_signflip_pool));
+    } else {
+      __ xorpd(dest->as_xmm_double_reg(),
+               ExternalAddress((address)double_signflip_pool));
+    }
   } else if (left->is_single_fpu() || left->is_double_fpu()) {
     assert(left->fpu() == 0, "arg must be on TOS");
     assert(dest->fpu() == 0, "dest must be TOS");

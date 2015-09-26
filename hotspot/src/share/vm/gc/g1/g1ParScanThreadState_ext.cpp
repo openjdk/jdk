@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,9 @@
  */
 
 #include "precompiled.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
+
 #include "gc/g1/g1ParScanThreadState.hpp"
-#include "gc/g1/heapRegion.inline.hpp"
 
-bool G1CollectedHeap::copy_allocation_context_stats(const jint* contexts,
-                                                    jlong* totals,
-                                                    jbyte* accuracy,
-                                                    jint len) {
-  return false;
-}
-
-HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
-                                             MemRegion mr) {
-  return new HeapRegion(hrs_index, bot_shared(), mr);
+G1ParScanThreadState* G1ParScanThreadStateSet::new_par_scan_state(uint worker_id, size_t young_cset_length) {
+  return new G1ParScanThreadState(_g1h, worker_id, young_cset_length);
 }

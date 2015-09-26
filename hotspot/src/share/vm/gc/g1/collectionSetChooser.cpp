@@ -83,7 +83,7 @@ CollectionSetChooser::CollectionSetChooser() :
   _regions((ResourceObj::set_allocation_type((address) &_regions,
                                              ResourceObj::C_HEAP),
                   100), true /* C_Heap */),
-    _curr_index(0), _length(0), _first_par_unreserved_idx(0),
+    _front(0), _end(0), _first_par_unreserved_idx(0),
     _region_live_threshold_bytes(0), _remaining_reclaimable_bytes(0) {
   _region_live_threshold_bytes =
     HeapRegion::GrainBytes * (size_t) G1MixedGCLiveThresholdPercent / 100;
@@ -91,19 +91,19 @@ CollectionSetChooser::CollectionSetChooser() :
 
 #ifndef PRODUCT
 void CollectionSetChooser::verify() {
-  guarantee(_length <= regions_length(),
-         err_msg("_length: %u regions length: %u", _length, regions_length()));
-  guarantee(_curr_index <= _length,
-            err_msg("_curr_index: %u _length: %u", _curr_index, _length));
+  guarantee(_end <= regions_length(),
+         err_msg("_end: %u regions length: %u", _end, regions_length()));
+  guarantee(_front <= _end,
+            err_msg("_front: %u _end: %u", _front, _end));
   uint index = 0;
   size_t sum_of_reclaimable_bytes = 0;
-  while (index < _curr_index) {
+  while (index < _front) {
     guarantee(regions_at(index) == NULL,
-              "all entries before _curr_index should be NULL");
+              "all entries before _front should be NULL");
     index += 1;
   }
   HeapRegion *prev = NULL;
-  while (index < _length) {
+  while (index < _end) {
     HeapRegion *curr = regions_at(index++);
     guarantee(curr != NULL, "Regions in _regions array cannot be NULL");
     guarantee(!curr->is_young(), "should not be young!");
@@ -132,15 +132,15 @@ void CollectionSetChooser::sort_regions() {
     regions_trunc_to(_first_par_unreserved_idx);
   }
   _regions.sort(order_regions);
-  assert(_length <= regions_length(), "Requirement");
+  assert(_end <= regions_length(), "Requirement");
 #ifdef ASSERT
-  for (uint i = 0; i < _length; i++) {
+  for (uint i = 0; i < _end; i++) {
     assert(regions_at(i) != NULL, "Should be true by sorting!");
   }
 #endif // ASSERT
   if (G1PrintRegionLivenessInfo) {
     G1PrintRegionLivenessInfoClosure cl(gclog_or_tty, "Post-Sorting");
-    for (uint i = 0; i < _length; ++i) {
+    for (uint i = 0; i < _end; ++i) {
       HeapRegion* r = regions_at(i);
       cl.doHeapRegion(r);
     }
@@ -154,9 +154,17 @@ void CollectionSetChooser::add_region(HeapRegion* hr) {
          err_msg("Pinned region shouldn't be added to the collection set (index %u)", hr->hrm_index()));
   assert(!hr->is_young(), "should not be young!");
   _regions.append(hr);
-  _length++;
+  _end++;
   _remaining_reclaimable_bytes += hr->reclaimable_bytes();
   hr->calc_gc_efficiency();
+}
+
+void CollectionSetChooser::push(HeapRegion* hr) {
+  assert(hr != NULL, "Can't put back a NULL region");
+  assert(_front >= 1, "Too many regions have been put back");
+  _front--;
+  regions_at_put(_front, hr);
+  _remaining_reclaimable_bytes += hr->reclaimable_bytes();
 }
 
 void CollectionSetChooser::prepare_for_par_region_addition(uint n_threads,
@@ -193,7 +201,7 @@ void CollectionSetChooser::update_totals(uint region_num,
     // We could have just used atomics instead of taking the
     // lock. However, we currently don't have an atomic add for size_t.
     MutexLockerEx x(ParGCRareEvent_lock, Mutex::_no_safepoint_check_flag);
-    _length += region_num;
+    _end += region_num;
     _remaining_reclaimable_bytes += reclaimable_bytes;
   } else {
     assert(reclaimable_bytes == 0, "invariant");
@@ -202,7 +210,7 @@ void CollectionSetChooser::update_totals(uint region_num,
 
 void CollectionSetChooser::clear() {
   _regions.clear();
-  _curr_index = 0;
-  _length = 0;
+  _front = 0;
+  _end = 0;
   _remaining_reclaimable_bytes = 0;
 };

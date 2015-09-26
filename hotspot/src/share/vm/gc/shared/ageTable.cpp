@@ -28,7 +28,6 @@
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/atomic.inline.hpp"
 #include "utilities/copy.hpp"
 
 /* Copyright (c) 1992, 2015, Oracle and/or its affiliates, and Stanford University.
@@ -70,12 +69,6 @@ void ageTable::clear() {
 void ageTable::merge(ageTable* subTable) {
   for (int i = 0; i < table_size; i++) {
     sizes[i]+= subTable->sizes[i];
-  }
-}
-
-void ageTable::merge_par(ageTable* subTable) {
-  for (int i = 0; i < table_size; i++) {
-    Atomic::add_ptr(subTable->sizes[i], &sizes[i]);
   }
 }
 
