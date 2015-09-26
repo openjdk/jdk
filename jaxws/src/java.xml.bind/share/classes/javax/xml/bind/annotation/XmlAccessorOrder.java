@@ -38,7 +38,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  *
  * <h3>Usage </h3>
  *
- * <p> <tt> @XmlAccessorOrder </tt> annotation can be used with the following
+ * <p> {@code @XmlAccessorOrder} annotation can be used with the following
  * program elements:</p>
  *
  * <ul>
@@ -46,19 +46,19 @@ import static java.lang.annotation.RetentionPolicy.*;
  *   <li> a top level class </li>
  * </ul>
  *
- * <p> See "Package Specification" in <tt>javax.xml.bind</tt> package javadoc for
+ * <p> See "Package Specification" in {@code javax.xml.bind} package javadoc for
  * additional common information.</p>
  *
  * <p>The effective {@link XmlAccessOrder} on a class is determined
  * as follows:
  *
  * <ul>
- *   <li> If there is a <tt>@XmlAccessorOrder</tt> on a class, then
+ *   <li> If there is a {@code @XmlAccessorOrder} on a class, then
  *        it is used. </li>
- *   <li> Otherwise, if a <tt>@XmlAccessorOrder </tt> exists on one of
+ *   <li> Otherwise, if a {@code @XmlAccessorOrder} exists on one of
  *        its super classes, then it is inherited (by the virtue of
  *        {@link Inherited})
- *   <li> Otherwise, the <tt>@XmlAccessorOrder</tt> on the package
+ *   <li> Otherwise, the {@code @XmlAccessorOrder} on the package
  *        of the class is used, if it's there.
  *   <li> Otherwise {@link XmlAccessOrder#UNDEFINED}.
  * </ul>

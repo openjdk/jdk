@@ -352,7 +352,7 @@ public abstract class JAXBRIContext extends JAXBContext {
      * Accordingly, this method may return an identifier that collides with reserved words.
      *
      * <p>
-     * Use <tt>JJavaName.isJavaIdentifier(String)</tt> to check for such collision.
+     * Use {@code JJavaName.isJavaIdentifier(String)} to check for such collision.
      *
      * @return
      *      Typically, this method returns "nameLikeThis".
@@ -394,17 +394,17 @@ public abstract class JAXBRIContext extends JAXBContext {
      *
      * <p>
      * For example, given the following
-     * <pre><xmp>
+     * <pre>{@code
      * interface Foo<T> extends List<List<T>> {}
      * interface Bar extends Foo<String> {}
-     * </xmp></pre>
+     * }</pre>
      * This method works like this:
-     * <pre><xmp>
+     * <pre>{@code
      * getBaseClass( Bar, List ) = List<List<String>
      * getBaseClass( Bar, Foo  ) = Foo<String>
      * getBaseClass( Foo<? extends Number>, Collection ) = Collection<List<? extends Number>>
      * getBaseClass( ArrayList<? extends BigInteger>, List ) = List<? extends BigInteger>
-     * </xmp></pre>
+     * }</pre>
      *
      * @param type
      *      The type that derives from {@code baseType}
@@ -460,7 +460,7 @@ public abstract class JAXBRIContext extends JAXBContext {
 
     /**
      * The property that you can specify to {@link JAXBContext#newInstance}
-     * to allow unmarshaller to honor <tt>xsi:nil</tt> anywhere, even if they are
+     * to allow unmarshaller to honor {@code xsi:nil} anywhere, even if they are
      * not specifically allowed by the schema.
      *
      * Boolean

@@ -68,7 +68,7 @@ import java.net.URLConnection;
  * </ol>
  *
  * <p>
- * In addition, the <tt>unmarshal</tt> methods have the following characteristic:
+ * In addition, the {@code unmarshal} methods have the following characteristic:
  *
  * <ol>
  *  <li>Schema validation is not performed on the input XML.
@@ -78,7 +78,7 @@ import java.net.URLConnection;
  * </ol>
  *
  * <p>
- * Similarly, the <tt>marshal</tt> methods have the following characteristic:
+ * Similarly, the {@code marshal} methods have the following characteristic:
  * <ol>
  *  <li>The processing will try to continue even if the Java object tree
  *      does not meet the validity requirement. Only as
@@ -88,7 +88,7 @@ import java.net.URLConnection;
  *
  * <p>
  * All the methods on this class require non-null arguments to all parameters.
- * The <tt>unmarshal</tt> methods either fail with an exception or return
+ * The {@code unmarshal} methods either fail with an exception or return
  * a non-null value.
  *
  * @author Kohsuke Kawaguchi
@@ -179,7 +179,7 @@ public final class JAXB {
      *
      * @param xml
      *      The URI is {@link URI#toURL() turned into URL} and then
-     *      follows the handling of <tt>URL</tt>.
+     *      follows the handling of {@code URL}.
      */
     public static <T> T unmarshal( URI xml, Class<T> type ) {
         try {
@@ -196,9 +196,9 @@ public final class JAXB {
      * Reads in a Java object tree from the given XML input.
      *
      * @param xml
-     *      The string is first interpreted as an absolute <tt>URI</tt>.
+     *      The string is first interpreted as an absolute {@code URI}.
      *      If it's not {@link URI#isAbsolute() a valid absolute URI},
-     *      then it's interpreted as a <tt>File</tt>
+     *      then it's interpreted as a {@code File}
      */
     public static <T> T unmarshal( String xml, Class<T> type ) {
         try {
@@ -347,8 +347,8 @@ public final class JAXB {
      *
      * @param xml
      *      The XML will be {@link URLConnection#getOutputStream() sent} to the
-     *      resource pointed by this URL. Note that not all <tt>URL</tt>s support
-     *      such operation, and exact semantics depends on the <tt>URL</tt>
+     *      resource pointed by this URL. Note that not all {@code URL}s support
+     *      such operation, and exact semantics depends on the {@code URL}
      *      implementations. In case of {@link HttpURLConnection HTTP URLs},
      *      this will perform HTTP POST.
      *
@@ -374,7 +374,7 @@ public final class JAXB {
      *
      * @param xml
      *      The URI is {@link URI#toURL() turned into URL} and then
-     *      follows the handling of <tt>URL</tt>. See above.
+     *      follows the handling of {@code URL}. See above.
      *
      * @throws DataBindingException
      *      If the operation fails, such as due to I/O error, unbindable classes.
@@ -397,9 +397,9 @@ public final class JAXB {
      *      This parameter must not be null.
      *
      * @param xml
-     *      The string is first interpreted as an absolute <tt>URI</tt>.
+     *      The string is first interpreted as an absolute {@code URI}.
      *      If it's not {@link URI#isAbsolute() a valid absolute URI},
-     *      then it's interpreted as a <tt>File</tt>
+     *      then it's interpreted as a {@code File}
      *
      * @throws DataBindingException
      *      If the operation fails, such as due to I/O error, unbindable classes.
@@ -522,19 +522,19 @@ public final class JAXB {
      *      </tr><tr>
      *          <td>{@link URL}</td>
      *          <td>The XML will be {@link URLConnection#getOutputStream() sent} to the
-     *              resource pointed by this URL. Note that not all <tt>URL</tt>s support
-     *              such operation, and exact semantics depends on the <tt>URL</tt>
+     *              resource pointed by this URL. Note that not all {@code URL}s support
+     *              such operation, and exact semantics depends on the {@code URL}
      *              implementations. In case of {@link HttpURLConnection HTTP URLs},
      *              this will perform HTTP POST.</td>
      *      </tr><tr>
      *          <td>{@link URI}</td>
      *          <td>The URI is {@link URI#toURL() turned into URL} and then
-     *              follows the handling of <tt>URL</tt>. See above.</td>
+     *              follows the handling of {@code URL}. See above.</td>
      *      </tr><tr>
      *          <td>{@link String}</td>
-     *          <td>The string is first interpreted as an absolute <tt>URI</tt>.
+     *          <td>The string is first interpreted as an absolute {@code URI}.
      *              If it's not {@link URI#isAbsolute() a valid absolute URI},
-     *              then it's interpreted as a <tt>File</tt></td>
+     *              then it's interpreted as a {@code File}</td>
      *      </tr><tr>
      *          <td>{@link OutputStream}</td>
      *          <td>The XML will be sent to the given {@link OutputStream}.

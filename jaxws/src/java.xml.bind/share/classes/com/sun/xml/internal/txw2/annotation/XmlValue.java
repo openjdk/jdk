@@ -34,12 +34,12 @@ import java.lang.annotation.Target;
  * Specifies that the invocation of the method will produce a text
  *
  * <p>
- * The method signature has to match the form <tt>R foo(DT1,DT2,..)</tt>
+ * The method signature has to match the form {@code R foo(DT1,DT2,..)}
  *
  * <p>
- * R is either <tt>void</tt> or the type to which the interface that declares
+ * R is either {@code void} or the type to which the interface that declares
  * this method is assignable. In the case of the latter, the method will return
- * <tt>this</tt> object, allowing you to chain the multiple method
+ * {@code this} object, allowing you to chain the multiple method
  * invocations like {@link StringBuffer}.
  *
  * <p>

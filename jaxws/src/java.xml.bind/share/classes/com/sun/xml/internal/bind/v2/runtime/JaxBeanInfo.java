@@ -68,7 +68,7 @@ import org.xml.sax.SAXException;
  * <p>
  * Typically, {@link JaxBeanInfo} implementations should be generated
  * by XJC/JXC. Those impl classes will register themselves to their
- * master <tt>ObjectFactory</tt> class.
+ * master {@code ObjectFactory} class.
  *
  * <p>
  * The type parameter BeanT is the Java class of the bean that this represents.

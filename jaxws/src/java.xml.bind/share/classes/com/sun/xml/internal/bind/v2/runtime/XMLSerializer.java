@@ -378,7 +378,7 @@ public final class XMLSerializer extends Coordinator {
      * c.endElement();
      * </pre>
      *
-     * will generate <code>&lt;foo>abc def&lt;bar/>ghi&lt;/foo></code>.
+     * will generate {@code <foo>abc def<bar/>ghi</foo>}.
      */
     public void text( String text, String fieldName ) throws SAXException, IOException, XMLStreamException {
         // If the assertion fails, it must be a bug of xjc.
@@ -492,7 +492,7 @@ public final class XMLSerializer extends Coordinator {
      * When a cycle is found, this method tries to recover from it.
      *
      * @return
-     *      the object that should be marshalled instead of the given <tt>obj</tt>,
+     *      the object that should be marshalled instead of the given {@code obj},
      *      or null if the error is found and we need to avoid marshalling this object
      *      to prevent infinite recursion. When this method returns null, the error
      *      has already been reported.

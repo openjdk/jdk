@@ -101,7 +101,7 @@ public interface Header {
      * specifically, this method has to perform the following tasks:
      *
      * <ul>
-     *  <li>If this header does not have <tt>mustUnderstand</tt> as "1" nor "true",
+     *  <li>If this header does not have {@code mustUnderstand} as "1" nor "true",
      *      then this method must return true.
      *  <li>Otherwise, check the role attribute (for SOAP 1.2) or the actor attribute (for SOAP 1.1).
      *      When those attributes are absent, the default values have to be assumed.
@@ -300,7 +300,7 @@ public interface Header {
      *
      * <p>
      * A header is responsible for producing the SAX events for its part,
-     * including <tt>startPrefixMapping</tt> and <tt>endPrefixMapping</tt>,
+     * including {@code startPrefixMapping} and {@code endPrefixMapping},
      * but not startDocument/endDocument.
      *
      * <p>

@@ -169,7 +169,7 @@ public final class RequestContext extends BaseDistributedPropertySet {
      *
      * <p>
      * For outgoing messages, the transport may sends out this value.
-     * If this field is null, the transport may choose to send <tt>""</tt>
+     * If this field is null, the transport may choose to send {@code ""}
      * (quoted empty string.)
      *
      * For incoming messages, the transport will set this field.

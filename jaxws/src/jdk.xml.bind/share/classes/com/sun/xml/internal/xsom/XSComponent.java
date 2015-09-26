@@ -54,7 +54,7 @@ public interface XSComponent
      *      false to make this method behavel like {@link #getAnnotation()}.
      *
      * @return
-     *      null if <tt>createIfNotExist==false</tt> and annotation didn't exist.
+     *      null if {@code createIfNotExist==false} and annotation didn't exist.
      *      Otherwise non-null.
      */
     XSAnnotation getAnnotation(boolean createIfNotExist);
