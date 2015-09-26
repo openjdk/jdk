@@ -28,15 +28,10 @@
 #import <objc/runtime.h>
 #import <Cocoa/Cocoa.h>
 #import <Security/AuthSession.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
-#import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
 #include "jni_util.h"
-#import "CMenuBar.h"
-#import "InitIDs.h"
 #import "LWCToolkit.h"
 #import "ThreadUtilities.h"
-#import "AWT_debug.h"
 #import "CSystemColors.h"
 #import  "NSApplicationAWT.h"
 #import "PropertiesUtilities.h"
@@ -45,6 +40,8 @@
 #import "sun_lwawt_macosx_LWCToolkit.h"
 
 #import "sizecalc.h"
+
+#import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
 int gNumberOfButtons;
 jint* gButtonDownMasks;
