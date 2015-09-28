@@ -1235,7 +1235,8 @@ void ConcurrentMark::markFromRoots() {
 }
 
 // Helper class to get rid of some boilerplate code.
-class G1CMTraceTime : public GCTraceTime {
+class G1CMTraceTime : public StackObj {
+  GCTraceTimeImpl _gc_trace_time;
   static bool doit_and_prepend(bool doit) {
     if (doit) {
       gclog_or_tty->put(' ');
@@ -1245,7 +1246,7 @@ class G1CMTraceTime : public GCTraceTime {
 
  public:
   G1CMTraceTime(const char* title, bool doit)
-    : GCTraceTime(title, doit_and_prepend(doit), false, G1CollectedHeap::heap()->gc_timer_cm(),
+    : _gc_trace_time(title, doit_and_prepend(doit), false, G1CollectedHeap::heap()->gc_timer_cm(),
         G1CollectedHeap::heap()->concurrent_mark()->concurrent_gc_id()) {
   }
 };

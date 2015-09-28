@@ -1440,3 +1440,14 @@ bool networkStream::connect(const char *ip, short port) {
 }
 
 #endif
+
+void logStream::write(const char* s, size_t len) {
+  if (len > 0 && s[len - 1] == '\n') {
+    _current_line.write(s, len - 1);
+    _log_func(_current_line.as_string());
+    _current_line.reset();
+  } else {
+    _current_line.write(s, len);
+    update_position(s, len);
+  }
+}
