@@ -1630,6 +1630,9 @@ void LIRGenerator::CardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* 
     __ move(dirty, card_addr);
     __ branch_destination(L_already_dirty->label());
   } else {
+    if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
+      __ membar_storestore();
+    }
     __ move(dirty, card_addr);
   }
 #endif

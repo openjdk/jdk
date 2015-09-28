@@ -31,6 +31,7 @@
 #include "gc/shared/gcTraceTime.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/referenceProcessor.hpp"
+#include "memory/allocation.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/jniHandles.hpp"
@@ -182,6 +183,21 @@ size_t ReferenceProcessor::total_count(DiscoveredList lists[]) {
   return total;
 }
 
+static void log_ref_count(size_t count, bool doit) {
+  if (doit) {
+    gclog_or_tty->print(", " SIZE_FORMAT " refs", count);
+  }
+}
+
+class GCRefTraceTime : public StackObj {
+  GCTraceTimeImpl _gc_trace_time;
+ public:
+  GCRefTraceTime(const char* title, bool doit, GCTimer* timer, GCId gc_id, size_t count) :
+    _gc_trace_time(title, doit, false, timer, gc_id) {
+    log_ref_count(count, doit);
+  }
+};
+
 ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   BoolObjectClosure*           is_alive,
   OopClosure*                  keep_alive,
@@ -206,48 +222,48 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
 
   bool trace_time = PrintGCDetails && PrintReferenceGC;
 
+  // Include cleaners in phantom statistics.  We expect Cleaner
+  // references to be temporary, and don't want to deal with
+  // possible incompatibilities arising from making it more visible.
+  ReferenceProcessorStats stats(
+      total_count(_discoveredSoftRefs),
+      total_count(_discoveredWeakRefs),
+      total_count(_discoveredFinalRefs),
+      total_count(_discoveredPhantomRefs) + total_count(_discoveredCleanerRefs));
+
   // Soft references
-  size_t soft_count = 0;
   {
-    GCTraceTime tt("SoftReference", trace_time, false, gc_timer, gc_id);
-    soft_count =
-      process_discovered_reflist(_discoveredSoftRefs, _current_soft_ref_policy, true,
-                                 is_alive, keep_alive, complete_gc, task_executor);
+    GCRefTraceTime tt("SoftReference", trace_time, gc_timer, gc_id, stats.soft_count());
+    process_discovered_reflist(_discoveredSoftRefs, _current_soft_ref_policy, true,
+                               is_alive, keep_alive, complete_gc, task_executor);
   }
 
   update_soft_ref_master_clock();
 
   // Weak references
-  size_t weak_count = 0;
   {
-    GCTraceTime tt("WeakReference", trace_time, false, gc_timer, gc_id);
-    weak_count =
-      process_discovered_reflist(_discoveredWeakRefs, NULL, true,
-                                 is_alive, keep_alive, complete_gc, task_executor);
+    GCRefTraceTime tt("WeakReference", trace_time, gc_timer, gc_id, stats.weak_count());
+    process_discovered_reflist(_discoveredWeakRefs, NULL, true,
+                               is_alive, keep_alive, complete_gc, task_executor);
   }
 
   // Final references
-  size_t final_count = 0;
   {
-    GCTraceTime tt("FinalReference", trace_time, false, gc_timer, gc_id);
-    final_count =
-      process_discovered_reflist(_discoveredFinalRefs, NULL, false,
-                                 is_alive, keep_alive, complete_gc, task_executor);
+    GCRefTraceTime tt("FinalReference", trace_time, gc_timer, gc_id, stats.final_count());
+    process_discovered_reflist(_discoveredFinalRefs, NULL, false,
+                               is_alive, keep_alive, complete_gc, task_executor);
   }
 
   // Phantom references
-  size_t phantom_count = 0;
   {
-    GCTraceTime tt("PhantomReference", trace_time, false, gc_timer, gc_id);
-    phantom_count =
-      process_discovered_reflist(_discoveredPhantomRefs, NULL, false,
-                                 is_alive, keep_alive, complete_gc, task_executor);
+    GCRefTraceTime tt("PhantomReference", trace_time, gc_timer, gc_id, stats.phantom_count());
+    process_discovered_reflist(_discoveredPhantomRefs, NULL, false,
+                               is_alive, keep_alive, complete_gc, task_executor);
 
-    // Process cleaners, but include them in phantom statistics.  We expect
+    // Process cleaners, but include them in phantom timing.  We expect
     // Cleaner references to be temporary, and don't want to deal with
     // possible incompatibilities arising from making it more visible.
-    phantom_count +=
-      process_discovered_reflist(_discoveredCleanerRefs, NULL, true,
+    process_discovered_reflist(_discoveredCleanerRefs, NULL, true,
                                  is_alive, keep_alive, complete_gc, task_executor);
   }
 
@@ -258,13 +274,14 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   // resurrect a "post-mortem" object.
   {
     GCTraceTime tt("JNI Weak Reference", trace_time, false, gc_timer, gc_id);
+    NOT_PRODUCT(log_ref_count(count_jni_refs(), trace_time);)
     if (task_executor != NULL) {
       task_executor->set_single_threaded_mode();
     }
     process_phaseJNI(is_alive, keep_alive, complete_gc);
   }
 
-  return ReferenceProcessorStats(soft_count, weak_count, final_count, phantom_count);
+  return stats;
 }
 
 #ifndef PRODUCT
@@ -294,12 +311,6 @@ uint ReferenceProcessor::count_jni_refs() {
 void ReferenceProcessor::process_phaseJNI(BoolObjectClosure* is_alive,
                                           OopClosure*        keep_alive,
                                           VoidClosure*       complete_gc) {
-#ifndef PRODUCT
-  if (PrintGCDetails && PrintReferenceGC) {
-    unsigned int count = count_jni_refs();
-    gclog_or_tty->print(", %u refs", count);
-  }
-#endif
   JNIHandles::weak_oops_do(is_alive, keep_alive);
   complete_gc->do_void();
 }
@@ -826,8 +837,7 @@ void ReferenceProcessor::balance_all_queues() {
   balance_queues(_discoveredCleanerRefs);
 }
 
-size_t
-ReferenceProcessor::process_discovered_reflist(
+void ReferenceProcessor::process_discovered_reflist(
   DiscoveredList               refs_lists[],
   ReferencePolicy*             policy,
   bool                         clear_referent,
@@ -848,12 +858,6 @@ ReferenceProcessor::process_discovered_reflist(
   if ((mt_processing && ParallelRefProcBalancingEnabled) ||
       must_balance) {
     balance_queues(refs_lists);
-  }
-
-  size_t total_list_count = total_count(refs_lists);
-
-  if (PrintReferenceGC && PrintGCDetails) {
-    gclog_or_tty->print(", " SIZE_FORMAT " refs", total_list_count);
   }
 
   // Phase 1 (soft refs only):
@@ -898,8 +902,6 @@ ReferenceProcessor::process_discovered_reflist(
                      is_alive, keep_alive, complete_gc);
     }
   }
-
-  return total_list_count;
 }
 
 inline DiscoveredList* ReferenceProcessor::get_discovered_list(ReferenceType rt) {
