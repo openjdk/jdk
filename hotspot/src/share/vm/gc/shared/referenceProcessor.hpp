@@ -263,13 +263,13 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   }
 
   // Process references with a certain reachability level.
-  size_t process_discovered_reflist(DiscoveredList               refs_lists[],
-                                    ReferencePolicy*             policy,
-                                    bool                         clear_referent,
-                                    BoolObjectClosure*           is_alive,
-                                    OopClosure*                  keep_alive,
-                                    VoidClosure*                 complete_gc,
-                                    AbstractRefProcTaskExecutor* task_executor);
+  void process_discovered_reflist(DiscoveredList               refs_lists[],
+                                  ReferencePolicy*             policy,
+                                  bool                         clear_referent,
+                                  BoolObjectClosure*           is_alive,
+                                  OopClosure*                  keep_alive,
+                                  VoidClosure*                 complete_gc,
+                                  AbstractRefProcTaskExecutor* task_executor);
 
   void process_phaseJNI(BoolObjectClosure* is_alive,
                         OopClosure*        keep_alive,
