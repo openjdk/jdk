@@ -216,11 +216,11 @@ char* LogFileOutput::make_file_name(const char* file_name,
 
   // At least one of the place-holders were found in the file_name
   const char* first = "";
-  size_t first_pos = -1;
+  size_t first_pos = SIZE_MAX;
   size_t first_replace_len = 0;
 
   const char* second = "";
-  size_t second_pos = -1;
+  size_t second_pos = SIZE_MAX;
   size_t second_replace_len = 0;
 
   // If we found a %p, then setup our variables accordingly
