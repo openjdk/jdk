@@ -674,6 +674,10 @@ define AddFileToCopy
   $3 += $2
 endef
 
+# Returns the value of the first argument
+identity = \
+    $(strip $1)
+
 # Setup make rules for copying files, with an option to do more complex
 # processing instead of copying.
 #
@@ -688,6 +692,8 @@ endef
 #   FLATTEN : Set to flatten the directory structure in the DEST dir.
 #   MACRO   : Optionally override the default macro used for making the copy.
 #             Default is 'install-file'
+#   NAME_MACRO : Optionally supply a macro that rewrites the target file name
+#                based on the source file name
 SetupCopyFiles = $(NamedParamsMacroTemplate)
 define SetupCopyFilesBody
 
@@ -700,12 +706,17 @@ define SetupCopyFilesBody
     $1_SRC := $$(dir $$(firstword $$($1_FILES)))
   endif
 
+  ifeq ($$($1_NAME_MACRO), )
+    $1_NAME_MACRO := identity
+  endif
+
   # Remove any trailing slash from SRC
   $1_SRC := $$(patsubst %/,%,$$($1_SRC))
 
   $$(foreach f, $$(patsubst $$($1_SRC)/%,%,$$($1_FILES)), \
       $$(eval $$(call AddFileToCopy, $$($1_SRC)/$$f, \
-      $$($1_DEST)/$$(if $$($1_FLATTEN),$$(notdir $$f),$$f), $1, $$($1_MACRO))))
+      $$($1_DEST)/$$(call $$(strip $$($1_NAME_MACRO)),$$(if $$($1_FLATTEN),$$(notdir $$f),$$f)), \
+      $1, $$($1_MACRO))))
 
 endef
 

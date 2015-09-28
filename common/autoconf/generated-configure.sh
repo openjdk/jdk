@@ -735,7 +735,7 @@ AR_OUT_OPTION
 LD_OUT_OPTION
 EXE_OUT_OPTION
 CC_OUT_OPTION
-POST_STRIP_CMD
+STRIPFLAGS
 ARFLAGS
 COMPILER_TARGET_BITS_FLAG
 JT_HOME
@@ -4359,7 +4359,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1441958217
+DATE_WHEN_GENERATED=1442448271
 
 ###############################################################################
 #
@@ -41053,9 +41053,6 @@ $as_echo "$tool_specified" >&6; }
     STRIPFLAGS="-X32_64"
   fi
 
-  if test "x$OPENJDK_TARGET_OS" != xwindows; then
-    POST_STRIP_CMD="$STRIP $STRIPFLAGS"
-  fi
 
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
