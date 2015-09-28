@@ -1858,6 +1858,11 @@ void SuperWord::output() {
           vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
           vlen_in_bytes = vn->as_Vector()->length_in_bytes();
         }
+      } else if (opc == Op_SqrtD) {
+        // Promote operand to vector (Sqrt is a 2 address instruction)
+        Node* in = vector_opd(p, 1);
+        vn = VectorNode::make(opc, in, NULL, vlen, velt_basic_type(n));
+        vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else {
         ShouldNotReachHere();
       }

@@ -68,7 +68,7 @@ public abstract class ServiceInterceptor {
      * @return
      *      A set of features to be added to the newly created {@link WSBinding}.
      *      Can be empty but never null.
-     *      <tt>defaultFeatures</tt> will take precedence over what this method
+     *      {@code defaultFeatures} will take precedence over what this method
      *      would return (because it includes user-specified ones which will
      *      take the at-most priority), but features you return from this method
      *      will take precedence over {@link BindingID}'s

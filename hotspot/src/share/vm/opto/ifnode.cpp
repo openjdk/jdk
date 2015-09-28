@@ -858,18 +858,29 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     // this_bool = <=
     //   dom_bool = >= (proj = True) or dom_bool = < (proj = False)
     //     x in [a, b] on the fail (= True) projection, b+1 > a-1:
-    //     lo = a, hi = b, adjusted_lim = b-a, cond = <=u
+    //     lo = a, hi = b, adjusted_lim = b-a+1, cond = <u
+    //     lo = a, hi = b, adjusted_lim = b-a, cond = <=u doesn't work because b = a - 1 is possible, then b-a = -1
     //   dom_bool = > (proj = True) or dom_bool = <= (proj = False)
     //     x in ]a, b] on the fail (= True) projection b+1 > a:
     //     lo = a+1, hi = b, adjusted_lim = b-a, cond = <u
-    //     lo = a+1, hi = b, adjusted_lim = b-a-1, cond = <=u doesn't work because a = b is possible, then hi-lo = -1
+    //     lo = a+1, hi = b, adjusted_lim = b-a-1, cond = <=u doesn't work because a = b is possible, then b-a-1 = -1
 
-    if (lo_test == BoolTest::gt || lo_test == BoolTest::le) {
-      if (hi_test == BoolTest::le) {
+    if (hi_test == BoolTest::lt) {
+      if (lo_test == BoolTest::gt || lo_test == BoolTest::le) {
+        lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
+      }
+    } else {
+      assert(hi_test == BoolTest::le, "bad test");
+      if (lo_test == BoolTest::ge || lo_test == BoolTest::lt) {
         adjusted_lim = igvn->transform(new SubINode(hi, lo));
+        adjusted_lim = igvn->transform(new AddINode(adjusted_lim, igvn->intcon(1)));
+        cond = BoolTest::lt;
+      } else {
+        assert(lo_test == BoolTest::gt || lo_test == BoolTest::le, "bad test");
+        adjusted_lim = igvn->transform(new SubINode(hi, lo));
+        lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
         cond = BoolTest::lt;
       }
-      lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
     }
   } else if (lo_type->_lo > hi_type->_hi && lo_type->_hi == max_jint && hi_type->_lo == min_jint) {
 
@@ -879,7 +890,8 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     //     lo = b, hi = a, adjusted_lim = a-b, cond = >=u
     //   dom_bool = <= (proj = True) or dom_bool = > (proj = False)
     //     x in [b, a] on the fail (= False) projection, a+1 > b-1:
-    //     lo = b, hi = a, adjusted_lim = a-b, cond = >u
+    //     lo = b, hi = a, adjusted_lim = a-b+1, cond = >=u
+    //     lo = b, hi = a, adjusted_lim = a-b, cond = >u doesn't work because a = b - 1 is possible, then b-a = -1
     // this_bool = <=
     //   dom_bool = < (proj = True) or dom_bool = >= (proj = False)
     //     x in ]b, a[ on the fail (= False) projection, a > b:
@@ -887,7 +899,7 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
     //   dom_bool = <= (proj = True) or dom_bool = > (proj = False)
     //     x in ]b, a] on the fail (= False) projection, a+1 > b:
     //     lo = b+1, hi = a, adjusted_lim = a-b, cond = >=u
-    //     lo = b+1, hi = a, adjusted_lim = a-b-1, cond = >u doesn't work because a = b is possible, then hi-lo = -1
+    //     lo = b+1, hi = a, adjusted_lim = a-b-1, cond = >u doesn't work because a = b is possible, then b-a-1 = -1
 
     swap(lo, hi);
     swap(lo_type, hi_type);
@@ -900,14 +912,26 @@ bool IfNode::fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* f
 
     cond = (hi_test == BoolTest::le || hi_test == BoolTest::gt) ? BoolTest::gt : BoolTest::ge;
 
-    if (lo_test == BoolTest::le) {
-      if (cond == BoolTest::gt) {
+    if (lo_test == BoolTest::lt) {
+      if (hi_test == BoolTest::lt || hi_test == BoolTest::ge) {
+        cond = BoolTest::ge;
+      } else {
+        assert(hi_test == BoolTest::le || hi_test == BoolTest::gt, "bad test");
         adjusted_lim = igvn->transform(new SubINode(hi, lo));
+        adjusted_lim = igvn->transform(new AddINode(adjusted_lim, igvn->intcon(1)));
         cond = BoolTest::ge;
       }
-      lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
+    } else if (lo_test == BoolTest::le) {
+      if (hi_test == BoolTest::lt || hi_test == BoolTest::ge) {
+        lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
+        cond = BoolTest::ge;
+      } else {
+        assert(hi_test == BoolTest::le || hi_test == BoolTest::gt, "bad test");
+        adjusted_lim = igvn->transform(new SubINode(hi, lo));
+        lo = igvn->transform(new AddINode(lo, igvn->intcon(1)));
+        cond = BoolTest::ge;
+      }
     }
-
   } else {
     const TypeInt* failtype  = filtered_int_type(igvn, n, proj);
     if (failtype != NULL) {

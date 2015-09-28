@@ -105,7 +105,6 @@ class ObjArrayKlass : public ArrayKlass {
   // GC specific object visitors
   //
   // Mark Sweep
-  void oop_ms_follow_contents(oop obj);
   int  oop_ms_adjust_pointers(oop obj);
 #if INCLUDE_ALL_GCS
   // Parallel Scavenge
@@ -125,15 +124,15 @@ class ObjArrayKlass : public ArrayKlass {
 
   // Iterate over oop elements and metadata.
   template <bool nv, typename OopClosureType>
-  inline int oop_oop_iterate(oop obj, OopClosureType* closure);
+  inline void oop_oop_iterate(oop obj, OopClosureType* closure);
 
   // Iterate over oop elements within mr, and metadata.
   template <bool nv, typename OopClosureType>
-  inline int oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
+  inline void oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr);
 
   // Iterate over oop elements with indices within [start, end), and metadata.
   template <bool nv, class OopClosureType>
-  inline int oop_oop_iterate_range(oop obj, OopClosureType* closure, int start, int end);
+  inline void oop_oop_iterate_range(oop obj, OopClosureType* closure, int start, int end);
 
   // Iterate over oop elements within [start, end), and metadata.
   // Specialized for [T = oop] or [T = narrowOop].

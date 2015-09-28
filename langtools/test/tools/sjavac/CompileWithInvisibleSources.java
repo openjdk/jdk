@@ -70,6 +70,7 @@ public class CompileWithInvisibleSources extends SJavacTester {
                 "-sourcepath", GENSRC2.toString(),
                 "-sourcepath", GENSRC3.toString(),
                 "-d", BIN.toString(),
+                "--state-dir=" + BIN,
                 "-h", HEADERS.toString(),
                 "-j", "1",
                 SERVER_ARG);
@@ -86,6 +87,7 @@ public class CompileWithInvisibleSources extends SJavacTester {
                              "-sourcepath", GENSRC2.toString(),
                              "-sourcepath", GENSRC3.toString(),
                              "-d", BIN.toString(),
+                             "--state-dir=" + BIN,
                              "-h", HEADERS.toString(),
                              "-j", "1",
                              SERVER_ARG);

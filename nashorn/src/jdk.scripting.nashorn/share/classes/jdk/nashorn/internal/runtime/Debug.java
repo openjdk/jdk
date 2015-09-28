@@ -26,6 +26,8 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.parser.TokenType.EOF;
+
+import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenStream;
@@ -60,6 +62,15 @@ public final class Debug {
      */
     public static String firstJSFrame() {
         return firstJSFrame(new Throwable());
+    }
+
+    /**
+     * Return a formatted script stack trace string with frames information separated by '\n'.
+     * This is a shortcut for {@code NashornException.getScriptStackString(new Throwable())}.
+     * @return formatted stack trace string
+     */
+    public static String scriptStack() {
+        return NashornException.getScriptStackString(new Throwable());
     }
 
     /**

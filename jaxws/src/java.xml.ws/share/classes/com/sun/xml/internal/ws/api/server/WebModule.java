@@ -43,7 +43,7 @@ public abstract class WebModule extends Module {
      * this URI.
      *
      * <p>
-     * This method follows the convention of the <tt>HttpServletRequest.getContextPath()</tt>,
+     * This method follows the convention of the {@code HttpServletRequest.getContextPath()},
      * and accepts strings like "http://myhost" (for web applications that are deployed
      * to the root context path), or "http://myhost/foobar" (for web applications
      * that are deployed to context path "/foobar")

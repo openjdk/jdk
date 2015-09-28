@@ -53,8 +53,8 @@ public class MethodRepository extends ConstructorRepository {
      * that this repository is servicing
      * @param f - a factory that will provide instances of reflective
      * objects when this repository converts its AST
-     * @return a <tt>MethodRepository</tt> that manages the generic type
-     * information represented in the signature <tt>rawSig</tt>
+     * @return a {@code MethodRepository} that manages the generic type
+     * information represented in the signature {@code rawSig}
      */
     public static MethodRepository make(String rawSig, GenericsFactory f) {
         return new MethodRepository(rawSig, f);

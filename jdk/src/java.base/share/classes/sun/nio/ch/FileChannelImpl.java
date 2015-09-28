@@ -44,9 +44,10 @@ import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.List;
 
+import jdk.internal.misc.JavaIOFileDescriptorAccess;
+import jdk.internal.misc.JavaNioAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.misc.Cleaner;
-import sun.misc.JavaIOFileDescriptorAccess;
-import sun.misc.SharedSecrets;
 import sun.security.action.GetPropertyAction;
 
 public class FileChannelImpl
@@ -328,6 +329,7 @@ public class FileChannelImpl
             int rv = -1;
             long p = -1;
             int ti = -1;
+            long rp = -1;
             try {
                 begin();
                 ti = threads.add();
@@ -363,8 +365,8 @@ public class FileChannelImpl
                 if (p > newSize)
                     p = newSize;
                 do {
-                    rv = (int)position0(fd, p);
-                } while ((rv == IOStatus.INTERRUPTED) && isOpen());
+                    rp = position0(fd, p);
+                } while ((rp == IOStatus.INTERRUPTED) && isOpen());
                 return this;
             } finally {
                 threads.remove(ti);
@@ -975,8 +977,8 @@ public class FileChannelImpl
      * Invoked by sun.management.ManagementFactoryHelper to create the management
      * interface for mapped buffers.
      */
-    public static sun.misc.JavaNioAccess.BufferPool getMappedBufferPool() {
-        return new sun.misc.JavaNioAccess.BufferPool() {
+    public static JavaNioAccess.BufferPool getMappedBufferPool() {
+        return new JavaNioAccess.BufferPool() {
             @Override
             public String getName() {
                 return "mapped";

@@ -26,6 +26,7 @@
 package java.lang.reflect;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.misc.SharedSecrets;
 import sun.reflect.CallerSensitive;
 import sun.reflect.MethodAccessor;
 import sun.reflect.Reflection;
@@ -626,7 +627,7 @@ public final class Method extends Executable {
             getReturnType());
         Object result = AnnotationParser.parseMemberValue(
             memberType, ByteBuffer.wrap(annotationDefault),
-            sun.misc.SharedSecrets.getJavaLangAccess().
+            SharedSecrets.getJavaLangAccess().
                 getConstantPool(getDeclaringClass()),
             getDeclaringClass());
         if (result instanceof sun.reflect.annotation.ExceptionProxy)

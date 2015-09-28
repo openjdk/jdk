@@ -33,22 +33,20 @@
 
 class ExtendedOopClosure;
 
-inline int TypeArrayKlass::oop_oop_iterate_impl(oop obj, ExtendedOopClosure* closure) {
+inline void TypeArrayKlass::oop_oop_iterate_impl(oop obj, ExtendedOopClosure* closure) {
   assert(obj->is_typeArray(),"must be a type array");
-  typeArrayOop t = typeArrayOop(obj);
   // Performance tweak: We skip iterating over the klass pointer since we
   // know that Universe::TypeArrayKlass never moves.
-  return t->object_size();
 }
 
 template <bool nv, typename OopClosureType>
-int TypeArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
-  return oop_oop_iterate_impl(obj, closure);
+void TypeArrayKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
+  oop_oop_iterate_impl(obj, closure);
 }
 
 template <bool nv, typename OopClosureType>
-int TypeArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
-  return oop_oop_iterate_impl(obj, closure);
+void TypeArrayKlass::oop_oop_iterate_bounded(oop obj, OopClosureType* closure, MemRegion mr) {
+  oop_oop_iterate_impl(obj, closure);
 }
 
 #define ALL_TYPE_ARRAY_KLASS_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)    \

@@ -56,6 +56,7 @@ class HRRSCleanupTask;
 class GenerationSpec;
 class OopsInHeapRegionClosure;
 class G1ParScanThreadState;
+class G1ParScanThreadStateSet;
 class G1KlassScanClosure;
 class G1ParScanThreadState;
 class ObjectClosure;
@@ -192,6 +193,7 @@ class G1CollectedHeap : public CollectedHeap {
 
   // Closures used in implementation.
   friend class G1ParScanThreadState;
+  friend class G1ParScanThreadStateSet;
   friend class G1ParTask;
   friend class G1PLABAllocator;
   friend class G1PrepareCompactClosure;
@@ -309,13 +311,7 @@ private:
 
   volatile unsigned _gc_time_stamp;
 
-  size_t* _surviving_young_words;
-
   G1HRPrinter _hr_printer;
-
-  void setup_surviving_young_words();
-  void update_surviving_young_words(size_t* surv_young_words);
-  void cleanup_surviving_young_words();
 
   // It decides whether an explicit GC should start a concurrent cycle
   // instead of doing a STW GC. Currently, a concurrent cycle is
@@ -584,11 +580,11 @@ protected:
 
   // Process any reference objects discovered during
   // an incremental evacuation pause.
-  void process_discovered_references(G1ParScanThreadState** per_thread_states);
+  void process_discovered_references(G1ParScanThreadStateSet* per_thread_states);
 
   // Enqueue any remaining discovered references
   // after processing.
-  void enqueue_discovered_references(G1ParScanThreadState** per_thread_states);
+  void enqueue_discovered_references(G1ParScanThreadStateSet* per_thread_states);
 
 public:
   WorkGang* workers() const { return _workers; }
@@ -683,9 +679,6 @@ public:
   // Allocates a new heap region instance.
   HeapRegion* new_heap_region(uint hrs_index, MemRegion mr);
 
-  // Allocates a new per thread par scan state for the given thread id.
-  G1ParScanThreadState* new_par_scan_state(uint worker_id);
-
   // Allocate the highest free region in the reserved heap. This will commit
   // regions as necessary.
   HeapRegion* alloc_highest_free_region();
@@ -757,6 +750,12 @@ public:
   // alloc_archive_regions, and after class loading has occurred.
   void fill_archive_regions(MemRegion* range, size_t count);
 
+  // For each of the specified MemRegions, uncommit the containing G1 regions
+  // which had been allocated by alloc_archive_regions. This should be called
+  // rather than fill_archive_regions at JVM init time if the archive file
+  // mapping failed, with the same non-overlapping and sorted MemRegion array.
+  void dealloc_archive_regions(MemRegion* range, size_t count);
+
 protected:
 
   // Shrink the garbage-first heap by at most the given size (in bytes!).
@@ -793,7 +792,7 @@ protected:
   bool do_collection_pause_at_safepoint(double target_pause_time_ms);
 
   // Actually do the work of evacuating the collection set.
-  void evacuate_collection_set(EvacuationInfo& evacuation_info);
+  void evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states);
 
   // Print the header for the per-thread termination statistics.
   static void print_termination_stats_hdr(outputStream* const st);
@@ -827,7 +826,7 @@ protected:
 
   // After a collection pause, make the regions in the CS into free
   // regions.
-  void free_collection_set(HeapRegion* cs_head, EvacuationInfo& evacuation_info);
+  void free_collection_set(HeapRegion* cs_head, EvacuationInfo& evacuation_info, const size_t* surviving_young_words);
 
   // Abandon the current collection set without recording policy
   // statistics or updating free lists.
@@ -1051,7 +1050,7 @@ public:
   // The current policy object for the collector.
   G1CollectorPolicy* g1_policy() const { return _g1_policy; }
 
-  virtual CollectorPolicy* collector_policy() const { return (CollectorPolicy*) g1_policy(); }
+  virtual CollectorPolicy* collector_policy() const;
 
   // Adaptive size policy.  No such thing for g1.
   virtual AdaptiveSizePolicy* size_policy() { return NULL; }
@@ -1604,7 +1603,6 @@ public:
 
 public:
   size_t pending_card_num();
-  size_t cards_scanned();
 
 protected:
   size_t _max_heap_capacity;

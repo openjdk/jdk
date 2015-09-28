@@ -656,7 +656,7 @@ class StubGenerator: public StubCodeGenerator {
           __ bind(filtered);
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
       case BarrierSet::ModRef:
         break;
@@ -697,7 +697,7 @@ class StubGenerator: public StubCodeGenerator {
           }
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
         {
           Label Lskip_loop, Lstore_loop;

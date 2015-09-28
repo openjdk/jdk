@@ -28,11 +28,20 @@
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
+#include "gc/shared/specialized_oop_closures.hpp"
+#include "memory/iterator.inline.hpp"
+#include "oops/instanceClassLoaderKlass.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.inline.hpp"
+#include "oops/instanceRefKlass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "utilities/macros.hpp"
+#include "utilities/stack.inline.hpp"
+#if INCLUDE_ALL_GCS
+#include "gc/g1/g1StringDedup.hpp"
+#endif // INCLUDE_ALL_GCS
 
 uint                    MarkSweep::_total_invocations = 0;
 
@@ -50,176 +59,101 @@ SerialOldTracer*        MarkSweep::_gc_tracer       = NULL;
 
 MarkSweep::FollowRootClosure  MarkSweep::follow_root_closure;
 
-void MarkSweep::FollowRootClosure::do_oop(oop* p)       { follow_root(p); }
-void MarkSweep::FollowRootClosure::do_oop(narrowOop* p) { follow_root(p); }
-
-MarkSweep::MarkAndPushClosure MarkSweep::mark_and_push_closure;
+MarkAndPushClosure            MarkSweep::mark_and_push_closure;
 CLDToOopClosure               MarkSweep::follow_cld_closure(&mark_and_push_closure);
 CLDToOopClosure               MarkSweep::adjust_cld_closure(&adjust_pointer_closure);
 
-template <typename T>
-void MarkSweep::MarkAndPushClosure::do_oop_nv(T* p)       { mark_and_push(p); }
-void MarkSweep::MarkAndPushClosure::do_oop(oop* p)        { do_oop_nv(p); }
-void MarkSweep::MarkAndPushClosure::do_oop(narrowOop* p)  { do_oop_nv(p); }
+inline void MarkSweep::mark_object(oop obj) {
+#if INCLUDE_ALL_GCS
+  if (G1StringDedup::is_enabled()) {
+    // We must enqueue the object before it is marked
+    // as we otherwise can't read the object's age.
+    G1StringDedup::enqueue_from_mark(obj);
+  }
+#endif
+  // some marks may contain information we need to preserve so we store them away
+  // and overwrite the mark.  We'll restore it at the end of markSweep.
+  markOop mark = obj->mark();
+  obj->set_mark(markOopDesc::prototype()->set_marked());
 
-void MarkSweep::follow_class_loader(ClassLoaderData* cld) {
+  if (mark->must_be_preserved(obj)) {
+    preserve_mark(obj, mark);
+  }
+}
+
+template <class T> inline void MarkSweep::mark_and_push(T* p) {
+  T heap_oop = oopDesc::load_heap_oop(p);
+  if (!oopDesc::is_null(heap_oop)) {
+    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+    if (!obj->mark()->is_marked() &&
+        !is_archive_object(obj)) {
+      mark_object(obj);
+      _marking_stack.push(obj);
+    }
+  }
+}
+
+inline void MarkSweep::follow_klass(Klass* klass) {
+  oop op = klass->klass_holder();
+  MarkSweep::mark_and_push(&op);
+}
+
+inline void MarkSweep::follow_cld(ClassLoaderData* cld) {
   MarkSweep::follow_cld_closure.do_cld(cld);
 }
 
-void InstanceKlass::oop_ms_follow_contents(oop obj) {
-  assert(obj != NULL, "can't follow the content of NULL object");
-  MarkSweep::follow_klass(this);
+template <typename T>
+inline void MarkAndPushClosure::do_oop_nv(T* p)                 { MarkSweep::mark_and_push(p); }
+void MarkAndPushClosure::do_oop(oop* p)                         { do_oop_nv(p); }
+void MarkAndPushClosure::do_oop(narrowOop* p)                   { do_oop_nv(p); }
+inline bool MarkAndPushClosure::do_metadata_nv()                { return true; }
+bool MarkAndPushClosure::do_metadata()                          { return do_metadata_nv(); }
+inline void MarkAndPushClosure::do_klass_nv(Klass* k)           { MarkSweep::follow_klass(k); }
+void MarkAndPushClosure::do_klass(Klass* k)                     { do_klass_nv(k); }
+inline void MarkAndPushClosure::do_cld_nv(ClassLoaderData* cld) { MarkSweep::follow_cld(cld); }
+void MarkAndPushClosure::do_cld(ClassLoaderData* cld)           { do_cld_nv(cld); }
 
-  oop_oop_iterate_oop_maps<true>(obj, &MarkSweep::mark_and_push_closure);
+template <class T> inline void MarkSweep::KeepAliveClosure::do_oop_work(T* p) {
+  mark_and_push(p);
 }
 
-void InstanceMirrorKlass::oop_ms_follow_contents(oop obj) {
-  InstanceKlass::oop_ms_follow_contents(obj);
+void MarkSweep::push_objarray(oop obj, size_t index) {
+  ObjArrayTask task(obj, index);
+  assert(task.is_valid(), "bad ObjArrayTask");
+  _objarray_stack.push(task);
+}
 
-  // Follow the klass field in the mirror
-  Klass* klass = java_lang_Class::as_Klass(obj);
-  if (klass != NULL) {
-    // An anonymous class doesn't have its own class loader, so the call
-    // to follow_klass will mark and push its java mirror instead of the
-    // class loader. When handling the java mirror for an anonymous class
-    // we need to make sure its class loader data is claimed, this is done
-    // by calling follow_class_loader explicitly. For non-anonymous classes
-    // the call to follow_class_loader is made when the class loader itself
-    // is handled.
-    if (klass->oop_is_instance() && InstanceKlass::cast(klass)->is_anonymous()) {
-      MarkSweep::follow_class_loader(klass->class_loader_data());
-    } else {
-      MarkSweep::follow_klass(klass);
-    }
+inline void MarkSweep::follow_array(objArrayOop array) {
+  MarkSweep::follow_klass(array->klass());
+  // Don't push empty arrays to avoid unnecessary work.
+  if (array->length() > 0) {
+    MarkSweep::push_objarray(array, 0);
+  }
+}
+
+inline void MarkSweep::follow_object(oop obj) {
+  assert(obj->is_gc_marked(), "should be marked");
+  if (obj->is_objArray()) {
+    // Handle object arrays explicitly to allow them to
+    // be split into chunks if needed.
+    MarkSweep::follow_array((objArrayOop)obj);
   } else {
-    // If klass is NULL then this a mirror for a primitive type.
-    // We don't have to follow them, since they are handled as strong
-    // roots in Universe::oops_do.
-    assert(java_lang_Class::is_primitive(obj), "Sanity check");
-  }
-
-  oop_oop_iterate_statics<true>(obj, &MarkSweep::mark_and_push_closure);
-}
-
-void InstanceClassLoaderKlass::oop_ms_follow_contents(oop obj) {
-  InstanceKlass::oop_ms_follow_contents(obj);
-
-  ClassLoaderData * const loader_data = java_lang_ClassLoader::loader_data(obj);
-
-  // We must NULL check here, since the class loader
-  // can be found before the loader data has been set up.
-  if(loader_data != NULL) {
-    MarkSweep::follow_class_loader(loader_data);
+    obj->oop_iterate(&mark_and_push_closure);
   }
 }
 
-template <class T>
-static void oop_ms_follow_contents_specialized(InstanceRefKlass* klass, oop obj) {
-  T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
-  T heap_oop = oopDesc::load_heap_oop(referent_addr);
-  debug_only(
-    if(TraceReferenceGC && PrintGCDetails) {
-      gclog_or_tty->print_cr("InstanceRefKlass::oop_ms_follow_contents_specialized " PTR_FORMAT, p2i(obj));
-    }
-  )
-  if (!oopDesc::is_null(heap_oop)) {
-    oop referent = oopDesc::decode_heap_oop_not_null(heap_oop);
-    if (!referent->is_gc_marked() &&
-        MarkSweep::ref_processor()->discover_reference(obj, klass->reference_type())) {
-      // reference was discovered, referent will be traversed later
-      klass->InstanceKlass::oop_ms_follow_contents(obj);
-      debug_only(
-        if(TraceReferenceGC && PrintGCDetails) {
-          gclog_or_tty->print_cr("       Non NULL enqueued " PTR_FORMAT, p2i(obj));
-        }
-      )
-      return;
-    } else {
-      // treat referent as normal oop
-      debug_only(
-        if(TraceReferenceGC && PrintGCDetails) {
-          gclog_or_tty->print_cr("       Non NULL normal " PTR_FORMAT, p2i(obj));
-        }
-      )
-      MarkSweep::mark_and_push(referent_addr);
-    }
-  }
-  T* next_addr = (T*)java_lang_ref_Reference::next_addr(obj);
-  // Treat discovered as normal oop, if ref is not "active",
-  // i.e. if next is non-NULL.
-  T  next_oop = oopDesc::load_heap_oop(next_addr);
-  if (!oopDesc::is_null(next_oop)) { // i.e. ref is not "active"
-    T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr(obj);
-    debug_only(
-      if(TraceReferenceGC && PrintGCDetails) {
-        gclog_or_tty->print_cr("   Process discovered as normal "
-                               PTR_FORMAT, p2i(discovered_addr));
-      }
-    )
-    MarkSweep::mark_and_push(discovered_addr);
-  }
-  // treat next as normal oop.  next is a link in the reference queue.
-  debug_only(
-    if(TraceReferenceGC && PrintGCDetails) {
-      gclog_or_tty->print_cr("   Process next as normal " PTR_FORMAT, p2i(next_addr));
-    }
-  )
-  MarkSweep::mark_and_push(next_addr);
-  klass->InstanceKlass::oop_ms_follow_contents(obj);
-}
-
-void InstanceRefKlass::oop_ms_follow_contents(oop obj) {
-  if (UseCompressedOops) {
-    oop_ms_follow_contents_specialized<narrowOop>(this, obj);
-  } else {
-    oop_ms_follow_contents_specialized<oop>(this, obj);
-  }
-}
-
-template <class T>
-static void oop_ms_follow_contents_specialized(oop obj, int index) {
-  objArrayOop a = objArrayOop(obj);
-  const size_t len = size_t(a->length());
-  const size_t beg_index = size_t(index);
+void MarkSweep::follow_array_chunk(objArrayOop array, int index) {
+  const int len = array->length();
+  const int beg_index = index;
   assert(beg_index < len || len == 0, "index too large");
 
-  const size_t stride = MIN2(len - beg_index, ObjArrayMarkingStride);
-  const size_t end_index = beg_index + stride;
-  T* const base = (T*)a->base();
-  T* const beg = base + beg_index;
-  T* const end = base + end_index;
+  const int stride = MIN2(len - beg_index, (int) ObjArrayMarkingStride);
+  const int end_index = beg_index + stride;
 
-  // Push the non-NULL elements of the next stride on the marking stack.
-  for (T* e = beg; e < end; e++) {
-    MarkSweep::mark_and_push<T>(e);
-  }
+  array->oop_iterate_range(&mark_and_push_closure, beg_index, end_index);
 
   if (end_index < len) {
-    MarkSweep::push_objarray(a, end_index); // Push the continuation.
-  }
-}
-
-void ObjArrayKlass::oop_ms_follow_contents(oop obj) {
-  assert (obj->is_array(), "obj must be array");
-  MarkSweep::follow_klass(this);
-  if (UseCompressedOops) {
-    oop_ms_follow_contents_specialized<narrowOop>(obj, 0);
-  } else {
-    oop_ms_follow_contents_specialized<oop>(obj, 0);
-  }
-}
-
-void TypeArrayKlass::oop_ms_follow_contents(oop obj) {
-  assert(obj->is_typeArray(),"must be a type array");
-  // Performance tweak: We skip iterating over the klass pointer since we
-  // know that Universe::TypeArrayKlass never moves.
-}
-
-void MarkSweep::follow_array(objArrayOop array, int index) {
-  if (UseCompressedOops) {
-    oop_ms_follow_contents_specialized<narrowOop>(array, index);
-  } else {
-    oop_ms_follow_contents_specialized<oop>(array, index);
+    MarkSweep::push_objarray(array, end_index); // Push the continuation.
   }
 }
 
@@ -233,7 +167,7 @@ void MarkSweep::follow_stack() {
     // Process ObjArrays one at a time to avoid marking stack bloat.
     if (!_objarray_stack.is_empty()) {
       ObjArrayTask task = _objarray_stack.pop();
-      follow_array(objArrayOop(task.obj()), task.index());
+      follow_array_chunk(objArrayOop(task.obj()), task.index());
     }
   } while (!_marking_stack.is_empty() || !_objarray_stack.is_empty());
 }
@@ -241,6 +175,24 @@ void MarkSweep::follow_stack() {
 MarkSweep::FollowStackClosure MarkSweep::follow_stack_closure;
 
 void MarkSweep::FollowStackClosure::do_void() { follow_stack(); }
+
+template <class T> inline void MarkSweep::follow_root(T* p) {
+  assert(!Universe::heap()->is_in_reserved(p),
+         "roots shouldn't be things within the heap");
+  T heap_oop = oopDesc::load_heap_oop(p);
+  if (!oopDesc::is_null(heap_oop)) {
+    oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+    if (!obj->mark()->is_marked() &&
+        !is_archive_object(obj)) {
+      mark_object(obj);
+      follow_object(obj);
+    }
+  }
+  follow_stack();
+}
+
+void MarkSweep::FollowRootClosure::do_oop(oop* p)       { follow_root(p); }
+void MarkSweep::FollowRootClosure::do_oop(narrowOop* p) { follow_root(p); }
 
 void PreservedMark::adjust_pointer() {
   MarkSweep::adjust_pointer(&_obj);
@@ -264,6 +216,11 @@ void MarkSweep::preserve_mark(oop obj, markOop mark) {
     _preserved_mark_stack.push(mark);
     _preserved_oop_stack.push(obj);
   }
+}
+
+void MarkSweep::set_ref_processor(ReferenceProcessor* rp) {
+  _ref_processor = rp;
+  mark_and_push_closure.set_ref_processor(_ref_processor);
 }
 
 MarkSweep::AdjustPointerClosure MarkSweep::adjust_pointer_closure;
@@ -405,3 +362,6 @@ int TypeArrayKlass::oop_ms_adjust_pointers(oop obj) {
   // know that Universe::TypeArrayKlass never moves.
   return t->object_size();
 }
+
+// Generate MS specialized oop_oop_iterate functions.
+SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_MS(ALL_KLASS_OOP_OOP_ITERATE_DEFN)

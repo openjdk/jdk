@@ -35,6 +35,8 @@ import java.util.GregorianCalendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Objects;
+import jdk.internal.misc.JavaNetHttpCookieAccess;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * An HttpCookie object represents an HTTP cookie, which carries state
@@ -971,8 +973,8 @@ public final class HttpCookie implements Cloneable {
     }
 
     static {
-        sun.misc.SharedSecrets.setJavaNetHttpCookieAccess(
-            new sun.misc.JavaNetHttpCookieAccess() {
+        SharedSecrets.setJavaNetHttpCookieAccess(
+            new JavaNetHttpCookieAccess() {
                 public List<HttpCookie> parse(String header) {
                     return HttpCookie.parse(header, true);
                 }

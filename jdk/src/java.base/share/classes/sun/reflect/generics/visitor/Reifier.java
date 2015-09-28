@@ -50,7 +50,7 @@ public class Reifier implements TypeTreeVisitor<Type> {
     /**
      * Factory method. The resulting visitor will convert an AST
      * representing generic signatures into corresponding reflective
-     * objects, using the provided factory, <tt>f</tt>.
+     * objects, using the provided factory, {@code f}.
      * @param f - a factory that can be used to manufacture reflective
      * objects returned by this visitor
      * @return A visitor that can be used to reify ASTs representing

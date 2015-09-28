@@ -139,7 +139,7 @@ public class RuntimeWSDLParser {
      * then as last option, if the wsdlLoc has no '?wsdl' as query parameter then it is tried by appending '?wsdl'.
      *
      * @param wsdlLoc
-     *      Either this or <tt>wsdl</tt> parameter must be given.
+     *      Either this or {@code wsdl} parameter must be given.
      *      Null location means the system won't be able to resolve relative references in the WSDL,
      */
     public static WSDLModel parse(@Nullable URL wsdlLoc, @NotNull Source wsdlSource, @NotNull EntityResolver resolver,
@@ -154,7 +154,7 @@ public class RuntimeWSDLParser {
      * then as last option, if the wsdlLoc has no '?wsdl' as query parameter then it is tried by appending '?wsdl'.
      *
      * @param wsdlLoc
-     *      Either this or <tt>wsdl</tt> parameter must be given.
+     *      Either this or {@code wsdl} parameter must be given.
      *      Null location means the system won't be able to resolve relative references in the WSDL,
      */
     public static WSDLModel parse(@Nullable URL wsdlLoc, @NotNull Source wsdlSource, @NotNull EntityResolver resolver,
@@ -169,7 +169,7 @@ public class RuntimeWSDLParser {
      * then as last option, if the wsdlLoc has no '?wsdl' as query parameter then it is tried by appending '?wsdl'.
      *
      * @param wsdlLoc
-     *      Either this or <tt>wsdl</tt> parameter must be given.
+     *      Either this or {@code wsdl} parameter must be given.
      *      Null location means the system won't be able to resolve relative references in the WSDL,
      */
     public static WSDLModel parse(@Nullable URL wsdlLoc, @NotNull Source wsdlSource, @NotNull EntityResolver resolver,
@@ -184,7 +184,7 @@ public class RuntimeWSDLParser {
      * then as last option, if the wsdlLoc has no '?wsdl' as query parameter then it is tried by appending '?wsdl'.
      *
      * @param wsdlLoc
-     *      Either this or <tt>wsdl</tt> parameter must be given.
+     *      Either this or {@code wsdl} parameter must be given.
      *      Null location means the system won't be able to resolve relative references in the WSDL,
      */
     public static WSDLModel parse(@Nullable URL wsdlLoc, @NotNull Source wsdlSource, @NotNull EntityResolver resolver,
@@ -200,7 +200,7 @@ public class RuntimeWSDLParser {
      * then as last option, if the wsdlLoc has no '?wsdl' as query parameter then it is tried by appending '?wsdl'.
      *
      * @param wsdlLoc
-     *      Either this or <tt>wsdl</tt> parameter must be given.
+     *      Either this or {@code wsdl} parameter must be given.
      *      Null location means the system won't be able to resolve relative references in the WSDL,
      */
     public static WSDLModel parse(@Nullable URL wsdlLoc, @NotNull Source wsdlSource, @NotNull EntityResolver resolver,

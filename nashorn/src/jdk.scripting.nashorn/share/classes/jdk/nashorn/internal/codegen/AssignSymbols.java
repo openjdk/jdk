@@ -65,17 +65,15 @@ import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LexicalContextNode;
 import jdk.nashorn.internal.ir.LiteralNode;
-import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
-import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode.ArrayUnit;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
+import jdk.nashorn.internal.ir.Splittable;
 import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.Symbol;
@@ -828,7 +826,7 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
                        lc.applyTopFlags(functionNode))))
                        .setThisProperties(lc, thisProperties.pop().size()));
         }
-        return finalizedFunction.setState(lc, CompilationState.SYMBOLS_ASSIGNED);
+        return finalizedFunction;
     }
 
     @Override
@@ -985,7 +983,7 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
         boolean previousWasBlock = false;
         for (final Iterator<LexicalContextNode> it = lc.getAllNodes(); it.hasNext();) {
             final LexicalContextNode node = it.next();
-            if (node instanceof FunctionNode || isSplitArray(node)) {
+            if (node instanceof FunctionNode || isSplitLiteral(node)) {
                 // We reached the function boundary or a splitting boundary without seeing a definition for the symbol.
                 // It needs to be in scope.
                 return true;
@@ -1011,12 +1009,8 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
         throw new AssertionError();
     }
 
-    private static boolean isSplitArray(final LexicalContextNode expr) {
-        if(!(expr instanceof ArrayLiteralNode)) {
-            return false;
-        }
-        final List<ArrayUnit> units = ((ArrayLiteralNode)expr).getUnits();
-        return !(units == null || units.isEmpty());
+    private static boolean isSplitLiteral(final LexicalContextNode expr) {
+        return expr instanceof Splittable && ((Splittable) expr).getSplitRanges() != null;
     }
 
     private void throwUnprotectedSwitchError(final VarNode varNode) {

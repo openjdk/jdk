@@ -172,8 +172,6 @@ char* GenCollectedHeap::allocate(size_t alignment,
 void GenCollectedHeap::post_initialize() {
   CollectedHeap::post_initialize();
   ref_processing_init();
-  GenCollectorPolicy *policy = (GenCollectorPolicy *)collector_policy();
-  guarantee(policy->is_generation_policy(), "Illegal policy type");
   assert((_young_gen->kind() == Generation::DefNew) ||
          (_young_gen->kind() == Generation::ParNew),
     "Wrong youngest generation type");
@@ -183,10 +181,10 @@ void GenCollectedHeap::post_initialize() {
          _old_gen->kind() == Generation::MarkSweepCompact,
     "Wrong generation kind");
 
-  policy->initialize_size_policy(def_new_gen->eden()->capacity(),
-                                 _old_gen->capacity(),
-                                 def_new_gen->from()->capacity());
-  policy->initialize_gc_policy_counters();
+  _gen_policy->initialize_size_policy(def_new_gen->eden()->capacity(),
+                                      _old_gen->capacity(),
+                                      def_new_gen->from()->capacity());
+  _gen_policy->initialize_gc_policy_counters();
 }
 
 void GenCollectedHeap::ref_processing_init() {
@@ -464,7 +462,7 @@ void GenCollectedHeap::do_collection(bool           full,
     bool prepared_for_verification = false;
     bool collected_old = false;
     bool old_collects_young = complete &&
-                              _old_gen->full_collects_younger_generations();
+                              _old_gen->full_collects_young_generation();
     if (!old_collects_young &&
         _young_gen->should_collect(full, size, is_tlab)) {
       if (run_verification && VerifyGCLevel <= 0 && VerifyBeforeGC) {
@@ -521,7 +519,7 @@ void GenCollectedHeap::do_collection(bool           full,
     // a whole heap collection.
     complete = complete || collected_old;
 
-    if (complete) { // We did a "major" collection
+    if (complete) { // We did a full collection
       // FIXME: See comment at pre_full_gc_dump call
       post_full_gc_dump(NULL);   // do any post full gc dumps
     }
@@ -668,13 +666,13 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
 
 void GenCollectedHeap::gen_process_roots(StrongRootsScope* scope,
                                          GenerationType type,
-                                         bool younger_gens_as_roots,
+                                         bool young_gen_as_roots,
                                          ScanningOption so,
                                          bool only_strong_roots,
                                          OopsInGenClosure* not_older_gens,
                                          OopsInGenClosure* older_gens,
                                          CLDClosure* cld_closure) {
-  const bool is_adjust_phase = !only_strong_roots && !younger_gens_as_roots;
+  const bool is_adjust_phase = !only_strong_roots && !young_gen_as_roots;
 
   bool is_moving_collection = false;
   if (type == YoungGen || is_adjust_phase) {
@@ -691,7 +689,7 @@ void GenCollectedHeap::gen_process_roots(StrongRootsScope* scope,
                 cld_closure, weak_cld_closure,
                 &mark_code_closure);
 
-  if (younger_gens_as_roots) {
+  if (young_gen_as_roots) {
     if (!_process_strong_tasks->is_task_claimed(GCH_PS_younger_gens)) {
       if (type == OldGen) {
         not_older_gens->set_generation(_young_gen);
@@ -763,25 +761,25 @@ HeapWord** GenCollectedHeap::end_addr() const {
 void GenCollectedHeap::collect(GCCause::Cause cause) {
   if (should_do_concurrent_full_gc(cause)) {
 #if INCLUDE_ALL_GCS
-    // mostly concurrent full collection
+    // Mostly concurrent full collection.
     collect_mostly_concurrent(cause);
 #else  // INCLUDE_ALL_GCS
     ShouldNotReachHere();
 #endif // INCLUDE_ALL_GCS
   } else if (cause == GCCause::_wb_young_gc) {
-    // minor collection for WhiteBox API
+    // Young collection for the WhiteBox API.
     collect(cause, YoungGen);
   } else {
 #ifdef ASSERT
   if (cause == GCCause::_scavenge_alot) {
-    // minor collection only
+    // Young collection only.
     collect(cause, YoungGen);
   } else {
-    // Stop-the-world full collection
+    // Stop-the-world full collection.
     collect(cause, OldGen);
   }
 #else
-    // Stop-the-world full collection
+    // Stop-the-world full collection.
     collect(cause, OldGen);
 #endif
   }
@@ -822,10 +820,11 @@ bool GenCollectedHeap::create_cms_collector() {
          "Unexpected generation kinds");
   // Skip two header words in the block content verification
   NOT_PRODUCT(_skip_header_HeapWords = CMSCollector::skip_header_HeapWords();)
-  CMSCollector* collector = new CMSCollector(
-    (ConcurrentMarkSweepGeneration*)_old_gen,
-    _rem_set->as_CardTableRS(),
-    (ConcurrentMarkSweepPolicy*) collector_policy());
+  assert(_gen_policy->is_concurrent_mark_sweep_policy(), "Unexpected policy type");
+  CMSCollector* collector =
+    new CMSCollector((ConcurrentMarkSweepGeneration*)_old_gen,
+                     _rem_set->as_CardTableRS(),
+                     _gen_policy->as_concurrent_mark_sweep_policy());
 
   if (collector == NULL || !collector->completed_initialization()) {
     if (collector) {

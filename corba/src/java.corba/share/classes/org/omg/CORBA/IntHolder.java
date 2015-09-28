@@ -30,57 +30,57 @@ import org.omg.CORBA.portable.InputStream;
 import org.omg.CORBA.portable.OutputStream;
 
 /**
- * The Holder for <tt>Int</tt>.  For more information on
+ * The Holder for {@code Int}. For more information on
  * Holder files, see <a href="doc-files/generatedfiles.html#holder">
  * "Generated Files: Holder Files"</a>.<P>
- * A Holder class for an <code>int</code>
+ * A Holder class for an {@code int}
  * that is used to store "out" and "inout" parameters in IDL methods.
- * If an IDL method signature has an IDL <code>long</code> as an "out"
+ * If an IDL method signature has an IDL {@code long} as an "out"
  * or "inout" parameter, the programmer must pass an instance of
- * <code>IntHolder</code> as the corresponding
+ * {@code IntHolder} as the corresponding
  * parameter in the method invocation; for "inout" parameters, the programmer
  * must also fill the "in" value to be sent to the server.
  * Before the method invocation returns, the ORB will fill in the
  * value corresponding to the "out" value returned from the server.
  * <P>
- * If <code>myIntHolder</code> is an instance of <code>IntHolder</code>,
- * the value stored in its <code>value</code> field can be accessed with
- * <code>myIntHolder.value</code>.
+ * If {@code myIntHolder} is an instance of {@code IntHolder},
+ * the value stored in its {@code value} field can be accessed with
+ * {@code myIntHolder.value}.
  *
  * @since       JDK1.2
  */
 public final class IntHolder implements Streamable {
 
     /**
-     * The <code>int</code> value held by this <code>IntHolder</code>
-     * object in its <code>value</code> field.
+     * The {@code int} value held by this {@code IntHolder}
+     * object in its {@code value} field.
      */
     public int value;
 
     /**
-     * Constructs a new <code>IntHolder</code> object with its
-     * <code>value</code> field initialized to <code>0</code>.
+     * Constructs a new {@code IntHolder} object with its
+     * {@code value} field initialized to {@code 0}.
      */
     public IntHolder() {
     }
 
     /**
-     * Constructs a new <code>IntHolder</code> object with its
-     * <code>value</code> field initialized to the given
-     * <code>int</code>.
-     * @param initial the <code>int</code> with which to initialize
-     *                the <code>value</code> field of the newly-created
-     *                <code>IntHolder</code> object
+     * Constructs a new {@code IntHolder} object with its
+     * {@code value} field initialized to the given
+     * {@code int}.
+     * @param initial the {@code int} with which to initialize
+     *                the {@code value} field of the newly-created
+     *                {@code IntHolder} object
      */
     public IntHolder(int initial) {
         value = initial;
     }
 
     /**
-     * Reads unmarshalled data from <code>input</code> and assigns it to
-     * the <code>value</code> field in this <code>IntHolder</code> object.
+     * Reads unmarshalled data from {@code input} and assigns it to
+     * the {@code value} field in this {@code IntHolder} object.
      *
-     * @param input the <code>InputStream</code> object containing CDR
+     * @param input the {@code InputStream} object containing CDR
      *              formatted data from the wire
      */
     public void _read(InputStream input) {
@@ -88,10 +88,10 @@ public final class IntHolder implements Streamable {
     }
 
     /**
-     * Marshals the value in this <code>IntHolder</code> object's
-     * <code>value</code> field to the output stream <code>output</code>.
+     * Marshals the value in this {@code IntHolder} object's
+     * {@code value} field to the output stream {@code output}.
      *
-     * @param output the <code>OutputStream</code> object that will contain
+     * @param output the {@code OutputStream} object that will contain
      *               the CDR formatted data
      */
     public void _write(OutputStream output) {
@@ -99,11 +99,11 @@ public final class IntHolder implements Streamable {
     }
 
     /**
-     * Retrieves the <code>TypeCode</code> object that corresponds
-     * to the value held in this <code>IntHolder</code> object's
-     * <code>value</code> field.
+     * Retrieves the {@code TypeCode} object that corresponds
+     * to the value held in this {@code IntHolder} object's
+     * {@code value} field.
      *
-     * @return    the type code for the value held in this <code>IntHolder</code>
+     * @return    the type code for the value held in this {@code IntHolder}
      *            object
      */
     public org.omg.CORBA.TypeCode _type() {

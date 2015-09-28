@@ -26,10 +26,10 @@ package org.omg.CORBA;
 
 
 /**
-* The interface for <tt>IRObject</tt>.  For more information on
-* Operations interfaces, see <a href="doc-files/generatedfiles.html#operations">
-* "Generated Files: Operations files"</a>.
-*/
+ * The interface for {@code IRObject}.  For more information on
+ * Operations interfaces, see <a href="doc-files/generatedfiles.html#operations">
+ * "Generated Files: Operations files"</a>.
+ */
 
 /*
  tempout/org/omg/CORBA/IRObjectOperations.java
@@ -39,7 +39,7 @@ package org.omg.CORBA;
 */
 
 /**
- * This is the Operations interface for the mapping from <tt>IRObject</tt>.
+ * This is the Operations interface for the mapping from {@code IRObject}.
  * Several interfaces are used as base interfaces for objects in
  * the Interface Repository (IR). These base interfaces are not instantiable.
  * A common set of operations is used to locate objects within the
@@ -59,8 +59,8 @@ public interface IRObjectOperations
 
     // read interface
     /**
-     * Returns the <code>DefinitionKind</code> corresponding to this Interface Repository object.
-     * @return the <code>DefinitionKind</code> corresponding to this Interface Repository object.
+     * Returns the {@code DefinitionKind} corresponding to this Interface Repository object.
+     * @return the {@code DefinitionKind} corresponding to this Interface Repository object.
      */
     org.omg.CORBA.DefinitionKind def_kind ();
 
@@ -70,13 +70,13 @@ public interface IRObjectOperations
      * this method is applied to all its contents. If the object contains an IDLType
      * attribute for an anonymous type, that IDLType is destroyed.
      * If the object is currently contained in some other object, it is removed.
-     * If the method is invoked on a <code>Repository</code> or on a <code>PrimitiveDef</code>
-     * then the <code>BAD_INV_ORDER</code> exception is raised with minor value 2.
+     * If the method is invoked on a {@code Repository} or on a {@code PrimitiveDef}
+     * then the {@code BAD_INV_ORDER} exception is raised with minor value 2.
      * An attempt to destroy an object that would leave the repository in an
-     * incoherent state causes <code>BAD_INV_ORDER</code> exception to be raised
+     * incoherent state causes {@code BAD_INV_ORDER} exception to be raised
      * with the minor code 1.
      * @exception BAD_INV_ORDER if this method is invoked on a repository or
-     *            <code>PrimitiveDef</code>, or if an attempt to destroy an
+     *            {@code PrimitiveDef}, or if an attempt to destroy an
      *            object would leave the repository in an incoherent state
      */
     void destroy ();

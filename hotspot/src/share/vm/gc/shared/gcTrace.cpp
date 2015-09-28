@@ -88,6 +88,8 @@ void GCTracer::report_gc_reference_stats(const ReferenceProcessorStats& rps) con
   send_reference_stats_event(REF_WEAK, rps.weak_count());
   send_reference_stats_event(REF_FINAL, rps.final_count());
   send_reference_stats_event(REF_PHANTOM, rps.phantom_count());
+  send_reference_stats_event(REF_CLEANER, rps.cleaner_count());
+  send_reference_stats_event(REF_JNI, rps.jni_weak_ref_count());
 }
 
 #if INCLUDE_SERVICES
@@ -171,6 +173,11 @@ void YoungGCTracer::report_promotion_failed(const PromotionFailedInfo& pf_info) 
 
 void YoungGCTracer::report_tenuring_threshold(const uint tenuring_threshold) {
   _tenuring_threshold = tenuring_threshold;
+}
+
+bool YoungGCTracer::should_report_promotion_events() const {
+  return should_report_promotion_in_new_plab_event() ||
+          should_report_promotion_outside_plab_event();
 }
 
 bool YoungGCTracer::should_report_promotion_in_new_plab_event() const {

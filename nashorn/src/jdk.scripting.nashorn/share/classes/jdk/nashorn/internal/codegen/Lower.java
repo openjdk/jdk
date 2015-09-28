@@ -52,7 +52,6 @@ import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.ExpressionStatement;
 import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
@@ -122,13 +121,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
                             terminated = true;
                         }
                     } else {
-                        statement.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
-                            @Override
-                            public boolean enterVarNode(final VarNode varNode) {
-                                newStatements.add(varNode.setInit(null));
-                                return false;
-                            }
-                        });
+                        FoldConstants.extractVarNodesFromDeadCode(statement, newStatements);
                     }
                 }
                 return newStatements;
@@ -276,7 +269,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
     @Override
     public Node leaveFunctionNode(final FunctionNode functionNode) {
         log.info("END FunctionNode: ", functionNode.getName());
-        return functionNode.setState(lc, CompilationState.LOWERED);
+        return functionNode;
     }
 
     @Override

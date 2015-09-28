@@ -73,7 +73,7 @@ public class ClassScope extends AbstractScope<Class<?>> implements Scope {
     }
 
     /**
-     * Factory method. Takes a <tt>Class</tt> object and creates a
+     * Factory method. Takes a {@code Class} object and creates a
      * scope for it.
      * @param c - a Class whose scope we want to obtain
      * @return The type-variable scope for the class c

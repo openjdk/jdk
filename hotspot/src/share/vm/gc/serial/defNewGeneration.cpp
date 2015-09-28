@@ -106,14 +106,14 @@ FastEvacuateFollowersClosure(GenCollectedHeap* gch,
   _gch(gch), _scan_cur_or_nonheap(cur), _scan_older(older)
 {
   assert(_gch->young_gen()->kind() == Generation::DefNew, "Generation should be DefNew");
-  _gen = (DefNewGeneration*)_gch->young_gen();
+  _young_gen = (DefNewGeneration*)_gch->young_gen();
 }
 
 void DefNewGeneration::FastEvacuateFollowersClosure::do_void() {
   do {
     _gch->oop_since_save_marks_iterate(GenCollectedHeap::YoungGen, _scan_cur_or_nonheap, _scan_older);
   } while (!_gch->no_allocs_since_save_marks());
-  guarantee(_gen->promo_failure_scan_is_complete(), "Failed to finish scan");
+  guarantee(_young_gen->promo_failure_scan_is_complete(), "Failed to finish scan");
 }
 
 ScanClosure::ScanClosure(DefNewGeneration* g, bool gc_barrier) :
@@ -200,8 +200,9 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   _from_space = new ContiguousSpace();
   _to_space   = new ContiguousSpace();
 
-  if (_eden_space == NULL || _from_space == NULL || _to_space == NULL)
+  if (_eden_space == NULL || _from_space == NULL || _to_space == NULL) {
     vm_exit_during_initialization("Could not allocate a new gen space");
+  }
 
   // Compute the maximum eden and survivor space sizes. These sizes
   // are computed assuming the entire reserved space is committed.
@@ -212,7 +213,7 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   _max_eden_size = size - (2*_max_survivor_size);
 
   // allocate the performance counters
-  GenCollectorPolicy* gcp = (GenCollectorPolicy*)gch->collector_policy();
+  GenCollectorPolicy* gcp = gch->gen_policy();
 
   // Generation counters -- generation 0, 3 subspaces
   _gen_counters = new GenerationCounters("new", 0, 3,
@@ -655,7 +656,7 @@ void DefNewGeneration::collect(bool   full,
     if (ZapUnusedHeapArea) {
       // This is now done here because of the piece-meal mangling which
       // can check for valid mangling at intermediate points in the
-      // collection(s).  When a minor collection fails to collect
+      // collection(s).  When a young collection fails to collect
       // sufficient space resizing of the young generation can occur
       // an redistribute the spaces in the young generation.  Mangle
       // here so that unzapped regions don't get distributed to

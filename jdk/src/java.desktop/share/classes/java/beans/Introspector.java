@@ -47,9 +47,9 @@ import java.util.Iterator;
 import java.util.EventObject;
 import java.util.List;
 import java.util.TreeMap;
-import sun.misc.JavaBeansAccess;
 
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaBeansAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.reflect.misc.ReflectUtil;
 
 /**

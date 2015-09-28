@@ -57,8 +57,7 @@ TenuredGeneration::TenuredGeneration(ReservedSpace rs,
   // initialize performance counters
 
   const char* gen_name = "old";
-  GenCollectorPolicy* gcp = (GenCollectorPolicy*) GenCollectedHeap::heap()->collector_policy();
-
+  GenCollectorPolicy* gcp = GenCollectedHeap::heap()->gen_policy();
   // Generation Counters -- generation 1, 1 subspace
   _gen_counters = new GenerationCounters(gen_name, 1, 1,
       gcp->min_old_size(), gcp->max_old_size(), &_virtual_space);
@@ -108,7 +107,7 @@ bool TenuredGeneration::should_collect(bool  full,
                     free());
     }
   }
-  // If we had to expand to accommodate promotions from younger generations
+  // If we had to expand to accommodate promotions from the young generation
   if (!result && _capacity_at_prologue < capacity()) {
     result = true;
     if (PrintGC && Verbose) {
@@ -140,11 +139,11 @@ void TenuredGeneration::update_gc_stats(Generation* current_generation,
   // that are of interest at this point.
   bool current_is_young = GenCollectedHeap::heap()->is_young_gen(current_generation);
   if (!full && current_is_young) {
-    // Calculate size of data promoted from the younger generations
+    // Calculate size of data promoted from the young generation
     // before doing the collection.
     size_t used_before_gc = used();
 
-    // If the younger gen collections were skipped, then the
+    // If the young gen collection was skipped, then the
     // number of promoted bytes will be 0 and adding it to the
     // average will incorrectly lessen the average.  It is, however,
     // also possible that no promotion was needed.

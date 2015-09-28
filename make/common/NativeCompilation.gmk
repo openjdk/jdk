@@ -102,7 +102,7 @@ $(eval $(call DefineNativeToolchain, TOOLCHAIN_BUILD, \
 ################################################################################
 
 # Extensions of files handled by this macro.
-NATIVE_SOURCE_EXTENSIONS := %.s %.c %.cpp %.m %.mm
+NATIVE_SOURCE_EXTENSIONS := %.s %.c %.cpp %.cc %.m %.mm
 
 # Replaces native source extensions with the object file extension in a string.
 # Param 1: the string containing source file names with extensions
@@ -167,7 +167,7 @@ define add_native_source
     $1_$2_FLAGS=$8 -DTHIS_FILE='"$$(<F)"'
     $1_$2_COMP=$(AS)
     $1_$2_DEP_FLAG:=
-  else ifneq (,$$(filter %.cpp,$2)$$(filter %.mm,$2))
+  else ifneq (,$$(filter %.cpp,$2)$$(filter %.cc,$2)$$(filter %.mm,$2))
     # Compile as a C++ or Objective-C++ file
     $1_$2_FLAGS=$(CFLAGS_CCACHE) $6 $$($1_$(notdir $2)_CXXFLAGS) -DTHIS_FILE='"$$(<F)"' -c
     $1_$2_COMP=$7
@@ -204,18 +204,18 @@ define add_native_source
           ifeq ($(TOOLCHAIN_TYPE)$$(filter %.s,$2), solstudio)
             # The Solaris studio compiler doesn't output the full path to the object file in the
             # generated deps files. Fixing it with sed. If compiling assembly, don't try this.
-	    $(call LogFailures, $$($1_$2_OBJ).log, $1_$$(notdir $2), \
+	    $(call LogFailures, $$($1_$2_OBJ).log, $$($1_SAFE_NAME)_$$(notdir $2), \
 	        $$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEP_FLAG) $$($1_$2_DEP).tmp $(CC_OUT_OPTION)$$($1_$2_OBJ) $2)
 	    $(SED) 's|^$$(@F):|$$@:|' $$($1_$2_DEP).tmp > $$($1_$2_DEP)
           else
-	    $(call LogFailures, $$($1_$2_OBJ).log, $1_$$(notdir $2), \
+	    $(call LogFailures, $$($1_$2_OBJ).log, $$($1_SAFE_NAME)_$$(notdir $2), \
 	        $$($1_$2_COMP) $$($1_$2_FLAGS) $$($1_$2_DEP_FLAG) $$($1_$2_DEP) $(CC_OUT_OPTION)$$($1_$2_OBJ) $2)
           endif
         else
           # The Visual Studio compiler lacks a feature for generating make dependencies, but by
           # setting -showIncludes, all included files are printed. These are filtered out and
           # parsed into make dependences.
-	  ($(call LogFailures, $$($1_$2_OBJ).log, $1_$$(notdir $2), \
+	  ($(call LogFailures, $$($1_$2_OBJ).log, $$($1_SAFE_NAME)_$$(notdir $2), \
 	      $$($1_$2_COMP) $$($1_$2_FLAGS) -showIncludes $$($1_$2_DEBUG_OUT_FLAGS) \
 	          $(CC_OUT_OPTION)$$($1_$2_OBJ) $2) ; echo $$$$? > $$($1_$2_DEP).exitvalue) \
 	      | $(TEE) $$($1_$2_DEP).raw | $(GREP) -v -e "^Note: including file:" \
@@ -353,6 +353,7 @@ define SetupNativeCompilationBody
     $1_TARGET:=$$($1_OUTPUT_DIR)/$$($1_BASENAME)
     $1_NOSUFFIX:=$$($1_PROGRAM)
   endif
+  $1_SAFE_NAME := $$(strip $$(subst /,_, $1))
 
   ifeq (,$$($1_TARGET))
     $$(error Neither PROGRAM, LIBRARY nor STATIC_LIBRARY has been specified for SetupNativeCompilation)
@@ -413,6 +414,10 @@ define SetupNativeCompilationBody
   endif
 
   $1_SRCS += $$($1_EXTRA_FILES)
+
+  ifeq (,$$($1_SRCS))
+    $$(error No sources found for $1 when looking inside the dirs $$($1_SRC))
+  endif
 
   # Calculate the expected output from compiling the sources (sort to remove duplicates. Also provides
   # a reproducable order on the input files to the linker).
@@ -549,8 +554,8 @@ define SetupNativeCompilationBody
         else
 	  $(ECHO) $$(strip 'Updating $$($1_BASENAME)' \
 	      $$(if $$(filter-out %.vardeps, $$?), \
-	        'from $$(words $$(filter-out %.vardeps, $$?)) file(s)') \
-	      $$(if $$(filter %.vardeps, $$?), 'due to makefile changes'))
+	        'due to $$(words $$(filter-out %.vardeps, $$?)) file(s)', \
+	      $$(if $$(filter %.vardeps, $$?), 'due to makefile changes')))
         endif
 	$(TOUCH) $$@
 
@@ -674,7 +679,7 @@ define SetupNativeCompilationBody
     $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_REAL_MAPFILE) \
         $$($1_VARDEPS_FILE)
 		$(ECHO) $(LOG_INFO) "Linking $$($1_BASENAME)"
-		$(call LogFailures, $$($1_OBJECT_DIR)/$1_link.log, $1_link, \
+		$(call LogFailures, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link.log, $$($1_SAFE_NAME)_link, \
 		    $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
 		    $(LD_OUT_OPTION)$$@ \
 		    $$($1_EXPECTED_OBJS) $$($1_RES) \
@@ -697,7 +702,7 @@ define SetupNativeCompilationBody
     # Generating a static library, ie object file archive.
     $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_VARDEPS_FILE)
 	$(ECHO) $(LOG_INFO) "Archiving $$($1_STATIC_LIBRARY)"
-	$(call LogFailures, $$($1_OBJECT_DIR)/$1_link.log, $1_link, \
+	$(call LogFailures, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link.log, $$($1_SAFE_NAME)_link, \
 	    $$($1_AR) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_EXPECTED_OBJS) \
 	        $$($1_RES) $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX))
   endif
@@ -715,7 +720,7 @@ define SetupNativeCompilationBody
     $$($1_TARGET): $$($1_EXPECTED_OBJS) $$($1_RES) $$($1_MANIFEST) \
         $$($1_VARDEPS_FILE)
 		$(ECHO) $(LOG_INFO) "Linking executable $$($1_BASENAME)"
-		$(call LogFailures, $$($1_OBJECT_DIR)/$1_link.log, $1_link, \
+		$(call LogFailures, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link.log, $$($1_SAFE_NAME)_link, \
 		    $$($1_LD) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) $$($1_SYSROOT_LDFLAGS) \
 		        $(EXE_OUT_OPTION)$$($1_TARGET) \
 		        $$($1_EXPECTED_OBJS) $$($1_RES) \

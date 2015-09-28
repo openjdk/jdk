@@ -172,6 +172,7 @@ class YoungGCTracer : public GCTracer {
    *
    * plab_size is the size of the newly allocated PLAB in bytes.
    */
+  bool should_report_promotion_events() const;
   bool should_report_promotion_in_new_plab_event() const;
   bool should_report_promotion_outside_plab_event() const;
   void report_promotion_in_new_plab_event(Klass* klass, size_t obj_size,

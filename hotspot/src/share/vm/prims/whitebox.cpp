@@ -27,7 +27,6 @@
 #include <new>
 
 #include "classfile/classLoaderData.hpp"
-#include "classfile/imageFile.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
@@ -56,6 +55,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/parallel/parallelScavengeHeap.inline.hpp"
+#include "gc/parallel/adjoiningGenerations.hpp"
 #endif // INCLUDE_ALL_GCS
 #if INCLUDE_NMT
 #include "services/mallocSiteTable.hpp"
@@ -297,6 +297,11 @@ WB_ENTRY(jlong, WB_GetObjectSize(JNIEnv* env, jobject o, jobject obj))
   return p->size() * HeapWordSize;
 WB_END
 
+WB_ENTRY(jlong, WB_GetHeapSpaceAlignment(JNIEnv* env, jobject o))
+  size_t alignment = Universe::heap()->collector_policy()->space_alignment();
+  return (jlong)alignment;
+WB_END
+
 #if INCLUDE_ALL_GCS
 WB_ENTRY(jboolean, WB_G1IsHumongous(JNIEnv* env, jobject o, jobject obj))
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
@@ -333,6 +338,17 @@ WB_END
 
 WB_ENTRY(jint, WB_G1RegionSize(JNIEnv* env, jobject o))
   return (jint)HeapRegion::GrainBytes;
+WB_END
+
+WB_ENTRY(jlong, WB_PSVirtualSpaceAlignment(JNIEnv* env, jobject o))
+  ParallelScavengeHeap* ps = ParallelScavengeHeap::heap();
+  size_t alignment = ps->gens()->virtual_spaces()->alignment();
+  return (jlong)alignment;
+WB_END
+
+WB_ENTRY(jlong, WB_PSHeapGenerationAlignment(JNIEnv* env, jobject o))
+  size_t alignment = ParallelScavengeHeap::heap()->generation_alignment();
+  return (jlong)alignment;
 WB_END
 
 WB_ENTRY(jobject, WB_G1AuxiliaryMemoryUsage(JNIEnv* env))
@@ -1025,11 +1041,18 @@ CodeBlob* WhiteBox::allocate_code_blob(int size, int blob_type) {
 }
 
 WB_ENTRY(jlong, WB_AllocateCodeBlob(JNIEnv* env, jobject o, jint size, jint blob_type))
-    return (jlong) WhiteBox::allocate_code_blob(size, blob_type);
+  if (size < 0) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+      err_msg("WB_AllocateCodeBlob: size is negative: " INT32_FORMAT, size));
+  }
+  return (jlong) WhiteBox::allocate_code_blob(size, blob_type);
 WB_END
 
 WB_ENTRY(void, WB_FreeCodeBlob(JNIEnv* env, jobject o, jlong addr))
-    BufferBlob::free((BufferBlob*) addr);
+  if (addr == 0) {
+    return;
+  }
+  BufferBlob::free((BufferBlob*) addr);
 WB_END
 
 WB_ENTRY(jobjectArray, WB_GetCodeHeapEntries(JNIEnv* env, jobject o, jint blob_type))
@@ -1074,9 +1097,13 @@ WB_ENTRY(jint, WB_GetCompilationActivityMode(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jobjectArray, WB_GetCodeBlob(JNIEnv* env, jobject o, jlong addr))
-    ThreadToNativeFromVM ttn(thread);
-    CodeBlobStub stub((CodeBlob*) addr);
-    return codeBlob2objectArray(thread, env, &stub);
+  if (addr == 0) {
+    THROW_MSG_NULL(vmSymbols::java_lang_NullPointerException(),
+      "WB_GetCodeBlob: addr is null");
+  }
+  ThreadToNativeFromVM ttn(thread);
+  CodeBlobStub stub((CodeBlob*) addr);
+  return codeBlob2objectArray(thread, env, &stub);
 WB_END
 
 WB_ENTRY(jlong, WB_GetThreadStackSize(JNIEnv* env, jobject o))
@@ -1144,131 +1171,7 @@ WB_ENTRY(jlong, WB_MetaspaceCapacityUntilGC(JNIEnv* env, jobject wb))
   return (jlong) MetaspaceGC::capacity_until_GC();
 WB_END
 
-WB_ENTRY(jboolean, WB_ReadImageFile(JNIEnv* env, jobject wb, jstring imagefile))
-  const char* filename = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(imagefile));
-  return ImageFileReader::open(filename) != NULL;
-WB_END
 
-WB_ENTRY(jlong, WB_imageOpenImage(JNIEnv *env, jobject wb, jstring path, jboolean big_endian))
-  ThreadToNativeFromVM ttn(thread);
-  const char *nativePath = env->GetStringUTFChars(path, NULL);
-  jlong ret = JVM_ImageOpen(env, nativePath, big_endian);
-
-  env->ReleaseStringUTFChars(path, nativePath);
-  return ret;
-WB_END
-
-WB_ENTRY(void, WB_imageCloseImage(JNIEnv *env, jobject wb, jlong id))
-  ThreadToNativeFromVM ttn(thread);
-  JVM_ImageClose(env, id);
-WB_END
-
-WB_ENTRY(jlong, WB_imageGetIndexAddress(JNIEnv *env, jobject wb, jlong id))
-  ThreadToNativeFromVM ttn(thread);
-  return JVM_ImageGetIndexAddress(env, id);
-WB_END
-
-WB_ENTRY(jlong, WB_imageGetDataAddress(JNIEnv *env, jobject wb, jlong id))
-  ThreadToNativeFromVM ttn(thread);
-  return JVM_ImageGetDataAddress(env, id);
-WB_END
-
-WB_ENTRY(jboolean, WB_imageRead(JNIEnv *env, jobject wb, jlong id, jlong offset, jobject uncompressedBuffer, jlong uncompressed_size))
-  ThreadToNativeFromVM ttn(thread);
-  if (uncompressedBuffer == NULL) {
-    return JNI_FALSE;
-  }
-  unsigned char* uncompressedAddress =
-          (unsigned char*) env->GetDirectBufferAddress(uncompressedBuffer);
-  return JVM_ImageRead(env, id, offset, uncompressedAddress, uncompressed_size);
-WB_END
-
-WB_ENTRY(jboolean, WB_imageReadCompressed(JNIEnv *env, jobject wb, jlong id, jlong offset, jobject compressedBuffer, jlong compressed_size, jobject uncompressedBuffer, jlong uncompressed_size))
-  ThreadToNativeFromVM ttn(thread);
-  if (uncompressedBuffer == NULL || compressedBuffer == NULL) {
-    return false;
-  }
-  // Get address of read direct buffer.
-  unsigned char* compressedAddress =
-        (unsigned char*) env->GetDirectBufferAddress(compressedBuffer);
-  // Get address of decompression direct buffer.
-  unsigned char* uncompressedAddress =
-        (unsigned char*) env->GetDirectBufferAddress(uncompressedBuffer);
-  return JVM_ImageReadCompressed(env, id, offset, compressedAddress, compressed_size, uncompressedAddress, uncompressed_size);
-WB_END
-
-WB_ENTRY(jbyteArray, WB_imageGetStringBytes(JNIEnv *env, jobject wb, jlong id, jlong offset))
-  ThreadToNativeFromVM ttn(thread);
-  const char* data = JVM_ImageGetStringBytes(env, id, offset);
-  // Determine String length.
-  size_t size = strlen(data);
-  // Allocate byte array.
-  jbyteArray byteArray = env->NewByteArray((jsize) size);
-  // Get array base address.
-  jbyte* rawBytes = env->GetByteArrayElements(byteArray, NULL);
-  // Copy bytes from image string table.
-  memcpy(rawBytes, data, size);
-  // Release byte array base address.
-  env->ReleaseByteArrayElements(byteArray, rawBytes, 0);
-  return byteArray;
-WB_END
-
-WB_ENTRY(jlong, WB_imageGetStringsSize(JNIEnv *env, jobject wb, jlong id))
-  ImageFileReader* reader = ImageFileReader::idToReader(id);
-  return reader? reader->strings_size() : 0L;
-WB_END
-
-WB_ENTRY(jlongArray, WB_imageGetAttributes(JNIEnv *env, jobject wb, jlong id, jint offset))
-  ThreadToNativeFromVM ttn(thread);
-  // Allocate a jlong large enough for all location attributes.
-  jlongArray attributes = env->NewLongArray(JVM_ImageGetAttributesCount(env));
-  // Get base address for jlong array.
-  jlong* rawAttributes = env->GetLongArrayElements(attributes, NULL);
-  jlong* ret = JVM_ImageGetAttributes(env, rawAttributes, id, offset);
-  // Release jlong array base address.
-  env->ReleaseLongArrayElements(attributes, rawAttributes, 0);
-    return ret == NULL ? NULL : attributes;
-WB_END
-
-WB_ENTRY(jlongArray, WB_imageFindAttributes(JNIEnv *env, jobject wb, jlong id, jbyteArray utf8))
-  ThreadToNativeFromVM ttn(thread);
-  // Allocate a jlong large enough for all location attributes.
-  jlongArray attributes = env->NewLongArray(JVM_ImageGetAttributesCount(env));
-  // Get base address for jlong array.
-  jlong* rawAttributes = env->GetLongArrayElements(attributes, NULL);
-  jsize size = env->GetArrayLength(utf8);
-  jbyte* rawBytes = env->GetByteArrayElements(utf8, NULL);
-  jlong* ret = JVM_ImageFindAttributes(env, rawAttributes, rawBytes, size, id);
-  env->ReleaseByteArrayElements(utf8, rawBytes, 0);
-  env->ReleaseLongArrayElements(attributes, rawAttributes, 0);
-  return ret == NULL ? NULL : attributes;
-WB_END
-
-WB_ENTRY(jintArray, WB_imageAttributeOffsets(JNIEnv *env, jobject wb, jlong id))
-  ThreadToNativeFromVM ttn(thread);
-  unsigned int length = JVM_ImageAttributeOffsetsLength(env, id);
-  if (length == 0) {
-    return NULL;
-  }
-  jintArray offsets = env->NewIntArray(length);
-  // Get base address of result.
-  jint* rawOffsets = env->GetIntArrayElements(offsets, NULL);
-  jint* ret = JVM_ImageAttributeOffsets(env, rawOffsets, length, id);
-  // Release result base address.
-  env->ReleaseIntArrayElements(offsets, rawOffsets, 0);
-  return ret == NULL ? NULL : offsets;
-WB_END
-
-WB_ENTRY(jint, WB_imageGetIntAtAddress(JNIEnv *env, jobject wb, jlong address, jint offset, jboolean big_endian))
-  unsigned char* arr = (unsigned char*) address + offset;
-  jint uraw;
-  if (big_endian) {
-     uraw = arr[0] << 24 | arr[1]<<16 | (arr[2]<<8) | arr[3];
-  } else {
-      uraw = arr[0] | arr[1]<<8 | (arr[2]<<16) | arr[3]<<24;
-  }
-  return uraw;
-WB_END
 
 WB_ENTRY(void, WB_AssertMatchingSafepointCalls(JNIEnv* env, jobject o, jboolean mutexSafepointValue, jboolean attemptedNoSafepointValue))
   Monitor::SafepointCheckRequired sfpt_check_required = mutexSafepointValue ?
@@ -1457,6 +1360,7 @@ static JNINativeMethod methods[] = {
   {CC"getVMPageSize",                    CC"()I",                   (void*)&WB_GetVMPageSize     },
   {CC"getVMAllocationGranularity",       CC"()J",                   (void*)&WB_GetVMAllocationGranularity },
   {CC"getVMLargePageSize",               CC"()J",                   (void*)&WB_GetVMLargePageSize},
+  {CC"getHeapSpaceAlignment",            CC"()J",                   (void*)&WB_GetHeapSpaceAlignment},
   {CC"isClassAlive0",                    CC"(Ljava/lang/String;)Z", (void*)&WB_IsClassAlive      },
   {CC"parseCommandLine0",
       CC"(Ljava/lang/String;C[Lsun/hotspot/parser/DiagnosticCommand;)[Ljava/lang/Object;",
@@ -1481,6 +1385,8 @@ static JNINativeMethod methods[] = {
   {CC"g1StartConcMarkCycle",       CC"()Z",           (void*)&WB_G1StartMarkCycle  },
   {CC"g1AuxiliaryMemoryUsage", CC"()Ljava/lang/management/MemoryUsage;",
                                                       (void*)&WB_G1AuxiliaryMemoryUsage  },
+  {CC"psVirtualSpaceAlignment",CC"()J",               (void*)&WB_PSVirtualSpaceAlignment},
+  {CC"psHeapGenerationAlignment",CC"()J",             (void*)&WB_PSHeapGenerationAlignment},
 #endif // INCLUDE_ALL_GCS
 #if INCLUDE_NMT
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
@@ -1576,21 +1482,6 @@ static JNINativeMethod methods[] = {
   {CC"getCodeBlob",        CC"(J)[Ljava/lang/Object;",(void*)&WB_GetCodeBlob        },
   {CC"getThreadStackSize", CC"()J",                   (void*)&WB_GetThreadStackSize },
   {CC"getThreadRemainingStackSize", CC"()J",          (void*)&WB_GetThreadRemainingStackSize },
-  {CC"readImageFile",      CC"(Ljava/lang/String;)Z", (void*)&WB_ReadImageFile },
-  {CC"imageOpenImage",     CC"(Ljava/lang/String;Z)J",(void*)&WB_imageOpenImage },
-  {CC"imageCloseImage",    CC"(J)V",                  (void*)&WB_imageCloseImage },
-  {CC"imageGetIndexAddress",CC"(J)J",                 (void*)&WB_imageGetIndexAddress},
-  {CC"imageGetDataAddress",CC"(J)J",                  (void*)&WB_imageGetDataAddress},
-  {CC"imageRead",          CC"(JJLjava/nio/ByteBuffer;J)Z",
-                                                      (void*)&WB_imageRead    },
-  {CC"imageReadCompressed",CC"(JJLjava/nio/ByteBuffer;JLjava/nio/ByteBuffer;J)Z",
-                                                      (void*)&WB_imageReadCompressed},
-  {CC"imageGetStringBytes",CC"(JI)[B",                (void*)&WB_imageGetStringBytes},
-  {CC"imageGetStringsSize",CC"(J)J",                  (void*)&WB_imageGetStringsSize},
-  {CC"imageGetAttributes", CC"(JI)[J",                (void*)&WB_imageGetAttributes},
-  {CC"imageFindAttributes",CC"(J[B)[J",               (void*)&WB_imageFindAttributes},
-  {CC"imageAttributeOffsets",CC"(J)[I",               (void*)&WB_imageAttributeOffsets},
-  {CC"imageGetIntAtAddress",CC"(JIZ)I",                (void*)&WB_imageGetIntAtAddress},
   {CC"assertMatchingSafepointCalls", CC"(ZZ)V",       (void*)&WB_AssertMatchingSafepointCalls },
   {CC"isMonitorInflated0", CC"(Ljava/lang/Object;)Z", (void*)&WB_IsMonitorInflated  },
   {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },

@@ -4143,6 +4143,7 @@ bool MatchRule::is_vector() const {
     "SubVB","SubVS","SubVI","SubVL","SubVF","SubVD",
     "MulVS","MulVI","MulVL","MulVF","MulVD",
     "DivVF","DivVD",
+    "SqrtVD",
     "AndV" ,"XorV" ,"OrV",
     "AddReductionVI", "AddReductionVL",
     "AddReductionVF", "AddReductionVD",

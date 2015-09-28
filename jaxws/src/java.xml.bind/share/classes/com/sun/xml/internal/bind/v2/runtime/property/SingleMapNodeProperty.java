@@ -134,7 +134,7 @@ final class SingleMapNodeProperty<BeanT,ValueT extends Map> extends PropertyImpl
     private Loader valueLoader;
 
     /**
-     * Handles &lt;items> and &lt;/items>.
+     * Handles {@code <items>} and {@code </items>}.
      *
      * The target will be set to a {@link Map}.
      */
@@ -190,7 +190,7 @@ final class SingleMapNodeProperty<BeanT,ValueT extends Map> extends PropertyImpl
     };
 
     /**
-     * Handles &lt;entry> and &lt;/entry>.
+     * Handles {@code <entry>} and {@code </entry>}.
      *
      * The target will be set to a {@link Map}.
      */

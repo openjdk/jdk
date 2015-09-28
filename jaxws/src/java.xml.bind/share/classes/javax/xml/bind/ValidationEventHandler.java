@@ -39,7 +39,7 @@ package javax.xml.bind;
  * handlers.
  *
  * <p>
- * If the <tt>handleEvent</tt> method throws an unchecked runtime exception,
+ * If the {@code handleEvent} method throws an unchecked runtime exception,
  * the JAXB Provider must treat that as if the method returned false, effectively
  * terminating whatever operation was in progress at the time (unmarshal,
  * validate, or marshal).
@@ -49,7 +49,7 @@ package javax.xml.bind;
  * by the specification and may result in unexpected behaviour.
  *
  * <p>
- * Failing to return false from the <tt>handleEvent</tt> method after
+ * Failing to return false from the {@code handleEvent} method after
  * encountering a fatal error is undefined by the specification and may result
  * in unexpected behavior.
  *
@@ -59,7 +59,9 @@ package javax.xml.bind;
  *    See: <a href="Validator.html#defaulthandler">Validator javadocs</a>
  * </blockquote>
  *
- * @author <ul><li>Ryan Shoemaker, Sun Microsystems, Inc.</li><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li><li>Joe Fialli, Sun Microsystems, Inc.</li></ul>
+ * @author <ul><li>Ryan Shoemaker, Sun Microsystems, Inc.</li>
+ *             <li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li>
+ *             <li>Joe Fialli, Sun Microsystems, Inc.</li></ul>
  * @see Unmarshaller
  * @see Validator
  * @see Marshaller
@@ -85,8 +87,8 @@ public interface ValidationEventHandler {
      * @return true if the JAXB Provider should attempt to continue the current
      *         unmarshal, validate, or marshal operation after handling this
      *         warning/error, false if the provider should terminate the current
-     *         operation with the appropriate <tt>UnmarshalException</tt>,
-     *         <tt>ValidationException</tt>, or <tt>MarshalException</tt>.
+     *         operation with the appropriate {@code UnmarshalException},
+     *         {@code ValidationException}, or {@code MarshalException}.
      * @throws IllegalArgumentException if the event object is null.
      */
     public boolean handleEvent( ValidationEvent event );

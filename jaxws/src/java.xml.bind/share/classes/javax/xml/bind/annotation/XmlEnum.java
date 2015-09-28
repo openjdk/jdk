@@ -39,7 +39,7 @@ import java.lang.annotation.Target;
  *
  * <p> <b>Usage</b> </p>
  * <p>
- * The <tt>@XmlEnum</tt> annotation can be used with the
+ * The {@code @XmlEnum} annotation can be used with the
  * following program elements:
  * <ul>
  *   <li>enum type</li>
@@ -56,9 +56,9 @@ import java.lang.annotation.Target;
  *
  * <p>An enum type is mapped to a schema simple type with enumeration
  * facets. The schema type is derived from the Java type to which
- * <tt>@XmlEnum.value()</tt>. Each enum constant <tt>@XmlEnumValue</tt>
+ * {@code @XmlEnum.value()}. Each enum constant {@code @XmlEnumValue}
  * must have a valid lexical representation for the type
- * <tt>@XmlEnum.value()</tt> .
+ * {@code @XmlEnum.value()}.
  *
  * <p><b>Examples:</b> See examples in {@link XmlEnumValue}
  *
