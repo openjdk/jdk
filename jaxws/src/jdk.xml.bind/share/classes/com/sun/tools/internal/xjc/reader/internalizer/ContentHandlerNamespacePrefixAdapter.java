@@ -37,13 +37,13 @@ import org.xml.sax.helpers.XMLFilterImpl;
 
 /**
  * {@link XMLReader} filter for supporting
- * <tt>http://xml.org/sax/features/namespace-prefixes</tt> feature.
+ * {@code http://xml.org/sax/features/namespace-prefixes} feature.
  *
  * @author Kohsuke Kawaguchi
  */
 final class ContentHandlerNamespacePrefixAdapter extends XMLFilterImpl {
     /**
-     * True if <tt>http://xml.org/sax/features/namespace-prefixes</tt> is set to true.
+     * True if {@code http://xml.org/sax/features/namespace-prefixes} is set to true.
      */
     private boolean namespacePrefixes = false;
 

@@ -63,8 +63,8 @@ public class ClassRepository extends GenericDeclRepository<ClassSignature> {
      * that this repository is servicing
      * @param f - a factory that will provide instances of reflective
      * objects when this repository converts its AST
-     * @return a <tt>ClassRepository</tt> that manages the generic type
-     * information represented in the signature <tt>rawSig</tt>
+     * @return a {@code ClassRepository} that manages the generic type
+     * information represented in the signature {@code rawSig}
      */
     public static ClassRepository make(String rawSig, GenericsFactory f) {
         return new ClassRepository(rawSig, f);

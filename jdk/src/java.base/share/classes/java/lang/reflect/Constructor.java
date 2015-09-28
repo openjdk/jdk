@@ -25,6 +25,7 @@
 
 package java.lang.reflect;
 
+import jdk.internal.misc.SharedSecrets;
 import sun.reflect.CallerSensitive;
 import sun.reflect.ConstructorAccessor;
 import sun.reflect.Reflection;
@@ -582,7 +583,7 @@ public final class Constructor<T> extends Executable {
 
         // A Constructor for an inner class
         return TypeAnnotationParser.buildAnnotatedType(getTypeAnnotationBytes0(),
-                sun.misc.SharedSecrets.getJavaLangAccess().
+                SharedSecrets.getJavaLangAccess().
                     getConstantPool(thisDeclClass),
                 this,
                 thisDeclClass,

@@ -135,12 +135,12 @@ public final class QNameMap<V> {
 
     /**
      * Returns the value to which the specified keys are mapped in this QNameMap,
-     * or <tt>null</tt> if the map contains no mapping for this key.
+     * or {@code null} if the map contains no mapping for this key.
      *
      * @param   nsUri the namespaceUri key whose associated value is to be returned.
      * @param   localPart the localPart key whose associated value is to be returned.
      * @return  the value to which this map maps the specified set of keya, or
-     *          <tt>null</tt> if the map contains no mapping for this set of keys.
+     *          {@code null} if the map contains no mapping for this set of keys.
      * @see #put(String,String, Object)
      */
     public V get( String nsUri, String localPart ) {

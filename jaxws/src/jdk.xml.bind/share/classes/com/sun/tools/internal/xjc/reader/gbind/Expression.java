@@ -35,12 +35,12 @@ import java.util.Set;
 public abstract class Expression {
 
     /**
-     * Computes <tt>LAST(exp)</tt>
+     * Computes {@code LAST(exp)}
      */
     abstract ElementSet lastSet();
 
     /**
-     * True of <tt>\epsilon \in L(exp)</tt>
+     * True of {@code \epsilon \in L(exp)}
      */
     abstract boolean isNullable();
 

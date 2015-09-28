@@ -283,17 +283,17 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             Klass*)                                \
   volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              Klass*)                                \
   nonstatic_field(ArrayKlass,                  _vtable_len,                                   int)                                   \
-  nonstatic_field(CompiledICHolder,     _holder_method,                                Method*)                               \
-  nonstatic_field(CompiledICHolder,     _holder_klass,                                 Klass*)                                \
-  nonstatic_field(ConstantPool,         _tags,                                         Array<u1>*)                            \
-  nonstatic_field(ConstantPool,         _cache,                                        ConstantPoolCache*)                    \
-  nonstatic_field(ConstantPool,         _pool_holder,                                  InstanceKlass*)                        \
-  nonstatic_field(ConstantPool,         _operands,                                     Array<u2>*)                            \
-  nonstatic_field(ConstantPool,         _length,                                       int)                                   \
-  nonstatic_field(ConstantPool,         _resolved_references,                          jobject)                               \
-  nonstatic_field(ConstantPool,         _reference_map,                                Array<u2>*)                            \
-  nonstatic_field(ConstantPoolCache,    _length,                                       int)                                   \
-  nonstatic_field(ConstantPoolCache,    _constant_pool,                                ConstantPool*)                         \
+  nonstatic_field(CompiledICHolder,            _holder_method,                                Method*)                               \
+  nonstatic_field(CompiledICHolder,            _holder_klass,                                 Klass*)                                \
+  nonstatic_field(ConstantPool,                _tags,                                         Array<u1>*)                            \
+  nonstatic_field(ConstantPool,                _cache,                                        ConstantPoolCache*)                    \
+  nonstatic_field(ConstantPool,                _pool_holder,                                  InstanceKlass*)                        \
+  nonstatic_field(ConstantPool,                _operands,                                     Array<u2>*)                            \
+  nonstatic_field(ConstantPool,                _length,                                       int)                                   \
+  nonstatic_field(ConstantPool,                _resolved_references,                          jobject)                               \
+  nonstatic_field(ConstantPool,                _reference_map,                                Array<u2>*)                            \
+  nonstatic_field(ConstantPoolCache,           _length,                                       int)                                   \
+  nonstatic_field(ConstantPoolCache,           _constant_pool,                                ConstantPool*)                         \
   nonstatic_field(InstanceKlass,               _array_klasses,                                Klass*)                                \
   nonstatic_field(InstanceKlass,               _methods,                                      Array<Method*>*)                       \
   nonstatic_field(InstanceKlass,               _default_methods,                              Array<Method*>*)                       \
@@ -303,12 +303,12 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(InstanceKlass,               _java_fields_count,                            u2)                                    \
   nonstatic_field(InstanceKlass,               _constants,                                    ConstantPool*)                         \
   nonstatic_field(InstanceKlass,               _class_loader_data,                            ClassLoaderData*)                      \
-  nonstatic_field(InstanceKlass,               _source_file_name_index,                            u2)                               \
+  nonstatic_field(InstanceKlass,               _source_file_name_index,                       u2)                                    \
   nonstatic_field(InstanceKlass,               _source_debug_extension,                       char*)                                 \
-  nonstatic_field(InstanceKlass,               _inner_classes,                               Array<jushort>*)                       \
+  nonstatic_field(InstanceKlass,               _inner_classes,                                Array<jushort>*)                       \
   nonstatic_field(InstanceKlass,               _nonstatic_field_size,                         int)                                   \
   nonstatic_field(InstanceKlass,               _static_field_size,                            int)                                   \
-  nonstatic_field(InstanceKlass,               _static_oop_field_count,                       u2)                                   \
+  nonstatic_field(InstanceKlass,               _static_oop_field_count,                       u2)                                    \
   nonstatic_field(InstanceKlass,               _nonstatic_oop_map_size,                       int)                                   \
   nonstatic_field(InstanceKlass,               _is_marked_dependent,                          bool)                                  \
   nonstatic_field(InstanceKlass,               _minor_version,                                u2)                                    \
@@ -346,62 +346,62 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(Klass,                       _prototype_header,                             markOop)                               \
   nonstatic_field(Klass,                       _next_sibling,                                 Klass*)                                \
   nonstatic_field(vtableEntry,                 _method,                                       Method*)                               \
-  nonstatic_field(MethodData,           _size,                                         int)                                   \
-  nonstatic_field(MethodData,           _method,                                       Method*)                               \
-  nonstatic_field(MethodData,           _data_size,                                    int)                                   \
-  nonstatic_field(MethodData,           _data[0],                                      intptr_t)                              \
-  nonstatic_field(MethodData,           _parameters_type_data_di,                      int)                                   \
-  nonstatic_field(MethodData,           _nof_decompiles,                               uint)                                  \
-  nonstatic_field(MethodData,           _nof_overflow_recompiles,                      uint)                                  \
-  nonstatic_field(MethodData,           _nof_overflow_traps,                           uint)                                  \
-  nonstatic_field(MethodData,           _trap_hist._array[0],                          u1)                                    \
-  nonstatic_field(MethodData,           _eflags,                                       intx)                                  \
-  nonstatic_field(MethodData,           _arg_local,                                    intx)                                  \
-  nonstatic_field(MethodData,           _arg_stack,                                    intx)                                  \
-  nonstatic_field(MethodData,           _arg_returned,                                 intx)                                  \
-  nonstatic_field(MethodData,           _tenure_traps,                                 uint)                                  \
-  nonstatic_field(MethodData,           _invoke_mask,                                  int)                                   \
-  nonstatic_field(MethodData,           _backedge_mask,                                int)                                   \
-  nonstatic_field(DataLayout,           _header._struct._tag,                          u1)                                    \
-  nonstatic_field(DataLayout,           _header._struct._flags,                        u1)                                    \
-  nonstatic_field(DataLayout,           _header._struct._bci,                          u2)                                    \
-  nonstatic_field(DataLayout,           _cells[0],                                     intptr_t)                              \
-  nonstatic_field(MethodCounters,       _nmethod_age,                                  int)                                   \
-  nonstatic_field(MethodCounters,       _interpreter_invocation_limit,                 int)                                   \
-  nonstatic_field(MethodCounters,       _interpreter_backward_branch_limit,            int)                                   \
-  nonstatic_field(MethodCounters,       _interpreter_profile_limit,                    int)                                   \
-  nonstatic_field(MethodCounters,       _invoke_mask,                                  int)                                   \
-  nonstatic_field(MethodCounters,       _backedge_mask,                                int)                                   \
-  nonstatic_field(MethodCounters,       _interpreter_invocation_count,                 int)                                   \
-  nonstatic_field(MethodCounters,       _interpreter_throwout_count,                   u2)                                    \
-  nonstatic_field(MethodCounters,       _number_of_breakpoints,                        u2)                                    \
-  nonstatic_field(MethodCounters,       _invocation_counter,                           InvocationCounter)                     \
-  nonstatic_field(MethodCounters,       _backedge_counter,                             InvocationCounter)                     \
-  nonstatic_field(Method,               _constMethod,                                  ConstMethod*)                          \
-  nonstatic_field(Method,               _method_data,                                  MethodData*)                           \
-  nonstatic_field(Method,               _method_counters,                              MethodCounters*)                       \
-  nonstatic_field(Method,               _access_flags,                                 AccessFlags)                           \
-  nonstatic_field(Method,               _vtable_index,                                 int)                                   \
-  nonstatic_field(Method,               _method_size,                                  u2)                                    \
-  nonstatic_field(Method,               _intrinsic_id,                                 u1)                                    \
-  nonproduct_nonstatic_field(Method,    _compiled_invocation_count,                    int)                                   \
-  volatile_nonstatic_field(Method,      _code,                                         nmethod*)                              \
-  nonstatic_field(Method,               _i2i_entry,                                    address)                               \
-  nonstatic_field(Method,               _adapter,                                      AdapterHandlerEntry*)                  \
-  volatile_nonstatic_field(Method,      _from_compiled_entry,                          address)                               \
-  volatile_nonstatic_field(Method,      _from_interpreted_entry,                       address)                               \
-  volatile_nonstatic_field(ConstMethod, _fingerprint,                                  uint64_t)                              \
-  nonstatic_field(ConstMethod,          _constants,                                    ConstantPool*)                         \
-  nonstatic_field(ConstMethod,          _stackmap_data,                                Array<u1>*)                            \
-  nonstatic_field(ConstMethod,          _constMethod_size,                             int)                                   \
-  nonstatic_field(ConstMethod,          _flags,                                        u2)                                    \
-  nonstatic_field(ConstMethod,          _code_size,                                    u2)                                    \
-  nonstatic_field(ConstMethod,          _name_index,                                   u2)                                    \
-  nonstatic_field(ConstMethod,          _signature_index,                              u2)                                    \
-  nonstatic_field(ConstMethod,          _method_idnum,                                 u2)                                    \
-  nonstatic_field(ConstMethod,          _max_stack,                                    u2)                                    \
-  nonstatic_field(ConstMethod,          _max_locals,                                   u2)                                    \
-  nonstatic_field(ConstMethod,          _size_of_parameters,                           u2)                                    \
+  nonstatic_field(MethodData,                  _size,                                         int)                                   \
+  nonstatic_field(MethodData,                  _method,                                       Method*)                               \
+  nonstatic_field(MethodData,                  _data_size,                                    int)                                   \
+  nonstatic_field(MethodData,                  _data[0],                                      intptr_t)                              \
+  nonstatic_field(MethodData,                  _parameters_type_data_di,                      int)                                   \
+  nonstatic_field(MethodData,                  _nof_decompiles,                               uint)                                  \
+  nonstatic_field(MethodData,                  _nof_overflow_recompiles,                      uint)                                  \
+  nonstatic_field(MethodData,                  _nof_overflow_traps,                           uint)                                  \
+  nonstatic_field(MethodData,                  _trap_hist._array[0],                          u1)                                    \
+  nonstatic_field(MethodData,                  _eflags,                                       intx)                                  \
+  nonstatic_field(MethodData,                  _arg_local,                                    intx)                                  \
+  nonstatic_field(MethodData,                  _arg_stack,                                    intx)                                  \
+  nonstatic_field(MethodData,                  _arg_returned,                                 intx)                                  \
+  nonstatic_field(MethodData,                  _tenure_traps,                                 uint)                                  \
+  nonstatic_field(MethodData,                  _invoke_mask,                                  int)                                   \
+  nonstatic_field(MethodData,                  _backedge_mask,                                int)                                   \
+  nonstatic_field(DataLayout,                  _header._struct._tag,                          u1)                                    \
+  nonstatic_field(DataLayout,                  _header._struct._flags,                        u1)                                    \
+  nonstatic_field(DataLayout,                  _header._struct._bci,                          u2)                                    \
+  nonstatic_field(DataLayout,                  _cells[0],                                     intptr_t)                              \
+  nonstatic_field(MethodCounters,              _nmethod_age,                                  int)                                   \
+  nonstatic_field(MethodCounters,              _interpreter_invocation_limit,                 int)                                   \
+  nonstatic_field(MethodCounters,              _interpreter_backward_branch_limit,            int)                                   \
+  nonstatic_field(MethodCounters,              _interpreter_profile_limit,                    int)                                   \
+  nonstatic_field(MethodCounters,              _invoke_mask,                                  int)                                   \
+  nonstatic_field(MethodCounters,              _backedge_mask,                                int)                                   \
+  nonstatic_field(MethodCounters,              _interpreter_invocation_count,                 int)                                   \
+  nonstatic_field(MethodCounters,              _interpreter_throwout_count,                   u2)                                    \
+  nonstatic_field(MethodCounters,              _number_of_breakpoints,                        u2)                                    \
+  nonstatic_field(MethodCounters,              _invocation_counter,                           InvocationCounter)                     \
+  nonstatic_field(MethodCounters,              _backedge_counter,                             InvocationCounter)                     \
+  nonstatic_field(Method,                      _constMethod,                                  ConstMethod*)                          \
+  nonstatic_field(Method,                      _method_data,                                  MethodData*)                           \
+  nonstatic_field(Method,                      _method_counters,                              MethodCounters*)                       \
+  nonstatic_field(Method,                      _access_flags,                                 AccessFlags)                           \
+  nonstatic_field(Method,                      _vtable_index,                                 int)                                   \
+  nonstatic_field(Method,                      _method_size,                                  u2)                                    \
+  nonstatic_field(Method,                      _intrinsic_id,                                 u1)                                    \
+  nonproduct_nonstatic_field(Method,           _compiled_invocation_count,                    int)                                   \
+  volatile_nonstatic_field(Method,             _code,                                         nmethod*)                              \
+  nonstatic_field(Method,                      _i2i_entry,                                    address)                               \
+  nonstatic_field(Method,                      _adapter,                                      AdapterHandlerEntry*)                  \
+  volatile_nonstatic_field(Method,             _from_compiled_entry,                          address)                               \
+  volatile_nonstatic_field(Method,             _from_interpreted_entry,                       address)                               \
+  volatile_nonstatic_field(ConstMethod,        _fingerprint,                                  uint64_t)                              \
+  nonstatic_field(ConstMethod,                 _constants,                                    ConstantPool*)                         \
+  nonstatic_field(ConstMethod,                 _stackmap_data,                                Array<u1>*)                            \
+  nonstatic_field(ConstMethod,                 _constMethod_size,                             int)                                   \
+  nonstatic_field(ConstMethod,                 _flags,                                        u2)                                    \
+  nonstatic_field(ConstMethod,                 _code_size,                                    u2)                                    \
+  nonstatic_field(ConstMethod,                 _name_index,                                   u2)                                    \
+  nonstatic_field(ConstMethod,                 _signature_index,                              u2)                                    \
+  nonstatic_field(ConstMethod,                 _method_idnum,                                 u2)                                    \
+  nonstatic_field(ConstMethod,                 _max_stack,                                    u2)                                    \
+  nonstatic_field(ConstMethod,                 _max_locals,                                   u2)                                    \
+  nonstatic_field(ConstMethod,                 _size_of_parameters,                           u2)                                    \
   nonstatic_field(ObjArrayKlass,               _element_klass,                                Klass*)                                \
   nonstatic_field(ObjArrayKlass,               _bottom_klass,                                 Klass*)                                \
   volatile_nonstatic_field(Symbol,             _refcount,                                     short)                                 \
@@ -414,10 +414,10 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* Constant Pool Cache */                                                                                                          \
   /***********************/                                                                                                          \
                                                                                                                                      \
-  volatile_nonstatic_field(ConstantPoolCacheEntry,      _indices,                                      intx)                         \
-  nonstatic_field(ConstantPoolCacheEntry,               _f1,                                           volatile Metadata*)           \
-  volatile_nonstatic_field(ConstantPoolCacheEntry,      _f2,                                           intx)                         \
-  volatile_nonstatic_field(ConstantPoolCacheEntry,      _flags,                                        intx)                         \
+  volatile_nonstatic_field(ConstantPoolCacheEntry,      _indices,                             intx)                                  \
+  nonstatic_field(ConstantPoolCacheEntry,               _f1,                                  volatile Metadata*)                    \
+  volatile_nonstatic_field(ConstantPoolCacheEntry,      _f2,                                  intx)                                  \
+  volatile_nonstatic_field(ConstantPoolCacheEntry,      _flags,                               intx)                                  \
                                                                                                                                      \
   /********************************/                                                                                                 \
   /* MethodOop-related structures */                                                                                                 \
@@ -631,83 +631,83 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* SymbolTable */                                                                                                                  \
   /***************/                                                                                                                  \
                                                                                                                                      \
-     static_field(SymbolTable,                  _the_table,                                   SymbolTable*)                          \
-     static_field(SymbolTable,                  _shared_table,                                SymbolCompactHashTable)                \
+     static_field(SymbolTable,                 _the_table,                                    SymbolTable*)                          \
+     static_field(SymbolTable,                 _shared_table,                                 SymbolCompactHashTable)                \
                                                                                                                                      \
   /***************/                                                                                                                  \
   /* StringTable */                                                                                                                  \
   /***************/                                                                                                                  \
                                                                                                                                      \
-     static_field(StringTable,                  _the_table,                                   StringTable*)                          \
+     static_field(StringTable,                 _the_table,                                    StringTable*)                          \
                                                                                                                                      \
   /********************/                                                                                                             \
   /* CompactHashTable */                                                                                                             \
   /********************/                                                                                                             \
                                                                                                                                      \
-  nonstatic_field(SymbolCompactHashTable, _base_address, uintx)                                                                      \
-  nonstatic_field(SymbolCompactHashTable, _entry_count, juint)                                                                       \
-  nonstatic_field(SymbolCompactHashTable, _bucket_count, juint)                                                                      \
-  nonstatic_field(SymbolCompactHashTable, _table_end_offset, juint)                                                                  \
-  nonstatic_field(SymbolCompactHashTable, _buckets, juint*)                                                                          \
+  nonstatic_field(SymbolCompactHashTable,      _base_address,                                 uintx)                                 \
+  nonstatic_field(SymbolCompactHashTable,      _entry_count,                                  juint)                                 \
+  nonstatic_field(SymbolCompactHashTable,      _bucket_count,                                 juint)                                 \
+  nonstatic_field(SymbolCompactHashTable,      _table_end_offset,                             juint)                                 \
+  nonstatic_field(SymbolCompactHashTable,      _buckets,                                      juint*)                                \
                                                                                                                                      \
   /********************/                                                                                                             \
   /* SystemDictionary */                                                                                                             \
   /********************/                                                                                                             \
                                                                                                                                      \
-      static_field(SystemDictionary,            _dictionary,                                   Dictionary*)                          \
-      static_field(SystemDictionary,            _placeholders,                                 PlaceholderTable*)                    \
-      static_field(SystemDictionary,            _shared_dictionary,                            Dictionary*)                          \
-      static_field(SystemDictionary,            _system_loader_lock_obj,                       oop)                                  \
-      static_field(SystemDictionary,            _loader_constraints,                           LoaderConstraintTable*)               \
-      static_field(SystemDictionary,            WK_KLASS(Object_klass),                        Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(String_klass),                        Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(Class_klass),                         Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(Cloneable_klass),                     Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(ClassLoader_klass),                   Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(Serializable_klass),                  Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(System_klass),                        Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(Throwable_klass),                     Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(ThreadDeath_klass),                   Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(Error_klass),                         Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(Exception_klass),                     Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(RuntimeException_klass),              Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(ClassNotFoundException_klass),        Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(NoClassDefFoundError_klass),          Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(LinkageError_klass),                  Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(ClassCastException_klass),            Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(ArrayStoreException_klass),           Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(VirtualMachineError_klass),           Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(OutOfMemoryError_klass),              Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(StackOverflowError_klass),            Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(ProtectionDomain_klass),              Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(AccessControlContext_klass),          Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(SecureClassLoader_klass),             Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(Reference_klass),                     Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(SoftReference_klass),                 Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(WeakReference_klass),                 Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(FinalReference_klass),                Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(PhantomReference_klass),              Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(Cleaner_klass),                       Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(Finalizer_klass),                     Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(Thread_klass),                        Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(ThreadGroup_klass),                   Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(Properties_klass),                    Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(StringBuffer_klass),                  Klass*)                               \
-      static_field(SystemDictionary,            WK_KLASS(MethodHandle_klass),                  Klass*)                               \
-      static_field(SystemDictionary,            _box_klasses[0],                               Klass*)                               \
-      static_field(SystemDictionary,            _java_system_loader,                           oop)                                  \
+     static_field(SystemDictionary,            _dictionary,                                   Dictionary*)                           \
+     static_field(SystemDictionary,            _placeholders,                                 PlaceholderTable*)                     \
+     static_field(SystemDictionary,            _shared_dictionary,                            Dictionary*)                           \
+     static_field(SystemDictionary,            _system_loader_lock_obj,                       oop)                                   \
+     static_field(SystemDictionary,            _loader_constraints,                           LoaderConstraintTable*)                \
+     static_field(SystemDictionary,            WK_KLASS(Object_klass),                        Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(String_klass),                        Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(Class_klass),                         Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(Cloneable_klass),                     Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(ClassLoader_klass),                   Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(Serializable_klass),                  Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(System_klass),                        Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(Throwable_klass),                     Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(ThreadDeath_klass),                   Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(Error_klass),                         Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(Exception_klass),                     Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(RuntimeException_klass),              Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(ClassNotFoundException_klass),        Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(NoClassDefFoundError_klass),          Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(LinkageError_klass),                  Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(ClassCastException_klass),            Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(ArrayStoreException_klass),           Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(VirtualMachineError_klass),           Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(OutOfMemoryError_klass),              Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(StackOverflowError_klass),            Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(ProtectionDomain_klass),              Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(AccessControlContext_klass),          Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(SecureClassLoader_klass),             Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(Reference_klass),                     Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(SoftReference_klass),                 Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(WeakReference_klass),                 Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(FinalReference_klass),                Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(PhantomReference_klass),              Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(Cleaner_klass),                       Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(Finalizer_klass),                     Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(Thread_klass),                        Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(ThreadGroup_klass),                   Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(Properties_klass),                    Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(StringBuffer_klass),                  Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(MethodHandle_klass),                  Klass*)                                \
+     static_field(SystemDictionary,            _box_klasses[0],                               Klass*)                                \
+     static_field(SystemDictionary,            _java_system_loader,                           oop)                                   \
                                                                                                                                      \
   /*************/                                                                                                                    \
   /* vmSymbols */                                                                                                                    \
   /*************/                                                                                                                    \
                                                                                                                                      \
-      static_field(vmSymbols,                   _symbols[0],                                  Symbol*)                               \
+     static_field(vmSymbols,                   _symbols[0],                                   Symbol*)                               \
                                                                                                                                      \
   /*******************/                                                                                                              \
   /* HashtableBucket */                                                                                                              \
   /*******************/                                                                                                              \
                                                                                                                                      \
-  nonstatic_field(HashtableBucket<mtInternal>,  _entry,                                        BasicHashtableEntry<mtInternal>*)     \
+  nonstatic_field(HashtableBucket<mtInternal>, _entry,                                        BasicHashtableEntry<mtInternal>*)      \
                                                                                                                                      \
   /******************/                                                                                                               \
   /* HashtableEntry */                                                                                                               \
@@ -721,12 +721,12 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* Hashtable */                                                                                                                    \
   /*************/                                                                                                                    \
                                                                                                                                      \
-  nonstatic_field(BasicHashtable<mtInternal>, _table_size,                                   int)                                   \
-  nonstatic_field(BasicHashtable<mtInternal>, _buckets,                                      HashtableBucket<mtInternal>*)          \
-  nonstatic_field(BasicHashtable<mtInternal>, _free_list,                                    BasicHashtableEntry<mtInternal>*)      \
-  nonstatic_field(BasicHashtable<mtInternal>, _first_free_entry,                             char*)                                 \
-  nonstatic_field(BasicHashtable<mtInternal>, _end_block,                                    char*)                                 \
-  nonstatic_field(BasicHashtable<mtInternal>, _entry_size,                                   int)                                   \
+  nonstatic_field(BasicHashtable<mtInternal>,  _table_size,                                   int)                                   \
+  nonstatic_field(BasicHashtable<mtInternal>,  _buckets,                                      HashtableBucket<mtInternal>*)          \
+  nonstatic_field(BasicHashtable<mtInternal>,  _free_list,                                    BasicHashtableEntry<mtInternal>*)      \
+  nonstatic_field(BasicHashtable<mtInternal>,  _first_free_entry,                             char*)                                 \
+  nonstatic_field(BasicHashtable<mtInternal>,  _end_block,                                    char*)                                 \
+  nonstatic_field(BasicHashtable<mtInternal>,  _entry_size,                                   int)                                   \
                                                                                                                                      \
   /*******************/                                                                                                              \
   /* DictionaryEntry */                                                                                                              \
@@ -764,7 +764,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(ClassLoaderData,             _class_loader,                                 oop)                                   \
   nonstatic_field(ClassLoaderData,             _next,                                         ClassLoaderData*)                      \
                                                                                                                                      \
-  static_field(ClassLoaderDataGraph,           _head,                                         ClassLoaderData*)                      \
+     static_field(ClassLoaderDataGraph,        _head,                                         ClassLoaderData*)                      \
                                                                                                                                      \
   /**********/                                                                                                                       \
   /* Arrays */                                                                                                                       \
@@ -786,8 +786,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* CodeCache (NOTE: incomplete) */                                                                                                 \
   /********************************/                                                                                                 \
                                                                                                                                      \
-  static_field(CodeCache,                      _heaps,                                        GrowableArray<CodeHeap*>*)             \
-  static_field(CodeCache,                      _scavenge_root_nmethods,                       nmethod*)                              \
+     static_field(CodeCache,                   _heaps,                                        GrowableArray<CodeHeap*>*)             \
+     static_field(CodeCache,                   _scavenge_root_nmethods,                       nmethod*)                              \
                                                                                                                                      \
   /*******************************/                                                                                                  \
   /* CodeHeap (NOTE: incomplete) */                                                                                                  \
@@ -873,37 +873,37 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* NMethods (NOTE: incomplete, but only a little) */                                                                               \
   /**************************************************/                                                                               \
                                                                                                                                      \
-  nonstatic_field(nmethod,             _method,                                       Method*)                        \
-  nonstatic_field(nmethod,             _entry_bci,                                    int)                                   \
-  nonstatic_field(nmethod,             _osr_link,                                     nmethod*)                              \
-  nonstatic_field(nmethod,             _scavenge_root_link,                           nmethod*)                              \
-  nonstatic_field(nmethod,             _scavenge_root_state,                          jbyte)                                 \
-  nonstatic_field(nmethod,             _state,                                        volatile unsigned char)                \
-  nonstatic_field(nmethod,             _exception_offset,                             int)                                   \
-  nonstatic_field(nmethod,             _deoptimize_offset,                            int)                                   \
-  nonstatic_field(nmethod,             _deoptimize_mh_offset,                         int)                                   \
-  nonstatic_field(nmethod,             _orig_pc_offset,                               int)                                   \
-  nonstatic_field(nmethod,             _stub_offset,                                  int)                                   \
-  nonstatic_field(nmethod,             _consts_offset,                                int)                                   \
-  nonstatic_field(nmethod,             _oops_offset,                                  int)                                   \
-  nonstatic_field(nmethod,             _metadata_offset,                              int)                                   \
-  nonstatic_field(nmethod,             _scopes_data_offset,                           int)                                   \
-  nonstatic_field(nmethod,             _scopes_pcs_offset,                            int)                                   \
-  nonstatic_field(nmethod,             _dependencies_offset,                          int)                                   \
-  nonstatic_field(nmethod,             _handler_table_offset,                         int)                                   \
-  nonstatic_field(nmethod,             _nul_chk_table_offset,                         int)                                   \
-  nonstatic_field(nmethod,             _nmethod_end_offset,                           int)                                   \
-  nonstatic_field(nmethod,             _entry_point,                                  address)                               \
-  nonstatic_field(nmethod,             _verified_entry_point,                         address)                               \
-  nonstatic_field(nmethod,             _osr_entry_point,                              address)                               \
-  volatile_nonstatic_field(nmethod,    _lock_count,                                   jint)                                  \
-  nonstatic_field(nmethod,             _stack_traversal_mark,                         long)                                  \
-  nonstatic_field(nmethod,             _compile_id,                                   int)                                   \
-  nonstatic_field(nmethod,             _comp_level,                                   int)                                   \
-  nonstatic_field(nmethod,             _exception_cache,                              ExceptionCache*)                       \
-  nonstatic_field(nmethod,             _marked_for_deoptimization,                    bool)                                  \
-                                                                                                                             \
-  unchecked_c2_static_field(Deoptimization,         _trap_reason_name,                   void*)                              \
+  nonstatic_field(nmethod,                     _method,                                       Method*)                               \
+  nonstatic_field(nmethod,                     _entry_bci,                                    int)                                   \
+  nonstatic_field(nmethod,                     _osr_link,                                     nmethod*)                              \
+  nonstatic_field(nmethod,                     _scavenge_root_link,                           nmethod*)                              \
+  nonstatic_field(nmethod,                     _scavenge_root_state,                          jbyte)                                 \
+  nonstatic_field(nmethod,                     _state,                                        volatile unsigned char)                \
+  nonstatic_field(nmethod,                     _exception_offset,                             int)                                   \
+  nonstatic_field(nmethod,                     _deoptimize_offset,                            int)                                   \
+  nonstatic_field(nmethod,                     _deoptimize_mh_offset,                         int)                                   \
+  nonstatic_field(nmethod,                     _orig_pc_offset,                               int)                                   \
+  nonstatic_field(nmethod,                     _stub_offset,                                  int)                                   \
+  nonstatic_field(nmethod,                     _consts_offset,                                int)                                   \
+  nonstatic_field(nmethod,                     _oops_offset,                                  int)                                   \
+  nonstatic_field(nmethod,                     _metadata_offset,                              int)                                   \
+  nonstatic_field(nmethod,                     _scopes_data_offset,                           int)                                   \
+  nonstatic_field(nmethod,                     _scopes_pcs_offset,                            int)                                   \
+  nonstatic_field(nmethod,                     _dependencies_offset,                          int)                                   \
+  nonstatic_field(nmethod,                     _handler_table_offset,                         int)                                   \
+  nonstatic_field(nmethod,                     _nul_chk_table_offset,                         int)                                   \
+  nonstatic_field(nmethod,                     _nmethod_end_offset,                           int)                                   \
+  nonstatic_field(nmethod,                     _entry_point,                                  address)                               \
+  nonstatic_field(nmethod,                     _verified_entry_point,                         address)                               \
+  nonstatic_field(nmethod,                     _osr_entry_point,                              address)                               \
+  volatile_nonstatic_field(nmethod,            _lock_count,                                   jint)                                  \
+  nonstatic_field(nmethod,                     _stack_traversal_mark,                         long)                                  \
+  nonstatic_field(nmethod,                     _compile_id,                                   int)                                   \
+  nonstatic_field(nmethod,                     _comp_level,                                   int)                                   \
+  nonstatic_field(nmethod,                     _exception_cache,                              ExceptionCache*)                       \
+  nonstatic_field(nmethod,                     _marked_for_deoptimization,                    bool)                                  \
+                                                                                                                                     \
+  unchecked_c2_static_field(Deoptimization,    _trap_reason_name,                             void*)                                 \
                                                                                                                                      \
   /********************************/                                                                                                 \
   /* JavaCalls (NOTE: incomplete) */                                                                                                 \
@@ -928,7 +928,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(ThreadShadow,                _pending_exception,                            oop)                                   \
   nonstatic_field(ThreadShadow,                _exception_file,                               const char*)                           \
   nonstatic_field(ThreadShadow,                _exception_line,                               int)                                   \
-   volatile_nonstatic_field(Thread,            _suspend_flags,                                uint32_t)                              \
+  volatile_nonstatic_field(Thread,             _suspend_flags,                                uint32_t)                              \
   nonstatic_field(Thread,                      _active_handles,                               JNIHandleBlock*)                       \
   nonstatic_field(Thread,                      _tlab,                                         ThreadLocalAllocBuffer)                \
   nonstatic_field(Thread,                      _allocated_bytes,                              jlong)                                 \
@@ -948,7 +948,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   volatile_nonstatic_field(JavaThread,         _is_method_handle_return,                      int)                                   \
   nonstatic_field(JavaThread,                  _special_runtime_exit_condition,               JavaThread::AsyncRequests)             \
   nonstatic_field(JavaThread,                  _saved_exception_pc,                           address)                               \
-   volatile_nonstatic_field(JavaThread,        _thread_state,                                 JavaThreadState)                       \
+  volatile_nonstatic_field(JavaThread,         _thread_state,                                 JavaThreadState)                       \
   nonstatic_field(JavaThread,                  _osthread,                                     OSThread*)                             \
   nonstatic_field(JavaThread,                  _stack_base,                                   address)                               \
   nonstatic_field(JavaThread,                  _stack_size,                                   size_t)                                \
@@ -991,7 +991,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(JNIHandles,                  _weak_global_handles,                          JNIHandleBlock*)                       \
      static_field(JNIHandles,                  _deleted_handle,                               oop)                                   \
                                                                                                                                      \
-  unchecked_nonstatic_field(JNIHandleBlock,    _handles,                                      JNIHandleBlock::block_size_in_oops * sizeof(Oop)) /* Note: no type */ \
+  unchecked_nonstatic_field(JNIHandleBlock,    _handles,       JNIHandleBlock::block_size_in_oops * sizeof(Oop)) /* Note: no type */ \
   nonstatic_field(JNIHandleBlock,              _top,                                          int)                                   \
   nonstatic_field(JNIHandleBlock,              _next,                                         JNIHandleBlock*)                       \
                                                                                                                                      \
@@ -1019,80 +1019,80 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* allocation */                                                                                                                   \
   /**************/                                                                                                                   \
                                                                                                                                      \
-  nonstatic_field(Chunk, _next, Chunk*)                                                                                              \
-  nonstatic_field(Chunk, _len, const size_t)                                                                                         \
+  nonstatic_field(Chunk,                       _next,                                         Chunk*)                                \
+  nonstatic_field(Chunk,                       _len,                                          const size_t)                          \
                                                                                                                                      \
-  nonstatic_field(Arena, _first, Chunk*)                                                                                             \
-  nonstatic_field(Arena, _chunk, Chunk*)                                                                                             \
-  nonstatic_field(Arena, _hwm, char*)                                                                                                \
-  nonstatic_field(Arena, _max, char*)                                                                                                \
+  nonstatic_field(Arena,                       _first,                                        Chunk*)                                \
+  nonstatic_field(Arena,                       _chunk,                                        Chunk*)                                \
+  nonstatic_field(Arena,                       _hwm,                                          char*)                                 \
+  nonstatic_field(Arena,                       _max,                                          char*)                                 \
                                                                                                                                      \
   /************/                                                                                                                     \
   /* CI */                                                                                                                           \
   /************/                                                                                                                     \
                                                                                                                                      \
- nonstatic_field(ciEnv,               _system_dictionary_modification_counter, int)                                                  \
- nonstatic_field(ciEnv,               _compiler_data, void*)                                                                         \
- nonstatic_field(ciEnv,               _failure_reason, const char*)                                                                  \
- nonstatic_field(ciEnv,               _factory, ciObjectFactory*)                                                                    \
- nonstatic_field(ciEnv,               _dependencies, Dependencies*)                                                                  \
- nonstatic_field(ciEnv,               _task, CompileTask*)                                                                           \
- nonstatic_field(ciEnv,               _arena, Arena*)                                                                                \
+  nonstatic_field(ciEnv,                       _system_dictionary_modification_counter,       int)                                   \
+  nonstatic_field(ciEnv,                       _compiler_data,                                void*)                                 \
+  nonstatic_field(ciEnv,                       _failure_reason,                               const char*)                           \
+  nonstatic_field(ciEnv,                       _factory,                                      ciObjectFactory*)                      \
+  nonstatic_field(ciEnv,                       _dependencies,                                 Dependencies*)                         \
+  nonstatic_field(ciEnv,                       _task,                                         CompileTask*)                          \
+  nonstatic_field(ciEnv,                       _arena,                                        Arena*)                                \
                                                                                                                                      \
- nonstatic_field(ciBaseObject,    _ident, uint)                                                                                      \
+  nonstatic_field(ciBaseObject,                _ident,                                        uint)                                  \
                                                                                                                                      \
- nonstatic_field(ciObject,    _handle, jobject)                                                                                      \
- nonstatic_field(ciObject,    _klass, ciKlass*)                                                                                      \
+  nonstatic_field(ciObject,                    _handle,                                       jobject)                               \
+  nonstatic_field(ciObject,                    _klass,                                        ciKlass*)                              \
                                                                                                                                      \
- nonstatic_field(ciMetadata,  _metadata, Metadata*)                                                                           \
+  nonstatic_field(ciMetadata,                  _metadata,                                     Metadata*)                             \
                                                                                                                                      \
- nonstatic_field(ciSymbol,    _symbol, Symbol*)                                                                                      \
+  nonstatic_field(ciSymbol,                    _symbol,                                       Symbol*)                               \
                                                                                                                                      \
- nonstatic_field(ciType,    _basic_type, BasicType)                                                                                  \
+  nonstatic_field(ciType,                      _basic_type,                                   BasicType)                             \
                                                                                                                                      \
- nonstatic_field(ciKlass,   _name, ciSymbol*)                                                                                        \
+  nonstatic_field(ciKlass,                     _name,                                         ciSymbol*)                             \
                                                                                                                                      \
- nonstatic_field(ciArrayKlass,   _dimension, jint)                                                                                   \
+  nonstatic_field(ciArrayKlass,                _dimension,                                    jint)                                  \
                                                                                                                                      \
- nonstatic_field(ciObjArrayKlass, _element_klass, ciKlass*)                                                                          \
- nonstatic_field(ciObjArrayKlass, _base_element_klass, ciKlass*)                                                                     \
+  nonstatic_field(ciObjArrayKlass,             _element_klass,                                ciKlass*)                              \
+  nonstatic_field(ciObjArrayKlass,             _base_element_klass,                           ciKlass*)                              \
                                                                                                                                      \
- nonstatic_field(ciInstanceKlass,   _init_state, InstanceKlass::ClassState)                                                          \
- nonstatic_field(ciInstanceKlass,   _is_shared,  bool)                                                                               \
+  nonstatic_field(ciInstanceKlass,             _init_state,                                   InstanceKlass::ClassState)             \
+  nonstatic_field(ciInstanceKlass,             _is_shared,                                    bool)                                  \
                                                                                                                                      \
- nonstatic_field(ciMethod,     _interpreter_invocation_count, int)                                                                   \
- nonstatic_field(ciMethod,     _interpreter_throwout_count, int)                                                                     \
- nonstatic_field(ciMethod,     _instructions_size, int)                                                                              \
+  nonstatic_field(ciMethod,                    _interpreter_invocation_count,                 int)                                   \
+  nonstatic_field(ciMethod,                    _interpreter_throwout_count,                   int)                                   \
+  nonstatic_field(ciMethod,                    _instructions_size,                            int)                                   \
                                                                                                                                      \
- nonstatic_field(ciMethodData, _data_size, int)                                                                                      \
- nonstatic_field(ciMethodData, _state, u_char)                                                                                       \
- nonstatic_field(ciMethodData, _extra_data_size, int)                                                                                \
- nonstatic_field(ciMethodData, _data, intptr_t*)                                                                                     \
- nonstatic_field(ciMethodData, _hint_di, int)                                                                                        \
- nonstatic_field(ciMethodData, _eflags, intx)                                                                                        \
- nonstatic_field(ciMethodData, _arg_local, intx)                                                                                     \
- nonstatic_field(ciMethodData, _arg_stack, intx)                                                                                     \
- nonstatic_field(ciMethodData, _arg_returned, intx)                                                                                  \
- nonstatic_field(ciMethodData, _current_mileage, int)                                                                                \
- nonstatic_field(ciMethodData, _orig, MethodData)                                                                             \
+  nonstatic_field(ciMethodData,                _data_size,                                    int)                                   \
+  nonstatic_field(ciMethodData,                _state,                                        u_char)                                \
+  nonstatic_field(ciMethodData,                _extra_data_size,                              int)                                   \
+  nonstatic_field(ciMethodData,                _data,                                         intptr_t*)                             \
+  nonstatic_field(ciMethodData,                _hint_di,                                      int)                                   \
+  nonstatic_field(ciMethodData,                _eflags,                                       intx)                                  \
+  nonstatic_field(ciMethodData,                _arg_local,                                    intx)                                  \
+  nonstatic_field(ciMethodData,                _arg_stack,                                    intx)                                  \
+  nonstatic_field(ciMethodData,                _arg_returned,                                 intx)                                  \
+  nonstatic_field(ciMethodData,                _current_mileage,                              int)                                   \
+  nonstatic_field(ciMethodData,                _orig,                                         MethodData)                            \
                                                                                                                                      \
- nonstatic_field(ciField,     _holder, ciInstanceKlass*)                                                                             \
- nonstatic_field(ciField,     _name, ciSymbol*)                                                                                      \
- nonstatic_field(ciField,     _signature, ciSymbol*)                                                                                 \
- nonstatic_field(ciField,     _offset, int)                                                                                          \
- nonstatic_field(ciField,     _is_constant, bool)                                                                                    \
- nonstatic_field(ciField,     _constant_value, ciConstant)                                                                           \
+  nonstatic_field(ciField,                     _holder,                                       ciInstanceKlass*)                      \
+  nonstatic_field(ciField,                     _name,                                         ciSymbol*)                             \
+  nonstatic_field(ciField,                     _signature,                                    ciSymbol*)                             \
+  nonstatic_field(ciField,                     _offset,                                       int)                                   \
+  nonstatic_field(ciField,                     _is_constant,                                  bool)                                  \
+  nonstatic_field(ciField,                     _constant_value,                               ciConstant)                            \
                                                                                                                                      \
- nonstatic_field(ciObjectFactory,     _ci_metadata, GrowableArray<ciMetadata*>*)                                                     \
- nonstatic_field(ciObjectFactory,     _symbols, GrowableArray<ciSymbol*>*)                                                           \
- nonstatic_field(ciObjectFactory,     _unloaded_methods, GrowableArray<ciMethod*>*)                                                  \
+  nonstatic_field(ciObjectFactory,             _ci_metadata,                                  GrowableArray<ciMetadata*>*)           \
+  nonstatic_field(ciObjectFactory,             _symbols,                                      GrowableArray<ciSymbol*>*)             \
+  nonstatic_field(ciObjectFactory,             _unloaded_methods,                             GrowableArray<ciMethod*>*)             \
                                                                                                                                      \
- nonstatic_field(ciConstant,     _type, BasicType)                                                                                   \
- nonstatic_field(ciConstant,     _value._int, jint)                                                                                  \
- nonstatic_field(ciConstant,     _value._long, jlong)                                                                                \
- nonstatic_field(ciConstant,     _value._float, jfloat)                                                                              \
- nonstatic_field(ciConstant,     _value._double, jdouble)                                                                            \
- nonstatic_field(ciConstant,     _value._object, ciObject*)                                                                          \
+  nonstatic_field(ciConstant,                  _type,                                         BasicType)                             \
+  nonstatic_field(ciConstant,                  _value._int,                                   jint)                                  \
+  nonstatic_field(ciConstant,                  _value._long,                                  jlong)                                 \
+  nonstatic_field(ciConstant,                  _value._float,                                 jfloat)                                \
+  nonstatic_field(ciConstant,                  _value._double,                                jdouble)                               \
+  nonstatic_field(ciConstant,                  _value._object,                                ciObject*)                             \
                                                                                                                                      \
   /************/                                                                                                                     \
   /* Monitors */                                                                                                                     \
@@ -1108,7 +1108,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   volatile_nonstatic_field(BasicLock,          _displaced_header,                             markOop)                               \
   nonstatic_field(BasicObjectLock,             _lock,                                         BasicLock)                             \
   nonstatic_field(BasicObjectLock,             _obj,                                          oop)                                   \
-  static_field(ObjectSynchronizer,             gBlockList,                                    ObjectMonitor*)                        \
+     static_field(ObjectSynchronizer,          gBlockList,                                    ObjectMonitor*)                        \
                                                                                                                                      \
   /*********************/                                                                                                            \
   /* Matcher (C2 only) */                                                                                                            \
@@ -1116,111 +1116,111 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
   unchecked_c2_static_field(Matcher,           _regEncode,                          sizeof(Matcher::_regEncode)) /* NOTE: no type */ \
                                                                                                                                      \
-  c2_nonstatic_field(Node,               _in,                      Node**)                                                           \
-  c2_nonstatic_field(Node,               _out,                     Node**)                                                           \
-  c2_nonstatic_field(Node,               _cnt,                     node_idx_t)                                                       \
-  c2_nonstatic_field(Node,               _max,                     node_idx_t)                                                       \
-  c2_nonstatic_field(Node,               _outcnt,                  node_idx_t)                                                       \
-  c2_nonstatic_field(Node,               _outmax,                  node_idx_t)                                                       \
-  c2_nonstatic_field(Node,               _idx,                     const node_idx_t)                                                 \
-  c2_nonstatic_field(Node,               _class_id,                jushort)                                                          \
-  c2_nonstatic_field(Node,               _flags,                   jushort)                                                          \
+  c2_nonstatic_field(Node,                     _in,                                           Node**)                                \
+  c2_nonstatic_field(Node,                     _out,                                          Node**)                                \
+  c2_nonstatic_field(Node,                     _cnt,                                          node_idx_t)                            \
+  c2_nonstatic_field(Node,                     _max,                                          node_idx_t)                            \
+  c2_nonstatic_field(Node,                     _outcnt,                                       node_idx_t)                            \
+  c2_nonstatic_field(Node,                     _outmax,                                       node_idx_t)                            \
+  c2_nonstatic_field(Node,                     _idx,                                          const node_idx_t)                      \
+  c2_nonstatic_field(Node,                     _class_id,                                     jushort)                               \
+  c2_nonstatic_field(Node,                     _flags,                                        jushort)                               \
                                                                                                                                      \
-  c2_nonstatic_field(Compile,            _root,                    RootNode*)                                                        \
-  c2_nonstatic_field(Compile,            _unique,                  uint)                                                             \
-  c2_nonstatic_field(Compile,            _entry_bci,               int)                                                              \
-  c2_nonstatic_field(Compile,            _top,                     Node*)                                                            \
-  c2_nonstatic_field(Compile,            _cfg,                     PhaseCFG*)                                                        \
-  c2_nonstatic_field(Compile,            _regalloc,                PhaseRegAlloc*)                                                   \
-  c2_nonstatic_field(Compile,            _method,                  ciMethod*)                                                        \
-  c2_nonstatic_field(Compile,            _compile_id,              const int)                                                        \
-  c2_nonstatic_field(Compile,            _save_argument_registers, const bool)                                                       \
-  c2_nonstatic_field(Compile,            _subsume_loads,           const bool)                                                       \
-  c2_nonstatic_field(Compile,            _do_escape_analysis,      const bool)                                                       \
-  c2_nonstatic_field(Compile,            _eliminate_boxing,        const bool)                                                       \
-  c2_nonstatic_field(Compile,            _ilt,                     InlineTree*)                                                      \
+  c2_nonstatic_field(Compile,                  _root,                                         RootNode*)                             \
+  c2_nonstatic_field(Compile,                  _unique,                                       uint)                                  \
+  c2_nonstatic_field(Compile,                  _entry_bci,                                    int)                                   \
+  c2_nonstatic_field(Compile,                  _top,                                          Node*)                                 \
+  c2_nonstatic_field(Compile,                  _cfg,                                          PhaseCFG*)                             \
+  c2_nonstatic_field(Compile,                  _regalloc,                                     PhaseRegAlloc*)                        \
+  c2_nonstatic_field(Compile,                  _method,                                       ciMethod*)                             \
+  c2_nonstatic_field(Compile,                  _compile_id,                                   const int)                             \
+  c2_nonstatic_field(Compile,                  _save_argument_registers,                      const bool)                            \
+  c2_nonstatic_field(Compile,                  _subsume_loads,                                const bool)                            \
+  c2_nonstatic_field(Compile,                  _do_escape_analysis,                           const bool)                            \
+  c2_nonstatic_field(Compile,                  _eliminate_boxing,                             const bool)                            \
+  c2_nonstatic_field(Compile,                  _ilt,                                          InlineTree*)                           \
                                                                                                                                      \
-  c2_nonstatic_field(InlineTree,         _caller_jvms,             JVMState*)                                                        \
-  c2_nonstatic_field(InlineTree,         _method,                  ciMethod*)                                                        \
-  c2_nonstatic_field(InlineTree,         _caller_tree,             InlineTree*)                                                      \
-  c2_nonstatic_field(InlineTree,         _subtrees,                GrowableArray<InlineTree*>)                                       \
+  c2_nonstatic_field(InlineTree,               _caller_jvms,                                  JVMState*)                             \
+  c2_nonstatic_field(InlineTree,               _method,                                       ciMethod*)                             \
+  c2_nonstatic_field(InlineTree,               _caller_tree,                                  InlineTree*)                           \
+  c2_nonstatic_field(InlineTree,               _subtrees,                                     GrowableArray<InlineTree*>)            \
                                                                                                                                      \
-  c2_nonstatic_field(OptoRegPair,        _first,                   short)                                                            \
-  c2_nonstatic_field(OptoRegPair,        _second,                  short)                                                            \
+  c2_nonstatic_field(OptoRegPair,              _first,                                        short)                                 \
+  c2_nonstatic_field(OptoRegPair,              _second,                                       short)                                 \
                                                                                                                                      \
-  c2_nonstatic_field(JVMState,           _caller,                  JVMState*)                                                        \
-  c2_nonstatic_field(JVMState,           _depth,                   uint)                                                             \
-  c2_nonstatic_field(JVMState,           _locoff,                  uint)                                                             \
-  c2_nonstatic_field(JVMState,           _stkoff,                  uint)                                                             \
-  c2_nonstatic_field(JVMState,           _monoff,                  uint)                                                             \
-  c2_nonstatic_field(JVMState,           _scloff,                  uint)                                                             \
-  c2_nonstatic_field(JVMState,           _endoff,                  uint)                                                             \
-  c2_nonstatic_field(JVMState,           _sp,                      uint)                                                             \
-  c2_nonstatic_field(JVMState,           _bci,                     int)                                                              \
-  c2_nonstatic_field(JVMState,           _method,                  ciMethod*)                                                        \
-  c2_nonstatic_field(JVMState,           _map,                     SafePointNode*)                                                   \
+  c2_nonstatic_field(JVMState,                 _caller,                                       JVMState*)                             \
+  c2_nonstatic_field(JVMState,                 _depth,                                        uint)                                  \
+  c2_nonstatic_field(JVMState,                 _locoff,                                       uint)                                  \
+  c2_nonstatic_field(JVMState,                 _stkoff,                                       uint)                                  \
+  c2_nonstatic_field(JVMState,                 _monoff,                                       uint)                                  \
+  c2_nonstatic_field(JVMState,                 _scloff,                                       uint)                                  \
+  c2_nonstatic_field(JVMState,                 _endoff,                                       uint)                                  \
+  c2_nonstatic_field(JVMState,                 _sp,                                           uint)                                  \
+  c2_nonstatic_field(JVMState,                 _bci,                                          int)                                   \
+  c2_nonstatic_field(JVMState,                 _method,                                       ciMethod*)                             \
+  c2_nonstatic_field(JVMState,                 _map,                                          SafePointNode*)                        \
                                                                                                                                      \
-  c2_nonstatic_field(SafePointNode,      _jvms,                    JVMState* const)                                                  \
+  c2_nonstatic_field(SafePointNode,            _jvms,                                         JVMState* const)                       \
                                                                                                                                      \
-  c2_nonstatic_field(MachSafePointNode,  _jvms,                    JVMState*)                                                        \
-  c2_nonstatic_field(MachSafePointNode,  _jvmadj,                  uint)                                                             \
+  c2_nonstatic_field(MachSafePointNode,        _jvms,                                         JVMState*)                             \
+  c2_nonstatic_field(MachSafePointNode,        _jvmadj,                                       uint)                                  \
                                                                                                                                      \
-  c2_nonstatic_field(MachIfNode,         _prob,                    jfloat)                                                           \
-  c2_nonstatic_field(MachIfNode,         _fcnt,                    jfloat)                                                           \
+  c2_nonstatic_field(MachIfNode,               _prob,                                         jfloat)                                \
+  c2_nonstatic_field(MachIfNode,               _fcnt,                                         jfloat)                                \
                                                                                                                                      \
-  c2_nonstatic_field(CallNode,           _entry_point,             address)                                                          \
+  c2_nonstatic_field(CallNode,                 _entry_point,                                  address)                               \
                                                                                                                                      \
-  c2_nonstatic_field(CallJavaNode,       _method,                  ciMethod*)                                                        \
+  c2_nonstatic_field(CallJavaNode,             _method,                                       ciMethod*)                             \
                                                                                                                                      \
-  c2_nonstatic_field(CallRuntimeNode,    _name,                    const char*)                                                      \
+  c2_nonstatic_field(CallRuntimeNode,          _name,                                         const char*)                           \
                                                                                                                                      \
-  c2_nonstatic_field(CallStaticJavaNode, _name,                    const char*)                                                      \
+  c2_nonstatic_field(CallStaticJavaNode,       _name,                                         const char*)                           \
                                                                                                                                      \
-  c2_nonstatic_field(MachCallJavaNode,   _method,                  ciMethod*)                                                        \
-  c2_nonstatic_field(MachCallJavaNode,   _bci,                     int)                                                              \
+  c2_nonstatic_field(MachCallJavaNode,         _method,                                       ciMethod*)                             \
+  c2_nonstatic_field(MachCallJavaNode,         _bci,                                          int)                                   \
                                                                                                                                      \
-  c2_nonstatic_field(MachCallStaticJavaNode, _name,                const char*)                                                      \
+  c2_nonstatic_field(MachCallStaticJavaNode,   _name,                                         const char*)                           \
                                                                                                                                      \
-  c2_nonstatic_field(MachCallRuntimeNode,  _name,                  const char*)                                                      \
+  c2_nonstatic_field(MachCallRuntimeNode,      _name,                                         const char*)                           \
                                                                                                                                      \
-  c2_nonstatic_field(PhaseCFG,           _number_of_blocks,        uint)                                                             \
-  c2_nonstatic_field(PhaseCFG,           _blocks,                  Block_List)                                                       \
-  c2_nonstatic_field(PhaseCFG,           _node_to_block_mapping,   Block_Array)                                                      \
-  c2_nonstatic_field(PhaseCFG,           _root_block,              Block*)                                                           \
+  c2_nonstatic_field(PhaseCFG,                 _number_of_blocks,                             uint)                                  \
+  c2_nonstatic_field(PhaseCFG,                 _blocks,                                       Block_List)                            \
+  c2_nonstatic_field(PhaseCFG,                 _node_to_block_mapping,                        Block_Array)                           \
+  c2_nonstatic_field(PhaseCFG,                 _root_block,                                   Block*)                                \
                                                                                                                                      \
-  c2_nonstatic_field(PhaseRegAlloc,      _node_regs,               OptoRegPair*)                                                     \
-  c2_nonstatic_field(PhaseRegAlloc,      _node_regs_max_index,     uint)                                                             \
-  c2_nonstatic_field(PhaseRegAlloc,      _framesize,               uint)                                                             \
-  c2_nonstatic_field(PhaseRegAlloc,      _max_reg,                 OptoReg::Name)                                                    \
+  c2_nonstatic_field(PhaseRegAlloc,            _node_regs,                                    OptoRegPair*)                          \
+  c2_nonstatic_field(PhaseRegAlloc,            _node_regs_max_index,                          uint)                                  \
+  c2_nonstatic_field(PhaseRegAlloc,            _framesize,                                    uint)                                  \
+  c2_nonstatic_field(PhaseRegAlloc,            _max_reg,                                      OptoReg::Name)                         \
                                                                                                                                      \
-  c2_nonstatic_field(PhaseChaitin,       _trip_cnt,                int)                                                              \
-  c2_nonstatic_field(PhaseChaitin,       _alternate,               int)                                                              \
-  c2_nonstatic_field(PhaseChaitin,       _lo_degree,               uint)                                                             \
-  c2_nonstatic_field(PhaseChaitin,       _lo_stk_degree,           uint)                                                             \
-  c2_nonstatic_field(PhaseChaitin,       _hi_degree,               uint)                                                             \
-  c2_nonstatic_field(PhaseChaitin,       _simplified,              uint)                                                             \
+  c2_nonstatic_field(PhaseChaitin,             _trip_cnt,                                     int)                                   \
+  c2_nonstatic_field(PhaseChaitin,             _alternate,                                    int)                                   \
+  c2_nonstatic_field(PhaseChaitin,             _lo_degree,                                    uint)                                  \
+  c2_nonstatic_field(PhaseChaitin,             _lo_stk_degree,                                uint)                                  \
+  c2_nonstatic_field(PhaseChaitin,             _hi_degree,                                    uint)                                  \
+  c2_nonstatic_field(PhaseChaitin,             _simplified,                                   uint)                                  \
                                                                                                                                      \
-  c2_nonstatic_field(Block,              _nodes,                   Node_List)                                                        \
-  c2_nonstatic_field(Block,              _succs,                   Block_Array)                                                      \
-  c2_nonstatic_field(Block,              _num_succs,               uint)                                                             \
-  c2_nonstatic_field(Block,              _pre_order,               uint)                                                             \
-  c2_nonstatic_field(Block,              _dom_depth,               uint)                                                             \
-  c2_nonstatic_field(Block,              _idom,                    Block*)                                                           \
-  c2_nonstatic_field(Block,              _freq,                    jdouble)                                                          \
+  c2_nonstatic_field(Block,                    _nodes,                                        Node_List)                             \
+  c2_nonstatic_field(Block,                    _succs,                                        Block_Array)                           \
+  c2_nonstatic_field(Block,                    _num_succs,                                    uint)                                  \
+  c2_nonstatic_field(Block,                    _pre_order,                                    uint)                                  \
+  c2_nonstatic_field(Block,                    _dom_depth,                                    uint)                                  \
+  c2_nonstatic_field(Block,                    _idom,                                         Block*)                                \
+  c2_nonstatic_field(Block,                    _freq,                                         jdouble)                               \
                                                                                                                                      \
-  c2_nonstatic_field(CFGElement,         _freq,                    jdouble)                                                          \
+  c2_nonstatic_field(CFGElement,               _freq,                                         jdouble)                               \
                                                                                                                                      \
-  c2_nonstatic_field(Block_List,         _cnt,                     uint)                                                             \
+  c2_nonstatic_field(Block_List,               _cnt,                                          uint)                                  \
                                                                                                                                      \
-  c2_nonstatic_field(Block_Array,        _size,                    uint)                                                             \
-  c2_nonstatic_field(Block_Array,        _blocks,                  Block**)                                                          \
-  c2_nonstatic_field(Block_Array,        _arena,                   Arena*)                                                           \
+  c2_nonstatic_field(Block_Array,              _size,                                         uint)                                  \
+  c2_nonstatic_field(Block_Array,              _blocks,                                       Block**)                               \
+  c2_nonstatic_field(Block_Array,              _arena,                                        Arena*)                                \
                                                                                                                                      \
-  c2_nonstatic_field(Node_List,          _cnt,                     uint)                                                             \
+  c2_nonstatic_field(Node_List,                _cnt,                                          uint)                                  \
                                                                                                                                      \
-  c2_nonstatic_field(Node_Array,         _max,                     uint)                                                             \
-  c2_nonstatic_field(Node_Array,         _nodes,                   Node**)                                                           \
-  c2_nonstatic_field(Node_Array,         _a,                       Arena*)                                                           \
+  c2_nonstatic_field(Node_Array,               _max,                                          uint)                                  \
+  c2_nonstatic_field(Node_Array,               _nodes,                                        Node**)                                \
+  c2_nonstatic_field(Node_Array,               _a,                                            Arena*)                                \
                                                                                                                                      \
                                                                                                                                      \
   /*********************/                                                                                                            \
@@ -1231,22 +1231,22 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(Flag,                        _name,                                         const char*)                           \
   unchecked_nonstatic_field(Flag,              _addr,                                         sizeof(void*)) /* NOTE: no type */     \
   nonstatic_field(Flag,                        _flags,                                        Flag::Flags)                           \
-  static_field(Flag,                           flags,                                         Flag*)                                 \
-  static_field(Flag,                           numFlags,                                      size_t)                                \
+     static_field(Flag,                        flags,                                         Flag*)                                 \
+     static_field(Flag,                        numFlags,                                      size_t)                                \
                                                                                                                                      \
   /*************************/                                                                                                        \
   /* JDK / VM version info */                                                                                                        \
   /*************************/                                                                                                        \
                                                                                                                                      \
-  static_field(Abstract_VM_Version,            _s_vm_release,                                 const char*)                           \
-  static_field(Abstract_VM_Version,            _s_internal_vm_info_string,                    const char*)                           \
-  static_field(Abstract_VM_Version,            _vm_major_version,                             int)                                   \
-  static_field(Abstract_VM_Version,            _vm_minor_version,                             int)                                   \
-  static_field(Abstract_VM_Version,            _vm_micro_version,                             int)                                   \
-  static_field(Abstract_VM_Version,            _vm_build_number,                              int)                                   \
-  static_field(Abstract_VM_Version,            _reserve_for_allocation_prefetch,              int)                                   \
+     static_field(Abstract_VM_Version,         _s_vm_release,                                 const char*)                           \
+     static_field(Abstract_VM_Version,         _s_internal_vm_info_string,                    const char*)                           \
+     static_field(Abstract_VM_Version,         _vm_major_version,                             int)                                   \
+     static_field(Abstract_VM_Version,         _vm_minor_version,                             int)                                   \
+     static_field(Abstract_VM_Version,         _vm_micro_version,                             int)                                   \
+     static_field(Abstract_VM_Version,         _vm_build_number,                              int)                                   \
+     static_field(Abstract_VM_Version,         _reserve_for_allocation_prefetch,              int)                                   \
                                                                                                                                      \
-  static_field(JDK_Version,                    _current,                                      JDK_Version)                           \
+     static_field(JDK_Version,                 _current,                                      JDK_Version)                           \
   nonstatic_field(JDK_Version,                 _partially_initialized,                        bool)                                  \
   nonstatic_field(JDK_Version,                 _major,                                        unsigned char)                         \
                                                                                                                                      \
@@ -1260,65 +1260,65 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* Arguments */                                                                                                                    \
   /*************/                                                                                                                    \
                                                                                                                                      \
-  static_field(Arguments,                      _jvm_flags_array,                              char**)                                \
-  static_field(Arguments,                      _num_jvm_flags,                                int)                                   \
-  static_field(Arguments,                      _jvm_args_array,                               char**)                                \
-  static_field(Arguments,                      _num_jvm_args,                                 int)                                   \
-  static_field(Arguments,                      _java_command,                                 char*)                                 \
+     static_field(Arguments,                   _jvm_flags_array,                              char**)                                \
+     static_field(Arguments,                   _num_jvm_flags,                                int)                                   \
+     static_field(Arguments,                   _jvm_args_array,                               char**)                                \
+     static_field(Arguments,                   _num_jvm_args,                                 int)                                   \
+     static_field(Arguments,                   _java_command,                                 char*)                                 \
                                                                                                                                      \
   /************/                                                                                                                     \
   /* Array<T> */                                                                                                                     \
   /************/                                                                                                                     \
                                                                                                                                      \
-  nonstatic_field(Array<int>,                      _length,                                   int)                                   \
-  unchecked_nonstatic_field(Array<int>,            _data,                                     sizeof(int))                           \
-  unchecked_nonstatic_field(Array<u1>,             _data,                                     sizeof(u1))                            \
-  unchecked_nonstatic_field(Array<u2>,             _data,                                     sizeof(u2))                            \
-  unchecked_nonstatic_field(Array<Method*>,        _data,                                     sizeof(Method*))                       \
-  unchecked_nonstatic_field(Array<Klass*>,         _data,                                     sizeof(Klass*))                        \
+  nonstatic_field(Array<int>,                  _length,                                       int)                                   \
+  unchecked_nonstatic_field(Array<int>,        _data,                                         sizeof(int))                           \
+  unchecked_nonstatic_field(Array<u1>,         _data,                                         sizeof(u1))                            \
+  unchecked_nonstatic_field(Array<u2>,         _data,                                         sizeof(u2))                            \
+  unchecked_nonstatic_field(Array<Method*>,    _data,                                         sizeof(Method*))                       \
+  unchecked_nonstatic_field(Array<Klass*>,     _data,                                         sizeof(Klass*))                        \
                                                                                                                                      \
   /*********************************/                                                                                                \
   /* java_lang_Class fields        */                                                                                                \
   /*********************************/                                                                                                \
                                                                                                                                      \
-  static_field(java_lang_Class,                _klass_offset,                                 int)                                   \
-  static_field(java_lang_Class,                _array_klass_offset,                           int)                                   \
-  static_field(java_lang_Class,                _oop_size_offset,                              int)                                   \
-  static_field(java_lang_Class,                _static_oop_field_count_offset,                int)                                   \
+     static_field(java_lang_Class,             _klass_offset,                                 int)                                   \
+     static_field(java_lang_Class,             _array_klass_offset,                           int)                                   \
+     static_field(java_lang_Class,             _oop_size_offset,                              int)                                   \
+     static_field(java_lang_Class,             _static_oop_field_count_offset,                int)                                   \
                                                                                                                                      \
   /************************/                                                                                                         \
   /* Miscellaneous fields */                                                                                                         \
   /************************/                                                                                                         \
                                                                                                                                      \
-  nonstatic_field(CompileTask,                 _method,                                      Method*)                                \
-  nonstatic_field(CompileTask,                 _osr_bci,                                     int)                                    \
-  nonstatic_field(CompileTask,                 _comp_level,                                  int)                                    \
-  nonstatic_field(CompileTask,                 _compile_id,                                  uint)                                   \
-  nonstatic_field(CompileTask,                 _next,                                        CompileTask*)                           \
-  nonstatic_field(CompileTask,                 _prev,                                        CompileTask*)                           \
+  nonstatic_field(CompileTask,                 _method,                                       Method*)                               \
+  nonstatic_field(CompileTask,                 _osr_bci,                                      int)                                   \
+  nonstatic_field(CompileTask,                 _comp_level,                                   int)                                   \
+  nonstatic_field(CompileTask,                 _compile_id,                                   uint)                                  \
+  nonstatic_field(CompileTask,                 _next,                                         CompileTask*)                          \
+  nonstatic_field(CompileTask,                 _prev,                                         CompileTask*)                          \
                                                                                                                                      \
-  nonstatic_field(vframeArray,                 _next,                                        vframeArray*)                           \
-  nonstatic_field(vframeArray,                 _original,                                    frame)                                  \
-  nonstatic_field(vframeArray,                 _caller,                                      frame)                                  \
-  nonstatic_field(vframeArray,                 _frames,                                      int)                                    \
+  nonstatic_field(vframeArray,                 _next,                                         vframeArray*)                          \
+  nonstatic_field(vframeArray,                 _original,                                     frame)                                 \
+  nonstatic_field(vframeArray,                 _caller,                                       frame)                                 \
+  nonstatic_field(vframeArray,                 _frames,                                       int)                                   \
                                                                                                                                      \
-  nonstatic_field(vframeArrayElement,          _frame,                                       frame)                                  \
-  nonstatic_field(vframeArrayElement,          _bci,                                         int)                                    \
-  nonstatic_field(vframeArrayElement,          _method,                                      Method*)                                \
+  nonstatic_field(vframeArrayElement,          _frame,                                        frame)                                 \
+  nonstatic_field(vframeArrayElement,          _bci,                                          int)                                   \
+  nonstatic_field(vframeArrayElement,          _method,                                       Method*)                               \
                                                                                                                                      \
-  nonstatic_field(PtrQueue,                    _active,                                      bool)                                   \
-  nonstatic_field(PtrQueue,                    _buf,                                         void**)                                 \
-  nonstatic_field(PtrQueue,                    _index,                                       size_t)                                 \
+  nonstatic_field(PtrQueue,                    _active,                                       bool)                                  \
+  nonstatic_field(PtrQueue,                    _buf,                                          void**)                                \
+  nonstatic_field(PtrQueue,                    _index,                                        size_t)                                \
                                                                                                                                      \
-  nonstatic_field(AccessFlags,                 _flags,                                       jint)                                   \
-  nonstatic_field(elapsedTimer,                _counter,                                     jlong)                                  \
-  nonstatic_field(elapsedTimer,                _active,                                      bool)                                   \
-  nonstatic_field(InvocationCounter,           _counter,                                     unsigned int)                           \
-  volatile_nonstatic_field(FreeChunk,          _size,                                        size_t)                                 \
-  nonstatic_field(FreeChunk,                   _next,                                        FreeChunk*)                             \
-  nonstatic_field(FreeChunk,                   _prev,                                        FreeChunk*)                             \
-  nonstatic_field(AdaptiveFreeList<FreeChunk>, _size,                                        size_t)                                 \
-  nonstatic_field(AdaptiveFreeList<FreeChunk>, _count,                                       ssize_t)
+  nonstatic_field(AccessFlags,                 _flags,                                        jint)                                  \
+  nonstatic_field(elapsedTimer,                _counter,                                      jlong)                                 \
+  nonstatic_field(elapsedTimer,                _active,                                       bool)                                  \
+  nonstatic_field(InvocationCounter,           _counter,                                      unsigned int)                          \
+  volatile_nonstatic_field(FreeChunk,          _size,                                         size_t)                                \
+  nonstatic_field(FreeChunk,                   _next,                                         FreeChunk*)                            \
+  nonstatic_field(FreeChunk,                   _prev,                                         FreeChunk*)                            \
+  nonstatic_field(AdaptiveFreeList<FreeChunk>, _size,                                         size_t)                                \
+  nonstatic_field(AdaptiveFreeList<FreeChunk>, _count,                                        ssize_t)
 
 
 //--------------------------------------------------------------------------------
@@ -2253,6 +2253,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                           \
   declare_constant(BarrierSet::ModRef)                                    \
   declare_constant(BarrierSet::CardTableModRef)                           \
+  declare_constant(BarrierSet::CardTableForRS)                            \
   declare_constant(BarrierSet::CardTableExtension)                        \
   declare_constant(BarrierSet::G1SATBCT)                                  \
   declare_constant(BarrierSet::G1SATBCTLogging)                           \

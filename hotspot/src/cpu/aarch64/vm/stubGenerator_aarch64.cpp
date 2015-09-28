@@ -691,7 +691,7 @@ class StubGenerator: public StubCodeGenerator {
         __ call_VM_leaf(CAST_FROM_FN_PTR(address, BarrierSet::static_write_ref_array_pre), 2);
         __ pop(RegSet::range(r0, r29), sp);         // integer registers except lr & sp        }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
       case BarrierSet::ModRef:
         break;
@@ -731,7 +731,7 @@ class StubGenerator: public StubCodeGenerator {
           __ pop(RegSet::range(r0, r29), sp);         // integer registers except lr & sp        }
         }
         break;
-      case BarrierSet::CardTableModRef:
+      case BarrierSet::CardTableForRS:
       case BarrierSet::CardTableExtension:
         {
           CardTableModRefBS* ct = (CardTableModRefBS*)bs;
@@ -2364,7 +2364,7 @@ class StubGenerator: public StubCodeGenerator {
    *   c_rarg3   - int* table
    *
    * Ouput:
-   *       rax   - int crc result
+   *       r0   - int crc result
    */
   address generate_updateBytesCRC32C() {
     assert(UseCRC32CIntrinsics, "what are we doing here?");
@@ -2435,6 +2435,69 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  void ghash_multiply(FloatRegister result_lo, FloatRegister result_hi,
+                      FloatRegister a, FloatRegister b, FloatRegister a1_xor_a0,
+                      FloatRegister tmp1, FloatRegister tmp2, FloatRegister tmp3, FloatRegister tmp4) {
+    // Karatsuba multiplication performs a 128*128 -> 256-bit
+    // multiplication in three 128-bit multiplications and a few
+    // additions.
+    //
+    // (C1:C0) = A1*B1, (D1:D0) = A0*B0, (E1:E0) = (A0+A1)(B0+B1)
+    // (A1:A0)(B1:B0) = C1:(C0+C1+D1+E1):(D1+C0+D0+E0):D0
+    //
+    // Inputs:
+    //
+    // A0 in a.d[0]     (subkey)
+    // A1 in a.d[1]
+    // (A1+A0) in a1_xor_a0.d[0]
+    //
+    // B0 in b.d[0]     (state)
+    // B1 in b.d[1]
+
+    __ ext(tmp1, __ T16B, b, b, 0x08);
+    __ pmull2(result_hi, __ T1Q, b, a, __ T2D);  // A1*B1
+    __ eor(tmp1, __ T16B, tmp1, b);            // (B1+B0)
+    __ pmull(result_lo,  __ T1Q, b, a, __ T1D);  // A0*B0
+    __ pmull(tmp2, __ T1Q, tmp1, a1_xor_a0, __ T1D); // (A1+A0)(B1+B0)
+
+    __ ext(tmp4, __ T16B, result_lo, result_hi, 0x08);
+    __ eor(tmp3, __ T16B, result_hi, result_lo); // A1*B1+A0*B0
+    __ eor(tmp2, __ T16B, tmp2, tmp4);
+    __ eor(tmp2, __ T16B, tmp2, tmp3);
+
+    // Register pair <result_hi:result_lo> holds the result of carry-less multiplication
+    __ ins(result_hi, __ D, tmp2, 0, 1);
+    __ ins(result_lo, __ D, tmp2, 1, 0);
+  }
+
+  void ghash_reduce(FloatRegister result, FloatRegister lo, FloatRegister hi,
+                    FloatRegister p, FloatRegister z, FloatRegister t1) {
+    const FloatRegister t0 = result;
+
+    // The GCM field polynomial f is z^128 + p(z), where p =
+    // z^7+z^2+z+1.
+    //
+    //    z^128 === -p(z)  (mod (z^128 + p(z)))
+    //
+    // so, given that the product we're reducing is
+    //    a == lo + hi * z^128
+    // substituting,
+    //      === lo - hi * p(z)  (mod (z^128 + p(z)))
+    //
+    // we reduce by multiplying hi by p(z) and subtracting the result
+    // from (i.e. XORing it with) lo.  Because p has no nonzero high
+    // bits we can do this with two 64-bit multiplications, lo*p and
+    // hi*p.
+
+    __ pmull2(t0, __ T1Q, hi, p, __ T2D);
+    __ ext(t1, __ T16B, t0, z, 8);
+    __ eor(hi, __ T16B, hi, t1);
+    __ ext(t1, __ T16B, z, t0, 8);
+    __ eor(lo, __ T16B, lo, t1);
+    __ pmull(t0, __ T1Q, hi, p, __ T1D);
+    __ eor(result, __ T16B, lo, t0);
+  }
+
   /**
    *  Arguments:
    *
@@ -2448,10 +2511,27 @@ class StubGenerator: public StubCodeGenerator {
    *  Updated state at c_rarg0
    */
   address generate_ghash_processBlocks() {
-    __ align(CodeEntryAlignment);
-    Label L_ghash_loop, L_exit;
+    // Bafflingly, GCM uses little-endian for the byte order, but
+    // big-endian for the bit order.  For example, the polynomial 1 is
+    // represented as the 16-byte string 80 00 00 00 | 12 bytes of 00.
+    //
+    // So, we must either reverse the bytes in each word and do
+    // everything big-endian or reverse the bits in each byte and do
+    // it little-endian.  On AArch64 it's more idiomatic to reverse
+    // the bits in each byte (we have an instruction, RBIT, to do
+    // that) and keep the data in little-endian bit order throught the
+    // calculation, bit-reversing the inputs and outputs.
 
     StubCodeMark mark(this, "StubRoutines", "ghash_processBlocks");
+    __ align(wordSize * 2);
+    address p = __ pc();
+    __ emit_int64(0x87);  // The low-order bits of the field
+                          // polynomial (i.e. p = z^7+z^2+z+1)
+                          // repeated in the low and high parts of a
+                          // 128-bit vector
+    __ emit_int64(0x87);
+
+    __ align(CodeEntryAlignment);
     address start = __ pc();
 
     Register state   = c_rarg0;
@@ -2462,104 +2542,43 @@ class StubGenerator: public StubCodeGenerator {
     FloatRegister vzr = v30;
     __ eor(vzr, __ T16B, vzr, vzr); // zero register
 
-    __ mov(v26, __ T16B, 1);
-    __ mov(v27, __ T16B, 63);
-    __ mov(v28, __ T16B, 62);
-    __ mov(v29, __ T16B, 57);
+    __ ldrq(v0, Address(state));
+    __ ldrq(v1, Address(subkeyH));
 
-    __ ldrq(v6, Address(state));
-    __ ldrq(v16, Address(subkeyH));
+    __ rev64(v0, __ T16B, v0);          // Bit-reverse words in state and subkeyH
+    __ rbit(v0, __ T16B, v0);
+    __ rev64(v1, __ T16B, v1);
+    __ rbit(v1, __ T16B, v1);
 
-    __ ext(v0, __ T16B, v6, v6, 0x08);
-    __ ext(v1, __ T16B, v16, v16, 0x08);
-    __ eor(v16, __ T16B, v16, v1);
+    __ ldrq(v26, p);
 
-    __ bind(L_ghash_loop);
+    __ ext(v16, __ T16B, v1, v1, 0x08); // long-swap subkeyH into v1
+    __ eor(v16, __ T16B, v16, v1);      // xor subkeyH into subkeyL (Karatsuba: (A1+A0))
 
-    __ ldrq(v2, Address(__ post(data, 0x10)));
-    __ rev64(v2, __ T16B, v2); // swap data
+    {
+      Label L_ghash_loop;
+      __ bind(L_ghash_loop);
 
-    __ ext(v6, __ T16B, v0, v0, 0x08);
-    __ eor(v6, __ T16B, v6, v2);
-    __ ext(v2, __ T16B, v6, v6, 0x08);
+      __ ldrq(v2, Address(__ post(data, 0x10))); // Load the data, bit
+                                                 // reversing each byte
+      __ rbit(v2, __ T16B, v2);
+      __ eor(v2, __ T16B, v0, v2);   // bit-swapped data ^ bit-swapped state
 
-    __ pmull2(v7, __ T1Q, v2, v1, __ T2D);  // A1*B1
-    __ eor(v6, __ T16B, v6, v2);
-    __ pmull(v5,  __ T1Q, v2, v1, __ T1D);  // A0*B0
-    __ pmull(v20, __ T1Q, v6, v16, __ T1D);  // (A1 + A0)(B1 + B0)
+      // Multiply state in v2 by subkey in v1
+      ghash_multiply(/*result_lo*/v5, /*result_hi*/v7,
+                     /*a*/v1, /*b*/v2, /*a1_xor_a0*/v16,
+                     /*temps*/v6, v20, v18, v21);
+      // Reduce v7:v5 by the field polynomial
+      ghash_reduce(v0, v5, v7, v26, vzr, v20);
 
-    __ ext(v21, __ T16B, v5, v7, 0x08);
-    __ eor(v18, __ T16B, v7, v5); // A1*B1 xor A0*B0
-    __ eor(v20, __ T16B, v20, v21);
-    __ eor(v20, __ T16B, v20, v18);
+      __ sub(blocks, blocks, 1);
+      __ cbnz(blocks, L_ghash_loop);
+    }
 
-    // Registers pair <v7:v5> holds the result of carry-less multiplication
-    __ ins(v7, __ D, v20, 0, 1);
-    __ ins(v5, __ D, v20, 1, 0);
+    // The bit-reversed result is at this point in v0
+    __ rev64(v1, __ T16B, v0);
+    __ rbit(v1, __ T16B, v1);
 
-    // Result of the multiplication is shifted by one bit position
-    // [X3:X2:X1:X0] = [X3:X2:X1:X0] << 1
-    __ ushr(v18, __ T2D, v5, -63 & 63);
-    __ ins(v25, __ D, v18, 1, 0);
-    __ ins(v25, __ D, vzr, 0, 0);
-    __ ushl(v5, __ T2D, v5, v26);
-    __ orr(v5, __ T16B, v5, v25);
-
-    __ ushr(v19, __ T2D, v7, -63 & 63);
-    __ ins(v19, __ D, v19, 1, 0);
-    __ ins(v19, __ D, v18, 0, 1);
-    __ ushl(v7, __ T2D, v7, v26);
-    __ orr(v6, __ T16B, v7, v19);
-
-    __ ins(v24, __ D, v5, 0, 1);
-
-    // A = X0 << 63
-    __ ushl(v21, __ T2D, v5, v27);
-
-    // A = X0 << 62
-    __ ushl(v22, __ T2D, v5, v28);
-
-    // A = X0 << 57
-    __ ushl(v23, __ T2D, v5, v29);
-
-    // D = X1^A^B^C
-    __ eor(v21, __ T16B, v21, v22);
-    __ eor(v21, __ T16B, v21, v23);
-    __ eor(v21, __ T16B, v21, v24);
-    __ ins(v5, __ D, v21, 1, 0);
-
-    // [E1:E0] = [D:X0] >> 1
-    __ ushr(v20, __ T2D, v5, -1 & 63);
-    __ ushl(v18, __ T2D, v5, v27);
-    __ ext(v25, __ T16B, v18, vzr, 0x08);
-    __ orr(v19, __ T16B, v20, v25);
-
-    __ eor(v7, __ T16B, v5, v19);
-
-    // [F1:F0] = [D:X0] >> 2
-    __ ushr(v20, __ T2D, v5, -2 & 63);
-    __ ushl(v18, __ T2D, v5, v28);
-    __ ins(v25, __ D, v18, 0, 1);
-    __ orr(v19, __ T16B, v20, v25);
-
-    __ eor(v7, __ T16B, v7, v19);
-
-    // [G1:G0] = [D:X0] >> 7
-    __ ushr(v20, __ T2D, v5, -7 & 63);
-    __ ushl(v18, __ T2D, v5, v29);
-    __ ins(v25, __ D, v18, 0, 1);
-    __ orr(v19, __ T16B, v20, v25);
-
-    // [H1:H0] = [D^E1^F1^G1:X0^E0^F0^G0]
-    __ eor(v7, __ T16B, v7, v19);
-
-    // Result = [H1:H0]^[X3:X2]
-    __ eor(v0, __ T16B, v7, v6);
-
-    __ subs(blocks, blocks, 1);
-    __ cbnz(blocks, L_ghash_loop);
-
-    __ ext(v1, __ T16B, v0, v0, 0x08);
     __ st1(v1, __ T16B, state);
     __ ret(lr);
 

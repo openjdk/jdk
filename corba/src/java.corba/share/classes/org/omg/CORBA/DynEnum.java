@@ -26,8 +26,9 @@
 
 package org.omg.CORBA;
 
-/** Represents a <tt>DynAny</tt> object  associated
- *  with an IDL enum.
+/**
+ * Represents a {@code DynAny} object associated with an IDL enum.
+ *
  * @deprecated Use the new <a href="../DynamicAny/DynEnum.html">DynEnum</a> instead
  */
 @Deprecated
@@ -35,14 +36,14 @@ public interface DynEnum extends org.omg.CORBA.Object, org.omg.CORBA.DynAny
 {
     /**
      * Return the value of the IDL enum stored in this
-     * <code>DynEnum</code> as a string.
+     * {@code DynEnum} as a string.
      *
      * @return the stringified value.
      */
     public String value_as_string();
 
     /**
-     * Set a particular enum in this <code>DynEnum</code>.
+     * Set a particular enum in this {@code DynEnum}.
      *
      * @param arg the string corresponding to the value.
      */

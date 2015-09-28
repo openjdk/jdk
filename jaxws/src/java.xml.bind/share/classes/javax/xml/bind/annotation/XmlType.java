@@ -35,7 +35,7 @@ import java.lang.annotation.Target;
  * Maps a class or an enum type to a XML Schema type.
  *
  * <p><b>Usage</b></p>
- * <p> The <tt>@XmlType</tt> annnotation can be used with the following program
+ * <p> The {@code @XmlType} annnotation can be used with the following program
  * elements:
  * <ul>
  *   <li> a top level class </li>
@@ -53,8 +53,8 @@ import java.lang.annotation.Target;
  * schema type's content model (e.g. model groups, attributes etc).
  * <p> To be mapped, a class must either have a public no-arg
  * constructor or a static no-arg factory method. The static factory
- * method can be specified in <tt>factoryMethod()</tt> and
- * <tt>factoryClass()</tt> annotation elements. The static factory
+ * method can be specified in {@code factoryMethod()} and
+ * {@code factoryClass()} annotation elements. The static factory
  * method or the no-arg constructor is used during unmarshalling to
  * create an instance of this class. If both are present, the static
  * factory method overrides the no-arg constructor.
@@ -64,7 +64,7 @@ import java.lang.annotation.Target;
  * mapping of JavaBean properties and fields contained within the
  * class. The schema type to which the class is mapped can either be
  * named or anonymous. A class can be mapped to an anonymous schema
- * type by annotating the class with <tt>&#64;XmlType(name="")</tt>.
+ * type by annotating the class with {@code @XmlType(name="")}.
  * <p>
  * Either a global element, local element or a local attribute can be
  * associated with an anonymous type as follows:
@@ -84,29 +84,29 @@ import java.lang.annotation.Target;
  * </ul>
  * <b> Mapping to XML Schema Complex Type </b>
  * <ul>
- *   <li>If class is annotated with <tt>@XmlType(name="") </tt>, it
+ *   <li>If class is annotated with {@code @XmlType(name="") }, it
  *   is mapped to an anonymous type otherwise, the class name maps
- *   to a complex type name. The <tt>XmlName()</tt> annotation element
+ *   to a complex type name. The {@code XmlName()} annotation element
  *   can be used to customize the name.</li>
  *
  *   <li> Properties and fields that are mapped to elements are mapped to a
  *   content model within a complex type. The annotation element
- *   <tt>propOrder()</tt> can be used to customize the content model to be
- *   <tt>xs:all</tt> or <tt>xs:sequence</tt>.  It is used for specifying
- *   the order of XML elements in <tt>xs:sequence</tt>. </li>
+ *   {@code propOrder()} can be used to customize the content model to be
+ *   {@code xs:all} or {@code xs:sequence}.  It is used for specifying
+ *   the order of XML elements in {@code xs:sequence}. </li>
  *
  *   <li> Properties and fields can be mapped to attributes within the
  *        complex type.  </li>
  *
  *   <li> The targetnamespace of the XML Schema type can be customized
- *        using the annotation element <tt>namespace()</tt>. </li>
+ *        using the annotation element {@code namespace()}. </li>
  * </ul>
  *
  * <p>
  * <b> Mapping class to XML Schema simple type </b>
  * <p>
  * A class can be mapped to a XML Schema simple type using the
- * <tt>@XmlValue</tt> annotation. For additional details and examples,
+ * {@code @XmlValue} annotation. For additional details and examples,
  * see @{@link XmlValue} annotation type.
  * <p>
  * The following table shows the mapping of the class to a XML Schema
@@ -114,8 +114,8 @@ import java.lang.annotation.Target;
  * <ul>
  *   <li> {@literal ->}    : represents a mapping </li>
  *   <li> [x]+  : one or more occurances of x </li>
- *   <li> [ <tt>@XmlValue</tt> property ]: JavaBean property annotated with
- *         <tt>@XmlValue</tt></li>
+ *   <li> [ {@code @XmlValue} property ]: JavaBean property annotated with
+ *         {@code @XmlValue}</li>
  *   <li> X     : don't care
  * </ul>
  * <blockquote>
@@ -156,7 +156,7 @@ import java.lang.annotation.Target;
  *       <tr valign="top">
  *         <td>Class</td>
  *         <td>X</td>
- *         <td>1 [<tt>@XmlValue</tt> property] {@literal &&} <br> [property]+ {@literal ->} attributes</td>
+ *         <td>1 [{@code @XmlValue} property] {@literal &&} <br> [property]+ {@literal ->} attributes</td>
  *         <td>simplecontent</td>
  *         <td> </td>
  *       </tr>
@@ -164,7 +164,7 @@ import java.lang.annotation.Target;
  *       <tr valign="top">
  *         <td>Class</td>
  *         <td>X</td>
- *         <td>1 [<tt>@XmlValue</tt> property] {@literal &&} <br> no properties {@literal ->} attribute</td>
+ *         <td>1 [{@code @XmlValue} property] {@literal &&} <br> no properties {@literal ->} attribute</td>
  *         <td> </td>
  *         <td>simpletype</td>
  *       </tr>
@@ -176,8 +176,8 @@ import java.lang.annotation.Target;
  *
  * An enum type maps to a XML schema simple type with enumeration
  * facets. The following annotation elements are ignored since they
- * are not meaningful: <tt>propOrder()</tt> , <tt>factoryMethod()</tt> ,
- * <tt>factoryClass()</tt> .
+ * are not meaningful: {@code propOrder()} , {@code factoryMethod()} ,
+ * {@code factoryClass()} .
  *
  *  <h3> Usage with other annotations </h3>
  * <p> This annotation can be used with the following annotations:
@@ -406,7 +406,7 @@ public @interface XmlType {
      * <p> All of the JavaBean properties being mapped to XML Schema elements
      *     must be listed.
      * <p> A JavaBean property or field listed in propOrder must not
-     *     be transient or annotated with <tt>@XmlTransient</tt>.
+     *     be transient or annotated with {@code @XmlTransient}.
      * <p> The default ordering of JavaBean properties is determined
      *     by @{@link XmlAccessorOrder}.
      */
@@ -423,18 +423,18 @@ public @interface XmlType {
      * Class containing a no-arg factory method for creating an
      * instance of this class. The default is this class.
      *
-     * <p>If <tt>factoryClass</tt> is DEFAULT.class and
-     * <tt>factoryMethod</tt> is "", then there is no static factory
+     * <p>If {@code factoryClass} is DEFAULT.class and
+     * {@code factoryMethod} is "", then there is no static factory
      * method.
      *
-     * <p>If <tt>factoryClass</tt> is DEFAULT.class and
-     * <tt>factoryMethod</tt> is not "", then
-     * <tt>factoryMethod</tt> is the name of a static factory method
+     * <p>If {@code factoryClass} is DEFAULT.class and
+     * {@code factoryMethod} is not "", then
+     * {@code factoryMethod} is the name of a static factory method
      * in this class.
      *
-     * <p>If <tt>factoryClass</tt> is not DEFAULT.class, then
-     * <tt>factoryMethod</tt> must not be "" and must be the name of
-     * a static factory method specified in <tt>factoryClass</tt>.
+     * <p>If {@code factoryClass} is not DEFAULT.class, then
+     * {@code factoryMethod} must not be "" and must be the name of
+     * a static factory method specified in {@code factoryClass}.
      */
     Class factoryClass() default DEFAULT.class;
 
@@ -447,7 +447,7 @@ public @interface XmlType {
 
     /**
      * Name of a no-arg factory method in the class specified in
-     * <tt>factoryClass</tt> factoryClass().
+     * {@code factoryClass} factoryClass().
      *
      */
     String factoryMethod() default "";

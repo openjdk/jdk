@@ -26,8 +26,8 @@ package com.sun.jmx.mbeanserver;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import sun.misc.JavaBeansAccess;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaBeansAccess;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * A centralized place for gaining access to java.beans related functionality -

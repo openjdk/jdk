@@ -44,7 +44,7 @@ import java.lang.annotation.Target;
  * &#64;XmlElements({ @XmlElement(...),@XmlElement(...) })
  * </pre>
  *
- * <p>The <tt>@XmlElements</tt> annotation can be used with the
+ * <p>The {@code @XmlElements} annotation can be used with the
  * following program elements: </p>
  * <ul>
  *   <li> a JavaBean property </li>
@@ -62,7 +62,7 @@ import java.lang.annotation.Target;
  *        annotations: @{@link XmlIDREF}, @{@link XmlElementWrapper}. </li>
  *   <li> If @XmlIDREF is also specified on the JavaBean property,
  *        then each &#64;XmlElement.type() must contain a JavaBean
- *        property annotated with <tt>&#64;XmlID</tt>.</li>
+ *        property annotated with {@code @XmlID}.</li>
  * </ul>
  *
  * <p>See "Package Specification" in javax.xml.bind.package javadoc for

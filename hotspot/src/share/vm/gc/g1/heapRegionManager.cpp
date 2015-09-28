@@ -426,7 +426,7 @@ uint HeapRegionManager::shrink_by(uint num_regions_to_remove) {
       (num_last_found = find_empty_from_idx_reverse(cur, &idx_last_found)) > 0) {
     uint to_remove = MIN2(num_regions_to_remove - removed, num_last_found);
 
-    uncommit_regions(idx_last_found + num_last_found - to_remove, to_remove);
+    shrink_at(idx_last_found + num_last_found - to_remove, to_remove);
 
     cur = idx_last_found;
     removed += to_remove;
@@ -435,6 +435,17 @@ uint HeapRegionManager::shrink_by(uint num_regions_to_remove) {
   verify_optional();
 
   return removed;
+}
+
+void HeapRegionManager::shrink_at(uint index, size_t num_regions) {
+#ifdef ASSERT
+  for (uint i = index; i < (index + num_regions); i++) {
+    assert(is_available(i), err_msg("Expected available region at index %u", i));
+    assert(at(i)->is_empty(), err_msg("Expected empty region at index %u", i));
+    assert(at(i)->is_free(), err_msg("Expected free region at index %u", i));
+  }
+#endif
+  uncommit_regions(index, num_regions);
 }
 
 uint HeapRegionManager::find_empty_from_idx_reverse(uint start_idx, uint* res_idx) const {

@@ -179,7 +179,7 @@ public interface Codec {
      *      <p>
      *      If the {@link Codec} implementation is already
      *      re-entrant and multi-thread safe to begin with,
-     *      then this method may simply return <tt>this</tt>.
+     *      then this method may simply return {@code this}.
      */
     Codec copy();
 
@@ -208,7 +208,7 @@ public interface Codec {
      *      The MIME content type (like "application/xml") of this byte stream.
      *      Thie text includes all the sub-headers of the content-type header. Therefore,
      *      in more complex case, this could be something like
-     *      <tt>multipart/related; boundary="--=_outer_boundary"; type="multipart/alternative"</tt>.
+     *      {@code multipart/related; boundary="--=_outer_boundary"; type="multipart/alternative"}.
      *      This parameter must not be null.
      *
      * @param response

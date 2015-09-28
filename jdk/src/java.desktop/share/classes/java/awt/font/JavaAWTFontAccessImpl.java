@@ -26,9 +26,9 @@
 package java.awt.font;
 
 import java.lang.reflect.Field;
-import sun.misc.JavaAWTFontAccess;
+import jdk.internal.misc.JavaAWTFontAccess;
 
-class JavaAWTFontAccessImpl implements sun.misc.JavaAWTFontAccess {
+class JavaAWTFontAccessImpl implements JavaAWTFontAccess {
 
     // java.awt.font.TextAttribute constants
     public Object getTextAttributeConstant(String name) {

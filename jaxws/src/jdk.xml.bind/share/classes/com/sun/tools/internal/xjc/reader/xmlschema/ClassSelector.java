@@ -281,7 +281,7 @@ public final class ClassSelector extends BindingComponent {
      *      the binding of the body will be done later, to avoid
      *      cyclic binding problem.
      * @param referer
-     *      The component that refers to <tt>sc</tt>. This can be null,
+     *      The component that refers to {@code sc}. This can be null,
      *      if figuring out the referer is too hard, in which case
      *      the error message might be less user friendly.
      */
@@ -423,7 +423,7 @@ public final class ClassSelector extends BindingComponent {
 
 
     /**
-     * Set of package names that are tested (set of <code>String</code>s.)
+     * Set of package names that are tested (set of {@code String}s.)
      *
      * This set is used to avoid duplicating "incorrect package name"
      * errors.

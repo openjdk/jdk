@@ -134,10 +134,10 @@ public abstract class IDResolver {
      * and it is used as the target object.
      *
      * <p>
-     * When a forward-reference happens, the <tt>call</tt> method
+     * When a forward-reference happens, the {@code call} method
      * should return null. In this case the JAXB RI unmarshaller invokes
-     * the <tt>call</tt> method again after all the documents are fully unmarshalled.
-     * If the <tt>call</tt> method still returns null, then the JAXB RI unmarshaller
+     * the {@code call} method again after all the documents are fully unmarshalled.
+     * If the {@code call} method still returns null, then the JAXB RI unmarshaller
      * treats it as an error.
      *
      * <p>

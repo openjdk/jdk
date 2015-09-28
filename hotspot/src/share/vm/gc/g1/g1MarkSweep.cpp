@@ -74,7 +74,7 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   assert(rp != NULL, "should be non-NULL");
   assert(rp == G1CollectedHeap::heap()->ref_processor_stw(), "Precondition");
 
-  GenMarkSweep::_ref_processor = rp;
+  GenMarkSweep::set_ref_processor(rp);
   rp->setup_policy(clear_all_softrefs);
 
   // When collecting the permanent generation Method*s may be moving,
@@ -108,7 +108,7 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   JvmtiExport::gc_epilogue();
 
   // refs processing: clean slate
-  GenMarkSweep::_ref_processor = NULL;
+  GenMarkSweep::set_ref_processor(NULL);
 }
 
 
@@ -310,9 +310,9 @@ void G1MarkSweep::enable_archive_object_check() {
                                  HeapRegion::GrainBytes);
 }
 
-void G1MarkSweep::mark_range_archive(MemRegion range) {
+void G1MarkSweep::set_range_archive(MemRegion range, bool is_archive) {
   assert(_archive_check_enabled, "archive range check not enabled");
-  _archive_region_map.set_by_address(range, true);
+  _archive_region_map.set_by_address(range, is_archive);
 }
 
 bool G1MarkSweep::in_archive_range(oop object) {

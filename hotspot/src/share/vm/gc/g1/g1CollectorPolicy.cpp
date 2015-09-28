@@ -181,15 +181,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
     G1ErgoVerbose::set_enabled(false);
   }
 
-  // Verify PLAB sizes
-  const size_t region_size = HeapRegion::GrainWords;
-  if (YoungPLABSize > region_size || OldPLABSize > region_size) {
-    char buffer[128];
-    jio_snprintf(buffer, sizeof(buffer), "%sPLABSize should be at most " SIZE_FORMAT,
-                 OldPLABSize > region_size ? "Old" : "Young", region_size);
-    vm_exit_during_initialization(buffer);
-  }
-
   _recent_prev_end_times_for_all_gcs_sec->add(os::elapsedTime());
   _prev_collection_pause_end_ms = os::elapsedTime() * 1000.0;
 
@@ -932,7 +923,7 @@ bool G1CollectorPolicy::need_to_start_conc_mark(const char* source, size_t alloc
 // Anything below that is considered to be zero
 #define MIN_TIMER_GRANULARITY 0.0000001
 
-void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, EvacuationInfo& evacuation_info) {
+void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t cards_scanned) {
   double end_time_sec = os::elapsedTime();
   assert(_cur_collection_pause_used_regions_at_start >= cset_region_length(),
          "otherwise, the subtraction below does not make sense");
@@ -963,9 +954,6 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
 
   _mmu_tracker->add_pause(end_time_sec - pause_time_ms/1000.0,
                           end_time_sec, _g1->gc_tracer_stw()->gc_id());
-
-  evacuation_info.set_collectionset_used_before(_collection_set_bytes_used_before);
-  evacuation_info.set_bytes_copied(_bytes_copied_during_gc);
 
   if (update_stats) {
     _trace_young_gen_time_data.record_end_collection(pause_time_ms, phase_times());
@@ -1063,8 +1051,6 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
       cost_per_card_ms = phase_times()->average_time_ms(G1GCPhaseTimes::UpdateRS) / (double) _pending_cards;
       _cost_per_card_ms_seq->add(cost_per_card_ms);
     }
-
-    size_t cards_scanned = _g1->cards_scanned();
 
     double cost_per_entry_ms = 0.0;
     if (cards_scanned > 10) {
@@ -1883,7 +1869,7 @@ uint G1CollectorPolicy::calc_max_old_cset_length() {
 }
 
 
-void G1CollectorPolicy::finalize_cset(double target_pause_time_ms, EvacuationInfo& evacuation_info) {
+double G1CollectorPolicy::finalize_young_cset_part(double target_pause_time_ms) {
   double young_start_time_sec = os::elapsedTime();
 
   YoungList* young_list = _g1->young_list();
@@ -1895,7 +1881,6 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms, EvacuationInf
   guarantee(_collection_set == NULL, "Precondition");
 
   double base_time_ms = predict_base_elapsed_time_ms(_pending_cards);
-  double predicted_pause_time_ms = base_time_ms;
   double time_remaining_ms = MAX2(target_pause_time_ms - base_time_ms, 0.0);
 
   ergo_verbose4(ErgoCSetConstruction | ErgoHigh,
@@ -1939,15 +1924,16 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms, EvacuationInf
   _collection_set = _inc_cset_head;
   _collection_set_bytes_used_before = _inc_cset_bytes_used_before;
   time_remaining_ms = MAX2(time_remaining_ms - _inc_cset_predicted_elapsed_time_ms, 0.0);
-  predicted_pause_time_ms += _inc_cset_predicted_elapsed_time_ms;
 
-  ergo_verbose3(ErgoCSetConstruction | ErgoHigh,
+  ergo_verbose4(ErgoCSetConstruction | ErgoHigh,
                 "add young regions to CSet",
                 ergo_format_region("eden")
                 ergo_format_region("survivors")
-                ergo_format_ms("predicted young region time"),
+                ergo_format_ms("predicted young region time")
+                ergo_format_ms("target pause time"),
                 eden_region_length, survivor_region_length,
-                _inc_cset_predicted_elapsed_time_ms);
+                _inc_cset_predicted_elapsed_time_ms,
+                target_pause_time_ms);
 
   // The number of recorded young regions is the incremental
   // collection set's current size
@@ -1956,8 +1942,13 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms, EvacuationInf
   double young_end_time_sec = os::elapsedTime();
   phase_times()->record_young_cset_choice_time_ms((young_end_time_sec - young_start_time_sec) * 1000.0);
 
-  // Set the start of the non-young choice time.
-  double non_young_start_time_sec = young_end_time_sec;
+  return time_remaining_ms;
+}
+
+void G1CollectorPolicy::finalize_old_cset_part(double time_remaining_ms) {
+  double non_young_start_time_sec = os::elapsedTime();
+  double predicted_old_time_ms = 0.0;
+
 
   if (!collector_state()->gcs_are_young()) {
     CollectionSetChooser* cset_chooser = _collectionSetChooser;
@@ -2045,8 +2036,8 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms, EvacuationInf
 
       // We will add this region to the CSet.
       time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
-      predicted_pause_time_ms += predicted_time_ms;
-      cset_chooser->remove_and_move_to_next(hr);
+      predicted_old_time_ms += predicted_time_ms;
+      cset_chooser->pop(); // already have region via peek()
       _g1->old_set_remove(hr);
       add_old_region_to_cset(hr);
 
@@ -2080,20 +2071,16 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms, EvacuationInf
 
   stop_incremental_cset_building();
 
-  ergo_verbose5(ErgoCSetConstruction,
+  ergo_verbose3(ErgoCSetConstruction,
                 "finish choosing CSet",
-                ergo_format_region("eden")
-                ergo_format_region("survivors")
                 ergo_format_region("old")
-                ergo_format_ms("predicted pause time")
-                ergo_format_ms("target pause time"),
-                eden_region_length, survivor_region_length,
+                ergo_format_ms("predicted old region time")
+                ergo_format_ms("time remaining"),
                 old_cset_region_length(),
-                predicted_pause_time_ms, target_pause_time_ms);
+                predicted_old_time_ms, time_remaining_ms);
 
   double non_young_end_time_sec = os::elapsedTime();
   phase_times()->record_non_young_cset_choice_time_ms((non_young_end_time_sec - non_young_start_time_sec) * 1000.0);
-  evacuation_info.set_collectionset_regions(cset_region_length());
 }
 
 void TraceYoungGenTimeData::record_start_collection(double time_to_stop_the_world_ms) {

@@ -116,7 +116,8 @@ public abstract class JType implements JGenerable, Comparable<JType> {
     }
 
     /**
-     * If this class is a primitive type, return the boxed class. Otherwise return <tt>this</tt>.
+     * If this class is a primitive type, return the boxed class.
+     * Otherwise return {@code this}.
      *
      * <p>
      * For example, for "int", this method returns "java.lang.Integer".
@@ -125,7 +126,7 @@ public abstract class JType implements JGenerable, Comparable<JType> {
 
     /**
      * If this class is a wrapper type for a primitive, return the primitive type.
-     * Otherwise return <tt>this</tt>.
+     * Otherwise return {@code this}.
      *
      * <p>
      * For example, for "java.lang.Integer", this method returns "int".

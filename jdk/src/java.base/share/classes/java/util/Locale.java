@@ -825,7 +825,7 @@ public final class Locale implements Cloneable, Serializable {
      * setDefault(Locale.Category, Locale) method.
      *
      * @param category - the specified category to get the default locale
-     * @throws NullPointerException - if category is null
+     * @throws NullPointerException if category is null
      * @return the default locale for the specified Category for this instance
      *     of the Java Virtual Machine
      * @see #setDefault(Locale.Category, Locale)
@@ -954,9 +954,9 @@ public final class Locale implements Cloneable, Serializable {
      *
      * @param category - the specified category to set the default locale
      * @param newLocale - the new default locale
-     * @throws SecurityException - if a security manager exists and its
+     * @throws SecurityException if a security manager exists and its
      *     checkPermission method doesn't allow the operation.
-     * @throws NullPointerException - if category and/or newLocale is null
+     * @throws NullPointerException if category and/or newLocale is null
      * @see SecurityManager#checkPermission(java.security.Permission)
      * @see PropertyPermission
      * @see #getDefault(Locale.Category)

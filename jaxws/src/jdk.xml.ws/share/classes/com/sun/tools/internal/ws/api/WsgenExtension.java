@@ -30,7 +30,7 @@ package com.sun.tools.internal.ws.api;
  * The extension implementations are found using service
  * discovery mechanism i.e. JAX-WS tooltime locates
  * {@link WsgenExtension}s through the
- * <tt>META-INF/services/com.sun.tools.internal.ws.api.WsgenExtension</tt>
+ * {@code META-INF/services/com.sun.tools.internal.ws.api.WsgenExtension}
  * files.
  *
  * {@link WsgenProtocol} annotation can be specified on the

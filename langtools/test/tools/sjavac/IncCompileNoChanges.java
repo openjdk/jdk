@@ -69,6 +69,7 @@ public class IncCompileNoChanges  extends SJavacTester {
         System.out.println("Testing that no change in sources implies no change in binaries");
         compile(GENSRC.toString(),
                 "-d", BIN.toString(),
+                "--state-dir=" + BIN,
                 "-h", HEADERS.toString(),
                 "-j", "1",
                 SERVER_ARG,

@@ -99,7 +99,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   BlockOffsetArrayNonContigSpace _bt;
 
   CMSCollector* _collector;
-  ConcurrentMarkSweepGeneration* _gen;
+  ConcurrentMarkSweepGeneration* _old_gen;
 
   // Data structures for free blocks (used during allocation/sweeping)
 

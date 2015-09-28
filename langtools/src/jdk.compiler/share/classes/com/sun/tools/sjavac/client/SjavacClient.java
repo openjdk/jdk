@@ -91,7 +91,7 @@ public class SjavacClient implements Sjavac {
         String serverConf = (tmpServerConf!=null)? tmpServerConf : "";
         String tmpId = Util.extractStringOption("id", serverConf);
         id = (tmpId!=null) ? tmpId : "id"+(((new java.util.Random()).nextLong())&Long.MAX_VALUE);
-        String defaultPortfile = options.getStateDir()
+        String defaultPortfile = options.getDestDir()
                                         .resolve("javac_server")
                                         .toAbsolutePath()
                                         .toString();

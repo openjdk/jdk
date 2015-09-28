@@ -49,7 +49,6 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.DeferredAttr.DeferredAttrContext;
 import com.sun.tools.javac.comp.Infer.FreeTypeListener;
 import com.sun.tools.javac.tree.JCTree.*;
-import com.sun.tools.javac.tree.JCTree.JCPolyExpression.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
@@ -976,10 +975,6 @@ public class Check {
                 TreeInfo.setVarargsElement(env.tree, types.elemtype(argtype));
             }
          }
-         PolyKind pkind = (sym.type.hasTag(FORALL) &&
-                 sym.type.getReturnType().containsAny(((ForAll)sym.type).tvars)) ?
-                 PolyKind.POLY : PolyKind.STANDALONE;
-         TreeInfo.setPolyKind(env.tree, pkind);
          return owntype;
     }
     //where

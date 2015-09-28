@@ -115,6 +115,7 @@ class RegisterSaver {
 OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_frame_words,
                                            int* total_frame_words, bool verify_fpu, bool save_vectors) {
   int vect_words = 0;
+  int num_xmm_regs = XMMRegisterImpl::number_of_registers;
 #ifdef COMPILER2
   if (save_vectors) {
     assert(UseAVX > 0, "512bit vectors are supported only with EVEX");
@@ -173,59 +174,50 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
   }
 
+  int off = st0_off;
+  int delta = st1_off - off;
+
   // Save the FPU registers in de-opt-able form
+  for (int n = 0; n < FloatRegisterImpl::number_of_registers; n++) {
+    __ fstp_d(Address(rsp, off*wordSize));
+    off += delta;
+  }
 
-  __ fstp_d(Address(rsp, st0_off*wordSize)); // st(0)
-  __ fstp_d(Address(rsp, st1_off*wordSize)); // st(1)
-  __ fstp_d(Address(rsp, st2_off*wordSize)); // st(2)
-  __ fstp_d(Address(rsp, st3_off*wordSize)); // st(3)
-  __ fstp_d(Address(rsp, st4_off*wordSize)); // st(4)
-  __ fstp_d(Address(rsp, st5_off*wordSize)); // st(5)
-  __ fstp_d(Address(rsp, st6_off*wordSize)); // st(6)
-  __ fstp_d(Address(rsp, st7_off*wordSize)); // st(7)
-
-  if( UseSSE == 1 ) {           // Save the XMM state
-    __ movflt(Address(rsp,xmm0_off*wordSize),xmm0);
-    __ movflt(Address(rsp,xmm1_off*wordSize),xmm1);
-    __ movflt(Address(rsp,xmm2_off*wordSize),xmm2);
-    __ movflt(Address(rsp,xmm3_off*wordSize),xmm3);
-    __ movflt(Address(rsp,xmm4_off*wordSize),xmm4);
-    __ movflt(Address(rsp,xmm5_off*wordSize),xmm5);
-    __ movflt(Address(rsp,xmm6_off*wordSize),xmm6);
-    __ movflt(Address(rsp,xmm7_off*wordSize),xmm7);
-  } else if( UseSSE >= 2 ) {
+  off = xmm0_off;
+  delta = xmm1_off - off;
+  if(UseSSE == 1) {           // Save the XMM state
+    for (int n = 0; n < num_xmm_regs; n++) {
+      __ movflt(Address(rsp, off*wordSize), as_XMMRegister(n));
+      off += delta;
+    }
+  } else if(UseSSE >= 2) {
     // Save whole 128bit (16 bytes) XMM regiters
-    __ movdqu(Address(rsp,xmm0_off*wordSize),xmm0);
-    __ movdqu(Address(rsp,xmm1_off*wordSize),xmm1);
-    __ movdqu(Address(rsp,xmm2_off*wordSize),xmm2);
-    __ movdqu(Address(rsp,xmm3_off*wordSize),xmm3);
-    __ movdqu(Address(rsp,xmm4_off*wordSize),xmm4);
-    __ movdqu(Address(rsp,xmm5_off*wordSize),xmm5);
-    __ movdqu(Address(rsp,xmm6_off*wordSize),xmm6);
-    __ movdqu(Address(rsp,xmm7_off*wordSize),xmm7);
+    if (VM_Version::supports_avx512novl()) {
+      for (int n = 0; n < num_xmm_regs; n++) {
+        __ vextractf32x4h(Address(rsp, off*wordSize), as_XMMRegister(n), 0);
+        off += delta;
+      }
+    } else {
+      for (int n = 0; n < num_xmm_regs; n++) {
+        __ movdqu(Address(rsp, off*wordSize), as_XMMRegister(n));
+        off += delta;
+      }
+    }
   }
 
   if (vect_words > 0) {
     assert(vect_words*wordSize == 128, "");
     __ subptr(rsp, 128); // Save upper half of YMM registes
-    __ vextractf128h(Address(rsp,  0),xmm0);
-    __ vextractf128h(Address(rsp, 16),xmm1);
-    __ vextractf128h(Address(rsp, 32),xmm2);
-    __ vextractf128h(Address(rsp, 48),xmm3);
-    __ vextractf128h(Address(rsp, 64),xmm4);
-    __ vextractf128h(Address(rsp, 80),xmm5);
-    __ vextractf128h(Address(rsp, 96),xmm6);
-    __ vextractf128h(Address(rsp,112),xmm7);
+    off = 0;
+    for (int n = 0; n < num_xmm_regs; n++) {
+      __ vextractf128h(Address(rsp, off++*16), as_XMMRegister(n));
+    }
     if (UseAVX > 2) {
       __ subptr(rsp, 256); // Save upper half of ZMM registes
-      __ vextractf64x4h(Address(rsp, 0), xmm0);
-      __ vextractf64x4h(Address(rsp, 32), xmm1);
-      __ vextractf64x4h(Address(rsp, 64), xmm2);
-      __ vextractf64x4h(Address(rsp, 96), xmm3);
-      __ vextractf64x4h(Address(rsp, 128), xmm4);
-      __ vextractf64x4h(Address(rsp, 160), xmm5);
-      __ vextractf64x4h(Address(rsp, 192), xmm6);
-      __ vextractf64x4h(Address(rsp, 224), xmm7);
+      off = 0;
+      for (int n = 0; n < num_xmm_regs; n++) {
+        __ vextractf64x4h(Address(rsp, off++*32), as_XMMRegister(n));
+      }
     }
   }
 
@@ -238,58 +230,40 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   OopMap* map =  new OopMap( frame_words, 0 );
 
 #define STACK_OFFSET(x) VMRegImpl::stack2reg((x) + additional_frame_words)
-
-  map->set_callee_saved(STACK_OFFSET( rax_off), rax->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET( rcx_off), rcx->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET( rdx_off), rdx->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET( rbx_off), rbx->as_VMReg());
-  // rbp, location is known implicitly, no oopMap
-  map->set_callee_saved(STACK_OFFSET( rsi_off), rsi->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET( rdi_off), rdi->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET(st0_off), as_FloatRegister(0)->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET(st1_off), as_FloatRegister(1)->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET(st2_off), as_FloatRegister(2)->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET(st3_off), as_FloatRegister(3)->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET(st4_off), as_FloatRegister(4)->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET(st5_off), as_FloatRegister(5)->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET(st6_off), as_FloatRegister(6)->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET(st7_off), as_FloatRegister(7)->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET(xmm0_off), xmm0->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET(xmm1_off), xmm1->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET(xmm2_off), xmm2->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET(xmm3_off), xmm3->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET(xmm4_off), xmm4->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET(xmm5_off), xmm5->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET(xmm6_off), xmm6->as_VMReg());
-  map->set_callee_saved(STACK_OFFSET(xmm7_off), xmm7->as_VMReg());
-  // %%% This is really a waste but we'll keep things as they were for now
-  if (true) {
 #define NEXTREG(x) (x)->as_VMReg()->next()
-    map->set_callee_saved(STACK_OFFSET(st0H_off), NEXTREG(as_FloatRegister(0)));
-    map->set_callee_saved(STACK_OFFSET(st1H_off), NEXTREG(as_FloatRegister(1)));
-    map->set_callee_saved(STACK_OFFSET(st2H_off), NEXTREG(as_FloatRegister(2)));
-    map->set_callee_saved(STACK_OFFSET(st3H_off), NEXTREG(as_FloatRegister(3)));
-    map->set_callee_saved(STACK_OFFSET(st4H_off), NEXTREG(as_FloatRegister(4)));
-    map->set_callee_saved(STACK_OFFSET(st5H_off), NEXTREG(as_FloatRegister(5)));
-    map->set_callee_saved(STACK_OFFSET(st6H_off), NEXTREG(as_FloatRegister(6)));
-    map->set_callee_saved(STACK_OFFSET(st7H_off), NEXTREG(as_FloatRegister(7)));
-    map->set_callee_saved(STACK_OFFSET(xmm0H_off), NEXTREG(xmm0));
-    map->set_callee_saved(STACK_OFFSET(xmm1H_off), NEXTREG(xmm1));
-    map->set_callee_saved(STACK_OFFSET(xmm2H_off), NEXTREG(xmm2));
-    map->set_callee_saved(STACK_OFFSET(xmm3H_off), NEXTREG(xmm3));
-    map->set_callee_saved(STACK_OFFSET(xmm4H_off), NEXTREG(xmm4));
-    map->set_callee_saved(STACK_OFFSET(xmm5H_off), NEXTREG(xmm5));
-    map->set_callee_saved(STACK_OFFSET(xmm6H_off), NEXTREG(xmm6));
-    map->set_callee_saved(STACK_OFFSET(xmm7H_off), NEXTREG(xmm7));
+
+  map->set_callee_saved(STACK_OFFSET(rax_off), rax->as_VMReg());
+  map->set_callee_saved(STACK_OFFSET(rcx_off), rcx->as_VMReg());
+  map->set_callee_saved(STACK_OFFSET(rdx_off), rdx->as_VMReg());
+  map->set_callee_saved(STACK_OFFSET(rbx_off), rbx->as_VMReg());
+  // rbp, location is known implicitly, no oopMap
+  map->set_callee_saved(STACK_OFFSET(rsi_off), rsi->as_VMReg());
+  map->set_callee_saved(STACK_OFFSET(rdi_off), rdi->as_VMReg());
+  // %%% This is really a waste but we'll keep things as they were for now for the upper component
+  off = st0_off;
+  delta = st1_off - off;
+  for (int n = 0; n < FloatRegisterImpl::number_of_registers; n++) {
+    FloatRegister freg_name = as_FloatRegister(n);
+    map->set_callee_saved(STACK_OFFSET(off), freg_name->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(off+1), NEXTREG(freg_name));
+    off += delta;
+  }
+  off = xmm0_off;
+  delta = xmm1_off - off;
+  for (int n = 0; n < num_xmm_regs; n++) {
+    XMMRegister xmm_name = as_XMMRegister(n);
+    map->set_callee_saved(STACK_OFFSET(off), xmm_name->as_VMReg());
+    map->set_callee_saved(STACK_OFFSET(off+1), NEXTREG(xmm_name));
+    off += delta;
+  }
 #undef NEXTREG
 #undef STACK_OFFSET
-  }
 
   return map;
-
 }
 
 void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_vectors) {
+  int num_xmm_regs = XMMRegisterImpl::number_of_registers;
   // Recover XMM & FPU state
   int additional_frame_bytes = 0;
 #ifdef COMPILER2
@@ -301,52 +275,43 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
 #else
   assert(!restore_vectors, "vectors are generated only by C2");
 #endif
+  int off = xmm0_off;
+  int delta = xmm1_off - off;
+
   if (UseSSE == 1) {
     assert(additional_frame_bytes == 0, "");
-    __ movflt(xmm0,Address(rsp,xmm0_off*wordSize));
-    __ movflt(xmm1,Address(rsp,xmm1_off*wordSize));
-    __ movflt(xmm2,Address(rsp,xmm2_off*wordSize));
-    __ movflt(xmm3,Address(rsp,xmm3_off*wordSize));
-    __ movflt(xmm4,Address(rsp,xmm4_off*wordSize));
-    __ movflt(xmm5,Address(rsp,xmm5_off*wordSize));
-    __ movflt(xmm6,Address(rsp,xmm6_off*wordSize));
-    __ movflt(xmm7,Address(rsp,xmm7_off*wordSize));
+    for (int n = 0; n < num_xmm_regs; n++) {
+      __ movflt(as_XMMRegister(n), Address(rsp, off*wordSize));
+      off += delta;
+    }
   } else if (UseSSE >= 2) {
-#define STACK_ADDRESS(x) Address(rsp,(x)*wordSize + additional_frame_bytes)
-    __ movdqu(xmm0,STACK_ADDRESS(xmm0_off));
-    __ movdqu(xmm1,STACK_ADDRESS(xmm1_off));
-    __ movdqu(xmm2,STACK_ADDRESS(xmm2_off));
-    __ movdqu(xmm3,STACK_ADDRESS(xmm3_off));
-    __ movdqu(xmm4,STACK_ADDRESS(xmm4_off));
-    __ movdqu(xmm5,STACK_ADDRESS(xmm5_off));
-    __ movdqu(xmm6,STACK_ADDRESS(xmm6_off));
-    __ movdqu(xmm7,STACK_ADDRESS(xmm7_off));
-#undef STACK_ADDRESS
+    if (VM_Version::supports_avx512novl()) {
+      for (int n = 0; n < num_xmm_regs; n++) {
+        __ vinsertf32x4h(as_XMMRegister(n), Address(rsp, off*wordSize+additional_frame_bytes), 0);
+        off += delta;
+      }
+    } else {
+      for (int n = 0; n < num_xmm_regs; n++) {
+        __ movdqu(as_XMMRegister(n), Address(rsp, off*wordSize+additional_frame_bytes));
+        off += delta;
+      }
+    }
   }
   if (restore_vectors) {
+    if (UseAVX > 2) {
+      off = 0;
+      for (int n = 0; n < num_xmm_regs; n++) {
+        __ vinsertf64x4h(as_XMMRegister(n), Address(rsp, off++*32));
+      }
+      __ addptr(rsp, additional_frame_bytes*2); // Save upper half of ZMM registes
+    }
     // Restore upper half of YMM registes.
     assert(additional_frame_bytes == 128, "");
-    __ vinsertf128h(xmm0, Address(rsp,  0));
-    __ vinsertf128h(xmm1, Address(rsp, 16));
-    __ vinsertf128h(xmm2, Address(rsp, 32));
-    __ vinsertf128h(xmm3, Address(rsp, 48));
-    __ vinsertf128h(xmm4, Address(rsp, 64));
-    __ vinsertf128h(xmm5, Address(rsp, 80));
-    __ vinsertf128h(xmm6, Address(rsp, 96));
-    __ vinsertf128h(xmm7, Address(rsp,112));
-    __ addptr(rsp, additional_frame_bytes);
-    if (UseAVX > 2) {
-      additional_frame_bytes = 256;
-      __ vinsertf64x4h(xmm0, Address(rsp, 0));
-      __ vinsertf64x4h(xmm1, Address(rsp, 32));
-      __ vinsertf64x4h(xmm2, Address(rsp, 64));
-      __ vinsertf64x4h(xmm3, Address(rsp, 96));
-      __ vinsertf64x4h(xmm4, Address(rsp, 128));
-      __ vinsertf64x4h(xmm5, Address(rsp, 160));
-      __ vinsertf64x4h(xmm6, Address(rsp, 192));
-      __ vinsertf64x4h(xmm7, Address(rsp, 224));
-      __ addptr(rsp, additional_frame_bytes);
+    off = 0;
+    for (int n = 0; n < num_xmm_regs; n++) {
+      __ vinsertf128h(as_XMMRegister(n), Address(rsp, off++*16));
     }
+    __ addptr(rsp, additional_frame_bytes); // Save upper half of YMM registes
   }
   __ pop_FPU_state();
   __ addptr(rsp, FPU_regs_live*wordSize); // Pop FPU registers

@@ -286,7 +286,7 @@ public final class Document {
      * by using {@link #activeNamespaces}.
      *
      * @return
-     *      the buffer passed as the <tt>buf</tt> parameter.
+     *      the buffer passed as the {@code buf} parameter.
      */
     private StringBuilder fixPrefix(StringBuilder buf) {
         assert activeNamespaces!=null;

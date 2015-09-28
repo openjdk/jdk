@@ -38,7 +38,7 @@ public interface JAXBContextFactory {
 
     /**
      * <p>
-     * Create a new instance of a <tt>JAXBContext</tt> class.
+     * Create a new instance of a {@code JAXBContext} class.
      *
      * <p>
      * For semantics see {@link javax.xml.bind.JAXBContext#newInstance(Class[], java.util.Map)}
@@ -52,11 +52,11 @@ public interface JAXBContextFactory {
      *      in an empty map.
      *
      * @return
-     *      A new instance of a <tt>JAXBContext</tt>.
+     *      A new instance of a {@code JAXBContext}.
      *
      * @throws JAXBException
      *      if an error was encountered while creating the
-     *      <tt>JAXBContext</tt>, such as (but not limited to):
+     *      {@code JAXBContext}, such as (but not limited to):
      * <ol>
      *  <li>Classes use JAXB annotations incorrectly
      *  <li>Classes have colliding annotations (i.e., two classes with the same type name)
@@ -75,14 +75,14 @@ public interface JAXBContextFactory {
 
     /**
      * <p>
-     * Create a new instance of a <tt>JAXBContext</tt> class.
+     * Create a new instance of a {@code JAXBContext} class.
      *
      * <p>
      * For semantics see {@link javax.xml.bind.JAXBContext#newInstance(String, ClassLoader, java.util.Map)}
      *
      * <p>
      * The interpretation of properties is up to implementations. Implementations should
-     * throw <tt>JAXBException</tt> if it finds properties that it doesn't understand.
+     * throw {@code JAXBException} if it finds properties that it doesn't understand.
      *
      * @param contextPath list of java package names that contain schema derived classes
      * @param classLoader
@@ -91,9 +91,9 @@ public interface JAXBContextFactory {
      *      provider-specific properties. Can be null, which means the same thing as passing
      *      in an empty map.
      *
-     * @return a new instance of a <tt>JAXBContext</tt>
+     * @return a new instance of a {@code JAXBContext}
      * @throws JAXBException if an error was encountered while creating the
-     *                       <tt>JAXBContext</tt> such as
+     *                       {@code JAXBContext} such as
      * <ol>
      *   <li>failure to locate either ObjectFactory.class or jaxb.index in the packages</li>
      *   <li>an ambiguity among global elements contained in the contextPath</li>

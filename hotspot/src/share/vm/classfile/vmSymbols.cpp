@@ -625,6 +625,10 @@ bool vmIntrinsics::is_disabled_by_flags(methodHandle method, methodHandle compil
   case vmIntrinsics::_updateDirectByteBufferCRC32C:
     if (!UseCRC32CIntrinsics) return true;
     break;
+  case vmIntrinsics::_updateBytesAdler32:
+  case vmIntrinsics::_updateByteBufferAdler32:
+    if (!UseAdler32Intrinsics) return true;
+    break;
   case vmIntrinsics::_copyMemory:
     if (!InlineArrayCopy || !InlineUnsafeOps) return true;
     break;

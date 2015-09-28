@@ -36,7 +36,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Stream;
 
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.main.Main;
+import com.sun.tools.javac.util.Context;
 import com.sun.tools.sjavac.JavacState;
 import com.sun.tools.sjavac.Log;
 import com.sun.tools.sjavac.Module;
@@ -44,9 +48,12 @@ import com.sun.tools.sjavac.ProblemException;
 import com.sun.tools.sjavac.Source;
 import com.sun.tools.sjavac.Transformer;
 import com.sun.tools.sjavac.Util;
+import com.sun.tools.sjavac.options.Option;
 import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.options.SourceLocation;
 import com.sun.tools.sjavac.server.Sjavac;
+
+import javax.tools.JavaFileManager;
 
 /**
  * The sjavac implementation that interacts with javac and performs the actual
@@ -77,7 +84,8 @@ public class SjavacImpl implements Sjavac {
         if (!createIfMissing(options.getDestDir()))
             return RC_FATAL;
 
-        if (!createIfMissing(options.getStateDir()))
+        Path stateDir = options.getStateDir();
+        if (stateDir != null && !createIfMissing(options.getStateDir()))
             return RC_FATAL;
 
         Path gensrc = options.getGenSrcDir();
@@ -88,164 +96,189 @@ public class SjavacImpl implements Sjavac {
         if (hdrdir != null && !createIfMissing(hdrdir))
             return RC_FATAL;
 
-        // Load the prev build state database.
-        JavacState javac_state = JavacState.load(options, out, err);
+        if (stateDir == null) {
+            // Prepare context. Direct logging to our byte array stream.
+            Context context = new Context();
+            PrintWriter writer = new PrintWriter(err);
+            com.sun.tools.javac.util.Log.preRegister(context, writer);
+            JavacFileManager.preRegister(context);
 
-        // Setup the suffix rules from the command line.
-        Map<String, Transformer> suffixRules = new HashMap<>();
+            // Prepare arguments
+            String[] passThroughArgs = Stream.of(args)
+                                             .filter(arg -> !arg.startsWith(Option.SERVER.arg))
+                                             .toArray(String[]::new);
 
-        // Handling of .java-compilation
-        suffixRules.putAll(javac_state.getJavaSuffixRule());
+            // Compile
+            com.sun.tools.javac.main.Main compiler = new com.sun.tools.javac.main.Main("javac", writer);
+            Main.Result result = compiler.compile(passThroughArgs, context);
 
-        // Handling of -copy and -tr
-        suffixRules.putAll(options.getTranslationRules());
+            // Clean up
+            JavaFileManager fileManager = context.get(JavaFileManager.class);
+            if (fileManager instanceof JavacFileManager) {
+                ((JavacFileManager) fileManager).close();
+            }
+            return result.exitCode;
 
-        // All found modules are put here.
-        Map<String,Module> modules = new HashMap<>();
-        // We start out in the legacy empty no-name module.
-        // As soon as we stumble on a module-info.java file we change to that module.
-        Module current_module = new Module("", "");
-        modules.put("", current_module);
+        } else {
+            // Load the prev build state database.
+            JavacState javac_state = JavacState.load(options, out, err);
 
-        // Find all sources, use the suffix rules to know which files are sources.
-        Map<String,Source> sources = new HashMap<>();
+            // Setup the suffix rules from the command line.
+            Map<String, Transformer> suffixRules = new HashMap<>();
 
-        // Find the files, this will automatically populate the found modules
-        // with found packages where the sources are found!
-        findSourceFiles(options.getSources(),
-                        suffixRules.keySet(),
-                        sources,
-                        modules,
-                        current_module,
-                        options.isDefaultPackagePermitted(),
-                        false);
+            // Handling of .java-compilation
+            suffixRules.putAll(javac_state.getJavaSuffixRule());
 
-        if (sources.isEmpty()) {
-            Log.error("Found nothing to compile!");
-            return RC_FATAL;
-        }
+            // Handling of -copy and -tr
+            suffixRules.putAll(options.getTranslationRules());
 
+            // All found modules are put here.
+            Map<String,Module> modules = new HashMap<>();
+            // We start out in the legacy empty no-name module.
+            // As soon as we stumble on a module-info.java file we change to that module.
+            Module current_module = new Module("", "");
+            modules.put("", current_module);
 
-        // Create a map of all source files that are available for linking. Both -src and
-        // -sourcepath point to such files. It is possible to specify multiple
-        // -sourcepath options to enable different filtering rules. If the
-        // filters are the same for multiple sourcepaths, they may be concatenated
-        // using :(;). Before sending the list of sourcepaths to javac, they are
-        // all concatenated. The list created here is used by the SmartFileWrapper to
-        // make sure only the correct sources are actually available.
-        // We might find more modules here as well.
-        Map<String,Source> sources_to_link_to = new HashMap<>();
+            // Find all sources, use the suffix rules to know which files are sources.
+            Map<String,Source> sources = new HashMap<>();
 
-        List<SourceLocation> sourceResolutionLocations = new ArrayList<>();
-        sourceResolutionLocations.addAll(options.getSources());
-        sourceResolutionLocations.addAll(options.getSourceSearchPaths());
-        findSourceFiles(sourceResolutionLocations,
-                        Collections.singleton(".java"),
-                        sources_to_link_to,
-                        modules,
-                        current_module,
-                        options.isDefaultPackagePermitted(),
-                        true);
+            // Find the files, this will automatically populate the found modules
+            // with found packages where the sources are found!
+            findSourceFiles(options.getSources(),
+                            suffixRules.keySet(),
+                            sources,
+                            modules,
+                            current_module,
+                            options.isDefaultPackagePermitted(),
+                            false);
 
-        // Add the set of sources to the build database.
-        javac_state.now().flattenPackagesSourcesAndArtifacts(modules);
-        javac_state.now().checkInternalState("checking sources", false, sources);
-        javac_state.now().checkInternalState("checking linked sources", true, sources_to_link_to);
-        javac_state.setVisibleSources(sources_to_link_to);
-
-        int round = 0;
-        printRound(round);
-
-        // If there is any change in the source files, taint packages
-        // and mark the database in need of saving.
-        javac_state.checkSourceStatus(false);
-
-        // Find all existing artifacts. Their timestamp will match the last modified timestamps stored
-        // in javac_state, simply because loading of the JavacState will clean out all artifacts
-        // that do not match the javac_state database.
-        javac_state.findAllArtifacts();
-
-        // Remove unidentified artifacts from the bin, gensrc and header dirs.
-        // (Unless we allow them to be there.)
-        // I.e. artifacts that are not known according to the build database (javac_state).
-        // For examples, files that have been manually copied into these dirs.
-        // Artifacts with bad timestamps (ie the on disk timestamp does not match the timestamp
-        // in javac_state) have already been removed when the javac_state was loaded.
-        if (!options.areUnidentifiedArtifactsPermitted()) {
-            javac_state.removeUnidentifiedArtifacts();
-        }
-        // Go through all sources and taint all packages that miss artifacts.
-        javac_state.taintPackagesThatMissArtifacts();
-
-        // Check recorded classpath public apis. Taint packages that depend on
-        // classpath classes whose public apis have changed.
-        javac_state.taintPackagesDependingOnChangedClasspathPackages();
-
-        // Now clean out all known artifacts belonging to tainted packages.
-        javac_state.deleteClassArtifactsInTaintedPackages();
-        // Copy files, for example property files, images files, xml files etc etc.
-        javac_state.performCopying(Util.pathToFile(options.getDestDir()), suffixRules);
-        // Translate files, for example compile properties or compile idls.
-        javac_state.performTranslation(Util.pathToFile(gensrc), suffixRules);
-        // Add any potentially generated java sources to the tobe compiled list.
-        // (Generated sources must always have a package.)
-        Map<String,Source> generated_sources = new HashMap<>();
-
-        try {
-
-            Source.scanRoot(Util.pathToFile(options.getGenSrcDir()), Util.set(".java"), null, null, null, null,
-                    generated_sources, modules, current_module, false, true, false);
-            javac_state.now().flattenPackagesSourcesAndArtifacts(modules);
-            // Recheck the the source files and their timestamps again.
-            javac_state.checkSourceStatus(true);
-
-            // Now do a safety check that the list of source files is identical
-            // to the list Make believes we are compiling. If we do not get this
-            // right, then incremental builds will fail with subtility.
-            // If any difference is detected, then we will fail hard here.
-            // This is an important safety net.
-            javac_state.compareWithMakefileList(Util.pathToFile(options.getSourceReferenceList()));
-
-            // Do the compilations, repeatedly until no tainted packages exist.
-            boolean again;
-            // Collect the name of all compiled packages.
-            Set<String> recently_compiled = new HashSet<>();
-            boolean[] rc = new boolean[1];
-
-            CompilationService compilationService = new CompilationService();
-            do {
-                if (round > 0)
-                    printRound(round);
-                // Clean out artifacts in tainted packages.
-                javac_state.deleteClassArtifactsInTaintedPackages();
-                again = javac_state.performJavaCompilations(compilationService, options, recently_compiled, rc);
-                if (!rc[0]) {
-                    Log.debug("Compilation failed.");
-                    break;
-                }
-                if (!again) {
-                    Log.debug("Nothing left to do.");
-                }
-                round++;
-            } while (again);
-            Log.debug("No need to do another round.");
-
-            // Only update the state if the compile went well.
-            if (rc[0]) {
-                javac_state.save();
-                // Reflatten only the artifacts.
-                javac_state.now().flattenArtifacts(modules);
-                // Remove artifacts that were generated during the last compile, but not this one.
-                javac_state.removeSuperfluousArtifacts(recently_compiled);
+            if (sources.isEmpty()) {
+                Log.error("Found nothing to compile!");
+                return RC_FATAL;
             }
 
-            return rc[0] ? RC_OK : RC_FATAL;
-        } catch (ProblemException e) {
-            Log.error(e.getMessage());
-            return RC_FATAL;
-        } catch (Exception e) {
-            e.printStackTrace(new PrintWriter(err));
-            return RC_FATAL;
+
+            // Create a map of all source files that are available for linking. Both -src and
+            // -sourcepath point to such files. It is possible to specify multiple
+            // -sourcepath options to enable different filtering rules. If the
+            // filters are the same for multiple sourcepaths, they may be concatenated
+            // using :(;). Before sending the list of sourcepaths to javac, they are
+            // all concatenated. The list created here is used by the SmartFileWrapper to
+            // make sure only the correct sources are actually available.
+            // We might find more modules here as well.
+            Map<String,Source> sources_to_link_to = new HashMap<>();
+
+            List<SourceLocation> sourceResolutionLocations = new ArrayList<>();
+            sourceResolutionLocations.addAll(options.getSources());
+            sourceResolutionLocations.addAll(options.getSourceSearchPaths());
+            findSourceFiles(sourceResolutionLocations,
+                            Collections.singleton(".java"),
+                            sources_to_link_to,
+                            modules,
+                            current_module,
+                            options.isDefaultPackagePermitted(),
+                            true);
+
+            // Add the set of sources to the build database.
+            javac_state.now().flattenPackagesSourcesAndArtifacts(modules);
+            javac_state.now().checkInternalState("checking sources", false, sources);
+            javac_state.now().checkInternalState("checking linked sources", true, sources_to_link_to);
+            javac_state.setVisibleSources(sources_to_link_to);
+
+            int round = 0;
+            printRound(round);
+
+            // If there is any change in the source files, taint packages
+            // and mark the database in need of saving.
+            javac_state.checkSourceStatus(false);
+
+            // Find all existing artifacts. Their timestamp will match the last modified timestamps stored
+            // in javac_state, simply because loading of the JavacState will clean out all artifacts
+            // that do not match the javac_state database.
+            javac_state.findAllArtifacts();
+
+            // Remove unidentified artifacts from the bin, gensrc and header dirs.
+            // (Unless we allow them to be there.)
+            // I.e. artifacts that are not known according to the build database (javac_state).
+            // For examples, files that have been manually copied into these dirs.
+            // Artifacts with bad timestamps (ie the on disk timestamp does not match the timestamp
+            // in javac_state) have already been removed when the javac_state was loaded.
+            if (!options.areUnidentifiedArtifactsPermitted()) {
+                javac_state.removeUnidentifiedArtifacts();
+            }
+            // Go through all sources and taint all packages that miss artifacts.
+            javac_state.taintPackagesThatMissArtifacts();
+
+            // Check recorded classpath public apis. Taint packages that depend on
+            // classpath classes whose public apis have changed.
+            javac_state.taintPackagesDependingOnChangedClasspathPackages();
+
+            // Now clean out all known artifacts belonging to tainted packages.
+            javac_state.deleteClassArtifactsInTaintedPackages();
+            // Copy files, for example property files, images files, xml files etc etc.
+            javac_state.performCopying(Util.pathToFile(options.getDestDir()), suffixRules);
+            // Translate files, for example compile properties or compile idls.
+            javac_state.performTranslation(Util.pathToFile(gensrc), suffixRules);
+            // Add any potentially generated java sources to the tobe compiled list.
+            // (Generated sources must always have a package.)
+            Map<String,Source> generated_sources = new HashMap<>();
+
+            try {
+
+                Source.scanRoot(Util.pathToFile(options.getGenSrcDir()), Util.set(".java"), null, null, null, null,
+                        generated_sources, modules, current_module, false, true, false);
+                javac_state.now().flattenPackagesSourcesAndArtifacts(modules);
+                // Recheck the the source files and their timestamps again.
+                javac_state.checkSourceStatus(true);
+
+                // Now do a safety check that the list of source files is identical
+                // to the list Make believes we are compiling. If we do not get this
+                // right, then incremental builds will fail with subtility.
+                // If any difference is detected, then we will fail hard here.
+                // This is an important safety net.
+                javac_state.compareWithMakefileList(Util.pathToFile(options.getSourceReferenceList()));
+
+                // Do the compilations, repeatedly until no tainted packages exist.
+                boolean again;
+                // Collect the name of all compiled packages.
+                Set<String> recently_compiled = new HashSet<>();
+                boolean[] rc = new boolean[1];
+
+                CompilationService compilationService = new CompilationService();
+                do {
+                    if (round > 0)
+                        printRound(round);
+                    // Clean out artifacts in tainted packages.
+                    javac_state.deleteClassArtifactsInTaintedPackages();
+                    again = javac_state.performJavaCompilations(compilationService, options, recently_compiled, rc);
+                    if (!rc[0]) {
+                        Log.debug("Compilation failed.");
+                        break;
+                    }
+                    if (!again) {
+                        Log.debug("Nothing left to do.");
+                    }
+                    round++;
+                } while (again);
+                Log.debug("No need to do another round.");
+
+                // Only update the state if the compile went well.
+                if (rc[0]) {
+                    javac_state.save();
+                    // Reflatten only the artifacts.
+                    javac_state.now().flattenArtifacts(modules);
+                    // Remove artifacts that were generated during the last compile, but not this one.
+                    javac_state.removeSuperfluousArtifacts(recently_compiled);
+                }
+
+                return rc[0] ? RC_OK : RC_FATAL;
+            } catch (ProblemException e) {
+                Log.error(e.getMessage());
+                return RC_FATAL;
+            } catch (Exception e) {
+                e.printStackTrace(new PrintWriter(err));
+                return RC_FATAL;
+            }
         }
     }
 
@@ -266,8 +299,8 @@ public class SjavacImpl implements Sjavac {
             err = "No server configuration provided.";
         } else if (!options.getImplicitPolicy().equals("none")) {
             err = "The only allowed setting for sjavac is -implicit:none";
-        } else if (options.getSources().isEmpty()) {
-            err = "You have to specify -src.";
+        } else if (options.getSources().isEmpty() && options.getStateDir() != null) {
+            err = "You have to specify -src when using --state-dir.";
         } else if (options.getTranslationRules().size() > 1
                 && options.getGenSrcDir() == null) {
             err = "You have translators but no gensrc dir (-s) specified!";

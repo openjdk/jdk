@@ -446,14 +446,14 @@ public abstract class Message {
      *
      * <p>
      * A message without a payload is a SOAP message that looks like:
-     * <pre><xmp>
+     * <pre>{@code
      * <S:Envelope>
      *   <S:Header>
      *     ...
      *   </S:Header>
      *   <S:Body />
      * </S:Envelope>
-     * </xmp></pre>
+     * }</pre>
      */
     public abstract boolean hasPayload();
 
