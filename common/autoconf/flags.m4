@@ -60,10 +60,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
     STRIPFLAGS="-X32_64"
   fi
 
-  if test "x$OPENJDK_TARGET_OS" != xwindows; then
-    POST_STRIP_CMD="$STRIP $STRIPFLAGS"
-  fi
-  AC_SUBST(POST_STRIP_CMD)
+  AC_SUBST(STRIPFLAGS)
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     CC_OUT_OPTION=-Fo
