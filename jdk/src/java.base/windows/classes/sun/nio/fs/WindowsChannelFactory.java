@@ -36,8 +36,8 @@ import java.util.Set;
 
 import com.sun.nio.file.ExtendedOpenOption;
 
-import sun.misc.JavaIOFileDescriptorAccess;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaIOFileDescriptorAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.nio.ch.FileChannelImpl;
 import sun.nio.ch.ThreadPool;
 import sun.nio.ch.WindowsAsynchronousFileChannelImpl;

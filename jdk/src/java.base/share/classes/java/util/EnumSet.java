@@ -25,7 +25,7 @@
 
 package java.util;
 
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * A specialized {@link Set} implementation for use with enum types.  All of

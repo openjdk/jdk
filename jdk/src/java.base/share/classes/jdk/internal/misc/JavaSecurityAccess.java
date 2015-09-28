@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,18 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.misc;
 
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
+import java.security.AccessControlContext;
+import java.security.PrivilegedAction;
 
-public interface JavaNioAccess {
-    /**
-     * Provides access to information on buffer usage.
-     */
-    interface BufferPool {
-        String getName();
-        long getCount();
-        long getTotalCapacity();
-        long getMemoryUsed();
-    }
-    BufferPool getDirectBufferPool();
+public interface JavaSecurityAccess {
 
-    /**
-     * Constructs a direct ByteBuffer referring to the block of memory starting
-     * at the given memory address and extending {@code cap} bytes.
-     * The {@code ob} parameter is an arbitrary object that is attached
-     * to the resulting buffer.
-     */
-    ByteBuffer newDirectByteBuffer(long addr, int cap, Object ob);
+    <T> T doIntersectionPrivilege(PrivilegedAction<T> action,
+                                  AccessControlContext stack,
+                                  AccessControlContext context);
 
-    /**
-     * Truncates a buffer by changing its capacity to 0.
-     */
-    void truncate(Buffer buf);
+    <T> T doIntersectionPrivilege(PrivilegedAction<T> action,
+                                  AccessControlContext context);
 
 }

@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.misc;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;

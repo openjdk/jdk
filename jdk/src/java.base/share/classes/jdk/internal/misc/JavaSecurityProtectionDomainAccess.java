@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,18 +22,18 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.misc;
 
-/**
- * SharedSecrets interface used for the access from java.text.Bidi
- */
+import java.security.PermissionCollection;
+import java.security.ProtectionDomain;
 
-package sun.misc;
-
-public interface JavaAWTFontAccess {
-
-    // java.awt.font.TextAttribute constants
-    public Object getTextAttributeConstant(String name);
-
-    // java.awt.font.NumericShaper
-    public void shape(Object shaper, char[] text, int start, int count);
+public interface JavaSecurityProtectionDomainAccess {
+    interface ProtectionDomainCache {
+        void put(ProtectionDomain pd, PermissionCollection pc);
+        PermissionCollection get(ProtectionDomain pd);
+    }
+    /**
+     * Returns the ProtectionDomainCache.
+     */
+    ProtectionDomainCache getProtectionDomainCache();
 }

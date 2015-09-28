@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,14 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.misc;
 
-import java.io.IOException;
-import java.net.URL;
-import java.security.CodeSource;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
+import java.net.URLClassLoader;
+import sun.misc.URLClassPath;
 
-public interface JavaUtilJarAccess {
-    public boolean jarFileHasClassPathAttribute(JarFile jar) throws IOException;
-    public CodeSource[] getCodeSources(JarFile jar, URL url);
-    public CodeSource getCodeSource(JarFile jar, URL url, String name);
-    public Enumeration<String> entryNames(JarFile jar, CodeSource[] cs);
-    public Enumeration<JarEntry> entries2(JarFile jar);
-    public void setEagerValidation(JarFile jar, boolean eager);
-    public List<Object> getManifestDigests(JarFile jar);
+public interface JavaNetAccess {
+    /**
+     * return the URLClassPath belonging to the given loader
+     */
+    URLClassPath getURLClassPath (URLClassLoader u);
 }
