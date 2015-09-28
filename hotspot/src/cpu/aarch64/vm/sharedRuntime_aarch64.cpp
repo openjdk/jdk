@@ -1159,7 +1159,7 @@ static void rt_call(MacroAssembler* masm, address dest, int gpargs, int fpargs, 
     assert((unsigned)gpargs < 256, "eek!");
     assert((unsigned)fpargs < 32, "eek!");
     __ lea(rscratch1, RuntimeAddress(dest));
-    __ mov(rscratch2, (gpargs << 6) | (fpargs << 2) | type);
+    if (UseBuiltinSim)   __ mov(rscratch2, (gpargs << 6) | (fpargs << 2) | type);
     __ blrt(rscratch1, rscratch2);
     __ maybe_isb();
   }
@@ -1534,14 +1534,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   int vep_offset = ((intptr_t)__ pc()) - start;
 
-  // Generate stack overflow check
-
   // If we have to make this method not-entrant we'll overwrite its
   // first instruction with a jump.  For this action to be legal we
   // must ensure that this first instruction is a B, BL, NOP, BKPT,
   // SVC, HVC, or SMC.  Make it a NOP.
   __ nop();
 
+  // Generate stack overflow check
   if (UseStackBanging) {
     __ bang_stack_with_offset(StackShadowPages*os::vm_page_size());
   } else {
@@ -1722,23 +1721,20 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // need to spill before we call out
   int c_arg = total_c_args - total_in_args;
 
-  // Pre-load a static method's oop into r20.  Used both by locking code and
-  // the normal JNI call code.
+  // Pre-load a static method's oop into c_rarg1.
   if (method->is_static() && !is_critical_native) {
 
     //  load oop into a register
-    __ movoop(oop_handle_reg,
+    __ movoop(c_rarg1,
               JNIHandles::make_local(method->method_holder()->java_mirror()),
               /*immediate*/true);
 
     // Now handlize the static class mirror it's known not-null.
-    __ str(oop_handle_reg, Address(sp, klass_offset));
+    __ str(c_rarg1, Address(sp, klass_offset));
     map->set_oop(VMRegImpl::stack2reg(klass_slot_offset));
 
     // Now get the handle
-    __ lea(oop_handle_reg, Address(sp, klass_offset));
-    // store the klass handle as second argument
-    __ mov(c_rarg1, oop_handle_reg);
+    __ lea(c_rarg1, Address(sp, klass_offset));
     // and protect the arg if we must spill
     c_arg--;
   }
@@ -1753,19 +1749,13 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   __ set_last_Java_frame(sp, noreg, (address)the_pc, rscratch1);
 
-
-  // We have all of the arguments setup at this point. We must not touch any register
-  // argument registers at this point (what if we save/restore them there are no oop?
-
+  Label dtrace_method_entry, dtrace_method_entry_done;
   {
-    SkipIfEqual skip(masm, &DTraceMethodProbes, false);
-    // protect the args we've loaded
-    save_args(masm, total_c_args, c_arg, out_regs);
-    __ mov_metadata(c_rarg1, method());
-    __ call_VM_leaf(
-      CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
-      rthread, c_rarg1);
-    restore_args(masm, total_c_args, c_arg, out_regs);
+    unsigned long offset;
+    __ adrp(rscratch1, ExternalAddress((address)&DTraceMethodProbes), offset);
+    __ ldrb(rscratch1, Address(rscratch1, offset));
+    __ cbnzw(rscratch1, dtrace_method_entry);
+    __ bind(dtrace_method_entry_done);
   }
 
   // RedefineClasses() tracing support for obsolete method entry
@@ -1794,7 +1784,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   if (method->is_synchronized()) {
     assert(!is_critical_native, "unhandled");
-
 
     const int mark_word_offset = BasicLock::displaced_header_offset_in_bytes();
 
@@ -1851,7 +1840,6 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Finally just about ready to make the JNI call
 
-
   // get JNIEnv* which is first argument to native
   if (!is_critical_native) {
     __ lea(c_rarg0, Address(rthread, in_bytes(JavaThread::jni_environment_offset())));
@@ -1892,9 +1880,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 
   // Unpack native results.
   switch (ret_type) {
-  case T_BOOLEAN: __ ubfx(r0, r0, 0, 8);            break;
+  case T_BOOLEAN: __ ubfx(r0, r0, 0, 8);             break;
   case T_CHAR   : __ ubfx(r0, r0, 0, 16);            break;
-  case T_BYTE   : __ sbfx(r0, r0, 0, 8);            break;
+  case T_BYTE   : __ sbfx(r0, r0, 0, 8);             break;
   case T_SHORT  : __ sbfx(r0, r0, 0, 16);            break;
   case T_INT    : __ sbfx(r0, r0, 0, 32);            break;
   case T_DOUBLE :
@@ -1917,14 +1905,17 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   //     Thread A is resumed to finish this native method, but doesn't block here since it
   //     didn't see any synchronization is progress, and escapes.
   __ mov(rscratch1, _thread_in_native_trans);
-  __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
-  __ stlrw(rscratch1, rscratch2);
 
   if(os::is_MP()) {
     if (UseMembar) {
+      __ strw(rscratch1, Address(rthread, JavaThread::thread_state_offset()));
+
       // Force this write out before the read below
       __ dmb(Assembler::SY);
     } else {
+      __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
+      __ stlrw(rscratch1, rscratch2);
+
       // Write serialization page so VM thread can do a pseudo remote membar.
       // We use the current thread pointer to calculate a thread specific
       // offset to write to within the page. This minimizes bus traffic
@@ -1933,54 +1924,23 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
   }
 
-  Label after_transition;
-
   // check for safepoint operation in progress and/or pending suspend requests
+  Label safepoint_in_progress, safepoint_in_progress_done;
   {
-    Label Continue;
-
-    { unsigned long offset;
-      __ adrp(rscratch1,
-              ExternalAddress((address)SafepointSynchronize::address_of_state()),
-              offset);
-      __ ldrw(rscratch1, Address(rscratch1, offset));
-    }
-    __ cmpw(rscratch1, SafepointSynchronize::_not_synchronized);
-
-    Label L;
-    __ br(Assembler::NE, L);
+    assert(SafepointSynchronize::_not_synchronized == 0, "fix this code");
+    unsigned long offset;
+    __ adrp(rscratch1,
+            ExternalAddress((address)SafepointSynchronize::address_of_state()),
+            offset);
+    __ ldrw(rscratch1, Address(rscratch1, offset));
+    __ cbnzw(rscratch1, safepoint_in_progress);
     __ ldrw(rscratch1, Address(rthread, JavaThread::suspend_flags_offset()));
-    __ cbz(rscratch1, Continue);
-    __ bind(L);
-
-    // Don't use call_VM as it will see a possible pending exception and forward it
-    // and never return here preventing us from clearing _last_native_pc down below.
-    //
-    save_native_result(masm, ret_type, stack_slots);
-    __ mov(c_rarg0, rthread);
-#ifndef PRODUCT
-  assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
-#endif
-    if (!is_critical_native) {
-      __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
-    } else {
-      __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans_and_transition)));
-    }
-    __ blrt(rscratch1, 1, 0, 1);
-    __ maybe_isb();
-    // Restore any method result value
-    restore_native_result(masm, ret_type, stack_slots);
-
-    if (is_critical_native) {
-      // The call above performed the transition to thread_in_Java so
-      // skip the transition logic below.
-      __ b(after_transition);
-    }
-
-    __ bind(Continue);
+    __ cbnzw(rscratch1, safepoint_in_progress);
+    __ bind(safepoint_in_progress_done);
   }
 
   // change thread state
+  Label after_transition;
   __ mov(rscratch1, _thread_in_Java);
   __ lea(rscratch2, Address(rthread, JavaThread::thread_state_offset()));
   __ stlrw(rscratch1, rscratch2);
@@ -2037,16 +1997,15 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
 
     __ bind(done);
-
   }
+
+  Label dtrace_method_exit, dtrace_method_exit_done;
   {
-    SkipIfEqual skip(masm, &DTraceMethodProbes, false);
-    save_native_result(masm, ret_type, stack_slots);
-    __ mov_metadata(c_rarg1, method());
-    __ call_VM_leaf(
-         CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit),
-         rthread, c_rarg1);
-    restore_native_result(masm, ret_type, stack_slots);
+    unsigned long offset;
+    __ adrp(rscratch1, ExternalAddress((address)&DTraceMethodProbes), offset);
+    __ ldrb(rscratch1, Address(rscratch1, offset));
+    __ cbnzw(rscratch1, dtrace_method_exit);
+    __ bind(dtrace_method_exit_done);
   }
 
   __ reset_last_Java_frame(false, true);
@@ -2095,7 +2054,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // Slow path locking & unlocking
   if (method->is_synchronized()) {
 
-    // BEGIN Slow path lock
+    __ block_comment("Slow path lock {");
     __ bind(slow_path_lock);
 
     // has last_Java_frame setup. No exceptions so do vanilla call not call_VM
@@ -2122,9 +2081,9 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
 #endif
     __ b(lock_done);
 
-    // END Slow path lock
+    __ block_comment("} Slow path lock");
 
-    // BEGIN Slow path unlock
+    __ block_comment("Slow path unlock {");
     __ bind(slow_path_unlock);
 
     // If we haven't already saved the native result we must save it now as xmm registers
@@ -2162,7 +2121,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
     }
     __ b(unlock_done);
 
-    // END Slow path unlock
+    __ block_comment("} Slow path unlock");
 
   } // synchronized
 
@@ -2175,6 +2134,69 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   // and continue
   __ b(reguard_done);
 
+  // SLOW PATH safepoint
+  {
+    __ block_comment("safepoint {");
+    __ bind(safepoint_in_progress);
+
+    // Don't use call_VM as it will see a possible pending exception and forward it
+    // and never return here preventing us from clearing _last_native_pc down below.
+    //
+    save_native_result(masm, ret_type, stack_slots);
+    __ mov(c_rarg0, rthread);
+#ifndef PRODUCT
+  assert(frame::arg_reg_save_area_bytes == 0, "not expecting frame reg save area");
+#endif
+    if (!is_critical_native) {
+      __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
+    } else {
+      __ lea(rscratch1, RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans_and_transition)));
+    }
+    __ blrt(rscratch1, 1, 0, 1);
+    __ maybe_isb();
+    // Restore any method result value
+    restore_native_result(masm, ret_type, stack_slots);
+
+    if (is_critical_native) {
+      // The call above performed the transition to thread_in_Java so
+      // skip the transition logic above.
+      __ b(after_transition);
+    }
+
+    __ b(safepoint_in_progress_done);
+    __ block_comment("} safepoint");
+  }
+
+  // SLOW PATH dtrace support
+  {
+    __ block_comment("dtrace entry {");
+    __ bind(dtrace_method_entry);
+
+    // We have all of the arguments setup at this point. We must not touch any register
+    // argument registers at this point (what if we save/restore them there are no oop?
+
+    save_args(masm, total_c_args, c_arg, out_regs);
+    __ mov_metadata(c_rarg1, method());
+    __ call_VM_leaf(
+      CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_entry),
+      rthread, c_rarg1);
+    restore_args(masm, total_c_args, c_arg, out_regs);
+    __ b(dtrace_method_entry_done);
+    __ block_comment("} dtrace entry");
+  }
+
+  {
+    __ block_comment("dtrace exit {");
+    __ bind(dtrace_method_exit);
+    save_native_result(masm, ret_type, stack_slots);
+    __ mov_metadata(c_rarg1, method());
+    __ call_VM_leaf(
+         CAST_FROM_FN_PTR(address, SharedRuntime::dtrace_method_exit),
+         rthread, c_rarg1);
+    restore_native_result(masm, ret_type, stack_slots);
+    __ b(dtrace_method_exit_done);
+    __ block_comment("} dtrace exit");
+  }
 
 
   __ flush();
