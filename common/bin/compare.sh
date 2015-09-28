@@ -590,7 +590,7 @@ compare_bin_file() {
     ORIG_THIS_FILE="$THIS_FILE"
     ORIG_OTHER_FILE="$OTHER_FILE"
 
-    if [[ "$STRIP_BEFORE_COMPARE" = *"$BIN_FILE"* ]]; then
+    if [ "$STRIP_ALL" = "true" ] || [[ "$STRIP_BEFORE_COMPARE" = *"$BIN_FILE"* ]]; then
         THIS_STRIPPED_FILE=$FILE_WORK_DIR/this/$NAME
         OTHER_STRIPPED_FILE=$FILE_WORK_DIR/other/$NAME
         $MKDIR -p $FILE_WORK_DIR/this $FILE_WORK_DIR/other
@@ -1015,6 +1015,8 @@ if [ -z "$1" ] || [ "$1" = "-h" ] || [ "$1" = "-?" ] || [ "$1" = "/h" ] || [ "$1
     echo "-vv                 More verbose output, shows diff output of all comparisons"
     echo "-o [OTHER]          Compare with build in other directory. Will default to the old build directory"
     echo ""
+    echo "--strip             Strip all binaries before comparing"
+    echo ""
     echo "[FILTER]            List filenames in the image to compare, works for jars, zips, libs and execs"
     echo "Example:"
     echo "bash ./common/bin/compareimages.sh CodePointIM.jar"
@@ -1106,6 +1108,9 @@ while [ -n "$1" ]; do
             OTHER_FILE=$3
             shift
             shift
+            ;;
+        --strip)
+            STRIP_ALL=true
             ;;
         *)
             CMP_NAMES=false
