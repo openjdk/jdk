@@ -37,24 +37,19 @@ import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IndexNode;
-import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.Optimistic;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.ir.visitor.SimpleNodeVisitor;
 
 /**
  * Find program points in the code that are needed for optimistic assumptions
  */
-class ProgramPoints extends NodeVisitor<LexicalContext> {
+class ProgramPoints extends SimpleNodeVisitor {
 
     private final IntDeque nextProgramPoint = new IntDeque();
     private final Set<Node> noProgramPoint = new HashSet<>();
-
-    ProgramPoints() {
-        super(new LexicalContext());
-    }
 
     private int next() {
         final int next = nextProgramPoint.getAndIncrement();
