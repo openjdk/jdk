@@ -47,8 +47,8 @@ import java.security.PrivilegedAction;
 
 import java.security.AccessControlContext;
 import java.security.ProtectionDomain;
-import sun.misc.SharedSecrets;
-import sun.misc.JavaSecurityAccess;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaSecurityAccess;
 
 import sun.awt.AWTAccessor;
 

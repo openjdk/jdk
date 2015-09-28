@@ -43,6 +43,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
 
+import jdk.internal.misc.JavaNetInetAddressAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.security.action.*;
 import sun.net.InetAddressCachePolicy;
 import sun.net.util.IPAddressUtil;
@@ -215,7 +217,7 @@ class InetAddress implements java.io.Serializable {
          * DNS forging.
          *
          * Oracle JSSE provider is using this original hostname, via
-         * sun.misc.JavaNetAccess, for SSL/TLS endpoint identification.
+         * jdk.internal.misc.JavaNetAccess, for SSL/TLS endpoint identification.
          *
          * Note: May define a new public method in the future if necessary.
          */
@@ -297,8 +299,8 @@ class InetAddress implements java.io.Serializable {
                     return null;
                 }
             });
-        sun.misc.SharedSecrets.setJavaNetInetAddressAccess(
-                new sun.misc.JavaNetInetAddressAccess() {
+        SharedSecrets.setJavaNetInetAddressAccess(
+                new JavaNetInetAddressAccess() {
                     public String getOriginalHostName(InetAddress ia) {
                         return ia.holder.getOriginalHostName();
                     }

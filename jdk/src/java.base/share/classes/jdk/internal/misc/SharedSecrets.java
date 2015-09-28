@@ -23,14 +23,14 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.misc;
 
 import java.util.jar.JarFile;
 import java.io.Console;
 import java.io.FileDescriptor;
 import java.security.ProtectionDomain;
-
 import java.security.AccessController;
+import sun.misc.Unsafe;
 
 /** A repository of "shared secrets", which are a mechanism for
     calling implementation-private methods in another package without

@@ -49,6 +49,9 @@ import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
+
+import jdk.internal.misc.JavaNetAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.misc.Resource;
 import sun.misc.URLClassPath;
 import sun.net.www.ParseUtil;
@@ -769,9 +772,9 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
     }
 
     static {
-        sun.misc.SharedSecrets.setJavaNetAccess (
-            new sun.misc.JavaNetAccess() {
-                public URLClassPath getURLClassPath (URLClassLoader u) {
+        SharedSecrets.setJavaNetAccess(
+            new JavaNetAccess() {
+                public URLClassPath getURLClassPath(URLClassLoader u) {
                     return u.ucp;
                 }
             }

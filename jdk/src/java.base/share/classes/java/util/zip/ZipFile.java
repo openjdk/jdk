@@ -44,6 +44,8 @@ import java.util.Spliterators;
 import java.util.WeakHashMap;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.internal.misc.JavaUtilZipFileAccess;
+import jdk.internal.misc.SharedSecrets;
 
 import static java.util.zip.ZipConstants64.*;
 
@@ -781,12 +783,12 @@ class ZipFile implements ZipConstants, Closeable {
     }
 
     static {
-        sun.misc.SharedSecrets.setJavaUtilZipFileAccess(
-            new sun.misc.JavaUtilZipFileAccess() {
+        SharedSecrets.setJavaUtilZipFileAccess(
+            new JavaUtilZipFileAccess() {
                 public boolean startsWithLocHeader(ZipFile zip) {
                     return zip.startsWithLocHeader();
                 }
-             }
+            }
         );
     }
 

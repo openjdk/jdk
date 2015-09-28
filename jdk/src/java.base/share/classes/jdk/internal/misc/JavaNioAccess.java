@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +23,34 @@
  * questions.
  */
 
-package sun.misc;
-import java.io.Console;
-import java.nio.charset.Charset;
+package jdk.internal.misc;
 
-public interface JavaIOAccess {
-    public Console console();
-    public Charset charset();
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+
+public interface JavaNioAccess {
+    /**
+     * Provides access to information on buffer usage.
+     */
+    interface BufferPool {
+        String getName();
+        long getCount();
+        long getTotalCapacity();
+        long getMemoryUsed();
+    }
+    BufferPool getDirectBufferPool();
+
+    /**
+     * Constructs a direct ByteBuffer referring to the block of memory starting
+     * at the given memory address and extending {@code cap} bytes.
+     * The {@code ob} parameter is an arbitrary object that is attached
+     * to the resulting buffer.
+     */
+    ByteBuffer newDirectByteBuffer(long addr, int cap, Object ob);
+
+    /**
+     * Truncates a buffer by changing its capacity to 0.
+     */
+    void truncate(Buffer buf);
+
 }

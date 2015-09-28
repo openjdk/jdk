@@ -24,8 +24,8 @@
  */
 package java.util;
 
-import sun.misc.JavaLangAccess;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaLangAccess;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * {@code StringJoiner} is used to construct a sequence of characters separated

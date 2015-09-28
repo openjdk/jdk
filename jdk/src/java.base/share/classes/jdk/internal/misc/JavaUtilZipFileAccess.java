@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,11 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.misc;
 
-public interface JavaLangRefAccess {
+import java.util.zip.ZipFile;
 
-    /**
-     * Help ReferenceHandler thread process next pending
-     * {@link java.lang.ref.Reference}
-     *
-     * @return {@code true} if there was a pending reference and it
-     *         was enqueue-ed or {@code false} if there was no
-     *         pending reference
-     */
-    boolean tryHandlePendingReference();
+public interface JavaUtilZipFileAccess {
+    public boolean startsWithLocHeader(ZipFile zip);
 }
+
