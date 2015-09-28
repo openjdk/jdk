@@ -42,7 +42,6 @@ import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.JoinPredecessorExpression;
-import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LoopNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.Optimistic;
@@ -52,7 +51,7 @@ import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.ir.visitor.SimpleNodeVisitor;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.ScriptObject;
 
@@ -61,7 +60,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  * must not ever be marked as optimistic, assigning narrowest non-invalidated types to program points from the
  * compilation environment, as well as initializing optimistic types of global properties for scripts.
  */
-final class OptimisticTypesCalculator extends NodeVisitor<LexicalContext> {
+final class OptimisticTypesCalculator extends SimpleNodeVisitor {
 
     final Compiler compiler;
 
@@ -69,7 +68,6 @@ final class OptimisticTypesCalculator extends NodeVisitor<LexicalContext> {
     final Deque<BitSet> neverOptimistic = new ArrayDeque<>();
 
     OptimisticTypesCalculator(final Compiler compiler) {
-        super(new LexicalContext());
         this.compiler = compiler;
     }
 
