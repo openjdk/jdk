@@ -133,17 +133,17 @@ void AdaptiveFreeList<Chunk>::verify_stats() const {
           + _allocation_stats.coal_births() + 1)   // Total Production Stock + 1
          >= (_allocation_stats.split_deaths() + _allocation_stats.coal_deaths()
              + (ssize_t)count()),                // Total Current Stock + depletion
-         err_msg("FreeList " PTR_FORMAT " of size " SIZE_FORMAT
-                 " violates Conservation Principle: "
-                 "prev_sweep(" SIZE_FORMAT ")"
-                 " + split_births(" SIZE_FORMAT ")"
-                 " + coal_births(" SIZE_FORMAT ") + 1 >= "
-                 " split_deaths(" SIZE_FORMAT ")"
-                 " coal_deaths(" SIZE_FORMAT ")"
-                 " + count(" SSIZE_FORMAT ")",
-                 p2i(this), size(), _allocation_stats.prev_sweep(), _allocation_stats.split_births(),
-                 _allocation_stats.coal_births(), _allocation_stats.split_deaths(),
-                 _allocation_stats.coal_deaths(), count()));
+         "FreeList " PTR_FORMAT " of size " SIZE_FORMAT
+         " violates Conservation Principle: "
+         "prev_sweep(" SIZE_FORMAT ")"
+         " + split_births(" SIZE_FORMAT ")"
+         " + coal_births(" SIZE_FORMAT ") + 1 >= "
+         " split_deaths(" SIZE_FORMAT ")"
+         " coal_deaths(" SIZE_FORMAT ")"
+         " + count(" SSIZE_FORMAT ")",
+         p2i(this), size(), _allocation_stats.prev_sweep(), _allocation_stats.split_births(),
+         _allocation_stats.coal_births(), _allocation_stats.split_deaths(),
+         _allocation_stats.coal_deaths(), count());
 }
 #endif
 

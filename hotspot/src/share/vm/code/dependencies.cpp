@@ -400,7 +400,7 @@ int Dependencies::dep_args(Dependencies::DepType dept) {
 }
 
 void Dependencies::check_valid_dependency_type(DepType dept) {
-  guarantee(FIRST_TYPE <= dept && dept < TYPE_LIMIT, err_msg("invalid dependency type: %d", (int) dept));
+  guarantee(FIRST_TYPE <= dept && dept < TYPE_LIMIT, "invalid dependency type: %d", (int) dept);
 }
 
 // for the sake of the compiler log, print out current dependencies:

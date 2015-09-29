@@ -602,7 +602,7 @@ address* TemplateInterpreter::invoke_return_entry_table_for(Bytecodes::Code code
   case Bytecodes::_invokedynamic:
     return Interpreter::invokedynamic_return_entry_table();
   default:
-    fatal(err_msg("invalid bytecode: %s", Bytecodes::name(code)));
+    fatal("invalid bytecode: %s", Bytecodes::name(code));
     return NULL;
   }
 }
@@ -624,7 +624,7 @@ address TemplateInterpreter::return_entry(TosState state, int length, Bytecodes:
   case Bytecodes::_invokedynamic:
     return _invokedynamic_return_entry[index];
   default:
-    assert(!Bytecodes::is_invoke(code), err_msg("invoke instructions should be handled separately: %s", Bytecodes::name(code)));
+    assert(!Bytecodes::is_invoke(code), "invoke instructions should be handled separately: %s", Bytecodes::name(code));
     return _return_entry[length].entry(state);
   }
 }

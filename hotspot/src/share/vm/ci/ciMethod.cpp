@@ -576,13 +576,13 @@ void ciCallProfile::add_receiver(ciKlass* receiver, int receiver_count) {
 
 void ciMethod::assert_virtual_call_type_ok(int bci) {
   assert(java_code_at_bci(bci) == Bytecodes::_invokevirtual ||
-         java_code_at_bci(bci) == Bytecodes::_invokeinterface, err_msg("unexpected bytecode %s", Bytecodes::name(java_code_at_bci(bci))));
+         java_code_at_bci(bci) == Bytecodes::_invokeinterface, "unexpected bytecode %s", Bytecodes::name(java_code_at_bci(bci)));
 }
 
 void ciMethod::assert_call_type_ok(int bci) {
   assert(java_code_at_bci(bci) == Bytecodes::_invokestatic ||
          java_code_at_bci(bci) == Bytecodes::_invokespecial ||
-         java_code_at_bci(bci) == Bytecodes::_invokedynamic, err_msg("unexpected bytecode %s", Bytecodes::name(java_code_at_bci(bci))));
+         java_code_at_bci(bci) == Bytecodes::_invokedynamic, "unexpected bytecode %s", Bytecodes::name(java_code_at_bci(bci)));
 }
 
 /**

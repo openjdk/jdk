@@ -129,7 +129,7 @@ const Type *CastIINode::Value(PhaseTransform *phase) const {
             } else {
               stringStream ss;
               test.dump_on(&ss);
-              fatal(err_msg_res("unexpected comparison %s", ss.as_string()));
+              fatal("unexpected comparison %s", ss.as_string());
             }
             int lo_int = (int)lo_long;
             int hi_int = (int)hi_long;

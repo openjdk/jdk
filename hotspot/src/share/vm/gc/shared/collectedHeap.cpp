@@ -459,7 +459,7 @@ CollectedHeap::fill_with_array(HeapWord* start, size_t words, bool zap)
 
   const size_t payload_size = words - filler_array_hdr_size();
   const size_t len = payload_size * HeapWordSize / sizeof(jint);
-  assert((int)len >= 0, err_msg("size too large " SIZE_FORMAT " becomes %d", words, (int)len));
+  assert((int)len >= 0, "size too large " SIZE_FORMAT " becomes %d", words, (int)len);
 
   // Set the length first for concurrent GC.
   ((arrayOop)start)->set_length((int)len);
@@ -622,12 +622,12 @@ void CollectedHeap::test_is_in() {
   assert(heap_start >= ((uintptr_t)NULL + epsilon), "sanity");
   void* before_heap = (void*)(heap_start - epsilon);
   assert(!heap->is_in(before_heap),
-      err_msg("before_heap: " PTR_FORMAT " is unexpectedly in the heap", p2i(before_heap)));
+         "before_heap: " PTR_FORMAT " is unexpectedly in the heap", p2i(before_heap));
 
   // Test that a pointer to after the heap end is reported as outside the heap.
   assert(heap_end <= ((uintptr_t)-1 - epsilon), "sanity");
   void* after_heap = (void*)(heap_end + epsilon);
   assert(!heap->is_in(after_heap),
-      err_msg("after_heap: " PTR_FORMAT " is unexpectedly in the heap", p2i(after_heap)));
+         "after_heap: " PTR_FORMAT " is unexpectedly in the heap", p2i(after_heap));
 }
 #endif

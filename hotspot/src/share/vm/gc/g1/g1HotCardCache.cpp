@@ -112,8 +112,7 @@ void G1HotCardCache::drain(uint worker_i,
           // RSet updating while within an evacuation pause.
           // In this case worker_i should be the id of a GC worker thread
           assert(SafepointSynchronize::is_at_safepoint(), "Should be at a safepoint");
-          assert(worker_i < ParallelGCThreads,
-                 err_msg("incorrect worker id: %u", worker_i));
+          assert(worker_i < ParallelGCThreads, "incorrect worker id: %u", worker_i);
 
           into_cset_dcq->enqueue(card_ptr);
         }

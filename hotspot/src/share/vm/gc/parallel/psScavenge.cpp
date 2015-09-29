@@ -819,7 +819,7 @@ void PSScavenge::initialize() {
 
   if (AlwaysTenure || NeverTenure) {
     assert(MaxTenuringThreshold == 0 || MaxTenuringThreshold == markOopDesc::max_age + 1,
-        err_msg("MaxTenuringThreshold should be 0 or markOopDesc::max_age + 1, but is %d", (int) MaxTenuringThreshold));
+           "MaxTenuringThreshold should be 0 or markOopDesc::max_age + 1, but is %d", (int) MaxTenuringThreshold);
     _tenuring_threshold = MaxTenuringThreshold;
   } else {
     // We want to smooth out our startup times for the AdaptiveSizePolicy

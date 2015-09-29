@@ -162,7 +162,7 @@ class XMMRegisterImpl: public AbstractRegisterImpl {
   XMMRegister successor() const                          { return as_XMMRegister(encoding() + 1); }
 
   // accessors
-  int   encoding() const                          { assert(is_valid(), err_msg("invalid register (%d)", (int)(intptr_t)this )); return (intptr_t)this; }
+  int   encoding() const                          { assert(is_valid(), "invalid register (%d)", (int)(intptr_t)this ); return (intptr_t)this; }
   bool  is_valid() const                          { return 0 <= (intptr_t)this && (intptr_t)this < number_of_registers; }
   const char* name() const;
 };
@@ -245,7 +245,7 @@ public:
   KRegister successor() const                          { return as_KRegister(encoding() + 1); }
 
   // accessors
-  int   encoding() const                          { assert(is_valid(), err_msg("invalid register (%d)", (int)(intptr_t)this)); return (intptr_t)this; }
+  int   encoding() const                          { assert(is_valid(), "invalid register (%d)", (int)(intptr_t)this); return (intptr_t)this; }
   bool  is_valid() const                          { return 0 <= (intptr_t)this && (intptr_t)this < number_of_registers; }
   const char* name() const;
 };

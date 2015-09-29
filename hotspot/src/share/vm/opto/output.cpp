@@ -2611,7 +2611,7 @@ void Scheduling::verify_do_def( Node *n, OptoReg::Name def, const char *msg ) {
       n->dump();
       tty->print_cr("...");
       prior_use->dump();
-      assert(edge_from_to(prior_use,n),msg);
+      assert(edge_from_to(prior_use,n), "%s", msg);
     }
     _reg_node.map(def,NULL); // Kill live USEs
   }
@@ -2649,11 +2649,11 @@ void Scheduling::verify_good_schedule( Block *b, const char *msg ) {
       OptoReg::Name reg_lo = _regalloc->get_reg_first(def);
       OptoReg::Name reg_hi = _regalloc->get_reg_second(def);
       if( OptoReg::is_valid(reg_lo) ) {
-        assert(!_reg_node[reg_lo] || edge_from_to(_reg_node[reg_lo],def), msg);
+        assert(!_reg_node[reg_lo] || edge_from_to(_reg_node[reg_lo],def), "%s", msg);
         _reg_node.map(reg_lo,n);
       }
       if( OptoReg::is_valid(reg_hi) ) {
-        assert(!_reg_node[reg_hi] || edge_from_to(_reg_node[reg_hi],def), msg);
+        assert(!_reg_node[reg_hi] || edge_from_to(_reg_node[reg_hi],def), "%s", msg);
         _reg_node.map(reg_hi,n);
       }
     }

@@ -475,9 +475,8 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm, int frame_siz
 
 // Is vector's size (in bytes) bigger than a size saved by default?
 bool SharedRuntime::is_wide_vector(int size) {
-  ResourceMark rm;
   // Note, MaxVectorSize == 8 on PPC64.
-  assert(size <= 8, err_msg_res("%d bytes vectors are not supported", size));
+  assert(size <= 8, "%d bytes vectors are not supported", size);
   return size > 8;
 }
 #ifdef COMPILER2
@@ -1631,7 +1630,7 @@ static void gen_special_dispatch(MacroAssembler* masm,
   } else if (iid == vmIntrinsics::_invokeBasic) {
     has_receiver = true;
   } else {
-    fatal(err_msg_res("unexpected intrinsic id %d", iid));
+    fatal("unexpected intrinsic id %d", iid);
   }
 
   if (member_reg != noreg) {

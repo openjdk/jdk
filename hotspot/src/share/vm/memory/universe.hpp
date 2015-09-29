@@ -269,7 +269,7 @@ class Universe: AllStatic {
   }
 
   static Klass* typeArrayKlassObj(BasicType t) {
-    assert((uint)t < T_VOID+1, err_msg("range check for type: %s", type2name(t)));
+    assert((uint)t < T_VOID+1, "range check for type: %s", type2name(t));
     assert(_typeArrayKlassObjs[t] != NULL, "domain check");
     return _typeArrayKlassObjs[t];
   }

@@ -3476,7 +3476,7 @@ class Par_ConcMarkingClosure: public MetadataAwareOopClosure {
 // been published), so we do not need to check for
 // uninitialized objects before pushing here.
 void Par_ConcMarkingClosure::do_oop(oop obj) {
-  assert(obj->is_oop_or_null(true), err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(obj)));
+  assert(obj->is_oop_or_null(true), "Expected an oop or NULL at " PTR_FORMAT, p2i(obj));
   HeapWord* addr = (HeapWord*)obj;
   // Check if oop points into the CMS generation
   // and is not marked
@@ -6458,7 +6458,7 @@ void SurvivorSpacePrecleanClosure::do_yield_work() {
 // isMarked() query is "safe".
 bool ScanMarkedObjectsAgainClosure::do_object_bm(oop p, MemRegion mr) {
   // Ignore mark word because we are running concurrent with mutators
-  assert(p->is_oop_or_null(true), err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(p)));
+  assert(p->is_oop_or_null(true), "Expected an oop or NULL at " PTR_FORMAT, p2i(p));
   HeapWord* addr = (HeapWord*)p;
   assert(_span.contains(addr), "we are scanning the CMS generation");
   bool is_obj_array = false;
@@ -6893,7 +6893,7 @@ void PushAndMarkVerifyClosure::handle_stack_overflow(HeapWord* lost) {
 }
 
 void PushAndMarkVerifyClosure::do_oop(oop obj) {
-  assert(obj->is_oop_or_null(), err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(obj)));
+  assert(obj->is_oop_or_null(), "Expected an oop or NULL at " PTR_FORMAT, p2i(obj));
   HeapWord* addr = (HeapWord*)obj;
   if (_span.contains(addr) && !_verification_bm->isMarked(addr)) {
     // Oop lies in _span and isn't yet grey or black
@@ -6991,7 +6991,7 @@ void Par_PushOrMarkClosure::handle_stack_overflow(HeapWord* lost) {
 
 void PushOrMarkClosure::do_oop(oop obj) {
   // Ignore mark word because we are running concurrent with mutators.
-  assert(obj->is_oop_or_null(true), err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(obj)));
+  assert(obj->is_oop_or_null(true), "Expected an oop or NULL at " PTR_FORMAT, p2i(obj));
   HeapWord* addr = (HeapWord*)obj;
   if (_span.contains(addr) && !_bitMap->isMarked(addr)) {
     // Oop lies in _span and isn't yet grey or black
@@ -7029,7 +7029,7 @@ void PushOrMarkClosure::do_oop(narrowOop* p) { PushOrMarkClosure::do_oop_work(p)
 
 void Par_PushOrMarkClosure::do_oop(oop obj) {
   // Ignore mark word because we are running concurrent with mutators.
-  assert(obj->is_oop_or_null(true), err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(obj)));
+  assert(obj->is_oop_or_null(true), "Expected an oop or NULL at " PTR_FORMAT, p2i(obj));
   HeapWord* addr = (HeapWord*)obj;
   if (_whole_span.contains(addr) && !_bit_map->isMarked(addr)) {
     // Oop lies in _span and isn't yet grey or black
@@ -7106,7 +7106,7 @@ void PushAndMarkClosure::do_oop(oop obj) {
   // path and may be at the end of the global overflow list (so
   // the mark word may be NULL).
   assert(obj->is_oop_or_null(true /* ignore mark word */),
-         err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(obj)));
+         "Expected an oop or NULL at " PTR_FORMAT, p2i(obj));
   HeapWord* addr = (HeapWord*)obj;
   // Check if oop points into the CMS generation
   // and is not marked
@@ -7186,7 +7186,7 @@ void Par_PushAndMarkClosure::do_oop(oop obj) {
   // the debugger, is_oop_or_null(false) may subsequently start
   // to hold.
   assert(obj->is_oop_or_null(true),
-         err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(obj)));
+         "Expected an oop or NULL at " PTR_FORMAT, p2i(obj));
   HeapWord* addr = (HeapWord*)obj;
   // Check if oop points into the CMS generation
   // and is not marked
@@ -7423,7 +7423,7 @@ size_t SweepClosure::do_blk_careful(HeapWord* addr) {
     // coalesced chunk to the appropriate free list.
     if (inFreeRange()) {
       assert(freeFinger() >= _sp->bottom() && freeFinger() < _limit,
-             err_msg("freeFinger() " PTR_FORMAT " is out-of-bounds", p2i(freeFinger())));
+             "freeFinger() " PTR_FORMAT " is out-of-bounds", p2i(freeFinger()));
       flush_cur_free_chunk(freeFinger(),
                            pointer_delta(addr, freeFinger()));
       if (CMSTraceSweeper) {
@@ -7825,10 +7825,10 @@ void SweepClosure::lookahead_and_flush(FreeChunk* fc, size_t chunk_size) {
   assert(inFreeRange(), "Should only be called if currently in a free range.");
   HeapWord* const eob = ((HeapWord*)fc) + chunk_size;
   assert(_sp->used_region().contains(eob - 1),
-         err_msg("eob = " PTR_FORMAT " eob-1 = " PTR_FORMAT " _limit = " PTR_FORMAT
-                 " out of bounds wrt _sp = [" PTR_FORMAT "," PTR_FORMAT ")"
-                 " when examining fc = " PTR_FORMAT "(" SIZE_FORMAT ")",
-                 p2i(eob), p2i(eob-1), p2i(_limit), p2i(_sp->bottom()), p2i(_sp->end()), p2i(fc), chunk_size));
+         "eob = " PTR_FORMAT " eob-1 = " PTR_FORMAT " _limit = " PTR_FORMAT
+         " out of bounds wrt _sp = [" PTR_FORMAT "," PTR_FORMAT ")"
+         " when examining fc = " PTR_FORMAT "(" SIZE_FORMAT ")",
+         p2i(eob), p2i(eob-1), p2i(_limit), p2i(_sp->bottom()), p2i(_sp->end()), p2i(fc), chunk_size);
   if (eob >= _limit) {
     assert(eob == _limit || fc->is_free(), "Only a free chunk should allow us to cross over the limit");
     if (CMSTraceSweeper) {

@@ -110,7 +110,7 @@ char* ProfileData::print_data_on_helper(const MethodData* md) const {
       return ss.as_string();
       break;
     default:
-      fatal(err_msg("unexpected tag %d", dp->tag()));
+      fatal("unexpected tag %d", dp->tag());
     }
   }
   return NULL;
@@ -1239,7 +1239,7 @@ DataLayout* MethodData::next_extra(DataLayout* dp) {
     nb_cells = SpeculativeTrapData::static_cell_count();
     break;
   default:
-    fatal(err_msg("unexpected tag %d", dp->tag()));
+    fatal("unexpected tag %d", dp->tag());
   }
   return (DataLayout*)((address)dp + DataLayout::compute_size_in_bytes(nb_cells));
 }
@@ -1279,7 +1279,7 @@ ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout
       }
       break;
     default:
-      fatal(err_msg("unexpected tag %d", dp->tag()));
+      fatal("unexpected tag %d", dp->tag());
     }
   }
   return NULL;
@@ -1400,7 +1400,7 @@ void MethodData::print_data_on(outputStream* st) const {
       dp = end; // ArgInfoData is at the end of extra data section.
       break;
     default:
-      fatal(err_msg("unexpected tag %d", dp->tag()));
+      fatal("unexpected tag %d", dp->tag());
     }
     st->print("%d", dp_to_di(data->dp()));
     st->fill_to(6);
@@ -1612,7 +1612,7 @@ void MethodData::clean_extra_data(CleanExtraDataClosure* cl) {
       clean_extra_data_helper(dp, shift, true);
       return;
     default:
-      fatal(err_msg("unexpected tag %d", dp->tag()));
+      fatal("unexpected tag %d", dp->tag());
     }
   }
 }
@@ -1638,7 +1638,7 @@ void MethodData::verify_extra_data_clean(CleanExtraDataClosure* cl) {
     case DataLayout::arg_info_data_tag:
       return;
     default:
-      fatal(err_msg("unexpected tag %d", dp->tag()));
+      fatal("unexpected tag %d", dp->tag());
     }
   }
 #endif

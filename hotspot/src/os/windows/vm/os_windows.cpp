@@ -823,7 +823,7 @@ jlong offset() {
   java_origin.wMilliseconds  = 0;
   FILETIME jot;
   if (!SystemTimeToFileTime(&java_origin, &jot)) {
-    fatal(err_msg("Error = %d\nWindows error", GetLastError()));
+    fatal("Error = %d\nWindows error", GetLastError());
   }
   _calculated_offset = jlong_from(jot.dwHighDateTime, jot.dwLowDateTime);
   _has_calculated_offset = 1;
@@ -1936,7 +1936,7 @@ int os::get_last_error() {
 WindowsSemaphore::WindowsSemaphore(uint value) {
   _semaphore = ::CreateSemaphore(NULL, value, LONG_MAX, NULL);
 
-  guarantee(_semaphore != NULL, err_msg("CreateSemaphore failed with error code: %lu", GetLastError()));
+  guarantee(_semaphore != NULL, "CreateSemaphore failed with error code: %lu", GetLastError());
 }
 
 WindowsSemaphore::~WindowsSemaphore() {
@@ -1947,14 +1947,14 @@ void WindowsSemaphore::signal(uint count) {
   if (count > 0) {
     BOOL ret = ::ReleaseSemaphore(_semaphore, count, NULL);
 
-    assert(ret != 0, err_msg("ReleaseSemaphore failed with error code: %lu", GetLastError()));
+    assert(ret != 0, "ReleaseSemaphore failed with error code: %lu", GetLastError());
   }
 }
 
 void WindowsSemaphore::wait() {
   DWORD ret = ::WaitForSingleObject(_semaphore, INFINITE);
-  assert(ret != WAIT_FAILED,   err_msg("WaitForSingleObject failed with error code: %lu", GetLastError()));
-  assert(ret == WAIT_OBJECT_0, err_msg("WaitForSingleObject failed with return value: %lu", ret));
+  assert(ret != WAIT_FAILED,   "WaitForSingleObject failed with error code: %lu", GetLastError());
+  assert(ret == WAIT_OBJECT_0, "WaitForSingleObject failed with return value: %lu", ret);
 }
 
 // sun.misc.Signal
@@ -2344,8 +2344,7 @@ LONG WINAPI Handle_FLT_Exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 
 static inline void report_error(Thread* t, DWORD exception_code,
                                 address addr, void* siginfo, void* context) {
-  VMError err(t, exception_code, addr, siginfo, context);
-  err.report_and_die();
+  VMError::report_and_die(t, exception_code, addr, siginfo, context);
 
   // If UseOsErrorReporting, this will return here and save the error file
   // somewhere where we can find it in the minidump.
@@ -3325,7 +3324,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   assert(mesg != NULL, "mesg must be specified");
   if (!pd_commit_memory(addr, size, exec)) {
     warn_fail_commit_memory(addr, size, exec);
-    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, mesg);
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
   }
 }
 
@@ -5259,7 +5258,7 @@ bool os::check_heap(bool force) {
       }
       DWORD err = GetLastError();
       if (err != ERROR_NO_MORE_ITEMS && err != ERROR_CALL_NOT_IMPLEMENTED) {
-        fatal(err_msg("heap walk aborted with error %d", err));
+        fatal("heap walk aborted with error %d", err);
       }
       HeapUnlock(heap);
     }
@@ -5978,8 +5977,8 @@ void TestReserveMemorySpecial_test() {
       os::release_memory_special(actual_location, expected_allocation_size);
       // only now check, after releasing any memory to avoid any leaks.
       assert(actual_location == expected_location,
-             err_msg("Failed to allocate memory at requested location " PTR_FORMAT " of size " SIZE_FORMAT ", is " PTR_FORMAT " instead",
-             expected_location, expected_allocation_size, actual_location));
+             "Failed to allocate memory at requested location " PTR_FORMAT " of size " SIZE_FORMAT ", is " PTR_FORMAT " instead",
+             expected_location, expected_allocation_size, actual_location);
     }
   }
 

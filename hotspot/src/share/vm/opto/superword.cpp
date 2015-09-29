@@ -769,7 +769,7 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
     // if offset is 0.
     int iv_adjustment_in_bytes = (stride_sign * vw - (offset % vw));
     assert(((ABS(iv_adjustment_in_bytes) % elt_size) == 0),
-           err_msg_res("(%d) should be divisible by (%d)", iv_adjustment_in_bytes, elt_size));
+           "(%d) should be divisible by (%d)", iv_adjustment_in_bytes, elt_size);
     iv_adjustment = iv_adjustment_in_bytes/elt_size;
   } else {
     // This memory op is not dependent on iv (scale == 0)
@@ -914,7 +914,7 @@ void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &p
     preds.push(n);
     NOT_PRODUCT(if (TraceSuperWord && Verbose) tty->print_cr("SuperWord::mem_slice_preds: added pred(%d)", n->_idx);)
     prev = n;
-    assert(n->is_Mem(), err_msg_res("unexpected node %s", n->Name()));
+    assert(n->is_Mem(), "unexpected node %s", n->Name());
     n = n->in(MemNode::Memory);
   }
 }
@@ -2110,7 +2110,7 @@ bool SuperWord::construct_bb() {
       Node* n_tail  = n->in(LoopNode::LoopBackControl);
       if (n_tail != n->in(LoopNode::EntryControl)) {
         if (!n_tail->is_Mem()) {
-          assert(n_tail->is_Mem(), err_msg_res("unexpected node for memory slice: %s", n_tail->Name()));
+          assert(n_tail->is_Mem(), "unexpected node for memory slice: %s", n_tail->Name());
           return false; // Bailout
         }
         _mem_slice_head.push(n);

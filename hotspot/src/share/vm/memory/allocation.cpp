@@ -125,7 +125,7 @@ void ResourceObj::operator delete [](void* p) {
 void ResourceObj::set_allocation_type(address res, allocation_type type) {
     // Set allocation type in the resource object
     uintptr_t allocation = (uintptr_t)res;
-    assert((allocation & allocation_mask) == 0, err_msg("address should be aligned to 4 bytes at least: " INTPTR_FORMAT, p2i(res)));
+    assert((allocation & allocation_mask) == 0, "address should be aligned to 4 bytes at least: " INTPTR_FORMAT, p2i(res));
     assert(type <= allocation_mask, "incorrect allocation type");
     ResourceObj* resobj = (ResourceObj *)res;
     resobj->_allocation_t[0] = ~(allocation + type);
@@ -161,8 +161,8 @@ ResourceObj::ResourceObj() { // default constructor
     } else if (is_type_set()) {
       // Operator new() was called and type was set.
       assert(!allocated_on_stack(),
-             err_msg("not embedded or stack, this(" PTR_FORMAT ") type %d a[0]=(" PTR_FORMAT ") a[1]=(" PTR_FORMAT ")",
-                     p2i(this), get_allocation_type(), _allocation_t[0], _allocation_t[1]));
+             "not embedded or stack, this(" PTR_FORMAT ") type %d a[0]=(" PTR_FORMAT ") a[1]=(" PTR_FORMAT ")",
+             p2i(this), get_allocation_type(), _allocation_t[0], _allocation_t[1]);
     } else {
       // Operator new() was not called.
       // Assume that it is embedded or stack object.
@@ -175,8 +175,8 @@ ResourceObj::ResourceObj(const ResourceObj& r) { // default copy constructor
     // Used in ClassFileParser::parse_constant_pool_entries() for ClassFileStream.
     // Note: garbage may resembles valid value.
     assert(~(_allocation_t[0] | allocation_mask) != (uintptr_t)this || !is_type_set(),
-           err_msg("embedded or stack only, this(" PTR_FORMAT ") type %d a[0]=(" PTR_FORMAT ") a[1]=(" PTR_FORMAT ")",
-                   p2i(this), get_allocation_type(), _allocation_t[0], _allocation_t[1]));
+           "embedded or stack only, this(" PTR_FORMAT ") type %d a[0]=(" PTR_FORMAT ") a[1]=(" PTR_FORMAT ")",
+           p2i(this), get_allocation_type(), _allocation_t[0], _allocation_t[1]);
     set_allocation_type((address)this, STACK_OR_EMBEDDED);
     _allocation_t[1] = 0; // Zap verification value
 }
@@ -184,8 +184,8 @@ ResourceObj::ResourceObj(const ResourceObj& r) { // default copy constructor
 ResourceObj& ResourceObj::operator=(const ResourceObj& r) { // default copy assignment
     // Used in InlineTree::ok_to_inline() for WarmCallInfo.
     assert(allocated_on_stack(),
-           err_msg("copy only into local, this(" PTR_FORMAT ") type %d a[0]=(" PTR_FORMAT ") a[1]=(" PTR_FORMAT ")",
-                   p2i(this), get_allocation_type(), _allocation_t[0], _allocation_t[1]));
+           "copy only into local, this(" PTR_FORMAT ") type %d a[0]=(" PTR_FORMAT ") a[1]=(" PTR_FORMAT ")",
+           p2i(this), get_allocation_type(), _allocation_t[0], _allocation_t[1]);
     // Keep current _allocation_t value;
     return *this;
 }
@@ -533,7 +533,7 @@ size_t Arena::used() const {
 }
 
 void Arena::signal_out_of_memory(size_t sz, const char* whence) const {
-  vm_exit_out_of_memory(sz, OOM_MALLOC_ERROR, whence);
+  vm_exit_out_of_memory(sz, OOM_MALLOC_ERROR, "%s", whence);
 }
 
 // Grow a new Chunk

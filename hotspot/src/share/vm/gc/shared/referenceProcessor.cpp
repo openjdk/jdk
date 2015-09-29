@@ -448,7 +448,7 @@ void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
   _discovered_addr = java_lang_ref_Reference::discovered_addr(_ref);
   oop discovered = java_lang_ref_Reference::discovered(_ref);
   assert(_discovered_addr && discovered->is_oop_or_null(),
-         err_msg("Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered)));
+         "Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered));
   _next = discovered;
   _referent_addr = java_lang_ref_Reference::referent_addr(_ref);
   _referent = java_lang_ref_Reference::referent(_ref);
@@ -457,9 +457,9 @@ void DiscoveredListIterator::load_ptrs(DEBUG_ONLY(bool allow_null_referent)) {
   assert(allow_null_referent ?
              _referent->is_oop_or_null()
            : _referent->is_oop(),
-         err_msg("Expected an oop%s for referent field at " PTR_FORMAT,
-                 (allow_null_referent ? " or NULL" : ""),
-                 p2i(_referent)));
+         "Expected an oop%s for referent field at " PTR_FORMAT,
+         (allow_null_referent ? " or NULL" : ""),
+         p2i(_referent));
 }
 
 void DiscoveredListIterator::remove() {
@@ -589,7 +589,7 @@ ReferenceProcessor::pp2_work_concurrent_discovery(DiscoveredList&    refs_list,
     oop next = java_lang_ref_Reference::next(iter.obj());
     if ((iter.referent() == NULL || iter.is_referent_alive() ||
          next != NULL)) {
-      assert(next->is_oop_or_null(), err_msg("Expected an oop or NULL for next field at " PTR_FORMAT, p2i(next)));
+      assert(next->is_oop_or_null(), "Expected an oop or NULL for next field at " PTR_FORMAT, p2i(next));
       // Remove Reference object from list
       iter.remove();
       // Trace the cohorts
@@ -995,9 +995,9 @@ void ReferenceProcessor::verify_referent(oop obj) {
   bool da = discovery_is_atomic();
   oop referent = java_lang_ref_Reference::referent(obj);
   assert(da ? referent->is_oop() : referent->is_oop_or_null(),
-         err_msg("Bad referent " INTPTR_FORMAT " found in Reference "
-                 INTPTR_FORMAT " during %satomic discovery ",
-                 p2i(referent), p2i(obj), da ? "" : "non-"));
+         "Bad referent " INTPTR_FORMAT " found in Reference "
+         INTPTR_FORMAT " during %satomic discovery ",
+         p2i(referent), p2i(obj), da ? "" : "non-");
 }
 #endif
 
@@ -1072,7 +1072,7 @@ bool ReferenceProcessor::discover_reference(oop obj, ReferenceType rt) {
 
   HeapWord* const discovered_addr = java_lang_ref_Reference::discovered_addr(obj);
   const oop  discovered = java_lang_ref_Reference::discovered(obj);
-  assert(discovered->is_oop_or_null(), err_msg("Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered)));
+  assert(discovered->is_oop_or_null(), "Expected an oop or NULL for discovered field at " PTR_FORMAT, p2i(discovered));
   if (discovered != NULL) {
     // The reference has already been discovered...
     if (TraceReferenceGC) {

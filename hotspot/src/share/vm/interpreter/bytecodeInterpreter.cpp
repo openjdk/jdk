@@ -2734,8 +2734,8 @@ run:
       }
 
       DEFAULT:
-          fatal(err_msg("Unimplemented opcode %d = %s", opcode,
-                        Bytecodes::name((Bytecodes::Code)opcode)));
+          fatal("Unimplemented opcode %d = %s", opcode,
+                Bytecodes::name((Bytecodes::Code)opcode));
           goto finish;
 
       } /* switch(opc) */

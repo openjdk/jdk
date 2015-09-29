@@ -1499,7 +1499,7 @@ int InstanceKlass::find_method_index(
     // not found
 #ifdef ASSERT
     int index = (skipping_overpass || skipping_static || skipping_private) ? -1 : linear_search(methods, name, signature);
-    assert(index == -1, err_msg("binary search should have found entry %d", index));
+    assert(index == -1, "binary search should have found entry %d", index);
 #endif
   }
   return -1;
@@ -1915,7 +1915,7 @@ bool nmethodBucket::remove_dependent_nmethod(nmethodBucket* deps, nmethod* nm) {
   for (nmethodBucket* b = deps; b != NULL; b = b->next()) {
     if (nm == b->get_nmethod()) {
       int val = b->decrement();
-      guarantee(val >= 0, err_msg("Underflow: %d", val));
+      guarantee(val >= 0, "Underflow: %d", val);
       return (val == 0);
     }
   }
@@ -1936,7 +1936,7 @@ nmethodBucket* nmethodBucket::clean_dependent_nmethods(nmethodBucket* deps) {
   nmethodBucket* b = first;
 
   while (b != NULL) {
-    assert(b->count() >= 0, err_msg("bucket count: %d", b->count()));
+    assert(b->count() >= 0, "bucket count: %d", b->count());
     nmethodBucket* next = b->next();
     if (b->count() == 0) {
       if (last == NULL) {
@@ -1976,7 +1976,7 @@ bool nmethodBucket::is_dependent_nmethod(nmethodBucket* deps, nmethod* nm) {
     if (nm == b->get_nmethod()) {
 #ifdef ASSERT
       int count = b->count();
-      assert(count >= 0, err_msg("count shouldn't be negative: %d", count));
+      assert(count >= 0, "count shouldn't be negative: %d", count);
 #endif
       return true;
     }
@@ -2001,7 +2001,7 @@ void InstanceKlass::clean_dependent_nmethods() {
   else {
     // Verification
     for (nmethodBucket* b = _dependencies; b != NULL; b = b->next()) {
-      assert(b->count() >= 0, err_msg("bucket count: %d", b->count()));
+      assert(b->count() >= 0, "bucket count: %d", b->count());
       assert(b->count() != 0, "empty buckets need to be cleaned");
     }
   }
@@ -3110,7 +3110,7 @@ void InstanceKlass::verify_on(outputStream* st) {
   Klass* sib = next_sibling();
   if (sib != NULL) {
     if (sib == this) {
-      fatal(err_msg("subclass points to itself " PTR_FORMAT, sib));
+      fatal("subclass points to itself " PTR_FORMAT, sib);
     }
 
     guarantee(sib->is_klass(), "should be klass");

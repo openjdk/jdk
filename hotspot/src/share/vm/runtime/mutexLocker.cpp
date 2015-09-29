@@ -156,7 +156,7 @@ void assert_locked_or_safepoint(const Monitor * lock) {
   // see if invoker of VM operation owns it
   VM_Operation* op = VMThread::vm_operation();
   if (op != NULL && op->calling_thread() == lock->owner()) return;
-  fatal(err_msg("must own lock %s", lock->name()));
+  fatal("must own lock %s", lock->name());
 }
 
 // a stronger assertion than the above
@@ -164,7 +164,7 @@ void assert_lock_strong(const Monitor * lock) {
   if (IgnoreLockingAssertions) return;
   assert(lock != NULL, "Need non-NULL lock");
   if (lock->owned_by_self()) return;
-  fatal(err_msg("must own lock %s", lock->name()));
+  fatal("must own lock %s", lock->name());
 }
 #endif
 

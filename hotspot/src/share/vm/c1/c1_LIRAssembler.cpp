@@ -462,7 +462,7 @@ void LIR_Assembler::emit_call(LIR_OpJavaCall* op) {
     vtable_call(op);
     break;
   default:
-    fatal(err_msg_res("unexpected op code: %s", op->name()));
+    fatal("unexpected op code: %s", op->name());
     break;
   }
 

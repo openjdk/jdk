@@ -2680,7 +2680,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   if (err != 0) {
     // the caller wants all commit errors to exit with the specified mesg:
     warn_fail_commit_memory(addr, size, exec, err);
-    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, mesg);
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
   }
 }
 
@@ -2716,7 +2716,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
   if (err != 0) {
     // the caller wants all commit errors to exit with the specified mesg:
     warn_fail_commit_memory(addr, size, alignment_hint, exec, err);
-    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, mesg);
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
   }
 }
 
@@ -4278,8 +4278,8 @@ void os::Linux::set_signal_handler(int sig, bool set_installed) {
       // libjsig also interposes the sigaction() call below and saves the
       // old sigaction on it own.
     } else {
-      fatal(err_msg("Encountered unexpected pre-existing sigaction handler "
-                    "%#lx for signal %d.", (long)oldhand, sig));
+      fatal("Encountered unexpected pre-existing sigaction handler "
+            "%#lx for signal %d.", (long)oldhand, sig);
     }
   }
 
@@ -4611,8 +4611,8 @@ void os::init(void) {
 
   Linux::set_page_size(sysconf(_SC_PAGESIZE));
   if (Linux::page_size() == -1) {
-    fatal(err_msg("os_linux.cpp: os::init: sysconf failed (%s)",
-                  strerror(errno)));
+    fatal("os_linux.cpp: os::init: sysconf failed (%s)",
+          strerror(errno));
   }
   init_page_sizes((size_t) Linux::page_size());
 
@@ -4628,7 +4628,7 @@ void os::init(void) {
   int status;
   pthread_condattr_t* _condattr = os::Linux::condAttr();
   if ((status = pthread_condattr_init(_condattr)) != 0) {
-    fatal(err_msg("pthread_condattr_init: %s", strerror(status)));
+    fatal("pthread_condattr_init: %s", strerror(status));
   }
   // Only set the clock if CLOCK_MONOTONIC is available
   if (os::supports_monotonic_clock()) {
@@ -4637,7 +4637,7 @@ void os::init(void) {
         warning("Unable to use monotonic clock with relative timed-waits" \
                 " - changes to the time-of-day clock may have adverse affects");
       } else {
-        fatal(err_msg("pthread_condattr_setclock: %s", strerror(status)));
+        fatal("pthread_condattr_setclock: %s", strerror(status));
       }
     }
   }

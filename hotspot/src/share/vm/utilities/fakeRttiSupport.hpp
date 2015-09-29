@@ -76,8 +76,8 @@ public:
   FakeRttiSupport add_tag(TagType tag) const {
     uintx tbit = tag_bit(tag);
     assert((_tag_set & tbit) == 0,
-           err_msg("Tag " UINTX_FORMAT " is already present in tag set: " UINTX_FORMAT,
-                   (uintx)tag, _tag_set));
+           "Tag " UINTX_FORMAT " is already present in tag set: " UINTX_FORMAT,
+           (uintx)tag, _tag_set);
     return FakeRttiSupport(_concrete_tag, _tag_set | tbit);
   }
 
@@ -90,9 +90,9 @@ private:
   }
 
   static TagType validate_tag(TagType tag) {
-    assert(0 <= tag, err_msg("Tag " INTX_FORMAT " is negative", (intx)tag));
+    assert(0 <= tag, "Tag " INTX_FORMAT " is negative", (intx)tag);
     assert(tag < BitsPerWord,
-           err_msg("Tag " UINTX_FORMAT " is too large", (uintx)tag));
+           "Tag " UINTX_FORMAT " is too large", (uintx)tag);
     return tag;
   }
 };

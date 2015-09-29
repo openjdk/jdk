@@ -341,7 +341,7 @@ protected:
     assert(lh < (jint)_lh_neutral_value, "must be array");
     int l2esz = (lh >> _lh_log2_element_size_shift) & _lh_log2_element_size_mask;
     assert(l2esz <= LogBitsPerLong,
-        err_msg("sanity. l2esz: 0x%x for lh: 0x%x", (uint)l2esz, (uint)lh));
+           "sanity. l2esz: 0x%x for lh: 0x%x", (uint)l2esz, (uint)lh);
     return l2esz;
   }
   static jint array_layout_helper(jint tag, int hsize, BasicType etype, int log2_esize) {

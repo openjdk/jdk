@@ -1826,9 +1826,9 @@ void ConstantPool::patch_resolved_references(GrowableArray<Handle>* cp_patches) 
   // Ensure that all the patches have been used.
   for (int index = 0; index < cp_patches->length(); index++) {
     assert(cp_patches->at(index).is_null(),
-           err_msg("Unused constant pool patch at %d in class file %s",
-                   index,
-                   pool_holder()->external_name()));
+           "Unused constant pool patch at %d in class file %s",
+           index,
+           pool_holder()->external_name());
   }
 #endif // ASSERT
 }

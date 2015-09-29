@@ -312,12 +312,12 @@ void StringTable::buckets_oops_do(OopClosure* f, int start_idx, int end_idx) {
   const int limit = the_table()->table_size();
 
   assert(0 <= start_idx && start_idx <= limit,
-         err_msg("start_idx (%d) is out of bounds", start_idx));
+         "start_idx (%d) is out of bounds", start_idx);
   assert(0 <= end_idx && end_idx <= limit,
-         err_msg("end_idx (%d) is out of bounds", end_idx));
+         "end_idx (%d) is out of bounds", end_idx);
   assert(start_idx <= end_idx,
-         err_msg("Index ordering: start_idx=%d, end_idx=%d",
-                 start_idx, end_idx));
+         "Index ordering: start_idx=%d, end_idx=%d",
+         start_idx, end_idx);
 
   for (int i = start_idx; i < end_idx; i += 1) {
     HashtableEntry<oop, mtSymbol>* entry = the_table()->bucket(i);
@@ -335,12 +335,12 @@ void StringTable::buckets_unlink_or_oops_do(BoolObjectClosure* is_alive, OopClos
   const int limit = the_table()->table_size();
 
   assert(0 <= start_idx && start_idx <= limit,
-         err_msg("start_idx (%d) is out of bounds", start_idx));
+         "start_idx (%d) is out of bounds", start_idx);
   assert(0 <= end_idx && end_idx <= limit,
-         err_msg("end_idx (%d) is out of bounds", end_idx));
+         "end_idx (%d) is out of bounds", end_idx);
   assert(start_idx <= end_idx,
-         err_msg("Index ordering: start_idx=%d, end_idx=%d",
-                 start_idx, end_idx));
+         "Index ordering: start_idx=%d, end_idx=%d",
+         start_idx, end_idx);
 
   for (int i = start_idx; i < end_idx; ++i) {
     HashtableEntry<oop, mtSymbol>** p = the_table()->bucket_addr(i);

@@ -137,9 +137,9 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
       }
       // Check alignment constraints.
       assert((uintptr_t) base % alignment == 0,
-             err_msg("Large pages returned a non-aligned address, base: "
-                 PTR_FORMAT " alignment: " PTR_FORMAT,
-                 base, (void*)(uintptr_t)alignment));
+             "Large pages returned a non-aligned address, base: "
+             PTR_FORMAT " alignment: " PTR_FORMAT,
+             base, (void*)(uintptr_t)alignment);
       _special = true;
     } else {
       // failed; try to reserve regular memory below
@@ -334,9 +334,9 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
     if (base != NULL) {
       // Check alignment constraints.
       assert((uintptr_t) base % alignment == 0,
-             err_msg("Large pages returned a non-aligned address, base: "
-                     PTR_FORMAT " alignment: " PTR_FORMAT,
-                     base, (void*)(uintptr_t)alignment));
+             "Large pages returned a non-aligned address, base: "
+             PTR_FORMAT " alignment: " PTR_FORMAT,
+             base, (void*)(uintptr_t)alignment);
       _special = true;
     }
   }
@@ -1205,20 +1205,20 @@ void TestReservedSpace_test() {
   TestReservedSpace::test_reserved_space();
 }
 
-#define assert_equals(actual, expected)     \
-  assert(actual == expected,                \
-    err_msg("Got " SIZE_FORMAT " expected " \
-      SIZE_FORMAT, actual, expected));
+#define assert_equals(actual, expected)  \
+  assert(actual == expected,             \
+         "Got " SIZE_FORMAT " expected " \
+         SIZE_FORMAT, actual, expected);
 
 #define assert_ge(value1, value2)                  \
   assert(value1 >= value2,                         \
-    err_msg("'" #value1 "': " SIZE_FORMAT " '"     \
-      #value2 "': " SIZE_FORMAT, value1, value2));
+         "'" #value1 "': " SIZE_FORMAT " '"        \
+         #value2 "': " SIZE_FORMAT, value1, value2);
 
 #define assert_lt(value1, value2)                  \
   assert(value1 < value2,                          \
-    err_msg("'" #value1 "': " SIZE_FORMAT " '"     \
-      #value2 "': " SIZE_FORMAT, value1, value2));
+         "'" #value1 "': " SIZE_FORMAT " '"        \
+         #value2 "': " SIZE_FORMAT, value1, value2);
 
 
 class TestVirtualSpace : AllStatic {

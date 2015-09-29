@@ -1964,7 +1964,7 @@ ciTypeFlow::ciTypeFlow(ciEnv* env, ciMethod* method, int osr_bci) {
   _has_irreducible_entry = false;
   _osr_bci = osr_bci;
   _failure_reason = NULL;
-  assert(0 <= start_bci() && start_bci() < code_size() , err_msg("correct osr_bci argument: 0 <= %d < %d", start_bci(), code_size()));
+  assert(0 <= start_bci() && start_bci() < code_size() , "correct osr_bci argument: 0 <= %d < %d", start_bci(), code_size());
   _work_list = NULL;
 
   _ciblock_count = _methodBlocks->num_blocks();

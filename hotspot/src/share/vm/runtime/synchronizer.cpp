@@ -1702,9 +1702,9 @@ class ReleaseJavaMonitorsClosure: public MonitorClosure {
         Handle obj((oop) mid->object());
         tty->print("INFO: unexpected locked object:");
         javaVFrame::print_locked_object_class_name(tty, obj, "locked");
-        fatal(err_msg("exiting JavaThread=" INTPTR_FORMAT
-                      " unexpectedly owns ObjectMonitor=" INTPTR_FORMAT,
-                      THREAD, mid));
+        fatal("exiting JavaThread=" INTPTR_FORMAT
+              " unexpectedly owns ObjectMonitor=" INTPTR_FORMAT,
+              THREAD, mid);
       }
       (void)mid->complete_exit(CHECK);
     }
