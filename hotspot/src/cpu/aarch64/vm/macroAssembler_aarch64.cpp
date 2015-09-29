@@ -3039,6 +3039,24 @@ SkipIfEqual::~SkipIfEqual() {
   _masm->bind(_label);
 }
 
+void MacroAssembler::addptr(const Address &dst, int32_t src) {
+  Address adr;
+  switch(dst.getMode()) {
+  case Address::base_plus_offset:
+    // This is the expected mode, although we allow all the other
+    // forms below.
+    adr = form_address(rscratch2, dst.base(), dst.offset(), LogBytesPerWord);
+    break;
+  default:
+    lea(rscratch2, dst);
+    adr = Address(rscratch2);
+    break;
+  }
+  ldr(rscratch1, adr);
+  add(rscratch1, rscratch1, src);
+  str(rscratch1, adr);
+}
+
 void MacroAssembler::cmpptr(Register src1, Address src2) {
   unsigned long offset;
   adrp(rscratch1, src2, offset);
