@@ -269,9 +269,7 @@ SUNWprivate_1.1 {
 		Java_sun_reflect_Reflection_getCallerClass__I;
 		Java_sun_reflect_Reflection_getClassAccessFlags;
                 Java_sun_misc_Version_getJdkVersionInfo;
-                Java_sun_misc_Version_getJdkSpecialVersion;
                 Java_sun_misc_Version_getJvmVersionInfo;
-                Java_sun_misc_Version_getJvmSpecialVersion;
 		Java_sun_misc_VM_latestUserDefinedLoader;
                 Java_sun_misc_VM_getuid;
                 Java_sun_misc_VM_geteuid;
