@@ -66,8 +66,8 @@ VM_G1IncCollectionPause::VM_G1IncCollectionPause(uint           gc_count_before,
     _should_retry_gc(false),
     _old_marking_cycles_completed_before(0) {
   guarantee(target_pause_time_ms > 0.0,
-            err_msg("target_pause_time_ms = %1.6lf should be positive",
-                    target_pause_time_ms));
+            "target_pause_time_ms = %1.6lf should be positive",
+            target_pause_time_ms);
   _gc_cause = gc_cause;
 }
 

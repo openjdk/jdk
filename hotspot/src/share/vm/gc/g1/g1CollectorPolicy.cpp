@@ -813,8 +813,8 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec) {
   update_survivors_policy();
 
   assert(_g1->used() == _g1->recalculate_used(),
-         err_msg("sanity, used: " SIZE_FORMAT " recalculate_used: " SIZE_FORMAT,
-                 _g1->used(), _g1->recalculate_used()));
+         "sanity, used: " SIZE_FORMAT " recalculate_used: " SIZE_FORMAT,
+         _g1->used(), _g1->recalculate_used());
 
   double s_w_t_ms = (start_time_sec - _stop_world_start) * 1000.0;
   _trace_young_gen_time_data.record_start_collection(s_w_t_ms);
@@ -1876,8 +1876,7 @@ double G1CollectorPolicy::finalize_young_cset_part(double target_pause_time_ms) 
   finalize_incremental_cset_building();
 
   guarantee(target_pause_time_ms > 0.0,
-            err_msg("target_pause_time_ms = %1.6lf should be positive",
-                    target_pause_time_ms));
+            "target_pause_time_ms = %1.6lf should be positive", target_pause_time_ms);
   guarantee(_collection_set == NULL, "Precondition");
 
   double base_time_ms = predict_base_elapsed_time_ms(_pending_cards);

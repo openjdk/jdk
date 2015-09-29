@@ -588,7 +588,7 @@ address InterpreterGenerator::generate_method_entry(
 #endif // defined(TARGET_ARCH_x86) && !defined(_LP64)
 #endif // CC_INTERP
   default:
-    fatal(err_msg("unexpected method kind: %d", kind));
+    fatal("unexpected method kind: %d", kind);
     break;
   }
 

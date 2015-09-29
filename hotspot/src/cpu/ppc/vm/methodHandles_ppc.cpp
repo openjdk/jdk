@@ -60,7 +60,7 @@ void MethodHandles::load_klass_from_Class(MacroAssembler* _masm, Register klass_
 
 #ifdef ASSERT
 static int check_nonzero(const char* xname, int x) {
-  assert(x != 0, err_msg("%s should be nonzero", xname));
+  assert(x != 0, "%s should be nonzero", xname);
   return x;
 }
 #define NONZERO(x) check_nonzero(#x, x)
@@ -434,7 +434,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
     }
 
     default:
-      fatal(err_msg_res("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid)));
+      fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
       break;
     }
 

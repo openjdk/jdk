@@ -133,7 +133,7 @@ class LibraryCallKit : public GraphKit {
 
  private:
   void fatal_unexpected_iid(vmIntrinsics::ID iid) {
-    fatal(err_msg_res("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid)));
+    fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
   }
 
   void  set_result(Node* n) { assert(_result == NULL, "only set once"); _result = n; }
@@ -2466,7 +2466,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
         p = ConvX2UL(p);
         break;
       default:
-        fatal(err_msg_res("unexpected type %d: %s", type, type2name(type)));
+        fatal("unexpected type %d: %s", type, type2name(type));
         break;
       }
     }
@@ -2755,7 +2755,7 @@ bool LibraryCallKit::inline_unsafe_load_store(BasicType type, LoadStoreKind kind
     }
     break;
   default:
-    fatal(err_msg_res("unexpected type %d: %s", type, type2name(type)));
+    fatal("unexpected type %d: %s", type, type2name(type));
     break;
   }
 
@@ -3807,7 +3807,7 @@ Node* LibraryCallKit::generate_virtual_guard(Node* obj_klass,
   ciMethod* method = callee();
   int vtable_index = method->vtable_index();
   assert(vtable_index >= 0 || vtable_index == Method::nonvirtual_vtable_index,
-         err_msg_res("bad index %d", vtable_index));
+         "bad index %d", vtable_index);
   // Get the Method* out of the appropriate vtable entry.
   int entry_offset  = (InstanceKlass::vtable_start_offset() +
                      vtable_index*vtableEntry::size()) * wordSize +
@@ -3859,7 +3859,7 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
       // No need to use the linkResolver to get it.
        vtable_index = method->vtable_index();
        assert(vtable_index >= 0 || vtable_index == Method::nonvirtual_vtable_index,
-              err_msg_res("bad index %d", vtable_index));
+              "bad index %d", vtable_index);
     }
     slow_call = new CallDynamicJavaNode(tf,
                           SharedRuntime::get_resolve_virtual_call_stub(),
@@ -6131,7 +6131,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
     }
     break;
   default:
-    fatal(err_msg_res("unknown SHA intrinsic predicate: %d", predicate));
+    fatal("unknown SHA intrinsic predicate: %d", predicate);
   }
   if (klass_SHA_name != NULL) {
     // get DigestBase klass to lookup for SHA klass
@@ -6236,7 +6236,7 @@ Node* LibraryCallKit::inline_digestBase_implCompressMB_predicate(int predicate) 
     }
     break;
   default:
-    fatal(err_msg_res("unknown SHA intrinsic predicate: %d", predicate));
+    fatal("unknown SHA intrinsic predicate: %d", predicate);
   }
 
   ciKlass* klass_SHA = NULL;

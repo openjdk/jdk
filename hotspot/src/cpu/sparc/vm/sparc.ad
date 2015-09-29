@@ -1098,7 +1098,7 @@ void MachConstantBaseNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const {
   Register r = as_Register(ra_->get_encode(this));
   CodeSection* consts_section = __ code()->consts();
   int consts_size = consts_section->align_at_start(consts_section->size());
-  assert(constant_table.size() == consts_size, err_msg("must be: %d == %d", constant_table.size(), consts_size));
+  assert(constant_table.size() == consts_size, "must be: %d == %d", constant_table.size(), consts_size);
 
   if (UseRDPCForConstantTableBase) {
     // For the following RDPC logic to work correctly the consts

@@ -839,7 +839,7 @@ public:
       case InCSetState::Old:
         return REGIONS_UNLIMITED;
       default:
-        assert(false, err_msg("Unknown dest state: " CSETSTATE_FORMAT, dest.value()));
+        assert(false, "Unknown dest state: " CSETSTATE_FORMAT, dest.value());
         break;
     }
     // keep some compilers happy

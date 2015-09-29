@@ -542,9 +542,9 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void set_containing_set(HeapRegionSetBase* containing_set) {
     assert((containing_set == NULL && _containing_set != NULL) ||
            (containing_set != NULL && _containing_set == NULL),
-           err_msg("containing_set: " PTR_FORMAT " "
-                   "_containing_set: " PTR_FORMAT,
-                   p2i(containing_set), p2i(_containing_set)));
+           "containing_set: " PTR_FORMAT " "
+           "_containing_set: " PTR_FORMAT,
+           p2i(containing_set), p2i(_containing_set));
 
     _containing_set = containing_set;
   }

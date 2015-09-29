@@ -353,8 +353,8 @@ class Bytecodes: AllStatic {
 
  public:
   // Conversion
-  static void        check          (Code code)    { assert(is_defined(code),      err_msg("illegal code: %d", (int)code)); }
-  static void        wide_check     (Code code)    { assert(wide_is_defined(code), err_msg("illegal code: %d", (int)code)); }
+  static void        check          (Code code)    { assert(is_defined(code),      "illegal code: %d", (int)code); }
+  static void        wide_check     (Code code)    { assert(wide_is_defined(code), "illegal code: %d", (int)code); }
   static Code        cast           (int  code)    { return (Code)code; }
 
 

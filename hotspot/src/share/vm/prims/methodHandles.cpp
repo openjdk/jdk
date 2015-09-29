@@ -228,8 +228,8 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
         { ResourceMark rm;
           Method* m2 = m_klass_non_interface->vtable()->method_at(vmindex);
           assert(m->name() == m2->name() && m->signature() == m2->signature(),
-                 err_msg("at %d, %s != %s", vmindex,
-                         m->name_and_sig_as_C_string(), m2->name_and_sig_as_C_string()));
+                 "at %d, %s != %s", vmindex,
+                 m->name_and_sig_as_C_string(), m2->name_and_sig_as_C_string());
         }
 #endif //ASSERT
       }
@@ -345,7 +345,7 @@ bool MethodHandles::is_method_handle_invoke_name(Klass* klass, Symbol* name) {
 
 
 Symbol* MethodHandles::signature_polymorphic_intrinsic_name(vmIntrinsics::ID iid) {
-  assert(is_signature_polymorphic_intrinsic(iid), err_msg("iid=%d", iid));
+  assert(is_signature_polymorphic_intrinsic(iid), "iid=%d", iid);
   switch (iid) {
   case vmIntrinsics::_invokeBasic:      return vmSymbols::invokeBasic_name();
   case vmIntrinsics::_linkToVirtual:    return vmSymbols::linkToVirtual_name();
@@ -365,7 +365,7 @@ int MethodHandles::signature_polymorphic_intrinsic_ref_kind(vmIntrinsics::ID iid
   case vmIntrinsics::_linkToSpecial:    return JVM_REF_invokeSpecial;
   case vmIntrinsics::_linkToInterface:  return JVM_REF_invokeInterface;
   }
-  assert(false, err_msg("iid=%d", iid));
+  assert(false, "iid=%d", iid);
   return 0;
 }
 
@@ -698,7 +698,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, KlassHandle caller, TRAPS
           LinkResolver::resolve_virtual_call(result, Handle(), defc,
                         link_info, false, THREAD);
         } else {
-          assert(false, err_msg("ref_kind=%d", ref_kind));
+          assert(false, "ref_kind=%d", ref_kind);
         }
         if (HAS_PENDING_EXCEPTION) {
           return empty;

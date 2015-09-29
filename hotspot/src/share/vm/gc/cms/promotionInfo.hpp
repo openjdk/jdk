@@ -73,7 +73,7 @@ class PromotedObject VALUE_OBJ_CLASS_SPEC {
     } else {
       res = (PromotedObject*)(_next & next_mask);
     }
-    assert(oop(res)->is_oop_or_null(true /* ignore mark word */), err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(oop(res))));
+    assert(oop(res)->is_oop_or_null(true /* ignore mark word */), "Expected an oop or NULL at " PTR_FORMAT, p2i(oop(res)));
     return res;
   }
   inline void setNext(PromotedObject* x) {

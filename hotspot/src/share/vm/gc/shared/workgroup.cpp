@@ -140,7 +140,7 @@ public:
     _end_semaphore->wait();
 
     // No workers are allowed to read the state variables after the coordinator has been signaled.
-    assert(_not_finished == 0, err_msg("%d not finished workers?", _not_finished));
+    assert(_not_finished == 0, "%d not finished workers?", _not_finished);
     _task    = NULL;
     _started = 0;
 

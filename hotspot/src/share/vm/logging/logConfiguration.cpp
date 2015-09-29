@@ -114,8 +114,8 @@ size_t LogConfiguration::add_output(LogOutput* output) {
 
 void LogConfiguration::delete_output(size_t idx) {
   assert(idx > 1 && idx < _n_outputs,
-         err_msg("idx must be in range 1 < idx < _n_outputs, but idx = " SIZE_FORMAT
-                 " and _n_outputs = " SIZE_FORMAT, idx, _n_outputs));
+         "idx must be in range 1 < idx < _n_outputs, but idx = " SIZE_FORMAT
+         " and _n_outputs = " SIZE_FORMAT, idx, _n_outputs);
   LogOutput* output = _outputs[idx];
   // Swap places with the last output and shrink the array
   _outputs[idx] = _outputs[--_n_outputs];
@@ -124,7 +124,7 @@ void LogConfiguration::delete_output(size_t idx) {
 }
 
 void LogConfiguration::configure_output(size_t idx, const LogTagLevelExpression& tag_level_expression, const LogDecorators& decorators) {
-  assert(idx < _n_outputs, err_msg("Invalid index, idx = " SIZE_FORMAT " and _n_outputs = " SIZE_FORMAT, idx, _n_outputs));
+  assert(idx < _n_outputs, "Invalid index, idx = " SIZE_FORMAT " and _n_outputs = " SIZE_FORMAT, idx, _n_outputs);
   LogOutput* output = _outputs[idx];
   output->set_decorators(decorators);
   output->set_config_string(tag_level_expression.to_string());

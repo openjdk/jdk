@@ -1461,8 +1461,8 @@ void klassVtable::verify(outputStream* st, bool forced) {
   oop* end_of_obj = (oop*)_klass() + _klass()->size();
   oop* end_of_vtable = (oop *)&table()[_length];
   if (end_of_vtable > end_of_obj) {
-    fatal(err_msg("klass %s: klass object too short (vtable extends beyond "
-                  "end)", _klass->internal_name()));
+    fatal("klass %s: klass object too short (vtable extends beyond end)",
+          _klass->internal_name());
   }
 
   for (int i = 0; i < _length; i++) table()[i].verify(this, st);
@@ -1505,7 +1505,7 @@ void vtableEntry::verify(klassVtable* vt, outputStream* st) {
 #ifndef PRODUCT
     print();
 #endif
-    fatal(err_msg("vtableEntry " PTR_FORMAT ": method is from subclass", this));
+    fatal("vtableEntry " PTR_FORMAT ": method is from subclass", this);
   }
 }
 

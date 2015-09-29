@@ -162,8 +162,8 @@ char* GenCollectedHeap::allocate(size_t alignment,
                                   "the maximum representable size");
   }
   assert(total_reserved % alignment == 0,
-         err_msg("Gen size; total_reserved=" SIZE_FORMAT ", alignment="
-                 SIZE_FORMAT, total_reserved, alignment));
+         "Gen size; total_reserved=" SIZE_FORMAT ", alignment="
+         SIZE_FORMAT, total_reserved, alignment);
 
   *heap_rs = Universe::reserve_heap(total_reserved, alignment);
   return heap_rs->base();
@@ -891,7 +891,7 @@ void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
 bool GenCollectedHeap::is_in_young(oop p) {
   bool result = ((HeapWord*)p) < _old_gen->reserved().start();
   assert(result == _young_gen->is_in_reserved(p),
-         err_msg("incorrect test - result=%d, p=" INTPTR_FORMAT, result, p2i((void*)p)));
+         "incorrect test - result=%d, p=" INTPTR_FORMAT, result, p2i((void*)p));
   return result;
 }
 

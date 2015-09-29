@@ -319,12 +319,12 @@ PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
 void ClassFileParser::report_assert_property_failure(const char* msg, TRAPS) {
   ResourceMark rm(THREAD);
-  fatal(err_msg(msg, _class_name->as_C_string()));
+  fatal(msg, _class_name->as_C_string());
 }
 
 void ClassFileParser::report_assert_property_failure(const char* msg, int index, TRAPS) {
   ResourceMark rm(THREAD);
-  fatal(err_msg(msg, index, _class_name->as_C_string()));
+  fatal(msg, index, _class_name->as_C_string());
 }
 PRAGMA_DIAG_POP
 
@@ -492,8 +492,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
           break;
         }
       default:
-        fatal(err_msg("bad constant pool tag value %u",
-                      cp->tag_at(index).value()));
+        fatal("bad constant pool tag value %u", cp->tag_at(index).value());
         ShouldNotReachHere();
         break;
     } // end of switch

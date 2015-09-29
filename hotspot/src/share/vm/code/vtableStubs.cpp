@@ -222,9 +222,9 @@ extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int 
   InstanceKlass* ik = InstanceKlass::cast(klass);
   klassVtable* vt = ik->vtable();
   ik->print();
-  fatal(err_msg("bad compiled vtable dispatch: receiver " INTPTR_FORMAT ", "
-                "index %d (vtable length %d)",
-                (address)receiver, index, vt->length()));
+  fatal("bad compiled vtable dispatch: receiver " INTPTR_FORMAT ", "
+        "index %d (vtable length %d)",
+        (address)receiver, index, vt->length());
 }
 
-#endif // Product
+#endif // PRODUCT

@@ -246,9 +246,11 @@ int Method::bci_from(address bcp) const {
     return 0;
   }
 #ifdef ASSERT
-  { ResourceMark rm;
-  assert(is_native() && bcp == code_base() || contains(bcp) || is_error_reported(),
-         err_msg("bcp doesn't belong to this method: bcp: " INTPTR_FORMAT ", method: %s", bcp, name_and_sig_as_C_string()));
+  {
+    ResourceMark rm;
+    assert(is_native() && bcp == code_base() || contains(bcp) || is_error_reported(),
+           "bcp doesn't belong to this method: bcp: " INTPTR_FORMAT ", method: %s",
+           bcp, name_and_sig_as_C_string());
   }
 #endif
   return bcp - code_base();
@@ -279,7 +281,7 @@ int Method::validate_bci_from_bcp(address bcp) const {
 }
 
 address Method::bcp_from(int bci) const {
-  assert((is_native() && bci == 0)  || (!is_native() && 0 <= bci && bci < code_size()), err_msg("illegal bci: %d", bci));
+  assert((is_native() && bci == 0) || (!is_native() && 0 <= bci && bci < code_size()), "illegal bci: %d", bci);
   address bcp = code_base() + bci;
   assert(is_native() && bcp == code_base() || contains(bcp), "bcp doesn't belong to this method");
   return bcp;
@@ -573,7 +575,7 @@ bool Method::can_be_statically_bound(AccessFlags class_access_flags) const {
   ResourceMark rm;
   bool is_nonv = (vtable_index() == nonvirtual_vtable_index);
   if (class_access_flags.is_interface()) {
-      assert(is_nonv == is_static(), err_msg("is_nonv=%s", name_and_sig_as_C_string()));
+    assert(is_nonv == is_static(), "is_nonv=%s", name_and_sig_as_C_string());
   }
 #endif
   assert(valid_vtable_index() || valid_itable_index(), "method must be linked before we ask this question");
@@ -1572,7 +1574,7 @@ Bytecodes::Code Method::orig_bytecode_at(int bci) const {
   }
   {
     ResourceMark rm;
-    fatal(err_msg("no original bytecode found in %s at bci %d", name_and_sig_as_C_string(), bci));
+    fatal("no original bytecode found in %s at bci %d", name_and_sig_as_C_string(), bci);
   }
   return Bytecodes::_shouldnotreachhere;
 }

@@ -1027,10 +1027,10 @@ void os::WatcherThreadCrashProtection::check_crash_protection(int sig,
   }
 }
 
-#define check_with_errno(check_type, cond, msg)                                      \
-  do {                                                                               \
-    int err = errno;                                                                 \
-    check_type(cond, err_msg("%s; error='%s' (errno=%d)", msg, strerror(err), err)); \
+#define check_with_errno(check_type, cond, msg)                             \
+  do {                                                                      \
+    int err = errno;                                                        \
+    check_type(cond, "%s; error='%s' (errno=%d)", msg, strerror(err), err); \
 } while (false)
 
 #define assert_with_errno(cond, msg)    check_with_errno(assert, cond, msg)

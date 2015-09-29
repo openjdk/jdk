@@ -858,7 +858,7 @@ IRT_ENTRY(void, InterpreterRuntime::resolve_from_cache(JavaThread* thread, Bytec
     resolve_invokedynamic(thread);
     break;
   default:
-    fatal(err_msg("unexpected bytecode: %s", Bytecodes::name(bytecode)));
+    fatal("unexpected bytecode: %s", Bytecodes::name(bytecode));
     break;
   }
 }

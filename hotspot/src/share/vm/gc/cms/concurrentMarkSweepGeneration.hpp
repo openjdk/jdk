@@ -296,8 +296,8 @@ class ChunkArray: public CHeapObj<mtGC> {
 
   size_t end() {
     assert(_index <= capacity(),
-           err_msg("_index (" SIZE_FORMAT ") > _capacity (" SIZE_FORMAT "): out of bounds",
-                   _index, _capacity));
+           "_index (" SIZE_FORMAT ") > _capacity (" SIZE_FORMAT "): out of bounds",
+           _index, _capacity);
     return _index;
   }  // exclusive
 
@@ -322,9 +322,9 @@ class ChunkArray: public CHeapObj<mtGC> {
     } else {
       ++_overflows;
       assert(_index == _capacity,
-             err_msg("_index (" SIZE_FORMAT ") > _capacity (" SIZE_FORMAT
-                     "): out of bounds at overflow#" SIZE_FORMAT,
-                     _index, _capacity, _overflows));
+             "_index (" SIZE_FORMAT ") > _capacity (" SIZE_FORMAT
+             "): out of bounds at overflow#" SIZE_FORMAT,
+             _index, _capacity, _overflows);
     }
   }
 };

@@ -81,10 +81,10 @@
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 FormatBufferResource::FormatBufferResource(const char * format, ...)
-  : FormatBufferBase((char*)resource_allocate_bytes(RES_BUFSZ)) {
+  : FormatBufferBase((char*)resource_allocate_bytes(FormatBufferBase::BufferSize)) {
   va_list argp;
   va_start(argp, format);
-  jio_vsnprintf(_buf, RES_BUFSZ, format, argp);
+  jio_vsnprintf(_buf, FormatBufferBase::BufferSize, format, argp);
   va_end(argp);
 }
 
@@ -207,26 +207,36 @@ bool error_is_suppressed(const char* file_name, int line_no) {
 
 #endif // !PRODUCT
 
-void report_vm_error(const char* file, int line, const char* error_msg,
-                     const char* detail_msg)
+void report_vm_error(const char* file, int line, const char* error_msg)
 {
-  if (Debugging || error_is_suppressed(file, line)) return;
-  Thread* const thread = ThreadLocalStorage::get_thread_slow();
-  VMError err(thread, file, line, error_msg, detail_msg);
-  err.report_and_die();
+  report_vm_error(file, line, error_msg, "%s", "");
 }
 
-void report_fatal(const char* file, int line, const char* message)
+void report_vm_error(const char* file, int line, const char* error_msg, const char* detail_fmt, ...)
 {
-  report_vm_error(file, line, "fatal error", message);
+  if (Debugging || error_is_suppressed(file, line)) return;
+  va_list detail_args;
+  va_start(detail_args, detail_fmt);
+  VMError::report_and_die(ThreadLocalStorage::get_thread_slow(), file, line, error_msg, detail_fmt, detail_args);
+  va_end(detail_args);
+}
+
+void report_fatal(const char* file, int line, const char* detail_fmt, ...)
+{
+  if (Debugging || error_is_suppressed(file, line)) return;
+  va_list detail_args;
+  va_start(detail_args, detail_fmt);
+  VMError::report_and_die(ThreadLocalStorage::get_thread_slow(), file, line, "fatal error", detail_fmt, detail_args);
+  va_end(detail_args);
 }
 
 void report_vm_out_of_memory(const char* file, int line, size_t size,
-                             VMErrorType vm_err_type, const char* message) {
+                             VMErrorType vm_err_type, const char* detail_fmt, ...) {
   if (Debugging) return;
-
-  Thread* thread = ThreadLocalStorage::get_thread_slow();
-  VMError(thread, file, line, size, vm_err_type, message).report_and_die();
+  va_list detail_args;
+  va_start(detail_args, detail_fmt);
+  VMError::report_and_die(ThreadLocalStorage::get_thread_slow(), file, line, size, vm_err_type, detail_fmt, detail_args);
+  va_end(detail_args);
 
   // The UseOSErrorReporting option in report_and_die() may allow a return
   // to here. If so then we'll have to figure out how to handle it.
@@ -295,8 +305,7 @@ void report_java_out_of_memory(const char* message) {
     }
 
     if (OnOutOfMemoryError && OnOutOfMemoryError[0]) {
-      VMError err(message);
-      err.report_java_out_of_memory();
+      VMError::report_java_out_of_memory(message);
     }
   }
 }
@@ -369,18 +378,18 @@ void controlled_crash(int how) {
   switch (how) {
     case  1: vmassert(str == NULL, "expected null");
     case  2: vmassert(num == 1023 && *str == 'X',
-                      err_msg("num=" SIZE_FORMAT " str=\"%s\"", num, str));
+                      "num=" SIZE_FORMAT " str=\"%s\"", num, str);
     case  3: guarantee(str == NULL, "expected null");
     case  4: guarantee(num == 1023 && *str == 'X',
-                       err_msg("num=" SIZE_FORMAT " str=\"%s\"", num, str));
+                       "num=" SIZE_FORMAT " str=\"%s\"", num, str);
     case  5: fatal("expected null");
-    case  6: fatal(err_msg("num=" SIZE_FORMAT " str=\"%s\"", num, str));
-    case  7: fatal(err_msg("%s%s#    %s%s#    %s%s#    %s%s#    %s%s#    "
-                           "%s%s#    %s%s#    %s%s#    %s%s#    %s%s#    "
-                           "%s%s#    %s%s#    %s%s#    %s%s#    %s",
-                           msg, eol, msg, eol, msg, eol, msg, eol, msg, eol,
-                           msg, eol, msg, eol, msg, eol, msg, eol, msg, eol,
-                           msg, eol, msg, eol, msg, eol, msg, eol, msg));
+    case  6: fatal("num=" SIZE_FORMAT " str=\"%s\"", num, str);
+    case  7: fatal("%s%s#    %s%s#    %s%s#    %s%s#    %s%s#    "
+                   "%s%s#    %s%s#    %s%s#    %s%s#    %s%s#    "
+                   "%s%s#    %s%s#    %s%s#    %s%s#    %s",
+                   msg, eol, msg, eol, msg, eol, msg, eol, msg, eol,
+                   msg, eol, msg, eol, msg, eol, msg, eol, msg, eol,
+                   msg, eol, msg, eol, msg, eol, msg, eol, msg);
     case  8: vm_exit_out_of_memory(num, OOM_MALLOC_ERROR, "ChunkPool::allocate");
     case  9: ShouldNotCallThis();
     case 10: ShouldNotReachHere();

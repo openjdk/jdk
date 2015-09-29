@@ -254,9 +254,9 @@ void StealRegionCompactionTask::do_it(GCTaskManager* manager, uint which) {
   if (use_all_workers) {
     which_stack_index = which;
     assert(manager->active_workers() == ParallelGCThreads,
-           err_msg("all_workers_active has been incorrectly set: "
-                   " active %d  ParallelGCThreads %u", manager->active_workers(),
-                   ParallelGCThreads));
+           "all_workers_active has been incorrectly set: "
+           " active %d  ParallelGCThreads %u", manager->active_workers(),
+           ParallelGCThreads);
   } else {
     which_stack_index = ParCompactionManager::pop_recycled_stack_index();
   }
@@ -333,9 +333,9 @@ void DrainStacksCompactionTask::do_it(GCTaskManager* manager, uint which) {
   if (use_all_workers) {
     which_stack_index = which;
     assert(manager->active_workers() == ParallelGCThreads,
-           err_msg("all_workers_active has been incorrectly set: "
-                   " active %d  ParallelGCThreads %u", manager->active_workers(),
-                   ParallelGCThreads));
+           "all_workers_active has been incorrectly set: "
+           " active %d  ParallelGCThreads %u", manager->active_workers(),
+           ParallelGCThreads);
   } else {
     which_stack_index = stack_index();
   }

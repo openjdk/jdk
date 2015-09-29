@@ -2238,7 +2238,7 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[])
     ttyLocker ttyl;
     ::tty->print_cr("=============== DEBUG MESSAGE: %s ================\n",
                     msg);
-    assert(false, err_msg("DEBUG MESSAGE: %s", msg));
+    assert(false, "DEBUG MESSAGE: %s", msg);
   }
 }
 

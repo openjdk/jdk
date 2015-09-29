@@ -85,8 +85,8 @@ void MutableNUMASpace::ensure_parsability() {
         while (words_left_to_fill > 0) {
           size_t words_to_fill = MIN2(words_left_to_fill, CollectedHeap::filler_array_max_size());
           assert(words_to_fill >= CollectedHeap::min_fill_size(),
-            err_msg("Remaining size (" SIZE_FORMAT ") is too small to fill (based on " SIZE_FORMAT " and " SIZE_FORMAT ")",
-            words_to_fill, words_left_to_fill, CollectedHeap::filler_array_max_size()));
+                 "Remaining size (" SIZE_FORMAT ") is too small to fill (based on " SIZE_FORMAT " and " SIZE_FORMAT ")",
+                 words_to_fill, words_left_to_fill, CollectedHeap::filler_array_max_size());
           CollectedHeap::fill_with_object((HeapWord*)cur_top, words_to_fill);
           if (!os::numa_has_static_binding()) {
             size_t touched_words = words_to_fill;
@@ -971,7 +971,7 @@ void MutableNUMASpace::LGRPSpace::scan_pages(size_t page_size, size_t page_count
       break;
     }
     if (e != scan_end) {
-      assert(e < scan_end, err_msg("e: " PTR_FORMAT " scan_end: " PTR_FORMAT, p2i(e), p2i(scan_end)));
+      assert(e < scan_end, "e: " PTR_FORMAT " scan_end: " PTR_FORMAT, p2i(e), p2i(scan_end));
 
       if ((page_expected.size != page_size || page_expected.lgrp_id != lgrp_id())
           && page_expected.size != 0) {

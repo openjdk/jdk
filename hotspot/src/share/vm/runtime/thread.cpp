@@ -880,7 +880,7 @@ void Thread::check_for_valid_safepoint_state(bool potential_vm_operation) {
            cur != VMOperationRequest_lock &&
            cur != VMOperationQueue_lock) ||
            cur->rank() == Mutex::special) {
-        fatal(err_msg("Thread holding lock at safepoint that vm can block on: %s", cur->name()));
+        fatal("Thread holding lock at safepoint that vm can block on: %s", cur->name());
       }
     }
   }
@@ -4103,7 +4103,7 @@ void Threads::assert_all_threads_claimed() {
   ALL_JAVA_THREADS(p) {
     const int thread_parity = p->oops_do_parity();
     assert((thread_parity == _thread_claim_parity),
-        err_msg("Thread " PTR_FORMAT " has incorrect parity %d != %d", p2i(p), thread_parity, _thread_claim_parity));
+           "Thread " PTR_FORMAT " has incorrect parity %d != %d", p2i(p), thread_parity, _thread_claim_parity);
   }
 }
 #endif // ASSERT

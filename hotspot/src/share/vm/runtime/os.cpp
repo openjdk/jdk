@@ -1679,7 +1679,7 @@ os::SuspendResume::State os::SuspendResume::switch_state(os::SuspendResume::Stat
 
 #ifndef PRODUCT
 
-#define assert_eq(a,b) assert(a == b, err_msg(SIZE_FORMAT " != " SIZE_FORMAT, a, b))
+#define assert_eq(a,b) assert(a == b, SIZE_FORMAT " != " SIZE_FORMAT, a, b)
 
 class TestOS : AllStatic {
   static size_t small_page_size() {

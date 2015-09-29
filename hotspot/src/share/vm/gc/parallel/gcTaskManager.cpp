@@ -483,9 +483,9 @@ void GCTaskManager::set_active_gang() {
                                  Threads::number_of_non_daemon_threads());
 
   assert(!all_workers_active() || active_workers() == ParallelGCThreads,
-         err_msg("all_workers_active() is  incorrect: "
-                 "active %d  ParallelGCThreads %u", active_workers(),
-                 ParallelGCThreads));
+         "all_workers_active() is  incorrect: "
+         "active %d  ParallelGCThreads %u", active_workers(),
+         ParallelGCThreads);
   if (TraceDynamicGCThreads) {
     gclog_or_tty->print_cr("GCTaskManager::set_active_gang(): "
                            "all_workers_active()  %d  workers %d  "
