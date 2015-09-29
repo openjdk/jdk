@@ -526,7 +526,7 @@ JNF_COCOA_ENTER(env);
             // Processing all events excluding NSApplicationDefined which need to be processed
             // on the main loop only (those events are intended for disposing resources)
             NSEvent *event;
-            if ((event = [NSApp nextEventMatchingMask:(NSAnyEventMask & ~NSApplicationDefined)
+            if ((event = [NSApp nextEventMatchingMask:(NSAnyEventMask & ~NSApplicationDefinedMask)
                                            untilDate:nil
                                               inMode:NSDefaultRunLoopMode
                                              dequeue:YES]) != nil) {
