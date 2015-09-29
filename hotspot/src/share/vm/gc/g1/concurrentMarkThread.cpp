@@ -194,7 +194,7 @@ void ConcurrentMarkThread::run() {
         // reclaimed by cleanup.
 
         double cleanup_start_sec = os::elapsedTime();
-        cm_log(G1Log::fine(), true, "[GC concurrent-cleanup-start]");
+        cm_log(G1Log::fine(), false, "[GC concurrent-cleanup-start]");
 
         // Now do the concurrent cleanup operation.
         _cm->completeCleanup();
