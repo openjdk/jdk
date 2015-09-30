@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
@@ -328,6 +329,7 @@ void GangWorker::print_task_done(WorkData data) {
 void GangWorker::run_task(WorkData data) {
   print_task_started(data);
 
+  GCIdMark gc_id_mark(data._task->gc_id());
   data._task->work(data._worker_id);
 
   print_task_done(data);

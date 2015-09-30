@@ -857,7 +857,7 @@ void G1CollectorPolicy::record_concurrent_mark_remark_end() {
   _cur_mark_stop_world_time_ms += elapsed_time_ms;
   _prev_collection_pause_end_ms += elapsed_time_ms;
 
-  _mmu_tracker->add_pause(_mark_remark_start_sec, end_time_sec, _g1->gc_tracer_cm()->gc_id());
+  _mmu_tracker->add_pause(_mark_remark_start_sec, end_time_sec);
 }
 
 void G1CollectorPolicy::record_concurrent_mark_cleanup_start() {
@@ -952,8 +952,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
     collector_state()->set_initiate_conc_mark_if_possible(true);
   }
 
-  _mmu_tracker->add_pause(end_time_sec - pause_time_ms/1000.0,
-                          end_time_sec, _g1->gc_tracer_stw()->gc_id());
+  _mmu_tracker->add_pause(end_time_sec - pause_time_ms/1000.0, end_time_sec);
 
   if (update_stats) {
     _trace_young_gen_time_data.record_end_collection(pause_time_ms, phase_times());
@@ -1584,7 +1583,7 @@ G1CollectorPolicy::record_concurrent_mark_cleanup_end() {
   _concurrent_mark_cleanup_times_ms->add(elapsed_time_ms);
   _cur_mark_stop_world_time_ms += elapsed_time_ms;
   _prev_collection_pause_end_ms += elapsed_time_ms;
-  _mmu_tracker->add_pause(_mark_cleanup_start_sec, end_sec, _g1->gc_tracer_cm()->gc_id());
+  _mmu_tracker->add_pause(_mark_cleanup_start_sec, end_sec);
 }
 
 // Add the heap region at the head of the non-incremental collection set

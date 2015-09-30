@@ -30,6 +30,7 @@
 #include "code/icBuffer.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.hpp"
@@ -315,9 +316,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
                                           bool restore_marks_for_biased_locking) {
   // Timer for individual generations. Last argument is false: no CR
   // FIXME: We should try to start the timing earlier to cover more of the GC pause
-  // The PrintGCDetails logging starts before we have incremented the GC id. We will do that later
-  // so we can assume here that the next GC id is what we want.
-  GCTraceTime t1(gen->short_name(), PrintGCDetails, false, NULL, GCId::peek());
+  GCTraceTime t1(gen->short_name(), PrintGCDetails, false, NULL);
   TraceCollectorStats tcs(gen->counters());
   TraceMemoryManagerStats tmms(gen->kind(),gc_cause());
 
@@ -434,6 +433,8 @@ void GenCollectedHeap::do_collection(bool           full,
     return; // GC is disabled (e.g. JNI GetXXXCritical operation)
   }
 
+  GCIdMark gc_id_mark;
+
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
                           collector_policy()->should_clear_all_soft_refs();
 
@@ -449,9 +450,7 @@ void GenCollectedHeap::do_collection(bool           full,
     bool complete = full && (max_generation == OldGen);
     const char* gc_cause_prefix = complete ? "Full GC" : "GC";
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-    // The PrintGCDetails logging starts before we have incremented the GC id. We will do that later
-    // so we can assume here that the next GC id is what we want.
-    GCTraceTime t(GCCauseString(gc_cause_prefix, gc_cause()), PrintGCDetails, false, NULL, GCId::peek());
+    GCTraceTime t(GCCauseString(gc_cause_prefix, gc_cause()), PrintGCDetails, false, NULL);
 
     gc_prologue(complete);
     increment_total_collections(complete);
@@ -489,6 +488,7 @@ void GenCollectedHeap::do_collection(bool           full,
     bool must_restore_marks_for_biased_locking = false;
 
     if (max_generation == OldGen && _old_gen->should_collect(full, size, is_tlab)) {
+      GCIdMark gc_id_mark;
       if (!complete) {
         // The full_collections increment was missed above.
         increment_total_full_collections();

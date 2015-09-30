@@ -331,8 +331,7 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
                                       OopClosure*        keep_alive,
                                       VoidClosure*       complete_gc,
                                       YieldClosure*      yield,
-                                      GCTimer*           gc_timer,
-                                      GCId               gc_id);
+                                      GCTimer*           gc_timer);
 
   // Returns the name of the discovered reference list
   // occupying the i / _num_q slot.
@@ -441,8 +440,7 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
                                 OopClosure*                  keep_alive,
                                 VoidClosure*                 complete_gc,
                                 AbstractRefProcTaskExecutor* task_executor,
-                                GCTimer *gc_timer,
-                                GCId    gc_id);
+                                GCTimer *gc_timer);
 
   // Enqueue references at end of GC (called by the garbage collector)
   bool enqueue_discovered_references(AbstractRefProcTaskExecutor* task_executor = NULL);
