@@ -1242,12 +1242,11 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(Abstract_VM_Version,         _s_internal_vm_info_string,                    const char*)                           \
      static_field(Abstract_VM_Version,         _vm_major_version,                             int)                                   \
      static_field(Abstract_VM_Version,         _vm_minor_version,                             int)                                   \
-     static_field(Abstract_VM_Version,         _vm_micro_version,                             int)                                   \
+     static_field(Abstract_VM_Version,         _vm_security_version,                          int)                                   \
      static_field(Abstract_VM_Version,         _vm_build_number,                              int)                                   \
      static_field(Abstract_VM_Version,         _reserve_for_allocation_prefetch,              int)                                   \
                                                                                                                                      \
      static_field(JDK_Version,                 _current,                                      JDK_Version)                           \
-  nonstatic_field(JDK_Version,                 _partially_initialized,                        bool)                                  \
   nonstatic_field(JDK_Version,                 _major,                                        unsigned char)                         \
                                                                                                                                      \
   /*************************/                                                                                                        \

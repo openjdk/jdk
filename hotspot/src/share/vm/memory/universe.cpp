@@ -351,37 +351,6 @@ void Universe::genesis(TRAPS) {
   // Have already been initialized.
   _objectArrayKlassObj->append_to_sibling_list();
 
-  // Compute is_jdk version flags.
-  // Only 1.3 or later has the java.lang.Shutdown class.
-  // Only 1.4 or later has the java.lang.CharSequence interface.
-  // Only 1.5 or later has the java.lang.management.MemoryUsage class.
-  if (JDK_Version::is_partially_initialized()) {
-    uint8_t jdk_version;
-    Klass* k = SystemDictionary::resolve_or_null(
-        vmSymbols::java_lang_management_MemoryUsage(), THREAD);
-    CLEAR_PENDING_EXCEPTION; // ignore exceptions
-    if (k == NULL) {
-      k = SystemDictionary::resolve_or_null(
-          vmSymbols::java_lang_CharSequence(), THREAD);
-      CLEAR_PENDING_EXCEPTION; // ignore exceptions
-      if (k == NULL) {
-        k = SystemDictionary::resolve_or_null(
-            vmSymbols::java_lang_Shutdown(), THREAD);
-        CLEAR_PENDING_EXCEPTION; // ignore exceptions
-        if (k == NULL) {
-          jdk_version = 2;
-        } else {
-          jdk_version = 3;
-        }
-      } else {
-        jdk_version = 4;
-      }
-    } else {
-      jdk_version = 5;
-    }
-    JDK_Version::fully_initialize(jdk_version);
-  }
-
   #ifdef ASSERT
   if (FullGCALot) {
     // Allocate an array of dummy objects.
