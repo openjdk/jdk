@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -850,7 +850,7 @@ public final class YearMonth
         long monthCount = year * 12L + (month - 1);
         long calcMonths = monthCount + monthsToAdd;  // safe overflow
         int newYear = YEAR.checkValidIntValue(Math.floorDiv(calcMonths, 12));
-        int newMonth = (int)Math.floorMod(calcMonths, 12) + 1;
+        int newMonth = Math.floorMod(calcMonths, 12) + 1;
         return with(newYear, newMonth);
     }
 
