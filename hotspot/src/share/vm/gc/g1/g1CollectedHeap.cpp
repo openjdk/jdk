@@ -1801,21 +1801,20 @@ resize_if_necessary_after_full_collection(size_t word_size) {
   }
 }
 
-
-HeapWord*
-G1CollectedHeap::satisfy_failed_allocation(size_t word_size,
-                                           AllocationContext_t context,
-                                           bool* succeeded) {
-  assert_at_safepoint(true /* should_be_vm_thread */);
-
-  *succeeded = true;
+HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
+                                                            AllocationContext_t context,
+                                                            bool do_gc,
+                                                            bool clear_all_soft_refs,
+                                                            bool expect_null_mutator_alloc_region,
+                                                            bool* gc_succeeded) {
+  *gc_succeeded = true;
   // Let's attempt the allocation first.
   HeapWord* result =
     attempt_allocation_at_safepoint(word_size,
                                     context,
-                                    false /* expect_null_mutator_alloc_region */);
+                                    expect_null_mutator_alloc_region);
   if (result != NULL) {
-    assert(*succeeded, "sanity");
+    assert(*gc_succeeded, "sanity");
     return result;
   }
 
@@ -1825,41 +1824,58 @@ G1CollectedHeap::satisfy_failed_allocation(size_t word_size,
   // do something smarter than full collection to satisfy a failed alloc.)
   result = expand_and_allocate(word_size, context);
   if (result != NULL) {
-    assert(*succeeded, "sanity");
+    assert(*gc_succeeded, "sanity");
     return result;
   }
 
-  // Expansion didn't work, we'll try to do a Full GC.
-  bool gc_succeeded = do_collection(false, /* explicit_gc */
-                                    false, /* clear_all_soft_refs */
-                                    word_size);
-  if (!gc_succeeded) {
-    *succeeded = false;
-    return NULL;
+  if (do_gc) {
+    // Expansion didn't work, we'll try to do a Full GC.
+    *gc_succeeded = do_collection(false, /* explicit_gc */
+                                  clear_all_soft_refs,
+                                  word_size);
   }
 
-  // Retry the allocation
-  result = attempt_allocation_at_safepoint(word_size,
-                                           context,
-                                           true /* expect_null_mutator_alloc_region */);
-  if (result != NULL) {
-    assert(*succeeded, "sanity");
+  return NULL;
+}
+
+HeapWord* G1CollectedHeap::satisfy_failed_allocation(size_t word_size,
+                                                     AllocationContext_t context,
+                                                     bool* succeeded) {
+  assert_at_safepoint(true /* should_be_vm_thread */);
+
+  // Attempts to allocate followed by Full GC.
+  HeapWord* result =
+    satisfy_failed_allocation_helper(word_size,
+                                     context,
+                                     true,  /* do_gc */
+                                     false, /* clear_all_soft_refs */
+                                     false, /* expect_null_mutator_alloc_region */
+                                     succeeded);
+
+  if (result != NULL || !*succeeded) {
     return result;
   }
 
-  // Then, try a Full GC that will collect all soft references.
-  gc_succeeded = do_collection(false, /* explicit_gc */
-                               true,  /* clear_all_soft_refs */
-                               word_size);
-  if (!gc_succeeded) {
-    *succeeded = false;
-    return NULL;
+  // Attempts to allocate followed by Full GC that will collect all soft references.
+  result = satisfy_failed_allocation_helper(word_size,
+                                            context,
+                                            true, /* do_gc */
+                                            true, /* clear_all_soft_refs */
+                                            true, /* expect_null_mutator_alloc_region */
+                                            succeeded);
+
+  if (result != NULL || !*succeeded) {
+    return result;
   }
 
-  // Retry the allocation once more
-  result = attempt_allocation_at_safepoint(word_size,
-                                           context,
-                                           true /* expect_null_mutator_alloc_region */);
+  // Attempts to allocate, no GC
+  result = satisfy_failed_allocation_helper(word_size,
+                                            context,
+                                            false, /* do_gc */
+                                            false, /* clear_all_soft_refs */
+                                            true,  /* expect_null_mutator_alloc_region */
+                                            succeeded);
+
   if (result != NULL) {
     assert(*succeeded, "sanity");
     return result;
