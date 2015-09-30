@@ -68,7 +68,7 @@ define_pd_global(intx, RegisterCostAreaRatio,        16000);
 
 // Peephole and CISC spilling both break the graph, and so makes the
 // scheduler sick.
-define_pd_global(bool, OptoPeephole,                 true);
+define_pd_global(bool, OptoPeephole,                 false);
 define_pd_global(bool, UseCISCSpill,                 true);
 define_pd_global(bool, OptoScheduling,               false);
 define_pd_global(bool, OptoBundling,                 false);
