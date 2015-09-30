@@ -571,7 +571,16 @@ protected:
   HeapWord* satisfy_failed_allocation(size_t word_size,
                                       AllocationContext_t context,
                                       bool* succeeded);
+private:
+  // Helper method for satisfy_failed_allocation()
+  HeapWord* satisfy_failed_allocation_helper(size_t word_size,
+                                             AllocationContext_t context,
+                                             bool do_gc,
+                                             bool clear_all_soft_refs,
+                                             bool expect_null_mutator_alloc_region,
+                                             bool* gc_succeeded);
 
+protected:
   // Attempting to expand the heap sufficiently
   // to support an allocation of the given "word_size".  If
   // successful, perform the allocation and return the address of the
