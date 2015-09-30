@@ -283,8 +283,11 @@ Java_java_net_Inet4AddressImpl_getHostByAddr(JNIEnv *env, jobject this,
  * Returns true is an ECHO_REPLY is received, otherwise, false.
  */
 static jboolean
-ping4(JNIEnv *env, unsigned long ipaddr, jint timeout) {
-
+ping4(JNIEnv *env,
+      unsigned long src_addr,
+      unsigned long dest_addr,
+      jint timeout)
+{
     // See https://msdn.microsoft.com/en-us/library/aa366050%28VS.85%29.aspx
 
     HANDLE hIcmpFile;
@@ -307,14 +310,29 @@ ping4(JNIEnv *env, unsigned long ipaddr, jint timeout) {
         return JNI_FALSE;
     }
 
-    dwRetVal = IcmpSendEcho(hIcmpFile,  // HANDLE IcmpHandle,
-                            ipaddr,     // IPAddr DestinationAddress,
-                            SendData,   // LPVOID RequestData,
-                            sizeof(SendData),   // WORD RequestSize,
-                            NULL,       // PIP_OPTION_INFORMATION RequestOptions,
-                            ReplyBuffer,// LPVOID ReplyBuffer,
-                            ReplySize,  // DWORD ReplySize,
-                            timeout);   // DWORD Timeout
+    if (src_addr == 0) {
+        dwRetVal = IcmpSendEcho(hIcmpFile,  // HANDLE IcmpHandle,
+                                dest_addr,  // IPAddr DestinationAddress,
+                                SendData,   // LPVOID RequestData,
+                                sizeof(SendData),   // WORD RequestSize,
+                                NULL,       // PIP_OPTION_INFORMATION RequestOptions,
+                                ReplyBuffer,// LPVOID ReplyBuffer,
+                                ReplySize,  // DWORD ReplySize,
+                                timeout);   // DWORD Timeout
+    } else {
+        dwRetVal = IcmpSendEcho2Ex(hIcmpFile,  // HANDLE IcmpHandle,
+                                   NULL,       // HANDLE Event
+                                   NULL,       // PIO_APC_ROUTINE ApcRoutine
+                                   NULL,       // ApcContext
+                                   src_addr,   // IPAddr SourceAddress,
+                                   dest_addr,  // IPAddr DestinationAddress,
+                                   SendData,   // LPVOID RequestData,
+                                   sizeof(SendData),   // WORD RequestSize,
+                                   NULL,       // PIP_OPTION_INFORMATION RequestOptions,
+                                   ReplyBuffer,// LPVOID ReplyBuffer,
+                                   ReplySize,  // DWORD ReplySize,
+                                   timeout);   // DWORD Timeout
+    }
 
     free(ReplyBuffer);
     IcmpCloseHandle(hIcmpFile);
@@ -337,9 +355,9 @@ Java_java_net_Inet4AddressImpl_isReachable0(JNIEnv *env, jobject this,
                                            jint timeout,
                                            jbyteArray ifArray,
                                            jint ttl) {
-    jint addr;
+    jint src_addr = 0;
+    jint dest_addr = 0;
     jbyte caddr[4];
-    struct sockaddr_in him;
     int sz;
 
     /**
@@ -349,14 +367,28 @@ Java_java_net_Inet4AddressImpl_isReachable0(JNIEnv *env, jobject this,
     if (sz != 4) {
       return JNI_FALSE;
     }
-    memset((char *) &him, 0, sizeof(him));
     memset((char *) caddr, 0, sizeof(caddr));
     (*env)->GetByteArrayRegion(env, addrArray, 0, 4, caddr);
-    addr = ((caddr[0]<<24) & 0xff000000);
-    addr |= ((caddr[1] <<16) & 0xff0000);
-    addr |= ((caddr[2] <<8) & 0xff00);
-    addr |= (caddr[3] & 0xff);
-    addr = htonl(addr);
+    dest_addr = ((caddr[0]<<24) & 0xff000000);
+    dest_addr |= ((caddr[1] <<16) & 0xff0000);
+    dest_addr |= ((caddr[2] <<8) & 0xff00);
+    dest_addr |= (caddr[3] & 0xff);
+    dest_addr = htonl(dest_addr);
 
-    return ping4(env, addr, timeout);
+    /**
+     * If a network interface was specified, let's convert its address
+     * as well.
+     */
+    if (!(IS_NULL(ifArray))) {
+        memset((char *) caddr, 0, sizeof(caddr));
+        (*env)->GetByteArrayRegion(env, ifArray, 0, 4, caddr);
+        src_addr = ((caddr[0]<<24) & 0xff000000);
+        src_addr |= ((caddr[1] <<16) & 0xff0000);
+        src_addr |= ((caddr[2] <<8) & 0xff00);
+        src_addr |= (caddr[3] & 0xff);
+        src_addr = htonl(src_addr);
+    }
+
+    return ping4(env, src_addr, dest_addr, timeout);
 }
+
