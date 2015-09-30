@@ -15223,6 +15223,88 @@ instruct vsqrt2D(vecX dst, vecX src)
   ins_pipe(pipe_class_default);
 %}
 
+// --------------------------------- ABS --------------------------------------
+
+instruct vabs2F(vecD dst, vecD src)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AbsVF src));
+  ins_cost(INSN_COST * 3);
+  format %{ "fabs  $dst,$src\t# vector (2S)" %}
+  ins_encode %{
+    __ fabs(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vabs4F(vecX dst, vecX src)
+%{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (AbsVF src));
+  ins_cost(INSN_COST * 3);
+  format %{ "fabs  $dst,$src\t# vector (4S)" %}
+  ins_encode %{
+    __ fabs(as_FloatRegister($dst$$reg), __ T4S,
+            as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vabs2D(vecX dst, vecX src)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AbsVD src));
+  ins_cost(INSN_COST * 3);
+  format %{ "fabs  $dst,$src\t# vector (2D)" %}
+  ins_encode %{
+    __ fabs(as_FloatRegister($dst$$reg), __ T2D,
+            as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// --------------------------------- NEG --------------------------------------
+
+instruct vneg2F(vecD dst, vecD src)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (NegVF src));
+  ins_cost(INSN_COST * 3);
+  format %{ "fneg  $dst,$src\t# vector (2S)" %}
+  ins_encode %{
+    __ fneg(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vneg4F(vecX dst, vecX src)
+%{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (NegVF src));
+  ins_cost(INSN_COST * 3);
+  format %{ "fneg  $dst,$src\t# vector (4S)" %}
+  ins_encode %{
+    __ fneg(as_FloatRegister($dst$$reg), __ T4S,
+            as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vneg2D(vecX dst, vecX src)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (NegVD src));
+  ins_cost(INSN_COST * 3);
+  format %{ "fneg  $dst,$src\t# vector (2D)" %}
+  ins_encode %{
+    __ fneg(as_FloatRegister($dst$$reg), __ T2D,
+            as_FloatRegister($src$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // --------------------------------- AND --------------------------------------
 
 instruct vand8B(vecD dst, vecD src1, vecD src2)
