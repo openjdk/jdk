@@ -36,7 +36,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
  * Base class for object creation code generation.
  * @param <T> value type
  */
-public abstract class ObjectCreator<T> {
+public abstract class ObjectCreator<T> implements CodeGenerator.SplitLiteralCreator {
 
     /** List of keys & symbols to initiate in this ObjectCreator */
     final List<MapTuple<T>> tuples;
@@ -69,7 +69,23 @@ public abstract class ObjectCreator<T> {
      * Generate code for making the object.
      * @param method Script method.
      */
-    protected abstract void makeObject(final MethodEmitter method);
+    public void makeObject(final MethodEmitter method) {
+        createObject(method);
+        // We need to store the object in a temporary slot as populateRange expects to load the
+        // object from a slot (as it is also invoked within split methods). Note that this also
+        // helps optimistic continuations to handle the stack in case an optimistic assumption
+        // fails during initialization (see JDK-8079269).
+        final int objectSlot = method.getUsedSlotsWithLiveTemporaries();
+        final Type objectType = method.peekType();
+        method.storeTemp(objectType, objectSlot);
+        populateRange(method, objectType, objectSlot, 0, tuples.size());
+    }
+
+    /**
+     * Generate code for creating and initializing the object.
+     * @param method the method emitter
+     */
+    protected abstract void createObject(final MethodEmitter method);
 
     /**
      * Construct the property map appropriate for the object.
@@ -125,6 +141,12 @@ public abstract class ObjectCreator<T> {
     }
 
     /**
+     * Get the class of objects created by this ObjectCreator
+     * @return class of created object
+     */
+    abstract protected Class<? extends ScriptObject> getAllocatorClass();
+
+    /**
      * Technique for loading an initial value. Defined by anonymous subclasses in code gen.
      *
      * @param value Value to load.
@@ -144,30 +166,5 @@ public abstract class ObjectCreator<T> {
 
     MethodEmitter loadTuple(final MethodEmitter method, final MapTuple<T> tuple) {
         return loadTuple(method, tuple, true);
-    }
-
-    /**
-     * If using optimistic typing, let the code generator realize that the newly created object on the stack
-     * when DUP-ed will be the same value. Basically: {NEW, DUP, INVOKESPECIAL init, DUP} will leave a stack
-     * load specification {unknown, unknown} on stack (that is "there's two values on the stack, but neither
-     * comes from a known local load"). If there's an optimistic operation in the literal initializer,
-     * OptimisticOperation.storeStack will allocate two temporary locals for it and store them as
-     * {ASTORE 4, ASTORE 3}. If we instead do {NEW, DUP, INVOKESPECIAL init, ASTORE 3, ALOAD 3, DUP} we end up
-     * with stack load specification {ALOAD 3, ALOAD 3} (as DUP can track that the value it duplicated came
-     * from a local load), so if/when a continuation needs to be recreated from it, it'll be
-     * able to emit ALOAD 3, ALOAD 3 to recreate the stack. If we didn't do this, deoptimization within an
-     * object literal initialization could in rare cases cause an incompatible change in the shape of the
-     * local variable table for the temporaries, e.g. in the following snippet where a variable is reassigned
-     * to a wider type in an object initializer:
-     * <code>var m = 1; var obj = {p0: m, p1: m = "foo", p2: m}</code>
-     * @param method the current method emitter.
-     */
-    void helpOptimisticRecognizeDuplicateIdentity(final MethodEmitter method) {
-        if (codegen.useOptimisticTypes()) {
-            final Type objectType = method.peekType();
-            final int tempSlot = method.defineTemporaryLocalVariable(objectType.getSlots());
-            method.storeHidden(objectType, tempSlot);
-            method.load(objectType, tempSlot);
-        }
     }
 }

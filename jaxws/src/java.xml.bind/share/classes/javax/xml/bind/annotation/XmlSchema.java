@@ -163,12 +163,12 @@ public @interface XmlSchema {
      * manually.
      *
      * <p>
-     * Value could be any absolute URI, like <tt>http://example.org/some.xsd</tt>.
+     * Value could be any absolute URI, like {@code http://example.org/some.xsd}.
      * It is also possible to specify the empty string, to indicate
      * that the schema is externally available but the location is
      * unspecified (and thus it's the responsibility of the reader of the generate
      * schema to locate it.) Finally, the default value of this property
-     * <tt>"##generate"</tt> indicates that the schema generator is going
+     * {@code "##generate"} indicates that the schema generator is going
      * to generate components for this namespace (as it did in JAXB 2.0.)
      *
      * <p>
@@ -179,17 +179,17 @@ public @interface XmlSchema {
      *
      * <h3>Note to implementor</h3>
      * <p>
-     * More precisely, the value must be either <tt>""</tt>, <tt>"##generate"</tt>, or
+     * More precisely, the value must be either {@code ""}, {@code "##generate"}, or
      * <a href="http://www.w3.org/TR/xmlschema-2/#anyURI">
-     * a valid lexical representation of <tt>xs:anyURI</tt></a> that begins
-     * with <tt>&lt;scheme&gt;:</tt>.
+     * a valid lexical representation of {@code xs:anyURI}</a> that begins
+     * with {@code <scheme>:}.
      *
      * <p>
      * A schema generator is expected to generate a corresponding
-     * <tt>&lt;xs:import namespace="..." schemaLocation="..."/&gt;</tt> (or
-     * no <tt>schemaLocation</tt> attribute at all if the empty string is specified.)
+     * {@code <xs:import namespace="..." schemaLocation="..."/>} (or
+     * no {@code schemaLocation} attribute at all if the empty string is specified.)
      * However, the schema generator is allowed to use a different value in
-     * the <tt>schemaLocation</tt> attribute (including not generating
+     * the {@code schemaLocation} attribute (including not generating
      * such attribute), for example so that the user can specify a local
      * copy of the resource through the command line interface.
      *

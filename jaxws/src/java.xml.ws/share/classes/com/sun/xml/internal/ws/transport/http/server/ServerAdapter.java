@@ -69,7 +69,7 @@ public final class ServerAdapter extends HttpAdapter implements BoundEndpoint {
     }
 
     /**
-     * Gets the name of the endpoint as given in the <tt>sun-jaxws.xml</tt>
+     * Gets the name of the endpoint as given in the {@code sun-jaxws.xml}
      * deployment descriptor.
      */
     public String getName() {

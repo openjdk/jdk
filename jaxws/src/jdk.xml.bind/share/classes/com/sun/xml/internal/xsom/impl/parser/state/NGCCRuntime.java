@@ -163,28 +163,28 @@ public class NGCCRuntime implements ContentHandler, NGCCEventSource {
      * Whitespace handling is a tricky business. Consider the following
      * schema fragment:
      *
-     * <xmp>
+     * <pre>{@code
      * <element name="foo">
      *   <choice>
      *     <element name="bar"><empty/></element>
      *     <text/>
      *   </choice>
      * </element>
-     * </xmp>
+     * }</pre>
      *
      * Assume we hit the following instance:
-     * <xmp>
+     * <pre>{@code
      * <foo> <bar/></foo>
-     * </xmp>
+     * }</pre>
      *
      * Then this first space needs to be ignored (for otherwise, we will
      * end up treating this space as the match to &lt;text/> and won't
      * be able to process &lt;bar>.)
      *
      * Now assume the following instance:
-     * <xmp>
+     * <pre>{@code
      * <foo/>
-     * </xmp>
+     * }</pre>
      *
      * This time, we need to treat this empty string as a text, for
      * otherwise we won't be able to accept this instance.
@@ -481,16 +481,16 @@ public class NGCCRuntime implements ContentHandler, NGCCEventSource {
      * the top of the effective bindings. Because of the
      * timing difference between the startPrefixMapping method
      * and the execution of the corresponding actions,
-     * this value can be different from <code>namespaces.size()</code>.
+     * this value can be different from {@code namespaces.size()}.
      * <p>
      * For example, consider the following schema:
-     * <pre><xmp>
+     * <pre>{@code
      *  <oneOrMore>
      *   <element name="foo"><empty/></element>
      *  </oneOrMore>
      *  code fragment X
      *  <element name="bob"/>
-     * </xmp></pre>
+     * }</pre>
      * Code fragment X is executed after we see a startElement event,
      * but at this time the namespaces variable already include new
      * namespace bindings declared on "bob".

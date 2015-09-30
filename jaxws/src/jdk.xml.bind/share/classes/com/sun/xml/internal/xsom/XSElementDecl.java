@@ -132,7 +132,7 @@ public interface XSElementDecl extends XSDeclaration, XSTerm
      * by the given declaration.
      *
      * <p>
-     * Just a short cut of <tt>getSubstitutables().contain(e);</tt>
+     * Just a short cut of {@code getSubstitutables().contain(e);}
      */
     boolean canBeSubstitutedBy(XSElementDecl e);
 

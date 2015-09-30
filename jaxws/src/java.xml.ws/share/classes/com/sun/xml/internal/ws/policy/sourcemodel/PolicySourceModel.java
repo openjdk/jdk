@@ -299,7 +299,7 @@ public class PolicySourceModel implements Cloneable {
      * Every source model that references other policies must be expanded before it can be translated into a Policy objects. See
      * {@link #expand(PolicySourceModelContext)} and {@link #isExpanded()} for more details.
      *
-     * @return {@code true} or {code false} depending on whether this policy source model contains references to another policy source models.
+     * @return {@code true} or {@code false} depending on whether this policy source model contains references to another policy source models.
      */
     public boolean containsPolicyReferences() {
         return !references.isEmpty();

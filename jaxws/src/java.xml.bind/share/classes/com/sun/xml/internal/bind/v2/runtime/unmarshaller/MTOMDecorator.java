@@ -58,9 +58,9 @@ final class MTOMDecorator implements XmlVisitor {
      * UGLY HACK: we need to ignore the whitespace that follows
      * the attached base64 image.
      *
-     * This happens twice; once before &lt;/xop:Include>, another
-     * after &lt;/xop:Include>. The spec guarantees that
-     * no valid pcdata can follow &lt;/xop:Include>.
+     * This happens twice; once before {@code </xop:Include>}, another
+     * after {@code </xop:Include>}. The spec guarantees that
+     * no valid pcdata can follow {@code </xop:Include>}.
      */
     private boolean followXop;
 

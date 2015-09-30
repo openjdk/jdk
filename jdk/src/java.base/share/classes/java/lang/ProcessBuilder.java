@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,8 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 /**
  * This class is used to create operating system processes.
  *
@@ -445,6 +446,7 @@ public final class ProcessBuilder
      * <ul>
      * <li>the special value {@link #PIPE Redirect.PIPE}
      * <li>the special value {@link #INHERIT Redirect.INHERIT}
+     * <li>the special value {@link #DISCARD Redirect.DISCARD}
      * <li>a redirection to read from a file, created by an invocation of
      *     {@link Redirect#from Redirect.from(File)}
      * <li>a redirection to write to a file,  created by an invocation of
@@ -459,6 +461,13 @@ public final class ProcessBuilder
      * @since 1.7
      */
     public abstract static class Redirect {
+        private static final File NULL_FILE = AccessController.doPrivileged(
+                (PrivilegedAction<File>) () -> {
+                    return new File((System.getProperty("os.name")
+                            .startsWith("Windows") ? "NUL" : "/dev/null"));
+                }
+        );
+
         /**
          * The type of a {@link Redirect}.
          */
@@ -528,6 +537,28 @@ public final class ProcessBuilder
         public static final Redirect INHERIT = new Redirect() {
                 public Type type() { return Type.INHERIT; }
                 public String toString() { return type().toString(); }};
+
+
+        /**
+         * Indicates that subprocess output will be discarded.
+         * A typical implementation discards the output by writing to
+         * an operating system specific "null file".
+         *
+         * <p>It will always be true that
+         * <pre> {@code
+         * Redirect.DISCARD.file() the filename appropriate for the operating system
+         * and may be null &&
+         * Redirect.DISCARD.type() == Redirect.Type.WRITE &&
+         * Redirect.DISCARD.append() == false
+         * }</pre>
+         * @since 9
+         */
+        public static final Redirect DISCARD = new Redirect() {
+                public Type type() { return Type.WRITE; }
+                public String toString() { return type().toString(); }
+                public File file() { return NULL_FILE; }
+                boolean append() { return false; }
+        };
 
         /**
          * Returns the {@link File} source or destination associated

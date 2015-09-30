@@ -64,7 +64,7 @@ public abstract class Loader {
      * and when the parent designated this loader as the child loader.
      *
      * <p>
-     * The callee may change <tt>state.loader</tt> to designate another {@link Loader}
+     * The callee may change {@code state.loader} to designate another {@link Loader}
      * for the processing. It's the responsibility of the callee to forward the startElement
      * event in such a case.
      *

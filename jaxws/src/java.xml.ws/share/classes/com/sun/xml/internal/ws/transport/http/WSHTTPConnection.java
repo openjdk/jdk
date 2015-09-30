@@ -87,7 +87,7 @@ public abstract class WSHTTPConnection extends BasePropertySet {
      * <p>
      * This parameter is usually exposed to {@link WebServiceContext}
      * as {@link Packet#OUTBOUND_TRANSPORT_HEADERS}, and thus it
-     * should ignore <tt>Content-Type</tt> and <tt>Content-Length</tt> headers.
+     * should ignore {@code Content-Type} and {@code Content-Length} headers.
      *
      * @param headers
      *      See {@link HttpURLConnection#getHeaderFields()} for the format.
@@ -105,7 +105,7 @@ public abstract class WSHTTPConnection extends BasePropertySet {
     public abstract void setResponseHeader(String key, List<String> value);
 
     /**
-     * Sets the <tt>"Content-Type"</tt> header.
+     * Sets the {@code "Content-Type"} header.
      *
      * <p>
      * If the Content-Type header has already been set, this method will overwrite
@@ -116,8 +116,8 @@ public abstract class WSHTTPConnection extends BasePropertySet {
      * may be invoked in any arbitrary order.
      *
      * @param value
-     *      strings like <tt>"application/xml; charset=UTF-8"</tt> or
-     *      <tt>"image/jpeg"</tt>.
+     *      strings like {@code "application/xml; charset=UTF-8"} or
+     *      {@code "image/jpeg"}.
      */
     public abstract void setContentTypeResponseHeader(@NotNull String value);
 

@@ -64,7 +64,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
@@ -301,7 +300,47 @@ public final class Context {
         }
     }
 
-    private final Map<CodeSource, Reference<Class<?>>> anonymousHostClasses = new ConcurrentHashMap<>();
+    private final Map<CodeSource, HostClassReference> anonymousHostClasses = new HashMap<>();
+    private final ReferenceQueue<Class<?>> anonymousHostClassesRefQueue = new ReferenceQueue<>();
+
+    private static class HostClassReference extends WeakReference<Class<?>> {
+        final CodeSource codeSource;
+
+        HostClassReference(final CodeSource codeSource, final Class<?> clazz, final ReferenceQueue<Class<?>> refQueue) {
+            super(clazz, refQueue);
+            this.codeSource = codeSource;
+        }
+    }
+
+    private synchronized Class<?> getAnonymousHostClass(final CodeSource codeSource) {
+        // Remove cleared entries
+        for(;;) {
+            final HostClassReference clearedRef = (HostClassReference)anonymousHostClassesRefQueue.poll();
+            if (clearedRef == null) {
+                break;
+            }
+            anonymousHostClasses.remove(clearedRef.codeSource, clearedRef);
+        }
+
+        // Try to find an existing host class
+        final Reference<Class<?>> ref = anonymousHostClasses.get(codeSource);
+        if (ref != null) {
+            final Class<?> existingHostClass = ref.get();
+            if (existingHostClass != null) {
+                return existingHostClass;
+            }
+        }
+
+        // Define a new host class if existing is not found
+        final Class<?> newHostClass = createNewLoader().installClass(
+                // NOTE: we're defining these constants in AnonymousContextCodeInstaller so they are not
+                // initialized if we don't use AnonymousContextCodeInstaller. As this method is only ever
+                // invoked from AnonymousContextCodeInstaller, this is okay.
+                AnonymousContextCodeInstaller.ANONYMOUS_HOST_CLASS_NAME,
+                AnonymousContextCodeInstaller.ANONYMOUS_HOST_CLASS_BYTES, codeSource);
+        anonymousHostClasses.put(codeSource, new HostClassReference(codeSource, newHostClass, anonymousHostClassesRefQueue));
+        return newHostClass;
+    }
 
     private static final class AnonymousContextCodeInstaller extends ContextCodeInstaller {
         private static final Unsafe UNSAFE = getUnsafe();
@@ -310,9 +349,9 @@ public final class Context {
 
         private final Class<?> hostClass;
 
-        private AnonymousContextCodeInstaller(final Context context, final CodeSource codeSource) {
+        private AnonymousContextCodeInstaller(final Context context, final CodeSource codeSource, final Class<?> hostClass) {
             super(context, codeSource);
-            hostClass = getAnonymousHostClass();
+            this.hostClass = hostClass;
         }
 
         @Override
@@ -333,19 +372,6 @@ public final class Context {
             // would have no resolvable names. Therefore, in such situation we must revert to an installer that
             // produces named classes.
             return new NamedContextCodeInstaller(context, codeSource, context.createNewLoader());
-        }
-
-        private Class<?> getAnonymousHostClass() {
-            final Reference<Class<?>> ref = context.anonymousHostClasses.get(codeSource);
-            if (ref != null) {
-                final Class<?> existingHostClass = ref.get();
-                if (existingHostClass != null) {
-                    return existingHostClass;
-                }
-            }
-            final Class<?> newHostClass = context.createNewLoader().installClass(ANONYMOUS_HOST_CLASS_NAME, ANONYMOUS_HOST_CLASS_BYTES, codeSource);
-            context.anonymousHostClasses.put(codeSource, new WeakReference<>(newHostClass));
-            return newHostClass;
         }
 
         private static final byte[] getAnonymousHostClassBytes() {
@@ -1034,6 +1060,16 @@ public final class Context {
     }
 
     /**
+     * Is {@code className} the name of a structure class?
+     *
+     * @param className a class name
+     * @return true if className is a structure class name
+     */
+    public static boolean isStructureClass(final String className) {
+        return StructureLoader.isStructureClass(className);
+    }
+
+    /**
      * Checks that the given Class can be accessed from no permissions context.
      *
      * @param clazz Class object
@@ -1404,7 +1440,7 @@ public final class Context {
             final ScriptLoader loader = env._loader_per_compile ? createNewLoader() : scriptLoader;
             installer = new NamedContextCodeInstaller(this, cs, loader);
         } else {
-            installer = new AnonymousContextCodeInstaller(this, cs);
+            installer = new AnonymousContextCodeInstaller(this, cs, getAnonymousHostClass(cs));
         }
 
         if (storedScript == null) {

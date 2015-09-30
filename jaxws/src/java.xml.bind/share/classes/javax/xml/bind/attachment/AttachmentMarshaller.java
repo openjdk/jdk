@@ -123,7 +123,7 @@ public abstract class AttachmentMarshaller {
      *
      * @param data
      *      represents the data to be attached. Must be non-null. The actual data region is
-     *      specified by <tt>(data,offset,length)</tt> tuple.
+     *      specified by {@code (data,offset,length)} tuple.
      *
      * @param offset
      *       The offset within the array of the first byte to be read;

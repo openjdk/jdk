@@ -341,8 +341,8 @@ public class WSServiceDelegate extends WSService {
     /**
      * Parses the WSDL and builds {@link com.sun.xml.internal.ws.api.model.wsdl.WSDLModel}.
      * @param wsdlDocumentLocation
-     *      Either this or <tt>wsdl</tt> parameter must be given.
-     *      Null location means the system won't be able to resolve relative references in the WSDL,
+     *      Either this or {@code wsdl} parameter must be given.
+     *      Null location means the system won't be able to resolve relative references in the WSDL.
      */
     private WSDLModel parseWSDL(URL wsdlDocumentLocation, Source wsdlSource, Class serviceClass) {
         try {

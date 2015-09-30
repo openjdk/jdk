@@ -46,21 +46,22 @@ class ParallelCompilations extends SJavacTester {
 
   public void run() throws Exception {
     ToolBox tb = new ToolBox();
-    final String SERVER_ARG = "--server:"
-            + "portfile=testportfile,"
-            + "background=false";
 
     // Generate 10 files
     for (int i = 0; i < 10; i++) {
-      String fileName = "Test" + i;
       String content = "package foo"+ i + ";\n" +
-                       "public class "+ fileName + "{\n" +
+                       "public class Test" + i + "{\n" +
                        "  public static void main(String[] args) {}\n" +
                        "\n}";
       Path srcDir = Paths.get("src");
-      tb.writeJavaFiles(srcDir,content);
+      tb.writeJavaFiles(srcDir, content);
     }
-    //Method will throw an exception if compilation fails
-    compile("src", "-d", "classes", "-j", "10", SERVER_ARG, "--log=debug");
+    // Method will throw an exception if compilation fails
+    compile("src",
+            "-d", BIN.toString(),
+            "--state-dir=" + BIN,
+            "-j", "10",
+            SERVER_ARG,
+            "--log=debug");
   }
 }

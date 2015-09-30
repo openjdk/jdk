@@ -65,6 +65,7 @@ public class PermittedArtifact extends SJavacTester {
                 "--permit-artifact=" + BIN + "/alfa/omega/AA.class",
                 "-src", GENSRC.toString(),
                 "-d", BIN.toString(),
+                "--state-dir=" + BIN,
                 SERVER_ARG);
 
         Map<String,Long> new_bin_state = collectState(BIN);

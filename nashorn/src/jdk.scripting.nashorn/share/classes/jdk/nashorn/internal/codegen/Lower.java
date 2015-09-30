@@ -121,13 +121,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
                             terminated = true;
                         }
                     } else {
-                        statement.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
-                            @Override
-                            public boolean enterVarNode(final VarNode varNode) {
-                                newStatements.add(varNode.setInit(null));
-                                return false;
-                            }
-                        });
+                        FoldConstants.extractVarNodesFromDeadCode(statement, newStatements);
                     }
                 }
                 return newStatements;
