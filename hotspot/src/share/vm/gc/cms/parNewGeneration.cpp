@@ -896,7 +896,7 @@ void ParNewGeneration::collect(bool   full,
     size_policy->minor_collection_begin();
   }
 
-  GCTraceTime t1(GCCauseString("GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, NULL, _gc_tracer.gc_id());
+  GCTraceTime t1(GCCauseString("GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, NULL);
   // Capture heap used before collection (for printing).
   size_t gch_prev_used = gch->used();
 
@@ -959,13 +959,13 @@ void ParNewGeneration::collect(bool   full,
     ParNewRefProcTaskExecutor task_executor(*this, *_old_gen, thread_state_set);
     stats = rp->process_discovered_references(&is_alive, &keep_alive,
                                               &evacuate_followers, &task_executor,
-                                              _gc_timer, _gc_tracer.gc_id());
+                                              _gc_timer);
   } else {
     thread_state_set.flush();
     gch->save_marks();
     stats = rp->process_discovered_references(&is_alive, &keep_alive,
                                               &evacuate_followers, NULL,
-                                              _gc_timer, _gc_tracer.gc_id());
+                                              _gc_timer);
   }
   _gc_tracer.report_gc_reference_stats(stats);
   if (!promotion_failed()) {

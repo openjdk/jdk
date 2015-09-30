@@ -28,6 +28,7 @@
 #include "memory/allocation.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/thread.hpp"
+#include "gc/shared/gcId.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -54,9 +55,13 @@ class WorkGang;
 // You subclass this to supply your own work() method
 class AbstractGangTask VALUE_OBJ_CLASS_SPEC {
   const char* _name;
+  const uint _gc_id;
 
  public:
-  AbstractGangTask(const char* name) : _name(name) {}
+  AbstractGangTask(const char* name) :
+    _name(name),
+    _gc_id(GCId::current_raw())
+ {}
 
   // The abstract work method.
   // The argument tells you which member of the gang you are.
@@ -64,6 +69,7 @@ class AbstractGangTask VALUE_OBJ_CLASS_SPEC {
 
   // Debugging accessor for the name.
   const char* name() const { return _name; }
+  const uint gc_id() const { return _gc_id; }
 };
 
 struct WorkData {

@@ -43,7 +43,7 @@ protected:
 public:
   G1MMUTracker(double time_slice, double max_gc_time);
 
-  virtual void add_pause(double start, double end, const GCId& gcId) = 0;
+  virtual void add_pause(double start, double end) = 0;
   virtual double when_sec(double current_time, double pause_time) = 0;
 
   double max_gc_time() {
@@ -127,7 +127,7 @@ private:
 public:
   G1MMUTrackerQueue(double time_slice, double max_gc_time);
 
-  virtual void add_pause(double start, double end, const GCId& gcId);
+  virtual void add_pause(double start, double end);
 
   virtual double when_sec(double current_time, double pause_time);
 };

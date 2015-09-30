@@ -31,6 +31,7 @@
 #include "code/codeCacheExtensions.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "interpreter/interpreter.hpp"
@@ -1149,6 +1150,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
 NamedThread::NamedThread() : Thread() {
   _name = NULL;
   _processed_thread = NULL;
+  _gc_id = GCId::undefined();
 }
 
 NamedThread::~NamedThread() {

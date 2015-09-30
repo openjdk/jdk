@@ -30,6 +30,7 @@
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/suspendibleThreadSet.hpp"
 #include "gc/g1/vm_operations_g1.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/vmThread.hpp"
@@ -85,7 +86,7 @@ void ConcurrentMarkThread::cm_log(bool doit, bool join_sts, const char* fmt, ...
     SuspendibleThreadSetJoiner sts_joiner(join_sts);
     va_list args;
     va_start(args, fmt);
-    gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
+    gclog_or_tty->gclog_stamp();
     gclog_or_tty->vprint_cr(fmt, args);
     va_end(args);
   }
@@ -108,6 +109,7 @@ void ConcurrentMarkThread::run() {
       break;
     }
 
+    GCIdMark gc_id_mark;
     {
       ResourceMark rm;
       HandleMark   hm;

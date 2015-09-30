@@ -53,6 +53,7 @@
 #include "gc/g1/suspendibleThreadSet.hpp"
 #include "gc/g1/vm_operations_g1.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
@@ -1450,6 +1451,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
   gc_timer->register_gc_start();
 
   SerialOldTracer* gc_tracer = G1MarkSweep::gc_tracer();
+  GCIdMark gc_id_mark;
   gc_tracer->report_gc_start(gc_cause(), gc_timer->gc_start());
 
   SvcGCMarker sgcm(SvcGCMarker::FULL);
@@ -1476,7 +1478,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
 
     {
-      GCTraceTime t(GCCauseString("Full GC", gc_cause()), G1Log::fine(), true, NULL, gc_tracer->gc_id());
+      GCTraceTime t(GCCauseString("Full GC", gc_cause()), G1Log::fine(), true, NULL);
       TraceCollectorStats tcs(g1mm()->full_collection_counters());
       TraceMemoryManagerStats tms(true /* fullGC */, gc_cause());
 
@@ -3894,7 +3896,7 @@ void G1CollectedHeap::log_gc_header() {
     return;
   }
 
-  gclog_or_tty->gclog_stamp(_gc_tracer_stw->gc_id());
+  gclog_or_tty->gclog_stamp();
 
   GCCauseString gc_cause_str = GCCauseString("GC pause", gc_cause())
     .append(collector_state()->gcs_are_young() ? "(young)" : "(mixed)")
@@ -3952,6 +3954,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
   _gc_timer_stw->register_gc_start();
 
+  GCIdMark gc_id_mark;
   _gc_tracer_stw->report_gc_start(gc_cause(), _gc_timer_stw->gc_start());
 
   SvcGCMarker sgcm(SvcGCMarker::MINOR);
@@ -5501,8 +5504,7 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
                                               &keep_alive,
                                               &drain_queue,
                                               NULL,
-                                              _gc_timer_stw,
-                                              _gc_tracer_stw->gc_id());
+                                              _gc_timer_stw);
   } else {
     // Parallel reference processing
     assert(rp->num_q() == no_of_gc_workers, "sanity");
@@ -5513,8 +5515,7 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
                                               &keep_alive,
                                               &drain_queue,
                                               &par_task_executor,
-                                              _gc_timer_stw,
-                                              _gc_tracer_stw->gc_id());
+                                              _gc_timer_stw);
   }
 
   _gc_tracer_stw->report_gc_reference_stats(stats);

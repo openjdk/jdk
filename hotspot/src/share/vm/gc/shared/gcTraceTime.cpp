@@ -35,7 +35,7 @@
 #include "utilities/ticks.inline.hpp"
 
 
-GCTraceTimeImpl::GCTraceTimeImpl(const char* title, bool doit, bool print_cr, GCTimer* timer, GCId gc_id) :
+GCTraceTimeImpl::GCTraceTimeImpl(const char* title, bool doit, bool print_cr, GCTimer* timer) :
     _title(title), _doit(doit), _print_cr(print_cr), _timer(timer), _start_counter() {
   if (_doit || _timer != NULL) {
     _start_counter.stamp();
@@ -49,11 +49,7 @@ GCTraceTimeImpl::GCTraceTimeImpl(const char* title, bool doit, bool print_cr, GC
   }
 
   if (_doit) {
-    gclog_or_tty->date_stamp(PrintGCDateStamps);
-    gclog_or_tty->stamp(PrintGCTimeStamps);
-    if (PrintGCID) {
-      gclog_or_tty->print("#%u: ", gc_id.id());
-    }
+    gclog_or_tty->gclog_stamp();
     gclog_or_tty->print("[%s", title);
     gclog_or_tty->flush();
   }

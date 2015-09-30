@@ -573,13 +573,13 @@ void CollectedHeap::resize_all_tlabs() {
 
 void CollectedHeap::pre_full_gc_dump(GCTimer* timer) {
   if (HeapDumpBeforeFullGC) {
-    GCTraceTime tt("Heap Dump (before full gc): ", PrintGCDetails, false, timer, GCId::create());
+    GCTraceTime tt("Heap Dump (before full gc): ", PrintGCDetails, false, timer);
     // We are doing a full collection and a heap dump before
     // full collection has been requested.
     HeapDumper::dump_heap();
   }
   if (PrintClassHistogramBeforeFullGC) {
-    GCTraceTime tt("Class Histogram (before full gc): ", PrintGCDetails, true, timer, GCId::create());
+    GCTraceTime tt("Class Histogram (before full gc): ", PrintGCDetails, true, timer);
     VM_GC_HeapInspection inspector(gclog_or_tty, false /* ! full gc */);
     inspector.doit();
   }
@@ -587,11 +587,11 @@ void CollectedHeap::pre_full_gc_dump(GCTimer* timer) {
 
 void CollectedHeap::post_full_gc_dump(GCTimer* timer) {
   if (HeapDumpAfterFullGC) {
-    GCTraceTime tt("Heap Dump (after full gc): ", PrintGCDetails, false, timer, GCId::create());
+    GCTraceTime tt("Heap Dump (after full gc): ", PrintGCDetails, false, timer);
     HeapDumper::dump_heap();
   }
   if (PrintClassHistogramAfterFullGC) {
-    GCTraceTime tt("Class Histogram (after full gc): ", PrintGCDetails, true, timer, GCId::create());
+    GCTraceTime tt("Class Histogram (after full gc): ", PrintGCDetails, true, timer);
     VM_GC_HeapInspection inspector(gclog_or_tty, false /* ! full gc */);
     inspector.doit();
   }

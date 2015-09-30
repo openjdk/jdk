@@ -108,7 +108,7 @@ class outputStream : public ResourceObj {
    void date_stamp(bool guard) {
      date_stamp(guard, "", ": ");
    }
-   void gclog_stamp(const GCId& gc_id);
+   void gclog_stamp();
 
    // portable printing of 64 bit integers
    void print_jlong(jlong value);

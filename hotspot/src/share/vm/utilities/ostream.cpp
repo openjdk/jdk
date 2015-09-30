@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
 #include "gc/shared/gcId.hpp"
+#include "gc/shared/gcId.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
@@ -238,11 +239,11 @@ void outputStream::date_stamp(bool guard,
   return;
 }
 
-void outputStream::gclog_stamp(const GCId& gc_id) {
+void outputStream::gclog_stamp() {
   date_stamp(PrintGCDateStamps);
   stamp(PrintGCTimeStamps);
   if (PrintGCID) {
-    print("#%u: ", gc_id.id());
+    print("#%u: ", GCId::current());
   }
 }
 
