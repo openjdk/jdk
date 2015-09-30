@@ -95,7 +95,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * {@code subtractExact}, {@code multiplyExact}, and {@code toIntExact}
  * throw an {@code ArithmeticException} when the results overflow.
  * For other arithmetic operations such as divide, absolute value,
- * increment, decrement, and negation overflow occurs only with
+ * increment by one, decrement by one, and negation, overflow occurs only with
  * a specific minimum or maximum value and should be checked against
  * the minimum or maximum as appropriate.
  *
@@ -861,7 +861,7 @@ public final class Math {
     public static int subtractExact(int x, int y) {
         int r = x - y;
         // HD 2-12 Overflow iff the arguments have different signs and
-        // the sign of the result is different than the sign of x
+        // the sign of the result is different from the sign of x
         if (((x ^ y) & (x ^ r)) < 0) {
             throw new ArithmeticException("integer overflow");
         }
@@ -882,7 +882,7 @@ public final class Math {
     public static long subtractExact(long x, long y) {
         long r = x - y;
         // HD 2-12 Overflow iff the arguments have different signs and
-        // the sign of the result is different than the sign of x
+        // the sign of the result is different from the sign of x
         if (((x ^ y) & (x ^ r)) < 0) {
             throw new ArithmeticException("long overflow");
         }
@@ -906,6 +906,20 @@ public final class Math {
             throw new ArithmeticException("integer overflow");
         }
         return (int)r;
+    }
+
+    /**
+     * Returns the product of the arguments, throwing an exception if the result
+     * overflows a {@code long}.
+     *
+     * @param x the first value
+     * @param y the second value
+     * @return the result
+     * @throws ArithmeticException if the result overflows a long
+     * @since 1.9
+     */
+    public static long multiplyExact(long x, int y) {
+        return multiplyExact(x, (long)y);
     }
 
     /**
@@ -1112,12 +1126,12 @@ public final class Math {
      * There is one special case, if the dividend is the
      * {@linkplain Integer#MIN_VALUE Integer.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
-     * the result is equal to the {@code Integer.MIN_VALUE}.
+     * the result is equal to {@code Integer.MIN_VALUE}.
      * <p>
      * Normal integer division operates under the round to zero rounding mode
      * (truncation).  This operation instead acts under the round toward
      * negative infinity (floor) rounding mode.
-     * The floor rounding mode gives different results than truncation
+     * The floor rounding mode gives different results from truncation
      * when the exact result is negative.
      * <ul>
      *   <li>If the signs of the arguments are the same, the results of
@@ -1155,12 +1169,41 @@ public final class Math {
      * There is one special case, if the dividend is the
      * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
      * then integer overflow occurs and
-     * the result is equal to the {@code Long.MIN_VALUE}.
+     * the result is equal to {@code Long.MIN_VALUE}.
      * <p>
      * Normal integer division operates under the round to zero rounding mode
      * (truncation).  This operation instead acts under the round toward
      * negative infinity (floor) rounding mode.
-     * The floor rounding mode gives different results than truncation
+     * The floor rounding mode gives different results from truncation
+     * when the exact result is negative.
+     * <p>
+     * For examples, see {@link #floorDiv(int, int)}.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the largest (closest to positive infinity)
+     * {@code int} value that is less than or equal to the algebraic quotient.
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see #floorMod(long, int)
+     * @see #floor(double)
+     * @since 1.9
+     */
+    public static long floorDiv(long x, int y) {
+        return floorDiv(x, (long)y);
+    }
+
+    /**
+     * Returns the largest (closest to positive infinity)
+     * {@code long} value that is less than or equal to the algebraic quotient.
+     * There is one special case, if the dividend is the
+     * {@linkplain Long#MIN_VALUE Long.MIN_VALUE} and the divisor is {@code -1},
+     * then integer overflow occurs and
+     * the result is equal to {@code Long.MIN_VALUE}.
+     * <p>
+     * Normal integer division operates under the round to zero rounding mode
+     * (truncation).  This operation instead acts under the round toward
+     * negative infinity (floor) rounding mode.
+     * The floor rounding mode gives different results from truncation
      * when the exact result is negative.
      * <p>
      * For examples, see {@link #floorDiv(int, int)}.
@@ -1228,8 +1271,34 @@ public final class Math {
      * @since 1.8
      */
     public static int floorMod(int x, int y) {
-        int r = x - floorDiv(x, y) * y;
-        return r;
+        return x - floorDiv(x, y) * y;
+    }
+
+    /**
+     * Returns the floor modulus of the {@code long} and {@int} arguments.
+     * <p>
+     * The floor modulus is {@code x - (floorDiv(x, y) * y)},
+     * has the same sign as the divisor {@code y}, and
+     * is in the range of {@code -abs(y) < r < +abs(y)}.
+     *
+     * <p>
+     * The relationship between {@code floorDiv} and {@code floorMod} is such that:
+     * <ul>
+     *   <li>{@code floorDiv(x, y) * y + floorMod(x, y) == x}
+     * </ul>
+     * <p>
+     * For examples, see {@link #floorMod(int, int)}.
+     *
+     * @param x the dividend
+     * @param y the divisor
+     * @return the floor modulus {@code x - (floorDiv(x, y) * y)}
+     * @throws ArithmeticException if the divisor {@code y} is zero
+     * @see #floorDiv(long, int)
+     * @since 1.9
+     */
+    public static int floorMod(long x, int y) {
+        // Result cannot overflow the range of int.
+        return (int)(x - floorDiv(x, y) * y);
     }
 
     /**
