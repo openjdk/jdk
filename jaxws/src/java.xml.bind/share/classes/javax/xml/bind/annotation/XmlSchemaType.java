@@ -38,7 +38,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *
  * <p> <b>Usage</b> </p>
  * <p>
- * <tt>@XmlSchemaType</tt> annotation can be used with the following program
+ * {@code @XmlSchemaType} annotation can be used with the following program
  * elements:
  * <ul>
  *   <li> a JavaBean property </li>
@@ -46,10 +46,10 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *   <li> package</li>
  * </ul>
  *
- * <p> <tt>@XmlSchemaType</tt> annotation defined for Java type
+ * <p> {@code @XmlSchemaType} annotation defined for Java type
  * applies to all references to the Java type from a property/field.
- * A <tt>@XmlSchemaType</tt> annotation specified on the
- * property/field overrides the <tt>@XmlSchemaType</tt> annotation
+ * A {@code @XmlSchemaType} annotation specified on the
+ * property/field overrides the {@code @XmlSchemaType} annotation
  * specified at the package level.
  *
  * <p> This annotation can be used with the following annotations:

@@ -63,6 +63,7 @@ public class CompileCircularSources extends SJavacTester {
         compile(GENSRC.toString(),
                 "-d", BIN.toString(),
                 "-h", HEADERS.toString(),
+                "--state-dir=" + BIN,
                 "-j", "3",
                 SERVER_ARG,
                 "--log=debug");

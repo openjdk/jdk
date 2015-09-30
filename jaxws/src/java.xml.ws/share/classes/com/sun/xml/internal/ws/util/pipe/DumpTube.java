@@ -119,7 +119,7 @@ public class DumpTube extends AbstractFilterTubeImpl {
      * Wraps {@link XMLStreamWriter} by an indentation engine if possible.
      *
      * <p>
-     * We can do this only when we have <tt>stax-utils.jar</tt> in the classpath.
+     * We can do this only when we have {@code stax-utils.jar} in the classpath.
      */
     private XMLStreamWriter createIndenter(XMLStreamWriter writer) {
         try {

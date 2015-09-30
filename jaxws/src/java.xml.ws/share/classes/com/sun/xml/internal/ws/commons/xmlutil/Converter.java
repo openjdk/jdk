@@ -198,7 +198,7 @@ public final class Converter {
      * Wraps {@link javax.xml.stream.XMLStreamWriter} by an indentation engine if possible.
      *
      * <p>
-     * We can do this only when we have <tt>stax-utils.jar</tt> in the class path.
+     * We can do this only when we have {@code stax-utils.jar} in the class path.
      */
     private static XMLStreamWriter createIndenter(XMLStreamWriter writer) {
         try {

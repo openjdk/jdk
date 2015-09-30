@@ -53,7 +53,7 @@ public class IncCompInheritance extends SjavacBase {
 
         // Initial compile (should succeed)
         String server = "--server:portfile=testserver,background=false";
-        int rc1 = compile(server, "-d", classes, src);
+        int rc1 = compile(server, "-d", classes, "--state-dir=" + classes, src);
         if (rc1 != 0)
             throw new AssertionError("Compilation failed unexpectedly");
 
@@ -65,7 +65,7 @@ public class IncCompInheritance extends SjavacBase {
         // Incremental compile (C should now be recompiled even though it
         // depends on A only through inheritance via B).
         // Since A.m is removed, this should fail.
-        int rc2 = compile(server, "-d", classes, src);
+        int rc2 = compile(server, "-d", classes, "--state-dir=" + classes, src);
         if (rc2 == 0)
             throw new AssertionError("Compilation succeeded unexpectedly");
     }

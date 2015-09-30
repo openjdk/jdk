@@ -29,7 +29,7 @@ import javax.xml.bind.DatatypeConverter;
 import javax.xml.bind.annotation.adapters.XmlAdapter;
 
 /**
- * Serializes <tt>boolean</tt> as 0 or 1.
+ * Serializes {@code boolean} as 0 or 1.
  *
  * @author Kohsuke Kawaguchi
  * @since 2.0

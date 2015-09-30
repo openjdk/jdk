@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8005471 8008577 8129881 8130845
+ * @bug 8005471 8008577 8129881 8130845 8136518
  * @run main/othervm -Djava.locale.providers=CLDR CLDRDisplayNamesTest
  * @summary Make sure that localized time zone names of CLDR are used
  * if specified.
@@ -93,7 +93,7 @@ public class CLDRDisplayNamesTest {
 
         // for 8129881
         tz = TimeZone.getTimeZone("Europe/Vienna");
-        String name = tz.getDisplayName(false, SHORT);
+        String name = tz.getDisplayName(false, SHORT, Locale.ENGLISH);
         if (!"CET".equals(name)) {
             System.err.printf("error: got '%s' expected 'CET' %n", name);
             errors++;

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,28 +23,10 @@
  * questions.
  */
 
-/**
- * @test
- * @option -Dnashorn.debug=true
- * @fork
- */
+package jdk.nashorn.test.models;
 
-load(__DIR__ + "maputil.js");
-
-function Foo() {
-    this.x = 33;
+public interface A {
+    default String a() {
+        return "from A.a";
+    }
 }
-
-var obj1 = new Foo();
-var obj2 = new Foo();
-
-assertSameMap(obj1, obj2);
-
-// property deletion at same callsite
-function deleteX(obj) {
-   delete obj.x;
-}
-deleteX(obj1);
-deleteX(obj2);
-
-assertSameMap(obj1, obj2);

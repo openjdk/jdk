@@ -36,6 +36,11 @@ CONFIGURE_COMMAND_LINE:=@CONFIGURE_COMMAND_LINE@
 # A self-referential reference to this file.
 SPEC:=@SPEC@
 
+# SPACE is defined in MakeBase.gmk, but it is also used in := rules here for some
+# toolchains, and is needed if MakeBase.gmk is not included before this file.
+X:=
+SPACE:=$(X) $(X)
+
 # What make to use for main processing, after bootstrapping top-level Makefile.
 MAKE := @MAKE@
 
@@ -495,6 +500,7 @@ LN:=@LN@
 MKDIR:=@MKDIR@
 MV:=@MV@
 NAWK:=@NAWK@
+PATCH:=@PATCH@
 PRINTF:=@PRINTF@
 PWD:=@THEPWDCMD@
 RM:=@RM@

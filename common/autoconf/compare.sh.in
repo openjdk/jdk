@@ -29,47 +29,50 @@
 ##########################################################################################
 # Substitutions from autoconf
 
-LEGACY_BUILD_DIR=@OPENJDK_TARGET_OS@-@OPENJDK_TARGET_CPU_LEGACY@
+export LEGACY_BUILD_DIR=@OPENJDK_TARGET_OS@-@OPENJDK_TARGET_CPU_LEGACY@
 
-OPENJDK_TARGET_OS="@OPENJDK_TARGET_OS@"
-OPENJDK_TARGET_CPU="@OPENJDK_TARGET_CPU@"
+export OPENJDK_TARGET_OS="@OPENJDK_TARGET_OS@"
+export OPENJDK_TARGET_CPU="@OPENJDK_TARGET_CPU@"
 
-AWK="@AWK@"
-CAT="@CAT@"
-CMP="@CMP@"
-CP="@CP@"
-CUT="@CUT@"
-DIFF="@DIFF@"
-DUMPBIN="@FIXPATH@ @DUMPBIN@"
-EXPR="@EXPR@"
-FILE="@FILE@"
-FIND="@FIND@"
-GREP="@GREP@"
-JAVAP="@FIXPATH@ @BOOT_JDK@/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
-JIMAGE="@FIXPATH@ @BUILD_OUTPUT@/jdk/bin/jimage"
-LDD="@LDD@"
-LN="@LN@"
-MKDIR="@MKDIR@"
-NAWK="@NAWK@"
-NM="@GNM@"
-OBJDUMP="@OBJDUMP@"
-OTOOL="@OTOOL@"
-PRINTF="@PRINTF@"
-READELF="@READELF@"
-RM="@RM@"
-SED="@SED@"
-SORT="@SORT@"
-STAT="@STAT@"
-STRIP="@POST_STRIP_CMD@"
-TEE="@TEE@"
-UNIQ="@UNIQ@"
-UNPACK200="@FIXPATH@ @BOOT_JDK@/bin/unpack200"
-UNZIP="@UNZIP@"
+export AWK="@AWK@"
+export BASH="@BASH@"
+export CAT="@CAT@"
+export CMP="@CMP@"
+export CP="@CP@"
+export CUT="@CUT@"
+export DIFF="@DIFF@"
+export DUMPBIN="@FIXPATH@ @DUMPBIN@"
+export EXPR="@EXPR@"
+export FILE="@FILE@"
+export FIND="@FIND@"
+export GREP="@GREP@"
+export JAVAP="@FIXPATH@ @BOOT_JDK@/bin/javap @JAVA_TOOL_FLAGS_SMALL@"
+export JIMAGE="@FIXPATH@ @BUILD_OUTPUT@/jdk/bin/jimage"
+export LDD="@LDD@"
+export LN="@LN@"
+export MKDIR="@MKDIR@"
+export MV="@MV@"
+export NAWK="@NAWK@"
+export NM="@GNM@"
+export OBJDUMP="@OBJDUMP@"
+export OTOOL="@OTOOL@"
+export PRINTF="@PRINTF@"
+export READELF="@READELF@"
+export RM="@RM@"
+export SED="@SED@"
+export SORT="@SORT@"
+export STAT="@STAT@"
+export STRIP="@POST_STRIP_CMD@"
+export TEE="@TEE@"
+export UNIQ="@UNIQ@"
+export UNPACK200="@FIXPATH@ @BOOT_JDK@/bin/unpack200"
+export UNZIP="@UNZIP@"
 
-SRC_ROOT="@TOPDIR@"
+export SRC_ROOT="@TOPDIR@"
+export OUTPUT_ROOT="@OUTPUT_ROOT@"
 
 if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
-  PATH="@VS_PATH@"
+  export PATH="@VS_PATH@"
 fi
 
 # Now locate the main script and run it.
@@ -79,4 +82,8 @@ if [ ! -e "$REAL_COMPARE_SCRIPT" ]; then
   exit 1
 fi
 
-. "$REAL_COMPARE_SCRIPT" "$@"
+# Rotate logs
+$RM $OUTPUT_ROOT/compare.log.old 2> /dev/null
+$MV $OUTPUT_ROOT/compare.log $OUTPUT_ROOT/compare.log.old 2> /dev/null
+
+$BASH $SRC_ROOT/common/bin/logger.sh $OUTPUT_ROOT/compare.log $BASH "$REAL_COMPARE_SCRIPT" "$@"

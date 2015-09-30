@@ -36,7 +36,7 @@ import com.sun.xml.internal.xsom.XSWildcard;
 final class GWildcardElement extends GElement {
 
     /**
-     * If true, bind to <tt>Object</tt> for eager JAXB unmarshalling.
+     * If true, bind to {@code Object} for eager JAXB unmarshalling.
      * Otherwise bind to DOM (I hate "you can put both" semantics,
      * so I'm not going to do that in this binding mode.)
      */

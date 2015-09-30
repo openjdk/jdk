@@ -36,9 +36,11 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
-import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode.ArrayUnit;
 import jdk.nashorn.internal.ir.Node;
+import jdk.nashorn.internal.ir.ObjectNode;
+import jdk.nashorn.internal.ir.PropertyNode;
 import jdk.nashorn.internal.ir.SplitNode;
+import jdk.nashorn.internal.ir.Splittable;
 import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Context;
@@ -295,7 +297,7 @@ final class Splitter extends NodeVisitor<LexicalContext> implements Loggable {
             final ArrayLiteralNode arrayLiteralNode = (ArrayLiteralNode) literal;
             final Node[]           value            = arrayLiteralNode.getValue();
             final int[]            postsets         = arrayLiteralNode.getPostsets();
-            final List<ArrayUnit>  units            = new ArrayList<>();
+            final List<Splittable.SplitRange> ranges = new ArrayList<>();
 
             long totalWeight = 0;
             int  lo          = 0;
@@ -309,7 +311,7 @@ final class Splitter extends NodeVisitor<LexicalContext> implements Loggable {
 
                 if (totalWeight >= SPLIT_THRESHOLD) {
                     final CompileUnit unit = compiler.findUnit(totalWeight - weight);
-                    units.add(new ArrayUnit(unit, lo, i));
+                    ranges.add(new Splittable.SplitRange(unit, lo, i));
                     lo = i;
                     totalWeight = weight;
                 }
@@ -317,13 +319,56 @@ final class Splitter extends NodeVisitor<LexicalContext> implements Loggable {
 
             if (lo != postsets.length) {
                 final CompileUnit unit = compiler.findUnit(totalWeight);
-                units.add(new ArrayUnit(unit, lo, postsets.length));
+                ranges.add(new Splittable.SplitRange(unit, lo, postsets.length));
             }
 
-            return arrayLiteralNode.setUnits(lc, units);
+            return arrayLiteralNode.setSplitRanges(lc, ranges);
         }
 
         return literal;
+    }
+
+    @Override
+    public Node leaveObjectNode(final ObjectNode objectNode) {
+        long weight = WeighNodes.weigh(objectNode);
+
+        if (weight < SPLIT_THRESHOLD) {
+            return objectNode;
+        }
+
+        final FunctionNode functionNode = lc.getCurrentFunction();
+        lc.setFlag(functionNode, FunctionNode.IS_SPLIT);
+
+        final List<Splittable.SplitRange> ranges        = new ArrayList<>();
+        final List<PropertyNode>          properties    = objectNode.getElements();
+        final boolean                     isSpillObject = properties.size() > CodeGenerator.OBJECT_SPILL_THRESHOLD;
+        long totalWeight = 0;
+        int  lo          = 0;
+
+        for (int i = 0; i < properties.size(); i++) {
+
+            final PropertyNode property = properties.get(i);
+            final boolean isConstant = LiteralNode.isConstant(property.getValue());
+
+            if (!isConstant || !isSpillObject) {
+                weight = isConstant ? 0 : WeighNodes.weigh(property.getValue());
+                totalWeight += WeighNodes.AASTORE_WEIGHT + weight;
+
+                if (totalWeight >= SPLIT_THRESHOLD) {
+                    final CompileUnit unit = compiler.findUnit(totalWeight - weight);
+                    ranges.add(new Splittable.SplitRange(unit, lo, i));
+                    lo = i;
+                    totalWeight = weight;
+                }
+            }
+        }
+
+        if (lo != properties.size()) {
+            final CompileUnit unit = compiler.findUnit(totalWeight);
+            ranges.add(new Splittable.SplitRange(unit, lo, properties.size()));
+        }
+
+        return objectNode.setSplitRanges(lc, ranges);
     }
 
     @Override

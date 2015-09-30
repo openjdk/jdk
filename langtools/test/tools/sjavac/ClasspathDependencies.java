@@ -64,7 +64,7 @@ public class ClasspathDependencies extends SjavacBase {
         headline("Create a test dependency, Dep.class, and put it in the classpath dir");
         String depCode = "package dep; public class Dep { public void m1() {} }";
         toolbox.writeFile(srcDep.resolve("dep/Dep.java"), depCode);
-        int rc = compile(server, "-d", classesDep, srcDep);
+        int rc = compile(server, "-d", classesDep, "--state-dir=" + classesDep, srcDep);
         check(rc == 0, "Compilation failed unexpectedly");
 
         ////////////////////////////////////////////////////////////////////////
@@ -73,7 +73,7 @@ public class ClasspathDependencies extends SjavacBase {
                           "package pkg;" +
                           "import dep.Dep;" +
                           "public class C { Dep dep; public void m() { new Dep().m1(); } }");
-        rc = compile(server, "-d", classes, src, "-cp", classesDep);
+        rc = compile(server, "-d", classes, "--state-dir=" + classes, src, "-cp", classesDep);
         check(rc == 0, "Compilation failed unexpectedly");
         FileTime modTime1 = Files.getLastModifiedTime(classes.resolve("pkg/C.class"));
 
@@ -82,12 +82,12 @@ public class ClasspathDependencies extends SjavacBase {
         Thread.sleep(2000);
         depCode = depCode.replaceAll("}$", "private void m2() {} }");
         toolbox.writeFile(srcDep.resolve("dep/Dep.java"), depCode);
-        rc = compile(server, "-d", classesDep, srcDep);
+        rc = compile(server, "-d", classesDep, "--state-dir=" + classesDep, srcDep);
         check(rc == 0, "Compilation failed unexpectedly");
 
         ////////////////////////////////////////////////////////////////////////
         headline("Make sure that this does not trigger recompilation of C.java");
-        rc = compile(server, "-d", classes, src, "-cp", classesDep);
+        rc = compile(server, "-d", classes, "--state-dir=" + classes, src, "-cp", classesDep);
         check(rc == 0, "Compilation failed unexpectedly");
         FileTime modTime2 = Files.getLastModifiedTime(classes.resolve("pkg/C.class"));
         check(modTime1.equals(modTime2), "Recompilation erroneously triggered");
@@ -97,12 +97,12 @@ public class ClasspathDependencies extends SjavacBase {
         Thread.sleep(2000);
         depCode = depCode.replace("m1()", "m1(String... arg)");
         toolbox.writeFile(srcDep.resolve("dep/Dep.java"), depCode);
-        rc = compile(server, "-d", classesDep, srcDep);
+        rc = compile(server, "-d", classesDep, "--state-dir=" + classesDep, srcDep);
         check(rc == 0, "Compilation failed unexpectedly");
 
         ////////////////////////////////////////////////////////////////////////
         headline("Make sure that recompilation of C.java is triggered");
-        rc = compile(server, "-d", classes, src, "-cp", classesDep);
+        rc = compile(server, "-d", classes, "--state-dir=" + classes, src, "-cp", classesDep);
         check(rc == 0, "Compilation failed unexpectedly");
         FileTime modTime3 = Files.getLastModifiedTime(classes.resolve("pkg/C.class"));
         check(modTime2.compareTo(modTime3) < 0, "Recompilation not triggered");

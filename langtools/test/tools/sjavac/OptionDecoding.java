@@ -59,7 +59,6 @@ import com.sun.tools.sjavac.options.SourceLocation;
 public class OptionDecoding {
 
     public static void main(String[] args) throws IOException {
-
         testPaths();
         testDupPaths();
         testSourceLocations();
@@ -67,30 +66,28 @@ public class OptionDecoding {
         testServerConf();
         testSearchPaths();
         testTranslationRules();
-
     }
 
     // Test decoding of output paths
     static void testPaths() throws IOException {
-
         final String H = "headers";
         final String G = "gensrc";
         final String D = "dest";
+        final String stateDir = "stateDir";
         final String CMP = "srcRefList.txt";
 
-        Options options = Options.parseArgs("-h", H, "-s", G, "-d", D,
+        Options options = Options.parseArgs("-h", H, "-s", G, "-d", D, "--state-dir=" + stateDir,
                                             "--compare-found-sources", CMP);
 
         assertEquals(Paths.get(H).toAbsolutePath(), options.getHeaderDir());
         assertEquals(Paths.get(G).toAbsolutePath(), options.getGenSrcDir());
         assertEquals(Paths.get(D).toAbsolutePath(), options.getDestDir());
+        assertEquals(Paths.get(stateDir).toAbsolutePath(), options.getStateDir());
         assertEquals(Paths.get(CMP), options.getSourceReferenceList());
-
     }
 
     // Providing duplicate header / dest / gensrc paths should produce an error.
     static void testDupPaths() throws IOException {
-
         try {
             Options.parseArgs("-h", "dir1", "-h", "dir2");
             throw new RuntimeException("Duplicate header directories should fail.");
@@ -111,12 +108,10 @@ public class OptionDecoding {
         } catch (IllegalArgumentException iae) {
             // Expected
         }
-
     }
 
     // Test source locations and -x, -i, -xf, -if filters
     static void testSourceLocations() throws IOException {
-
         Path a1 = Paths.get("root/pkg1/ClassA1.java");
         Path a2 = Paths.get("root/pkg1/ClassA2.java");
         Path b1 = Paths.get("root/pkg1/pkg2/ClassB1.java");
@@ -185,12 +180,10 @@ public class OptionDecoding {
 
             checkFilesFound(foundFiles.keySet(), a1, a2);
         }
-
     }
 
     // Test basic options
     static void testSimpleOptions() {
-
         Options options = Options.parseArgs("-j", "17", "--log=debug");
         assertEquals(17, options.getNumCores());
         assertEquals("debug", options.getLogLevel());
@@ -239,7 +232,6 @@ public class OptionDecoding {
 
     // Test -tr option
     static void testTranslationRules() {
-
         Class<?> cls = com.sun.tools.sjavac.CompileJavaPackages.class;
 
         Options options = Options.parseArgs(
@@ -250,6 +242,5 @@ public class OptionDecoding {
         assertEquals(cls, options.getTranslationRules().get(".exa").getClass());
         assertEquals(cls, options.getTranslationRules().get(".exb").getClass());
         assertEquals(CopyFile.class, options.getTranslationRules().get(".html").getClass());
-
     }
 }

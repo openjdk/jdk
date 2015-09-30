@@ -59,8 +59,8 @@ public class FieldRepository extends AbstractRepository<TypeSignature> {
      * that this repository is servicing
      * @param f - a factory that will provide instances of reflective
      * objects when this repository converts its AST
-     * @return a <tt>FieldRepository</tt> that manages the generic type
-     * information represented in the signature <tt>rawSig</tt>
+     * @return a {@code FieldRepository} that manages the generic type
+     * information represented in the signature {@code rawSig}
      */
     public static FieldRepository make(String rawSig, GenericsFactory f) {
         return new FieldRepository(rawSig, f);

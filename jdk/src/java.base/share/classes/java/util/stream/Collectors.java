@@ -504,7 +504,7 @@ public final class Collectors {
      */
     public static <T> Collector<T, ?, Long>
     counting() {
-        return reducing(0L, e -> 1L, Long::sum);
+        return summingLong(e -> 1L);
     }
 
     /**

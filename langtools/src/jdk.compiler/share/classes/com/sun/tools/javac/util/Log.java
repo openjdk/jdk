@@ -322,6 +322,13 @@ public class Log extends AbstractLog {
         return instance;
     }
 
+    /**
+     * Register a Context.Factory to create a Log.
+     */
+    public static void preRegister(Context context, PrintWriter w) {
+        context.put(Log.class, (Context.Factory<Log>) (c -> new Log(c, w)));
+    }
+
     /** The number of errors encountered so far.
      */
     public int nerrors = 0;

@@ -62,6 +62,7 @@ public class CompileExcludingDependency extends SJavacTester {
                 "-x", "alfa/omega",
                 "-sourcepath", GENSRC.toString(),
                 "-d", BIN.toString(),
+                "--state-dir=" + BIN,
                 SERVER_ARG);
 
         Map<String,Long> new_bin_state = collectState(BIN);

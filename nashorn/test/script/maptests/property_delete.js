@@ -1,13 +1,10 @@
-
 /*
- * Copyright (c) 1998, 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -24,29 +21,28 @@
  * questions.
  */
 
-/*
- * wrapper hypot(x,y)
+/**
+ * @test
+ * @option -Dnashorn.debug=true
+ * @fork
  */
 
-#include "fdlibm.h"
+load(__DIR__ + "maputil.js");
 
-
-#ifdef __STDC__
-        double hypot(double x, double y)/* wrapper hypot */
-#else
-        double hypot(x,y)               /* wrapper hypot */
-        double x,y;
-#endif
-{
-#ifdef _IEEE_LIBM
-        return __ieee754_hypot(x,y);
-#else
-        double z;
-        z = __ieee754_hypot(x,y);
-        if(_LIB_VERSION == _IEEE_) return z;
-        if((!finite(z))&&finite(x)&&finite(y))
-            return __kernel_standard(x,y,4); /* hypot overflow */
-        else
-            return z;
-#endif
+function Foo() {
+    this.x = 33;
 }
+
+var obj1 = new Foo();
+var obj2 = new Foo();
+
+assertSameMap(obj1, obj2);
+
+// property deletion at same callsite
+function deleteX(obj) {
+   delete obj.x;
+}
+deleteX(obj1);
+deleteX(obj2);
+
+assertEqualWithoutTypeMap(obj1, obj2);

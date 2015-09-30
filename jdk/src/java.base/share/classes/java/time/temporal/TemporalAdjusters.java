@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -313,7 +313,7 @@ public final class TemporalAdjusters {
 
     /**
      * Returns the day-of-week in month adjuster, which returns a new date
-     * in the same month with the ordinal day-of-week.
+     * with the ordinal day-of-week based on the month.
      * This is used for expressions like the 'second Tuesday in March'.
      * <p>
      * The ISO calendar system behaves as follows:<br>
