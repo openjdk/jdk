@@ -3886,6 +3886,8 @@ msys_help() {
 
 apt_help() {
   case $1 in
+    reduced)
+      PKGHANDLER_COMMAND="sudo apt-get install gcc-multilib g++-multilib" ;;
     devkit)
       PKGHANDLER_COMMAND="sudo apt-get install build-essential" ;;
     openjdk)
@@ -4362,7 +4364,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1442820958
+DATE_WHEN_GENERATED=1443605847
 
 ###############################################################################
 #
@@ -41543,8 +41545,38 @@ else
     { $as_echo "$as_me:${as_lineno-$LINENO}: Failed to compile stdio.h. This likely implies missing compile dependencies." >&5
 $as_echo "$as_me: Failed to compile stdio.h. This likely implies missing compile dependencies." >&6;}
     if test "x$COMPILE_TYPE" = xreduced; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a reduced build. Check that you have 32-bit libraries installed." >&5
-$as_echo "$as_me: You are doing a reduced build. Check that you have 32-bit libraries installed." >&6;}
+
+  # Print a helpful message on how to acquire the necessary build dependency.
+  # reduced is the help tag: freetype, cups, pulse, alsa etc
+  MISSING_DEPENDENCY=reduced
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
+
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a reduced build. Check that you have 32-bit libraries installed. $HELP_MSG" >&5
+$as_echo "$as_me: You are doing a reduced build. Check that you have 32-bit libraries installed. $HELP_MSG" >&6;}
     elif test "x$COMPILE_TYPE" = xcross; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a cross-compilation. Check that you have all target platform libraries installed." >&5
 $as_echo "$as_me: You are doing a cross-compilation. Check that you have all target platform libraries installed." >&6;}
@@ -41603,8 +41635,8 @@ $as_echo "$as_me: WARNING: The number of bits in the target could not be determi
       # Let's try to implicitely set the compilers target architecture and retry the test
       { $as_echo "$as_me:${as_lineno-$LINENO}: The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)." >&5
 $as_echo "$as_me: The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)." >&6;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: I'll retry after setting the platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}" >&5
-$as_echo "$as_me: I'll retry after setting the platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Retrying with platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}" >&5
+$as_echo "$as_me: Retrying with platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}" >&6;}
 
   # When we add flags to the "official" CFLAGS etc, we need to
   # keep track of these additions in ADDED_CFLAGS etc. These
@@ -41667,7 +41699,46 @@ _ACEOF
       TESTED_TARGET_CPU_BITS=`expr 8 \* $ac_cv_sizeof_int_p`
 
       if test "x$TESTED_TARGET_CPU_BITS" != "x$OPENJDK_TARGET_CPU_BITS"; then
-        as_fn_error $? "The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)" "$LINENO" 5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)" >&5
+$as_echo "$as_me: The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)" >&6;}
+        if test "x$COMPILE_TYPE" = xreduced; then
+
+  # Print a helpful message on how to acquire the necessary build dependency.
+  # reduced is the help tag: freetype, cups, pulse, alsa etc
+  MISSING_DEPENDENCY=reduced
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
+
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
+  fi
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a reduced build. Check that you have 32-bit libraries installed. $HELP_MSG" >&5
+$as_echo "$as_me: You are doing a reduced build. Check that you have 32-bit libraries installed. $HELP_MSG" >&6;}
+        elif test "x$COMPILE_TYPE" = xcross; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a cross-compilation. Check that you have all target platform libraries installed." >&5
+$as_echo "$as_me: You are doing a cross-compilation. Check that you have all target platform libraries installed." >&6;}
+        fi
+        as_fn_error $? "Cannot continue." "$LINENO" 5
       fi
     fi
   fi
