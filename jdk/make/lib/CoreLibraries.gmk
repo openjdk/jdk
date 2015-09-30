@@ -160,6 +160,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
         -framework Security -framework SystemConfiguration, \
     LDFLAGS_SUFFIX_windows := -export:winFileHandleOpen -export:handleLseek \
         -export:getLastErrorString \
+        -export:getErrorString \
         jvm.lib $(BUILD_LIBFDLIBM) $(WIN_VERIFY_LIB) \
         shell32.lib delayimp.lib -DELAYLOAD:shell32.dll \
         advapi32.lib version.lib, \

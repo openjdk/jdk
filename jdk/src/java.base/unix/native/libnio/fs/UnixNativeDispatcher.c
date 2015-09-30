@@ -315,21 +315,15 @@ Java_sun_nio_fs_UnixNativeDispatcher_getcwd(JNIEnv* env, jclass this) {
 JNIEXPORT jbyteArray
 Java_sun_nio_fs_UnixNativeDispatcher_strerror(JNIEnv* env, jclass this, jint error)
 {
-    char* msg;
+    char tmpbuf[1024];
     jsize len;
     jbyteArray bytes;
 
-#ifdef _AIX
-    /* strerror() is not thread-safe on AIX so we have to use strerror_r() */
-    char buffer[256];
-    msg = (strerror_r((int)error, buffer, 256) == 0) ? buffer : "Error while calling strerror_r";
-#else
-    msg = strerror((int)error);
-#endif
-    len = strlen(msg);
+    getErrorString((int)errno, tmpbuf, sizeof(tmpbuf));
+    len = strlen(tmpbuf);
     bytes = (*env)->NewByteArray(env, len);
     if (bytes != NULL) {
-        (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte*)msg);
+        (*env)->SetByteArrayRegion(env, bytes, 0, len, (jbyte*)tmpbuf);
     }
     return bytes;
 }

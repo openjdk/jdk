@@ -388,6 +388,7 @@ void buildJniFunctionName(const char *sym, const char *cname,
                           char *jniEntryName);
 
 extern size_t getLastErrorString(char *buf, size_t len);
+extern int getErrorString(int err, char *buf, size_t len);
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
