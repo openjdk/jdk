@@ -30,10 +30,6 @@
  * @run main TestVMOptionsFile
  */
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
-import jdk.test.lib.Asserts;
-import jdk.test.lib.DynamicVMOption;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -49,31 +45,39 @@ import java.nio.file.attribute.UserPrincipal;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
 import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+import jdk.test.lib.Asserts;
+import jdk.test.lib.DynamicVMOption;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 
 public class TestVMOptionsFile {
 
-    /* Empty VM Option file */
-    private static final String VM_OPTION_FILE_EMPTY = "optionfile_empty";
-    /* VM Option file with tabs and spaces */
-    private static final String VM_OPTION_FILE_TABS_AND_SPACES = "optionfile_only_tabsandspaces";
     /* Various valid VM Option files */
+    private static final String VM_OPTION_FILE_EMPTY = "optionfile_empty";
+    private static final String VM_OPTION_FILE_TABS_AND_SPACES = "optionfile_only_tabsandspaces";
     private static final String VM_OPTION_FILE_1 = "optionfile_1";
     private static final String VM_OPTION_FILE_2 = "optionFILE_2";
     private static final String VM_OPTION_FILE_3 = "optionfile_3";
     private static final String VM_OPTION_FILE_QUOTE = "optionfile_quote";
-    private static final String VM_OPTION_FILE_QUOTE_MAX_SIZE = "optionfile_quote_max_size";
-    /* 2 VM Option files with unmatched quotes */
-    private static final String VM_OPTION_FILE_UNMATCHED_QUOTE_1 = "optionfile_unmatched_quote_1";
-    private static final String VM_OPTION_FILE_UNMATCHED_QUOTE_2 = "optionfile_unmatched_quote_2";
+    private static final String VM_OPTION_FILE_BIG = "optionfile_big";
+    private static final int REPEAT_COUNT = 512;
     /* Name of the file with flags for VM_OPTION_FILE_2 Option file */
     private static final String FLAGS_FILE = "flags_file";
     /* VM Option file with a lot of options with quote on separate lines */
     private static final String VM_OPTION_FILE_LOT_OF_OPTIONS_QUOTE = "optionfile_lot_of_options_quote";
     /* Number of properties defined in VM_OPTION_FILE_LOT_OF_OPTIONS_QUOTE */
-    private static final int NUM_OF_PROP_IN_FILE_LOT_OF_OPTIONS_QUOTE = 65;
+    private static final int NUM_OF_PROP_IN_FILE_LOT_OF_OPTIONS_QUOTE = 70;
+    /* VM Option file with long property */
+    private static final String VM_OPTION_FILE_WITH_LONG_PROPERTY = "optionfile_long_property";
+    private static final String LONG_PROPERTY_NAME = "veryl'" + String.format("%1536s", "").replace(' ', 'o') + "ng'name";
+    private static final String LONG_PROPERTY_VALUE = String.format("%2096s", "").replaceAll("    ", "long");
+    /* 2 VM Option files with unmatched quotes */
+    private static final String VM_OPTION_FILE_UNMATCHED_QUOTE_1 = "optionfile_unmatched_quote_1";
+    private static final String VM_OPTION_FILE_UNMATCHED_QUOTE_2 = "optionfile_unmatched_quote_2";
     /* VM Option file with bad option in it */
     private static final String VM_OPTION_FILE_WITH_BAD_OPTION = "optionfile_bad_option";
     /* VM Option file with "-XX:VMOptionsFile=" option in it */
@@ -82,10 +86,6 @@ public class TestVMOptionsFile {
     private static final String VM_OPTION_FILE_WITH_SAME_VM_OPTION_FILE = "optionfile_with_same_optionfile";
     /* VM Option file without read permissions(not accessible) */
     private static final String VM_OPTION_FILE_WITHOUT_READ_PERMISSIONS = "optionfile_wo_read_perm";
-    /* VM Option file with long property(file size is 1024 bytes) */
-    private static final String VM_OPTION_FILE_WITH_LONG_PROPERTY = "optionfile_long_property";
-    /* VM Option file with very long property(file size is more than 1024 bytes) */
-    private static final String VM_OPTION_FILE_WITH_VERY_LONG_PROPERTY = "optionfile_very_long_property";
     /* VM Option file which does not exist */
     private static final String NOT_EXISTING_FILE = "not_exist_junk2123";
 
@@ -110,6 +110,9 @@ public class TestVMOptionsFile {
     private static final Set<String> appParams = new LinkedHashSet<>();
 
     private static OutputAnalyzer output;
+
+    private static final String PRINT_PROPERTY_FORMAT = "Property %s=%s";
+    private static final String PRINT_VM_OPTION_FORMAT = "Virtual Machine option %s=%s";
 
     /*
      * Get absoulte path to file from folder with sources
@@ -163,6 +166,23 @@ public class TestVMOptionsFile {
         fw.write("-XX:MinHeapFreeRatio=12 -XX:VMOptionsFile=" + (new File(VM_OPTION_FILE_WITH_SAME_VM_OPTION_FILE)).getCanonicalPath());
         fw.close();
 
+        /* Create VM option file with long property */
+        fw = new FileWriter(VM_OPTION_FILE_WITH_LONG_PROPERTY);
+        fw.write("-D" + LONG_PROPERTY_NAME + "=" + LONG_PROPERTY_VALUE);
+        fw.close();
+
+        /* Create big VM option file */
+        fw = new FileWriter(VM_OPTION_FILE_BIG);
+        fw.write("-XX:MinHeapFreeRatio=17\n");
+        for (int i = 0; i < REPEAT_COUNT; i++) {
+            if (i == REPEAT_COUNT / 2) {
+                fw.write("-XX:+PrintVMOptions ");
+            }
+            fw.write("-Dmy.property=value" + (i + 1) + "\n");
+        }
+        fw.write("-XX:MaxHeapFreeRatio=85\n");
+        fw.close();
+
         /* Copy valid VM option file and change its permission to make it not accessible */
         Files.copy(Paths.get(getAbsolutePathFromSource(VM_OPTION_FILE_1)),
                 Paths.get(VM_OPTION_FILE_WITHOUT_READ_PERMISSIONS),
@@ -188,15 +208,6 @@ public class TestVMOptionsFile {
     }
 
     /*
-     * Add property name to the application arguments list
-     */
-    private static void addPropertiesToCheck(String... params) {
-        for (String param : params) {
-            appParams.add("property=" + param);
-        }
-    }
-
-    /*
      * Add VM option name to the application arguments list
      */
     private static void addVMOptionsToCheck(String... params) {
@@ -210,7 +221,6 @@ public class TestVMOptionsFile {
      */
     private static void addProperty(String propertyName, String propertyValue) {
         addVMParam("-D" + propertyName + "=" + propertyValue);
-        addPropertiesToCheck(propertyName);
     }
 
     /*
@@ -263,20 +273,18 @@ public class TestVMOptionsFile {
     /*
      * Check property value by examining output
      */
-    private static void checkProperty(String property, String value) {
-        outputShouldContain("Property " + property + "=" + value);
+    private static void checkProperty(String property, String expectedValue) {
+        outputShouldContain(String.format(PRINT_PROPERTY_FORMAT, property, expectedValue));
     }
 
     /*
      * Check VM Option value by examining output
      */
-    private static void checkVMOption(String vmOption, String value) {
-        outputShouldContain("VM Option " + vmOption + "=" + value);
+    private static void checkVMOption(String vmOption, String expectedValue) {
+        outputShouldContain(String.format(PRINT_VM_OPTION_FORMAT, vmOption, expectedValue));
     }
 
     private static void testVMOptions() throws Exception {
-        StringBuilder longProperty = new StringBuilder();
-
         /* Check that empty VM Option file is accepted without errors */
         addVMOptionsFile(VM_OPTION_FILE_EMPTY);
 
@@ -290,7 +298,6 @@ public class TestVMOptionsFile {
         /* Check that parameters are gotten from first VM Option file. Pass absolute path to the VM Option file */
         addVMParam("-showversion");
         addVMOptionsFile(getAbsolutePathFromSource(VM_OPTION_FILE_1));
-        addPropertiesToCheck("optfile_1");
         addVMOptionsToCheck("SurvivorRatio", "MinHeapFreeRatio");
 
         runJavaCheckExitValue(JVM_SUCCESS);
@@ -306,7 +313,6 @@ public class TestVMOptionsFile {
          * Pass relative path to the VM Option file in form "vmoptionfile"
          */
         addVMOptionsFile(VM_OPTION_FILE_2);
-        addPropertiesToCheck("javax.net.ssl.keyStorePassword");
         addVMOptionsToCheck("UseGCOverheadLimit", "NewRatio", "MinHeapFreeRatio", "MaxFDLimit", "AlwaysPreTouch");
 
         runJavaCheckExitValue(JVM_SUCCESS);
@@ -320,7 +326,6 @@ public class TestVMOptionsFile {
         /* Check that parameters are gotten from third VM Option file which contains a mix of the options */
         addVMParam("-showversion");
         addVMOptionsFile(getAbsolutePathFromSource(VM_OPTION_FILE_3));
-        addPropertiesToCheck("other.secret.data", "property");
         addVMOptionsToCheck("UseGCOverheadLimit", "NewRatio");
 
         runJavaCheckExitValue(JVM_SUCCESS);
@@ -331,34 +336,23 @@ public class TestVMOptionsFile {
         checkVMOption("NewRatio", "16");
 
         /* Check that quotes are processed normally in VM Option file */
+        addVMParam("-showversion");
         addVMOptionsFile(getAbsolutePathFromSource(VM_OPTION_FILE_QUOTE));
-        addPropertiesToCheck("my.quote.single", "my.quote.double", "javax.net.ssl.trustStorePassword");
         addVMOptionsToCheck("ErrorFile");
 
         runJavaCheckExitValue(JVM_SUCCESS);
 
+        outputShouldContain("interpreted mode");
         checkProperty("my.quote.single", "Property in single quote. Here a double qoute\" Add some slashes \\/");
         checkProperty("my.quote.double", "Double qoute. Include single '.");
         checkProperty("javax.net.ssl.trustStorePassword", "data @+NEW");
         checkVMOption("ErrorFile", "./my error file");
 
-        /* Check that quotes are processed normally in VM Option file. Pass max size file */
-        addVMOptionsFile(getAbsolutePathFromSource(VM_OPTION_FILE_QUOTE_MAX_SIZE));
-
-        addPropertiesToCheck("big");
-
-        runJavaCheckExitValue(JVM_SUCCESS);
-
-        checkProperty("big", String.format("%01016d", 9));
-
         /*
-         * Verify that VM Option file accepts a file with 65 properties and with two options on separate
+         * Verify that VM Option file accepts a file with 70 properties and with two options on separate
          * lines and properties that use quotes a lot.
          */
         addVMOptionsFile(getAbsolutePathFromSource(VM_OPTION_FILE_LOT_OF_OPTIONS_QUOTE));
-        for (int i = 1; i <= NUM_OF_PROP_IN_FILE_LOT_OF_OPTIONS_QUOTE; i++) {
-            addPropertiesToCheck(String.format("prop%02d", i));
-        }
         addVMOptionsToCheck("MinHeapFreeRatio", "MaxHeapFreeRatio");
 
         runJavaCheckExitValue(JVM_SUCCESS);
@@ -370,17 +364,27 @@ public class TestVMOptionsFile {
         checkVMOption("MaxHeapFreeRatio", "96");
 
         /*
-         * Verify that VM Option file accepts a file with maximum allowed size(1024 bytes)
+         * Verify that VM Option file accepts a file with very long property.
          */
-        addVMOptionsFile(getAbsolutePathFromSource(VM_OPTION_FILE_WITH_LONG_PROPERTY));
-        addPropertiesToCheck("very.very.long.property");
+        addVMOptionsFile(VM_OPTION_FILE_WITH_LONG_PROPERTY);
 
         runJavaCheckExitValue(JVM_SUCCESS);
-        for (int i = 1; i < 249; i++) {
-            longProperty.append("long");
-        }
-        longProperty.append("l");
-        checkProperty("very.very.long.property", longProperty.toString());
+
+        checkProperty(LONG_PROPERTY_NAME.replaceAll("'", ""), LONG_PROPERTY_VALUE);
+
+        /*
+         * Verify that VM Option file accepts a big VM Option file
+         */
+        addVMOptionsFile(VM_OPTION_FILE_BIG);
+        addVMOptionsToCheck("MinHeapFreeRatio");
+        addVMOptionsToCheck("MaxHeapFreeRatio");
+
+        runJavaCheckExitValue(JVM_SUCCESS);
+
+        outputShouldContain("VM option '+PrintVMOptions'");
+        checkProperty("my.property", "value" + REPEAT_COUNT);
+        checkVMOption("MinHeapFreeRatio", "17");
+        checkVMOption("MaxHeapFreeRatio", "85");
     }
 
     private static ProcessBuilder prepareTestCase(int testCase) throws Exception {
@@ -389,11 +393,10 @@ public class TestVMOptionsFile {
         Asserts.assertTrue(0 < testCase && testCase < 6, "testCase should be from 1 to 5");
 
         addVMParam("-showversion");
-        addPropertiesToCheck("jto", "jo", "optfile_1", "shared.property");
         addVMOptionsToCheck("MinHeapFreeRatio", "SurvivorRatio", "NewRatio");
 
         if (testCase < 5) {
-            addVMParam("-XX:Flags=flags_file");
+            addVMParam("-XX:Flags=flags_file", "-XX:-PrintVMOptions");
             addProperty("shared.property", "command_line_before");
             addProperty("clb", "unique_command_line_before");
             addVMParam("-XX:MinHeapFreeRatio=7");
@@ -404,7 +407,7 @@ public class TestVMOptionsFile {
         }
 
         if (testCase < 3) {
-            addVMParam("-XX:MinHeapFreeRatio=9");
+            addVMParam("-XX:MinHeapFreeRatio=9", "-XX:-PrintVMOptions");
             addProperty("shared.property", "command_line_after");
             addProperty("cla", "unique_command_line_after");
         }
@@ -414,12 +417,12 @@ public class TestVMOptionsFile {
 
         if (testCase < 2) {
             updateEnvironment(pb, JAVA_OPTIONS, "-Dshared.property=somevalue -Djo=unique_java_options "
-                    + "-XX:MinHeapFreeRatio=18 -Dshared.property=java_options -XX:MinHeapFreeRatio=11");
+                    + "-XX:MinHeapFreeRatio=18 -Dshared.property=java_options -XX:MinHeapFreeRatio=11 -XX:+PrintVMOptions");
         }
 
         if (testCase < 6) {
             updateEnvironment(pb, JAVA_TOOL_OPTIONS, "-Dshared.property=qwerty -Djto=unique_java_tool_options "
-                    + "-XX:MinHeapFreeRatio=15 -Dshared.property=java_tool_options -XX:MinHeapFreeRatio=6");
+                    + "-XX:MinHeapFreeRatio=15 -Dshared.property=java_tool_options -XX:MinHeapFreeRatio=6 -XX:+PrintVMOptions");
         }
 
         return pb;
@@ -451,6 +454,7 @@ public class TestVMOptionsFile {
         runJavaCheckExitValue(pb, JVM_SUCCESS);
 
         outputShouldContain("interpreted mode");
+        outputShouldContain("VM option '+PrintVMOptions'");
         checkProperty("shared.property", "java_options");
         checkVMOption("MinHeapFreeRatio", "11");
         /* Each category defines its own properties */
@@ -488,6 +492,7 @@ public class TestVMOptionsFile {
         runJavaCheckExitValue(pb, JVM_SUCCESS);
 
         outputShouldContain("interpreted mode");
+        outputShouldContain("VM option '+PrintVMOptions'");
         checkProperty("shared.property", "vmoptfile");
         checkVMOption("MinHeapFreeRatio", "22");
 
@@ -500,6 +505,10 @@ public class TestVMOptionsFile {
 
         runJavaCheckExitValue(pb, JVM_SUCCESS);
 
+/*
+ * This check can be enabled after 8136552 is fixed:
+ *      outputShouldNotContain("VM option '+PrintVMOptions'");
+ */
         checkProperty("shared.property", "command_line_before");
         checkVMOption("MinHeapFreeRatio", "7");
 
@@ -512,6 +521,7 @@ public class TestVMOptionsFile {
 
         runJavaCheckExitValue(pb, JVM_SUCCESS);
 
+        outputShouldContain("VM option '+PrintVMOptions'");
         checkProperty("shared.property", "java_tool_options");
         checkVMOption("MinHeapFreeRatio", "6");
     }
@@ -547,13 +557,6 @@ public class TestVMOptionsFile {
 
         runJavaCheckExitValue(JVM_FAIL_WITH_EXIT_CODE_1);
         outputShouldContain("VM options file is only supported on the command line");
-
-        /* Pass VM option file with very long property(more than 1024 bytes) */
-        addVMOptionsFile(getAbsolutePathFromSource(VM_OPTION_FILE_WITH_VERY_LONG_PROPERTY));
-
-        runJavaCheckExitValue(JVM_FAIL_WITH_EXIT_CODE_1);
-        outputShouldContain("Options file");
-        outputShouldContain("is larger than 1024 bytes");
 
         /* Pass VM option file which is not accessible (without read permissions) */
         addVMOptionsFile(getAbsolutePathFromSource(VM_OPTION_FILE_WITHOUT_READ_PERMISSIONS));
@@ -604,15 +607,17 @@ public class TestVMOptionsFile {
     public static class PrintPropertyAndOptions {
 
         public static void main(String[] arguments) {
-            String property;
             String vmOption;
+            Properties properties = System.getProperties();
+
+            for (String propertyName : properties.stringPropertyNames()) {
+                System.out.println(String.format(PRINT_PROPERTY_FORMAT, propertyName, System.getProperty(propertyName, "NOT DEFINED")));
+            }
+
             for (String arg : arguments) {
-                if (arg.startsWith("property=")) {
-                    property = arg.substring(9);
-                    System.out.println("Property " + property + "=" + System.getProperty(property, "NOT DEFINED"));
-                } else if (arg.startsWith("vmoption=")) {
+                if (arg.startsWith("vmoption=")) {
                     vmOption = arg.substring(9);
-                    System.out.println("VM Option " + vmOption + "=" + (new DynamicVMOption(vmOption)).getValue());
+                    System.out.println(String.format(PRINT_VM_OPTION_FORMAT, vmOption, new DynamicVMOption(vmOption).getValue()));
                 }
             }
         }
