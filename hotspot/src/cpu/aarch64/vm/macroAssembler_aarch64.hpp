@@ -777,8 +777,8 @@ public:
 
   DEBUG_ONLY(void verify_heapbase(const char* msg);)
 
-  void push_CPU_state();
-  void pop_CPU_state() ;
+  void push_CPU_state(bool save_vectors = false);
+  void pop_CPU_state(bool restore_vectors = false) ;
 
   // Round up to a power of two
   void round_to(Register reg, int modulus);

@@ -2336,7 +2336,7 @@ void Compile::Code_Gen() {
     debug_only( cfg.verify(); )
   }
 
-  PhaseChaitin regalloc(unique(), cfg, matcher);
+  PhaseChaitin regalloc(unique(), cfg, matcher, false);
   _regalloc = &regalloc;
   {
     TracePhase tp("regalloc", &timers[_t_registerAllocation]);

@@ -213,31 +213,6 @@ void InterpreterOopMap::iterate_oop(OffsetClosure* oop_closure) const {
   }
 }
 
-
-#ifdef ENABLE_ZAP_DEAD_LOCALS
-
-void InterpreterOopMap::iterate_all(OffsetClosure* oop_closure, OffsetClosure* value_closure, OffsetClosure* dead_closure) {
-  int n = number_of_entries();
-  int word_index = 0;
-  uintptr_t value = 0;
-  uintptr_t mask = 0;
-  // iterate over entries
-  for (int i = 0; i < n; i++, mask <<= bits_per_entry) {
-    // get current word
-    if (mask == 0) {
-      value = bit_mask()[word_index++];
-      mask = 1;
-    }
-    // test for dead values  & oops, and for live values
-         if ((value & (mask << dead_bit_number)) != 0)  dead_closure->offset_do(i); // call this for all dead values or oops
-    else if ((value & (mask <<  oop_bit_number)) != 0)   oop_closure->offset_do(i); // call this for all live oops
-    else                                               value_closure->offset_do(i); // call this for all live values
-  }
-}
-
-#endif
-
-
 void InterpreterOopMap::print() const {
   int n = number_of_entries();
   tty->print("oop map for ");
@@ -297,12 +272,6 @@ bool OopMapCacheEntry::verify_mask(CellTypeState* vars, CellTypeState* stack, in
     bool v2 = vars[i].is_reference()  ? true : false;
     assert(v1 == v2, "locals oop mask generation error");
     if (TraceOopMapGeneration && Verbose) tty->print("%d", v1 ? 1 : 0);
-#ifdef ENABLE_ZAP_DEAD_LOCALS
-    bool v3 = is_dead(i)              ? true : false;
-    bool v4 = !vars[i].is_live()      ? true : false;
-    assert(v3 == v4, "locals live mask generation error");
-    assert(!(v1 && v3), "dead value marked as oop");
-#endif
   }
 
   if (TraceOopMapGeneration && Verbose) { tty->cr(); tty->print("Stack (%d): ", stack_top); }
@@ -311,12 +280,6 @@ bool OopMapCacheEntry::verify_mask(CellTypeState* vars, CellTypeState* stack, in
     bool v2 = stack[j].is_reference() ? true : false;
     assert(v1 == v2, "stack oop mask generation error");
     if (TraceOopMapGeneration && Verbose) tty->print("%d", v1 ? 1 : 0);
-#ifdef ENABLE_ZAP_DEAD_LOCALS
-    bool v3 = is_dead(max_locals + j) ? true : false;
-    bool v4 = !stack[j].is_live()     ? true : false;
-    assert(v3 == v4, "stack live mask generation error");
-    assert(!(v1 && v3), "dead value marked as oop");
-#endif
   }
   if (TraceOopMapGeneration && Verbose) tty->cr();
   return true;
