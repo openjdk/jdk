@@ -1264,17 +1264,16 @@ public final class Context {
      *
      * @param global the global
      * @param engine the associated ScriptEngine instance, can be null
-     * @param ctxt the initial ScriptContext, can be null
      * @return the initialized global scope object.
      */
-    public Global initGlobal(final Global global, final ScriptEngine engine, final ScriptContext ctxt) {
+    public Global initGlobal(final Global global, final ScriptEngine engine) {
         // Need only minimal global object, if we are just compiling.
         if (!env._compile_only) {
             final Global oldGlobal = Context.getGlobal();
             try {
                 Context.setGlobal(global);
                 // initialize global scope with builtin global objects
-                global.initBuiltinObjects(engine, ctxt);
+                global.initBuiltinObjects(engine);
             } finally {
                 Context.setGlobal(oldGlobal);
             }
@@ -1290,7 +1289,7 @@ public final class Context {
      * @return the initialized global scope object.
      */
     public Global initGlobal(final Global global) {
-        return initGlobal(global, null, null);
+        return initGlobal(global, null);
     }
 
     /**
