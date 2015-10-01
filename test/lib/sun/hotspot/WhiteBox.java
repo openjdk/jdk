@@ -159,6 +159,7 @@ public class WhiteBox {
   public native int NMTGetHashSize();
 
   // Compiler
+  public native int     matchesMethod(Executable method, String pattern);
   public native int     deoptimizeFrames(boolean makeNotEntrant);
   public native void    deoptimizeAll();
   public        boolean isMethodCompiled(Executable method) {
