@@ -69,22 +69,6 @@
   develop(bool, StressGCM, false,                                           \
           "Randomize instruction scheduling in GCM")                        \
                                                                             \
-  notproduct(intx, CompileZapFirst, 0,                                      \
-          "If +ZapDeadCompiledLocals, "                                     \
-          "skip this many before compiling in zap calls")                   \
-                                                                            \
-  notproduct(intx, CompileZapLast, -1,                                      \
-          "If +ZapDeadCompiledLocals, "                                     \
-          "compile this many after skipping (incl. skip count, -1 = all)")  \
-                                                                            \
-  notproduct(intx, ZapDeadCompiledLocalsFirst, 0,                           \
-          "If +ZapDeadCompiledLocals, "                                     \
-          "skip this many before really doing it")                          \
-                                                                            \
-  notproduct(intx, ZapDeadCompiledLocalsLast, -1,                           \
-          "If +ZapDeadCompiledLocals, "                                     \
-          "do this many after skipping (incl. skip count, -1 = all)")       \
-                                                                            \
   develop(intx, OptoPrologueNops, 0,                                        \
           "Insert this many extra nop instructions "                        \
           "in the prologue of every nmethod")                               \
@@ -305,6 +289,9 @@
                                                                             \
   product_pd(bool, OptoScheduling,                                          \
           "Instruction Scheduling after register allocation")               \
+                                                                            \
+  product_pd(bool, OptoRegScheduling,                                       \
+          "Instruction Scheduling before register allocation for pressure") \
                                                                             \
   product(bool, PartialPeelLoop, true,                                      \
           "Partial peel (rotate) loops")                                    \

@@ -1208,12 +1208,6 @@ class Compile : public Phase {
   // Compute the name of old_SP.  See <arch>.ad for frame layout.
   OptoReg::Name compute_old_SP();
 
-#ifdef ENABLE_ZAP_DEAD_LOCALS
-  static bool is_node_getting_a_safepoint(Node*);
-  void Insert_zap_nodes();
-  Node* call_zap_node(MachSafePointNode* n, int block_no);
-#endif
-
  private:
   // Phase control:
   void Init(int aliaslevel);                     // Prepare for a single compilation

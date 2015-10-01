@@ -661,6 +661,18 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
+  if (supports_sse4_2()) {
+    if (FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
+      UseCRC32CIntrinsics = true;
+    }
+  }
+  else if (UseCRC32CIntrinsics) {
+    if (!FLAG_IS_DEFAULT(UseCRC32CIntrinsics)) {
+      warning("CRC32C intrinsics are not available on this CPU");
+    }
+    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
+  }
+
   // The AES intrinsic stubs require AES instruction support (of course)
   // but also require sse3 mode for instructions it use.
   if (UseAES && (UseSSE > 2)) {
@@ -702,12 +714,6 @@ void VM_Version::get_processor_features() {
   if (UseSHA512Intrinsics) {
     warning("Intrinsics for SHA-384 and SHA-512 crypto hash functions not available on this CPU.");
     FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
-  }
-
-  if (UseCRC32CIntrinsics) {
-    if (!FLAG_IS_DEFAULT(UseCRC32CIntrinsics))
-      warning("CRC32C intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
   }
 
   if (UseAdler32Intrinsics) {

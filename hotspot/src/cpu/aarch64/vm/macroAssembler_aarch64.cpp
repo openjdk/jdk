@@ -2286,18 +2286,30 @@ void MacroAssembler::c_stub_prolog(int gp_arg_count, int fp_arg_count, int ret_t
 }
 #endif
 
-void MacroAssembler::push_CPU_state() {
-    push(0x3fffffff, sp);         // integer registers except lr & sp
+void MacroAssembler::push_CPU_state(bool save_vectors) {
+  push(0x3fffffff, sp);         // integer registers except lr & sp
 
+  if (!save_vectors) {
     for (int i = 30; i >= 0; i -= 2)
       stpd(as_FloatRegister(i), as_FloatRegister(i+1),
            Address(pre(sp, -2 * wordSize)));
+  } else {
+    for (int i = 30; i >= 0; i -= 2)
+      stpq(as_FloatRegister(i), as_FloatRegister(i+1),
+           Address(pre(sp, -4 * wordSize)));
+  }
 }
 
-void MacroAssembler::pop_CPU_state() {
-  for (int i = 0; i < 32; i += 2)
-    ldpd(as_FloatRegister(i), as_FloatRegister(i+1),
-         Address(post(sp, 2 * wordSize)));
+void MacroAssembler::pop_CPU_state(bool restore_vectors) {
+  if (!restore_vectors) {
+    for (int i = 0; i < 32; i += 2)
+      ldpd(as_FloatRegister(i), as_FloatRegister(i+1),
+           Address(post(sp, 2 * wordSize)));
+  } else {
+    for (int i = 0; i < 32; i += 2)
+      ldpq(as_FloatRegister(i), as_FloatRegister(i+1),
+           Address(post(sp, 4 * wordSize)));
+  }
 
   pop(0x3fffffff, sp);         // integer registers except lr & sp
 }

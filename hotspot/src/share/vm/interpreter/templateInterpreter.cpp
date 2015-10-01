@@ -412,17 +412,6 @@ void TemplateInterpreterGenerator::generate_all() {
       method_entry(java_lang_math_pow  )
       method_entry(java_lang_ref_reference_get)
 
-      if (UseCRC32Intrinsics) {
-        method_entry(java_util_zip_CRC32_update)
-        method_entry(java_util_zip_CRC32_updateBytes)
-        method_entry(java_util_zip_CRC32_updateByteBuffer)
-      }
-
-      method_entry(java_lang_Float_intBitsToFloat);
-      method_entry(java_lang_Float_floatToRawIntBits);
-      method_entry(java_lang_Double_longBitsToDouble);
-      method_entry(java_lang_Double_doubleToRawLongBits);
-
       initialize_method_handle_entries();
 
       // all native method kinds (must be one contiguous block)
@@ -430,6 +419,22 @@ void TemplateInterpreterGenerator::generate_all() {
       method_entry(native)
       method_entry(native_synchronized)
       Interpreter::_native_entry_end = Interpreter::code()->code_end();
+
+      if (UseCRC32Intrinsics) {
+        method_entry(java_util_zip_CRC32_update)
+        method_entry(java_util_zip_CRC32_updateBytes)
+        method_entry(java_util_zip_CRC32_updateByteBuffer)
+      }
+
+      if (UseCRC32CIntrinsics) {
+        method_entry(java_util_zip_CRC32C_updateBytes)
+        method_entry(java_util_zip_CRC32C_updateDirectByteBuffer)
+      }
+
+      method_entry(java_lang_Float_intBitsToFloat);
+      method_entry(java_lang_Float_floatToRawIntBits);
+      method_entry(java_lang_Double_longBitsToDouble);
+      method_entry(java_lang_Double_doubleToRawLongBits);
 
 #undef method_entry
 

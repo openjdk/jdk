@@ -31,12 +31,12 @@
  private:
 
   address generate_abstract_entry(void);
-  address generate_jump_to_normal_entry(void);
-  address generate_accessor_entry(void) { return generate_jump_to_normal_entry(); }
-  address generate_empty_entry(void) { return generate_jump_to_normal_entry(); }
+  address generate_accessor_entry(void) { return NULL; }
+  address generate_empty_entry(void) { return NULL; }
   address generate_Reference_get_entry(void);
 
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
+  address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return NULL; }
 
 #endif // CPU_PPC_VM_INTERPRETERGENERATOR_PPC_HPP

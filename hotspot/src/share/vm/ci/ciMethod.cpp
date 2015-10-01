@@ -1044,18 +1044,6 @@ MethodCounters* ciMethod::ensure_method_counters() {
 }
 
 // ------------------------------------------------------------------
-// ciMethod::should_exclude
-//
-// Should this method be excluded from compilation?
-bool ciMethod::should_exclude() {
-  check_is_loaded();
-  VM_ENTRY_MARK;
-  methodHandle mh(THREAD, get_Method());
-  bool ignore;
-  return CompilerOracle::should_exclude(mh, ignore);
-}
-
-// ------------------------------------------------------------------
 // ciMethod::should_inline
 //
 // Should this method be inlined during compilation?

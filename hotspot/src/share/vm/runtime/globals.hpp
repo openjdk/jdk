@@ -937,16 +937,6 @@ public:
   notproduct(bool, VerifyCodeCache, false,                                  \
           "Verify code cache on memory allocation/deallocation")            \
                                                                             \
-  develop(bool, ZapDeadCompiledLocals, false,                               \
-          "Zap dead locals in compiler frames")                             \
-                                                                            \
-  notproduct(bool, ZapDeadLocalsOld, false,                                 \
-          "Zap dead locals (old version, zaps all frames when "             \
-          "entering the VM")                                                \
-                                                                            \
-  notproduct(bool, CheckOopishValues, false,                                \
-          "Warn if value contains oop (requires ZapDeadLocals)")            \
-                                                                            \
   develop(bool, UseMallocOnly, false,                                       \
           "Use only malloc/free for allocation (no resource area/arena)")   \
                                                                             \
@@ -1488,9 +1478,6 @@ public:
                                                                             \
   develop(bool, TraceCompiledIC, false,                                     \
           "Trace changes of compiled IC")                                   \
-                                                                            \
-  notproduct(bool, TraceZapDeadLocals, false,                               \
-          "Trace zapping dead locals")                                      \
                                                                             \
   develop(bool, TraceStartupTime, false,                                    \
           "Trace setup time")                                               \
@@ -3143,7 +3130,7 @@ public:
                                                                             \
   develop(intx, MaxForceInlineLevel, 100,                                   \
           "maximum number of nested calls that are forced for inlining "    \
-          "(using CompilerOracle or marked w/ @ForceInline)")               \
+          "(using CompileCommand or marked w/ @ForceInline)")               \
                                                                             \
   product_pd(intx, InlineSmallCode,                                         \
           "Only inline already compiled methods if their code size is "     \
