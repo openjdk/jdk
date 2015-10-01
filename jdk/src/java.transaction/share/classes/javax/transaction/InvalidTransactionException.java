@@ -40,6 +40,11 @@ package javax.transaction;
 public class InvalidTransactionException extends java.rmi.RemoteException {
 
     /**
+     * Specify serialVersionUID for backward compatibility
+     */
+    private static final long serialVersionUID = 3597320220337691496L;
+
+    /**
      * Constructs an {@code InvalidTransactionException}.
      */
     public InvalidTransactionException() {
