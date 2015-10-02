@@ -36,7 +36,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * Handle arrays where the index is very large.
  */
 class SparseArrayData extends ArrayData {
-    static final int MAX_DENSE_LENGTH = 8 * 1024 * 1024;
+    static final int MAX_DENSE_LENGTH = 1024 * 1024;
 
     /** Underlying array. */
     private ArrayData underlying;
@@ -48,7 +48,7 @@ class SparseArrayData extends ArrayData {
     private TreeMap<Long, Object> sparseMap;
 
     SparseArrayData(final ArrayData underlying, final long length) {
-        this(underlying, length, new TreeMap<Long, Object>());
+        this(underlying, length, new TreeMap<>());
     }
 
     SparseArrayData(final ArrayData underlying, final long length, final TreeMap<Long, Object> sparseMap) {
