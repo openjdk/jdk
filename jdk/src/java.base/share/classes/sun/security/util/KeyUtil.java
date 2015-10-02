@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
 import java.math.BigInteger;
+
+import sun.security.jca.JCAUtil;
 
 /**
  * A utility class to get key length, valiate keys, etc.
@@ -201,7 +203,7 @@ public final class KeyUtil {
             byte[] encoded, boolean isFailOver) {
 
         if (random == null) {
-            random = new SecureRandom();
+            random = JCAUtil.getSecureRandom();
         }
         byte[] replacer = new byte[48];
         random.nextBytes(replacer);
