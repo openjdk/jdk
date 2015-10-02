@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2001, Thai Open Source Software Center Ltd
+/*
+ * Copyright (c) 2005, 2015, Thai Open Source Software Center Ltd
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,40 +31,46 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.relaxng.datatype;
+
+package com.sun.xml.internal.org.relaxng.datatype.helpers;
+
+import com.sun.xml.internal.org.relaxng.datatype.*;
 
 /**
- * A Datatype library
+ * Dummy implementation of {@link DatatypeBuilder}.
  *
- * @author <a href="mailto:jjc@jclark.com">James Clark</a>
+ * This implementation can be used for Datatypes which have no parameters.
+ * Any attempt to add parameters will be rejected.
+ *
+ * <p>
+ * Typical usage would be:
+ * <PRE>{@code
+ * class MyDatatypeLibrary implements DatatypeLibrary {
+ *     ....
+ *     DatatypeBuilder createDatatypeBuilder( String typeName ) {
+ *         return new ParameterleessDatatypeBuilder(createDatatype(typeName));
+ *     }
+ *     ....
+ * }
+ * }</PRE>
+ *
  * @author <a href="mailto:kohsuke.kawaguchi@sun.com">Kohsuke KAWAGUCHI</a>
  */
-public interface DatatypeLibrary {
+public final class ParameterlessDatatypeBuilder implements DatatypeBuilder {
 
-        /**
-         * Creates a new instance of DatatypeBuilder.
-         *
-         * The callee should throw a DatatypeException in case of an error.
-         *
-         * @param baseTypeLocalName
-         *              The local name of the base type.
-         *
-         * @return
-         *              A non-null valid datatype object.
-         */
-        DatatypeBuilder createDatatypeBuilder( String baseTypeLocalName )
-                throws DatatypeException;
+        /** This type object is returned for the derive method. */
+        private final Datatype baseType;
 
-        /**
-         * Gets or creates a pre-defined type.
-         *
-         * This is just a short-cut of
-         * <code>createDatatypeBuilder(typeLocalName).createDatatype();</code>
-         *
-         * The callee should throw a DatatypeException in case of an error.
-         *
-         * @return
-         *              A non-null valid datatype object.
-         */
-        Datatype createDatatype( String typeLocalName ) throws DatatypeException;
+        public ParameterlessDatatypeBuilder( Datatype baseType ) {
+                this.baseType = baseType;
+        }
+
+        public void addParameter( String name, String strValue, ValidationContext context )
+                        throws DatatypeException {
+                throw new DatatypeException();
+        }
+
+        public Datatype createDatatype() throws DatatypeException {
+                return baseType;
+        }
 }
