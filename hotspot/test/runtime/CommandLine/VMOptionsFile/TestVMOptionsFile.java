@@ -505,10 +505,7 @@ public class TestVMOptionsFile {
 
         runJavaCheckExitValue(pb, JVM_SUCCESS);
 
-/*
- * This check can be enabled after 8136552 is fixed:
- *      outputShouldNotContain("VM option '+PrintVMOptions'");
- */
+        outputShouldNotContain("VM option '+PrintVMOptions'");
         checkProperty("shared.property", "command_line_before");
         checkVMOption("MinHeapFreeRatio", "7");
 
