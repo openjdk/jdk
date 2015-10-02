@@ -49,7 +49,7 @@ template <> struct LogPrefix<__VA_ARGS__> { \
   static size_t prefix(char* buf, size_t len) { \
     int ret = jio_snprintf(buf, len, fmt, fn); \
     assert(ret >= 0, \
-           err_msg("Failed to prefix log message using prefix ('%s', '%s'), log buffer too small?", fmt, #fn)); \
+           "Failed to prefix log message using prefix ('%s', '%s'), log buffer too small?", fmt, #fn); \
     return ret; \
   } \
 };
