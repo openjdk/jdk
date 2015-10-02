@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2001, Thai Open Source Software Center Ltd
+/*
+ * Copyright (c) 2005, 2015, Thai Open Source Software Center Ltd
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,23 +31,26 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.relaxng.datatype.helpers;
 
-import org.relaxng.datatype.*;
+package com.sun.xml.internal.org.relaxng.datatype.helpers;
+
+import com.sun.xml.internal.org.relaxng.datatype.*;
 
 /**
- * Dummy implementation of {@link DatatypeBuilder}.
+ * Dummy implementation of {@link DatatypeStreamingValidator}.
  *
- * This implementation can be used for Datatypes which have no parameters.
- * Any attempt to add parameters will be rejected.
+ * <p>
+ * This implementation can be used as a quick hack when the performance
+ * of streaming validation is not important. And this implementation
+ * also shows you how to implement the DatatypeStreamingValidator interface.
  *
  * <p>
  * Typical usage would be:
  * <PRE>{@code
- * class MyDatatypeLibrary implements DatatypeLibrary {
+ * class MyDatatype implements Datatype {
  *     ....
- *     DatatypeBuilder createDatatypeBuilder( String typeName ) {
- *         return new ParameterleessDatatypeBuilder(createDatatype(typeName));
+ *     public DatatypeStreamingValidator createStreamingValidator( ValidationContext context ) {
+ *         return new StreamingValidatorImpl(this,context);
  *     }
  *     ....
  * }
@@ -55,21 +58,32 @@ import org.relaxng.datatype.*;
  *
  * @author <a href="mailto:kohsuke.kawaguchi@sun.com">Kohsuke KAWAGUCHI</a>
  */
-public final class ParameterlessDatatypeBuilder implements DatatypeBuilder {
+public final class StreamingValidatorImpl implements DatatypeStreamingValidator {
 
-        /** This type object is returned for the derive method. */
+        /** This buffer accumulates characters. */
+        private final StringBuffer buffer = new StringBuffer();
+
+        /** Datatype obejct that creates this streaming validator. */
         private final Datatype baseType;
 
-        public ParameterlessDatatypeBuilder( Datatype baseType ) {
+        /** The current context. */
+        private final ValidationContext context;
+
+        public void addCharacters( char[] buf, int start, int len ) {
+                // append characters to the current buffer.
+                buffer.append(buf,start,len);
+        }
+
+        public boolean isValid() {
+                return baseType.isValid(buffer.toString(),context);
+        }
+
+        public void checkValid() throws DatatypeException {
+                baseType.checkValid(buffer.toString(),context);
+        }
+
+        public StreamingValidatorImpl( Datatype baseType, ValidationContext context ) {
                 this.baseType = baseType;
-        }
-
-        public void addParameter( String name, String strValue, ValidationContext context )
-                        throws DatatypeException {
-                throw new DatatypeException();
-        }
-
-        public Datatype createDatatype() throws DatatypeException {
-                return baseType;
+                this.context = context;
         }
 }
