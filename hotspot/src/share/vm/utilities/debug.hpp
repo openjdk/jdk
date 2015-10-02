@@ -200,8 +200,15 @@ enum VMErrorType {
 
 // error reporting helper functions
 void report_vm_error(const char* file, int line, const char* error_msg);
+#if !defined(__GNUC__) || defined (__clang_major__) || (((__GNUC__ == 4) && (__GNUC_MINOR__ >= 8)) || __GNUC__ > 4)
+// ATTRIBUTE_PRINTF works with gcc >= 4.8 and any other compiler.
 void report_vm_error(const char* file, int line, const char* error_msg,
                      const char* detail_fmt, ...) ATTRIBUTE_PRINTF(4, 5);
+#else
+// GCC < 4.8 warns because of empty format string.  Warning can not be switched off selectively.
+void report_vm_error(const char* file, int line, const char* error_msg,
+                     const char* detail_fmt, ...);
+#endif
 void report_fatal(const char* file, int line, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(3, 4);
 void report_vm_out_of_memory(const char* file, int line, size_t size, VMErrorType vm_err_type,
                              const char* detail_fmt, ...) ATTRIBUTE_PRINTF(5, 6);
