@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,12 +41,6 @@ public final class JCAUtil {
         // no instantiation
     }
 
-    // lock to use for synchronization
-    private static final Object LOCK = JCAUtil.class;
-
-    // cached SecureRandom instance
-    private static volatile SecureRandom secureRandom;
-
     // size of the temporary arrays we use. Should fit into the CPU's 1st
     // level cache and could be adjusted based on the platform
     private static final int ARRAY_SIZE = 4096;
@@ -60,26 +54,19 @@ public final class JCAUtil {
         return Math.min(ARRAY_SIZE, totalSize);
     }
 
+    // cached SecureRandom instance
+    private static class CachedSecureRandomHolder {
+        public static SecureRandom instance = new SecureRandom();
+    }
+
     /**
-     * Get a SecureRandom instance. This method should me used by JDK
+     * Get a SecureRandom instance. This method should be used by JDK
      * internal code in favor of calling "new SecureRandom()". That needs to
      * iterate through the provider table to find the default SecureRandom
      * implementation, which is fairly inefficient.
      */
     public static SecureRandom getSecureRandom() {
-        // we use double checked locking to minimize synchronization
-        // works because we use a volatile reference
-        SecureRandom r = secureRandom;
-        if (r == null) {
-            synchronized (LOCK) {
-                r = secureRandom;
-                if (r == null) {
-                    r = new SecureRandom();
-                    secureRandom = r;
-                }
-            }
-        }
-        return r;
+        return CachedSecureRandomHolder.instance;
     }
 
 }
