@@ -53,11 +53,11 @@ public abstract class AudioFloatConverter {
 
         private final AudioFloatConverter converter;
 
-        final private int offset;
+        private final int offset;
 
-        final private int stepsize;
+        private final int stepsize;
 
-        final private byte mask;
+        private final byte mask;
 
         private byte[] mask_buffer;
 

@@ -60,7 +60,7 @@ public class OSInfo {
     private static final String OS_NAME = "os.name";
     private static final String OS_VERSION = "os.version";
 
-    private final static Map<String, WindowsVersion> windowsVersionMap = new HashMap<String, OSInfo.WindowsVersion>();
+    private static final Map<String, WindowsVersion> windowsVersionMap = new HashMap<String, OSInfo.WindowsVersion>();
 
     static {
         windowsVersionMap.put(WINDOWS_95.toString(), WINDOWS_95);

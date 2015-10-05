@@ -623,7 +623,7 @@ public class MouseEvent extends InputEvent {
 
     /* if the button is an extra button and it is released or clicked then in Xsystem its state
        is not modified. Exclude this button number from ExtModifiers mask.*/
-    transient private boolean shouldExcludeButtonFromExtModifiers = false;
+    private transient boolean shouldExcludeButtonFromExtModifiers = false;
 
     /**
      * {@inheritDoc}

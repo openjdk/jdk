@@ -41,9 +41,9 @@ import sun.java2d.SurfaceData;
  */
 public class DrawPolygons extends GraphicsPrimitive
 {
-    public final static String methodSignature = "DrawPolygons(...)".toString();
+    public static final String methodSignature = "DrawPolygons(...)".toString();
 
-    public final static int primTypeID = makePrimTypeID();
+    public static final int primTypeID = makePrimTypeID();
 
     public static DrawPolygons locate(SurfaceType srctype,
                                       CompositeType comptype,

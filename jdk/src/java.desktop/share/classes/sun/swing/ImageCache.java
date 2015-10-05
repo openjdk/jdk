@@ -37,7 +37,7 @@ public class ImageCache {
     // Maximum number of entries to cache
     private int maxCount;
     // The entries.
-    final private LinkedList<SoftReference<Entry>> entries;
+    private final LinkedList<SoftReference<Entry>> entries;
 
     public ImageCache(int maxCount) {
         this.maxCount = maxCount;
@@ -102,10 +102,10 @@ public class ImageCache {
      * Caches set of arguments and Image.
      */
     private static class Entry {
-        final private GraphicsConfiguration config;
-        final private int w;
-        final private int h;
-        final private Object[] args;
+        private final GraphicsConfiguration config;
+        private final int w;
+        private final int h;
+        private final Object[] args;
         private Image image;
 
         Entry(GraphicsConfiguration config, int w, int h, Object[] args) {

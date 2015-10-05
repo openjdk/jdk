@@ -195,8 +195,8 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
     private PrinterName name;
     private String port;
 
-    transient private PrintServiceAttributeSet lastSet;
-    transient private ServiceNotifier notifier = null;
+    private transient PrintServiceAttributeSet lastSet;
+    private transient ServiceNotifier notifier = null;
 
     private MediaSizeName[] mediaSizeNames;
     private MediaPrintableArea[] mediaPrintables;
@@ -1734,7 +1734,7 @@ class Win32MediaSize extends MediaSizeName {
 
     }
 
-    private synchronized static int nextValue(String name) {
+    private static synchronized int nextValue(String name) {
       winStringTable.add(name);
       return (winStringTable.size()-1);
     }

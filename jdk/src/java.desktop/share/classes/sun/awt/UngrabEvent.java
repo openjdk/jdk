@@ -42,7 +42,7 @@ import java.awt.Component;
 @SuppressWarnings("serial")
 public class UngrabEvent extends AWTEvent {
 
-    private final static int UNGRAB_EVENT_ID = 1998;
+    private static final int UNGRAB_EVENT_ID = 1998;
 
     public UngrabEvent(Component source) {
         super(source, UNGRAB_EVENT_ID);

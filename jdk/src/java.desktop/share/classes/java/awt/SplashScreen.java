@@ -411,14 +411,14 @@ public final class SplashScreen {
 
     private static final PlatformLogger log = PlatformLogger.getLogger("java.awt.SplashScreen");
 
-    private native static void _update(long splashPtr, int[] data, int x, int y, int width, int height, int scanlineStride);
-    private native static boolean _isVisible(long splashPtr);
-    private native static Rectangle _getBounds(long splashPtr);
-    private native static long _getInstance();
-    private native static void _close(long splashPtr);
-    private native static String _getImageFileName(long splashPtr);
-    private native static String _getImageJarName(long SplashPtr);
-    private native static boolean _setImageData(long SplashPtr, byte[] data);
-    private native static float _getScaleFactor(long SplashPtr);
+    private static native void _update(long splashPtr, int[] data, int x, int y, int width, int height, int scanlineStride);
+    private static native boolean _isVisible(long splashPtr);
+    private static native Rectangle _getBounds(long splashPtr);
+    private static native long _getInstance();
+    private static native void _close(long splashPtr);
+    private static native String _getImageFileName(long splashPtr);
+    private static native String _getImageJarName(long SplashPtr);
+    private static native boolean _setImageData(long SplashPtr, byte[] data);
+    private static native float _getScaleFactor(long SplashPtr);
 
 }

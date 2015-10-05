@@ -150,8 +150,8 @@ public final class AppContext {
     /*
      * The keys to store EventQueue push/pop lock and condition.
      */
-    public final static Object EVENT_QUEUE_LOCK_KEY = new StringBuilder("EventQueue.Lock");
-    public final static Object EVENT_QUEUE_COND_KEY = new StringBuilder("EventQueue.Condition");
+    public static final Object EVENT_QUEUE_LOCK_KEY = new StringBuilder("EventQueue.Lock");
+    public static final Object EVENT_QUEUE_COND_KEY = new StringBuilder("EventQueue.Condition");
 
     /* A map of AppContexts, referenced by ThreadGroup.
      */
@@ -174,7 +174,7 @@ public final class AppContext {
     private static volatile AppContext mainAppContext = null;
 
     private static class GetAppContextLock {};
-    private final static Object getAppContextLock = new GetAppContextLock();
+    private static final Object getAppContextLock = new GetAppContextLock();
 
     /*
      * The hash map associated with this AppContext.  A private delegate
