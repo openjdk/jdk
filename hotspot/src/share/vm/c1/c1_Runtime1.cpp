@@ -1163,7 +1163,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           }
 #endif
 
-          for (int i = NativeCall::instruction_size; i < *byte_count; i++) {
+          for (int i = NativeGeneralJump::instruction_size; i < *byte_count; i++) {
             address ptr = copy_buff + i;
             int a_byte = (*ptr) & 0xFF;
             address dst = instr_pc + i;
