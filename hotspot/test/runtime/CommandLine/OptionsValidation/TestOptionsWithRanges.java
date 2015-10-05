@@ -51,6 +51,14 @@ public class TestOptionsWithRanges {
          */
         allOptionsAsMap.remove("CICompilerCount");
 
+        /*
+         * Exclude below options as their maximum value would consume too much memory
+         * and would affect other tests that run in parallel.
+         */
+        allOptionsAsMap.remove("G1ConcRefinementThreads");
+        allOptionsAsMap.remove("G1RSetRegionEntries");
+        allOptionsAsMap.remove("G1RSetSparseRegionEntries");
+
         allOptions = new ArrayList<>(allOptionsAsMap.values());
 
         Asserts.assertGT(allOptions.size(), 0, "Options with ranges not found!");
