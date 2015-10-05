@@ -49,6 +49,7 @@ endif
 #   AS - Assembler
 #   MT - Windows MT tool
 #   RC - Windows RC tool
+#   STRIP - The tool to use for stripping debug symbols
 #   SYSROOT_CFLAGS - Compiler flags for using the specific sysroot
 #   SYSROOT_LDFLAGS - Linker flags for using the specific sysroot
 DefineNativeToolchain = $(NamedParamsMacroTemplate)
@@ -64,6 +65,7 @@ define DefineNativeToolchainBody
     $$(call SetIfEmpty, $1_AS, $$($$($1_EXTENDS)_AS))
     $$(call SetIfEmpty, $1_MT, $$($$($1_EXTENDS)_MT))
     $$(call SetIfEmpty, $1_RC, $$($$($1_EXTENDS)_RC))
+    $$(call SetIfEmpty, $1_STRIP, $$($$($1_EXTENDS)_STRIP))
     $$(call SetIfEmpty, $1_SYSROOT_CFLAGS, $$($$($1_EXTENDS)_SYSROOT_CFLAGS))
     $$(call SetIfEmpty, $1_SYSROOT_LDFLAGS, $$($$($1_EXTENDS)_SYSROOT_LDFLAGS))
   endif
@@ -78,6 +80,7 @@ $(eval $(call DefineNativeToolchain, TOOLCHAIN_DEFAULT, \
     AS := $(AS), \
     MT := $(MT), \
     RC := $(RC), \
+    STRIP := $(STRIP), \
     SYSROOT_CFLAGS := $(SYSROOT_CFLAGS), \
     SYSROOT_LDFLAGS := $(SYSROOT_LDFLAGS), \
 ))
@@ -267,6 +270,8 @@ endef
 #   LD the linker to use, default is $(LD)
 #   OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST
 #   DISABLED_WARNINGS_<toolchain> Disable the given warnings for the specified toolchain
+#   STRIP_SYMBOLS Set to true to strip the final binary if the toolchain allows for it
+#   STRIPFLAGS Optionally change the flags given to the strip command
 SetupNativeCompilation = $(NamedParamsMacroTemplate)
 define SetupNativeCompilationBody
 
@@ -370,6 +375,7 @@ define SetupNativeCompilationBody
   $$(call SetIfEmpty, $1_AS, $$($$($1_TOOLCHAIN)_AS))
   $$(call SetIfEmpty, $1_MT, $$($$($1_TOOLCHAIN)_MT))
   $$(call SetIfEmpty, $1_RC, $$($$($1_TOOLCHAIN)_RC))
+  $$(call SetIfEmpty, $1_STRIP, $$($$($1_TOOLCHAIN)_STRIP))
   $$(call SetIfEmpty, $1_SYSROOT_CFLAGS, $$($$($1_TOOLCHAIN)_SYSROOT_CFLAGS))
   $$(call SetIfEmpty, $1_SYSROOT_LDFLAGS, $$($$($1_TOOLCHAIN)_SYSROOT_LDFLAGS))
 
@@ -668,6 +674,14 @@ define SetupNativeCompilationBody
     endif # $1_DEBUG_SYMBOLS
   endif # !STATIC_LIBRARY
 
+  ifeq ($$($1_STRIP_SYMBOLS), true)
+    ifneq ($$($1_STRIP), )
+      # Default to using the global STRIPFLAGS. Allow for overriding with an empty value
+      $1_STRIPFLAGS ?= $(STRIPFLAGS)
+      $1_STRIP_CMD := $$($1_STRIP) $$($1_STRIPFLAGS) $$($1_TARGET)
+    endif
+  endif
+
   ifneq (,$$($1_LIBRARY))
     # Generating a dynamic library.
     $1_EXTRA_LDFLAGS += $$(call SET_SHARED_LIBRARY_NAME,$$($1_BASENAME))
@@ -678,7 +692,8 @@ define SetupNativeCompilationBody
     $1_EXTRA_LDFLAGS_SUFFIX += $(GLOBAL_LDFLAGS_SUFFIX)
 
     $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
-        $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX) $$($1_CREATE_DEBUGINFO_CMDS)
+        $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX) $$($1_CREATE_DEBUGINFO_CMDS) \
+        $$($1_STRIP_CMD)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
 
@@ -691,6 +706,12 @@ define SetupNativeCompilationBody
 		    $$($1_EXPECTED_OBJS) $$($1_RES) \
 		    $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX)) ; \
 		$$($1_CREATE_DEBUGINFO_CMDS)
+		$$($1_STRIP_CMD)
+                # Touch target to make sure it has a later time stamp than the debug
+                # symbol files to avoid unnecessary relinking on rebuild.
+                ifeq ($(OPENJDK_TARGET_OS), windows)
+		  $(TOUCH) $$@
+                endif
 
   endif
 
@@ -714,7 +735,8 @@ define SetupNativeCompilationBody
 
     $1_VARDEPS := $$($1_LD) $$($1_SYSROOT_LDFLAGS) $$($1_LDFLAGS) $$($1_EXTRA_LDFLAGS) \
         $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX) $$($1_MT) \
-        $$($1_CODESIGN) $$($1_CREATE_DEBUGINFO_CMDS) $$($1_MANIFEST_VERSION)
+        $$($1_CODESIGN) $$($1_CREATE_DEBUGINFO_CMDS) $$($1_MANIFEST_VERSION) \
+        $$($1_STRIP_CMD)
     $1_VARDEPS_FILE := $$(call DependOnVariable, $1_VARDEPS, \
         $$($1_OBJECT_DIR)/$$($1_NOSUFFIX).vardeps)
 
@@ -739,6 +761,12 @@ define SetupNativeCompilationBody
                   endif
                 endif
 		$$($1_CREATE_DEBUGINFO_CMDS)
+		$$($1_STRIP_CMD)
+                # Touch target to make sure it has a later time stamp than the debug
+                # symbol files to avoid unnecessary relinking on rebuild.
+                ifeq ($(OPENJDK_TARGET_OS), windows)
+		  $(TOUCH) $$@
+                endif
 
   endif
 endef
