@@ -996,7 +996,7 @@ import javax.swing.text.*;
     boolean skipComments = false;
 
     boolean gridValid;
-    static final private BitSet EMPTY = new BitSet();
+    private static final BitSet EMPTY = new BitSet();
 
     class ColumnIterator implements CSS.LayoutIterator {
 

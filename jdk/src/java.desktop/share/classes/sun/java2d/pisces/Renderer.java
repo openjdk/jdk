@@ -311,12 +311,12 @@ final class Renderer implements PathConsumer2D {
     public static final int WIND_NON_ZERO = 1;
 
     // Antialiasing
-    final private int SUBPIXEL_LG_POSITIONS_X;
-    final private int SUBPIXEL_LG_POSITIONS_Y;
-    final private int SUBPIXEL_POSITIONS_X;
-    final private int SUBPIXEL_POSITIONS_Y;
-    final private int SUBPIXEL_MASK_X;
-    final private int SUBPIXEL_MASK_Y;
+    private final int SUBPIXEL_LG_POSITIONS_X;
+    private final int SUBPIXEL_LG_POSITIONS_Y;
+    private final int SUBPIXEL_POSITIONS_X;
+    private final int SUBPIXEL_POSITIONS_Y;
+    private final int SUBPIXEL_MASK_X;
+    private final int SUBPIXEL_MASK_Y;
     final int MAX_AA_ALPHA;
 
     // Cache to store RLE-encoded coverage mask of the current primitive

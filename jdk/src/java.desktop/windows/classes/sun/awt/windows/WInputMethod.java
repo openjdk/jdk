@@ -67,23 +67,23 @@ final class WInputMethod extends InputMethodAdapter
     private boolean statusWindowHidden = false;
 
     // attribute definition in Win32 (in IMM.H)
-    public final static byte ATTR_INPUT                 = 0x00;
-    public final static byte ATTR_TARGET_CONVERTED      = 0x01;
-    public final static byte ATTR_CONVERTED             = 0x02;
-    public final static byte ATTR_TARGET_NOTCONVERTED   = 0x03;
-    public final static byte ATTR_INPUT_ERROR           = 0x04;
+    public static final byte ATTR_INPUT                 = 0x00;
+    public static final byte ATTR_TARGET_CONVERTED      = 0x01;
+    public static final byte ATTR_CONVERTED             = 0x02;
+    public static final byte ATTR_TARGET_NOTCONVERTED   = 0x03;
+    public static final byte ATTR_INPUT_ERROR           = 0x04;
     // cmode definition in Win32 (in IMM.H)
-    public final static int  IME_CMODE_ALPHANUMERIC     = 0x0000;
-    public final static int  IME_CMODE_NATIVE           = 0x0001;
-    public final static int  IME_CMODE_KATAKANA         = 0x0002;
-    public final static int  IME_CMODE_LANGUAGE         = 0x0003;
-    public final static int  IME_CMODE_FULLSHAPE        = 0x0008;
-    public final static int  IME_CMODE_HANJACONVERT     = 0x0040;
-    public final static int  IME_CMODE_ROMAN            = 0x0010;
+    public static final int  IME_CMODE_ALPHANUMERIC     = 0x0000;
+    public static final int  IME_CMODE_NATIVE           = 0x0001;
+    public static final int  IME_CMODE_KATAKANA         = 0x0002;
+    public static final int  IME_CMODE_LANGUAGE         = 0x0003;
+    public static final int  IME_CMODE_FULLSHAPE        = 0x0008;
+    public static final int  IME_CMODE_HANJACONVERT     = 0x0040;
+    public static final int  IME_CMODE_ROMAN            = 0x0010;
 
     // flag values for endCompositionNative() behavior
-    private final static boolean COMMIT_INPUT           = true;
-    private final static boolean DISCARD_INPUT          = false;
+    private static final boolean COMMIT_INPUT           = true;
+    private static final boolean DISCARD_INPUT          = false;
 
     private static Map<TextAttribute,Object> [] highlightStyles;
 

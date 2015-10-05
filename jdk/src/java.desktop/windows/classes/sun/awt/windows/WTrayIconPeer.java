@@ -40,9 +40,9 @@ import sun.awt.SunToolkit;
 import sun.awt.image.IntegerComponentRaster;
 
 final class WTrayIconPeer extends WObjectPeer implements TrayIconPeer {
-    final static int TRAY_ICON_WIDTH = 16;
-    final static int TRAY_ICON_HEIGHT = 16;
-    final static int TRAY_ICON_MASK_SIZE = (TRAY_ICON_WIDTH * TRAY_ICON_HEIGHT) / 8;
+    static final int TRAY_ICON_WIDTH = 16;
+    static final int TRAY_ICON_HEIGHT = 16;
+    static final int TRAY_ICON_MASK_SIZE = (TRAY_ICON_WIDTH * TRAY_ICON_HEIGHT) / 8;
 
     IconObserver observer = new IconObserver();
     boolean firstUpdate = true;

@@ -192,8 +192,8 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     private PrinterName name;
     private boolean isInvalid;
 
-    transient private PrintServiceAttributeSet lastSet;
-    transient private ServiceNotifier notifier = null;
+    private transient PrintServiceAttributeSet lastSet;
+    private transient ServiceNotifier notifier = null;
 
     UnixPrintService(String name) {
         if (name == null) {

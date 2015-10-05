@@ -513,7 +513,7 @@ public abstract class AbstractLayoutCache implements RowMapper {
      * Used by <code>AbstractLayoutCache</code> to determine the size
      * and x origin of a particular node.
      */
-    static public abstract class NodeDimensions {
+    public abstract static class NodeDimensions {
         /**
          * Returns, by reference in bounds, the size and x origin to
          * place value at. The calling method is responsible for determining

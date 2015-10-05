@@ -959,10 +959,9 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           $(X_CFLAGS) \
           $(X_LIBS) \
           $(LIBAWT_LWAWT_CFLAGS), \
-      DISABLED_WARNINGS_clang := incomplete-implementation \
+      DISABLED_WARNINGS_clang := incomplete-implementation enum-conversion \
           deprecated-declarations objc-method-access bitwise-op-parentheses \
           incompatible-pointer-types parentheses-equality extra-tokens, \
-      WARNINGS_AS_ERRORS_clang := false, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN) \
           -L$(INSTALL_LIBRARIES_HERE), \
