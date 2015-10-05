@@ -1849,6 +1849,22 @@ Zone America/Edmonton	-7:33:52 -	LMT	1906 Sep
 
 # The transition dates (and times) are guesses.
 
+# From Matt Johnson (2015-09-21):
+# Fort Nelson, BC, Canada will cancel DST this year.  So while previously they
+# were aligned with America/Vancouver, they're now aligned with
+# America/Dawson_Creek.
+# http://www.northernrockies.ca/EN/meta/news/archives/2015/northern-rockies-time-change.html
+#
+# From Tim Parenti (2015-09-23):
+# This requires a new zone for the Northern Rockies Regional Municipality,
+# America/Fort_Nelson.  The resolution of 2014-12-08 was reached following a
+# 2014-11-15 poll with nearly 75% support.  Effectively, the municipality has
+# been on MST (-0700) like Dawson Creek since it advanced its clocks on
+# 2015-03-08.
+#
+# From Paul Eggert (2015-09-23):
+# Shanks says Fort Nelson did not observe DST in 1946, unlike Vancouver.
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Vanc	1918	only	-	Apr	14	2:00	1:00	D
 Rule	Vanc	1918	only	-	Oct	27	2:00	0	S
@@ -1866,6 +1882,12 @@ Zone America/Vancouver	-8:12:28 -	LMT	1884
 Zone America/Dawson_Creek -8:00:56 -	LMT	1884
 			-8:00	Canada	P%sT	1947
 			-8:00	Vanc	P%sT	1972 Aug 30  2:00
+			-7:00	-	MST
+Zone America/Fort_Nelson	-8:10:47 -	LMT	1884
+			-8:00	Vanc	P%sT	1946
+			-8:00	-	PST	1947
+			-8:00	Vanc	P%sT	1987
+			-8:00	Canada	P%sT	2015 Mar  8  2:00
 			-7:00	-	MST
 Zone America/Creston	-7:46:04 -	LMT	1884
 			-7:00	-	MST	1916 Oct 1
