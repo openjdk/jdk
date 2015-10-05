@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,6 +68,7 @@ void LIRItem::load_nonconstant() {
 
 LIR_Opr LIRGenerator::exceptionOopOpr()              { return FrameMap::Oexception_opr;  }
 LIR_Opr LIRGenerator::exceptionPcOpr()               { return FrameMap::Oissuing_pc_opr; }
+LIR_Opr LIRGenerator::syncLockOpr()                  { return new_register(T_INT); }
 LIR_Opr LIRGenerator::syncTempOpr()                  { return new_register(T_OBJECT); }
 LIR_Opr LIRGenerator::getThreadTemp()                { return rlock_callee_saved(NOT_LP64(T_INT) LP64_ONLY(T_LONG)); }
 

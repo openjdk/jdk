@@ -2802,7 +2802,7 @@ void LIRGenerator::do_Base(Base* x) {
     assert(obj->is_valid(), "must be valid");
 
     if (method()->is_synchronized() && GenerateSynchronizationCode) {
-      LIR_Opr lock = new_register(T_INT);
+      LIR_Opr lock = syncLockOpr();
       __ load_stack_address_monitor(0, lock);
 
       CodeEmitInfo* info = new CodeEmitInfo(scope()->start()->state()->copy(ValueStack::StateBefore, SynchronizationEntryBCI), NULL, x->check_flag(Instruction::DeoptimizeOnException));
