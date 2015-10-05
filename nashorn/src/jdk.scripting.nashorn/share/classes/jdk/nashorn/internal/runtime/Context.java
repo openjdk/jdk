@@ -140,7 +140,7 @@ public final class Context {
 
     private static final LongAdder NAMED_INSTALLED_SCRIPT_COUNT = new LongAdder();
     private static final LongAdder ANONYMOUS_INSTALLED_SCRIPT_COUNT = new LongAdder();
-    private static final boolean DISABLE_VM_ANONYMOUS_CLASSES = Options.getBooleanProperty("nashorn.disableVmAnonymousClasses");
+
     /**
      * Should scripts use only object slots for fields, or dual long/object slots? The default
      * behaviour is to couple this to optimistic types, using dual representation if optimistic types are enabled
@@ -775,7 +775,7 @@ public final class Context {
      * @return reusable compiled script across many global scopes.
      */
     public MultiGlobalCompiledScript compileScript(final Source source) {
-        final Class<?> clazz = compile(source, this.errors, this._strict);
+        final Class<?> clazz = compile(source, this.errors, this._strict, false);
         final MethodHandle createProgramFunctionHandle = getCreateProgramFunctionHandle(clazz);
 
         return new MultiGlobalCompiledScript() {
@@ -829,7 +829,7 @@ public final class Context {
 
         Class<?> clazz = null;
         try {
-            clazz = compile(source, new ThrowErrorManager(), strictFlag);
+            clazz = compile(source, new ThrowErrorManager(), strictFlag, true);
         } catch (final ParserException e) {
             e.throwAsEcmaException(global);
             return null;
@@ -1379,10 +1379,10 @@ public final class Context {
     }
 
     private ScriptFunction compileScript(final Source source, final ScriptObject scope, final ErrorManager errMan) {
-        return getProgramFunction(compile(source, errMan, this._strict), scope);
+        return getProgramFunction(compile(source, errMan, this._strict, false), scope);
     }
 
-    private synchronized Class<?> compile(final Source source, final ErrorManager errMan, final boolean strict) {
+    private synchronized Class<?> compile(final Source source, final ErrorManager errMan, final boolean strict, final boolean isEval) {
         // start with no errors, no warnings.
         errMan.reset();
 
@@ -1434,7 +1434,7 @@ public final class Context {
         final URL          url    = source.getURL();
         final CodeSource   cs     = new CodeSource(url, (CodeSigner[])null);
         final CodeInstaller installer;
-        if (DISABLE_VM_ANONYMOUS_CLASSES || env._persistent_cache || !env._lazy_compilation) {
+        if (!env.useAnonymousClasses(isEval) || env._persistent_cache || !env._lazy_compilation) {
             // Persistent code cache and eager compilation preclude use of VM anonymous classes
             final ScriptLoader loader = env._loader_per_compile ? createNewLoader() : scriptLoader;
             installer = new NamedContextCodeInstaller(this, cs, loader);
