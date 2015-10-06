@@ -656,17 +656,23 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     BASIC_FIXUP_EXECUTABLE(BUILD_CXX)
     BASIC_PATH_PROGS(BUILD_LD, ld)
     BASIC_FIXUP_EXECUTABLE(BUILD_LD)
+    BUILD_SYSROOT_CFLAGS=""
+    BUILD_SYSROOT_LDFLAGS=""
   else
     # If we are not cross compiling, use the normal target compilers for
     # building the build platform executables.
     BUILD_CC="$CC"
     BUILD_CXX="$CXX"
     BUILD_LD="$LD"
+    BUILD_SYSROOT_CFLAGS="$SYSROOT_CFLAGS"
+    BUILD_SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS"
   fi
 
   AC_SUBST(BUILD_CC)
   AC_SUBST(BUILD_CXX)
   AC_SUBST(BUILD_LD)
+  AC_SUBST(BUILD_SYSROOT_CFLAGS)
+  AC_SUBST(BUILD_SYSROOT_LDFLAGS)
 ])
 
 # Setup legacy variables that are still needed as alternative ways to refer to

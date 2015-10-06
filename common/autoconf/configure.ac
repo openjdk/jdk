@@ -165,6 +165,11 @@ SRCDIRS_SETUP_OUTPUT_DIRS
 # First determine the toolchain type (compiler family)
 TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE
 
+# User supplied flags should be used when configure detects compilers
+FLAGS_SETUP_USER_SUPPLIED_FLAGS
+# The sysroot cflags are needed for configure to be able to run the compilers
+FLAGS_SETUP_SYSROOT_FLAGS
+
 # Then detect the actual binaries needed
 TOOLCHAIN_PRE_DETECTION
 TOOLCHAIN_DETECT_TOOLCHAIN_CORE
