@@ -99,13 +99,13 @@ AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
     # The \$ are escaped to the shell, and the $(...) variables
     # are evaluated by make.
     RC_FLAGS="$RC_FLAGS \
-        -D\"JDK_BUILD_ID=\$(FULL_VERSION)\" \
+        -D\"JDK_VERSION_STRING=\$(VERSION_STRING)\" \
         -D\"JDK_COMPANY=\$(COMPANY_NAME)\" \
         -D\"JDK_COMPONENT=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) binary\" \
-        -D\"JDK_VER=\$(JDK_MINOR_VERSION).\$(JDK_MICRO_VERSION).\$(if \$(JDK_UPDATE_VERSION),\$(JDK_UPDATE_VERSION),0).\$(COOKED_BUILD_NUMBER)\" \
+        -D\"JDK_VER=\$(VERSION_NUMBER)\" \
         -D\"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\" \
-        -D\"JDK_NAME=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) \$(JDK_MINOR_VERSION) \$(JDK_UPDATE_META_TAG)\" \
-        -D\"JDK_FVER=\$(JDK_MINOR_VERSION),\$(JDK_MICRO_VERSION),\$(if \$(JDK_UPDATE_VERSION),\$(JDK_UPDATE_VERSION),0),\$(COOKED_BUILD_NUMBER)\""
+        -D\"JDK_NAME=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) \$(VERSION_MAJOR)\" \
+        -D\"JDK_FVER=\$(subst .,\$(COMMA),\$(VERSION_NUMBER_FOUR_POSITIONS))\""
   fi
   AC_SUBST(RC_FLAGS)
 
@@ -637,10 +637,6 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   else
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DDEBUG"
   fi
-
-  # Setup release name
-  COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DRELEASE='\"\$(RELEASE)\"'"
-
 
   # Set some additional per-OS defines.
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
