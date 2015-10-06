@@ -97,6 +97,8 @@ msys_help() {
 
 apt_help() {
   case $1 in
+    reduced)
+      PKGHANDLER_COMMAND="sudo apt-get install gcc-multilib g++-multilib" ;;
     devkit)
       PKGHANDLER_COMMAND="sudo apt-get install build-essential" ;;
     openjdk)

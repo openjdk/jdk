@@ -52,7 +52,7 @@ public class LoopPipe
                ShapeDrawPipe,
                LoopBasedPipe
 {
-    final static RenderingEngine RenderEngine = RenderingEngine.getInstance();
+    static final RenderingEngine RenderEngine = RenderingEngine.getInstance();
 
     public void drawLine(SunGraphics2D sg2d,
                          int x1, int y1, int x2, int y2)

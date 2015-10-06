@@ -3781,11 +3781,24 @@ public class Types {
      * Compute a hash code on a type.
      */
     public int hashCode(Type t) {
-        return hashCode.visit(t);
+        return hashCode(t, false);
+    }
+
+    public int hashCode(Type t, boolean strict) {
+        return strict ?
+                hashCodeStrictVisitor.visit(t) :
+                hashCodeVisitor.visit(t);
     }
     // where
-        private static final UnaryVisitor<Integer> hashCode = new UnaryVisitor<Integer>() {
+        private static final HashCodeVisitor hashCodeVisitor = new HashCodeVisitor();
+        private static final HashCodeVisitor hashCodeStrictVisitor = new HashCodeVisitor() {
+            @Override
+            public Integer visitTypeVar(TypeVar t, Void ignored) {
+                return System.identityHashCode(t);
+            }
+        };
 
+        private static class HashCodeVisitor extends UnaryVisitor<Integer> {
             public Integer visitType(Type t, Void ignored) {
                 return t.getTag().ordinal();
             }
@@ -3841,7 +3854,7 @@ public class Types {
             public Integer visitErrorType(ErrorType t, Void ignored) {
                 return 0;
             }
-        };
+        }
     // </editor-fold>
 
     // <editor-fold defaultstate="collapsed" desc="Return-Type-Substitutable">

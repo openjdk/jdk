@@ -2215,7 +2215,7 @@ public class Attr extends JCTree.Visitor {
                 inferenceContext.addFreeTypeListener(List.of(tree.constructorType, tree.clazz.type),
                         instantiatedContext -> {
                             tree.constructorType = instantiatedContext.asInstType(tree.constructorType);
-                            clazz.type = instantiatedContext.asInstType(clazz.type);
+                            tree.clazz.type = clazz.type = instantiatedContext.asInstType(clazz.type);
                             ResultInfo prevResult = this.resultInfo;
                             try {
                                 this.resultInfo = resultInfoForClassDefinition;

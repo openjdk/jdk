@@ -124,7 +124,7 @@ public class SysexMessage extends MidiMessage {
      *         including the status byte; it should be non-negative and less
      *         than or equal to {@code data.length}
      * @throws InvalidMidiDataException if the parameter values do not specify a
-     *         valid MIDI meta message.
+     *         valid MIDI meta message
      * @see #setMessage(byte[], int)
      * @see #setMessage(int, byte[], int)
      * @see #getData()

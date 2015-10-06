@@ -78,7 +78,7 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
     protected EventListenerList   listenerList = new EventListenerList();
 
     /** Provides a row for a given path. */
-    transient protected RowMapper               rowMapper;
+    protected transient RowMapper               rowMapper;
 
     /** Handles maintaining the list selection model. The RowMapper is used
      * to map from a TreePath to a row, and the value is then placed here. */

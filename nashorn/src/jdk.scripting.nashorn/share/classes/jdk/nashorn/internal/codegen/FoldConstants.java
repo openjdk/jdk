@@ -38,7 +38,6 @@ import jdk.nashorn.internal.ir.EmptyNode;
 import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IfNode;
-import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.Node;
@@ -47,7 +46,7 @@ import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.TernaryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.ir.visitor.SimpleNodeVisitor;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -59,12 +58,11 @@ import jdk.nashorn.internal.runtime.logging.Logger;
  * Simple constant folding pass, executed before IR is starting to be lowered.
  */
 @Logger(name="fold")
-final class FoldConstants extends NodeVisitor<LexicalContext> implements Loggable {
+final class FoldConstants extends SimpleNodeVisitor implements Loggable {
 
     private final DebugLogger log;
 
     FoldConstants(final Compiler compiler) {
-        super(new LexicalContext());
         this.log = initLogger(compiler.getContext());
     }
 
@@ -194,7 +192,7 @@ final class FoldConstants extends NodeVisitor<LexicalContext> implements Loggabl
      * initializers removed.
      */
     static void extractVarNodesFromDeadCode(final Node deadCodeRoot, final List<Statement> statements) {
-        deadCodeRoot.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+        deadCodeRoot.accept(new SimpleNodeVisitor() {
             @Override
             public boolean enterVarNode(final VarNode varNode) {
                 statements.add(varNode.setInit(null));

@@ -35,7 +35,8 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import sun.misc.JavaLangAccess;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaLangAccess;
 import sun.reflect.ConstantPool;
 import static sun.reflect.annotation.TypeAnnotation.*;
 
@@ -309,7 +310,7 @@ public final class TypeAnnotationParser {
     static TypeAnnotation[] parseAllTypeAnnotations(AnnotatedElement decl) {
         Class<?> container;
         byte[] rawBytes;
-        JavaLangAccess javaLangAccess = sun.misc.SharedSecrets.getJavaLangAccess();
+        JavaLangAccess javaLangAccess = SharedSecrets.getJavaLangAccess();
         if (decl instanceof Class) {
             container = (Class<?>)decl;
             rawBytes = javaLangAccess.getRawClassTypeAnnotations(container);

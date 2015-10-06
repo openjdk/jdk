@@ -213,6 +213,14 @@ public final class ScriptEnvironment {
     /** Timing */
     public final Timing _timing;
 
+    /** Whether to use anonymous classes. See {@link #useAnonymousClasses(boolean)}. */
+    private final AnonymousClasses _anonymousClasses;
+    private enum AnonymousClasses {
+        AUTO,
+        OFF,
+        ON
+    }
+
     /**
      * Constructor
      *
@@ -278,6 +286,18 @@ public final class ScriptEnvironment {
         _strict               = options.getBoolean("strict");
         _version              = options.getBoolean("version");
         _verify_code          = options.getBoolean("verify.code");
+
+        final String anonClasses = options.getString("anonymous.classes");
+        if (anonClasses == null || anonClasses.equals("auto")) {
+            _anonymousClasses = AnonymousClasses.AUTO;
+        } else if (anonClasses.equals("true")) {
+            _anonymousClasses = AnonymousClasses.ON;
+        } else if (anonClasses.equals("false")) {
+            _anonymousClasses = AnonymousClasses.OFF;
+        } else {
+            throw new RuntimeException("Unsupported value for anonymous classes: " + anonClasses);
+        }
+
 
         final String language = options.getString("language");
         if (language == null || language.equals("es5")) {
@@ -409,6 +429,15 @@ public final class ScriptEnvironment {
      */
     public boolean isTimingEnabled() {
         return _timing != null ? _timing.isEnabled() : false;
+    }
+
+    /**
+     * Returns true if compilation should use anonymous classes.
+     * @param isEval true if compilation is an eval call.
+     * @return true if anonymous classes should be used
+     */
+    public boolean useAnonymousClasses(final boolean isEval) {
+        return _anonymousClasses == AnonymousClasses.ON || (_anonymousClasses == AnonymousClasses.AUTO && isEval);
     }
 
 }

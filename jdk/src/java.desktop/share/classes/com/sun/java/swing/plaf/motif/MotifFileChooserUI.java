@@ -306,7 +306,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         }
 
         @SuppressWarnings("serial") // anonymous class
-        JTextField tmp1 = new JTextField(curDirName) {
+        JTextField tmp1 = new JTextField(curDirName, 35) {
             public Dimension getMaximumSize() {
                 Dimension d = super.getMaximumSize();
                 d.height = getPreferredSize().height;
@@ -420,7 +420,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         interior.add(fileNameLabel);
 
         @SuppressWarnings("serial") // anonymous class
-        JTextField tmp3 = new JTextField() {
+        JTextField tmp3 = new JTextField(35) {
             public Dimension getMaximumSize() {
                 Dimension d = super.getMaximumSize();
                 d.height = getPreferredSize().height;

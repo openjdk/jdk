@@ -29,6 +29,7 @@ import com.sun.source.tree.LambdaExpressionTree;
 import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
+import com.sun.tools.javac.comp.ArgumentAttr.LocalCacheContext;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCBlock;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
@@ -54,7 +55,6 @@ import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.Filter;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 import com.sun.tools.javac.util.List;
@@ -72,7 +72,6 @@ import static com.sun.tools.javac.code.Flags.GENERATEDCONSTR;
 import static com.sun.tools.javac.code.Flags.SYNTHETIC;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.tree.JCTree.Tag.APPLY;
-import static com.sun.tools.javac.tree.JCTree.Tag.CLASSDEF;
 import static com.sun.tools.javac.tree.JCTree.Tag.METHODDEF;
 import static com.sun.tools.javac.tree.JCTree.Tag.NEWCLASS;
 import static com.sun.tools.javac.tree.JCTree.Tag.TYPEAPPLY;
@@ -88,6 +87,7 @@ public class Analyzer {
     final Log log;
     final Attr attr;
     final DeferredAttr deferredAttr;
+    final ArgumentAttr argumentAttr;
     final TreeMaker make;
     final Names names;
     private final boolean allowDiamondWithAnonymousClassCreation;
@@ -107,6 +107,7 @@ public class Analyzer {
         log = Log.instance(context);
         attr = Attr.instance(context);
         deferredAttr = DeferredAttr.instance(context);
+        argumentAttr = ArgumentAttr.instance(context);
         make = TreeMaker.instance(context);
         names = Names.instance(context);
         Options options = Options.instance(context);
@@ -363,8 +364,13 @@ public class Analyzer {
 
             TreeMapper treeMapper = new TreeMapper(context);
             //TODO: to further refine the analysis, try all rewriting combinations
-            deferredAttr.attribSpeculative(fakeBlock, env, attr.statInfo, treeMapper,
-                    t -> new AnalyzeDeferredDiagHandler(context));
+            LocalCacheContext localCacheContext = argumentAttr.withLocalCacheContext();
+            try {
+                deferredAttr.attribSpeculative(fakeBlock, env, attr.statInfo, treeMapper,
+                        t -> new AnalyzeDeferredDiagHandler(context));
+            } finally {
+                localCacheContext.leave();
+            }
 
             context.treeMap.entrySet().forEach(e -> {
                 context.treesToAnalyzer.get(e.getKey())

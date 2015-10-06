@@ -72,8 +72,8 @@ public class XBaseWindow {
     private XSizeHints hints;
     private XWMHints wmHints;
 
-    final static int MIN_SIZE = 1;
-    final static int DEF_LOCATION = 1;
+    static final int MIN_SIZE = 1;
+    static final int DEF_LOCATION = 1;
 
     private static XAtom wm_client_leader;
 

@@ -194,7 +194,7 @@ public class TypeEnter implements Completer {
 
             dependencies.push((ClassSymbol) sym, CompletionCause.MEMBER_ENTER);
             try {
-                queue = completeClass.runPhase(List.of(typeEnvs.get((ClassSymbol) sym)));
+                queue = completeClass.completeEnvs(List.of(typeEnvs.get((ClassSymbol) sym)));
             } finally {
                 dependencies.pop();
             }
@@ -237,9 +237,22 @@ public class TypeEnter implements Completer {
             this.next = next;
         }
 
-        public List<Env<AttrContext>> runPhase(List<Env<AttrContext>> envs) {
+        public final List<Env<AttrContext>> completeEnvs(List<Env<AttrContext>> envs) {
             boolean firstToComplete = queue.isEmpty();
 
+            doCompleteEnvs(envs);
+
+            if (firstToComplete) {
+                List<Env<AttrContext>> out = queue.toList();
+
+                queue.clear();
+                return next != null ? next.completeEnvs(out) : out;
+            } else {
+                return List.nil();
+            }
+        }
+
+        protected void doCompleteEnvs(List<Env<AttrContext>> envs) {
             for (Env<AttrContext> env : envs) {
                 JCClassDecl tree = (JCClassDecl)env.tree;
 
@@ -249,7 +262,7 @@ public class TypeEnter implements Completer {
                 DiagnosticPosition prevLintPos = deferredLintHandler.setPos(tree.pos());
                 try {
                     dependencies.push(env.enclClass.sym, phaseName);
-                    doRunPhase(env);
+                    runPhase(env);
                 } catch (CompletionFailure ex) {
                     chk.completionError(tree.pos(), ex);
                 } finally {
@@ -258,18 +271,9 @@ public class TypeEnter implements Completer {
                     log.useSource(prev);
                 }
             }
+        }
 
-            if (firstToComplete) {
-                List<Env<AttrContext>> out = queue.toList();
-
-                queue.clear();
-                return next != null ? next.runPhase(out) : out;
-            } else {
-                return List.nil();
-            }
-       }
-
-        protected abstract void doRunPhase(Env<AttrContext> env);
+        protected abstract void runPhase(Env<AttrContext> env);
     }
 
     private final ImportsPhase completeClass = new ImportsPhase();
@@ -289,7 +293,7 @@ public class TypeEnter implements Completer {
                 (imp, cf) -> chk.completionError(imp.pos(), cf);
 
         @Override
-        protected void doRunPhase(Env<AttrContext> env) {
+        protected void runPhase(Env<AttrContext> env) {
             JCClassDecl tree = env.enclClass;
             ClassSymbol sym = tree.sym;
 
@@ -699,14 +703,29 @@ public class TypeEnter implements Completer {
             }
     }
 
-    private final class HierarchyPhase extends AbstractHeaderPhase {
+    private final class HierarchyPhase extends AbstractHeaderPhase implements Completer {
 
         public HierarchyPhase() {
             super(CompletionCause.HIERARCHY_PHASE, new HeaderPhase());
         }
 
         @Override
-        protected void doRunPhase(Env<AttrContext> env) {
+        protected void doCompleteEnvs(List<Env<AttrContext>> envs) {
+            //The ClassSymbols in the envs list may not be in the dependency order.
+            //To get proper results, for every class or interface C, the supertypes of
+            //C must be processed by the HierarchyPhase phase before C.
+            //To achieve that, the HierarchyPhase is registered as the Completer for
+            //all the classes first, and then all the classes are completed.
+            for (Env<AttrContext> env : envs) {
+                env.enclClass.sym.completer = this;
+            }
+            for (Env<AttrContext> env : envs) {
+                env.enclClass.sym.complete();
+            }
+        }
+
+        @Override
+        protected void runPhase(Env<AttrContext> env) {
             JCClassDecl tree = env.enclClass;
             ClassSymbol sym = tree.sym;
             ClassType ct = (ClassType)sym.type;
@@ -760,6 +779,14 @@ public class TypeEnter implements Completer {
                 }
                 return false;
             }
+
+        @Override
+        public void complete(Symbol sym) throws CompletionFailure {
+            Env<AttrContext> env = typeEnvs.get((ClassSymbol) sym);
+
+            super.doCompleteEnvs(List.of(env));
+        }
+
     }
 
     private final class HeaderPhase extends AbstractHeaderPhase {
@@ -769,7 +796,7 @@ public class TypeEnter implements Completer {
         }
 
         @Override
-        protected void doRunPhase(Env<AttrContext> env) {
+        protected void runPhase(Env<AttrContext> env) {
             JCClassDecl tree = env.enclClass;
             ClassSymbol sym = tree.sym;
             ClassType ct = (ClassType)sym.type;
@@ -824,7 +851,7 @@ public class TypeEnter implements Completer {
         }
 
         @Override
-        protected void doRunPhase(Env<AttrContext> env) {
+        protected void runPhase(Env<AttrContext> env) {
             JCClassDecl tree = env.enclClass;
             ClassSymbol sym = tree.sym;
             ClassType ct = (ClassType)sym.type;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,10 +68,6 @@ final class PropMap implements SortedMap<String, String>  {
         // Set the DEBUG_VERBOSE from system
         props.put(Utils.DEBUG_VERBOSE,
                   String.valueOf(Integer.getInteger(Utils.DEBUG_VERBOSE,0)));
-
-        // Set the PACK_TIMEZONE_NO_UTC
-        props.put(Utils.PACK_DEFAULT_TIMEZONE,
-                  String.valueOf(Boolean.getBoolean(Utils.PACK_DEFAULT_TIMEZONE)));
 
         // The segment size is unlimited
         props.put(Pack200.Packer.SEGMENT_LIMIT, "-1");
