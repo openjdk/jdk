@@ -1254,9 +1254,9 @@ public class Infer {
         public int hashCode() {
             int result = opKind.hashCode();
             result *= 127;
-            result += types.hashCode(op1);
+            result += types.hashCode(op1, true);
             result *= 127;
-            result += types.hashCode(op2);
+            result += types.hashCode(op2, true);
             return result;
         }
 
