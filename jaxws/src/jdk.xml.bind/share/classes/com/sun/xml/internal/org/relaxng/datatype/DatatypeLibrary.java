@@ -1,5 +1,5 @@
-/**
- * Copyright (c) 2001, Thai Open Source Software Center Ltd
+/*
+ * Copyright (c) 2005, 2015, Thai Open Source Software Center Ltd
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,42 +31,41 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.relaxng.datatype;
+
+package com.sun.xml.internal.org.relaxng.datatype;
 
 /**
- * Signals Datatype related exceptions.
+ * A Datatype library
  *
  * @author <a href="mailto:jjc@jclark.com">James Clark</a>
  * @author <a href="mailto:kohsuke.kawaguchi@sun.com">Kohsuke KAWAGUCHI</a>
  */
-public class DatatypeException extends Exception {
-
-        public DatatypeException( int index, String msg ) {
-                super(msg);
-                this.index = index;
-        }
-        public DatatypeException( String msg ) {
-                this(UNKNOWN,msg);
-        }
-        /**
-         * A constructor for those datatype libraries which don't support any
-         * diagnostic information at all.
-         */
-        public DatatypeException() {
-                this(UNKNOWN,null);
-        }
-
-
-        private final int index;
-
-        public static final int UNKNOWN = -1;
+public interface DatatypeLibrary {
 
         /**
-         * Gets the index of the content where the error occured.
-         * UNKNOWN can be returned to indicate that no index information
-         * is available.
+         * Creates a new instance of DatatypeBuilder.
+         *
+         * The callee should throw a DatatypeException in case of an error.
+         *
+         * @param baseTypeLocalName
+         *              The local name of the base type.
+         *
+         * @return
+         *              A non-null valid datatype object.
          */
-        public int getIndex() {
-                return index;
-        }
+        DatatypeBuilder createDatatypeBuilder( String baseTypeLocalName )
+                throws DatatypeException;
+
+        /**
+         * Gets or creates a pre-defined type.
+         *
+         * This is just a short-cut of
+         * <code>createDatatypeBuilder(typeLocalName).createDatatype();</code>
+         *
+         * The callee should throw a DatatypeException in case of an error.
+         *
+         * @return
+         *              A non-null valid datatype object.
+         */
+        Datatype createDatatype( String typeLocalName ) throws DatatypeException;
 }

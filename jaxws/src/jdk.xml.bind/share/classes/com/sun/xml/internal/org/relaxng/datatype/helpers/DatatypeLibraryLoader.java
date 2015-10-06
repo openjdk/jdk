@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2001, Thai Open Source Software Center Ltd
+ * Copyright (c) 2001, 2015 Thai Open Source Software Center Ltd
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,10 +31,10 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.relaxng.datatype.helpers;
+package com.sun.xml.internal.org.relaxng.datatype.helpers;
 
-import org.relaxng.datatype.DatatypeLibraryFactory;
-import org.relaxng.datatype.DatatypeLibrary;
+import com.sun.xml.internal.org.relaxng.datatype.DatatypeLibraryFactory;
+import com.sun.xml.internal.org.relaxng.datatype.DatatypeLibrary;
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import java.util.Vector;
