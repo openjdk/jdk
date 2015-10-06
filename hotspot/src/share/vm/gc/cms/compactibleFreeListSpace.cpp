@@ -1959,9 +1959,9 @@ void CompactibleFreeListSpace::save_marks() {
   MemRegion ur    = used_region();
   MemRegion urasm = used_region_at_save_marks();
   assert(ur.contains(urasm),
-         err_msg(" Error at save_marks(): [" PTR_FORMAT "," PTR_FORMAT ")"
-                 " should contain [" PTR_FORMAT "," PTR_FORMAT ")",
-                 p2i(ur.start()), p2i(ur.end()), p2i(urasm.start()), p2i(urasm.end())));
+         " Error at save_marks(): [" PTR_FORMAT "," PTR_FORMAT ")"
+         " should contain [" PTR_FORMAT "," PTR_FORMAT ")",
+         p2i(ur.start()), p2i(ur.end()), p2i(urasm.start()), p2i(urasm.end()));
 #endif
   // inform allocator that promotions should be tracked.
   assert(_promoInfo.noPromotions(), "_promoInfo inconsistency");
@@ -2875,9 +2875,9 @@ FreeChunk* CompactibleFreeListSpace::get_n_way_chunk_to_split(size_t word_sz, si
     smallSplitBirth(rem);
   }
   assert(n * word_sz == fc->size(),
-    err_msg("Chunk size " SIZE_FORMAT " is not exactly splittable by "
-    SIZE_FORMAT " sized chunks of size " SIZE_FORMAT,
-    fc->size(), n, word_sz));
+         "Chunk size " SIZE_FORMAT " is not exactly splittable by "
+         SIZE_FORMAT " sized chunks of size " SIZE_FORMAT,
+         fc->size(), n, word_sz);
   return fc;
 }
 

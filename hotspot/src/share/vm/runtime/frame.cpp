@@ -1022,7 +1022,7 @@ oop frame::retrieve_receiver(RegisterMap* reg_map) {
     return NULL;
   }
   oop r = *oop_adr;
-  assert(Universe::heap()->is_in_or_null(r), err_msg("bad receiver: " INTPTR_FORMAT " (" INTX_FORMAT ")", (void *) r, (void *) r));
+  assert(Universe::heap()->is_in_or_null(r), "bad receiver: " INTPTR_FORMAT " (" INTX_FORMAT ")", (void *) r, (void *) r);
   return r;
 }
 

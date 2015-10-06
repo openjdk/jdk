@@ -316,7 +316,7 @@ void RegisterSaver::restore_result_registers(MacroAssembler* masm) {
 // 8 bytes FP registers are saved by default on SPARC.
 bool SharedRuntime::is_wide_vector(int size) {
   // Note, MaxVectorSize == 8 on SPARC.
-  assert(size <= 8, err_msg_res("%d bytes vectors are not supported", size));
+  assert(size <= 8, "%d bytes vectors are not supported", size);
   return size > 8;
 }
 
@@ -464,7 +464,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
       break;
 
     default:
-      fatal(err_msg_res("unknown basic type %d", sig_bt[i]));
+      fatal("unknown basic type %d", sig_bt[i]);
       break;
     }
   }
@@ -1859,7 +1859,7 @@ static void gen_special_dispatch(MacroAssembler* masm,
   } else if (iid == vmIntrinsics::_invokeBasic) {
     has_receiver = true;
   } else {
-    fatal(err_msg_res("unexpected intrinsic id %d", iid));
+    fatal("unexpected intrinsic id %d", iid);
   }
 
   if (member_reg != noreg) {

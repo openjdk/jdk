@@ -689,7 +689,7 @@ void SafepointSynchronize::block(JavaThread *thread) {
       break;
 
     default:
-     fatal(err_msg("Illegal threadstate encountered: %d", state));
+     fatal("Illegal threadstate encountered: %d", state);
   }
 
   // Check for pending. async. exceptions or suspends - except if the
@@ -773,12 +773,10 @@ void SafepointSynchronize::print_safepoint_timeout(SafepointTimeoutReason reason
   // To debug the long safepoint, specify both DieOnSafepointTimeout &
   // ShowMessageBoxOnError.
   if (DieOnSafepointTimeout) {
-    char msg[1024];
     VM_Operation *op = VMThread::vm_operation();
-    sprintf(msg, "Safepoint sync time longer than " INTX_FORMAT "ms detected when executing %s.",
-            SafepointTimeoutDelay,
-            op != NULL ? op->name() : "no vm operation");
-    fatal(msg);
+    fatal("Safepoint sync time longer than " INTX_FORMAT "ms detected when executing %s.",
+          SafepointTimeoutDelay,
+          op != NULL ? op->name() : "no vm operation");
   }
 }
 

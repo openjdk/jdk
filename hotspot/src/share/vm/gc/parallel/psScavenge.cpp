@@ -36,6 +36,7 @@
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/gcCause.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
@@ -278,6 +279,7 @@ bool PSScavenge::invoke_no_policy() {
     return false;
   }
 
+  GCIdMark gc_id_mark;
   _gc_tracer.report_gc_start(heap->gc_cause(), _gc_timer.gc_start());
 
   bool promotion_failure_occurred = false;
@@ -322,7 +324,7 @@ bool PSScavenge::invoke_no_policy() {
     HandleMark hm;
 
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-    GCTraceTime t1(GCCauseString("GC", gc_cause), PrintGC, !PrintGCDetails, NULL, _gc_tracer.gc_id());
+    GCTraceTime t1(GCCauseString("GC", gc_cause), PrintGC, !PrintGCDetails, NULL);
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(false /* not full GC */,gc_cause);
 
@@ -387,7 +389,7 @@ bool PSScavenge::invoke_no_policy() {
     // We'll use the promotion manager again later.
     PSPromotionManager* promotion_manager = PSPromotionManager::vm_thread_promotion_manager();
     {
-      GCTraceTime tm("Scavenge", false, false, &_gc_timer, _gc_tracer.gc_id());
+      GCTraceTime tm("Scavenge", false, false, &_gc_timer);
       ParallelScavengeHeap::ParStrongRootsScope psrs;
 
       GCTaskQueue* q = GCTaskQueue::create();
@@ -429,7 +431,7 @@ bool PSScavenge::invoke_no_policy() {
 
     // Process reference objects discovered during scavenge
     {
-      GCTraceTime tm("References", false, false, &_gc_timer, _gc_tracer.gc_id());
+      GCTraceTime tm("References", false, false, &_gc_timer);
 
       reference_processor()->setup_policy(false); // not always_clear
       reference_processor()->set_active_mt_degree(active_workers);
@@ -440,10 +442,10 @@ bool PSScavenge::invoke_no_policy() {
         PSRefProcTaskExecutor task_executor;
         stats = reference_processor()->process_discovered_references(
           &_is_alive_closure, &keep_alive, &evac_followers, &task_executor,
-          &_gc_timer, _gc_tracer.gc_id());
+          &_gc_timer);
       } else {
         stats = reference_processor()->process_discovered_references(
-          &_is_alive_closure, &keep_alive, &evac_followers, NULL, &_gc_timer, _gc_tracer.gc_id());
+          &_is_alive_closure, &keep_alive, &evac_followers, NULL, &_gc_timer);
       }
 
       _gc_tracer.report_gc_reference_stats(stats);
@@ -458,7 +460,7 @@ bool PSScavenge::invoke_no_policy() {
     }
 
     {
-      GCTraceTime tm("StringTable", false, false, &_gc_timer, _gc_tracer.gc_id());
+      GCTraceTime tm("StringTable", false, false, &_gc_timer);
       // Unlink any dead interned Strings and process the remaining live ones.
       PSScavengeRootsClosure root_closure(promotion_manager);
       StringTable::unlink_or_oops_do(&_is_alive_closure, &root_closure);
@@ -628,7 +630,7 @@ bool PSScavenge::invoke_no_policy() {
     NOT_PRODUCT(reference_processor()->verify_no_references_recorded());
 
     {
-      GCTraceTime tm("Prune Scavenge Root Methods", false, false, &_gc_timer, _gc_tracer.gc_id());
+      GCTraceTime tm("Prune Scavenge Root Methods", false, false, &_gc_timer);
 
       CodeCache::prune_scavenge_root_nmethods();
     }
@@ -819,7 +821,7 @@ void PSScavenge::initialize() {
 
   if (AlwaysTenure || NeverTenure) {
     assert(MaxTenuringThreshold == 0 || MaxTenuringThreshold == markOopDesc::max_age + 1,
-        err_msg("MaxTenuringThreshold should be 0 or markOopDesc::max_age + 1, but is %d", (int) MaxTenuringThreshold));
+           "MaxTenuringThreshold should be 0 or markOopDesc::max_age + 1, but is %d", (int) MaxTenuringThreshold);
     _tenuring_threshold = MaxTenuringThreshold;
   } else {
     // We want to smooth out our startup times for the AdaptiveSizePolicy

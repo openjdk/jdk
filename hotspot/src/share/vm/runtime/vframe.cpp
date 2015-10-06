@@ -493,7 +493,7 @@ vframeStream::vframeStream(JavaThread* thread, frame top_frame,
 // This function is used in Class.forName, Class.newInstance, Method.Invoke,
 // AccessController.doPrivileged.
 void vframeStreamCommon::security_get_caller_frame(int depth) {
-  assert(depth >= 0, err_msg("invalid depth: %d", depth));
+  assert(depth >= 0, "invalid depth: %d", depth);
   for (int n = 0; !at_end(); security_next()) {
     if (!method()->is_ignored_by_security_stack_walk()) {
       if (n == depth) {

@@ -455,7 +455,7 @@ JRT_END
 // previous frame depending on the return address.
 
 address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thread, address return_address) {
-  assert(frame::verify_return_pc(return_address), err_msg("must be a return address: " INTPTR_FORMAT, return_address));
+  assert(frame::verify_return_pc(return_address), "must be a return address: " INTPTR_FORMAT, return_address);
   assert(thread->frames_to_pop_failed_realloc() == 0 || Interpreter::contains(return_address), "missed frames to pop?");
 
   // Reset method handle flag.
@@ -807,7 +807,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
             bool is_in_blob = cb->is_adapter_blob() || cb->is_method_handles_adapter_blob();
             if (!is_in_blob) {
               cb->print();
-              fatal(err_msg("exception happened outside interpreter, nmethods and vtable stubs at pc " INTPTR_FORMAT, pc));
+              fatal("exception happened outside interpreter, nmethods and vtable stubs at pc " INTPTR_FORMAT, pc);
             }
             Events::log_exception(thread, "NullPointerException in code blob at " INTPTR_FORMAT, pc);
             // There is no handler here, so we will simply unwind.
@@ -1630,7 +1630,7 @@ void SharedRuntime::check_member_name_argument_is_last_argument(methodHandle met
   for (int i = 0; i < member_arg_pos; i++) {
     VMReg a =    regs_with_member_name[i].first();
     VMReg b = regs_without_member_name[i].first();
-    assert(a->value() == b->value(), err_msg_res("register allocation mismatch: a=%d, b=%d", a->value(), b->value()));
+    assert(a->value() == b->value(), "register allocation mismatch: a=%d, b=%d", a->value(), b->value());
   }
   assert(regs_with_member_name[member_arg_pos].first()->is_valid(), "bad member arg");
 }

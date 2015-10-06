@@ -123,7 +123,7 @@ VerifyOopClosure VerifyOopClosure::verify_oop;
 
 template <class T> void VerifyOopClosure::do_oop_work(T* p) {
   oop obj = oopDesc::load_decode_heap_oop(p);
-  guarantee(obj->is_oop_or_null(), err_msg("invalid oop: " INTPTR_FORMAT, p2i((oopDesc*) obj)));
+  guarantee(obj->is_oop_or_null(), "invalid oop: " INTPTR_FORMAT, p2i((oopDesc*) obj));
 }
 
 void VerifyOopClosure::do_oop(oop* p)       { VerifyOopClosure::do_oop_work(p); }

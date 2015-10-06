@@ -31,12 +31,14 @@
 #include "code/codeCacheExtensions.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "logging/logConfiguration.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
@@ -879,7 +881,7 @@ void Thread::check_for_valid_safepoint_state(bool potential_vm_operation) {
            cur != VMOperationRequest_lock &&
            cur != VMOperationQueue_lock) ||
            cur->rank() == Mutex::special) {
-        fatal(err_msg("Thread holding lock at safepoint that vm can block on: %s", cur->name()));
+        fatal("Thread holding lock at safepoint that vm can block on: %s", cur->name());
       }
     }
   }
@@ -1148,6 +1150,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
 NamedThread::NamedThread() : Thread() {
   _name = NULL;
   _processed_thread = NULL;
+  _gc_id = GCId::undefined();
 }
 
 NamedThread::~NamedThread() {
@@ -3306,6 +3309,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize the os module before using TLS
   os::init();
 
+  // Record VM creation timing statistics
+  TraceVmCreationTime create_vm_timer;
+  create_vm_timer.start();
+
   // Initialize system properties.
   Arguments::init_system_properties();
 
@@ -3314,6 +3321,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Update/Initialize System properties after JDK version number is known
   Arguments::init_version_specific_system_properties();
+
+  // Make sure to initialize log configuration *before* parsing arguments
+  LogConfiguration::initialize(create_vm_timer.begin_time());
 
   // Parse arguments
   jint parse_result = Arguments::parse(args);
@@ -3340,10 +3350,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 
   HOTSPOT_VM_INIT_BEGIN();
-
-  // Record VM creation timing statistics
-  TraceVmCreationTime create_vm_timer;
-  create_vm_timer.start();
 
   // Timing (must come after argument parsing)
   TraceTime timer("Create VM", TraceStartupTime);
@@ -3492,6 +3498,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // debug stuff, that does not work until all basic classes have been initialized.
   set_init_completed();
 
+  LogConfiguration::post_initialize();
   Metaspace::post_initialize();
 
   HOTSPOT_VM_INIT_END();
@@ -3966,6 +3973,8 @@ bool Threads::destroy_vm() {
   // exit_globals() will delete tty
   exit_globals();
 
+  LogConfiguration::finalize();
+
   return true;
 }
 
@@ -4096,7 +4105,7 @@ void Threads::assert_all_threads_claimed() {
   ALL_JAVA_THREADS(p) {
     const int thread_parity = p->oops_do_parity();
     assert((thread_parity == _thread_claim_parity),
-        err_msg("Thread " PTR_FORMAT " has incorrect parity %d != %d", p2i(p), thread_parity, _thread_claim_parity));
+           "Thread " PTR_FORMAT " has incorrect parity %d != %d", p2i(p), thread_parity, _thread_claim_parity);
   }
 }
 #endif // ASSERT

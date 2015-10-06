@@ -1770,7 +1770,7 @@ Node *PhaseChaitin::find_base_for_derived( Node **derived_base_map, Node *derive
 
   // Check for AddP-related opcodes
   if (!derived->is_Phi()) {
-    assert(derived->as_Mach()->ideal_Opcode() == Op_AddP, err_msg_res("but is: %s", derived->Name()));
+    assert(derived->as_Mach()->ideal_Opcode() == Op_AddP, "but is: %s", derived->Name());
     Node *base = derived->in(AddPNode::Base);
     derived_base_map[derived->_idx] = base;
     return base;

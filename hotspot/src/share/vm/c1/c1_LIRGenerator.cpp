@@ -920,7 +920,7 @@ LIR_Opr LIRGenerator::round_item(LIR_Opr opr) {
 
 LIR_Opr LIRGenerator::force_to_spill(LIR_Opr value, BasicType t) {
   assert(type2size[t] == type2size[value->type()],
-         err_msg_res("size mismatch: t=%s, value->type()=%s", type2name(t), type2name(value->type())));
+         "size mismatch: t=%s, value->type()=%s", type2name(t), type2name(value->type()));
   if (!value->is_register()) {
     // force into a register
     LIR_Opr r = new_register(value->type());
@@ -1630,6 +1630,9 @@ void LIRGenerator::CardTableModRef_post_barrier(LIR_OprDesc* addr, LIR_OprDesc* 
     __ move(dirty, card_addr);
     __ branch_destination(L_already_dirty->label());
   } else {
+    if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
+      __ membar_storestore();
+    }
     __ move(dirty, card_addr);
   }
 #endif
@@ -2829,7 +2832,7 @@ void LIRGenerator::do_OsrEntry(OsrEntry* x) {
 
 void LIRGenerator::invoke_load_arguments(Invoke* x, LIRItemList* args, const LIR_OprList* arg_list) {
   assert(args->length() == arg_list->length(),
-         err_msg_res("args=%d, arg_list=%d", args->length(), arg_list->length()));
+         "args=%d, arg_list=%d", args->length(), arg_list->length());
   for (int i = x->has_receiver() ? 1 : 0; i < args->length(); i++) {
     LIRItem* param = args->at(i);
     LIR_Opr loc = arg_list->at(i);
@@ -2973,7 +2976,7 @@ void LIRGenerator::do_Invoke(Invoke* x) {
       break;
     }
     default:
-      fatal(err_msg("unexpected bytecode: %s", Bytecodes::name(x->code())));
+      fatal("unexpected bytecode: %s", Bytecodes::name(x->code()));
       break;
   }
 

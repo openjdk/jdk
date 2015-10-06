@@ -36,21 +36,21 @@ class FormatBufferBase {
   char* _buf;
   inline FormatBufferBase(char* buf) : _buf(buf) {}
  public:
+  static const int BufferSize = 256;
   operator const char *() const { return _buf; }
 };
 
 // Use resource area for buffer
-#define RES_BUFSZ 256
 class FormatBufferResource : public FormatBufferBase {
  public:
   FormatBufferResource(const char * format, ...) ATTRIBUTE_PRINTF(2, 3);
 };
 
 // Use stack for buffer
-template <size_t bufsz = 256>
+template <size_t bufsz = FormatBufferBase::BufferSize>
 class FormatBuffer : public FormatBufferBase {
  public:
-  inline FormatBuffer(const char * format, ...) ATTRIBUTE_PRINTF(2, 3);
+  inline FormatBuffer(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
   inline void append(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
   inline void print(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
   inline void printv(const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
@@ -105,27 +105,29 @@ void FormatBuffer<bufsz>::append(const char* format, ...) {
   va_end(argp);
 }
 
-// Used to format messages for vmassert(), guarantee(), fatal(), etc.
+// Used to format messages.
 typedef FormatBuffer<> err_msg;
-typedef FormatBufferResource err_msg_res;
 
 // assertions
 #ifndef ASSERT
-#define vmassert(p, msg)
+#define vmassert(p, ...)
 #else
 // Note: message says "assert" rather than "vmassert" for backward
 // compatibility with tools that parse/match the message text.
-#define vmassert(p, msg)                                                     \
-do {                                                                         \
-  if (!(p)) {                                                                \
-    report_vm_error(__FILE__, __LINE__, "assert(" #p ") failed", msg);       \
-    BREAKPOINT;                                                              \
-  }                                                                          \
+// Note: The signature is vmassert(p, format, ...), but the solaris
+// compiler can't handle an empty ellipsis in a macro without a warning.
+#define vmassert(p, ...)                                                       \
+do {                                                                           \
+  if (!(p)) {                                                                  \
+    report_vm_error(__FILE__, __LINE__, "assert(" #p ") failed", __VA_ARGS__); \
+    BREAKPOINT;                                                                \
+  }                                                                            \
 } while (0)
+
 #endif
 
 // For backward compatibility.
-#define assert(p, msg) vmassert(p, msg)
+#define assert(p, ...) vmassert(p, __VA_ARGS__)
 
 // This version of vmassert is for use with checking return status from
 // library calls that return actual error values eg. EINVAL,
@@ -135,7 +137,7 @@ do {                                                                         \
 // an extra arg and use strerror to convert it to a meaningful string
 // like "Invalid argument", "out of memory" etc
 #define vmassert_status(p, status, msg) \
-  vmassert(p, err_msg("error %s(%d), %s", strerror(status), status, msg))
+  vmassert(p, "error %s(%d), %s", strerror(status), status, msg)
 
 // For backward compatibility.
 #define assert_status(p, status, msg) vmassert_status(p, status, msg)
@@ -143,49 +145,49 @@ do {                                                                         \
 // guarantee is like vmassert except it's always executed -- use it for
 // cheap tests that catch errors that would otherwise be hard to find.
 // guarantee is also used for Verify options.
-#define guarantee(p, msg)                                                    \
-do {                                                                         \
-  if (!(p)) {                                                                \
-    report_vm_error(__FILE__, __LINE__, "guarantee(" #p ") failed", msg);    \
-    BREAKPOINT;                                                              \
-  }                                                                          \
+#define guarantee(p, ...)                                                         \
+do {                                                                              \
+  if (!(p)) {                                                                     \
+    report_vm_error(__FILE__, __LINE__, "guarantee(" #p ") failed", __VA_ARGS__); \
+    BREAKPOINT;                                                                   \
+  }                                                                               \
 } while (0)
 
-#define fatal(msg)                                                           \
-do {                                                                         \
-  report_fatal(__FILE__, __LINE__, msg);                                     \
-  BREAKPOINT;                                                                \
+#define fatal(...)                                                                \
+do {                                                                              \
+  report_fatal(__FILE__, __LINE__, __VA_ARGS__);                                  \
+  BREAKPOINT;                                                                     \
 } while (0)
 
 // out of memory
-#define vm_exit_out_of_memory(size, vm_err_type, msg)                        \
-do {                                                                         \
-  report_vm_out_of_memory(__FILE__, __LINE__, size, vm_err_type, msg);       \
-  BREAKPOINT;                                                                \
+#define vm_exit_out_of_memory(size, vm_err_type, ...)                             \
+do {                                                                              \
+  report_vm_out_of_memory(__FILE__, __LINE__, size, vm_err_type, __VA_ARGS__);    \
+  BREAKPOINT;                                                                     \
 } while (0)
 
-#define ShouldNotCallThis()                                                  \
-do {                                                                         \
-  report_should_not_call(__FILE__, __LINE__);                                \
-  BREAKPOINT;                                                                \
+#define ShouldNotCallThis()                                                       \
+do {                                                                              \
+  report_should_not_call(__FILE__, __LINE__);                                     \
+  BREAKPOINT;                                                                     \
 } while (0)
 
-#define ShouldNotReachHere()                                                 \
-do {                                                                         \
-  report_should_not_reach_here(__FILE__, __LINE__);                          \
-  BREAKPOINT;                                                                \
+#define ShouldNotReachHere()                                                      \
+do {                                                                              \
+  report_should_not_reach_here(__FILE__, __LINE__);                               \
+  BREAKPOINT;                                                                     \
 } while (0)
 
-#define Unimplemented()                                                      \
-do {                                                                         \
-  report_unimplemented(__FILE__, __LINE__);                                  \
-  BREAKPOINT;                                                                \
+#define Unimplemented()                                                           \
+do {                                                                              \
+  report_unimplemented(__FILE__, __LINE__);                                       \
+  BREAKPOINT;                                                                     \
 } while (0)
 
-#define Untested(msg)                                                        \
-do {                                                                         \
-  report_untested(__FILE__, __LINE__, msg);                                  \
-  BREAKPOINT;                                                                \
+#define Untested(msg)                                                             \
+do {                                                                              \
+  report_untested(__FILE__, __LINE__, msg);                                       \
+  BREAKPOINT;                                                                     \
 } while (0);
 
 
@@ -197,11 +199,12 @@ enum VMErrorType {
 };
 
 // error reporting helper functions
+void report_vm_error(const char* file, int line, const char* error_msg);
 void report_vm_error(const char* file, int line, const char* error_msg,
-                     const char* detail_msg = NULL);
-void report_fatal(const char* file, int line, const char* message);
-void report_vm_out_of_memory(const char* file, int line, size_t size,
-                             VMErrorType vm_err_type, const char* message);
+                     const char* detail_fmt, ...) ATTRIBUTE_PRINTF(4, 5);
+void report_fatal(const char* file, int line, const char* detail_fmt, ...) ATTRIBUTE_PRINTF(3, 4);
+void report_vm_out_of_memory(const char* file, int line, size_t size, VMErrorType vm_err_type,
+                             const char* detail_fmt, ...) ATTRIBUTE_PRINTF(5, 6);
 void report_should_not_call(const char* file, int line);
 void report_should_not_reach_here(const char* file, int line);
 void report_unimplemented(const char* file, int line);

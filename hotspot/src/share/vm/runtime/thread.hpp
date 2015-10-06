@@ -678,6 +678,7 @@ class NamedThread: public Thread {
   char* _name;
   // log JavaThread being processed by oops_do
   JavaThread* _processed_thread;
+  uint _gc_id; // The current GC id when a thread takes part in GC
 
  public:
   NamedThread();
@@ -690,6 +691,9 @@ class NamedThread: public Thread {
   JavaThread *processed_thread() { return _processed_thread; }
   void set_processed_thread(JavaThread *thread) { _processed_thread = thread; }
   virtual void print_on(outputStream* st) const;
+
+  void set_gc_id(uint gc_id) { _gc_id = gc_id; }
+  uint gc_id() { return _gc_id; }
 };
 
 // Worker threads are named and have an id of an assigned work.

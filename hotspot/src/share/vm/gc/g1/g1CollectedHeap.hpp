@@ -368,17 +368,17 @@ private:
   // These are macros so that, if the assert fires, we get the correct
   // line number, file, etc.
 
-#define heap_locking_asserts_err_msg(_extra_message_)                         \
-  err_msg("%s : Heap_lock locked: %s, at safepoint: %s, is VM thread: %s",    \
-          (_extra_message_),                                                  \
-          BOOL_TO_STR(Heap_lock->owned_by_self()),                            \
-          BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()),               \
-          BOOL_TO_STR(Thread::current()->is_VM_thread()))
+#define heap_locking_asserts_params(_extra_message_)                          \
+  "%s : Heap_lock locked: %s, at safepoint: %s, is VM thread: %s",            \
+  (_extra_message_),                                                          \
+  BOOL_TO_STR(Heap_lock->owned_by_self()),                                    \
+  BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()),                       \
+  BOOL_TO_STR(Thread::current()->is_VM_thread())
 
 #define assert_heap_locked()                                                  \
   do {                                                                        \
     assert(Heap_lock->owned_by_self(),                                        \
-           heap_locking_asserts_err_msg("should be holding the Heap_lock"));  \
+           heap_locking_asserts_params("should be holding the Heap_lock"));   \
   } while (0)
 
 #define assert_heap_locked_or_at_safepoint(_should_be_vm_thread_)             \
@@ -386,7 +386,7 @@ private:
     assert(Heap_lock->owned_by_self() ||                                      \
            (SafepointSynchronize::is_at_safepoint() &&                        \
              ((_should_be_vm_thread_) == Thread::current()->is_VM_thread())), \
-           heap_locking_asserts_err_msg("should be holding the Heap_lock or " \
+           heap_locking_asserts_params("should be holding the Heap_lock or "  \
                                         "should be at a safepoint"));         \
   } while (0)
 
@@ -394,21 +394,21 @@ private:
   do {                                                                        \
     assert(Heap_lock->owned_by_self() &&                                      \
                                     !SafepointSynchronize::is_at_safepoint(), \
-          heap_locking_asserts_err_msg("should be holding the Heap_lock and " \
+          heap_locking_asserts_params("should be holding the Heap_lock and "  \
                                        "should not be at a safepoint"));      \
   } while (0)
 
 #define assert_heap_not_locked()                                              \
   do {                                                                        \
     assert(!Heap_lock->owned_by_self(),                                       \
-        heap_locking_asserts_err_msg("should not be holding the Heap_lock")); \
+        heap_locking_asserts_params("should not be holding the Heap_lock"));  \
   } while (0)
 
 #define assert_heap_not_locked_and_not_at_safepoint()                         \
   do {                                                                        \
     assert(!Heap_lock->owned_by_self() &&                                     \
                                     !SafepointSynchronize::is_at_safepoint(), \
-      heap_locking_asserts_err_msg("should not be holding the Heap_lock and " \
+      heap_locking_asserts_params("should not be holding the Heap_lock and "  \
                                    "should not be at a safepoint"));          \
   } while (0)
 
@@ -416,13 +416,13 @@ private:
   do {                                                                        \
     assert(SafepointSynchronize::is_at_safepoint() &&                         \
               ((_should_be_vm_thread_) == Thread::current()->is_VM_thread()), \
-           heap_locking_asserts_err_msg("should be at a safepoint"));         \
+           heap_locking_asserts_params("should be at a safepoint"));          \
   } while (0)
 
 #define assert_not_at_safepoint()                                             \
   do {                                                                        \
     assert(!SafepointSynchronize::is_at_safepoint(),                          \
-           heap_locking_asserts_err_msg("should not be at a safepoint"));     \
+           heap_locking_asserts_params("should not be at a safepoint"));      \
   } while (0)
 
 protected:
@@ -571,7 +571,16 @@ protected:
   HeapWord* satisfy_failed_allocation(size_t word_size,
                                       AllocationContext_t context,
                                       bool* succeeded);
+private:
+  // Helper method for satisfy_failed_allocation()
+  HeapWord* satisfy_failed_allocation_helper(size_t word_size,
+                                             AllocationContext_t context,
+                                             bool do_gc,
+                                             bool clear_all_soft_refs,
+                                             bool expect_null_mutator_alloc_region,
+                                             bool* gc_succeeded);
 
+protected:
   // Attempting to expand the heap sufficiently
   // to support an allocation of the given "word_size".  If
   // successful, perform the allocation and return the address of the

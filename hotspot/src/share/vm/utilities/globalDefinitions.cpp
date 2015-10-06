@@ -50,7 +50,7 @@ int LogMinObjAlignmentInBytes  = -1;
 uint64_t OopEncodingHeapMax = 0;
 
 void basic_fatal(const char* msg) {
-  fatal(msg);
+  fatal("%s", msg);
 }
 
 // Something to help porters sleep at night

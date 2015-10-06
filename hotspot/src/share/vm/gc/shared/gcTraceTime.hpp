@@ -26,12 +26,13 @@
 #define SHARE_VM_GC_SHARED_GCTRACETIME_HPP
 
 #include "gc/shared/gcTrace.hpp"
+#include "memory/allocation.hpp"
 #include "prims/jni_md.h"
 #include "utilities/ticks.hpp"
 
 class GCTimer;
 
-class GCTraceTime {
+class GCTraceTimeImpl VALUE_OBJ_CLASS_SPEC {
   const char* _title;
   bool _doit;
   bool _print_cr;
@@ -39,8 +40,16 @@ class GCTraceTime {
   Ticks _start_counter;
 
  public:
-  GCTraceTime(const char* title, bool doit, bool print_cr, GCTimer* timer, GCId gc_id);
-  ~GCTraceTime();
+  GCTraceTimeImpl(const char* title, bool doit, bool print_cr, GCTimer* timer);
+  ~GCTraceTimeImpl();
+};
+
+class GCTraceTime : public StackObj {
+  GCTraceTimeImpl _gc_trace_time_impl;
+
+ public:
+  GCTraceTime(const char* title, bool doit, bool print_cr, GCTimer* timer) :
+    _gc_trace_time_impl(title, doit, print_cr, timer) {};
 };
 
 #endif // SHARE_VM_GC_SHARED_GCTRACETIME_HPP

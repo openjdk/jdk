@@ -813,8 +813,8 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec) {
   update_survivors_policy();
 
   assert(_g1->used() == _g1->recalculate_used(),
-         err_msg("sanity, used: " SIZE_FORMAT " recalculate_used: " SIZE_FORMAT,
-                 _g1->used(), _g1->recalculate_used()));
+         "sanity, used: " SIZE_FORMAT " recalculate_used: " SIZE_FORMAT,
+         _g1->used(), _g1->recalculate_used());
 
   double s_w_t_ms = (start_time_sec - _stop_world_start) * 1000.0;
   _trace_young_gen_time_data.record_start_collection(s_w_t_ms);
@@ -857,7 +857,7 @@ void G1CollectorPolicy::record_concurrent_mark_remark_end() {
   _cur_mark_stop_world_time_ms += elapsed_time_ms;
   _prev_collection_pause_end_ms += elapsed_time_ms;
 
-  _mmu_tracker->add_pause(_mark_remark_start_sec, end_time_sec, _g1->gc_tracer_cm()->gc_id());
+  _mmu_tracker->add_pause(_mark_remark_start_sec, end_time_sec);
 }
 
 void G1CollectorPolicy::record_concurrent_mark_cleanup_start() {
@@ -952,8 +952,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
     collector_state()->set_initiate_conc_mark_if_possible(true);
   }
 
-  _mmu_tracker->add_pause(end_time_sec - pause_time_ms/1000.0,
-                          end_time_sec, _g1->gc_tracer_stw()->gc_id());
+  _mmu_tracker->add_pause(end_time_sec - pause_time_ms/1000.0, end_time_sec);
 
   if (update_stats) {
     _trace_young_gen_time_data.record_end_collection(pause_time_ms, phase_times());
@@ -1584,7 +1583,7 @@ G1CollectorPolicy::record_concurrent_mark_cleanup_end() {
   _concurrent_mark_cleanup_times_ms->add(elapsed_time_ms);
   _cur_mark_stop_world_time_ms += elapsed_time_ms;
   _prev_collection_pause_end_ms += elapsed_time_ms;
-  _mmu_tracker->add_pause(_mark_cleanup_start_sec, end_sec, _g1->gc_tracer_cm()->gc_id());
+  _mmu_tracker->add_pause(_mark_cleanup_start_sec, end_sec);
 }
 
 // Add the heap region at the head of the non-incremental collection set
@@ -1876,8 +1875,7 @@ double G1CollectorPolicy::finalize_young_cset_part(double target_pause_time_ms) 
   finalize_incremental_cset_building();
 
   guarantee(target_pause_time_ms > 0.0,
-            err_msg("target_pause_time_ms = %1.6lf should be positive",
-                    target_pause_time_ms));
+            "target_pause_time_ms = %1.6lf should be positive", target_pause_time_ms);
   guarantee(_collection_set == NULL, "Precondition");
 
   double base_time_ms = predict_base_elapsed_time_ms(_pending_cards);

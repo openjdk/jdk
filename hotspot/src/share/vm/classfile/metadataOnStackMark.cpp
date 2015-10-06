@@ -119,7 +119,7 @@ MetadataOnStackBuffer* MetadataOnStackMark::allocate_buffer() {
     allocated = new MetadataOnStackBuffer();
   }
 
-  assert(!allocated->is_full(), err_msg("Should not be full: " PTR_FORMAT, p2i(allocated)));
+  assert(!allocated->is_full(), "Should not be full: " PTR_FORMAT, p2i(allocated));
 
   return allocated;
 }

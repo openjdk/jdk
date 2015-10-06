@@ -4018,7 +4018,7 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee) {
     break;
 
   default:
-    fatal(err_msg("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid)));
+    fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
     break;
   }
   set_state(state_before);

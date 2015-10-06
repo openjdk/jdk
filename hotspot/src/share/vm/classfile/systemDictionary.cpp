@@ -229,9 +229,9 @@ Klass* SystemDictionary::resolve_or_fail(Symbol* class_name,
 
 Klass* SystemDictionary::resolve_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS) {
   assert(!THREAD->is_Compiler_thread(),
-         err_msg("can not load classes with compiler thread: class=%s, classloader=%s",
-                 class_name->as_C_string(),
-                 class_loader.is_null() ? "null" : class_loader->klass()->name()->as_C_string()));
+         "can not load classes with compiler thread: class=%s, classloader=%s",
+         class_name->as_C_string(),
+         class_loader.is_null() ? "null" : class_loader->klass()->name()->as_C_string());
   if (FieldType::is_array(class_name)) {
     return resolve_array_class_or_null(class_name, class_loader, protection_domain, THREAD);
   } else if (FieldType::is_obj(class_name)) {
@@ -2264,7 +2264,7 @@ methodHandle SystemDictionary::find_method_handle_intrinsic(vmIntrinsics::ID iid
   assert(MethodHandles::is_signature_polymorphic(iid) &&
          MethodHandles::is_signature_polymorphic_intrinsic(iid) &&
          iid != vmIntrinsics::_invokeGeneric,
-         err_msg("must be a known MH intrinsic iid=%d: %s", iid, vmIntrinsics::name_at(iid)));
+         "must be a known MH intrinsic iid=%d: %s", iid, vmIntrinsics::name_at(iid));
 
   unsigned int hash  = invoke_method_table()->compute_hash(signature, iid);
   int          index = invoke_method_table()->hash_to_index(hash);
@@ -2390,7 +2390,7 @@ static bool is_always_visible_class(oop mirror) {
   if (klass->oop_is_typeArray()) {
     return true; // primitive array
   }
-  assert(klass->oop_is_instance(), klass->external_name());
+  assert(klass->oop_is_instance(), "%s", klass->external_name());
   return klass->is_public() &&
          (InstanceKlass::cast(klass)->is_same_class_package(SystemDictionary::Object_klass()) ||       // java.lang
           InstanceKlass::cast(klass)->is_same_class_package(SystemDictionary::MethodHandle_klass()));  // java.lang.invoke
@@ -2443,7 +2443,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
       mirror = ss.as_java_mirror(class_loader, protection_domain,
                                  SignatureStream::NCDFError, CHECK_(empty));
     }
-    assert(!oopDesc::is_null(mirror), ss.as_symbol(THREAD)->as_C_string());
+    assert(!oopDesc::is_null(mirror), "%s", ss.as_symbol(THREAD)->as_C_string());
     if (ss.at_return_type())
       rt = Handle(THREAD, mirror);
     else

@@ -128,6 +128,7 @@
 # include "interpreter/templateInterpreter.hpp"
 # include "interpreter/templateTable.hpp"
 # include "jvmtifiles/jvmti.h"
+# include "logging/log.hpp"
 # include "memory/allocation.hpp"
 # include "memory/allocation.inline.hpp"
 # include "memory/heap.hpp"

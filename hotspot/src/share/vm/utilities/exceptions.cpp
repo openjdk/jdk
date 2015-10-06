@@ -486,7 +486,7 @@ void Exceptions::debug_check_abort(const char *value_string, const char* message
       strstr(value_string, AbortVMOnException)) {
     if (AbortVMOnExceptionMessage == NULL || message == NULL ||
         strcmp(message, AbortVMOnExceptionMessage) == 0) {
-      fatal(err_msg("Saw %s, aborting", value_string));
+      fatal("Saw %s, aborting", value_string);
     }
   }
 }
