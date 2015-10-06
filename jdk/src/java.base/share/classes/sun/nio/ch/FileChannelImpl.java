@@ -44,9 +44,10 @@ import java.security.AccessController;
 import java.util.ArrayList;
 import java.util.List;
 
+import jdk.internal.misc.JavaIOFileDescriptorAccess;
+import jdk.internal.misc.JavaNioAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.misc.Cleaner;
-import sun.misc.JavaIOFileDescriptorAccess;
-import sun.misc.SharedSecrets;
 import sun.security.action.GetPropertyAction;
 
 public class FileChannelImpl
@@ -976,8 +977,8 @@ public class FileChannelImpl
      * Invoked by sun.management.ManagementFactoryHelper to create the management
      * interface for mapped buffers.
      */
-    public static sun.misc.JavaNioAccess.BufferPool getMappedBufferPool() {
-        return new sun.misc.JavaNioAccess.BufferPool() {
+    public static JavaNioAccess.BufferPool getMappedBufferPool() {
+        return new JavaNioAccess.BufferPool() {
             @Override
             public String getName() {
                 return "mapped";

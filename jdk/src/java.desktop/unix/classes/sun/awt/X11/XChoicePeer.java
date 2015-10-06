@@ -50,10 +50,10 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
     // at a time in an
     // unfurled Choice
     // Description of these constants in ListHelper
-    public final static int TEXT_SPACE = 1;
-    public final static int BORDER_WIDTH = 1;
-    public final static int ITEM_MARGIN = 1;
-    public final static int SCROLLBAR_WIDTH = 15;
+    public static final int TEXT_SPACE = 1;
+    public static final int BORDER_WIDTH = 1;
+    public static final int ITEM_MARGIN = 1;
+    public static final int SCROLLBAR_WIDTH = 15;
 
 
     // SHARE THESE!

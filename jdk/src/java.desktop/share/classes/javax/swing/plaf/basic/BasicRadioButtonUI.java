@@ -53,7 +53,7 @@ public class BasicRadioButtonUI extends BasicToggleButtonUI
 
     private boolean defaults_initialized = false;
 
-    private final static String propertyPrefix = "RadioButton" + ".";
+    private static final String propertyPrefix = "RadioButton" + ".";
 
     private KeyListener keyListener = null;
 

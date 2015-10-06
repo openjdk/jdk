@@ -27,8 +27,8 @@ package java.util;
 
 import java.security.*;
 
-import sun.misc.JavaLangAccess;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaLangAccess;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * A class that represents an immutable universally unique identifier (UUID).

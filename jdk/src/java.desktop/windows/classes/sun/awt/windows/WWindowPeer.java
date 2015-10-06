@@ -59,7 +59,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      * is a list of windows, sorted by the time of activation: later a window is
      * activated, greater its index is in the list.
      */
-    private final static StringBuffer ACTIVE_WINDOWS_KEY =
+    private static final StringBuffer ACTIVE_WINDOWS_KEY =
         new StringBuffer("active_windows_list");
 
     /*
@@ -72,7 +72,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
     /*
      * The object is a listener for the AppContext.GUI_DISPOSED property.
      */
-    private final static PropertyChangeListener guiDisposedListener =
+    private static final PropertyChangeListener guiDisposedListener =
         new GuiDisposedListener();
 
     /*

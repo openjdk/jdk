@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.concurrent.ExecutionException;
+import jdk.testlibrary.Utils;
 import org.testng.Assert;
 import org.testng.TestNG;
 import org.testng.annotations.Test;
@@ -174,7 +175,7 @@ public class TreeTest extends ProcessUtil {
 
             // Poll until all 9 child processes exist or the timeout is reached
             int expected = 9;
-            long timeout = jdk.testlibrary.Utils.adjustTimeout(10L);
+            long timeout = Utils.adjustTimeout(10L);
             Instant endTimeout = Instant.now().plusSeconds(timeout);
             do {
                 Thread.sleep(200L);
@@ -223,6 +224,10 @@ public class TreeTest extends ProcessUtil {
 
     /**
      * Test destroy of processes.
+     * A JavaChild is started and it starts three children.
+     * Each one is then checked to be alive and listed by allChildren
+     * and forcibly destroyed.
+     * After they exit they should no longer be listed by allChildren.
      */
     @Test
     public static void test3() {
@@ -239,7 +244,7 @@ public class TreeTest extends ProcessUtil {
             // Spawn children and have them wait
             p1.sendAction("spawn", newChildren, "stdin");
 
-            // Gather the PIDs from the output of the spawing process
+            // Gather the PIDs from the output of the spawning process
             p1.forEachOutputLine((s) -> {
                 String[] split = s.trim().split(" ");
                 if (split.length == 3 && split[1].equals("spawn")) {
@@ -259,15 +264,23 @@ public class TreeTest extends ProcessUtil {
                 Assert.assertTrue(allChildren.contains(p), "Spawned child should be listed in allChildren: " + p);
                 p.destroyForcibly();
             });
+            Assert.assertEquals(processes.size(), newChildren, "Wrong number of children");
 
             processes.forEach((p, parent) ->  {
-                while (p.isAlive()) {
+                for (long retries = Utils.adjustTimeout(100L); retries > 0 ; retries--) {
+                    if (!p.isAlive()) {
+                        return;                 // not alive, go on to the next
+                    }
+                    // Wait a bit and retry
                     try {
-                        Thread.sleep(100L);  // It will happen but don't burn the cpu
+                        Thread.sleep(100L);
                     } catch (InterruptedException ie) {
                         // try again
                     }
                 }
+                printf("Timeout waiting for exit of pid %s, parent: %s, info: %s%n",
+                        p, parent, p.info());
+                Assert.fail("Process still alive: " + p);
             });
             p1.destroyForcibly();
             p1.waitFor();
@@ -281,7 +294,12 @@ public class TreeTest extends ProcessUtil {
         } catch (InterruptedException inte) {
             Assert.fail("InterruptedException", inte);
         } finally {
-            processes.forEach((p, parent) -> p.destroyForcibly());
+            processes.forEach((p, parent) -> {
+                if (p.isAlive()) {
+                    ProcessUtil.printProcess(p);
+                    p.destroyForcibly();
+                }
+            });
         }
     }
 

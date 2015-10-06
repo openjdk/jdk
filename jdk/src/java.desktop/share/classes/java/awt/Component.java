@@ -545,24 +545,24 @@ public abstract class Component implements ImageObserver, MenuContainer,
     transient InputMethodListener inputMethodListener;
 
     /** Internal, constants for serialization */
-    final static String actionListenerK = "actionL";
-    final static String adjustmentListenerK = "adjustmentL";
-    final static String componentListenerK = "componentL";
-    final static String containerListenerK = "containerL";
-    final static String focusListenerK = "focusL";
-    final static String itemListenerK = "itemL";
-    final static String keyListenerK = "keyL";
-    final static String mouseListenerK = "mouseL";
-    final static String mouseMotionListenerK = "mouseMotionL";
-    final static String mouseWheelListenerK = "mouseWheelL";
-    final static String textListenerK = "textL";
-    final static String ownedWindowK = "ownedL";
-    final static String windowListenerK = "windowL";
-    final static String inputMethodListenerK = "inputMethodL";
-    final static String hierarchyListenerK = "hierarchyL";
-    final static String hierarchyBoundsListenerK = "hierarchyBoundsL";
-    final static String windowStateListenerK = "windowStateL";
-    final static String windowFocusListenerK = "windowFocusL";
+    static final String actionListenerK = "actionL";
+    static final String adjustmentListenerK = "adjustmentL";
+    static final String componentListenerK = "componentL";
+    static final String containerListenerK = "containerL";
+    static final String focusListenerK = "focusL";
+    static final String itemListenerK = "itemL";
+    static final String keyListenerK = "keyL";
+    static final String mouseListenerK = "mouseL";
+    static final String mouseMotionListenerK = "mouseMotionL";
+    static final String mouseWheelListenerK = "mouseWheelL";
+    static final String textListenerK = "textL";
+    static final String ownedWindowK = "ownedL";
+    static final String windowListenerK = "windowL";
+    static final String inputMethodListenerK = "inputMethodL";
+    static final String hierarchyListenerK = "hierarchyL";
+    static final String hierarchyBoundsListenerK = "hierarchyBoundsL";
+    static final String windowStateListenerK = "windowStateL";
+    static final String windowFocusListenerK = "windowFocusL";
 
     /**
      * The <code>eventMask</code> is ONLY set by subclasses via
@@ -6209,7 +6209,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #isCoalescingEnabled
      * @see #checkCoalescing
      */
-    transient private boolean coalescingEnabled = checkCoalescing();
+    private transient boolean coalescingEnabled = checkCoalescing();
 
     /**
      * Weak map of known coalesceEvent overriders.
@@ -7916,7 +7916,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         }
     };
 
-    synchronized static void setRequestFocusController(RequestFocusController requestController)
+    static synchronized void setRequestFocusController(RequestFocusController requestController)
     {
         if (requestController == null) {
             requestFocusController = new DummyRequestFocusController();
@@ -9173,7 +9173,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * to add/remove ComponentListener and FocusListener to track
          * target Component's state.
          */
-        private volatile transient int propertyListenersCount = 0;
+        private transient volatile int propertyListenersCount = 0;
 
         /**
          * A component listener to track show/hide/resize events

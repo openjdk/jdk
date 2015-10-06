@@ -313,7 +313,7 @@ static native String XSetLocaleModifiers(String modifier_list);
                                          long delete, long req_type, long actualy_type,
                                          long actualy_format, long nitems_ptr,
                                          long bytes_after, long data_ptr);
-    native static void XChangePropertyImpl(long display, long window, long atom,
+    static native void XChangePropertyImpl(long display, long window, long atom,
                                            long type, int format, int mode, long data,
                                            int nelements);
     static void XChangeProperty(long display, long window, long atom,
@@ -566,8 +566,8 @@ static native String XSetLocaleModifiers(String modifier_list);
 
 /* Global memory area used for X lib parameter passing */
 
-    final static long lbuffer = unsafe.allocateMemory(64);  // array to hold 8 longs
-    final static long ibuffer = unsafe.allocateMemory(32);  // array to hold 8 ints
+    static final long lbuffer = unsafe.allocateMemory(64);  // array to hold 8 longs
+    static final long ibuffer = unsafe.allocateMemory(32);  // array to hold 8 ints
 
     static final long larg1 = lbuffer;
     static final long larg2 = larg1+8;

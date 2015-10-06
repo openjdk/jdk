@@ -221,7 +221,7 @@ public abstract class AquaButtonLabeledUI extends AquaButtonToggleUI implements 
         return new Dimension(width, height);
     }
 
-    public static abstract class LabeledButtonBorder extends AquaButtonBorder {
+    public abstract static class LabeledButtonBorder extends AquaButtonBorder {
         public LabeledButtonBorder(final SizeDescriptor sizeDescriptor) {
             super(sizeDescriptor);
         }

@@ -23,14 +23,14 @@
 
 import java.util.Objects;
 import java.util.Comparator;
-import sun.misc.JavaLangAccess;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaLangAccess;
+import jdk.internal.misc.SharedSecrets;
 
 /*
  * @test
  * @bug 8013528
  * @summary Test JavaLangAccess.newUnsafeString
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  * @compile -XDignore.symbol.file NewUnsafeString.java
  */
 public class NewUnsafeString {

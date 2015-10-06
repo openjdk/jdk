@@ -25,13 +25,13 @@
 
 package sun.reflect.annotation;
 
-import sun.misc.JavaLangAccess;
-
 import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.util.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaLangAccess;
 
 /**
  * Represents an annotation type at run time.  Used to type-check annotations
@@ -79,7 +79,7 @@ public class AnnotationType {
     public static AnnotationType getInstance(
         Class<? extends Annotation> annotationClass)
     {
-        JavaLangAccess jla = sun.misc.SharedSecrets.getJavaLangAccess();
+        JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
         AnnotationType result = jla.getAnnotationType(annotationClass); // volatile read
         if (result == null) {
             result = new AnnotationType(annotationClass);
@@ -134,7 +134,7 @@ public class AnnotationType {
         // of the corresponding annotation types breaks infinite recursion.
         if (annotationClass != Retention.class &&
             annotationClass != Inherited.class) {
-            JavaLangAccess jla = sun.misc.SharedSecrets.getJavaLangAccess();
+            JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
             Map<Class<? extends Annotation>, Annotation> metaAnnotations =
                 AnnotationParser.parseSelectAnnotations(
                     jla.getRawClassAnnotations(annotationClass),

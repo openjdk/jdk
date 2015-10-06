@@ -1074,7 +1074,7 @@ public class UIManager implements Serializable
      * @see #getAuxiliaryLookAndFeels
      * @see #getInstalledLookAndFeels
      */
-    static public void addAuxiliaryLookAndFeel(LookAndFeel laf) {
+    public static void addAuxiliaryLookAndFeel(LookAndFeel laf) {
         maybeInitialize();
 
         if (!laf.isSupportedLookAndFeel()) {
@@ -1115,7 +1115,7 @@ public class UIManager implements Serializable
      * @see #setLookAndFeel
      * @see #getInstalledLookAndFeels
      */
-    static public boolean removeAuxiliaryLookAndFeel(LookAndFeel laf) {
+    public static boolean removeAuxiliaryLookAndFeel(LookAndFeel laf) {
         maybeInitialize();
 
         boolean result;
@@ -1153,7 +1153,7 @@ public class UIManager implements Serializable
      * @see #setLookAndFeel
      * @see #getInstalledLookAndFeels
      */
-    static public LookAndFeel[] getAuxiliaryLookAndFeels() {
+    public static LookAndFeel[] getAuxiliaryLookAndFeels() {
         maybeInitialize();
 
         Vector<LookAndFeel> v = getLAFState().auxLookAndFeels;

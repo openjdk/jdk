@@ -21,14 +21,14 @@
  * questions.
  */
 
-import sun.misc.JavaLangAccess;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaLangAccess;
+import jdk.internal.misc.SharedSecrets;
 
 /*
  * @test
  * @bug 8050114
  * @summary Test JavaLangAccess.formatUnsignedInt/-Long
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  */
 public class FormatUnsigned {
 

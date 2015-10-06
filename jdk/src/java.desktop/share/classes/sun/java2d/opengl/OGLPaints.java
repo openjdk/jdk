@@ -151,7 +151,7 @@ abstract class OGLPaints {
 
 /****************** Shared MultipleGradientPaint support ********************/
 
-    private static abstract class MultiGradient extends OGLPaints {
+    private abstract static class MultiGradient extends OGLPaints {
         protected MultiGradient() {}
 
         /**

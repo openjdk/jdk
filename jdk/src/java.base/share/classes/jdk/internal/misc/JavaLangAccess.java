@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.misc;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Executable;

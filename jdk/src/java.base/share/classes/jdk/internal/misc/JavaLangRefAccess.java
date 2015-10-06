@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,22 +23,17 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.misc;
 
-import java.net.HttpCookie;
-import java.util.List;
+public interface JavaLangRefAccess {
 
-public interface JavaNetHttpCookieAccess {
-    /*
-     * Constructs cookies from Set-Cookie or Set-Cookie2 header string,
-     * retaining the original header String in the cookie itself.
+    /**
+     * Help ReferenceHandler thread process next pending
+     * {@link java.lang.ref.Reference}
+     *
+     * @return {@code true} if there was a pending reference and it
+     *         was enqueue-ed or {@code false} if there was no
+     *         pending reference
      */
-    public List<HttpCookie> parse(String header);
-
-    /*
-     * Returns the original header this cookie was constructed from, if it was
-     * constructed by parsing a header, otherwise null.
-     */
-    public String header(HttpCookie cookie);
+    boolean tryHandlePendingReference();
 }
-

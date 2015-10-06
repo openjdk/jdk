@@ -422,7 +422,7 @@ final class PortMixer extends AbstractMixer {
         private boolean closed = false;
 
         // predefined float control types. See also Ports.h
-        private final static FloatControl.Type[] FLOAT_CONTROL_TYPES = {
+        private static final FloatControl.Type[] FLOAT_CONTROL_TYPES = {
             null,
             FloatControl.Type.BALANCE,
             FloatControl.Type.MASTER_GAIN,
