@@ -83,6 +83,9 @@ public class DOMImplementationImpl extends CoreDOMImplementationImpl
      * specified feature and version.
      */
     public boolean hasFeature(String feature, String version) {
+        if (feature == null || feature.length() == 0) {
+            return false;
+        }
 
         boolean result = super.hasFeature(feature, version);
         if (!result) {
