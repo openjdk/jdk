@@ -108,13 +108,9 @@ getLastErrorString(char *utf8_jvmErrorMsg, size_t cbErrorMsg)
                 }
             } else if (errno != 0) {
                 // C runtime error that has no corresponding WIN32 error code
-                const WCHAR *rtError = _wcserror(errno);
-                if (rtError != NULL) {
-                    wcsncpy(utf16_osErrorMsg, rtError, cbErrorMsg);
-                    // truncate if too long
-                    utf16_osErrorMsg[cbErrorMsg - 1] = L'\0';
+                int ret = _wcserror_s(utf16_osErrorMsg, cbErrorMsg, errno);
+                if (ret == 0)
                     n = wcslen(utf16_osErrorMsg);
-                }
             } else
                 noError = TRUE; //OS has no error to report
 
@@ -146,4 +142,13 @@ getLastErrorString(char *utf8_jvmErrorMsg, size_t cbErrorMsg)
         }
     }
     return n;
+}
+
+int
+getErrorString(int err, char *buf, size_t len)
+{
+    int ret = 0;
+    if (err == 0 || len < 1) return 0;
+    ret = strerror_s(buf, len, err);
+    return ret;
 }
