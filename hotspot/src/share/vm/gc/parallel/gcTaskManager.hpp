@@ -38,12 +38,8 @@ class GCTask;
 class GCTaskQueue;
 class SynchronizedGCTaskQueue;
 class GCTaskManager;
-class NotifyDoneClosure;
 // Some useful subclasses of GCTask.  You can also make up your own.
 class NoopGCTask;
-class BarrierGCTask;
-class ReleasingBarrierGCTask;
-class NotifyingBarrierGCTask;
 class WaitForBarrierGCTask;
 class IdleGCTask;
 // A free list of Monitor*'s.
@@ -64,7 +60,7 @@ public:
     enum kind {
       unknown_task,
       ordinary_task,
-      barrier_task,
+      wait_for_barrier_task,
       noop_task,
       idle_task
     };
@@ -105,7 +101,7 @@ public:
     return kind()==Kind::ordinary_task;
   }
   bool is_barrier_task() const {
-    return kind()==Kind::barrier_task;
+    return kind()==Kind::wait_for_barrier_task;
   }
   bool is_noop_task() const {
     return kind()==Kind::noop_task;
@@ -276,23 +272,6 @@ protected:
   ~SynchronizedGCTaskQueue();
 };
 
-// This is an abstract base class for getting notifications
-// when a GCTaskManager is done.
-class NotifyDoneClosure : public CHeapObj<mtGC> {
-public:
-  // The notification callback method.
-  virtual void notify(GCTaskManager* manager) = 0;
-protected:
-  // Constructor.
-  NotifyDoneClosure() {
-    // Nothing to do.
-  }
-  // Virtual destructor because virtual methods.
-  virtual ~NotifyDoneClosure() {
-    // Nothing to do.
-  }
-};
-
 // Dynamic number of GC threads
 //
 //  GC threads wait in get_task() for work (i.e., a task) to perform.
@@ -365,7 +344,6 @@ class GCTaskManager : public CHeapObj<mtGC> {
  friend class IdleGCTask;
 private:
   // Instance state.
-  NotifyDoneClosure*        _ndc;               // Notify on completion.
   const uint                _workers;           // Number of workers.
   Monitor*                  _monitor;           // Notification of changes.
   SynchronizedGCTaskQueue*  _queue;             // Queue of tasks.
@@ -379,16 +357,12 @@ private:
   uint                      _barriers;          // Count of barrier tasks.
   uint                      _emptied_queue;     // Times we emptied the queue.
   NoopGCTask*               _noop_task;         // The NoopGCTask instance.
-  uint                      _noop_tasks;        // Count of noop tasks.
   WaitForBarrierGCTask*     _idle_inactive_task;// Task for inactive workers
   volatile uint             _idle_workers;      // Number of idled workers
 public:
   // Factory create and destroy methods.
   static GCTaskManager* create(uint workers) {
     return new GCTaskManager(workers);
-  }
-  static GCTaskManager* create(uint workers, NotifyDoneClosure* ndc) {
-    return new GCTaskManager(workers, ndc);
   }
   static void destroy(GCTaskManager* that) {
     if (that != NULL) {
@@ -452,8 +426,6 @@ protected:
   // Constructors.  Clients use factory, but there might be subclasses.
   //     Create a GCTaskManager with the appropriate number of workers.
   GCTaskManager(uint workers);
-  //     Create a GCTaskManager that calls back when there's no more work.
-  GCTaskManager(uint workers, NotifyDoneClosure* ndc);
   //     Make virtual if necessary.
   ~GCTaskManager();
   // Accessors.
@@ -469,9 +441,6 @@ protected:
   // Sets the number of threads that will be used in a collection
   void set_active_gang();
 
-  NotifyDoneClosure* notify_done_closure() const {
-    return _ndc;
-  }
   SynchronizedGCTaskQueue* queue() const {
     return _queue;
   }
@@ -540,17 +509,6 @@ protected:
   void reset_emptied_queue() {
     _emptied_queue = 0;
   }
-  //     Count of the number of noop tasks we've handed out,
-  //     e.g., to handle resource release requests.
-  uint noop_tasks() const {
-    return _noop_tasks;
-  }
-  void increment_noop_tasks() {
-    _noop_tasks += 1;
-  }
-  void reset_noop_tasks() {
-    _noop_tasks = 0;
-  }
   void increment_idle_workers() {
     _idle_workers++;
   }
@@ -575,11 +533,8 @@ protected:
 // A noop task that does nothing,
 // except take us around the GCTaskThread loop.
 class NoopGCTask : public GCTask {
-private:
-  const bool _is_c_heap_obj;            // Is this a CHeapObj?
 public:
   // Factory create and destroy methods.
-  static NoopGCTask* create();
   static NoopGCTask* create_on_c_heap();
   static void destroy(NoopGCTask* that);
 
@@ -590,113 +545,16 @@ public:
   }
 protected:
   // Constructor.
-  NoopGCTask(bool on_c_heap) :
-    GCTask(GCTask::Kind::noop_task),
-    _is_c_heap_obj(on_c_heap) {
-    // Nothing to do.
-  }
-  // Destructor-like method.
-  void destruct();
-  // Accessors.
-  bool is_c_heap_obj() const {
-    return _is_c_heap_obj;
-  }
-};
-
-// A BarrierGCTask blocks other tasks from starting,
-// and waits until it is the only task running.
-class BarrierGCTask : public GCTask {
-public:
-  // Factory create and destroy methods.
-  static BarrierGCTask* create() {
-    return new BarrierGCTask();
-  }
-  static void destroy(BarrierGCTask* that) {
-    if (that != NULL) {
-      that->destruct();
-      delete that;
-    }
-  }
-  // Methods from GCTask.
-  void do_it(GCTaskManager* manager, uint which);
-protected:
-  // Constructor.  Clients use factory, but there might be subclasses.
-  BarrierGCTask() :
-    GCTask(GCTask::Kind::barrier_task) {
-    // Nothing to do.
-  }
-  // Destructor-like method.
-  void destruct();
-
-  virtual char* name() { return (char *)"barrier task"; }
-  // Methods.
-  //     Wait for this to be the only task running.
-  void do_it_internal(GCTaskManager* manager, uint which);
-};
-
-// A ReleasingBarrierGCTask is a BarrierGCTask
-// that tells all the tasks to release their resource areas.
-class ReleasingBarrierGCTask : public BarrierGCTask {
-public:
-  // Factory create and destroy methods.
-  static ReleasingBarrierGCTask* create() {
-    return new ReleasingBarrierGCTask();
-  }
-  static void destroy(ReleasingBarrierGCTask* that) {
-    if (that != NULL) {
-      that->destruct();
-      delete that;
-    }
-  }
-  // Methods from GCTask.
-  void do_it(GCTaskManager* manager, uint which);
-protected:
-  // Constructor.  Clients use factory, but there might be subclasses.
-  ReleasingBarrierGCTask() :
-    BarrierGCTask() {
-    // Nothing to do.
-  }
+  NoopGCTask() :
+    GCTask(GCTask::Kind::noop_task) { }
   // Destructor-like method.
   void destruct();
 };
 
-// A NotifyingBarrierGCTask is a BarrierGCTask
-// that calls a notification method when it is the only task running.
-class NotifyingBarrierGCTask : public BarrierGCTask {
-private:
-  // Instance state.
-  NotifyDoneClosure* _ndc;              // The callback object.
-public:
-  // Factory create and destroy methods.
-  static NotifyingBarrierGCTask* create(NotifyDoneClosure* ndc) {
-    return new NotifyingBarrierGCTask(ndc);
-  }
-  static void destroy(NotifyingBarrierGCTask* that) {
-    if (that != NULL) {
-      that->destruct();
-      delete that;
-    }
-  }
-  // Methods from GCTask.
-  void do_it(GCTaskManager* manager, uint which);
-protected:
-  // Constructor.  Clients use factory, but there might be subclasses.
-  NotifyingBarrierGCTask(NotifyDoneClosure* ndc) :
-    BarrierGCTask(),
-    _ndc(ndc) {
-    assert(notify_done_closure() != NULL, "can't notify on NULL");
-  }
-  // Destructor-like method.
-  void destruct();
-  // Accessor.
-  NotifyDoneClosure* notify_done_closure() const { return _ndc; }
-};
-
-// A WaitForBarrierGCTask is a BarrierGCTask
+// A WaitForBarrierGCTask is a GCTask
 // with a method you can call to wait until
 // the BarrierGCTask is done.
-// This may cover many of the uses of NotifyingBarrierGCTasks.
-class WaitForBarrierGCTask : public BarrierGCTask {
+class WaitForBarrierGCTask : public GCTask {
   friend class GCTaskManager;
   friend class IdleGCTask;
 private:
@@ -722,6 +580,11 @@ protected:
   WaitForBarrierGCTask(bool on_c_heap);
   // Destructor-like method.
   void destruct();
+
+  // Methods.
+  //     Wait for this to be the only task running.
+  void do_it_internal(GCTaskManager* manager, uint which);
+
   // Accessors.
   Monitor* monitor() const {
     return _monitor;

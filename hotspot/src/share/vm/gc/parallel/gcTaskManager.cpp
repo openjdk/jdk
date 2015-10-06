@@ -48,8 +48,8 @@ const char* GCTask::Kind::to_string(kind value) {
   case ordinary_task:
     result = "ordinary task";
     break;
-  case barrier_task:
-    result = "barrier task";
+  case wait_for_barrier_task:
+    result = "wait for barrier task";
     break;
   case noop_task:
     result = "noop task";
@@ -378,16 +378,7 @@ SynchronizedGCTaskQueue::~SynchronizedGCTaskQueue() {
 GCTaskManager::GCTaskManager(uint workers) :
   _workers(workers),
   _active_workers(0),
-  _idle_workers(0),
-  _ndc(NULL) {
-  initialize();
-}
-
-GCTaskManager::GCTaskManager(uint workers, NotifyDoneClosure* ndc) :
-  _workers(workers),
-  _active_workers(0),
-  _idle_workers(0),
-  _ndc(ndc) {
+  _idle_workers(0) {
   initialize();
 }
 
@@ -437,7 +428,6 @@ void GCTaskManager::initialize() {
   }
   reset_delivered_tasks();
   reset_completed_tasks();
-  reset_noop_tasks();
   reset_barriers();
   reset_emptied_queue();
   for (uint s = 0; s < workers(); s += 1) {
@@ -671,7 +661,6 @@ GCTask* GCTaskManager::get_task(uint which) {
     // Just hand back a Noop task,
     // in case someone wanted us to release resources, or whatever.
     result = noop_task();
-    increment_noop_tasks();
   }
   assert(result != NULL, "shouldn't have null task");
   if (TraceGCTaskManager) {
@@ -705,11 +694,6 @@ void GCTaskManager::note_completion(uint which) {
     increment_emptied_queue();
     if (TraceGCTaskManager) {
       tty->print_cr("    GCTaskManager::note_completion(%u) done", which);
-    }
-    // Notify client that we are done.
-    NotifyDoneClosure* ndc = notify_done_closure();
-    if (ndc != NULL) {
-      ndc->notify(this);
     }
   }
   if (TraceGCTaskManager) {
@@ -751,7 +735,7 @@ uint GCTaskManager::decrement_busy_workers() {
 }
 
 void GCTaskManager::release_all_resources() {
-  // If you want this to be done atomically, do it in a BarrierGCTask.
+  // If you want this to be done atomically, do it in a WaitForBarrierGCTask.
   for (uint i = 0; i < workers(); i += 1) {
     set_resource_flag(i, true);
   }
@@ -813,22 +797,15 @@ void GCTaskManager::set_resource_flag(uint which, bool value) {
 // NoopGCTask
 //
 
-NoopGCTask* NoopGCTask::create() {
-  NoopGCTask* result = new NoopGCTask(false);
-  return result;
-}
-
 NoopGCTask* NoopGCTask::create_on_c_heap() {
-  NoopGCTask* result = new(ResourceObj::C_HEAP, mtGC) NoopGCTask(true);
+  NoopGCTask* result = new(ResourceObj::C_HEAP, mtGC) NoopGCTask();
   return result;
 }
 
 void NoopGCTask::destroy(NoopGCTask* that) {
   if (that != NULL) {
     that->destruct();
-    if (that->is_c_heap_obj()) {
-      FreeHeap(that);
-    }
+    FreeHeap(that);
   }
 }
 
@@ -909,74 +886,6 @@ void IdleGCTask::destruct() {
 }
 
 //
-// BarrierGCTask
-//
-
-void BarrierGCTask::do_it(GCTaskManager* manager, uint which) {
-  // Wait for this to be the only busy worker.
-  // ??? I thought of having a StackObj class
-  //     whose constructor would grab the lock and come to the barrier,
-  //     and whose destructor would release the lock,
-  //     but that seems like too much mechanism for two lines of code.
-  MutexLockerEx ml(manager->lock(), Mutex::_no_safepoint_check_flag);
-  do_it_internal(manager, which);
-  // Release manager->lock().
-}
-
-void BarrierGCTask::do_it_internal(GCTaskManager* manager, uint which) {
-  // Wait for this to be the only busy worker.
-  assert(manager->monitor()->owned_by_self(), "don't own the lock");
-  assert(manager->is_blocked(), "manager isn't blocked");
-  while (manager->busy_workers() > 1) {
-    if (TraceGCTaskManager) {
-      tty->print_cr("BarrierGCTask::do_it(%u) waiting on %u workers",
-                    which, manager->busy_workers());
-    }
-    manager->monitor()->wait(Mutex::_no_safepoint_check_flag, 0);
-  }
-}
-
-void BarrierGCTask::destruct() {
-  this->GCTask::destruct();
-  // Nothing else to do.
-}
-
-//
-// ReleasingBarrierGCTask
-//
-
-void ReleasingBarrierGCTask::do_it(GCTaskManager* manager, uint which) {
-  MutexLockerEx ml(manager->lock(), Mutex::_no_safepoint_check_flag);
-  do_it_internal(manager, which);
-  manager->release_all_resources();
-  // Release manager->lock().
-}
-
-void ReleasingBarrierGCTask::destruct() {
-  this->BarrierGCTask::destruct();
-  // Nothing else to do.
-}
-
-//
-// NotifyingBarrierGCTask
-//
-
-void NotifyingBarrierGCTask::do_it(GCTaskManager* manager, uint which) {
-  MutexLockerEx ml(manager->lock(), Mutex::_no_safepoint_check_flag);
-  do_it_internal(manager, which);
-  NotifyDoneClosure* ndc = notify_done_closure();
-  if (ndc != NULL) {
-    ndc->notify(manager);
-  }
-  // Release manager->lock().
-}
-
-void NotifyingBarrierGCTask::destruct() {
-  this->BarrierGCTask::destruct();
-  // Nothing else to do.
-}
-
-//
 // WaitForBarrierGCTask
 //
 WaitForBarrierGCTask* WaitForBarrierGCTask::create() {
@@ -991,6 +900,7 @@ WaitForBarrierGCTask* WaitForBarrierGCTask::create_on_c_heap() {
 }
 
 WaitForBarrierGCTask::WaitForBarrierGCTask(bool on_c_heap) :
+  GCTask(GCTask::Kind::wait_for_barrier_task),
   _is_c_heap_obj(on_c_heap) {
   _monitor = MonitorSupply::reserve();
   set_should_wait(true);
@@ -1028,13 +938,26 @@ void WaitForBarrierGCTask::destruct() {
                   "  monitor: " INTPTR_FORMAT,
                   p2i(this), p2i(monitor()));
   }
-  this->BarrierGCTask::destruct();
+  this->GCTask::destruct();
   // Clean up that should be in the destructor,
   // except that ResourceMarks don't call destructors.
    if (monitor() != NULL) {
      MonitorSupply::release(monitor());
   }
   _monitor = (Monitor*) 0xDEAD000F;
+}
+
+void WaitForBarrierGCTask::do_it_internal(GCTaskManager* manager, uint which) {
+  // Wait for this to be the only busy worker.
+  assert(manager->monitor()->owned_by_self(), "don't own the lock");
+  assert(manager->is_blocked(), "manager isn't blocked");
+  while (manager->busy_workers() > 1) {
+    if (TraceGCTaskManager) {
+      tty->print_cr("WaitForBarrierGCTask::do_it(%u) waiting on %u workers",
+                    which, manager->busy_workers());
+    }
+    manager->monitor()->wait(Mutex::_no_safepoint_check_flag, 0);
+  }
 }
 
 void WaitForBarrierGCTask::do_it(GCTaskManager* manager, uint which) {
