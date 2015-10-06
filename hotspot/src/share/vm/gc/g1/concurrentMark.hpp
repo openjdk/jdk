@@ -182,15 +182,6 @@ class CMMarkStack VALUE_OBJ_CLASS_SPEC {
 
   bool  _overflow;
   bool  _should_expand;
-  DEBUG_ONLY(bool _drain_in_progress;)
-  DEBUG_ONLY(bool _drain_in_progress_yields;)
-
-  oop pop() {
-    if (!isEmpty()) {
-      return _base[--_index] ;
-    }
-    return NULL;
-  }
 
  public:
   CMMarkStack(ConcurrentMark* cm);
@@ -211,17 +202,6 @@ class CMMarkStack VALUE_OBJ_CLASS_SPEC {
   // concurrency is allowed only with "par_push_arr" and/or "par_pop_arr"
   // operations, which use the same locking strategy.
   bool par_pop_arr(oop* ptr_arr, int max, int* n);
-
-  // Drain the mark stack, applying the given closure to all fields of
-  // objects on the stack.  (That is, continue until the stack is empty,
-  // even if closure applications add entries to the stack.)  The "bm"
-  // argument, if non-null, may be used to verify that only marked objects
-  // are on the mark stack.  If "yield_after" is "true", then the
-  // concurrent marker performing the drain offers to yield after
-  // processing each object.  If a yield occurs, stops the drain operation
-  // and returns false.  Otherwise, returns true.
-  template<class OopClosureClass>
-  bool drain(OopClosureClass* cl, CMBitMap* bm, bool yield_after = false);
 
   bool isEmpty()    { return _index == 0; }
   int  maxElems()   { return _capacity; }
