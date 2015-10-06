@@ -252,6 +252,9 @@ address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKin
 
   if (kind == Interpreter::java_lang_math_sqrt) {
     __ sqrtsd(xmm0, Address(rsp, wordSize));
+  } else if (kind == Interpreter::java_lang_math_exp) {
+    __ movdbl(xmm0, Address(rsp, wordSize));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dexp())));
   } else {
     __ fld_d(Address(rsp, wordSize));
     switch (kind) {
@@ -278,9 +281,6 @@ address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKin
                                               // empty stack slot)
           __ pow_with_fallback(0);
           break;
-      case Interpreter::java_lang_math_exp:
-          __ exp_with_fallback(0);
-           break;
       default                              :
           ShouldNotReachHere();
     }

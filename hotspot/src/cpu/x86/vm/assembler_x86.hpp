@@ -1679,10 +1679,14 @@ private:
   // SSE 4.1 extract
   void pextrd(Register dst, XMMRegister src, int imm8);
   void pextrq(Register dst, XMMRegister src, int imm8);
+  // SSE 2 extract
+  void pextrw(Register dst, XMMRegister src, int imm8);
 
   // SSE 4.1 insert
   void pinsrd(XMMRegister dst, Register src, int imm8);
   void pinsrq(XMMRegister dst, Register src, int imm8);
+  // SSE 2 insert
+  void pinsrw(XMMRegister dst, Register src, int imm8);
 
   // SSE4.1 packed move
   void pmovzxbw(XMMRegister dst, XMMRegister src);
@@ -1933,6 +1937,7 @@ private:
 
   // Multiply Packed Floating-Point Values
   void mulpd(XMMRegister dst, XMMRegister src);
+  void mulpd(XMMRegister dst, Address src);
   void mulps(XMMRegister dst, XMMRegister src);
   void vmulpd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vmulps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -1958,6 +1963,9 @@ private:
   void vandps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vandpd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vandps(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
+  void unpckhpd(XMMRegister dst, XMMRegister src);
+  void unpcklpd(XMMRegister dst, XMMRegister src);
 
   // Bitwise Logical XOR of Packed Floating-Point Values
   void xorpd(XMMRegister dst, XMMRegister src);
@@ -2053,6 +2061,9 @@ private:
   void pand(XMMRegister dst, XMMRegister src);
   void vpand(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpand(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
+  // Andn packed integers
+  void pandn(XMMRegister dst, XMMRegister src);
 
   // Or packed integers
   void por(XMMRegister dst, XMMRegister src);

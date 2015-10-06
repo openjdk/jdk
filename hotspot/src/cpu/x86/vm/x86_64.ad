@@ -9898,22 +9898,6 @@ instruct powD_reg(regD dst, regD src0, regD src1, rax_RegI rax, rdx_RegI rdx, rc
   ins_pipe( pipe_slow );
 %}
 
-instruct expD_reg(regD dst, regD src, rax_RegI rax, rdx_RegI rdx, rcx_RegI rcx, rFlagsReg cr) %{
-  match(Set dst (ExpD src));
-  effect(KILL rax, KILL rcx, KILL rdx, KILL cr);
-  format %{ "fast_exp $dst -> $src  // KILL $rax, $rcx, $rdx" %}
-  ins_encode %{
-    __ subptr(rsp, 8);
-    __ movdbl(Address(rsp, 0), $src$$XMMRegister);
-    __ fld_d(Address(rsp, 0));
-    __ fast_exp();
-    __ fstp_d(Address(rsp, 0));
-    __ movdbl($dst$$XMMRegister, Address(rsp, 0));
-    __ addptr(rsp, 8);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
 //----------Arithmetic Conversion Instructions---------------------------------
 
 instruct roundFloat_nop(regF dst)

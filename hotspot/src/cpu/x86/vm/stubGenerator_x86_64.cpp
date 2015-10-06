@@ -3039,19 +3039,6 @@ class StubGenerator: public StubCodeGenerator {
       __ ret(0);
     }
     {
-      StubCodeMark mark(this, "StubRoutines", "exp");
-      StubRoutines::_intrinsic_exp = (double (*)(double)) __ pc();
-
-      __ subq(rsp, 8);
-      __ movdbl(Address(rsp, 0), xmm0);
-      __ fld_d(Address(rsp, 0));
-      __ exp_with_fallback(0);
-      __ fstp_d(Address(rsp, 0));
-      __ movdbl(xmm0, Address(rsp, 0));
-      __ addq(rsp, 8);
-      __ ret(0);
-    }
-    {
       StubCodeMark mark(this, "StubRoutines", "pow");
       StubRoutines::_intrinsic_pow = (double (*)(double,double)) __ pc();
 
@@ -4180,6 +4167,44 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  address generate_libmExp() {
+    address start = __ pc();
+
+    const XMMRegister x0  = xmm0;
+    const XMMRegister x1  = xmm1;
+    const XMMRegister x2  = xmm2;
+    const XMMRegister x3  = xmm3;
+
+    const XMMRegister x4  = xmm4;
+    const XMMRegister x5  = xmm5;
+    const XMMRegister x6  = xmm6;
+    const XMMRegister x7  = xmm7;
+
+    const Register tmp   = r11;
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+
+#ifdef _WIN64
+    // save the xmm registers which must be preserved 6-7
+    __ movdqu(xmm_save(6), as_XMMRegister(6));
+    __ movdqu(xmm_save(7), as_XMMRegister(7));
+#endif
+      __ fast_exp(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
+
+#ifdef _WIN64
+    // restore xmm regs belonging to calling function
+    __ movdqu(as_XMMRegister(6), xmm_save(6));
+    __ movdqu(as_XMMRegister(7), xmm_save(7));
+#endif
+
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+
+    return start;
+
+  }
+
 
 #undef __
 #define __ masm->
@@ -4367,6 +4392,7 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_crc32c_table_addr = (address)StubRoutines::x86::_crc32c_table;
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C(supports_clmul);
     }
+    StubRoutines::_dexp = generate_libmExp();
   }
 
   void generate_all() {
