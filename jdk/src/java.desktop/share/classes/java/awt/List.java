@@ -209,7 +209,7 @@ public class List extends Component implements ItemSelectable, Accessible {
      * The default number of visible rows is 4.  A list with
      * zero rows is unusable and unsightly.
      */
-    final static int    DEFAULT_VISIBLE_ROWS = 4;
+    static final int    DEFAULT_VISIBLE_ROWS = 4;
 
     /**
      * Creates a new scrolling list initialized to display the specified

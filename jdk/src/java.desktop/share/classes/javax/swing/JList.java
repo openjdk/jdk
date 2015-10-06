@@ -161,8 +161,8 @@ import static sun.swing.SwingUtilities2.Section.*;
  *  // Display an icon and a string for each object in the list.
  *
  * class MyCellRenderer extends JLabel implements ListCellRenderer<Object> {
- *     final static ImageIcon longIcon = new ImageIcon("long.gif");
- *     final static ImageIcon shortIcon = new ImageIcon("short.gif");
+ *     static final ImageIcon longIcon = new ImageIcon("long.gif");
+ *     static final ImageIcon shortIcon = new ImageIcon("short.gif");
  *
  *     // This is the only method defined by ListCellRenderer.
  *     // We just reconfigure the JLabel each time we're called.

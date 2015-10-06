@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,22 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.misc;
 
-public interface JavaAWTAccess {
+import java.net.HttpCookie;
+import java.util.List;
 
-    // Returns the AppContext used for applet logging isolation, or null if
-    // no isolation is required.
-    // If there's no applet, or if the caller is a stand alone application,
-    // or running in the main app context, returns null.
-    // Otherwise, returns the AppContext of the calling applet.
-    public Object getAppletContext();
+public interface JavaNetHttpCookieAccess {
+    /*
+     * Constructs cookies from Set-Cookie or Set-Cookie2 header string,
+     * retaining the original header String in the cookie itself.
+     */
+    public List<HttpCookie> parse(String header);
+
+    /*
+     * Returns the original header this cookie was constructed from, if it was
+     * constructed by parsing a header, otherwise null.
+     */
+    public String header(HttpCookie cookie);
 }
+

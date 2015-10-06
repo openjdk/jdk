@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,12 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.misc;
 
-import java.security.AccessControlContext;
-import java.security.PrivilegedAction;
+import java.io.Console;
+import java.nio.charset.Charset;
 
-public interface JavaSecurityAccess {
-
-    <T> T doIntersectionPrivilege(PrivilegedAction<T> action,
-                                  AccessControlContext stack,
-                                  AccessControlContext context);
-
-    <T> T doIntersectionPrivilege(PrivilegedAction<T> action,
-                                  AccessControlContext context);
-
+public interface JavaIOAccess {
+    public Console console();
+    public Charset charset();
 }

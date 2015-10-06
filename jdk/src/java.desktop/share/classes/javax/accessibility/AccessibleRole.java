@@ -588,7 +588,7 @@ public class AccessibleRole extends AccessibleBundle {
      *
      * @since 1.5
      */
-    static public final AccessibleRole EDITBAR =
+    public static final AccessibleRole EDITBAR =
         new AccessibleRole("editbar");
 
     /**
@@ -597,7 +597,7 @@ public class AccessibleRole extends AccessibleBundle {
      *
      * @since 1.5
      */
-    static public final AccessibleRole PROGRESS_MONITOR =
+    public static final AccessibleRole PROGRESS_MONITOR =
         new AccessibleRole("progressMonitor");
 
 

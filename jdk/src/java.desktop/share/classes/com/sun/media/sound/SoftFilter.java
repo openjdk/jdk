@@ -35,13 +35,13 @@ package com.sun.media.sound;
  */
 public final class SoftFilter {
 
-    public final static int FILTERTYPE_LP6 = 0x00;
-    public final static int FILTERTYPE_LP12 = 0x01;
-    public final static int FILTERTYPE_HP12 = 0x11;
-    public final static int FILTERTYPE_BP12 = 0x21;
-    public final static int FILTERTYPE_NP12 = 0x31;
-    public final static int FILTERTYPE_LP24 = 0x03;
-    public final static int FILTERTYPE_HP24 = 0x13;
+    public static final int FILTERTYPE_LP6 = 0x00;
+    public static final int FILTERTYPE_LP12 = 0x01;
+    public static final int FILTERTYPE_HP12 = 0x11;
+    public static final int FILTERTYPE_BP12 = 0x21;
+    public static final int FILTERTYPE_NP12 = 0x31;
+    public static final int FILTERTYPE_LP24 = 0x03;
+    public static final int FILTERTYPE_HP24 = 0x13;
 
     //
     // 0x0 = 1st-order, 6 dB/oct

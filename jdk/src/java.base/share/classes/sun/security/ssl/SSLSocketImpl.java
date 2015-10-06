@@ -42,8 +42,8 @@ import javax.crypto.BadPaddingException;
 import javax.net.ssl.*;
 import sun.misc.ManagedLocalsThread;
 
-import sun.misc.JavaNetInetAddressAccess;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaNetInetAddressAccess;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * Implementation of an SSL socket.  This is a normal connection type
@@ -2094,7 +2094,7 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
      */
     private static String getOriginalHostname(InetAddress inetAddress) {
         /*
-         * Get the original hostname via sun.misc.SharedSecrets.
+         * Get the original hostname via jdk.internal.misc.SharedSecrets.
          */
         JavaNetInetAddressAccess jna = SharedSecrets.getJavaNetInetAddressAccess();
         String originalHostname = jna.getOriginalHostName(inetAddress);

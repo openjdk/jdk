@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,21 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.misc;
 
-import java.io.FileDescriptor;
+package jdk.internal.misc;
 
-/*
- * @author Chris Hegarty
- */
+import java.net.InetAddress;
 
-public interface JavaIOFileDescriptorAccess {
-    public void set(FileDescriptor obj, int fd);
-    public int get(FileDescriptor fd);
-    public void setAppend(FileDescriptor obj, boolean append);
-    public boolean getAppend(FileDescriptor obj);
-
-    // Only valid on Windows
-    public void setHandle(FileDescriptor obj, long handle);
-    public long getHandle(FileDescriptor obj);
+public interface JavaNetInetAddressAccess {
+    /**
+     * Return the original application specified hostname of
+     * the given InetAddress object.
+     */
+    String getOriginalHostName(InetAddress ia);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,13 +23,14 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.misc;
 
-import java.net.URLClassLoader;
+public interface JavaAWTAccess {
 
-public interface JavaNetAccess {
-    /**
-     * return the URLClassPath belonging to the given loader
-     */
-    URLClassPath getURLClassPath (URLClassLoader u);
+    // Returns the AppContext used for applet logging isolation, or null if
+    // no isolation is required.
+    // If there's no applet, or if the caller is a stand alone application,
+    // or running in the main app context, returns null.
+    // Otherwise, returns the AppContext of the calling applet.
+    public Object getAppletContext();
 }

@@ -34,10 +34,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
-import sun.misc.JavaSecurityAccess;
-import sun.misc.JavaSecurityProtectionDomainAccess;
-import static sun.misc.JavaSecurityProtectionDomainAccess.ProtectionDomainCache;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaSecurityAccess;
+import jdk.internal.misc.JavaSecurityProtectionDomainAccess;
+import static jdk.internal.misc.JavaSecurityProtectionDomainAccess.ProtectionDomainCache;
+import jdk.internal.misc.SharedSecrets;
 import sun.security.util.Debug;
 import sun.security.util.SecurityConstants;
 

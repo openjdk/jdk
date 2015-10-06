@@ -252,7 +252,7 @@ public final class SunGraphics2D
     private FontInfo glyphVectorFontInfo;
     private FontRenderContext glyphVectorFRC;
 
-    private final static int slowTextTransformMask =
+    private static final int slowTextTransformMask =
                             AffineTransform.TYPE_GENERAL_TRANSFORM
                         |   AffineTransform.TYPE_MASK_ROTATION
                         |   AffineTransform.TYPE_FLIP;

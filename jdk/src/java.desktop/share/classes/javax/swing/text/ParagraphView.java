@@ -1184,11 +1184,11 @@ public class ParagraphView extends FlowView implements TabExpander {
                            lineSpacing);
         }
 
-        final static int SPACE_ADDON = 0;
-        final static int SPACE_ADDON_LEFTOVER_END = 1;
-        final static int START_JUSTIFIABLE = 2;
+        static final int SPACE_ADDON = 0;
+        static final int SPACE_ADDON_LEFTOVER_END = 1;
+        static final int START_JUSTIFIABLE = 2;
         //this should be the last index in justificationData
-        final static int END_JUSTIFIABLE = 3;
+        static final int END_JUSTIFIABLE = 3;
 
         int justificationData[] = null;
     }
