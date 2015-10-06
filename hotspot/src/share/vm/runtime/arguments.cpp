@@ -32,6 +32,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "logging/logConfiguration.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -3190,6 +3191,26 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       if (FLAG_SET_CMDLINE(bool, PrintGCTimeStamps, true) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
+    } else if (match_option(option, "-Xlog", &tail)) {
+      bool ret = false;
+      if (strcmp(tail, ":help") == 0) {
+        LogConfiguration::print_command_line_help(defaultStream::output_stream());
+        vm_exit(0);
+      } else if (strcmp(tail, ":disable") == 0) {
+        LogConfiguration::disable_logging();
+        ret = true;
+      } else if (*tail == '\0') {
+        ret = LogConfiguration::parse_command_line_arguments();
+        assert(ret, "-Xlog without arguments should never fail to parse");
+      } else if (*tail == ':') {
+        ret = LogConfiguration::parse_command_line_arguments(tail + 1);
+      }
+      if (ret == false) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Invalid -Xlog option '-Xlog%s'\n",
+                    tail);
+        return JNI_EINVAL;
+      }
     // JNI hooks
     } else if (match_option(option, "-Xcheck", &tail)) {
       if (!strcmp(tail, ":jni")) {
@@ -3690,8 +3711,6 @@ jint Arguments::parse_options_environment_variable(const char* name,
   return retcode;
 }
 
-const int OPTION_BUFFER_SIZE = 1024;
-
 jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* vm_args) {
   // read file into buffer
   int fd = ::open(file_name, O_RDONLY);
@@ -3702,8 +3721,24 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
     return JNI_ERR;
   }
 
+  struct stat stbuf;
+  int retcode = os::stat(file_name, &stbuf);
+  if (retcode != 0) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Could not stat options file '%s'\n",
+                file_name);
+    os::close(fd);
+    return JNI_ERR;
+  }
+
+  if (stbuf.st_size == 0) {
+    // tell caller there is no option data and that is ok
+    os::close(fd);
+    return JNI_OK;
+  }
+
   // '+ 1' for NULL termination even with max bytes
-  int bytes_alloc = OPTION_BUFFER_SIZE + 1;
+  size_t bytes_alloc = stbuf.st_size + 1;
 
   char *buf = NEW_C_HEAP_ARRAY_RETURN_NULL(char, bytes_alloc, mtInternal);
   if (NULL == buf) {
@@ -3713,14 +3748,14 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
     return JNI_ENOMEM;
   }
 
-  memset(buf, 0, (unsigned)bytes_alloc);
+  memset(buf, 0, bytes_alloc);
 
   // Fill buffer
   // Use ::read() instead of os::read because os::read()
   // might do a thread state transition
   // and it is too early for that here
 
-  int bytes_read = ::read(fd, (void *)buf, (unsigned)bytes_alloc);
+  ssize_t bytes_read = ::read(fd, (void *)buf, (unsigned)bytes_alloc);
   os::close(fd);
   if (bytes_read < 0) {
     FREE_C_HEAP_ARRAY(char, buf);
@@ -3735,16 +3770,7 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
     return JNI_OK;
   }
 
-  // file is larger than OPTION_BUFFER_SIZE
-  if (bytes_read > bytes_alloc - 1) {
-    FREE_C_HEAP_ARRAY(char, buf);
-    jio_fprintf(defaultStream::error_stream(),
-                "Options file '%s' is larger than %d bytes.\n",
-                file_name, bytes_alloc - 1);
-    return JNI_EINVAL;
-  }
-
-  int retcode = parse_options_buffer(file_name, buf, bytes_read, vm_args);
+  retcode = parse_options_buffer(file_name, buf, bytes_read, vm_args);
 
   FREE_C_HEAP_ARRAY(char, buf);
   return retcode;

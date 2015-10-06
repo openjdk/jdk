@@ -2238,7 +2238,7 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[])
     ttyLocker ttyl;
     ::tty->print_cr("=============== DEBUG MESSAGE: %s ================\n",
                     msg);
-    assert(false, err_msg("DEBUG MESSAGE: %s", msg));
+    assert(false, "DEBUG MESSAGE: %s", msg);
   }
 }
 
@@ -3075,11 +3075,15 @@ void MacroAssembler::store_check(Register obj) {
 
   if (UseCondCardMark) {
     Label L_already_dirty;
+    membar(StoreLoad);
     ldrb(rscratch2,  Address(obj, rscratch1));
     cbz(rscratch2, L_already_dirty);
     strb(zr, Address(obj, rscratch1));
     bind(L_already_dirty);
   } else {
+    if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
+      membar(StoreStore);
+    }
     strb(zr, Address(obj, rscratch1));
   }
 }

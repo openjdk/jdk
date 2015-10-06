@@ -1977,7 +1977,7 @@ static const char* sem_init_strerror(kern_return_t value) {
 OSXSemaphore::OSXSemaphore(uint value) {
   kern_return_t ret = SEM_INIT(_semaphore, value);
 
-  guarantee(ret == KERN_SUCCESS, err_msg("Failed to create semaphore: %s", sem_init_strerror(ret)));
+  guarantee(ret == KERN_SUCCESS, "Failed to create semaphore: %s", sem_init_strerror(ret));
 }
 
 OSXSemaphore::~OSXSemaphore() {
@@ -2213,7 +2213,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   if (!pd_commit_memory(addr, size, exec)) {
     // add extra info in product mode for vm_exit_out_of_memory():
     PRODUCT_ONLY(warn_fail_commit_memory(addr, size, exec, errno);)
-    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, mesg);
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
   }
 }
 
@@ -3100,8 +3100,8 @@ void os::Bsd::set_signal_handler(int sig, bool set_installed) {
       // libjsig also interposes the sigaction() call below and saves the
       // old sigaction on it own.
     } else {
-      fatal(err_msg("Encountered unexpected pre-existing sigaction handler "
-                    "%#lx for signal %d.", (long)oldhand, sig));
+      fatal("Encountered unexpected pre-existing sigaction handler "
+            "%#lx for signal %d.", (long)oldhand, sig);
     }
   }
 
@@ -3459,8 +3459,7 @@ void os::init(void) {
 
   Bsd::set_page_size(getpagesize());
   if (Bsd::page_size() == -1) {
-    fatal(err_msg("os_bsd.cpp: os::init: sysconf failed (%s)",
-                  strerror(errno)));
+    fatal("os_bsd.cpp: os::init: sysconf failed (%s)", strerror(errno));
   }
   init_page_sizes((size_t) Bsd::page_size());
 

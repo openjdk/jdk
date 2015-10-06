@@ -1709,7 +1709,7 @@ static bool clean_if_nmethod_is_unloaded(CompiledICorStaticCall *ic, address add
     // Clean inline caches pointing to both zombie and not_entrant methods
     if (!nm->is_in_use() || (nm->method()->code() != nm)) {
       ic->set_to_clean();
-      assert(ic->is_clean(), err_msg("nmethod " PTR_FORMAT "not clean %s", from, from->method()->name_and_sig_as_C_string()));
+      assert(ic->is_clean(), "nmethod " PTR_FORMAT "not clean %s", from, from->method()->name_and_sig_as_C_string());
     }
   }
 
@@ -2540,7 +2540,7 @@ void nmethod::verify() {
   ResourceMark rm;
 
   if (!CodeCache::contains(this)) {
-    fatal(err_msg("nmethod at " INTPTR_FORMAT " not in zone", this));
+    fatal("nmethod at " INTPTR_FORMAT " not in zone", this);
   }
 
   if(is_native_method() )
@@ -2548,8 +2548,7 @@ void nmethod::verify() {
 
   nmethod* nm = CodeCache::find_nmethod(verified_entry_point());
   if (nm != this) {
-    fatal(err_msg("findNMethod did not find this nmethod (" INTPTR_FORMAT ")",
-                  this));
+    fatal("findNMethod did not find this nmethod (" INTPTR_FORMAT ")", this);
   }
 
   for (PcDesc* p = scopes_pcs_begin(); p < scopes_pcs_end(); p++) {

@@ -1669,8 +1669,8 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       }
       if (PrintCompilation) {
         FormatBufferResource msg = retry_message != NULL ?
-            err_msg_res("COMPILE SKIPPED: %s (%s)", ci_env.failure_reason(), retry_message) :
-            err_msg_res("COMPILE SKIPPED: %s",      ci_env.failure_reason());
+            FormatBufferResource("COMPILE SKIPPED: %s (%s)", ci_env.failure_reason(), retry_message) :
+            FormatBufferResource("COMPILE SKIPPED: %s",      ci_env.failure_reason());
         task->print(tty, msg);
       }
     } else {

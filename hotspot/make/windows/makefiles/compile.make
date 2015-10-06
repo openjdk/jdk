@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ CXX=cl.exe
 #   /nologo   Supress copyright message at every cl.exe startup
 #   /W3       Warning level 3
 #   /Zi       Include debugging information
+#   /d2Zi+    Extended debugging symbols for optimized code (/Zo in VS2013 Update 3 and later)
 #   /WX       Treat any warning error as a fatal error
 #   /MD       Use dynamic multi-threaded runtime (msvcrt.dll or msvc*NN.dll)
 #   /MTd      Use static multi-threaded runtime debug versions
@@ -57,7 +58,7 @@ CXX_FLAGS=$(EXTRA_CFLAGS) /nologo /W3 /WX
 
 # Let's add debug information when Full Debug Symbols is enabled
 !if "$(ENABLE_FULL_DEBUG_SYMBOLS)" == "1"
-CXX_FLAGS=$(CXX_FLAGS) /Zi
+CXX_FLAGS=$(CXX_FLAGS) /Zi /d2Zi+
 !endif
 
 # Based on BUILDARCH we add some flags and select the default compiler name

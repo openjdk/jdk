@@ -690,11 +690,11 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
 bool Klass::verify_vtable_index(int i) {
   if (oop_is_instance()) {
     int limit = ((InstanceKlass*)this)->vtable_length()/vtableEntry::size();
-    assert(i >= 0 && i < limit, err_msg("index %d out of bounds %d", i, limit));
+    assert(i >= 0 && i < limit, "index %d out of bounds %d", i, limit);
   } else {
     assert(oop_is_array(), "Must be");
     int limit = ((ArrayKlass*)this)->vtable_length()/vtableEntry::size();
-    assert(i >= 0 && i < limit, err_msg("index %d out of bounds %d", i, limit));
+    assert(i >= 0 && i < limit, "index %d out of bounds %d", i, limit);
   }
   return true;
 }

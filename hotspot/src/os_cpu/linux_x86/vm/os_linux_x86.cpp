@@ -542,8 +542,7 @@ JVM_handle_linux_signal(int sig,
   sigaddset(&newset, sig);
   sigprocmask(SIG_UNBLOCK, &newset, NULL);
 
-  VMError err(t, sig, pc, info, ucVoid);
-  err.report_and_die();
+  VMError::report_and_die(t, sig, pc, info, ucVoid);
 
   ShouldNotReachHere();
   return true; // Mute compiler
@@ -689,7 +688,7 @@ static void current_stack_region(address * bottom, size_t * size) {
        if (rslt == ENOMEM) {
          vm_exit_out_of_memory(0, OOM_MMAP_ERROR, "pthread_getattr_np");
        } else {
-         fatal(err_msg("pthread_getattr_np failed with errno = %d", rslt));
+         fatal("pthread_getattr_np failed with errno = %d", rslt);
        }
      }
 

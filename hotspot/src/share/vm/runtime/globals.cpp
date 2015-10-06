@@ -93,7 +93,7 @@ static bool is_product_build() {
 
 void Flag::check_writable() {
   if (is_constant_in_binary()) {
-    fatal(err_msg("flag is constant: %s", _name));
+    fatal("flag is constant: %s", _name);
   }
 }
 

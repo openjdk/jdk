@@ -4292,7 +4292,7 @@ const char* stop_types[] = {
 
 static void stop_on_request(int tp, const char* msg) {
   tty->print("PPC assembly code requires stop: (%s) %s\n", stop_types[tp%/*stop_end*/4], msg);
-  guarantee(false, err_msg("PPC assembly code requires stop: %s", msg));
+  guarantee(false, "PPC assembly code requires stop: %s", msg);
 }
 
 // Call a C-function that prints output.

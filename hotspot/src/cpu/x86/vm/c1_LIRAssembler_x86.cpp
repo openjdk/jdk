@@ -2684,7 +2684,7 @@ void LIR_Assembler::comp_op(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2,
 #endif // _LP64
         }
       } else {
-        fatal(err_msg("unexpected type: %s", basictype_to_str(c->type())));
+        fatal("unexpected type: %s", basictype_to_str(c->type()));
       }
       // cpu register - address
     } else if (opr2->is_address()) {

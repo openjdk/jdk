@@ -327,6 +327,7 @@ hotspot_runtime = \
  -runtime/Thread/TestThreadDumpMonitorContention.java \
  -runtime/SharedArchiveFile/SharedBaseAddress.java \
  -runtime/memory/ReserveMemory.java \
+ -runtime/memory/RunUnitTestsConcurrently.java \
  -runtime/Unsafe/RangeCheck.java \
  -runtime/SharedArchiveFile/CdsSameObjectAlignment.java \
  -runtime/SharedArchiveFile/DefaultUseWithClient.java \
