@@ -26,6 +26,7 @@
 #include "gc/parallel/gcTaskManager.hpp"
 #include "gc/parallel/gcTaskThread.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
+#include "gc/shared/gcId.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/mutex.hpp"
@@ -61,33 +62,24 @@ const char* GCTask::Kind::to_string(kind value) {
   return result;
 };
 
-GCTask::GCTask() :
-  _kind(Kind::ordinary_task),
-  _affinity(GCTaskManager::sentinel_worker()){
-  initialize();
+GCTask::GCTask() {
+  initialize(Kind::ordinary_task, GCId::current());
 }
 
-GCTask::GCTask(Kind::kind kind) :
-  _kind(kind),
-  _affinity(GCTaskManager::sentinel_worker()) {
-  initialize();
+GCTask::GCTask(Kind::kind kind) {
+  initialize(kind, GCId::current());
 }
 
-GCTask::GCTask(uint affinity) :
-  _kind(Kind::ordinary_task),
-  _affinity(affinity) {
-  initialize();
+GCTask::GCTask(Kind::kind kind, uint gc_id) {
+  initialize(kind, gc_id);
 }
 
-GCTask::GCTask(Kind::kind kind, uint affinity) :
-  _kind(kind),
-  _affinity(affinity) {
-  initialize();
-}
-
-void GCTask::initialize() {
+void GCTask::initialize(Kind::kind kind, uint gc_id) {
+  _kind = kind;
+  _affinity = GCTaskManager::sentinel_worker();
   _older = NULL;
   _newer = NULL;
+  _gc_id = gc_id;
 }
 
 void GCTask::destruct() {
@@ -805,6 +797,10 @@ void NoopGCTask::destroy(NoopGCTask* that) {
     FreeHeap(that);
   }
 }
+
+// This task should never be performing GC work that require
+// a valid GC id.
+NoopGCTask::NoopGCTask() : GCTask(GCTask::Kind::noop_task, GCId::undefined()) { }
 
 void NoopGCTask::destruct() {
   // This has to know it's superclass structure, just like the constructor.
