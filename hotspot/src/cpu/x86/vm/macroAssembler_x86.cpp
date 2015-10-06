@@ -3033,6 +3033,15 @@ void MacroAssembler::fldcw(AddressLiteral src) {
   Assembler::fldcw(as_Address(src));
 }
 
+void MacroAssembler::mulpd(XMMRegister dst, AddressLiteral src) {
+  if (reachable(src)) {
+    Assembler::mulpd(dst, as_Address(src));
+  } else {
+    lea(rscratch1, src);
+    Assembler::mulpd(dst, Address(rscratch1, 0));
+  }
+}
+
 void MacroAssembler::pow_exp_core_encoding() {
   // kills rax, rcx, rdx
   subptr(rsp,sizeof(jdouble));
@@ -3105,19 +3114,7 @@ void MacroAssembler::fast_pow() {
   BLOCK_COMMENT("} fast_pow");
 }
 
-void MacroAssembler::fast_exp() {
-  // computes exp(X) = 2^(X * log2(e))
-  // if fast computation is not possible, result is NaN. Requires
-  // fallback from user of this macro.
-  // increase precision for intermediate steps of the computation
-  increase_precision();
-  fldl2e();                // Stack: log2(e) X ...
-  fmulp(1);                // Stack: (X*log2(e)) ...
-  pow_exp_core_encoding(); // Stack: exp(X) ...
-  restore_precision();
-}
-
-void MacroAssembler::pow_or_exp(bool is_exp, int num_fpu_regs_in_use) {
+void MacroAssembler::pow_or_exp(int num_fpu_regs_in_use) {
   // kills rax, rcx, rdx
   // pow and exp needs 2 extra registers on the fpu stack.
   Label slow_case, done;
@@ -3129,182 +3126,164 @@ void MacroAssembler::pow_or_exp(bool is_exp, int num_fpu_regs_in_use) {
   Register tmp2 = rax;
   Register tmp3 = rcx;
 
-  if (is_exp) {
-    // Stack: X
-    fld_s(0);                   // duplicate argument for runtime call. Stack: X X
-    fast_exp();                 // Stack: exp(X) X
-    fcmp(tmp, 0, false, false); // Stack: exp(X) X
-    // exp(X) not equal to itself: exp(X) is NaN go to slow case.
-    jcc(Assembler::parity, slow_case);
-    // get rid of duplicate argument. Stack: exp(X)
-    if (num_fpu_regs_in_use > 0) {
-      fxch();
-      fpop();
-    } else {
-      ffree(1);
-    }
-    jmp(done);
+  // Stack: X Y
+  Label x_negative, y_not_2;
+
+  static double two = 2.0;
+  ExternalAddress two_addr((address)&two);
+
+  // constant maybe too far on 64 bit
+  lea(tmp2, two_addr);
+  fld_d(Address(tmp2, 0));    // Stack: 2 X Y
+  fcmp(tmp, 2, true, false);  // Stack: X Y
+  jcc(Assembler::parity, y_not_2);
+  jcc(Assembler::notEqual, y_not_2);
+
+  fxch(); fpop();             // Stack: X
+  fmul(0);                    // Stack: X*X
+
+  jmp(done);
+
+  bind(y_not_2);
+
+  fldz();                     // Stack: 0 X Y
+  fcmp(tmp, 1, true, false);  // Stack: X Y
+  jcc(Assembler::above, x_negative);
+
+  // X >= 0
+
+  fld_s(1);                   // duplicate arguments for runtime call. Stack: Y X Y
+  fld_s(1);                   // Stack: X Y X Y
+  fast_pow();                 // Stack: X^Y X Y
+  fcmp(tmp, 0, false, false); // Stack: X^Y X Y
+  // X^Y not equal to itself: X^Y is NaN go to slow case.
+  jcc(Assembler::parity, slow_case);
+  // get rid of duplicate arguments. Stack: X^Y
+  if (num_fpu_regs_in_use > 0) {
+    fxch(); fpop();
+    fxch(); fpop();
   } else {
-    // Stack: X Y
-    Label x_negative, y_not_2;
+    ffree(2);
+    ffree(1);
+  }
+  jmp(done);
 
-    static double two = 2.0;
-    ExternalAddress two_addr((address)&two);
+  // X <= 0
+  bind(x_negative);
 
-    // constant maybe too far on 64 bit
-    lea(tmp2, two_addr);
-    fld_d(Address(tmp2, 0));    // Stack: 2 X Y
-    fcmp(tmp, 2, true, false);  // Stack: X Y
-    jcc(Assembler::parity, y_not_2);
-    jcc(Assembler::notEqual, y_not_2);
+  fld_s(1);                   // Stack: Y X Y
+  frndint();                  // Stack: int(Y) X Y
+  fcmp(tmp, 2, false, false); // Stack: int(Y) X Y
+  jcc(Assembler::notEqual, slow_case);
 
-    fxch(); fpop();             // Stack: X
-    fmul(0);                    // Stack: X*X
+  subptr(rsp, 8);
 
-    jmp(done);
-
-    bind(y_not_2);
-
-    fldz();                     // Stack: 0 X Y
-    fcmp(tmp, 1, true, false);  // Stack: X Y
-    jcc(Assembler::above, x_negative);
-
-    // X >= 0
-
-    fld_s(1);                   // duplicate arguments for runtime call. Stack: Y X Y
-    fld_s(1);                   // Stack: X Y X Y
-    fast_pow();                 // Stack: X^Y X Y
-    fcmp(tmp, 0, false, false); // Stack: X^Y X Y
-    // X^Y not equal to itself: X^Y is NaN go to slow case.
-    jcc(Assembler::parity, slow_case);
-    // get rid of duplicate arguments. Stack: X^Y
-    if (num_fpu_regs_in_use > 0) {
-      fxch(); fpop();
-      fxch(); fpop();
-    } else {
-      ffree(2);
-      ffree(1);
-    }
-    jmp(done);
-
-    // X <= 0
-    bind(x_negative);
-
-    fld_s(1);                   // Stack: Y X Y
-    frndint();                  // Stack: int(Y) X Y
-    fcmp(tmp, 2, false, false); // Stack: int(Y) X Y
-    jcc(Assembler::notEqual, slow_case);
-
-    subptr(rsp, 8);
-
-    // For X^Y, when X < 0, Y has to be an integer and the final
-    // result depends on whether it's odd or even. We just checked
-    // that int(Y) == Y.  We move int(Y) to gp registers as a 64 bit
-    // integer to test its parity. If int(Y) is huge and doesn't fit
-    // in the 64 bit integer range, the integer indefinite value will
-    // end up in the gp registers. Huge numbers are all even, the
-    // integer indefinite number is even so it's fine.
+  // For X^Y, when X < 0, Y has to be an integer and the final
+  // result depends on whether it's odd or even. We just checked
+  // that int(Y) == Y.  We move int(Y) to gp registers as a 64 bit
+  // integer to test its parity. If int(Y) is huge and doesn't fit
+  // in the 64 bit integer range, the integer indefinite value will
+  // end up in the gp registers. Huge numbers are all even, the
+  // integer indefinite number is even so it's fine.
 
 #ifdef ASSERT
-    // Let's check we don't end up with an integer indefinite number
-    // when not expected. First test for huge numbers: check whether
-    // int(Y)+1 == int(Y) which is true for very large numbers and
-    // those are all even. A 64 bit integer is guaranteed to not
-    // overflow for numbers where y+1 != y (when precision is set to
-    // double precision).
-    Label y_not_huge;
+  // Let's check we don't end up with an integer indefinite number
+  // when not expected. First test for huge numbers: check whether
+  // int(Y)+1 == int(Y) which is true for very large numbers and
+  // those are all even. A 64 bit integer is guaranteed to not
+  // overflow for numbers where y+1 != y (when precision is set to
+  // double precision).
+  Label y_not_huge;
 
-    fld1();                     // Stack: 1 int(Y) X Y
-    fadd(1);                    // Stack: 1+int(Y) int(Y) X Y
+  fld1();                     // Stack: 1 int(Y) X Y
+  fadd(1);                    // Stack: 1+int(Y) int(Y) X Y
 
 #ifdef _LP64
-    // trip to memory to force the precision down from double extended
-    // precision
-    fstp_d(Address(rsp, 0));
-    fld_d(Address(rsp, 0));
+  // trip to memory to force the precision down from double extended
+  // precision
+  fstp_d(Address(rsp, 0));
+  fld_d(Address(rsp, 0));
 #endif
 
-    fcmp(tmp, 1, true, false);  // Stack: int(Y) X Y
+  fcmp(tmp, 1, true, false);  // Stack: int(Y) X Y
 #endif
 
-    // move int(Y) as 64 bit integer to thread's stack
-    fistp_d(Address(rsp,0));    // Stack: X Y
+  // move int(Y) as 64 bit integer to thread's stack
+  fistp_d(Address(rsp,0));    // Stack: X Y
 
 #ifdef ASSERT
-    jcc(Assembler::notEqual, y_not_huge);
+  jcc(Assembler::notEqual, y_not_huge);
 
-    // Y is huge so we know it's even. It may not fit in a 64 bit
-    // integer and we don't want the debug code below to see the
-    // integer indefinite value so overwrite int(Y) on the thread's
-    // stack with 0.
-    movl(Address(rsp, 0), 0);
-    movl(Address(rsp, 4), 0);
+  // Y is huge so we know it's even. It may not fit in a 64 bit
+  // integer and we don't want the debug code below to see the
+  // integer indefinite value so overwrite int(Y) on the thread's
+  // stack with 0.
+  movl(Address(rsp, 0), 0);
+  movl(Address(rsp, 4), 0);
 
-    bind(y_not_huge);
+  bind(y_not_huge);
 #endif
 
-    fld_s(1);                   // duplicate arguments for runtime call. Stack: Y X Y
-    fld_s(1);                   // Stack: X Y X Y
-    fabs();                     // Stack: abs(X) Y X Y
-    fast_pow();                 // Stack: abs(X)^Y X Y
-    fcmp(tmp, 0, false, false); // Stack: abs(X)^Y X Y
-    // abs(X)^Y not equal to itself: abs(X)^Y is NaN go to slow case.
+  fld_s(1);                   // duplicate arguments for runtime call. Stack: Y X Y
+  fld_s(1);                   // Stack: X Y X Y
+  fabs();                     // Stack: abs(X) Y X Y
+  fast_pow();                 // Stack: abs(X)^Y X Y
+  fcmp(tmp, 0, false, false); // Stack: abs(X)^Y X Y
+  // abs(X)^Y not equal to itself: abs(X)^Y is NaN go to slow case.
 
-    pop(tmp2);
-    NOT_LP64(pop(tmp3));
-    jcc(Assembler::parity, slow_case);
+  pop(tmp2);
+  NOT_LP64(pop(tmp3));
+  jcc(Assembler::parity, slow_case);
 
 #ifdef ASSERT
-    // Check that int(Y) is not integer indefinite value (int
-    // overflow). Shouldn't happen because for values that would
-    // overflow, 1+int(Y)==Y which was tested earlier.
+  // Check that int(Y) is not integer indefinite value (int
+  // overflow). Shouldn't happen because for values that would
+  // overflow, 1+int(Y)==Y which was tested earlier.
 #ifndef _LP64
-    {
-      Label integer;
-      testl(tmp2, tmp2);
-      jcc(Assembler::notZero, integer);
-      cmpl(tmp3, 0x80000000);
-      jcc(Assembler::notZero, integer);
-      STOP("integer indefinite value shouldn't be seen here");
-      bind(integer);
-    }
-#else
-    {
-      Label integer;
-      mov(tmp3, tmp2); // preserve tmp2 for parity check below
-      shlq(tmp3, 1);
-      jcc(Assembler::carryClear, integer);
-      jcc(Assembler::notZero, integer);
-      STOP("integer indefinite value shouldn't be seen here");
-      bind(integer);
-    }
-#endif
-#endif
-
-    // get rid of duplicate arguments. Stack: X^Y
-    if (num_fpu_regs_in_use > 0) {
-      fxch(); fpop();
-      fxch(); fpop();
-    } else {
-      ffree(2);
-      ffree(1);
-    }
-
-    testl(tmp2, 1);
-    jcc(Assembler::zero, done); // X <= 0, Y even: X^Y = abs(X)^Y
-    // X <= 0, Y even: X^Y = -abs(X)^Y
-
-    fchs();                     // Stack: -abs(X)^Y Y
-    jmp(done);
+  {
+    Label integer;
+    testl(tmp2, tmp2);
+    jcc(Assembler::notZero, integer);
+    cmpl(tmp3, 0x80000000);
+    jcc(Assembler::notZero, integer);
+    STOP("integer indefinite value shouldn't be seen here");
+    bind(integer);
   }
+#else
+  {
+    Label integer;
+    mov(tmp3, tmp2); // preserve tmp2 for parity check below
+    shlq(tmp3, 1);
+    jcc(Assembler::carryClear, integer);
+    jcc(Assembler::notZero, integer);
+    STOP("integer indefinite value shouldn't be seen here");
+    bind(integer);
+  }
+#endif
+#endif
+
+  // get rid of duplicate arguments. Stack: X^Y
+  if (num_fpu_regs_in_use > 0) {
+    fxch(); fpop();
+    fxch(); fpop();
+  } else {
+    ffree(2);
+    ffree(1);
+  }
+
+  testl(tmp2, 1);
+  jcc(Assembler::zero, done); // X <= 0, Y even: X^Y = abs(X)^Y
+  // X <= 0, Y even: X^Y = -abs(X)^Y
+
+  fchs();                     // Stack: -abs(X)^Y Y
+  jmp(done);
 
   // slow case: runtime call
   bind(slow_case);
 
   fpop();                       // pop incorrect result or int(Y)
 
-  fp_runtime_fallback(is_exp ? CAST_FROM_FN_PTR(address, SharedRuntime::dexp) : CAST_FROM_FN_PTR(address, SharedRuntime::dpow),
-                      is_exp ? 1 : 2, num_fpu_regs_in_use);
+  fp_runtime_fallback(CAST_FROM_FN_PTR(address, SharedRuntime::dpow), 2, num_fpu_regs_in_use);
 
   // Come here with result in F-TOS
   bind(done);
