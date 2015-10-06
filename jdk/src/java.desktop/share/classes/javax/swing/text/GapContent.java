@@ -332,7 +332,7 @@ public class GapContent extends GapVector implements AbstractDocument.Content, S
 
     private transient ReferenceQueue<StickyPosition> queue;
 
-    final static int GROWTH_SIZE = 1024 * 512;
+    static final int GROWTH_SIZE = 1024 * 512;
 
     // --- gap management -------------------------------
 

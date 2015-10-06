@@ -50,7 +50,7 @@ package org.w3c.dom;
  * elements of an element, for preprocessing before navigation.
  *
  * @see
- * <a href='http://www.w3.org/TR/ElementTraversal/'><cite>Element Traversal Specification</cite></a>.
+ * <a href='http://www.w3.org/TR/ElementTraversal/'><cite>Element Traversal Specification</cite></a>
  *
  * @since 9
  */

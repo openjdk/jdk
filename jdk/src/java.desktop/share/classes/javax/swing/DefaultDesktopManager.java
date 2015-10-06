@@ -50,11 +50,11 @@ import java.beans.PropertyVetoException;
   */
 @SuppressWarnings("serial") // No Interesting Non-Transient State
 public class DefaultDesktopManager implements DesktopManager, java.io.Serializable {
-    final static String HAS_BEEN_ICONIFIED_PROPERTY = "wasIconOnce";
+    static final String HAS_BEEN_ICONIFIED_PROPERTY = "wasIconOnce";
 
-    final static int DEFAULT_DRAG_MODE = 0;
-    final static int OUTLINE_DRAG_MODE = 1;
-    final static int FASTER_DRAG_MODE = 2;
+    static final int DEFAULT_DRAG_MODE = 0;
+    static final int OUTLINE_DRAG_MODE = 1;
+    static final int FASTER_DRAG_MODE = 2;
 
     int dragMode = DEFAULT_DRAG_MODE;
 

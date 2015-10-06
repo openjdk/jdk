@@ -190,7 +190,6 @@ needs_full_vm_compact1 = \
   gc/g1/TestShrinkToOneRegion.java \
   gc/metaspace/G1AddMetaspaceDependency.java \
   gc/startup_warnings/TestCMS.java \
-  gc/startup_warnings/TestDefaultMaxRAMFraction.java \
   gc/startup_warnings/TestDefNewCMS.java \
   gc/startup_warnings/TestParallelGC.java \
   gc/startup_warnings/TestParallelScavengeSerialOld.java \

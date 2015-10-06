@@ -220,10 +220,12 @@ JVM_OBJ_FILES = $(Obj_Files)
 
 vm_version.o: $(filter-out vm_version.o,$(JVM_OBJ_FILES))
 
-mapfile : $(MAPFILE) vm.def
+MAPFILE_SHARE  := $(GAMMADIR)/make/share/makefiles/mapfile-vers
+
+mapfile : $(MAPFILE) $(MAPFILE_SHARE) vm.def
 	rm -f $@
 	awk '{ if ($$0 ~ "INSERT VTABLE SYMBOLS HERE")	\
-                 { system ("cat vm.def"); }		\
+                 { system ("cat ${MAPFILE_SHARE} vm.def"); } \
                else					\
                  { print $$0 }				\
              }' > $@ < $(MAPFILE)

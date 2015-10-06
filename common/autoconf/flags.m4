@@ -23,6 +23,100 @@
 # questions.
 #
 
+# Reset the global CFLAGS/LDFLAGS variables and initialize them with the
+# corresponding configure arguments instead
+AC_DEFUN_ONCE([FLAGS_SETUP_USER_SUPPLIED_FLAGS],
+[
+  if test "x$CFLAGS" != "x${ADDED_CFLAGS}"; then
+    AC_MSG_WARN([Ignoring CFLAGS($CFLAGS) found in environment. Use --with-extra-cflags])
+  fi
+
+  if test "x$CXXFLAGS" != "x${ADDED_CXXFLAGS}"; then
+    AC_MSG_WARN([Ignoring CXXFLAGS($CXXFLAGS) found in environment. Use --with-extra-cxxflags])
+  fi
+
+  if test "x$LDFLAGS" != "x${ADDED_LDFLAGS}"; then
+    AC_MSG_WARN([Ignoring LDFLAGS($LDFLAGS) found in environment. Use --with-extra-ldflags])
+  fi
+
+  AC_ARG_WITH(extra-cflags, [AS_HELP_STRING([--with-extra-cflags],
+      [extra flags to be used when compiling jdk c-files])])
+
+  AC_ARG_WITH(extra-cxxflags, [AS_HELP_STRING([--with-extra-cxxflags],
+      [extra flags to be used when compiling jdk c++-files])])
+
+  AC_ARG_WITH(extra-ldflags, [AS_HELP_STRING([--with-extra-ldflags],
+      [extra flags to be used when linking jdk])])
+
+  EXTRA_CFLAGS="$with_extra_cflags"
+  EXTRA_CXXFLAGS="$with_extra_cxxflags"
+  EXTRA_LDFLAGS="$with_extra_ldflags"
+
+  # Hotspot needs these set in their legacy form
+  LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $EXTRA_CFLAGS"
+  LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $EXTRA_CXXFLAGS"
+  LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $EXTRA_LDFLAGS"
+
+  AC_SUBST(LEGACY_EXTRA_CFLAGS)
+  AC_SUBST(LEGACY_EXTRA_CXXFLAGS)
+  AC_SUBST(LEGACY_EXTRA_LDFLAGS)
+
+  # The global CFLAGS and LDLAGS variables are used by configure tests and
+  # should include the extra parameters
+  CFLAGS="$EXTRA_CFLAGS"
+  CXXFLAGS="$EXTRA_CXXFLAGS"
+  LDFLAGS="$EXTRA_LDFLAGS"
+  CPPFLAGS=""
+])
+
+# Setup the sysroot flags and add them to global CFLAGS and LDFLAGS so
+# that configure can use them while detecting compilers.
+# TOOLCHAIN_TYPE is available here.
+AC_DEFUN_ONCE([FLAGS_SETUP_SYSROOT_FLAGS],
+[
+  if test "x$SYSROOT" != "x"; then
+    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+      if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+        # Solaris Studio does not have a concept of sysroot. Instead we must
+        # make sure the default include and lib dirs are appended to each
+        # compile and link command line.
+        SYSROOT_CFLAGS="-I$SYSROOT/usr/include"
+        SYSROOT_LDFLAGS="-L$SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
+            -L$SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
+            -L$SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
+      fi
+    elif test "x$TOOLCHAIN_TYPE" = xgcc; then
+      SYSROOT_CFLAGS="--sysroot=$SYSROOT"
+      SYSROOT_LDFLAGS="--sysroot=$SYSROOT"
+    elif test "x$TOOLCHAIN_TYPE" = xclang; then
+      SYSROOT_CFLAGS="-isysroot $SYSROOT"
+      SYSROOT_LDFLAGS="-isysroot $SYSROOT"
+    fi
+    # Propagate the sysroot args to hotspot
+    LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $SYSROOT_CFLAGS"
+    LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $SYSROOT_CFLAGS"
+    LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $SYSROOT_LDFLAGS"
+    # The global CFLAGS and LDFLAGS variables need these for configure to function
+    CFLAGS="$CFLAGS $SYSROOT_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $SYSROOT_CFLAGS"
+    CXXFLAGS="$CXXFLAGS $SYSROOT_CFLAGS"
+    LDFLAGS="$LDFLAGS $SYSROOT_LDFLAGS"
+  fi
+
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    # We also need -iframework<path>/System/Library/Frameworks
+    SYSROOT_CFLAGS="$SYSROOT_CFLAGS -iframework $SYSROOT/System/Library/Frameworks"
+    SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -iframework $SYSROOT/System/Library/Frameworks"
+    # These always need to be set, or we can't find the frameworks embedded in JavaVM.framework
+    # set this here so it doesn't have to be peppered throughout the forest
+    SYSROOT_CFLAGS="$SYSROOT_CFLAGS -F $SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
+    SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -F $SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
+  fi
+
+  AC_SUBST(SYSROOT_CFLAGS)
+  AC_SUBST(SYSROOT_LDFLAGS)
+])
+
 AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
 [
   # Option used to tell the compiler whether to create 32- or 64-bit executables
@@ -110,44 +204,6 @@ AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
     # silence copyright notice and other headers.
     COMMON_CCXXFLAGS="$COMMON_CCXXFLAGS -nologo"
   fi
-
-  if test "x$SYSROOT" != "x"; then
-    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-      if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-        # Solaris Studio does not have a concept of sysroot. Instead we must
-        # make sure the default include and lib dirs are appended to each
-        # compile and link command line.
-        SYSROOT_CFLAGS="-I$SYSROOT/usr/include"
-        SYSROOT_LDFLAGS="-L$SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
-            -L$SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
-            -L$SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
-      fi
-    elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      # Apple only wants -isysroot <path>, but we also need -iframework<path>/System/Library/Frameworks
-      SYSROOT_CFLAGS="-isysroot \"$SYSROOT\" -iframework\"$SYSROOT/System/Library/Frameworks\""
-      SYSROOT_LDFLAGS=$SYSROOT_CFLAGS
-    elif test "x$TOOLCHAIN_TYPE" = xgcc; then
-      SYSROOT_CFLAGS="--sysroot=$SYSROOT"
-      SYSROOT_LDFLAGS="--sysroot=$SYSROOT"
-    elif test "x$TOOLCHAIN_TYPE" = xclang; then
-      SYSROOT_CFLAGS="-isysroot \"$SYSROOT\""
-      SYSROOT_LDFLAGS="-isysroot \"$SYSROOT\""
-    fi
-    # Propagate the sysroot args to hotspot
-    LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $SYSROOT_CFLAGS"
-    LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $SYSROOT_CFLAGS"
-    LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $SYSROOT_LDFLAGS"
-  fi
-
-  # These always need to be set, or we can't find the frameworks embedded in JavaVM.framework
-  # set this here so it doesn't have to be peppered throughout the forest
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    SYSROOT_CFLAGS="$SYSROOT_CFLAGS -F\"$SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks\""
-    SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -F\"$SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks\""
-  fi
-
-  AC_SUBST(SYSROOT_CFLAGS)
-  AC_SUBST(SYSROOT_LDFLAGS)
 ])
 
 AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
@@ -477,39 +533,9 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
   fi
 
-  if test "x$CFLAGS" != "x${ADDED_CFLAGS}"; then
-    AC_MSG_WARN([Ignoring CFLAGS($CFLAGS) found in environment. Use --with-extra-cflags])
-  fi
-
-  if test "x$CXXFLAGS" != "x${ADDED_CXXFLAGS}"; then
-    AC_MSG_WARN([Ignoring CXXFLAGS($CXXFLAGS) found in environment. Use --with-extra-cxxflags])
-  fi
-
-  if test "x$LDFLAGS" != "x${ADDED_LDFLAGS}"; then
-    AC_MSG_WARN([Ignoring LDFLAGS($LDFLAGS) found in environment. Use --with-extra-ldflags])
-  fi
-
-  AC_ARG_WITH(extra-cflags, [AS_HELP_STRING([--with-extra-cflags],
-      [extra flags to be used when compiling jdk c-files])])
-
-  AC_ARG_WITH(extra-cxxflags, [AS_HELP_STRING([--with-extra-cxxflags],
-      [extra flags to be used when compiling jdk c++-files])])
-
-  AC_ARG_WITH(extra-ldflags, [AS_HELP_STRING([--with-extra-ldflags],
-      [extra flags to be used when linking jdk])])
-
-  CFLAGS_JDK="${CFLAGS_JDK} $with_extra_cflags"
-  CXXFLAGS_JDK="${CXXFLAGS_JDK} $with_extra_cxxflags"
-  LDFLAGS_JDK="${LDFLAGS_JDK} $with_extra_ldflags"
-
-  # Hotspot needs these set in their legacy form
-  LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $with_extra_cflags"
-  LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $with_extra_cxxflags"
-  LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $with_extra_ldflags"
-
-  AC_SUBST(LEGACY_EXTRA_CFLAGS)
-  AC_SUBST(LEGACY_EXTRA_CXXFLAGS)
-  AC_SUBST(LEGACY_EXTRA_LDFLAGS)
+  CFLAGS_JDK="${CFLAGS_JDK} $EXTRA_CFLAGS"
+  CXXFLAGS_JDK="${CXXFLAGS_JDK} $EXTRA_CXXFLAGS"
+  LDFLAGS_JDK="${LDFLAGS_JDK} $EXTRA_LDFLAGS"
 
   ###############################################################################
   #

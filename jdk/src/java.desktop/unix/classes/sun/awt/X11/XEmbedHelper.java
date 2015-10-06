@@ -38,43 +38,43 @@ import java.awt.event.InputEvent;
  */
 public class XEmbedHelper {
     private static final PlatformLogger xembedLog = PlatformLogger.getLogger("sun.awt.X11.xembed");
-    final static Unsafe unsafe = Unsafe.getUnsafe();
+    static final Unsafe unsafe = Unsafe.getUnsafe();
 
-    final static int XEMBED_VERSION = 0,
+    static final int XEMBED_VERSION = 0,
         XEMBED_MAPPED = (1 << 0);
 /* XEMBED messages */
-    final static int XEMBED_EMBEDDED_NOTIFY     =       0;
-    final static int XEMBED_WINDOW_ACTIVATE  =  1;
-    final static int XEMBED_WINDOW_DEACTIVATE =         2;
-    final static int XEMBED_REQUEST_FOCUS               =3;
-    final static int XEMBED_FOCUS_IN    =       4;
-    final static int XEMBED_FOCUS_OUT   =       5;
-    final static int XEMBED_FOCUS_NEXT  =       6;
-    final static int XEMBED_FOCUS_PREV  =       7;
+    static final int XEMBED_EMBEDDED_NOTIFY     =       0;
+    static final int XEMBED_WINDOW_ACTIVATE  =  1;
+    static final int XEMBED_WINDOW_DEACTIVATE =         2;
+    static final int XEMBED_REQUEST_FOCUS               =3;
+    static final int XEMBED_FOCUS_IN    =       4;
+    static final int XEMBED_FOCUS_OUT   =       5;
+    static final int XEMBED_FOCUS_NEXT  =       6;
+    static final int XEMBED_FOCUS_PREV  =       7;
 /* 8-9 were used for XEMBED_GRAB_KEY/XEMBED_UNGRAB_KEY */
-    final static int XEMBED_GRAB_KEY = 8;
-    final static int XEMBED_UNGRAB_KEY = 9;
-    final static int XEMBED_MODALITY_ON         =       10;
-    final static int XEMBED_MODALITY_OFF        =       11;
-    final static int XEMBED_REGISTER_ACCELERATOR =    12;
-    final static int XEMBED_UNREGISTER_ACCELERATOR=   13;
-    final static int XEMBED_ACTIVATE_ACCELERATOR  =   14;
+    static final int XEMBED_GRAB_KEY = 8;
+    static final int XEMBED_UNGRAB_KEY = 9;
+    static final int XEMBED_MODALITY_ON         =       10;
+    static final int XEMBED_MODALITY_OFF        =       11;
+    static final int XEMBED_REGISTER_ACCELERATOR =    12;
+    static final int XEMBED_UNREGISTER_ACCELERATOR=   13;
+    static final int XEMBED_ACTIVATE_ACCELERATOR  =   14;
 
-    final static int NON_STANDARD_XEMBED_GTK_GRAB_KEY = 108;
-    final static int NON_STANDARD_XEMBED_GTK_UNGRAB_KEY = 109;
+    static final int NON_STANDARD_XEMBED_GTK_GRAB_KEY = 108;
+    static final int NON_STANDARD_XEMBED_GTK_UNGRAB_KEY = 109;
 
 //     A detail code is required for XEMBED_FOCUS_IN. The following values are valid:
 /* Details for  XEMBED_FOCUS_IN: */
-    final static int XEMBED_FOCUS_CURRENT       =       0;
-    final static int XEMBED_FOCUS_FIRST         =       1;
-    final static int XEMBED_FOCUS_LAST  =       2;
+    static final int XEMBED_FOCUS_CURRENT       =       0;
+    static final int XEMBED_FOCUS_FIRST         =       1;
+    static final int XEMBED_FOCUS_LAST  =       2;
 
 // Modifiers bits
-    final static int XEMBED_MODIFIER_SHIFT   = (1 << 0);
-    final static int XEMBED_MODIFIER_CONTROL = (1 << 1);
-    final static int XEMBED_MODIFIER_ALT     = (1 << 2);
-    final static int XEMBED_MODIFIER_SUPER   = (1 << 3);
-    final static int XEMBED_MODIFIER_HYPER   = (1 << 4);
+    static final int XEMBED_MODIFIER_SHIFT   = (1 << 0);
+    static final int XEMBED_MODIFIER_CONTROL = (1 << 1);
+    static final int XEMBED_MODIFIER_ALT     = (1 << 2);
+    static final int XEMBED_MODIFIER_SUPER   = (1 << 3);
+    static final int XEMBED_MODIFIER_HYPER   = (1 << 4);
 
     static XAtom XEmbedInfo;
     static XAtom XEmbed;

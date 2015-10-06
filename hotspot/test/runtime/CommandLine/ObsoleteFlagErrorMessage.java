@@ -46,7 +46,7 @@ public class ObsoleteFlagErrorMessage {
         "-XX:NmethodSweepFraction=10", "-version");
 
     OutputAnalyzer output2 = new OutputAnalyzer(pb2.start());
-    output2.shouldContain("ignoring option").shouldContain("support was removed");
+    output2.shouldContain("Ignoring option").shouldContain("support was removed");
     output2.shouldContain("NmethodSweepFraction");
   }
 }

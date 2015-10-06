@@ -26,6 +26,8 @@
 package com.apple.laf;
 
 import java.awt.*;
+import java.awt.Insets;
+import java.awt.Rectangle;
 import java.awt.event.*;
 
 import javax.swing.*;
@@ -195,24 +197,14 @@ class AquaComboBoxPopup extends BasicComboPopup {
         final GraphicsDevice[] gs = ge.getScreenDevices();
         //System.err.println("  gs.length = " + gs.length);
         final Rectangle comboBoxBounds = comboBox.getBounds();
-        if (gs.length == 1) {
-            final Dimension scrSize = Toolkit.getDefaultToolkit().getScreenSize();
-
-            //System.err.println("  scrSize: "+ scrSize);
-
-            // If the combo box is totally off screen, don't show a popup
-            if ((p.x + comboBoxBounds.width < 0) || (p.y + comboBoxBounds.height < 0) || (p.x > scrSize.width) || (p.y > scrSize.height)) {
-                return null;
-            }
-            Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(comboBox.getGraphicsConfiguration());
-            return new Rectangle(0, insets.top, scrSize.width, scrSize.height - insets.top - insets.bottom);
-        }
 
         for (final GraphicsDevice gd : gs) {
             final GraphicsConfiguration[] gc = gd.getConfigurations();
             for (final GraphicsConfiguration element0 : gc) {
                 final Rectangle gcBounds = element0.getBounds();
-                if (gcBounds.contains(p)) return gcBounds;
+                if (gcBounds.contains(p)) {
+                    return getAvailableScreenArea(gcBounds, element0);
+                }
             }
         }
 
@@ -222,11 +214,22 @@ class AquaComboBoxPopup extends BasicComboPopup {
             final GraphicsConfiguration[] gc = gd.getConfigurations();
             for (final GraphicsConfiguration element0 : gc) {
                 final Rectangle gcBounds = element0.getBounds();
-                if (gcBounds.intersects(comboBoxBounds)) return gcBounds;
+                if (gcBounds.intersects(comboBoxBounds)) {
+                    if (gcBounds.contains(p)) {
+                        return getAvailableScreenArea(gcBounds, element0);
+                    }
+                }
             }
         }
 
         return null;
+    }
+
+    private Rectangle getAvailableScreenArea(Rectangle bounds,
+                                             GraphicsConfiguration gc) {
+        Insets insets = Toolkit.getDefaultToolkit().getScreenInsets(gc);
+        return new Rectangle(0, insets.top, bounds.width,
+                bounds.height - insets.top);
     }
 
     @Override

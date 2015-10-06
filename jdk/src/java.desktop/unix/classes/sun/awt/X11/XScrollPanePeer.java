@@ -34,13 +34,13 @@ import sun.awt.AWTAccessor;
 
 class XScrollPanePeer extends XComponentPeer implements ScrollPanePeer, XScrollbarClient {
 
-    public final static int     MARGIN = 1;
-    public final static int     SCROLLBAR;
-    public final static int     SPACE = 2;
-    public final static int     SCROLLBAR_INSET = 2;
+    public static final int     MARGIN = 1;
+    public static final int     SCROLLBAR;
+    public static final int     SPACE = 2;
+    public static final int     SCROLLBAR_INSET = 2;
 
-    public final static int     VERTICAL = 1 << 0;
-    public final static int     HORIZONTAL = 1 << 1;
+    public static final int     VERTICAL = 1 << 0;
+    public static final int     HORIZONTAL = 1 << 1;
 
     static {
         SCROLLBAR = XToolkit.getUIDefaults().getInt("ScrollBar.defaultWidth");

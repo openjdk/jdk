@@ -41,6 +41,6 @@ public class AutoshutdownNMT {
                 "-XX:-AutoShutdownNMT",
                 "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("ignoring option AutoShutdownNMT");
+        output.shouldContain("Ignoring option AutoShutdownNMT");
     }
 }

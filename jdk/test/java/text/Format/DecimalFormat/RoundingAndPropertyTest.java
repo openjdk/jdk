@@ -25,6 +25,7 @@
  * @bug 7050528
  * @summary Test java.text.DecimalFormat fast-path for format(double...)
  * @author Olivier Lagneau
+ * @build GoldenDoubleValues GoldenFormattedValues
  * @run main RoundingAndPropertyTest
  *
  */

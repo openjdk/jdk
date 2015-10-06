@@ -127,7 +127,7 @@ public class DataFlavor implements Externalizable, Cloneable {
      * @return the class loaded
      * @exception ClassNotFoundException if class is not found
      */
-    protected final static Class<?> tryToLoadClass(String className,
+    protected static final Class<?> tryToLoadClass(String className,
                                                    ClassLoader fallback)
         throws ClassNotFoundException
     {
@@ -163,7 +163,7 @@ public class DataFlavor implements Externalizable, Cloneable {
     /*
      * private initializer
      */
-    static private DataFlavor createConstant(Class<?> rc, String prn) {
+    private static DataFlavor createConstant(Class<?> rc, String prn) {
         try {
             return new DataFlavor(rc, prn);
         } catch (Exception e) {
@@ -174,7 +174,7 @@ public class DataFlavor implements Externalizable, Cloneable {
     /*
      * private initializer
      */
-    static private DataFlavor createConstant(String mt, String prn) {
+    private static DataFlavor createConstant(String mt, String prn) {
         try {
             return new DataFlavor(mt, prn);
         } catch (Exception e) {
@@ -185,7 +185,7 @@ public class DataFlavor implements Externalizable, Cloneable {
     /*
      * private initializer
      */
-    static private DataFlavor initHtmlDataFlavor(String htmlFlavorType) {
+    private static DataFlavor initHtmlDataFlavor(String htmlFlavorType) {
         try {
             return new DataFlavor ("text/html; class=java.lang.String;document=" +
                                        htmlFlavorType + ";charset=Unicode");

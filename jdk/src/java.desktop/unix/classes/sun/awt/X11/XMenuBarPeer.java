@@ -56,15 +56,15 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
     /*
      * dimension constants
      */
-    private final static int BAR_SPACING_TOP = 3;
-    private final static int BAR_SPACING_BOTTOM = 3;
-    private final static int BAR_SPACING_LEFT = 3;
-    private final static int BAR_SPACING_RIGHT = 3;
-    private final static int BAR_ITEM_SPACING = 2;
-    private final static int BAR_ITEM_MARGIN_LEFT = 10;
-    private final static int BAR_ITEM_MARGIN_RIGHT = 10;
-    private final static int BAR_ITEM_MARGIN_TOP = 2;
-    private final static int BAR_ITEM_MARGIN_BOTTOM = 2;
+    private static final int BAR_SPACING_TOP = 3;
+    private static final int BAR_SPACING_BOTTOM = 3;
+    private static final int BAR_SPACING_LEFT = 3;
+    private static final int BAR_SPACING_RIGHT = 3;
+    private static final int BAR_ITEM_SPACING = 2;
+    private static final int BAR_ITEM_MARGIN_LEFT = 10;
+    private static final int BAR_ITEM_MARGIN_RIGHT = 10;
+    private static final int BAR_ITEM_MARGIN_TOP = 2;
+    private static final int BAR_ITEM_MARGIN_BOTTOM = 2;
 
     /************************************************
      *

@@ -99,18 +99,18 @@ public abstract class GraphicsDevice {
     /**
      * Device is a raster screen.
      */
-    public final static int TYPE_RASTER_SCREEN          = 0;
+    public static final int TYPE_RASTER_SCREEN          = 0;
 
     /**
      * Device is a printer.
      */
-    public final static int TYPE_PRINTER                = 1;
+    public static final int TYPE_PRINTER                = 1;
 
     /**
      * Device is an image buffer.  This buffer can reside in device
      * or system memory but it is not physically viewable by the user.
      */
-    public final static int TYPE_IMAGE_BUFFER           = 2;
+    public static final int TYPE_IMAGE_BUFFER           = 2;
 
     /**
      * Kinds of translucency supported by the underlying system.

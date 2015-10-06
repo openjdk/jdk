@@ -26,8 +26,10 @@ import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.InnerClasses_attribute;
 import com.sun.tools.classfile.InnerClasses_attribute.Info;
 
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -87,8 +89,13 @@ public abstract class InnerClassesTestBase extends TestResult {
      */
     public void test(String classToTest, String...skipClasses) throws TestFailedException {
         try {
-            for (TestCase test : generateTestCases()) {
-                addTestCase(test.getSource());
+            String testName = getClass().getName();
+            List<TestCase> testCases = generateTestCases();
+            for (int i = 0; i < testCases.size(); ++i) {
+                TestCase test = testCases.get(i);
+                String testCaseName = testName + i + ".java";
+                addTestCase(testCaseName);
+                writeToFileIfEnabled(Paths.get(testCaseName), test.getSource());
                 test(classToTest, test, skipClasses);
             }
         } catch (Exception e) {
@@ -330,7 +337,7 @@ public abstract class InnerClassesTestBase extends TestResult {
                     list.add(Arrays.asList(access, mod1, mod2));
                 }
                 if (mod1 == Modifier.EMPTY) {
-                    list.add(Arrays.asList(access));
+                    list.add(Collections.singletonList(access));
                 }
             }
         }
@@ -413,7 +420,7 @@ public abstract class InnerClassesTestBase extends TestResult {
 
         private final String classType;
 
-        private ClassType(String clazz) {
+        ClassType(String clazz) {
             this.classType = clazz;
         }
 
@@ -435,7 +442,7 @@ public abstract class InnerClassesTestBase extends TestResult {
 
         private final String str;
 
-        private Modifier(String str) {
+        Modifier(String str) {
             this.str = str;
         }
 

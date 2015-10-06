@@ -169,9 +169,9 @@ final class Platform {
     }
 
     // the following native methods are implemented in Platform.c
-    private native static boolean nIsBigEndian();
-    private native static String nGetExtraLibraries();
-    private native static int nGetLibraryForFeature(int feature);
+    private static native boolean nIsBigEndian();
+    private static native String nGetExtraLibraries();
+    private static native int nGetLibraryForFeature(int feature);
 
     /**
      * Read the required system properties.

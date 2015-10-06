@@ -237,7 +237,7 @@ abstract class TexturePaintContext implements PaintContext {
     private static WeakReference<Raster> xrgbRasRef;
     private static WeakReference<Raster> argbRasRef;
 
-    synchronized static WritableRaster makeRaster(ColorModel cm,
+    static synchronized WritableRaster makeRaster(ColorModel cm,
                                                   Raster srcRas,
                                                   int w, int h)
     {
@@ -273,7 +273,7 @@ abstract class TexturePaintContext implements PaintContext {
         }
     }
 
-    synchronized static void dropRaster(ColorModel cm, Raster outRas) {
+    static synchronized void dropRaster(ColorModel cm, Raster outRas) {
         if (outRas == null) {
             return;
         }
@@ -286,7 +286,7 @@ abstract class TexturePaintContext implements PaintContext {
 
     private static WeakReference<Raster> byteRasRef;
 
-    synchronized static WritableRaster makeByteRaster(Raster srcRas,
+    static synchronized WritableRaster makeByteRaster(Raster srcRas,
                                                       int w, int h)
     {
         if (byteRasRef != null) {
@@ -303,7 +303,7 @@ abstract class TexturePaintContext implements PaintContext {
         return srcRas.createCompatibleWritableRaster(w, h);
     }
 
-    synchronized static void dropByteRaster(Raster outRas) {
+    static synchronized void dropByteRaster(Raster outRas) {
         if (outRas == null) {
             return;
         }

@@ -3284,35 +3284,32 @@ void JvmtiTagMap::follow_references(jint heap_filter,
 }
 
 
-size_t JvmtiTagMap::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
+void JvmtiTagMap::weak_oops_do(BoolObjectClosure* is_alive, OopClosure* f) {
   // No locks during VM bring-up (0 threads) and no safepoints after main
   // thread creation and before VMThread creation (1 thread); initial GC
   // verification can happen in that window which gets to here.
   assert(Threads::number_of_threads() <= 1 ||
          SafepointSynchronize::is_at_safepoint(),
          "must be executed at a safepoint");
-  size_t count = 0;
   if (JvmtiEnv::environments_might_exist()) {
     JvmtiEnvIterator it;
     for (JvmtiEnvBase* env = it.first(); env != NULL; env = it.next(env)) {
       JvmtiTagMap* tag_map = env->tag_map();
       if (tag_map != NULL && !tag_map->is_empty()) {
-        count += tag_map->do_weak_oops(is_alive, f);
+        tag_map->do_weak_oops(is_alive, f);
       }
     }
   }
-  return count;
 }
 
-size_t JvmtiTagMap::do_weak_oops(BoolObjectClosure* is_alive, OopClosure* f) {
+void JvmtiTagMap::do_weak_oops(BoolObjectClosure* is_alive, OopClosure* f) {
 
   // does this environment have the OBJECT_FREE event enabled
   bool post_object_free = env()->is_enabled(JVMTI_EVENT_OBJECT_FREE);
 
   // counters used for trace message
-  size_t freed = 0;
-  size_t moved = 0;
-  size_t stayed = 0;
+  int freed = 0;
+  int moved = 0;
 
   JvmtiTagHashmap* hashmap = this->hashmap();
 
@@ -3321,7 +3318,7 @@ size_t JvmtiTagMap::do_weak_oops(BoolObjectClosure* is_alive, OopClosure* f) {
 
   // if the hashmap is empty then we can skip it
   if (hashmap->_entry_count == 0) {
-    return 0;
+    return;
   }
 
   // now iterate through each entry in the table
@@ -3383,7 +3380,6 @@ size_t JvmtiTagMap::do_weak_oops(BoolObjectClosure* is_alive, OopClosure* f) {
         } else {
           // object didn't move
           prev = entry;
-          stayed++;
         }
       }
 
@@ -3402,12 +3398,10 @@ size_t JvmtiTagMap::do_weak_oops(BoolObjectClosure* is_alive, OopClosure* f) {
 
   // stats
   if (TraceJVMTIObjectTagging) {
-    size_t post_total = hashmap->_entry_count;
-    size_t pre_total = post_total + freed;
+    int post_total = hashmap->_entry_count;
+    int pre_total = post_total + freed;
 
-    tty->print_cr("(" SIZE_FORMAT "->" SIZE_FORMAT ", " SIZE_FORMAT " freed, " SIZE_FORMAT " stayed, " SIZE_FORMAT " moved)",
-        pre_total, post_total, freed, stayed, moved);
+    tty->print_cr("(%d->%d, %d freed, %d total moves)",
+        pre_total, post_total, freed, moved);
   }
-
-  return (freed + stayed + moved);
 }

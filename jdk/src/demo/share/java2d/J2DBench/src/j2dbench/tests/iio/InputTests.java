@@ -161,7 +161,7 @@ abstract class InputTests extends IIOTests {
         }
     }
 
-    protected static abstract class Context {
+    protected abstract static class Context {
         int size;
         Object input;
         int inputType;

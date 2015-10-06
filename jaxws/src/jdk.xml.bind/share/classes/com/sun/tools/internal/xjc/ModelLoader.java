@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,8 +38,6 @@ import com.sun.tools.internal.xjc.reader.internalizer.DOMForestScanner;
 import com.sun.tools.internal.xjc.reader.internalizer.InternalizationLogic;
 import com.sun.tools.internal.xjc.reader.internalizer.SCDBasedBindingSet;
 import com.sun.tools.internal.xjc.reader.internalizer.VersionChecker;
-import com.sun.tools.internal.xjc.reader.relaxng.RELAXNGCompiler;
-import com.sun.tools.internal.xjc.reader.relaxng.RELAXNGInternalizationLogic;
 import com.sun.tools.internal.xjc.reader.xmlschema.BGMBuilder;
 import com.sun.tools.internal.xjc.reader.xmlschema.bindinfo.AnnotationParserFactoryImpl;
 import com.sun.tools.internal.xjc.reader.xmlschema.parser.CustomizationContextChecker;
@@ -54,15 +52,6 @@ import com.sun.xml.internal.xsom.parser.XMLParser;
 import com.sun.xml.internal.xsom.parser.XSOMParser;
 import javax.xml.XMLConstants;
 
-import com.sun.xml.internal.rngom.ast.builder.SchemaBuilder;
-import com.sun.xml.internal.rngom.ast.util.CheckingSchemaBuilder;
-import com.sun.xml.internal.rngom.digested.DPattern;
-import com.sun.xml.internal.rngom.digested.DSchemaBuilderImpl;
-import com.sun.xml.internal.rngom.parse.IllegalSchemaException;
-import com.sun.xml.internal.rngom.parse.Parseable;
-import com.sun.xml.internal.rngom.parse.compact.CompactParseable;
-import com.sun.xml.internal.rngom.parse.xml.SAXParseable;
-import com.sun.xml.internal.rngom.xml.sax.XMLReaderCreator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -73,8 +62,6 @@ import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-import org.xml.sax.XMLFilter;
-import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.XMLFilterImpl;
 
 /**
@@ -141,16 +128,6 @@ public final class ModelLoader {
                 grammar = loadDTD(opt.getGrammars()[0], bindFile );
                 break;
 
-            case RELAXNG :
-                checkTooManySchemaErrors();
-                grammar = loadRELAXNG();
-                break;
-
-            case RELAXNG_COMPACT :
-                checkTooManySchemaErrors();
-                grammar = loadRELAXNGCompact();
-                break;
-
             case WSDL:
                 grammar = annotateXMLSchema( loadWSDL() );
                 break;
@@ -205,12 +182,6 @@ public final class ModelLoader {
             switch(guess) {
             case DTD:
                 msg = new String[]{"DTD","-dtd"};
-                break;
-            case RELAXNG:
-                msg = new String[]{"RELAX NG","-relaxng"};
-                break;
-            case RELAXNG_COMPACT:
-                msg = new String[]{"RELAX NG compact syntax","-relaxng-compact"};
                 break;
             case WSDL:
                 msg = new String[]{"WSDL","-wsdl"};
@@ -528,71 +499,4 @@ public final class ModelLoader {
         return result;
     }
 
-    /**
-     * Parses a RELAX NG grammar into an annotated grammar.
-     */
-    private Model loadRELAXNG() throws SAXException {
-
-        // build DOM forest
-        final DOMForest forest = buildDOMForest( new RELAXNGInternalizationLogic() );
-
-        // use JAXP masquerading to validate the input document.
-        // DOMForest -> ExtensionBindingChecker -> RNGOM
-
-        XMLReaderCreator xrc = new XMLReaderCreator() {
-            public XMLReader createXMLReader() {
-
-                // foreset parser cannot change the receivers while it's working,
-                // so we need to have one XMLFilter that works as a buffer
-                XMLFilter buffer = new XMLFilterImpl() {
-                    @Override
-                    public void parse(InputSource source) throws IOException, SAXException {
-                        forest.createParser().parse( source, this, this, this );
-                    }
-                };
-
-                XMLFilter f = new ExtensionBindingChecker(Const.RELAXNG_URI,opt,errorReceiver);
-                f.setParent(buffer);
-
-                f.setEntityResolver(opt.entityResolver);
-
-                return f;
-            }
-        };
-
-        Parseable p = new SAXParseable( opt.getGrammars()[0], errorReceiver, xrc );
-
-        return loadRELAXNG(p);
-
-    }
-
-    /**
-     * Loads RELAX NG compact syntax
-     */
-    private Model loadRELAXNGCompact() {
-        if(opt.getBindFiles().length>0)
-            errorReceiver.error(new SAXParseException(
-                Messages.format(Messages.ERR_BINDING_FILE_NOT_SUPPORTED_FOR_RNC),null));
-
-        // TODO: entity resolver?
-        Parseable p = new CompactParseable( opt.getGrammars()[0], errorReceiver );
-
-        return loadRELAXNG(p);
-
-    }
-
-    /**
-     * Common part between the XML syntax and the compact syntax.
-     */
-    private Model loadRELAXNG(Parseable p) {
-        SchemaBuilder sb = new CheckingSchemaBuilder(new DSchemaBuilderImpl(),errorReceiver);
-
-        try {
-            DPattern out = (DPattern)p.parse(sb);
-            return RELAXNGCompiler.build(out,codeModel,opt);
-        } catch (IllegalSchemaException e) {
-            errorReceiver.error(e.getMessage(),e);
-            return null;
-        }
-    }
 }

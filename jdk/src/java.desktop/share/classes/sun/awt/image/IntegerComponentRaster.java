@@ -91,7 +91,7 @@ public class IntegerComponentRaster extends SunWritableRaster {
     /** A cached copy of minY + height for use in bounds checks. */
     private int maxY;
 
-    static private native void initIDs();
+    private static native void initIDs();
     static {
         /* ensure that the necessary native libraries are loaded */
         NativeLibLoader.loadLibraries();
