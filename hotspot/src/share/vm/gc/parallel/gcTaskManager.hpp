@@ -272,6 +272,28 @@ protected:
   ~SynchronizedGCTaskQueue();
 };
 
+class WaitHelper VALUE_OBJ_CLASS_SPEC {
+ private:
+  Monitor*      _monitor;
+  volatile bool _should_wait;
+ public:
+  WaitHelper();
+  ~WaitHelper();
+  void wait_for(bool reset);
+  void notify();
+  void set_should_wait(bool value) {
+    _should_wait = value;
+  }
+
+  Monitor* monitor() const {
+    return _monitor;
+  }
+  bool should_wait() const {
+    return _should_wait;
+  }
+  void release_monitor();
+};
+
 // Dynamic number of GC threads
 //
 //  GC threads wait in get_task() for work (i.e., a task) to perform.
@@ -357,7 +379,7 @@ private:
   uint                      _barriers;          // Count of barrier tasks.
   uint                      _emptied_queue;     // Times we emptied the queue.
   NoopGCTask*               _noop_task;         // The NoopGCTask instance.
-  WaitForBarrierGCTask*     _idle_inactive_task;// Task for inactive workers
+  WaitHelper                _wait_helper;       // Used by inactive worker
   volatile uint             _idle_workers;      // Number of idled workers
 public:
   // Factory create and destroy methods.
@@ -383,8 +405,8 @@ public:
   Monitor * lock() const {
     return _monitor;
   }
-  WaitForBarrierGCTask* idle_inactive_task() {
-    return _idle_inactive_task;
+  WaitHelper* wait_helper() {
+    return &_wait_helper;
   }
   // Methods.
   //     Add the argument task to be run.
@@ -559,25 +581,17 @@ class WaitForBarrierGCTask : public GCTask {
   friend class IdleGCTask;
 private:
   // Instance state.
-  Monitor*      _monitor;                  // Guard and notify changes.
-  volatile bool _should_wait;              // true=>wait, false=>proceed.
-  const bool    _is_c_heap_obj;            // Was allocated on the heap.
+  WaitHelper    _wait_helper;
+  WaitForBarrierGCTask();
 public:
   virtual char* name() { return (char *) "waitfor-barrier-task"; }
 
   // Factory create and destroy methods.
   static WaitForBarrierGCTask* create();
-  static WaitForBarrierGCTask* create_on_c_heap();
   static void destroy(WaitForBarrierGCTask* that);
   // Methods.
   void     do_it(GCTaskManager* manager, uint which);
-  void     wait_for(bool reset);
-  void set_should_wait(bool value) {
-    _should_wait = value;
-  }
 protected:
-  // Constructor.  Clients use factory, but there might be subclasses.
-  WaitForBarrierGCTask(bool on_c_heap);
   // Destructor-like method.
   void destruct();
 
@@ -585,15 +599,8 @@ protected:
   //     Wait for this to be the only task running.
   void do_it_internal(GCTaskManager* manager, uint which);
 
-  // Accessors.
-  Monitor* monitor() const {
-    return _monitor;
-  }
-  bool should_wait() const {
-    return _should_wait;
-  }
-  bool is_c_heap_obj() {
-    return _is_c_heap_obj;
+  void wait_for(bool reset) {
+    _wait_helper.wait_for(reset);
   }
 };
 
