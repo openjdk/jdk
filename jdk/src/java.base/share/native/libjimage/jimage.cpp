@@ -29,8 +29,6 @@
 
 #include "imageFile.hpp"
 
-#define BOOT_VERSION "9.0"
-
 /*
  * JImageOpen - Given the supplied full path file name, open an image file. This
  * function will also initialize tables and retrieve meta-data necessary to
@@ -104,10 +102,6 @@ extern "C" const char* JIMAGE_PackageToModule(JImageFile* image, const char* pac
 extern "C" JImageLocationRef JIMAGE_FindResource(JImageFile* image,
         const char* module_name, const char* version, const char* name,
         jlong* size) {
-    if (strcmp(version, BOOT_VERSION) != 0) {
-        return (JImageLocationRef) 0;
-    }
-
     ImageLocation location;
     char fullpath[IMAGE_MAX_PATH];
 
