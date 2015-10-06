@@ -155,7 +155,7 @@ static const char* get_jimage_version_string() {
   static char version_string[10] = "";
   if (version_string[0] == '\0') {
     jio_snprintf(version_string, sizeof(version_string), "%d.%d",
-                 Abstract_VM_Version::vm_minor_version(), Abstract_VM_Version::vm_micro_version());
+                 Abstract_VM_Version::vm_major_version(), Abstract_VM_Version::vm_minor_version());
   }
   return (const char*)version_string;
 }
