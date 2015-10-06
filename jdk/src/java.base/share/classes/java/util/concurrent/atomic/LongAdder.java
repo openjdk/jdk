@@ -34,6 +34,7 @@
  */
 
 package java.util.concurrent.atomic;
+
 import java.io.Serializable;
 
 /**
@@ -116,13 +117,12 @@ public class LongAdder extends Striped64 implements Serializable {
      * @return the sum
      */
     public long sum() {
-        Cell[] as = cells; Cell a;
+        Cell[] as = cells;
         long sum = base;
         if (as != null) {
-            for (int i = 0; i < as.length; ++i) {
-                if ((a = as[i]) != null)
+            for (Cell a : as)
+                if (a != null)
                     sum += a.value;
-            }
         }
         return sum;
     }
@@ -135,13 +135,12 @@ public class LongAdder extends Striped64 implements Serializable {
      * known that no threads are concurrently updating.
      */
     public void reset() {
-        Cell[] as = cells; Cell a;
+        Cell[] as = cells;
         base = 0L;
         if (as != null) {
-            for (int i = 0; i < as.length; ++i) {
-                if ((a = as[i]) != null)
-                    a.value = 0L;
-            }
+            for (Cell a : as)
+                if (a != null)
+                    a.reset();
         }
     }
 
@@ -156,14 +155,14 @@ public class LongAdder extends Striped64 implements Serializable {
      * @return the sum
      */
     public long sumThenReset() {
-        Cell[] as = cells; Cell a;
+        Cell[] as = cells;
         long sum = base;
         base = 0L;
         if (as != null) {
-            for (int i = 0; i < as.length; ++i) {
-                if ((a = as[i]) != null) {
+            for (Cell a : as) {
+                if (a != null) {
                     sum += a.value;
-                    a.value = 0L;
+                    a.reset();
                 }
             }
         }
@@ -230,11 +229,11 @@ public class LongAdder extends Striped64 implements Serializable {
         }
 
         /**
-         * Return a {@code LongAdder} object with initial state
+         * Returns a {@code LongAdder} object with initial state
          * held by this proxy.
          *
          * @return a {@code LongAdder} object with initial state
-         * held by this proxy.
+         * held by this proxy
          */
         private Object readResolve() {
             LongAdder a = new LongAdder();
