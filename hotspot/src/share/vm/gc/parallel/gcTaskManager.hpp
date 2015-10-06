@@ -68,12 +68,15 @@ public:
   };
 private:
   // Instance state.
-  const Kind::kind _kind;               // For runtime type checking.
-  const uint       _affinity;           // Which worker should run task.
+  Kind::kind       _kind;               // For runtime type checking.
+  uint             _affinity;           // Which worker should run task.
   GCTask*          _newer;              // Tasks are on doubly-linked ...
   GCTask*          _older;              // ... lists.
+  uint             _gc_id;              // GC Id to use for the thread that executes this task
 public:
   virtual char* name() { return (char *)"task"; }
+
+  uint gc_id() { return _gc_id; }
 
   // Abstract do_it method
   virtual void do_it(GCTaskManager* manager, uint which) = 0;
@@ -116,17 +119,14 @@ protected:
   GCTask();
   //     A GCTask of a particular kind, usually barrier or noop.
   GCTask(Kind::kind kind);
-  //     An ordinary GCTask with an affinity.
-  GCTask(uint affinity);
-  //     A GCTask of a particular kind, with and affinity.
-  GCTask(Kind::kind kind, uint affinity);
+  GCTask(Kind::kind kind, uint gc_id);
   // We want a virtual destructor because virtual methods,
   // but since ResourceObj's don't have their destructors
   // called, we don't have one at all.  Instead we have
   // this method, which gets called by subclasses to clean up.
   virtual void destruct();
   // Methods.
-  void initialize();
+  void initialize(Kind::kind kind, uint gc_id);
 };
 
 // A doubly-linked list of GCTasks.
@@ -567,8 +567,7 @@ public:
   }
 protected:
   // Constructor.
-  NoopGCTask() :
-    GCTask(GCTask::Kind::noop_task) { }
+  NoopGCTask();
   // Destructor-like method.
   void destruct();
 };
