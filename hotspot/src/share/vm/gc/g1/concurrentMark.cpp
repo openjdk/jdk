@@ -246,10 +246,6 @@ MemRegion CMBitMap::getAndClearMarkedRegion(HeapWord* addr,
 
 CMMarkStack::CMMarkStack(ConcurrentMark* cm) :
   _base(NULL), _cm(cm)
-#ifdef ASSERT
-  , _drain_in_progress(false)
-  , _drain_in_progress_yields(false)
-#endif
 {}
 
 bool CMMarkStack::allocate(size_t capacity) {
@@ -361,30 +357,6 @@ bool CMMarkStack::par_pop_arr(oop* ptr_arr, int max, int* n) {
     *n = k;
     return true;
   }
-}
-
-template<class OopClosureClass>
-bool CMMarkStack::drain(OopClosureClass* cl, CMBitMap* bm, bool yield_after) {
-  assert(!_drain_in_progress || !_drain_in_progress_yields || yield_after
-         || SafepointSynchronize::is_at_safepoint(),
-         "Drain recursion must be yield-safe.");
-  bool res = true;
-  debug_only(_drain_in_progress = true);
-  debug_only(_drain_in_progress_yields = yield_after);
-  while (!isEmpty()) {
-    oop newOop = pop();
-    assert(G1CollectedHeap::heap()->is_in_reserved(newOop), "Bad pop");
-    assert(newOop->is_oop(), "Expected an oop");
-    assert(bm == NULL || bm->isMarked((HeapWord*)newOop),
-           "only grey objects on this stack");
-    newOop->oop_iterate(cl);
-    if (yield_after && _cm->do_yield_check()) {
-      res = false;
-      break;
-    }
-  }
-  debug_only(_drain_in_progress = false);
-  return res;
 }
 
 void CMMarkStack::note_start_of_gc() {
