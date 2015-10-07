@@ -63,7 +63,7 @@ class VMError : public AllStatic {
 
   // Thread id of the first error. We must be able to handle native thread,
   // so use thread id instead of Thread* to identify thread.
-  static volatile jlong    first_error_tid;
+  static volatile intptr_t first_error_tid;
 
   // Core dump status, false if we have been unable to write a core/minidump for some reason
   static bool coredump_status;
@@ -141,9 +141,7 @@ public:
   // check to see if fatal error reporting is in progress
   static bool fatal_error_in_progress() { return first_error_tid != -1; }
 
-  static jlong get_first_error_tid() {
-    return first_error_tid;
-  }
+  static intptr_t get_first_error_tid() { return first_error_tid; }
 };
 
 #endif // SHARE_VM_UTILITIES_VMERROR_HPP
