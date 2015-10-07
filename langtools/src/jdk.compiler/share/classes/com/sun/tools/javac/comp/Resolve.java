@@ -290,6 +290,13 @@ public class Resolve {
     }
 
     public boolean isAccessible(Env<AttrContext> env, TypeSymbol c, boolean checkInner) {
+
+        /* 15.9.5.1: Note that it is possible for the signature of the anonymous constructor
+           to refer to an inaccessible type
+        */
+        if (env.enclMethod != null && (env.enclMethod.mods.flags & ANONCONSTR) != 0)
+            return true;
+
         boolean isAccessible = false;
         switch ((short)(c.flags() & AccessFlags)) {
             case PRIVATE:
@@ -301,13 +308,7 @@ public class Resolve {
                 isAccessible =
                     env.toplevel.packge == c.owner // fast special case
                     ||
-                    env.toplevel.packge == c.packge()
-                    ||
-                    // Hack: this case is added since synthesized default constructors
-                    // of anonymous classes should be allowed to access
-                    // classes which would be inaccessible otherwise.
-                    env.enclMethod != null &&
-                    (env.enclMethod.mods.flags & ANONCONSTR) != 0;
+                    env.toplevel.packge == c.packge();
                 break;
             default: // error recovery
             case PUBLIC:
@@ -361,6 +362,13 @@ public class Resolve {
     }
     public boolean isAccessible(Env<AttrContext> env, Type site, Symbol sym, boolean checkInner) {
         if (sym.name == names.init && sym.owner != site.tsym) return false;
+
+        /* 15.9.5.1: Note that it is possible for the signature of the anonymous constructor
+           to refer to an inaccessible type
+        */
+        if (env.enclMethod != null && (env.enclMethod.mods.flags & ANONCONSTR) != 0)
+            return true;
+
         switch ((short)(sym.flags() & AccessFlags)) {
         case PRIVATE:
             return
