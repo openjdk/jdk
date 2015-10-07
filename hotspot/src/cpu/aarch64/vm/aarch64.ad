@@ -2556,7 +2556,7 @@ bool unnecessary_acquire(const Node *barrier)
     if (ld == NULL) {
       // check for a child cpuorder membar
       MemBarNode *child  = child_membar(barrier->as_MemBar());
-      if (child && child->Opcode() != Op_MemBarCPUOrder)
+      if (child && child->Opcode() == Op_MemBarCPUOrder)
 	return true;
     }
   }
