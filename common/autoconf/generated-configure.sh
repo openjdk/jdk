@@ -948,6 +948,7 @@ build_os
 build_vendor
 build_cpu
 build
+NICE
 CPIO
 DF
 READLINK
@@ -1169,6 +1170,7 @@ CYGPATH
 READLINK
 DF
 CPIO
+NICE
 UNZIP
 ZIP
 LDD
@@ -2049,6 +2051,7 @@ Some influential environment variables:
   READLINK    Override default value for READLINK
   DF          Override default value for DF
   CPIO        Override default value for CPIO
+  NICE        Override default value for NICE
   UNZIP       Override default value for UNZIP
   ZIP         Override default value for ZIP
   LDD         Override default value for LDD
@@ -4375,7 +4378,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1444077934
+DATE_WHEN_GENERATED=1444211811
 
 ###############################################################################
 #
@@ -4432,7 +4435,7 @@ $as_echo "$as_me: configure script generated at timestamp $DATE_WHEN_GENERATED."
   # Publish this variable in the help.
 
 
-  if test "x$BASENAME" = x; then
+  if [ -z "${BASENAME+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in basename
 do
@@ -4545,14 +4548,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$BASENAME"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BASENAME=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$BASENAME" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool BASENAME= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool BASENAME= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BASENAME" >&5
+$as_echo_n "checking for BASENAME... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$BASENAME"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BASENAME=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool BASENAME=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -4592,22 +4604,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$BASENAME" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BASENAME=$tool_specified" >&5
+          if test "x$BASENAME" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BASENAME=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool BASENAME=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BASENAME" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BASENAME" >&5
 $as_echo_n "checking for BASENAME... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool BASENAME=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool BASENAME=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -4625,7 +4638,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$BASH" = x; then
+  if [ -z "${BASH+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in bash
 do
@@ -4738,14 +4751,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$BASH"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BASH=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$BASH" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool BASH= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool BASH= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BASH" >&5
+$as_echo_n "checking for BASH... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$BASH"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BASH=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool BASH=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -4785,22 +4807,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$BASH" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BASH=$tool_specified" >&5
+          if test "x$BASH" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BASH=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool BASH=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BASH" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BASH" >&5
 $as_echo_n "checking for BASH... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool BASH=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool BASH=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -4818,7 +4841,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CAT" = x; then
+  if [ -z "${CAT+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cat
 do
@@ -4931,14 +4954,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CAT"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CAT=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CAT" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CAT= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CAT= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CAT" >&5
+$as_echo_n "checking for CAT... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CAT"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CAT=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CAT=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -4978,22 +5010,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CAT" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CAT=$tool_specified" >&5
+          if test "x$CAT" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CAT=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CAT=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CAT" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CAT" >&5
 $as_echo_n "checking for CAT... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CAT=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CAT=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -5011,7 +5044,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CHMOD" = x; then
+  if [ -z "${CHMOD+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in chmod
 do
@@ -5124,14 +5157,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CHMOD"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CHMOD=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CHMOD" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CHMOD= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CHMOD= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CHMOD" >&5
+$as_echo_n "checking for CHMOD... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CHMOD"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CHMOD=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CHMOD=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -5171,22 +5213,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CHMOD" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CHMOD=$tool_specified" >&5
+          if test "x$CHMOD" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CHMOD=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CHMOD=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CHMOD" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CHMOD" >&5
 $as_echo_n "checking for CHMOD... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CHMOD=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CHMOD=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -5204,7 +5247,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CMP" = x; then
+  if [ -z "${CMP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cmp
 do
@@ -5317,14 +5360,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CMP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CMP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CMP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CMP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CMP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CMP" >&5
+$as_echo_n "checking for CMP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CMP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CMP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CMP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -5364,22 +5416,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CMP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CMP=$tool_specified" >&5
+          if test "x$CMP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CMP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CMP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CMP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CMP" >&5
 $as_echo_n "checking for CMP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CMP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CMP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -5397,7 +5450,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$COMM" = x; then
+  if [ -z "${COMM+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in comm
 do
@@ -5510,14 +5563,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$COMM"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool COMM=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$COMM" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool COMM= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool COMM= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for COMM" >&5
+$as_echo_n "checking for COMM... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$COMM"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool COMM=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool COMM=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -5557,22 +5619,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$COMM" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool COMM=$tool_specified" >&5
+          if test "x$COMM" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool COMM=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool COMM=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for COMM" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for COMM" >&5
 $as_echo_n "checking for COMM... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool COMM=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool COMM=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -5590,7 +5653,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CP" = x; then
+  if [ -z "${CP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cp
 do
@@ -5703,14 +5766,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CP" >&5
+$as_echo_n "checking for CP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -5750,22 +5822,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CP=$tool_specified" >&5
+          if test "x$CP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CP" >&5
 $as_echo_n "checking for CP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -5783,7 +5856,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CUT" = x; then
+  if [ -z "${CUT+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cut
 do
@@ -5896,14 +5969,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CUT"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CUT=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CUT" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CUT= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CUT= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CUT" >&5
+$as_echo_n "checking for CUT... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CUT"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CUT=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CUT=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -5943,22 +6025,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CUT" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CUT=$tool_specified" >&5
+          if test "x$CUT" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CUT=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CUT=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CUT" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CUT" >&5
 $as_echo_n "checking for CUT... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CUT=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CUT=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -5976,7 +6059,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$DATE" = x; then
+  if [ -z "${DATE+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in date
 do
@@ -6089,14 +6172,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$DATE"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DATE=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$DATE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool DATE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool DATE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DATE" >&5
+$as_echo_n "checking for DATE... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$DATE"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DATE=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool DATE=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -6136,22 +6228,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$DATE" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DATE=$tool_specified" >&5
+          if test "x$DATE" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DATE=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool DATE=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DATE" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DATE" >&5
 $as_echo_n "checking for DATE... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool DATE=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool DATE=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -6169,7 +6262,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$DIFF" = x; then
+  if [ -z "${DIFF+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in gdiff diff
 do
@@ -6282,14 +6375,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$DIFF"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DIFF=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$DIFF" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool DIFF= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool DIFF= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DIFF" >&5
+$as_echo_n "checking for DIFF... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$DIFF"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DIFF=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool DIFF=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -6329,22 +6431,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$DIFF" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DIFF=$tool_specified" >&5
+          if test "x$DIFF" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DIFF=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool DIFF=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DIFF" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DIFF" >&5
 $as_echo_n "checking for DIFF... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool DIFF=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool DIFF=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -6362,7 +6465,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$DIRNAME" = x; then
+  if [ -z "${DIRNAME+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in dirname
 do
@@ -6475,14 +6578,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$DIRNAME"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DIRNAME=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$DIRNAME" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool DIRNAME= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool DIRNAME= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DIRNAME" >&5
+$as_echo_n "checking for DIRNAME... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$DIRNAME"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DIRNAME=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool DIRNAME=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -6522,22 +6634,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$DIRNAME" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DIRNAME=$tool_specified" >&5
+          if test "x$DIRNAME" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DIRNAME=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool DIRNAME=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DIRNAME" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DIRNAME" >&5
 $as_echo_n "checking for DIRNAME... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool DIRNAME=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool DIRNAME=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -6555,7 +6668,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$ECHO" = x; then
+  if [ -z "${ECHO+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in echo
 do
@@ -6668,14 +6781,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$ECHO"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool ECHO=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$ECHO" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool ECHO= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool ECHO= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ECHO" >&5
+$as_echo_n "checking for ECHO... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$ECHO"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool ECHO=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool ECHO=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -6715,22 +6837,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$ECHO" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool ECHO=$tool_specified" >&5
+          if test "x$ECHO" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool ECHO=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool ECHO=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ECHO" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ECHO" >&5
 $as_echo_n "checking for ECHO... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool ECHO=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool ECHO=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -6748,7 +6871,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$EXPR" = x; then
+  if [ -z "${EXPR+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in expr
 do
@@ -6861,14 +6984,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$EXPR"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool EXPR=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$EXPR" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool EXPR= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool EXPR= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for EXPR" >&5
+$as_echo_n "checking for EXPR... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$EXPR"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool EXPR=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool EXPR=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -6908,22 +7040,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$EXPR" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool EXPR=$tool_specified" >&5
+          if test "x$EXPR" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool EXPR=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool EXPR=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for EXPR" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for EXPR" >&5
 $as_echo_n "checking for EXPR... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool EXPR=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool EXPR=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -6941,7 +7074,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$FILE" = x; then
+  if [ -z "${FILE+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in file
 do
@@ -7054,14 +7187,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$FILE"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FILE=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$FILE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool FILE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool FILE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FILE" >&5
+$as_echo_n "checking for FILE... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$FILE"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FILE=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool FILE=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -7101,22 +7243,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$FILE" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FILE=$tool_specified" >&5
+          if test "x$FILE" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FILE=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool FILE=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FILE" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FILE" >&5
 $as_echo_n "checking for FILE... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool FILE=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool FILE=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -7134,7 +7277,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$FIND" = x; then
+  if [ -z "${FIND+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in find
 do
@@ -7247,14 +7390,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$FIND"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FIND=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$FIND" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool FIND= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool FIND= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FIND" >&5
+$as_echo_n "checking for FIND... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$FIND"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FIND=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool FIND=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -7294,22 +7446,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$FIND" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FIND=$tool_specified" >&5
+          if test "x$FIND" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FIND=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool FIND=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FIND" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FIND" >&5
 $as_echo_n "checking for FIND... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool FIND=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool FIND=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -7327,7 +7480,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$HEAD" = x; then
+  if [ -z "${HEAD+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in head
 do
@@ -7440,14 +7593,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$HEAD"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool HEAD=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$HEAD" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool HEAD= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool HEAD= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HEAD" >&5
+$as_echo_n "checking for HEAD... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$HEAD"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool HEAD=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool HEAD=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -7487,22 +7649,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$HEAD" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool HEAD=$tool_specified" >&5
+          if test "x$HEAD" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool HEAD=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool HEAD=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HEAD" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HEAD" >&5
 $as_echo_n "checking for HEAD... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool HEAD=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool HEAD=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -7520,7 +7683,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$LN" = x; then
+  if [ -z "${LN+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in ln
 do
@@ -7633,14 +7796,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$LN"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LN=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$LN" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool LN= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool LN= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LN" >&5
+$as_echo_n "checking for LN... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$LN"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LN=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool LN=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -7680,22 +7852,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$LN" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LN=$tool_specified" >&5
+          if test "x$LN" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LN=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool LN=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LN" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LN" >&5
 $as_echo_n "checking for LN... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool LN=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool LN=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -7713,7 +7886,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$LS" = x; then
+  if [ -z "${LS+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in ls
 do
@@ -7826,14 +7999,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$LS"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LS=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$LS" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool LS= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool LS= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LS" >&5
+$as_echo_n "checking for LS... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$LS"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LS=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool LS=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -7873,22 +8055,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$LS" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LS=$tool_specified" >&5
+          if test "x$LS" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LS=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool LS=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LS" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LS" >&5
 $as_echo_n "checking for LS... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool LS=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool LS=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -7906,7 +8089,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$MKDIR" = x; then
+  if [ -z "${MKDIR+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in mkdir
 do
@@ -8019,14 +8202,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$MKDIR"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MKDIR=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$MKDIR" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool MKDIR= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool MKDIR= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MKDIR" >&5
+$as_echo_n "checking for MKDIR... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$MKDIR"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MKDIR=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool MKDIR=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -8066,22 +8258,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$MKDIR" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MKDIR=$tool_specified" >&5
+          if test "x$MKDIR" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MKDIR=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool MKDIR=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MKDIR" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MKDIR" >&5
 $as_echo_n "checking for MKDIR... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool MKDIR=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool MKDIR=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -8099,7 +8292,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$MKTEMP" = x; then
+  if [ -z "${MKTEMP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in mktemp
 do
@@ -8212,14 +8405,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$MKTEMP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MKTEMP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$MKTEMP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool MKTEMP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool MKTEMP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MKTEMP" >&5
+$as_echo_n "checking for MKTEMP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$MKTEMP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MKTEMP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool MKTEMP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -8259,22 +8461,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$MKTEMP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MKTEMP=$tool_specified" >&5
+          if test "x$MKTEMP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MKTEMP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool MKTEMP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MKTEMP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MKTEMP" >&5
 $as_echo_n "checking for MKTEMP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool MKTEMP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool MKTEMP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -8292,7 +8495,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$MV" = x; then
+  if [ -z "${MV+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in mv
 do
@@ -8405,14 +8608,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$MV"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MV=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$MV" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool MV= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool MV= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MV" >&5
+$as_echo_n "checking for MV... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$MV"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MV=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool MV=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -8452,22 +8664,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$MV" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MV=$tool_specified" >&5
+          if test "x$MV" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MV=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool MV=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MV" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MV" >&5
 $as_echo_n "checking for MV... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool MV=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool MV=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -8485,7 +8698,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$NAWK" = x; then
+  if [ -z "${NAWK+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in nawk gawk awk
 do
@@ -8598,14 +8811,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$NAWK"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NAWK=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$NAWK" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool NAWK= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool NAWK= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NAWK" >&5
+$as_echo_n "checking for NAWK... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$NAWK"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NAWK=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool NAWK=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -8645,22 +8867,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$NAWK" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NAWK=$tool_specified" >&5
+          if test "x$NAWK" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NAWK=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool NAWK=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NAWK" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NAWK" >&5
 $as_echo_n "checking for NAWK... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool NAWK=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool NAWK=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -8678,7 +8901,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$PRINTF" = x; then
+  if [ -z "${PRINTF+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in printf
 do
@@ -8791,14 +9014,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$PRINTF"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool PRINTF=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$PRINTF" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool PRINTF= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool PRINTF= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PRINTF" >&5
+$as_echo_n "checking for PRINTF... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$PRINTF"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool PRINTF=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool PRINTF=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -8838,22 +9070,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$PRINTF" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool PRINTF=$tool_specified" >&5
+          if test "x$PRINTF" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool PRINTF=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool PRINTF=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PRINTF" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PRINTF" >&5
 $as_echo_n "checking for PRINTF... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool PRINTF=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool PRINTF=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -8871,7 +9104,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$RM" = x; then
+  if [ -z "${RM+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in rm
 do
@@ -8984,14 +9217,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$RM"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool RM=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$RM" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool RM= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool RM= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for RM" >&5
+$as_echo_n "checking for RM... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$RM"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool RM=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool RM=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -9031,22 +9273,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$RM" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool RM=$tool_specified" >&5
+          if test "x$RM" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool RM=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool RM=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for RM" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for RM" >&5
 $as_echo_n "checking for RM... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool RM=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool RM=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -9064,7 +9307,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$SH" = x; then
+  if [ -z "${SH+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in sh
 do
@@ -9177,14 +9420,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$SH"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SH=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$SH" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool SH= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool SH= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SH" >&5
+$as_echo_n "checking for SH... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$SH"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SH=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool SH=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -9224,22 +9476,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$SH" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SH=$tool_specified" >&5
+          if test "x$SH" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SH=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool SH=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SH" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SH" >&5
 $as_echo_n "checking for SH... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool SH=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool SH=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -9257,7 +9510,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$SORT" = x; then
+  if [ -z "${SORT+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in sort
 do
@@ -9370,14 +9623,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$SORT"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SORT=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$SORT" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool SORT= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool SORT= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SORT" >&5
+$as_echo_n "checking for SORT... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$SORT"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SORT=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool SORT=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -9417,22 +9679,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$SORT" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SORT=$tool_specified" >&5
+          if test "x$SORT" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SORT=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool SORT=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SORT" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SORT" >&5
 $as_echo_n "checking for SORT... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool SORT=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool SORT=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -9450,7 +9713,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$TAIL" = x; then
+  if [ -z "${TAIL+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in tail
 do
@@ -9563,14 +9826,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$TAIL"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TAIL=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$TAIL" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool TAIL= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool TAIL= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TAIL" >&5
+$as_echo_n "checking for TAIL... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$TAIL"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TAIL=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool TAIL=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -9610,22 +9882,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$TAIL" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TAIL=$tool_specified" >&5
+          if test "x$TAIL" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TAIL=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool TAIL=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TAIL" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TAIL" >&5
 $as_echo_n "checking for TAIL... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool TAIL=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool TAIL=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -9643,7 +9916,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$TAR" = x; then
+  if [ -z "${TAR+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in tar
 do
@@ -9756,14 +10029,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$TAR"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TAR=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$TAR" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool TAR= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool TAR= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TAR" >&5
+$as_echo_n "checking for TAR... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$TAR"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TAR=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool TAR=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -9803,22 +10085,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$TAR" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TAR=$tool_specified" >&5
+          if test "x$TAR" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TAR=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool TAR=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TAR" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TAR" >&5
 $as_echo_n "checking for TAR... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool TAR=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool TAR=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -9836,7 +10119,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$TEE" = x; then
+  if [ -z "${TEE+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in tee
 do
@@ -9949,14 +10232,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$TEE"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TEE=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$TEE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool TEE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool TEE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TEE" >&5
+$as_echo_n "checking for TEE... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$TEE"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TEE=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool TEE=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -9996,22 +10288,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$TEE" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TEE=$tool_specified" >&5
+          if test "x$TEE" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TEE=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool TEE=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TEE" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TEE" >&5
 $as_echo_n "checking for TEE... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool TEE=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool TEE=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -10029,7 +10322,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$TOUCH" = x; then
+  if [ -z "${TOUCH+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in touch
 do
@@ -10142,14 +10435,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$TOUCH"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TOUCH=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$TOUCH" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool TOUCH= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool TOUCH= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TOUCH" >&5
+$as_echo_n "checking for TOUCH... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$TOUCH"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TOUCH=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool TOUCH=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -10189,22 +10491,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$TOUCH" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TOUCH=$tool_specified" >&5
+          if test "x$TOUCH" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TOUCH=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool TOUCH=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TOUCH" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TOUCH" >&5
 $as_echo_n "checking for TOUCH... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool TOUCH=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool TOUCH=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -10222,7 +10525,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$TR" = x; then
+  if [ -z "${TR+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in tr
 do
@@ -10335,14 +10638,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$TR"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TR=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$TR" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool TR= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool TR= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TR" >&5
+$as_echo_n "checking for TR... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$TR"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TR=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool TR=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -10382,22 +10694,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$TR" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TR=$tool_specified" >&5
+          if test "x$TR" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TR=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool TR=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TR" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TR" >&5
 $as_echo_n "checking for TR... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool TR=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool TR=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -10415,7 +10728,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$UNAME" = x; then
+  if [ -z "${UNAME+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in uname
 do
@@ -10528,14 +10841,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$UNAME"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool UNAME=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$UNAME" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool UNAME= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool UNAME= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNAME" >&5
+$as_echo_n "checking for UNAME... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$UNAME"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool UNAME=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool UNAME=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -10575,22 +10897,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$UNAME" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool UNAME=$tool_specified" >&5
+          if test "x$UNAME" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool UNAME=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool UNAME=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNAME" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNAME" >&5
 $as_echo_n "checking for UNAME... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool UNAME=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool UNAME=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -10608,7 +10931,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$UNIQ" = x; then
+  if [ -z "${UNIQ+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in uniq
 do
@@ -10721,14 +11044,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$UNIQ"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool UNIQ=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$UNIQ" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool UNIQ= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool UNIQ= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNIQ" >&5
+$as_echo_n "checking for UNIQ... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$UNIQ"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool UNIQ=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool UNIQ=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -10768,22 +11100,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$UNIQ" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool UNIQ=$tool_specified" >&5
+          if test "x$UNIQ" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool UNIQ=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool UNIQ=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNIQ" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNIQ" >&5
 $as_echo_n "checking for UNIQ... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool UNIQ=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool UNIQ=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -10801,7 +11134,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$WC" = x; then
+  if [ -z "${WC+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in wc
 do
@@ -10914,14 +11247,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$WC"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool WC=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$WC" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool WC= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool WC= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for WC" >&5
+$as_echo_n "checking for WC... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$WC"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool WC=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool WC=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -10961,22 +11303,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$WC" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool WC=$tool_specified" >&5
+          if test "x$WC" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool WC=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool WC=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for WC" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for WC" >&5
 $as_echo_n "checking for WC... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool WC=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool WC=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -10994,7 +11337,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$WHICH" = x; then
+  if [ -z "${WHICH+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in which
 do
@@ -11107,14 +11450,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$WHICH"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool WHICH=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$WHICH" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool WHICH= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool WHICH= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for WHICH" >&5
+$as_echo_n "checking for WHICH... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$WHICH"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool WHICH=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool WHICH=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -11154,22 +11506,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$WHICH" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool WHICH=$tool_specified" >&5
+          if test "x$WHICH" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool WHICH=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool WHICH=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for WHICH" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for WHICH" >&5
 $as_echo_n "checking for WHICH... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool WHICH=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool WHICH=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -11187,7 +11540,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$XARGS" = x; then
+  if [ -z "${XARGS+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in xargs
 do
@@ -11300,14 +11653,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$XARGS"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool XARGS=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$XARGS" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool XARGS= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool XARGS= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XARGS" >&5
+$as_echo_n "checking for XARGS... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$XARGS"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool XARGS=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool XARGS=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -11347,22 +11709,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$XARGS" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool XARGS=$tool_specified" >&5
+          if test "x$XARGS" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool XARGS=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool XARGS=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XARGS" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XARGS" >&5
 $as_echo_n "checking for XARGS... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool XARGS=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool XARGS=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -11381,7 +11744,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$AWK" = x; then
+  if [ -z "${AWK+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in gawk mawk nawk awk
 do
@@ -11488,14 +11851,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$AWK"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool AWK=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$AWK" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool AWK= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool AWK= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AWK" >&5
+$as_echo_n "checking for AWK... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$AWK"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool AWK=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool AWK=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -11535,22 +11907,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$AWK" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool AWK=$tool_specified" >&5
+          if test "x$AWK" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool AWK=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool AWK=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AWK" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AWK" >&5
 $as_echo_n "checking for AWK... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool AWK=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool AWK=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -11566,7 +11939,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$GREP" = x; then
+  if [ -z "${GREP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for grep that handles long lines and -e" >&5
 $as_echo_n "checking for grep that handles long lines and -e... " >&6; }
@@ -11715,14 +12088,23 @@ $as_echo "$ac_cv_path_GREP" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$GREP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool GREP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$GREP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool GREP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool GREP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GREP" >&5
+$as_echo_n "checking for GREP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$GREP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool GREP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool GREP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -11762,22 +12144,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$GREP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool GREP=$tool_specified" >&5
+          if test "x$GREP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool GREP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool GREP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GREP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GREP" >&5
 $as_echo_n "checking for GREP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool GREP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool GREP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -11793,7 +12176,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$EGREP" = x; then
+  if [ -z "${EGREP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for egrep" >&5
 $as_echo_n "checking for egrep... " >&6; }
@@ -11950,14 +12333,23 @@ $as_echo "$ac_cv_path_EGREP" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$EGREP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool EGREP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$EGREP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool EGREP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool EGREP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for EGREP" >&5
+$as_echo_n "checking for EGREP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$EGREP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool EGREP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool EGREP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -11997,22 +12389,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$EGREP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool EGREP=$tool_specified" >&5
+          if test "x$EGREP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool EGREP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool EGREP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for EGREP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for EGREP" >&5
 $as_echo_n "checking for EGREP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool EGREP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool EGREP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -12028,7 +12421,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$FGREP" = x; then
+  if [ -z "${FGREP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fgrep" >&5
 $as_echo_n "checking for fgrep... " >&6; }
@@ -12185,14 +12578,23 @@ $as_echo "$ac_cv_path_FGREP" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$FGREP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FGREP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$FGREP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool FGREP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool FGREP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FGREP" >&5
+$as_echo_n "checking for FGREP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$FGREP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FGREP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool FGREP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -12232,22 +12634,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$FGREP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FGREP=$tool_specified" >&5
+          if test "x$FGREP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FGREP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool FGREP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FGREP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FGREP" >&5
 $as_echo_n "checking for FGREP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool FGREP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool FGREP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -12263,7 +12666,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$SED" = x; then
+  if [ -z "${SED+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for a sed that does not truncate output" >&5
 $as_echo_n "checking for a sed that does not truncate output... " >&6; }
@@ -12424,14 +12827,23 @@ $as_echo "$ac_cv_path_SED" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$SED"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SED=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$SED" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool SED= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool SED= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SED" >&5
+$as_echo_n "checking for SED... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$SED"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SED=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool SED=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -12471,22 +12883,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$SED" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SED=$tool_specified" >&5
+          if test "x$SED" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SED=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool SED=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SED" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SED" >&5
 $as_echo_n "checking for SED... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool SED=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool SED=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -12511,7 +12924,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CYGPATH" = x; then
+  if [ -z "${CYGPATH+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cygpath
 do
@@ -12624,14 +13037,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CYGPATH"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CYGPATH=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CYGPATH" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CYGPATH= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CYGPATH= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CYGPATH" >&5
+$as_echo_n "checking for CYGPATH... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CYGPATH"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CYGPATH=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CYGPATH=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -12671,22 +13093,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CYGPATH" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CYGPATH=$tool_specified" >&5
+          if test "x$CYGPATH" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CYGPATH=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CYGPATH=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CYGPATH" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CYGPATH" >&5
 $as_echo_n "checking for CYGPATH... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CYGPATH=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CYGPATH=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -12697,7 +13120,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$READLINK" = x; then
+  if [ -z "${READLINK+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in greadlink readlink
 do
@@ -12810,14 +13233,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$READLINK"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool READLINK=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$READLINK" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool READLINK= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool READLINK= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for READLINK" >&5
+$as_echo_n "checking for READLINK... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$READLINK"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool READLINK=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool READLINK=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -12857,22 +13289,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$READLINK" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool READLINK=$tool_specified" >&5
+          if test "x$READLINK" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool READLINK=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool READLINK=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for READLINK" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for READLINK" >&5
 $as_echo_n "checking for READLINK... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool READLINK=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool READLINK=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -12883,7 +13316,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$DF" = x; then
+  if [ -z "${DF+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in df
 do
@@ -12996,14 +13429,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$DF"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DF=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$DF" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool DF= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool DF= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DF" >&5
+$as_echo_n "checking for DF... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$DF"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DF=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool DF=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -13043,22 +13485,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$DF" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DF=$tool_specified" >&5
+          if test "x$DF" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DF=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool DF=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DF" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DF" >&5
 $as_echo_n "checking for DF... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool DF=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool DF=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -13069,7 +13512,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CPIO" = x; then
+  if [ -z "${CPIO+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cpio bsdcpio
 do
@@ -13182,14 +13625,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CPIO"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CPIO=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CPIO" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CPIO= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CPIO= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CPIO" >&5
+$as_echo_n "checking for CPIO... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CPIO"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CPIO=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CPIO=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -13229,22 +13681,219 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CPIO" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CPIO=$tool_specified" >&5
+          if test "x$CPIO" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CPIO=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CPIO=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CPIO" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CPIO" >&5
 $as_echo_n "checking for CPIO... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CPIO=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CPIO=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if [ -z "${NICE+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in nice
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_NICE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NICE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NICE="$NICE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_NICE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+NICE=$ac_cv_path_NICE
+if test -n "$NICE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NICE" >&5
+$as_echo "$NICE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$NICE" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !NICE! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!NICE!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xNICE" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of NICE from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of NICE from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in nice
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_NICE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NICE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NICE="$NICE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_NICE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+NICE=$ac_cv_path_NICE
+if test -n "$NICE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NICE" >&5
+$as_echo "$NICE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$NICE" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$NICE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool NICE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool NICE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NICE" >&5
+$as_echo_n "checking for NICE... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$NICE"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NICE=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool NICE=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_NICE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NICE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NICE="$NICE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_NICE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+NICE=$ac_cv_path_NICE
+if test -n "$NICE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NICE" >&5
+$as_echo "$NICE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$NICE" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NICE=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool NICE=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NICE" >&5
+$as_echo_n "checking for NICE... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool NICE=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -17383,7 +18032,7 @@ $as_echo "yes" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$UNZIP" = x; then
+  if [ -z "${UNZIP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in unzip
 do
@@ -17496,14 +18145,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$UNZIP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool UNZIP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$UNZIP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool UNZIP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool UNZIP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNZIP" >&5
+$as_echo_n "checking for UNZIP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$UNZIP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool UNZIP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool UNZIP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -17543,22 +18201,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$UNZIP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool UNZIP=$tool_specified" >&5
+          if test "x$UNZIP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool UNZIP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool UNZIP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNZIP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNZIP" >&5
 $as_echo_n "checking for UNZIP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool UNZIP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool UNZIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -17576,7 +18235,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$ZIP" = x; then
+  if [ -z "${ZIP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in zip
 do
@@ -17689,14 +18348,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$ZIP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool ZIP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$ZIP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool ZIP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool ZIP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZIP" >&5
+$as_echo_n "checking for ZIP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$ZIP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool ZIP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool ZIP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -17736,22 +18404,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$ZIP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool ZIP=$tool_specified" >&5
+          if test "x$ZIP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool ZIP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool ZIP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZIP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZIP" >&5
 $as_echo_n "checking for ZIP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool ZIP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool ZIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -17771,7 +18440,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$LDD" = x; then
+  if [ -z "${LDD+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in ldd
 do
@@ -17884,14 +18553,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$LDD"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LDD=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$LDD" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool LDD= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool LDD= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LDD" >&5
+$as_echo_n "checking for LDD... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$LDD"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LDD=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool LDD=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -17931,22 +18609,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$LDD" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LDD=$tool_specified" >&5
+          if test "x$LDD" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LDD=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool LDD=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LDD" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LDD" >&5
 $as_echo_n "checking for LDD... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool LDD=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool LDD=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -17963,7 +18642,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$OTOOL" = x; then
+  if [ -z "${OTOOL+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in otool
 do
@@ -18076,14 +18755,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$OTOOL"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool OTOOL=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$OTOOL" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool OTOOL= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool OTOOL= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OTOOL" >&5
+$as_echo_n "checking for OTOOL... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$OTOOL"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool OTOOL=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool OTOOL=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -18123,22 +18811,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$OTOOL" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool OTOOL=$tool_specified" >&5
+          if test "x$OTOOL" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool OTOOL=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool OTOOL=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OTOOL" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OTOOL" >&5
 $as_echo_n "checking for OTOOL... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool OTOOL=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool OTOOL=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -18152,7 +18841,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$READELF" = x; then
+  if [ -z "${READELF+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in greadelf readelf
 do
@@ -18265,14 +18954,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$READELF"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool READELF=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$READELF" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool READELF= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool READELF= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for READELF" >&5
+$as_echo_n "checking for READELF... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$READELF"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool READELF=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool READELF=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -18312,22 +19010,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$READELF" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool READELF=$tool_specified" >&5
+          if test "x$READELF" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool READELF=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool READELF=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for READELF" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for READELF" >&5
 $as_echo_n "checking for READELF... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool READELF=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool READELF=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -18338,7 +19037,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$HG" = x; then
+  if [ -z "${HG+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in hg
 do
@@ -18451,14 +19150,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$HG"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool HG=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$HG" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool HG= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool HG= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HG" >&5
+$as_echo_n "checking for HG... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$HG"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool HG=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool HG=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -18498,22 +19206,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$HG" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool HG=$tool_specified" >&5
+          if test "x$HG" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool HG=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool HG=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HG" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HG" >&5
 $as_echo_n "checking for HG... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool HG=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool HG=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -18524,7 +19233,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$STAT" = x; then
+  if [ -z "${STAT+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in stat
 do
@@ -18637,14 +19346,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$STAT"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool STAT=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$STAT" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool STAT= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool STAT= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STAT" >&5
+$as_echo_n "checking for STAT... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$STAT"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool STAT=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool STAT=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -18684,22 +19402,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$STAT" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool STAT=$tool_specified" >&5
+          if test "x$STAT" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool STAT=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool STAT=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STAT" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STAT" >&5
 $as_echo_n "checking for STAT... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool STAT=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool STAT=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -18710,7 +19429,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$TIME" = x; then
+  if [ -z "${TIME+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in time
 do
@@ -18823,14 +19542,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$TIME"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TIME=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$TIME" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool TIME= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool TIME= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TIME" >&5
+$as_echo_n "checking for TIME... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$TIME"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TIME=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool TIME=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -18870,22 +19598,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$TIME" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TIME=$tool_specified" >&5
+          if test "x$TIME" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TIME=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool TIME=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TIME" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TIME" >&5
 $as_echo_n "checking for TIME... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool TIME=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool TIME=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -18896,7 +19625,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$PATCH" = x; then
+  if [ -z "${PATCH+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in gpatch patch
 do
@@ -19009,14 +19738,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$PATCH"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool PATCH=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$PATCH" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool PATCH= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool PATCH= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PATCH" >&5
+$as_echo_n "checking for PATCH... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$PATCH"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool PATCH=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool PATCH=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -19056,22 +19794,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$PATCH" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool PATCH=$tool_specified" >&5
+          if test "x$PATCH" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool PATCH=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool PATCH=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PATCH" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PATCH" >&5
 $as_echo_n "checking for PATCH... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool PATCH=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool PATCH=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -19093,7 +19832,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$DSYMUTIL" = x; then
+  if [ -z "${DSYMUTIL+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in dsymutil
 do
@@ -19206,14 +19945,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$DSYMUTIL"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DSYMUTIL=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$DSYMUTIL" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool DSYMUTIL= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool DSYMUTIL= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DSYMUTIL" >&5
+$as_echo_n "checking for DSYMUTIL... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$DSYMUTIL"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DSYMUTIL=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool DSYMUTIL=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -19253,22 +20001,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$DSYMUTIL" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DSYMUTIL=$tool_specified" >&5
+          if test "x$DSYMUTIL" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DSYMUTIL=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool DSYMUTIL=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DSYMUTIL" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DSYMUTIL" >&5
 $as_echo_n "checking for DSYMUTIL... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool DSYMUTIL=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool DSYMUTIL=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -19286,7 +20035,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$XATTR" = x; then
+  if [ -z "${XATTR+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in xattr
 do
@@ -19399,14 +20148,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$XATTR"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool XATTR=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$XATTR" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool XATTR= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool XATTR= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XATTR" >&5
+$as_echo_n "checking for XATTR... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$XATTR"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool XATTR=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool XATTR=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -19446,22 +20204,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$XATTR" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool XATTR=$tool_specified" >&5
+          if test "x$XATTR" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool XATTR=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool XATTR=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XATTR" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XATTR" >&5
 $as_echo_n "checking for XATTR... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool XATTR=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool XATTR=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -19478,7 +20237,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CODESIGN" = x; then
+  if [ -z "${CODESIGN+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in codesign
 do
@@ -19591,14 +20350,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CODESIGN"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CODESIGN=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CODESIGN" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CODESIGN= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CODESIGN= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CODESIGN" >&5
+$as_echo_n "checking for CODESIGN... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CODESIGN"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CODESIGN=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CODESIGN=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -19638,22 +20406,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CODESIGN" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CODESIGN=$tool_specified" >&5
+          if test "x$CODESIGN" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CODESIGN=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CODESIGN=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CODESIGN" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CODESIGN" >&5
 $as_echo_n "checking for CODESIGN... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CODESIGN=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CODESIGN=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -19681,7 +20450,7 @@ $as_echo "yes" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$SETFILE" = x; then
+  if [ -z "${SETFILE+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in SetFile
 do
@@ -19794,14 +20563,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$SETFILE"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SETFILE=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$SETFILE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool SETFILE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool SETFILE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SETFILE" >&5
+$as_echo_n "checking for SETFILE... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$SETFILE"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SETFILE=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool SETFILE=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -19841,22 +20619,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$SETFILE" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SETFILE=$tool_specified" >&5
+          if test "x$SETFILE" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SETFILE=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool SETFILE=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SETFILE" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SETFILE" >&5
 $as_echo_n "checking for SETFILE... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool SETFILE=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool SETFILE=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -25747,7 +26526,7 @@ $as_echo "$as_me: This might be fixed by explicitely setting --with-boot-jdk" >&
   # Publish this variable in the help.
 
 
-  if test "x$JAVA" = x; then
+  if [ -z "${JAVA+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for java in Boot JDK" >&5
@@ -25800,14 +26579,23 @@ $as_echo "ok" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$JAVA"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAVA=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$JAVA" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool JAVA= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool JAVA= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVA" >&5
+$as_echo_n "checking for JAVA... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$JAVA"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAVA=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool JAVA=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -25847,22 +26635,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$JAVA" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAVA=$tool_specified" >&5
+          if test "x$JAVA" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAVA=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool JAVA=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVA" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVA" >&5
 $as_echo_n "checking for JAVA... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool JAVA=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool JAVA=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -25874,7 +26663,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$JAVAC" = x; then
+  if [ -z "${JAVAC+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for javac in Boot JDK" >&5
@@ -25927,14 +26716,23 @@ $as_echo "ok" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$JAVAC"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAVAC=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$JAVAC" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool JAVAC= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool JAVAC= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVAC" >&5
+$as_echo_n "checking for JAVAC... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$JAVAC"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAVAC=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool JAVAC=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -25974,22 +26772,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$JAVAC" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAVAC=$tool_specified" >&5
+          if test "x$JAVAC" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAVAC=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool JAVAC=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVAC" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVAC" >&5
 $as_echo_n "checking for JAVAC... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool JAVAC=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool JAVAC=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -26001,7 +26800,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$JAVAH" = x; then
+  if [ -z "${JAVAH+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for javah in Boot JDK" >&5
@@ -26054,14 +26853,23 @@ $as_echo "ok" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$JAVAH"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAVAH=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$JAVAH" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool JAVAH= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool JAVAH= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVAH" >&5
+$as_echo_n "checking for JAVAH... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$JAVAH"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAVAH=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool JAVAH=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -26101,22 +26909,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$JAVAH" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAVAH=$tool_specified" >&5
+          if test "x$JAVAH" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAVAH=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool JAVAH=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVAH" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVAH" >&5
 $as_echo_n "checking for JAVAH... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool JAVAH=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool JAVAH=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -26128,7 +26937,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$JAR" = x; then
+  if [ -z "${JAR+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jar in Boot JDK" >&5
@@ -26181,14 +26990,23 @@ $as_echo "ok" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$JAR"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAR=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$JAR" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool JAR= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool JAR= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAR" >&5
+$as_echo_n "checking for JAR... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$JAR"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAR=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool JAR=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -26228,22 +27046,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$JAR" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAR=$tool_specified" >&5
+          if test "x$JAR" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAR=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool JAR=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAR" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAR" >&5
 $as_echo_n "checking for JAR... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool JAR=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool JAR=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -26255,7 +27074,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$JARSIGNER" = x; then
+  if [ -z "${JARSIGNER+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jarsigner in Boot JDK" >&5
@@ -26308,14 +27127,23 @@ $as_echo "ok" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$JARSIGNER"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JARSIGNER=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$JARSIGNER" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool JARSIGNER= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool JARSIGNER= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JARSIGNER" >&5
+$as_echo_n "checking for JARSIGNER... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$JARSIGNER"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JARSIGNER=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool JARSIGNER=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -26355,22 +27183,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$JARSIGNER" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JARSIGNER=$tool_specified" >&5
+          if test "x$JARSIGNER" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JARSIGNER=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool JARSIGNER=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JARSIGNER" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JARSIGNER" >&5
 $as_echo_n "checking for JARSIGNER... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool JARSIGNER=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool JARSIGNER=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -32800,7 +33629,7 @@ $as_echo "yes" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$AS" = x; then
+  if [ -z "${AS+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in as
 do
@@ -32913,14 +33742,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$AS"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool AS=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$AS" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool AS= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool AS= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AS" >&5
+$as_echo_n "checking for AS... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$AS"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool AS=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool AS=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -32960,22 +33798,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$AS" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool AS=$tool_specified" >&5
+          if test "x$AS" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool AS=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool AS=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AS" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AS" >&5
 $as_echo_n "checking for AS... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool AS=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool AS=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -33321,7 +34160,7 @@ fi
   # Publish this variable in the help.
 
 
-  if test "x$AR" = x; then
+  if [ -z "${AR+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     if test -n "$ac_tool_prefix"; then
   for ac_prog in ar
@@ -33544,14 +34383,23 @@ fi
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$AR"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool AR=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$AR" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool AR= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool AR= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AR" >&5
+$as_echo_n "checking for AR... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$AR"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool AR=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool AR=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -33591,22 +34439,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$AR" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool AR=$tool_specified" >&5
+          if test "x$AR" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool AR=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool AR=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AR" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AR" >&5
 $as_echo_n "checking for AR... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool AR=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool AR=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -33907,7 +34756,7 @@ $as_echo "$as_me: Rewriting AR to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$LIPO" = x; then
+  if [ -z "${LIPO+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in lipo
 do
@@ -34020,14 +34869,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$LIPO"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LIPO=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$LIPO" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool LIPO= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool LIPO= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIPO" >&5
+$as_echo_n "checking for LIPO... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$LIPO"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LIPO=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool LIPO=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -34067,22 +34925,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$LIPO" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LIPO=$tool_specified" >&5
+          if test "x$LIPO" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LIPO=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool LIPO=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIPO" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIPO" >&5
 $as_echo_n "checking for LIPO... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool LIPO=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool LIPO=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -35433,7 +36292,7 @@ fi
   # Publish this variable in the help.
 
 
-  if test "x$STRIP" = x; then
+  if [ -z "${STRIP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in strip
 do
@@ -35546,14 +36405,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$STRIP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool STRIP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$STRIP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool STRIP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool STRIP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STRIP" >&5
+$as_echo_n "checking for STRIP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$STRIP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool STRIP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool STRIP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -35593,22 +36461,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$STRIP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool STRIP=$tool_specified" >&5
+          if test "x$STRIP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool STRIP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool STRIP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STRIP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STRIP" >&5
 $as_echo_n "checking for STRIP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool STRIP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool STRIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -35905,7 +36774,7 @@ $as_echo "$as_me: Rewriting STRIP to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$NM" = x; then
+  if [ -z "${NM+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in nm
 do
@@ -36018,14 +36887,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$NM"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NM=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$NM" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool NM= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool NM= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NM" >&5
+$as_echo_n "checking for NM... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$NM"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NM=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool NM=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -36065,22 +36943,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$NM" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NM=$tool_specified" >&5
+          if test "x$NM" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NM=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool NM=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NM" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NM" >&5
 $as_echo_n "checking for NM... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool NM=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool NM=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -36377,7 +37256,7 @@ $as_echo "$as_me: Rewriting NM to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$GNM" = x; then
+  if [ -z "${GNM+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in gnm
 do
@@ -36490,14 +37369,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$GNM"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool GNM=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$GNM" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool GNM= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool GNM= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GNM" >&5
+$as_echo_n "checking for GNM... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$GNM"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool GNM=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool GNM=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -36537,22 +37425,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$GNM" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool GNM=$tool_specified" >&5
+          if test "x$GNM" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool GNM=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool GNM=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GNM" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GNM" >&5
 $as_echo_n "checking for GNM... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool GNM=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool GNM=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -36851,7 +37740,7 @@ $as_echo "$as_me: Rewriting GNM to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$STRIP" = x; then
+  if [ -z "${STRIP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     if test -n "$ac_tool_prefix"; then
   for ac_prog in strip
@@ -37074,14 +37963,23 @@ fi
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$STRIP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool STRIP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$STRIP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool STRIP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool STRIP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STRIP" >&5
+$as_echo_n "checking for STRIP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$STRIP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool STRIP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool STRIP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -37121,22 +38019,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$STRIP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool STRIP=$tool_specified" >&5
+          if test "x$STRIP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool STRIP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool STRIP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STRIP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STRIP" >&5
 $as_echo_n "checking for STRIP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool STRIP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool STRIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -37433,7 +38332,7 @@ $as_echo "$as_me: Rewriting STRIP to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$NM" = x; then
+  if [ -z "${NM+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     if test -n "$ac_tool_prefix"; then
   for ac_prog in nm
@@ -37656,14 +38555,23 @@ fi
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$NM"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NM=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$NM" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool NM= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool NM= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NM" >&5
+$as_echo_n "checking for NM... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$NM"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NM=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool NM=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -37703,22 +38611,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$NM" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NM=$tool_specified" >&5
+          if test "x$NM" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NM=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool NM=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NM" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NM" >&5
 $as_echo_n "checking for NM... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool NM=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool NM=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -38022,7 +38931,7 @@ $as_echo "$as_me: Rewriting NM to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$OBJCOPY" = x; then
+  if [ -z "${OBJCOPY+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     if test -n "$ac_tool_prefix"; then
   for ac_prog in gobjcopy objcopy
@@ -38245,14 +39154,23 @@ fi
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$OBJCOPY"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool OBJCOPY=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$OBJCOPY" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool OBJCOPY= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool OBJCOPY= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OBJCOPY" >&5
+$as_echo_n "checking for OBJCOPY... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$OBJCOPY"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool OBJCOPY=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool OBJCOPY=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -38292,22 +39210,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$OBJCOPY" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool OBJCOPY=$tool_specified" >&5
+          if test "x$OBJCOPY" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool OBJCOPY=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool OBJCOPY=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OBJCOPY" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OBJCOPY" >&5
 $as_echo_n "checking for OBJCOPY... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool OBJCOPY=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool OBJCOPY=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -38651,7 +39570,7 @@ $as_echo "$as_me: Note: Solaris 11 Update 1 contains the correct version" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$OBJDUMP" = x; then
+  if [ -z "${OBJDUMP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     if test -n "$ac_tool_prefix"; then
   for ac_prog in gobjdump objdump
@@ -38874,14 +39793,23 @@ fi
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$OBJDUMP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool OBJDUMP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$OBJDUMP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool OBJDUMP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool OBJDUMP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OBJDUMP" >&5
+$as_echo_n "checking for OBJDUMP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$OBJDUMP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool OBJDUMP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool OBJDUMP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -38921,22 +39849,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$OBJDUMP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool OBJDUMP=$tool_specified" >&5
+          if test "x$OBJDUMP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool OBJDUMP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool OBJDUMP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OBJDUMP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OBJDUMP" >&5
 $as_echo_n "checking for OBJDUMP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool OBJDUMP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool OBJDUMP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -39260,7 +40189,7 @@ $as_echo "$as_me: Rewriting OBJDUMP to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$BUILD_CC" = x; then
+  if [ -z "${BUILD_CC+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cl cc gcc
 do
@@ -39373,14 +40302,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$BUILD_CC"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BUILD_CC=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$BUILD_CC" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool BUILD_CC= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool BUILD_CC= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_CC" >&5
+$as_echo_n "checking for BUILD_CC... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$BUILD_CC"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BUILD_CC=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool BUILD_CC=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -39420,22 +40358,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$BUILD_CC" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BUILD_CC=$tool_specified" >&5
+          if test "x$BUILD_CC" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BUILD_CC=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool BUILD_CC=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_CC" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_CC" >&5
 $as_echo_n "checking for BUILD_CC... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool BUILD_CC=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool BUILD_CC=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -39732,7 +40671,7 @@ $as_echo "$as_me: Rewriting BUILD_CC to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$BUILD_CXX" = x; then
+  if [ -z "${BUILD_CXX+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cl CC g++
 do
@@ -39845,14 +40784,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$BUILD_CXX"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BUILD_CXX=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$BUILD_CXX" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool BUILD_CXX= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool BUILD_CXX= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_CXX" >&5
+$as_echo_n "checking for BUILD_CXX... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$BUILD_CXX"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BUILD_CXX=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool BUILD_CXX=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -39892,22 +40840,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$BUILD_CXX" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BUILD_CXX=$tool_specified" >&5
+          if test "x$BUILD_CXX" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BUILD_CXX=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool BUILD_CXX=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_CXX" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_CXX" >&5
 $as_echo_n "checking for BUILD_CXX... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool BUILD_CXX=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool BUILD_CXX=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -40204,7 +41153,7 @@ $as_echo "$as_me: Rewriting BUILD_CXX to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$BUILD_LD" = x; then
+  if [ -z "${BUILD_LD+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in ld
 do
@@ -40317,14 +41266,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$BUILD_LD"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BUILD_LD=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$BUILD_LD" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool BUILD_LD= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool BUILD_LD= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_LD" >&5
+$as_echo_n "checking for BUILD_LD... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$BUILD_LD"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BUILD_LD=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool BUILD_LD=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -40364,22 +41322,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$BUILD_LD" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BUILD_LD=$tool_specified" >&5
+          if test "x$BUILD_LD" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BUILD_LD=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool BUILD_LD=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_LD" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_LD" >&5
 $as_echo_n "checking for BUILD_LD... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool BUILD_LD=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool BUILD_LD=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -41143,7 +42102,7 @@ $as_echo "$JTREGEXE" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$JTREGEXE" = x; then
+  if [ -z "${JTREGEXE+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in jtreg
 do
@@ -41256,14 +42215,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$JTREGEXE"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JTREGEXE=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$JTREGEXE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool JTREGEXE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool JTREGEXE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JTREGEXE" >&5
+$as_echo_n "checking for JTREGEXE... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$JTREGEXE"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JTREGEXE=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool JTREGEXE=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -41303,22 +42271,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$JTREGEXE" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JTREGEXE=$tool_specified" >&5
+          if test "x$JTREGEXE" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JTREGEXE=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool JTREGEXE=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JTREGEXE" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JTREGEXE" >&5
 $as_echo_n "checking for JTREGEXE... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool JTREGEXE=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool JTREGEXE=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -53089,7 +54058,7 @@ $as_echo "yes" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CCACHE" = x; then
+  if [ -z "${CCACHE+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in ccache
 do
@@ -53202,14 +54171,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CCACHE"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CCACHE=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CCACHE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CCACHE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CCACHE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CCACHE" >&5
+$as_echo_n "checking for CCACHE... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CCACHE"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CCACHE=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CCACHE=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -53249,22 +54227,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CCACHE" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CCACHE=$tool_specified" >&5
+          if test "x$CCACHE" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CCACHE=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CCACHE=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CCACHE" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CCACHE" >&5
 $as_echo_n "checking for CCACHE... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CCACHE=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CCACHE=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
