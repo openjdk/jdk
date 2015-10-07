@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package javax.swing;
 
 import java.io.Serializable;
@@ -31,17 +30,15 @@ import java.awt.Adjustable;
 import java.awt.Dimension;
 import java.awt.event.AdjustmentListener;
 import java.awt.event.AdjustmentEvent;
-import java.awt.Graphics;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 
 import javax.swing.event.*;
 import javax.swing.plaf.*;
 import javax.accessibility.*;
 
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-
-
 
 /**
  * An implementation of a scrollbar. The user positions the knob in the
@@ -72,13 +69,12 @@ import java.io.IOException;
  * Please see {@link java.beans.XMLEncoder}.
  *
  * @see JScrollPane
- * @beaninfo
- *      attribute: isContainer false
- *    description: A component that helps determine the visible content range of an area.
  *
  * @author David Kloba
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UI", description = "A component that helps determine the visible content range of an area.")
+@SwingContainer(false)
 @SuppressWarnings("serial") // Same-version serialization only
 public class JScrollBar extends JComponent implements Adjustable, Accessible
 {
@@ -207,12 +203,9 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * @param ui  the <code>ScrollBarUI</code> {@literal L&F} object
      * @see UIDefaults#getUI
      * @since 1.4
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *    attribute: visualUpdate true
-     *  description: The UI object that implements the Component's LookAndFeel
      */
+    @BeanProperty(hidden = true, visualUpdate = true, description
+            = "The UI object that implements the Component's LookAndFeel")
     public void setUI(ScrollBarUI ui) {
         super.setUI(ui);
     }
@@ -246,6 +239,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -271,14 +265,11 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * @param orientation an orientation of the {@code JScrollBar}
      * @exception IllegalArgumentException if orientation is not one of VERTICAL, HORIZONTAL
      * @see #getOrientation
-     * @beaninfo
-     *    preferred: true
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: The scrollbar's orientation.
-     *         enum: VERTICAL JScrollBar.VERTICAL
-     *               HORIZONTAL JScrollBar.HORIZONTAL
      */
+    @BeanProperty(preferred = true, visualUpdate = true, enumerationValues = {
+            "JScrollBar.VERTICAL",
+            "JScrollBar.HORIZONTAL"}, description
+            = "The scrollbar's orientation.")
     public void setOrientation(int orientation)
     {
         checkOrientation(orientation);
@@ -319,11 +310,9 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      *
      * @param newModel a new model
      * @see #getModel
-     * @beaninfo
-     *       bound: true
-     *       expert: true
-     * description: The scrollbar's BoundedRangeModel.
      */
+    @BeanProperty(expert = true, description
+            = "The scrollbar's BoundedRangeModel.")
     public void setModel(BoundedRangeModel newModel) {
         Integer oldValue = null;
         BoundedRangeModel oldModel = model;
@@ -384,11 +373,9 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * and ignore this property.
      *
      * @see #getUnitIncrement
-     * @beaninfo
-     *   preferred: true
-     *       bound: true
-     * description: The scrollbar's unit increment.
      */
+    @BeanProperty(preferred = true, description
+            = "The scrollbar's unit increment.")
     public void setUnitIncrement(int unitIncrement) {
         int oldValue = this.unitIncrement;
         this.unitIncrement = unitIncrement;
@@ -434,11 +421,9 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * and ignore this property.
      *
      * @see #getBlockIncrement()
-     * @beaninfo
-     *   preferred: true
-     *       bound: true
-     * description: The scrollbar's block increment.
      */
+    @BeanProperty(preferred = true, description
+            = "The scrollbar's block increment.")
     public void setBlockIncrement(int blockIncrement) {
         int oldValue = this.blockIncrement;
         this.blockIncrement = blockIncrement;
@@ -482,10 +467,9 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      *
      * @see #getValue
      * @see BoundedRangeModel#setValue
-     * @beaninfo
-     *   preferred: true
-     * description: The scrollbar's current value.
      */
+    @BeanProperty(bound = false, preferred = true, description
+            = "The scrollbar's current value.")
     public void setValue(int value) {
         BoundedRangeModel m = getModel();
         int oldValue = m.getValue();
@@ -518,10 +502,9 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      *
      * @see #getVisibleAmount
      * @see BoundedRangeModel#setExtent
-     * @beaninfo
-     *   preferred: true
-     * description: The amount of the view that is currently visible.
      */
+    @BeanProperty(bound = false, preferred = true, description
+            = "The amount of the view that is currently visible.")
     public void setVisibleAmount(int extent) {
         getModel().setExtent(extent);
     }
@@ -544,10 +527,9 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      *
      * @see #getMinimum
      * @see BoundedRangeModel#setMinimum
-     * @beaninfo
-     *   preferred: true
-     * description: The scrollbar's minimum value.
      */
+    @BeanProperty(bound = false, preferred = true, description
+            = "The scrollbar's minimum value.")
     public void setMinimum(int minimum) {
         getModel().setMinimum(minimum);
     }
@@ -570,10 +552,9 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      *
      * @see #getMaximum
      * @see BoundedRangeModel#setMaximum
-     * @beaninfo
-     *   preferred: true
-     * description: The scrollbar's maximum value.
      */
+    @BeanProperty(bound = false, preferred = true, description
+            = "The scrollbar's maximum value.")
     public void setMaximum(int maximum) {
         getModel().setMaximum(maximum);
     }
@@ -601,10 +582,9 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      *
      * @see #getValueIsAdjusting
      * @see BoundedRangeModel#setValueIsAdjusting
-     * @beaninfo
-     *      expert: true
-     * description: True if the scrollbar thumb is being dragged.
      */
+    @BeanProperty(bound = false, expert = true, description
+            = "True if the scrollbar thumb is being dragged.")
     public void setValueIsAdjusting(boolean b) {
         BoundedRangeModel m = getModel();
         boolean oldValue = m.getValueIsAdjusting();
@@ -693,6 +673,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      *         array if no listeners have been added
      * @since 1.4
      */
+    @BeanProperty(bound = false)
     public AdjustmentListener[] getAdjustmentListeners() {
         return listenerList.getListeners(AdjustmentListener.class);
     }
@@ -845,6 +826,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * @return an AccessibleJScrollBar that serves as the
      *         AccessibleContext of this JScrollBar
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJScrollBar();

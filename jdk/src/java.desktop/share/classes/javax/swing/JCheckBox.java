@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,8 @@
  */
 package javax.swing;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 
 import javax.swing.plaf.*;
 import javax.accessibility.*;
@@ -34,7 +33,6 @@ import javax.accessibility.*;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.IOException;
-
 
 /**
  * An implementation of a check box -- an item that can be selected or
@@ -69,13 +67,11 @@ import java.io.IOException;
  *
  * @see JRadioButton
  *
- * @beaninfo
- *   attribute: isContainer false
- * description: A component which can be selected or deselected.
- *
  * @author Jeff Dinkins
  * @since 1.2
  */
+@JavaBean(description = "A component which can be selected or deselected.")
+@SwingContainer(false)
 @SuppressWarnings("serial") // Same-version serialization only
 public class JCheckBox extends JToggleButton implements Accessible {
 
@@ -195,12 +191,10 @@ public class JCheckBox extends JToggleButton implements Accessible {
      * @param b <code>true</code> requests that the border be painted flat;
      *          <code>false</code> requests normal borders
      * @see #isBorderPaintedFlat
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: Whether the border is painted flat.
      * @since 1.3
      */
+    @BeanProperty(visualUpdate = true, description
+            = "Whether the border is painted flat.")
     public void setBorderPaintedFlat(boolean b) {
         boolean oldValue = flat;
         flat = b;
@@ -239,10 +233,9 @@ public class JCheckBox extends JToggleButton implements Accessible {
      * @return the string "CheckBoxUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
-     * @beaninfo
-     *        expert: true
-     *   description: A string that specifies the name of the L&amp;F class
      */
+    @BeanProperty(bound = false, expert = true, description
+            = "A string that specifies the name of the L&amp;F class")
     public String getUIClassID() {
         return uiClassID;
     }
@@ -311,10 +304,9 @@ public class JCheckBox extends JToggleButton implements Accessible {
      *
      * @return an AccessibleJCheckBox that serves as the
      *         AccessibleContext of this JCheckBox
-     * @beaninfo
-     *       expert: true
-     *  description: The AccessibleContext associated with this CheckBox.
      */
+    @BeanProperty(bound = false, expert = true, description
+            = "The AccessibleContext associated with this CheckBox.")
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJCheckBox();

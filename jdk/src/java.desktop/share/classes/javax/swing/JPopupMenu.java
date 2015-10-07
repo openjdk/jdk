@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package javax.swing;
 
 import java.awt.*;
@@ -31,21 +30,18 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.beans.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
-import java.util.Locale;
 import java.util.Vector;
-import java.util.Hashtable;
 import javax.accessibility.*;
 import javax.swing.plaf.PopupMenuUI;
-import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicComboPopup;
 import javax.swing.event.*;
 
 import sun.awt.SunToolkit;
-import sun.security.util.SecurityConstants;
-
-import java.applet.Applet;
 
 /**
  * An implementation of a popup menu -- a small window that pops up
@@ -75,15 +71,13 @@ import java.applet.Applet;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- *   attribute: isContainer false
- * description: A small window that pops up and displays a series of choices.
- *
  * @author Georges Saab
  * @author David Karlton
  * @author Arnaud Weber
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UI", description = "A small window that pops up and displays a series of choices.")
+@SwingContainer(false)
 @SuppressWarnings("serial")
 public class JPopupMenu extends JComponent implements Accessible,MenuElement {
 
@@ -210,12 +204,9 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      *
      * @param ui the new <code>PopupMenuUI</code> L&amp;F object
      * @see UIDefaults#getUI
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *    attribute: visualUpdate true
-     *  description: The UI object that implements the Component's LookAndFeel.
      */
+    @BeanProperty(hidden = true, visualUpdate = true, description
+            = "The UI object that implements the Component's LookAndFeel.")
     public void setUI(PopupMenuUI ui) {
         super.setUI(ui);
     }
@@ -237,6 +228,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -274,10 +266,9 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      *
      * @param model the new <code>SingleSelectionModel</code>
      * @see SingleSelectionModel
-     * @beaninfo
-     * description: The selection model for the popup menu
-     *      expert: true
      */
+    @BeanProperty(bound = false, expert = true, description
+            = "The selection model for the popup menu")
     public void setSelectionModel(SingleSelectionModel model) {
         selectionModel = model;
     }
@@ -495,12 +486,11 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * no matter what the value of this property.
      *
      * @param aFlag  <code>false</code> to disable lightweight popups
-     * @beaninfo
-     * description: Determines whether lightweight popups are used when possible
-     *      expert: true
      *
      * @see #isLightWeightPopupEnabled
      */
+    @BeanProperty(bound = false, expert = true, description
+            = "Determines whether lightweight popups are used when possible")
     public void setLightWeightPopupEnabled(boolean aFlag) {
         // NOTE: this use to set the flag on a shared JPopupMenu, which meant
         // this effected ALL JPopupMenus.
@@ -534,10 +524,9 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * @param label a string specifying the label for the popup menu
      *
      * @see #setLabel
-     * @beaninfo
-     * description: The label for the popup menu.
-     *       bound: true
      */
+    @BeanProperty(description
+            = "The label for the popup menu.")
     public void setLabel(String label) {
         String oldValue = this.label;
         this.label = label;
@@ -637,6 +626,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      *         array if no listeners have been added
      * @since 1.4
      */
+    @BeanProperty(bound = false)
     public PopupMenuListener[] getPopupMenuListeners() {
         return listenerList.getListeners(PopupMenuListener.class);
     }
@@ -669,6 +659,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      *         array if no listeners have been added
      * @since 1.5
      */
+    @BeanProperty(bound = false)
     public MenuKeyListener[] getMenuKeyListeners() {
         return listenerList.getListeners(MenuKeyListener.class);
     }
@@ -753,10 +744,9 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      *
      * @param b true to make the popup visible, or false to
      *          hide it
-     * @beaninfo
-     *           bound: true
-     *     description: Makes the popup visible
      */
+    @BeanProperty(description
+            = "Makes the popup visible")
     public void setVisible(boolean b) {
         if (DEBUG) {
             System.out.println("JPopupMenu.setVisible " + b);
@@ -868,9 +858,9 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      *          in the screen's coordinate space
      * @param y the y coordinate of the popup's new position
      *          in the screen's coordinate space
-     * @beaninfo
-     * description: The location of the popup menu.
      */
+    @BeanProperty(description
+            = "The location of the popup menu.")
     public void setLocation(int x, int y) {
         int oldX = desiredLocationX;
         int oldY = desiredLocationY;
@@ -908,10 +898,9 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      *
      * @param invoker the <code>Component</code> in which the popup
      *          menu is displayed
-     * @beaninfo
-     * description: The invoking component for the popup menu
-     *      expert: true
      */
+    @BeanProperty(bound = false, expert = true, description
+            = "The invoking component for the popup menu")
     public void setInvoker(Component invoker) {
         Component oldInvoker = this.invoker;
         this.invoker = invoker;
@@ -1024,9 +1013,9 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      *
      * @param d   the <code>Dimension</code> specifying the new size
      * of this component.
-     * @beaninfo
-     * description: The size of the popup menu
      */
+    @BeanProperty(description
+            = "The size of the popup menu")
     public void setPopupSize(Dimension d) {
         Dimension oldSize = getPreferredSize();
 
@@ -1047,9 +1036,9 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      *
      * @param width the new width of the Popup in pixels
      * @param height the new height of the Popup in pixels
-     * @beaninfo
-     * description: The size of the popup menu
      */
+    @BeanProperty(description
+            = "The size of the popup menu")
     public void setPopupSize(int width, int height) {
         setPopupSize(new Dimension(width, height));
     }
@@ -1059,11 +1048,9 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * in a change to the selection model.
      *
      * @param sel the <code>Component</code> to select
-     * @beaninfo
-     * description: The selected component on the popup menu
-     *      expert: true
-     *      hidden: true
      */
+    @BeanProperty(expert = true, hidden = true, description
+            = "The selected component on the popup menu")
     public void setSelected(Component sel) {
         SingleSelectionModel model = getSelectionModel();
         int index = getComponentIndex(sel);
@@ -1085,9 +1072,9 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      *
      * @param b if true, the border is painted.
      * @see #isBorderPainted
-     * @beaninfo
-     * description: Is the border of the popup menu painted
      */
+    @BeanProperty(bound = false, description
+            = "Is the border of the popup menu painted")
     public void setBorderPainted(boolean b) {
         paintBorder = b;
         repaint();
@@ -1113,6 +1100,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      *
      * @return an <code>Insets</code> object containing the margin values.
      */
+    @BeanProperty(bound = false)
     public Insets getMargin() {
         if(margin == null) {
             return new Insets(0,0,0,0);
@@ -1198,6 +1186,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * @return an AccessibleJPopupMenu that serves as the
      *         AccessibleContext of this JPopupMenu
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJPopupMenu();
@@ -1512,6 +1501,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * @return an array of <code>MenuElement</code> objects
      * @see MenuElement#getSubElements
      */
+    @BeanProperty(bound = false)
     public MenuElement[] getSubElements() {
         MenuElement result[];
         Vector<MenuElement> tmp = new Vector<MenuElement>();

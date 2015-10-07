@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package javax.swing;
 
 import javax.swing.plaf.*;
@@ -40,6 +39,8 @@ import java.awt.Point;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
 
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.Transient;
@@ -161,14 +162,11 @@ import java.beans.Transient;
  * @see #setCorner
  * @see #setViewportBorder
  *
- * @beaninfo
- *     attribute: isContainer true
- *     attribute: containerDelegate getViewport
- *   description: A specialized container that manages a viewport, optional scrollbars and headers
- *
  * @author Hans Muller
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UI", description = "A specialized container that manages a viewport, optional scrollbars and headers")
+@SwingContainer(delegate = "getViewport")
 @SuppressWarnings("serial") // Same-version serialization only
 public class JScrollPane extends JComponent implements ScrollPaneConstants, Accessible
 {
@@ -360,12 +358,9 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @return the <code>ScrollPaneUI</code> object that renders this
      *                          component
      * @see #setUI
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *    attribute: visualUpdate true
-     *  description: The UI object that implements the Component's LookAndFeel.
      */
+    @BeanProperty(hidden = true, visualUpdate = true, description
+            = "The UI object that implements the Component's LookAndFeel.")
     public ScrollPaneUI getUI() {
         return (ScrollPaneUI)ui;
     }
@@ -403,10 +398,8 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @return the string "ScrollPaneUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
-     *
-     * @beaninfo
-     *    hidden: true
      */
+    @BeanProperty(bound = false, hidden = true)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -427,9 +420,6 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      *                  <code>ScrollPaneLayout</code>
      * @see java.awt.Container#getLayout
      * @see java.awt.Container#setLayout
-     *
-     * @beaninfo
-     *    hidden: true
      */
     public void setLayout(LayoutManager layout) {
         if (layout instanceof ScrollPaneLayout) {
@@ -456,11 +446,9 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @see JComponent#revalidate
      * @see JComponent#isValidateRoot
      * @see java.awt.Container#isValidateRoot
-     *
-     * @beaninfo
-     *    hidden: true
      */
     @Override
+    @BeanProperty(hidden = true)
     public boolean isValidateRoot() {
         return true;
     }
@@ -489,15 +477,12 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @exception IllegalArgumentException if <code>policy</code>
      *                          is not one of the legal values shown above
      * @see #getVerticalScrollBarPolicy
-     *
-     * @beaninfo
-     *   preferred: true
-     *       bound: true
-     * description: The scrollpane vertical scrollbar policy
-     *        enum: VERTICAL_SCROLLBAR_AS_NEEDED ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED
-     *              VERTICAL_SCROLLBAR_NEVER ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER
-     *              VERTICAL_SCROLLBAR_ALWAYS ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS
      */
+    @BeanProperty(preferred = true, enumerationValues = {
+            "ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED",
+            "ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER",
+            "ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS"}, description
+            = "The scrollpane vertical scrollbar policy")
     public void setVerticalScrollBarPolicy(int policy) {
         switch (policy) {
         case VERTICAL_SCROLLBAR_AS_NEEDED:
@@ -537,15 +522,12 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @exception IllegalArgumentException if <code>policy</code>
      *                          is not one of the legal values shown above
      * @see #getHorizontalScrollBarPolicy
-     *
-     * @beaninfo
-     *   preferred: true
-     *       bound: true
-     * description: The scrollpane scrollbar policy
-     *        enum: HORIZONTAL_SCROLLBAR_AS_NEEDED ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED
-     *              HORIZONTAL_SCROLLBAR_NEVER ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
-     *              HORIZONTAL_SCROLLBAR_ALWAYS ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS
      */
+    @BeanProperty(preferred = true, enumerationValues = {
+            "ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED",
+            "ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER",
+            "ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS"}, description
+            = "The scrollpane scrollbar policy")
     public void setHorizontalScrollBarPolicy(int policy) {
         switch (policy) {
         case HORIZONTAL_SCROLLBAR_AS_NEEDED:
@@ -587,12 +569,9 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @param viewportBorder the border to be added
      * @see #getViewportBorder
      * @see #setViewport
-     *
-     * @beaninfo
-     *   preferred: true
-     *       bound: true
-     * description: The border around the viewport.
      */
+    @BeanProperty(preferred = true, description
+            = "The border around the viewport.")
     public void setViewportBorder(Border viewportBorder) {
         Border oldValue = this.viewportBorder;
         this.viewportBorder = viewportBorder;
@@ -605,6 +584,7 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      *
      * @return a <code>Rectangle</code> object specifying the viewport border
      */
+    @BeanProperty(bound = false)
     public Rectangle getViewportBorderBounds()
     {
         Rectangle borderR = new Rectangle(getSize());
@@ -840,12 +820,9 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @param horizontalScrollBar the horizontal scrollbar to be added
      * @see #createHorizontalScrollBar
      * @see #getHorizontalScrollBar
-     *
-     * @beaninfo
-     *        expert: true
-     *         bound: true
-     *   description: The horizontal scrollbar.
      */
+    @BeanProperty(expert = true, description
+            = "The horizontal scrollbar.")
     public void setHorizontalScrollBar(JScrollBar horizontalScrollBar) {
         JScrollBar old = getHorizontalScrollBar();
         this.horizontalScrollBar = horizontalScrollBar;
@@ -899,12 +876,9 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @param verticalScrollBar the new vertical scrollbar to be added
      * @see #createVerticalScrollBar
      * @see #getVerticalScrollBar
-     *
-     * @beaninfo
-     *        expert: true
-     *         bound: true
-     *   description: The vertical scrollbar.
      */
+    @BeanProperty(expert = true, description
+            = "The vertical scrollbar.")
     public void setVerticalScrollBar(JScrollBar verticalScrollBar) {
         JScrollBar old = getVerticalScrollBar();
         this.verticalScrollBar = verticalScrollBar;
@@ -959,14 +933,9 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @see #createViewport
      * @see #getViewport
      * @see #setViewportView
-     *
-     * @beaninfo
-     *       expert: true
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: The viewport child for this scrollpane
-     *
      */
+    @BeanProperty(expert = true, visualUpdate = true, description
+            = "The viewport child for this scrollpane")
     public void setViewport(JViewport viewport) {
         JViewport old = getViewport();
         this.viewport = viewport;
@@ -1038,12 +1007,9 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      *          is set to <code>null</code>
      * @see #getRowHeader
      * @see #setRowHeaderView
-     *
-     * @beaninfo
-     *        bound: true
-     *       expert: true
-     *  description: The row header child for this scrollpane
      */
+    @BeanProperty(expert = true, description
+            = "The row header child for this scrollpane")
     public void setRowHeader(JViewport rowHeader) {
         JViewport old = getRowHeader();
         this.rowHeader = rowHeader;
@@ -1105,12 +1071,9 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @param columnHeader  a {@code JViewport} which is the new column header
      * @see #getColumnHeader
      * @see #setColumnHeaderView
-     *
-     * @beaninfo
-     *        bound: true
-     *  description: The column header child for this scrollpane
-     *    attribute: visualUpdate true
      */
+    @BeanProperty(visualUpdate = true, description
+            = "The column header child for this scrollpane")
     public void setColumnHeader(JViewport columnHeader) {
         JViewport old = getColumnHeader();
         this.columnHeader = columnHeader;
@@ -1303,10 +1266,9 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @return true if mouse wheel scrolling is enabled, false otherwise
      * @see #setWheelScrollingEnabled
      * @since 1.4
-     * @beaninfo
-     *       bound: true
-     * description: Flag for enabling/disabling mouse wheel scrolling
      */
+    @BeanProperty(description
+            = "Flag for enabling/disabling mouse wheel scrolling")
     public boolean isWheelScrollingEnabled() {return wheelScrollState;}
 
     /**
@@ -1320,10 +1282,9 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @see java.awt.event.MouseWheelEvent
      * @see java.awt.event.MouseWheelListener
      * @since 1.4
-     * @beaninfo
-     *       bound: true
-     * description: Flag for enabling/disabling mouse wheel scrolling
      */
+    @BeanProperty(description
+            = "Flag for enabling/disabling mouse wheel scrolling")
     public void setWheelScrollingEnabled(boolean handleWheel) {
         boolean old = wheelScrollState;
         wheelScrollState = handleWheel;
@@ -1424,6 +1385,7 @@ public class JScrollPane extends JComponent implements ScrollPaneConstants, Acce
      * @return an AccessibleJScrollPane that serves as the
      *         AccessibleContext of this JScrollPane
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJScrollPane();
