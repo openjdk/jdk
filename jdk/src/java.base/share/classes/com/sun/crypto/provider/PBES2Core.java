@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,7 +263,7 @@ abstract class PBES2Core extends CipherSpi {
             passwdChars[i] = (char) (passwdBytes[i] & 0x7f);
 
         PBEKeySpec pbeSpec =
-            new PBEKeySpec(passwdChars, salt, iCount, blkSize * 8);
+            new PBEKeySpec(passwdChars, salt, iCount, keyLength);
             // password char[] was cloned in PBEKeySpec constructor,
             // so we can zero it out here
         java.util.Arrays.fill(passwdChars, ' ');
