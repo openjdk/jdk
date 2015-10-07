@@ -796,7 +796,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 # undef END
 }
 
-volatile jlong VMError::first_error_tid = -1;
+volatile intptr_t VMError::first_error_tid = -1;
 
 // An error could happen before tty is initialized or after it has been
 // destroyed. Here we use a very simple unbuffered fdStream for printing.
@@ -925,9 +925,9 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
   if (SuppressFatalErrorMessage) {
       os::abort(CreateCoredumpOnCrash);
   }
-  jlong mytid = os::current_thread_id();
+  intptr_t mytid = os::current_thread_id();
   if (first_error_tid == -1 &&
-      Atomic::cmpxchg(mytid, &first_error_tid, -1) == -1) {
+      Atomic::cmpxchg_ptr(mytid, &first_error_tid, -1) == -1) {
 
     _id = id;
     _message = message;
@@ -968,7 +968,7 @@ void VMError::report_and_die(int id, const char* message, const char* detail_fmt
     if (first_error_tid != mytid) {
       char msgbuf[64];
       jio_snprintf(msgbuf, sizeof(msgbuf),
-                   "[thread " INT64_FORMAT " also had an error]",
+                   "[thread " INTX_FORMAT " also had an error]",
                    mytid);
       out.print_raw_cr(msgbuf);
 
