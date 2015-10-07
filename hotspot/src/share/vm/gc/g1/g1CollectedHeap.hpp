@@ -1054,6 +1054,7 @@ public:
     return CollectedHeap::G1CollectedHeap;
   }
 
+  const G1CollectorState* collector_state() const { return &_collector_state; }
   G1CollectorState* collector_state() { return &_collector_state; }
 
   // The current policy object for the collector.

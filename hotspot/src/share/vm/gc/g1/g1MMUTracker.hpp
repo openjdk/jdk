@@ -46,7 +46,7 @@ public:
   virtual void add_pause(double start, double end) = 0;
   virtual double when_sec(double current_time, double pause_time) = 0;
 
-  double max_gc_time() {
+  double max_gc_time() const {
     return _max_gc_time;
   }
 
