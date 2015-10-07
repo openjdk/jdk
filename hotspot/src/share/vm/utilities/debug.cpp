@@ -374,7 +374,7 @@ void controlled_crash(int how) {
   char * const dataPtr = NULL;  // bad data pointer
   const void (*funcPtr)(void) = (const void(*)()) 0xF;  // bad function pointer
 
-  // Keep this in sync with test/runtime/6888954/vmerrors.sh.
+  // Keep this in sync with test/runtime/ErrorHandling/ErrorHandler.java
   switch (how) {
     case  1: vmassert(str == NULL, "expected null");
     case  2: vmassert(num == 1023 && *str == 'X',
