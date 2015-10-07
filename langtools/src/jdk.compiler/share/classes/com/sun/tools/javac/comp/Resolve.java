@@ -2426,7 +2426,9 @@ public class Resolve {
                 return spMethod;
             }
         };
-        polymorphicSignatureScope.enter(msym);
+        if (!mtype.isErroneous()) { // Cache only if kosher.
+            polymorphicSignatureScope.enter(msym);
+        }
         return msym;
     }
 
