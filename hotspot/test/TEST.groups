@@ -319,7 +319,7 @@ hotspot_gc_gcold = \
 
 hotspot_runtime = \
   runtime/ \
- -runtime/6888954/vmerrors.sh \
+ -runtime/ErrorHandling/ErrorHandler.java \
  -runtime/RedefineObject/TestRedefineObject.java \
  -runtime/8003720/Test8003720.java \
  -runtime/Metaspace/FragmentMetaspace.java \
