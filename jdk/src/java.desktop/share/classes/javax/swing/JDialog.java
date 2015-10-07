@@ -26,6 +26,8 @@ package javax.swing;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 import javax.accessibility.*;
 
 /**
@@ -86,16 +88,13 @@ import javax.accessibility.*;
  * @see JRootPane
  * @see javax.swing.RootPaneContainer
  *
- * @beaninfo
- *      attribute: isContainer true
- *      attribute: containerDelegate getContentPane
- *    description: A toplevel window for creating dialog boxes.
- *
  * @author David Kloba
  * @author James Gosling
  * @author Scott Violet
  * @since 1.2
  */
+@JavaBean(defaultProperty = "JMenuBar", description = "A toplevel window for creating dialog boxes.")
+@SwingContainer(delegate = "getContentPane")
 @SuppressWarnings("serial") // Same-version serialization only
 public class JDialog extends Dialog implements WindowConstants,
                                                Accessible,
@@ -743,15 +742,12 @@ public class JDialog extends Dialog implements WindowConstants,
      * @see #addWindowListener
      * @see #getDefaultCloseOperation
      * @see WindowConstants
-     *
-     * @beaninfo
-     *   preferred: true
-     *       bound: true
-     *        enum: DO_NOTHING_ON_CLOSE WindowConstants.DO_NOTHING_ON_CLOSE
-     *              HIDE_ON_CLOSE       WindowConstants.HIDE_ON_CLOSE
-     *              DISPOSE_ON_CLOSE    WindowConstants.DISPOSE_ON_CLOSE
-     * description: The dialog's default close operation.
      */
+    @BeanProperty(preferred = true, enumerationValues = {
+            "WindowConstants.DO_NOTHING_ON_CLOSE",
+            "WindowConstants.HIDE_ON_CLOSE",
+            "WindowConstants.DISPOSE_ON_CLOSE"}, description
+            = "The dialog's default close operation.")
     public void setDefaultCloseOperation(int operation) {
         if (operation != DO_NOTHING_ON_CLOSE &&
             operation != HIDE_ON_CLOSE &&
@@ -802,12 +798,9 @@ public class JDialog extends Dialog implements WindowConstants,
      * @see #getTransferHandler
      * @see java.awt.Component#setDropTarget
      * @since 1.6
-     *
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *  description: Mechanism for transfer of data into the component
      */
+    @BeanProperty(hidden = true, description
+            = "Mechanism for transfer of data into the component")
     public void setTransferHandler(TransferHandler newHandler) {
         TransferHandler oldHandler = transferHandler;
         transferHandler = newHandler;
@@ -844,11 +837,9 @@ public class JDialog extends Dialog implements WindowConstants,
     * @param menu the menubar being placed in the dialog
     *
     * @see #getJMenuBar
-    *
-    * @beaninfo
-    *      hidden: true
-    * description: The menubar for accessing pulldown menus from this dialog.
     */
+    @BeanProperty(bound = false, hidden = true, description
+            = "The menubar for accessing pulldown menus from this dialog.")
     public void setJMenuBar(final JMenuBar menu) {
         getRootPane().setJMenuBar(menu);
     }
@@ -892,10 +883,9 @@ public class JDialog extends Dialog implements WindowConstants,
      * @see #setLayout
      * @see #isRootPaneCheckingEnabled
      * @see javax.swing.RootPaneContainer
-     * @beaninfo
-     *      hidden: true
-     * description: Whether the add and setLayout methods are forwarded
      */
+    @BeanProperty(hidden = true, description
+            = "Whether the add and setLayout methods are forwarded")
     protected void setRootPaneCheckingEnabled(boolean enabled) {
         rootPaneCheckingEnabled = enabled;
     }
@@ -977,6 +967,8 @@ public class JDialog extends Dialog implements WindowConstants,
      * @see #setRootPane
      * @see RootPaneContainer#getRootPane
      */
+    @BeanProperty(bound = false, hidden = true, description
+            = "the RootPane object for this dialog.")
     public JRootPane getRootPane() {
         return rootPane;
     }
@@ -989,10 +981,6 @@ public class JDialog extends Dialog implements WindowConstants,
      * @param root the {@code rootPane} object for this dialog
      *
      * @see #getRootPane
-     *
-     * @beaninfo
-     *   hidden: true
-     * description: the RootPane object for this dialog.
      */
     protected void setRootPane(JRootPane root) {
         if(rootPane != null) {
@@ -1041,12 +1029,9 @@ public class JDialog extends Dialog implements WindowConstants,
      *            exception) if the content pane parameter is {@code null}
      * @see #getContentPane
      * @see RootPaneContainer#setContentPane
-     *
-     * @beaninfo
-     *     hidden: true
-     *     description: The client area of the dialog where child
-     *                  components are normally inserted.
      */
+    @BeanProperty(bound = false, hidden = true, description
+            = "The client area of the dialog where child components are normally inserted.")
     public void setContentPane(Container contentPane) {
         getRootPane().setContentPane(contentPane);
     }
@@ -1073,11 +1058,9 @@ public class JDialog extends Dialog implements WindowConstants,
      *            exception) if the layered pane parameter is null
      * @see #getLayeredPane
      * @see RootPaneContainer#setLayeredPane
-     *
-     * @beaninfo
-     *     hidden: true
-     *     description: The pane which holds the various dialog layers.
      */
+    @BeanProperty(bound = false, hidden = true, description
+            = "The pane which holds the various dialog layers.")
     public void setLayeredPane(JLayeredPane layeredPane) {
         getRootPane().setLayeredPane(layeredPane);
     }
@@ -1101,11 +1084,9 @@ public class JDialog extends Dialog implements WindowConstants,
      * @param glassPane the {@code glassPane} object for this dialog
      * @see #getGlassPane
      * @see RootPaneContainer#setGlassPane
-     *
-     * @beaninfo
-     *     hidden: true
-     *     description: A transparent pane used for menu rendering.
      */
+    @BeanProperty(bound = false, hidden = true, description
+            = "A transparent pane used for menu rendering.")
     public void setGlassPane(Component glassPane) {
         getRootPane().setGlassPane(glassPane);
     }
@@ -1115,6 +1096,7 @@ public class JDialog extends Dialog implements WindowConstants,
      *
      * @since 1.6
      */
+    @BeanProperty(bound = false)
     public Graphics getGraphics() {
         JComponent.getGraphicsInvoked(this);
         return super.getGraphics();
