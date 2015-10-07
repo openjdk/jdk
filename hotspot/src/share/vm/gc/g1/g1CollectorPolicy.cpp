@@ -112,6 +112,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
                                 new TruncatedSeq(NumPrevPausesForHeuristics)),
 
   _recent_avg_pause_time_ratio(0.0),
+  _rs_lengths_prediction(0),
 
   _eden_used_bytes_before_gc(0),
   _survivor_used_bytes_before_gc(0),
