@@ -458,11 +458,11 @@ frame frame::sender_for_interpreter_frame(RegisterMap* map) const {
   // This is the sp before any possible extension (adapter/locals).
   intptr_t* unextended_sp = interpreter_frame_sender_sp();
 
-#ifdef COMPILER2
+#if defined(COMPILER2) || INCLUDE_JVMCI
   if (map->update_map()) {
     update_map_with_saved_link(map, (intptr_t**) addr_at(link_offset));
   }
-#endif // COMPILER2
+#endif // COMPILER2 || INCLUDE_JVMCI
 
   return frame(sender_sp, unextended_sp, link(), sender_pc());
 }
@@ -683,10 +683,19 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
     DESCRIBE_FP_OFFSET(interpreter_frame_locals);
     DESCRIBE_FP_OFFSET(interpreter_frame_bcp);
     DESCRIBE_FP_OFFSET(interpreter_frame_initial_sp);
-#endif
+#ifdef AMD64
+  } else if (is_entry_frame()) {
+    // This could be more descriptive if we use the enum in
+    // stubGenerator to map to real names but it's most important to
+    // claim these frame slots so the error checking works.
+    for (int i = 0; i < entry_frame_after_call_words; i++) {
+      values.describe(frame_no, fp() - i, err_msg("call_stub word fp - %d", i));
+    }
+#endif // AMD64
   }
-}
 #endif
+}
+#endif // !PRODUCT
 
 intptr_t *frame::initial_deoptimization_info() {
   // used to reset the saved FP

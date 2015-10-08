@@ -37,7 +37,6 @@
   address generate_accessor_entry(void) { return NULL; }
   address generate_empty_entry(void) { return NULL; }
   address generate_Reference_get_entry(void);
-  void lock_method(void);
   void save_native_result(void);
   void restore_native_result(void);
 

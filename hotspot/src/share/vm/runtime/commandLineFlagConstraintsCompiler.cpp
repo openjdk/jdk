@@ -58,7 +58,7 @@ Flag::Error AliasLevelConstraintFunc(intx value, bool verbose) {
  */
 Flag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
   int min_number_of_compiler_threads = 0;
-#if !defined(COMPILER1) && !defined(COMPILER2) && !defined(SHARK)
+#if !defined(COMPILER1) && !defined(COMPILER2) && !defined(SHARK) && !INCLUDE_JVMCI
   // case 1
 #else
   if (!TieredCompilation || (TieredStopAtLevel < CompLevel_full_optimization)) {

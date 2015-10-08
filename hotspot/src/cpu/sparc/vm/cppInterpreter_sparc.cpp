@@ -1164,7 +1164,7 @@ void CppInterpreterGenerator::generate_compute_interpreter_state(const Register 
 }
 // Find preallocated  monitor and lock method (C++ interpreter)
 //
-void InterpreterGenerator::lock_method(void) {
+void CppInterpreterGenerator::lock_method() {
 // Lock the current method.
 // Destroys registers L2_scratch, L3_scratch, O0
 //

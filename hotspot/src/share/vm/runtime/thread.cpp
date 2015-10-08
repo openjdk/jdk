@@ -99,6 +99,10 @@
 #include "gc/g1/concurrentMarkThread.inline.hpp"
 #include "gc/parallel/pcTasks.hpp"
 #endif // INCLUDE_ALL_GCS
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciCompiler.hpp"
+#include "jvmci/jvmciRuntime.hpp"
+#endif
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -1386,6 +1390,33 @@ void WatcherThread::print_on(outputStream* st) const {
 
 // ======= JavaThread ========
 
+#if INCLUDE_JVMCI
+
+jlong* JavaThread::_jvmci_old_thread_counters;
+
+bool jvmci_counters_include(JavaThread* thread) {
+  oop threadObj = thread->threadObj();
+  return !JVMCICountersExcludeCompiler || !thread->is_Compiler_thread();
+}
+
+void JavaThread::collect_counters(typeArrayOop array) {
+  if (JVMCICounterSize > 0) {
+    MutexLocker tl(Threads_lock);
+    for (int i = 0; i < array->length(); i++) {
+      array->long_at_put(i, _jvmci_old_thread_counters[i]);
+    }
+    for (JavaThread* tp = Threads::first(); tp != NULL; tp = tp->next()) {
+      if (jvmci_counters_include(tp)) {
+        for (int i = 0; i < array->length(); i++) {
+          array->long_at_put(i, array->long_at(i) + tp->_jvmci_counters[i]);
+        }
+      }
+    }
+  }
+}
+
+#endif // INCLUDE_JVMCI
+
 // A JavaThread is a normal Java thread
 
 void JavaThread::initialize() {
@@ -1418,6 +1449,20 @@ void JavaThread::initialize() {
   _in_deopt_handler = 0;
   _doing_unsafe_access = false;
   _stack_guard_state = stack_guard_unused;
+#if INCLUDE_JVMCI
+  _pending_monitorenter = false;
+  _pending_deoptimization = -1;
+  _pending_failed_speculation = NULL;
+  _pending_transfer_to_interpreter = false;
+  _jvmci._alternate_call_target = NULL;
+  assert(_jvmci._implicit_exception_pc == NULL, "must be");
+  if (JVMCICounterSize > 0) {
+    _jvmci_counters = NEW_C_HEAP_ARRAY(jlong, JVMCICounterSize, mtInternal);
+    memset(_jvmci_counters, 0, sizeof(jlong) * JVMCICounterSize);
+  } else {
+    _jvmci_counters = NULL;
+  }
+#endif // INCLUDE_JVMCI
   (void)const_cast<oop&>(_exception_oop = oop(NULL));
   _exception_pc  = 0;
   _exception_handler_pc = 0;
@@ -1592,6 +1637,17 @@ JavaThread::~JavaThread() {
   ThreadSafepointState::destroy(this);
   if (_thread_profiler != NULL) delete _thread_profiler;
   if (_thread_stat != NULL) delete _thread_stat;
+
+#if INCLUDE_JVMCI
+  if (JVMCICounterSize > 0) {
+    if (jvmci_counters_include(this)) {
+      for (int i = 0; i < JVMCICounterSize; i++) {
+        _jvmci_old_thread_counters[i] += _jvmci_counters[i];
+      }
+    }
+    FREE_C_HEAP_ARRAY(jlong, _jvmci_counters);
+  }
+#endif // INCLUDE_JVMCI
 }
 
 
@@ -2135,7 +2191,7 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
 
   // Do not throw asynchronous exceptions against the compiler thread
   // (the compiler thread should not be a Java thread -- fix in 1.4.2)
-  if (is_Compiler_thread()) return;
+  if (!can_call_java()) return;
 
   {
     // Actually throw the Throwable against the target Thread - however
@@ -2614,12 +2670,6 @@ void JavaThread::deoptimized_wrt_marked_nmethods() {
   StackFrameStream fst(this, UseBiasedLocking);
   for (; !fst.is_done(); fst.next()) {
     if (fst.current()->should_be_deoptimized()) {
-      if (LogCompilation && xtty != NULL) {
-        nmethod* nm = fst.current()->cb()->as_nmethod_or_null();
-        xtty->elem("deoptimized thread='" UINTX_FORMAT "' compile_id='%d'",
-                   this->name(), nm != NULL ? nm->compile_id() : -1);
-      }
-
       Deoptimization::deoptimize(this, *fst.current(), fst.register_map());
     }
   }
@@ -2657,6 +2707,8 @@ void JavaThread::oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf) 
 
   // Traverse the GCHandles
   Thread::oops_do(f, cld_f, cf);
+
+  JVMCI_ONLY(f->do_oop((oop*)&_pending_failed_speculation);)
 
   assert((!has_last_Java_frame() && java_call_counter() == 0) ||
          (has_last_Java_frame() && java_call_counter() > 0), "wrong java_sp info!");
@@ -3175,6 +3227,10 @@ CompilerThread::CompilerThread(CompileQueue* queue,
 #endif
 }
 
+bool CompilerThread::can_call_java() const {
+  return _compiler != NULL && _compiler->is_jvmci();
+}
+
 // Create sweeper thread
 CodeCacheSweeperThread::CodeCacheSweeperThread()
 : JavaThread(&sweeper_thread_entry) {
@@ -3380,6 +3436,15 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Initialize global data structures and create system classes in heap
   vm_init_globals();
 
+#if INCLUDE_JVMCI
+  if (JVMCICounterSize > 0) {
+    JavaThread::_jvmci_old_thread_counters = NEW_C_HEAP_ARRAY(jlong, JVMCICounterSize, mtInternal);
+    memset(JavaThread::_jvmci_old_thread_counters, 0, sizeof(jlong) * JVMCICounterSize);
+  } else {
+    JavaThread::_jvmci_old_thread_counters = NULL;
+  }
+#endif // INCLUDE_JVMCI
+
   // Attach the main thread to this os thread
   JavaThread* main_thread = new JavaThread();
   main_thread->set_thread_state(_thread_in_vm);
@@ -3506,7 +3571,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Note that we do not use CHECK_0 here since we are inside an EXCEPTION_MARK and
   // set_init_completed has just been called, causing exceptions not to be shortcut
   // anymore. We call vm_exit_during_initialization directly instead.
-  SystemDictionary::compute_java_system_loader(CHECK_JNI_ERR);
+  SystemDictionary::compute_java_system_loader(CHECK_(JNI_ERR));
 
 #if INCLUDE_ALL_GCS
   // Support for ConcurrentMarkSweep. This should be cleaned up
@@ -3554,8 +3619,17 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     Chunk::start_chunk_pool_cleaner_task();
   }
 
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    const char* jvmciCompiler = Arguments::PropertyList_get_value(Arguments::system_properties(), "jvmci.compiler");
+    if (jvmciCompiler != NULL) {
+      JVMCIRuntime::save_compiler(jvmciCompiler);
+    }
+  }
+#endif // INCLUDE_JVMCI
+
   // initialize compiler(s)
-#if defined(COMPILER1) || defined(COMPILER2) || defined(SHARK)
+#if defined(COMPILER1) || defined(COMPILER2) || defined(SHARK) || INCLUDE_JVMCI
   CompileBroker::compilation_init();
 #endif
 
@@ -3963,6 +4037,12 @@ bool Threads::destroy_vm() {
 
   delete thread;
 
+#if INCLUDE_JVMCI
+  if (JVMCICounterSize > 0) {
+    FREE_C_HEAP_ARRAY(jlong, JavaThread::_jvmci_old_thread_counters);
+  }
+#endif
+
   // exit_globals() will delete tty
   exit_globals();
 
@@ -4179,7 +4259,7 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(int count,
   {
     MutexLockerEx ml(doLock ? Threads_lock : NULL);
     ALL_JAVA_THREADS(p) {
-      if (p->is_Compiler_thread()) continue;
+      if (!p->can_call_java()) continue;
 
       address pending = (address)p->current_pending_monitor();
       if (pending == monitor) {             // found a match
@@ -4236,7 +4316,7 @@ JavaThread *Threads::owning_thread_from_monitor_owner(address owner,
 void Threads::print_on(outputStream* st, bool print_stacks,
                        bool internal_format, bool print_concurrent_locks) {
   char buf[32];
-  st->print_cr("%s", os::local_time_string(buf, sizeof(buf)));
+  st->print_raw_cr(os::local_time_string(buf, sizeof(buf)));
 
   st->print_cr("Full thread dump %s (%s %s):",
                Abstract_VM_Version::vm_name(),

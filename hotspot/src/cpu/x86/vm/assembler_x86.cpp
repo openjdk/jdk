@@ -878,21 +878,35 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     // Check second byte
     NOT_LP64(assert((0xC0 & *ip) == 0xC0, "shouldn't have LDS and LES instructions"));
 
+    int vex_opcode;
     // First byte
     if ((0xFF & *inst) == VEX_3bytes) {
+      vex_opcode = VEX_OPCODE_MASK & *ip;
       ip++; // third byte
       is_64bit = ((VEX_W & *ip) == VEX_W);
+    } else {
+      vex_opcode = VEX_OPCODE_0F;
     }
     ip++; // opcode
     // To find the end of instruction (which == end_pc_operand).
-    switch (0xFF & *ip) {
-    case 0x61: // pcmpestri r, r/a, #8
-    case 0x70: // pshufd r, r/a, #8
-    case 0x73: // psrldq r, #8
-      tail_size = 1;  // the imm8
-      break;
-    default:
-      break;
+    switch (vex_opcode) {
+      case VEX_OPCODE_0F:
+        switch (0xFF & *ip) {
+        case 0x70: // pshufd r, r/a, #8
+        case 0x71: // ps[rl|ra|ll]w r, #8
+        case 0x72: // ps[rl|ra|ll]d r, #8
+        case 0x73: // ps[rl|ra|ll]q r, #8
+        case 0xC2: // cmp[ps|pd|ss|sd] r, r, r/a, #8
+        case 0xC4: // pinsrw r, r, r/a, #8
+        case 0xC5: // pextrw r/a, r, #8
+        case 0xC6: // shufp[s|d] r, r, r/a, #8
+          tail_size = 1;  // the imm8
+          break;
+        }
+        break;
+      case VEX_OPCODE_0F_3A:
+        tail_size = 1;
+        break;
     }
     ip++; // skip opcode
     debug_only(has_disp32 = true); // has both kinds of operands!
@@ -2479,7 +2493,7 @@ void Assembler::movsbl(Register dst, Address src) { // movsxb
 
 void Assembler::movsbl(Register dst, Register src) { // movsxb
   NOT_LP64(assert(src->has_byte_register(), "must have byte register"));
-  int encode = prefix_and_encode(dst->encoding(), src->encoding(), true);
+  int encode = prefix_and_encode(dst->encoding(), false, src->encoding(), true);
   emit_int8(0x0F);
   emit_int8((unsigned char)0xBE);
   emit_int8((unsigned char)(0xC0 | encode));
@@ -2596,7 +2610,7 @@ void Assembler::movzbl(Register dst, Address src) { // movzxb
 
 void Assembler::movzbl(Register dst, Register src) { // movzxb
   NOT_LP64(assert(src->has_byte_register(), "must have byte register"));
-  int encode = prefix_and_encode(dst->encoding(), src->encoding(), true);
+  int encode = prefix_and_encode(dst->encoding(), false, src->encoding(), true);
   emit_int8(0x0F);
   emit_int8((unsigned char)0xB6);
   emit_int8(0xC0 | encode);
@@ -6510,12 +6524,12 @@ int Assembler::prefixq_and_encode(int reg_enc) {
   return reg_enc;
 }
 
-int Assembler::prefix_and_encode(int dst_enc, int src_enc, bool byteinst) {
+int Assembler::prefix_and_encode(int dst_enc, bool dst_is_byte, int src_enc, bool src_is_byte) {
   if (dst_enc < 8) {
     if (src_enc >= 8) {
       prefix(REX_B);
       src_enc -= 8;
-    } else if (byteinst && src_enc >= 4) {
+    } else if ((src_is_byte && src_enc >= 4) || (dst_is_byte && dst_enc >= 4)) {
       prefix(REX);
     }
   } else {

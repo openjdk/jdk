@@ -149,6 +149,7 @@ ifeq ($(USE_CLANG), true)
     PCH_FLAG/sharedRuntimeTrig.o = $(PCH_FLAG/NO_PCH)
     PCH_FLAG/sharedRuntimeTrans.o = $(PCH_FLAG/NO_PCH)
     PCH_FLAG/unsafe.o = $(PCH_FLAG/NO_PCH)
+    PCH_FLAG/jvmciCompilerToVM.o = $(PCH_FLAG/NO_PCH)
 
   endif
 else # ($(USE_CLANG), true)

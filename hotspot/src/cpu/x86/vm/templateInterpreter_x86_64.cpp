@@ -198,13 +198,27 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 }
 
 
-address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state,
-                                                               int step) {
+address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step) {
   address entry = __ pc();
   // NULL last_sp until next java call
   __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
   __ restore_bcp();
   __ restore_locals();
+#if INCLUDE_JVMCI
+  // Check if we need to take lock at entry of synchronized method.
+  if (UseJVMCICompiler) {
+    Label L;
+    __ cmpb(Address(r15_thread, JavaThread::pending_monitorenter_offset()), 0);
+    __ jcc(Assembler::zero, L);
+    // Clear flag.
+    __ movb(Address(r15_thread, JavaThread::pending_monitorenter_offset()), 0);
+    // Satisfy calling convention for lock_method().
+    __ get_method(rbx);
+    // Take lock.
+    lock_method();
+    __ bind(L);
+  }
+#endif
   // handle exceptions
   {
     Label L;
@@ -500,7 +514,7 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
 //      rax
 //      c_rarg0, c_rarg1, c_rarg2, c_rarg3, ...(param regs)
 //      rscratch1, rscratch2 (scratch regs)
-void InterpreterGenerator::lock_method(void) {
+void TemplateInterpreterGenerator::lock_method() {
   // synchronize method
   const Address access_flags(rbx, Method::access_flags_offset());
   const Address monitor_block_top(

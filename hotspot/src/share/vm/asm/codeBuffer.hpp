@@ -452,7 +452,6 @@ class CodeBuffer: public StackObj {
     initialize_misc(name);
   }
 
-
   // (4) code buffer allocating codeBlob memory for code & relocation
   // info.  The name must be something informative and code_size must
   // include both code and stubs sizes.
@@ -552,6 +551,8 @@ class CodeBuffer: public StackObj {
 
   // allocated size of all relocation data, including index, rounded up
   csize_t total_relocation_size() const;
+
+  csize_t copy_relocations_to(address buf, csize_t buf_limit, bool only_inst) const;
 
   // allocated size of any and all recorded oops
   csize_t total_oop_size() const {

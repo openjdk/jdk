@@ -487,8 +487,14 @@ address decode_env::decode_instructions(address start, address end) {
 
 void Disassembler::decode(CodeBlob* cb, outputStream* st) {
   if (!load_library())  return;
+  if (cb->is_nmethod()) {
+    decode((nmethod*)cb, st);
+    return;
+  }
   decode_env env(cb, st);
-  env.output()->print_cr("Decoding CodeBlob " PTR_FORMAT, cb);
+  env.output()->print_cr("----------------------------------------------------------------------");
+  env.output()->print_cr("%s", cb->name());
+  env.output()->print_cr(" at  [" PTR_FORMAT ", " PTR_FORMAT "]  %d bytes", cb->code_begin(), cb->code_end(), ((jlong)(cb->code_end() - cb->code_begin())) * sizeof(unsigned char*));
   env.decode_instructions(cb->code_begin(), cb->code_end());
 }
 
@@ -501,8 +507,7 @@ void Disassembler::decode(address start, address end, outputStream* st, CodeStri
 void Disassembler::decode(nmethod* nm, outputStream* st) {
   if (!load_library())  return;
   decode_env env(nm, st);
-  env.output()->print_cr("Decoding compiled method " PTR_FORMAT ":", nm);
-  env.output()->print_cr("Code:");
+  env.output()->print_cr("----------------------------------------------------------------------");
 
 #ifdef SHARK
   SharkEntry* entry = (SharkEntry *) nm->code_begin();
@@ -512,6 +517,21 @@ void Disassembler::decode(nmethod* nm, outputStream* st) {
   unsigned char* p   = nm->code_begin();
   unsigned char* end = nm->code_end();
 #endif // SHARK
+
+  nm->method()->method_holder()->name()->print_symbol_on(env.output());
+  env.output()->print(".");
+  nm->method()->name()->print_symbol_on(env.output());
+  nm->method()->signature()->print_symbol_on(env.output());
+#if INCLUDE_JVMCI
+  {
+    char buffer[O_BUFLEN];
+    char* jvmciName = nm->jvmci_installed_code_name(buffer, O_BUFLEN);
+    if (jvmciName != NULL) {
+      env.output()->print(" (%s)", jvmciName);
+    }
+  }
+#endif
+  env.output()->print_cr("  [" PTR_FORMAT ", " PTR_FORMAT "]  %d bytes", p, end, ((jlong)(end - p)));
 
   // If there has been profiling, print the buckets.
   if (FlatProfiler::bucket_start_for(p) != NULL) {

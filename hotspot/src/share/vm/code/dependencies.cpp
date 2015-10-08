@@ -31,6 +31,7 @@
 #include "code/dependencies.hpp"
 #include "compiler/compileLog.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/objArrayKlass.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/thread.inline.hpp"
@@ -52,6 +53,9 @@ void Dependencies::initialize(ciEnv* env) {
   _oop_recorder = env->oop_recorder();
   _log = env->log();
   _dep_seen = new(arena) GrowableArray<int>(arena, 500, 0, 0);
+#if INCLUDE_JVMCI
+  _using_dep_values = false;
+#endif
   DEBUG_ONLY(_deps[end_marker] = NULL);
   for (int i = (int)FIRST_TYPE; i < (int)TYPE_LIMIT; i++) {
     _deps[i] = new(arena) GrowableArray<ciBaseObject*>(arena, 10, 0, 0);
@@ -119,6 +123,66 @@ void Dependencies::assert_has_no_finalizable_subclasses(ciKlass* ctxk) {
 void Dependencies::assert_call_site_target_value(ciCallSite* call_site, ciMethodHandle* method_handle) {
   assert_common_2(call_site_target_value, call_site, method_handle);
 }
+
+#if INCLUDE_JVMCI
+
+Dependencies::Dependencies(Arena* arena, OopRecorder* oop_recorder, CompileLog* log) {
+  _oop_recorder = oop_recorder;
+  _log = log;
+  _dep_seen = new(arena) GrowableArray<int>(arena, 500, 0, 0);
+  _using_dep_values = true;
+  DEBUG_ONLY(_dep_values[end_marker] = NULL);
+  for (int i = (int)FIRST_TYPE; i < (int)TYPE_LIMIT; i++) {
+    _dep_values[i] = new(arena) GrowableArray<DepValue>(arena, 10, 0, DepValue());
+  }
+  _content_bytes = NULL;
+  _size_in_bytes = (size_t)-1;
+
+  assert(TYPE_LIMIT <= (1<<LG2_TYPE_LIMIT), "sanity");
+}
+
+void Dependencies::assert_evol_method(Method* m) {
+  assert_common_1(evol_method, DepValue(_oop_recorder, m));
+}
+
+void Dependencies::assert_has_no_finalizable_subclasses(Klass* ctxk) {
+  check_ctxk(ctxk);
+  assert_common_1(no_finalizable_subclasses, DepValue(_oop_recorder, ctxk));
+}
+
+void Dependencies::assert_leaf_type(Klass* ctxk) {
+  if (ctxk->oop_is_array()) {
+    // As a special case, support this assertion on an array type,
+    // which reduces to an assertion on its element type.
+    // Note that this cannot be done with assertions that
+    // relate to concreteness or abstractness.
+    BasicType elemt = ArrayKlass::cast(ctxk)->element_type();
+    if (is_java_primitive(elemt))  return;   // Ex:  int[][]
+    ctxk = ObjArrayKlass::cast(ctxk)->bottom_klass();
+    //if (ctxk->is_final())  return;            // Ex:  String[][]
+  }
+  check_ctxk(ctxk);
+  assert_common_1(leaf_type, DepValue(_oop_recorder, ctxk));
+}
+
+void Dependencies::assert_abstract_with_unique_concrete_subtype(Klass* ctxk, Klass* conck) {
+  check_ctxk_abstract(ctxk);
+  DepValue ctxk_dv(_oop_recorder, ctxk);
+  DepValue conck_dv(_oop_recorder, conck, &ctxk_dv);
+  assert_common_2(abstract_with_unique_concrete_subtype, ctxk_dv, conck_dv);
+}
+
+void Dependencies::assert_unique_concrete_method(Klass* ctxk, Method* uniqm) {
+  check_ctxk(ctxk);
+  assert_common_2(unique_concrete_method, DepValue(_oop_recorder, ctxk), DepValue(_oop_recorder, uniqm));
+}
+
+void Dependencies::assert_call_site_target_value(oop call_site, oop method_handle) {
+  assert_common_2(call_site_target_value, DepValue(_oop_recorder, JNIHandles::make_local(call_site)), DepValue(_oop_recorder, JNIHandles::make_local(method_handle)));
+}
+
+#endif // INCLUDE_JVMCI
+
 
 // Helper function.  If we are adding a new dep. under ctxk2,
 // try to find an old dep. under a broader* ctxk1.  If there is
@@ -230,6 +294,78 @@ void Dependencies::assert_common_3(DepType dept,
   deps->append(x2);
 }
 
+#if INCLUDE_JVMCI
+bool Dependencies::maybe_merge_ctxk(GrowableArray<DepValue>* deps,
+                                    int ctxk_i, DepValue ctxk2_dv) {
+  Klass* ctxk1 = deps->at(ctxk_i).as_klass(_oop_recorder);
+  Klass* ctxk2 = ctxk2_dv.as_klass(_oop_recorder);
+  if (ctxk2->is_subtype_of(ctxk1)) {
+    return true;  // success, and no need to change
+  } else if (ctxk1->is_subtype_of(ctxk2)) {
+    // new context class fully subsumes previous one
+    deps->at_put(ctxk_i, ctxk2_dv);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+void Dependencies::assert_common_1(DepType dept, DepValue x) {
+  assert(dep_args(dept) == 1, "sanity");
+  //log_dependency(dept, x);
+  GrowableArray<DepValue>* deps = _dep_values[dept];
+
+  // see if the same (or a similar) dep is already recorded
+  if (note_dep_seen(dept, x)) {
+    assert(deps->find(x) >= 0, "sanity");
+  } else {
+    deps->append(x);
+  }
+}
+
+void Dependencies::assert_common_2(DepType dept,
+                                   DepValue x0, DepValue x1) {
+  assert(dep_args(dept) == 2, "sanity");
+  //log_dependency(dept, x0, x1);
+  GrowableArray<DepValue>* deps = _dep_values[dept];
+
+  // see if the same (or a similar) dep is already recorded
+  bool has_ctxk = has_explicit_context_arg(dept);
+  if (has_ctxk) {
+    assert(dep_context_arg(dept) == 0, "sanity");
+    if (note_dep_seen(dept, x1)) {
+      // look in this bucket for redundant assertions
+      const int stride = 2;
+      for (int i = deps->length(); (i -= stride) >= 0; ) {
+        DepValue y1 = deps->at(i+1);
+        if (x1 == y1) {  // same subject; check the context
+          if (maybe_merge_ctxk(deps, i+0, x0)) {
+            return;
+          }
+        }
+      }
+    }
+  } else {
+    assert(dep_implicit_context_arg(dept) == 0, "sanity");
+    if (note_dep_seen(dept, x0) && note_dep_seen(dept, x1)) {
+      // look in this bucket for redundant assertions
+      const int stride = 2;
+      for (int i = deps->length(); (i -= stride) >= 0; ) {
+        DepValue y0 = deps->at(i+0);
+        DepValue y1 = deps->at(i+1);
+        if (x0 == y0 && x1 == y1) {
+          return;
+        }
+      }
+    }
+  }
+
+  // append the assertion in the correct bucket:
+  deps->append(x0);
+  deps->append(x1);
+}
+#endif // INCLUDE_JVMCI
+
 /// Support for encoding dependencies into an nmethod:
 
 void Dependencies::copy_to(nmethod* nm) {
@@ -256,7 +392,40 @@ static int sort_dep_arg_2(ciBaseObject** p1, ciBaseObject** p2)
 static int sort_dep_arg_3(ciBaseObject** p1, ciBaseObject** p2)
 { return sort_dep(p1, p2, 3); }
 
+#if INCLUDE_JVMCI
+// metadata deps are sorted before object deps
+static int sort_dep_value(Dependencies::DepValue* p1, Dependencies::DepValue* p2, int narg) {
+  for (int i = 0; i < narg; i++) {
+    int diff = p1[i].sort_key() - p2[i].sort_key();
+    if (diff != 0)  return diff;
+  }
+  return 0;
+}
+static int sort_dep_value_arg_1(Dependencies::DepValue* p1, Dependencies::DepValue* p2)
+{ return sort_dep_value(p1, p2, 1); }
+static int sort_dep_value_arg_2(Dependencies::DepValue* p1, Dependencies::DepValue* p2)
+{ return sort_dep_value(p1, p2, 2); }
+static int sort_dep_value_arg_3(Dependencies::DepValue* p1, Dependencies::DepValue* p2)
+{ return sort_dep_value(p1, p2, 3); }
+#endif // INCLUDE_JVMCI
+
 void Dependencies::sort_all_deps() {
+#if INCLUDE_JVMCI
+  if (_using_dep_values) {
+    for (int deptv = (int)FIRST_TYPE; deptv < (int)TYPE_LIMIT; deptv++) {
+      DepType dept = (DepType)deptv;
+      GrowableArray<DepValue>* deps = _dep_values[dept];
+      if (deps->length() <= 1)  continue;
+      switch (dep_args(dept)) {
+      case 1: deps->sort(sort_dep_value_arg_1, 1); break;
+      case 2: deps->sort(sort_dep_value_arg_2, 2); break;
+      case 3: deps->sort(sort_dep_value_arg_3, 3); break;
+      default: ShouldNotReachHere();
+      }
+    }
+    return;
+  }
+#endif // INCLUDE_JVMCI
   for (int deptv = (int)FIRST_TYPE; deptv < (int)TYPE_LIMIT; deptv++) {
     DepType dept = (DepType)deptv;
     GrowableArray<ciBaseObject*>* deps = _deps[dept];
@@ -272,6 +441,16 @@ void Dependencies::sort_all_deps() {
 
 size_t Dependencies::estimate_size_in_bytes() {
   size_t est_size = 100;
+#if INCLUDE_JVMCI
+  if (_using_dep_values) {
+    for (int deptv = (int)FIRST_TYPE; deptv < (int)TYPE_LIMIT; deptv++) {
+      DepType dept = (DepType)deptv;
+      GrowableArray<DepValue>* deps = _dep_values[dept];
+      est_size += deps->length() * 2;  // tags and argument(s)
+    }
+    return est_size;
+  }
+#endif // INCLUDE_JVMCI
   for (int deptv = (int)FIRST_TYPE; deptv < (int)TYPE_LIMIT; deptv++) {
     DepType dept = (DepType)deptv;
     GrowableArray<ciBaseObject*>* deps = _deps[dept];
@@ -311,6 +490,37 @@ void Dependencies::encode_content_bytes() {
   // cast is safe, no deps can overflow INT_MAX
   CompressedWriteStream bytes((int)estimate_size_in_bytes());
 
+#if INCLUDE_JVMCI
+  if (_using_dep_values) {
+    for (int deptv = (int)FIRST_TYPE; deptv < (int)TYPE_LIMIT; deptv++) {
+      DepType dept = (DepType)deptv;
+      GrowableArray<DepValue>* deps = _dep_values[dept];
+      if (deps->length() == 0)  continue;
+      int stride = dep_args(dept);
+      int ctxkj  = dep_context_arg(dept);  // -1 if no context arg
+      assert(stride > 0, "sanity");
+      for (int i = 0; i < deps->length(); i += stride) {
+        jbyte code_byte = (jbyte)dept;
+        int skipj = -1;
+        if (ctxkj >= 0 && ctxkj+1 < stride) {
+          Klass*  ctxk = deps->at(i+ctxkj+0).as_klass(_oop_recorder);
+          DepValue x = deps->at(i+ctxkj+1);  // following argument
+          if (ctxk == ctxk_encoded_as_null(dept, x.as_metadata(_oop_recorder))) {
+            skipj = ctxkj;  // we win:  maybe one less oop to keep track of
+            code_byte |= default_context_type_bit;
+          }
+        }
+        bytes.write_byte(code_byte);
+        for (int j = 0; j < stride; j++) {
+          if (j == skipj)  continue;
+          DepValue v = deps->at(i+j);
+          int idx = v.index();
+          bytes.write_int(idx);
+        }
+      }
+    }
+  } else {
+#endif // INCLUDE_JVMCI
   for (int deptv = (int)FIRST_TYPE; deptv < (int)TYPE_LIMIT; deptv++) {
     DepType dept = (DepType)deptv;
     GrowableArray<ciBaseObject*>* deps = _deps[dept];
@@ -344,6 +554,9 @@ void Dependencies::encode_content_bytes() {
       }
     }
   }
+#if INCLUDE_JVMCI
+  }
+#endif
 
   // write a sentinel byte to mark the end
   bytes.write_byte(end_marker);
@@ -540,10 +753,10 @@ void Dependencies::write_dependency_to(xmlStream* xtty,
 }
 
 void Dependencies::print_dependency(DepType dept, GrowableArray<DepArgument>* args,
-                                    Klass* witness) {
+                                    Klass* witness, outputStream* st) {
   ResourceMark rm;
   ttyLocker ttyl;   // keep the following output all in one block
-  tty->print_cr("%s of type %s",
+  st->print_cr("%s of type %s",
                 (witness == NULL)? "Dependency": "Failed dependency",
                 dep_name(dept));
   // print arguments
@@ -565,22 +778,22 @@ void Dependencies::print_dependency(DepType dept, GrowableArray<DepArgument>* ar
     } else {
       what = "object ";
     }
-    tty->print("  %s = %s", what, (put_star? "*": ""));
+    st->print("  %s = %s", what, (put_star? "*": ""));
     if (arg.is_klass()) {
-      tty->print("%s", ((Klass*)arg.metadata_value())->external_name());
+      st->print("%s", ((Klass*)arg.metadata_value())->external_name());
     } else if (arg.is_method()) {
-      ((Method*)arg.metadata_value())->print_value();
+      ((Method*)arg.metadata_value())->print_value_on(st);
     } else if (arg.is_oop()) {
-      arg.oop_value()->print_value_on(tty);
+      arg.oop_value()->print_value_on(st);
     } else {
       ShouldNotReachHere(); // Provide impl for this type.
     }
 
-    tty->cr();
+    st->cr();
   }
   if (witness != NULL) {
     bool put_star = !Dependencies::is_concrete_klass(witness);
-    tty->print_cr("  witness = %s%s",
+    st->print_cr("  witness = %s%s",
                   (put_star? "*": ""),
                   witness->external_name());
   }
@@ -600,14 +813,19 @@ void Dependencies::DepStream::log_dependency(Klass* witness) {
   }
   int argslen = args->length();
   if (_deps != NULL && _deps->log() != NULL) {
-    Dependencies::write_dependency_to(_deps->log(), type(), args, witness);
+    if (ciEnv::current() != NULL) {
+      Dependencies::write_dependency_to(_deps->log(), type(), args, witness);
+    } else {
+      // Treat the CompileLog as an xmlstream instead
+      Dependencies::write_dependency_to((xmlStream*)_deps->log(), type(), args, witness);
+    }
   } else {
     Dependencies::write_dependency_to(xtty, type(), args, witness);
   }
   guarantee(argslen == args->length(), "args array cannot grow inside nested ResoureMark scope");
 }
 
-void Dependencies::DepStream::print_dependency(Klass* witness, bool verbose) {
+void Dependencies::DepStream::print_dependency(Klass* witness, bool verbose, outputStream* st) {
   ResourceMark rm;
   int nargs = argument_count();
   GrowableArray<DepArgument>* args = new GrowableArray<DepArgument>(nargs);
@@ -619,12 +837,12 @@ void Dependencies::DepStream::print_dependency(Klass* witness, bool verbose) {
     }
   }
   int argslen = args->length();
-  Dependencies::print_dependency(type(), args, witness);
+  Dependencies::print_dependency(type(), args, witness, st);
   if (verbose) {
     if (_code != NULL) {
-      tty->print("  code: ");
-      _code->print_value_on(tty);
-      tty->cr();
+      st->print("  code: ");
+      _code->print_value_on(st);
+      st->cr();
     }
   }
   guarantee(argslen == args->length(), "args array cannot grow inside nested ResoureMark scope");

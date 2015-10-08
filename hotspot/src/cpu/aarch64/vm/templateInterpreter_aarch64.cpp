@@ -535,7 +535,7 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
 //      r0
 //      c_rarg0, c_rarg1, c_rarg2, c_rarg3, ...(param regs)
 //      rscratch1, rscratch2 (scratch regs)
-void InterpreterGenerator::lock_method(void) {
+void TemplateInterpreterGenerator::lock_method() {
   // synchronize method
   const Address access_flags(rmethod, Method::access_flags_offset());
   const Address monitor_block_top(

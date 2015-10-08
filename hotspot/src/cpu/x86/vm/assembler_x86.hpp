@@ -536,7 +536,8 @@ class Assembler : public AbstractAssembler  {
     VEX_OPCODE_NONE  = 0x0,
     VEX_OPCODE_0F    = 0x1,
     VEX_OPCODE_0F_38 = 0x2,
-    VEX_OPCODE_0F_3A = 0x3
+    VEX_OPCODE_0F_3A = 0x3,
+    VEX_OPCODE_MASK  = 0x1F
   };
 
   enum AvxVectorLen {
@@ -612,7 +613,10 @@ private:
   int prefix_and_encode(int reg_enc, bool byteinst = false);
   int prefixq_and_encode(int reg_enc);
 
-  int prefix_and_encode(int dst_enc, int src_enc, bool byteinst = false);
+  int prefix_and_encode(int dst_enc, int src_enc) {
+    return prefix_and_encode(dst_enc, false, src_enc, false);
+  }
+  int prefix_and_encode(int dst_enc, bool dst_is_byte, int src_enc, bool src_is_byte);
   int prefixq_and_encode(int dst_enc, int src_enc);
 
   void prefix(Register reg);

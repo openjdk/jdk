@@ -200,6 +200,31 @@ class SWNodeInfo VALUE_OBJ_CLASS_SPEC {
   static const SWNodeInfo initial;
 };
 
+// JVMCI: OrderedPair is moved up to deal with compilation issues on Windows
+//------------------------------OrderedPair---------------------------
+// Ordered pair of Node*.
+class OrderedPair VALUE_OBJ_CLASS_SPEC {
+ protected:
+  Node* _p1;
+  Node* _p2;
+ public:
+  OrderedPair() : _p1(NULL), _p2(NULL) {}
+  OrderedPair(Node* p1, Node* p2) {
+    if (p1->_idx < p2->_idx) {
+      _p1 = p1; _p2 = p2;
+    } else {
+      _p1 = p2; _p2 = p1;
+    }
+  }
+
+  bool operator==(const OrderedPair &rhs) {
+    return _p1 == rhs._p1 && _p2 == rhs._p2;
+  }
+  void print() { tty->print("  (%d, %d)", _p1->_idx, _p2->_idx); }
+
+  static const OrderedPair initial;
+};
+
 // -----------------------------SuperWord---------------------------------
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
@@ -632,31 +657,6 @@ class SWPointer VALUE_OBJ_CLASS_SPEC {
 
   } _tracer;//TRacer;
 #endif
-};
-
-
-//------------------------------OrderedPair---------------------------
-// Ordered pair of Node*.
-class OrderedPair VALUE_OBJ_CLASS_SPEC {
- protected:
-  Node* _p1;
-  Node* _p2;
- public:
-  OrderedPair() : _p1(NULL), _p2(NULL) {}
-  OrderedPair(Node* p1, Node* p2) {
-    if (p1->_idx < p2->_idx) {
-      _p1 = p1; _p2 = p2;
-    } else {
-      _p1 = p2; _p2 = p1;
-    }
-  }
-
-  bool operator==(const OrderedPair &rhs) {
-    return _p1 == rhs._p1 && _p2 == rhs._p2;
-  }
-  void print() { tty->print("  (%d, %d)", _p1->_idx, _p2->_idx); }
-
-  static const OrderedPair initial;
 };
 
 #endif // SHARE_VM_OPTO_SUPERWORD_HPP

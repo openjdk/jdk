@@ -93,8 +93,10 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
 
   mark_sweep_phase2();
 
+#if defined(COMPILER2) || INCLUDE_JVMCI
   // Don't add any more derived pointers during phase3
-  COMPILER2_PRESENT(DerivedPointerTable::set_active(false));
+  DerivedPointerTable::set_active(false);
+#endif
 
   mark_sweep_phase3();
 
@@ -168,7 +170,9 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
-    COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact);
+#if defined(COMPILER2) || INCLUDE_JVMCI
+    DerivedPointerTableDeactivate dpt_deact;
+#endif
     g1h->prepare_for_verify();
     // Note: we can verify only the heap here. When an object is
     // marked, the previous value of the mark word (including

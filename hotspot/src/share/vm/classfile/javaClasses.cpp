@@ -53,6 +53,10 @@
 #include "runtime/vframe.hpp"
 #include "utilities/preserveException.hpp"
 
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciJavaClasses.hpp"
+#endif
+
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 #define INJECTED_FIELD_COMPUTE_OFFSET(klass, name, signature, may_be_java)    \
@@ -1579,7 +1583,7 @@ void java_lang_Throwable::print_stack_trace(oop throwable, outputStream* st) {
   while (h_throwable.not_null()) {
     objArrayHandle result (THREAD, objArrayOop(backtrace(h_throwable())));
     if (result.is_null()) {
-      st->print_cr("%s", no_stack_trace_message());
+      st->print_raw_cr(no_stack_trace_message());
       return;
     }
 

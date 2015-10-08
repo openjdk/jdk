@@ -787,6 +787,8 @@ void VM_Version::get_processor_features() {
       FLAG_SET_DEFAULT(UseFPUForSpilling, false);
     }
   }
+#endif
+#if defined(COMPILER2) || INCLUDE_JVMCI
   if (MaxVectorSize > 0) {
     if (!is_power_of_2(MaxVectorSize)) {
       warning("MaxVectorSize must be a power of 2");
@@ -803,7 +805,7 @@ void VM_Version::get_processor_features() {
       // Vectors (in XMM) are only supported with SSE2+
       FLAG_SET_DEFAULT(MaxVectorSize, 0);
     }
-#ifdef ASSERT
+#if defined(COMPILER2) && defined(ASSERT)
     if (supports_avx() && PrintMiscellaneous && Verbose && TraceNewVectors) {
       tty->print_cr("State of YMM registers after signal handle:");
       int nreg = 2 LP64_ONLY(+2);
@@ -816,9 +818,11 @@ void VM_Version::get_processor_features() {
         tty->cr();
       }
     }
-#endif
+#endif // COMPILER2 && ASSERT
   }
+#endif // COMPILER2 || INCLUDE_JVMCI
 
+#ifdef COMPILER2
 #ifdef _LP64
   if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
     UseMultiplyToLenIntrinsic = true;

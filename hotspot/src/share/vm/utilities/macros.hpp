@@ -173,6 +173,20 @@
 #define INCLUDE_TRACE 1
 #endif // INCLUDE_TRACE
 
+#ifndef INCLUDE_JVMCI
+#define INCLUDE_JVMCI 1
+#endif
+
+#if INCLUDE_JVMCI
+#define JVMCI_ONLY(code) code
+#define NOT_JVMCI(code)
+#define NOT_JVMCI_RETURN /* next token must be ; */
+#else
+#define JVMCI_ONLY(code)
+#define NOT_JVMCI(code) code
+#define NOT_JVMCI_RETURN {}
+#endif // INCLUDE_JVMCI
+
 // COMPILER1 variant
 #ifdef COMPILER1
 #ifdef COMPILER2
@@ -195,7 +209,7 @@
 #ifdef TIERED
 #define TIERED_ONLY(code) code
 #define NOT_TIERED(code)
-#else
+#else // TIERED
 #define TIERED_ONLY(code)
 #define NOT_TIERED(code) code
 #endif // TIERED

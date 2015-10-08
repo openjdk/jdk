@@ -32,20 +32,22 @@
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
-ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset, int obj_decode_offset, bool reexecute, bool return_oop) {
+ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset, int obj_decode_offset, bool reexecute, bool rethrow_exception, bool return_oop) {
   _code          = code;
   _decode_offset = decode_offset;
   _objects       = decode_object_values(obj_decode_offset);
   _reexecute     = reexecute;
+  _rethrow_exception = rethrow_exception;
   _return_oop    = return_oop;
   decode_body();
 }
 
-ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset, bool reexecute, bool return_oop) {
+ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset, bool reexecute, bool rethrow_exception, bool return_oop) {
   _code          = code;
   _decode_offset = decode_offset;
   _objects       = decode_object_values(DebugInformationRecorder::serialized_null);
   _reexecute     = reexecute;
+  _rethrow_exception = rethrow_exception;
   _return_oop    = return_oop;
   decode_body();
 }
@@ -56,6 +58,7 @@ ScopeDesc::ScopeDesc(const ScopeDesc* parent) {
   _decode_offset = parent->_sender_decode_offset;
   _objects       = parent->_objects;
   _reexecute     = false; //reexecute only applies to the first scope
+  _rethrow_exception = false;
   _return_oop    = false;
   decode_body();
 }
@@ -227,17 +230,18 @@ void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
     }
   }
 
-#ifdef COMPILER2
-  if (DoEscapeAnalysis && is_top() && _objects != NULL) {
+#if defined(COMPILER2) || INCLUDE_JVMCI
+  if (NOT_JVMCI(DoEscapeAnalysis &&) is_top() && _objects != NULL) {
     st->print_cr("   Objects");
     for (int i = 0; i < _objects->length(); i++) {
       ObjectValue* sv = (ObjectValue*) _objects->at(i);
       st->print("    - %d: ", sv->id());
+      st->print("%s ", java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()())->external_name());
       sv->print_fields_on(st);
       st->cr();
     }
   }
-#endif // COMPILER2
+#endif // COMPILER2 || INCLUDE_JVMCI
 }
 
 #endif
