@@ -290,6 +290,7 @@ public:
     if (phi() == NULL) {
       return NULL;
     }
+    assert(phi()->is_Phi(), "should be PhiNode");
     Node *ln = phi()->in(0);
     if (ln->is_CountedLoop() && ln->as_CountedLoop()->loopexit() == this) {
       return (CountedLoopNode*)ln;

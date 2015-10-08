@@ -779,14 +779,14 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
     // Generate regular method entry
     __ bind(slow_path);
-    (void) generate_normal_entry(false);
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
     return entry;
   }
 #endif // INCLUDE_ALL_GCS
 
   // If G1 is not enabled then attempt to go through the accessor entry point
   // Reference.get is an accessor
-  return generate_jump_to_normal_entry();
+  return NULL;
 }
 
 //

@@ -506,7 +506,8 @@ class Assembler : public AbstractAssembler  {
 
     VEX_3bytes = 0xC4,
     VEX_2bytes = 0xC5,
-    EVEX_4bytes = 0x62
+    EVEX_4bytes = 0x62,
+    Prefix_EMPTY = 0x0
   };
 
   enum VexPrefix {
@@ -615,6 +616,8 @@ private:
   int prefixq_and_encode(int dst_enc, int src_enc);
 
   void prefix(Register reg);
+  void prefix(Register dst, Register src, Prefix p);
+  void prefix(Register dst, Address adr, Prefix p);
   void prefix(Address adr);
   void prefixq(Address adr);
 
@@ -1177,6 +1180,10 @@ private:
   // Identify processor type and features
   void cpuid();
 
+  // CRC32C
+  void crc32(Register crc, Register v, int8_t sizeInBytes);
+  void crc32(Register crc, Address adr, int8_t sizeInBytes);
+
   // Convert Scalar Double-Precision Floating-Point Value to Scalar Single-Precision Floating-Point Value
   void cvtsd2ss(XMMRegister dst, XMMRegister src);
   void cvtsd2ss(XMMRegister dst, Address src);
@@ -1672,10 +1679,14 @@ private:
   // SSE 4.1 extract
   void pextrd(Register dst, XMMRegister src, int imm8);
   void pextrq(Register dst, XMMRegister src, int imm8);
+  // SSE 2 extract
+  void pextrw(Register dst, XMMRegister src, int imm8);
 
   // SSE 4.1 insert
   void pinsrd(XMMRegister dst, Register src, int imm8);
   void pinsrq(XMMRegister dst, Register src, int imm8);
+  // SSE 2 insert
+  void pinsrw(XMMRegister dst, Register src, int imm8);
 
   // SSE4.1 packed move
   void pmovzxbw(XMMRegister dst, XMMRegister src);
@@ -1783,6 +1794,7 @@ private:
   void setb(Condition cc, Register dst);
 
   void shldl(Register dst, Register src);
+  void shldl(Register dst, Register src, int8_t imm8);
 
   void shll(Register dst, int imm8);
   void shll(Register dst);
@@ -1925,6 +1937,7 @@ private:
 
   // Multiply Packed Floating-Point Values
   void mulpd(XMMRegister dst, XMMRegister src);
+  void mulpd(XMMRegister dst, Address src);
   void mulps(XMMRegister dst, XMMRegister src);
   void vmulpd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vmulps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
@@ -1950,6 +1963,9 @@ private:
   void vandps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vandpd(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
   void vandps(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
+  void unpckhpd(XMMRegister dst, XMMRegister src);
+  void unpcklpd(XMMRegister dst, XMMRegister src);
 
   // Bitwise Logical XOR of Packed Floating-Point Values
   void xorpd(XMMRegister dst, XMMRegister src);
@@ -2045,6 +2061,9 @@ private:
   void pand(XMMRegister dst, XMMRegister src);
   void vpand(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpand(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
+  // Andn packed integers
+  void pandn(XMMRegister dst, XMMRegister src);
 
   // Or packed integers
   void por(XMMRegister dst, XMMRegister src);

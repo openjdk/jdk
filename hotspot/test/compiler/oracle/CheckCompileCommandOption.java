@@ -66,7 +66,6 @@ public class CheckCompileCommandOption {
             "CompileCommand: option com/oracle/Test.test bool MyBoolOption1 = true",
             "CompileCommand: option com/oracle/Test.test bool MyBoolOption2 = true",
             "CompileCommand: option com/oracle/Test.test bool MyBoolOption3 = true",
-            "CompileCommand: option com/oracle/Test.test bool MyBoolOption4 = true",
             "CompileCommand: option com/oracle/Test.test bool MyBoolOption5 = true",
             "CompileCommand: option com/oracle/Test.test bool MyBoolOption6 = true",
             "CompileCommand: option com/oracle/Test.test bool MyBoolOption7 = true",
@@ -74,7 +73,6 @@ public class CheckCompileCommandOption {
             "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption9 = true",
             "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption10 = true",
             "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption11 = true",
-            "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption12 = true",
             "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption13 = true",
             "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption14 = true",
             "CompileCommand: option com/oracle/Test.test(I) bool MyBoolOption15 = true",
@@ -96,7 +94,6 @@ public class CheckCompileCommandOption {
             "-XX:CompileCommand=option,com/oracle/Test.test,MyBoolOption1",
             "-XX:CompileCommand=option,com/oracle/Test,test,MyBoolOption2",
             "-XX:CompileCommand=option,com.oracle.Test::test,MyBoolOption3",
-            "-XX:CompileCommand=option,com/oracle/Test::test,MyBoolOption4",
             "-XX:CompileCommand=option,com/oracle/Test.test,MyBoolOption5,MyBoolOption6",
             "-XX:CompileCommand=option,com/oracle/Test,test,MyBoolOption7,MyBoolOption8",
             "-version"
@@ -108,7 +105,6 @@ public class CheckCompileCommandOption {
             "CompileCommand: option com/oracle/Test.test bool MyBoolOption1 = true",
             "CompileCommand: option com/oracle/Test.test bool MyBoolOption2 = true",
             "CompileCommand: option com/oracle/Test.test bool MyBoolOption3 = true",
-            "CompileCommand: option com/oracle/Test.test bool MyBoolOption4 = true",
             "CompileCommand: option com/oracle/Test.test bool MyBoolOption5 = true",
             "CompileCommand: option com/oracle/Test.test bool MyBoolOption6 = true",
             "CompileCommand: option com/oracle/Test.test bool MyBoolOption7 = true",
@@ -198,7 +194,7 @@ public class CheckCompileCommandOption {
             out.shouldContain(expected_output);
         }
 
-        out.shouldNotContain("CompileCommand: An error occured during parsing");
+        out.shouldNotContain("CompileCommand: An error occurred during parsing");
         out.shouldHaveExitValue(0);
     }
 
@@ -209,7 +205,7 @@ public class CheckCompileCommandOption {
         pb = ProcessTools.createJavaProcessBuilder(arguments);
         out = new OutputAnalyzer(pb.start());
 
-        out.shouldContain("CompileCommand: An error occured during parsing");
+        out.shouldContain("CompileCommand: An error occurred during parsing");
         out.shouldHaveExitValue(0);
     }
 

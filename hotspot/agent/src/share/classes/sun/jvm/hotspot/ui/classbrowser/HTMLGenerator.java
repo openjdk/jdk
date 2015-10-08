@@ -1220,9 +1220,6 @@ public class HTMLGenerator implements /* imports */ ClassConstants {
       oms = new OopMapStream(map, OopMapValue.OopTypes.NARROWOOP_VALUE);
       buf.append(omvIterator.iterate(oms, "NarrowOops:", false));
 
-      oms = new OopMapStream(map, OopMapValue.OopTypes.VALUE_VALUE);
-      buf.append(omvIterator.iterate(oms, "Values:", false));
-
       oms = new OopMapStream(map, OopMapValue.OopTypes.CALLEE_SAVED_VALUE);
       buf.append(omvIterator.iterate(oms, "Callee saved:",  true));
 

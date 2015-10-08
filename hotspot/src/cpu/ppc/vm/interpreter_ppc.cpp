@@ -427,18 +427,6 @@ address AbstractInterpreterGenerator::generate_result_handler_for(BasicType type
   return entry;
 }
 
-// Call an accessor method (assuming it is resolved, otherwise drop into
-// vanilla (slow path) entry.
-address InterpreterGenerator::generate_jump_to_normal_entry(void) {
-  address entry = __ pc();
-  address normal_entry = Interpreter::entry_for_kind(Interpreter::zerolocals);
-  assert(normal_entry != NULL, "should already be generated.");
-  __ branch_to_entry(normal_entry, R11_scratch1);
-  __ flush();
-
-  return entry;
-}
-
 // Abstract method entry.
 //
 address InterpreterGenerator::generate_abstract_entry(void) {
@@ -529,13 +517,13 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
   //   regular method entry code to generate the NPE.
   //
 
-  address entry = __ pc();
-
-  const int referent_offset = java_lang_ref_Reference::referent_offset;
-  guarantee(referent_offset > 0, "referent offset not initialized");
-
   if (UseG1GC) {
-     Label slow_path;
+    address entry = __ pc();
+
+    const int referent_offset = java_lang_ref_Reference::referent_offset;
+    guarantee(referent_offset > 0, "referent offset not initialized");
+
+    Label slow_path;
 
     // Debugging not possible, so can't use __ skip_if_jvmti_mode(slow_path, GR31_SCRATCH);
 
@@ -577,13 +565,11 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
     // Generate regular method entry.
     __ bind(slow_path);
-    __ branch_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals), R11_scratch1);
-    __ flush();
-
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals), R11_scratch1);
     return entry;
-  } else {
-    return generate_jump_to_normal_entry();
   }
+
+  return NULL;
 }
 
 void Deoptimization::unwind_callee_save_values(frame* f, vframeArray* vframe_array) {

@@ -222,7 +222,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_negateExactL();
   bool inline_math_subtractExactI(bool is_decrement);
   bool inline_math_subtractExactL(bool is_decrement);
-  bool inline_exp();
   bool inline_pow();
   Node* finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName);
   bool inline_min_max(vmIntrinsics::ID id);
@@ -1535,20 +1534,6 @@ Node* LibraryCallKit::finish_pow_exp(Node* result, Node* x, Node* y, const TypeF
   }
 }
 
-//------------------------------inline_exp-------------------------------------
-// Inline exp instructions, if possible.  The Intel hardware only misses
-// really odd corner cases (+/- Infinity).  Just uncommon-trap them.
-bool LibraryCallKit::inline_exp() {
-  Node* arg = round_double_node(argument(0));
-  Node* n   = _gvn.transform(new ExpDNode(C, control(), arg));
-
-  n = finish_pow_exp(n, arg, NULL, OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dexp), "EXP");
-  set_result(n);
-
-  C->set_has_split_ifs(true); // Has chance for split-if optimization
-  return true;
-}
-
 //------------------------------inline_pow-------------------------------------
 // Inline power instructions, if possible.
 bool LibraryCallKit::inline_pow() {
@@ -1776,8 +1761,9 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsqrt:  return Matcher::match_rule_supported(Op_SqrtD) ? inline_math(id) : false;
   case vmIntrinsics::_dabs:   return Matcher::has_match_rule(Op_AbsD)   ? inline_math(id) : false;
 
-  case vmIntrinsics::_dexp:   return Matcher::has_match_rule(Op_ExpD)   ? inline_exp()    :
-    runtime_math(OptoRuntime::Math_D_D_Type(),  FN_PTR(SharedRuntime::dexp),  "EXP");
+  case vmIntrinsics::_dexp:
+    return (UseSSE >= 2) ? runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp") :
+    runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dexp),  "EXP");
   case vmIntrinsics::_dpow:   return Matcher::has_match_rule(Op_PowD)   ? inline_pow()    :
     runtime_math(OptoRuntime::Math_DD_D_Type(), FN_PTR(SharedRuntime::dpow),  "POW");
 #undef FN_PTR

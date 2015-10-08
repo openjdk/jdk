@@ -1712,6 +1712,18 @@ const bool Matcher::match_rule_supported(int opcode) {
   return ret_value;  // Per default match rules are supported.
 }
 
+const int Matcher::float_pressure(int default_pressure_threshold) {
+  int float_pressure_threshold = default_pressure_threshold;
+#ifdef _LP64
+  if (UseAVX > 2) {
+    // Increase pressure threshold on machines with AVX3 which have
+    // 2x more XMM registers.
+    float_pressure_threshold = default_pressure_threshold * 2;
+  }
+#endif
+  return float_pressure_threshold;
+}
+
 // Max vector size in bytes. 0 if not supported.
 const int Matcher::vector_width_in_bytes(BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");

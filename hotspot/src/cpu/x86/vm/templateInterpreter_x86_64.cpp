@@ -677,15 +677,14 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
     // generate a vanilla interpreter entry as the slow path
     __ bind(slow_path);
-    (void) generate_normal_entry(false);
-
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
     return entry;
   }
 #endif // INCLUDE_ALL_GCS
 
   // If G1 is not enabled then attempt to go through the accessor entry point
   // Reference.get is an accessor
-  return generate_jump_to_normal_entry();
+  return NULL;
 }
 
 /**
@@ -733,12 +732,10 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
 
     // generate a vanilla native entry as the slow path
     __ bind(slow_path);
-
-    (void) generate_native_entry(false);
-
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
     return entry;
   }
-  return generate_native_entry(false);
+  return NULL;
 }
 
 /**
@@ -796,12 +793,61 @@ address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpret
 
     // generate a vanilla native entry as the slow path
     __ bind(slow_path);
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+    return entry;
+  }
+  return NULL;
+}
 
-    (void) generate_native_entry(false);
+/**
+* Method entry for static native methods:
+*   int java.util.zip.CRC32C.updateBytes(int crc, byte[] b, int off, int end)
+*   int java.util.zip.CRC32C.updateByteBuffer(int crc, long address, int off, int end)
+*/
+address InterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+  if (UseCRC32CIntrinsics) {
+    address entry = __ pc();
+    // Load parameters
+    const Register crc = c_rarg0;  // crc
+    const Register buf = c_rarg1;  // source java byte array address
+    const Register len = c_rarg2;
+    const Register off = c_rarg3;  // offset
+    const Register end = len;
+
+    // Arguments are reversed on java expression stack
+    // Calculate address of start element
+    if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) {
+      __ movptr(buf, Address(rsp, 3 * wordSize)); // long buf
+      __ movl2ptr(off, Address(rsp, 2 * wordSize)); // offset
+      __ addq(buf, off); // + offset
+      __ movl(crc, Address(rsp, 5 * wordSize)); // Initial CRC
+      // Note on 5 * wordSize vs. 4 * wordSize:
+      // *   int java.util.zip.CRC32C.updateByteBuffer(int crc, long address, int off, int end)
+      //                                                   4         2,3          1        0
+      // end starts at SP + 8
+      // The Java(R) Virtual Machine Specification Java SE 7 Edition
+      // 4.10.2.3. Values of Types long and double
+      //    "When calculating operand stack length, values of type long and double have length two."
+    } else {
+      __ movptr(buf, Address(rsp, 3 * wordSize)); // byte[] array
+      __ addptr(buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
+      __ movl2ptr(off, Address(rsp, 2 * wordSize)); // offset
+      __ addq(buf, off); // + offset
+      __ movl(crc, Address(rsp, 4 * wordSize)); // Initial CRC
+    }
+    __ movl(end, Address(rsp, wordSize)); // end
+    __ subl(end, off); // end - off
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, StubRoutines::updateBytesCRC32C()), crc, buf, len);
+    // result in rax
+    // _areturn
+    __ pop(rdi);                // get return address
+    __ mov(rsp, r13);           // set sp to sender sp
+    __ jmp(rdi);
 
     return entry;
   }
-  return generate_native_entry(false);
+
+  return NULL;
 }
 
 // Interpreter stub for calling a native method. (asm interpreter)
