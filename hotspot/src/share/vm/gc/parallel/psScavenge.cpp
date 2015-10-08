@@ -475,6 +475,8 @@ bool PSScavenge::invoke_no_policy() {
       }
     }
 
+    _gc_tracer.report_tenuring_threshold(tenuring_threshold());
+
     // Let the size policy know we're done.  Note that we count promotion
     // failure cleanup time as part of the collection (otherwise, we're
     // implicitly saying it's mutator time).
@@ -674,7 +676,6 @@ bool PSScavenge::invoke_no_policy() {
 
   heap->print_heap_after_gc();
   heap->trace_heap_after_gc(&_gc_tracer);
-  _gc_tracer.report_tenuring_threshold(tenuring_threshold());
 
   if (ZapUnusedHeapArea) {
     young_gen->eden_space()->check_mangled_unused_area_complete();
