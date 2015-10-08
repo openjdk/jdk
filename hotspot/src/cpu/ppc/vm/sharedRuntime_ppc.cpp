@@ -957,11 +957,11 @@ static address gen_c2i_adapter(MacroAssembler *masm,
   return c2i_entrypoint;
 }
 
-static void gen_i2c_adapter(MacroAssembler *masm,
-                            int total_args_passed,
-                            int comp_args_on_stack,
-                            const BasicType *sig_bt,
-                            const VMRegPair *regs) {
+void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
+                                    int total_args_passed,
+                                    int comp_args_on_stack,
+                                    const BasicType *sig_bt,
+                                    const VMRegPair *regs) {
 
   // Load method's entry-point from method.
   __ ld(R12_scratch2, in_bytes(Method::from_compiled_offset()), R19_method);

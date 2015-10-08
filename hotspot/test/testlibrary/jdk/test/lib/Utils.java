@@ -459,6 +459,21 @@ public final class Utils {
     }
 
     /**
+     * Ensures a requested class is loaded
+     * @param aClass class to load
+     */
+    public static void ensureClassIsLoaded(Class<?> aClass) {
+        if (aClass == null) {
+            throw new Error("Requested null class");
+        }
+        try {
+            Class.forName(aClass.getName(), /* initialize = */ true,
+                    ClassLoader.getSystemClassLoader());
+        } catch (ClassNotFoundException e) {
+            throw new Error("Class not found", e);
+        }
+    }
+    /**
      * Runs runnable and checks that it throws expected exception. If exceptionException is null it means
      * that we expect no exception to be thrown.
      * @param runnable what we run

@@ -176,7 +176,7 @@
 #endif
 #endif
 
-#if !defined(COMPILER1) && !defined(COMPILER2) && !defined(SHARK)
+#if !defined(COMPILER1) && !defined(COMPILER2) && !defined(SHARK) && !INCLUDE_JVMCI
 define_pd_global(bool, BackgroundCompilation,        false);
 define_pd_global(bool, UseTLAB,                      false);
 define_pd_global(bool, CICompileOSR,                 false);
@@ -211,11 +211,11 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 #define CI_COMPILER_COUNT 0
 #else
 
-#ifdef COMPILER2
+#if defined(COMPILER2) || INCLUDE_JVMCI
 #define CI_COMPILER_COUNT 2
 #else
 #define CI_COMPILER_COUNT 1
-#endif // COMPILER2
+#endif // COMPILER2 || INCLUDE_JVMCI
 
 #endif // no compilers
 
@@ -254,6 +254,7 @@ struct Flag {
     KIND_SHARK              = 1 << 15,
     KIND_LP64_PRODUCT       = 1 << 16,
     KIND_COMMERCIAL         = 1 << 17,
+    KIND_JVMCI              = 1 << 18,
 
     KIND_MASK = ~VALUE_ORIGIN_MASK
   };
@@ -1098,8 +1099,14 @@ public:
   diagnostic(ccstr, PrintAssemblyOptions, NULL,                             \
           "Print options string passed to disassembler.so")                 \
                                                                             \
+  notproduct(bool, PrintNMethodStatistics, false,                           \
+          "Print a summary statistic for the generated nmethods")           \
+                                                                            \
   diagnostic(bool, PrintNMethods, false,                                    \
           "Print assembly code for nmethods when generated")                \
+                                                                            \
+  diagnostic(intx, PrintNMethodsAtLevel, -1,                                \
+          "Only print code for nmethods at the given compilation level")    \
                                                                             \
   diagnostic(bool, PrintNativeNMethods, false,                              \
           "Print assembly code for native nmethods when generated")         \
@@ -2825,7 +2832,7 @@ public:
                                                                             \
   develop(bool, CompileTheWorld, false,                                     \
           "Compile all methods in all classes in bootstrap class path "     \
-          "(stress test)")                                                  \
+            "(stress test)")                                                \
                                                                             \
   develop(bool, CompileTheWorldPreloadClasses, true,                        \
           "Preload all classes used by a class before start loading")       \
@@ -3063,6 +3070,9 @@ public:
   develop(bool, TraceDeoptimization, false,                                 \
           "Trace deoptimization")                                           \
                                                                             \
+  develop(bool, PrintDeoptimizationDetails, false,                          \
+          "Print more information about deoptimization")                    \
+                                                                            \
   develop(bool, DebugDeoptimization, false,                                 \
           "Tracing various information while debugging deoptimization")     \
                                                                             \
@@ -3209,8 +3219,11 @@ public:
           "If non-zero, maximum number of words that malloc/realloc can "   \
           "allocate (for testing only)")                                    \
                                                                             \
-  product(intx, TypeProfileWidth,     2,                                    \
+  product(intx, TypeProfileWidth, 2,                                        \
           "Number of receiver types to record in call/cast profile")        \
+                                                                            \
+  experimental(intx, MethodProfileWidth, 0,                                 \
+          "Number of methods to record in call profile")                    \
                                                                             \
   develop(intx, BciProfileWidth,      2,                                    \
           "Number of return bci's to record in ret profile")                \
@@ -3747,7 +3760,7 @@ public:
                                                                             \
   product(intx, Tier3CompileThreshold, 2000,                                \
           "Threshold at which tier 3 compilation is invoked (invocation "   \
-          "minimum must be satisfied")                                      \
+          "minimum must be satisfied)")                                     \
                                                                             \
   product(intx, Tier3BackEdgeThreshold,  60000,                             \
           "Back edge threshold at which tier 3 OSR compilation is invoked") \

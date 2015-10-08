@@ -2136,12 +2136,13 @@ encode %{
                      RELOC_DISP32);
     }
     if (_method) {
-      // Emit stub for static call.
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+      // Emit stubs for static call.
+      address mark = cbuf.insts_mark();
+      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
       if (stub == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
-      } 
+      }
     }
   %}
 

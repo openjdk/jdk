@@ -102,9 +102,12 @@ void ExceptionHandlerTable::add_subtable(
 
 void ExceptionHandlerTable::copy_to(nmethod* nm) {
   assert(size_in_bytes() == nm->handler_table_size(), "size of space allocated in nmethod incorrect");
-  memmove(nm->handler_table_begin(), _table, size_in_bytes());
+  copy_bytes_to(nm->handler_table_begin());
 }
 
+void ExceptionHandlerTable::copy_bytes_to(address addr) {
+  memmove(addr, _table, size_in_bytes());
+}
 
 HandlerTableEntry* ExceptionHandlerTable::entry_for(int catch_pco, int handler_bci, int scope_depth) const {
   HandlerTableEntry* t = subtable_for(catch_pco);

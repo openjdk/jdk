@@ -1755,6 +1755,12 @@ ClassFileParser::AnnotationCollector::annotation_index(ClassLoaderData* loader_d
     if (_location != _in_method)  break;  // only allow for methods
     if (!privileged)              break;  // only allow in privileged code
     return _method_HotSpotIntrinsicCandidate;
+#if INCLUDE_JVMCI
+  case vmSymbols::VM_SYMBOL_ENUM_NAME(jdk_vm_ci_hotspot_Stable_signature):
+    if (_location != _in_field)   break;  // only allow for fields
+    if (!privileged)              break;  // only allow in privileged code
+    return _field_Stable;
+#endif
   case vmSymbols::VM_SYMBOL_ENUM_NAME(java_lang_invoke_Stable_signature):
     if (_location != _in_field)   break;  // only allow for fields
     if (!privileged)              break;  // only allow in privileged code

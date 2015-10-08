@@ -30,6 +30,7 @@
 #include "memory/resourceArea.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "utilities/copy.hpp"
+#include "oops/oop.inline.hpp"
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
@@ -424,6 +425,30 @@ void Relocation::set_value(address x) {
   ShouldNotReachHere();
 }
 
+void Relocation::const_set_data_value(address x) {
+#ifdef _LP64
+  if (format() == relocInfo::narrow_oop_in_const) {
+    *(narrowOop*)addr() = oopDesc::encode_heap_oop((oop) x);
+  } else {
+#endif
+    *(address*)addr() = x;
+#ifdef _LP64
+  }
+#endif
+}
+
+void Relocation::const_verify_data_value(address x) {
+#ifdef _LP64
+  if (format() == relocInfo::narrow_oop_in_const) {
+    assert(*(narrowOop*)addr() == oopDesc::encode_heap_oop((oop) x), "must agree");
+  } else {
+#endif
+    assert(*(address*)addr() == x, "must agree");
+#ifdef _LP64
+  }
+#endif
+}
+
 
 RelocationHolder Relocation::spec_simple(relocInfo::relocType rtype) {
   if (rtype == relocInfo::none)  return RelocationHolder::none;
@@ -580,7 +605,8 @@ void static_stub_Relocation::pack_data_to(CodeSection* dest) {
 
 void static_stub_Relocation::unpack_data() {
   address base = binding()->section_start(CodeBuffer::SECT_INSTS);
-  _static_call = address_from_scaled_offset(unpack_1_int(), base);
+  jint offset = unpack_1_int();
+  _static_call = address_from_scaled_offset(offset, base);
 }
 
 void trampoline_stub_Relocation::pack_data_to(CodeSection* dest ) {
@@ -794,7 +820,8 @@ address opt_virtual_call_Relocation::static_stub() {
   RelocIterator iter(code());
   while (iter.next()) {
     if (iter.type() == relocInfo::static_stub_type) {
-      if (iter.static_stub_reloc()->static_call() == static_call_addr) {
+      static_stub_Relocation* stub_reloc = iter.static_stub_reloc();
+      if (stub_reloc->static_call() == static_call_addr) {
         return iter.addr();
       }
     }
@@ -816,7 +843,8 @@ address static_call_Relocation::static_stub() {
   RelocIterator iter(code());
   while (iter.next()) {
     if (iter.type() == relocInfo::static_stub_type) {
-      if (iter.static_stub_reloc()->static_call() == static_call_addr) {
+      static_stub_Relocation* stub_reloc = iter.static_stub_reloc();
+      if (stub_reloc->static_call() == static_call_addr) {
         return iter.addr();
       }
     }

@@ -29,6 +29,7 @@
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileTask.hpp"
 #include "runtime/perfData.hpp"
+#include "trace/tracing.hpp"
 
 class nmethod;
 class nmethodLocker;
@@ -243,6 +244,7 @@ class CompileBroker: AllStatic {
   static void wait_for_completion(CompileTask* task);
 
   static void invoke_compiler_on_method(CompileTask* task);
+  static void post_compile(CompilerThread* thread, CompileTask* task, EventCompilation& event, bool success, ciEnv* ci_env);
   static void set_last_compile(CompilerThread *thread, methodHandle method, bool is_osr, int comp_level);
   static void push_jni_handle_block();
   static void pop_jni_handle_block();
@@ -287,6 +289,9 @@ class CompileBroker: AllStatic {
                                  methodHandle hot_method,
                                  int hot_count,
                                  const char* comment, Thread* thread);
+
+  // Acquire any needed locks and assign a compile id
+  static uint assign_compile_id_unlocked(Thread* thread, methodHandle method, int osr_bci);
 
   static void compiler_thread_loop();
   static uint get_compilation_id() { return _compilation_id; }
@@ -336,8 +341,13 @@ class CompileBroker: AllStatic {
   // Redefine Classes support
   static void mark_on_stack();
 
+#if INCLUDE_JVMCI
+  // Print curent compilation time stats for a given compiler
+  static void print_times(AbstractCompiler* comp);
+#endif
+
   // Print a detailed accounting of compilation time
-  static void print_times();
+  static void print_times(bool per_compiler = true, bool aggregate = true);
 
   // Debugging output for failure
   static void print_last_compile();

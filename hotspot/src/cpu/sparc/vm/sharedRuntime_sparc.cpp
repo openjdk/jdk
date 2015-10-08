@@ -43,6 +43,9 @@
 #include "compiler/compileBroker.hpp"
 #include "shark/sharkCompiler.hpp"
 #endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciJavaClasses.hpp"
+#endif
 
 #define __ masm->
 
@@ -513,10 +516,10 @@ class AdapterGenerator {
                               const VMRegPair *regs,
                               Label& skip_fixup);
   void gen_i2c_adapter(int total_args_passed,
-                              // VMReg max_arg,
-                              int comp_args_on_stack, // VMRegStackSlots
-                              const BasicType *sig_bt,
-                              const VMRegPair *regs);
+                       // VMReg max_arg,
+                       int comp_args_on_stack, // VMRegStackSlots
+                       const BasicType *sig_bt,
+                       const VMRegPair *regs);
 
   AdapterGenerator(MacroAssembler *_masm) : masm(_masm) {}
 };
@@ -760,13 +763,11 @@ static void range_check(MacroAssembler* masm, Register pc_reg, Register temp_reg
   __ bind(L_fail);
 }
 
-void AdapterGenerator::gen_i2c_adapter(
-                            int total_args_passed,
-                            // VMReg max_arg,
-                            int comp_args_on_stack, // VMRegStackSlots
-                            const BasicType *sig_bt,
-                            const VMRegPair *regs) {
-
+void AdapterGenerator::gen_i2c_adapter(int total_args_passed,
+                                       // VMReg max_arg,
+                                       int comp_args_on_stack, // VMRegStackSlots
+                                       const BasicType *sig_bt,
+                                       const VMRegPair *regs) {
   // Generate an I2C adapter: adjust the I-frame to make space for the C-frame
   // layout.  Lesp was saved by the calling I-frame and will be restored on
   // return.  Meanwhile, outgoing arg space is all owned by the callee
@@ -990,6 +991,21 @@ void AdapterGenerator::gen_i2c_adapter(
 
   // Jump to the compiled code just as if compiled code was doing it.
   __ ld_ptr(G5_method, in_bytes(Method::from_compiled_offset()), G3);
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    // check if this call should be routed towards a specific entry point
+    __ ld(Address(G2_thread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())), G1);
+    __ cmp(G0, G1);
+    Label no_alternative_target;
+    __ br(Assembler::equal, false, Assembler::pn, no_alternative_target);
+    __ delayed()->nop();
+
+    __ ld_ptr(G2_thread, in_bytes(JavaThread::jvmci_alternate_call_target_offset()), G3);
+    __ st(G0, Address(G2_thread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+
+    __ bind(no_alternative_target);
+  }
+#endif // INCLUDE_JVMCI
 
   // 6243940 We might end up in handle_wrong_method if
   // the callee is deoptimized as we race thru here. If that
@@ -1006,6 +1022,15 @@ void AdapterGenerator::gen_i2c_adapter(
   __ delayed()->nop();
 }
 
+void SharedRuntime::gen_i2c_adapter(MacroAssembler *masm,
+                                    int total_args_passed,
+                                    int comp_args_on_stack,
+                                    const BasicType *sig_bt,
+                                    const VMRegPair *regs) {
+  AdapterGenerator agen(masm);
+  agen.gen_i2c_adapter(total_args_passed, comp_args_on_stack, sig_bt, regs);
+}
+
 // ---------------------------------------------------------------
 AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm,
                                                             int total_args_passed,
@@ -1016,9 +1041,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
                                                             AdapterFingerPrint* fingerprint) {
   address i2c_entry = __ pc();
 
-  AdapterGenerator agen(masm);
-
-  agen.gen_i2c_adapter(total_args_passed, comp_args_on_stack, sig_bt, regs);
+  gen_i2c_adapter(masm, total_args_passed, comp_args_on_stack, sig_bt, regs);
 
 
   // -------------------------------------------------------------------------
@@ -1063,7 +1086,7 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   }
 
   address c2i_entry = __ pc();
-
+  AdapterGenerator agen(masm);
   agen.gen_c2i_adapter(total_args_passed, comp_args_on_stack, sig_bt, regs, L_skip_fixup);
 
   __ flush();
@@ -2916,6 +2939,11 @@ void SharedRuntime::generate_deopt_blob() {
     pad += StackShadowPages*16 + 32;
   }
 #endif
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    pad += 1000; // Increase the buffer size when compiling for JVMCI
+  }
+#endif
 #ifdef _LP64
   CodeBuffer buffer("deopt_blob", 2100+pad, 512);
 #else
@@ -2982,6 +3010,45 @@ void SharedRuntime::generate_deopt_blob() {
   __ ba(cont);
   __ delayed()->mov(Deoptimization::Unpack_deopt, L0deopt_mode);
 
+
+#if INCLUDE_JVMCI
+  Label after_fetch_unroll_info_call;
+  int implicit_exception_uncommon_trap_offset = 0;
+  int uncommon_trap_offset = 0;
+
+  if (EnableJVMCI) {
+    masm->block_comment("BEGIN implicit_exception_uncommon_trap");
+    implicit_exception_uncommon_trap_offset = __ offset() - start;
+
+    __ ld_ptr(G2_thread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset()), O7);
+    __ st_ptr(G0, Address(G2_thread, in_bytes(JavaThread::jvmci_implicit_exception_pc_offset())));
+    __ add(O7, -8, O7);
+
+    uncommon_trap_offset = __ offset() - start;
+
+    // Save everything in sight.
+    (void) RegisterSaver::save_live_registers(masm, 0, &frame_size_words);
+    __ set_last_Java_frame(SP, NULL);
+
+    __ ld(G2_thread, in_bytes(JavaThread::pending_deoptimization_offset()), O1);
+    __ sub(G0, 1, L1);
+    __ st(L1, G2_thread, in_bytes(JavaThread::pending_deoptimization_offset()));
+
+    __ mov((int32_t)Deoptimization::Unpack_reexecute, L0deopt_mode);
+    __ mov(G2_thread, O0);
+    __ call(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap));
+    __ delayed()->nop();
+    oop_maps->add_gc_map( __ offset()-start, map->deep_copy());
+    __ get_thread();
+    __ add(O7, 8, O7);
+    __ reset_last_Java_frame();
+
+    __ ba(after_fetch_unroll_info_call);
+    __ delayed()->nop(); // Delay slot
+    masm->block_comment("END implicit_exception_uncommon_trap");
+  } // EnableJVMCI
+#endif // INCLUDE_JVMCI
+
   int exception_offset = __ offset() - start;
 
   // restore G2, the trampoline destroyed it
@@ -3004,6 +3071,7 @@ void SharedRuntime::generate_deopt_blob() {
   int exception_in_tls_offset = __ offset() - start;
 
   // No need to update oop_map  as each call to save_live_registers will produce identical oopmap
+  // Opens a new stack frame
   (void) RegisterSaver::save_live_registers(masm, 0, &frame_size_words);
 
   // Restore G2_thread
@@ -3035,7 +3103,12 @@ void SharedRuntime::generate_deopt_blob() {
   // Reexecute entry, similar to c2 uncommon trap
   //
   int reexecute_offset = __ offset() - start;
-
+#if INCLUDE_JVMCI && !defined(COMPILER1)
+  if (EnableJVMCI && UseJVMCICompiler) {
+    // JVMCI does not use this kind of deoptimization
+    __ should_not_reach_here();
+  }
+#endif
   // No need to update oop_map  as each call to save_live_registers will produce identical oopmap
   (void) RegisterSaver::save_live_registers(masm, 0, &frame_size_words);
 
@@ -3059,6 +3132,11 @@ void SharedRuntime::generate_deopt_blob() {
 
   __ reset_last_Java_frame();
 
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    __ bind(after_fetch_unroll_info_call);
+  }
+#endif
   // NOTE: we know that only O0/O1 will be reloaded by restore_result_registers
   // so this move will survive
 
@@ -3124,6 +3202,12 @@ void SharedRuntime::generate_deopt_blob() {
   masm->flush();
   _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, reexecute_offset, frame_size_words);
   _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    _deopt_blob->set_uncommon_trap_offset(uncommon_trap_offset);
+    _deopt_blob->set_implicit_exception_uncommon_trap_offset(implicit_exception_uncommon_trap_offset);
+  }
+#endif
 }
 
 #ifdef COMPILER2

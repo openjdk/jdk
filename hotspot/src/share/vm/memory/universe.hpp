@@ -248,9 +248,14 @@ class Universe: AllStatic {
 
   // Debugging
   static int _verify_count;                           // number of verifies done
+
   // True during call to verify().  Should only be set/cleared in verify().
   static bool _verify_in_progress;
 
+  static uintptr_t _verify_oop_mask;
+  static uintptr_t _verify_oop_bits;
+
+  static void calculate_verify_data(HeapWord* low_boundary, HeapWord* high_boundary) PRODUCT_RETURN;
   static void compute_verify_oop_data();
 
  public:

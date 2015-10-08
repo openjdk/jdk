@@ -124,7 +124,7 @@ void CallInfo::set_common(KlassHandle resolved_klass,
     // Note: with several active threads, the must_be_compiled may be true
     //       while can_be_compiled is false; remove assert
     // assert(CompilationPolicy::can_be_compiled(selected_method), "cannot compile");
-    if (THREAD->is_Compiler_thread()) {
+    if (!THREAD->can_call_java()) {
       // don't force compilation, resolve was on behalf of compiler
       return;
     }
@@ -450,7 +450,7 @@ methodHandle LinkResolver::lookup_polymorphic_method(
       }
       return result;
     } else if (iid == vmIntrinsics::_invokeGeneric
-               && !THREAD->is_Compiler_thread()
+               && THREAD->can_call_java()
                && appendix_result_or_null != NULL) {
       // This is a method with type-checking semantics.
       // We will ask Java code to spin an adapter method for it.

@@ -48,7 +48,6 @@
   address generate_Double_longBitsToDouble_entry();
   address generate_Double_doubleToRawLongBits_entry();
 #endif
-  void lock_method(void);
   void generate_stack_overflow_check(void);
 
   void generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue);

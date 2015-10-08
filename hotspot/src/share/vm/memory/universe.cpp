@@ -143,6 +143,10 @@ debug_only(int Universe::_fullgc_alot_dummy_next      = 0;)
 // Heap
 int             Universe::_verify_count = 0;
 
+// Oop verification (see MacroAssembler::verify_oop)
+uintptr_t       Universe::_verify_oop_mask = 0;
+uintptr_t       Universe::_verify_oop_bits = (uintptr_t) -1;
+
 int             Universe::_base_vtable_size = 0;
 bool            Universe::_bootstrapping = false;
 bool            Universe::_fully_initialized = false;
@@ -1171,17 +1175,9 @@ void Universe::verify(VerifyOption option, const char* prefix, bool silent) {
   _verify_in_progress = false;
 }
 
-// Oop verification (see MacroAssembler::verify_oop)
-
-static uintptr_t _verify_oop_data[2]   = {0, (uintptr_t)-1};
-static uintptr_t _verify_klass_data[2] = {0, (uintptr_t)-1};
-
 
 #ifndef PRODUCT
-
-static void calculate_verify_data(uintptr_t verify_data[2],
-                                  HeapWord* low_boundary,
-                                  HeapWord* high_boundary) {
+void Universe::calculate_verify_data(HeapWord* low_boundary, HeapWord* high_boundary) {
   assert(low_boundary < high_boundary, "bad interval");
 
   // decide which low-order bits we require to be clear:
@@ -1206,28 +1202,25 @@ static void calculate_verify_data(uintptr_t verify_data[2],
   // require address alignment, too:
   mask |= (alignSize - 1);
 
-  if (!(verify_data[0] == 0 && verify_data[1] == (uintptr_t)-1)) {
-    assert(verify_data[0] == mask && verify_data[1] == bits, "mask stability");
+  if (!(_verify_oop_mask == 0 && _verify_oop_bits == (uintptr_t)-1)) {
+    assert(_verify_oop_mask == mask && _verify_oop_bits == bits, "mask stability");
   }
-  verify_data[0] = mask;
-  verify_data[1] = bits;
+  _verify_oop_mask = mask;
+  _verify_oop_bits = bits;
 }
 
 // Oop verification (see MacroAssembler::verify_oop)
 
 uintptr_t Universe::verify_oop_mask() {
   MemRegion m = heap()->reserved_region();
-  calculate_verify_data(_verify_oop_data,
-                        m.start(),
-                        m.end());
-  return _verify_oop_data[0];
+  calculate_verify_data(m.start(), m.end());
+  return _verify_oop_mask;
 }
 
-
-
 uintptr_t Universe::verify_oop_bits() {
-  verify_oop_mask();
-  return _verify_oop_data[1];
+  MemRegion m = heap()->reserved_region();
+  calculate_verify_data(m.start(), m.end());
+  return _verify_oop_bits;
 }
 
 uintptr_t Universe::verify_mark_mask() {

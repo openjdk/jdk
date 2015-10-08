@@ -2254,6 +2254,8 @@ void Compile::Optimize() {
       if (failing())  return;
     }
   }
+  // Ensure that major progress is now clear
+  C->clear_major_progress();
 
   {
     // Verify that all previous optimizations produced a valid graph
