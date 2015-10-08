@@ -968,6 +968,8 @@ void ParNewGeneration::collect(bool   full,
                                               _gc_timer);
   }
   _gc_tracer.report_gc_reference_stats(stats);
+  _gc_tracer.report_tenuring_threshold(tenuring_threshold());
+
   if (!promotion_failed()) {
     // Swap the survivor spaces.
     eden()->clear(SpaceDecorator::Mangle);
@@ -1030,7 +1032,6 @@ void ParNewGeneration::collect(bool   full,
   rp->verify_no_references_recorded();
 
   gch->trace_heap_after_gc(gc_tracer());
-  _gc_tracer.report_tenuring_threshold(tenuring_threshold());
 
   _gc_timer->register_gc_end();
 

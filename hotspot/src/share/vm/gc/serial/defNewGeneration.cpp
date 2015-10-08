@@ -648,6 +648,7 @@ void DefNewGeneration::collect(bool   full,
   rp->process_discovered_references(&is_alive, &keep_alive, &evacuate_followers,
                                     NULL, _gc_timer);
   gc_tracer.report_gc_reference_stats(stats);
+  gc_tracer.report_tenuring_threshold(tenuring_threshold());
 
   if (!_promotion_failed) {
     // Swap the survivor spaces.
@@ -712,7 +713,6 @@ void DefNewGeneration::collect(bool   full,
   update_time_of_last_gc(now);
 
   gch->trace_heap_after_gc(&gc_tracer);
-  gc_tracer.report_tenuring_threshold(tenuring_threshold());
 
   _gc_timer->register_gc_end();
 
