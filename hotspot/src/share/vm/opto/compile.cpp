@@ -317,7 +317,7 @@ static inline bool not_a_node(const Node* n) {
 // Use breadth-first pass that records state in a Unique_Node_List,
 // recursive traversal is slower.
 void Compile::identify_useful_nodes(Unique_Node_List &useful) {
-  int estimated_worklist_size = unique();
+  int estimated_worklist_size = live_nodes();
   useful.map( estimated_worklist_size, NULL );  // preallocate space
 
   // Initialize worklist
@@ -3314,7 +3314,7 @@ bool Compile::final_graph_reshaping() {
   Final_Reshape_Counts frc;
 
   // Visit everybody reachable!
-  // Allocate stack of size C->unique()/2 to avoid frequent realloc
+  // Allocate stack of size C->live_nodes()/2 to avoid frequent realloc
   Node_Stack nstack(live_nodes() >> 1);
   final_graph_reshaping_walk(nstack, root(), frc);
 
