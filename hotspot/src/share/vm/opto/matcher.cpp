@@ -326,14 +326,14 @@ void Matcher::match( ) {
   grow_new_node_array(C->unique());
 
   // Reset node counter so MachNodes start with _idx at 0
-  int nodes = C->unique(); // save value
+  int live_nodes = C->live_nodes();
   C->set_unique(0);
   C->reset_dead_node_list();
 
   // Recursively match trees from old space into new space.
   // Correct leaves of new-space Nodes; they point to old-space.
   _visited.Clear();             // Clear visit bits for xform call
-  C->set_cached_top_node(xform( C->top(), nodes ));
+  C->set_cached_top_node(xform( C->top(), live_nodes ));
   if (!C->failing()) {
     Node* xroot =        xform( C->root(), 1 );
     if (xroot == NULL) {
@@ -1001,7 +1001,7 @@ class MStack: public Node_Stack {
 Node *Matcher::transform( Node *n ) { ShouldNotCallThis(); return n; }
 Node *Matcher::xform( Node *n, int max_stack ) {
   // Use one stack to keep both: child's node/state and parent's node/index
-  MStack mstack(max_stack * 2 * 2); // C->unique() * 2 * 2
+  MStack mstack(max_stack * 2 * 2); // usually: C->live_nodes() * 2 * 2
   mstack.push(n, Visit, NULL, -1);  // set NULL as parent to indicate root
 
   while (mstack.is_nonempty()) {
@@ -2076,7 +2076,7 @@ static bool clone_shift(Node* shift, Matcher* matcher, MStack& mstack, VectorSet
 //------------------------------find_shared------------------------------------
 // Set bits if Node is shared or otherwise a root
 void Matcher::find_shared( Node *n ) {
-  // Allocate stack of size C->unique() * 2 to avoid frequent realloc
+  // Allocate stack of size C->live_nodes() * 2 to avoid frequent realloc
   MStack mstack(C->live_nodes() * 2);
   // Mark nodes as address_visited if they are inputs to an address expression
   VectorSet address_visited(Thread::current()->resource_area());
