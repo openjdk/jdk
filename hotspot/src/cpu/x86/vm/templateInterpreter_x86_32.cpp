@@ -849,7 +849,7 @@ address InterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpre
     __ movl(end, Address(rsp, 4 + 0)); // end
     __ subl(len, Address(rsp, 4 + 1 * wordSize));  // end - offset == length
     // Calculate address of start element
-    if (kind == Interpreter::java_util_zip_CRC32_updateByteBuffer) {
+    if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) {
       __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // long address
       __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
       __ movl(crc, Address(rsp, 4 + 4 * wordSize)); // Initial CRC
