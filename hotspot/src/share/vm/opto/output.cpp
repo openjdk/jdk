@@ -116,12 +116,6 @@ void Compile::Output() {
     }
   }
 
-# ifdef ENABLE_ZAP_DEAD_LOCALS
-  if (ZapDeadCompiledLocals) {
-    Insert_zap_nodes();
-  }
-# endif
-
   uint* blk_starts = NEW_RESOURCE_ARRAY(uint, _cfg->number_of_blocks() + 1);
   blk_starts[0] = 0;
 
@@ -184,113 +178,6 @@ bool Compile::need_register_stack_bang() const {
   return (stub_function() == NULL && has_java_calls());
 }
 
-# ifdef ENABLE_ZAP_DEAD_LOCALS
-
-
-// In order to catch compiler oop-map bugs, we have implemented
-// a debugging mode called ZapDeadCompilerLocals.
-// This mode causes the compiler to insert a call to a runtime routine,
-// "zap_dead_locals", right before each place in compiled code
-// that could potentially be a gc-point (i.e., a safepoint or oop map point).
-// The runtime routine checks that locations mapped as oops are really
-// oops, that locations mapped as values do not look like oops,
-// and that locations mapped as dead are not used later
-// (by zapping them to an invalid address).
-
-int Compile::_CompiledZap_count = 0;
-
-void Compile::Insert_zap_nodes() {
-  bool skip = false;
-
-
-  // Dink with static counts because code code without the extra
-  // runtime calls is MUCH faster for debugging purposes
-
-       if ( CompileZapFirst  ==  0  ) ; // nothing special
-  else if ( CompileZapFirst  >  CompiledZap_count() )  skip = true;
-  else if ( CompileZapFirst  == CompiledZap_count() )
-    warning("starting zap compilation after skipping");
-
-       if ( CompileZapLast  ==  -1  ) ; // nothing special
-  else if ( CompileZapLast  <   CompiledZap_count() )  skip = true;
-  else if ( CompileZapLast  ==  CompiledZap_count() )
-    warning("about to compile last zap");
-
-  ++_CompiledZap_count; // counts skipped zaps, too
-
-  if ( skip )  return;
-
-
-  if ( _method == NULL )
-    return; // no safepoints/oopmaps emitted for calls in stubs,so we don't care
-
-  // Insert call to zap runtime stub before every node with an oop map
-  for( uint i=0; i<_cfg->number_of_blocks(); i++ ) {
-    Block *b = _cfg->get_block(i);
-    for ( uint j = 0;  j < b->number_of_nodes();  ++j ) {
-      Node *n = b->get_node(j);
-
-      // Determining if we should insert a zap-a-lot node in output.
-      // We do that for all nodes that has oopmap info, except for calls
-      // to allocation.  Calls to allocation passes in the old top-of-eden pointer
-      // and expect the C code to reset it.  Hence, there can be no safepoints between
-      // the inlined-allocation and the call to new_Java, etc.
-      // We also cannot zap monitor calls, as they must hold the microlock
-      // during the call to Zap, which also wants to grab the microlock.
-      bool insert = n->is_MachSafePoint() && (n->as_MachSafePoint()->oop_map() != NULL);
-      if ( insert ) { // it is MachSafePoint
-        if ( !n->is_MachCall() ) {
-          insert = false;
-        } else if ( n->is_MachCall() ) {
-          MachCallNode* call = n->as_MachCall();
-          if (call->entry_point() == OptoRuntime::new_instance_Java() ||
-              call->entry_point() == OptoRuntime::new_array_Java() ||
-              call->entry_point() == OptoRuntime::multianewarray2_Java() ||
-              call->entry_point() == OptoRuntime::multianewarray3_Java() ||
-              call->entry_point() == OptoRuntime::multianewarray4_Java() ||
-              call->entry_point() == OptoRuntime::multianewarray5_Java() ||
-              call->entry_point() == OptoRuntime::slow_arraycopy_Java() ||
-              call->entry_point() == OptoRuntime::complete_monitor_locking_Java()
-              ) {
-            insert = false;
-          }
-        }
-        if (insert) {
-          Node *zap = call_zap_node(n->as_MachSafePoint(), i);
-          b->insert_node(zap, j);
-          _cfg->map_node_to_block(zap, b);
-          ++j;
-        }
-      }
-    }
-  }
-}
-
-
-Node* Compile::call_zap_node(MachSafePointNode* node_to_check, int block_no) {
-  const TypeFunc *tf = OptoRuntime::zap_dead_locals_Type();
-  CallStaticJavaNode* ideal_node =
-    new CallStaticJavaNode( tf,
-         OptoRuntime::zap_dead_locals_stub(_method->flags().is_native()),
-                       "call zap dead locals stub", 0, TypePtr::BOTTOM);
-  // We need to copy the OopMap from the site we're zapping at.
-  // We have to make a copy, because the zap site might not be
-  // a call site, and zap_dead is a call site.
-  OopMap* clone = node_to_check->oop_map()->deep_copy();
-
-  // Add the cloned OopMap to the zap node
-  ideal_node->set_oop_map(clone);
-  return _matcher->match_sfpt(ideal_node);
-}
-
-bool Compile::is_node_getting_a_safepoint( Node* n) {
-  // This code duplicates the logic prior to the call of add_safepoint
-  // below in this file.
-  if( n->is_MachSafePoint() ) return true;
-  return false;
-}
-
-# endif // ENABLE_ZAP_DEAD_LOCALS
 
 // Compute the size of first NumberOfLoopInstrToAlign instructions at the top
 // of a loop. When aligning a loop we need to provide enough instructions
@@ -834,10 +721,6 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
   MachSafePointNode *sfn   = mach->as_MachSafePoint();
   MachCallNode      *mcall;
 
-#ifdef ENABLE_ZAP_DEAD_LOCALS
-  assert( is_node_getting_a_safepoint(mach),  "logic does not match; false negative");
-#endif
-
   int safepoint_pc_offset = current_offset;
   bool is_method_handle_invoke = false;
   bool return_oop = false;
@@ -1294,10 +1177,6 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       if (Pipeline::requires_bundling() && starts_bundle(n))
         cb->flush_bundle(false);
 
-      // The following logic is duplicated in the code ifdeffed for
-      // ENABLE_ZAP_DEAD_LOCALS which appears above in this file.  It
-      // should be factored out.  Or maybe dispersed to the nodes?
-
       // Special handling for SafePoint/Call Nodes
       bool is_mcall = false;
       if (n->is_Mach()) {
@@ -1364,9 +1243,6 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
             // !!!!! Stubs only need an oopmap right now, so bail out
             if (sfn->jvms()->method() == NULL) {
               // Write the oopmap directly to the code blob??!!
-#             ifdef ENABLE_ZAP_DEAD_LOCALS
-              assert( !is_node_getting_a_safepoint(sfn),  "logic does not match; false positive");
-#             endif
               continue;
             }
           } // End synchronization
@@ -1554,9 +1430,6 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
           // !!!!! Stubs only need an oopmap right now, so bail out
           if (!mach->is_MachCall() && mach->as_MachSafePoint()->jvms()->method() == NULL) {
             // Write the oopmap directly to the code blob??!!
-#           ifdef ENABLE_ZAP_DEAD_LOCALS
-            assert( !is_node_getting_a_safepoint(mach),  "logic does not match; false positive");
-#           endif
             delay_slot = NULL;
             continue;
           }

@@ -832,10 +832,12 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(StubRoutines,                _ghash_processBlocks,                          address)                               \
      static_field(StubRoutines,                _updateBytesCRC32,                             address)                               \
      static_field(StubRoutines,                _crc_table_adr,                                address)                               \
+     static_field(StubRoutines,                _crc32c_table_addr,                            address)                               \
      static_field(StubRoutines,                _updateBytesCRC32C,                            address)                               \
      static_field(StubRoutines,                _multiplyToLen,                                address)                               \
      static_field(StubRoutines,                _squareToLen,                                  address)                               \
      static_field(StubRoutines,                _mulAdd,                                       address)                               \
+     static_field(StubRoutines,                _dexp,                                         address)                               \
                                                                                                                                      \
   /*****************/                                                                                                                \
   /* SharedRuntime */                                                                                                                \
@@ -1991,7 +1993,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(TanDNode, Node)                                         \
   declare_c2_type(AtanDNode, Node)                                        \
   declare_c2_type(SqrtDNode, Node)                                        \
-  declare_c2_type(ExpDNode, Node)                                         \
   declare_c2_type(LogDNode, Node)                                         \
   declare_c2_type(Log10DNode, Node)                                       \
   declare_c2_type(PowDNode, Node)                                         \
@@ -2581,7 +2582,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_constant(OopMapValue::register_mask_in_place)                   \
   declare_constant(OopMapValue::unused_value)                             \
   declare_constant(OopMapValue::oop_value)                                \
-  declare_constant(OopMapValue::value_value)                              \
   declare_constant(OopMapValue::narrowoop_value)                          \
   declare_constant(OopMapValue::callee_saved_value)                       \
   declare_constant(OopMapValue::derived_oop_value)                        \
