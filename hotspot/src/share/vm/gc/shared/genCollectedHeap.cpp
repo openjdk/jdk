@@ -488,7 +488,7 @@ void GenCollectedHeap::do_collection(bool           full,
     bool must_restore_marks_for_biased_locking = false;
 
     if (max_generation == OldGen && _old_gen->should_collect(full, size, is_tlab)) {
-      GCIdMark gc_id_mark;
+      GCIdMarkAndRestore gc_id_mark;
       if (!complete) {
         // The full_collections increment was missed above.
         increment_total_full_collections();

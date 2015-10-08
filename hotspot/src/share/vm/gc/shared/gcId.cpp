@@ -59,3 +59,11 @@ GCIdMark::~GCIdMark() {
   currentNamedthread()->set_gc_id(GCId::undefined());
 }
 
+GCIdMarkAndRestore::GCIdMarkAndRestore() : _gc_id(GCId::create()) {
+  _previous_gc_id = GCId::current(); // will assert that the GC Id is not undefinied
+  currentNamedthread()->set_gc_id(_gc_id);
+}
+
+GCIdMarkAndRestore::~GCIdMarkAndRestore() {
+  currentNamedthread()->set_gc_id(_previous_gc_id);
+}

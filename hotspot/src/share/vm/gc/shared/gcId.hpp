@@ -29,6 +29,7 @@
 
 class GCId : public AllStatic {
   friend class GCIdMark;
+  friend class GCIdMarkAndRestore;
   static uint _next_id;
   static const uint UNDEFINED = (uint)-1;
   static const uint create();
@@ -47,6 +48,14 @@ class GCIdMark : public StackObj {
   GCIdMark();
   GCIdMark(uint gc_id);
   ~GCIdMark();
+};
+
+class GCIdMarkAndRestore : public StackObj {
+  uint _gc_id;
+  uint _previous_gc_id;
+ public:
+  GCIdMarkAndRestore();
+  ~GCIdMarkAndRestore();
 };
 
 #endif // SHARE_VM_GC_SHARED_GCID_HPP
