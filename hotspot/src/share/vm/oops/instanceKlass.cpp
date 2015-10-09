@@ -66,8 +66,6 @@
 #include "c1/c1_Compiler.hpp"
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 #ifdef DTRACE_ENABLED
 
 
@@ -1028,7 +1026,7 @@ instanceOop InstanceKlass::register_finalizer(instanceOop i, TRAPS) {
   if (TraceFinalizerRegistration) {
     tty->print("Registered ");
     i->print_value_on(tty);
-    tty->print_cr(" (" INTPTR_FORMAT ") as finalizable", (address)i);
+    tty->print_cr(" (" INTPTR_FORMAT ") as finalizable", p2i(i));
   }
   instanceHandle h_i(THREAD, i);
   // Pass the handle as argument, JavaCalls::call expects oop as jobjects
@@ -1131,7 +1129,7 @@ void InstanceKlass::call_class_initializer_impl(instanceKlassHandle this_k, TRAP
   if (TraceClassInitialization) {
     tty->print("%d Initializing ", call_class_initializer_impl_counter++);
     this_k->name()->print_value();
-    tty->print_cr("%s (" INTPTR_FORMAT ")", h_method() == NULL ? "(no method)" : "", (address)this_k());
+    tty->print_cr("%s (" INTPTR_FORMAT ")", h_method() == NULL ? "(no method)" : "", p2i(this_k()));
   }
   if (h_method() != NULL) {
     JavaCallArguments args; // No arguments
@@ -2797,7 +2795,7 @@ void InstanceKlass::print_on(outputStream* st) const {
       st->print("   ");
     }
   }
-  if (n >= MaxSubklassPrintSize) st->print("(%d more klasses...)", n - MaxSubklassPrintSize);
+  if (n >= MaxSubklassPrintSize) st->print("(" INTX_FORMAT " more klasses...)", n - MaxSubklassPrintSize);
   st->cr();
 
   if (is_interface()) {
@@ -2873,9 +2871,9 @@ void InstanceKlass::print_on(outputStream* st) const {
   }
   st->print(BULLET"inner classes:     "); inner_classes()->print_value_on(st);     st->cr();
   st->print(BULLET"java mirror:       "); java_mirror()->print_value_on(st);       st->cr();
-  st->print(BULLET"vtable length      %d  (start addr: " INTPTR_FORMAT ")", vtable_length(), start_of_vtable());  st->cr();
+  st->print(BULLET"vtable length      %d  (start addr: " INTPTR_FORMAT ")", vtable_length(), p2i(start_of_vtable())); st->cr();
   if (vtable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_vtable(), vtable_length(), st);
-  st->print(BULLET"itable length      %d (start addr: " INTPTR_FORMAT ")", itable_length(), start_of_itable()); st->cr();
+  st->print(BULLET"itable length      %d (start addr: " INTPTR_FORMAT ")", itable_length(), p2i(start_of_itable())); st->cr();
   if (itable_length() > 0 && (Verbose || WizardMode))  print_vtable(start_of_itable(), itable_length(), st);
   st->print_cr(BULLET"---- static fields (%d words):", static_field_size());
   FieldPrinter print_static_field(st);
@@ -3068,7 +3066,7 @@ class VerifyFieldClosure: public OopClosure {
   template <class T> void do_oop_work(T* p) {
     oop obj = oopDesc::load_decode_heap_oop(p);
     if (!obj->is_oop_or_null()) {
-      tty->print_cr("Failed: " PTR_FORMAT " -> " PTR_FORMAT, p, (address)obj);
+      tty->print_cr("Failed: " PTR_FORMAT " -> " PTR_FORMAT, p2i(p), p2i(obj));
       Universe::print();
       guarantee(false, "boom");
     }
@@ -3110,7 +3108,7 @@ void InstanceKlass::verify_on(outputStream* st) {
   Klass* sib = next_sibling();
   if (sib != NULL) {
     if (sib == this) {
-      fatal("subclass points to itself " PTR_FORMAT, sib);
+      fatal("subclass points to itself " PTR_FORMAT, p2i(sib));
     }
 
     guarantee(sib->is_klass(), "should be klass");
@@ -3310,7 +3308,7 @@ void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
         // The previous version InstanceKlass is on the ClassLoaderData deallocate list
         // so will be deallocated during the next phase of class unloading.
         RC_TRACE(0x00000200, ("purge: previous version " INTPTR_FORMAT " is dead",
-                              pv_node));
+                              p2i(pv_node)));
         // For debugging purposes.
         pv_node->set_is_scratch_class();
         pv_node->class_loader_data()->add_to_deallocate_list(pv_node);
@@ -3321,7 +3319,7 @@ void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
         continue;
       } else {
         RC_TRACE(0x00000200, ("purge: previous version " INTPTR_FORMAT " is alive",
-                              pv_node));
+                              p2i(pv_node)));
         assert(pvcp->pool_holder() != NULL, "Constant pool with no holder");
         guarantee (!loader_data->is_unloading(), "unloaded classes can't be on the stack");
         live_count++;
@@ -3472,10 +3470,10 @@ void InstanceKlass::add_previous_version(instanceKlassHandle scratch_class,
         // is never reached, but this won't be noticeable to the programmer.
         old_method->set_running_emcp(true);
         RC_TRACE(0x00000400, ("add: EMCP method %s is on_stack " INTPTR_FORMAT,
-                              old_method->name_and_sig_as_C_string(), old_method));
+                              old_method->name_and_sig_as_C_string(), p2i(old_method)));
       } else if (!old_method->is_obsolete()) {
         RC_TRACE(0x00000400, ("add: EMCP method %s is NOT on_stack " INTPTR_FORMAT,
-                              old_method->name_and_sig_as_C_string(), old_method));
+                              old_method->name_and_sig_as_C_string(), p2i(old_method)));
       }
     }
   }

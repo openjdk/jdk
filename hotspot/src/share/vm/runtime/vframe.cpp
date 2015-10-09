@@ -46,8 +46,6 @@
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 vframe::vframe(const frame* fr, const RegisterMap* reg_map, JavaThread* thread)
 : _reg_map(reg_map), _thread(thread) {
   assert(fr != NULL, "must have frame");
@@ -146,7 +144,7 @@ GrowableArray<MonitorInfo*>* javaVFrame::locked_monitors() {
 
 void javaVFrame::print_locked_object_class_name(outputStream* st, Handle obj, const char* lock_state) {
   if (obj.not_null()) {
-    st->print("\t- %s <" INTPTR_FORMAT "> ", lock_state, (address)obj());
+    st->print("\t- %s <" INTPTR_FORMAT "> ", lock_state, p2i(obj()));
     if (obj->klass() == SystemDictionary::Class_klass()) {
       st->print_cr("(a java.lang.Class for %s)", java_lang_Class::as_external_name(obj()));
     } else {
@@ -186,7 +184,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
     } else if (thread()->current_park_blocker() != NULL) {
       oop obj = thread()->current_park_blocker();
       Klass* k = obj->klass();
-      st->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", "parking to wait for ", (address)obj, k->external_name());
+      st->print_cr("\t- %s <" INTPTR_FORMAT "> (a %s)", "parking to wait for ", p2i(obj), k->external_name());
     }
   }
 
@@ -583,7 +581,7 @@ void entryVFrame::print_value() const {
 void entryVFrame::print() {
   vframe::print();
   tty->print_cr("C Chunk inbetween Java");
-  tty->print_cr("C     link " INTPTR_FORMAT, _fr.link());
+  tty->print_cr("C     link " INTPTR_FORMAT, p2i(_fr.link()));
 }
 
 
@@ -620,7 +618,7 @@ void javaVFrame::print() {
       tty->print("( null )");
     } else {
       monitor->owner()->print_value();
-      tty->print("(owner=" INTPTR_FORMAT ")", (address)monitor->owner());
+      tty->print("(owner=" INTPTR_FORMAT ")", p2i(monitor->owner()));
     }
     if (monitor->eliminated()) {
       if(is_compiled_frame()) {
@@ -641,7 +639,7 @@ void javaVFrame::print_value() const {
   Method*    m = method();
   InstanceKlass*     k = m->method_holder();
   tty->print_cr("frame( sp=" INTPTR_FORMAT ", unextended_sp=" INTPTR_FORMAT ", fp=" INTPTR_FORMAT ", pc=" INTPTR_FORMAT ")",
-                _fr.sp(),  _fr.unextended_sp(), _fr.fp(), _fr.pc());
+                p2i(_fr.sp()),  p2i(_fr.unextended_sp()), p2i(_fr.fp()), p2i(_fr.pc()));
   tty->print("%s.%s", k->internal_name(), m->name()->as_C_string());
 
   if (!m->is_native()) {

@@ -45,8 +45,6 @@
 #include "utilities/top.hpp"
 #include "utilities/vmError.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // List of environment variables that should be reported in error log file.
 const char *env_list[] = {
   // All platforms
@@ -284,14 +282,14 @@ void VMError::report(outputStream* st, bool _verbose) {
   // error handler after a secondary crash works.
   STEP(20, "(test secondary crash 1)")
     if (_verbose && TestCrashInErrorHandler != 0) {
-      st->print_cr("Will crash now (TestCrashInErrorHandler=%d)...",
+      st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
 
   STEP(30, "(test secondary crash 2)")
     if (_verbose && TestCrashInErrorHandler != 0) {
-      st->print_cr("Will crash now (TestCrashInErrorHandler=%d)...",
+      st->print_cr("Will crash now (TestCrashInErrorHandler=" UINTX_FORMAT ")...",
         TestCrashInErrorHandler);
       controlled_crash(TestCrashInErrorHandler);
     }
@@ -360,7 +358,7 @@ void VMError::report(outputStream* st, bool _verbose) {
      if (os::exception_name(_id, buf, sizeof(buf))) {
        st->print("%s", buf);
        st->print(" (0x%x)", _id);                // signal number
-       st->print(" at pc=" PTR_FORMAT, _pc);
+       st->print(" at pc=" PTR_FORMAT, p2i(_pc));
      } else {
        if (should_report_bug(_id)) {
          st->print("Internal Error");
@@ -495,7 +493,7 @@ void VMError::report(outputStream* st, bool _verbose) {
      // current thread
      if (_verbose) {
        if (_thread) {
-         st->print("Current thread (" PTR_FORMAT "):  ", _thread);
+         st->print("Current thread (" PTR_FORMAT "):  ", p2i(_thread));
          _thread->print_on_error(st, buf, sizeof(buf));
          st->cr();
        } else {
@@ -534,13 +532,13 @@ void VMError::report(outputStream* st, bool _verbose) {
        }
 
        address stack_bottom = stack_top - stack_size;
-       st->print("[" PTR_FORMAT "," PTR_FORMAT "]", stack_bottom, stack_top);
+       st->print("[" PTR_FORMAT "," PTR_FORMAT "]", p2i(stack_bottom), p2i(stack_top));
 
        frame fr = _context ? os::fetch_frame_from_context(_context)
                            : os::current_frame();
 
        if (fr.sp()) {
-         st->print(",  sp=" PTR_FORMAT, fr.sp());
+         st->print(",  sp=" PTR_FORMAT, p2i(fr.sp()));
          size_t free_stack_size = pointer_delta(fr.sp(), stack_bottom, 1024);
          st->print(",  free space=" SIZE_FORMAT "k", free_stack_size);
        }
@@ -574,7 +572,7 @@ void VMError::report(outputStream* st, bool _verbose) {
      if (_verbose && _thread && (_thread->is_Named_thread())) {
        JavaThread*  jt = ((NamedThread *)_thread)->processed_thread();
        if (jt != NULL) {
-         st->print_cr("JavaThread " PTR_FORMAT " (nid = " UINTX_FORMAT ") was being processed", jt, jt->osthread()->thread_id());
+         st->print_cr("JavaThread " PTR_FORMAT " (nid = %d) was being processed", p2i(jt), jt->osthread()->thread_id());
          print_stack_trace(st, jt, buf, sizeof(buf), true);
        }
      }
@@ -686,7 +684,7 @@ void VMError::report(outputStream* st, bool _verbose) {
        Universe::heap()->print_on_error(st);
        st->cr();
 
-       st->print_cr("Polling page: " INTPTR_FORMAT, os::get_polling_page());
+       st->print_cr("Polling page: " INTPTR_FORMAT, p2i(os::get_polling_page()));
        st->cr();
      }
 

@@ -36,8 +36,6 @@
 #include "runtime/vframe.hpp"
 #include "utilities/preserveException.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Implementation of InterfaceSupport
 
 #ifdef ASSERT
@@ -73,7 +71,7 @@ RuntimeHistogramElement::RuntimeHistogramElement(const char* elementName) {
 }
 
 void InterfaceSupport::trace(const char* result_type, const char* header) {
-  tty->print_cr("%6d  %s", _number_of_calls, header);
+  tty->print_cr("%6ld  %s", _number_of_calls, header);
 }
 
 void InterfaceSupport::gc_alot() {
@@ -109,8 +107,7 @@ void InterfaceSupport::gc_alot() {
       if (FullGCALotInterval > 1) {
         _fullgc_alot_counter = 1+(long)((double)FullGCALotInterval*os::random()/(max_jint+1.0));
         if (PrintGCDetails && Verbose) {
-          tty->print_cr("Full gc no: %u\tInterval: %d", invocations,
-                        _fullgc_alot_counter);
+          tty->print_cr("Full gc no: %u\tInterval: %ld", invocations, _fullgc_alot_counter);
         }
       } else {
         _fullgc_alot_counter = 1;
@@ -130,8 +127,7 @@ void InterfaceSupport::gc_alot() {
         if (ScavengeALotInterval > 1) {
           _scavenge_alot_counter = 1+(long)((double)ScavengeALotInterval*os::random()/(max_jint+1.0));
           if (PrintGCDetails && Verbose) {
-            tty->print_cr("Scavenge no: %u\tInterval: %d", invocations,
-                          _scavenge_alot_counter);
+            tty->print_cr("Scavenge no: %u\tInterval: %ld", invocations, _scavenge_alot_counter);
           }
         } else {
           _scavenge_alot_counter = 1;

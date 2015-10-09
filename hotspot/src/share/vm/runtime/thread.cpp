@@ -112,8 +112,6 @@
 #include "runtime/rtmLocking.hpp"
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 #ifdef DTRACE_ENABLED
 
 // Only bother with this argument setup if dtrace is available
@@ -165,7 +163,7 @@ void* Thread::allocate(size_t size, bool throw_excpt, MEMFLAGS flags) {
     if (TraceBiasedLocking) {
       if (aligned_addr != real_malloc_addr) {
         tty->print_cr("Aligned thread " INTPTR_FORMAT " to " INTPTR_FORMAT,
-                      real_malloc_addr, aligned_addr);
+                      p2i(real_malloc_addr), p2i(aligned_addr));
       }
     }
     ((Thread*) aligned_addr)->_real_malloc_address = real_malloc_addr;
@@ -799,7 +797,7 @@ void Thread::print_on(outputStream* st) const {
     if (os::get_native_priority(this, &os_prio) == OS_OK) {
       st->print("os_prio=%d ", os_prio);
     }
-    st->print("tid=" INTPTR_FORMAT " ", this);
+    st->print("tid=" INTPTR_FORMAT " ", p2i(this));
     ext().print_on(st);
     osthread()->print_on(st);
   }
@@ -818,7 +816,7 @@ void Thread::print_on_error(outputStream* st, char* buf, int buflen) const {
   else                                st->print("Thread");
 
   st->print(" [stack: " PTR_FORMAT "," PTR_FORMAT "]",
-            _stack_base - _stack_size, _stack_base);
+            p2i(_stack_base - _stack_size), p2i(_stack_base));
 
   if (osthread()) {
     st->print(" [id=%d]", osthread()->thread_id());
@@ -2042,10 +2040,10 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
 
       if (TraceExceptions) {
         ResourceMark rm;
-        tty->print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", this);
+        tty->print("Async. exception installed at runtime exit (" INTPTR_FORMAT ")", p2i(this));
         if (has_last_Java_frame()) {
           frame f = last_frame();
-          tty->print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", f.pc(), f.sp());
+          tty->print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", p2i(f.pc()), p2i(f.sp()));
         }
         tty->print_cr(" of type: %s", InstanceKlass::cast(_pending_async_exception->klass())->external_name());
       }
@@ -2619,7 +2617,7 @@ void JavaThread::deoptimized_wrt_marked_nmethods() {
     if (fst.current()->should_be_deoptimized()) {
       if (LogCompilation && xtty != NULL) {
         nmethod* nm = fst.current()->cb()->as_nmethod_or_null();
-        xtty->elem("deoptimized thread='" UINTX_FORMAT "' compile_id='%d'",
+        xtty->elem("deoptimized thread='%s' compile_id='%d'",
                    this->name(), nm != NULL ? nm->compile_id() : -1);
       }
 
@@ -2812,7 +2810,7 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
     st->print(", id=%d", osthread()->thread_id());
   }
   st->print(", stack(" PTR_FORMAT "," PTR_FORMAT ")",
-            _stack_base - _stack_size, _stack_base);
+            p2i(_stack_base - _stack_size), p2i(_stack_base));
   st->print("]");
   return;
 }
@@ -3050,15 +3048,15 @@ class PrintAndVerifyOopClosure: public OopClosure {
   template <class T> inline void do_oop_work(T* p) {
     oop obj = oopDesc::load_decode_heap_oop(p);
     if (obj == NULL) return;
-    tty->print(INTPTR_FORMAT ": ", p);
+    tty->print(INTPTR_FORMAT ": ", p2i(p));
     if (obj->is_oop_or_null()) {
       if (obj->is_objArray()) {
-        tty->print_cr("valid objArray: " INTPTR_FORMAT, (oopDesc*) obj);
+        tty->print_cr("valid objArray: " INTPTR_FORMAT, p2i(obj));
       } else {
         obj->print();
       }
     } else {
-      tty->print_cr("invalid oop: " INTPTR_FORMAT, (oopDesc*) obj);
+      tty->print_cr("invalid oop: " INTPTR_FORMAT, p2i(obj));
     }
     tty->cr();
   }
@@ -4016,7 +4014,7 @@ void Threads::add(JavaThread* p, bool force_daemon) {
   ThreadService::add_thread(p, daemon);
 
   // Possible GC point.
-  Events::log(p, "Thread added: " INTPTR_FORMAT, p);
+  Events::log(p, "Thread added: " INTPTR_FORMAT, p2i(p));
 }
 
 void Threads::remove(JavaThread* p) {
@@ -4062,7 +4060,7 @@ void Threads::remove(JavaThread* p) {
   } // unlock Threads_lock
 
   // Since Events::log uses a lock, we grab it outside the Threads_lock
-  Events::log(p, "Thread exited: " INTPTR_FORMAT, p);
+  Events::log(p, "Thread exited: " INTPTR_FORMAT, p2i(p));
 }
 
 // Threads_lock must be held when this is called (or must be called during a safepoint)
@@ -4305,7 +4303,7 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
 
     st->print("%s", is_current ? "=>" : "  ");
 
-    st->print(PTR_FORMAT, thread);
+    st->print(PTR_FORMAT, p2i(thread));
     st->print(" ");
     thread->print_on_error(st, buf, buflen);
     st->cr();
@@ -4318,7 +4316,7 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
     found_current = found_current || is_current;
     st->print("%s", current == VMThread::vm_thread() ? "=>" : "  ");
 
-    st->print(PTR_FORMAT, VMThread::vm_thread());
+    st->print(PTR_FORMAT, p2i(VMThread::vm_thread()));
     st->print(" ");
     VMThread::vm_thread()->print_on_error(st, buf, buflen);
     st->cr();
@@ -4329,14 +4327,14 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
     found_current = found_current || is_current;
     st->print("%s", is_current ? "=>" : "  ");
 
-    st->print(PTR_FORMAT, wt);
+    st->print(PTR_FORMAT, p2i(wt));
     st->print(" ");
     wt->print_on_error(st, buf, buflen);
     st->cr();
   }
   if (!found_current) {
     st->cr();
-    st->print("=>" PTR_FORMAT " (exited) ", current);
+    st->print("=>" PTR_FORMAT " (exited) ", p2i(current));
     current->print_on_error(st, buf, buflen);
     st->cr();
   }

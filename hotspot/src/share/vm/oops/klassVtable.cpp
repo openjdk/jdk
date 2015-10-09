@@ -38,8 +38,6 @@
 #include "runtime/handles.inline.hpp"
 #include "utilities/copy.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 inline InstanceKlass* klassVtable::ik() const {
   Klass* k = _klass();
   assert(k->oop_is_instance(), "not an InstanceKlass");
@@ -1505,7 +1503,7 @@ void vtableEntry::verify(klassVtable* vt, outputStream* st) {
 #ifndef PRODUCT
     print();
 #endif
-    fatal("vtableEntry " PTR_FORMAT ": method is from subclass", this);
+    fatal("vtableEntry " PTR_FORMAT ": method is from subclass", p2i(this));
   }
 }
 
@@ -1515,7 +1513,7 @@ void vtableEntry::print() {
   ResourceMark rm;
   tty->print("vtableEntry %s: ", method()->name()->as_C_string());
   if (Verbose) {
-    tty->print("m %#lx ", (address)method());
+    tty->print("m " PTR_FORMAT " ", p2i(method()));
   }
 }
 
@@ -1586,7 +1584,7 @@ long klassItable::_total_size;      // Total no. of bytes used for itables
 void klassItable::print_statistics() {
  tty->print_cr("itable statistics:");
  tty->print_cr("%6d classes with itables", _total_classes);
- tty->print_cr("%6d K uses for itables (average by class: %d bytes)", _total_size / K, _total_size / _total_classes);
+ tty->print_cr("%6lu K uses for itables (average by class: %ld bytes)", _total_size / K, _total_size / _total_classes);
 }
 
 #endif // PRODUCT

@@ -50,7 +50,6 @@
 #define O_BINARY 0     // otherwise do nothing.
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 extern address JVM_FunctionAtStart();
 extern address JVM_FunctionAtEnd();
 
@@ -443,8 +442,8 @@ void FileMapInfo::write_region(int region, char* base, size_t size,
   if (_file_open) {
     guarantee(si->_file_offset == _file_offset, "file offset mismatch.");
     if (PrintSharedSpaces) {
-      tty->print_cr("Shared file region %d: 0x%6x bytes, addr " INTPTR_FORMAT
-                    " file offset 0x%6x", region, size, base, _file_offset);
+      tty->print_cr("Shared file region %d: " SIZE_FORMAT_HEX_W(6) " bytes, addr " INTPTR_FORMAT
+                    " file offset " SIZE_FORMAT_HEX_W(6), region, size, p2i(base), _file_offset);
     }
   } else {
     si->_file_offset = _file_offset;
@@ -602,7 +601,8 @@ ReservedSpace FileMapInfo::reserve_shared_memory() {
   // other reserved memory (like the code cache).
   ReservedSpace rs(size, os::vm_allocation_granularity(), false, requested_addr);
   if (!rs.is_reserved()) {
-    fail_continue("Unable to reserve shared space at required address " INTPTR_FORMAT, requested_addr);
+    fail_continue("Unable to reserve shared space at required address "
+                  INTPTR_FORMAT, p2i(requested_addr));
     return rs;
   }
   // the reserved virtual memory is for mapping class data sharing archive
@@ -659,7 +659,7 @@ bool FileMapInfo::map_string_regions() {
         tty->print_cr("Shared string data from the CDS archive is being ignored. "
                      "The current CompressedOops/CompressedClassPointers encoding differs from "
                      "that archived due to heap size change. The archive was dumped using max heap "
-                     "size %dM.", max_heap_size()/M);
+                     "size " UINTX_FORMAT "M.", max_heap_size()/M);
       }
     } else {
       string_ranges = new MemRegion[MetaspaceShared::max_strings];
@@ -896,7 +896,7 @@ bool FileMapInfo::FileMapHeader::validate() {
   }
   if (_obj_alignment != ObjectAlignmentInBytes) {
     FileMapInfo::fail_continue("The shared archive file's ObjectAlignmentInBytes of %d"
-                  " does not equal the current ObjectAlignmentInBytes of %d.",
+                  " does not equal the current ObjectAlignmentInBytes of " INTX_FORMAT ".",
                   _obj_alignment, ObjectAlignmentInBytes);
     return false;
   }
@@ -951,7 +951,7 @@ void FileMapInfo::print_shared_spaces() {
     char *base = _header->region_addr(i);
     gclog_or_tty->print("  %s " INTPTR_FORMAT "-" INTPTR_FORMAT,
                         shared_region_name[i],
-                        base, base + si->_used);
+                        p2i(base), p2i(base + si->_used));
   }
 }
 

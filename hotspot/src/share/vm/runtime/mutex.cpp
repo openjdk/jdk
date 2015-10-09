@@ -42,8 +42,6 @@
 # include "mutex_bsd.inline.hpp"
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o-o
 //
 // Native Monitor-Mutex locking - theory of operations
@@ -1212,9 +1210,9 @@ bool Monitor::owned_by_self() const {
 }
 
 void Monitor::print_on_error(outputStream* st) const {
-  st->print("[" PTR_FORMAT, this);
+  st->print("[" PTR_FORMAT, p2i(this));
   st->print("] %s", _name);
-  st->print(" - owner thread: " PTR_FORMAT, _owner);
+  st->print(" - owner thread: " PTR_FORMAT, p2i(_owner));
 }
 
 
@@ -1225,7 +1223,8 @@ void Monitor::print_on_error(outputStream* st) const {
 
 #ifndef PRODUCT
 void Monitor::print_on(outputStream* st) const {
-  st->print_cr("Mutex: [0x%lx/0x%lx] %s - owner: 0x%lx", this, _LockWord.FullWord, _name, _owner);
+  st->print_cr("Mutex: [" PTR_FORMAT "/" PTR_FORMAT "] %s - owner: " PTR_FORMAT,
+               p2i(this), _LockWord.FullWord, _name, p2i(_owner));
 }
 #endif
 

@@ -35,8 +35,6 @@
 #include "utilities/events.hpp"
 #include "utilities/exceptions.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Implementation of ThreadShadow
 void check_ThreadShadow() {
   const ByteSize offset1 = byte_offset_of(ThreadShadow, _pending_exception);
@@ -144,7 +142,7 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
                   "thrown [%s, line %d]\nfor thread " INTPTR_FORMAT,
                   h_exception->print_value_string(),
                   message ? ": " : "", message ? message : "",
-                  (address)h_exception(), file, line, thread);
+                  p2i(h_exception()), file, line, p2i(thread));
   }
   // for AbortVMOnException flag
   NOT_PRODUCT(Exceptions::debug_check_abort(h_exception, message));
@@ -167,7 +165,7 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
   if (LogEvents){
     Events::log_exception(thread, "Exception <%s%s%s> (" INTPTR_FORMAT ") thrown at [%s, line %d]",
                           h_exception->print_value_string(), message ? ": " : "", message ? message : "",
-                          (address)h_exception(), file, line);
+                          p2i(h_exception()), file, line);
   }
 }
 

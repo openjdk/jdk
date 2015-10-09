@@ -29,8 +29,6 @@
 #include "oops/oop.inline.hpp"
 #include "services/memTracker.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // ReservedSpace
 
 // Dummy constructor
@@ -82,7 +80,7 @@ static bool failed_to_reserve_as_requested(char* base, char* requested_address,
     assert(UseCompressedOops, "currently requested address used only for compressed oops");
     if (PrintCompressedOopsMode) {
       tty->cr();
-      tty->print_cr("Reserved memory not at requested address: " PTR_FORMAT " vs " PTR_FORMAT, base, requested_address);
+      tty->print_cr("Reserved memory not at requested address: " PTR_FORMAT " vs " PTR_FORMAT, p2i(base), p2i(requested_address));
     }
     // OS ignored requested address. Try different address.
     if (special) {
@@ -138,8 +136,8 @@ void ReservedSpace::initialize(size_t size, size_t alignment, bool large,
       // Check alignment constraints.
       assert((uintptr_t) base % alignment == 0,
              "Large pages returned a non-aligned address, base: "
-             PTR_FORMAT " alignment: " PTR_FORMAT,
-             base, (void*)(uintptr_t)alignment);
+             PTR_FORMAT " alignment: " SIZE_FORMAT_HEX,
+             p2i(base), alignment);
       _special = true;
     } else {
       // failed; try to reserve regular memory below
@@ -291,7 +289,7 @@ void ReservedHeapSpace::establish_noaccess_prefix() {
       if (PrintCompressedOopsMode) {
         tty->cr();
         tty->print_cr("Protected page at the reserved heap base: "
-                      PTR_FORMAT " / " INTX_FORMAT " bytes", _base, _noaccess_prefix);
+                      PTR_FORMAT " / " INTX_FORMAT " bytes", p2i(_base), _noaccess_prefix);
       }
       assert(Universe::narrow_oop_use_implicit_null_checks() == true, "not initialized?");
     } else {
@@ -324,8 +322,8 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
   char* base = NULL;
 
   if (PrintCompressedOopsMode && Verbose) {
-    tty->print("Trying to allocate at address " PTR_FORMAT " heap of size " PTR_FORMAT ".\n",
-               requested_address, (address)size);
+    tty->print("Trying to allocate at address " PTR_FORMAT " heap of size " SIZE_FORMAT_HEX ".\n",
+               p2i(requested_address), size);
   }
 
   if (special) {
@@ -335,8 +333,8 @@ void ReservedHeapSpace::try_reserve_heap(size_t size,
       // Check alignment constraints.
       assert((uintptr_t) base % alignment == 0,
              "Large pages returned a non-aligned address, base: "
-             PTR_FORMAT " alignment: " PTR_FORMAT,
-             base, (void*)(uintptr_t)alignment);
+             PTR_FORMAT " alignment: " SIZE_FORMAT_HEX,
+             p2i(base), alignment);
       _special = true;
     }
   }
@@ -561,7 +559,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     // Last, desperate try without any placement.
     if (_base == NULL) {
       if (PrintCompressedOopsMode && Verbose) {
-        tty->print("Trying to allocate at address NULL heap of size " PTR_FORMAT ".\n", (address)size + noaccess_prefix);
+        tty->print("Trying to allocate at address NULL heap of size " SIZE_FORMAT_HEX ".\n", size + noaccess_prefix);
       }
       initialize(size + noaccess_prefix, alignment, large, NULL, false);
     }
@@ -853,7 +851,7 @@ bool VirtualSpace::expand_by(size_t bytes, bool pre_touch) {
     if (!os::commit_memory(lower_high(), lower_needs, _executable)) {
       debug_only(warning("INFO: os::commit_memory(" PTR_FORMAT
                          ", lower_needs=" SIZE_FORMAT ", %d) failed",
-                         lower_high(), lower_needs, _executable);)
+                         p2i(lower_high()), lower_needs, _executable);)
       return false;
     } else {
       _lower_high += lower_needs;
@@ -867,7 +865,7 @@ bool VirtualSpace::expand_by(size_t bytes, bool pre_touch) {
                            _executable)) {
       debug_only(warning("INFO: os::commit_memory(" PTR_FORMAT
                          ", middle_needs=" SIZE_FORMAT ", " SIZE_FORMAT
-                         ", %d) failed", middle_high(), middle_needs,
+                         ", %d) failed", p2i(middle_high()), middle_needs,
                          middle_alignment(), _executable);)
       return false;
     }
@@ -880,7 +878,7 @@ bool VirtualSpace::expand_by(size_t bytes, bool pre_touch) {
     if (!os::commit_memory(upper_high(), upper_needs, _executable)) {
       debug_only(warning("INFO: os::commit_memory(" PTR_FORMAT
                          ", upper_needs=" SIZE_FORMAT ", %d) failed",
-                         upper_high(), upper_needs, _executable);)
+                         p2i(upper_high()), upper_needs, _executable);)
       return false;
     } else {
       _upper_high += upper_needs;
@@ -1017,8 +1015,8 @@ void VirtualSpace::print_on(outputStream* out) {
   out->cr();
   out->print_cr(" - committed: " SIZE_FORMAT, committed_size());
   out->print_cr(" - reserved:  " SIZE_FORMAT, reserved_size());
-  out->print_cr(" - [low, high]:     [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  low(), high());
-  out->print_cr(" - [low_b, high_b]: [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  low_boundary(), high_boundary());
+  out->print_cr(" - [low, high]:     [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  p2i(low()), p2i(high()));
+  out->print_cr(" - [low_b, high_b]: [" INTPTR_FORMAT ", " INTPTR_FORMAT "]",  p2i(low_boundary()), p2i(high_boundary()));
 }
 
 void VirtualSpace::print() {

@@ -44,8 +44,6 @@
 #include "opto/runtime.hpp"
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 int vframeArrayElement:: bci(void) const { return (_bci == SynchronizationEntryBCI ? 0 : _bci); }
 
 void vframeArrayElement::free_monitors(JavaThread* jt) {
@@ -415,7 +413,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     int bci = method()->bci_from(bcp);
     tty->print(" - %s", Bytecodes::name(code));
     tty->print(" @ bci %d ", bci);
-    tty->print_cr("sp = " PTR_FORMAT, iframe()->sp());
+    tty->print_cr("sp = " PTR_FORMAT, p2i(iframe()->sp()));
   }
 #endif // PRODUCT
 
@@ -605,7 +603,7 @@ address vframeArray::register_location(int i) const {
 
 // Note: we cannot have print_on as const, as we allocate inside the method
 void vframeArray::print_on_2(outputStream* st)  {
-  st->print_cr(" - sp: " INTPTR_FORMAT, sp());
+  st->print_cr(" - sp: " INTPTR_FORMAT, p2i(sp()));
   st->print(" - thread: ");
   Thread::current()->print();
   st->print_cr(" - frame size: %d", frame_size());
@@ -615,7 +613,7 @@ void vframeArray::print_on_2(outputStream* st)  {
 }
 
 void vframeArrayElement::print(outputStream* st) {
-  st->print_cr(" - interpreter_frame -> sp: " INTPTR_FORMAT, iframe()->sp());
+  st->print_cr(" - interpreter_frame -> sp: " INTPTR_FORMAT, p2i(iframe()->sp()));
 }
 
 void vframeArray::print_value_on(outputStream* st) const {

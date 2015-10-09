@@ -30,8 +30,6 @@
 #include "memory/allocation.inline.hpp"
 #include "prims/methodHandles.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 #define __ _masm->
 
 #ifdef PRODUCT
@@ -488,7 +486,7 @@ void trace_method_handle_stub(const char* adaptername,
   const char* mh_reg_name = has_mh ? "rcx_mh" : "rcx";
   tty->print_cr("MH %s %s=" PTR_FORMAT " sp=" PTR_FORMAT,
                 adaptername, mh_reg_name,
-                (void *)mh, entry_sp);
+                p2i(mh), p2i(entry_sp));
 
   if (Verbose) {
     tty->print_cr("Registers:");

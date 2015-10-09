@@ -52,8 +52,6 @@
 
 #define __ _masm->
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 #ifdef _WIN64
 address AbstractInterpreterGenerator::generate_slow_signature_handler() {
   address entry = __ pc();

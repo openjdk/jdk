@@ -41,8 +41,6 @@
 #include "utilities/events.hpp"
 #include "utilities/xmlstream.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Dummy VM operation to act as first element in our circular double-linked list
 class VM_Dummy: public VM_Operation {
   VMOp_Type type() const { return VMOp_Dummy; }
@@ -410,7 +408,7 @@ void VMThread::loop() {
           !_cur_vm_operation->evaluate_concurrently()) {
         long stall = os::javaTimeMillis() - _cur_vm_operation->timestamp();
         if (stall > 0)
-          tty->print_cr("%s stall: %Ld",  _cur_vm_operation->name(), stall);
+          tty->print_cr("%s stall: %ld",  _cur_vm_operation->name(), stall);
       }
 
       while (!should_terminate() && _cur_vm_operation == NULL) {

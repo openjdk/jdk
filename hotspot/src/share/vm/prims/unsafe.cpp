@@ -44,8 +44,6 @@
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif // INCLUDE_ALL_GCS
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 /*
  *      Implementation of class sun.misc.Unsafe
  */
