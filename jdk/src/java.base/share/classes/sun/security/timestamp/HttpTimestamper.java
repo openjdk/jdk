@@ -27,13 +27,13 @@ package sun.security.timestamp;
 
 import java.io.BufferedInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.net.HttpURLConnection;
 import java.util.*;
 
-import sun.misc.IOUtils;
 import sun.security.util.Debug;
 
 /**
@@ -147,8 +147,11 @@ public class HttpTimestamper implements Timestamper {
             }
             verifyMimeType(connection.getContentType());
 
-            int contentLength = connection.getContentLength();
-            replyBuffer = IOUtils.readFully(input, contentLength, false);
+            int clen = connection.getContentLength();
+            replyBuffer = input.readAllBytes();
+            if (clen != -1 && replyBuffer.length != clen)
+                throw new EOFException("Expected:" + clen +
+                                       ", read:" + replyBuffer.length);
 
             if (debug != null) {
                 debug.println("received timestamp response (length=" +
