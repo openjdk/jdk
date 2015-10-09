@@ -25,6 +25,7 @@
 
 package sun.reflect.misc;
 
+import java.io.EOFException;
 import java.security.AllPermission;
 import java.security.AccessController;
 import java.security.PermissionCollection;
@@ -43,7 +44,6 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import sun.misc.IOUtils;
 
 
 class Trampoline {
@@ -368,15 +368,12 @@ public final class MethodUtil extends SecureClassLoader {
             }
         }
         int len = uc.getContentLength();
-        InputStream in = new BufferedInputStream(uc.getInputStream());
-
-        byte[] b;
-        try {
-            b = IOUtils.readFully(in, len, true);
-        } finally {
-            in.close();
+        try (InputStream in = new BufferedInputStream(uc.getInputStream())) {
+            byte[] b = in.readAllBytes();
+            if (len != -1 && b.length != len)
+                throw new EOFException("Expected:" + len + ", read:" + b.length);
+            return b;
         }
-        return b;
     }
 
 

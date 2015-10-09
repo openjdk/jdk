@@ -53,6 +53,17 @@ import java.util.StringTokenizer;
  * </tr>
  *
  * <tr>
+ *   <td>authProvider.{provider name}</td>
+ *   <td>Allow the named provider to be an AuthProvider for login and
+ * logout operations. </td>
+ *   <td>This allows the named provider to perform login and logout
+ * operations. The named provider must extend {@code AuthProvider}
+ * and care must be taken to grant to a trusted provider since
+ * login operations involve sensitive authentication information
+ * such as PINs and passwords. </td>
+ * </tr>
+ *
+ * <tr>
  *   <td>createAccessControlContext</td>
  *   <td>Creation of an AccessControlContext</td>
  *   <td>This allows someone to instantiate an AccessControlContext

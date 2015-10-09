@@ -182,7 +182,7 @@ class FdLibm {
             }
 
             int k = 0;
-            if (a > 0x1.0p500) {   // a > 2**500
+            if (a > 0x1.00000_ffff_ffffp500) {   // a > ~2**500
                 // scale a and b by 2**-600
                 ha -= 0x25800000;
                 hb -= 0x25800000;
