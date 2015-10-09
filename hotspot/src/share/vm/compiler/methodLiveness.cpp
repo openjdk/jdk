@@ -32,8 +32,6 @@
 #include "memory/allocation.inline.hpp"
 #include "utilities/bitMap.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // The MethodLiveness class performs a simple liveness analysis on a method
 // in order to decide which locals are live (that is, will be used again) at
 // a particular bytecode index (bci).
@@ -540,7 +538,7 @@ void MethodLiveness::print_times() {
                  _time_flow.seconds() * 100 / _time_total.seconds());
   tty->print_cr ("    Query       : %3.3f sec. (%2.2f%%)", _time_query.seconds(),
                  _time_query.seconds() * 100 / _time_total.seconds());
-  tty->print_cr ("  #bytes   : %8d (%3.0f bytes per sec)",
+  tty->print_cr ("  #bytes   : %8ld (%3.0f bytes per sec)",
                  _total_bytes,
                  _total_bytes / _time_total.seconds());
   tty->print_cr ("  #methods : %8d (%3.0f methods per sec)",
@@ -554,7 +552,7 @@ void MethodLiveness::print_times() {
                  _max_method_blocks);
   tty->print_cr ("    avg bytes  : %3.3f",
                  (float)_total_bytes / _total_methods);
-  tty->print_cr ("  #blocks  : %8d",
+  tty->print_cr ("  #blocks  : %8ld",
                  _total_blocks);
   tty->print_cr ("    avg normal predecessors    : %3.3f  max normal predecessors    : %3d",
                  (float)_total_edges / _total_blocks,
@@ -564,7 +562,7 @@ void MethodLiveness::print_times() {
                  _max_block_exc_edges);
   tty->print_cr ("    avg visits                 : %3.3f",
                  (float)_total_visits / _total_blocks);
-  tty->print_cr ("  #locals queried : %8d    #live : %8d   %%live : %2.2f%%",
+  tty->print_cr ("  #locals queried : %8ld    #live : %8ld   %%live : %2.2f%%",
                  _total_locals_queried,
                  _total_live_locals_queried,
                  100.0 * _total_live_locals_queried / _total_locals_queried);

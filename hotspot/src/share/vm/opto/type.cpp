@@ -41,8 +41,6 @@
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Portions of code courtesy of Clifford Click
 
 // Optimization - Graph Style
@@ -2784,7 +2782,7 @@ int TypeRawPtr::hash(void) const {
 #ifndef PRODUCT
 void TypeRawPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   if( _ptr == Constant )
-    st->print(INTPTR_FORMAT, _bits);
+    st->print(INTPTR_FORMAT, p2i(_bits));
   else
     st->print("rawptr:%s", ptr_msg[_ptr]);
 }
@@ -3187,7 +3185,7 @@ int TypeOopPtr::hash(void) const {
 void TypeOopPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   st->print("oopptr:%s", ptr_msg[_ptr]);
   if( _klass_is_exact ) st->print(":exact");
-  if( const_oop() ) st->print(INTPTR_FORMAT, const_oop());
+  if( const_oop() ) st->print(INTPTR_FORMAT, p2i(const_oop()));
   switch( _offset ) {
   case OffsetTop: st->print("+top"); break;
   case OffsetBot: st->print("+any"); break;
@@ -4635,7 +4633,7 @@ const Type *TypeMetadataPtr::xdual() const {
 #ifndef PRODUCT
 void TypeMetadataPtr::dump2( Dict &d, uint depth, outputStream *st ) const {
   st->print("metadataptr:%s", ptr_msg[_ptr]);
-  if( metadata() ) st->print(INTPTR_FORMAT, metadata());
+  if( metadata() ) st->print(INTPTR_FORMAT, p2i(metadata()));
   switch( _offset ) {
   case OffsetTop: st->print("+top"); break;
   case OffsetBot: st->print("+any"); break;
@@ -5033,7 +5031,7 @@ void TypeKlassPtr::dump2( Dict & d, uint depth, outputStream *st ) const {
     {
       const char *name = klass()->name()->as_utf8();
       if( name ) {
-        st->print("klass %s: " INTPTR_FORMAT, name, klass());
+        st->print("klass %s: " INTPTR_FORMAT, name, p2i(klass()));
       } else {
         ShouldNotReachHere();
       }

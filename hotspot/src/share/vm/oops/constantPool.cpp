@@ -45,8 +45,6 @@
 #include "runtime/vframe.hpp"
 #include "utilities/copy.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 ConstantPool* ConstantPool::allocate(ClassLoaderData* loader_data, int length, TRAPS) {
   // Tags are RW but comment below applies to tags also.
   Array<u1>* tags = MetadataFactory::new_writeable_array<u1>(loader_data, length, 0, CHECK_NULL);
@@ -1868,11 +1866,11 @@ void ConstantPool::print_on(outputStream* st) const {
     st->cr();
   }
   if (pool_holder() != NULL) {
-    st->print_cr(" - holder: " INTPTR_FORMAT, pool_holder());
+    st->print_cr(" - holder: " INTPTR_FORMAT, p2i(pool_holder()));
   }
-  st->print_cr(" - cache: " INTPTR_FORMAT, cache());
-  st->print_cr(" - resolved_references: " INTPTR_FORMAT, (void *)resolved_references());
-  st->print_cr(" - reference_map: " INTPTR_FORMAT, reference_map());
+  st->print_cr(" - cache: " INTPTR_FORMAT, p2i(cache()));
+  st->print_cr(" - resolved_references: " INTPTR_FORMAT, p2i(resolved_references()));
+  st->print_cr(" - reference_map: " INTPTR_FORMAT, p2i(reference_map()));
 
   for (int index = 1; index < length(); index++) {      // Index 0 is unused
     ((ConstantPool*)this)->print_entry_on(index, st);
@@ -1897,7 +1895,7 @@ void ConstantPool::print_entry_on(const int index, outputStream* st) {
       { Klass* k = klass_at(index, CATCH);
         guarantee(k != NULL, "need klass");
         k->print_value_on(st);
-        st->print(" {0x%lx}", (address)k);
+        st->print(" {" PTR_FORMAT "}", p2i(k));
       }
       break;
     case JVM_CONSTANT_Fieldref :
@@ -1910,7 +1908,7 @@ void ConstantPool::print_entry_on(const int index, outputStream* st) {
       if (is_pseudo_string_at(index)) {
         oop anObj = pseudo_string_at(index);
         anObj->print_value_on(st);
-        st->print(" {0x%lx}", (address)anObj);
+        st->print(" {" PTR_FORMAT "}", p2i(anObj));
       } else {
         unresolved_string_at(index)->print_value_on(st);
       }
@@ -1987,7 +1985,7 @@ void ConstantPool::print_value_on(outputStream* st) const {
     if (extra)  st->print(" (extra)");
   }
   if (cache() != NULL) {
-    st->print(" cache=" PTR_FORMAT, cache());
+    st->print(" cache=" PTR_FORMAT, p2i(cache()));
   }
 }
 

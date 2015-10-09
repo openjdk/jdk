@@ -50,8 +50,6 @@
 #include "shark/sharkCompiler.hpp"
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 unsigned char nmethod::_global_unloading_clock = 0;
 
 #ifdef DTRACE_ENABLED
@@ -809,9 +807,9 @@ void nmethod::log_identity(xmlStream* log) const {
 
 
 #define LOG_OFFSET(log, name)                    \
-  if ((intptr_t)name##_end() - (intptr_t)name##_begin()) \
-    log->print(" " XSTR(name) "_offset='%d'"    , \
-               (intptr_t)name##_begin() - (intptr_t)this)
+  if (p2i(name##_end()) - p2i(name##_begin())) \
+    log->print(" " XSTR(name) "_offset='" INTX_FORMAT "'"    , \
+               p2i(name##_begin()) - p2i(this))
 
 
 void nmethod::log_new_nmethod() const {
@@ -820,8 +818,8 @@ void nmethod::log_new_nmethod() const {
     HandleMark hm;
     xtty->begin_elem("nmethod");
     log_identity(xtty);
-    xtty->print(" entry='" INTPTR_FORMAT "' size='%d'", code_begin(), size());
-    xtty->print(" address='" INTPTR_FORMAT "'", (intptr_t) this);
+    xtty->print(" entry='" INTPTR_FORMAT "' size='%d'", p2i(code_begin()), size());
+    xtty->print(" address='" INTPTR_FORMAT "'", p2i(this));
 
     LOG_OFFSET(xtty, relocation);
     LOG_OFFSET(xtty, consts);
@@ -849,7 +847,7 @@ void nmethod::print_on(outputStream* st, const char* msg) const {
     ttyLocker ttyl;
     if (WizardMode) {
       CompileTask::print(st, this, msg, /*short_form:*/ true);
-      st->print_cr(" (" INTPTR_FORMAT ")", this);
+      st->print_cr(" (" INTPTR_FORMAT ")", p2i(this));
     } else {
       CompileTask::print(st, this, msg, /*short_form:*/ false);
     }
@@ -1205,7 +1203,7 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
     tty->print_cr("[Class unloading: Making nmethod " INTPTR_FORMAT
                   " unloadable], Method*(" INTPTR_FORMAT
                   "), cause(" INTPTR_FORMAT ")",
-                  this, (address)_method, (address)cause);
+                  p2i(this), p2i(_method), p2i(cause));
     if (!Universe::heap()->is_gc_active())
       cause->klass()->print();
   }
@@ -1402,7 +1400,8 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   }
 
   if (TraceCreateZombies) {
-    tty->print_cr("nmethod <" INTPTR_FORMAT "> code made %s", this, (state == not_entrant) ? "not entrant" : "zombie");
+    tty->print_cr("nmethod <" INTPTR_FORMAT "> code made %s",
+                  p2i(this), (state == not_entrant) ? "not entrant" : "zombie");
   }
 
   NMethodSweeper::report_state_change(this);
@@ -1418,10 +1417,12 @@ void nmethod::flush() {
   assert_locked_or_safepoint(CodeCache_lock);
 
   // completely deallocate this method
-  Events::log(JavaThread::current(), "flushing nmethod " INTPTR_FORMAT, this);
+  Events::log(JavaThread::current(), "flushing nmethod " INTPTR_FORMAT, p2i(this));
   if (PrintMethodFlushing) {
-    tty->print_cr("*flushing nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT "/Free CodeCache:" SIZE_FORMAT "Kb",
-        _compile_id, this, CodeCache::nof_blobs(), CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024);
+    tty->print_cr("*flushing nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT
+                  "/Free CodeCache:" SIZE_FORMAT "Kb",
+                  _compile_id, p2i(this), CodeCache::nof_blobs(),
+                  CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024);
   }
 
   // We need to deallocate any ExceptionCache data.
@@ -1709,7 +1710,7 @@ static bool clean_if_nmethod_is_unloaded(CompiledICorStaticCall *ic, address add
     // Clean inline caches pointing to both zombie and not_entrant methods
     if (!nm->is_in_use() || (nm->method()->code() != nm)) {
       ic->set_to_clean();
-      assert(ic->is_clean(), "nmethod " PTR_FORMAT "not clean %s", from, from->method()->name_and_sig_as_C_string());
+      assert(ic->is_clean(), "nmethod " PTR_FORMAT "not clean %s", p2i(from), from->method()->name_and_sig_as_C_string());
     }
   }
 
@@ -2119,8 +2120,8 @@ public:
     if (_print_nm == NULL)  return;
     if (!_detected_scavenge_root)  _print_nm->print_on(tty, "new scavenge root");
     tty->print_cr("" PTR_FORMAT "[offset=%d] detected scavengable oop " PTR_FORMAT " (found at " PTR_FORMAT ")",
-                  _print_nm, (int)((intptr_t)p - (intptr_t)_print_nm),
-                  (void *)(*p), (intptr_t)p);
+                  p2i(_print_nm), (int)((intptr_t)p - (intptr_t)_print_nm),
+                  p2i(*p), p2i(p));
     (*p)->print();
   }
 #endif //PRODUCT
@@ -2426,7 +2427,7 @@ address nmethod::continuation_for_implicit_exception(address pc) {
     ResourceMark rm(thread);
     CodeBlob* cb = CodeCache::find_blob(pc);
     assert(cb != NULL && cb == this, "");
-    tty->print_cr("implicit exception happened at " INTPTR_FORMAT, pc);
+    tty->print_cr("implicit exception happened at " INTPTR_FORMAT, p2i(pc));
     print();
     method()->print_codes();
     print_code();
@@ -2519,7 +2520,7 @@ public:
       _ok = false;
     }
     tty->print_cr("*** non-oop " PTR_FORMAT " found at " PTR_FORMAT " (offset %d)",
-                  (void *)(*p), (intptr_t)p, (int)((intptr_t)p - (intptr_t)_nm));
+                  p2i(*p), p2i(p), (int)((intptr_t)p - (intptr_t)_nm));
   }
   virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
 };
@@ -2540,7 +2541,7 @@ void nmethod::verify() {
   ResourceMark rm;
 
   if (!CodeCache::contains(this)) {
-    fatal("nmethod at " INTPTR_FORMAT " not in zone", this);
+    fatal("nmethod at " INTPTR_FORMAT " not in zone", p2i(this));
   }
 
   if(is_native_method() )
@@ -2548,12 +2549,12 @@ void nmethod::verify() {
 
   nmethod* nm = CodeCache::find_nmethod(verified_entry_point());
   if (nm != this) {
-    fatal("findNMethod did not find this nmethod (" INTPTR_FORMAT ")", this);
+    fatal("findNMethod did not find this nmethod (" INTPTR_FORMAT ")", p2i(this));
   }
 
   for (PcDesc* p = scopes_pcs_begin(); p < scopes_pcs_end(); p++) {
     if (! p->verify(this)) {
-      tty->print_cr("\t\tin nmethod at " INTPTR_FORMAT " (pcs)", this);
+      tty->print_cr("\t\tin nmethod at " INTPTR_FORMAT " (pcs)", p2i(this));
     }
   }
 
@@ -2642,7 +2643,7 @@ public:
       _ok = false;
     }
     tty->print_cr("*** scavengable oop " PTR_FORMAT " found at " PTR_FORMAT " (offset %d)",
-                  (void *)(*p), (intptr_t)p, (int)((intptr_t)p - (intptr_t)_nm));
+                  p2i(*p), p2i(p), (int)((intptr_t)p - (intptr_t)_nm));
     (*p)->print();
   }
   virtual void do_oop(narrowOop* p) { ShouldNotReachHere(); }
@@ -2686,8 +2687,8 @@ void nmethod::print() const {
   print_on(tty, NULL);
 
   if (WizardMode) {
-    tty->print("((nmethod*) " INTPTR_FORMAT ") ", this);
-    tty->print(" for method " INTPTR_FORMAT , (address)method());
+    tty->print("((nmethod*) " INTPTR_FORMAT ") ", p2i(this));
+    tty->print(" for method " INTPTR_FORMAT , p2i(method()));
     tty->print(" { ");
     if (is_in_use())      tty->print("in_use ");
     if (is_not_entrant()) tty->print("not_entrant ");
@@ -2697,52 +2698,52 @@ void nmethod::print() const {
     tty->print_cr("}:");
   }
   if (size              () > 0) tty->print_cr(" total in heap  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              (address)this,
-                                              (address)this + size(),
+                                              p2i(this),
+                                              p2i(this) + size(),
                                               size());
   if (relocation_size   () > 0) tty->print_cr(" relocation     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              relocation_begin(),
-                                              relocation_end(),
+                                              p2i(relocation_begin()),
+                                              p2i(relocation_end()),
                                               relocation_size());
   if (consts_size       () > 0) tty->print_cr(" constants      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              consts_begin(),
-                                              consts_end(),
+                                              p2i(consts_begin()),
+                                              p2i(consts_end()),
                                               consts_size());
   if (insts_size        () > 0) tty->print_cr(" main code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              insts_begin(),
-                                              insts_end(),
+                                              p2i(insts_begin()),
+                                              p2i(insts_end()),
                                               insts_size());
   if (stub_size         () > 0) tty->print_cr(" stub code      [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              stub_begin(),
-                                              stub_end(),
+                                              p2i(stub_begin()),
+                                              p2i(stub_end()),
                                               stub_size());
   if (oops_size         () > 0) tty->print_cr(" oops           [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              oops_begin(),
-                                              oops_end(),
+                                              p2i(oops_begin()),
+                                              p2i(oops_end()),
                                               oops_size());
   if (metadata_size      () > 0) tty->print_cr(" metadata       [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              metadata_begin(),
-                                              metadata_end(),
+                                              p2i(metadata_begin()),
+                                              p2i(metadata_end()),
                                               metadata_size());
   if (scopes_data_size  () > 0) tty->print_cr(" scopes data    [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              scopes_data_begin(),
-                                              scopes_data_end(),
+                                              p2i(scopes_data_begin()),
+                                              p2i(scopes_data_end()),
                                               scopes_data_size());
   if (scopes_pcs_size   () > 0) tty->print_cr(" scopes pcs     [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              scopes_pcs_begin(),
-                                              scopes_pcs_end(),
+                                              p2i(scopes_pcs_begin()),
+                                              p2i(scopes_pcs_end()),
                                               scopes_pcs_size());
   if (dependencies_size () > 0) tty->print_cr(" dependencies   [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              dependencies_begin(),
-                                              dependencies_end(),
+                                              p2i(dependencies_begin()),
+                                              p2i(dependencies_end()),
                                               dependencies_size());
   if (handler_table_size() > 0) tty->print_cr(" handler table  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              handler_table_begin(),
-                                              handler_table_end(),
+                                              p2i(handler_table_begin()),
+                                              p2i(handler_table_end()),
                                               handler_table_size());
   if (nul_chk_table_size() > 0) tty->print_cr(" nul chk table  [" INTPTR_FORMAT "," INTPTR_FORMAT "] = %d",
-                                              nul_chk_table_begin(),
-                                              nul_chk_table_end(),
+                                              p2i(nul_chk_table_begin()),
+                                              p2i(nul_chk_table_end()),
                                               nul_chk_table_size());
 }
 
@@ -2793,20 +2794,20 @@ void nmethod::print_relocations() {
     jint* index_end   = (jint*)relocation_end() - 1;
     jint  index_size  = *index_end;
     jint* index_start = (jint*)( (address)index_end - index_size );
-    tty->print_cr("    index @" INTPTR_FORMAT ": index_size=%d", index_start, index_size);
+    tty->print_cr("    index @" INTPTR_FORMAT ": index_size=%d", p2i(index_start), index_size);
     if (index_size > 0) {
       jint* ip;
       for (ip = index_start; ip+2 <= index_end; ip += 2)
         tty->print_cr("  (%d %d) addr=" INTPTR_FORMAT " @" INTPTR_FORMAT,
                       ip[0],
                       ip[1],
-                      header_end()+ip[0],
-                      relocation_begin()-1+ip[1]);
+                      p2i(header_end()+ip[0]),
+                      p2i(relocation_begin()-1+ip[1]));
       for (; ip < index_end; ip++)
         tty->print_cr("  (%d ?)", ip[0]);
-      tty->print_cr("          @" INTPTR_FORMAT ": index_size=%d", ip, *ip);
+      tty->print_cr("          @" INTPTR_FORMAT ": index_size=%d", p2i(ip), *ip);
       ip++;
-      tty->print_cr("reloc_end @" INTPTR_FORMAT ":", ip);
+      tty->print_cr("reloc_end @" INTPTR_FORMAT ":", p2i(ip));
     }
   }
 }
@@ -3088,7 +3089,7 @@ void nmethod::print_code_comment_on(outputStream* st, int column, u_char* begin,
   int cont_offset = ImplicitExceptionTable(this).at(begin - code_begin());
   if (cont_offset != 0) {
     st->move_to(column);
-    st->print("; implicit exception: dispatches to " INTPTR_FORMAT, code_begin() + cont_offset);
+    st->print("; implicit exception: dispatches to " INTPTR_FORMAT, p2i(code_begin() + cont_offset));
   }
 
 }
@@ -3111,7 +3112,7 @@ void nmethod::print_calls(outputStream* st) {
       break;
     }
     case relocInfo::static_call_type:
-      st->print_cr("Static call at " INTPTR_FORMAT, iter.reloc()->addr());
+      st->print_cr("Static call at " INTPTR_FORMAT, p2i(iter.reloc()->addr()));
       compiledStaticCall_at(iter.reloc())->print();
       break;
     }

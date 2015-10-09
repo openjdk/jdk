@@ -38,8 +38,6 @@
 #include <semaphore.h>
 #include <signal.h>
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Todo: provide a os::get_max_process_id() or similar. Number of processes
 // may have been configured, can be read more accurately from proc fs etc.
 #ifndef MAX_PID
@@ -194,30 +192,30 @@ void os::Posix::print_rlimit_info(outputStream* st) {
   st->print(" STACK ");
   getrlimit(RLIMIT_STACK, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
+  else st->print("%luk", rlim.rlim_cur >> 10);
 
   st->print(", CORE ");
   getrlimit(RLIMIT_CORE, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
+  else st->print("%luk", rlim.rlim_cur >> 10);
 
   // Isn't there on solaris
 #if !defined(TARGET_OS_FAMILY_solaris) && !defined(TARGET_OS_FAMILY_aix)
   st->print(", NPROC ");
   getrlimit(RLIMIT_NPROC, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%d", rlim.rlim_cur);
+  else st->print("%lu", rlim.rlim_cur);
 #endif
 
   st->print(", NOFILE ");
   getrlimit(RLIMIT_NOFILE, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%d", rlim.rlim_cur);
+  else st->print("%lu", rlim.rlim_cur);
 
   st->print(", AS ");
   getrlimit(RLIMIT_AS, &rlim);
   if (rlim.rlim_cur == RLIM_INFINITY) st->print("infinity");
-  else st->print("%uk", rlim.rlim_cur >> 10);
+  else st->print("%luk", rlim.rlim_cur >> 10);
   st->cr();
 }
 
@@ -961,7 +959,7 @@ void os::Posix::print_siginfo_brief(outputStream* os, const siginfo_t* si) {
     }
   } else if (sig == SIGSEGV || sig == SIGBUS || sig == SIGILL ||
              sig == SIGTRAP || sig == SIGFPE) {
-    os->print(", si_addr: " PTR_FORMAT, si->si_addr);
+    os->print(", si_addr: " PTR_FORMAT, p2i(si->si_addr));
 #ifdef SIGPOLL
   } else if (sig == SIGPOLL) {
     os->print(", si_band: " PTR64_FORMAT, (uint64_t)si->si_band);

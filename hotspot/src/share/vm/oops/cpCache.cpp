@@ -36,8 +36,6 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Implementation of ConstantPoolCacheEntry
 
 void ConstantPoolCacheEntry::initialize_entry(int index) {
@@ -310,9 +308,9 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
   if (TraceInvokeDynamic) {
     tty->print_cr("set_method_handle bc=%d appendix=" PTR_FORMAT "%s method_type=" PTR_FORMAT "%s method=" PTR_FORMAT " ",
                   invoke_code,
-                  (void *)appendix(),    (has_appendix    ? "" : " (unused)"),
-                  (void *)method_type(), (has_method_type ? "" : " (unused)"),
-                  (intptr_t)adapter());
+                  p2i(appendix()),    (has_appendix    ? "" : " (unused)"),
+                  p2i(method_type()), (has_method_type ? "" : " (unused)"),
+                  p2i(adapter()));
     adapter->print();
     if (has_appendix)  appendix()->print();
   }

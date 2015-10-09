@@ -63,8 +63,6 @@
 #include "c1/c1_globals.hpp"
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // --------------------------------------------------------------------------------------------------
 // Implementation of Safepoint begin/end
 
@@ -893,7 +891,7 @@ void ThreadSafepointState::restart() {
     case _running:
     default:
        tty->print_cr("restart thread " INTPTR_FORMAT " with state %d",
-                      _thread, _type);
+                     p2i(_thread), _type);
        _thread->print();
       ShouldNotReachHere();
   }
@@ -915,7 +913,7 @@ void ThreadSafepointState::print_on(outputStream *st) const {
 
   st->print_cr("Thread: " INTPTR_FORMAT
               "  [0x%2x] State: %s _has_called_back %d _at_poll_safepoint %d",
-               _thread, _thread->osthread()->thread_id(), s, _has_called_back,
+               p2i(_thread), _thread->osthread()->thread_id(), s, _has_called_back,
                _at_poll_safepoint);
 
   _thread->print_thread_state_on(st);
@@ -934,7 +932,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
   // Step 1: Find the nmethod from the return address
   if (ShowSafepointMsgs && Verbose) {
-    tty->print_cr("Polling page exception at " INTPTR_FORMAT, thread()->saved_exception_pc());
+    tty->print_cr("Polling page exception at " INTPTR_FORMAT, p2i(thread()->saved_exception_pc()));
   }
   address real_return_addr = thread()->saved_exception_pc();
 
@@ -1241,8 +1239,8 @@ void SafepointSynchronize::print_stat_on_exit() {
   if (!need_to_track_page_armed_status) {
     tty->print_cr("Polling page always armed");
   } else {
-    tty->print_cr("Defer polling page loop count = %d\n",
-                 DeferPollingPageLoopCount);
+    tty->print_cr("Defer polling page loop count = " INTX_FORMAT "\n",
+                  DeferPollingPageLoopCount);
   }
 
   for (int index = 0; index < VM_Operation::VMOp_Terminating; index++) {

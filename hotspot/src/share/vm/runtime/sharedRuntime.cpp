@@ -64,8 +64,6 @@
 #include "c1/c1_Runtime1.hpp"
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Shared stub locations
 RuntimeStub*        SharedRuntime::_wrong_method_blob;
 RuntimeStub*        SharedRuntime::_wrong_method_abstract_blob;
@@ -183,7 +181,7 @@ void SharedRuntime::print_ic_miss_histogram() {
     tty->print_cr("IC Miss Histogram:");
     int tot_misses = 0;
     for (int i = 0; i < _ICmiss_index; i++) {
-      tty->print_cr("  at: " INTPTR_FORMAT "  nof: %d", _ICmiss_at[i], _ICmiss_count[i]);
+      tty->print_cr("  at: " INTPTR_FORMAT "  nof: %d", p2i(_ICmiss_at[i]), _ICmiss_count[i]);
       tot_misses += _ICmiss_count[i];
     }
     tty->print_cr("Total IC misses: %7d", tot_misses);
@@ -455,7 +453,7 @@ JRT_END
 // previous frame depending on the return address.
 
 address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thread, address return_address) {
-  assert(frame::verify_return_pc(return_address), "must be a return address: " INTPTR_FORMAT, return_address);
+  assert(frame::verify_return_pc(return_address), "must be a return address: " INTPTR_FORMAT, p2i(return_address));
   assert(thread->frames_to_pop_failed_realloc() == 0 || Interpreter::contains(return_address), "missed frames to pop?");
 
   // Reset method handle flag.
@@ -498,7 +496,7 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
 
 #ifndef PRODUCT
   { ResourceMark rm;
-    tty->print_cr("No exception handler found for exception at " INTPTR_FORMAT " - potential problems:", return_address);
+    tty->print_cr("No exception handler found for exception at " INTPTR_FORMAT " - potential problems:", p2i(return_address));
     tty->print_cr("a) exception happened in (new?) code stubs/buffers that is not handled here");
     tty->print_cr("b) other problem");
   }
@@ -685,7 +683,7 @@ address SharedRuntime::compute_compiled_exc_handler(nmethod* nm, address ret_pc,
 #endif
 
   if (t == NULL) {
-    tty->print_cr("MISSING EXCEPTION HANDLER for pc " INTPTR_FORMAT " and handler bci %d", ret_pc, handler_bci);
+    tty->print_cr("MISSING EXCEPTION HANDLER for pc " INTPTR_FORMAT " and handler bci %d", p2i(ret_pc), handler_bci);
     tty->print_cr("   Exception:");
     exception->print();
     tty->cr();
@@ -769,7 +767,7 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
         // in a debug VM to verify the correctness of the compiled
         // method stack banging.
         assert(thread->deopt_mark() == NULL, "no stack overflow from deopt blob/uncommon trap");
-        Events::log_exception(thread, "StackOverflowError at " INTPTR_FORMAT, pc);
+        Events::log_exception(thread, "StackOverflowError at " INTPTR_FORMAT, p2i(pc));
         return StubRoutines::throw_StackOverflowError_entry();
       }
 
@@ -786,10 +784,10 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
 
           if (vt_stub->is_abstract_method_error(pc)) {
             assert(!vt_stub->is_vtable_stub(), "should never see AbstractMethodErrors from vtable-type VtableStubs");
-            Events::log_exception(thread, "AbstractMethodError at " INTPTR_FORMAT, pc);
+            Events::log_exception(thread, "AbstractMethodError at " INTPTR_FORMAT, p2i(pc));
             return StubRoutines::throw_AbstractMethodError_entry();
           } else {
-            Events::log_exception(thread, "NullPointerException at vtable entry " INTPTR_FORMAT, pc);
+            Events::log_exception(thread, "NullPointerException at vtable entry " INTPTR_FORMAT, p2i(pc));
             return StubRoutines::throw_NullPointerException_at_call_entry();
           }
         } else {
@@ -807,9 +805,9 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
             bool is_in_blob = cb->is_adapter_blob() || cb->is_method_handles_adapter_blob();
             if (!is_in_blob) {
               cb->print();
-              fatal("exception happened outside interpreter, nmethods and vtable stubs at pc " INTPTR_FORMAT, pc);
+              fatal("exception happened outside interpreter, nmethods and vtable stubs at pc " INTPTR_FORMAT, p2i(pc));
             }
-            Events::log_exception(thread, "NullPointerException in code blob at " INTPTR_FORMAT, pc);
+            Events::log_exception(thread, "NullPointerException in code blob at " INTPTR_FORMAT, p2i(pc));
             // There is no handler here, so we will simply unwind.
             return StubRoutines::throw_NullPointerException_at_call_entry();
           }
@@ -821,13 +819,13 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
             // => the nmethod is not yet active (i.e., the frame
             // is not set up yet) => use return address pushed by
             // caller => don't push another return address
-            Events::log_exception(thread, "NullPointerException in IC check " INTPTR_FORMAT, pc);
+            Events::log_exception(thread, "NullPointerException in IC check " INTPTR_FORMAT, p2i(pc));
             return StubRoutines::throw_NullPointerException_at_call_entry();
           }
 
           if (nm->method()->is_method_handle_intrinsic()) {
             // exception happened inside MH dispatch code, similar to a vtable stub
-            Events::log_exception(thread, "NullPointerException in MH adapter " INTPTR_FORMAT, pc);
+            Events::log_exception(thread, "NullPointerException in MH adapter " INTPTR_FORMAT, p2i(pc));
             return StubRoutines::throw_NullPointerException_at_call_entry();
           }
 
@@ -865,9 +863,9 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
     // for AbortVMOnException flag
     NOT_PRODUCT(Exceptions::debug_check_abort("java.lang.NullPointerException"));
     if (exception_kind == IMPLICIT_NULL) {
-      Events::log_exception(thread, "Implicit null exception at " INTPTR_FORMAT " to " INTPTR_FORMAT, pc, target_pc);
+      Events::log_exception(thread, "Implicit null exception at " INTPTR_FORMAT " to " INTPTR_FORMAT, p2i(pc), p2i(target_pc));
     } else {
-      Events::log_exception(thread, "Implicit division by zero exception at " INTPTR_FORMAT " to " INTPTR_FORMAT, pc, target_pc);
+      Events::log_exception(thread, "Implicit division by zero exception at " INTPTR_FORMAT " to " INTPTR_FORMAT, p2i(pc), p2i(target_pc));
     }
     return target_pc;
   }
@@ -1176,7 +1174,8 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
       (is_optimized) ? "optimized " : "", (is_virtual) ? "virtual" : "static",
       Bytecodes::name(invoke_code));
     callee_method->print_short_name(tty);
-    tty->print_cr(" at pc: " INTPTR_FORMAT " to code: " INTPTR_FORMAT, caller_frame.pc(), callee_method->code());
+    tty->print_cr(" at pc: " INTPTR_FORMAT " to code: " INTPTR_FORMAT,
+                  p2i(caller_frame.pc()), p2i(callee_method->code()));
   }
 #endif
 
@@ -1397,8 +1396,8 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
       ResourceMark rm(thread);
       tty->print("converting IC miss to reresolve (%s) call to", Bytecodes::name(bc));
       callee_method->print_short_name(tty);
-      tty->print_cr(" from pc: " INTPTR_FORMAT, caller_frame.pc());
-      tty->print_cr(" code: " INTPTR_FORMAT, callee_method->code());
+      tty->print_cr(" from pc: " INTPTR_FORMAT, p2i(caller_frame.pc()));
+      tty->print_cr(" code: " INTPTR_FORMAT, p2i(callee_method->code()));
     }
     return callee_method;
   }
@@ -1415,7 +1414,7 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
     ResourceMark rm(thread);
     tty->print("IC miss (%s) call to", Bytecodes::name(bc));
     callee_method->print_short_name(tty);
-    tty->print_cr(" code: " INTPTR_FORMAT, callee_method->code());
+    tty->print_cr(" code: " INTPTR_FORMAT, p2i(callee_method->code()));
   }
 
   if (ICMissHistogram) {
@@ -1447,7 +1446,7 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
           ResourceMark rm(thread);
           tty->print("OPTIMIZED IC miss (%s) call to", Bytecodes::name(bc));
           callee_method->print_short_name(tty);
-          tty->print_cr(" code: " INTPTR_FORMAT, callee_method->code());
+          tty->print_cr(" code: " INTPTR_FORMAT, p2i(callee_method->code()));
         }
         should_be_mono = true;
       } else if (inline_cache->is_icholder_call()) {
@@ -1464,7 +1463,7 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
               ResourceMark rm(thread);
               tty->print("FALSE IC miss (%s) converting to compiled call to", Bytecodes::name(bc));
               callee_method->print_short_name(tty);
-              tty->print_cr(" code: " INTPTR_FORMAT, callee_method->code());
+              tty->print_cr(" code: " INTPTR_FORMAT, p2i(callee_method->code()));
             }
             should_be_mono = true;
           }
@@ -1604,7 +1603,7 @@ methodHandle SharedRuntime::reresolve_call_site(JavaThread *thread, TRAPS) {
     ResourceMark rm(thread);
     tty->print("handle_wrong_method reresolving call to");
     callee_method->print_short_name(tty);
-    tty->print_cr(" code: " INTPTR_FORMAT, callee_method->code());
+    tty->print_cr(" code: " INTPTR_FORMAT, p2i(callee_method->code()));
   }
 #endif
 
@@ -1630,7 +1629,7 @@ void SharedRuntime::check_member_name_argument_is_last_argument(methodHandle met
   for (int i = 0; i < member_arg_pos; i++) {
     VMReg a =    regs_with_member_name[i].first();
     VMReg b = regs_without_member_name[i].first();
-    assert(a->value() == b->value(), "register allocation mismatch: a=%d, b=%d", a->value(), b->value());
+    assert(a->value() == b->value(), "register allocation mismatch: a=" INTX_FORMAT ", b=" INTX_FORMAT, a->value(), b->value());
   }
   assert(regs_with_member_name[member_arg_pos].first()->is_valid(), "bad member arg");
 }
@@ -1712,25 +1711,25 @@ IRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
         if (callee == cb || callee->is_adapter_blob()) {
           // static call or optimized virtual
           if (TraceCallFixup) {
-            tty->print("fixup callsite           at " INTPTR_FORMAT " to compiled code for", caller_pc);
+            tty->print("fixup callsite           at " INTPTR_FORMAT " to compiled code for", p2i(caller_pc));
             moop->print_short_name(tty);
-            tty->print_cr(" to " INTPTR_FORMAT, entry_point);
+            tty->print_cr(" to " INTPTR_FORMAT, p2i(entry_point));
           }
           call->set_destination_mt_safe(entry_point);
         } else {
           if (TraceCallFixup) {
-            tty->print("failed to fixup callsite at " INTPTR_FORMAT " to compiled code for", caller_pc);
+            tty->print("failed to fixup callsite at " INTPTR_FORMAT " to compiled code for", p2i(caller_pc));
             moop->print_short_name(tty);
-            tty->print_cr(" to " INTPTR_FORMAT, entry_point);
+            tty->print_cr(" to " INTPTR_FORMAT, p2i(entry_point));
           }
           // assert is too strong could also be resolve destinations.
           // assert(InlineCacheBuffer::contains(destination) || VtableStubs::contains(destination), "must be");
         }
       } else {
           if (TraceCallFixup) {
-            tty->print("already patched callsite at " INTPTR_FORMAT " to compiled code for", caller_pc);
+            tty->print("already patched callsite at " INTPTR_FORMAT " to compiled code for", p2i(caller_pc));
             moop->print_short_name(tty);
-            tty->print_cr(" to " INTPTR_FORMAT, entry_point);
+            tty->print_cr(" to " INTPTR_FORMAT, p2i(entry_point));
           }
       }
     }
@@ -2834,8 +2833,8 @@ void AdapterHandlerLibrary::print_handler_on(outputStream* st, CodeBlob* b) {
 
 void AdapterHandlerEntry::print_adapter_on(outputStream* st) const {
   st->print_cr("AHE@" INTPTR_FORMAT ": %s i2c: " INTPTR_FORMAT " c2i: " INTPTR_FORMAT " c2iUV: " INTPTR_FORMAT,
-               (intptr_t) this, fingerprint()->as_string(),
-               get_i2c_entry(), get_c2i_entry(), get_c2i_unverified_entry());
+               p2i(this), fingerprint()->as_string(),
+               p2i(get_i2c_entry()), p2i(get_c2i_entry()), p2i(get_c2i_unverified_entry()));
 
 }
 

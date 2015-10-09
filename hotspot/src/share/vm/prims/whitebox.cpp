@@ -65,8 +65,6 @@
 #endif // INCLUDE_NMT
 
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 #define SIZE_T_MAX_VALUE ((size_t) -1)
 
 bool WhiteBox::_used = false;
@@ -201,8 +199,8 @@ WB_ENTRY(void, WB_ReadFromNoaccessArea(JNIEnv* env, jobject o))
                   "\tUniverse::narrow_oop_base() is " PTR_FORMAT "\n"
                   "\tUniverse::narrow_oop_use_implicit_null_checks() is %d",
                   UseCompressedOops,
-                  rhs.base(),
-                  Universe::narrow_oop_base(),
+                  p2i(rhs.base()),
+                  p2i(Universe::narrow_oop_base()),
                   Universe::narrow_oop_use_implicit_null_checks());
     return;
   }

@@ -50,9 +50,6 @@
 #include "runtime/thread.inline.hpp"
 #include "utilities/decoder.hpp"
 
-
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 RegisterMap::RegisterMap(JavaThread *thread, bool update_map) {
   _thread         = thread;
   _update_map     = update_map;
@@ -112,7 +109,7 @@ void RegisterMap::print_on(outputStream* st) const {
     if (src != NULL) {
 
       r->print_on(st);
-      st->print(" [" INTPTR_FORMAT "] = ", src);
+      st->print(" [" INTPTR_FORMAT "] = ", p2i(src));
       if (((uintptr_t)src & (sizeof(*src)-1)) != 0) {
         st->print_cr("<misaligned>");
       } else {
@@ -494,9 +491,10 @@ void frame::print_value_on(outputStream* st, JavaThread *thread) const {
   NOT_PRODUCT(address begin = pc()-40;)
   NOT_PRODUCT(address end   = NULL;)
 
-  st->print("%s frame (sp=" INTPTR_FORMAT " unextended sp=" INTPTR_FORMAT, print_name(), sp(), unextended_sp());
+  st->print("%s frame (sp=" INTPTR_FORMAT " unextended sp=" INTPTR_FORMAT, print_name(), p2i(sp()), p2i(unextended_sp()));
   if (sp() != NULL)
-    st->print(", fp=" INTPTR_FORMAT ", real_fp=" INTPTR_FORMAT ", pc=" INTPTR_FORMAT, fp(), real_fp(), pc());
+    st->print(", fp=" INTPTR_FORMAT ", real_fp=" INTPTR_FORMAT ", pc=" INTPTR_FORMAT,
+              p2i(fp()), p2i(real_fp()), p2i(pc()));
 
   if (StubRoutines::contains(pc())) {
     st->print_cr(")");
@@ -569,15 +567,15 @@ void frame::interpreter_frame_print_on(outputStream* st) const {
     st->print_cr("]");
   }
   // monitor
-  st->print_cr(" - monitor[" INTPTR_FORMAT "]", interpreter_frame_monitor_begin());
+  st->print_cr(" - monitor[" INTPTR_FORMAT "]", p2i(interpreter_frame_monitor_begin()));
   // bcp
-  st->print(" - bcp    [" INTPTR_FORMAT "]", interpreter_frame_bcp());
+  st->print(" - bcp    [" INTPTR_FORMAT "]", p2i(interpreter_frame_bcp()));
   st->fill_to(23);
   st->print_cr("; @%d", interpreter_frame_bci());
   // locals
-  st->print_cr(" - locals [" INTPTR_FORMAT "]", interpreter_frame_local_at(0));
+  st->print_cr(" - locals [" INTPTR_FORMAT "]", p2i(interpreter_frame_local_at(0)));
   // method
-  st->print(" - method [" INTPTR_FORMAT "]", (address)interpreter_frame_method());
+  st->print(" - method [" INTPTR_FORMAT "]", p2i(interpreter_frame_method()));
   st->fill_to(23);
   st->print("; ");
   interpreter_frame_method()->print_name(st);
@@ -606,7 +604,7 @@ void frame::print_C_frame(outputStream* st, char* buf, int buflen, address pc) {
     while ((p2 = strstr(p1, os::file_separator())) != NULL) p1 = p2 + len;
     st->print("  [%s+0x%x]", p1, offset);
   } else {
-    st->print("  " PTR_FORMAT, pc);
+    st->print("  " PTR_FORMAT, p2i(pc));
   }
 
   // function name - os::dll_address_to_function_name() may return confusing
@@ -645,14 +643,14 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
         st->print("j  %s", buf);
         st->print("+%d", this->interpreter_frame_bci());
       } else {
-        st->print("j  " PTR_FORMAT, pc());
+        st->print("j  " PTR_FORMAT, p2i(pc()));
       }
     } else if (StubRoutines::contains(pc())) {
       StubCodeDesc* desc = StubCodeDesc::desc_for(pc());
       if (desc != NULL) {
         st->print("v  ~StubRoutines::%s", desc->name());
       } else {
-        st->print("v  ~StubRoutines::" PTR_FORMAT, pc());
+        st->print("v  ~StubRoutines::" PTR_FORMAT, p2i(pc()));
       }
     } else if (_cb->is_buffer_blob()) {
       st->print("v  ~BufferBlob::%s", ((BufferBlob *)_cb)->name());
@@ -661,12 +659,12 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
       Method* m = nm->method();
       if (m != NULL) {
         m->name_and_sig_as_C_string(buf, buflen);
-        st->print("J %d%s %s %s (%d bytes) @ " PTR_FORMAT " [" PTR_FORMAT "+0x%x]",
+        st->print("J %d%s %s %s (%d bytes) @ " PTR_FORMAT " [" PTR_FORMAT "+" INTPTR_FORMAT "]",
                   nm->compile_id(), (nm->is_osr_method() ? "%" : ""),
                   ((nm->compiler() != NULL) ? nm->compiler()->name() : ""),
-                  buf, m->code_size(), _pc, _cb->code_begin(), _pc - _cb->code_begin());
+                  buf, m->code_size(), p2i(_pc), p2i(_cb->code_begin()), _pc - _cb->code_begin());
       } else {
-        st->print("J  " PTR_FORMAT, pc());
+        st->print("J  " PTR_FORMAT, p2i(pc()));
       }
     } else if (_cb->is_runtime_stub()) {
       st->print("v  ~RuntimeStub::%s", ((RuntimeStub *)_cb)->name());
@@ -677,7 +675,7 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
     } else if (_cb->is_safepoint_stub()) {
       st->print("v  ~SafepointBlob");
     } else {
-      st->print("v  blob " PTR_FORMAT, pc());
+      st->print("v  blob " PTR_FORMAT, p2i(pc()));
     }
   } else {
     print_C_frame(st, buf, buflen, pc());
@@ -998,7 +996,8 @@ class CompiledArgumentOopFinder: public SignatureInfo {
   }
 };
 
-void frame::oops_compiled_arguments_do(Symbol* signature, bool has_receiver, bool has_appendix, const RegisterMap* reg_map, OopClosure* f) {
+void frame::oops_compiled_arguments_do(Symbol* signature, bool has_receiver, bool has_appendix,
+                                       const RegisterMap* reg_map, OopClosure* f) {
   ResourceMark rm;
   CompiledArgumentOopFinder finder(signature, has_receiver, has_appendix, f, *this, reg_map);
   finder.oops_do();
@@ -1022,7 +1021,7 @@ oop frame::retrieve_receiver(RegisterMap* reg_map) {
     return NULL;
   }
   oop r = *oop_adr;
-  assert(Universe::heap()->is_in_or_null(r), "bad receiver: " INTPTR_FORMAT " (" INTX_FORMAT ")", (void *) r, (void *) r);
+  assert(Universe::heap()->is_in_or_null(r), "bad receiver: " INTPTR_FORMAT " (" INTX_FORMAT ")", p2i(r), p2i(r));
   return r;
 }
 
@@ -1223,7 +1222,7 @@ void frame::describe(FrameValues& values, int frame_no) {
     nmethod* nm = cb()->as_nmethod_or_null();
     values.describe(-1, info_address,
                     FormatBuffer<1024>("#%d nmethod " INTPTR_FORMAT " for method %s%s", frame_no,
-                                       nm, nm->method()->name_and_sig_as_C_string(),
+                                       p2i(nm), nm->method()->name_and_sig_as_C_string(),
                                        (_deopt_state == is_deoptimized) ?
                                        " (deoptimized)" :
                                        ((_deopt_state == unknown) ? " (state unknown)" : "")),
@@ -1233,7 +1232,7 @@ void frame::describe(FrameValues& values, int frame_no) {
     nmethod* nm = cb()->as_nmethod_or_null();
     values.describe(-1, info_address,
                     FormatBuffer<1024>("#%d nmethod " INTPTR_FORMAT " for native method %s", frame_no,
-                                       nm, nm->method()->name_and_sig_as_C_string()), 2);
+                                       p2i(nm), nm->method()->name_and_sig_as_C_string()), 2);
   } else {
     // provide default info if not handled before
     char *info = (char *) "special frame";
@@ -1290,8 +1289,8 @@ void FrameValues::validate() {
     if (prev.location == fv.location) {
       if (fv.owner != prev.owner) {
         tty->print_cr("overlapping storage");
-        tty->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", prev.location, *prev.location, prev.description);
-        tty->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", fv.location, *fv.location, fv.description);
+        tty->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", p2i(prev.location), *prev.location, prev.description);
+        tty->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", p2i(fv.location), *fv.location, fv.description);
         error = true;
       }
     } else {
@@ -1335,14 +1334,14 @@ void FrameValues::print(JavaThread* thread) {
   for (int i = max_index; i >= min_index; i--) {
     FrameValue fv = _values.at(i);
     while (cur > fv.location) {
-      tty->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT, cur, *cur);
+      tty->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT, p2i(cur), *cur);
       cur--;
     }
     if (last == fv.location) {
       const char* spacer = "          " LP64_ONLY("        ");
       tty->print_cr(" %s  %s %s", spacer, spacer, fv.description);
     } else {
-      tty->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", fv.location, *fv.location, fv.description);
+      tty->print_cr(" " INTPTR_FORMAT ": " INTPTR_FORMAT " %s", p2i(fv.location), *fv.location, fv.description);
       last = fv.location;
       cur--;
     }

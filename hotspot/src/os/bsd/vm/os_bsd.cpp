@@ -128,8 +128,6 @@
 
 #define LARGEPAGES_BIT (1 << 6)
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
 julong os::Bsd::_physical_memory = 0;

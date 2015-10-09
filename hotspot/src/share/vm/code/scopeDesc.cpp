@@ -30,8 +30,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 ScopeDesc::ScopeDesc(const nmethod* code, int decode_offset, int obj_decode_offset, bool reexecute, bool return_oop) {
   _code          = code;
   _decode_offset = decode_offset;
@@ -178,13 +176,13 @@ void ScopeDesc::print_on(outputStream* st) const {
 void ScopeDesc::print_on(outputStream* st, PcDesc* pd) const {
   // header
   if (pd != NULL) {
-    st->print_cr("ScopeDesc(pc=" PTR_FORMAT " offset=%x):", pd->real_pc(_code), pd->pc_offset());
+    st->print_cr("ScopeDesc(pc=" PTR_FORMAT " offset=%x):", p2i(pd->real_pc(_code)), pd->pc_offset());
   }
 
   print_value_on(st);
   // decode offsets
   if (WizardMode) {
-    st->print("ScopeDesc[%d]@" PTR_FORMAT " ", _decode_offset, _code->content_begin());
+    st->print("ScopeDesc[%d]@" PTR_FORMAT " ", _decode_offset, p2i(_code->content_begin()));
     st->print_cr(" offset:     %d",    _decode_offset);
     st->print_cr(" bci:        %d",    bci());
     st->print_cr(" reexecute:  %s",    should_reexecute() ? "true" : "false");
