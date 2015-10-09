@@ -145,8 +145,8 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(
     } else {
       // normal class
       ik = new (loader_data, size, THREAD) InstanceKlass(
-        vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt,
-        access_flags, is_anonymous);
+        vtable_len, itable_len, static_field_size, nonstatic_oop_map_size,
+        InstanceKlass::_misc_kind_other, rt, access_flags, is_anonymous);
     }
   } else {
     // reference klass
@@ -195,6 +195,7 @@ InstanceKlass::InstanceKlass(int vtable_len,
                              int itable_len,
                              int static_field_size,
                              int nonstatic_oop_map_size,
+                             unsigned kind,
                              ReferenceType rt,
                              AccessFlags access_flags,
                              bool is_anonymous) {
@@ -209,6 +210,7 @@ InstanceKlass::InstanceKlass(int vtable_len,
   set_nonstatic_oop_map_size(nonstatic_oop_map_size);
   set_access_flags(access_flags);
   _misc_flags = 0;  // initialize to zero
+  set_kind(kind);
   set_is_anonymous(is_anonymous);
   assert(size() == iksize, "wrong size for object");
 
