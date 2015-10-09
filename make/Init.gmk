@@ -287,7 +287,7 @@ else # HAS_SPEC=true
 	    $(call StartGlobalTimer)
 	    $(call PrepareSmartJavac)
 	    ( cd $(TOPDIR) && \
-	        $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) $(OUTPUT_SYNC_FLAG) \
+	        $(BUILD_LOG_WRAPPER) $(NICE) $(MAKE) $(MAKE_ARGS) $(OUTPUT_SYNC_FLAG) \
 	            -j $(JOBS) -f make/Main.gmk $(USER_MAKE_VARS) \
 	            $(PARALLEL_TARGETS) $(COMPARE_BUILD_MAKE) || \
 	        ( exitcode=$$? && $(BUILD_LOG_WRAPPER) \
