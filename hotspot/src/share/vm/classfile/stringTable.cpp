@@ -43,8 +43,6 @@
 #include "gc/g1/g1StringDedup.hpp"
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // the number of buckets a thread claims
 const int ClaimChunkSize = 32;
 
@@ -445,7 +443,7 @@ StringTable::VerifyRetTypes StringTable::compare_entries(
   if (str1 == str2) {
     tty->print_cr("ERROR: identical oop values (0x" PTR_FORMAT ") "
                   "in entry @ bucket[%d][%d] and entry @ bucket[%d][%d]",
-                  (void *)str1, bkt1, e_cnt1, bkt2, e_cnt2);
+                  p2i(str1), bkt1, e_cnt1, bkt2, e_cnt2);
     return _verify_fail_continue;
   }
 

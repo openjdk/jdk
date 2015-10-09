@@ -78,8 +78,6 @@
 #  endif
 #endif // PRODUCT
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 FormatBufferResource::FormatBufferResource(const char * format, ...)
   : FormatBufferBase((char*)resource_allocate_bytes(FormatBufferBase::BufferSize)) {
   va_list argp;
@@ -524,7 +522,7 @@ extern "C" void pp(void* p) {
     oop obj = oop(p);
     obj->print();
   } else {
-    tty->print(PTR_FORMAT, p);
+    tty->print(PTR_FORMAT, p2i(p));
   }
 }
 
@@ -559,7 +557,7 @@ extern "C" void ps() { // print stack
     frame f = os::current_frame();
     RegisterMap reg_map(p);
     f = f.sender(&reg_map);
-    tty->print("(guessing starting frame id=%#p based on current fp)\n", f.id());
+    tty->print("(guessing starting frame id=" PTR_FORMAT " based on current fp)\n", p2i(f.id()));
     p->trace_stack_from(vframe::new_vframe(&f, &reg_map, p));
   pd_ps(f);
 #endif // PRODUCT

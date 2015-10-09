@@ -38,8 +38,6 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "utilities/copy.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // ==================================================================
 // DataLayout
 //

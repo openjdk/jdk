@@ -31,8 +31,6 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 class OopMapCacheEntry: private InterpreterOopMap {
   friend class InterpreterOopMap;
   friend class OopMapForCacheEntry;

@@ -32,8 +32,6 @@
 #include "oops/typeArrayKlass.hpp"
 #include "runtime/signature.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Implementation of SignatureIterator
 
 // Signature syntax:
@@ -209,7 +207,7 @@ void SignatureIterator::iterate_parameters( uint64_t fingerprint ) {
         return;
         break;
       default:
-        tty->print_cr("*** parameter is %d", fingerprint & parameter_feature_mask);
+        tty->print_cr("*** parameter is " UINT64_FORMAT, fingerprint & parameter_feature_mask);
         tty->print_cr("*** fingerprint is " PTR64_FORMAT, saved_fingerprint);
         ShouldNotReachHere();
         break;

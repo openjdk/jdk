@@ -27,8 +27,6 @@
 #include "code/nmethod.hpp"
 #include "memory/allocation.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 void ExceptionHandlerTable::add_entry(HandlerTableEntry entry) {
   _nesting.check();
   if (_length >= _size) {
@@ -186,7 +184,7 @@ uint ImplicitExceptionTable::at( uint exec_off ) const {
 void ImplicitExceptionTable::print(address base) const {
   tty->print("{");
   for( uint i=0; i<len(); i++ )
-    tty->print("< " INTPTR_FORMAT ", " INTPTR_FORMAT " > ",base + *adr(i), base + *(adr(i)+1));
+    tty->print("< " INTPTR_FORMAT ", " INTPTR_FORMAT " > ", p2i(base + *adr(i)), p2i(base + *(adr(i)+1)));
   tty->print_cr("}");
 }
 
@@ -225,6 +223,6 @@ void ImplicitExceptionTable::verify(nmethod *nm) const {
   for (uint i = 0; i < len(); i++) {
      if ((*adr(i) > (unsigned int)nm->insts_size()) ||
          (*(adr(i)+1) > (unsigned int)nm->insts_size()))
-       fatal("Invalid offset in ImplicitExceptionTable at " PTR_FORMAT, _data);
+       fatal("Invalid offset in ImplicitExceptionTable at " PTR_FORMAT, p2i(_data));
   }
 }
