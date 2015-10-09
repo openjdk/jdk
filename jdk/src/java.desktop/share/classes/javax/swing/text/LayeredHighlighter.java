@@ -55,7 +55,7 @@ public abstract class LayeredHighlighter implements Highlighter {
     /**
      * Layered highlight renderer.
      */
-    static public abstract class LayerPainter implements Highlighter.HighlightPainter {
+    public abstract static class LayerPainter implements Highlighter.HighlightPainter {
         /**
          * @return a shape
          * @param g Graphics used to draw

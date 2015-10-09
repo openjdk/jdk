@@ -34,9 +34,9 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
-import sun.misc.JavaAWTAccess;
+import jdk.internal.misc.JavaAWTAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.misc.ManagedLocalsThread;
-import sun.misc.SharedSecrets;
 
 /**
  * There is a single global LogManager object that is used to

@@ -47,7 +47,7 @@ import sun.util.logging.PlatformLogger;
  */
 class WaitDispatchSupport implements SecondaryLoop {
 
-    private final static PlatformLogger log =
+    private static final PlatformLogger log =
         PlatformLogger.getLogger("java.awt.event.WaitDispatchSupport");
 
     private EventDispatchThread dispatchThread;
@@ -303,7 +303,7 @@ class WaitDispatchSupport implements SecondaryLoop {
         return false;
     }
 
-    private final static Object getTreeLock() {
+    private static final Object getTreeLock() {
         return Component.LOCK;
     }
 

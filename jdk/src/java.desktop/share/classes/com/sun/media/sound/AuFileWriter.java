@@ -52,7 +52,7 @@ import javax.sound.sampled.AudioSystem;
 public final class AuFileWriter extends SunFileWriter {
 
     //$$fb value for length field if length is not known
-    public final static int UNKNOWN_SIZE=-1;
+    public static final int UNKNOWN_SIZE=-1;
 
     /**
      * Constructs a new AuFileWriter object.

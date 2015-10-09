@@ -73,18 +73,18 @@ public class ImagingLib {
      */
     private static native boolean init();
 
-    static public native int transformBI(BufferedImage src, BufferedImage dst,
+    public static native int transformBI(BufferedImage src, BufferedImage dst,
                                          double[] matrix, int interpType);
-    static public native int transformRaster(Raster src, Raster dst,
+    public static native int transformRaster(Raster src, Raster dst,
                                              double[] matrix,
                                              int interpType);
-    static public native int convolveBI(BufferedImage src, BufferedImage dst,
+    public static native int convolveBI(BufferedImage src, BufferedImage dst,
                                         Kernel kernel, int edgeHint);
-    static public native int convolveRaster(Raster src, Raster dst,
+    public static native int convolveRaster(Raster src, Raster dst,
                                             Kernel kernel, int edgeHint);
-    static public native int lookupByteBI(BufferedImage src, BufferedImage dst,
+    public static native int lookupByteBI(BufferedImage src, BufferedImage dst,
                                         byte[][] table);
-    static public native int lookupByteRaster(Raster src, Raster dst,
+    public static native int lookupByteRaster(Raster src, Raster dst,
                                               byte[][] table);
 
     static {

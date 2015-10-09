@@ -42,28 +42,28 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
 
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XListPeer");
 
-    public final static int     MARGIN = 2;
-    public final static int     SPACE = 1;
-    public final static int     SCROLLBAR_AREA = 17;  // Area reserved for the
+    public static final int     MARGIN = 2;
+    public static final int     SPACE = 1;
+    public static final int     SCROLLBAR_AREA = 17;  // Area reserved for the
                                                       // scrollbar
-    public final static int     SCROLLBAR_WIDTH = 13; // Actual width of the
+    public static final int     SCROLLBAR_WIDTH = 13; // Actual width of the
                                                       // scrollbar
-    public final static int     NONE = -1;
-    public final static int     WINDOW = 0;
-    public final static int     VERSCROLLBAR = 1;
-    public final static int     HORSCROLLBAR = 2;
-    public final static int     DEFAULT_VISIBLE_ROWS = 4; // From java.awt.List,
-    public final static int     HORIZ_SCROLL_AMT = 10;
+    public static final int     NONE = -1;
+    public static final int     WINDOW = 0;
+    public static final int     VERSCROLLBAR = 1;
+    public static final int     HORSCROLLBAR = 2;
+    public static final int     DEFAULT_VISIBLE_ROWS = 4; // From java.awt.List,
+    public static final int     HORIZ_SCROLL_AMT = 10;
 
-    private final static int    PAINT_VSCROLL = 2;
-    private final static int    PAINT_HSCROLL = 4;
-    private final static int    PAINT_ITEMS = 8;
-    private final static int    PAINT_FOCUS = 16;
-    private final static int    PAINT_BACKGROUND = 32;
-    private final static int    PAINT_HIDEFOCUS = 64;
-    private final static int    PAINT_ALL =
+    private static final int    PAINT_VSCROLL = 2;
+    private static final int    PAINT_HSCROLL = 4;
+    private static final int    PAINT_ITEMS = 8;
+    private static final int    PAINT_FOCUS = 16;
+    private static final int    PAINT_BACKGROUND = 32;
+    private static final int    PAINT_HIDEFOCUS = 64;
+    private static final int    PAINT_ALL =
         PAINT_VSCROLL | PAINT_HSCROLL | PAINT_ITEMS | PAINT_FOCUS | PAINT_BACKGROUND;
-    private final static int    COPY_AREA = 128;
+    private static final int    COPY_AREA = 128;
 
     XVerticalScrollbar       vsb;
     XHorizontalScrollbar     hsb;

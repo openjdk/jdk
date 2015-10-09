@@ -82,7 +82,7 @@ public class LineEvent extends EventObject {
      * @param  position the number of sample frames that the line had already
      *         processed when the event occurred, or
      *         {@link AudioSystem#NOT_SPECIFIED}
-     * @throws IllegalArgumentException if {@code line} is {@code null}.
+     * @throws IllegalArgumentException if {@code line} is {@code null}
      */
     public LineEvent(Line line, Type type, long position) {
 

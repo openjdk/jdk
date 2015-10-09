@@ -25,7 +25,7 @@
 
 package sun.awt.X11;
 
-final public class XUtilConstants {
+public final class XUtilConstants {
 
     private XUtilConstants(){}
 

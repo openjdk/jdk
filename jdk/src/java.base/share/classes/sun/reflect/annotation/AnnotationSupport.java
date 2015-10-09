@@ -35,12 +35,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import sun.misc.JavaLangAccess;
-import sun.reflect.LangReflectAccess;
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaLangAccess;
 import sun.reflect.ReflectionFactory;
 
 public final class AnnotationSupport {
-    private static final JavaLangAccess LANG_ACCESS = sun.misc.SharedSecrets.getJavaLangAccess();
+    private static final JavaLangAccess LANG_ACCESS = SharedSecrets.getJavaLangAccess();
 
     /**
      * Finds and returns all annotations in {@code annotations} matching

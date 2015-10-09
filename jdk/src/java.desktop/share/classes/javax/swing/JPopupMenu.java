@@ -1545,7 +1545,7 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
      * A popup menu-specific separator.
      */
     @SuppressWarnings("serial")
-    static public class Separator extends JSeparator
+    public static class Separator extends JSeparator
     {
         /**
          * Constructs a popup menu-specific Separator.

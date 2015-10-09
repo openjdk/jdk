@@ -281,7 +281,7 @@ public class BufferedImage extends java.awt.Image
     private static final int DCM_BGR_BLU_MASK = 0xff0000;
 
 
-    static private native void initIDs();
+    private static native void initIDs();
     static {
         ColorModel.loadLibraries();
         initIDs();

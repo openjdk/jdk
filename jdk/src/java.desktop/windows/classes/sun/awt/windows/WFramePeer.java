@@ -195,7 +195,7 @@ class WFramePeer extends WWindowPeer implements FramePeer {
         setState(target.getExtendedState());
     }
 
-    private native static int getSysMenuHeight();
+    private static native int getSysMenuHeight();
 
     native void pSetIMMOption(String option);
     void notifyIMMOptionChange(){

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,10 +32,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.SortedMap;
-import java.util.TimeZone;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
@@ -95,13 +96,9 @@ public class UnpackerImpl extends TLGlobals implements Pack200.Unpacker {
             throw new NullPointerException("null output");
         }
         assert(Utils.currentInstance.get() == null);
-        TimeZone tz = (props.getBoolean(Utils.PACK_DEFAULT_TIMEZONE))
-                      ? null
-                      : TimeZone.getDefault();
 
         try {
             Utils.currentInstance.set(this);
-            if (tz != null) TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
             final int verbose = props.getInteger(Utils.DEBUG_VERBOSE);
             BufferedInputStream in0 = new BufferedInputStream(in);
             if (Utils.isJarMagic(Utils.readMagic(in0))) {
@@ -125,7 +122,6 @@ public class UnpackerImpl extends TLGlobals implements Pack200.Unpacker {
         } finally {
             _nunp = null;
             Utils.currentInstance.set(null);
-            if (tz != null) TimeZone.setDefault(tz);
         }
     }
 
@@ -246,9 +242,9 @@ public class UnpackerImpl extends TLGlobals implements Pack200.Unpacker {
                     je.setCrc(crc.getValue());
                 }
                 if (keepModtime) {
-                    je.setTime(file.modtime);
-                    // Convert back to milliseconds
-                    je.setTime((long)file.modtime * 1000);
+                    LocalDateTime ldt = LocalDateTime
+                            .ofEpochSecond(file.modtime, 0, ZoneOffset.UTC);
+                    je.setTimeLocal(ldt);
                 } else {
                     je.setTime((long)modtime * 1000);
                 }

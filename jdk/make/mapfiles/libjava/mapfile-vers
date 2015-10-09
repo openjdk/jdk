@@ -282,8 +282,9 @@ SUNWprivate_1.1 {
 
                 # ZipFile.c needs this one
 		throwFileNotFoundException;
-                # zip_util.c needs this one
+                # zip_util.c needs these
 		getLastErrorString;
+		getErrorString;
 
 	# Outcalls from libjvm done using dlsym().
 

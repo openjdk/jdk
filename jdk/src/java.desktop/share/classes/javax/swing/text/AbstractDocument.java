@@ -1300,7 +1300,7 @@ public abstract class AbstractDocument implements Document, Serializable {
      * @return the thread actively modifying the document
      *  or <code>null</code> if there are no modifications in progress
      */
-    protected synchronized final Thread getCurrentWriter() {
+    protected final synchronized Thread getCurrentWriter() {
         return currWriter;
     }
 
@@ -1329,7 +1329,7 @@ public abstract class AbstractDocument implements Document, Serializable {
      *  where order of delivery is not guaranteed and all listeners
      *  should be notified before further mutations are allowed.
      */
-    protected synchronized final void writeLock() {
+    protected final synchronized void writeLock() {
         try {
             while ((numReaders > 0) || (currWriter != null)) {
                 if (Thread.currentThread() == currWriter) {
@@ -1359,7 +1359,7 @@ public abstract class AbstractDocument implements Document, Serializable {
      *
      * @see #writeLock
      */
-    protected synchronized final void writeUnlock() {
+    protected final synchronized void writeUnlock() {
         if (--numWriters <= 0) {
             numWriters = 0;
             currWriter = null;
@@ -1378,7 +1378,7 @@ public abstract class AbstractDocument implements Document, Serializable {
      *
      * @see #readUnlock
      */
-    public synchronized final void readLock() {
+    public final synchronized void readLock() {
         try {
             while (currWriter != null) {
                 if (currWriter == Thread.currentThread()) {
@@ -1412,7 +1412,7 @@ public abstract class AbstractDocument implements Document, Serializable {
      *
      * @see #readLock
      */
-    public synchronized final void readUnlock() {
+    public final synchronized void readUnlock() {
         if (currWriter == Thread.currentThread()) {
             // writer has full read access.... may try to acquire
             // lock in notification

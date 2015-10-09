@@ -80,8 +80,8 @@ import javax.management.RuntimeErrorException;
 import javax.management.RuntimeOperationsException;
 import javax.management.ServiceNotFoundException;
 import javax.management.loading.ClassLoaderRepository;
-import sun.misc.JavaSecurityAccess;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaSecurityAccess;
+import jdk.internal.misc.SharedSecrets;
 
 import sun.reflect.misc.MethodUtil;
 import sun.reflect.misc.ReflectUtil;

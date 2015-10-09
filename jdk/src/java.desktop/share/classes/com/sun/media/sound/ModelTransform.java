@@ -31,5 +31,5 @@ package com.sun.media.sound;
  */
 public interface ModelTransform {
 
-    abstract public double transform(double value);
+    public abstract double transform(double value);
 }

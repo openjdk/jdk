@@ -26,10 +26,10 @@
 package java.lang.ref;
 
 import sun.misc.Cleaner;
-import sun.misc.JavaLangRefAccess;
-import sun.misc.ManagedLocalsThread;
-import sun.misc.SharedSecrets;
 import jdk.internal.HotSpotIntrinsicCandidate;
+import jdk.internal.misc.JavaLangRefAccess;
+import jdk.internal.misc.SharedSecrets;
+import sun.misc.ManagedLocalsThread;
 
 /**
  * Abstract base class for reference objects.  This class defines the
