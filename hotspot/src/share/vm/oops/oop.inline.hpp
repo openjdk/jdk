@@ -126,10 +126,25 @@ inline void   oopDesc::init_mark()                 { set_mark(markOopDesc::proto
 
 inline bool oopDesc::is_a(Klass* k)        const { return klass()->is_subtype_of(k); }
 
-inline bool oopDesc::is_instance()            const { return klass()->oop_is_instance(); }
-inline bool oopDesc::is_instanceClassLoader() const { return klass()->oop_is_instanceClassLoader(); }
-inline bool oopDesc::is_instanceMirror()      const { return klass()->oop_is_instanceMirror(); }
-inline bool oopDesc::is_instanceRef()         const { return klass()->oop_is_instanceRef(); }
+inline bool oopDesc::is_instance() const {
+  return klass()->oop_is_instance();
+}
+
+inline bool oopDesc::is_instanceClassLoader() const {
+  Klass* k = klass();
+  return k->oop_is_instance() && InstanceKlass::cast(k)->is_class_loader_instance_klass();
+}
+
+inline bool oopDesc::is_instanceMirror() const {
+  Klass* k = klass();
+  return k->oop_is_instance() && InstanceKlass::cast(k)->is_mirror_instance_klass();
+}
+
+inline bool oopDesc::is_instanceRef() const {
+  Klass* k = klass();
+  return k->oop_is_instance() && InstanceKlass::cast(k)->is_reference_instance_klass();
+}
+
 inline bool oopDesc::is_array()               const { return klass()->oop_is_array(); }
 inline bool oopDesc::is_objArray()            const { return klass()->oop_is_objArray(); }
 inline bool oopDesc::is_typeArray()           const { return klass()->oop_is_typeArray(); }

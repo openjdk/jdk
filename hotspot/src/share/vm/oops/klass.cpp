@@ -715,8 +715,14 @@ bool Klass::verify_itable_index(int i) {
 class TestKlass {
  public:
   static void test_oop_is_instanceClassLoader() {
-    assert(SystemDictionary::ClassLoader_klass()->oop_is_instanceClassLoader(), "assert");
-    assert(!SystemDictionary::String_klass()->oop_is_instanceClassLoader(), "assert");
+    Klass* klass = SystemDictionary::ClassLoader_klass();
+    guarantee(klass->oop_is_instance(), "assert");
+    guarantee(InstanceKlass::cast(klass)->is_class_loader_instance_klass(), "test failed");
+
+    klass = SystemDictionary::String_klass();
+    guarantee(!klass->oop_is_instance() ||
+              !InstanceKlass::cast(klass)->is_class_loader_instance_klass(),
+              "test failed");
   }
 };
 
