@@ -1092,11 +1092,6 @@ void VM_Version::get_processor_features() {
   }
 #endif // COMPILER2
 
-  assert(0 <= AllocatePrefetchInstr && AllocatePrefetchInstr <= 3, "invalid value");
-
-  // set valid Prefetch instruction
-  if( AllocatePrefetchInstr < 0 ) AllocatePrefetchInstr = 0;
-  if( AllocatePrefetchInstr > 3 ) AllocatePrefetchInstr = 3;
   if( AllocatePrefetchInstr == 3 && !supports_3dnow_prefetch() ) AllocatePrefetchInstr=0;
   if( !supports_sse() && supports_3dnow_prefetch() ) AllocatePrefetchInstr = 3;
 
@@ -1135,7 +1130,6 @@ void VM_Version::get_processor_features() {
     }
 #endif
   }
-  assert(AllocatePrefetchDistance % AllocatePrefetchStepSize == 0, "invalid value");
 
 #ifdef _LP64
   // Prefetch settings

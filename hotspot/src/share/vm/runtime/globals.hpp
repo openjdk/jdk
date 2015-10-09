@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_GLOBALS_HPP
 #define SHARE_VM_RUNTIME_GLOBALS_HPP
 
+#include <float.h>
 #include "utilities/debug.hpp"
 
 // use this for flags that are true per default in the tiered build
@@ -528,7 +529,7 @@ public:
 // notproduct flags are settable / visible only during development and are not declared in the PRODUCT version
 
 // A flag must be declared with one of the following types:
-// bool, intx, uintx, size_t, ccstr, double, or uint64_t.
+// bool, int, uint, intx, uintx, size_t, ccstr, double, or uint64_t.
 // The type "ccstr" is an alias for "const char*" and is used
 // only in this file, because the macrology requires single-token type names.
 
@@ -701,6 +702,7 @@ public:
                                                                             \
   product(intx, UseSSE, 99,                                                 \
           "Highest supported SSE instructions set on x86/x64")              \
+          range(0, 99)                                                      \
                                                                             \
   product(bool, UseAES, false,                                              \
           "Control whether AES instructions can be used on x86/x64")        \
@@ -1255,6 +1257,7 @@ public:
                "Control emission of inline sync fast-path code")            \
                                                                             \
   product(intx, MonitorBound, 0, "Bound Monitor population")                \
+          range(0, max_jint)                                                \
                                                                             \
   product(bool, MonitorInUseLists, false, "Track Monitors for Deflation")   \
                                                                             \
@@ -2712,6 +2715,7 @@ public:
   diagnostic(intx, HotMethodDetectionLimit, 100000,                         \
           "Number of compiled code invocations after which "                \
           "the method is considered as hot by the flusher")                 \
+          range(1, max_jint)                                                \
                                                                             \
   diagnostic(intx, MinPassesBeforeFlush, 10,                                \
           "Minimum number of sweeper passes before an nmethod "             \
@@ -2870,13 +2874,16 @@ public:
                      "Y: Type profiling of return value at call; "          \
                      "X: Type profiling of parameters to methods; "         \
           "X, Y and Z in 0=off ; 1=jsr292 only; 2=all methods")             \
+          constraint(TypeProfileLevelConstraintFunc, AfterErgo)             \
                                                                             \
   product(intx, TypeProfileArgsLimit,     2,                                \
           "max number of call arguments to consider for type profiling")    \
+          range(0, 16)                                                      \
                                                                             \
   product(intx, TypeProfileParmsLimit,    2,                                \
           "max number of incoming parameters to consider for type profiling"\
           ", -1 for all")                                                   \
+          range(-1, 64)                                                     \
                                                                             \
   /* statistics */                                                          \
   develop(bool, CountCompiledCalls, false,                                  \
@@ -3035,13 +3042,17 @@ public:
           "Analyze bytecodes to estimate escape state of arguments")        \
                                                                             \
   product(intx, BCEATraceLevel, 0,                                          \
-          "How much tracing to do of bytecode escape analysis estimates")   \
+          "How much tracing to do of bytecode escape analysis estimates "   \
+          "(0-3)")                                                          \
+          range(0, 3)                                                       \
                                                                             \
   product(intx, MaxBCEAEstimateLevel, 5,                                    \
           "Maximum number of nested calls that are analyzed by BC EA")      \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, MaxBCEAEstimateSize, 150,                                   \
           "Maximum bytecode size of a method to be analyzed by BC EA")      \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx,  AllocatePrefetchStyle, 1,                                  \
           "0 = no prefetch, "                                               \
@@ -3051,20 +3062,26 @@ public:
           range(0, 3)                                                       \
                                                                             \
   product(intx,  AllocatePrefetchDistance, -1,                              \
-          "Distance to prefetch ahead of allocation pointer")               \
+          "Distance to prefetch ahead of allocation pointer. "              \
+          "-1: use system-specific value (automatically determined")        \
+          constraint(AllocatePrefetchDistanceConstraintFunc, AfterMemoryInit)\
                                                                             \
   product(intx,  AllocatePrefetchLines, 3,                                  \
           "Number of lines to prefetch ahead of array allocation pointer")  \
+          range(1, max_jint / 2)                                            \
                                                                             \
   product(intx,  AllocateInstancePrefetchLines, 1,                          \
           "Number of lines to prefetch ahead of instance allocation "       \
           "pointer")                                                        \
+          range(1, max_jint / 2)                                            \
                                                                             \
   product(intx,  AllocatePrefetchStepSize, 16,                              \
           "Step size in bytes of sequential prefetch instructions")         \
+          constraint(AllocatePrefetchStepSizeConstraintFunc,AfterMemoryInit)\
                                                                             \
   product(intx,  AllocatePrefetchInstr, 0,                                  \
           "Prefetch instruction to prefetch ahead of allocation pointer")   \
+          constraint(AllocatePrefetchInstrConstraintFunc, AfterErgo)        \
                                                                             \
   /* deoptimization */                                                      \
   develop(bool, TraceDeoptimization, false,                                 \
@@ -3134,30 +3151,38 @@ public:
                                                                             \
   product(intx, MaxInlineLevel, 9,                                          \
           "maximum number of nested calls that are inlined")                \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, MaxRecursiveInlineLevel, 1,                                 \
           "maximum number of nested recursive calls that are inlined")      \
+          range(0, max_jint)                                                \
                                                                             \
   develop(intx, MaxForceInlineLevel, 100,                                   \
           "maximum number of nested calls that are forced for inlining "    \
           "(using CompileCommand or marked w/ @ForceInline)")               \
+          range(0, max_jint)                                                \
                                                                             \
   product_pd(intx, InlineSmallCode,                                         \
           "Only inline already compiled methods if their code size is "     \
           "less than this")                                                 \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, MaxInlineSize, 35,                                          \
           "The maximum bytecode size of a method to be inlined")            \
+          range(0, max_jint)                                                \
                                                                             \
   product_pd(intx, FreqInlineSize,                                          \
           "The maximum bytecode size of a frequent method to be inlined")   \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, MaxTrivialSize, 6,                                          \
           "The maximum bytecode size of a trivial method to be inlined")    \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, MinInliningThreshold, 250,                                  \
           "The minimum invocation count a method needs to have to be "      \
           "inlined")                                                        \
+          range(0, max_jint)                                                \
                                                                             \
   develop(intx, MethodHistogramCutoff, 100,                                 \
           "The cutoff value for method invocation histogram (+CountCalls)") \
@@ -3221,6 +3246,7 @@ public:
                                                                             \
   product(intx, TypeProfileWidth, 2,                                        \
           "Number of receiver types to record in call/cast profile")        \
+          range(0, 4)                                                       \
                                                                             \
   experimental(intx, MethodProfileWidth, 0,                                 \
           "Number of methods to record in call profile")                    \
@@ -3238,32 +3264,40 @@ public:
                                                                             \
   product(intx, PerMethodTrapLimit,  100,                                   \
           "Limit on traps (of one kind) in a method (includes inlines)")    \
+          range(0, max_jint)                                                \
                                                                             \
   experimental(intx, PerMethodSpecTrapLimit,  5000,                         \
           "Limit on speculative traps (of one kind) in a method "           \
           "(includes inlines)")                                             \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, PerBytecodeTrapLimit,  4,                                   \
           "Limit on traps (of one kind) at a particular BCI")               \
+          range(0, max_jint)                                                \
                                                                             \
   experimental(intx, SpecTrapLimitExtraEntries,  3,                         \
           "Extra method data trap entries for speculation")                 \
                                                                             \
   develop(intx, InlineFrequencyRatio,    20,                                \
           "Ratio of call site execution to caller method invocation")       \
+          range(0, max_jint)                                                \
                                                                             \
   develop_pd(intx, InlineFrequencyCount,                                    \
           "Count of call site execution necessary to trigger frequent "     \
           "inlining")                                                       \
+          range(0, max_jint)                                                \
                                                                             \
   develop(intx, InlineThrowCount,    50,                                    \
           "Force inlining of interpreted methods that throw this often")    \
+          range(0, max_jint)                                                \
                                                                             \
   develop(intx, InlineThrowMaxSize,   200,                                  \
           "Force inlining of throwing methods smaller than this")           \
+          range(0, max_jint)                                                \
                                                                             \
   develop(intx, ProfilerNodeSize,  1024,                                    \
           "Size in K to allocate for the Profile Nodes of each thread")     \
+          range(0, 1024)                                                    \
                                                                             \
   /* gc parameters */                                                       \
   product(size_t, InitialHeapSize, 0,                                       \
@@ -3467,6 +3501,7 @@ public:
                                                                             \
   product_pd(intx, CompilerThreadStackSize,                                 \
           "Compiler Thread Stack Size (in Kbytes)")                         \
+          range(0, max_intx)                                                \
                                                                             \
   develop_pd(size_t, JVMInvokeMethodSlack,                                  \
           "Stack space (bytes) required for JVM_InvokeMethod to complete")  \
@@ -3477,36 +3512,46 @@ public:
           "Code cache segment size (in bytes) - smallest unit of "          \
           "allocation")                                                     \
           range(1, 1024)                                                    \
+          constraint(CodeCacheSegmentSizeConstraintFunc, AfterErgo)         \
                                                                             \
   develop_pd(intx, CodeEntryAlignment,                                      \
           "Code entry alignment for generated code (in bytes)")             \
+          constraint(CodeEntryAlignmentConstraintFunc, AfterErgo)           \
                                                                             \
   product_pd(intx, OptoLoopAlignment,                                       \
           "Align inner loops to zero relative to this modulus")             \
+          constraint(OptoLoopAlignmentConstraintFunc, AfterErgo)            \
                                                                             \
   product_pd(uintx, InitialCodeCacheSize,                                   \
           "Initial code cache size (in bytes)")                             \
+          range(0, max_uintx)                                               \
                                                                             \
   develop_pd(uintx, CodeCacheMinimumUseSpace,                               \
           "Minimum code cache size (in bytes) required to start VM.")       \
+          range(0, max_uintx)                                               \
                                                                             \
   product(bool, SegmentedCodeCache, false,                                  \
           "Use a segmented code cache")                                     \
                                                                             \
   product_pd(uintx, ReservedCodeCacheSize,                                  \
           "Reserved code cache size (in bytes) - maximum code cache size")  \
+          range(0, max_uintx)                                               \
                                                                             \
   product_pd(uintx, NonProfiledCodeHeapSize,                                \
           "Size of code heap with non-profiled methods (in bytes)")         \
+          range(0, max_uintx)                                               \
                                                                             \
   product_pd(uintx, ProfiledCodeHeapSize,                                   \
           "Size of code heap with profiled methods (in bytes)")             \
+          range(0, max_uintx)                                               \
                                                                             \
   product_pd(uintx, NonNMethodCodeHeapSize,                                 \
           "Size of code heap with non-nmethods (in bytes)")                 \
+          range(0, max_uintx)                                               \
                                                                             \
   product_pd(uintx, CodeCacheExpansionSize,                                 \
           "Code cache expansion size (in bytes)")                           \
+          range(0, max_uintx)                                               \
                                                                             \
   develop_pd(uintx, CodeCacheMinBlockLength,                                \
           "Minimum number of segments in a code cache block")               \
@@ -3636,6 +3681,7 @@ public:
   product(intx, CompilerThreadPriority, -1,                                 \
           "The native priority at which compiler threads should run "       \
           "(-1 means no change)")                                           \
+          constraint(CompilerThreadPriorityConstraintFunc, AfterErgo)       \
                                                                             \
   product(intx, VMThreadPriority, -1,                                       \
           "The native priority at which the VM thread should run "          \
@@ -3708,6 +3754,7 @@ public:
   /* recompilation */                                                       \
   product_pd(intx, CompileThreshold,                                        \
           "number of interpreted method invocations before (re-)compiling") \
+          constraint(CompileThresholdConstraintFunc, AfterErgo)             \
                                                                             \
   product(double, CompileThresholdScaling, 1.0,                             \
           "Factor to control when first compilation happens "               \
@@ -3721,90 +3768,115 @@ public:
           "If a value is specified for a method, compilation thresholds "   \
           "for that method are scaled by both the value of the global flag "\
           "and the value of the per-method flag.")                          \
+          range(0.0, DBL_MAX)                                               \
                                                                             \
   product(intx, Tier0InvokeNotifyFreqLog, 7,                                \
           "Interpreter (tier 0) invocation notification frequency")         \
+          range(0, 30)                                                      \
                                                                             \
   product(intx, Tier2InvokeNotifyFreqLog, 11,                               \
           "C1 without MDO (tier 2) invocation notification frequency")      \
+          range(0, 30)                                                      \
                                                                             \
   product(intx, Tier3InvokeNotifyFreqLog, 10,                               \
           "C1 with MDO profiling (tier 3) invocation notification "         \
           "frequency")                                                      \
+          range(0, 30)                                                      \
                                                                             \
   product(intx, Tier23InlineeNotifyFreqLog, 20,                             \
           "Inlinee invocation (tiers 2 and 3) notification frequency")      \
+          range(0, 30)                                                      \
                                                                             \
   product(intx, Tier0BackedgeNotifyFreqLog, 10,                             \
           "Interpreter (tier 0) invocation notification frequency")         \
+          range(0, 30)                                                      \
                                                                             \
   product(intx, Tier2BackedgeNotifyFreqLog, 14,                             \
           "C1 without MDO (tier 2) invocation notification frequency")      \
+          range(0, 30)                                                      \
                                                                             \
   product(intx, Tier3BackedgeNotifyFreqLog, 13,                             \
           "C1 with MDO profiling (tier 3) invocation notification "         \
           "frequency")                                                      \
+          range(0, 30)                                                      \
                                                                             \
   product(intx, Tier2CompileThreshold, 0,                                   \
           "threshold at which tier 2 compilation is invoked")               \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier2BackEdgeThreshold, 0,                                  \
           "Back edge threshold at which tier 2 compilation is invoked")     \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3InvocationThreshold, 200,                              \
           "Compile if number of method invocations crosses this "           \
           "threshold")                                                      \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3MinInvocationThreshold, 100,                           \
           "Minimum invocation to compile at tier 3")                        \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3CompileThreshold, 2000,                                \
           "Threshold at which tier 3 compilation is invoked (invocation "   \
           "minimum must be satisfied)")                                     \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3BackEdgeThreshold,  60000,                             \
           "Back edge threshold at which tier 3 OSR compilation is invoked") \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier4InvocationThreshold, 5000,                             \
           "Compile if number of method invocations crosses this "           \
           "threshold")                                                      \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier4MinInvocationThreshold, 600,                           \
           "Minimum invocation to compile at tier 4")                        \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier4CompileThreshold, 15000,                               \
           "Threshold at which tier 4 compilation is invoked (invocation "   \
           "minimum must be satisfied")                                      \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier4BackEdgeThreshold, 40000,                              \
           "Back edge threshold at which tier 4 OSR compilation is invoked") \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3DelayOn, 5,                                            \
           "If C2 queue size grows over this amount per compiler thread "    \
           "stop compiling at tier 3 and start compiling at tier 2")         \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3DelayOff, 2,                                           \
           "If C2 queue size is less than this amount per compiler thread "  \
           "allow methods compiled at tier 2 transition to tier 3")          \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3LoadFeedback, 5,                                       \
           "Tier 3 thresholds will increase twofold when C1 queue size "     \
           "reaches this amount per compiler thread")                        \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier4LoadFeedback, 3,                                       \
           "Tier 4 thresholds will increase twofold when C2 queue size "     \
           "reaches this amount per compiler thread")                        \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, TieredCompileTaskTimeout, 50,                               \
           "Kill compile task if method was not used within "                \
           "given timeout in milliseconds")                                  \
+          range(0, max_intx)                                                \
                                                                             \
   product(intx, TieredStopAtLevel, 4,                                       \
           "Stop at given compilation level")                                \
+          range(0, 4)                                                       \
                                                                             \
   product(intx, Tier0ProfilingStartPercentage, 200,                         \
           "Start profiling in interpreter if the counters exceed tier 3 "   \
           "thresholds by the specified percentage")                         \
+          range(0, max_jint)                                                \
                                                                             \
   product(uintx, IncreaseFirstTierCompileThresholdAt, 50,                   \
           "Increase the compile threshold for C1 compilation if the code "  \
@@ -3813,9 +3885,11 @@ public:
                                                                             \
   product(intx, TieredRateUpdateMinTime, 1,                                 \
           "Minimum rate sampling interval (in milliseconds)")               \
+          range(0, max_intx)                                                \
                                                                             \
   product(intx, TieredRateUpdateMaxTime, 25,                                \
           "Maximum rate sampling interval (in milliseconds)")               \
+          range(0, max_intx)                                                \
                                                                             \
   product_pd(bool, TieredCompilation,                                       \
           "Enable tiered compilation")                                      \
@@ -3826,6 +3900,7 @@ public:
   product_pd(intx, OnStackReplacePercentage,                                \
           "NON_TIERED number of method invocations/branches (expressed as " \
           "% of CompileThreshold) before (re-)compiling OSR code")          \
+          constraint(OnStackReplacePercentageConstraintFunc, AfterErgo)     \
                                                                             \
   product(intx, InterpreterProfilePercentage, 33,                           \
           "NON_TIERED number of method invocations/branches (expressed as " \

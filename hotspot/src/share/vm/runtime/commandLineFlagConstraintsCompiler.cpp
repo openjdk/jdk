@@ -23,6 +23,10 @@
  */
 
 #include "precompiled.hpp"
+#include "oops/metadata.hpp"
+#include "runtime/os.hpp"
+#include "code/relocInfo.hpp"
+#include "interpreter/invocationCounter.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/commandLineFlagConstraintsCompiler.hpp"
 #include "runtime/commandLineFlagRangeList.hpp"
@@ -84,3 +88,308 @@ Flag::Error CICompilerCountConstraintFunc(intx value, bool verbose) {
     return Flag::SUCCESS;
   }
 }
+
+Flag::Error AllocatePrefetchDistanceConstraintFunc(intx value, bool verbose) {
+  if (value < 0) {
+    CommandLineError::print(verbose,
+                            "Unable to determine system-specific value for AllocatePrefetchDistance. "
+                            "Please provide appropriate value, if unsure, use 0 to disable prefetching\n");
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+  return Flag::SUCCESS;
+}
+
+Flag::Error AllocatePrefetchInstrConstraintFunc(intx value, bool verbose) {
+  intx max_value = max_intx;
+#if defined(SPARC)
+  max_value = 1;
+#elif defined(X86)
+  max_value = 3;
+#endif
+  if (value < 0 || value > max_value) {
+    CommandLineError::print(verbose,
+                            "AllocatePrefetchInstr (" INTX_FORMAT ") must be "
+                            "between 0 and " INTX_FORMAT "\n", value, max_value);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+  return Flag::SUCCESS;
+}
+
+Flag::Error AllocatePrefetchStepSizeConstraintFunc(intx value, bool verbose) {
+  if (value < 0 || value > max_jint) {
+    CommandLineError::print(verbose,
+                            "AllocatePrefetchStepSize (" INTX_FORMAT ") "
+                            "must be between 0 and %d\n",
+                            AllocatePrefetchStepSize,
+                            max_jint);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+  if (AllocatePrefetchDistance % AllocatePrefetchStepSize != 0) {
+     CommandLineError::print(verbose,
+                             "AllocatePrefetchDistance (" INTX_FORMAT ") "
+                             "%% AllocatePrefetchStepSize (" INTX_FORMAT ") "
+                             "= " INTX_FORMAT " "
+                             "must be 0\n",
+                             AllocatePrefetchDistance, AllocatePrefetchStepSize,
+                             AllocatePrefetchDistance % AllocatePrefetchStepSize);
+     return Flag::VIOLATES_CONSTRAINT;
+   }
+
+   return Flag::SUCCESS;
+}
+
+Flag::Error CompileThresholdConstraintFunc(intx value, bool verbose) {
+  if (value < 0 || value > INT_MAX >> InvocationCounter::count_shift) {
+    CommandLineError::print(verbose,
+                            "CompileThreshold (" INTX_FORMAT ") "
+                            "must be between 0 and %d\n",
+                            value,
+                            INT_MAX >> InvocationCounter::count_shift);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+  return Flag::SUCCESS;
+}
+
+Flag::Error OnStackReplacePercentageConstraintFunc(intx value, bool verbose) {
+  int backward_branch_limit;
+  if (ProfileInterpreter) {
+    if (OnStackReplacePercentage < InterpreterProfilePercentage) {
+      CommandLineError::print(verbose,
+                              "OnStackReplacePercentage (" INTX_FORMAT ") must be "
+                              "larger than InterpreterProfilePercentage (" INTX_FORMAT ")\n",
+                              OnStackReplacePercentage, InterpreterProfilePercentage);
+      return Flag::VIOLATES_CONSTRAINT;
+    }
+
+    backward_branch_limit = ((CompileThreshold * (OnStackReplacePercentage - InterpreterProfilePercentage)) / 100)
+                            << InvocationCounter::count_shift;
+
+    if (backward_branch_limit < 0) {
+      CommandLineError::print(verbose,
+                              "CompileThreshold * (InterpreterProfilePercentage - OnStackReplacePercentage) / 100 = "
+                              INTX_FORMAT " "
+                              "must be between 0 and " INTX_FORMAT ", try changing "
+                              "CompileThreshold, InterpreterProfilePercentage, and/or OnStackReplacePercentage\n",
+                              (CompileThreshold * (OnStackReplacePercentage - InterpreterProfilePercentage)) / 100,
+                              INT_MAX >> InvocationCounter::count_shift);
+      return Flag::VIOLATES_CONSTRAINT;
+    }
+  } else {
+    if (OnStackReplacePercentage < 0 ) {
+      CommandLineError::print(verbose,
+                              "OnStackReplacePercentage (" INTX_FORMAT ") must be "
+                              "non-negative\n", OnStackReplacePercentage);
+      return Flag::VIOLATES_CONSTRAINT;
+    }
+
+    backward_branch_limit = ((CompileThreshold * OnStackReplacePercentage) / 100)
+                            << InvocationCounter::count_shift;
+
+    if (backward_branch_limit < 0) {
+      CommandLineError::print(verbose,
+                              "CompileThreshold * OnStackReplacePercentage / 100 = " INTX_FORMAT " "
+                              "must be between 0 and " INTX_FORMAT ", try changing "
+                              "CompileThreshold and/or OnStackReplacePercentage\n",
+                              (CompileThreshold * OnStackReplacePercentage) / 100,
+                              INT_MAX >> InvocationCounter::count_shift);
+      return Flag::VIOLATES_CONSTRAINT;
+    }
+  }
+  return Flag::SUCCESS;
+}
+
+Flag::Error CodeCacheSegmentSizeConstraintFunc(uintx value, bool verbose) {
+  if (CodeCacheSegmentSize < (uintx)CodeEntryAlignment) {
+    CommandLineError::print(verbose,
+                            "CodeCacheSegmentSize  (" UINTX_FORMAT ") must be "
+                            "larger than or equal to CodeEntryAlignment (" INTX_FORMAT ")"
+                            "to align entry points\n",
+                            CodeCacheSegmentSize, CodeEntryAlignment);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+  if (CodeCacheSegmentSize < sizeof(jdouble)) {
+    CommandLineError::print(verbose,
+                            "CodeCacheSegmentSize  (" UINTX_FORMAT ") must be "
+                            "at least " SIZE_FORMAT " to align constants\n",
+                            CodeCacheSegmentSize, sizeof(jdouble));
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+#ifdef COMPILER2
+  if (CodeCacheSegmentSize < (uintx)OptoLoopAlignment) {
+    CommandLineError::print(verbose,
+                            "CodeCacheSegmentSize  (" UINTX_FORMAT ") must be "
+                            "larger than or equal to OptoLoopAlignment (" INTX_FORMAT ")"
+                            "to align inner loops\n",
+                            CodeCacheSegmentSize, OptoLoopAlignment);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+#endif
+
+  return Flag::SUCCESS;
+}
+
+Flag::Error CompilerThreadPriorityConstraintFunc(intx value, bool verbose) {
+  if (value < min_jint || value > max_jint) {
+    CommandLineError::print(verbose,
+                            "CompileThreadPriority (" INTX_FORMAT ") "
+                            "must be between %d and %d. "
+                            "Please also make sure to specify values that are "
+                            "meaningful to your operating system\n",
+                            value, min_jint, max_jint);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+  return Flag::SUCCESS;
+}
+
+Flag::Error CodeEntryAlignmentConstraintFunc(intx value, bool verbose) {
+#ifdef SPARC
+  if (CodeEntryAlignment % relocInfo::addr_unit() != 0) {
+    CommandLineError::print(verbose,
+                            "CodeEntryAlignment (" INTX_FORMAT ") must be "
+                            "multiple of NOP size\n", CodeEntryAlignment);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+#endif
+
+  if (!is_power_of_2(value)) {
+    CommandLineError::print(verbose,
+                            "CodeEntryAlignment (" INTX_FORMAT ") must be "
+                            "a power of two\n", CodeEntryAlignment);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+  if (CodeEntryAlignment < 16) {
+      CommandLineError::print(verbose,
+                              "CodeEntryAlignment (" INTX_FORMAT ") must be "
+                              "greater than or equal to %d\n",
+                              CodeEntryAlignment, 16);
+      return Flag::VIOLATES_CONSTRAINT;
+  }
+
+  return Flag::SUCCESS;
+}
+
+Flag::Error OptoLoopAlignmentConstraintFunc(intx value, bool verbose) {
+  if (value < 0 || value > 16) {
+    CommandLineError::print(verbose,
+                            "OptoLoopAlignment (" INTX_FORMAT ") "
+                            "must be between 0 and 16\n",
+                            value);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+  if (!is_power_of_2(value)) {
+    CommandLineError::print(verbose,
+                            "OptoLoopAlignment (" INTX_FORMAT ") "
+                            "must be a power of two\n",
+                            value);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+#ifdef SPARC
+  if (OptoLoopAlignment % relocInfo::addr_unit() != 0) {
+    CommandLineError::print(verbose,
+                            "OptoLoopAlignment (" INTX_FORMAT ") must be "
+                            "multiple of NOP size\n");
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+#endif
+
+  return Flag::SUCCESS;
+}
+
+Flag::Error ArraycopyDstPrefetchDistanceConstraintFunc(uintx value, bool verbose) {
+  if (value != 0) {
+    CommandLineError::print(verbose,
+                            "ArraycopyDstPrefetchDistance (" INTX_FORMAT ") must be 0\n");
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+  return Flag::SUCCESS;
+}
+
+Flag::Error ArraycopySrcPrefetchDistanceConstraintFunc(uintx value, bool verbose) {
+  if (value != 0) {
+    CommandLineError::print(verbose,
+                            "ArraycopySrcPrefetchDistance (" INTX_FORMAT ") must be 0\n");
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+  return Flag::SUCCESS;
+}
+
+Flag::Error TypeProfileLevelConstraintFunc(uintx value, bool verbose) {
+  for (int i = 0; i < 3; i++) {
+    if (value % 10 > 2) {
+      CommandLineError::print(verbose,
+                              "Invalid value (" UINTX_FORMAT ") "
+                              "in TypeProfileLevel at position %d\n", value, i);
+      return Flag::VIOLATES_CONSTRAINT;
+    }
+    value = value / 10;
+  }
+
+  return Flag::SUCCESS;
+}
+
+#ifdef COMPILER2
+Flag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose) {
+  if (InteriorEntryAlignment > CodeEntryAlignment) {
+    CommandLineError::print(verbose,
+                           "InteriorEntryAlignment (" INTX_FORMAT ") must be "
+                           "less than or equal to CodeEntryAlignment (" INTX_FORMAT ")\n",
+                           InteriorEntryAlignment, CodeEntryAlignment);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+#ifdef SPARC
+  if (InteriorEntryAlignment % relocInfo::addr_unit() != 0) {
+    CommandLineError::print(verbose,
+                            "InteriorEntryAlignment (" INTX_FORMAT ") must be "
+                            "multiple of NOP size\n");
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+#endif
+
+  if (!is_power_of_2(value)) {
+     CommandLineError::print(verbose,
+                             "InteriorEntryAlignment (" INTX_FORMAT ") must be "
+                             "a power of two\n", InteriorEntryAlignment);
+     return Flag::VIOLATES_CONSTRAINT;
+   }
+
+  int minimum_alignment = 16;
+#if defined(SPARC) || (defined(X86) && !defined(AMD64))
+  minimum_alignment = 4;
+#endif
+
+  if (InteriorEntryAlignment < minimum_alignment) {
+    CommandLineError::print(verbose,
+                            "InteriorEntryAlignment (" INTX_FORMAT ") must be "
+                            "greater than or equal to %d\n",
+                            InteriorEntryAlignment, minimum_alignment);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+  return Flag::SUCCESS;
+}
+
+Flag::Error NodeLimitFudgeFactorConstraintFunc(intx value, bool verbose) {
+  if (value < MaxNodeLimit * 2 / 100 || value > MaxNodeLimit * 40 / 100) {
+    CommandLineError::print(verbose,
+                            "NodeLimitFudgeFactor must be between 2%% and 40%% "
+                            "of MaxNodeLimit (" INTX_FORMAT ")\n",
+                            MaxNodeLimit);
+    return Flag::VIOLATES_CONSTRAINT;
+  }
+
+  return Flag::SUCCESS;
+}
+#endif // COMPILER2

@@ -91,6 +91,7 @@ define_pd_global(bool, PreserveFramePointer, false);
                                                                             \
   product(intx, UseAVX, 99,                                                 \
           "Highest supported AVX instructions set on x86/x64")              \
+          range(0, 99)                                                      \
                                                                             \
   product(bool, UseCLMUL, false,                                            \
           "Control whether CLMUL instructions can be used on x86/x64")      \
