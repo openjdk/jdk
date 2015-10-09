@@ -25,7 +25,7 @@
 
 package sun.awt.X11;
 
-final public class XProtocolConstants {
+public final class XProtocolConstants {
 
     private XProtocolConstants(){}
 

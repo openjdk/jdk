@@ -124,7 +124,7 @@ public class SystemTray {
     private static SystemTray systemTray;
     private int currentIconID = 0; // each TrayIcon added gets a unique ID
 
-    transient private SystemTrayPeer peer;
+    private transient SystemTrayPeer peer;
 
     private static final TrayIcon[] EMPTY_TRAY_ARRAY = new TrayIcon[0];
 

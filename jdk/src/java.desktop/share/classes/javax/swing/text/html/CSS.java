@@ -2433,7 +2433,7 @@ public class CSS implements Serializable {
         }
 
         // CSS.Values are static, don't archive it.
-        transient private CSS.Value style;
+        private transient CSS.Value style;
     }
 
     @SuppressWarnings("serial") // Same-version serialization only

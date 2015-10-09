@@ -131,13 +131,13 @@ public class DefaultTreeCellRenderer extends JLabel implements TreeCellRenderer
 
     // Icons
     /** Icon used to show non-leaf nodes that aren't expanded. */
-    transient protected Icon closedIcon;
+    protected transient Icon closedIcon;
 
     /** Icon used to show leaf nodes. */
-    transient protected Icon leafIcon;
+    protected transient Icon leafIcon;
 
     /** Icon used to show non-leaf nodes that are expanded. */
-    transient protected Icon openIcon;
+    protected transient Icon openIcon;
 
     // Colors
     /** Color to use for the foreground for selected nodes. */

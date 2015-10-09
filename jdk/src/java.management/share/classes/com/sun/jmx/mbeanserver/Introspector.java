@@ -56,8 +56,6 @@ import java.security.AccessController;
 import javax.management.AttributeNotFoundException;
 import javax.management.openmbean.CompositeData;
 
-import sun.misc.JavaBeansAccess;
-import sun.misc.SharedSecrets;
 import sun.reflect.misc.MethodUtil;
 import sun.reflect.misc.ReflectUtil;
 

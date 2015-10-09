@@ -44,9 +44,9 @@ import javax.sound.midi.Track;
  */
 public final class MidiUtils {
 
-    public final static int DEFAULT_TEMPO_MPQ = 500000; // 120bpm
-    public final static int META_END_OF_TRACK_TYPE = 0x2F;
-    public final static int META_TEMPO_TYPE = 0x51;
+    public static final int DEFAULT_TEMPO_MPQ = 500000; // 120bpm
+    public static final int META_END_OF_TRACK_TYPE = 0x2F;
+    public static final int META_TEMPO_TYPE = 0x51;
 
     /**
      * Suppresses default constructor, ensuring non-instantiability.

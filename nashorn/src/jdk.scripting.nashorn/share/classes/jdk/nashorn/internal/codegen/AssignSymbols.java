@@ -67,7 +67,6 @@ import jdk.nashorn.internal.ir.ForNode;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IndexNode;
-import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LexicalContextNode;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
@@ -81,7 +80,7 @@ import jdk.nashorn.internal.ir.TryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WithNode;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.ir.visitor.SimpleNodeVisitor;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAErrors;
@@ -102,7 +101,7 @@ import jdk.nashorn.internal.runtime.logging.Logger;
  * visitor.
  */
 @Logger(name="symbols")
-final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggable {
+final class AssignSymbols extends SimpleNodeVisitor implements Loggable {
     private final DebugLogger log;
     private final boolean     debug;
 
@@ -150,7 +149,6 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
     private final boolean isOnDemand;
 
     public AssignSymbols(final Compiler compiler) {
-        super(new LexicalContext());
         this.compiler = compiler;
         this.log   = initLogger(compiler.getContext());
         this.debug = log.isEnabled();
@@ -187,7 +185,7 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
      */
     private void acceptDeclarations(final FunctionNode functionNode, final Block body) {
         // This visitor will assign symbol to all declared variables.
-        body.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+        body.accept(new SimpleNodeVisitor() {
             @Override
             protected boolean enterDefault(final Node node) {
                 // Don't bother visiting expressions; var is a statement, it can't be inside an expression.

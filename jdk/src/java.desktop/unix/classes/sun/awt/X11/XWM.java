@@ -50,9 +50,9 @@ import sun.util.logging.PlatformLogger;
 final class XWM
 {
 
-    private final static PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XWM");
-    private final static PlatformLogger insLog = PlatformLogger.getLogger("sun.awt.X11.insets.XWM");
-    private final static PlatformLogger stateLog = PlatformLogger.getLogger("sun.awt.X11.states.XWM");
+    private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.X11.XWM");
+    private static final PlatformLogger insLog = PlatformLogger.getLogger("sun.awt.X11.insets.XWM");
+    private static final PlatformLogger stateLog = PlatformLogger.getLogger("sun.awt.X11.states.XWM");
 
     static final XAtom XA_MWM_HINTS = new XAtom();
 
@@ -66,30 +66,30 @@ final class XWM
     XAtom XA_UTF8_STRING = XAtom.get("UTF8_STRING");    /* like STRING but encoding is UTF-8 */
 
 /* Currently we only care about max_v and max_h in _NET_WM_STATE */
-    final static int AWT_NET_N_KNOWN_STATES=2;
+    static final int AWT_NET_N_KNOWN_STATES=2;
 
 /* Enlightenment */
-    final static XAtom XA_E_FRAME_SIZE = new XAtom();
+    static final XAtom XA_E_FRAME_SIZE = new XAtom();
 
 /* KWin (KDE2) */
-    final static XAtom XA_KDE_NET_WM_FRAME_STRUT = new XAtom();
+    static final XAtom XA_KDE_NET_WM_FRAME_STRUT = new XAtom();
 
 /* KWM (KDE 1.x) OBSOLETE??? */
-    final static XAtom XA_KWM_WIN_ICONIFIED = new XAtom();
-    final static XAtom XA_KWM_WIN_MAXIMIZED = new XAtom();
+    static final XAtom XA_KWM_WIN_ICONIFIED = new XAtom();
+    static final XAtom XA_KWM_WIN_MAXIMIZED = new XAtom();
 
 /* OpenLook */
-    final static XAtom XA_OL_DECOR_DEL = new XAtom();
-    final static XAtom XA_OL_DECOR_HEADER = new XAtom();
-    final static XAtom XA_OL_DECOR_RESIZE = new XAtom();
-    final static XAtom XA_OL_DECOR_PIN = new XAtom();
-    final static XAtom XA_OL_DECOR_CLOSE = new XAtom();
+    static final XAtom XA_OL_DECOR_DEL = new XAtom();
+    static final XAtom XA_OL_DECOR_HEADER = new XAtom();
+    static final XAtom XA_OL_DECOR_RESIZE = new XAtom();
+    static final XAtom XA_OL_DECOR_PIN = new XAtom();
+    static final XAtom XA_OL_DECOR_CLOSE = new XAtom();
 
 /* EWMH */
-    final static XAtom XA_NET_FRAME_EXTENTS = new XAtom();
-    final static XAtom XA_NET_REQUEST_FRAME_EXTENTS = new XAtom();
+    static final XAtom XA_NET_FRAME_EXTENTS = new XAtom();
+    static final XAtom XA_NET_REQUEST_FRAME_EXTENTS = new XAtom();
 
-    final static int
+    static final int
         UNDETERMINED_WM = 1,
         NO_WM = 2,
         OTHER_WM = 3,

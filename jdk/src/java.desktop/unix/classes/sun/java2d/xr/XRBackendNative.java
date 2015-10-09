@@ -107,7 +107,7 @@ public class XRBackendNative implements XRBackend {
                                           int x1, int y1, int x2, int y2,
                                           int numStops, int repeat);
 
-    private native static int
+    private static native int
         XRCreateRadialGradientPaintNative(float[] fractionsArray,
                                           short[] pixelsArray, int numStops,
                                           int centerX, int centerY,

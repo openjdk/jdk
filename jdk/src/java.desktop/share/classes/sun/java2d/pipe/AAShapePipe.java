@@ -127,7 +127,7 @@ public class AAShapePipe
 
     private static byte[] theTile;
 
-    private synchronized static byte[] getAlphaTile(int len) {
+    private static synchronized byte[] getAlphaTile(int len) {
         byte[] t = theTile;
         if (t == null || t.length < len) {
             t = new byte[len];
@@ -137,7 +137,7 @@ public class AAShapePipe
         return t;
     }
 
-    private synchronized static void dropAlphaTile(byte[] t) {
+    private static synchronized void dropAlphaTile(byte[] t) {
         theTile = t;
     }
 

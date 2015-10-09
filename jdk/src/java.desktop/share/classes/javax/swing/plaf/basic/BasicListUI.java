@@ -167,35 +167,35 @@ public class BasicListUI extends ListUI
     /**
      * The bit relates to model changed property.
      */
-    protected final static int modelChanged = 1 << 0;
+    protected static final int modelChanged = 1 << 0;
     /**
      * The bit relates to selection model changed property.
      */
-    protected final static int selectionModelChanged = 1 << 1;
+    protected static final int selectionModelChanged = 1 << 1;
     /**
      * The bit relates to font changed property.
      */
-    protected final static int fontChanged = 1 << 2;
+    protected static final int fontChanged = 1 << 2;
     /**
      * The bit relates to fixed cell width changed property.
      */
-    protected final static int fixedCellWidthChanged = 1 << 3;
+    protected static final int fixedCellWidthChanged = 1 << 3;
     /**
      * The bit relates to fixed cell height changed property.
      */
-    protected final static int fixedCellHeightChanged = 1 << 4;
+    protected static final int fixedCellHeightChanged = 1 << 4;
     /**
      * The bit relates to prototype cell value changed property.
      */
-    protected final static int prototypeCellValueChanged = 1 << 5;
+    protected static final int prototypeCellValueChanged = 1 << 5;
     /**
      * The bit relates to cell renderer changed property.
      */
-    protected final static int cellRendererChanged = 1 << 6;
-    private final static int layoutOrientationChanged = 1 << 7;
-    private final static int heightChanged = 1 << 8;
-    private final static int widthChanged = 1 << 9;
-    private final static int componentOrientationChanged = 1 << 10;
+    protected static final int cellRendererChanged = 1 << 6;
+    private static final int layoutOrientationChanged = 1 << 7;
+    private static final int heightChanged = 1 << 8;
+    private static final int widthChanged = 1 << 9;
+    private static final int componentOrientationChanged = 1 << 10;
 
     private static final int DROP_LINE_THICKNESS = 2;
 

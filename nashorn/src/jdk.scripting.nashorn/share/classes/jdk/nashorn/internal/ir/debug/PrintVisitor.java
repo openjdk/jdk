@@ -41,7 +41,6 @@ import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.JoinPredecessor;
 import jdk.nashorn.internal.ir.JoinPredecessorExpression;
 import jdk.nashorn.internal.ir.LabelNode;
-import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LocalVariableConversion;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.SplitNode;
@@ -53,7 +52,7 @@ import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.ir.visitor.SimpleNodeVisitor;
 
 /**
  * Print out the AST as human readable source code.
@@ -61,7 +60,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  *
  * see the flags --print-parse and --print-lower-parse
  */
-public final class PrintVisitor extends NodeVisitor<LexicalContext> {
+public final class PrintVisitor extends SimpleNodeVisitor {
     /** Tab width */
     private static final int TABWIDTH = 4;
 
@@ -96,7 +95,6 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
      * @param printTypes        should we print optimistic and inferred types?
      */
     public PrintVisitor(final boolean printLineNumbers, final boolean printTypes) {
-        super(new LexicalContext());
         this.EOLN             = System.lineSeparator();
         this.sb               = new StringBuilder();
         this.printLineNumbers = printLineNumbers;

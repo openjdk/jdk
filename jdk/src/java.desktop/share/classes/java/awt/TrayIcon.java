@@ -92,7 +92,7 @@ public class TrayIcon {
     private int id;
     private String actionCommand;
 
-    transient private TrayIconPeer peer;
+    private transient TrayIconPeer peer;
 
     transient MouseListener mouseListener;
     transient MouseMotionListener mouseMotionListener;

@@ -26,8 +26,8 @@ import java.security.Policy;
 import java.security.ProtectionDomain;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import sun.misc.JavaAWTAccess;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaAWTAccess;
+import jdk.internal.misc.SharedSecrets;
 
 /*
  * @test
@@ -35,7 +35,7 @@ import sun.misc.SharedSecrets;
  *
  * @summary NPE with logging while launching webstart
  *
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  * @build TestGetLoggerNPE
  * @run main/othervm TestGetLoggerNPE getLogger
  * @run main/othervm TestGetLoggerNPE getLogManager

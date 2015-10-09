@@ -43,8 +43,8 @@ import java.lang.annotation.Native;
  * This is the SurfaceData for a CGContextRef.
  */
 public abstract class OSXSurfaceData extends BufImgSurfaceData {
-    final static float UPPER_BND = Float.MAX_VALUE / 2.0f;
-    final static float LOWER_BND = -UPPER_BND;
+    static final float UPPER_BND = Float.MAX_VALUE / 2.0f;
+    static final float LOWER_BND = -UPPER_BND;
 
     protected static CRenderer sQuartzPipe = null;
     protected static CTextPipe sCocoaTextPipe = null;
