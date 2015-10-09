@@ -342,6 +342,9 @@
   product(bool, SuperWordReductions, true,                                  \
           "Enable reductions support in superword.")                        \
                                                                             \
+  product(bool, DoReserveCopyInSuperWord, true,                             \
+          "Create reserve copy of graph in SuperWord.")                     \
+                                                                            \
   notproduct(bool, TraceSuperWord, false,                                   \
           "Trace superword transforms")                                     \
                                                                             \

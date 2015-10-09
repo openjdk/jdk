@@ -299,6 +299,7 @@ class SuperWord : public ResourceObj {
   GrowableArray<int> _ii_order;
 #ifndef PRODUCT
   uintx          _vector_loop_debug; // provide more printing in debug mode
+  uintx          _CountedLoopReserveKit_debug; // for debugging CountedLoopReserveKit
 #endif
 
   // Accessors
@@ -375,6 +376,7 @@ class SuperWord : public ResourceObj {
   // Tracing support
   #ifndef PRODUCT
   void find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best_iv_adjustment);
+  void print_loop(bool whole);
   #endif
   // Find a memory reference to align the loop induction variable to.
   MemNode* find_align_to_ref(Node_List &memops);
