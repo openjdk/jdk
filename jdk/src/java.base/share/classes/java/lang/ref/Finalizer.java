@@ -27,9 +27,9 @@ package java.lang.ref;
 
 import java.security.PrivilegedAction;
 import java.security.AccessController;
-import sun.misc.JavaLangAccess;
+import jdk.internal.misc.JavaLangAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.misc.ManagedLocalsThread;
-import sun.misc.SharedSecrets;
 import sun.misc.VM;
 
 final class Finalizer extends FinalReference<Object> { /* Package-private; must be in

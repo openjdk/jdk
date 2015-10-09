@@ -34,9 +34,9 @@
  */
 
 package java.util.concurrent.atomic;
-import java.util.function.IntUnaryOperator;
+
 import java.util.function.IntBinaryOperator;
-import sun.misc.Unsafe;
+import java.util.function.IntUnaryOperator;
 
 /**
  * An {@code int} value that may be updated atomically.  See the
@@ -50,19 +50,20 @@ import sun.misc.Unsafe;
  *
  * @since 1.5
  * @author Doug Lea
-*/
+ */
 public class AtomicInteger extends Number implements java.io.Serializable {
     private static final long serialVersionUID = 6214790243416807050L;
 
-    // setup to use Unsafe.compareAndSwapInt for updates
-    private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static final long valueOffset;
+    private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+    private static final long VALUE;
 
     static {
         try {
-            valueOffset = unsafe.objectFieldOffset
+            VALUE = U.objectFieldOffset
                 (AtomicInteger.class.getDeclaredField("value"));
-        } catch (Exception ex) { throw new Error(ex); }
+        } catch (ReflectiveOperationException e) {
+            throw new Error(e);
+        }
     }
 
     private volatile int value;
@@ -107,7 +108,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @since 1.6
      */
     public final void lazySet(int newValue) {
-        unsafe.putOrderedInt(this, valueOffset, newValue);
+        U.putOrderedInt(this, VALUE, newValue);
     }
 
     /**
@@ -117,7 +118,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @return the previous value
      */
     public final int getAndSet(int newValue) {
-        return unsafe.getAndSetInt(this, valueOffset, newValue);
+        return U.getAndSetInt(this, VALUE, newValue);
     }
 
     /**
@@ -130,7 +131,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * the actual value was not equal to the expected value.
      */
     public final boolean compareAndSet(int expect, int update) {
-        return unsafe.compareAndSwapInt(this, valueOffset, expect, update);
+        return U.compareAndSwapInt(this, VALUE, expect, update);
     }
 
     /**
@@ -146,7 +147,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @return {@code true} if successful
      */
     public final boolean weakCompareAndSet(int expect, int update) {
-        return unsafe.compareAndSwapInt(this, valueOffset, expect, update);
+        return U.compareAndSwapInt(this, VALUE, expect, update);
     }
 
     /**
@@ -155,7 +156,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @return the previous value
      */
     public final int getAndIncrement() {
-        return unsafe.getAndAddInt(this, valueOffset, 1);
+        return U.getAndAddInt(this, VALUE, 1);
     }
 
     /**
@@ -164,7 +165,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @return the previous value
      */
     public final int getAndDecrement() {
-        return unsafe.getAndAddInt(this, valueOffset, -1);
+        return U.getAndAddInt(this, VALUE, -1);
     }
 
     /**
@@ -174,7 +175,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @return the previous value
      */
     public final int getAndAdd(int delta) {
-        return unsafe.getAndAddInt(this, valueOffset, delta);
+        return U.getAndAddInt(this, VALUE, delta);
     }
 
     /**
@@ -183,7 +184,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @return the updated value
      */
     public final int incrementAndGet() {
-        return unsafe.getAndAddInt(this, valueOffset, 1) + 1;
+        return U.getAndAddInt(this, VALUE, 1) + 1;
     }
 
     /**
@@ -192,7 +193,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @return the updated value
      */
     public final int decrementAndGet() {
-        return unsafe.getAndAddInt(this, valueOffset, -1) - 1;
+        return U.getAndAddInt(this, VALUE, -1) - 1;
     }
 
     /**
@@ -202,7 +203,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
      * @return the updated value
      */
     public final int addAndGet(int delta) {
-        return unsafe.getAndAddInt(this, valueOffset, delta) + delta;
+        return U.getAndAddInt(this, VALUE, delta) + delta;
     }
 
     /**
@@ -301,6 +302,7 @@ public class AtomicInteger extends Number implements java.io.Serializable {
 
     /**
      * Returns the value of this {@code AtomicInteger} as an {@code int}.
+     * Equivalent to {@link #get()}.
      */
     public int intValue() {
         return get();

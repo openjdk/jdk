@@ -43,12 +43,12 @@ import static sun.lwawt.LWWindowPeer.PeerType;
 
 public abstract class LWToolkit extends SunToolkit implements Runnable {
 
-    private final static int STATE_NONE = 0;
-    private final static int STATE_INIT = 1;
-    private final static int STATE_MESSAGELOOP = 2;
-    private final static int STATE_SHUTDOWN = 3;
-    private final static int STATE_CLEANUP = 4;
-    private final static int STATE_DONE = 5;
+    private static final int STATE_NONE = 0;
+    private static final int STATE_INIT = 1;
+    private static final int STATE_MESSAGELOOP = 2;
+    private static final int STATE_SHUTDOWN = 3;
+    private static final int STATE_CLEANUP = 4;
+    private static final int STATE_DONE = 5;
 
     private int runState = STATE_NONE;
 
@@ -454,14 +454,14 @@ public abstract class LWToolkit extends SunToolkit implements Runnable {
     /*
      * Expose non-public targetToPeer() method.
      */
-    public final static Object targetToPeer(Object target) {
+    public static final Object targetToPeer(Object target) {
         return SunToolkit.targetToPeer(target);
     }
 
     /*
      * Expose non-public targetDisposedPeer() method.
      */
-    public final static void targetDisposedPeer(Object target, Object peer) {
+    public static final void targetDisposedPeer(Object target, Object peer) {
         SunToolkit.targetDisposedPeer(target, peer);
     }
 

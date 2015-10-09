@@ -38,17 +38,17 @@ import com.apple.laf.AquaUtils.*;
 
 public abstract class AquaButtonBorder extends AquaBorder implements Border, UIResource {
     public static final RecyclableSingleton<Dynamic> fDynamic = new RecyclableSingletonFromDefaultConstructor<Dynamic>(Dynamic.class);
-    static public AquaButtonBorder getDynamicButtonBorder() {
+    public static AquaButtonBorder getDynamicButtonBorder() {
         return fDynamic.get();
     }
 
     private static final RecyclableSingleton<Toggle> fToggle = new RecyclableSingletonFromDefaultConstructor<Toggle>(Toggle.class);
-    static public AquaButtonBorder getToggleButtonBorder() {
+    public static AquaButtonBorder getToggleButtonBorder() {
         return fToggle.get();
     }
 
     public static final RecyclableSingleton<Toolbar> fToolBar = new RecyclableSingletonFromDefaultConstructor<Toolbar>(Toolbar.class);
-    static public Border getToolBarButtonBorder() {
+    public static Border getToolBarButtonBorder() {
         return fToolBar.get();
     }
 

@@ -193,7 +193,7 @@ public class Dialog extends Window {
      *
      * @since 1.6
      */
-    public final static ModalityType DEFAULT_MODALITY_TYPE = ModalityType.APPLICATION_MODAL;
+    public static final ModalityType DEFAULT_MODALITY_TYPE = ModalityType.APPLICATION_MODAL;
 
     /**
      * True if this dialog is modal, false is the dialog is modeless.
@@ -265,7 +265,7 @@ public class Dialog extends Window {
     };
 
     /* operations with this list should be synchronized on tree lock*/
-    transient static IdentityArrayList<Dialog> modalDialogs = new IdentityArrayList<Dialog>();
+    static transient IdentityArrayList<Dialog> modalDialogs = new IdentityArrayList<Dialog>();
 
     transient IdentityArrayList<Window> blockedWindows = new IdentityArrayList<Window>();
 

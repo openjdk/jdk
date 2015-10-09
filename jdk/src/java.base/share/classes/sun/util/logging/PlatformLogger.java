@@ -39,8 +39,8 @@ import java.time.ZonedDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import sun.misc.JavaLangAccess;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaLangAccess;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * Platform logger provides an API for the JRE components to log

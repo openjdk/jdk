@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,7 +42,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.SortedMap;
-import java.util.TimeZone;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
@@ -84,13 +84,8 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
      */
     public synchronized void pack(JarFile in, OutputStream out) throws IOException {
         assert(Utils.currentInstance.get() == null);
-        TimeZone tz = (props.getBoolean(Utils.PACK_DEFAULT_TIMEZONE))
-                      ? null
-                      : TimeZone.getDefault();
         try {
             Utils.currentInstance.set(this);
-            if (tz != null) TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-
             if ("0".equals(props.getProperty(Pack200.Packer.EFFORT))) {
                 Utils.copyJarFile(in, out);
             } else {
@@ -98,7 +93,6 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
             }
         } finally {
             Utils.currentInstance.set(null);
-            if (tz != null) TimeZone.setDefault(tz);
             in.close();
         }
     }
@@ -119,11 +113,8 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
      */
     public synchronized void pack(JarInputStream in, OutputStream out) throws IOException {
         assert(Utils.currentInstance.get() == null);
-        TimeZone tz = (props.getBoolean(Utils.PACK_DEFAULT_TIMEZONE)) ? null :
-            TimeZone.getDefault();
         try {
             Utils.currentInstance.set(this);
-            if (tz != null) TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
             if ("0".equals(props.getProperty(Pack200.Packer.EFFORT))) {
                 Utils.copyJarFile(in, out);
             } else {
@@ -131,7 +122,6 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
             }
         } finally {
             Utils.currentInstance.set(null);
-            if (tz != null) TimeZone.setDefault(tz);
             in.close();
         }
     }
@@ -327,7 +317,9 @@ public class PackerImpl  extends TLGlobals implements Pack200.Packer {
                 this.f = null;
                 this.jf = jf;
                 this.je = je;
-                int timeSecs = getModtime(je.getTime());
+                int timeSecs = (int) je.getTimeLocal()
+                        .atOffset(ZoneOffset.UTC)
+                        .toEpochSecond();
                 if (keepModtime && timeSecs != Constants.NO_MODTIME) {
                      this.modtime = timeSecs;
                 } else if (latestModtime && timeSecs > pkg.default_modtime) {

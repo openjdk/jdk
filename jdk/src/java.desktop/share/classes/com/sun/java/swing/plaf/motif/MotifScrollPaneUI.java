@@ -47,9 +47,9 @@ import java.beans.PropertyChangeListener;
  */
 public class MotifScrollPaneUI extends BasicScrollPaneUI
 {
-    private final static Border vsbMarginBorderR = new EmptyBorder(0, 4, 0, 0);
-    private final static Border vsbMarginBorderL = new EmptyBorder(0, 0, 0, 4);
-    private final static Border hsbMarginBorder = new EmptyBorder(4, 0, 0, 0);
+    private static final Border vsbMarginBorderR = new EmptyBorder(0, 4, 0, 0);
+    private static final Border vsbMarginBorderL = new EmptyBorder(0, 0, 0, 4);
+    private static final Border hsbMarginBorder = new EmptyBorder(4, 0, 0, 0);
 
     private CompoundBorder vsbBorder;
     private CompoundBorder hsbBorder;

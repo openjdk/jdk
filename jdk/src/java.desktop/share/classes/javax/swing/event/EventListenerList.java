@@ -100,7 +100,7 @@ import sun.reflect.misc.ReflectUtil;
 @SuppressWarnings("serial")
 public class EventListenerList implements Serializable {
     /* A null array to be shared by all empty listener lists*/
-    private final static Object[] NULL_ARRAY = new Object[0];
+    private static final Object[] NULL_ARRAY = new Object[0];
     /** The list of ListenerType - Listener pairs */
     protected transient Object[] listenerList = NULL_ARRAY;
 

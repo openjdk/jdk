@@ -27,6 +27,8 @@ package java.io;
 
 import java.util.*;
 import java.nio.charset.Charset;
+import jdk.internal.misc.JavaIOAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.nio.cs.StreamDecoder;
 import sun.nio.cs.StreamEncoder;
 
@@ -519,7 +521,7 @@ public final class Console implements Flushable
         try {
             // Add a shutdown hook to restore console's echo state should
             // it be necessary.
-            sun.misc.SharedSecrets.getJavaLangAccess()
+            SharedSecrets.getJavaLangAccess()
                 .registerShutdownHook(0 /* shutdown hook invocation order */,
                     false /* only register if shutdown is not in progress */,
                     new Runnable() {
@@ -536,7 +538,7 @@ public final class Console implements Flushable
             // by a shutdown hook
         }
 
-        sun.misc.SharedSecrets.setJavaIOAccess(new sun.misc.JavaIOAccess() {
+        SharedSecrets.setJavaIOAccess(new JavaIOAccess() {
             public Console console() {
                 if (istty()) {
                     if (cons == null)

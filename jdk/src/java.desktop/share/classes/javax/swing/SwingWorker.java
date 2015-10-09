@@ -827,7 +827,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
     }
     private static class DoSubmitAccumulativeRunnable
           extends AccumulativeRunnable<Runnable> implements ActionListener {
-        private final static int DELAY = 1000 / 30;
+        private static final int DELAY = 1000 / 30;
         @Override
         protected void run(List<Runnable> args) {
             for (Runnable runnable : args) {

@@ -1885,7 +1885,7 @@ public class PeekGraphics extends Graphics2D
             return mHeight;
         }
 
-        synchronized private void waitForDimensions(Image img) {
+        private synchronized void waitForDimensions(Image img) {
             mHeight = img.getHeight(this);
             mWidth = img.getWidth(this);
             while (!badImage && (mWidth < 0 || mHeight < 0)) {
@@ -1903,7 +1903,7 @@ public class PeekGraphics extends Graphics2D
             }
         }
 
-        synchronized public boolean imageUpdate(Image image, int flags,
+        public synchronized boolean imageUpdate(Image image, int flags,
                                                 int x, int y, int w, int h) {
 
             boolean dontCallMeAgain = (flags & (HEIGHT | ABORT | ERROR)) != 0;

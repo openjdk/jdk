@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -938,15 +938,9 @@ search:
 
             try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
                 try (InputStream is = (InputStream)obj) {
-                    boolean eof = false;
-                    int avail = is.available();
-                    byte[] tmp = new byte[avail > 8192 ? avail : 8192];
-                    do {
-                        int aValue;
-                        if (!(eof = (aValue = is.read(tmp, 0, tmp.length)) == -1)) {
-                            bos.write(tmp, 0, aValue);
-                        }
-                    } while (!eof);
+                    is.mark(Integer.MAX_VALUE);
+                    is.transferTo(bos);
+                    is.reset();
                 }
 
                 if (DataFlavorUtil.isFlavorCharsetTextType(flavor) && isTextFormat(format)) {
@@ -1086,14 +1080,14 @@ search:
         return new File(filePath);
     }
 
-    private final static String[] DEPLOYMENT_CACHE_PROPERTIES = {
+    private static final String[] DEPLOYMENT_CACHE_PROPERTIES = {
         "deployment.system.cachedir",
         "deployment.user.cachedir",
         "deployment.javaws.cachedir",
         "deployment.javapi.cachedir"
     };
 
-    private final static ArrayList <File> deploymentCacheDirectoryList = new ArrayList<>();
+    private static final ArrayList <File> deploymentCacheDirectoryList = new ArrayList<>();
 
     private static boolean isFileInWebstartedCache(File f) {
 

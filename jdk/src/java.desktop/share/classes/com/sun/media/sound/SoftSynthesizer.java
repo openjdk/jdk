@@ -178,7 +178,7 @@ public final class SoftSynthesizer implements AudioSynthesizer,
     static final String INFO_VENDOR = "OpenJDK";
     static final String INFO_DESCRIPTION = "Software MIDI Synthesizer";
     static final String INFO_VERSION = "1.0";
-    final static MidiDevice.Info info = new Info();
+    static final MidiDevice.Info info = new Info();
 
     private static SourceDataLine testline = null;
 

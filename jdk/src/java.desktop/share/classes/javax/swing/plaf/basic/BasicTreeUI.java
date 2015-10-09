@@ -61,16 +61,16 @@ public class BasicTreeUI extends TreeUI
         new StringBuilder("Tree.baselineComponent");
 
     // Old actions forward to an instance of this.
-    static private final Actions SHARED_ACTION = new Actions();
+    private static final Actions SHARED_ACTION = new Actions();
 
     /**
      * The collapsed icon.
      */
-    transient protected Icon        collapsedIcon;
+    protected transient Icon        collapsedIcon;
     /**
      * The expanded icon.
      */
-    transient protected Icon        expandedIcon;
+    protected transient Icon        expandedIcon;
 
     /**
       * Color used to draw hash marks.  If <code>null</code> no hash marks
@@ -98,14 +98,14 @@ public class BasicTreeUI extends TreeUI
     protected JTree             tree;
 
     /** Renderer that is being used to do the actual cell drawing. */
-    transient protected TreeCellRenderer   currentCellRenderer;
+    protected transient TreeCellRenderer   currentCellRenderer;
 
     /** Set to true if the renderer that is currently in the tree was
      * created by this instance. */
     protected boolean           createdRenderer;
 
     /** Editor for the tree. */
-    transient protected TreeCellEditor     cellEditor;
+    protected transient TreeCellEditor     cellEditor;
 
     /** Set to true if editor that is currently in the tree was
      * created by this instance. */

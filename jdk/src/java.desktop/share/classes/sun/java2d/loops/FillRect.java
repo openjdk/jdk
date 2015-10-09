@@ -44,9 +44,9 @@ import sun.java2d.SurfaceData;
  */
 public class FillRect extends GraphicsPrimitive
 {
-    public final static String methodSignature = "FillRect(...)".toString();
+    public static final String methodSignature = "FillRect(...)".toString();
 
-    public final static int primTypeID = makePrimTypeID();
+    public static final int primTypeID = makePrimTypeID();
 
     public static FillRect locate(SurfaceType srctype,
                                   CompositeType comptype,
