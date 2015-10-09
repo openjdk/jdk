@@ -66,7 +66,7 @@ public class InputMethodContext
     private CompositionAreaHandler compositionAreaHandler;
     private Object compositionAreaHandlerLock = new Object();
 
-    static private boolean belowTheSpotInputRequested;
+    private static boolean belowTheSpotInputRequested;
     private boolean inputMethodSupportsBelowTheSpot;
 
     static {

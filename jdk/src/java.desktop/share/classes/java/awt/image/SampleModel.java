@@ -99,7 +99,7 @@ public abstract class SampleModel
      */
     protected int dataType;
 
-    static private native void initIDs();
+    private static native void initIDs();
     static {
         ColorModel.loadLibraries();
         initIDs();
@@ -153,7 +153,7 @@ public abstract class SampleModel
      *  @return the width in pixels of the region of image data
      *          that this <code>SampleModel</code> describes.
      */
-    final public int getWidth() {
+    public final int getWidth() {
          return width;
     }
 
@@ -161,7 +161,7 @@ public abstract class SampleModel
      *  @return the height in pixels of the region of image data
      *          that this <code>SampleModel</code> describes.
      */
-    final public int getHeight() {
+    public final int getHeight() {
          return height;
     }
 
@@ -169,7 +169,7 @@ public abstract class SampleModel
      *  @return the number of bands of image data that this
      *          <code>SampleModel</code> describes.
      */
-    final public int getNumBands() {
+    public final int getNumBands() {
          return numBands;
     }
 
@@ -193,7 +193,7 @@ public abstract class SampleModel
     /** Returns the data type of the DataBuffer storing the pixel data.
      *  @return the data type.
      */
-    final public int getDataType() {
+    public final int getDataType() {
         return dataType;
     }
 

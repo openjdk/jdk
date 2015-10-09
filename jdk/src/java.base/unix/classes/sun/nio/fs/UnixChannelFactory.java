@@ -30,11 +30,11 @@ import java.nio.channels.*;
 import java.io.FileDescriptor;
 import java.util.Set;
 
+import jdk.internal.misc.SharedSecrets;
+import jdk.internal.misc.JavaIOFileDescriptorAccess;
 import sun.nio.ch.FileChannelImpl;
 import sun.nio.ch.ThreadPool;
 import sun.nio.ch.SimpleAsynchronousFileChannelImpl;
-import sun.misc.SharedSecrets;
-import sun.misc.JavaIOFileDescriptorAccess;
 
 import static sun.nio.fs.UnixNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;

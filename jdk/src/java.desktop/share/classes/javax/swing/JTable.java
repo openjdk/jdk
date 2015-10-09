@@ -343,27 +343,27 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     protected boolean           cellSelectionEnabled;
 
     /** If editing, the <code>Component</code> that is handling the editing. */
-    transient protected Component       editorComp;
+    protected transient Component       editorComp;
 
     /**
      * The active cell editor object, that overwrites the screen real estate
      * occupied by the current cell and allows the user to change its contents.
      * {@code null} if the table isn't currently editing.
      */
-    transient protected TableCellEditor cellEditor;
+    protected transient TableCellEditor cellEditor;
 
     /** Identifies the column of the cell being edited. */
-    transient protected int             editingColumn;
+    protected transient int             editingColumn;
 
     /** Identifies the row of the cell being edited. */
-    transient protected int             editingRow;
+    protected transient int             editingRow;
 
    /**
      * A table of objects that display the contents of a cell,
      * indexed by class as declared in <code>getColumnClass</code>
      * in the <code>TableModel</code> interface.
      */
-    transient protected Hashtable<Object, Object> defaultRenderersByColumnClass;
+    protected transient Hashtable<Object, Object> defaultRenderersByColumnClass;
     // Logicaly, the above is a Hashtable<Class<?>, TableCellRenderer>.
     // It is declared otherwise to accomodate using UIDefaults.
 
@@ -372,7 +372,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * indexed by class as declared in <code>getColumnClass</code>
      * in the <code>TableModel</code> interface.
      */
-    transient protected Hashtable<Object, Object> defaultEditorsByColumnClass;
+    protected transient Hashtable<Object, Object> defaultEditorsByColumnClass;
     // Logicaly, the above is a Hashtable<Class<?>, TableCellEditor>.
     // It is declared otherwise to accomodate using UIDefaults.
 
@@ -880,7 +880,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * replaced by <code>new JScrollPane(aTable)</code>.
      */
     @Deprecated
-    static public JScrollPane createScrollPaneForTable(JTable aTable) {
+    public static JScrollPane createScrollPaneForTable(JTable aTable) {
         return new JScrollPane(aTable);
     }
 

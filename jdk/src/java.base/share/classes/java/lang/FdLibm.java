@@ -352,15 +352,15 @@ class FdLibm {
 
             double p_h, p_l, t1, t2;
             // |y| is huge
-            if (y_abs > 0x1.0p31) { // if |y| > 2**31
+            if (y_abs > 0x1.00000_ffff_ffffp31) { // if |y| > ~2**31
                 final double INV_LN2   =  0x1.7154_7652_b82fep0;   //  1.44269504088896338700e+00 = 1/ln2
                 final double INV_LN2_H =  0x1.715476p0;            //  1.44269502162933349609e+00 = 24 bits of 1/ln2
                 final double INV_LN2_L =  0x1.4ae0_bf85_ddf44p-26; //  1.92596299112661746887e-08 = 1/ln2 tail
 
                 // Over/underflow if x is not close to one
-                if (x_abs < 0x1.fffffp-1) // |x| < 0.9999995231628418
+                if (x_abs < 0x1.fffff_0000_0000p-1) // |x| < ~0.9999995231628418
                     return (y < 0.0) ? s * INFINITY : s * 0.0;
-                if (x_abs > 1.0)         // |x| > 1.0
+                if (x_abs > 0x1.00000_ffff_ffffp0)         // |x| > ~1.0
                     return (y > 0.0) ? s * INFINITY : s * 0.0;
                 /*
                  * now |1-x| is tiny <= 2**-20, sufficient to compute

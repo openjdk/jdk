@@ -3173,6 +3173,11 @@ Zone	Europe/Zurich	0:34:08 -	LMT	1853 Jul 16 # See above comment.
 # http://www.balkaneu.com/eventful-elections-turkey/ 2014-03-30.
 # I guess the best we can do is document the official time.
 
+# From Fatih (2015-09-29):
+# It's officially announced now by the Ministry of Energy.
+# Turkey delays winter time to 8th of November 04:00
+# http://www.aa.com.tr/tr/turkiye/yaz-saati-uygulamasi-8-kasimda-sona-erecek/362217
+
 # Rule	NAME	FROM	TO	TYPE	IN	ON	AT	SAVE	LETTER/S
 Rule	Turkey	1916	only	-	May	 1	0:00	1:00	S
 Rule	Turkey	1916	only	-	Oct	 1	0:00	0	-
@@ -3242,6 +3247,8 @@ Zone	Europe/Istanbul	1:55:52 -	LMT	1880
 			2:00	-	EET	2011 Mar 28  1:00u
 			2:00	EU	EE%sT	2014 Mar 30  1:00u
 			2:00	-	EET	2014 Mar 31  1:00u
+			2:00	EU	EE%sT	2015 Oct 25  1:00u
+			2:00	1:00	EEST	2015 Nov  8  1:00u
 			2:00	EU	EE%sT
 Link	Europe/Istanbul	Asia/Istanbul	# Istanbul is in both continents.
 

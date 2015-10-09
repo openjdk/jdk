@@ -261,7 +261,7 @@ public abstract class AbstractWriter {
      * @throws BadLocationException for an invalid location within
      * the document
      */
-    abstract protected void write() throws IOException, BadLocationException;
+    protected abstract void write() throws IOException, BadLocationException;
 
     /**
      * Returns the text associated with the element.

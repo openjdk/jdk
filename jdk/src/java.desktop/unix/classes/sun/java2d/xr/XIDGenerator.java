@@ -34,7 +34,7 @@ package sun.java2d.xr;
  */
 
 public class XIDGenerator {
-    private final static int XID_BUFFER_SIZE = 512;
+    private static final int XID_BUFFER_SIZE = 512;
 
     int[] xidBuffer = new int[XID_BUFFER_SIZE];
     int currentIndex = XID_BUFFER_SIZE;
