@@ -25,13 +25,29 @@
 
 package java.util;
 
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 /**
  * This class consists of {@code static} utility methods for operating
- * on objects.  These utilities include {@code null}-safe or {@code
- * null}-tolerant methods for computing the hash code of an object,
- * returning a string for an object, and comparing two objects.
+ * on objects, or checking certain conditions before operation.  These utilities
+ * include {@code null}-safe or {@code null}-tolerant methods for computing the
+ * hash code of an object, returning a string for an object, comparing two
+ * objects, and checking if indexes or sub-range values are out of bounds.
+ *
+ * @apiNote
+ * Static methods such as {@link Objects#checkIndex},
+ * {@link Objects#checkFromToIndex}, and {@link Objects#checkFromIndexSize} are
+ * provided for the convenience of checking if values corresponding to indexes
+ * and sub-ranges are out of bounds.
+ * Variations of these static methods support customization of the runtime
+ * exception, and corresponding exception detail message, that is thrown when
+ * values are out of bounds.  Such methods accept a functional interface
+ * argument, instances of {@code BiFunction}, that maps out of bound values to a
+ * runtime exception.  Care should be taken when using such methods in
+ * combination with an argument that is a lambda expression, method reference or
+ * class that capture values.  In such cases the cost of capture, related to
+ * functional interface allocation, may exceed the cost of checking bounds.
  *
  * @since 1.7
  */
@@ -289,5 +305,231 @@ public final class Objects {
         if (obj == null)
             throw new NullPointerException(messageSupplier.get());
         return obj;
+    }
+
+    /**
+     * Maps out of bounds values to a runtime exception.
+     *
+     * @param a the first out of bound value
+     * @param b the second out of bound value
+     * @param oobe the exception mapping function that when applied with out of
+     *        bounds arguments returns a runtime exception.  If {@code null}
+     *        then, it's as if an exception mapping function was supplied that
+     *        returns {@link IndexOutOfBoundsException} for any given arguments.
+     * @return the runtime exception
+     */
+    private static RuntimeException outOfBounds(
+            int a, int b, BiFunction<Integer, Integer, ? extends RuntimeException> oobe) {
+        return oobe == null
+               ? new IndexOutOfBoundsException(a, b)
+               : oobe.apply(a, b);
+    }
+
+    /**
+     * Checks if the {@code index} is within the bounds of the range from
+     * {@code 0} (inclusive) to {@code length} (exclusive).
+     *
+     * <p>The {@code index} is defined to be out of bounds if any of the
+     * following inequalities is true:
+     * <ul>
+     *  <li>{@code index < 0}</li>
+     *  <li>{@code index >= length}</li>
+     *  <li>{@code length < 0}, which is implied from the former inequalities</li>
+     * </ul>
+     *
+     * @param index the index
+     * @param length the upper-bound (exclusive) of the range
+     * @return {@code index} if it is within bounds of the range
+     * @throws IndexOutOfBoundsException if the {@code index} is out of bounds
+     * @since 9
+     */
+    public static
+    int checkIndex(int index, int length) throws IndexOutOfBoundsException {
+        return checkIndex(index, length, null);
+    }
+
+    /**
+     * Checks if the {@code index} is within the bounds of the range from
+     * {@code 0} (inclusive) to {@code length} (exclusive).
+     *
+     * <p>The {@code index} is defined to be out of bounds if any of the
+     * following inequalities is true:
+     * <ul>
+     *  <li>{@code index < 0}</li>
+     *  <li>{@code index >= length}</li>
+     *  <li>{@code length < 0}, which is implied from the former inequalities</li>
+     * </ul>
+     *
+     * <p>If the {@code index} is out of bounds, then a runtime exception is
+     * thrown that is the result of applying the arguments {@code index} and
+     * {@code length} to the given exception mapping function.
+     *
+     * @param <T> the type of runtime exception to throw if the arguments are
+     *        out of bounds
+     * @param index the index
+     * @param length the upper-bound (exclusive) of the range
+     * @param oobe the exception mapping function that when applied with out
+     *        of bounds arguments returns a runtime exception.  If {@code null}
+     *        then, it's as if an exception mapping function was supplied that
+     *        returns {@link IndexOutOfBoundsException} for any given arguments.
+     * @return {@code index} if it is within bounds of the range
+     * @throws T if the {@code index} is out of bounds, then a runtime exception
+     *         is thrown that is the result of applying the out of bounds
+     *         arguments to the exception mapping function.
+     * @throws IndexOutOfBoundsException if the {@code index} is out of bounds
+     *         and the exception mapping function is {@code null}
+     * @since 9
+     */
+    /*
+    @HotSpotIntrinsicCandidate
+    This method will be made intrinsic in C2 to guide HotSpot to perform
+    unsigned comparisons of the index and length when it is known the length is
+    a non-negative value (such as that of an array length or from the upper
+    bound of a loop)
+    */
+    public static <T extends RuntimeException>
+    int checkIndex(int index, int length,
+                   BiFunction<Integer, Integer, T> oobe) throws T, IndexOutOfBoundsException {
+        if (index < 0 || index >= length)
+            throw outOfBounds(index, length, oobe);
+        return index;
+    }
+
+    /**
+     * Checks if the sub-range from {@code fromIndex} (inclusive) to
+     * {@code toIndex} (exclusive) is within the bounds of range from {@code 0}
+     * (inclusive) to {@code length} (exclusive).
+     *
+     * <p>The sub-range is defined to be out of bounds if any of the following
+     * inequalities is true:
+     * <ul>
+     *  <li>{@code fromIndex < 0}</li>
+     *  <li>{@code fromIndex > toIndex}</li>
+     *  <li>{@code toIndex > length}</li>
+     *  <li>{@code length < 0}, which is implied from the former inequalities</li>
+     * </ul>
+     *
+     * @param fromIndex the lower-bound (inclusive) of the sub-range
+     * @param toIndex the upper-bound (exclusive) of the sub-range
+     * @param length the upper-bound (exclusive) the range
+     * @return {@code fromIndex} if the sub-range within bounds of the range
+     * @throws IndexOutOfBoundsException if the sub-range is out of bounds
+     * @since 9
+     */
+    public static
+    int checkFromToIndex(int fromIndex, int toIndex, int length) throws IndexOutOfBoundsException {
+        return checkFromToIndex(fromIndex, toIndex, length, null);
+    }
+
+    /**
+     * Checks if the sub-range from {@code fromIndex} (inclusive) to
+     * {@code toIndex} (exclusive) is within the bounds of range from {@code 0}
+     * (inclusive) to {@code length} (exclusive).
+     *
+     * <p>The sub-range is defined to be out of bounds if any of the following
+     * inequalities is true:
+     * <ul>
+     *  <li>{@code fromIndex < 0}</li>
+     *  <li>{@code fromIndex > toIndex}</li>
+     *  <li>{@code toIndex > length}</li>
+     *  <li>{@code length < 0}, which is implied from the former inequalities</li>
+     * </ul>
+     *
+     * <p>If the sub-range is out of bounds, then a runtime exception is thrown
+     * that is the result of applying the arguments {@code fromIndex} and
+     * {@code toIndex} to the given exception mapping function.
+     *
+     * @param <T> the type of runtime exception to throw if the arguments are
+     *        out of bounds
+     * @param fromIndex the lower-bound (inclusive) of the sub-range
+     * @param toIndex the upper-bound (exclusive) of the sub-range
+     * @param length the upper-bound (exclusive) the range
+     * @param oobe the exception mapping function that when applied with out
+     *        of bounds arguments returns a runtime exception.  If {@code null}
+     *        then, it's as if an exception mapping function was supplied that
+     *        returns {@link IndexOutOfBoundsException} for any given arguments.
+     * @return {@code fromIndex} if the sub-range within bounds of the range
+     * @throws T if the sub-range is out of bounds, then a runtime exception is
+     *         thrown that is the result of applying the out of bounds arguments
+     *         to the exception mapping function.
+     * @throws IndexOutOfBoundsException if the sub-range is out of bounds and
+     *         the exception mapping function is {@code null}
+     * @since 9
+     */
+    public static <T extends RuntimeException>
+    int checkFromToIndex(int fromIndex, int toIndex, int length,
+                         BiFunction<Integer, Integer, T> oobe) throws T, IndexOutOfBoundsException {
+        if (fromIndex < 0 || fromIndex > toIndex || toIndex > length)
+            throw outOfBounds(fromIndex, toIndex, oobe);
+        return fromIndex;
+    }
+
+    /**
+     * Checks if the sub-range from {@code fromIndex} (inclusive) to
+     * {@code fromIndex + size} (exclusive) is within the bounds of range from
+     * {@code 0} (inclusive) to {@code length} (exclusive).
+     *
+     * <p>The sub-range is defined to be out of bounds if any of the following
+     * inequalities is true:
+     * <ul>
+     *  <li>{@code fromIndex < 0}</li>
+     *  <li>{@code size < 0}</li>
+     *  <li>{@code fromIndex + size > length}, taking into account integer overflow</li>
+     *  <li>{@code length < 0}, which is implied from the former inequalities</li>
+     * </ul>
+     *
+     * @param fromIndex the lower-bound (inclusive) of the sub-interval
+     * @param size the size of the sub-range
+     * @param length the upper-bound (exclusive) of the range
+     * @return {@code fromIndex} if the sub-range within bounds of the range
+     * @throws IndexOutOfBoundsException if the sub-range is out of bounds
+     * @since 9
+     */
+    public static
+    int checkFromIndexSize(int fromIndex, int size, int length) throws IndexOutOfBoundsException {
+        return checkFromIndexSize(fromIndex, size, length, null);
+    }
+
+    /**
+     * Checks if the sub-range from {@code fromIndex} (inclusive) to
+     * {@code fromIndex + size} (exclusive) is within the bounds of range from
+     * {@code 0} (inclusive) to {@code length} (exclusive).
+     *
+     * <p>The sub-range is defined to be out of bounds if any of the following
+     * inequalities is true:
+     * <ul>
+     *  <li>{@code fromIndex < 0}</li>
+     *  <li>{@code size < 0}</li>
+     *  <li>{@code fromIndex + size > length}, taking into account integer overflow</li>
+     *  <li>{@code length < 0}, which is implied from the former inequalities</li>
+     * </ul>
+     *
+     * <p>If the sub-range is out of bounds then, a runtime exception is thrown
+     * that is the result of applying the arguments {@code fromIndex} and
+     * {@code size} to the given exception mapping function.
+     *
+     * @param <T> the type of runtime exception to throw if the arguments are
+     *        out of bounds
+     * @param fromIndex the lower-bound (inclusive) of the sub-interval
+     * @param size the size of the sub-range
+     * @param length the upper-bound (exclusive) of the range
+     * @param oobe the exception mapping function that when applied with out
+     *        of bounds arguments returns a runtime exception.  If {@code null}
+     *        then, it's as if an exception mapping function was supplied that
+     *        returns {@link IndexOutOfBoundsException} for any given arguments.
+     * @return {@code fromIndex} if the sub-range within bounds of the range
+     * @throws T if the sub-range is out of bounds, then a runtime exception is
+     *         thrown that is the result of applying the out of bounds arguments
+     *         to the exception mapping function.
+     * @throws IndexOutOfBoundsException if the sub-range is out of bounds and
+     *         the exception mapping function is {@code null}
+     * @since 9
+     */
+    public static <T extends RuntimeException>
+    int checkFromIndexSize(int fromIndex, int size, int length,
+                           BiFunction<Integer, Integer, T> oobe) throws T, IndexOutOfBoundsException {
+        if ((length | fromIndex | size) < 0 || size > length - fromIndex)
+            throw outOfBounds(fromIndex, size, oobe);
+        return fromIndex;
     }
 }
