@@ -66,7 +66,7 @@ abstract class WObjectPeer {
      * Subclasses should override disposeImpl() instead of dispose(). Client
      * code should always invoke dispose(), never disposeImpl().
      */
-    abstract protected void disposeImpl();
+    protected abstract void disposeImpl();
     public final void dispose() {
         boolean call_disposeImpl = false;
 

@@ -167,7 +167,7 @@ public class Raster {
     /** The parent of this Raster, or null. */
     protected Raster parent;
 
-    static private native void initIDs();
+    private static native void initIDs();
     static {
         ColorModel.loadLibraries();
         initIDs();
@@ -1139,7 +1139,7 @@ public class Raster {
      * @return the X translation from the coordinate space of the
      *         Raster's SampleModel to that of the Raster.
      */
-    final public int getSampleModelTranslateX() {
+    public final int getSampleModelTranslateX() {
         return sampleModelTranslateX;
     }
 
@@ -1151,7 +1151,7 @@ public class Raster {
      * @return the Y translation from the coordinate space of the
      *         Raster's SampleModel to that of the Raster.
      */
-    final public int getSampleModelTranslateY() {
+    public final int getSampleModelTranslateY() {
         return sampleModelTranslateY;
     }
 
@@ -1360,35 +1360,35 @@ public class Raster {
     /** Returns the minimum valid X coordinate of the Raster.
      *  @return the minimum x coordinate of this <code>Raster</code>.
      */
-    final public int getMinX() {
+    public final int getMinX() {
         return minX;
     }
 
     /** Returns the minimum valid Y coordinate of the Raster.
      *  @return the minimum y coordinate of this <code>Raster</code>.
      */
-    final public int getMinY() {
+    public final int getMinY() {
         return minY;
     }
 
     /** Returns the width in pixels of the Raster.
      *  @return the width of this <code>Raster</code>.
      */
-    final public int getWidth() {
+    public final int getWidth() {
         return width;
     }
 
     /** Returns the height in pixels of the Raster.
      *  @return the height of this <code>Raster</code>.
      */
-    final public int getHeight() {
+    public final int getHeight() {
         return height;
     }
 
     /** Returns the number of bands (samples per pixel) in this Raster.
      *  @return the number of bands of this <code>Raster</code>.
      */
-    final public int getNumBands() {
+    public final int getNumBands() {
         return numBands;
     }
 
@@ -1403,7 +1403,7 @@ public class Raster {
      *  as the storage data type of the DataBuffer.
      *  @return the number of data elements.
      */
-    final public int getNumDataElements() {
+    public final int getNumDataElements() {
         return sampleModel.getNumDataElements();
     }
 
@@ -1419,7 +1419,7 @@ public class Raster {
      *  be one of the types defined in DataBuffer.
      *  @return this transfer type.
      */
-    final public int getTransferType() {
+    public final int getTransferType() {
         return sampleModel.getTransferType();
     }
 

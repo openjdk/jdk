@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -1608,6 +1608,8 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
     test_method_data_pointer(mdp, profile_continue);
 
     if (MethodData::profile_return_jsr292_only()) {
+      assert(Method::intrinsic_id_size_in_bytes() == 2, "assuming Method::_intrinsic_id is u2");
+
       // If we don't profile all invoke bytecodes we must make sure
       // it's a bytecode we indeed profile. We can't go back to the
       // begining of the ProfileData we intend to update to check its
@@ -1620,7 +1622,7 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       cmp(rscratch1, Bytecodes::_invokehandle);
       br(Assembler::EQ, do_profile);
       get_method(tmp);
-      ldrb(rscratch1, Address(tmp, Method::intrinsic_id_offset_in_bytes()));
+      ldrh(rscratch1, Address(tmp, Method::intrinsic_id_offset_in_bytes()));
       cmp(rscratch1, vmIntrinsics::_compiledLambdaForm);
       br(Assembler::NE, profile_continue);
 

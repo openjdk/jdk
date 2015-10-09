@@ -164,7 +164,7 @@ final class ByteBufferArrayData extends ArrayData {
     }
 
     @Override
-    public boolean canDelete(final long fromIndex, final long toIndex, final boolean strict) {
+    public boolean canDelete(final long longIndex, final boolean strict) {
         return false;
     }
 

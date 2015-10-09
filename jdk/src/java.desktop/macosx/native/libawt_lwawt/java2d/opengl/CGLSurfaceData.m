@@ -24,16 +24,13 @@
  */
 
 #import <stdlib.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "sun_java2d_opengl_CGLSurfaceData.h"
 
-#import "jni.h"
 #import "jni_util.h"
 #import "OGLRenderQueue.h"
 #import "CGLGraphicsConfig.h"
 #import "CGLSurfaceData.h"
-#import "CGLLayer.h"
 #import "ThreadUtilities.h"
 
 /* JDK's glext.h is already included and will prevent the Apple glext.h

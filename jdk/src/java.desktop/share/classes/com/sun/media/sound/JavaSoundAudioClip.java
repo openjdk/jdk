@@ -88,9 +88,9 @@ public final class JavaSoundAudioClip implements AudioClip, MetaEventListener, L
      * with the number of samples in the stream.
      *
      */
-    private final static long CLIP_THRESHOLD = 1048576;
+    private static final long CLIP_THRESHOLD = 1048576;
     //private final static long CLIP_THRESHOLD = 1;
-    private final static int STREAM_BUFFER_SIZE = 1024;
+    private static final int STREAM_BUFFER_SIZE = 1024;
 
     public JavaSoundAudioClip(InputStream in) throws IOException {
         if (DEBUG || Printer.debug)Printer.debug("JavaSoundAudioClip.<init>");

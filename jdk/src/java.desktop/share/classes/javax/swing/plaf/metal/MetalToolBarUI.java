@@ -88,7 +88,7 @@ public class MetalToolBarUI extends BasicToolBarUI
     /**
      * Registers the specified component.
      */
-    synchronized static void register(JComponent c) {
+    static synchronized void register(JComponent c) {
         if (c == null) {
             // Exception is thrown as convenience for callers that are
             // typed to throw an NPE.
@@ -100,7 +100,7 @@ public class MetalToolBarUI extends BasicToolBarUI
     /**
      * Unregisters the specified component.
      */
-    synchronized static void unregister(JComponent c) {
+    static synchronized void unregister(JComponent c) {
         for (int counter = components.size() - 1; counter >= 0; counter--) {
             // Search for the component, removing any flushed references
             // along the way.
@@ -116,7 +116,7 @@ public class MetalToolBarUI extends BasicToolBarUI
      * Finds a previously registered component of class <code>target</code>
      * that shares the JRootPane ancestor of <code>from</code>.
      */
-    synchronized static Object findRegisteredComponentOfType(JComponent from,
+    static synchronized Object findRegisteredComponentOfType(JComponent from,
                                                              Class<?> target) {
         JRootPane rp = SwingUtilities.getRootPane(from);
         if (rp != null) {

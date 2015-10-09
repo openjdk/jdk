@@ -1017,7 +1017,7 @@ public class WindowsFileChooserUI extends BasicFileChooserUI {
         }
     }
 
-    final static int space = 10;
+    static final int space = 10;
     class IndentIcon implements Icon {
 
         Icon icon = null;

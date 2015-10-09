@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,11 +45,11 @@
  */
 package com.sun.xml.internal.rngom.dt.builtin;
 
-import org.relaxng.datatype.Datatype;
-import org.relaxng.datatype.DatatypeBuilder;
-import org.relaxng.datatype.DatatypeException;
-import org.relaxng.datatype.DatatypeLibrary;
-import org.relaxng.datatype.DatatypeLibraryFactory;
+import com.sun.xml.internal.org.relaxng.datatype.Datatype;
+import com.sun.xml.internal.org.relaxng.datatype.DatatypeBuilder;
+import com.sun.xml.internal.org.relaxng.datatype.DatatypeException;
+import com.sun.xml.internal.org.relaxng.datatype.DatatypeLibrary;
+import com.sun.xml.internal.org.relaxng.datatype.DatatypeLibraryFactory;
 import com.sun.xml.internal.rngom.xml.util.WellKnownNamespaces;
 
 class CompatibilityDatatypeLibrary implements DatatypeLibrary {
