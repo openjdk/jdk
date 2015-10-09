@@ -61,8 +61,8 @@ inline void fill_subword(void* start, void* end, int value) {
     " sub %[offset], %[end], %[offset]\n\t" // offset := start - end
     " sllx %[offset], 2, %[offset]\n\t" // scale offset for instruction size of 4
     " add %[offset], 40, %[offset]\n\t" // offset += 10 * instruction size
-    " rd %pc, %[pc]\n\t"                // dispatch on scaled offset
-    " jmpl %[pc]+%[offset], %g0\n\t"
+    " rd %%pc, %[pc]\n\t"               // dispatch on scaled offset
+    " jmpl %[pc]+%[offset], %%g0\n\t"
     "  nop\n\t"
     // DISPATCH: no direct reference, but without it the store block may be elided.
     "1:\n\t"
@@ -108,7 +108,7 @@ void memset_with_concurrent_readers(void* to, int value, size_t size) {
       // Unroll loop x8.
       " sub %[aend], %[ato], %[temp]\n\t"
       " cmp %[temp], 56\n\t"           // cc := (aligned_end - aligned_to) > 7 words
-      " ba %xcc, 2f\n\t"               // goto TEST always
+      " ba %%xcc, 2f\n\t"              // goto TEST always
       "  sub %[aend], 56, %[temp]\n\t" // limit := aligned_end - 7 words
       // LOOP:
       "1:\n\t"                         // unrolled x8 store loop top
@@ -123,7 +123,7 @@ void memset_with_concurrent_readers(void* to, int value, size_t size) {
       " stx %[xvalue], [%[ato]-8]\n\t"
       // TEST:
       "2:\n\t"
-      " bgu,a %xcc, 1b\n\t"            // goto LOOP if more than 7 words remaining
+      " bgu,a %%xcc, 1b\n\t"           // goto LOOP if more than 7 words remaining
       "  add %[ato], 64, %[ato]\n\t"   // aligned_to += 8, for next iteration
       // Fill remaining < 8 full words.
       // Dispatch on (aligned_end - aligned_to).
@@ -132,8 +132,8 @@ void memset_with_concurrent_readers(void* to, int value, size_t size) {
       " sub %[ato], %[aend], %[ato]\n\t" // offset := aligned_to - aligned_end
       " srax %[ato], 1, %[ato]\n\t"      // scale offset for instruction size of 4
       " add %[ato], 40, %[ato]\n\t"      // offset += 10 * instruction size
-      " rd %pc, %[temp]\n\t"             // dispatch on scaled offset
-      " jmpl %[temp]+%[ato], %g0\n\t"
+      " rd %%pc, %[temp]\n\t"            // dispatch on scaled offset
+      " jmpl %[temp]+%[ato], %%g0\n\t"
       "  nop\n\t"
       // DISPATCH: no direct reference, but without it the store block may be elided.
       "3:\n\t"
