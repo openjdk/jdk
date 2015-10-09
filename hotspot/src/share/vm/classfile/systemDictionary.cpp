@@ -1967,7 +1967,8 @@ void SystemDictionary::check_constraints(int d_index, unsigned int d_hash,
                                          instanceKlassHandle k,
                                          Handle class_loader, bool defining,
                                          TRAPS) {
-  const char *linkage_error = NULL;
+  const char *linkage_error1 = NULL;
+  const char *linkage_error2 = NULL;
   {
     Symbol*  name  = k->name();
     ClassLoaderData *loader_data = class_loader_data(class_loader);
@@ -1984,8 +1985,8 @@ void SystemDictionary::check_constraints(int d_index, unsigned int d_hash,
 
       assert(check->oop_is_instance(), "noninstance in systemdictionary");
       if ((defining == true) || (k() != check)) {
-        linkage_error = "loader (instance of  %s): attempted  duplicate class "
-          "definition for name: \"%s\"";
+        linkage_error1 = "loader (instance of  ";
+        linkage_error2 = "): attempted  duplicate class definition for name: \"";
       } else {
         return;
       }
@@ -1996,10 +1997,10 @@ void SystemDictionary::check_constraints(int d_index, unsigned int d_hash,
     assert(ph_check == NULL || ph_check == name, "invalid symbol");
 #endif
 
-    if (linkage_error == NULL) {
+    if (linkage_error1 == NULL) {
       if (constraints()->check_or_update(k, class_loader, name) == false) {
-        linkage_error = "loader constraint violation: loader (instance of %s)"
-          " previously initiated loading for a different type with name \"%s\"";
+        linkage_error1 = "loader constraint violation: loader (instance of ";
+        linkage_error2 = ") previously initiated loading for a different type with name \"";
       }
     }
   }
@@ -2007,14 +2008,14 @@ void SystemDictionary::check_constraints(int d_index, unsigned int d_hash,
   // Throw error now if needed (cannot throw while holding
   // SystemDictionary_lock because of rank ordering)
 
-  if (linkage_error) {
+  if (linkage_error1) {
     ResourceMark rm(THREAD);
     const char* class_loader_name = loader_name(class_loader());
     char* type_name = k->name()->as_C_string();
-    size_t buflen = strlen(linkage_error) + strlen(class_loader_name) +
-      strlen(type_name);
+    size_t buflen = strlen(linkage_error1) + strlen(class_loader_name) +
+      strlen(linkage_error2) + strlen(type_name) + 2; // +2 for '"' and null byte.
     char* buf = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, buflen);
-    jio_snprintf(buf, buflen, linkage_error, class_loader_name, type_name);
+    jio_snprintf(buf, buflen, "%s%s%s%s\"", linkage_error1, class_loader_name, linkage_error2, type_name);
     THROW_MSG(vmSymbols::java_lang_LinkageError(), buf);
   }
 }
