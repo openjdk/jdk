@@ -31,8 +31,6 @@
 #include "runtime/thread.inline.hpp"
 #include "utilities/copy.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 bool always_do_update_barrier = false;
 
 BarrierSet* oopDesc::_bs = NULL;
@@ -47,7 +45,7 @@ void oopDesc::print_on(outputStream* st) const {
 
 void oopDesc::print_address_on(outputStream* st) const {
   if (PrintOopAddress) {
-    st->print("{" INTPTR_FORMAT "}", this);
+    st->print("{" INTPTR_FORMAT "}", p2i(this));
   }
 }
 

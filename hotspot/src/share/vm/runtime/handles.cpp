@@ -30,13 +30,11 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 #ifdef ASSERT
 oop* HandleArea::allocate_handle(oop obj) {
   assert(_handle_mark_nesting > 1, "memory leak: allocating handle outside HandleMark");
   assert(_no_handle_mark_nesting == 0, "allocating handle inside NoHandleMark");
-  assert(obj->is_oop(), "not an oop: " INTPTR_FORMAT, (intptr_t*) obj);
+  assert(obj->is_oop(), "not an oop: " INTPTR_FORMAT, p2i(obj));
   return real_allocate_handle(obj);
 }
 
@@ -85,10 +83,9 @@ void HandleArea::oops_do(OopClosure* f) {
   // The thread local handle areas should not get very large
   if (TraceHandleAllocation && (size_t)handles_visited > TotalHandleAllocationLimit) {
 #ifdef ASSERT
-    warning("%d: Visited in HandleMark : %d",
-      _nof_handlemarks, handles_visited);
+    warning("%d: Visited in HandleMark : " SIZE_FORMAT, _nof_handlemarks, handles_visited);
 #else
-    warning("Visited in HandleMark : %d", handles_visited);
+    warning("Visited in HandleMark : " SIZE_FORMAT, handles_visited);
 #endif
   }
   if (_prev != NULL) _prev->oops_do(f);
@@ -137,10 +134,10 @@ HandleMark::~HandleMark() {
     handles /= sizeof(void *); // Adjust for size of a handle
     if (handles > HandleAllocationLimit) {
       // Note: _nof_handlemarks is only set in debug mode
-      warning("%d: Allocated in HandleMark : %d", _nof_handlemarks, handles);
+      warning("%d: Allocated in HandleMark : " SIZE_FORMAT, _nof_handlemarks, handles);
     }
 
-    tty->print_cr("Handles %d", handles);
+    tty->print_cr("Handles " SIZE_FORMAT, handles);
   }
 #endif
 

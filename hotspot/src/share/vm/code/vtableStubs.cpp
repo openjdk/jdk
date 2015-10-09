@@ -40,8 +40,6 @@
 #include "opto/matcher.hpp"
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // -----------------------------------------------------------------------------------------
 // Implementation of VtableStub
 
@@ -79,8 +77,8 @@ void* VtableStub::operator new(size_t size, int code_size) throw() {
 
 
 void VtableStub::print_on(outputStream* st) const {
-  st->print("vtable stub (index = %d, receiver_location = %d, code = [" INTPTR_FORMAT ", " INTPTR_FORMAT "[)",
-             index(), receiver_location(), code_begin(), code_end());
+  st->print("vtable stub (index = %d, receiver_location = " INTX_FORMAT ", code = [" INTPTR_FORMAT ", " INTPTR_FORMAT "[)",
+             index(), p2i(receiver_location()), p2i(code_begin()), p2i(code_end()));
 }
 
 
@@ -126,8 +124,8 @@ address VtableStubs::find_stub(bool is_vtable_stub, int vtable_index) {
 
     enter(is_vtable_stub, vtable_index, s);
     if (PrintAdapterHandlers) {
-      tty->print_cr("Decoding VtableStub %s[%d]@%d",
-                    is_vtable_stub? "vtbl": "itbl", vtable_index, VtableStub::receiver_location());
+      tty->print_cr("Decoding VtableStub %s[%d]@" INTX_FORMAT,
+                    is_vtable_stub? "vtbl": "itbl", vtable_index, p2i(VtableStub::receiver_location()));
       Disassembler::decode(s->code_begin(), s->code_end());
     }
     // Notify JVMTI about this stub. The event will be recorded by the enclosing
@@ -224,7 +222,7 @@ extern "C" void bad_compiled_vtable_index(JavaThread* thread, oop receiver, int 
   ik->print();
   fatal("bad compiled vtable dispatch: receiver " INTPTR_FORMAT ", "
         "index %d (vtable length %d)",
-        (address)receiver, index, vt->length());
+        p2i(receiver), index, vt->length());
 }
 
 #endif // PRODUCT

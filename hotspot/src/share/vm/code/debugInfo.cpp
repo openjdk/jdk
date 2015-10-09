@@ -29,8 +29,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Constructors
 
 DebugInfoWriteStream::DebugInfoWriteStream(DebugInformationRecorder* recorder, int initial_size)

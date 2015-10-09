@@ -276,8 +276,6 @@
 # endif
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 address os::current_stack_pointer() {
 #if defined(__clang__) || defined(__llvm__)
   register void *esp;

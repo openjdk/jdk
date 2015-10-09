@@ -66,8 +66,6 @@
 #include "opto/runtime.hpp"
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 class UnlockFlagSaver {
   private:
     JavaThread* _thread;
@@ -444,14 +442,14 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
       if (message != NULL) {
         tty->print_cr("Exception <%s: %s> (" INTPTR_FORMAT ")",
                       h_exception->print_value_string(), message->as_C_string(),
-                      (address)h_exception());
+                      p2i(h_exception()));
       } else {
         tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")",
                       h_exception->print_value_string(),
-                      (address)h_exception());
+                      p2i(h_exception()));
       }
       tty->print_cr(" thrown in interpreter method <%s>", h_method->print_value_string());
-      tty->print_cr(" at bci %d for thread " INTPTR_FORMAT, current_bci, thread);
+      tty->print_cr(" at bci %d for thread " INTPTR_FORMAT, current_bci, p2i(thread));
     }
 // Don't go paging in something which won't be used.
 //     else if (extable->length() == 0) {
@@ -885,7 +883,7 @@ nmethod* InterpreterRuntime::frequency_counter_overflow(JavaThread* thread, addr
 #ifndef PRODUCT
   if (TraceOnStackReplacement) {
     if (nm != NULL) {
-      tty->print("OSR entry @ pc: " INTPTR_FORMAT ": ", nm->osr_entry());
+      tty->print("OSR entry @ pc: " INTPTR_FORMAT ": ", p2i(nm->osr_entry()));
       nm->print();
     }
   }
@@ -1305,7 +1303,7 @@ void SignatureHandlerLibrary::add(uint64_t fingerprint, address handler) {
       tty->cr();
       tty->print_cr("argument handler #%d at " PTR_FORMAT " for fingerprint " UINT64_FORMAT,
                     _handlers->length(),
-                    handler,
+                    p2i(handler),
                     fingerprint);
     }
     _fingerprints->append(fingerprint);
@@ -1316,8 +1314,8 @@ void SignatureHandlerLibrary::add(uint64_t fingerprint, address handler) {
       tty->print_cr("duplicate argument handler #%d for fingerprint " UINT64_FORMAT "(old: " PTR_FORMAT ", new : " PTR_FORMAT ")",
                     _handlers->length(),
                     fingerprint,
-                    _handlers->at(handler_index),
-                    handler);
+                    p2i(_handlers->at(handler_index)),
+                    p2i(handler));
     }
   }
 }

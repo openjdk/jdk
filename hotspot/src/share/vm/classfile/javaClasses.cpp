@@ -53,8 +53,6 @@
 #include "runtime/vframe.hpp"
 #include "utilities/preserveException.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 #define INJECTED_FIELD_COMPUTE_OFFSET(klass, name, signature, may_be_java)    \
   klass::_##name##_offset = JavaClasses::compute_injected_offset(JavaClasses::klass##_##name##_enum);
 

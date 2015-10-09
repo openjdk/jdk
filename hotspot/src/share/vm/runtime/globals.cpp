@@ -49,8 +49,6 @@
 #include "shark/shark_globals.hpp"
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 RUNTIME_FLAGS(MATERIALIZE_DEVELOPER_FLAG, \
               MATERIALIZE_PD_DEVELOPER_FLAG, \
               MATERIALIZE_PRODUCT_FLAG, \
@@ -369,11 +367,11 @@ void Flag::print_on(outputStream* st, bool withComments, bool printRanges) {
     } else if (is_uint()) {
       st->print("%-16u", get_uint());
     } else if (is_intx()) {
-      st->print("%-16ld", get_intx());
+      st->print(INTX_FORMAT_W(-16), get_intx());
     } else if (is_uintx()) {
-      st->print("%-16lu", get_uintx());
+      st->print(UINTX_FORMAT_W(-16), get_uintx());
     } else if (is_uint64_t()) {
-      st->print("%-16lu", get_uint64_t());
+      st->print(UINT64_FORMAT_W(-16), get_uint64_t());
     } else if (is_size_t()) {
       st->print(SIZE_FORMAT_W(-16), get_size_t());
     } else if (is_double()) {

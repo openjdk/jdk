@@ -80,8 +80,6 @@
 #include "opto/runtime.hpp"
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 GrowableArray<Method*>* collected_profiled_methods;
 
 int compare_methods(Method** a, Method** b) {
@@ -159,7 +157,7 @@ void print_method_invocation_histogram() {
   collected_invoked_methods->sort(&compare_methods);
   //
   tty->cr();
-  tty->print_cr("Histogram Over MethodOop Invocation Counters (cutoff = %d):", MethodHistogramCutoff);
+  tty->print_cr("Histogram Over MethodOop Invocation Counters (cutoff = " INTX_FORMAT "):", MethodHistogramCutoff);
   tty->cr();
   tty->print_cr("____Count_(I+C)____Method________________________Module_________________");
   unsigned total = 0, int_total = 0, comp_total = 0, static_total = 0, final_total = 0,
