@@ -113,6 +113,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   _recent_avg_pause_time_ratio(0.0),
   _rs_lengths_prediction(0),
+  _max_survivor_regions(0),
 
   _eden_used_bytes_before_gc(0),
   _survivor_used_bytes_before_gc(0),
@@ -265,9 +266,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _concurrent_mark_remark_times_ms->add(0.05);
   _concurrent_mark_cleanup_times_ms->add(0.20);
   _tenuring_threshold = MaxTenuringThreshold;
-  // _max_survivor_regions will be calculated by
-  // update_young_list_target_length() during initialization.
-  _max_survivor_regions = 0;
 
   assert(GCTimeRatio > 0,
          "we should have set it to a default value set_g1_gc_flags() "
