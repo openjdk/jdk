@@ -799,8 +799,10 @@ class CMSCollector: public CHeapObj<mtGC> {
   // Concurrent sweeping work
   void sweepWork(ConcurrentMarkSweepGeneration* old_gen);
 
-  // (Concurrent) resetting of support data structures
-  void reset(bool concurrent);
+  // Concurrent resetting of support data structures
+  void reset_concurrent();
+  // Resetting of support data structures from a STW full GC
+  void reset_stw();
 
   // Clear _expansion_cause fields of constituent generations
   void clear_expansion_cause();
