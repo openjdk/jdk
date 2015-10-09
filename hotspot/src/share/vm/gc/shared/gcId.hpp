@@ -55,6 +55,7 @@ class GCIdMarkAndRestore : public StackObj {
   uint _previous_gc_id;
  public:
   GCIdMarkAndRestore();
+  GCIdMarkAndRestore(uint gc_id);
   ~GCIdMarkAndRestore();
 };
 
