@@ -390,7 +390,6 @@ void BytecodePrinter::print_field_or_method(int orig_i, int i, outputStream* st)
 }
 
 
-PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
 void BytecodePrinter::print_attributes(int bci, outputStream* st) {
   // Show attributes of pre-rewritten codes
   Bytecodes::Code code = Bytecodes::java_code(raw_code());
@@ -512,15 +511,11 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
         }
         st->print(" %d " INT32_FORMAT " " INT32_FORMAT " ",
                       default_dest, lo, hi);
-        int first = true;
-        for (int ll = lo; ll <= hi; ll++, first = false)  {
+        const char *comma = "";
+        for (int ll = lo; ll <= hi; ll++) {
           int idx = ll - lo;
-          const char *format = first ? " %d:" INT32_FORMAT " (delta: %d)" :
-                                       ", %d:" INT32_FORMAT " (delta: %d)";
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
-          st->print(format, ll, dest[idx], dest[idx]-bci);
-PRAGMA_DIAG_POP
+          st->print("%s %d:" INT32_FORMAT " (delta: %d)", comma, ll, dest[idx], dest[idx]-bci);
+          comma = ",";
         }
         st->cr();
       }
@@ -536,14 +531,10 @@ PRAGMA_DIAG_POP
           dest[i] = bci + get_int();
         };
         st->print(" %d %d ", default_dest, len);
-        bool first = true;
-        for (int ll = 0; ll < len; ll++, first = false)  {
-          const char *format = first ? " " INT32_FORMAT ":" INT32_FORMAT :
-                                       ", " INT32_FORMAT ":" INT32_FORMAT ;
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
-          st->print(format, key[ll], dest[ll]);
-PRAGMA_DIAG_POP
+        const char *comma = "";
+        for (int ll = 0; ll < len; ll++)  {
+          st->print("%s " INT32_FORMAT ":" INT32_FORMAT, comma, key[ll], dest[ll]);
+          comma = ",";
         }
         st->cr();
       }
