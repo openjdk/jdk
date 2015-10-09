@@ -72,24 +72,29 @@
   develop(intx, OptoPrologueNops, 0,                                        \
           "Insert this many extra nop instructions "                        \
           "in the prologue of every nmethod")                               \
+          range(0, 128)                                                     \
                                                                             \
   product_pd(intx, InteriorEntryAlignment,                                  \
           "Code alignment for interior entry points "                       \
           "in generated code (in bytes)")                                   \
+          constraint(InteriorEntryAlignmentConstraintFunc, AfterErgo)       \
                                                                             \
   product(intx, MaxLoopPad, (OptoLoopAlignment-1),                          \
           "Align a loop if padding size in bytes is less or equal to this " \
           "value")                                                          \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, MaxVectorSize, 64,                                          \
           "Max vector size in bytes, "                                      \
           "actual size could be less depending on elements type")           \
+          range(0, max_jint)                                                \
                                                                             \
   product(bool, AlignVector, true,                                          \
           "Perform vector store/load alignment in loop")                    \
                                                                             \
   product(intx, NumberOfLoopInstrToAlign, 4,                                \
           "Number of first instructions in a loop to align")                \
+          range(0, max_jint)                                                \
                                                                             \
   notproduct(intx, IndexSetWatch, 0,                                        \
           "Trace all operations on this IndexSet (-1 means all, 0 none)")   \
@@ -97,9 +102,11 @@
                                                                             \
   develop(intx, OptoNodeListSize, 4,                                        \
           "Starting allocation size of Node_List data structures")          \
+          range(0, max_jint)                                                \
                                                                             \
   develop(intx, OptoBlockListSize, 8,                                       \
           "Starting allocation size of Block_List data structures")         \
+          range(0, max_jint)                                                \
                                                                             \
   develop(intx, OptoPeepholeAt, -1,                                         \
           "Apply peephole optimizations to this peephole rule")             \
@@ -173,9 +180,11 @@
                                                                             \
   product_pd(intx,  LoopUnrollLimit,                                        \
           "Unroll loop bodies with node count less than this")              \
+          range(0, max_jint / 4)                                            \
                                                                             \
   product(intx,  LoopMaxUnroll, 16,                                         \
           "Maximum number of unrolls for main loop")                        \
+          range(0, max_jint)                                                \
                                                                             \
   product(bool,  SuperWordLoopUnrollAnalysis, false,                        \
           "Map number of unrolls for main loop via "                        \
@@ -187,16 +196,19 @@
   product(intx,  LoopUnrollMin, 4,                                          \
           "Minimum number of unroll loop bodies before checking progress"   \
           "of rounds of unroll,optimize,..")                                \
+          range(0, max_jint)                                                \
                                                                             \
   develop(intx, UnrollLimitForProfileCheck, 1,                              \
           "Don't use profile_trip_cnt() to restrict unrolling until "       \
           "unrolling would push the number of unrolled iterations above "   \
           "UnrollLimitForProfileCheck. A higher value allows more "         \
           "unrolling. Zero acts as a very large value." )                   \
+          range(0, max_intx)                                                \
                                                                             \
   product(intx, MultiArrayExpandLimit, 6,                                   \
           "Maximum number of individual allocations in an inline-expanded " \
           "multianewarray instruction")                                     \
+          range(0, max_jint)                                                \
                                                                             \
   notproduct(bool, TraceProfileTripCount, false,                            \
           "Trace profile loop trip count information")                      \
@@ -243,6 +255,7 @@
                                                                             \
   product(intx, TrackedInitializationLimit, 50,                             \
           "When initializing fields, track up to this many words")          \
+          range(0, 65535)                                                   \
                                                                             \
   product(bool, ReduceFieldZeroing, true,                                   \
           "When initializing fields, try to avoid needless zeroing")        \
@@ -277,9 +290,11 @@
                                                                             \
   develop_pd(intx, FLOATPRESSURE,                                           \
           "Number of float LRG's that constitute high register pressure")   \
+          range(0, max_jint)                                                \
                                                                             \
   develop_pd(intx, INTPRESSURE,                                             \
           "Number of integer LRG's that constitute high register pressure") \
+          range(0, max_jint)                                                \
                                                                             \
   notproduct(bool, TraceOptoPipelining, false,                              \
           "Trace pipelining information")                                   \
@@ -298,6 +313,7 @@
                                                                             \
   product(intx, PartialPeelNewPhiDelta, 0,                                  \
           "Additional phis that can be created by partial peeling")         \
+          range(0, max_jint)                                                \
                                                                             \
   notproduct(bool, TracePartialPeeling, false,                              \
           "Trace partial peeling (loop rotation) information")              \
@@ -337,6 +353,7 @@
                                                                             \
   product_pd(intx, ConditionalMoveLimit,                                    \
           "Limit of ops to make speculative when using CMOVE")              \
+          range(0, max_jint)                                                \
                                                                             \
   /* Set BranchOnRegister == false. See 4965987. */                         \
   product(bool, BranchOnRegister, false,                                    \
@@ -361,6 +378,7 @@
                                                                             \
   develop(intx, PrintIdealGraphPort, 4444,                                  \
           "Ideal graph printer to network port")                            \
+          range(0, SHRT_MAX)                                                \
                                                                             \
   notproduct(ccstr, PrintIdealGraphAddress, "127.0.0.1",                    \
           "IP address to connect to visualizer")                            \
@@ -389,50 +407,64 @@
   develop(intx, ImplicitNullCheckThreshold, 3,                              \
           "Don't do implicit null checks if NPE's in a method exceeds "     \
           "limit")                                                          \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, LoopOptsCount, 43,                                          \
           "Set level of loop optimization for tier 1 compiles")             \
+          range(5, 43)                                                      \
                                                                             \
   /* controls for heat-based inlining */                                    \
                                                                             \
   develop(intx, NodeCountInliningCutoff, 18000,                             \
           "If parser node generation exceeds limit stop inlining")          \
+          range(0, max_jint)                                                \
                                                                             \
   develop(intx, NodeCountInliningStep, 1000,                                \
           "Target size of warm calls inlined between optimization passes")  \
+          range(0, max_jint)                                                \
                                                                             \
   develop(bool, InlineWarmCalls, false,                                     \
           "Use a heat-based priority queue to govern inlining")             \
                                                                             \
   develop(intx, HotCallCountThreshold, 999999,                              \
           "large numbers of calls (per method invocation) force hotness")   \
+          range(0, max_intx)                                                \
                                                                             \
   develop(intx, HotCallProfitThreshold, 999999,                             \
           "highly profitable inlining opportunities force hotness")         \
+          range(0, max_intx)                                                \
                                                                             \
   develop(intx, HotCallTrivialWork, -1,                                     \
           "trivial execution time (no larger than this) forces hotness")    \
+          range(-1, max_intx)                                               \
                                                                             \
   develop(intx, HotCallTrivialSize, -1,                                     \
           "trivial methods (no larger than this) force calls to be hot")    \
+          range(-1, max_intx)                                               \
                                                                             \
   develop(intx, WarmCallMinCount, -1,                                       \
           "number of calls (per method invocation) to enable inlining")     \
+          range(-1, max_intx)                                               \
                                                                             \
   develop(intx, WarmCallMinProfit, -1,                                      \
           "number of calls (per method invocation) to enable inlining")     \
+          range(-1, max_intx)                                               \
                                                                             \
   develop(intx, WarmCallMaxWork, 999999,                                    \
           "execution time of the largest inlinable method")                 \
+          range(0, max_intx)                                                \
                                                                             \
   develop(intx, WarmCallMaxSize, 999999,                                    \
           "size of the largest inlinable method")                           \
+          range(0, max_intx)                                                \
                                                                             \
   product(intx, MaxNodeLimit, 80000,                                        \
           "Maximum number of nodes")                                        \
+          range(1000, max_jint / 3)                                         \
                                                                             \
   product(intx, NodeLimitFudgeFactor, 2000,                                 \
           "Fudge Factor for certain optimizations")                         \
+          constraint(NodeLimitFudgeFactorConstraintFunc, AfterErgo)         \
                                                                             \
   product(bool, UseJumpTables, true,                                        \
           "Use JumpTables instead of a binary search tree for switches")    \
@@ -442,12 +474,15 @@
                                                                             \
   product_pd(intx, MinJumpTableSize,                                        \
           "Minimum number of targets in a generated jump table")            \
+          range(0, max_intx)                                                \
                                                                             \
   product(intx, MaxJumpTableSize, 65000,                                    \
           "Maximum number of targets in a generated jump table")            \
+          range(0, max_intx)                                                \
                                                                             \
   product(intx, MaxJumpTableSparseness, 5,                                  \
           "Maximum sparseness for jumptables")                              \
+          range(0, max_intx / 4)                                            \
                                                                             \
   product(bool, EliminateLocks, true,                                       \
           "Coarsen locks when possible")                                    \
@@ -475,6 +510,7 @@
                                                                             \
   product(intx, AutoBoxCacheMax, 128,                                       \
           "Sets max value cached by the java.lang.Integer autobox cache")   \
+          range(0, max_jint)                                                \
                                                                             \
   experimental(bool, AggressiveUnboxing, false,                             \
           "Control optimizations for aggressive boxing elimination")        \
@@ -487,6 +523,7 @@
                                                                             \
   product(double, EscapeAnalysisTimeout, 20. DEBUG_ONLY(+40.),              \
           "Abort EA when it reaches time limit (in sec)")                   \
+          range(0, DBL_MAX)                                                 \
                                                                             \
   develop(bool, ExitEscapeAnalysisOnTimeout, true,                          \
           "Exit or throw assert in EA when it reaches time limit")          \
@@ -502,6 +539,7 @@
                                                                             \
   product(intx, EliminateAllocationArraySizeLimit, 64,                      \
           "Array size (number of elements) limit for scalar replacement")   \
+          range(0, max_jint)                                                \
                                                                             \
   product(bool, OptimizePtrCompare, true,                                   \
           "Use escape analysis to optimize pointers compare")               \
@@ -523,12 +561,15 @@
                                                                             \
   product(intx, ValueSearchLimit, 1000,                                     \
           "Recursion limit in PhaseMacroExpand::value_from_mem_phi")        \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, MaxLabelRootDepth, 1100,                                    \
           "Maximum times call Label_Root to prevent stack overflow")        \
+          range(100, max_jint)                                              \
                                                                             \
   diagnostic(intx, DominatorSearchLimit, 1000,                              \
           "Iterations limit in Node::dominates")                            \
+          range(0, max_jint)                                                \
                                                                             \
   product(bool, BlockLayoutByFrequency, true,                               \
           "Use edge frequencies to drive block ordering")                   \
@@ -638,6 +679,7 @@
                                                                             \
   develop(intx, FreqCountInvocations,  1,                                   \
           "Scaling factor for branch frequencies (deprecated)")             \
+          range(1, max_intx)                                                \
                                                                             \
   product(intx, AliasLevel,     3,                                          \
           "0 for no aliasing, 1 for oop/field/static/array split, "         \
@@ -656,6 +698,7 @@
                                                                             \
   product(intx, LiveNodeCountInliningCutoff, 40000,                         \
           "max number of live nodes in a method")                           \
+          range(0, max_juint / 8)                                           \
                                                                             \
   diagnostic(bool, OptimizeExpensiveOps, true,                              \
           "Find best control for expensive operations")                     \
@@ -692,6 +735,7 @@
   product(intx, ArrayCopyLoadStoreMaxElem, 8,                               \
           "Maximum number of arraycopy elements inlined as a sequence of"   \
           "loads/stores")                                                   \
+          range(0, max_intx)                                                \
                                                                             \
   develop(bool, StressArrayCopyMacroNode, false,                            \
           "Perform ArrayCopy load/store replacement during IGVN only")
