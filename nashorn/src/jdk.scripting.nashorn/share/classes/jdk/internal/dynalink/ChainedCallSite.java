@@ -103,27 +103,14 @@ import jdk.internal.dynalink.support.Lookup;
  * handle is always at the start of the chain.
  */
 public class ChainedCallSite extends AbstractRelinkableCallSite {
-    private static final MethodHandle PRUNE_CATCHES =
-            MethodHandles.insertArguments(
-                    Lookup.findOwnSpecial(
-                            MethodHandles.lookup(),
-                            "prune",
-                            MethodHandle.class,
-                            MethodHandle.class,
-                            boolean.class),
-                    2,
-                    true);
-
-    private static final MethodHandle PRUNE_SWITCHPOINTS =
-            MethodHandles.insertArguments(
-                    Lookup.findOwnSpecial(
-                            MethodHandles.lookup(),
-                            "prune",
-                            MethodHandle.class,
-                            MethodHandle.class,
-                            boolean.class),
-                    2,
-                    false);
+    private static final MethodHandle PRUNE_CATCHES;
+    private static final MethodHandle PRUNE_SWITCHPOINTS;
+    static {
+        final MethodHandle PRUNE = Lookup.findOwnSpecial(MethodHandles.lookup(), "prune", MethodHandle.class,
+                MethodHandle.class, boolean.class);
+        PRUNE_CATCHES      = MethodHandles.insertArguments(PRUNE, 2, true);
+        PRUNE_SWITCHPOINTS = MethodHandles.insertArguments(PRUNE, 2, false);
+    }
 
     private final AtomicReference<LinkedList<GuardedInvocation>> invocations = new AtomicReference<>();
 
@@ -181,8 +168,8 @@ public class ChainedCallSite extends AbstractRelinkableCallSite {
 
         // prune-and-invoke is used as the fallback for invalidated switchpoints. If a switchpoint gets invalidated, we
         // rebuild the chain and get rid of all invalidated switchpoints instead of letting them linger.
-        final MethodHandle pruneAndInvokeSwitchPoints = makePruneAndInvokeMethod(relink, getPruneSwitchpoints());
-        final MethodHandle pruneAndInvokeCatches      = makePruneAndInvokeMethod(relink, getPruneCatches());
+        final MethodHandle pruneAndInvokeSwitchPoints = makePruneAndInvokeMethod(relink, PRUNE_SWITCHPOINTS);
+        final MethodHandle pruneAndInvokeCatches      = makePruneAndInvokeMethod(relink, PRUNE_CATCHES);
 
         // Fold the new chain
         MethodHandle target = relink;
@@ -197,22 +184,6 @@ public class ChainedCallSite extends AbstractRelinkableCallSite {
             setTarget(target);
         }
         return target;
-    }
-
-    /**
-     * Get the switchpoint pruning function for a chained call site
-     * @return function that removes invalidated switchpoints tied to callsite guard chain and relinks
-     */
-    protected MethodHandle getPruneSwitchpoints() {
-        return PRUNE_SWITCHPOINTS;
-    }
-
-    /**
-     * Get the catch pruning function for a chained call site
-     * @return function that removes all catches tied to callsite guard chain and relinks
-     */
-    protected MethodHandle getPruneCatches() {
-        return PRUNE_CATCHES;
     }
 
     /**
