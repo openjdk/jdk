@@ -2612,15 +2612,18 @@ void G1CollectedHeap::increment_old_marking_cycles_completed(bool concurrent) {
 }
 
 void G1CollectedHeap::register_concurrent_cycle_start(const Ticks& start_time) {
+  GCIdMarkAndRestore conc_gc_id_mark;
   collector_state()->set_concurrent_cycle_started(true);
   _gc_timer_cm->register_gc_start(start_time);
 
   _gc_tracer_cm->report_gc_start(gc_cause(), _gc_timer_cm->gc_start());
   trace_heap_before_gc(_gc_tracer_cm);
+  _cmThread->set_gc_id(GCId::current());
 }
 
 void G1CollectedHeap::register_concurrent_cycle_end() {
   if (collector_state()->concurrent_cycle_started()) {
+    GCIdMarkAndRestore conc_gc_id_mark(_cmThread->gc_id());
     if (_cm->has_aborted()) {
       _gc_tracer_cm->report_concurrent_mode_failure();
     }
@@ -2643,6 +2646,7 @@ void G1CollectedHeap::trace_heap_after_concurrent_cycle() {
     //   but before the concurrent cycle end has been registered.
     // Make sure that we only send the heap information once.
     if (!_heap_summary_sent) {
+      GCIdMarkAndRestore conc_gc_id_mark(_cmThread->gc_id());
       trace_heap_after_gc(_gc_tracer_cm);
       _heap_summary_sent = true;
     }

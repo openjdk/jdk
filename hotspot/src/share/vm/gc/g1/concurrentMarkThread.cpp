@@ -109,7 +109,7 @@ void ConcurrentMarkThread::run() {
       break;
     }
 
-    GCIdMark gc_id_mark;
+    assert(GCId::current() != GCId::undefined(), "GC id should have been set up by the initial mark GC.");
     {
       ResourceMark rm;
       HandleMark   hm;

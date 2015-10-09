@@ -1654,7 +1654,7 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   _collectorState = Resetting;
   assert(_restart_addr == NULL,
          "Should have been NULL'd before baton was passed");
-  reset(false /* == !concurrent */);
+  reset_stw();
   _cmsGen->reset_after_compaction();
   _concurrent_cycles_since_last_unload = 0;
 
@@ -1934,7 +1934,7 @@ void CMSCollector::collect_in_background(GCCause::Cause cause) {
       }
       case Resetting:
         // CMS heap resizing has been completed
-        reset(true);
+        reset_concurrent();
         assert(_collectorState == Idling, "Collector state should "
           "have changed");
 
@@ -5698,68 +5698,71 @@ void CMSCollector::sweepWork(ConcurrentMarkSweepGeneration* old_gen) {
 
 // Reset CMS data structures (for now just the marking bit map)
 // preparatory for the next cycle.
-void CMSCollector::reset(bool concurrent) {
-  if (concurrent) {
-    CMSTokenSyncWithLocks ts(true, bitMapLock());
+void CMSCollector::reset_concurrent() {
+  CMSTokenSyncWithLocks ts(true, bitMapLock());
 
-    // If the state is not "Resetting", the foreground  thread
-    // has done a collection and the resetting.
-    if (_collectorState != Resetting) {
-      assert(_collectorState == Idling, "The state should only change"
-        " because the foreground collector has finished the collection");
-      return;
-    }
-
-    // Clear the mark bitmap (no grey objects to start with)
-    // for the next cycle.
-    TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-    CMSPhaseAccounting cmspa(this, "reset", !PrintGCDetails);
-
-    HeapWord* curAddr = _markBitMap.startWord();
-    while (curAddr < _markBitMap.endWord()) {
-      size_t remaining  = pointer_delta(_markBitMap.endWord(), curAddr);
-      MemRegion chunk(curAddr, MIN2(CMSBitMapYieldQuantum, remaining));
-      _markBitMap.clear_large_range(chunk);
-      if (ConcurrentMarkSweepThread::should_yield() &&
-          !foregroundGCIsActive() &&
-          CMSYield) {
-        assert(ConcurrentMarkSweepThread::cms_thread_has_cms_token(),
-               "CMS thread should hold CMS token");
-        assert_lock_strong(bitMapLock());
-        bitMapLock()->unlock();
-        ConcurrentMarkSweepThread::desynchronize(true);
-        stopTimer();
-        if (PrintCMSStatistics != 0) {
-          incrementYields();
-        }
-
-        // See the comment in coordinator_yield()
-        for (unsigned i = 0; i < CMSYieldSleepCount &&
-                         ConcurrentMarkSweepThread::should_yield() &&
-                         !CMSCollector::foregroundGCIsActive(); ++i) {
-          os::sleep(Thread::current(), 1, false);
-        }
-
-        ConcurrentMarkSweepThread::synchronize(true);
-        bitMapLock()->lock_without_safepoint_check();
-        startTimer();
-      }
-      curAddr = chunk.end();
-    }
-    // A successful mostly concurrent collection has been done.
-    // Because only the full (i.e., concurrent mode failure) collections
-    // are being measured for gc overhead limits, clean the "near" flag
-    // and count.
-    size_policy()->reset_gc_overhead_limit_count();
-    _collectorState = Idling;
-  } else {
-    // already have the lock
-    assert(_collectorState == Resetting, "just checking");
-    assert_lock_strong(bitMapLock());
-    _markBitMap.clear_all();
-    _collectorState = Idling;
+  // If the state is not "Resetting", the foreground  thread
+  // has done a collection and the resetting.
+  if (_collectorState != Resetting) {
+    assert(_collectorState == Idling, "The state should only change"
+      " because the foreground collector has finished the collection");
+    return;
   }
 
+  // Clear the mark bitmap (no grey objects to start with)
+  // for the next cycle.
+  TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
+  CMSPhaseAccounting cmspa(this, "reset", !PrintGCDetails);
+
+  HeapWord* curAddr = _markBitMap.startWord();
+  while (curAddr < _markBitMap.endWord()) {
+    size_t remaining  = pointer_delta(_markBitMap.endWord(), curAddr);
+    MemRegion chunk(curAddr, MIN2(CMSBitMapYieldQuantum, remaining));
+    _markBitMap.clear_large_range(chunk);
+    if (ConcurrentMarkSweepThread::should_yield() &&
+        !foregroundGCIsActive() &&
+        CMSYield) {
+      assert(ConcurrentMarkSweepThread::cms_thread_has_cms_token(),
+             "CMS thread should hold CMS token");
+      assert_lock_strong(bitMapLock());
+      bitMapLock()->unlock();
+      ConcurrentMarkSweepThread::desynchronize(true);
+      stopTimer();
+      if (PrintCMSStatistics != 0) {
+        incrementYields();
+      }
+
+      // See the comment in coordinator_yield()
+      for (unsigned i = 0; i < CMSYieldSleepCount &&
+                       ConcurrentMarkSweepThread::should_yield() &&
+                       !CMSCollector::foregroundGCIsActive(); ++i) {
+        os::sleep(Thread::current(), 1, false);
+      }
+
+      ConcurrentMarkSweepThread::synchronize(true);
+      bitMapLock()->lock_without_safepoint_check();
+      startTimer();
+    }
+    curAddr = chunk.end();
+  }
+  // A successful mostly concurrent collection has been done.
+  // Because only the full (i.e., concurrent mode failure) collections
+  // are being measured for gc overhead limits, clean the "near" flag
+  // and count.
+  size_policy()->reset_gc_overhead_limit_count();
+  _collectorState = Idling;
+
+  register_gc_end();
+}
+
+// Same as above but for STW paths
+void CMSCollector::reset_stw() {
+  // already have the lock
+  assert(_collectorState == Resetting, "just checking");
+  assert_lock_strong(bitMapLock());
+  GCIdMarkAndRestore gc_id_mark(_cmsThread->gc_id());
+  _markBitMap.clear_all();
+  _collectorState = Idling;
   register_gc_end();
 }
 
