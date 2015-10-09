@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8008577
+ * @bug 8008577 8138613
  * @summary Check whether CLDR locale provider adapter is enabled by default
  * @compile -XDignore.symbol.file Bug8008577.java
  * @run main Bug8008577
@@ -38,7 +38,6 @@ public class Bug8008577 {
     static final LocaleProviderAdapter.Type[] expected = {
         LocaleProviderAdapter.Type.CLDR,
         LocaleProviderAdapter.Type.JRE,
-        LocaleProviderAdapter.Type.SPI,
     };
 
     public static void main(String[] args) {

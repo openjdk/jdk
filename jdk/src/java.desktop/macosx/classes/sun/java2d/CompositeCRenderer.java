@@ -35,8 +35,8 @@ import sun.java2d.loops.*;
 import sun.java2d.pipe.*;
 
 public class CompositeCRenderer extends CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, DrawImagePipe, TextPipe {
-    final static int fPadding = 4;
-    final static int fPaddingHalf = fPadding / 2;
+    static final int fPadding = 4;
+    static final int fPaddingHalf = fPadding / 2;
 
     private static AffineTransform sIdentityMatrix = new AffineTransform();
 

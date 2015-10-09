@@ -89,33 +89,33 @@ public class DefaultButtonModel implements ButtonModel, Serializable {
      * indicates partial commitment towards choosing/triggering
      * the button.
      */
-    public final static int ARMED = 1 << 0;
+    public static final int ARMED = 1 << 0;
 
     /**
      * Identifies the "selected" bit in the bitmask, which
      * indicates that the button has been selected. Only needed for
      * certain types of buttons - such as radio button or check box.
      */
-    public final static int SELECTED = 1 << 1;
+    public static final int SELECTED = 1 << 1;
 
     /**
      * Identifies the "pressed" bit in the bitmask, which
      * indicates that the button is pressed.
      */
-    public final static int PRESSED = 1 << 2;
+    public static final int PRESSED = 1 << 2;
 
     /**
      * Identifies the "enabled" bit in the bitmask, which
      * indicates that the button can be selected by
      * an input device (such as a mouse pointer).
      */
-    public final static int ENABLED = 1 << 3;
+    public static final int ENABLED = 1 << 3;
 
     /**
      * Identifies the "rollover" bit in the bitmask, which
      * indicates that the mouse is over the button.
      */
-    public final static int ROLLOVER = 1 << 4;
+    public static final int ROLLOVER = 1 << 4;
 
     /**
      * {@inheritDoc}

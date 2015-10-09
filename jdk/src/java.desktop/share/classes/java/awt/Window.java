@@ -959,7 +959,7 @@ public class Window extends Container implements Accessible {
         }
     }
 
-    static private final AtomicBoolean
+    private static final AtomicBoolean
         beforeFirstWindowShown = new AtomicBoolean(true);
 
     final void closeSplashScreen() {

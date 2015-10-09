@@ -2675,7 +2675,7 @@ public abstract class Path2D implements Shape, Cloneable {
         }
     }
 
-    static abstract class Iterator implements PathIterator {
+    abstract static class Iterator implements PathIterator {
         int typeIdx;
         int pointIdx;
         Path2D path;

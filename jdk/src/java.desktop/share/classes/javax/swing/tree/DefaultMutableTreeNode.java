@@ -95,7 +95,7 @@ public class DefaultMutableTreeNode implements Cloneable,
      * An enumeration that is always empty. This is used when an enumeration
      * of a leaf node's children is requested.
      */
-    static public final Enumeration<TreeNode> EMPTY_ENUMERATION
+    public static final Enumeration<TreeNode> EMPTY_ENUMERATION
         = Collections.emptyEnumeration();
 
     /** this node's parent, or null if this node has no parent */
@@ -105,7 +105,7 @@ public class DefaultMutableTreeNode implements Cloneable,
     protected Vector<TreeNode> children;
 
     /** optional user object */
-    transient protected Object  userObject;
+    protected transient Object  userObject;
 
     /** true if the node is able to have children */
     protected boolean           allowsChildren;

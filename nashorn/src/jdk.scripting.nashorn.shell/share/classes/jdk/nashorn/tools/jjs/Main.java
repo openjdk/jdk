@@ -154,6 +154,10 @@ public final class Main extends Shell {
                     break;
                 }
 
+                if (source == null) {
+                    break;
+                }
+
                 if (source.isEmpty()) {
                     continue;
                 }

@@ -79,9 +79,9 @@ import java.awt.print.*;
 
 public class Win32PrintJob implements CancelablePrintJob {
 
-    transient private Vector<PrintJobListener> jobListeners;
-    transient private Vector<PrintJobAttributeListener> attrListeners;
-    transient private Vector<PrintJobAttributeSet> listenedAttributeSets;
+    private transient Vector<PrintJobListener> jobListeners;
+    private transient Vector<PrintJobAttributeListener> attrListeners;
+    private transient Vector<PrintJobAttributeSet> listenedAttributeSets;
 
     private Win32PrintService service;
     private boolean fidelity;

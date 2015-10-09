@@ -359,7 +359,7 @@ public class DuctusRenderingEngine extends RenderingEngine {
 
     private static Rasterizer theRasterizer;
 
-    public synchronized static Rasterizer getRasterizer() {
+    public static synchronized Rasterizer getRasterizer() {
         Rasterizer r = theRasterizer;
         if (r == null) {
             r = new Rasterizer();
@@ -369,7 +369,7 @@ public class DuctusRenderingEngine extends RenderingEngine {
         return r;
     }
 
-    public synchronized static void dropRasterizer(Rasterizer r) {
+    public static synchronized void dropRasterizer(Rasterizer r) {
         r.reset();
         theRasterizer = r;
     }

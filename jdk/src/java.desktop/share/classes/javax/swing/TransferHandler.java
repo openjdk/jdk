@@ -210,7 +210,7 @@ public class TransferHandler implements Serializable {
      * @see #importData(TransferHandler.TransferSupport)
      * @since 1.6
      */
-    public final static class TransferSupport {
+    public static final class TransferSupport {
         private boolean isDrop;
         private Component component;
 

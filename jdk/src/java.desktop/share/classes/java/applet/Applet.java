@@ -79,7 +79,7 @@ public class Applet extends Panel {
      * likely move it into RUNNING state).
      * The stub field will be restored by the reader.
      */
-    transient private AppletStub stub;
+    private transient AppletStub stub;
 
     /* version ID for serialized form. */
     private static final long serialVersionUID = -5836846270535785031L;
@@ -310,7 +310,7 @@ public class Applet extends Panel {
      *
      * @since       1.2
      */
-    public final static AudioClip newAudioClip(URL url) {
+    public static final AudioClip newAudioClip(URL url) {
         return new sun.applet.AppletAudioClip(url);
     }
 

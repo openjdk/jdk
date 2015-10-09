@@ -105,6 +105,7 @@ public class ModuleArchive implements Archive {
                     entries.addAll(stream
                             .filter(p -> !Files.isDirectory(p)
                                     && !classes.relativize(p).toString().startsWith("_the.")
+                                    && !classes.relativize(p).toString().endsWith(".bc")
                                     && !classes.relativize(p).toString().equals("javac_state"))
                             .sorted()
                             .map(p -> toEntry(p, classes, EntryType.CLASS_OR_RESOURCE))

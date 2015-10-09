@@ -30,35 +30,35 @@ public final class CocoaConstants {
     private CocoaConstants(){}
 
     //from the NSEvent class reference:
-    public final static int NSLeftMouseDown      = 1;
-    public final static int NSLeftMouseUp        = 2;
-    public final static int NSRightMouseDown     = 3;
-    public final static int NSRightMouseUp       = 4;
-    public final static int NSMouseMoved         = 5;
-    public final static int NSLeftMouseDragged   = 6;
-    public final static int NSRightMouseDragged  = 7;
-    public final static int NSMouseEntered       = 8;
-    public final static int NSMouseExited        = 9;
-    public final static int NSKeyDown            = 10;
-    public final static int NSKeyUp              = 11;
-    public final static int NSFlagsChanged       = 12;
+    public static final int NSLeftMouseDown      = 1;
+    public static final int NSLeftMouseUp        = 2;
+    public static final int NSRightMouseDown     = 3;
+    public static final int NSRightMouseUp       = 4;
+    public static final int NSMouseMoved         = 5;
+    public static final int NSLeftMouseDragged   = 6;
+    public static final int NSRightMouseDragged  = 7;
+    public static final int NSMouseEntered       = 8;
+    public static final int NSMouseExited        = 9;
+    public static final int NSKeyDown            = 10;
+    public static final int NSKeyUp              = 11;
+    public static final int NSFlagsChanged       = 12;
 
-    public final static int NSScrollWheel        = 22;
-    public final static int NSOtherMouseDown     = 25;
-    public final static int NSOtherMouseUp       = 26;
-    public final static int NSOtherMouseDragged  = 27;
+    public static final int NSScrollWheel        = 22;
+    public static final int NSOtherMouseDown     = 25;
+    public static final int NSOtherMouseUp       = 26;
+    public static final int NSOtherMouseDragged  = 27;
 
-    public final static int AllLeftMouseEventsMask =
+    public static final int AllLeftMouseEventsMask =
         1 << NSLeftMouseDown |
         1 << NSLeftMouseUp |
         1 << NSLeftMouseDragged;
 
-    public final static int AllRightMouseEventsMask =
+    public static final int AllRightMouseEventsMask =
         1 << NSRightMouseDown |
         1 << NSRightMouseUp |
         1 << NSRightMouseDragged;
 
-    public final static int AllOtherMouseEventsMask =
+    public static final int AllOtherMouseEventsMask =
         1 << NSOtherMouseDown |
         1 << NSOtherMouseUp |
         1 << NSOtherMouseDragged;
@@ -82,24 +82,24 @@ public final class CocoaConstants {
 
     // See http://developer.apple.com/library/mac/#documentation/Carbon/Reference/QuartzEventServicesRef/Reference/reference.html
 
-    public final static int kCGMouseButtonLeft   = 0;
-    public final static int kCGMouseButtonRight  = 1;
-    public final static int kCGMouseButtonCenter = 2;
+    public static final int kCGMouseButtonLeft   = 0;
+    public static final int kCGMouseButtonRight  = 1;
+    public static final int kCGMouseButtonCenter = 2;
 
     // See https://wiki.mozilla.org/NPAPI:CocoaEventModel
 
-    public final static int NPCocoaEventDrawRect           = 1;
-    public final static int NPCocoaEventMouseDown          = 2;
-    public final static int NPCocoaEventMouseUp            = 3;
-    public final static int NPCocoaEventMouseMoved         = 4;
-    public final static int NPCocoaEventMouseEntered       = 5;
-    public final static int NPCocoaEventMouseExited        = 6;
-    public final static int NPCocoaEventMouseDragged       = 7;
-    public final static int NPCocoaEventKeyDown            = 8;
-    public final static int NPCocoaEventKeyUp              = 9;
-    public final static int NPCocoaEventFlagsChanged       = 10;
-    public final static int NPCocoaEventFocusChanged       = 11;
-    public final static int NPCocoaEventWindowFocusChanged = 12;
-    public final static int NPCocoaEventScrollWheel        = 13;
-    public final static int NPCocoaEventTextInput          = 14;
+    public static final int NPCocoaEventDrawRect           = 1;
+    public static final int NPCocoaEventMouseDown          = 2;
+    public static final int NPCocoaEventMouseUp            = 3;
+    public static final int NPCocoaEventMouseMoved         = 4;
+    public static final int NPCocoaEventMouseEntered       = 5;
+    public static final int NPCocoaEventMouseExited        = 6;
+    public static final int NPCocoaEventMouseDragged       = 7;
+    public static final int NPCocoaEventKeyDown            = 8;
+    public static final int NPCocoaEventKeyUp              = 9;
+    public static final int NPCocoaEventFlagsChanged       = 10;
+    public static final int NPCocoaEventFocusChanged       = 11;
+    public static final int NPCocoaEventWindowFocusChanged = 12;
+    public static final int NPCocoaEventScrollWheel        = 13;
+    public static final int NPCocoaEventTextInput          = 14;
 }
