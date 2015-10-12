@@ -25,14 +25,14 @@
  * @test
  * @bug 8133196
  * @summary test functionality of getOriginalHostName(InetAddress)
- * @modules java.base/sun.misc
+ * @modules java.base/jdk.internal.misc
  */
 
 import java.io.*;
 import java.net.InetAddress;
 
-import sun.misc.JavaNetInetAddressAccess;
-import sun.misc.SharedSecrets;
+import jdk.internal.misc.JavaNetInetAddressAccess;
+import jdk.internal.misc.SharedSecrets;
 
 public class getOriginalHostName {
 
