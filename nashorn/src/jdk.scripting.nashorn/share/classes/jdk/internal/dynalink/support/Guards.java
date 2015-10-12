@@ -94,7 +94,6 @@ import jdk.internal.dynalink.linker.LinkerServices;
 /**
  * Utility methods for creating typical guards. TODO: introduce reasonable caching of created guards.
  *
- * @author Attila Szegedi
  */
 public class Guards {
     private static final Logger LOG = Logger

@@ -95,8 +95,6 @@ import jdk.internal.dynalink.support.TypeUtilities;
  * Interface for services provided to {@link GuardingDynamicLinker} instances by the {@link DynamicLinker} that owns
  * them. You can think of it as the interface of the {@link DynamicLinker} that faces the {@link GuardingDynamicLinker}
  * s.
- *
- * @author Attila Szegedi
  */
 public interface LinkerServices {
     /**

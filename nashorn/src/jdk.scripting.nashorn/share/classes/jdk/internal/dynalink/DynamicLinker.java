@@ -147,8 +147,6 @@ import jdk.internal.dynalink.support.RuntimeContextLinkRequestImpl;
  * additional parameters to the bootstrap method) to them.</li>
  *
  * </ul>
- *
- * @author Attila Szegedi
  */
 public final class DynamicLinker {
     private static final String CLASS_NAME = DynamicLinker.class.getName();
