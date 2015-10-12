@@ -94,8 +94,6 @@ import jdk.internal.dynalink.linker.MethodHandleTransformer;
 
 /**
  * Default implementation of the {@link LinkerServices} interface.
- *
- * @author Attila Szegedi
  */
 public class LinkerServicesImpl implements LinkerServices {
 

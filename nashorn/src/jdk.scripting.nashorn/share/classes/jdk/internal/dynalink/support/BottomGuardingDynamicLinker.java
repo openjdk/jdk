@@ -91,8 +91,6 @@ import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 /**
  * A linker that can't link any call site. Only used internally by {@link CompositeTypeBasedGuardingDynamicLinker}. Can
  * be used by other language runtimes if they need it though.
- *
- * @author Attila Szegedi
  */
 public class BottomGuardingDynamicLinker implements TypeBasedGuardingDynamicLinker {
 
