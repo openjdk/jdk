@@ -108,12 +108,6 @@ AC_DEFUN([BOOTJDK_CHECK_ARGUMENTS],
   fi
 ])
 
-# Test: Is bootjdk available from builddeps?
-AC_DEFUN([BOOTJDK_CHECK_BUILDDEPS],
-[
-  BDEPS_CHECK_MODULE(BOOT_JDK, bootjdk, xxx, [BOOT_JDK_FOUND=maybe], [BOOT_JDK_FOUND=no])
-])
-
 # Test: Is $JAVA_HOME set?
 AC_DEFUN([BOOTJDK_CHECK_JAVA_HOME],
 [
@@ -275,9 +269,6 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK],
     # we should not go on looking
     AC_MSG_ERROR([The path given by --with-boot-jdk does not contain a valid Boot JDK])
   fi
-
-  # Test: Is bootjdk available from builddeps?
-  BOOTJDK_DO_CHECK([BOOTJDK_CHECK_BUILDDEPS])
 
   # Test: On MacOS X, can we find a boot jdk using /usr/libexec/java_home?
   BOOTJDK_DO_CHECK([BOOTJDK_CHECK_MACOSX_JAVA_LOCATOR])

@@ -371,8 +371,8 @@ public final class Currency implements Serializable {
      * instance is needed
      * @return the <code>Currency</code> instance for the country of the given
      * locale, or {@code null}
-     * @exception NullPointerException if <code>locale</code> or its country
-     * code is {@code null}
+     * @exception NullPointerException if <code>locale</code>
+     * is {@code null}
      * @exception IllegalArgumentException if the country of the given {@code locale}
      * is not a supported ISO 3166 country code.
      */
