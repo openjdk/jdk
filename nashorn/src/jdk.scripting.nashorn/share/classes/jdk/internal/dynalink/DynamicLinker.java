@@ -150,12 +150,13 @@ import jdk.internal.dynalink.support.RuntimeContextLinkRequestImpl;
  *
  * @author Attila Szegedi
  */
-public class DynamicLinker {
+public final class DynamicLinker {
     private static final String CLASS_NAME = DynamicLinker.class.getName();
     private static final String RELINK_METHOD_NAME = "relink";
 
     private static final String INITIAL_LINK_CLASS_NAME = "java.lang.invoke.MethodHandleNatives";
     private static final String INITIAL_LINK_METHOD_NAME = "linkCallSite";
+    private static final String INVOKE_PACKAGE_PREFIX = "java.lang.invoke.";
 
     private final LinkerServices linkerServices;
     private final GuardedInvocationFilter prelinkFilter;
@@ -305,23 +306,18 @@ public class DynamicLinker {
         final StackTraceElement[] trace = new Throwable().getStackTrace();
         for(int i = 0; i < trace.length - 1; ++i) {
             final StackTraceElement frame = trace[i];
+            // If we found any of our linking entry points on the stack...
             if(isRelinkFrame(frame) || isInitialLinkFrame(frame)) {
-                return trace[i + 1];
+                // ... then look for the first thing calling it that isn't j.l.invoke
+                for (int j = i + 1; j < trace.length; ++j) {
+                    final StackTraceElement frame2 = trace[j];
+                    if (!frame2.getClassName().startsWith(INVOKE_PACKAGE_PREFIX)) {
+                        return frame2;
+                    }
+                }
             }
         }
         return null;
-    }
-
-    /**
-     * Deprecated because of imprecise name.
-     *
-     * @deprecated Use {@link #getLinkedCallSiteLocation()} instead.
-     *
-     * @return see non-deprecated method
-     */
-    @Deprecated
-    public static StackTraceElement getRelinkedCallSiteLocation() {
-        return getLinkedCallSiteLocation();
     }
 
     /**

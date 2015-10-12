@@ -118,7 +118,7 @@ import jdk.internal.dynalink.support.TypeUtilities;
  *
  * @author Attila Szegedi
  */
-public class DynamicLinkerFactory {
+public final class DynamicLinkerFactory {
     /**
      * Default value for {@link #setUnstableRelinkThreshold(int) unstable relink threshold}.
      */
