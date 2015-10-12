@@ -132,11 +132,6 @@ public class LinkerServicesImpl implements LinkerServices {
     }
 
     @Override
-    public MethodHandle asTypeLosslessReturn(final MethodHandle handle, final MethodType fromType) {
-        return Implementation.asTypeLosslessReturn(this, handle, fromType);
-    }
-
-    @Override
     public MethodHandle getTypeConverter(final Class<?> sourceType, final Class<?> targetType) {
         return typeConverterFactory.getTypeConverter(sourceType, targetType);
     }
