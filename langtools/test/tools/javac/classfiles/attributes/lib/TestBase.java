@@ -44,6 +44,7 @@ import com.sun.tools.classfile.ConstantPoolException;
 public class TestBase {
 
     public static final String LINE_SEPARATOR = System.lineSeparator();
+    public static final boolean isDumpOfSourceEnabled = Boolean.getBoolean("dump.src");
 
     private <S> InMemoryFileManager compile(
             List<String> options,
@@ -176,7 +177,9 @@ public class TestBase {
      * @throws ConstantPoolException if constant pool error occurs
      */
     public ClassFile readClassFile(File file) throws IOException, ConstantPoolException {
-        return readClassFile(new FileInputStream(file));
+        try (InputStream is = new FileInputStream(file)) {
+            return readClassFile(is);
+        }
     }
 
     public void assertEquals(Object actual, Object expected, String message) {
@@ -212,6 +215,14 @@ public class TestBase {
     public void writeToFile(Path path, String source) throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(path)) {
             writer.write(source);
+        }
+    }
+
+    public void writeToFileIfEnabled(Path path, String source) throws IOException {
+        if (isDumpOfSourceEnabled) {
+            writeToFile(path, source);
+        } else {
+            System.err.println("Source dumping disabled. To enable, run the test with '-Ddump.src=true'");
         }
     }
 

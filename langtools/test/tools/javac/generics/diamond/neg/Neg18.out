@@ -1,3 +1,3 @@
 Neg18.java:14:21: compiler.err.prob.found.req: (compiler.misc.cant.apply.diamond.1: (compiler.misc.diamond: pkg.Neg18_01), (compiler.misc.inaccessible.varargs.type: pkg.Neg18_01.PkgPrivate, kindname.class, Neg18))
-Neg18.java:14:26: compiler.err.not.def.public.cant.access: pkg.Neg18_01.PkgPrivate, pkg.Neg18_01
+Neg18.java:14:9: compiler.err.cant.apply.symbol: kindname.constructor, , pkg.Neg18_01.PkgPrivate[], compiler.misc.no.args, kindname.class, compiler.misc.anonymous.class: <any>, (compiler.misc.inaccessible.varargs.type: pkg.Neg18_01.PkgPrivate, kindname.class, Neg18)
 2 errors

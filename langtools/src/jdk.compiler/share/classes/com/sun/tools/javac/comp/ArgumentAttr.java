@@ -109,9 +109,6 @@ public class ArgumentAttr extends JCTree.Visitor {
     /** Cache for argument types; behavior is influences by the currrently selected cache policy. */
     Map<UniquePos, ArgumentType<?>> argumentTypeCache = new LinkedHashMap<>();
 
-    /** Cache policy: should argument types be cached? */
-    private CachePolicy cachePolicy = CachePolicy.CACHE;
-
     public static ArgumentAttr instance(Context context) {
         ArgumentAttr instance = context.get(methodAttrKey);
         if (instance == null)
@@ -160,12 +157,29 @@ public class ArgumentAttr extends JCTree.Visitor {
     }
 
     /**
-     * Sets given ache policy and returns current policy.
+     * Returns a local caching context in which argument types can safely be cached without
+     * the risk of polluting enclosing contexts. This is useful when attempting speculative
+     * attribution of potentially erroneous expressions, which could end up polluting the cache.
      */
-    CachePolicy withCachePolicy(CachePolicy newPolicy) {
-        CachePolicy oldPolicy = this.cachePolicy;
-        this.cachePolicy = newPolicy;
-        return oldPolicy;
+    LocalCacheContext withLocalCacheContext() {
+        return new LocalCacheContext();
+    }
+
+    /**
+     * Local cache context; this class keeps track of the previous cache and reverts to it
+     * when the {@link LocalCacheContext#leave()} method is called.
+     */
+    class LocalCacheContext {
+        Map<UniquePos, ArgumentType<?>> prevCache;
+
+        public LocalCacheContext() {
+            this.prevCache = argumentTypeCache;
+            argumentTypeCache = new HashMap<>();
+        }
+
+        public void leave() {
+            argumentTypeCache = prevCache;
+        }
     }
 
     /**
@@ -226,9 +240,7 @@ public class ArgumentAttr extends JCTree.Visitor {
             setResult(that, cached.dup(that, env));
         } else {
             Z res = argumentTypeFactory.get();
-            if (cachePolicy == CachePolicy.CACHE) {
-                argumentTypeCache.put(pos, res);
-            }
+            argumentTypeCache.put(pos, res);
             setResult(that, res);
         }
     }
@@ -341,7 +353,7 @@ public class ArgumentAttr extends JCTree.Visitor {
                 speculativeTypes.put(resultInfo, t);
                 return t;
             } else {
-                if (!env.info.isSpeculative && cachePolicy == CachePolicy.CACHE) {
+                if (!env.info.isSpeculative) {
                     argumentTypeCache.remove(new UniquePos(dt.tree));
                 }
                 return deferredAttr.basicCompleter.complete(dt, resultInfo, deferredAttrContext);
@@ -662,18 +674,5 @@ public class ArgumentAttr extends JCTree.Visitor {
         public String toString() {
             return source.getFile().getName() + " @ " + source.getLineNumber(pos);
         }
-    }
-
-    /**
-     * Argument type caching policy.
-     */
-    enum CachePolicy {
-        /** Cache argument types. */
-        CACHE,
-        /**
-         * Don't cache argument types. This is useful when performing speculative attribution on
-         * a tree that is known to contain erroneous info.
-         */
-        NO_CACHE;
     }
 }

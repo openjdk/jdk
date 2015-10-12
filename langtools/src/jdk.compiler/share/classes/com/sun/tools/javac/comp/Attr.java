@@ -2215,7 +2215,7 @@ public class Attr extends JCTree.Visitor {
                 inferenceContext.addFreeTypeListener(List.of(tree.constructorType, tree.clazz.type),
                         instantiatedContext -> {
                             tree.constructorType = instantiatedContext.asInstType(tree.constructorType);
-                            clazz.type = instantiatedContext.asInstType(clazz.type);
+                            tree.clazz.type = clazz.type = instantiatedContext.asInstType(clazz.type);
                             ResultInfo prevResult = this.resultInfo;
                             try {
                                 this.resultInfo = resultInfoForClassDefinition;
@@ -3733,17 +3733,17 @@ public class Attr extends JCTree.Visitor {
                                          " in tree " + tree);
             }
 
-            // Test (1): emit a `deprecation' warning if symbol is deprecated.
-            // (for constructors, the error was given when the constructor was
-            // resolved)
+            // Emit a `deprecation' warning if symbol is deprecated.
+            // (for constructors (but not for constructor references), the error
+            // was given when the constructor was resolved)
 
-            if (sym.name != names.init) {
+            if (sym.name != names.init || tree.hasTag(REFERENCE)) {
                 chk.checkDeprecated(tree.pos(), env.info.scope.owner, sym);
                 chk.checkSunAPI(tree.pos(), sym);
                 chk.checkProfile(tree.pos(), sym);
             }
 
-            // Test (3): if symbol is a variable, check that its type and
+            // If symbol is a variable, check that its type and
             // kind are compatible with the prototype and protokind.
             return check(tree, owntype, sym.kind.toSelector(), resultInfo);
         }

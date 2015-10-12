@@ -645,28 +645,24 @@ NUM_CORES
 ENABLE_INTREE_EC
 SALIB_NAME
 HOTSPOT_MAKE_ARGS
-MSVCP_DLL
-MSVCR_DLL
-LIBCXX
+LIBZIP_CAN_USE_MMAP
+LIBDL
+LIBM
+USE_EXTERNAL_LCMS
+LCMS_LIBS
+LCMS_CFLAGS
+USE_EXTERNAL_LIBZ
+USE_EXTERNAL_LIBPNG
+PNG_LIBS
+PNG_CFLAGS
+USE_EXTERNAL_LIBGIF
+USE_EXTERNAL_LIBJPEG
 LLVM_LIBS
 LLVM_LDFLAGS
 LLVM_CFLAGS
 LLVM_CONFIG
 LIBFFI_LIBS
 LIBFFI_CFLAGS
-STATIC_CXX_SETTING
-LIBDL
-LIBM
-LIBZIP_CAN_USE_MMAP
-USE_EXTERNAL_LIBZ
-USE_EXTERNAL_LIBPNG
-PNG_LIBS
-PNG_CFLAGS
-USE_EXTERNAL_LCMS
-LCMS_LIBS
-LCMS_CFLAGS
-USE_EXTERNAL_LIBGIF
-USE_EXTERNAL_LIBJPEG
 ALSA_LIBS
 ALSA_CFLAGS
 FREETYPE_BUNDLE_LIB_PATH
@@ -678,6 +674,10 @@ X_LIBS
 X_PRE_LIBS
 X_CFLAGS
 XMKMF
+MSVCP_DLL
+MSVCR_DLL
+LIBCXX
+STATIC_CXX_SETTING
 FIXPATH
 GCOV_ENABLED
 ZIP_DEBUGINFO_FILES
@@ -705,9 +705,6 @@ CXXFLAGS_JDKLIB
 CFLAGS_JDKEXE
 CFLAGS_JDKLIB
 MACOSX_VERSION_MIN
-LEGACY_EXTRA_LDFLAGS
-LEGACY_EXTRA_CXXFLAGS
-LEGACY_EXTRA_CFLAGS
 CXX_O_FLAG_NONE
 CXX_O_FLAG_DEBUG
 CXX_O_FLAG_NORM
@@ -728,14 +725,12 @@ SET_SHARED_LIBRARY_ORIGIN
 SET_EXECUTABLE_ORIGIN
 CXX_FLAG_REORDER
 C_FLAG_REORDER
-SYSROOT_LDFLAGS
-SYSROOT_CFLAGS
 RC_FLAGS
 AR_OUT_OPTION
 LD_OUT_OPTION
 EXE_OUT_OPTION
 CC_OUT_OPTION
-POST_STRIP_CMD
+STRIPFLAGS
 ARFLAGS
 COMPILER_TARGET_BITS_FLAG
 JT_HOME
@@ -747,6 +742,8 @@ HOTSPOT_LD
 HOTSPOT_CXX
 HOTSPOT_RC
 HOTSPOT_MT
+BUILD_SYSROOT_LDFLAGS
+BUILD_SYSROOT_CFLAGS
 BUILD_LD
 BUILD_CXX
 BUILD_CC
@@ -793,6 +790,11 @@ VS_LIB
 VS_INCLUDE
 VS_PATH
 CYGWIN_LINK
+SYSROOT_LDFLAGS
+SYSROOT_CFLAGS
+LEGACY_EXTRA_LDFLAGS
+LEGACY_EXTRA_CXXFLAGS
+LEGACY_EXTRA_CFLAGS
 EXE_SUFFIX
 OBJ_SUFFIX
 STATIC_LIBRARY
@@ -847,8 +849,6 @@ TEST_IN_BUILD
 BUILD_HEADLESS
 SUPPORT_HEADFUL
 SUPPORT_HEADLESS
-BDEPS_FTP
-BDEPS_UNZIP
 OS_VERSION_MICRO
 OS_VERSION_MINOR
 OS_VERSION_MAJOR
@@ -946,6 +946,7 @@ build_os
 build_vendor
 build_cpu
 build
+NICE
 CPIO
 DF
 READLINK
@@ -1052,10 +1053,6 @@ with_extra_path
 with_sdk_name
 with_conf_name
 with_output_sync
-with_builddeps_conf
-with_builddeps_server
-with_builddeps_dir
-with_builddeps_group
 enable_headful
 enable_hotspot_test_in_build
 with_cacerts_file
@@ -1078,15 +1075,18 @@ with_override_nashorn
 with_override_jdk
 with_import_hotspot
 with_toolchain_type
-with_toolchain_version
-with_jtreg
 with_extra_cflags
 with_extra_cxxflags
 with_extra_ldflags
+with_toolchain_version
+with_jtreg
 enable_warnings_as_errors
 enable_debug_symbols
 enable_zip_debug_info
 enable_native_coverage
+with_stdc__lib
+with_msvcr_dll
+with_msvcp_dll
 with_x
 with_cups
 with_cups_include
@@ -1098,14 +1098,14 @@ enable_freetype_bundling
 with_alsa
 with_alsa_include
 with_alsa_lib
+with_libffi
+with_libffi_include
+with_libffi_lib
 with_libjpeg
 with_giflib
-with_lcms
 with_libpng
 with_zlib
-with_stdc__lib
-with_msvcr_dll
-with_msvcp_dll
+with_lcms
 with_dxsdk
 with_dxsdk_lib
 with_dxsdk_include
@@ -1167,6 +1167,7 @@ CYGPATH
 READLINK
 DF
 CPIO
+NICE
 UNZIP
 ZIP
 LDD
@@ -1213,12 +1214,12 @@ FREETYPE_CFLAGS
 FREETYPE_LIBS
 ALSA_CFLAGS
 ALSA_LIBS
-LCMS_CFLAGS
-LCMS_LIBS
-PNG_CFLAGS
-PNG_LIBS
 LIBFFI_CFLAGS
 LIBFFI_LIBS
+PNG_CFLAGS
+PNG_LIBS
+LCMS_CFLAGS
+LCMS_LIBS
 CCACHE'
 
 
@@ -1896,13 +1897,6 @@ Optional Packages:
                           from important configuration options]
   --with-output-sync      set make output sync type if supported by make.
                           [recurse]
-  --with-builddeps-conf   use this configuration file for the builddeps
-  --with-builddeps-server download and use build dependencies from this server
-                          url
-  --with-builddeps-dir    store downloaded build dependencies here
-                          [/localhome/builddeps]
-  --with-builddeps-group  chgrp the downloaded build dependencies to this
-                          group
   --with-cacerts-file     specify alternative cacerts file
   --with-milestone        Set milestone value for build [internal]
   --with-update-version   Set update version value for build [b00]
@@ -1937,14 +1931,22 @@ Optional Packages:
                           source
   --with-toolchain-type   the toolchain type (or family) to use, use '--help'
                           to show possible values [platform dependent]
+  --with-extra-cflags     extra flags to be used when compiling jdk c-files
+  --with-extra-cxxflags   extra flags to be used when compiling jdk c++-files
+  --with-extra-ldflags    extra flags to be used when linking jdk
   --with-toolchain-version
                           the version of the toolchain to look for, use
                           '--help' to show possible values [platform
                           dependent]
   --with-jtreg            Regression Test Harness [probed]
-  --with-extra-cflags     extra flags to be used when compiling jdk c-files
-  --with-extra-cxxflags   extra flags to be used when compiling jdk c++-files
-  --with-extra-ldflags    extra flags to be used when linking jdk
+  --with-stdc++lib=<static>,<dynamic>,<default>
+                          force linking of the C++ runtime on Linux to either
+                          static or dynamic, default is static with dynamic as
+                          fallback
+  --with-msvcr-dll        path to microsoft C runtime dll (msvcr*.dll)
+                          (Windows only) [probed]
+  --with-msvcp-dll        path to microsoft C++ runtime dll (msvcp*.dll)
+                          (Windows only) [probed]
   --with-x                use the X Window System
   --with-cups             specify prefix directory for the cups package
                           (expecting the headers under PATH/include)
@@ -1962,24 +1964,21 @@ Optional Packages:
                           headers under PATH/include)
   --with-alsa-include     specify directory for the alsa include files
   --with-alsa-lib         specify directory for the alsa library
+  --with-libffi           specify prefix directory for the libffi package
+                          (expecting the libraries under PATH/lib and the
+                          headers under PATH/include)
+  --with-libffi-include   specify directory for the libffi include files
+  --with-libffi-lib       specify directory for the libffi library
   --with-libjpeg          use libjpeg from build system or OpenJDK source
                           (system, bundled) [bundled]
   --with-giflib           use giflib from build system or OpenJDK source
-                          (system, bundled) [bundled]
-  --with-lcms             use lcms2 from build system or OpenJDK source
                           (system, bundled) [bundled]
   --with-libpng           use libpng from build system or OpenJDK source
                           (system, bundled) [bundled]
   --with-zlib             use zlib from build system or OpenJDK source
                           (system, bundled) [bundled]
-  --with-stdc++lib=<static>,<dynamic>,<default>
-                          force linking of the C++ runtime on Linux to either
-                          static or dynamic, default is static with dynamic as
-                          fallback
-  --with-msvcr-dll        path to microsoft C runtime dll (msvcr*.dll)
-                          (Windows only) [probed]
-  --with-msvcp-dll        path to microsoft C++ runtime dll (msvcp*.dll)
-                          (Windows only) [probed]
+  --with-lcms             use lcms2 from build system or OpenJDK source
+                          (system, bundled) [bundled]
   --with-dxsdk            Deprecated. Option is kept for backwards
                           compatibility and is ignored
   --with-dxsdk-lib        Deprecated. Option is kept for backwards
@@ -2047,6 +2046,7 @@ Some influential environment variables:
   READLINK    Override default value for READLINK
   DF          Override default value for DF
   CPIO        Override default value for CPIO
+  NICE        Override default value for NICE
   UNZIP       Override default value for UNZIP
   ZIP         Override default value for ZIP
   LDD         Override default value for LDD
@@ -2096,13 +2096,13 @@ Some influential environment variables:
               linker flags for FREETYPE, overriding pkg-config
   ALSA_CFLAGS C compiler flags for ALSA, overriding pkg-config
   ALSA_LIBS   linker flags for ALSA, overriding pkg-config
-  LCMS_CFLAGS C compiler flags for LCMS, overriding pkg-config
-  LCMS_LIBS   linker flags for LCMS, overriding pkg-config
-  PNG_CFLAGS  C compiler flags for PNG, overriding pkg-config
-  PNG_LIBS    linker flags for PNG, overriding pkg-config
   LIBFFI_CFLAGS
               C compiler flags for LIBFFI, overriding pkg-config
   LIBFFI_LIBS linker flags for LIBFFI, overriding pkg-config
+  PNG_CFLAGS  C compiler flags for PNG, overriding pkg-config
+  PNG_LIBS    linker flags for PNG, overriding pkg-config
+  LCMS_CFLAGS C compiler flags for LCMS, overriding pkg-config
+  LCMS_LIBS   linker flags for LCMS, overriding pkg-config
   CCACHE      Override default value for CCACHE
 
 Use these variables to override the choices made by `configure' or to help
@@ -3557,41 +3557,6 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
-#
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
-# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
-#
-# This code is free software; you can redistribute it and/or modify it
-# under the terms of the GNU General Public License version 2 only, as
-# published by the Free Software Foundation.  Oracle designates this
-# particular file as subject to the "Classpath" exception as provided
-# by Oracle in the LICENSE file that accompanied this code.
-#
-# This code is distributed in the hope that it will be useful, but WITHOUT
-# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
-# version 2 for more details (a copy is included in the LICENSE file that
-# accompanied this code).
-#
-# You should have received a copy of the GNU General Public License version
-# 2 along with this work; if not, write to the Free Software Foundation,
-# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
-#
-# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
-# or visit www.oracle.com if you need additional information or have any
-# questions.
-#
-
-
-
-
-
-
-
-
-
-
-
 # ... then the rest
 #
 # Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
@@ -3652,9 +3617,6 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 # Test: Is bootjdk explicitely set by command line arguments?
-
-
-# Test: Is bootjdk available from builddeps?
 
 
 # Test: Is $JAVA_HOME set?
@@ -3767,6 +3729,15 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # questions.
 #
 
+# Reset the global CFLAGS/LDFLAGS variables and initialize them with the
+# corresponding configure arguments instead
+
+
+# Setup the sysroot flags and add them to global CFLAGS and LDFLAGS so
+# that configure can use them while detecting compilers.
+# TOOLCHAIN_TYPE is available here.
+
+
 
 
 
@@ -3821,7 +3792,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3886,6 +3857,8 @@ msys_help() {
 
 apt_help() {
   case $1 in
+    reduced)
+      PKGHANDLER_COMMAND="sudo apt-get install gcc-multilib g++-multilib" ;;
     devkit)
       PKGHANDLER_COMMAND="sudo apt-get install build-essential" ;;
     openjdk)
@@ -3896,8 +3869,8 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install libcups2-dev" ;;
     freetype)
       PKGHANDLER_COMMAND="sudo apt-get install libfreetype6-dev" ;;
-    pulse)
-      PKGHANDLER_COMMAND="sudo apt-get install libpulse-dev" ;;
+    ffi)
+      PKGHANDLER_COMMAND="sudo apt-get install libffi-dev" ;;
     x11)
       PKGHANDLER_COMMAND="sudo apt-get install libX11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev" ;;
     ccache)
@@ -3917,8 +3890,6 @@ yum_help() {
       PKGHANDLER_COMMAND="sudo yum install cups-devel" ;;
     freetype)
       PKGHANDLER_COMMAND="sudo yum install freetype-devel" ;;
-    pulse)
-      PKGHANDLER_COMMAND="sudo yum install pulseaudio-libs-devel" ;;
     x11)
       PKGHANDLER_COMMAND="sudo yum install libXtst-devel libXt-devel libXrender-devel libXi-devel" ;;
     ccache)
@@ -4007,7 +3978,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4031,24 +4002,278 @@ pkgadd_help() {
 # questions.
 #
 
+# Major library component reside in separate files.
+#
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# Setup alsa (Advanced Linux Sound Architecture)
+################################################################################
+
+
+#
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# Setup bundled libraries.
+#
+# For libjpeg, giflib, libpng, lcms2 and zlib, the source is present in the
+# OpenJDK repository. Default is to use these libraries as bundled, but they
+# might be replaced by en external version by the user.
+################################################################################
+
+
+################################################################################
+# Setup libjpeg
+################################################################################
+
+
+################################################################################
+# Setup giflib
+################################################################################
+
+
+################################################################################
+# Setup libpng
+################################################################################
+
+
+################################################################################
+# Setup zlib
+################################################################################
+
+
+################################################################################
+# Setup lcms (Little CMS)
+################################################################################
+
+
+#
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# Setup cups (Common Unix Printing System)
+################################################################################
+
+
+#
+# Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# Setup libffi (Foreign Function Interface)
+################################################################################
+
+
+#
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# Build the freetype lib from source
+################################################################################
+
+
+################################################################################
+# Check if a potential freeype library match is correct and usable
+################################################################################
+
+
+################################################################################
+# Setup freetype (The FreeType2 font rendering library)
+################################################################################
+
+
+#
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# Setup the standard C/C++ runtime libraries.
+#
+# Most importantly, determine if stdc++ should be linked statically or
+# dynamically.
+################################################################################
+
+
+#
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+################################################################################
+# Setup X11 Windows system
+################################################################################
 
 
 
+################################################################################
+# Determine which libraries are needed for this configuration
+################################################################################
 
 
+################################################################################
+# Parse library options, and setup needed libraries
+################################################################################
 
 
+################################################################################
+# Setup llvm (Low-Level VM)
+################################################################################
 
 
-
-
-
-
-
-
-
-
-
+################################################################################
+# Setup various libraries, typically small system libraries
+################################################################################
 
 
 #
@@ -4362,7 +4587,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1442820958
+DATE_WHEN_GENERATED=1444224363
 
 ###############################################################################
 #
@@ -4408,9 +4633,7 @@ $as_echo "$as_me: configure script generated at timestamp $DATE_WHEN_GENERATED."
 
   # Start with tools that do not need have cross compilation support
   # and can be expected to be found in the default PATH. These tools are
-  # used by configure. Nor are these tools expected to be found in the
-  # devkit from the builddeps server either, since they are
-  # needed to download the devkit.
+  # used by configure.
 
   # First are all the simple required tools.
 
@@ -4419,7 +4642,7 @@ $as_echo "$as_me: configure script generated at timestamp $DATE_WHEN_GENERATED."
   # Publish this variable in the help.
 
 
-  if test "x$BASENAME" = x; then
+  if [ -z "${BASENAME+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in basename
 do
@@ -4532,14 +4755,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$BASENAME"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BASENAME=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$BASENAME" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool BASENAME= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool BASENAME= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BASENAME" >&5
+$as_echo_n "checking for BASENAME... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$BASENAME"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BASENAME=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool BASENAME=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -4579,22 +4811,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$BASENAME" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BASENAME=$tool_specified" >&5
+          if test "x$BASENAME" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BASENAME=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool BASENAME=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BASENAME" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BASENAME" >&5
 $as_echo_n "checking for BASENAME... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool BASENAME=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool BASENAME=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -4612,7 +4845,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$BASH" = x; then
+  if [ -z "${BASH+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in bash
 do
@@ -4725,14 +4958,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$BASH"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BASH=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$BASH" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool BASH= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool BASH= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BASH" >&5
+$as_echo_n "checking for BASH... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$BASH"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BASH=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool BASH=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -4772,22 +5014,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$BASH" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BASH=$tool_specified" >&5
+          if test "x$BASH" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BASH=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool BASH=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BASH" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BASH" >&5
 $as_echo_n "checking for BASH... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool BASH=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool BASH=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -4805,7 +5048,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CAT" = x; then
+  if [ -z "${CAT+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cat
 do
@@ -4918,14 +5161,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CAT"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CAT=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CAT" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CAT= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CAT= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CAT" >&5
+$as_echo_n "checking for CAT... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CAT"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CAT=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CAT=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -4965,22 +5217,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CAT" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CAT=$tool_specified" >&5
+          if test "x$CAT" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CAT=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CAT=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CAT" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CAT" >&5
 $as_echo_n "checking for CAT... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CAT=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CAT=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -4998,7 +5251,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CHMOD" = x; then
+  if [ -z "${CHMOD+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in chmod
 do
@@ -5111,14 +5364,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CHMOD"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CHMOD=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CHMOD" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CHMOD= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CHMOD= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CHMOD" >&5
+$as_echo_n "checking for CHMOD... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CHMOD"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CHMOD=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CHMOD=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -5158,22 +5420,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CHMOD" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CHMOD=$tool_specified" >&5
+          if test "x$CHMOD" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CHMOD=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CHMOD=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CHMOD" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CHMOD" >&5
 $as_echo_n "checking for CHMOD... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CHMOD=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CHMOD=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -5191,7 +5454,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CMP" = x; then
+  if [ -z "${CMP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cmp
 do
@@ -5304,14 +5567,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CMP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CMP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CMP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CMP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CMP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CMP" >&5
+$as_echo_n "checking for CMP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CMP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CMP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CMP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -5351,22 +5623,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CMP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CMP=$tool_specified" >&5
+          if test "x$CMP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CMP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CMP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CMP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CMP" >&5
 $as_echo_n "checking for CMP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CMP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CMP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -5384,7 +5657,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$COMM" = x; then
+  if [ -z "${COMM+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in comm
 do
@@ -5497,14 +5770,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$COMM"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool COMM=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$COMM" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool COMM= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool COMM= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for COMM" >&5
+$as_echo_n "checking for COMM... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$COMM"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool COMM=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool COMM=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -5544,22 +5826,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$COMM" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool COMM=$tool_specified" >&5
+          if test "x$COMM" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool COMM=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool COMM=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for COMM" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for COMM" >&5
 $as_echo_n "checking for COMM... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool COMM=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool COMM=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -5577,7 +5860,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CP" = x; then
+  if [ -z "${CP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cp
 do
@@ -5690,14 +5973,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CP" >&5
+$as_echo_n "checking for CP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -5737,22 +6029,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CP=$tool_specified" >&5
+          if test "x$CP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CP" >&5
 $as_echo_n "checking for CP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -5770,7 +6063,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CUT" = x; then
+  if [ -z "${CUT+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cut
 do
@@ -5883,14 +6176,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CUT"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CUT=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CUT" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CUT= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CUT= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CUT" >&5
+$as_echo_n "checking for CUT... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CUT"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CUT=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CUT=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -5930,22 +6232,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CUT" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CUT=$tool_specified" >&5
+          if test "x$CUT" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CUT=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CUT=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CUT" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CUT" >&5
 $as_echo_n "checking for CUT... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CUT=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CUT=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -5963,7 +6266,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$DATE" = x; then
+  if [ -z "${DATE+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in date
 do
@@ -6076,14 +6379,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$DATE"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DATE=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$DATE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool DATE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool DATE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DATE" >&5
+$as_echo_n "checking for DATE... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$DATE"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DATE=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool DATE=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -6123,22 +6435,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$DATE" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DATE=$tool_specified" >&5
+          if test "x$DATE" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DATE=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool DATE=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DATE" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DATE" >&5
 $as_echo_n "checking for DATE... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool DATE=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool DATE=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -6156,7 +6469,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$DIFF" = x; then
+  if [ -z "${DIFF+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in gdiff diff
 do
@@ -6269,14 +6582,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$DIFF"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DIFF=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$DIFF" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool DIFF= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool DIFF= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DIFF" >&5
+$as_echo_n "checking for DIFF... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$DIFF"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DIFF=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool DIFF=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -6316,22 +6638,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$DIFF" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DIFF=$tool_specified" >&5
+          if test "x$DIFF" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DIFF=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool DIFF=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DIFF" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DIFF" >&5
 $as_echo_n "checking for DIFF... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool DIFF=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool DIFF=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -6349,7 +6672,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$DIRNAME" = x; then
+  if [ -z "${DIRNAME+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in dirname
 do
@@ -6462,14 +6785,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$DIRNAME"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DIRNAME=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$DIRNAME" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool DIRNAME= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool DIRNAME= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DIRNAME" >&5
+$as_echo_n "checking for DIRNAME... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$DIRNAME"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DIRNAME=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool DIRNAME=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -6509,22 +6841,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$DIRNAME" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DIRNAME=$tool_specified" >&5
+          if test "x$DIRNAME" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DIRNAME=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool DIRNAME=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DIRNAME" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DIRNAME" >&5
 $as_echo_n "checking for DIRNAME... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool DIRNAME=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool DIRNAME=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -6542,7 +6875,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$ECHO" = x; then
+  if [ -z "${ECHO+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in echo
 do
@@ -6655,14 +6988,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$ECHO"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool ECHO=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$ECHO" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool ECHO= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool ECHO= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ECHO" >&5
+$as_echo_n "checking for ECHO... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$ECHO"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool ECHO=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool ECHO=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -6702,22 +7044,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$ECHO" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool ECHO=$tool_specified" >&5
+          if test "x$ECHO" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool ECHO=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool ECHO=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ECHO" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ECHO" >&5
 $as_echo_n "checking for ECHO... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool ECHO=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool ECHO=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -6735,7 +7078,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$EXPR" = x; then
+  if [ -z "${EXPR+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in expr
 do
@@ -6848,14 +7191,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$EXPR"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool EXPR=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$EXPR" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool EXPR= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool EXPR= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for EXPR" >&5
+$as_echo_n "checking for EXPR... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$EXPR"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool EXPR=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool EXPR=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -6895,22 +7247,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$EXPR" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool EXPR=$tool_specified" >&5
+          if test "x$EXPR" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool EXPR=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool EXPR=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for EXPR" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for EXPR" >&5
 $as_echo_n "checking for EXPR... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool EXPR=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool EXPR=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -6928,7 +7281,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$FILE" = x; then
+  if [ -z "${FILE+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in file
 do
@@ -7041,14 +7394,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$FILE"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FILE=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$FILE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool FILE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool FILE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FILE" >&5
+$as_echo_n "checking for FILE... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$FILE"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FILE=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool FILE=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -7088,22 +7450,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$FILE" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FILE=$tool_specified" >&5
+          if test "x$FILE" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FILE=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool FILE=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FILE" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FILE" >&5
 $as_echo_n "checking for FILE... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool FILE=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool FILE=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -7121,7 +7484,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$FIND" = x; then
+  if [ -z "${FIND+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in find
 do
@@ -7234,14 +7597,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$FIND"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FIND=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$FIND" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool FIND= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool FIND= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FIND" >&5
+$as_echo_n "checking for FIND... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$FIND"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FIND=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool FIND=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -7281,22 +7653,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$FIND" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FIND=$tool_specified" >&5
+          if test "x$FIND" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FIND=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool FIND=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FIND" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FIND" >&5
 $as_echo_n "checking for FIND... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool FIND=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool FIND=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -7314,7 +7687,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$HEAD" = x; then
+  if [ -z "${HEAD+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in head
 do
@@ -7427,14 +7800,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$HEAD"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool HEAD=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$HEAD" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool HEAD= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool HEAD= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HEAD" >&5
+$as_echo_n "checking for HEAD... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$HEAD"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool HEAD=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool HEAD=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -7474,22 +7856,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$HEAD" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool HEAD=$tool_specified" >&5
+          if test "x$HEAD" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool HEAD=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool HEAD=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HEAD" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HEAD" >&5
 $as_echo_n "checking for HEAD... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool HEAD=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool HEAD=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -7507,7 +7890,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$LN" = x; then
+  if [ -z "${LN+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in ln
 do
@@ -7620,14 +8003,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$LN"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LN=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$LN" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool LN= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool LN= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LN" >&5
+$as_echo_n "checking for LN... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$LN"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LN=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool LN=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -7667,22 +8059,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$LN" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LN=$tool_specified" >&5
+          if test "x$LN" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LN=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool LN=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LN" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LN" >&5
 $as_echo_n "checking for LN... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool LN=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool LN=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -7700,7 +8093,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$LS" = x; then
+  if [ -z "${LS+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in ls
 do
@@ -7813,14 +8206,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$LS"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LS=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$LS" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool LS= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool LS= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LS" >&5
+$as_echo_n "checking for LS... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$LS"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LS=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool LS=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -7860,22 +8262,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$LS" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LS=$tool_specified" >&5
+          if test "x$LS" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LS=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool LS=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LS" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LS" >&5
 $as_echo_n "checking for LS... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool LS=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool LS=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -7893,7 +8296,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$MKDIR" = x; then
+  if [ -z "${MKDIR+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in mkdir
 do
@@ -8006,14 +8409,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$MKDIR"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MKDIR=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$MKDIR" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool MKDIR= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool MKDIR= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MKDIR" >&5
+$as_echo_n "checking for MKDIR... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$MKDIR"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MKDIR=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool MKDIR=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -8053,22 +8465,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$MKDIR" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MKDIR=$tool_specified" >&5
+          if test "x$MKDIR" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MKDIR=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool MKDIR=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MKDIR" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MKDIR" >&5
 $as_echo_n "checking for MKDIR... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool MKDIR=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool MKDIR=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -8086,7 +8499,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$MKTEMP" = x; then
+  if [ -z "${MKTEMP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in mktemp
 do
@@ -8199,14 +8612,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$MKTEMP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MKTEMP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$MKTEMP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool MKTEMP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool MKTEMP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MKTEMP" >&5
+$as_echo_n "checking for MKTEMP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$MKTEMP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MKTEMP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool MKTEMP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -8246,22 +8668,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$MKTEMP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MKTEMP=$tool_specified" >&5
+          if test "x$MKTEMP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MKTEMP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool MKTEMP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MKTEMP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MKTEMP" >&5
 $as_echo_n "checking for MKTEMP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool MKTEMP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool MKTEMP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -8279,7 +8702,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$MV" = x; then
+  if [ -z "${MV+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in mv
 do
@@ -8392,14 +8815,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$MV"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MV=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$MV" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool MV= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool MV= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MV" >&5
+$as_echo_n "checking for MV... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$MV"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MV=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool MV=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -8439,22 +8871,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$MV" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MV=$tool_specified" >&5
+          if test "x$MV" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MV=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool MV=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MV" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MV" >&5
 $as_echo_n "checking for MV... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool MV=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool MV=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -8472,7 +8905,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$NAWK" = x; then
+  if [ -z "${NAWK+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in nawk gawk awk
 do
@@ -8585,14 +9018,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$NAWK"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NAWK=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$NAWK" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool NAWK= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool NAWK= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NAWK" >&5
+$as_echo_n "checking for NAWK... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$NAWK"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NAWK=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool NAWK=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -8632,22 +9074,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$NAWK" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NAWK=$tool_specified" >&5
+          if test "x$NAWK" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NAWK=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool NAWK=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NAWK" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NAWK" >&5
 $as_echo_n "checking for NAWK... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool NAWK=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool NAWK=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -8665,7 +9108,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$PRINTF" = x; then
+  if [ -z "${PRINTF+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in printf
 do
@@ -8778,14 +9221,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$PRINTF"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool PRINTF=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$PRINTF" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool PRINTF= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool PRINTF= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PRINTF" >&5
+$as_echo_n "checking for PRINTF... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$PRINTF"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool PRINTF=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool PRINTF=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -8825,22 +9277,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$PRINTF" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool PRINTF=$tool_specified" >&5
+          if test "x$PRINTF" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool PRINTF=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool PRINTF=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PRINTF" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PRINTF" >&5
 $as_echo_n "checking for PRINTF... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool PRINTF=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool PRINTF=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -8858,7 +9311,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$RM" = x; then
+  if [ -z "${RM+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in rm
 do
@@ -8971,14 +9424,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$RM"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool RM=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$RM" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool RM= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool RM= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for RM" >&5
+$as_echo_n "checking for RM... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$RM"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool RM=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool RM=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -9018,22 +9480,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$RM" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool RM=$tool_specified" >&5
+          if test "x$RM" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool RM=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool RM=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for RM" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for RM" >&5
 $as_echo_n "checking for RM... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool RM=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool RM=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -9051,7 +9514,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$SH" = x; then
+  if [ -z "${SH+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in sh
 do
@@ -9164,14 +9627,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$SH"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SH=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$SH" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool SH= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool SH= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SH" >&5
+$as_echo_n "checking for SH... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$SH"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SH=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool SH=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -9211,22 +9683,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$SH" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SH=$tool_specified" >&5
+          if test "x$SH" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SH=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool SH=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SH" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SH" >&5
 $as_echo_n "checking for SH... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool SH=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool SH=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -9244,7 +9717,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$SORT" = x; then
+  if [ -z "${SORT+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in sort
 do
@@ -9357,14 +9830,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$SORT"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SORT=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$SORT" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool SORT= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool SORT= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SORT" >&5
+$as_echo_n "checking for SORT... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$SORT"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SORT=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool SORT=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -9404,22 +9886,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$SORT" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SORT=$tool_specified" >&5
+          if test "x$SORT" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SORT=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool SORT=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SORT" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SORT" >&5
 $as_echo_n "checking for SORT... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool SORT=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool SORT=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -9437,7 +9920,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$TAIL" = x; then
+  if [ -z "${TAIL+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in tail
 do
@@ -9550,14 +10033,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$TAIL"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TAIL=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$TAIL" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool TAIL= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool TAIL= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TAIL" >&5
+$as_echo_n "checking for TAIL... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$TAIL"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TAIL=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool TAIL=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -9597,22 +10089,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$TAIL" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TAIL=$tool_specified" >&5
+          if test "x$TAIL" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TAIL=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool TAIL=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TAIL" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TAIL" >&5
 $as_echo_n "checking for TAIL... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool TAIL=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool TAIL=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -9630,7 +10123,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$TAR" = x; then
+  if [ -z "${TAR+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in tar
 do
@@ -9743,14 +10236,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$TAR"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TAR=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$TAR" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool TAR= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool TAR= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TAR" >&5
+$as_echo_n "checking for TAR... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$TAR"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TAR=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool TAR=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -9790,22 +10292,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$TAR" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TAR=$tool_specified" >&5
+          if test "x$TAR" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TAR=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool TAR=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TAR" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TAR" >&5
 $as_echo_n "checking for TAR... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool TAR=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool TAR=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -9823,7 +10326,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$TEE" = x; then
+  if [ -z "${TEE+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in tee
 do
@@ -9936,14 +10439,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$TEE"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TEE=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$TEE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool TEE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool TEE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TEE" >&5
+$as_echo_n "checking for TEE... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$TEE"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TEE=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool TEE=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -9983,22 +10495,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$TEE" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TEE=$tool_specified" >&5
+          if test "x$TEE" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TEE=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool TEE=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TEE" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TEE" >&5
 $as_echo_n "checking for TEE... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool TEE=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool TEE=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -10016,7 +10529,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$TOUCH" = x; then
+  if [ -z "${TOUCH+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in touch
 do
@@ -10129,14 +10642,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$TOUCH"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TOUCH=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$TOUCH" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool TOUCH= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool TOUCH= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TOUCH" >&5
+$as_echo_n "checking for TOUCH... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$TOUCH"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TOUCH=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool TOUCH=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -10176,22 +10698,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$TOUCH" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TOUCH=$tool_specified" >&5
+          if test "x$TOUCH" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TOUCH=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool TOUCH=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TOUCH" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TOUCH" >&5
 $as_echo_n "checking for TOUCH... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool TOUCH=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool TOUCH=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -10209,7 +10732,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$TR" = x; then
+  if [ -z "${TR+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in tr
 do
@@ -10322,14 +10845,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$TR"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TR=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$TR" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool TR= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool TR= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TR" >&5
+$as_echo_n "checking for TR... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$TR"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TR=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool TR=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -10369,22 +10901,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$TR" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TR=$tool_specified" >&5
+          if test "x$TR" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TR=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool TR=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TR" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TR" >&5
 $as_echo_n "checking for TR... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool TR=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool TR=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -10402,7 +10935,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$UNAME" = x; then
+  if [ -z "${UNAME+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in uname
 do
@@ -10515,14 +11048,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$UNAME"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool UNAME=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$UNAME" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool UNAME= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool UNAME= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNAME" >&5
+$as_echo_n "checking for UNAME... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$UNAME"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool UNAME=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool UNAME=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -10562,22 +11104,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$UNAME" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool UNAME=$tool_specified" >&5
+          if test "x$UNAME" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool UNAME=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool UNAME=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNAME" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNAME" >&5
 $as_echo_n "checking for UNAME... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool UNAME=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool UNAME=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -10595,7 +11138,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$UNIQ" = x; then
+  if [ -z "${UNIQ+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in uniq
 do
@@ -10708,14 +11251,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$UNIQ"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool UNIQ=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$UNIQ" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool UNIQ= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool UNIQ= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNIQ" >&5
+$as_echo_n "checking for UNIQ... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$UNIQ"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool UNIQ=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool UNIQ=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -10755,22 +11307,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$UNIQ" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool UNIQ=$tool_specified" >&5
+          if test "x$UNIQ" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool UNIQ=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool UNIQ=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNIQ" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNIQ" >&5
 $as_echo_n "checking for UNIQ... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool UNIQ=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool UNIQ=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -10788,7 +11341,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$WC" = x; then
+  if [ -z "${WC+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in wc
 do
@@ -10901,14 +11454,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$WC"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool WC=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$WC" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool WC= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool WC= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for WC" >&5
+$as_echo_n "checking for WC... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$WC"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool WC=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool WC=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -10948,22 +11510,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$WC" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool WC=$tool_specified" >&5
+          if test "x$WC" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool WC=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool WC=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for WC" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for WC" >&5
 $as_echo_n "checking for WC... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool WC=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool WC=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -10981,7 +11544,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$WHICH" = x; then
+  if [ -z "${WHICH+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in which
 do
@@ -11094,14 +11657,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$WHICH"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool WHICH=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$WHICH" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool WHICH= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool WHICH= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for WHICH" >&5
+$as_echo_n "checking for WHICH... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$WHICH"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool WHICH=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool WHICH=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -11141,22 +11713,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$WHICH" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool WHICH=$tool_specified" >&5
+          if test "x$WHICH" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool WHICH=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool WHICH=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for WHICH" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for WHICH" >&5
 $as_echo_n "checking for WHICH... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool WHICH=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool WHICH=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -11174,7 +11747,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$XARGS" = x; then
+  if [ -z "${XARGS+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in xargs
 do
@@ -11287,14 +11860,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$XARGS"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool XARGS=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$XARGS" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool XARGS= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool XARGS= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XARGS" >&5
+$as_echo_n "checking for XARGS... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$XARGS"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool XARGS=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool XARGS=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -11334,22 +11916,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$XARGS" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool XARGS=$tool_specified" >&5
+          if test "x$XARGS" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool XARGS=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool XARGS=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XARGS" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XARGS" >&5
 $as_echo_n "checking for XARGS... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool XARGS=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool XARGS=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -11368,7 +11951,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$AWK" = x; then
+  if [ -z "${AWK+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in gawk mawk nawk awk
 do
@@ -11475,14 +12058,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$AWK"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool AWK=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$AWK" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool AWK= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool AWK= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AWK" >&5
+$as_echo_n "checking for AWK... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$AWK"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool AWK=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool AWK=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -11522,22 +12114,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$AWK" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool AWK=$tool_specified" >&5
+          if test "x$AWK" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool AWK=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool AWK=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AWK" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AWK" >&5
 $as_echo_n "checking for AWK... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool AWK=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool AWK=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -11553,7 +12146,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$GREP" = x; then
+  if [ -z "${GREP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for grep that handles long lines and -e" >&5
 $as_echo_n "checking for grep that handles long lines and -e... " >&6; }
@@ -11702,14 +12295,23 @@ $as_echo "$ac_cv_path_GREP" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$GREP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool GREP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$GREP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool GREP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool GREP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GREP" >&5
+$as_echo_n "checking for GREP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$GREP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool GREP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool GREP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -11749,22 +12351,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$GREP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool GREP=$tool_specified" >&5
+          if test "x$GREP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool GREP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool GREP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GREP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GREP" >&5
 $as_echo_n "checking for GREP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool GREP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool GREP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -11780,7 +12383,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$EGREP" = x; then
+  if [ -z "${EGREP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for egrep" >&5
 $as_echo_n "checking for egrep... " >&6; }
@@ -11937,14 +12540,23 @@ $as_echo "$ac_cv_path_EGREP" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$EGREP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool EGREP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$EGREP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool EGREP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool EGREP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for EGREP" >&5
+$as_echo_n "checking for EGREP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$EGREP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool EGREP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool EGREP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -11984,22 +12596,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$EGREP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool EGREP=$tool_specified" >&5
+          if test "x$EGREP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool EGREP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool EGREP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for EGREP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for EGREP" >&5
 $as_echo_n "checking for EGREP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool EGREP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool EGREP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -12015,7 +12628,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$FGREP" = x; then
+  if [ -z "${FGREP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for fgrep" >&5
 $as_echo_n "checking for fgrep... " >&6; }
@@ -12172,14 +12785,23 @@ $as_echo "$ac_cv_path_FGREP" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$FGREP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FGREP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$FGREP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool FGREP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool FGREP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FGREP" >&5
+$as_echo_n "checking for FGREP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$FGREP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool FGREP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool FGREP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -12219,22 +12841,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$FGREP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FGREP=$tool_specified" >&5
+          if test "x$FGREP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool FGREP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool FGREP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FGREP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for FGREP" >&5
 $as_echo_n "checking for FGREP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool FGREP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool FGREP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -12250,7 +12873,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$SED" = x; then
+  if [ -z "${SED+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for a sed that does not truncate output" >&5
 $as_echo_n "checking for a sed that does not truncate output... " >&6; }
@@ -12411,14 +13034,23 @@ $as_echo "$ac_cv_path_SED" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$SED"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SED=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$SED" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool SED= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool SED= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SED" >&5
+$as_echo_n "checking for SED... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$SED"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SED=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool SED=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -12458,22 +13090,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$SED" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SED=$tool_specified" >&5
+          if test "x$SED" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SED=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool SED=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SED" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SED" >&5
 $as_echo_n "checking for SED... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool SED=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool SED=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -12498,7 +13131,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CYGPATH" = x; then
+  if [ -z "${CYGPATH+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cygpath
 do
@@ -12611,14 +13244,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CYGPATH"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CYGPATH=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CYGPATH" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CYGPATH= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CYGPATH= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CYGPATH" >&5
+$as_echo_n "checking for CYGPATH... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CYGPATH"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CYGPATH=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CYGPATH=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -12658,22 +13300,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CYGPATH" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CYGPATH=$tool_specified" >&5
+          if test "x$CYGPATH" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CYGPATH=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CYGPATH=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CYGPATH" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CYGPATH" >&5
 $as_echo_n "checking for CYGPATH... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CYGPATH=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CYGPATH=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -12684,7 +13327,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$READLINK" = x; then
+  if [ -z "${READLINK+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in greadlink readlink
 do
@@ -12797,14 +13440,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$READLINK"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool READLINK=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$READLINK" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool READLINK= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool READLINK= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for READLINK" >&5
+$as_echo_n "checking for READLINK... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$READLINK"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool READLINK=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool READLINK=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -12844,22 +13496,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$READLINK" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool READLINK=$tool_specified" >&5
+          if test "x$READLINK" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool READLINK=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool READLINK=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for READLINK" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for READLINK" >&5
 $as_echo_n "checking for READLINK... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool READLINK=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool READLINK=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -12870,7 +13523,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$DF" = x; then
+  if [ -z "${DF+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in df
 do
@@ -12983,14 +13636,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$DF"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DF=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$DF" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool DF= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool DF= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DF" >&5
+$as_echo_n "checking for DF... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$DF"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DF=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool DF=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -13030,22 +13692,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$DF" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DF=$tool_specified" >&5
+          if test "x$DF" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DF=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool DF=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DF" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DF" >&5
 $as_echo_n "checking for DF... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool DF=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool DF=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -13056,7 +13719,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CPIO" = x; then
+  if [ -z "${CPIO+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cpio bsdcpio
 do
@@ -13169,14 +13832,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CPIO"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CPIO=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CPIO" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CPIO= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CPIO= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CPIO" >&5
+$as_echo_n "checking for CPIO... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CPIO"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CPIO=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CPIO=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -13216,22 +13888,219 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CPIO" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CPIO=$tool_specified" >&5
+          if test "x$CPIO" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CPIO=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CPIO=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CPIO" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CPIO" >&5
 $as_echo_n "checking for CPIO... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CPIO=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CPIO=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+  fi
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if [ -z "${NICE+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in nice
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_NICE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NICE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NICE="$NICE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_NICE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+NICE=$ac_cv_path_NICE
+if test -n "$NICE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NICE" >&5
+$as_echo "$NICE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$NICE" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !NICE! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!NICE!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xNICE" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of NICE from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of NICE from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in nice
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_NICE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NICE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NICE="$NICE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_NICE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+NICE=$ac_cv_path_NICE
+if test -n "$NICE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NICE" >&5
+$as_echo "$NICE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$NICE" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$NICE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool NICE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool NICE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NICE" >&5
+$as_echo_n "checking for NICE... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$NICE"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NICE=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool NICE=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_NICE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $NICE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_NICE="$NICE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_NICE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+NICE=$ac_cv_path_NICE
+if test -n "$NICE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NICE" >&5
+$as_echo "$NICE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$NICE" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NICE=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool NICE=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NICE" >&5
+$as_echo_n "checking for NICE... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool NICE=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -17370,7 +18239,7 @@ $as_echo "yes" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$UNZIP" = x; then
+  if [ -z "${UNZIP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in unzip
 do
@@ -17483,14 +18352,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$UNZIP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool UNZIP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$UNZIP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool UNZIP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool UNZIP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNZIP" >&5
+$as_echo_n "checking for UNZIP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$UNZIP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool UNZIP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool UNZIP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -17530,22 +18408,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$UNZIP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool UNZIP=$tool_specified" >&5
+          if test "x$UNZIP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool UNZIP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool UNZIP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNZIP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for UNZIP" >&5
 $as_echo_n "checking for UNZIP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool UNZIP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool UNZIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -17563,7 +18442,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$ZIP" = x; then
+  if [ -z "${ZIP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in zip
 do
@@ -17676,14 +18555,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$ZIP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool ZIP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$ZIP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool ZIP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool ZIP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZIP" >&5
+$as_echo_n "checking for ZIP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$ZIP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool ZIP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool ZIP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -17723,22 +18611,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$ZIP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool ZIP=$tool_specified" >&5
+          if test "x$ZIP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool ZIP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool ZIP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZIP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ZIP" >&5
 $as_echo_n "checking for ZIP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool ZIP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool ZIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -17758,7 +18647,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$LDD" = x; then
+  if [ -z "${LDD+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in ldd
 do
@@ -17871,14 +18760,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$LDD"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LDD=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$LDD" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool LDD= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool LDD= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LDD" >&5
+$as_echo_n "checking for LDD... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$LDD"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LDD=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool LDD=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -17918,22 +18816,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$LDD" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LDD=$tool_specified" >&5
+          if test "x$LDD" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LDD=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool LDD=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LDD" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LDD" >&5
 $as_echo_n "checking for LDD... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool LDD=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool LDD=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -17950,7 +18849,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$OTOOL" = x; then
+  if [ -z "${OTOOL+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in otool
 do
@@ -18063,14 +18962,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$OTOOL"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool OTOOL=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$OTOOL" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool OTOOL= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool OTOOL= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OTOOL" >&5
+$as_echo_n "checking for OTOOL... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$OTOOL"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool OTOOL=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool OTOOL=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -18110,22 +19018,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$OTOOL" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool OTOOL=$tool_specified" >&5
+          if test "x$OTOOL" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool OTOOL=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool OTOOL=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OTOOL" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OTOOL" >&5
 $as_echo_n "checking for OTOOL... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool OTOOL=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool OTOOL=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -18139,7 +19048,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$READELF" = x; then
+  if [ -z "${READELF+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in greadelf readelf
 do
@@ -18252,14 +19161,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$READELF"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool READELF=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$READELF" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool READELF= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool READELF= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for READELF" >&5
+$as_echo_n "checking for READELF... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$READELF"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool READELF=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool READELF=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -18299,22 +19217,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$READELF" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool READELF=$tool_specified" >&5
+          if test "x$READELF" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool READELF=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool READELF=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for READELF" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for READELF" >&5
 $as_echo_n "checking for READELF... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool READELF=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool READELF=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -18325,7 +19244,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$HG" = x; then
+  if [ -z "${HG+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in hg
 do
@@ -18438,14 +19357,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$HG"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool HG=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$HG" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool HG= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool HG= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HG" >&5
+$as_echo_n "checking for HG... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$HG"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool HG=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool HG=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -18485,22 +19413,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$HG" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool HG=$tool_specified" >&5
+          if test "x$HG" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool HG=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool HG=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HG" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for HG" >&5
 $as_echo_n "checking for HG... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool HG=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool HG=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -18511,7 +19440,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$STAT" = x; then
+  if [ -z "${STAT+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in stat
 do
@@ -18624,14 +19553,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$STAT"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool STAT=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$STAT" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool STAT= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool STAT= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STAT" >&5
+$as_echo_n "checking for STAT... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$STAT"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool STAT=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool STAT=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -18671,22 +19609,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$STAT" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool STAT=$tool_specified" >&5
+          if test "x$STAT" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool STAT=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool STAT=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STAT" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STAT" >&5
 $as_echo_n "checking for STAT... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool STAT=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool STAT=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -18697,7 +19636,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$TIME" = x; then
+  if [ -z "${TIME+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in time
 do
@@ -18810,14 +19749,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$TIME"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TIME=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$TIME" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool TIME= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool TIME= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TIME" >&5
+$as_echo_n "checking for TIME... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$TIME"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool TIME=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool TIME=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -18857,22 +19805,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$TIME" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TIME=$tool_specified" >&5
+          if test "x$TIME" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool TIME=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool TIME=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TIME" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for TIME" >&5
 $as_echo_n "checking for TIME... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool TIME=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool TIME=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -18883,7 +19832,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$PATCH" = x; then
+  if [ -z "${PATCH+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in gpatch patch
 do
@@ -18996,14 +19945,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$PATCH"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool PATCH=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$PATCH" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool PATCH= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool PATCH= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PATCH" >&5
+$as_echo_n "checking for PATCH... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$PATCH"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool PATCH=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool PATCH=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -19043,22 +20001,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$PATCH" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool PATCH=$tool_specified" >&5
+          if test "x$PATCH" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool PATCH=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool PATCH=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PATCH" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for PATCH" >&5
 $as_echo_n "checking for PATCH... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool PATCH=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool PATCH=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -19080,7 +20039,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$DSYMUTIL" = x; then
+  if [ -z "${DSYMUTIL+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in dsymutil
 do
@@ -19193,14 +20152,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$DSYMUTIL"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DSYMUTIL=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$DSYMUTIL" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool DSYMUTIL= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool DSYMUTIL= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DSYMUTIL" >&5
+$as_echo_n "checking for DSYMUTIL... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$DSYMUTIL"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool DSYMUTIL=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool DSYMUTIL=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -19240,22 +20208,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$DSYMUTIL" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DSYMUTIL=$tool_specified" >&5
+          if test "x$DSYMUTIL" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool DSYMUTIL=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool DSYMUTIL=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DSYMUTIL" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for DSYMUTIL" >&5
 $as_echo_n "checking for DSYMUTIL... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool DSYMUTIL=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool DSYMUTIL=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -19273,7 +20242,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$XATTR" = x; then
+  if [ -z "${XATTR+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in xattr
 do
@@ -19386,14 +20355,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$XATTR"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool XATTR=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$XATTR" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool XATTR= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool XATTR= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XATTR" >&5
+$as_echo_n "checking for XATTR... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$XATTR"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool XATTR=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool XATTR=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -19433,22 +20411,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$XATTR" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool XATTR=$tool_specified" >&5
+          if test "x$XATTR" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool XATTR=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool XATTR=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XATTR" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for XATTR" >&5
 $as_echo_n "checking for XATTR... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool XATTR=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool XATTR=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -19465,7 +20444,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CODESIGN" = x; then
+  if [ -z "${CODESIGN+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in codesign
 do
@@ -19578,14 +20557,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CODESIGN"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CODESIGN=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CODESIGN" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CODESIGN= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CODESIGN= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CODESIGN" >&5
+$as_echo_n "checking for CODESIGN... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CODESIGN"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CODESIGN=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CODESIGN=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -19625,22 +20613,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CODESIGN" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CODESIGN=$tool_specified" >&5
+          if test "x$CODESIGN" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CODESIGN=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CODESIGN=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CODESIGN" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CODESIGN" >&5
 $as_echo_n "checking for CODESIGN... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CODESIGN=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CODESIGN=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -19668,7 +20657,7 @@ $as_echo "yes" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$SETFILE" = x; then
+  if [ -z "${SETFILE+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in SetFile
 do
@@ -19781,14 +20770,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$SETFILE"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SETFILE=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$SETFILE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool SETFILE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool SETFILE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SETFILE" >&5
+$as_echo_n "checking for SETFILE... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$SETFILE"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool SETFILE=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool SETFILE=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -19828,22 +20826,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$SETFILE" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SETFILE=$tool_specified" >&5
+          if test "x$SETFILE" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool SETFILE=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool SETFILE=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SETFILE" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for SETFILE" >&5
 $as_echo_n "checking for SETFILE... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool SETFILE=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool SETFILE=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -20014,182 +21013,6 @@ fi
   OS_VERSION_MICRO="`${ECHO} ${OS_VERSION} | ${CUT} -f 3 -d ' '`"
 
 
-
-
-
-# Setup builddeps, for automatic downloading of tools we need.
-# This is needed before we can call BDEPS_CHECK_MODULE, which is done in
-# boot-jdk setup, but we need to have basic tools setup first.
-
-
-# Check whether --with-builddeps-conf was given.
-if test "${with_builddeps_conf+set}" = set; then :
-  withval=$with_builddeps_conf;
-fi
-
-
-
-# Check whether --with-builddeps-server was given.
-if test "${with_builddeps_server+set}" = set; then :
-  withval=$with_builddeps_server;
-fi
-
-
-
-# Check whether --with-builddeps-dir was given.
-if test "${with_builddeps_dir+set}" = set; then :
-  withval=$with_builddeps_dir;
-else
-  with_builddeps_dir=/localhome/builddeps
-fi
-
-
-
-# Check whether --with-builddeps-group was given.
-if test "${with_builddeps_group+set}" = set; then :
-  withval=$with_builddeps_group;
-fi
-
-
-
-
-  if test "x$with_builddeps_server" != x || test "x$with_builddeps_conf" != x; then
-    if test "x$with_builddeps_conf" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for supplied builddeps configuration file" >&5
-$as_echo_n "checking for supplied builddeps configuration file... " >&6; }
-      builddepsfile=$with_builddeps_conf
-      if test -s $builddepsfile; then
-        . $builddepsfile
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: loaded!" >&5
-$as_echo "loaded!" >&6; }
-      else
-        as_fn_error $? "The given builddeps conf file $with_builddeps_conf could not be loaded!" "$LINENO" 5
-      fi
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for builddeps.conf files in sources..." >&5
-$as_echo_n "checking for builddeps.conf files in sources...... " >&6; }
-      builddepsfile=`mktemp`
-      touch $builddepsfile
-      # Put all found confs into a single file.
-      find ${SRC_ROOT} -name builddeps.conf -exec cat \{\} \; >> $builddepsfile
-      # Source the file to acquire the variables
-      if test -s $builddepsfile; then
-        . $builddepsfile
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: found at least one!" >&5
-$as_echo "found at least one!" >&6; }
-      else
-        as_fn_error $? "Could not find any builddeps.conf at all!" "$LINENO" 5
-      fi
-    fi
-    # Create build and target names that use _ instead of "-" and ".".
-    # This is necessary to use them in variable names.
-    build_var=`echo ${OPENJDK_BUILD_AUTOCONF_NAME} | tr '-' '_' | tr '.' '_'`
-    target_var=`echo ${OPENJDK_TARGET_AUTOCONF_NAME} | tr '-' '_' | tr '.' '_'`
-    # Extract rewrite information for build and target
-    eval rewritten_build=\${REWRITE_${build_var}}
-    if test "x$rewritten_build" = x; then
-      rewritten_build=${OPENJDK_BUILD_AUTOCONF_NAME}
-      echo Build stays the same $rewritten_build
-    else
-      echo Rewriting build for builddeps into $rewritten_build
-    fi
-    eval rewritten_target=\${REWRITE_${target_var}}
-    if test "x$rewritten_target" = x; then
-      rewritten_target=${OPENJDK_TARGET_AUTOCONF_NAME}
-      echo Target stays the same $rewritten_target
-    else
-      echo Rewriting target for builddeps into $rewritten_target
-    fi
-    rewritten_build_var=`echo ${rewritten_build} | tr '-' '_' | tr '.' '_'`
-    rewritten_target_var=`echo ${rewritten_target} | tr '-' '_' | tr '.' '_'`
-  fi
-  for ac_prog in 7z unzip
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_BDEPS_UNZIP+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$BDEPS_UNZIP"; then
-  ac_cv_prog_BDEPS_UNZIP="$BDEPS_UNZIP" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_BDEPS_UNZIP="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-BDEPS_UNZIP=$ac_cv_prog_BDEPS_UNZIP
-if test -n "$BDEPS_UNZIP"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BDEPS_UNZIP" >&5
-$as_echo "$BDEPS_UNZIP" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$BDEPS_UNZIP" && break
-done
-
-  if test "x$BDEPS_UNZIP" = x7z; then
-    BDEPS_UNZIP="7z x"
-  fi
-
-  for ac_prog in wget lftp ftp
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_BDEPS_FTP+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$BDEPS_FTP"; then
-  ac_cv_prog_BDEPS_FTP="$BDEPS_FTP" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_BDEPS_FTP="$ac_prog"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-BDEPS_FTP=$ac_cv_prog_BDEPS_FTP
-if test -n "$BDEPS_FTP"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BDEPS_FTP" >&5
-$as_echo "$BDEPS_FTP" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$BDEPS_FTP" && break
-done
 
 
 
@@ -20623,330 +21446,6 @@ $as_echo "$BOOT_JDK_VERSION" >&6; }
     # we should not go on looking
     as_fn_error $? "The path given by --with-boot-jdk does not contain a valid Boot JDK" "$LINENO" 5
   fi
-
-  # Test: Is bootjdk available from builddeps?
-
-  if test "x$BOOT_JDK_FOUND" = xno; then
-    # Now execute the test
-
-
-
-  if test "x$with_builddeps_server" != x || test "x$with_builddeps_conf" != x; then
-    # Source the builddeps file again, to make sure it uses the latest variables!
-    . $builddepsfile
-    # Look for a target and build machine specific resource!
-    eval resource=\${builddep_bootjdk_BUILD_${rewritten_build_var}_TARGET_${rewritten_target_var}}
-    if test "x$resource" = x; then
-      # Ok, lets instead look for a target specific resource
-      eval resource=\${builddep_bootjdk_TARGET_${rewritten_target_var}}
-    fi
-    if test "x$resource" = x; then
-      # Ok, lets instead look for a build specific resource
-      eval resource=\${builddep_bootjdk_BUILD_${rewritten_build_var}}
-    fi
-    if test "x$resource" = x; then
-      # Ok, lets instead look for a generic resource
-      # (The bootjdk comes from M4 and not the shell, thus no need for eval here.)
-      resource=${builddep_bootjdk}
-    fi
-    if test "x$resource" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Using builddeps $resource for bootjdk" >&5
-$as_echo "$as_me: Using builddeps $resource for bootjdk" >&6;}
-      # If the resource in the builddeps.conf file is an existing directory,
-      # for example /java/linux/cups
-      if test -d ${resource}; then
-        depdir=${resource}
-      else
-
-  # bootjdk is for example mymodule
-  # $resource is for example libs/general/libmymod_1_2_3.zip
-  # $with_builddeps_server is for example ftp://mybuilddeps.myserver.com/builddeps
-  # $with_builddeps_dir is for example /localhome/builddeps
-  # depdir is the name of the variable into which we store the depdir, eg MYMOD
-  # Will download ftp://mybuilddeps.myserver.com/builddeps/libs/general/libmymod_1_2_3.zip and
-  # unzip into the directory: /localhome/builddeps/libmymod_1_2_3
-  filename=`basename $resource`
-  filebase=`echo $filename | sed 's/\.[^\.]*$//'`
-  filebase=${filename%%.*}
-  extension=${filename#*.}
-  installdir=$with_builddeps_dir/$filebase
-  if test ! -f $installdir/$filename.unpacked; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Downloading build dependency bootjdk from $with_builddeps_server/$resource and installing into $installdir" >&5
-$as_echo "$as_me: Downloading build dependency bootjdk from $with_builddeps_server/$resource and installing into $installdir" >&6;}
-    if test ! -d $installdir; then
-      mkdir -p $installdir
-    fi
-    if test ! -d $installdir; then
-      as_fn_error $? "Could not create directory $installdir" "$LINENO" 5
-    fi
-    tmpfile=`mktemp $installdir/bootjdk.XXXXXXXXX`
-    touch $tmpfile
-    if test ! -f $tmpfile; then
-      as_fn_error $? "Could not create files in directory $installdir" "$LINENO" 5
-    fi
-
-  # $with_builddeps_server/$resource  is the ftp://abuilddeps.server.com/libs/cups.zip
-  # $tmpfile is the local file name for the downloaded file.
-  VALID_TOOL=no
-  if test "x$BDEPS_FTP" = xwget; then
-    VALID_TOOL=yes
-    wget -O $tmpfile $with_builddeps_server/$resource
-  fi
-  if test "x$BDEPS_FTP" = xlftp; then
-    VALID_TOOL=yes
-    lftp -c "get $with_builddeps_server/$resource  -o $tmpfile"
-  fi
-  if test "x$BDEPS_FTP" = xftp; then
-    VALID_TOOL=yes
-    FTPSERVER=`echo $with_builddeps_server/$resource  | cut -f 3 -d '/'`
-    FTPPATH=`echo $with_builddeps_server/$resource  | cut -f 4- -d '/'`
-    FTPUSERPWD=${FTPSERVER%%@*}
-    if test "x$FTPSERVER" != "x$FTPUSERPWD"; then
-      FTPUSER=${userpwd%%:*}
-      FTPPWD=${userpwd#*@}
-      FTPSERVER=${FTPSERVER#*@}
-    else
-      FTPUSER=ftp
-      FTPPWD=ftp
-    fi
-    # the "pass" command does not work on some
-    # ftp clients (read ftp.exe) but if it works,
-    # passive mode is better!
-    ( \
-        echo "user $FTPUSER $FTPPWD"        ; \
-        echo "pass"                         ; \
-        echo "bin"                          ; \
-        echo "get $FTPPATH $tmpfile"              ; \
-    ) | ftp -in $FTPSERVER
-  fi
-  if test "x$VALID_TOOL" != xyes; then
-    as_fn_error $? "I do not know how to use the tool: $BDEPS_FTP" "$LINENO" 5
-  fi
-
-    mv $tmpfile $installdir/$filename
-    if test ! -s $installdir/$filename; then
-      as_fn_error $? "Could not download $with_builddeps_server/$resource" "$LINENO" 5
-    fi
-    case "$extension" in
-      zip)  echo "Unzipping $installdir/$filename..."
-        (cd $installdir ; rm -f $installdir/$filename.unpacked ; $BDEPS_UNZIP $installdir/$filename > /dev/null && touch $installdir/$filename.unpacked)
-        ;;
-      tar.gz) echo "Untaring $installdir/$filename..."
-        (cd $installdir ; rm -f $installdir/$filename.unpacked ; tar xzf $installdir/$filename && touch $installdir/$filename.unpacked)
-        ;;
-      tgz) echo "Untaring $installdir/$filename..."
-        (cd $installdir ; rm -f $installdir/$filename.unpacked ; tar xzf $installdir/$filename && touch $installdir/$filename.unpacked)
-        ;;
-      *) as_fn_error $? "Cannot handle build depency archive with extension $extension" "$LINENO" 5
-        ;;
-    esac
-  fi
-  if test -f $installdir/$filename.unpacked; then
-    depdir=$installdir
-  fi
-
-      fi
-      # Source the builddeps file again, because in the previous command, the depdir
-      # was updated to point at the current build dependency install directory.
-      . $builddepsfile
-      # Now extract variables from the builddeps.conf files.
-      theroot=${builddep_bootjdk_ROOT}
-      thecflags=${builddep_bootjdk_CFLAGS}
-      thelibs=${builddep_bootjdk_LIBS}
-      if test "x$depdir" = x; then
-        as_fn_error $? "Could not download build dependency bootjdk" "$LINENO" 5
-      fi
-      BOOT_JDK=$depdir
-      if test "x$theroot" != x; then
-        BOOT_JDK="$theroot"
-      fi
-      if test "x$thecflags" != x; then
-        BOOT_JDK_CFLAGS="$thecflags"
-      fi
-      if test "x$thelibs" != x; then
-        BOOT_JDK_LIBS="$thelibs"
-      fi
-      BOOT_JDK_FOUND=maybe
-      else BOOT_JDK_FOUND=no
-
-    fi
-    else BOOT_JDK_FOUND=no
-
-  fi
-
-
-
-    # If previous step claimed to have found a JDK, check it to see if it seems to be valid.
-    if test "x$BOOT_JDK_FOUND" = xmaybe; then
-      # Do we have a bin/java?
-      if test ! -x "$BOOT_JDK/bin/java"; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&5
-$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/java; ignoring" >&6;}
-        BOOT_JDK_FOUND=no
-      else
-        # Do we have a bin/javac?
-        if test ! -x "$BOOT_JDK/bin/javac"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&5
-$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK did not contain bin/javac; ignoring" >&6;}
-          { $as_echo "$as_me:${as_lineno-$LINENO}: (This might be an JRE instead of an JDK)" >&5
-$as_echo "$as_me: (This might be an JRE instead of an JDK)" >&6;}
-          BOOT_JDK_FOUND=no
-        else
-          # Oh, this is looking good! We probably have found a proper JDK. Is it the correct version?
-          BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | head -n 1`
-
-          # Extra M4 quote needed to protect [] in grep expression.
-          FOUND_CORRECT_VERSION=`echo $BOOT_JDK_VERSION | grep  '\"1\.[89]\.'`
-          if test "x$FOUND_CORRECT_VERSION" = x; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&5
-$as_echo "$as_me: Potential Boot JDK found at $BOOT_JDK is incorrect JDK version ($BOOT_JDK_VERSION); ignoring" >&6;}
-            { $as_echo "$as_me:${as_lineno-$LINENO}: (Your Boot JDK must be version 8 or 9)" >&5
-$as_echo "$as_me: (Your Boot JDK must be version 8 or 9)" >&6;}
-            BOOT_JDK_FOUND=no
-          else
-            # We're done! :-)
-            BOOT_JDK_FOUND=yes
-
-  # Only process if variable expands to non-empty
-
-  if test "x$BOOT_JDK" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$BOOT_JDK"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of BOOT_JDK" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    BOOT_JDK="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BOOT_JDK to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
-  fi
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$BOOT_JDK"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    BOOT_JDK="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BOOT_JDK to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting BOOT_JDK to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-    else
-      # We're on a unix platform. Hooray! :)
-      path="$BOOT_JDK"
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid." >&6;}
-        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-      fi
-
-      # Use eval to expand a potential ~
-      eval path="$path"
-      if test ! -f "$path" && test ! -d "$path"; then
-        as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
-      fi
-
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
-    fi
-  fi
-
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Boot JDK" >&5
-$as_echo_n "checking for Boot JDK... " >&6; }
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK" >&5
-$as_echo "$BOOT_JDK" >&6; }
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking Boot JDK version" >&5
-$as_echo_n "checking Boot JDK version... " >&6; }
-            BOOT_JDK_VERSION=`"$BOOT_JDK/bin/java" -version 2>&1 | $TR '\n\r' '  '`
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK_VERSION" >&5
-$as_echo "$BOOT_JDK_VERSION" >&6; }
-          fi # end check jdk version
-        fi # end check javac
-      fi # end check java
-    fi # end check boot jdk found
-  fi
-
 
   # Test: On MacOS X, can we find a boot jdk using /usr/libexec/java_home?
 
@@ -25690,7 +26189,7 @@ $as_echo "$BOOT_JDK_VERSION" >&6; }
   if test "x$BOOT_JDK_FOUND" = xno; then
 
   # Print a helpful message on how to acquire the necessary build dependency.
-  # openjdk is the help tag: freetype, cups, pulse, alsa etc
+  # openjdk is the help tag: freetype, cups, alsa etc
   MISSING_DEPENDENCY=openjdk
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -25734,7 +26233,7 @@ $as_echo "$as_me: This might be fixed by explicitely setting --with-boot-jdk" >&
   # Publish this variable in the help.
 
 
-  if test "x$JAVA" = x; then
+  if [ -z "${JAVA+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for java in Boot JDK" >&5
@@ -25787,14 +26286,23 @@ $as_echo "ok" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$JAVA"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAVA=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$JAVA" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool JAVA= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool JAVA= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVA" >&5
+$as_echo_n "checking for JAVA... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$JAVA"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAVA=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool JAVA=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -25834,22 +26342,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$JAVA" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAVA=$tool_specified" >&5
+          if test "x$JAVA" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAVA=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool JAVA=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVA" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVA" >&5
 $as_echo_n "checking for JAVA... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool JAVA=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool JAVA=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -25861,7 +26370,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$JAVAC" = x; then
+  if [ -z "${JAVAC+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for javac in Boot JDK" >&5
@@ -25914,14 +26423,23 @@ $as_echo "ok" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$JAVAC"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAVAC=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$JAVAC" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool JAVAC= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool JAVAC= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVAC" >&5
+$as_echo_n "checking for JAVAC... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$JAVAC"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAVAC=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool JAVAC=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -25961,22 +26479,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$JAVAC" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAVAC=$tool_specified" >&5
+          if test "x$JAVAC" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAVAC=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool JAVAC=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVAC" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVAC" >&5
 $as_echo_n "checking for JAVAC... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool JAVAC=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool JAVAC=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -25988,7 +26507,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$JAVAH" = x; then
+  if [ -z "${JAVAH+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for javah in Boot JDK" >&5
@@ -26041,14 +26560,23 @@ $as_echo "ok" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$JAVAH"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAVAH=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$JAVAH" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool JAVAH= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool JAVAH= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVAH" >&5
+$as_echo_n "checking for JAVAH... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$JAVAH"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAVAH=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool JAVAH=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -26088,22 +26616,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$JAVAH" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAVAH=$tool_specified" >&5
+          if test "x$JAVAH" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAVAH=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool JAVAH=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVAH" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAVAH" >&5
 $as_echo_n "checking for JAVAH... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool JAVAH=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool JAVAH=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -26115,7 +26644,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$JAR" = x; then
+  if [ -z "${JAR+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jar in Boot JDK" >&5
@@ -26168,14 +26697,23 @@ $as_echo "ok" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$JAR"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAR=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$JAR" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool JAR= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool JAR= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAR" >&5
+$as_echo_n "checking for JAR... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$JAR"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JAR=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool JAR=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -26215,22 +26753,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$JAR" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAR=$tool_specified" >&5
+          if test "x$JAR" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JAR=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool JAR=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAR" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JAR" >&5
 $as_echo_n "checking for JAR... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool JAR=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool JAR=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -26242,7 +26781,7 @@ $as_echo "$tool_specified" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$JARSIGNER" = x; then
+  if [ -z "${JARSIGNER+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
 
       { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jarsigner in Boot JDK" >&5
@@ -26295,14 +26834,23 @@ $as_echo "ok" >&6; }
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$JARSIGNER"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JARSIGNER=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$JARSIGNER" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool JARSIGNER= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool JARSIGNER= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JARSIGNER" >&5
+$as_echo_n "checking for JARSIGNER... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$JARSIGNER"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JARSIGNER=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool JARSIGNER=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -26342,22 +26890,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$JARSIGNER" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JARSIGNER=$tool_specified" >&5
+          if test "x$JARSIGNER" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JARSIGNER=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool JARSIGNER=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JARSIGNER" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JARSIGNER" >&5
 $as_echo_n "checking for JARSIGNER... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool JARSIGNER=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool JARSIGNER=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -26823,6 +27372,109 @@ $as_echo "$as_me: Using default toolchain $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTIO
     { $as_echo "$as_me:${as_lineno-$LINENO}: Using user selected toolchain $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION). Default toolchain is $DEFAULT_TOOLCHAIN." >&5
 $as_echo "$as_me: Using user selected toolchain $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION). Default toolchain is $DEFAULT_TOOLCHAIN." >&6;}
   fi
+
+
+# User supplied flags should be used when configure detects compilers
+
+  if test "x$CFLAGS" != "x${ADDED_CFLAGS}"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring CFLAGS($CFLAGS) found in environment. Use --with-extra-cflags" >&5
+$as_echo "$as_me: WARNING: Ignoring CFLAGS($CFLAGS) found in environment. Use --with-extra-cflags" >&2;}
+  fi
+
+  if test "x$CXXFLAGS" != "x${ADDED_CXXFLAGS}"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring CXXFLAGS($CXXFLAGS) found in environment. Use --with-extra-cxxflags" >&5
+$as_echo "$as_me: WARNING: Ignoring CXXFLAGS($CXXFLAGS) found in environment. Use --with-extra-cxxflags" >&2;}
+  fi
+
+  if test "x$LDFLAGS" != "x${ADDED_LDFLAGS}"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring LDFLAGS($LDFLAGS) found in environment. Use --with-extra-ldflags" >&5
+$as_echo "$as_me: WARNING: Ignoring LDFLAGS($LDFLAGS) found in environment. Use --with-extra-ldflags" >&2;}
+  fi
+
+
+# Check whether --with-extra-cflags was given.
+if test "${with_extra_cflags+set}" = set; then :
+  withval=$with_extra_cflags;
+fi
+
+
+
+# Check whether --with-extra-cxxflags was given.
+if test "${with_extra_cxxflags+set}" = set; then :
+  withval=$with_extra_cxxflags;
+fi
+
+
+
+# Check whether --with-extra-ldflags was given.
+if test "${with_extra_ldflags+set}" = set; then :
+  withval=$with_extra_ldflags;
+fi
+
+
+  EXTRA_CFLAGS="$with_extra_cflags"
+  EXTRA_CXXFLAGS="$with_extra_cxxflags"
+  EXTRA_LDFLAGS="$with_extra_ldflags"
+
+  # Hotspot needs these set in their legacy form
+  LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $EXTRA_CFLAGS"
+  LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $EXTRA_CXXFLAGS"
+  LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $EXTRA_LDFLAGS"
+
+
+
+
+
+  # The global CFLAGS and LDLAGS variables are used by configure tests and
+  # should include the extra parameters
+  CFLAGS="$EXTRA_CFLAGS"
+  CXXFLAGS="$EXTRA_CXXFLAGS"
+  LDFLAGS="$EXTRA_LDFLAGS"
+  CPPFLAGS=""
+
+# The sysroot cflags are needed for configure to be able to run the compilers
+
+  if test "x$SYSROOT" != "x"; then
+    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+      if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+        # Solaris Studio does not have a concept of sysroot. Instead we must
+        # make sure the default include and lib dirs are appended to each
+        # compile and link command line.
+        SYSROOT_CFLAGS="-I$SYSROOT/usr/include"
+        SYSROOT_LDFLAGS="-L$SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
+            -L$SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
+            -L$SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
+      fi
+    elif test "x$TOOLCHAIN_TYPE" = xgcc; then
+      SYSROOT_CFLAGS="--sysroot=$SYSROOT"
+      SYSROOT_LDFLAGS="--sysroot=$SYSROOT"
+    elif test "x$TOOLCHAIN_TYPE" = xclang; then
+      SYSROOT_CFLAGS="-isysroot $SYSROOT"
+      SYSROOT_LDFLAGS="-isysroot $SYSROOT"
+    fi
+    # Propagate the sysroot args to hotspot
+    LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $SYSROOT_CFLAGS"
+    LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $SYSROOT_CFLAGS"
+    LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $SYSROOT_LDFLAGS"
+    # The global CFLAGS and LDFLAGS variables need these for configure to function
+    CFLAGS="$CFLAGS $SYSROOT_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $SYSROOT_CFLAGS"
+    CXXFLAGS="$CXXFLAGS $SYSROOT_CFLAGS"
+    LDFLAGS="$LDFLAGS $SYSROOT_LDFLAGS"
+  fi
+
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    # We also need -iframework<path>/System/Library/Frameworks
+    SYSROOT_CFLAGS="$SYSROOT_CFLAGS -iframework $SYSROOT/System/Library/Frameworks"
+    SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -iframework $SYSROOT/System/Library/Frameworks"
+    # These always need to be set, or we can't find the frameworks embedded in JavaVM.framework
+    # set this here so it doesn't have to be peppered throughout the forest
+    SYSROOT_CFLAGS="$SYSROOT_CFLAGS -F $SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
+    SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -F $SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
+  fi
+
+
+
 
 
 # Then detect the actual binaries needed
@@ -28491,7 +29143,7 @@ done
     if test "x$CC" = x; then
 
   # Print a helpful message on how to acquire the necessary build dependency.
-  # devkit is the help tag: freetype, cups, pulse, alsa etc
+  # devkit is the help tag: freetype, cups, alsa etc
   MISSING_DEPENDENCY=devkit
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -30239,7 +30891,7 @@ done
     if test "x$CXX" = x; then
 
   # Print a helpful message on how to acquire the necessary build dependency.
-  # devkit is the help tag: freetype, cups, pulse, alsa etc
+  # devkit is the help tag: freetype, cups, alsa etc
   MISSING_DEPENDENCY=devkit
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -32684,7 +33336,7 @@ $as_echo "yes" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$AS" = x; then
+  if [ -z "${AS+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in as
 do
@@ -32797,14 +33449,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$AS"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool AS=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$AS" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool AS= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool AS= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AS" >&5
+$as_echo_n "checking for AS... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$AS"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool AS=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool AS=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -32844,22 +33505,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$AS" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool AS=$tool_specified" >&5
+          if test "x$AS" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool AS=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool AS=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AS" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AS" >&5
 $as_echo_n "checking for AS... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool AS=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool AS=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -33205,7 +33867,7 @@ fi
   # Publish this variable in the help.
 
 
-  if test "x$AR" = x; then
+  if [ -z "${AR+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     if test -n "$ac_tool_prefix"; then
   for ac_prog in ar
@@ -33428,14 +34090,23 @@ fi
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$AR"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool AR=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$AR" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool AR= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool AR= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AR" >&5
+$as_echo_n "checking for AR... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$AR"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool AR=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool AR=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -33475,22 +34146,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$AR" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool AR=$tool_specified" >&5
+          if test "x$AR" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool AR=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool AR=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AR" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for AR" >&5
 $as_echo_n "checking for AR... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool AR=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool AR=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -33791,7 +34463,7 @@ $as_echo "$as_me: Rewriting AR to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$LIPO" = x; then
+  if [ -z "${LIPO+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in lipo
 do
@@ -33904,14 +34576,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$LIPO"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LIPO=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$LIPO" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool LIPO= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool LIPO= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIPO" >&5
+$as_echo_n "checking for LIPO... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$LIPO"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool LIPO=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool LIPO=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -33951,22 +34632,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$LIPO" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LIPO=$tool_specified" >&5
+          if test "x$LIPO" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool LIPO=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool LIPO=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIPO" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIPO" >&5
 $as_echo_n "checking for LIPO... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool LIPO=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool LIPO=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -35317,7 +35999,7 @@ fi
   # Publish this variable in the help.
 
 
-  if test "x$STRIP" = x; then
+  if [ -z "${STRIP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in strip
 do
@@ -35430,14 +36112,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$STRIP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool STRIP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$STRIP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool STRIP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool STRIP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STRIP" >&5
+$as_echo_n "checking for STRIP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$STRIP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool STRIP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool STRIP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -35477,22 +36168,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$STRIP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool STRIP=$tool_specified" >&5
+          if test "x$STRIP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool STRIP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool STRIP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STRIP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STRIP" >&5
 $as_echo_n "checking for STRIP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool STRIP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool STRIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -35789,7 +36481,7 @@ $as_echo "$as_me: Rewriting STRIP to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$NM" = x; then
+  if [ -z "${NM+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in nm
 do
@@ -35902,14 +36594,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$NM"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NM=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$NM" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool NM= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool NM= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NM" >&5
+$as_echo_n "checking for NM... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$NM"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NM=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool NM=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -35949,22 +36650,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$NM" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NM=$tool_specified" >&5
+          if test "x$NM" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NM=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool NM=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NM" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NM" >&5
 $as_echo_n "checking for NM... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool NM=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool NM=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -36261,7 +36963,7 @@ $as_echo "$as_me: Rewriting NM to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$GNM" = x; then
+  if [ -z "${GNM+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in gnm
 do
@@ -36374,14 +37076,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$GNM"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool GNM=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$GNM" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool GNM= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool GNM= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GNM" >&5
+$as_echo_n "checking for GNM... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$GNM"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool GNM=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool GNM=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -36421,22 +37132,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$GNM" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool GNM=$tool_specified" >&5
+          if test "x$GNM" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool GNM=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool GNM=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GNM" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for GNM" >&5
 $as_echo_n "checking for GNM... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool GNM=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool GNM=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -36735,7 +37447,7 @@ $as_echo "$as_me: Rewriting GNM to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$STRIP" = x; then
+  if [ -z "${STRIP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     if test -n "$ac_tool_prefix"; then
   for ac_prog in strip
@@ -36958,14 +37670,23 @@ fi
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$STRIP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool STRIP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$STRIP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool STRIP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool STRIP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STRIP" >&5
+$as_echo_n "checking for STRIP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$STRIP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool STRIP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool STRIP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -37005,22 +37726,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$STRIP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool STRIP=$tool_specified" >&5
+          if test "x$STRIP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool STRIP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool STRIP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STRIP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for STRIP" >&5
 $as_echo_n "checking for STRIP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool STRIP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool STRIP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -37317,7 +38039,7 @@ $as_echo "$as_me: Rewriting STRIP to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$NM" = x; then
+  if [ -z "${NM+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     if test -n "$ac_tool_prefix"; then
   for ac_prog in nm
@@ -37540,14 +38262,23 @@ fi
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$NM"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NM=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$NM" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool NM= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool NM= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NM" >&5
+$as_echo_n "checking for NM... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$NM"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool NM=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool NM=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -37587,22 +38318,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$NM" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NM=$tool_specified" >&5
+          if test "x$NM" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool NM=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool NM=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NM" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for NM" >&5
 $as_echo_n "checking for NM... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool NM=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool NM=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -37906,7 +38638,7 @@ $as_echo "$as_me: Rewriting NM to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$OBJCOPY" = x; then
+  if [ -z "${OBJCOPY+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     if test -n "$ac_tool_prefix"; then
   for ac_prog in gobjcopy objcopy
@@ -38129,14 +38861,23 @@ fi
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$OBJCOPY"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool OBJCOPY=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$OBJCOPY" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool OBJCOPY= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool OBJCOPY= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OBJCOPY" >&5
+$as_echo_n "checking for OBJCOPY... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$OBJCOPY"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool OBJCOPY=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool OBJCOPY=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -38176,22 +38917,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$OBJCOPY" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool OBJCOPY=$tool_specified" >&5
+          if test "x$OBJCOPY" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool OBJCOPY=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool OBJCOPY=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OBJCOPY" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OBJCOPY" >&5
 $as_echo_n "checking for OBJCOPY... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool OBJCOPY=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool OBJCOPY=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -38535,7 +39277,7 @@ $as_echo "$as_me: Note: Solaris 11 Update 1 contains the correct version" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$OBJDUMP" = x; then
+  if [ -z "${OBJDUMP+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     if test -n "$ac_tool_prefix"; then
   for ac_prog in gobjdump objdump
@@ -38758,14 +39500,23 @@ fi
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$OBJDUMP"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool OBJDUMP=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$OBJDUMP" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool OBJDUMP= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool OBJDUMP= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OBJDUMP" >&5
+$as_echo_n "checking for OBJDUMP... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$OBJDUMP"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool OBJDUMP=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool OBJDUMP=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -38805,22 +39556,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$OBJDUMP" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool OBJDUMP=$tool_specified" >&5
+          if test "x$OBJDUMP" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool OBJDUMP=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool OBJDUMP=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OBJDUMP" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OBJDUMP" >&5
 $as_echo_n "checking for OBJDUMP... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool OBJDUMP=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool OBJDUMP=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -39144,7 +39896,7 @@ $as_echo "$as_me: Rewriting OBJDUMP to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$BUILD_CC" = x; then
+  if [ -z "${BUILD_CC+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cl cc gcc
 do
@@ -39257,14 +40009,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$BUILD_CC"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BUILD_CC=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$BUILD_CC" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool BUILD_CC= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool BUILD_CC= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_CC" >&5
+$as_echo_n "checking for BUILD_CC... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$BUILD_CC"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BUILD_CC=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool BUILD_CC=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -39304,22 +40065,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$BUILD_CC" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BUILD_CC=$tool_specified" >&5
+          if test "x$BUILD_CC" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BUILD_CC=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool BUILD_CC=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_CC" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_CC" >&5
 $as_echo_n "checking for BUILD_CC... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool BUILD_CC=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool BUILD_CC=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -39616,7 +40378,7 @@ $as_echo "$as_me: Rewriting BUILD_CC to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$BUILD_CXX" = x; then
+  if [ -z "${BUILD_CXX+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in cl CC g++
 do
@@ -39729,14 +40491,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$BUILD_CXX"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BUILD_CXX=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$BUILD_CXX" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool BUILD_CXX= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool BUILD_CXX= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_CXX" >&5
+$as_echo_n "checking for BUILD_CXX... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$BUILD_CXX"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BUILD_CXX=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool BUILD_CXX=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -39776,22 +40547,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$BUILD_CXX" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BUILD_CXX=$tool_specified" >&5
+          if test "x$BUILD_CXX" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BUILD_CXX=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool BUILD_CXX=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_CXX" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_CXX" >&5
 $as_echo_n "checking for BUILD_CXX... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool BUILD_CXX=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool BUILD_CXX=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -40088,7 +40860,7 @@ $as_echo "$as_me: Rewriting BUILD_CXX to \"$new_complete\"" >&6;}
   # Publish this variable in the help.
 
 
-  if test "x$BUILD_LD" = x; then
+  if [ -z "${BUILD_LD+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in ld
 do
@@ -40201,14 +40973,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$BUILD_LD"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BUILD_LD=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$BUILD_LD" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool BUILD_LD= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool BUILD_LD= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_LD" >&5
+$as_echo_n "checking for BUILD_LD... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$BUILD_LD"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BUILD_LD=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool BUILD_LD=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -40248,22 +41029,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$BUILD_LD" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BUILD_LD=$tool_specified" >&5
+          if test "x$BUILD_LD" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BUILD_LD=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool BUILD_LD=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_LD" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_LD" >&5
 $as_echo_n "checking for BUILD_LD... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool BUILD_LD=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool BUILD_LD=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -40555,13 +41337,19 @@ $as_echo "$as_me: Rewriting BUILD_LD to \"$new_complete\"" >&6;}
     fi
   fi
 
+    BUILD_SYSROOT_CFLAGS=""
+    BUILD_SYSROOT_LDFLAGS=""
   else
     # If we are not cross compiling, use the normal target compilers for
     # building the build platform executables.
     BUILD_CC="$CC"
     BUILD_CXX="$CXX"
     BUILD_LD="$LD"
+    BUILD_SYSROOT_CFLAGS="$SYSROOT_CFLAGS"
+    BUILD_SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS"
   fi
+
+
 
 
 
@@ -41021,7 +41809,7 @@ $as_echo "$JTREGEXE" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$JTREGEXE" = x; then
+  if [ -z "${JTREGEXE+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in jtreg
 do
@@ -41134,14 +41922,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$JTREGEXE"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JTREGEXE=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$JTREGEXE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool JTREGEXE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool JTREGEXE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JTREGEXE" >&5
+$as_echo_n "checking for JTREGEXE... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$JTREGEXE"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool JTREGEXE=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool JTREGEXE=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -41181,22 +41978,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$JTREGEXE" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JTREGEXE=$tool_specified" >&5
+          if test "x$JTREGEXE" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool JTREGEXE=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool JTREGEXE=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JTREGEXE" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for JTREGEXE" >&5
 $as_echo_n "checking for JTREGEXE... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool JTREGEXE=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool JTREGEXE=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
@@ -41252,9 +42050,6 @@ $as_echo "$tool_specified" >&6; }
     STRIPFLAGS="-X32_64"
   fi
 
-  if test "x$OPENJDK_TARGET_OS" != xwindows; then
-    POST_STRIP_CMD="$STRIP $STRIPFLAGS"
-  fi
 
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
@@ -41305,44 +42100,6 @@ $as_echo "$tool_specified" >&6; }
     # silence copyright notice and other headers.
     COMMON_CCXXFLAGS="$COMMON_CCXXFLAGS -nologo"
   fi
-
-  if test "x$SYSROOT" != "x"; then
-    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-      if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-        # Solaris Studio does not have a concept of sysroot. Instead we must
-        # make sure the default include and lib dirs are appended to each
-        # compile and link command line.
-        SYSROOT_CFLAGS="-I$SYSROOT/usr/include"
-        SYSROOT_LDFLAGS="-L$SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
-            -L$SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
-            -L$SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
-      fi
-    elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      # Apple only wants -isysroot <path>, but we also need -iframework<path>/System/Library/Frameworks
-      SYSROOT_CFLAGS="-isysroot \"$SYSROOT\" -iframework\"$SYSROOT/System/Library/Frameworks\""
-      SYSROOT_LDFLAGS=$SYSROOT_CFLAGS
-    elif test "x$TOOLCHAIN_TYPE" = xgcc; then
-      SYSROOT_CFLAGS="--sysroot=$SYSROOT"
-      SYSROOT_LDFLAGS="--sysroot=$SYSROOT"
-    elif test "x$TOOLCHAIN_TYPE" = xclang; then
-      SYSROOT_CFLAGS="-isysroot \"$SYSROOT\""
-      SYSROOT_LDFLAGS="-isysroot \"$SYSROOT\""
-    fi
-    # Propagate the sysroot args to hotspot
-    LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $SYSROOT_CFLAGS"
-    LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $SYSROOT_CFLAGS"
-    LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $SYSROOT_LDFLAGS"
-  fi
-
-  # These always need to be set, or we can't find the frameworks embedded in JavaVM.framework
-  # set this here so it doesn't have to be peppered throughout the forest
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    SYSROOT_CFLAGS="$SYSROOT_CFLAGS -F\"$SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks\""
-    SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -F\"$SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks\""
-  fi
-
-
-
 
 
 # FIXME: Currently we must test this after toolchain but before flags. Fix!
@@ -41543,8 +42300,38 @@ else
     { $as_echo "$as_me:${as_lineno-$LINENO}: Failed to compile stdio.h. This likely implies missing compile dependencies." >&5
 $as_echo "$as_me: Failed to compile stdio.h. This likely implies missing compile dependencies." >&6;}
     if test "x$COMPILE_TYPE" = xreduced; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a reduced build. Check that you have 32-bit libraries installed." >&5
-$as_echo "$as_me: You are doing a reduced build. Check that you have 32-bit libraries installed." >&6;}
+
+  # Print a helpful message on how to acquire the necessary build dependency.
+  # reduced is the help tag: freetype, cups, alsa etc
+  MISSING_DEPENDENCY=reduced
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
+
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a reduced build. Check that you have 32-bit libraries installed. $HELP_MSG" >&5
+$as_echo "$as_me: You are doing a reduced build. Check that you have 32-bit libraries installed. $HELP_MSG" >&6;}
     elif test "x$COMPILE_TYPE" = xcross; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a cross-compilation. Check that you have all target platform libraries installed." >&5
 $as_echo "$as_me: You are doing a cross-compilation. Check that you have all target platform libraries installed." >&6;}
@@ -41603,8 +42390,8 @@ $as_echo "$as_me: WARNING: The number of bits in the target could not be determi
       # Let's try to implicitely set the compilers target architecture and retry the test
       { $as_echo "$as_me:${as_lineno-$LINENO}: The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)." >&5
 $as_echo "$as_me: The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)." >&6;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: I'll retry after setting the platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}" >&5
-$as_echo "$as_me: I'll retry after setting the platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Retrying with platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}" >&5
+$as_echo "$as_me: Retrying with platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}" >&6;}
 
   # When we add flags to the "official" CFLAGS etc, we need to
   # keep track of these additions in ADDED_CFLAGS etc. These
@@ -41667,7 +42454,46 @@ _ACEOF
       TESTED_TARGET_CPU_BITS=`expr 8 \* $ac_cv_sizeof_int_p`
 
       if test "x$TESTED_TARGET_CPU_BITS" != "x$OPENJDK_TARGET_CPU_BITS"; then
-        as_fn_error $? "The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)" "$LINENO" 5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)" >&5
+$as_echo "$as_me: The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)" >&6;}
+        if test "x$COMPILE_TYPE" = xreduced; then
+
+  # Print a helpful message on how to acquire the necessary build dependency.
+  # reduced is the help tag: freetype, cups, alsa etc
+  MISSING_DEPENDENCY=reduced
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
+
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
+  fi
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a reduced build. Check that you have 32-bit libraries installed. $HELP_MSG" >&5
+$as_echo "$as_me: You are doing a reduced build. Check that you have 32-bit libraries installed. $HELP_MSG" >&6;}
+        elif test "x$COMPILE_TYPE" = xcross; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a cross-compilation. Check that you have all target platform libraries installed." >&5
+$as_echo "$as_me: You are doing a cross-compilation. Check that you have all target platform libraries installed." >&6;}
+        fi
+        as_fn_error $? "Cannot continue." "$LINENO" 5
       fi
     fi
   fi
@@ -42267,54 +43093,9 @@ $as_echo "$supports" >&6; }
     CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
   fi
 
-  if test "x$CFLAGS" != "x${ADDED_CFLAGS}"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring CFLAGS($CFLAGS) found in environment. Use --with-extra-cflags" >&5
-$as_echo "$as_me: WARNING: Ignoring CFLAGS($CFLAGS) found in environment. Use --with-extra-cflags" >&2;}
-  fi
-
-  if test "x$CXXFLAGS" != "x${ADDED_CXXFLAGS}"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring CXXFLAGS($CXXFLAGS) found in environment. Use --with-extra-cxxflags" >&5
-$as_echo "$as_me: WARNING: Ignoring CXXFLAGS($CXXFLAGS) found in environment. Use --with-extra-cxxflags" >&2;}
-  fi
-
-  if test "x$LDFLAGS" != "x${ADDED_LDFLAGS}"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring LDFLAGS($LDFLAGS) found in environment. Use --with-extra-ldflags" >&5
-$as_echo "$as_me: WARNING: Ignoring LDFLAGS($LDFLAGS) found in environment. Use --with-extra-ldflags" >&2;}
-  fi
-
-
-# Check whether --with-extra-cflags was given.
-if test "${with_extra_cflags+set}" = set; then :
-  withval=$with_extra_cflags;
-fi
-
-
-
-# Check whether --with-extra-cxxflags was given.
-if test "${with_extra_cxxflags+set}" = set; then :
-  withval=$with_extra_cxxflags;
-fi
-
-
-
-# Check whether --with-extra-ldflags was given.
-if test "${with_extra_ldflags+set}" = set; then :
-  withval=$with_extra_ldflags;
-fi
-
-
-  CFLAGS_JDK="${CFLAGS_JDK} $with_extra_cflags"
-  CXXFLAGS_JDK="${CXXFLAGS_JDK} $with_extra_cxxflags"
-  LDFLAGS_JDK="${LDFLAGS_JDK} $with_extra_ldflags"
-
-  # Hotspot needs these set in their legacy form
-  LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $with_extra_cflags"
-  LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $with_extra_cxxflags"
-  LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $with_extra_ldflags"
-
-
-
-
+  CFLAGS_JDK="${CFLAGS_JDK} $EXTRA_CFLAGS"
+  CXXFLAGS_JDK="${CXXFLAGS_JDK} $EXTRA_CXXFLAGS"
+  LDFLAGS_JDK="${LDFLAGS_JDK} $EXTRA_LDFLAGS"
 
   ###############################################################################
   #
@@ -43082,83 +43863,2814 @@ $as_echo "yes" >&6; }
 
 
 
-
-  ###############################################################################
-  #
-  # OS specific settings that we never will need to probe.
-  #
-  if test "x$OPENJDK_TARGET_OS" = xlinux; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking what is not needed on Linux?" >&5
-$as_echo_n "checking what is not needed on Linux?... " >&6; }
-    PULSE_NOT_NEEDED=yes
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: pulse" >&5
-$as_echo "pulse" >&6; }
+  # Check if X11 is needed
+  if test "x$OPENJDK_TARGET_OS" = xwindows || test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    # No X11 support on windows or macosx
+    NEEDS_LIB_X11=false
+  else
+    if test "x$SUPPORT_HEADFUL" = xno; then
+      # No X11 support if building headless-only
+      NEEDS_LIB_X11=false
+    else
+      # All other instances need X11
+      NEEDS_LIB_X11=true
+    fi
   fi
 
-  if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking what is not needed on Solaris?" >&5
-$as_echo_n "checking what is not needed on Solaris?... " >&6; }
-    ALSA_NOT_NEEDED=yes
-    PULSE_NOT_NEEDED=yes
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa pulse" >&5
-$as_echo "alsa pulse" >&6; }
-  fi
-
-  if test "x$OPENJDK_TARGET_OS" = xaix; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking what is not needed on AIX?" >&5
-$as_echo_n "checking what is not needed on AIX?... " >&6; }
-    ALSA_NOT_NEEDED=yes
-    PULSE_NOT_NEEDED=yes
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa pulse" >&5
-$as_echo "alsa pulse" >&6; }
-  fi
-
-
+  # Check if cups is needed
   if test "x$OPENJDK_TARGET_OS" = xwindows; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking what is not needed on Windows?" >&5
-$as_echo_n "checking what is not needed on Windows?... " >&6; }
-    CUPS_NOT_NEEDED=yes
-    ALSA_NOT_NEEDED=yes
-    PULSE_NOT_NEEDED=yes
-    X11_NOT_NEEDED=yes
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa cups pulse x11" >&5
-$as_echo "alsa cups pulse x11" >&6; }
+    # Windows have a separate print system
+    NEEDS_LIB_CUPS=false
+  else
+    NEEDS_LIB_CUPS=true
   fi
 
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking what is not needed on MacOSX?" >&5
-$as_echo_n "checking what is not needed on MacOSX?... " >&6; }
-    ALSA_NOT_NEEDED=yes
-    PULSE_NOT_NEEDED=yes
-    X11_NOT_NEEDED=yes
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa pulse x11" >&5
-$as_echo "alsa pulse x11" >&6; }
+  # Check if freetype is needed
+  if test "x$OPENJDK" = "xtrue"; then
+    NEEDS_LIB_FREETYPE=true
+  else
+    NEEDS_LIB_FREETYPE=false
   fi
 
-  if test "x$OPENJDK_TARGET_OS" = xbsd; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking what is not needed on bsd?" >&5
-$as_echo_n "checking what is not needed on bsd?... " >&6; }
-    ALSA_NOT_NEEDED=yes
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa" >&5
-$as_echo "alsa" >&6; }
+  # Check if alsa is needed
+  if test "x$OPENJDK_TARGET_OS" = xlinux; then
+    NEEDS_LIB_ALSA=true
+  else
+    NEEDS_LIB_ALSA=false
   fi
 
-  if test "x$OPENJDK" = "xfalse"; then
-    FREETYPE_NOT_NEEDED=yes
-  fi
-
-  if test "x$SUPPORT_HEADFUL" = xno; then
-    X11_NOT_NEEDED=yes
+  # Check if ffi is needed
+  if test "x$JVM_VARIANT_ZERO" = xtrue || test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+    NEEDS_LIB_FFI=true
+  else
+    NEEDS_LIB_FFI=false
   fi
 
 
+  # statically link libstdc++ before C++ ABI is stablized on Linux unless
+  # dynamic build is configured on command line.
 
-  ###############################################################################
+# Check whether --with-stdc++lib was given.
+if test "${with_stdc__lib+set}" = set; then :
+  withval=$with_stdc__lib;
+        if test "x$with_stdc__lib" != xdynamic && test "x$with_stdc__lib" != xstatic \
+                && test "x$with_stdc__lib" != xdefault; then
+          as_fn_error $? "Bad parameter value --with-stdc++lib=$with_stdc__lib!" "$LINENO" 5
+        fi
+
+else
+  with_stdc__lib=default
+
+fi
+
+
+  if test "x$OPENJDK_TARGET_OS" = xlinux; then
+    # Test if -lstdc++ works.
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if dynamic link of stdc++ is possible" >&5
+$as_echo_n "checking if dynamic link of stdc++ is possible... " >&6; }
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+    OLD_CXXFLAGS="$CXXFLAGS"
+    CXXFLAGS="$CXXFLAGS -lstdc++"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  has_dynamic_libstdcxx=yes
+else
+  has_dynamic_libstdcxx=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+    CXXFLAGS="$OLD_CXXFLAGS"
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $has_dynamic_libstdcxx" >&5
+$as_echo "$has_dynamic_libstdcxx" >&6; }
+
+    # Test if stdc++ can be linked statically.
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if static link of stdc++ is possible" >&5
+$as_echo_n "checking if static link of stdc++ is possible... " >&6; }
+    STATIC_STDCXX_FLAGS="-Wl,-Bstatic -lstdc++ -lgcc -Wl,-Bdynamic"
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+    OLD_LIBS="$LIBS"
+    OLD_CXX="$CXX"
+    LIBS="$STATIC_STDCXX_FLAGS"
+    CXX="$CC"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+return 0;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_cxx_try_link "$LINENO"; then :
+  has_static_libstdcxx=yes
+else
+  has_static_libstdcxx=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+    LIBS="$OLD_LIBS"
+    CXX="$OLD_CXX"
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $has_static_libstdcxx" >&5
+$as_echo "$has_static_libstdcxx" >&6; }
+
+    if test "x$has_static_libstdcxx" = xno && test "x$has_dynamic_libstdcxx" = xno; then
+      as_fn_error $? "Cannot link to stdc++, neither dynamically nor statically!" "$LINENO" 5
+    fi
+
+    if test "x$with_stdc__lib" = xstatic && test "x$has_static_libstdcxx" = xno; then
+      as_fn_error $? "Static linking of libstdc++ was not possible!" "$LINENO" 5
+    fi
+
+    if test "x$with_stdc__lib" = xdynamic && test "x$has_dynamic_libstdcxx" = xno; then
+      as_fn_error $? "Dynamic linking of libstdc++ was not possible!" "$LINENO" 5
+    fi
+
+    # If dynamic was requested, it's available since it would fail above otherwise.
+    # If dynamic wasn't requested, go with static unless it isn't available.
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking how to link with libstdc++" >&5
+$as_echo_n "checking how to link with libstdc++... " >&6; }
+    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno || test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+      LIBCXX="$LIBCXX -lstdc++"
+      LDCXX="$CXX"
+      STATIC_CXX_SETTING="STATIC_CXX=false"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: dynamic" >&5
+$as_echo "dynamic" >&6; }
+    else
+      LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
+      LDCXX="$CC"
+      STATIC_CXX_SETTING="STATIC_CXX=true"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: static" >&5
+$as_echo "static" >&6; }
+    fi
+  fi
+
+
+  # libCrun is the c++ runtime-library with SunStudio (roughly the equivalent of gcc's libstdc++.so)
+  if test "x$TOOLCHAIN_TYPE" = xsolstudio && test "x$LIBCXX" = x; then
+    LIBCXX="${SYSROOT}/usr/lib${OPENJDK_TARGET_CPU_ISADIR}/libCrun.so.1"
+  fi
+
+  # TODO better (platform agnostic) test
+  if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$LIBCXX" = x && test "x$TOOLCHAIN_TYPE" = xgcc; then
+    LIBCXX="-lstdc++"
+  fi
+
+
+  # Setup Windows runtime dlls
+  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
+
+
+# Check whether --with-msvcr-dll was given.
+if test "${with_msvcr_dll+set}" = set; then :
+  withval=$with_msvcr_dll;
+fi
+
+
+  if test "x$with_msvcr_dll" != x; then
+    # If given explicitely by user, do not probe. If not present, fail directly.
+
+  DLL_NAME="$MSVCR_NAME"
+  POSSIBLE_MSVC_DLL="$with_msvcr_dll"
+  METHOD="--with-msvcr-dll"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+
+  # Only process if variable expands to non-empty
+
+  if test "x$MSVC_DLL" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$MSVC_DLL"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
   #
-  # Check for X Windows
-  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
+  fi
 
-  if test "x$X11_NOT_NEEDED" = xyes; then
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$MSVC_DLL"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$MSVC_DLL"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    if test "x$MSVC_DLL" = x; then
+      as_fn_error $? "Could not find a proper $MSVCR_NAME as specified by --with-msvcr-dll" "$LINENO" 5
+    fi
+    MSVCR_DLL="$MSVC_DLL"
+  elif test "x$DEVKIT_MSVCR_DLL" != x; then
+
+  DLL_NAME="$MSVCR_NAME"
+  POSSIBLE_MSVC_DLL="$DEVKIT_MSVCR_DLL"
+  METHOD="devkit"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+
+  # Only process if variable expands to non-empty
+
+  if test "x$MSVC_DLL" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$MSVC_DLL"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$MSVC_DLL"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$MSVC_DLL"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    if test "x$MSVC_DLL" = x; then
+      as_fn_error $? "Could not find a proper $MSVCR_NAME as specified by devkit" "$LINENO" 5
+    fi
+    MSVCR_DLL="$MSVC_DLL"
+  else
+
+  DLL_NAME="${MSVCR_NAME}"
+  MSVC_DLL=
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Using well-known location from Visual Studio 10.0
+    if test "x$VCINSTALLDIR" != x; then
+      CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
+
+  windows_path="$CYGWIN_VC_INSTALL_DIR"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_VC_INSTALL_DIR="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_VC_INSTALL_DIR="$unix_path"
+  fi
+
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+      else
+        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+      fi
+      $ECHO "POSSIBLE_MSVC_DLL $POSSIBLEMSVC_DLL"
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="well-known location in VCINSTALLDIR"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+
+  # Only process if variable expands to non-empty
+
+  if test "x$MSVC_DLL" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$MSVC_DLL"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$MSVC_DLL"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$MSVC_DLL"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Check in the Boot JDK directory.
+    POSSIBLE_MSVC_DLL="$BOOT_JDK/bin/$DLL_NAME"
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="well-known location in Boot JDK"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+
+  # Only process if variable expands to non-empty
+
+  if test "x$MSVC_DLL" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$MSVC_DLL"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$MSVC_DLL"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$MSVC_DLL"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Look in the Windows system32 directory
+    CYGWIN_SYSTEMROOT="$SYSTEMROOT"
+
+  windows_path="$CYGWIN_SYSTEMROOT"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_SYSTEMROOT="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_SYSTEMROOT="$unix_path"
+  fi
+
+    POSSIBLE_MSVC_DLL="$CYGWIN_SYSTEMROOT/system32/$DLL_NAME"
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="well-known location in SYSTEMROOT"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+
+  # Only process if variable expands to non-empty
+
+  if test "x$MSVC_DLL" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$MSVC_DLL"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$MSVC_DLL"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$MSVC_DLL"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: If Visual Studio Express is installed, there is usually one with the debugger
+    if test "x$VS100COMNTOOLS" != x; then
+      CYGWIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
+
+  windows_path="$CYGWIN_VS_TOOLS_DIR"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_VS_TOOLS_DIR="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_VS_TOOLS_DIR="$unix_path"
+  fi
+
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
+	    | $GREP -i /x64/ | $HEAD --lines 1`
+      else
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
+	    | $GREP -i /x86/ | $HEAD --lines 1`
+      fi
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="search of VS100COMNTOOLS"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+
+  # Only process if variable expands to non-empty
+
+  if test "x$MSVC_DLL" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$MSVC_DLL"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$MSVC_DLL"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$MSVC_DLL"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
+    # (This was the original behaviour; kept since it might turn something up)
+    if test "x$CYGWIN_VC_INSTALL_DIR" != x; then
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	    | $GREP x64 | $HEAD --lines 1`
+      else
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	    | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
+        if test "x$POSSIBLE_MSVC_DLL" = x; then
+          # We're grasping at straws now...
+          POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	      | $HEAD --lines 1`
+        fi
+      fi
+
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="search of VCINSTALLDIR"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+
+  # Only process if variable expands to non-empty
+
+  if test "x$MSVC_DLL" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$MSVC_DLL"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$MSVC_DLL"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$MSVC_DLL"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    as_fn_error $? "Could not find $DLL_NAME. Please specify using --with-msvcr-dll." "$LINENO" 5
+  fi
+
+    MSVCR_DLL="$MSVC_DLL"
+  fi
+
+
+
+# Check whether --with-msvcp-dll was given.
+if test "${with_msvcp_dll+set}" = set; then :
+  withval=$with_msvcp_dll;
+fi
+
+
+  if test "x$MSVCP_NAME" != "x"; then
+    if test "x$with_msvcp_dll" != x; then
+      # If given explicitely by user, do not probe. If not present, fail directly.
+
+  DLL_NAME="$MSVCP_NAME"
+  POSSIBLE_MSVC_DLL="$with_msvcp_dll"
+  METHOD="--with-msvcp-dll"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+
+  # Only process if variable expands to non-empty
+
+  if test "x$MSVC_DLL" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$MSVC_DLL"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$MSVC_DLL"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$MSVC_DLL"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+      if test "x$MSVC_DLL" = x; then
+        as_fn_error $? "Could not find a proper $MSVCP_NAME as specified by --with-msvcp-dll" "$LINENO" 5
+      fi
+      MSVCP_DLL="$MSVC_DLL"
+    elif test "x$DEVKIT_MSVCP_DLL" != x; then
+
+  DLL_NAME="$MSVCP_NAME"
+  POSSIBLE_MSVC_DLL="$DEVKIT_MSVCP_DLL"
+  METHOD="devkit"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+
+  # Only process if variable expands to non-empty
+
+  if test "x$MSVC_DLL" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$MSVC_DLL"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$MSVC_DLL"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$MSVC_DLL"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+      if test "x$MSVC_DLL" = x; then
+        as_fn_error $? "Could not find a proper $MSVCP_NAME as specified by devkit" "$LINENO" 5
+      fi
+      MSVCP_DLL="$MSVC_DLL"
+    else
+
+  DLL_NAME="${MSVCP_NAME}"
+  MSVC_DLL=
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Using well-known location from Visual Studio 10.0
+    if test "x$VCINSTALLDIR" != x; then
+      CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
+
+  windows_path="$CYGWIN_VC_INSTALL_DIR"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_VC_INSTALL_DIR="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_VC_INSTALL_DIR="$unix_path"
+  fi
+
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+      else
+        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
+      fi
+      $ECHO "POSSIBLE_MSVC_DLL $POSSIBLEMSVC_DLL"
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="well-known location in VCINSTALLDIR"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+
+  # Only process if variable expands to non-empty
+
+  if test "x$MSVC_DLL" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$MSVC_DLL"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$MSVC_DLL"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$MSVC_DLL"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Check in the Boot JDK directory.
+    POSSIBLE_MSVC_DLL="$BOOT_JDK/bin/$DLL_NAME"
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="well-known location in Boot JDK"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+
+  # Only process if variable expands to non-empty
+
+  if test "x$MSVC_DLL" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$MSVC_DLL"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$MSVC_DLL"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$MSVC_DLL"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Look in the Windows system32 directory
+    CYGWIN_SYSTEMROOT="$SYSTEMROOT"
+
+  windows_path="$CYGWIN_SYSTEMROOT"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_SYSTEMROOT="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_SYSTEMROOT="$unix_path"
+  fi
+
+    POSSIBLE_MSVC_DLL="$CYGWIN_SYSTEMROOT/system32/$DLL_NAME"
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="well-known location in SYSTEMROOT"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+
+  # Only process if variable expands to non-empty
+
+  if test "x$MSVC_DLL" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$MSVC_DLL"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$MSVC_DLL"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$MSVC_DLL"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: If Visual Studio Express is installed, there is usually one with the debugger
+    if test "x$VS100COMNTOOLS" != x; then
+      CYGWIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
+
+  windows_path="$CYGWIN_VS_TOOLS_DIR"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    CYGWIN_VS_TOOLS_DIR="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    CYGWIN_VS_TOOLS_DIR="$unix_path"
+  fi
+
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
+	    | $GREP -i /x64/ | $HEAD --lines 1`
+      else
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
+	    | $GREP -i /x86/ | $HEAD --lines 1`
+      fi
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="search of VS100COMNTOOLS"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+
+  # Only process if variable expands to non-empty
+
+  if test "x$MSVC_DLL" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$MSVC_DLL"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$MSVC_DLL"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$MSVC_DLL"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
+    # (This was the original behaviour; kept since it might turn something up)
+    if test "x$CYGWIN_VC_INSTALL_DIR" != x; then
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	    | $GREP x64 | $HEAD --lines 1`
+      else
+        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	    | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
+        if test "x$POSSIBLE_MSVC_DLL" = x; then
+          # We're grasping at straws now...
+          POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
+	      | $HEAD --lines 1`
+        fi
+      fi
+
+
+  DLL_NAME="$DLL_NAME"
+  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
+  METHOD="search of VCINSTALLDIR"
+  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
+$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
+
+    # Need to check if the found msvcr is correct architecture
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
+$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
+    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
+      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH="PE32 executable"
+      else
+        CORRECT_MSVCR_ARCH="PE32+ executable"
+      fi
+    else
+      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
+        CORRECT_MSVCR_ARCH=386
+      else
+        CORRECT_MSVCR_ARCH=x86-64
+      fi
+    fi
+    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+      MSVC_DLL="$POSSIBLE_MSVC_DLL"
+
+  # Only process if variable expands to non-empty
+
+  if test "x$MSVC_DLL" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$MSVC_DLL"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$MSVC_DLL"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    MSVC_DLL="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$MSVC_DLL"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
+$as_echo "$MSVC_DLL" >&6; }
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
+$as_echo "incorrect, ignoring" >&6; }
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
+$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
+    fi
+  fi
+
+    fi
+  fi
+
+  if test "x$MSVC_DLL" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
+$as_echo_n "checking for $DLL_NAME... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+    as_fn_error $? "Could not find $DLL_NAME. Please specify using --with-msvcr-dll." "$LINENO" 5
+  fi
+
+      MSVCP_DLL="$MSVC_DLL"
+    fi
+
+  fi
+
+  fi
+
+
+  if test "x$NEEDS_LIB_X11" = xfalse; then
     if test "x${with_x}" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: X11 is not used, so --with-x is ignored" >&5
 $as_echo "$as_me: WARNING: X11 is not used, so --with-x is ignored" >&2;}
@@ -43884,7 +47396,7 @@ fi
     if test "x$no_x" = xyes; then
 
   # Print a helpful message on how to acquire the necessary build dependency.
-  # x11 is the help tag: freetype, cups, pulse, alsa etc
+  # x11 is the help tag: freetype, cups, alsa etc
   MISSING_DEPENDENCY=x11
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -43958,7 +47470,7 @@ done
     if test "x$X11_HEADERS_OK" = xno; then
 
   # Print a helpful message on how to acquire the necessary build dependency.
-  # x11 is the help tag: freetype, cups, pulse, alsa etc
+  # x11 is the help tag: freetype, cups, alsa etc
   MISSING_DEPENDENCY=x11
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -44021,17 +47533,12 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-  fi # X11_NOT_NEEDED
+  fi # NEEDS_LIB_X11
 
 
 
 
 
-
-  ###############################################################################
-  #
-  # The common unix printing system cups is used to print from java.
-  #
 
 # Check whether --with-cups was given.
 if test "${with_cups+set}" = set; then :
@@ -44045,7 +47552,7 @@ if test "${with_cups_include+set}" = set; then :
 fi
 
 
-  if test "x$CUPS_NOT_NEEDED" = xyes; then
+  if test "x$NEEDS_LIB_CUPS" = xfalse; then
     if test "x${with_cups}" != x || test "x${with_cups_include}" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: cups not used, so --with-cups is ignored" >&5
 $as_echo "$as_me: WARNING: cups not used, so --with-cups is ignored" >&2;}
@@ -44067,151 +47574,6 @@ $as_echo "$as_me: WARNING: cups not used, so --with-cups is ignored" >&2;}
       CUPS_FOUND=yes
     fi
     if test "x$CUPS_FOUND" = xno; then
-
-
-  if test "x$with_builddeps_server" != x || test "x$with_builddeps_conf" != x; then
-    # Source the builddeps file again, to make sure it uses the latest variables!
-    . $builddepsfile
-    # Look for a target and build machine specific resource!
-    eval resource=\${builddep_cups_BUILD_${rewritten_build_var}_TARGET_${rewritten_target_var}}
-    if test "x$resource" = x; then
-      # Ok, lets instead look for a target specific resource
-      eval resource=\${builddep_cups_TARGET_${rewritten_target_var}}
-    fi
-    if test "x$resource" = x; then
-      # Ok, lets instead look for a build specific resource
-      eval resource=\${builddep_cups_BUILD_${rewritten_build_var}}
-    fi
-    if test "x$resource" = x; then
-      # Ok, lets instead look for a generic resource
-      # (The cups comes from M4 and not the shell, thus no need for eval here.)
-      resource=${builddep_cups}
-    fi
-    if test "x$resource" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Using builddeps $resource for cups" >&5
-$as_echo "$as_me: Using builddeps $resource for cups" >&6;}
-      # If the resource in the builddeps.conf file is an existing directory,
-      # for example /java/linux/cups
-      if test -d ${resource}; then
-        depdir=${resource}
-      else
-
-  # cups is for example mymodule
-  # $resource is for example libs/general/libmymod_1_2_3.zip
-  # $with_builddeps_server is for example ftp://mybuilddeps.myserver.com/builddeps
-  # $with_builddeps_dir is for example /localhome/builddeps
-  # depdir is the name of the variable into which we store the depdir, eg MYMOD
-  # Will download ftp://mybuilddeps.myserver.com/builddeps/libs/general/libmymod_1_2_3.zip and
-  # unzip into the directory: /localhome/builddeps/libmymod_1_2_3
-  filename=`basename $resource`
-  filebase=`echo $filename | sed 's/\.[^\.]*$//'`
-  filebase=${filename%%.*}
-  extension=${filename#*.}
-  installdir=$with_builddeps_dir/$filebase
-  if test ! -f $installdir/$filename.unpacked; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Downloading build dependency cups from $with_builddeps_server/$resource and installing into $installdir" >&5
-$as_echo "$as_me: Downloading build dependency cups from $with_builddeps_server/$resource and installing into $installdir" >&6;}
-    if test ! -d $installdir; then
-      mkdir -p $installdir
-    fi
-    if test ! -d $installdir; then
-      as_fn_error $? "Could not create directory $installdir" "$LINENO" 5
-    fi
-    tmpfile=`mktemp $installdir/cups.XXXXXXXXX`
-    touch $tmpfile
-    if test ! -f $tmpfile; then
-      as_fn_error $? "Could not create files in directory $installdir" "$LINENO" 5
-    fi
-
-  # $with_builddeps_server/$resource  is the ftp://abuilddeps.server.com/libs/cups.zip
-  # $tmpfile is the local file name for the downloaded file.
-  VALID_TOOL=no
-  if test "x$BDEPS_FTP" = xwget; then
-    VALID_TOOL=yes
-    wget -O $tmpfile $with_builddeps_server/$resource
-  fi
-  if test "x$BDEPS_FTP" = xlftp; then
-    VALID_TOOL=yes
-    lftp -c "get $with_builddeps_server/$resource  -o $tmpfile"
-  fi
-  if test "x$BDEPS_FTP" = xftp; then
-    VALID_TOOL=yes
-    FTPSERVER=`echo $with_builddeps_server/$resource  | cut -f 3 -d '/'`
-    FTPPATH=`echo $with_builddeps_server/$resource  | cut -f 4- -d '/'`
-    FTPUSERPWD=${FTPSERVER%%@*}
-    if test "x$FTPSERVER" != "x$FTPUSERPWD"; then
-      FTPUSER=${userpwd%%:*}
-      FTPPWD=${userpwd#*@}
-      FTPSERVER=${FTPSERVER#*@}
-    else
-      FTPUSER=ftp
-      FTPPWD=ftp
-    fi
-    # the "pass" command does not work on some
-    # ftp clients (read ftp.exe) but if it works,
-    # passive mode is better!
-    ( \
-        echo "user $FTPUSER $FTPPWD"        ; \
-        echo "pass"                         ; \
-        echo "bin"                          ; \
-        echo "get $FTPPATH $tmpfile"              ; \
-    ) | ftp -in $FTPSERVER
-  fi
-  if test "x$VALID_TOOL" != xyes; then
-    as_fn_error $? "I do not know how to use the tool: $BDEPS_FTP" "$LINENO" 5
-  fi
-
-    mv $tmpfile $installdir/$filename
-    if test ! -s $installdir/$filename; then
-      as_fn_error $? "Could not download $with_builddeps_server/$resource" "$LINENO" 5
-    fi
-    case "$extension" in
-      zip)  echo "Unzipping $installdir/$filename..."
-        (cd $installdir ; rm -f $installdir/$filename.unpacked ; $BDEPS_UNZIP $installdir/$filename > /dev/null && touch $installdir/$filename.unpacked)
-        ;;
-      tar.gz) echo "Untaring $installdir/$filename..."
-        (cd $installdir ; rm -f $installdir/$filename.unpacked ; tar xzf $installdir/$filename && touch $installdir/$filename.unpacked)
-        ;;
-      tgz) echo "Untaring $installdir/$filename..."
-        (cd $installdir ; rm -f $installdir/$filename.unpacked ; tar xzf $installdir/$filename && touch $installdir/$filename.unpacked)
-        ;;
-      *) as_fn_error $? "Cannot handle build depency archive with extension $extension" "$LINENO" 5
-        ;;
-    esac
-  fi
-  if test -f $installdir/$filename.unpacked; then
-    depdir=$installdir
-  fi
-
-      fi
-      # Source the builddeps file again, because in the previous command, the depdir
-      # was updated to point at the current build dependency install directory.
-      . $builddepsfile
-      # Now extract variables from the builddeps.conf files.
-      theroot=${builddep_cups_ROOT}
-      thecflags=${builddep_cups_CFLAGS}
-      thelibs=${builddep_cups_LIBS}
-      if test "x$depdir" = x; then
-        as_fn_error $? "Could not download build dependency cups" "$LINENO" 5
-      fi
-      CUPS=$depdir
-      if test "x$theroot" != x; then
-        CUPS="$theroot"
-      fi
-      if test "x$thecflags" != x; then
-        CUPS_CFLAGS="$thecflags"
-      fi
-      if test "x$thelibs" != x; then
-        CUPS_LIBS="$thelibs"
-      fi
-      CUPS_FOUND=yes
-
-    fi
-
-  fi
-
-    fi
-    if test "x$CUPS_FOUND" = xno; then
       # Are the cups headers installed in the default /usr/include location?
       for ac_header in cups/cups.h cups/ppd.h
 do :
@@ -44222,10 +47584,9 @@ if eval test \"x\$"$as_ac_Header"\" = x"yes"; then :
 #define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
 _ACEOF
 
-            CUPS_FOUND=yes
-            CUPS_CFLAGS=
-            DEFAULT_CUPS=yes
-
+          CUPS_FOUND=yes
+          CUPS_CFLAGS=
+          DEFAULT_CUPS=yes
 
 fi
 
@@ -44252,7 +47613,7 @@ $as_echo "$CUPS_FOUND" >&6; }
     if test "x$CUPS_FOUND" = xno; then
 
   # Print a helpful message on how to acquire the necessary build dependency.
-  # cups is the help tag: freetype, cups, pulse, alsa etc
+  # cups is the help tag: freetype, cups, alsa etc
   MISSING_DEPENDENCY=cups
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -44287,12 +47648,6 @@ $as_echo "$CUPS_FOUND" >&6; }
 
 
 
-
-
-  ###############################################################################
-  #
-  # The ubiquitous freetype library is used to render fonts.
-  #
 
 # Check whether --with-freetype was given.
 if test "${with_freetype+set}" = set; then :
@@ -44329,7 +47684,7 @@ fi
   FREETYPE_LIBS=
   FREETYPE_BUNDLE_LIB_PATH=
 
-  if test "x$FREETYPE_NOT_NEEDED" = xyes; then
+  if test "x$NEEDS_LIB_FREETYPE" = xfalse; then
     if test "x$with_freetype" != x || test "x$with_freetype_include" != x || test "x$with_freetype_lib" != x || test "x$with_freetype_src" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: freetype not used, so --with-freetype is ignored" >&5
 $as_echo "$as_me: WARNING: freetype not used, so --with-freetype is ignored" >&2;}
@@ -44352,15 +47707,15 @@ $as_echo "$as_me: WARNING: freetype not used, so --enable-freetype-bundling is i
 
   # Check if the freetype sources are acessible..
   if ! test -d $FREETYPE_SRC_PATH; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-freetype-src specified, but can't find path \"$FREETYPE_SRC_PATH\" - ignoring --with-freetype-src" >&5
-$as_echo "$as_me: WARNING: --with-freetype-src specified, but can't find path \"$FREETYPE_SRC_PATH\" - ignoring --with-freetype-src" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-freetype-src specified, but can not find path \"$FREETYPE_SRC_PATH\" - ignoring --with-freetype-src" >&5
+$as_echo "$as_me: WARNING: --with-freetype-src specified, but can not find path \"$FREETYPE_SRC_PATH\" - ignoring --with-freetype-src" >&2;}
     BUILD_FREETYPE=no
   fi
   # ..and contain a vc2010 project file
   vcxproj_path="$FREETYPE_SRC_PATH/builds/windows/vc2010/freetype.vcxproj"
   if test "x$BUILD_FREETYPE" = xyes && ! test -s $vcxproj_path; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Can't find project file $vcxproj_path (you may try a newer freetype version) - ignoring --with-freetype-src" >&5
-$as_echo "$as_me: WARNING: Can't find project file $vcxproj_path (you may try a newer freetype version) - ignoring --with-freetype-src" >&2;}
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Can not find project file $vcxproj_path (you may try a newer freetype version) - ignoring --with-freetype-src" >&5
+$as_echo "$as_me: WARNING: Can not find project file $vcxproj_path (you may try a newer freetype version) - ignoring --with-freetype-src" >&2;}
     BUILD_FREETYPE=no
   fi
   # Now check if configure found a version of 'msbuild.exe'
@@ -44372,7 +47727,6 @@ $as_echo "$as_me: WARNING: Can not find an msbuild.exe executable (you may try t
 
   # Ready to go..
   if test "x$BUILD_FREETYPE" = xyes; then
-
     # msbuild requires trailing slashes for output directories
     freetype_lib_path="$FREETYPE_SRC_PATH/lib$OPENJDK_TARGET_CPU_BITS/"
     freetype_lib_path_unix="$freetype_lib_path"
@@ -44422,37 +47776,37 @@ $as_echo "$as_me: Trying to compile freetype sources with PlatformToolset=$PLATF
 
     # First we try to build the freetype.dll
     $ECHO -e "@echo off\n"\
-	     "$MSBUILD $vcxproj_path "\
-		       "/p:PlatformToolset=$PLATFORM_TOOLSET "\
-		       "/p:Configuration=\"Release Multithreaded\" "\
-		       "/p:Platform=$freetype_platform "\
-		       "/p:ConfigurationType=DynamicLibrary "\
-		       "/p:TargetName=freetype "\
-		       "/p:OutDir=\"$freetype_lib_path\" "\
-		       "/p:IntDir=\"$freetype_obj_path\" > freetype.log" > freetype.bat
+        "$MSBUILD $vcxproj_path "\
+        "/p:PlatformToolset=$PLATFORM_TOOLSET "\
+        "/p:Configuration=\"Release Multithreaded\" "\
+        "/p:Platform=$freetype_platform "\
+        "/p:ConfigurationType=DynamicLibrary "\
+        "/p:TargetName=freetype "\
+        "/p:OutDir=\"$freetype_lib_path\" "\
+        "/p:IntDir=\"$freetype_obj_path\" > freetype.log" > freetype.bat
     cmd /c freetype.bat
 
     if test -s "$freetype_lib_path_unix/freetype.dll"; then
       # If that succeeds we also build freetype.lib
       $ECHO -e "@echo off\n"\
-	       "$MSBUILD $vcxproj_path "\
-			 "/p:PlatformToolset=$PLATFORM_TOOLSET "\
-			 "/p:Configuration=\"Release Multithreaded\" "\
-			 "/p:Platform=$freetype_platform "\
-			 "/p:ConfigurationType=StaticLibrary "\
-			 "/p:TargetName=freetype "\
-			 "/p:OutDir=\"$freetype_lib_path\" "\
-			 "/p:IntDir=\"$freetype_obj_path\" >> freetype.log" > freetype.bat
+          "$MSBUILD $vcxproj_path "\
+          "/p:PlatformToolset=$PLATFORM_TOOLSET "\
+          "/p:Configuration=\"Release Multithreaded\" "\
+          "/p:Platform=$freetype_platform "\
+          "/p:ConfigurationType=StaticLibrary "\
+          "/p:TargetName=freetype "\
+          "/p:OutDir=\"$freetype_lib_path\" "\
+          "/p:IntDir=\"$freetype_obj_path\" >> freetype.log" > freetype.bat
       cmd /c freetype.bat
 
       if test -s "$freetype_lib_path_unix/freetype.lib"; then
-	# Once we build both, lib and dll, set freetype lib and include path appropriately
-	POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_SRC_PATH/include"
-	POTENTIAL_FREETYPE_LIB_PATH="$freetype_lib_path_unix"
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: Compiling freetype sources succeeded! (see freetype.log for build results)" >&5
+        # Once we build both, lib and dll, set freetype lib and include path appropriately
+        POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_SRC_PATH/include"
+        POTENTIAL_FREETYPE_LIB_PATH="$freetype_lib_path_unix"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compiling freetype sources succeeded! (see freetype.log for build results)" >&5
 $as_echo "$as_me: Compiling freetype sources succeeded! (see freetype.log for build results)" >&6;}
       else
-	BUILD_FREETYPE=no
+        BUILD_FREETYPE=no
       fi
     else
       BUILD_FREETYPE=no
@@ -45173,168 +48527,6 @@ $as_echo "$as_me: User specified --with-freetype-include but not --with-freetype
         fi
       fi
 
-      if test "x$FOUND_FREETYPE" != xyes; then
-        # Check builddeps
-
-
-  if test "x$with_builddeps_server" != x || test "x$with_builddeps_conf" != x; then
-    # Source the builddeps file again, to make sure it uses the latest variables!
-    . $builddepsfile
-    # Look for a target and build machine specific resource!
-    eval resource=\${builddep_freetype2_BUILD_${rewritten_build_var}_TARGET_${rewritten_target_var}}
-    if test "x$resource" = x; then
-      # Ok, lets instead look for a target specific resource
-      eval resource=\${builddep_freetype2_TARGET_${rewritten_target_var}}
-    fi
-    if test "x$resource" = x; then
-      # Ok, lets instead look for a build specific resource
-      eval resource=\${builddep_freetype2_BUILD_${rewritten_build_var}}
-    fi
-    if test "x$resource" = x; then
-      # Ok, lets instead look for a generic resource
-      # (The freetype2 comes from M4 and not the shell, thus no need for eval here.)
-      resource=${builddep_freetype2}
-    fi
-    if test "x$resource" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Using builddeps $resource for freetype2" >&5
-$as_echo "$as_me: Using builddeps $resource for freetype2" >&6;}
-      # If the resource in the builddeps.conf file is an existing directory,
-      # for example /java/linux/cups
-      if test -d ${resource}; then
-        depdir=${resource}
-      else
-
-  # freetype2 is for example mymodule
-  # $resource is for example libs/general/libmymod_1_2_3.zip
-  # $with_builddeps_server is for example ftp://mybuilddeps.myserver.com/builddeps
-  # $with_builddeps_dir is for example /localhome/builddeps
-  # depdir is the name of the variable into which we store the depdir, eg MYMOD
-  # Will download ftp://mybuilddeps.myserver.com/builddeps/libs/general/libmymod_1_2_3.zip and
-  # unzip into the directory: /localhome/builddeps/libmymod_1_2_3
-  filename=`basename $resource`
-  filebase=`echo $filename | sed 's/\.[^\.]*$//'`
-  filebase=${filename%%.*}
-  extension=${filename#*.}
-  installdir=$with_builddeps_dir/$filebase
-  if test ! -f $installdir/$filename.unpacked; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Downloading build dependency freetype2 from $with_builddeps_server/$resource and installing into $installdir" >&5
-$as_echo "$as_me: Downloading build dependency freetype2 from $with_builddeps_server/$resource and installing into $installdir" >&6;}
-    if test ! -d $installdir; then
-      mkdir -p $installdir
-    fi
-    if test ! -d $installdir; then
-      as_fn_error $? "Could not create directory $installdir" "$LINENO" 5
-    fi
-    tmpfile=`mktemp $installdir/freetype2.XXXXXXXXX`
-    touch $tmpfile
-    if test ! -f $tmpfile; then
-      as_fn_error $? "Could not create files in directory $installdir" "$LINENO" 5
-    fi
-
-  # $with_builddeps_server/$resource  is the ftp://abuilddeps.server.com/libs/cups.zip
-  # $tmpfile is the local file name for the downloaded file.
-  VALID_TOOL=no
-  if test "x$BDEPS_FTP" = xwget; then
-    VALID_TOOL=yes
-    wget -O $tmpfile $with_builddeps_server/$resource
-  fi
-  if test "x$BDEPS_FTP" = xlftp; then
-    VALID_TOOL=yes
-    lftp -c "get $with_builddeps_server/$resource  -o $tmpfile"
-  fi
-  if test "x$BDEPS_FTP" = xftp; then
-    VALID_TOOL=yes
-    FTPSERVER=`echo $with_builddeps_server/$resource  | cut -f 3 -d '/'`
-    FTPPATH=`echo $with_builddeps_server/$resource  | cut -f 4- -d '/'`
-    FTPUSERPWD=${FTPSERVER%%@*}
-    if test "x$FTPSERVER" != "x$FTPUSERPWD"; then
-      FTPUSER=${userpwd%%:*}
-      FTPPWD=${userpwd#*@}
-      FTPSERVER=${FTPSERVER#*@}
-    else
-      FTPUSER=ftp
-      FTPPWD=ftp
-    fi
-    # the "pass" command does not work on some
-    # ftp clients (read ftp.exe) but if it works,
-    # passive mode is better!
-    ( \
-        echo "user $FTPUSER $FTPPWD"        ; \
-        echo "pass"                         ; \
-        echo "bin"                          ; \
-        echo "get $FTPPATH $tmpfile"              ; \
-    ) | ftp -in $FTPSERVER
-  fi
-  if test "x$VALID_TOOL" != xyes; then
-    as_fn_error $? "I do not know how to use the tool: $BDEPS_FTP" "$LINENO" 5
-  fi
-
-    mv $tmpfile $installdir/$filename
-    if test ! -s $installdir/$filename; then
-      as_fn_error $? "Could not download $with_builddeps_server/$resource" "$LINENO" 5
-    fi
-    case "$extension" in
-      zip)  echo "Unzipping $installdir/$filename..."
-        (cd $installdir ; rm -f $installdir/$filename.unpacked ; $BDEPS_UNZIP $installdir/$filename > /dev/null && touch $installdir/$filename.unpacked)
-        ;;
-      tar.gz) echo "Untaring $installdir/$filename..."
-        (cd $installdir ; rm -f $installdir/$filename.unpacked ; tar xzf $installdir/$filename && touch $installdir/$filename.unpacked)
-        ;;
-      tgz) echo "Untaring $installdir/$filename..."
-        (cd $installdir ; rm -f $installdir/$filename.unpacked ; tar xzf $installdir/$filename && touch $installdir/$filename.unpacked)
-        ;;
-      *) as_fn_error $? "Cannot handle build depency archive with extension $extension" "$LINENO" 5
-        ;;
-    esac
-  fi
-  if test -f $installdir/$filename.unpacked; then
-    depdir=$installdir
-  fi
-
-      fi
-      # Source the builddeps file again, because in the previous command, the depdir
-      # was updated to point at the current build dependency install directory.
-      . $builddepsfile
-      # Now extract variables from the builddeps.conf files.
-      theroot=${builddep_freetype2_ROOT}
-      thecflags=${builddep_freetype2_CFLAGS}
-      thelibs=${builddep_freetype2_LIBS}
-      if test "x$depdir" = x; then
-        as_fn_error $? "Could not download build dependency freetype2" "$LINENO" 5
-      fi
-      FREETYPE=$depdir
-      if test "x$theroot" != x; then
-        FREETYPE="$theroot"
-      fi
-      if test "x$thecflags" != x; then
-        FREETYPE_CFLAGS="$thecflags"
-      fi
-      if test "x$thelibs" != x; then
-        FREETYPE_LIBS="$thelibs"
-      fi
-      FOUND_FREETYPE=yes
-      else FOUND_FREETYPE=no
-
-    fi
-    else FOUND_FREETYPE=no
-
-  fi
-
-        # BDEPS_CHECK_MODULE will set FREETYPE_CFLAGS and _LIBS, but we don't get a lib path for bundling.
-        if test "x$FOUND_FREETYPE" = xyes; then
-          if test "x$BUNDLE_FREETYPE" = xyes; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype using builddeps, but ignoring since we can not bundle that" >&5
-$as_echo "$as_me: Found freetype using builddeps, but ignoring since we can not bundle that" >&6;}
-            FOUND_FREETYPE=no
-          else
-            { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype" >&5
-$as_echo_n "checking for freetype... " >&6; }
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes (using builddeps)" >&5
-$as_echo "yes (using builddeps)" >&6; }
-          fi
-        fi
-      fi
-
       # If we have a sysroot, assume that's where we are supposed to look and skip pkg-config.
       if test "x$SYSROOT" = x; then
         if test "x$FOUND_FREETYPE" != xyes; then
@@ -45414,7 +48606,7 @@ fi
               if test "x$OPENJDK_TARGET_OS" = xsolaris && test "x$OPENJDK_TARGET_CPU" = xx86_64; then
                 FREETYPE_LIBS=`$ECHO $FREETYPE_LIBS | $SED 's?/lib?/lib/amd64?g'`
               fi
-              # BDEPS_CHECK_MODULE will set FREETYPE_CFLAGS and _LIBS, but we don't get a lib path for bundling.
+              # PKG_CHECK_MODULES will set FREETYPE_CFLAGS and _LIBS, but we don't get a lib path for bundling.
               if test "x$BUNDLE_FREETYPE" = xyes; then
                 { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype using pkg-config, but ignoring since we can not bundle that" >&5
 $as_echo "$as_me: Found freetype using pkg-config, but ignoring since we can not bundle that" >&6;}
@@ -48074,7 +51266,7 @@ $as_echo "$FREETYPE_LIB_PATH" >&6; }
       if test "x$FOUND_FREETYPE" != xyes; then
 
   # Print a helpful message on how to acquire the necessary build dependency.
-  # freetype is the help tag: freetype, cups, pulse, alsa etc
+  # freetype is the help tag: freetype, cups, alsa etc
   MISSING_DEPENDENCY=freetype
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -48417,7 +51609,7 @@ $as_echo "$as_me: Using FREETYPE_CFLAGS=$FREETYPE_CFLAGS and FREETYPE_LIBS=$FREE
 
 
   # Print a helpful message on how to acquire the necessary build dependency.
-  # freetype is the help tag: freetype, cups, pulse, alsa etc
+  # freetype is the help tag: freetype, cups, alsa etc
   MISSING_DEPENDENCY=freetype
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -48478,11 +51670,6 @@ $as_echo "$BUNDLE_FREETYPE" >&6; }
 
 
 
-  ###############################################################################
-  #
-  # Check for alsa headers and libraries. Used on Linux/GNU systems.
-  #
-
 # Check whether --with-alsa was given.
 if test "${with_alsa+set}" = set; then :
   withval=$with_alsa;
@@ -48501,7 +51688,7 @@ if test "${with_alsa_lib+set}" = set; then :
 fi
 
 
-  if test "x$ALSA_NOT_NEEDED" = xyes; then
+  if test "x$NEEDS_LIB_ALSA" = xfalse; then
     if test "x${with_alsa}" != x || test "x${with_alsa_include}" != x || test "x${with_alsa_lib}" != x; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: alsa not used, so --with-alsa is ignored" >&5
 $as_echo "$as_me: WARNING: alsa not used, so --with-alsa is ignored" >&2;}
@@ -48527,153 +51714,6 @@ $as_echo "$as_me: WARNING: alsa not used, so --with-alsa is ignored" >&2;}
     if test "x${with_alsa_lib}" != x; then
       ALSA_LIBS="-L${with_alsa_lib} -lasound"
       ALSA_FOUND=yes
-    fi
-    if test "x$ALSA_FOUND" = xno; then
-
-
-  if test "x$with_builddeps_server" != x || test "x$with_builddeps_conf" != x; then
-    # Source the builddeps file again, to make sure it uses the latest variables!
-    . $builddepsfile
-    # Look for a target and build machine specific resource!
-    eval resource=\${builddep_alsa_BUILD_${rewritten_build_var}_TARGET_${rewritten_target_var}}
-    if test "x$resource" = x; then
-      # Ok, lets instead look for a target specific resource
-      eval resource=\${builddep_alsa_TARGET_${rewritten_target_var}}
-    fi
-    if test "x$resource" = x; then
-      # Ok, lets instead look for a build specific resource
-      eval resource=\${builddep_alsa_BUILD_${rewritten_build_var}}
-    fi
-    if test "x$resource" = x; then
-      # Ok, lets instead look for a generic resource
-      # (The alsa comes from M4 and not the shell, thus no need for eval here.)
-      resource=${builddep_alsa}
-    fi
-    if test "x$resource" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Using builddeps $resource for alsa" >&5
-$as_echo "$as_me: Using builddeps $resource for alsa" >&6;}
-      # If the resource in the builddeps.conf file is an existing directory,
-      # for example /java/linux/cups
-      if test -d ${resource}; then
-        depdir=${resource}
-      else
-
-  # alsa is for example mymodule
-  # $resource is for example libs/general/libmymod_1_2_3.zip
-  # $with_builddeps_server is for example ftp://mybuilddeps.myserver.com/builddeps
-  # $with_builddeps_dir is for example /localhome/builddeps
-  # depdir is the name of the variable into which we store the depdir, eg MYMOD
-  # Will download ftp://mybuilddeps.myserver.com/builddeps/libs/general/libmymod_1_2_3.zip and
-  # unzip into the directory: /localhome/builddeps/libmymod_1_2_3
-  filename=`basename $resource`
-  filebase=`echo $filename | sed 's/\.[^\.]*$//'`
-  filebase=${filename%%.*}
-  extension=${filename#*.}
-  installdir=$with_builddeps_dir/$filebase
-  if test ! -f $installdir/$filename.unpacked; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Downloading build dependency alsa from $with_builddeps_server/$resource and installing into $installdir" >&5
-$as_echo "$as_me: Downloading build dependency alsa from $with_builddeps_server/$resource and installing into $installdir" >&6;}
-    if test ! -d $installdir; then
-      mkdir -p $installdir
-    fi
-    if test ! -d $installdir; then
-      as_fn_error $? "Could not create directory $installdir" "$LINENO" 5
-    fi
-    tmpfile=`mktemp $installdir/alsa.XXXXXXXXX`
-    touch $tmpfile
-    if test ! -f $tmpfile; then
-      as_fn_error $? "Could not create files in directory $installdir" "$LINENO" 5
-    fi
-
-  # $with_builddeps_server/$resource  is the ftp://abuilddeps.server.com/libs/cups.zip
-  # $tmpfile is the local file name for the downloaded file.
-  VALID_TOOL=no
-  if test "x$BDEPS_FTP" = xwget; then
-    VALID_TOOL=yes
-    wget -O $tmpfile $with_builddeps_server/$resource
-  fi
-  if test "x$BDEPS_FTP" = xlftp; then
-    VALID_TOOL=yes
-    lftp -c "get $with_builddeps_server/$resource  -o $tmpfile"
-  fi
-  if test "x$BDEPS_FTP" = xftp; then
-    VALID_TOOL=yes
-    FTPSERVER=`echo $with_builddeps_server/$resource  | cut -f 3 -d '/'`
-    FTPPATH=`echo $with_builddeps_server/$resource  | cut -f 4- -d '/'`
-    FTPUSERPWD=${FTPSERVER%%@*}
-    if test "x$FTPSERVER" != "x$FTPUSERPWD"; then
-      FTPUSER=${userpwd%%:*}
-      FTPPWD=${userpwd#*@}
-      FTPSERVER=${FTPSERVER#*@}
-    else
-      FTPUSER=ftp
-      FTPPWD=ftp
-    fi
-    # the "pass" command does not work on some
-    # ftp clients (read ftp.exe) but if it works,
-    # passive mode is better!
-    ( \
-        echo "user $FTPUSER $FTPPWD"        ; \
-        echo "pass"                         ; \
-        echo "bin"                          ; \
-        echo "get $FTPPATH $tmpfile"              ; \
-    ) | ftp -in $FTPSERVER
-  fi
-  if test "x$VALID_TOOL" != xyes; then
-    as_fn_error $? "I do not know how to use the tool: $BDEPS_FTP" "$LINENO" 5
-  fi
-
-    mv $tmpfile $installdir/$filename
-    if test ! -s $installdir/$filename; then
-      as_fn_error $? "Could not download $with_builddeps_server/$resource" "$LINENO" 5
-    fi
-    case "$extension" in
-      zip)  echo "Unzipping $installdir/$filename..."
-        (cd $installdir ; rm -f $installdir/$filename.unpacked ; $BDEPS_UNZIP $installdir/$filename > /dev/null && touch $installdir/$filename.unpacked)
-        ;;
-      tar.gz) echo "Untaring $installdir/$filename..."
-        (cd $installdir ; rm -f $installdir/$filename.unpacked ; tar xzf $installdir/$filename && touch $installdir/$filename.unpacked)
-        ;;
-      tgz) echo "Untaring $installdir/$filename..."
-        (cd $installdir ; rm -f $installdir/$filename.unpacked ; tar xzf $installdir/$filename && touch $installdir/$filename.unpacked)
-        ;;
-      *) as_fn_error $? "Cannot handle build depency archive with extension $extension" "$LINENO" 5
-        ;;
-    esac
-  fi
-  if test -f $installdir/$filename.unpacked; then
-    depdir=$installdir
-  fi
-
-      fi
-      # Source the builddeps file again, because in the previous command, the depdir
-      # was updated to point at the current build dependency install directory.
-      . $builddepsfile
-      # Now extract variables from the builddeps.conf files.
-      theroot=${builddep_alsa_ROOT}
-      thecflags=${builddep_alsa_CFLAGS}
-      thelibs=${builddep_alsa_LIBS}
-      if test "x$depdir" = x; then
-        as_fn_error $? "Could not download build dependency alsa" "$LINENO" 5
-      fi
-      ALSA=$depdir
-      if test "x$theroot" != x; then
-        ALSA="$theroot"
-      fi
-      if test "x$thecflags" != x; then
-        ALSA_CFLAGS="$thecflags"
-      fi
-      if test "x$thelibs" != x; then
-        ALSA_LIBS="$thelibs"
-      fi
-      ALSA_FOUND=yes
-      else ALSA_FOUND=no
-
-    fi
-    else ALSA_FOUND=no
-
-  fi
-
     fi
     # Do not try pkg-config if we have a sysroot set.
     if test "x$SYSROOT" = x; then
@@ -48763,6 +51803,7 @@ _ACEOF
 
 else
   ALSA_FOUND=no
+
 fi
 
 done
@@ -48771,7 +51812,7 @@ done
     if test "x$ALSA_FOUND" = xno; then
 
   # Print a helpful message on how to acquire the necessary build dependency.
-  # alsa is the help tag: freetype, cups, pulse, alsa etc
+  # alsa is the help tag: freetype, cups, alsa etc
   MISSING_DEPENDENCY=alsa
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -48799,7 +51840,7 @@ done
     fi
   fi
 
-      as_fn_error $? "Could not find alsa! $HELP_MSG " "$LINENO" 5
+      as_fn_error $? "Could not find alsa! $HELP_MSG" "$LINENO" 5
     fi
   fi
 
@@ -48808,10 +51849,346 @@ done
 
 
 
-  ###############################################################################
-  #
-  # Check for the jpeg library
-  #
+# Check whether --with-libffi was given.
+if test "${with_libffi+set}" = set; then :
+  withval=$with_libffi;
+fi
+
+
+# Check whether --with-libffi-include was given.
+if test "${with_libffi_include+set}" = set; then :
+  withval=$with_libffi_include;
+fi
+
+
+# Check whether --with-libffi-lib was given.
+if test "${with_libffi_lib+set}" = set; then :
+  withval=$with_libffi_lib;
+fi
+
+
+  if test "x$NEEDS_LIB_FFI" = xfalse; then
+    if test "x${with_libffi}" != x || test "x${with_libffi_include}" != x || test "x${with_libffi_lib}" != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libffi not used, so --with-libffi is ignored" >&5
+$as_echo "$as_me: WARNING: libffi not used, so --with-libffi is ignored" >&2;}
+    fi
+    LIBFFI_CFLAGS=
+    LIBFFI_LIBS=
+  else
+    LIBFFI_FOUND=no
+
+    if test "x${with_libffi}" = xno || test "x${with_libffi_include}" = xno || test "x${with_libffi_lib}" = xno; then
+      as_fn_error $? "It is not possible to disable the use of libffi. Remove the --without-libffi option." "$LINENO" 5
+    fi
+
+    if test "x${with_libffi}" != x; then
+      LIBFFI_LIBS="-L${with_libffi}/lib -lffi"
+      LIBFFI_CFLAGS="-I${with_libffi}/include"
+      LIBFFI_FOUND=yes
+    fi
+    if test "x${with_libffi_include}" != x; then
+      LIBFFI_CFLAGS="-I${with_libffi_include}"
+      LIBFFI_FOUND=yes
+    fi
+    if test "x${with_libffi_lib}" != x; then
+      LIBFFI_LIBS="-L${with_libffi_lib} -lffi"
+      LIBFFI_FOUND=yes
+    fi
+    # Do not try pkg-config if we have a sysroot set.
+    if test "x$SYSROOT" = x; then
+      if test "x$LIBFFI_FOUND" = xno; then
+        # Figure out LIBFFI_CFLAGS and LIBFFI_LIBS
+
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBFFI" >&5
+$as_echo_n "checking for LIBFFI... " >&6; }
+
+if test -n "$LIBFFI_CFLAGS"; then
+    pkg_cv_LIBFFI_CFLAGS="$LIBFFI_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libffi\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libffi") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBFFI_CFLAGS=`$PKG_CONFIG --cflags "libffi" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LIBFFI_LIBS"; then
+    pkg_cv_LIBFFI_LIBS="$LIBFFI_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libffi\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "libffi") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LIBFFI_LIBS=`$PKG_CONFIG --libs "libffi" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LIBFFI_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libffi" 2>&1`
+        else
+	        LIBFFI_PKG_ERRORS=`$PKG_CONFIG --print-errors "libffi" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LIBFFI_PKG_ERRORS" >&5
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                LIBFFI_FOUND=no
+elif test $pkg_failed = untried; then
+	LIBFFI_FOUND=no
+else
+	LIBFFI_CFLAGS=$pkg_cv_LIBFFI_CFLAGS
+	LIBFFI_LIBS=$pkg_cv_LIBFFI_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	LIBFFI_FOUND=yes
+fi
+      fi
+    fi
+    if test "x$LIBFFI_FOUND" = xno; then
+      for ac_header in ffi.h
+do :
+  ac_fn_cxx_check_header_mongrel "$LINENO" "ffi.h" "ac_cv_header_ffi_h" "$ac_includes_default"
+if test "x$ac_cv_header_ffi_h" = xyes; then :
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_FFI_H 1
+_ACEOF
+
+            LIBFFI_FOUND=yes
+            LIBFFI_CFLAGS=
+            LIBFFI_LIBS=-lffi
+
+else
+  LIBFFI_FOUND=no
+
+fi
+
+done
+
+    fi
+    if test "x$LIBFFI_FOUND" = xno; then
+
+  # Print a helpful message on how to acquire the necessary build dependency.
+  # ffi is the help tag: freetype, cups, alsa etc
+  MISSING_DEPENDENCY=ffi
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
+
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
+  fi
+
+      as_fn_error $? "Could not find libffi! $HELP_MSG" "$LINENO" 5
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if libffi works" >&5
+$as_echo_n "checking if libffi works... " >&6; }
+    ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+    OLD_CFLAGS="$CFLAGS"
+    CFLAGS="$CFLAGS $LIBFFI_CFLAGS"
+    OLD_LIBS="$LIBS"
+    LIBS="$LIBS $LIBFFI_LIBS"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+#include <ffi.h>
+int
+main ()
+{
+
+          ffi_call(NULL, NULL, NULL, NULL);
+          return 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  LIBFFI_WORKS=yes
+else
+  LIBFFI_WORKS=no
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+    CFLAGS="$OLD_CFLAGS"
+    LIBS="$OLD_LIBS"
+    ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LIBFFI_WORKS" >&5
+$as_echo "$LIBFFI_WORKS" >&6; }
+
+    if test "x$LIBFFI_WORKS" = xno; then
+
+  # Print a helpful message on how to acquire the necessary build dependency.
+  # ffi is the help tag: freetype, cups, alsa etc
+  MISSING_DEPENDENCY=ffi
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
+
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
+  fi
+
+      as_fn_error $? "Found libffi but could not link and compile with it. $HELP_MSG" "$LINENO" 5
+    fi
+  fi
+
+
+
+
+
+  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
+    # Extract the first word of "llvm-config", so it can be a program name with args.
+set dummy llvm-config; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_prog_LLVM_CONFIG+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$LLVM_CONFIG"; then
+  ac_cv_prog_LLVM_CONFIG="$LLVM_CONFIG" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_LLVM_CONFIG="llvm-config"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+fi
+fi
+LLVM_CONFIG=$ac_cv_prog_LLVM_CONFIG
+if test -n "$LLVM_CONFIG"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LLVM_CONFIG" >&5
+$as_echo "$LLVM_CONFIG" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+
+    if test "x$LLVM_CONFIG" != xllvm-config; then
+      as_fn_error $? "llvm-config not found in $PATH." "$LINENO" 5
+    fi
+
+    llvm_components="jit mcjit engine nativecodegen native"
+    unset LLVM_CFLAGS
+    for flag in $("$LLVM_CONFIG" --cxxflags); do
+      if echo "${flag}" | grep -q '^-[ID]'; then
+        if test "${flag}" != "-D_DEBUG" ; then
+          if test "${LLVM_CFLAGS}" != "" ; then
+            LLVM_CFLAGS="${LLVM_CFLAGS} "
+          fi
+          LLVM_CFLAGS="${LLVM_CFLAGS}${flag}"
+        fi
+      fi
+    done
+    llvm_version=$("${LLVM_CONFIG}" --version | sed 's/\.//; s/svn.*//')
+    LLVM_CFLAGS="${LLVM_CFLAGS} -DSHARK_LLVM_VERSION=${llvm_version}"
+
+    unset LLVM_LDFLAGS
+    for flag in $("${LLVM_CONFIG}" --ldflags); do
+      if echo "${flag}" | grep -q '^-L'; then
+        if test "${LLVM_LDFLAGS}" != ""; then
+          LLVM_LDFLAGS="${LLVM_LDFLAGS} "
+        fi
+        LLVM_LDFLAGS="${LLVM_LDFLAGS}${flag}"
+      fi
+    done
+
+    unset LLVM_LIBS
+    for flag in $("${LLVM_CONFIG}" --libs ${llvm_components}); do
+      if echo "${flag}" | grep -q '^-l'; then
+        if test "${LLVM_LIBS}" != ""; then
+          LLVM_LIBS="${LLVM_LIBS} "
+        fi
+        LLVM_LIBS="${LLVM_LIBS}${flag}"
+      fi
+    done
+
+
+
+
+  fi
+
 
 
 # Check whether --with-libjpeg was given.
@@ -48822,17 +52199,12 @@ fi
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for which libjpeg to use" >&5
 $as_echo_n "checking for which libjpeg to use... " >&6; }
-
   # default is bundled
   DEFAULT_LIBJPEG=bundled
-
-  #
   # if user didn't specify, use DEFAULT_LIBJPEG
-  #
   if test "x${with_libjpeg}" = "x"; then
     with_libjpeg=${DEFAULT_LIBJPEG}
   fi
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${with_libjpeg}" >&5
 $as_echo "${with_libjpeg}" >&6; }
 
@@ -48902,10 +52274,6 @@ fi
 
 
 
-  ###############################################################################
-  #
-  # Check for the gif library
-  #
 
 
 # Check whether --with-giflib was given.
@@ -48914,20 +52282,14 @@ if test "${with_giflib+set}" = set; then :
 fi
 
 
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for which giflib to use" >&5
 $as_echo_n "checking for which giflib to use... " >&6; }
-
   # default is bundled
   DEFAULT_GIFLIB=bundled
-
-  #
   # if user didn't specify, use DEFAULT_GIFLIB
-  #
   if test "x${with_giflib}" = "x"; then
     with_giflib=${DEFAULT_GIFLIB}
   fi
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${with_giflib}" >&5
 $as_echo "${with_giflib}" >&6; }
 
@@ -48996,119 +52358,7 @@ fi
   fi
 
 
-  ###############################################################################
-  #
-  # Check for the lcms2 library
-  #
 
-
-# Check whether --with-lcms was given.
-if test "${with_lcms+set}" = set; then :
-  withval=$with_lcms;
-fi
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for which lcms to use" >&5
-$as_echo_n "checking for which lcms to use... " >&6; }
-
-  DEFAULT_LCMS=bundled
-
-  #
-  # If user didn't specify, use DEFAULT_LCMS
-  #
-  if test "x${with_lcms}" = "x"; then
-      with_lcms=${DEFAULT_LCMS}
-  fi
-
-  if test "x${with_lcms}" = "xbundled"; then
-    USE_EXTERNAL_LCMS=false
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: bundled" >&5
-$as_echo "bundled" >&6; }
-  elif test "x${with_lcms}" = "xsystem"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: system" >&5
-$as_echo "system" >&6; }
-
-pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LCMS" >&5
-$as_echo_n "checking for LCMS... " >&6; }
-
-if test -n "$LCMS_CFLAGS"; then
-    pkg_cv_LCMS_CFLAGS="$LCMS_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"lcms2\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "lcms2") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_LCMS_CFLAGS=`$PKG_CONFIG --cflags "lcms2" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$LCMS_LIBS"; then
-    pkg_cv_LCMS_LIBS="$LCMS_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"lcms2\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "lcms2") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_LCMS_LIBS=`$PKG_CONFIG --libs "lcms2" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        LCMS_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "lcms2" 2>&1`
-        else
-	        LCMS_PKG_ERRORS=`$PKG_CONFIG --print-errors "lcms2" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$LCMS_PKG_ERRORS" >&5
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-                LCMS_FOUND=no
-elif test $pkg_failed = untried; then
-	LCMS_FOUND=no
-else
-	LCMS_CFLAGS=$pkg_cv_LCMS_CFLAGS
-	LCMS_LIBS=$pkg_cv_LCMS_LIBS
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-	LCMS_FOUND=yes
-fi
-    if test "x${LCMS_FOUND}" = "xyes"; then
-      USE_EXTERNAL_LCMS=true
-    else
-      as_fn_error $? "--with-lcms=system specified, but no lcms found!" "$LINENO" 5
-    fi
-  else
-    as_fn_error $? "Invalid value for --with-lcms: ${with_lcms}, use 'system' or 'bundled'" "$LINENO" 5
-  fi
-
-
-
-  ###############################################################################
-  #
-  # Check for the png library
-  #
 
 
 # Check whether --with-libpng was given.
@@ -49117,16 +52367,12 @@ if test "${with_libpng+set}" = set; then :
 fi
 
 
-
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for which libpng to use" >&5
 $as_echo_n "checking for which libpng to use... " >&6; }
 
   # default is bundled
   DEFAULT_LIBPNG=bundled
-
-  #
   # if user didn't specify, use DEFAULT_LIBPNG
-  #
   if test "x${with_libpng}" = "x"; then
       with_libpng=${DEFAULT_LIBPNG}
   fi
@@ -49217,10 +52463,7 @@ $as_echo "system not found" >&6; }
   fi
 
 
-  ###############################################################################
-  #
-  # Check for the zlib library
-  #
+
 
 
 # Check whether --with-zlib was given.
@@ -49277,22 +52520,16 @@ $as_echo_n "checking for which zlib to use... " >&6; }
 
   DEFAULT_ZLIB=bundled
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    #
-    # On macosx default is system...on others default is
-    #
+    # On macosx default is system...on others default is bundled
     DEFAULT_ZLIB=system
   fi
 
   if test "x${ZLIB_FOUND}" != "xyes"; then
-    #
     # If we don't find any system...set default to bundled
-    #
     DEFAULT_ZLIB=bundled
   fi
 
-  #
   # If user didn't specify, use DEFAULT_ZLIB
-  #
   if test "x${with_zlib}" = "x"; then
     with_zlib=${DEFAULT_ZLIB}
   fi
@@ -49317,45 +52554,117 @@ $as_echo "system not found" >&6; }
 
 
 
-  ###############################################################################
-  LIBZIP_CAN_USE_MMAP=true
 
 
-
-  ###############################################################################
-  #
-  # Check if altzone exists in time.h
-  #
-
-  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <time.h>
-int
-main ()
-{
-return (int)altzone;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  has_altzone=yes
-else
-  has_altzone=no
+# Check whether --with-lcms was given.
+if test "${with_lcms+set}" = set; then :
+  withval=$with_lcms;
 fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-  if test "x$has_altzone" = xyes; then
 
-$as_echo "#define HAVE_ALTZONE 1" >>confdefs.h
 
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for which lcms to use" >&5
+$as_echo_n "checking for which lcms to use... " >&6; }
+
+  DEFAULT_LCMS=bundled
+  # If user didn't specify, use DEFAULT_LCMS
+  if test "x${with_lcms}" = "x"; then
+      with_lcms=${DEFAULT_LCMS}
   fi
 
-  ###############################################################################
-  #
-  # Check the maths library
-  #
+  if test "x${with_lcms}" = "xbundled"; then
+    USE_EXTERNAL_LCMS=false
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: bundled" >&5
+$as_echo "bundled" >&6; }
+  elif test "x${with_lcms}" = "xsystem"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: system" >&5
+$as_echo "system" >&6; }
 
+pkg_failed=no
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LCMS" >&5
+$as_echo_n "checking for LCMS... " >&6; }
+
+if test -n "$LCMS_CFLAGS"; then
+    pkg_cv_LCMS_CFLAGS="$LCMS_CFLAGS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"lcms2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "lcms2") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LCMS_CFLAGS=`$PKG_CONFIG --cflags "lcms2" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+if test -n "$LCMS_LIBS"; then
+    pkg_cv_LCMS_LIBS="$LCMS_LIBS"
+ elif test -n "$PKG_CONFIG"; then
+    if test -n "$PKG_CONFIG" && \
+    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"lcms2\""; } >&5
+  ($PKG_CONFIG --exists --print-errors "lcms2") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
+  test $ac_status = 0; }; then
+  pkg_cv_LCMS_LIBS=`$PKG_CONFIG --libs "lcms2" 2>/dev/null`
+else
+  pkg_failed=yes
+fi
+ else
+    pkg_failed=untried
+fi
+
+
+
+if test $pkg_failed = yes; then
+
+if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
+        _pkg_short_errors_supported=yes
+else
+        _pkg_short_errors_supported=no
+fi
+        if test $_pkg_short_errors_supported = yes; then
+	        LCMS_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "lcms2" 2>&1`
+        else
+	        LCMS_PKG_ERRORS=`$PKG_CONFIG --print-errors "lcms2" 2>&1`
+        fi
+	# Put the nasty error message in config.log where it belongs
+	echo "$LCMS_PKG_ERRORS" >&5
+
+	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+                LCMS_FOUND=no
+elif test $pkg_failed = untried; then
+	LCMS_FOUND=no
+else
+	LCMS_CFLAGS=$pkg_cv_LCMS_CFLAGS
+	LCMS_LIBS=$pkg_cv_LCMS_LIBS
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+	LCMS_FOUND=yes
+fi
+    if test "x${LCMS_FOUND}" = "xyes"; then
+      USE_EXTERNAL_LCMS=true
+    else
+      as_fn_error $? "--with-lcms=system specified, but no lcms found!" "$LINENO" 5
+    fi
+  else
+    as_fn_error $? "Invalid value for --with-lcms: ${with_lcms}, use 'system' or 'bundled'" "$LINENO" 5
+  fi
+
+
+
+
+
+
+
+
+
+
+
+  # Setup libm (the maths library)
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cos in -lm" >&5
 $as_echo_n "checking for cos in -lm... " >&6; }
 if ${ac_cv_lib_m_cos+:} false; then :
@@ -49401,18 +52710,15 @@ _ACEOF
 
 else
 
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Maths library was not found" >&5
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Maths library was not found" >&5
 $as_echo "$as_me: Maths library was not found" >&6;}
-
 
 fi
 
+  LIBM=-lm
 
 
-  ###############################################################################
-  #
-  # Check for libdl.so
-
+  # Setup libdl (for dynamic library loading)
   save_LIBS="$LIBS"
   LIBS=""
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking for dlopen in -ldl" >&5
@@ -49464,2945 +52770,8 @@ fi
 
   LIBS="$save_LIBS"
 
-
-  ###############################################################################
-  #
-  # statically link libstdc++ before C++ ABI is stablized on Linux unless
-  # dynamic build is configured on command line.
-  #
-
-# Check whether --with-stdc++lib was given.
-if test "${with_stdc__lib+set}" = set; then :
-  withval=$with_stdc__lib;
-        if test "x$with_stdc__lib" != xdynamic && test "x$with_stdc__lib" != xstatic \
-                && test "x$with_stdc__lib" != xdefault; then
-          as_fn_error $? "Bad parameter value --with-stdc++lib=$with_stdc__lib!" "$LINENO" 5
-        fi
-
-else
-  with_stdc__lib=default
-
-fi
-
-
-  if test "x$OPENJDK_TARGET_OS" = xlinux; then
-    # Test if -lstdc++ works.
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if dynamic link of stdc++ is possible" >&5
-$as_echo_n "checking if dynamic link of stdc++ is possible... " >&6; }
-    ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-    OLD_CXXFLAGS="$CXXFLAGS"
-    CXXFLAGS="$CXXFLAGS -lstdc++"
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-return 0;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  has_dynamic_libstdcxx=yes
-else
-  has_dynamic_libstdcxx=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-    CXXFLAGS="$OLD_CXXFLAGS"
-    ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $has_dynamic_libstdcxx" >&5
-$as_echo "$has_dynamic_libstdcxx" >&6; }
-
-    # Test if stdc++ can be linked statically.
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if static link of stdc++ is possible" >&5
-$as_echo_n "checking if static link of stdc++ is possible... " >&6; }
-    STATIC_STDCXX_FLAGS="-Wl,-Bstatic -lstdc++ -lgcc -Wl,-Bdynamic"
-    ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-    OLD_LIBS="$LIBS"
-    OLD_CXX="$CXX"
-    LIBS="$STATIC_STDCXX_FLAGS"
-    CXX="$CC"
-    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-
-int
-main ()
-{
-return 0;
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_cxx_try_link "$LINENO"; then :
-  has_static_libstdcxx=yes
-else
-  has_static_libstdcxx=no
-fi
-rm -f core conftest.err conftest.$ac_objext \
-    conftest$ac_exeext conftest.$ac_ext
-    LIBS="$OLD_LIBS"
-    CXX="$OLD_CXX"
-    ac_ext=cpp
-ac_cpp='$CXXCPP $CPPFLAGS'
-ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
-ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
-ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $has_static_libstdcxx" >&5
-$as_echo "$has_static_libstdcxx" >&6; }
-
-    if test "x$has_static_libstdcxx" = xno && test "x$has_dynamic_libstdcxx" = xno; then
-      as_fn_error $? "Cannot link to stdc++, neither dynamically nor statically!" "$LINENO" 5
-    fi
-
-    if test "x$with_stdc__lib" = xstatic && test "x$has_static_libstdcxx" = xno; then
-      as_fn_error $? "Static linking of libstdc++ was not possible!" "$LINENO" 5
-    fi
-
-    if test "x$with_stdc__lib" = xdynamic && test "x$has_dynamic_libstdcxx" = xno; then
-      as_fn_error $? "Dynamic linking of libstdc++ was not possible!" "$LINENO" 5
-    fi
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking how to link with libstdc++" >&5
-$as_echo_n "checking how to link with libstdc++... " >&6; }
-    # If dynamic was requested, it's available since it would fail above otherwise.
-    # If dynamic wasn't requested, go with static unless it isn't available.
-    if test "x$with_stdc__lib" = xdynamic || test "x$has_static_libstdcxx" = xno || test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
-      LIBCXX="$LIBCXX -lstdc++"
-      LDCXX="$CXX"
-      STATIC_CXX_SETTING="STATIC_CXX=false"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: dynamic" >&5
-$as_echo "dynamic" >&6; }
-    else
-      LIBCXX="$LIBCXX $STATIC_STDCXX_FLAGS"
-      LDCXX="$CC"
-      STATIC_CXX_SETTING="STATIC_CXX=true"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: static" >&5
-$as_echo "static" >&6; }
-    fi
-  fi
-
-
-  if test "x$JVM_VARIANT_ZERO" = xtrue || test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
-    # Figure out LIBFFI_CFLAGS and LIBFFI_LIBS
-
-pkg_failed=no
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for LIBFFI" >&5
-$as_echo_n "checking for LIBFFI... " >&6; }
-
-if test -n "$LIBFFI_CFLAGS"; then
-    pkg_cv_LIBFFI_CFLAGS="$LIBFFI_CFLAGS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libffi\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libffi") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_LIBFFI_CFLAGS=`$PKG_CONFIG --cflags "libffi" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-if test -n "$LIBFFI_LIBS"; then
-    pkg_cv_LIBFFI_LIBS="$LIBFFI_LIBS"
- elif test -n "$PKG_CONFIG"; then
-    if test -n "$PKG_CONFIG" && \
-    { { $as_echo "$as_me:${as_lineno-$LINENO}: \$PKG_CONFIG --exists --print-errors \"libffi\""; } >&5
-  ($PKG_CONFIG --exists --print-errors "libffi") 2>&5
-  ac_status=$?
-  $as_echo "$as_me:${as_lineno-$LINENO}: \$? = $ac_status" >&5
-  test $ac_status = 0; }; then
-  pkg_cv_LIBFFI_LIBS=`$PKG_CONFIG --libs "libffi" 2>/dev/null`
-else
-  pkg_failed=yes
-fi
- else
-    pkg_failed=untried
-fi
-
-
-
-if test $pkg_failed = yes; then
-
-if $PKG_CONFIG --atleast-pkgconfig-version 0.20; then
-        _pkg_short_errors_supported=yes
-else
-        _pkg_short_errors_supported=no
-fi
-        if test $_pkg_short_errors_supported = yes; then
-	        LIBFFI_PKG_ERRORS=`$PKG_CONFIG --short-errors --print-errors "libffi" 2>&1`
-        else
-	        LIBFFI_PKG_ERRORS=`$PKG_CONFIG --print-errors "libffi" 2>&1`
-        fi
-	# Put the nasty error message in config.log where it belongs
-	echo "$LIBFFI_PKG_ERRORS" >&5
-
-	as_fn_error $? "Package requirements (libffi) were not met:
-
-$LIBFFI_PKG_ERRORS
-
-Consider adjusting the PKG_CONFIG_PATH environment variable if you
-installed software in a non-standard prefix.
-
-Alternatively, you may set the environment variables LIBFFI_CFLAGS
-and LIBFFI_LIBS to avoid the need to call pkg-config.
-See the pkg-config man page for more details.
-" "$LINENO" 5
-elif test $pkg_failed = untried; then
-	{ { $as_echo "$as_me:${as_lineno-$LINENO}: error: in \`$ac_pwd':" >&5
-$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
-as_fn_error $? "The pkg-config script could not be found or is too old.  Make sure it
-is in your PATH or set the PKG_CONFIG environment variable to the full
-path to pkg-config.
-
-Alternatively, you may set the environment variables LIBFFI_CFLAGS
-and LIBFFI_LIBS to avoid the need to call pkg-config.
-See the pkg-config man page for more details.
-
-To get pkg-config, see <http://pkg-config.freedesktop.org/>.
-See \`config.log' for more details" "$LINENO" 5; }
-else
-	LIBFFI_CFLAGS=$pkg_cv_LIBFFI_CFLAGS
-	LIBFFI_LIBS=$pkg_cv_LIBFFI_LIBS
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-	:
-fi
-
-  fi
-
-  if test "x$JVM_VARIANT_ZEROSHARK" = xtrue; then
-    # Extract the first word of "llvm-config", so it can be a program name with args.
-set dummy llvm-config; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_LLVM_CONFIG+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$LLVM_CONFIG"; then
-  ac_cv_prog_LLVM_CONFIG="$LLVM_CONFIG" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_LLVM_CONFIG="llvm-config"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-fi
-fi
-LLVM_CONFIG=$ac_cv_prog_LLVM_CONFIG
-if test -n "$LLVM_CONFIG"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $LLVM_CONFIG" >&5
-$as_echo "$LLVM_CONFIG" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-
-    if test "x$LLVM_CONFIG" != xllvm-config; then
-      as_fn_error $? "llvm-config not found in $PATH." "$LINENO" 5
-    fi
-
-    llvm_components="jit mcjit engine nativecodegen native"
-    unset LLVM_CFLAGS
-    for flag in $("$LLVM_CONFIG" --cxxflags); do
-      if echo "${flag}" | grep -q '^-[ID]'; then
-        if test "${flag}" != "-D_DEBUG" ; then
-          if test "${LLVM_CFLAGS}" != "" ; then
-            LLVM_CFLAGS="${LLVM_CFLAGS} "
-          fi
-          LLVM_CFLAGS="${LLVM_CFLAGS}${flag}"
-        fi
-      fi
-    done
-    llvm_version=$("${LLVM_CONFIG}" --version | sed 's/\.//; s/svn.*//')
-    LLVM_CFLAGS="${LLVM_CFLAGS} -DSHARK_LLVM_VERSION=${llvm_version}"
-
-    unset LLVM_LDFLAGS
-    for flag in $("${LLVM_CONFIG}" --ldflags); do
-      if echo "${flag}" | grep -q '^-L'; then
-        if test "${LLVM_LDFLAGS}" != ""; then
-          LLVM_LDFLAGS="${LLVM_LDFLAGS} "
-        fi
-        LLVM_LDFLAGS="${LLVM_LDFLAGS}${flag}"
-      fi
-    done
-
-    unset LLVM_LIBS
-    for flag in $("${LLVM_CONFIG}" --libs ${llvm_components}); do
-      if echo "${flag}" | grep -q '^-l'; then
-        if test "${LLVM_LIBS}" != ""; then
-          LLVM_LIBS="${LLVM_LIBS} "
-        fi
-        LLVM_LIBS="${LLVM_LIBS}${flag}"
-      fi
-    done
-
-
-
-
-  fi
-
-  # libCrun is the c++ runtime-library with SunStudio (roughly the equivalent of gcc's libstdc++.so)
-  if test "x$TOOLCHAIN_TYPE" = xsolstudio && test "x$LIBCXX" = x; then
-    LIBCXX="${SYSROOT}/usr/lib${OPENJDK_TARGET_CPU_ISADIR}/libCrun.so.1"
-  fi
-
-  # TODO better (platform agnostic) test
-  if test "x$OPENJDK_TARGET_OS" = xmacosx && test "x$LIBCXX" = x && test "x$TOOLCHAIN_TYPE" = xgcc; then
-    LIBCXX="-lstdc++"
-  fi
-
-
-
-
+  # Deprecated libraries, keep the flags for backwards compatibility
   if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-
-
-# Check whether --with-msvcr-dll was given.
-if test "${with_msvcr_dll+set}" = set; then :
-  withval=$with_msvcr_dll;
-fi
-
-
-  if test "x$with_msvcr_dll" != x; then
-    # If given explicitely by user, do not probe. If not present, fail directly.
-
-  DLL_NAME="$MSVCR_NAME"
-  POSSIBLE_MSVC_DLL="$with_msvcr_dll"
-  METHOD="--with-msvcr-dll"
-  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
-$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
-
-    # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
-$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
-    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
-      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH="PE32 executable"
-      else
-        CORRECT_MSVCR_ARCH="PE32+ executable"
-      fi
-    else
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH=386
-      else
-        CORRECT_MSVCR_ARCH=x86-64
-      fi
-    fi
-    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-      MSVC_DLL="$POSSIBLE_MSVC_DLL"
-
-  # Only process if variable expands to non-empty
-
-  if test "x$MSVC_DLL" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$MSVC_DLL"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$MSVC_DLL"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-    else
-      # We're on a unix platform. Hooray! :)
-      path="$MSVC_DLL"
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-      fi
-
-      # Use eval to expand a potential ~
-      eval path="$path"
-      if test ! -f "$path" && test ! -d "$path"; then
-        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
-      fi
-
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
-    fi
-  fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
-$as_echo_n "checking for $DLL_NAME... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
-$as_echo "$MSVC_DLL" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
-$as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
-    fi
-  fi
-
-    if test "x$MSVC_DLL" = x; then
-      as_fn_error $? "Could not find a proper $MSVCR_NAME as specified by --with-msvcr-dll" "$LINENO" 5
-    fi
-    MSVCR_DLL="$MSVC_DLL"
-  elif test "x$DEVKIT_MSVCR_DLL" != x; then
-
-  DLL_NAME="$MSVCR_NAME"
-  POSSIBLE_MSVC_DLL="$DEVKIT_MSVCR_DLL"
-  METHOD="devkit"
-  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
-$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
-
-    # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
-$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
-    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
-      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH="PE32 executable"
-      else
-        CORRECT_MSVCR_ARCH="PE32+ executable"
-      fi
-    else
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH=386
-      else
-        CORRECT_MSVCR_ARCH=x86-64
-      fi
-    fi
-    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-      MSVC_DLL="$POSSIBLE_MSVC_DLL"
-
-  # Only process if variable expands to non-empty
-
-  if test "x$MSVC_DLL" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$MSVC_DLL"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$MSVC_DLL"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-    else
-      # We're on a unix platform. Hooray! :)
-      path="$MSVC_DLL"
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-      fi
-
-      # Use eval to expand a potential ~
-      eval path="$path"
-      if test ! -f "$path" && test ! -d "$path"; then
-        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
-      fi
-
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
-    fi
-  fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
-$as_echo_n "checking for $DLL_NAME... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
-$as_echo "$MSVC_DLL" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
-$as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
-    fi
-  fi
-
-    if test "x$MSVC_DLL" = x; then
-      as_fn_error $? "Could not find a proper $MSVCR_NAME as specified by devkit" "$LINENO" 5
-    fi
-    MSVCR_DLL="$MSVC_DLL"
-  else
-
-  DLL_NAME="${MSVCR_NAME}"
-  MSVC_DLL=
-
-  if test "x$MSVC_DLL" = x; then
-    # Probe: Using well-known location from Visual Studio 10.0
-    if test "x$VCINSTALLDIR" != x; then
-      CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
-
-  windows_path="$CYGWIN_VC_INSTALL_DIR"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    CYGWIN_VC_INSTALL_DIR="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    CYGWIN_VC_INSTALL_DIR="$unix_path"
-  fi
-
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
-      else
-        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
-      fi
-      $ECHO "POSSIBLE_MSVC_DLL $POSSIBLEMSVC_DLL"
-
-  DLL_NAME="$DLL_NAME"
-  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
-  METHOD="well-known location in VCINSTALLDIR"
-  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
-$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
-
-    # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
-$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
-    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
-      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH="PE32 executable"
-      else
-        CORRECT_MSVCR_ARCH="PE32+ executable"
-      fi
-    else
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH=386
-      else
-        CORRECT_MSVCR_ARCH=x86-64
-      fi
-    fi
-    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-      MSVC_DLL="$POSSIBLE_MSVC_DLL"
-
-  # Only process if variable expands to non-empty
-
-  if test "x$MSVC_DLL" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$MSVC_DLL"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$MSVC_DLL"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-    else
-      # We're on a unix platform. Hooray! :)
-      path="$MSVC_DLL"
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-      fi
-
-      # Use eval to expand a potential ~
-      eval path="$path"
-      if test ! -f "$path" && test ! -d "$path"; then
-        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
-      fi
-
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
-    fi
-  fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
-$as_echo_n "checking for $DLL_NAME... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
-$as_echo "$MSVC_DLL" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
-$as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
-    fi
-  fi
-
-    fi
-  fi
-
-  if test "x$MSVC_DLL" = x; then
-    # Probe: Check in the Boot JDK directory.
-    POSSIBLE_MSVC_DLL="$BOOT_JDK/bin/$DLL_NAME"
-
-  DLL_NAME="$DLL_NAME"
-  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
-  METHOD="well-known location in Boot JDK"
-  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
-$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
-
-    # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
-$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
-    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
-      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH="PE32 executable"
-      else
-        CORRECT_MSVCR_ARCH="PE32+ executable"
-      fi
-    else
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH=386
-      else
-        CORRECT_MSVCR_ARCH=x86-64
-      fi
-    fi
-    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-      MSVC_DLL="$POSSIBLE_MSVC_DLL"
-
-  # Only process if variable expands to non-empty
-
-  if test "x$MSVC_DLL" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$MSVC_DLL"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$MSVC_DLL"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-    else
-      # We're on a unix platform. Hooray! :)
-      path="$MSVC_DLL"
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-      fi
-
-      # Use eval to expand a potential ~
-      eval path="$path"
-      if test ! -f "$path" && test ! -d "$path"; then
-        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
-      fi
-
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
-    fi
-  fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
-$as_echo_n "checking for $DLL_NAME... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
-$as_echo "$MSVC_DLL" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
-$as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
-    fi
-  fi
-
-  fi
-
-  if test "x$MSVC_DLL" = x; then
-    # Probe: Look in the Windows system32 directory
-    CYGWIN_SYSTEMROOT="$SYSTEMROOT"
-
-  windows_path="$CYGWIN_SYSTEMROOT"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    CYGWIN_SYSTEMROOT="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    CYGWIN_SYSTEMROOT="$unix_path"
-  fi
-
-    POSSIBLE_MSVC_DLL="$CYGWIN_SYSTEMROOT/system32/$DLL_NAME"
-
-  DLL_NAME="$DLL_NAME"
-  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
-  METHOD="well-known location in SYSTEMROOT"
-  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
-$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
-
-    # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
-$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
-    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
-      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH="PE32 executable"
-      else
-        CORRECT_MSVCR_ARCH="PE32+ executable"
-      fi
-    else
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH=386
-      else
-        CORRECT_MSVCR_ARCH=x86-64
-      fi
-    fi
-    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-      MSVC_DLL="$POSSIBLE_MSVC_DLL"
-
-  # Only process if variable expands to non-empty
-
-  if test "x$MSVC_DLL" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$MSVC_DLL"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$MSVC_DLL"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-    else
-      # We're on a unix platform. Hooray! :)
-      path="$MSVC_DLL"
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-      fi
-
-      # Use eval to expand a potential ~
-      eval path="$path"
-      if test ! -f "$path" && test ! -d "$path"; then
-        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
-      fi
-
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
-    fi
-  fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
-$as_echo_n "checking for $DLL_NAME... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
-$as_echo "$MSVC_DLL" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
-$as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
-    fi
-  fi
-
-  fi
-
-  if test "x$MSVC_DLL" = x; then
-    # Probe: If Visual Studio Express is installed, there is usually one with the debugger
-    if test "x$VS100COMNTOOLS" != x; then
-      CYGWIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
-
-  windows_path="$CYGWIN_VS_TOOLS_DIR"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    CYGWIN_VS_TOOLS_DIR="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    CYGWIN_VS_TOOLS_DIR="$unix_path"
-  fi
-
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
-	    | $GREP -i /x64/ | $HEAD --lines 1`
-      else
-        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
-	    | $GREP -i /x86/ | $HEAD --lines 1`
-      fi
-
-  DLL_NAME="$DLL_NAME"
-  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
-  METHOD="search of VS100COMNTOOLS"
-  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
-$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
-
-    # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
-$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
-    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
-      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH="PE32 executable"
-      else
-        CORRECT_MSVCR_ARCH="PE32+ executable"
-      fi
-    else
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH=386
-      else
-        CORRECT_MSVCR_ARCH=x86-64
-      fi
-    fi
-    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-      MSVC_DLL="$POSSIBLE_MSVC_DLL"
-
-  # Only process if variable expands to non-empty
-
-  if test "x$MSVC_DLL" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$MSVC_DLL"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$MSVC_DLL"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-    else
-      # We're on a unix platform. Hooray! :)
-      path="$MSVC_DLL"
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-      fi
-
-      # Use eval to expand a potential ~
-      eval path="$path"
-      if test ! -f "$path" && test ! -d "$path"; then
-        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
-      fi
-
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
-    fi
-  fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
-$as_echo_n "checking for $DLL_NAME... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
-$as_echo "$MSVC_DLL" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
-$as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
-    fi
-  fi
-
-    fi
-  fi
-
-  if test "x$MSVC_DLL" = x; then
-    # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
-    # (This was the original behaviour; kept since it might turn something up)
-    if test "x$CYGWIN_VC_INSTALL_DIR" != x; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
-	    | $GREP x64 | $HEAD --lines 1`
-      else
-        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
-	    | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
-        if test "x$POSSIBLE_MSVC_DLL" = x; then
-          # We're grasping at straws now...
-          POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
-	      | $HEAD --lines 1`
-        fi
-      fi
-
-
-  DLL_NAME="$DLL_NAME"
-  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
-  METHOD="search of VCINSTALLDIR"
-  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
-$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
-
-    # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
-$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
-    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
-      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH="PE32 executable"
-      else
-        CORRECT_MSVCR_ARCH="PE32+ executable"
-      fi
-    else
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH=386
-      else
-        CORRECT_MSVCR_ARCH=x86-64
-      fi
-    fi
-    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-      MSVC_DLL="$POSSIBLE_MSVC_DLL"
-
-  # Only process if variable expands to non-empty
-
-  if test "x$MSVC_DLL" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$MSVC_DLL"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$MSVC_DLL"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-    else
-      # We're on a unix platform. Hooray! :)
-      path="$MSVC_DLL"
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-      fi
-
-      # Use eval to expand a potential ~
-      eval path="$path"
-      if test ! -f "$path" && test ! -d "$path"; then
-        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
-      fi
-
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
-    fi
-  fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
-$as_echo_n "checking for $DLL_NAME... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
-$as_echo "$MSVC_DLL" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
-$as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
-    fi
-  fi
-
-    fi
-  fi
-
-  if test "x$MSVC_DLL" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
-$as_echo_n "checking for $DLL_NAME... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    as_fn_error $? "Could not find $DLL_NAME. Please specify using --with-msvcr-dll." "$LINENO" 5
-  fi
-
-    MSVCR_DLL="$MSVC_DLL"
-  fi
-
-
-
-# Check whether --with-msvcp-dll was given.
-if test "${with_msvcp_dll+set}" = set; then :
-  withval=$with_msvcp_dll;
-fi
-
-
-  if test "x$MSVCP_NAME" != "x"; then
-    if test "x$with_msvcp_dll" != x; then
-      # If given explicitely by user, do not probe. If not present, fail directly.
-
-  DLL_NAME="$MSVCP_NAME"
-  POSSIBLE_MSVC_DLL="$with_msvcp_dll"
-  METHOD="--with-msvcp-dll"
-  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
-$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
-
-    # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
-$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
-    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
-      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH="PE32 executable"
-      else
-        CORRECT_MSVCR_ARCH="PE32+ executable"
-      fi
-    else
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH=386
-      else
-        CORRECT_MSVCR_ARCH=x86-64
-      fi
-    fi
-    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-      MSVC_DLL="$POSSIBLE_MSVC_DLL"
-
-  # Only process if variable expands to non-empty
-
-  if test "x$MSVC_DLL" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$MSVC_DLL"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$MSVC_DLL"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-    else
-      # We're on a unix platform. Hooray! :)
-      path="$MSVC_DLL"
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-      fi
-
-      # Use eval to expand a potential ~
-      eval path="$path"
-      if test ! -f "$path" && test ! -d "$path"; then
-        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
-      fi
-
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
-    fi
-  fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
-$as_echo_n "checking for $DLL_NAME... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
-$as_echo "$MSVC_DLL" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
-$as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
-    fi
-  fi
-
-      if test "x$MSVC_DLL" = x; then
-        as_fn_error $? "Could not find a proper $MSVCP_NAME as specified by --with-msvcp-dll" "$LINENO" 5
-      fi
-      MSVCP_DLL="$MSVC_DLL"
-    elif test "x$DEVKIT_MSVCP_DLL" != x; then
-
-  DLL_NAME="$MSVCP_NAME"
-  POSSIBLE_MSVC_DLL="$DEVKIT_MSVCP_DLL"
-  METHOD="devkit"
-  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
-$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
-
-    # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
-$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
-    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
-      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH="PE32 executable"
-      else
-        CORRECT_MSVCR_ARCH="PE32+ executable"
-      fi
-    else
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH=386
-      else
-        CORRECT_MSVCR_ARCH=x86-64
-      fi
-    fi
-    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-      MSVC_DLL="$POSSIBLE_MSVC_DLL"
-
-  # Only process if variable expands to non-empty
-
-  if test "x$MSVC_DLL" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$MSVC_DLL"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$MSVC_DLL"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-    else
-      # We're on a unix platform. Hooray! :)
-      path="$MSVC_DLL"
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-      fi
-
-      # Use eval to expand a potential ~
-      eval path="$path"
-      if test ! -f "$path" && test ! -d "$path"; then
-        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
-      fi
-
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
-    fi
-  fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
-$as_echo_n "checking for $DLL_NAME... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
-$as_echo "$MSVC_DLL" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
-$as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
-    fi
-  fi
-
-      if test "x$MSVC_DLL" = x; then
-        as_fn_error $? "Could not find a proper $MSVCP_NAME as specified by devkit" "$LINENO" 5
-      fi
-      MSVCP_DLL="$MSVC_DLL"
-    else
-
-  DLL_NAME="${MSVCP_NAME}"
-  MSVC_DLL=
-
-  if test "x$MSVC_DLL" = x; then
-    # Probe: Using well-known location from Visual Studio 10.0
-    if test "x$VCINSTALLDIR" != x; then
-      CYGWIN_VC_INSTALL_DIR="$VCINSTALLDIR"
-
-  windows_path="$CYGWIN_VC_INSTALL_DIR"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    CYGWIN_VC_INSTALL_DIR="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    CYGWIN_VC_INSTALL_DIR="$unix_path"
-  fi
-
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x64/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
-      else
-        POSSIBLE_MSVC_DLL="$CYGWIN_VC_INSTALL_DIR/redist/x86/Microsoft.VC${VS_VERSION_INTERNAL}.CRT/$DLL_NAME"
-      fi
-      $ECHO "POSSIBLE_MSVC_DLL $POSSIBLEMSVC_DLL"
-
-  DLL_NAME="$DLL_NAME"
-  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
-  METHOD="well-known location in VCINSTALLDIR"
-  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
-$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
-
-    # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
-$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
-    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
-      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH="PE32 executable"
-      else
-        CORRECT_MSVCR_ARCH="PE32+ executable"
-      fi
-    else
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH=386
-      else
-        CORRECT_MSVCR_ARCH=x86-64
-      fi
-    fi
-    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-      MSVC_DLL="$POSSIBLE_MSVC_DLL"
-
-  # Only process if variable expands to non-empty
-
-  if test "x$MSVC_DLL" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$MSVC_DLL"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$MSVC_DLL"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-    else
-      # We're on a unix platform. Hooray! :)
-      path="$MSVC_DLL"
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-      fi
-
-      # Use eval to expand a potential ~
-      eval path="$path"
-      if test ! -f "$path" && test ! -d "$path"; then
-        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
-      fi
-
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
-    fi
-  fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
-$as_echo_n "checking for $DLL_NAME... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
-$as_echo "$MSVC_DLL" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
-$as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
-    fi
-  fi
-
-    fi
-  fi
-
-  if test "x$MSVC_DLL" = x; then
-    # Probe: Check in the Boot JDK directory.
-    POSSIBLE_MSVC_DLL="$BOOT_JDK/bin/$DLL_NAME"
-
-  DLL_NAME="$DLL_NAME"
-  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
-  METHOD="well-known location in Boot JDK"
-  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
-$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
-
-    # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
-$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
-    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
-      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH="PE32 executable"
-      else
-        CORRECT_MSVCR_ARCH="PE32+ executable"
-      fi
-    else
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH=386
-      else
-        CORRECT_MSVCR_ARCH=x86-64
-      fi
-    fi
-    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-      MSVC_DLL="$POSSIBLE_MSVC_DLL"
-
-  # Only process if variable expands to non-empty
-
-  if test "x$MSVC_DLL" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$MSVC_DLL"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$MSVC_DLL"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-    else
-      # We're on a unix platform. Hooray! :)
-      path="$MSVC_DLL"
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-      fi
-
-      # Use eval to expand a potential ~
-      eval path="$path"
-      if test ! -f "$path" && test ! -d "$path"; then
-        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
-      fi
-
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
-    fi
-  fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
-$as_echo_n "checking for $DLL_NAME... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
-$as_echo "$MSVC_DLL" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
-$as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
-    fi
-  fi
-
-  fi
-
-  if test "x$MSVC_DLL" = x; then
-    # Probe: Look in the Windows system32 directory
-    CYGWIN_SYSTEMROOT="$SYSTEMROOT"
-
-  windows_path="$CYGWIN_SYSTEMROOT"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    CYGWIN_SYSTEMROOT="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    CYGWIN_SYSTEMROOT="$unix_path"
-  fi
-
-    POSSIBLE_MSVC_DLL="$CYGWIN_SYSTEMROOT/system32/$DLL_NAME"
-
-  DLL_NAME="$DLL_NAME"
-  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
-  METHOD="well-known location in SYSTEMROOT"
-  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
-$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
-
-    # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
-$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
-    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
-      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH="PE32 executable"
-      else
-        CORRECT_MSVCR_ARCH="PE32+ executable"
-      fi
-    else
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH=386
-      else
-        CORRECT_MSVCR_ARCH=x86-64
-      fi
-    fi
-    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-      MSVC_DLL="$POSSIBLE_MSVC_DLL"
-
-  # Only process if variable expands to non-empty
-
-  if test "x$MSVC_DLL" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$MSVC_DLL"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$MSVC_DLL"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-    else
-      # We're on a unix platform. Hooray! :)
-      path="$MSVC_DLL"
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-      fi
-
-      # Use eval to expand a potential ~
-      eval path="$path"
-      if test ! -f "$path" && test ! -d "$path"; then
-        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
-      fi
-
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
-    fi
-  fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
-$as_echo_n "checking for $DLL_NAME... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
-$as_echo "$MSVC_DLL" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
-$as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
-    fi
-  fi
-
-  fi
-
-  if test "x$MSVC_DLL" = x; then
-    # Probe: If Visual Studio Express is installed, there is usually one with the debugger
-    if test "x$VS100COMNTOOLS" != x; then
-      CYGWIN_VS_TOOLS_DIR="$VS100COMNTOOLS/.."
-
-  windows_path="$CYGWIN_VS_TOOLS_DIR"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    CYGWIN_VS_TOOLS_DIR="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    CYGWIN_VS_TOOLS_DIR="$unix_path"
-  fi
-
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
-	    | $GREP -i /x64/ | $HEAD --lines 1`
-      else
-        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VS_TOOLS_DIR" -name $DLL_NAME \
-	    | $GREP -i /x86/ | $HEAD --lines 1`
-      fi
-
-  DLL_NAME="$DLL_NAME"
-  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
-  METHOD="search of VS100COMNTOOLS"
-  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
-$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
-
-    # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
-$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
-    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
-      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH="PE32 executable"
-      else
-        CORRECT_MSVCR_ARCH="PE32+ executable"
-      fi
-    else
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH=386
-      else
-        CORRECT_MSVCR_ARCH=x86-64
-      fi
-    fi
-    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-      MSVC_DLL="$POSSIBLE_MSVC_DLL"
-
-  # Only process if variable expands to non-empty
-
-  if test "x$MSVC_DLL" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$MSVC_DLL"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$MSVC_DLL"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-    else
-      # We're on a unix platform. Hooray! :)
-      path="$MSVC_DLL"
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-      fi
-
-      # Use eval to expand a potential ~
-      eval path="$path"
-      if test ! -f "$path" && test ! -d "$path"; then
-        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
-      fi
-
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
-    fi
-  fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
-$as_echo_n "checking for $DLL_NAME... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
-$as_echo "$MSVC_DLL" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
-$as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
-    fi
-  fi
-
-    fi
-  fi
-
-  if test "x$MSVC_DLL" = x; then
-    # Probe: Search wildly in the VCINSTALLDIR. We've probably lost by now.
-    # (This was the original behaviour; kept since it might turn something up)
-    if test "x$CYGWIN_VC_INSTALL_DIR" != x; then
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
-	    | $GREP x64 | $HEAD --lines 1`
-      else
-        POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
-	    | $GREP x86 | $GREP -v ia64 | $GREP -v x64 | $HEAD --lines 1`
-        if test "x$POSSIBLE_MSVC_DLL" = x; then
-          # We're grasping at straws now...
-          POSSIBLE_MSVC_DLL=`$FIND "$CYGWIN_VC_INSTALL_DIR" -name $DLL_NAME \
-	      | $HEAD --lines 1`
-        fi
-      fi
-
-
-  DLL_NAME="$DLL_NAME"
-  POSSIBLE_MSVC_DLL="$POSSIBLE_MSVC_DLL"
-  METHOD="search of VCINSTALLDIR"
-  if test -n "$POSSIBLE_MSVC_DLL" -a -e "$POSSIBLE_MSVC_DLL"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&5
-$as_echo "$as_me: Found $DLL_NAME at $POSSIBLE_MSVC_DLL using $METHOD" >&6;}
-
-    # Need to check if the found msvcr is correct architecture
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking found $DLL_NAME architecture" >&5
-$as_echo_n "checking found $DLL_NAME architecture... " >&6; }
-    MSVC_DLL_FILETYPE=`$FILE -b "$POSSIBLE_MSVC_DLL"`
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-      # The MSYS 'file' command returns "PE32 executable for MS Windows (DLL) (GUI) Intel 80386 32-bit"
-      # on x32 and "PE32+ executable for MS Windows (DLL) (GUI) Mono/.Net assembly" on x64 systems.
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH="PE32 executable"
-      else
-        CORRECT_MSVCR_ARCH="PE32+ executable"
-      fi
-    else
-      if test "x$OPENJDK_TARGET_CPU_BITS" = x32; then
-        CORRECT_MSVCR_ARCH=386
-      else
-        CORRECT_MSVCR_ARCH=x86-64
-      fi
-    fi
-    if $ECHO "$MSVC_DLL_FILETYPE" | $GREP "$CORRECT_MSVCR_ARCH" 2>&1 > /dev/null; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
-$as_echo "ok" >&6; }
-      MSVC_DLL="$POSSIBLE_MSVC_DLL"
-
-  # Only process if variable expands to non-empty
-
-  if test "x$MSVC_DLL" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  path="$MSVC_DLL"
-  new_path=`$CYGPATH -u "$path"`
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file precense.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-    as_fn_error $? "Cannot locate the the path of MSVC_DLL" "$LINENO" 5
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  path="$MSVC_DLL"
-  has_colon=`$ECHO $path | $GREP ^.:`
-  new_path="$path"
-  if test "x$has_colon" = x; then
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $path`
-  fi
-
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-  if test "x$path" != "x$new_path"; then
-    MSVC_DLL="$new_path"
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting MSVC_DLL to \"$new_path\"" >&5
-$as_echo "$as_me: Rewriting MSVC_DLL to \"$new_path\"" >&6;}
-  fi
-
-  # Save the first 10 bytes of this path to the storage, so fixpath can work.
-  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-
-    else
-      # We're on a unix platform. Hooray! :)
-      path="$MSVC_DLL"
-      has_space=`$ECHO "$path" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&5
-$as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid." >&6;}
-        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
-      fi
-
-      # Use eval to expand a potential ~
-      eval path="$path"
-      if test ! -f "$path" && test ! -d "$path"; then
-        as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
-      fi
-
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
-    fi
-  fi
-
-      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
-$as_echo_n "checking for $DLL_NAME... " >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MSVC_DLL" >&5
-$as_echo "$MSVC_DLL" >&6; }
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: result: incorrect, ignoring" >&5
-$as_echo "incorrect, ignoring" >&6; }
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&5
-$as_echo "$as_me: The file type of the located $DLL_NAME is $MSVC_DLL_FILETYPE" >&6;}
-    fi
-  fi
-
-    fi
-  fi
-
-  if test "x$MSVC_DLL" = x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $DLL_NAME" >&5
-$as_echo_n "checking for $DLL_NAME... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    as_fn_error $? "Could not find $DLL_NAME. Please specify using --with-msvcr-dll." "$LINENO" 5
-  fi
-
-      MSVCP_DLL="$MSVC_DLL"
-    fi
-
-  fi
-
 
 
 # Check whether --with-dxsdk was given.
@@ -52431,6 +52800,21 @@ fi
 
 
   fi
+
+  # Control if libzip can use mmap. Available for purposes of overriding.
+  LIBZIP_CAN_USE_MMAP=true
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ###############################################################################
@@ -52984,7 +53368,7 @@ $as_echo "yes" >&6; }
   # Publish this variable in the help.
 
 
-  if test "x$CCACHE" = x; then
+  if [ -z "${CCACHE+x}" ]; then
     # The variable is not set by user, try to locate tool using the code snippet
     for ac_prog in ccache
 do
@@ -53097,14 +53481,23 @@ done
       # for unknown variables in the end.
       CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
 
-      # Check if the provided tool contains a complete path.
-      tool_specified="$CCACHE"
-      tool_basename="${tool_specified##*/}"
-      if test "x$tool_basename" = "x$tool_specified"; then
-        # A command without a complete path is provided, search $PATH.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CCACHE=$tool_basename" >&5
+      # Check if we try to supply an empty value
+      if test "x$CCACHE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool CCACHE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool CCACHE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CCACHE" >&5
+$as_echo_n "checking for CCACHE... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$CCACHE"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool CCACHE=$tool_basename" >&5
 $as_echo "$as_me: Will search for user supplied tool CCACHE=$tool_basename" >&6;}
-        # Extract the first word of "$tool_basename", so it can be a program name with args.
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
 set dummy $tool_basename; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -53144,22 +53537,23 @@ $as_echo "no" >&6; }
 fi
 
 
-        if test "x$CCACHE" = x; then
-          as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-        fi
-      else
-        # Otherwise we believe it is a complete path. Use it as it is.
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CCACHE=$tool_specified" >&5
+          if test "x$CCACHE" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool CCACHE=$tool_specified" >&5
 $as_echo "$as_me: Will use user supplied tool CCACHE=$tool_specified" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CCACHE" >&5
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for CCACHE" >&5
 $as_echo_n "checking for CCACHE... " >&6; }
-        if test ! -x "$tool_specified"; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
 $as_echo "not found" >&6; }
-          as_fn_error $? "User supplied tool CCACHE=$tool_specified does not exist or is not executable" "$LINENO" 5
-        fi
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+            as_fn_error $? "User supplied tool CCACHE=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
 $as_echo "$tool_specified" >&6; }
+        fi
       fi
     fi
   fi
