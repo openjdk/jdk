@@ -213,23 +213,20 @@ VARDEP_VALUE_FILE := $(VARDEP_DIR)/value-file
 VARDEP_TEST_VAR2 := value3
 
 VARDEP_RETURN_VALUE := $(call DependOnVariable, VARDEP_TEST_VAR2, $(VARDEP_VALUE_FILE))
-ifneq ($(VARDEP_VALUE_FILE), $(VARDEP_RETURN_VALUE))
-  $(error Expected: $(VARDEP_VALUE_FILE) - DependOnVariable: $(VARDEP_RETURN_VALUE))
-endif
+$(eval $(call assert-equals, $(VARDEP_RETURN_VALUE), $(VARDEP_VALUE_FILE), \
+    Wrong filename returned))
 VARDEP_FILE_CONTENTS := $(shell $(CAT) $(VARDEP_VALUE_FILE))
-ifneq ($(VARDEP_TEST_VAR2), $(VARDEP_FILE_CONTENTS))
-  $(error Expected: $(VARDEP_TEST_VAR2) - DependOnVariable file contained: \
-      $(VARDEP_FILE_CONTENTS))
-endif
+$(eval $(call assert-equals, $(VARDEP_FILE_CONTENTS), \
+    VARDEP_TEST_VAR2_old:=$(VARDEP_TEST_VAR2), \
+    Wrong contents in vardeps file))
 
 # Test with a variable value containing some problematic characters
 VARDEP_TEST_VAR3 := foo '""' "''" bar
 VARDEP_VALUE_FILE := $(call DependOnVariable, VARDEP_TEST_VAR3)
 VARDEP_FILE_CONTENTS := $(shell $(CAT) $(VARDEP_VALUE_FILE))
-ifneq ($(VARDEP_TEST_VAR3), $(VARDEP_FILE_CONTENTS))
-  $(error Expected: >$(VARDEP_TEST_VAR3)< - DependOnVariable file contained: \
-      >$(VARDEP_FILE_CONTENTS)<)
-endif
+$(eval $(call assert-equals, $(VARDEP_FILE_CONTENTS), \
+    VARDEP_TEST_VAR3_old:=$(VARDEP_TEST_VAR3), \
+    Wrong contents in vardep file))
 
 TEST_TARGETS += test-vardep
 
