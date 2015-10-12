@@ -3048,8 +3048,8 @@ void Assembler::pextrq(Register dst, XMMRegister src, int imm8) {
 void Assembler::pextrw(Register dst, XMMRegister src, int imm8) {
   assert(VM_Version::supports_sse2(), "");
   int encode = simd_prefix_and_encode(as_XMMRegister(dst->encoding()), xnoreg, src, VEX_SIMD_66, /* no_mask_reg */ true,
-                                      VEX_OPCODE_0F_3A, /* rex_w */ false, AVX_128bit, /* legacy_mode */ _legacy_mode_bw);
-  emit_int8(0x15);
+                                      VEX_OPCODE_0F, /* rex_w */ false, AVX_128bit, /* legacy_mode */ _legacy_mode_bw);
+  emit_int8((unsigned char)0xC5);
   emit_int8((unsigned char)(0xC0 | encode));
   emit_int8(imm8);
 }
