@@ -48,36 +48,26 @@ class CompilerCounters : public CHeapObj<mtCompiler> {
   private:
 
     char _current_method[cmname_buffer_length];
-    PerfStringVariable* _perf_current_method;
-
     int  _compile_type;
-    PerfVariable* _perf_compile_type;
-
-    PerfCounter* _perf_time;
-    PerfCounter* _perf_compiles;
 
   public:
-    CompilerCounters(const char* name, int instance, TRAPS);
+    CompilerCounters();
 
     // these methods should be called in a thread safe context
 
     void set_current_method(const char* method) {
       strncpy(_current_method, method, (size_t)cmname_buffer_length-1);
       _current_method[cmname_buffer_length-1] = '\0';
-      if (UsePerfData) _perf_current_method->set_value(method);
     }
 
     char* current_method()                  { return _current_method; }
 
     void set_compile_type(int compile_type) {
       _compile_type = compile_type;
-      if (UsePerfData) _perf_compile_type->set_value((jlong)compile_type);
     }
 
     int compile_type()                       { return _compile_type; }
 
-    PerfCounter* time_counter()              { return _perf_time; }
-    PerfCounter* compile_counter()           { return _perf_compiles; }
 };
 
 // CompileQueue

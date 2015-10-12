@@ -458,41 +458,9 @@ void CompileQueue::print_tty() {
   print(tty);
 }
 
-CompilerCounters::CompilerCounters(const char* thread_name, int instance, TRAPS) {
-
+CompilerCounters::CompilerCounters() {
   _current_method[0] = '\0';
   _compile_type = CompileBroker::no_compile;
-
-  if (UsePerfData) {
-    ResourceMark rm;
-
-    // create the thread instance name space string - don't create an
-    // instance subspace if instance is -1 - keeps the adapterThread
-    // counters  from having a ".0" namespace.
-    const char* thread_i = (instance == -1) ? thread_name :
-                      PerfDataManager::name_space(thread_name, instance);
-
-
-    char* name = PerfDataManager::counter_name(thread_i, "method");
-    _perf_current_method =
-               PerfDataManager::create_string_variable(SUN_CI, name,
-                                                       cmname_buffer_length,
-                                                       _current_method, CHECK);
-
-    name = PerfDataManager::counter_name(thread_i, "type");
-    _perf_compile_type = PerfDataManager::create_variable(SUN_CI, name,
-                                                          PerfData::U_None,
-                                                         (jlong)_compile_type,
-                                                          CHECK);
-
-    name = PerfDataManager::counter_name(thread_i, "time");
-    _perf_time = PerfDataManager::create_counter(SUN_CI, name,
-                                                 PerfData::U_Ticks, CHECK);
-
-    name = PerfDataManager::counter_name(thread_i, "compiles");
-    _perf_compiles = PerfDataManager::create_counter(SUN_CI, name,
-                                                     PerfData::U_Events, CHECK);
-  }
 }
 
 // ------------------------------------------------------------------
@@ -765,7 +733,7 @@ void CompileBroker::init_compiler_sweeper_threads(int c1_compiler_count, int c2_
   for (int i = 0; i < c2_compiler_count; i++) {
     // Create a name for our thread.
     sprintf(name_buffer, "%s CompilerThread%d", _compilers[1]->name(), i);
-    CompilerCounters* counters = new CompilerCounters("compilerThread", i, CHECK);
+    CompilerCounters* counters = new CompilerCounters();
     // Shark and C2
     make_thread(name_buffer, _c2_compile_queue, counters, _compilers[1], compiler_thread, CHECK);
   }
@@ -773,7 +741,7 @@ void CompileBroker::init_compiler_sweeper_threads(int c1_compiler_count, int c2_
   for (int i = c2_compiler_count; i < compiler_count; i++) {
     // Create a name for our thread.
     sprintf(name_buffer, "C1 CompilerThread%d", i);
-    CompilerCounters* counters = new CompilerCounters("compilerThread", i, CHECK);
+    CompilerCounters* counters = new CompilerCounters();
     // C1
     make_thread(name_buffer, _c1_compile_queue, counters, _compilers[0], compiler_thread, CHECK);
   }
@@ -1513,10 +1481,6 @@ void CompileBroker::compiler_thread_loop() {
     if (CompilerThreadHintNoPreempt) {
       os::hint_no_preempt();
     }
-
-    // trace per thread time and compile statistics
-    CompilerCounters* counters = ((CompilerThread*)thread)->counters();
-    PerfTraceTimedEvent(counters->time_counter(), counters->compile_counter());
 
     // Assign the task to the current thread.  Mark this compilation
     // thread as active for the profiler.
