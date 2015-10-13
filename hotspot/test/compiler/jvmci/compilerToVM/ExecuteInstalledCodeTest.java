@@ -20,6 +20,7 @@ import java.util.Map;
 /*
  * @test
  * @bug 8136421
+ * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
  * @library /testlibrary /../../test/lib /
  * @compile ../common/CompilerToVMHelper.java
  * @build sun.hotspot.WhiteBox
