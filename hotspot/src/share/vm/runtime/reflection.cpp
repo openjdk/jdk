@@ -1025,7 +1025,7 @@ static BasicType basic_type_mirror_to_basic_type(oop basic_type_mirror, TRAPS) {
 static void narrow(jvalue* value, BasicType narrow_type, TRAPS) {
   switch (narrow_type) {
   case T_BOOLEAN:
-    value->z = (jboolean)value->i;
+    value->z = (jboolean) (value->i & 1);
     return;
   case T_BYTE:
     value->b = (jbyte)value->i;

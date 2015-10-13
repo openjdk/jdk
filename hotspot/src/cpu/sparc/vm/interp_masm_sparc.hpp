@@ -103,6 +103,8 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void dispatch_via (TosState state, address* table);
 
 
+  void narrow(Register result);
+
   // Removes the current activation (incl. unlocking of monitors).
   // Additionally this code is used for earlyReturn in which case we
   // want to skip throwing an exception and installing an exception.

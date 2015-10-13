@@ -257,6 +257,7 @@ class Bytecodes: AllStatic {
 
     _fast_aputfield       ,
     _fast_bputfield       ,
+    _fast_zputfield       ,
     _fast_cputfield       ,
     _fast_dputfield       ,
     _fast_fputfield       ,

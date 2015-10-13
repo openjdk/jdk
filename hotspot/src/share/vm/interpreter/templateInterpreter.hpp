@@ -47,7 +47,7 @@ class EntryPoint VALUE_OBJ_CLASS_SPEC {
  public:
   // Construction
   EntryPoint();
-  EntryPoint(address bentry, address centry, address sentry, address aentry, address ientry, address lentry, address fentry, address dentry, address ventry);
+  EntryPoint(address bentry, address zentry, address centry, address sentry, address aentry, address ientry, address lentry, address fentry, address dentry, address ventry);
 
   // Attributes
   address entry(TosState state) const;                // return target address for a given tosca state
