@@ -34,6 +34,7 @@
  */
 
 package java.util.concurrent.locks;
+
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -77,7 +78,7 @@ import java.util.concurrent.TimeUnit;
  * methods and statements. In most cases, the following idiom
  * should be used:
  *
- *  <pre> {@code
+ * <pre> {@code
  * Lock l = ...;
  * l.lock();
  * try {
@@ -121,8 +122,9 @@ import java.util.concurrent.TimeUnit;
  * <p>All {@code Lock} implementations <em>must</em> enforce the same
  * memory synchronization semantics as provided by the built-in monitor
  * lock, as described in
- * <a href="http://docs.oracle.com/javase/specs/jls/se7/html/jls-17.html#jls-17.4">
- * The Java Language Specification (17.4 Memory Model)</a>:
+ * <a href="https://docs.oracle.com/javase/specs/jls/se8/html/jls-17.html#jls-17.4">
+ * Chapter 17 of
+ * <cite>The Java&trade; Language Specification</cite></a>:
  * <ul>
  * <li>A successful {@code lock} operation has the same memory
  * synchronization effects as a successful <em>Lock</em> action.
@@ -240,7 +242,7 @@ public interface Lock {
      * immediately with the value {@code false}.
      *
      * <p>A typical usage idiom for this method would be:
-     *  <pre> {@code
+     * <pre> {@code
      * Lock lock = ...;
      * if (lock.tryLock()) {
      *   try {
