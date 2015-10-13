@@ -4592,12 +4592,7 @@ class G1KlassCleaningTask : public StackObj {
 public:
 
   void clean_klass(InstanceKlass* ik) {
-    ik->clean_implementors_list(_is_alive);
-    ik->clean_method_data(_is_alive);
-
-    // G1 specific cleanup work that has
-    // been moved here to be done in parallel.
-    ik->clean_dependent_nmethods();
+    ik->clean_weak_instanceklass_links(_is_alive);
   }
 
   void work() {

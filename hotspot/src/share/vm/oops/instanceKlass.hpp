@@ -837,7 +837,7 @@ public:
   // maintenance of deoptimization dependencies
   int mark_dependent_nmethods(DepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
-  void remove_dependent_nmethod(nmethod* nm);
+  void remove_dependent_nmethod(nmethod* nm, bool delete_immediately);
 
   // On-stack replacement support
   nmethod* osr_nmethods_head() const         { return _osr_nmethods_head; };
@@ -1021,6 +1021,7 @@ public:
   void adjust_default_methods(InstanceKlass* holder, bool* trace_name_printed);
 #endif // INCLUDE_JVMTI
 
+  void clean_weak_instanceklass_links(BoolObjectClosure* is_alive);
   void clean_implementors_list(BoolObjectClosure* is_alive);
   void clean_method_data(BoolObjectClosure* is_alive);
   void clean_dependent_nmethods();
@@ -1349,6 +1350,7 @@ class nmethodBucket: public CHeapObj<mtClass> {
 
   static int mark_dependent_nmethods(nmethodBucket* deps, DepChange& changes);
   static nmethodBucket* add_dependent_nmethod(nmethodBucket* deps, nmethod* nm);
+  static bool remove_dependent_nmethod(nmethodBucket** deps, nmethod* nm, bool delete_immediately);
   static bool remove_dependent_nmethod(nmethodBucket* deps, nmethod* nm);
   static nmethodBucket* clean_dependent_nmethods(nmethodBucket* deps);
 #ifndef PRODUCT
