@@ -263,6 +263,7 @@ public:
                                               DirtyCardQueue* into_cset_dcq) :
     _g1rs(g1h->g1_rem_set()), _into_cset_dcq(into_cset_dcq)
   {}
+
   bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
     // The only time we care about recording cards that
     // contain references that point into the collection set
@@ -285,11 +286,16 @@ public:
 };
 
 void G1RemSet::updateRS(DirtyCardQueue* into_cset_dcq, uint worker_i) {
-  G1GCParPhaseTimesTracker x(_g1p->phase_times(), G1GCPhaseTimes::UpdateRS, worker_i);
-  // Apply the given closure to all remaining log entries.
   RefineRecordRefsIntoCSCardTableEntryClosure into_cset_update_rs_cl(_g1, into_cset_dcq);
 
-  _g1->iterate_dirty_card_closure(&into_cset_update_rs_cl, into_cset_dcq, false, worker_i);
+  G1GCParPhaseTimesTracker x(_g1p->phase_times(), G1GCPhaseTimes::UpdateRS, worker_i);
+  {
+    // Apply the closure to the entries of the hot card cache.
+    G1GCParPhaseTimesTracker y(_g1p->phase_times(), G1GCPhaseTimes::ScanHCC, worker_i);
+    _g1->iterate_hcc_closure(&into_cset_update_rs_cl, worker_i);
+  }
+  // Apply the closure to all remaining log entries.
+  _g1->iterate_dirty_card_closure(&into_cset_update_rs_cl, worker_i);
 }
 
 void G1RemSet::cleanupHRRS() {
