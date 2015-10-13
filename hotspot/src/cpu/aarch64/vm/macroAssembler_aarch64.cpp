@@ -1709,6 +1709,20 @@ int MacroAssembler::corrected_idivq(Register result, Register ra, Register rb,
   return idivq_offset;
 }
 
+void MacroAssembler::membar(Membar_mask_bits order_constraint) {
+  address prev = pc() - NativeMembar::instruction_size;
+  if (prev == code()->last_membar()) {
+    NativeMembar *bar = NativeMembar_at(prev);
+    // We are merging two memory barrier instructions.  On AArch64 we
+    // can do this simply by ORing them together.
+    bar->set_kind(bar->get_kind() | order_constraint);
+    BLOCK_COMMENT("merged membar");
+  } else {
+    code()->set_last_membar(pc());
+    dmb(Assembler::barrier(order_constraint));
+  }
+}
+
 // MacroAssembler routines found actually to be needed
 
 void MacroAssembler::push(Register src)
