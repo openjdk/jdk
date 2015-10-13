@@ -3246,7 +3246,7 @@ public:
                                                                             \
   product(intx, TypeProfileWidth, 2,                                        \
           "Number of receiver types to record in call/cast profile")        \
-          range(0, 4)                                                       \
+          range(0, 8)                                                       \
                                                                             \
   experimental(intx, MethodProfileWidth, 0,                                 \
           "Number of methods to record in call profile")                    \
