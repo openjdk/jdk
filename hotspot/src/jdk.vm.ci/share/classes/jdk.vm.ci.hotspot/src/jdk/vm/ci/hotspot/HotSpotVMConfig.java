@@ -86,13 +86,11 @@ public class HotSpotVMConfig {
 
         final long barrierSetAddress = UNSAFE.getAddress(universeCollectedHeap + collectedHeapBarrierSetOffset);
         final int kind = UNSAFE.getInt(barrierSetAddress + barrierSetFakeRttiOffset + fakeRttiConcreteTagOffset);
-        if ((kind == barrierSetCardTableModRef) || (kind == barrierSetCardTableExtension) || (kind == barrierSetG1SATBCT) || (kind == barrierSetG1SATBCTLogging)) {
+        if ((kind == barrierSetCardTableModRef) || (kind == barrierSetCardTableForRS) || (kind == barrierSetCardTableExtension) || (kind == barrierSetG1SATBCT) || (kind == barrierSetG1SATBCTLogging)) {
             final long base = UNSAFE.getAddress(barrierSetAddress + cardTableModRefBSByteMapBaseOffset);
             assert base != 0 : "unexpected byte_map_base: " + base;
             cardtableStartAddress = base;
             cardtableShift = cardTableModRefBSCardShift;
-        } else if (kind == barrierSetCardTableForRS) {
-            throw JVMCIError.unimplemented();
         } else if (kind == barrierSetModRef) {
             // No post barriers
             cardtableStartAddress = 0;
@@ -1708,8 +1706,8 @@ public class HotSpotVMConfig {
         }
 
         assert codeEntryAlignment > 0 : codeEntryAlignment;
-        assert(layoutHelperArrayTagObjectValue & (1 << (Integer.SIZE - 1))) != 0 : "object array must have first bit set";
-        assert(layoutHelperArrayTagTypeValue & (1 << (Integer.SIZE - 1))) != 0 : "type array must have first bit set";
+        assert (layoutHelperArrayTagObjectValue & (1 << (Integer.SIZE - 1))) != 0 : "object array must have first bit set";
+        assert (layoutHelperArrayTagTypeValue & (1 << (Integer.SIZE - 1))) != 0 : "type array must have first bit set";
 
         return true;
     }
