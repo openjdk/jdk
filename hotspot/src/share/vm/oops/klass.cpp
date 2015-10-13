@@ -442,8 +442,7 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive, bool clean_alive
     // Clean the implementors list and method data.
     if (clean_alive_klasses && current->oop_is_instance()) {
       InstanceKlass* ik = InstanceKlass::cast(current);
-      ik->clean_implementors_list(is_alive);
-      ik->clean_method_data(is_alive);
+      ik->clean_weak_instanceklass_links(is_alive);
     }
   }
 }
