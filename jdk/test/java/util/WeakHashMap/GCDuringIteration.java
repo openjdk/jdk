@@ -24,7 +24,6 @@
 /*
  * @test
  * @bug 6499848
- * @ignore until 6842353 is resolved
  * @summary Check that iterators work properly in the presence of
  *          concurrent finalization and removal of elements.
  * @key randomness
@@ -116,7 +115,7 @@ public class GCDuringIteration {
             it.next();          // protects first entry
             System.out.println(map.values());
             foos[first] = null;
-            tryWaitForFinalizersToRun()
+            tryWaitForFinalizersToRun();
             equal(map.size(), first+1);
             System.out.println(map.values());
             checkIterator(it, first-1);
