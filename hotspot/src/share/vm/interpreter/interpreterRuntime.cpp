@@ -1077,7 +1077,8 @@ IRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread *thread,
   char sig_type = '\0';
 
   switch(cp_entry->flag_state()) {
-    case btos: sig_type = 'Z'; break;
+    case btos: sig_type = 'B'; break;
+    case ztos: sig_type = 'Z'; break;
     case ctos: sig_type = 'C'; break;
     case stos: sig_type = 'S'; break;
     case itos: sig_type = 'I'; break;

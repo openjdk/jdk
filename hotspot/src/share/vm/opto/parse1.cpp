@@ -730,6 +730,26 @@ void Parse::do_all_blocks() {
 #endif
 }
 
+static Node* mask_int_value(Node* v, BasicType bt, PhaseGVN* gvn) {
+  switch (bt) {
+  case T_BYTE:
+    v = gvn->transform(new LShiftINode(v, gvn->intcon(24)));
+    v = gvn->transform(new RShiftINode(v, gvn->intcon(24)));
+    break;
+  case T_SHORT:
+    v = gvn->transform(new LShiftINode(v, gvn->intcon(16)));
+    v = gvn->transform(new RShiftINode(v, gvn->intcon(16)));
+    break;
+  case T_CHAR:
+    v = gvn->transform(new AndINode(v, gvn->intcon(0xFFFF)));
+    break;
+  case T_BOOLEAN:
+    v = gvn->transform(new AndINode(v, gvn->intcon(0x1)));
+    break;
+  }
+  return v;
+}
+
 //-------------------------------build_exits----------------------------------
 // Build normal and exceptional exit merge points.
 void Parse::build_exits() {
@@ -754,6 +774,16 @@ void Parse::build_exits() {
   // Add a return value to the exit state.  (Do not push it yet.)
   if (tf()->range()->cnt() > TypeFunc::Parms) {
     const Type* ret_type = tf()->range()->field_at(TypeFunc::Parms);
+    if (ret_type->isa_int()) {
+      BasicType ret_bt = method()->return_type()->basic_type();
+      if (ret_bt == T_BOOLEAN ||
+          ret_bt == T_CHAR ||
+          ret_bt == T_BYTE ||
+          ret_bt == T_SHORT) {
+        ret_type = TypeInt::INT;
+      }
+    }
+
     // Don't "bind" an unloaded return klass to the ret_phi. If the klass
     // becomes loaded during the subsequent parsing, the loaded and unloaded
     // types will not join when we transform and push in do_exits().
@@ -1013,6 +1043,10 @@ void Parse::do_exits() {
         }
       }
       return;
+    }
+    if (ret_type->isa_int()) {
+      BasicType ret_bt = method()->return_type()->basic_type();
+      ret_phi = mask_int_value(ret_phi, ret_bt, &_gvn);
     }
     _exits.push_node(ret_type->basic_type(), ret_phi);
   }

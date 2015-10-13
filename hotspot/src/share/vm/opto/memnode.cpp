@@ -2389,7 +2389,7 @@ StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const
          ctl != NULL, "raw memory operations should have control edge");
 
   switch (bt) {
-  case T_BOOLEAN:
+  case T_BOOLEAN: val = gvn.transform(new AndINode(val, gvn.intcon(0x1))); // Fall through to T_BYTE case
   case T_BYTE:    return new StoreBNode(ctl, mem, adr, adr_type, val, mo);
   case T_INT:     return new StoreINode(ctl, mem, adr, adr_type, val, mo);
   case T_CHAR:
