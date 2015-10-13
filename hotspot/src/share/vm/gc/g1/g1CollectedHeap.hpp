@@ -1011,9 +1011,11 @@ public:
   // continues humongous regions too.
   void reset_gc_time_stamps(HeapRegion* hr);
 
-  void iterate_dirty_card_closure(CardTableEntryClosure* cl,
-                                  DirtyCardQueue* into_cset_dcq,
-                                  bool concurrent, uint worker_i);
+  // Apply the given closure on all cards in the Hot Card Cache, emptying it.
+  void iterate_hcc_closure(CardTableEntryClosure* cl, uint worker_i);
+
+  // Apply the given closure on all cards in the Dirty Card Queue Set, emptying it.
+  void iterate_dirty_card_closure(CardTableEntryClosure* cl, uint worker_i);
 
   // The shared block offset table array.
   G1BlockOffsetSharedArray* bot_shared() const { return _bot_shared; }

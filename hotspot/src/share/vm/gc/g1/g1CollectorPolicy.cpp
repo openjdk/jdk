@@ -92,6 +92,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _prev_collection_pause_end_ms(0.0),
   _rs_length_diff_seq(new TruncatedSeq(TruncatedSeqLength)),
   _cost_per_card_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
+  _cost_scan_hcc_seq(new TruncatedSeq(TruncatedSeqLength)),
   _young_cards_per_entry_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
   _mixed_cards_per_entry_ratio_seq(new TruncatedSeq(TruncatedSeqLength)),
   _cost_per_entry_ms_seq(new TruncatedSeq(TruncatedSeqLength)),
@@ -192,6 +193,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   _rs_length_diff_seq->add(rs_length_diff_defaults[index]);
   _cost_per_card_ms_seq->add(cost_per_card_ms_defaults[index]);
+  _cost_scan_hcc_seq->add(0.0);
   _young_cards_per_entry_ratio_seq->add(
                                   young_cards_per_entry_ratio_defaults[index]);
   _cost_per_entry_ms_seq->add(cost_per_entry_ms_defaults[index]);
@@ -1046,10 +1048,12 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
 
   if (update_stats) {
     double cost_per_card_ms = 0.0;
+    double cost_scan_hcc = phase_times()->average_time_ms(G1GCPhaseTimes::ScanHCC);
     if (_pending_cards > 0) {
-      cost_per_card_ms = phase_times()->average_time_ms(G1GCPhaseTimes::UpdateRS) / (double) _pending_cards;
+      cost_per_card_ms = (phase_times()->average_time_ms(G1GCPhaseTimes::UpdateRS) - cost_scan_hcc) / (double) _pending_cards;
       _cost_per_card_ms_seq->add(cost_per_card_ms);
     }
+    _cost_scan_hcc_seq->add(cost_scan_hcc);
 
     double cost_per_entry_ms = 0.0;
     if (cards_scanned > 10) {
@@ -1146,8 +1150,25 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
 
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
-  adjust_concurrent_refinement(phase_times()->average_time_ms(G1GCPhaseTimes::UpdateRS),
-                               phase_times()->sum_thread_work_items(G1GCPhaseTimes::UpdateRS), update_rs_time_goal_ms);
+
+  double scan_hcc_time_ms = phase_times()->average_time_ms(G1GCPhaseTimes::ScanHCC);
+
+  if (update_rs_time_goal_ms < scan_hcc_time_ms) {
+    ergo_verbose2(ErgoTiming,
+                  "adjust concurrent refinement thresholds",
+                  ergo_format_reason("Scanning the HCC expected to take longer than Update RS time goal")
+                  ergo_format_ms("Update RS time goal")
+                  ergo_format_ms("Scan HCC time"),
+                  update_rs_time_goal_ms,
+                  scan_hcc_time_ms);
+
+    update_rs_time_goal_ms = 0;
+  } else {
+    update_rs_time_goal_ms -= scan_hcc_time_ms;
+  }
+  adjust_concurrent_refinement(phase_times()->average_time_ms(G1GCPhaseTimes::UpdateRS) - scan_hcc_time_ms,
+                               phase_times()->sum_thread_work_items(G1GCPhaseTimes::UpdateRS),
+                               update_rs_time_goal_ms);
 
   _collectionSetChooser->verify();
 }

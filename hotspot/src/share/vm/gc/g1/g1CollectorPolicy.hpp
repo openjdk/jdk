@@ -219,6 +219,7 @@ private:
 
   TruncatedSeq* _rs_length_diff_seq;
   TruncatedSeq* _cost_per_card_ms_seq;
+  TruncatedSeq* _cost_scan_hcc_seq;
   TruncatedSeq* _young_cards_per_entry_ratio_seq;
   TruncatedSeq* _mixed_cards_per_entry_ratio_seq;
   TruncatedSeq* _cost_per_entry_ms_seq;
@@ -324,8 +325,12 @@ public:
     return get_new_prediction(_cost_per_card_ms_seq);
   }
 
+  double predict_scan_hcc_ms() const {
+    return get_new_prediction(_cost_scan_hcc_seq);
+  }
+
   double predict_rs_update_time_ms(size_t pending_cards) const {
-    return (double) pending_cards * predict_cost_per_card_ms();
+    return (double) pending_cards * predict_cost_per_card_ms() + predict_scan_hcc_ms();
   }
 
   double predict_young_cards_per_entry_ratio() const {

@@ -2258,14 +2258,11 @@ void G1CollectedHeap::check_gc_time_stamps() {
 }
 #endif // PRODUCT
 
-void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl,
-                                                 DirtyCardQueue* into_cset_dcq,
-                                                 bool concurrent,
-                                                 uint worker_i) {
-  // Clean cards in the hot card cache
-  G1HotCardCache* hot_card_cache = _cg1r->hot_card_cache();
-  hot_card_cache->drain(worker_i, g1_rem_set(), into_cset_dcq);
+void G1CollectedHeap::iterate_hcc_closure(CardTableEntryClosure* cl, uint worker_i) {
+  _cg1r->hot_card_cache()->drain(cl, worker_i);
+}
 
+void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl, uint worker_i) {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   size_t n_completed_buffers = 0;
   while (dcqs.apply_closure_to_completed_buffer(cl, worker_i, 0, true)) {
