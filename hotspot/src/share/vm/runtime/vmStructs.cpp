@@ -55,7 +55,6 @@
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/watermark.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
@@ -593,8 +592,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(VirtualSpace,                _lower_high,                                   char*)                                 \
   nonstatic_field(VirtualSpace,                _middle_high,                                  char*)                                 \
   nonstatic_field(VirtualSpace,                _upper_high,                                   char*)                                 \
-  nonstatic_field(WaterMark,                   _point,                                        HeapWord*)                             \
-  nonstatic_field(WaterMark,                   _space,                                        Space*)                                \
                                                                                                                                      \
   /************************/                                                                                                         \
   /* PerfMemory - jvmstat */                                                                                                         \
@@ -1545,7 +1542,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_toplevel_type(MemRegion)                                        \
   declare_toplevel_type(ThreadLocalAllocBuffer)                           \
   declare_toplevel_type(VirtualSpace)                                     \
-  declare_toplevel_type(WaterMark)                                        \
   declare_toplevel_type(ObjPtrQueue)                                      \
   declare_toplevel_type(DirtyCardQueue)                                   \
                                                                           \
