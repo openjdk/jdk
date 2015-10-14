@@ -1997,6 +1997,10 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
     verify_legal_method_modifiers(flags, is_interface, name, CHECK_(nullHandle));
   }
 
+  if (name == vmSymbols::object_initializer_name() && is_interface) {
+    classfile_parse_error("Interface cannot have a method named <init>, class file %s", CHECK_(nullHandle));
+  }
+
   int args_size = -1;  // only used when _need_verify is true
   if (_need_verify) {
     args_size = ((flags & JVM_ACC_STATIC) ? 0 : 1) +
