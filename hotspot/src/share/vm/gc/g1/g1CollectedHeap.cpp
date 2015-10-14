@@ -44,6 +44,7 @@
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/g1RemSet.inline.hpp"
+#include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1YCTypes.hpp"
@@ -4138,80 +4139,6 @@ void G1CollectedHeap::preserve_mark_during_evac_failure(uint worker_id, oop obj,
   }
 }
 
-void G1ParCopyHelper::mark_object(oop obj) {
-  assert(!_g1->heap_region_containing(obj)->in_collection_set(), "should not mark objects in the CSet");
-
-  // We know that the object is not moving so it's safe to read its size.
-  _cm->grayRoot(obj, (size_t) obj->size(), _worker_id);
-}
-
-void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
-  assert(from_obj->is_forwarded(), "from obj should be forwarded");
-  assert(from_obj->forwardee() == to_obj, "to obj should be the forwardee");
-  assert(from_obj != to_obj, "should not be self-forwarded");
-
-  assert(_g1->heap_region_containing(from_obj)->in_collection_set(), "from obj should be in the CSet");
-  assert(!_g1->heap_region_containing(to_obj)->in_collection_set(), "should not mark objects in the CSet");
-
-  // The object might be in the process of being copied by another
-  // worker so we cannot trust that its to-space image is
-  // well-formed. So we have to read its size from its from-space
-  // image which we know should not be changing.
-  _cm->grayRoot(to_obj, (size_t) from_obj->size(), _worker_id);
-}
-
-template <class T>
-void G1ParCopyHelper::do_klass_barrier(T* p, oop new_obj) {
-  if (_g1->heap_region_containing_raw(new_obj)->is_young()) {
-    _scanned_klass->record_modified_oops();
-  }
-}
-
-template <G1Barrier barrier, G1Mark do_mark_object>
-template <class T>
-void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-
-  if (oopDesc::is_null(heap_oop)) {
-    return;
-  }
-
-  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-
-  assert(_worker_id == _par_scan_state->worker_id(), "sanity");
-
-  const InCSetState state = _g1->in_cset_state(obj);
-  if (state.is_in_cset()) {
-    oop forwardee;
-    markOop m = obj->mark();
-    if (m->is_marked()) {
-      forwardee = (oop) m->decode_pointer();
-    } else {
-      forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
-    }
-    assert(forwardee != NULL, "forwardee should not be NULL");
-    oopDesc::encode_store_heap_oop(p, forwardee);
-    if (do_mark_object != G1MarkNone && forwardee != obj) {
-      // If the object is self-forwarded we don't need to explicitly
-      // mark it, the evacuation failure protocol will do so.
-      mark_forwarded_object(obj, forwardee);
-    }
-
-    if (barrier == G1BarrierKlass) {
-      do_klass_barrier(p, forwardee);
-    }
-  } else {
-    if (state.is_humongous()) {
-      _g1->set_humongous_is_live(obj);
-    }
-    // The object is not in collection set. If we're a root scanning
-    // closure during an initial mark pause then attempt to mark the object.
-    if (do_mark_object == G1MarkFromRoot) {
-      mark_object(obj);
-    }
-  }
-}
-
 class G1ParEvacuateFollowersClosure : public VoidClosure {
 private:
   double _start_term;
@@ -4264,32 +4191,6 @@ void G1ParEvacuateFollowersClosure::do_void() {
   } while (!offer_termination());
 }
 
-class G1KlassScanClosure : public KlassClosure {
- G1ParCopyHelper* _closure;
- bool             _process_only_dirty;
- int              _count;
- public:
-  G1KlassScanClosure(G1ParCopyHelper* closure, bool process_only_dirty)
-      : _process_only_dirty(process_only_dirty), _closure(closure), _count(0) {}
-  void do_klass(Klass* klass) {
-    // If the klass has not been dirtied we know that there's
-    // no references into  the young gen and we can skip it.
-   if (!_process_only_dirty || klass->has_modified_oops()) {
-      // Clean the klass since we're going to scavenge all the metadata.
-      klass->clear_modified_oops();
-
-      // Tell the closure that this klass is the Klass to scavenge
-      // and is the one to dirty if oops are left pointing into the young gen.
-      _closure->set_scanned_klass(klass);
-
-      klass->oops_do(_closure);
-
-      _closure->set_scanned_klass(NULL);
-    }
-    _count++;
-  }
-};
-
 class G1ParTask : public AbstractGangTask {
 protected:
   G1CollectedHeap*         _g1h;
@@ -4310,42 +4211,6 @@ public:
       _n_workers(n_workers)
   {}
 
-  RefToScanQueueSet* queues() { return _queues; }
-
-  RefToScanQueue *work_queue(int i) {
-    return queues()->queue(i);
-  }
-
-  ParallelTaskTerminator* terminator() { return &_terminator; }
-
-  // Helps out with CLD processing.
-  //
-  // During InitialMark we need to:
-  // 1) Scavenge all CLDs for the young GC.
-  // 2) Mark all objects directly reachable from strong CLDs.
-  template <G1Mark do_mark_object>
-  class G1CLDClosure : public CLDClosure {
-    G1ParCopyClosure<G1BarrierNone,  do_mark_object>* _oop_closure;
-    G1ParCopyClosure<G1BarrierKlass, do_mark_object>  _oop_in_klass_closure;
-    G1KlassScanClosure                                _klass_in_cld_closure;
-    bool                                              _claim;
-
-   public:
-    G1CLDClosure(G1ParCopyClosure<G1BarrierNone, do_mark_object>* oop_closure,
-                 bool only_young, bool claim)
-        : _oop_closure(oop_closure),
-          _oop_in_klass_closure(oop_closure->g1(),
-                                oop_closure->pss()),
-          _klass_in_cld_closure(&_oop_in_klass_closure, only_young),
-          _claim(claim) {
-
-    }
-
-    void do_cld(ClassLoaderData* cld) {
-      cld->oops_do(_oop_closure, &_klass_in_cld_closure, _claim);
-    }
-  };
-
   void work(uint worker_id) {
     if (worker_id >= _n_workers) return;  // no work needed this round
 
@@ -4361,62 +4226,18 @@ public:
       G1ParScanThreadState*           pss = _pss->state_for_worker(worker_id);
       pss->set_ref_processor(rp);
 
-      bool only_young = _g1h->collector_state()->gcs_are_young();
-
-      // Non-IM young GC.
-      G1ParCopyClosure<G1BarrierNone, G1MarkNone>             scan_only_root_cl(_g1h, pss);
-      G1CLDClosure<G1MarkNone>                                scan_only_cld_cl(&scan_only_root_cl,
-                                                                               only_young, // Only process dirty klasses.
-                                                                               false);     // No need to claim CLDs.
-      // IM young GC.
-      //    Strong roots closures.
-      G1ParCopyClosure<G1BarrierNone, G1MarkFromRoot>         scan_mark_root_cl(_g1h, pss);
-      G1CLDClosure<G1MarkFromRoot>                            scan_mark_cld_cl(&scan_mark_root_cl,
-                                                                               false, // Process all klasses.
-                                                                               true); // Need to claim CLDs.
-      //    Weak roots closures.
-      G1ParCopyClosure<G1BarrierNone, G1MarkPromotedFromRoot> scan_mark_weak_root_cl(_g1h, pss);
-      G1CLDClosure<G1MarkPromotedFromRoot>                    scan_mark_weak_cld_cl(&scan_mark_weak_root_cl,
-                                                                                    false, // Process all klasses.
-                                                                                    true); // Need to claim CLDs.
-
-      OopClosure* strong_root_cl;
-      OopClosure* weak_root_cl;
-      CLDClosure* strong_cld_cl;
-      CLDClosure* weak_cld_cl;
-
-      bool trace_metadata = false;
-
-      if (_g1h->collector_state()->during_initial_mark_pause()) {
-        // We also need to mark copied objects.
-        strong_root_cl = &scan_mark_root_cl;
-        strong_cld_cl  = &scan_mark_cld_cl;
-        if (ClassUnloadingWithConcurrentMark) {
-          weak_root_cl = &scan_mark_weak_root_cl;
-          weak_cld_cl  = &scan_mark_weak_cld_cl;
-          trace_metadata = true;
-        } else {
-          weak_root_cl = &scan_mark_root_cl;
-          weak_cld_cl  = &scan_mark_cld_cl;
-        }
-      } else {
-        strong_root_cl = &scan_only_root_cl;
-        weak_root_cl   = &scan_only_root_cl;
-        strong_cld_cl  = &scan_only_cld_cl;
-        weak_cld_cl    = &scan_only_cld_cl;
-      }
-
       double start_strong_roots_sec = os::elapsedTime();
-      _root_processor->evacuate_roots(strong_root_cl,
-                                      weak_root_cl,
-                                      strong_cld_cl,
-                                      weak_cld_cl,
-                                      trace_metadata,
-                                      worker_id);
+
+      _root_processor->evacuate_roots(pss->closures(), worker_id);
 
       G1ParPushHeapRSClosure push_heap_rs_cl(_g1h, pss);
+
+      // We pass a weak code blobs closure to the remembered set scanning because we want to avoid
+      // treating the nmethods visited to act as roots for concurrent marking.
+      // We only want to make sure that the oops in the nmethods are adjusted with regard to the
+      // objects copied by the current evacuation.
       size_t cards_scanned = _g1h->g1_rem_set()->oops_into_collection_set_do(&push_heap_rs_cl,
-                                                                             weak_root_cl,
+                                                                             pss->closures()->weak_codeblobs(),
                                                                              worker_id);
 
       _pss->add_cards_scanned(worker_id, cards_scanned);
@@ -5077,19 +4898,8 @@ public:
     G1ParScanThreadState*          pss = _pss->state_for_worker(worker_id);
     pss->set_ref_processor(NULL);
 
-    G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, pss);
-
-    G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(_g1h, pss);
-
-    OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
-
-    if (_g1h->collector_state()->during_initial_mark_pause()) {
-      // We also need to mark copied objects.
-      copy_non_heap_cl = &copy_mark_non_heap_cl;
-    }
-
     // Keep alive closure.
-    G1CopyingKeepAliveClosure keep_alive(_g1h, copy_non_heap_cl, pss);
+    G1CopyingKeepAliveClosure keep_alive(_g1h, pss->closures()->raw_strong_oops(), pss);
 
     // Complete GC closure
     G1ParEvacuateFollowersClosure drain_queue(_g1h, pss, _task_queues, _terminator);
@@ -5177,23 +4987,12 @@ public:
     pss->set_ref_processor(NULL);
     assert(pss->queue_is_empty(), "both queue and overflow should be empty");
 
-    G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, pss);
-
-    G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(_g1h, pss);
-
-    OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
-
-    if (_g1h->collector_state()->during_initial_mark_pause()) {
-      // We also need to mark copied objects.
-      copy_non_heap_cl = &copy_mark_non_heap_cl;
-    }
-
     // Is alive closure
     G1AlwaysAliveClosure always_alive(_g1h);
 
     // Copying keep alive closure. Applied to referent objects that need
     // to be copied.
-    G1CopyingKeepAliveClosure keep_alive(_g1h, copy_non_heap_cl, pss);
+    G1CopyingKeepAliveClosure keep_alive(_g1h, pss->closures()->raw_strong_oops(), pss);
 
     ReferenceProcessor* rp = _g1h->ref_processor_cm();
 
@@ -5283,23 +5082,8 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
   pss->set_ref_processor(NULL);
   assert(pss->queue_is_empty(), "pre-condition");
 
-  // We do not embed a reference processor in the copying/scanning
-  // closures while we're actually processing the discovered
-  // reference objects.
-
-  G1ParScanExtRootClosure        only_copy_non_heap_cl(this, pss);
-
-  G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(this, pss);
-
-  OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
-
-  if (collector_state()->during_initial_mark_pause()) {
-    // We also need to mark copied objects.
-    copy_non_heap_cl = &copy_mark_non_heap_cl;
-  }
-
   // Keep alive closure.
-  G1CopyingKeepAliveClosure keep_alive(this, copy_non_heap_cl, pss);
+  G1CopyingKeepAliveClosure keep_alive(this, pss->closures()->raw_strong_oops(), pss);
 
   // Serial Complete GC closure
   G1STWDrainQueueClosure drain_queue(this, pss);

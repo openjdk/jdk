@@ -58,5 +58,23 @@ void G1ParClosureSuper::set_par_scan_thread_state(G1ParScanThreadState* par_scan
          "The given worker id %u must be less than the number of threads %u", _worker_id, ParallelGCThreads);
 }
 
+void G1KlassScanClosure::do_klass(Klass* klass) {
+  // If the klass has not been dirtied we know that there's
+  // no references into  the young gen and we can skip it.
+  if (!_process_only_dirty || klass->has_modified_oops()) {
+    // Clean the klass since we're going to scavenge all the metadata.
+    klass->clear_modified_oops();
+
+    // Tell the closure that this klass is the Klass to scavenge
+    // and is the one to dirty if oops are left pointing into the young gen.
+    _closure->set_scanned_klass(klass);
+
+    klass->oops_do(_closure);
+
+    _closure->set_scanned_klass(NULL);
+  }
+  _count++;
+}
+
 // Generate G1 specialized oop_oop_iterate functions.
 SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1(ALL_KLASS_OOP_OOP_ITERATE_DEFN)

@@ -36,6 +36,7 @@
 #include "oops/oop.hpp"
 
 class G1PLABAllocator;
+class G1EvacuationRootClosures;
 class HeapRegion;
 class outputStream;
 
@@ -45,7 +46,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
   RefToScanQueue*  _refs;
   DirtyCardQueue   _dcq;
   G1SATBCardTableModRefBS* _ct_bs;
-  G1RemSet*         _g1_rem;
+  G1EvacuationRootClosures* _closures;
 
   G1PLABAllocator*  _plab_allocator;
 
@@ -109,6 +110,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
     }
   }
 
+  G1EvacuationRootClosures* closures() { return _closures; }
   uint worker_id() { return _worker_id; }
 
   // Returns the current amount of waste due to alignment or not being able to fit

@@ -94,18 +94,18 @@ protected:
   // Mark the object if it's not already marked. This is used to mark
   // objects pointed to by roots that are guaranteed not to move
   // during the GC (i.e., non-CSet objects). It is MT-safe.
-  void mark_object(oop obj);
+  inline void mark_object(oop obj);
 
   // Mark the object if it's not already marked. This is used to mark
   // objects pointed to by roots that have been forwarded during a
   // GC. It is MT-safe.
-  void mark_forwarded_object(oop from_obj, oop to_obj);
+  inline void mark_forwarded_object(oop from_obj, oop to_obj);
  public:
   G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par_scan_state);
   G1ParCopyHelper(G1CollectedHeap* g1);
 
   void set_scanned_klass(Klass* k) { _scanned_klass = k; }
-  template <class T> void do_klass_barrier(T* p, oop new_obj);
+  template <class T> inline void do_klass_barrier(T* p, oop new_obj);
 };
 
 enum G1Barrier {
@@ -137,16 +137,17 @@ public:
   template <class T> void do_oop_nv(T* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
-
-  G1CollectedHeap*      g1()  { return _g1; };
-  G1ParScanThreadState* pss() { return _par_scan_state; }
 };
 
-typedef G1ParCopyClosure<G1BarrierNone,  G1MarkNone>             G1ParScanExtRootClosure;
-typedef G1ParCopyClosure<G1BarrierNone,  G1MarkFromRoot>         G1ParScanAndMarkExtRootClosure;
-typedef G1ParCopyClosure<G1BarrierNone,  G1MarkPromotedFromRoot> G1ParScanAndMarkWeakExtRootClosure;
-// We use a separate closure to handle references during evacuation
-// failure processing.
+class G1KlassScanClosure : public KlassClosure {
+ G1ParCopyHelper* _closure;
+ bool             _process_only_dirty;
+ int              _count;
+ public:
+  G1KlassScanClosure(G1ParCopyHelper* closure, bool process_only_dirty)
+      : _process_only_dirty(process_only_dirty), _closure(closure), _count(0) {}
+  void do_klass(Klass* klass);
+};
 
 class FilterIntoCSClosure: public ExtendedOopClosure {
   G1CollectedHeap* _g1;
