@@ -2807,11 +2807,11 @@ public:
           "standard exit from VM if bytecode verify error "                 \
           "(only in debug mode)")                                           \
                                                                             \
-  notproduct(ccstr, AbortVMOnException, NULL,                               \
+  diagnostic(ccstr, AbortVMOnException, NULL,                               \
           "Call fatal if this exception is thrown.  Example: "              \
           "java -XX:AbortVMOnException=java.lang.NullPointerException Foo") \
                                                                             \
-  notproduct(ccstr, AbortVMOnExceptionMessage, NULL,                        \
+  diagnostic(ccstr, AbortVMOnExceptionMessage, NULL,                        \
           "Call fatal if the exception pointed by AbortVMOnException "      \
           "has this message")                                               \
                                                                             \

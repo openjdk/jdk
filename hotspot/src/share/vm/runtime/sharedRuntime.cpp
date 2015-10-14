@@ -861,7 +861,8 @@ address SharedRuntime::continuation_for_implicit_exception(JavaThread* thread,
     assert(exception_kind == IMPLICIT_NULL || exception_kind == IMPLICIT_DIVIDE_BY_ZERO, "wrong implicit exception kind");
 
     // for AbortVMOnException flag
-    NOT_PRODUCT(Exceptions::debug_check_abort("java.lang.NullPointerException"));
+    Exceptions::debug_check_abort("java.lang.NullPointerException");
+
     if (exception_kind == IMPLICIT_NULL) {
       Events::log_exception(thread, "Implicit null exception at " INTPTR_FORMAT " to " INTPTR_FORMAT, p2i(pc), p2i(target_pc));
     } else {

@@ -458,7 +458,7 @@ IRT_ENTRY(address, InterpreterRuntime::exception_handler_for_exception(JavaThrea
 //       // warning("performance bug: should not call runtime if method has no exception handlers");
 //     }
     // for AbortVMOnException flag
-    NOT_PRODUCT(Exceptions::debug_check_abort(h_exception));
+    Exceptions::debug_check_abort(h_exception);
 
     // exception handler lookup
     KlassHandle h_klass(THREAD, h_exception->klass());

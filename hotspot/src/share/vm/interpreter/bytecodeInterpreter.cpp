@@ -2791,7 +2791,7 @@ run:
                       (int)continuation_bci, p2i(THREAD));
       }
       // for AbortVMOnException flag
-      NOT_PRODUCT(Exceptions::debug_check_abort(except_oop));
+      Exceptions::debug_check_abort(except_oop);
 
       // Update profiling data.
       BI_PROFILE_ALIGN_TO_CURRENT_BCI();
@@ -2807,7 +2807,8 @@ run:
                     p2i(THREAD));
     }
     // for AbortVMOnException flag
-    NOT_PRODUCT(Exceptions::debug_check_abort(except_oop));
+    Exceptions::debug_check_abort(except_oop);
+
     // No handler in this activation, unwind and try again
     THREAD->set_pending_exception(except_oop(), NULL, 0);
     goto handle_return;
