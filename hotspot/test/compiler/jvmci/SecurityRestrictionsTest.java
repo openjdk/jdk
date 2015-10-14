@@ -51,6 +51,8 @@ import jdk.test.lib.Utils;
 import java.lang.InternalError;
 import java.security.AccessControlException;
 import java.security.Permission;
+import java.util.PropertyPermission;
+import java.util.function.Consumer;
 
 public class SecurityRestrictionsTest {
 
@@ -121,9 +123,12 @@ public class SecurityRestrictionsTest {
 
             private boolean isJvmciPermission(Permission perm) {
                 String name = perm.getName();
-                return perm instanceof RuntimePermission
+                boolean isJvmciRuntime = perm instanceof RuntimePermission
                         && (JVMCI_SERVICES.equals(name)
-                                || name.startsWith(JVMCI_RT_PERM_START));
+                            || name.startsWith(JVMCI_RT_PERM_START));
+                boolean isJvmciProperty = perm instanceof PropertyPermission
+                        && name.startsWith(JVMCI_PROP_START);
+                return isJvmciRuntime || isJvmciProperty;
             }
 
             @Override
@@ -134,10 +139,32 @@ public class SecurityRestrictionsTest {
 
         public void run() {
             System.setSecurityManager(getSecurityManager());
-            Utils.runAndCheckException(
-                    // to run CompilerToVM::<cinit> inside runAndCheckException
-                    () -> new CompilerToVM(),
-                    getExpectedException());
+            Consumer<Throwable> exceptionCheck = e -> {
+                if (e == null) {
+                    if (getExpectedException() != null) {
+                        String message = name() + ": Didn't get expected exception "
+                                + getExpectedException();
+                        throw new AssertionError(message);
+                    }
+                } else {
+                    String message = name() + ": Got unexpected exception "
+                            + e.getClass().getSimpleName();
+                    if (getExpectedException() == null){
+                        throw new AssertionError(message, e);
+                    }
+
+                    Throwable t = e;
+                    while (t.getCause() != null) {
+                        t = t.getCause();
+                    }
+                    if (!getExpectedException().isAssignableFrom(t.getClass())) {
+                        message += " instead of " + getExpectedException()
+                                .getSimpleName();
+                        throw new AssertionError(message, e);
+                    }
+                }
+            };
+            Utils.runAndCheckException(CompilerToVM::new, exceptionCheck);
         }
 
         public SecurityManager getSecurityManager() {
@@ -152,5 +179,6 @@ public class SecurityRestrictionsTest {
                 = "accessClassInPackage.jdk.vm.ci";
         private static final String JVMCI_SERVICES = "jvmciServices";
         private static final String JVMCI_PROP_START = "jvmci.";
+
     }
 }
