@@ -101,7 +101,6 @@
 # include "gc/shared/gcStats.hpp"
 # include "gc/shared/gcUtil.hpp"
 # include "gc/shared/genCollectedHeap.hpp"
-# include "gc/shared/genRemSet.hpp"
 # include "gc/shared/generation.hpp"
 # include "gc/shared/generationCounters.hpp"
 # include "gc/shared/modRefBarrierSet.hpp"

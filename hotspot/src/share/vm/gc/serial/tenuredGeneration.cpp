@@ -42,7 +42,7 @@
 
 TenuredGeneration::TenuredGeneration(ReservedSpace rs,
                                      size_t initial_byte_size,
-                                     GenRemSet* remset) :
+                                     CardTableRS* remset) :
   CardGeneration(rs, initial_byte_size, remset)
 {
   HeapWord* bottom = (HeapWord*) _virtual_space.low();

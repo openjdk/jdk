@@ -291,7 +291,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
 void G1CollectorPolicy::initialize_alignments() {
   _space_alignment = HeapRegion::GrainBytes;
-  size_t card_table_alignment = GenRemSet::max_alignment_constraint();
+  size_t card_table_alignment = CardTableRS::ct_max_alignment_constraint();
   size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
   _heap_alignment = MAX3(card_table_alignment, _space_alignment, page_size);
 }
