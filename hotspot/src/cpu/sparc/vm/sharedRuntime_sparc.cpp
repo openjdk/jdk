@@ -1001,7 +1001,7 @@ void AdapterGenerator::gen_i2c_adapter(int total_args_passed,
     __ delayed()->nop();
 
     __ ld_ptr(G2_thread, in_bytes(JavaThread::jvmci_alternate_call_target_offset()), G3);
-    __ st(G0, Address(G2_thread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
+    __ st_ptr(G0, Address(G2_thread, in_bytes(JavaThread::jvmci_alternate_call_target_offset())));
 
     __ bind(no_alternative_target);
   }
