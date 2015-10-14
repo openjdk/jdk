@@ -381,7 +381,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(Method,                      _method_counters,                              MethodCounters*)                       \
   nonstatic_field(Method,                      _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Method,                      _vtable_index,                                 int)                                   \
-  nonstatic_field(Method,                      _method_size,                                  u2)                                    \
   nonstatic_field(Method,                      _intrinsic_id,                                 u2)                                    \
   nonproduct_nonstatic_field(Method,           _compiled_invocation_count,                    int)                                   \
   volatile_nonstatic_field(Method,             _code,                                         nmethod*)                              \
