@@ -41,9 +41,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.BooleanSupplier;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import sun.misc.Unsafe;
 
 /**
@@ -480,23 +480,34 @@ public final class Utils {
      * @param expectedException expected exception
      */
     public static void runAndCheckException(Runnable runnable, Class<? extends Throwable> expectedException) {
-        boolean expectedExceptionWasNotThrown = false;
+        runAndCheckException(runnable, t -> {
+            if (t == null) {
+                if (expectedException != null) {
+                    throw new AssertionError("Didn't get expected exception " + expectedException.getSimpleName());
+                }
+            } else {
+                String message = "Got unexpected exception " + t.getClass().getSimpleName();
+                if (expectedException == null) {
+                    throw new AssertionError(message, t);
+                } else if (!expectedException.isAssignableFrom(t.getClass())) {
+                    message += " instead of " + expectedException.getSimpleName();
+                    throw new AssertionError(message, t);
+                }
+            }
+        });
+    }
+
+    /**
+     * Runs runnable and makes some checks to ensure that it throws expected exception.
+     * @param runnable what we run
+     * @param checkException a consumer which checks that we got expected exception and raises a new exception otherwise
+     */
+    public static void runAndCheckException(Runnable runnable, Consumer<Throwable> checkException) {
         try {
             runnable.run();
-            if (expectedException != null) {
-                expectedExceptionWasNotThrown = true;
-            }
+            checkException.accept(null);
         } catch (Throwable t) {
-            if (expectedException == null) {
-                throw new AssertionError("Got unexpected exception ", t);
-            }
-            if (!expectedException.isAssignableFrom(t.getClass())) {
-                throw new AssertionError(String.format("Got unexpected exception %s instead of %s",
-                        t.getClass().getSimpleName(), expectedException.getSimpleName()), t);
-            }
-        }
-        if (expectedExceptionWasNotThrown) {
-           throw new AssertionError("Didn't get expected exception " + expectedException.getSimpleName());
+            checkException.accept(t);
         }
     }
 
