@@ -553,7 +553,7 @@ JRT_ENTRY_NO_ASYNC(static address, exception_handler_for_pc_helper(JavaThread* t
                     exception->print_value_string(), p2i((address)exception()), nm->method()->print_value_string(), p2i(pc), p2i(thread));
     }
     // for AbortVMOnException flag
-    NOT_PRODUCT(Exceptions::debug_check_abort(exception));
+    Exceptions::debug_check_abort(exception);
 
     // Clear out the exception oop and pc since looking up an
     // exception handler can cause class loading, which might throw an
