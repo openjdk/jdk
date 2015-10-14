@@ -66,7 +66,6 @@ class OopClosure;
 class ScanClosure;
 class FastScanClosure;
 class GenCollectedHeap;
-class GenRemSet;
 class GCStats;
 
 // A "ScratchBlock" represents a block of memory in one generation usable by

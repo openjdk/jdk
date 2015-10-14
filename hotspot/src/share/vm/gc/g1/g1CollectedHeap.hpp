@@ -65,7 +65,6 @@ class SpaceClosure;
 class CompactibleSpaceClosure;
 class Space;
 class G1CollectorPolicy;
-class GenRemSet;
 class G1RemSet;
 class HeapRegionRemSetIterator;
 class ConcurrentMark;

@@ -47,7 +47,6 @@ class BlockOffsetArrayContigSpace;
 class Generation;
 class CompactibleSpace;
 class BlockOffsetTable;
-class GenRemSet;
 class CardTableRS;
 class DirtyCardToOopClosure;
 

@@ -502,7 +502,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
   nonstatic_field(BlockOffsetArrayNonContigSpace, _unallocated_block,                         HeapWord*)                             \
                                                                                                                                      \
-  nonstatic_field(CardGeneration,              _rs,                                           GenRemSet*)                            \
+  nonstatic_field(CardGeneration,              _rs,                                           CardTableRS*)                          \
   nonstatic_field(CardGeneration,              _bts,                                          BlockOffsetSharedArray*)               \
   nonstatic_field(CardGeneration,              _shrink_factor,                                size_t)                                \
   nonstatic_field(CardGeneration,              _capacity_at_prologue,                         size_t)                                \
@@ -1524,8 +1524,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
            declare_type(CardTableModRefBS,            ModRefBarrierSet)   \
            declare_type(CardTableModRefBSForCTRS,     CardTableModRefBS)  \
   declare_toplevel_type(BarrierSet::Name)                                 \
-  declare_toplevel_type(GenRemSet)                                        \
-           declare_type(CardTableRS,                  GenRemSet)          \
+  declare_toplevel_type(CardTableRS)                                      \
   declare_toplevel_type(BlockOffsetSharedArray)                           \
   declare_toplevel_type(BlockOffsetTable)                                 \
            declare_type(BlockOffsetArray,             BlockOffsetTable)   \
@@ -1548,7 +1547,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                           \
   declare_toplevel_type(BarrierSet*)                                      \
   declare_toplevel_type(BlockOffsetSharedArray*)                          \
-  declare_toplevel_type(GenRemSet*)                                       \
   declare_toplevel_type(CardTableRS*)                                     \
   declare_toplevel_type(CardTableModRefBS*)                               \
   declare_toplevel_type(CardTableModRefBS**)                              \
