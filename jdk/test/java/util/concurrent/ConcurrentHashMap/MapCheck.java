@@ -68,7 +68,6 @@ public class MapCheck {
             }
         }
 
-
         if (args.length > 1)
             numTests = Integer.parseInt(args[1]);
 
@@ -91,7 +90,6 @@ public class MapCheck {
         }
 
         TestTimer.printStats();
-
 
         if (doSerializeTest)
             stest(newMap(mapClass), size);

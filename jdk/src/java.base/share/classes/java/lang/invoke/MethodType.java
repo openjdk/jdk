@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1056,6 +1056,23 @@ class MethodType implements java.io.Serializable {
      * @throws TypeNotPresentException if a named type cannot be found
      */
     public static MethodType fromMethodDescriptorString(String descriptor, ClassLoader loader)
+        throws IllegalArgumentException, TypeNotPresentException
+    {
+        return fromDescriptor(descriptor,
+                              (loader == null) ? ClassLoader.getSystemClassLoader() : loader);
+    }
+
+    /**
+     * Same as {@link #fromMethodDescriptorString(String, ClassLoader)}, but
+     * {@code null} ClassLoader means the bootstrap loader is used here.
+     * <p>
+     * IMPORTANT: This method is preferable for JDK internal use as it more
+     * correctly interprets {@code null} ClassLoader than
+     * {@link #fromMethodDescriptorString(String, ClassLoader)}.
+     * Use of this method also avoids early initialization issues when system
+     * ClassLoader is not initialized yet.
+     */
+    static MethodType fromDescriptor(String descriptor, ClassLoader loader)
         throws IllegalArgumentException, TypeNotPresentException
     {
         if (!descriptor.startsWith("(") ||  // also generates NPE if needed
