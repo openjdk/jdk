@@ -103,8 +103,6 @@ import jdk.internal.dynalink.linker.MethodTypeConversionStrategy;
  * A factory for type converters. This class is the main implementation behind the
  * {@link LinkerServices#asType(MethodHandle, MethodType)}. It manages the known {@link GuardingTypeConverterFactory}
  * instances and creates appropriate converters for method handles.
- *
- * @author Attila Szegedi
  */
 public class TypeConverterFactory {
 

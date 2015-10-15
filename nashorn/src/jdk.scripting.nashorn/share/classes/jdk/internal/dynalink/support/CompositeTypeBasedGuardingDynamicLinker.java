@@ -98,8 +98,6 @@ import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
  * are queried sequentially on their {@link TypeBasedGuardingDynamicLinker#canLinkType(Class)} method. The linkers
  * returning true are then bound to the class, and next time a receiver of same type is encountered, the linking is
  * delegated to those linkers only, speeding up dispatch.
- *
- * @author Attila Szegedi
  */
 public class CompositeTypeBasedGuardingDynamicLinker implements TypeBasedGuardingDynamicLinker, Serializable {
     private static final long serialVersionUID = 1L;
