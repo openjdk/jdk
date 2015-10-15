@@ -41,7 +41,6 @@ private:
   double* _surv_rate;
   double* _accum_surv_rate_pred;
   double  _last_pred;
-  double  _accum_surv_rate;
   TruncatedSeq** _surv_rate_pred;
   NumberSeq**    _summary_surv_rates;
   size_t         _summary_surv_rates_len;
@@ -59,7 +58,7 @@ public:
   void start_adding_regions();
   void stop_adding_regions();
   void record_surviving_words(int age_in_group, size_t surv_words);
-  void all_surviving_words_recorded(bool propagate);
+  void all_surviving_words_recorded(bool update_predictors);
   const char* name() { return _name; }
 
   size_t region_num() { return _region_num; }
@@ -72,8 +71,6 @@ public:
       return _accum_surv_rate_pred[_stats_arrays_length-1] + diff * _last_pred;
     }
   }
-
-  double accum_surv_rate(size_t adjustment);
 
   TruncatedSeq* get_seq(size_t age) const {
     if (age >= _setup_seq_num) {

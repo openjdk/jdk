@@ -59,7 +59,6 @@ double SurvRateGroup::get_new_prediction(TruncatedSeq const* seq) const {
 void SurvRateGroup::reset() {
   _all_regions_allocated = 0;
   _setup_seq_num         = 0;
-  _accum_surv_rate       = 0.0;
   _last_pred             = 0.0;
   // the following will set up the arrays with length 1
   _region_num            = 1;
@@ -83,7 +82,6 @@ void SurvRateGroup::reset() {
 void SurvRateGroup::start_adding_regions() {
   _setup_seq_num   = _stats_arrays_length;
   _region_num      = 0;
-  _accum_surv_rate = 0.0;
 }
 
 void SurvRateGroup::stop_adding_regions() {
@@ -121,25 +119,7 @@ void SurvRateGroup::stop_adding_regions() {
   }
 }
 
-double SurvRateGroup::accum_surv_rate(size_t adjustment) {
-  // we might relax this one in the future...
-  guarantee( adjustment == 0 || adjustment == 1, "pre-condition" );
-
-  double ret = _accum_surv_rate;
-  if (adjustment > 0) {
-    TruncatedSeq* seq = get_seq(_region_num+1);
-    double surv_rate = get_new_prediction(seq);
-    ret += surv_rate;
-  }
-
-  return ret;
-}
-
 int SurvRateGroup::next_age_index() {
-  TruncatedSeq* seq = get_seq(_region_num);
-  double surv_rate = get_new_prediction(seq);
-  _accum_surv_rate += surv_rate;
-
   ++_region_num;
   return (int) ++_all_regions_allocated;
 }
@@ -160,8 +140,8 @@ void SurvRateGroup::record_surviving_words(int age_in_group, size_t surv_words) 
   }
 }
 
-void SurvRateGroup::all_surviving_words_recorded(bool propagate) {
-  if (propagate && _region_num > 0) { // conservative
+void SurvRateGroup::all_surviving_words_recorded(bool update_predictors) {
+  if (update_predictors && _region_num > 0) { // conservative
     double surv_rate = _surv_rate_pred[_region_num-1]->last();
     for (size_t i = _region_num; i < _stats_arrays_length; ++i) {
       guarantee( _surv_rate[i] <= 0.00001,

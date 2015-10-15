@@ -343,11 +343,15 @@ public:
 
   double predict_survivor_regions_evac_time() const;
 
+  bool should_update_surv_rate_group_predictors() {
+    return collector_state()->last_young_gc() && !collector_state()->in_marking_window();
+  }
+
   void cset_regions_freed() {
-    bool propagate = collector_state()->should_propagate();
-    _short_lived_surv_rate_group->all_surviving_words_recorded(propagate);
-    _survivor_surv_rate_group->all_surviving_words_recorded(propagate);
-    // also call it on any more surv rate groups
+    bool update = should_update_surv_rate_group_predictors();
+
+    _short_lived_surv_rate_group->all_surviving_words_recorded(update);
+    _survivor_surv_rate_group->all_surviving_words_recorded(update);
   }
 
   G1MMUTracker* mmu_tracker() {
