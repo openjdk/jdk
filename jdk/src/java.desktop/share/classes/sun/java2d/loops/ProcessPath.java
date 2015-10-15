@@ -45,7 +45,7 @@ public class ProcessPath {
 
     /* Public interfaces and methods for drawing and filling general paths */
 
-    public static abstract class DrawHandler {
+    public abstract static class DrawHandler {
         public int xMin;
         public int yMin;
         public int xMax;
@@ -121,7 +121,7 @@ public class ProcessPath {
     public static final int PH_MODE_DRAW_CLIP = 0;
     public static final int PH_MODE_FILL_CLIP = 1;
 
-    public static abstract class ProcessHandler implements EndSubPathHandler {
+    public abstract static class ProcessHandler implements EndSubPathHandler {
         DrawHandler dhnd;
         int clipMode;
 

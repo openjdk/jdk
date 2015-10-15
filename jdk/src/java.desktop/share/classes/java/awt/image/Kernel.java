@@ -83,7 +83,7 @@ public class Kernel implements Cloneable {
      * Returns the X origin of this <code>Kernel</code>.
      * @return the X origin.
      */
-    final public int getXOrigin(){
+    public final int getXOrigin(){
         return xOrigin;
     }
 
@@ -91,7 +91,7 @@ public class Kernel implements Cloneable {
      * Returns the Y origin of this <code>Kernel</code>.
      * @return the Y origin.
      */
-    final public int getYOrigin() {
+    public final int getYOrigin() {
         return yOrigin;
     }
 
@@ -99,7 +99,7 @@ public class Kernel implements Cloneable {
      * Returns the width of this <code>Kernel</code>.
      * @return the width of this <code>Kernel</code>.
      */
-    final public int getWidth() {
+    public final int getWidth() {
         return width;
     }
 
@@ -107,7 +107,7 @@ public class Kernel implements Cloneable {
      * Returns the height of this <code>Kernel</code>.
      * @return the height of this <code>Kernel</code>.
      */
-    final public int getHeight() {
+    public final int getHeight() {
         return height;
     }
 
@@ -123,7 +123,7 @@ public class Kernel implements Cloneable {
      * @throws IllegalArgumentException if <code>data</code> is less
      *         than the size of this <code>Kernel</code>
      */
-    final public float[] getKernelData(float[] data) {
+    public final float[] getKernelData(float[] data) {
         if (data == null) {
             data = new float[this.data.length];
         }

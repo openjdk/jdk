@@ -60,7 +60,7 @@ public abstract class Arc2D extends RectangularShape {
      * connecting the two ends of the arc segment.
      * @since 1.2
      */
-    public final static int OPEN = 0;
+    public static final int OPEN = 0;
 
     /**
      * The closure type for an arc closed by drawing a straight
@@ -68,7 +68,7 @@ public abstract class Arc2D extends RectangularShape {
      * arc segment.
      * @since 1.2
      */
-    public final static int CHORD = 1;
+    public static final int CHORD = 1;
 
     /**
      * The closure type for an arc closed by drawing straight line
@@ -76,7 +76,7 @@ public abstract class Arc2D extends RectangularShape {
      * of the full ellipse and from that point to the end of the arc segment.
      * @since 1.2
      */
-    public final static int PIE = 2;
+    public static final int PIE = 2;
 
     /**
      * This class defines an arc specified in {@code float} precision.

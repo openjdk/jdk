@@ -107,16 +107,16 @@ class XRobotPeer implements RobotPeer {
         return pixelArray;
     }
 
-    private static native synchronized void setup(int numberOfButtons, int[] buttonDownMasks);
+    private static synchronized native void setup(int numberOfButtons, int[] buttonDownMasks);
 
-    private static native synchronized void mouseMoveImpl(X11GraphicsConfig xgc, int x, int y);
-    private static native synchronized void mousePressImpl(int buttons);
-    private static native synchronized void mouseReleaseImpl(int buttons);
-    private static native synchronized void mouseWheelImpl(int wheelAmt);
+    private static synchronized native void mouseMoveImpl(X11GraphicsConfig xgc, int x, int y);
+    private static synchronized native void mousePressImpl(int buttons);
+    private static synchronized native void mouseReleaseImpl(int buttons);
+    private static synchronized native void mouseWheelImpl(int wheelAmt);
 
-    private static native synchronized void keyPressImpl(int keycode);
-    private static native synchronized void keyReleaseImpl(int keycode);
+    private static synchronized native void keyPressImpl(int keycode);
+    private static synchronized native void keyReleaseImpl(int keycode);
 
-    private static native synchronized void getRGBPixelsImpl(X11GraphicsConfig xgc,
+    private static synchronized native void getRGBPixelsImpl(X11GraphicsConfig xgc,
             int x, int y, int width, int height, int pixelArray[], boolean isGtkSupported);
 }

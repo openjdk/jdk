@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.Node;
@@ -42,7 +41,7 @@ import jdk.nashorn.internal.ir.PropertyNode;
 import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.Splittable;
 import jdk.nashorn.internal.ir.Statement;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.ir.visitor.SimpleNodeVisitor;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
@@ -53,7 +52,7 @@ import jdk.nashorn.internal.runtime.options.Options;
  * Split the IR into smaller compile units.
  */
 @Logger(name="splitter")
-final class Splitter extends NodeVisitor<LexicalContext> implements Loggable {
+final class Splitter extends SimpleNodeVisitor implements Loggable {
     /** Current compiler. */
     private final Compiler compiler;
 
@@ -79,7 +78,6 @@ final class Splitter extends NodeVisitor<LexicalContext> implements Loggable {
      * @param outermostCompileUnit  compile unit for outermost function, if non-lazy this is the script's compile unit
      */
     public Splitter(final Compiler compiler, final FunctionNode functionNode, final CompileUnit outermostCompileUnit) {
-        super(new LexicalContext());
         this.compiler             = compiler;
         this.outermost            = functionNode;
         this.outermostCompileUnit = outermostCompileUnit;
@@ -142,7 +140,7 @@ final class Splitter extends NodeVisitor<LexicalContext> implements Loggable {
         final Block body = functionNode.getBody();
         final List<FunctionNode> dc = directChildren(functionNode);
 
-        final Block newBody = (Block)body.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+        final Block newBody = (Block)body.accept(new SimpleNodeVisitor() {
             @Override
             public boolean enterFunctionNode(final FunctionNode nestedFunction) {
                 return dc.contains(nestedFunction);
@@ -164,7 +162,7 @@ final class Splitter extends NodeVisitor<LexicalContext> implements Loggable {
 
     private static List<FunctionNode> directChildren(final FunctionNode functionNode) {
         final List<FunctionNode> dc = new ArrayList<>();
-        functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+        functionNode.accept(new SimpleNodeVisitor() {
             @Override
             public boolean enterFunctionNode(final FunctionNode child) {
                 if (child == functionNode) {

@@ -41,7 +41,7 @@ import sun.java2d.SunGraphics2D;
  * The abstract class XBaseMenuWindow is the superclass
  * of all menu windows.
  */
-abstract public class XBaseMenuWindow extends XWindow {
+public abstract class XBaseMenuWindow extends XWindow {
 
     /************************************************
      *
@@ -89,7 +89,7 @@ abstract public class XBaseMenuWindow extends XWindow {
      * no other locks should be taken when
      * thread own this lock.
      */
-    static private Object menuTreeLock = new Object();
+    private static Object menuTreeLock = new Object();
 
     /************************************************
      *

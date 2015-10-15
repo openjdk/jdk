@@ -263,27 +263,27 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
 
     // The following Strings are maintained for backward-compatibility with
     // Properties based print control.
-    private final static String DEST_PROP = "awt.print.destination";
-    private final static String PRINTER = "printer";
-    private final static String FILE = "file";
+    private static final String DEST_PROP = "awt.print.destination";
+    private static final String PRINTER = "printer";
+    private static final String FILE = "file";
 
-    private final static String PRINTER_PROP = "awt.print.printer";
+    private static final String PRINTER_PROP = "awt.print.printer";
 
-    private final static String FILENAME_PROP = "awt.print.fileName";
+    private static final String FILENAME_PROP = "awt.print.fileName";
 
-    private final static String NUMCOPIES_PROP = "awt.print.numCopies";
+    private static final String NUMCOPIES_PROP = "awt.print.numCopies";
 
-    private final static String OPTIONS_PROP = "awt.print.options";
+    private static final String OPTIONS_PROP = "awt.print.options";
 
-    private final static String ORIENT_PROP = "awt.print.orientation";
-    private final static String PORTRAIT = "portrait";
-    private final static String LANDSCAPE = "landscape";
+    private static final String ORIENT_PROP = "awt.print.orientation";
+    private static final String PORTRAIT = "portrait";
+    private static final String LANDSCAPE = "landscape";
 
-    private final static String PAPERSIZE_PROP = "awt.print.paperSize";
-    private final static String LETTER = "letter";
-    private final static String LEGAL = "legal";
-    private final static String EXECUTIVE = "executive";
-    private final static String A4 = "a4";
+    private static final String PAPERSIZE_PROP = "awt.print.paperSize";
+    private static final String LETTER = "letter";
+    private static final String LEGAL = "legal";
+    private static final String EXECUTIVE = "executive";
+    private static final String A4 = "a4";
 
     private Properties props;
 

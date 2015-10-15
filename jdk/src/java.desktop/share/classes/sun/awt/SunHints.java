@@ -102,7 +102,7 @@ public class SunHints {
         private static Value[][] ValueObjects =
             new Value[NUM_KEYS][VALS_PER_KEY];
 
-        private synchronized static void register(SunHints.Key key,
+        private static synchronized void register(SunHints.Key key,
                                                   Value value) {
             int kindex = key.getIndex();
             int vindex = value.getIndex();

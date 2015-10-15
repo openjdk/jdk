@@ -62,7 +62,7 @@ class _AppEventHandler {
     private static native void nativeReplyToAppShouldTerminate(final boolean shouldTerminate);
     private static native void nativeRegisterForNotification(final int notification);
 
-    final static _AppEventHandler instance = new _AppEventHandler();
+    static final _AppEventHandler instance = new _AppEventHandler();
     static _AppEventHandler getInstance() {
         return instance;
     }

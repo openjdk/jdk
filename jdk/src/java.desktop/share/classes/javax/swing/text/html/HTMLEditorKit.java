@@ -987,7 +987,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * providing a different parser while reusing some of the
      * implementation provided by this editor kit.
      */
-    public static abstract class Parser {
+    public abstract static class Parser {
         /**
          * Parse the given stream and drive the given callback
          * with the results of the parse.  This method should
@@ -1564,7 +1564,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * methods may have inconsistent behavior, or return the wrong thing.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    public static abstract class HTMLTextAction extends StyledTextAction {
+    public abstract static class HTMLTextAction extends StyledTextAction {
 
         /**
          * Creates a new HTMLTextAction from a string action name.
@@ -2009,7 +2009,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
     /*
      * Returns the object in an AttributeSet matching a key
      */
-    static private Object getAttrValue(AttributeSet attr, HTML.Attribute key) {
+    private static Object getAttrValue(AttributeSet attr, HTML.Attribute key) {
         Enumeration<?> names = attr.getAttributeNames();
         while (names.hasMoreElements()) {
             Object nextKey = names.nextElement();

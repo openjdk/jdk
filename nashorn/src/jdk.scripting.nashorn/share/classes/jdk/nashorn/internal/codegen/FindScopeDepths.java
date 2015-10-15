@@ -39,7 +39,7 @@ import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.WithNode;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.ir.visitor.SimpleNodeVisitor;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
@@ -53,7 +53,7 @@ import jdk.nashorn.internal.runtime.logging.Logger;
  * FunctionNode being compiled
  */
 @Logger(name="scopedepths")
-final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Loggable {
+final class FindScopeDepths extends SimpleNodeVisitor implements Loggable {
 
     private final Compiler compiler;
     private final Map<Integer, Map<Integer, RecompilableScriptFunctionData>> fnIdToNestedFunctions = new HashMap<>();
@@ -66,7 +66,6 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
     private int dynamicScopeCount;
 
     FindScopeDepths(final Compiler compiler) {
-        super(new LexicalContext());
         this.compiler = compiler;
         this.log      = initLogger(compiler.getContext());
     }
@@ -273,7 +272,7 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
 
         //get all symbols that are referenced inside this function body
         final Set<Symbol> symbols = new HashSet<>();
-        block.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+        block.accept(new SimpleNodeVisitor() {
             @Override
             public boolean enterIdentNode(final IdentNode identNode) {
                 final Symbol symbol = identNode.getSymbol();

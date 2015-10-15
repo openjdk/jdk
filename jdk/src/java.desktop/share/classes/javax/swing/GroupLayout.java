@@ -3391,7 +3391,7 @@ public class GroupLayout implements LayoutManager2 {
      * Represents two springs that should have autopadding inserted between
      * them.
      */
-    private final static class AutoPreferredGapMatch {
+    private static final class AutoPreferredGapMatch {
         public final ComponentSpring source;
         public final ComponentSpring target;
 

@@ -1537,7 +1537,7 @@ public class JEditorPane extends JTextComponent {
     private Hashtable<String, Object> pageProperties;
 
     /** Should be kept in sync with javax.swing.text.html.FormView counterpart. */
-    final static String PostDataProperty = "javax.swing.JEditorPane.postdata";
+    static final String PostDataProperty = "javax.swing.JEditorPane.postdata";
 
     /**
      * Table of registered type handlers for this editor.
