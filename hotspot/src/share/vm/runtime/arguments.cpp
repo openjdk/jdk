@@ -3938,16 +3938,8 @@ jint Arguments::insert_vm_options_file(const JavaVMInitArgs* args,
     return code;
   }
 
-  // Now set global settings from the vm_option file, giving an error if
-  // it has VMOptionsFile in it
-  code = match_special_option_and_act(vm_options_file_args->get(), flags_file,
-                                      NULL, NULL, NULL);
-  if (code != JNI_OK) {
-    return code;
-  }
-
   if (vm_options_file_args->get()->nOptions < 1) {
-    return 0;
+    return JNI_OK;
   }
 
   return args_out->insert(args, vm_options_file_args->get(),
@@ -3982,17 +3974,29 @@ jint Arguments::match_special_option_and_act(const JavaVMInitArgs* args,
         // The caller accepts -XX:VMOptionsFile
         if (*vm_options_file != NULL) {
           jio_fprintf(defaultStream::error_stream(),
-                      "Only one VM Options file is supported "
-                      "on the command line\n");
+                      "The VM Options file can only be specified once and "
+                      "only on the command line.\n");
           return JNI_EINVAL;
         }
 
         *vm_options_file = (char *) tail;
         vm_options_file_pos = index;  // save position of -XX:VMOptionsFile
-        if (*vm_options_file == NULL) {
-          jio_fprintf(defaultStream::error_stream(),
-                      "Cannot copy vm_options_file name.\n");
-          return JNI_ENOMEM;
+        // If there's a VMOptionsFile, parse that (also can set flags_file)
+        jint code = insert_vm_options_file(args, flags_file, vm_options_file,
+                                           vm_options_file_pos,
+                                           vm_options_file_args, args_out);
+        if (code != JNI_OK) {
+          return code;
+        }
+        if (args_out->is_set()) {
+          // The VMOptions file inserted some options so switch 'args'
+          // to the new set of options, and continue processing which
+          // preserves "last option wins" semantics.
+          args = args_out->get();
+          // The first option from the VMOptionsFile replaces the
+          // current option.  So we back track to process the
+          // replacement option.
+          index--;
         }
       } else {
         jio_fprintf(defaultStream::error_stream(),
@@ -4051,12 +4055,6 @@ jint Arguments::match_special_option_and_act(const JavaVMInitArgs* args,
       vm_exit(0);
     }
 #endif
-  }
-
-  // If there's a VMOptionsFile, parse that (also can set flags_file)
-  if ((vm_options_file != NULL) && (*vm_options_file != NULL)) {
-    return insert_vm_options_file(args, flags_file, vm_options_file,
-                                  vm_options_file_pos, vm_options_file_args, args_out);
   }
   return JNI_OK;
 }
