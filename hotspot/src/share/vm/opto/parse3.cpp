@@ -313,10 +313,19 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
 
     // Preserve allocation ptr to create precedent edge to it in membar
     // generated on exit from constructor.
-    if (C->eliminate_boxing() &&
-        adr_type->isa_oopptr() && adr_type->is_oopptr()->is_ptr_to_boxed_value() &&
-        AllocateNode::Ideal_allocation(obj, &_gvn) != NULL) {
-      set_alloc_with_final(obj);
+    if (AllocateNode::Ideal_allocation(obj, &_gvn) != NULL) {
+      if (field->is_final()) {
+        set_alloc_with_final(obj);
+      }
+      if (field->is_stable()) {
+        set_alloc_with_stable(obj);
+      }
+    } else if (field->is_stable()) {
+      // This stable field doesn't have an allocation, set
+      // alloc_with_stable as NULL: its initial value is NodeSentinel,
+      // if it is not set to NULL here, next set_alloc_with_stable
+      // call might set none-NULL value successfully.
+      set_alloc_with_stable(NULL);
     }
   }
 }
