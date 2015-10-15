@@ -83,16 +83,16 @@ public class SortingFocusTraversalPolicy
      * that they need to invoke getFirstComponent or getLastComponent, the
      * sorted list should be reused if possible.
      */
-    transient private Container cachedRoot;
-    transient private List<Component> cachedCycle;
+    private transient Container cachedRoot;
+    private transient List<Component> cachedCycle;
 
     // Delegate our fitness test to ContainerOrder so that we only have to
     // code the algorithm once.
     private static final SwingContainerOrderFocusTraversalPolicy
         fitnessTestPolicy = new SwingContainerOrderFocusTraversalPolicy();
 
-    final private int FORWARD_TRAVERSAL = 0;
-    final private int BACKWARD_TRAVERSAL = 1;
+    private final int FORWARD_TRAVERSAL = 0;
+    private final int BACKWARD_TRAVERSAL = 1;
 
     /*
      * When true (by default), the legacy merge-sort algo is used to sort an FTP cycle.

@@ -143,11 +143,11 @@ public class FileChooserDemo extends JPanel implements ActionListener {
     private JTextField customField;
     private final ExampleFileView fileView;
     private final ExampleFileSystemView fileSystemView;
-    private final static Dimension hpad10 = new Dimension(10, 1);
-    private final static Dimension vpad20 = new Dimension(1, 20);
-    private final static Dimension vpad7 = new Dimension(1, 7);
-    private final static Dimension vpad4 = new Dimension(1, 4);
-    private final static Insets insets = new Insets(5, 10, 0, 10);
+    private static final Dimension hpad10 = new Dimension(10, 1);
+    private static final Dimension vpad20 = new Dimension(1, 20);
+    private static final Dimension vpad7 = new Dimension(1, 7);
+    private static final Dimension vpad4 = new Dimension(1, 4);
+    private static final Insets insets = new Insets(5, 10, 0, 10);
     private final FilePreviewer previewer;
     private final JFileChooser chooser;
 

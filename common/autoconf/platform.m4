@@ -489,7 +489,8 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_BITS],
   AC_CHECK_HEADERS([stdio.h], , [
     AC_MSG_NOTICE([Failed to compile stdio.h. This likely implies missing compile dependencies.])
     if test "x$COMPILE_TYPE" = xreduced; then
-      AC_MSG_NOTICE([You are doing a reduced build. Check that you have 32-bit libraries installed.])
+      HELP_MSG_MISSING_DEPENDENCY([reduced])
+      AC_MSG_NOTICE([You are doing a reduced build. Check that you have 32-bit libraries installed. $HELP_MSG])
     elif test "x$COMPILE_TYPE" = xcross; then
       AC_MSG_NOTICE([You are doing a cross-compilation. Check that you have all target platform libraries installed.])
     fi
@@ -509,7 +510,7 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_TARGET_BITS],
       # This situation may happen on 64-bit platforms where the compiler by default only generates 32-bit objects
       # Let's try to implicitely set the compilers target architecture and retry the test
       AC_MSG_NOTICE([The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS).])
-      AC_MSG_NOTICE([I'll retry after setting the platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}])
+      AC_MSG_NOTICE([Retrying with platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}])
       PLATFORM_SET_COMPILER_TARGET_BITS_FLAGS
 
       # We have to unset 'ac_cv_sizeof_int_p' first, otherwise AC_CHECK_SIZEOF will use the previously cached value!
@@ -524,7 +525,14 @@ _ACEOF
       TESTED_TARGET_CPU_BITS=`expr 8 \* $ac_cv_sizeof_int_p`
 
       if test "x$TESTED_TARGET_CPU_BITS" != "x$OPENJDK_TARGET_CPU_BITS"; then
-        AC_MSG_ERROR([The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)])
+        AC_MSG_NOTICE([The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)])
+        if test "x$COMPILE_TYPE" = xreduced; then
+          HELP_MSG_MISSING_DEPENDENCY([reduced])
+          AC_MSG_NOTICE([You are doing a reduced build. Check that you have 32-bit libraries installed. $HELP_MSG])
+        elif test "x$COMPILE_TYPE" = xcross; then
+          AC_MSG_NOTICE([You are doing a cross-compilation. Check that you have all target platform libraries installed.])
+        fi
+        AC_MSG_ERROR([Cannot continue.])
       fi
     fi
   fi

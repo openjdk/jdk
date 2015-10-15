@@ -22,7 +22,6 @@
  */
 
 import java.io.File;
-import java.net.PortUnreachableException;
 import java.util.HashMap;
 import java.util.Map;
 import jdk.testlibrary.ProcessTools;
@@ -86,7 +85,6 @@ public class KinitConfPlusProps {
         try {
             OutputAnalyzer out = ProcessTools.executeCommand(command);
             out.shouldHaveExitValue(-1);
-            out.shouldContain(PortUnreachableException.class.getName());
         } catch(Throwable e) {
             System.out.println("Unexpected exception: " + e);
             e.printStackTrace(System.out);

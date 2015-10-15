@@ -148,9 +148,10 @@ address StubRoutines::_mulAdd = NULL;
 address StubRoutines::_montgomeryMultiply = NULL;
 address StubRoutines::_montgomerySquare = NULL;
 
+address StubRoutines::_dexp = NULL;
+
 double (* StubRoutines::_intrinsic_log   )(double) = NULL;
 double (* StubRoutines::_intrinsic_log10 )(double) = NULL;
-double (* StubRoutines::_intrinsic_exp   )(double) = NULL;
 double (* StubRoutines::_intrinsic_pow   )(double, double) = NULL;
 double (* StubRoutines::_intrinsic_sin   )(double) = NULL;
 double (* StubRoutines::_intrinsic_cos   )(double) = NULL;

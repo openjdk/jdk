@@ -142,7 +142,7 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
      *        this <code>RescaleOp</code>
      * @return the scale factors of this <code>RescaleOp</code>.
      */
-    final public float[] getScaleFactors (float scaleFactors[]) {
+    public final float[] getScaleFactors (float scaleFactors[]) {
         if (scaleFactors == null) {
             return this.scaleFactors.clone();
         }
@@ -160,7 +160,7 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
      *        this <code>RescaleOp</code>
      * @return the offsets of this <code>RescaleOp</code>.
      */
-    final public float[] getOffsets(float offsets[]) {
+    public final float[] getOffsets(float offsets[]) {
         if (offsets == null) {
             return this.offsets.clone();
         }
@@ -176,7 +176,7 @@ public class RescaleOp implements BufferedImageOp, RasterOp {
      * @return the number of scaling factors and offsets of this
      *         <code>RescaleOp</code>.
      */
-    final public int getNumFactors() {
+    public final int getNumFactors() {
         return length;
     }
 

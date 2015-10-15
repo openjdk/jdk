@@ -113,7 +113,7 @@ public abstract class SunToolkit extends Toolkit
      * the 4-bytes limit for the int type. (CR 6799099)
      * One more bit is reserved for FIRST_HIGH_BIT.
      */
-    public final static int MAX_BUTTONS_SUPPORTED = 20;
+    public static final int MAX_BUTTONS_SUPPORTED = 20;
 
     /**
      * Creates and initializes EventQueue instance for the specified
@@ -1820,7 +1820,7 @@ public abstract class SunToolkit extends Toolkit
      * Returns the value of "sun.awt.disableMixing" property. Default
      * value is {@code false}.
      */
-    public synchronized static boolean getSunAwtDisableMixing() {
+    public static synchronized boolean getSunAwtDisableMixing() {
         if (sunAwtDisableMixing == null) {
             sunAwtDisableMixing = AccessController.doPrivileged(
                                       new GetBooleanAction("sun.awt.disableMixing"));

@@ -837,6 +837,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(StubRoutines,                _multiplyToLen,                                address)                               \
      static_field(StubRoutines,                _squareToLen,                                  address)                               \
      static_field(StubRoutines,                _mulAdd,                                       address)                               \
+     static_field(StubRoutines,                _dexp,                                         address)                               \
                                                                                                                                      \
   /*****************/                                                                                                                \
   /* SharedRuntime */                                                                                                                \
@@ -1992,7 +1993,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(TanDNode, Node)                                         \
   declare_c2_type(AtanDNode, Node)                                        \
   declare_c2_type(SqrtDNode, Node)                                        \
-  declare_c2_type(ExpDNode, Node)                                         \
   declare_c2_type(LogDNode, Node)                                         \
   declare_c2_type(Log10DNode, Node)                                       \
   declare_c2_type(PowDNode, Node)                                         \

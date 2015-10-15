@@ -98,7 +98,7 @@ public final class GraphicsPrimitiveMgr {
     private GraphicsPrimitiveMgr() {
     }
 
-    public synchronized static void register(GraphicsPrimitive[] newPrimitives)
+    public static synchronized void register(GraphicsPrimitive[] newPrimitives)
     {
         GraphicsPrimitive[] devCollection = primitives;
         int oldSize = 0;
@@ -121,7 +121,7 @@ public final class GraphicsPrimitiveMgr {
         primitives = temp;
     }
 
-    public synchronized static void registerGeneral(GraphicsPrimitive gen) {
+    public static synchronized void registerGeneral(GraphicsPrimitive gen) {
         if (generalPrimitives == null) {
             generalPrimitives = new GraphicsPrimitive[] {gen};
             return;
@@ -133,7 +133,7 @@ public final class GraphicsPrimitiveMgr {
         generalPrimitives = newGen;
     }
 
-    public synchronized static GraphicsPrimitive locate(int primTypeID,
+    public static synchronized GraphicsPrimitive locate(int primTypeID,
                                                         SurfaceType dsttype)
     {
         return locate(primTypeID,
@@ -142,7 +142,7 @@ public final class GraphicsPrimitiveMgr {
                       dsttype);
     }
 
-    public synchronized static GraphicsPrimitive locate(int primTypeID,
+    public static synchronized GraphicsPrimitive locate(int primTypeID,
                                                         SurfaceType srctype,
                                                         CompositeType comptype,
                                                         SurfaceType dsttype)
@@ -170,7 +170,7 @@ public final class GraphicsPrimitiveMgr {
         return prim;
     }
 
-    public synchronized static GraphicsPrimitive
+    public static synchronized GraphicsPrimitive
         locatePrim(int primTypeID,
                    SurfaceType srctype,
                    CompositeType comptype,

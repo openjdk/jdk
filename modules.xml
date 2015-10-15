@@ -223,6 +223,16 @@
       <to>jdk.dev</to>
     </export>
     <export>
+      <name>jdk.internal.misc</name>
+      <to>java.corba</to>
+      <to>java.desktop</to>
+      <to>java.logging</to>
+      <to>java.management</to>
+      <to>java.naming</to>
+      <to>java.sql</to>
+      <to>jdk.management.resource</to>
+    </export>
+    <export>
       <name>jdk.internal.org.objectweb.asm</name>
       <to>java.instrument</to>
       <to>jdk.jfr</to>
@@ -265,7 +275,6 @@
       <to>java.rmi</to>
       <to>java.security.jgss</to>
       <to>java.security.sasl</to>
-      <to>java.sql</to>
       <to>java.xml</to>
       <to>java.xml.ws</to>
       <to>jdk.charsets</to>

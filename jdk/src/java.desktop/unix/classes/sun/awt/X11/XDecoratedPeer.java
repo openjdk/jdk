@@ -904,7 +904,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
         return getSize().height;
     }
 
-    final public WindowDimensions getDimensions() {
+    public final WindowDimensions getDimensions() {
         return dimensions;
     }
 

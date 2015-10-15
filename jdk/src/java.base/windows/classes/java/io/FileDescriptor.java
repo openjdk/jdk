@@ -27,6 +27,8 @@ package java.io;
 
 import java.util.ArrayList;
 import java.util.List;
+import jdk.internal.misc.JavaIOFileDescriptorAccess;
+import jdk.internal.misc.SharedSecrets;
 
 /**
  * Instances of the file descriptor class serve as an opaque handle
@@ -70,8 +72,8 @@ public final class FileDescriptor {
 
     // Set up JavaIOFileDescriptorAccess in SharedSecrets
     static {
-        sun.misc.SharedSecrets.setJavaIOFileDescriptorAccess(
-            new sun.misc.JavaIOFileDescriptorAccess() {
+        SharedSecrets.setJavaIOFileDescriptorAccess(
+            new JavaIOFileDescriptorAccess() {
                 public void set(FileDescriptor obj, int fd) {
                     obj.fd = fd;
                 }

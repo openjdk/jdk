@@ -2135,14 +2135,6 @@ class StubGenerator: public StubCodeGenerator {
       __ ret(0);
     }
     {
-      StubCodeMark mark(this, "StubRoutines", "exp");
-      StubRoutines::_intrinsic_exp = (double (*)(double)) __ pc();
-
-      __ fld_d(Address(rsp, 4));
-      __ exp_with_fallback(0);
-      __ ret(0);
-    }
-    {
       StubCodeMark mark(this, "StubRoutines", "pow");
       StubRoutines::_intrinsic_pow = (double (*)(double,double)) __ pc();
 
@@ -3048,6 +3040,32 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+ address generate_libmExp() {
+    address start = __ pc();
+
+    const XMMRegister x0  = xmm0;
+    const XMMRegister x1  = xmm1;
+    const XMMRegister x2  = xmm2;
+    const XMMRegister x3  = xmm3;
+
+    const XMMRegister x4  = xmm4;
+    const XMMRegister x5  = xmm5;
+    const XMMRegister x6  = xmm6;
+    const XMMRegister x7  = xmm7;
+
+    const Register tmp   = rbx;
+
+    BLOCK_COMMENT("Entry:");
+    __ enter(); // required for proper stackwalking of RuntimeStub frame
+    __ fast_exp(x0, x1, x2, x3, x4, x5, x6, x7, rax, rcx, rdx, tmp);
+    __ leave(); // required for proper stackwalking of RuntimeStub frame
+    __ ret(0);
+
+    return start;
+
+  }
+
+
   // Safefetch stubs.
   void generate_safefetch(const char* name, int size, address* entry,
                           address* fault_pc, address* continuation_pc) {
@@ -3267,6 +3285,9 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::x86::generate_CRC32C_table(supports_clmul);
       StubRoutines::_crc32c_table_addr = (address)StubRoutines::x86::_crc32c_table;
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C(supports_clmul);
+    }
+    if (VM_Version::supports_sse2()) {
+      StubRoutines::_dexp = generate_libmExp();
     }
   }
 

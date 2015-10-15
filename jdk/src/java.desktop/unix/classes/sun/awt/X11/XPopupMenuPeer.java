@@ -58,8 +58,8 @@ public class XPopupMenuPeer extends XMenuWindow implements PopupMenuPeer {
     /*
      * Painting constants
      */
-    private final static int CAPTION_MARGIN_TOP = 4;
-    private final static int CAPTION_SEPARATOR_HEIGHT = 6;
+    private static final int CAPTION_MARGIN_TOP = 4;
+    private static final int CAPTION_SEPARATOR_HEIGHT = 6;
 
     /************************************************
      *

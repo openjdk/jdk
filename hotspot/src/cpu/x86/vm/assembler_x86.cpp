@@ -770,6 +770,7 @@ address Assembler::locate_operand(address inst, WhichOperand which) {
     case 0x55: // andnps
     case 0x56: // orps
     case 0x57: // xorps
+    case 0x59: //mulpd
     case 0x6E: // movd
     case 0x7E: // movd
     case 0xAE: // ldmxcsr, stmxcsr, fxrstor, fxsave, clflush
@@ -3030,6 +3031,15 @@ void Assembler::pextrq(Register dst, XMMRegister src, int imm8) {
   emit_int8(imm8);
 }
 
+void Assembler::pextrw(Register dst, XMMRegister src, int imm8) {
+  assert(VM_Version::supports_sse2(), "");
+  int encode = simd_prefix_and_encode(as_XMMRegister(dst->encoding()), xnoreg, src, VEX_SIMD_66, /* no_mask_reg */ true,
+                                      VEX_OPCODE_0F_3A, /* rex_w */ false, AVX_128bit, /* legacy_mode */ _legacy_mode_bw);
+  emit_int8(0x15);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8(imm8);
+}
+
 void Assembler::pinsrd(XMMRegister dst, Register src, int imm8) {
   assert(VM_Version::supports_sse4_1(), "");
   int encode = simd_prefix_and_encode(dst, dst, as_XMMRegister(src->encoding()), VEX_SIMD_66, /* no_mask_reg */ true,
@@ -3044,6 +3054,15 @@ void Assembler::pinsrq(XMMRegister dst, Register src, int imm8) {
   int encode = simd_prefix_and_encode(dst, dst, as_XMMRegister(src->encoding()), VEX_SIMD_66, /* no_mask_reg */ true,
                                       VEX_OPCODE_0F_3A, /* rex_w */ true, AVX_128bit, /* legacy_mode */ _legacy_mode_dq);
   emit_int8(0x22);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8(imm8);
+}
+
+void Assembler::pinsrw(XMMRegister dst, Register src, int imm8) {
+  assert(VM_Version::supports_sse2(), "");
+  int encode = simd_prefix_and_encode(dst, dst, as_XMMRegister(src->encoding()), VEX_SIMD_66, /* no_mask_reg */ true,
+                                      VEX_OPCODE_0F, /* rex_w */ false, AVX_128bit, /* legacy_mode */ _legacy_mode_bw);
+  emit_int8((unsigned char)0xC4);
   emit_int8((unsigned char)(0xC0 | encode));
   emit_int8(imm8);
 }
@@ -4063,6 +4082,16 @@ void Assembler::mulpd(XMMRegister dst, XMMRegister src) {
   }
 }
 
+void Assembler::mulpd(XMMRegister dst, Address src) {
+  _instruction_uses_vl = true;
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  if (VM_Version::supports_evex()) {
+    emit_simd_arith_q(0x59, dst, src, VEX_SIMD_66);
+  } else {
+    emit_simd_arith(0x59, dst, src, VEX_SIMD_66);
+  }
+}
+
 void Assembler::mulps(XMMRegister dst, XMMRegister src) {
   _instruction_uses_vl = true;
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
@@ -4249,6 +4278,26 @@ void Assembler::vandps(XMMRegister dst, XMMRegister nds, Address src, int vector
     _input_size_in_bits = EVEX_32bit;
   }
   emit_vex_arith(0x54, dst, nds, src, VEX_SIMD_NONE, vector_len, /* no_mask_reg */ false, /* legacy_mode */ _legacy_mode_dq);
+}
+
+void Assembler::unpckhpd(XMMRegister dst, XMMRegister src) {
+  _instruction_uses_vl = true;
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  if (VM_Version::supports_evex()) {
+    emit_simd_arith_q(0x15, dst, src, VEX_SIMD_66);
+  } else {
+    emit_simd_arith(0x15, dst, src, VEX_SIMD_66);
+  }
+}
+
+void Assembler::unpcklpd(XMMRegister dst, XMMRegister src) {
+  _instruction_uses_vl = true;
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  if (VM_Version::supports_evex()) {
+    emit_simd_arith_q(0x14, dst, src, VEX_SIMD_66);
+  } else {
+    emit_simd_arith(0x14, dst, src, VEX_SIMD_66);
+  }
 }
 
 void Assembler::xorpd(XMMRegister dst, XMMRegister src) {
@@ -4871,8 +4920,9 @@ void Assembler::vpsrad(XMMRegister dst, XMMRegister src, XMMRegister shift, int 
 }
 
 
-// AND packed integers
+// logical operations packed integers
 void Assembler::pand(XMMRegister dst, XMMRegister src) {
+  _instruction_uses_vl = true;
   NOT_LP64(assert(VM_Version::supports_sse2(), ""));
   emit_simd_arith(0xDB, dst, src, VEX_SIMD_66);
 }
@@ -4891,6 +4941,17 @@ void Assembler::vpand(XMMRegister dst, XMMRegister nds, Address src, int vector_
     _input_size_in_bits = EVEX_32bit;
   }
   emit_vex_arith(0xDB, dst, nds, src, VEX_SIMD_66, vector_len);
+}
+
+void Assembler::pandn(XMMRegister dst, XMMRegister src) {
+  _instruction_uses_vl = true;
+  NOT_LP64(assert(VM_Version::supports_sse2(), ""));
+  if (VM_Version::supports_evex()) {
+    emit_simd_arith_q(0xDF, dst, src, VEX_SIMD_66);
+  }
+  else {
+    emit_simd_arith(0xDF, dst, src, VEX_SIMD_66);
+  }
 }
 
 void Assembler::por(XMMRegister dst, XMMRegister src) {

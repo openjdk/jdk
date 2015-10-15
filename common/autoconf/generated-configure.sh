@@ -705,9 +705,6 @@ CXXFLAGS_JDKLIB
 CFLAGS_JDKEXE
 CFLAGS_JDKLIB
 MACOSX_VERSION_MIN
-LEGACY_EXTRA_LDFLAGS
-LEGACY_EXTRA_CXXFLAGS
-LEGACY_EXTRA_CFLAGS
 CXX_O_FLAG_NONE
 CXX_O_FLAG_DEBUG
 CXX_O_FLAG_NORM
@@ -728,14 +725,12 @@ SET_SHARED_LIBRARY_ORIGIN
 SET_EXECUTABLE_ORIGIN
 CXX_FLAG_REORDER
 C_FLAG_REORDER
-SYSROOT_LDFLAGS
-SYSROOT_CFLAGS
 RC_FLAGS
 AR_OUT_OPTION
 LD_OUT_OPTION
 EXE_OUT_OPTION
 CC_OUT_OPTION
-POST_STRIP_CMD
+STRIPFLAGS
 ARFLAGS
 COMPILER_TARGET_BITS_FLAG
 JT_HOME
@@ -747,6 +742,8 @@ HOTSPOT_LD
 HOTSPOT_CXX
 HOTSPOT_RC
 HOTSPOT_MT
+BUILD_SYSROOT_LDFLAGS
+BUILD_SYSROOT_CFLAGS
 BUILD_LD
 BUILD_CXX
 BUILD_CC
@@ -793,6 +790,11 @@ VS_LIB
 VS_INCLUDE
 VS_PATH
 CYGWIN_LINK
+SYSROOT_LDFLAGS
+SYSROOT_CFLAGS
+LEGACY_EXTRA_LDFLAGS
+LEGACY_EXTRA_CXXFLAGS
+LEGACY_EXTRA_CFLAGS
 EXE_SUFFIX
 OBJ_SUFFIX
 STATIC_LIBRARY
@@ -1078,11 +1080,11 @@ with_override_nashorn
 with_override_jdk
 with_import_hotspot
 with_toolchain_type
-with_toolchain_version
-with_jtreg
 with_extra_cflags
 with_extra_cxxflags
 with_extra_ldflags
+with_toolchain_version
+with_jtreg
 enable_warnings_as_errors
 enable_debug_symbols
 enable_zip_debug_info
@@ -1937,14 +1939,14 @@ Optional Packages:
                           source
   --with-toolchain-type   the toolchain type (or family) to use, use '--help'
                           to show possible values [platform dependent]
+  --with-extra-cflags     extra flags to be used when compiling jdk c-files
+  --with-extra-cxxflags   extra flags to be used when compiling jdk c++-files
+  --with-extra-ldflags    extra flags to be used when linking jdk
   --with-toolchain-version
                           the version of the toolchain to look for, use
                           '--help' to show possible values [platform
                           dependent]
   --with-jtreg            Regression Test Harness [probed]
-  --with-extra-cflags     extra flags to be used when compiling jdk c-files
-  --with-extra-cxxflags   extra flags to be used when compiling jdk c++-files
-  --with-extra-ldflags    extra flags to be used when linking jdk
   --with-x                use the X Window System
   --with-cups             specify prefix directory for the cups package
                           (expecting the headers under PATH/include)
@@ -3767,6 +3769,15 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # questions.
 #
 
+# Reset the global CFLAGS/LDFLAGS variables and initialize them with the
+# corresponding configure arguments instead
+
+
+# Setup the sysroot flags and add them to global CFLAGS and LDFLAGS so
+# that configure can use them while detecting compilers.
+# TOOLCHAIN_TYPE is available here.
+
+
 
 
 
@@ -3886,6 +3897,8 @@ msys_help() {
 
 apt_help() {
   case $1 in
+    reduced)
+      PKGHANDLER_COMMAND="sudo apt-get install gcc-multilib g++-multilib" ;;
     devkit)
       PKGHANDLER_COMMAND="sudo apt-get install build-essential" ;;
     openjdk)
@@ -4362,7 +4375,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1442820958
+DATE_WHEN_GENERATED=1444077934
 
 ###############################################################################
 #
@@ -26825,6 +26838,109 @@ $as_echo "$as_me: Using user selected toolchain $TOOLCHAIN_TYPE ($TOOLCHAIN_DESC
   fi
 
 
+# User supplied flags should be used when configure detects compilers
+
+  if test "x$CFLAGS" != "x${ADDED_CFLAGS}"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring CFLAGS($CFLAGS) found in environment. Use --with-extra-cflags" >&5
+$as_echo "$as_me: WARNING: Ignoring CFLAGS($CFLAGS) found in environment. Use --with-extra-cflags" >&2;}
+  fi
+
+  if test "x$CXXFLAGS" != "x${ADDED_CXXFLAGS}"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring CXXFLAGS($CXXFLAGS) found in environment. Use --with-extra-cxxflags" >&5
+$as_echo "$as_me: WARNING: Ignoring CXXFLAGS($CXXFLAGS) found in environment. Use --with-extra-cxxflags" >&2;}
+  fi
+
+  if test "x$LDFLAGS" != "x${ADDED_LDFLAGS}"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring LDFLAGS($LDFLAGS) found in environment. Use --with-extra-ldflags" >&5
+$as_echo "$as_me: WARNING: Ignoring LDFLAGS($LDFLAGS) found in environment. Use --with-extra-ldflags" >&2;}
+  fi
+
+
+# Check whether --with-extra-cflags was given.
+if test "${with_extra_cflags+set}" = set; then :
+  withval=$with_extra_cflags;
+fi
+
+
+
+# Check whether --with-extra-cxxflags was given.
+if test "${with_extra_cxxflags+set}" = set; then :
+  withval=$with_extra_cxxflags;
+fi
+
+
+
+# Check whether --with-extra-ldflags was given.
+if test "${with_extra_ldflags+set}" = set; then :
+  withval=$with_extra_ldflags;
+fi
+
+
+  EXTRA_CFLAGS="$with_extra_cflags"
+  EXTRA_CXXFLAGS="$with_extra_cxxflags"
+  EXTRA_LDFLAGS="$with_extra_ldflags"
+
+  # Hotspot needs these set in their legacy form
+  LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $EXTRA_CFLAGS"
+  LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $EXTRA_CXXFLAGS"
+  LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $EXTRA_LDFLAGS"
+
+
+
+
+
+  # The global CFLAGS and LDLAGS variables are used by configure tests and
+  # should include the extra parameters
+  CFLAGS="$EXTRA_CFLAGS"
+  CXXFLAGS="$EXTRA_CXXFLAGS"
+  LDFLAGS="$EXTRA_LDFLAGS"
+  CPPFLAGS=""
+
+# The sysroot cflags are needed for configure to be able to run the compilers
+
+  if test "x$SYSROOT" != "x"; then
+    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+      if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+        # Solaris Studio does not have a concept of sysroot. Instead we must
+        # make sure the default include and lib dirs are appended to each
+        # compile and link command line.
+        SYSROOT_CFLAGS="-I$SYSROOT/usr/include"
+        SYSROOT_LDFLAGS="-L$SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
+            -L$SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
+            -L$SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
+      fi
+    elif test "x$TOOLCHAIN_TYPE" = xgcc; then
+      SYSROOT_CFLAGS="--sysroot=$SYSROOT"
+      SYSROOT_LDFLAGS="--sysroot=$SYSROOT"
+    elif test "x$TOOLCHAIN_TYPE" = xclang; then
+      SYSROOT_CFLAGS="-isysroot $SYSROOT"
+      SYSROOT_LDFLAGS="-isysroot $SYSROOT"
+    fi
+    # Propagate the sysroot args to hotspot
+    LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $SYSROOT_CFLAGS"
+    LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $SYSROOT_CFLAGS"
+    LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $SYSROOT_LDFLAGS"
+    # The global CFLAGS and LDFLAGS variables need these for configure to function
+    CFLAGS="$CFLAGS $SYSROOT_CFLAGS"
+    CPPFLAGS="$CPPFLAGS $SYSROOT_CFLAGS"
+    CXXFLAGS="$CXXFLAGS $SYSROOT_CFLAGS"
+    LDFLAGS="$LDFLAGS $SYSROOT_LDFLAGS"
+  fi
+
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    # We also need -iframework<path>/System/Library/Frameworks
+    SYSROOT_CFLAGS="$SYSROOT_CFLAGS -iframework $SYSROOT/System/Library/Frameworks"
+    SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -iframework $SYSROOT/System/Library/Frameworks"
+    # These always need to be set, or we can't find the frameworks embedded in JavaVM.framework
+    # set this here so it doesn't have to be peppered throughout the forest
+    SYSROOT_CFLAGS="$SYSROOT_CFLAGS -F $SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
+    SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -F $SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
+  fi
+
+
+
+
+
 # Then detect the actual binaries needed
 
   # FIXME: Is this needed?
@@ -40555,13 +40671,19 @@ $as_echo "$as_me: Rewriting BUILD_LD to \"$new_complete\"" >&6;}
     fi
   fi
 
+    BUILD_SYSROOT_CFLAGS=""
+    BUILD_SYSROOT_LDFLAGS=""
   else
     # If we are not cross compiling, use the normal target compilers for
     # building the build platform executables.
     BUILD_CC="$CC"
     BUILD_CXX="$CXX"
     BUILD_LD="$LD"
+    BUILD_SYSROOT_CFLAGS="$SYSROOT_CFLAGS"
+    BUILD_SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS"
   fi
+
+
 
 
 
@@ -41252,9 +41374,6 @@ $as_echo "$tool_specified" >&6; }
     STRIPFLAGS="-X32_64"
   fi
 
-  if test "x$OPENJDK_TARGET_OS" != xwindows; then
-    POST_STRIP_CMD="$STRIP $STRIPFLAGS"
-  fi
 
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
@@ -41305,44 +41424,6 @@ $as_echo "$tool_specified" >&6; }
     # silence copyright notice and other headers.
     COMMON_CCXXFLAGS="$COMMON_CCXXFLAGS -nologo"
   fi
-
-  if test "x$SYSROOT" != "x"; then
-    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-      if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-        # Solaris Studio does not have a concept of sysroot. Instead we must
-        # make sure the default include and lib dirs are appended to each
-        # compile and link command line.
-        SYSROOT_CFLAGS="-I$SYSROOT/usr/include"
-        SYSROOT_LDFLAGS="-L$SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
-            -L$SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
-            -L$SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
-      fi
-    elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      # Apple only wants -isysroot <path>, but we also need -iframework<path>/System/Library/Frameworks
-      SYSROOT_CFLAGS="-isysroot \"$SYSROOT\" -iframework\"$SYSROOT/System/Library/Frameworks\""
-      SYSROOT_LDFLAGS=$SYSROOT_CFLAGS
-    elif test "x$TOOLCHAIN_TYPE" = xgcc; then
-      SYSROOT_CFLAGS="--sysroot=$SYSROOT"
-      SYSROOT_LDFLAGS="--sysroot=$SYSROOT"
-    elif test "x$TOOLCHAIN_TYPE" = xclang; then
-      SYSROOT_CFLAGS="-isysroot \"$SYSROOT\""
-      SYSROOT_LDFLAGS="-isysroot \"$SYSROOT\""
-    fi
-    # Propagate the sysroot args to hotspot
-    LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $SYSROOT_CFLAGS"
-    LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $SYSROOT_CFLAGS"
-    LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $SYSROOT_LDFLAGS"
-  fi
-
-  # These always need to be set, or we can't find the frameworks embedded in JavaVM.framework
-  # set this here so it doesn't have to be peppered throughout the forest
-  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    SYSROOT_CFLAGS="$SYSROOT_CFLAGS -F\"$SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks\""
-    SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -F\"$SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks\""
-  fi
-
-
-
 
 
 # FIXME: Currently we must test this after toolchain but before flags. Fix!
@@ -41543,8 +41624,38 @@ else
     { $as_echo "$as_me:${as_lineno-$LINENO}: Failed to compile stdio.h. This likely implies missing compile dependencies." >&5
 $as_echo "$as_me: Failed to compile stdio.h. This likely implies missing compile dependencies." >&6;}
     if test "x$COMPILE_TYPE" = xreduced; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a reduced build. Check that you have 32-bit libraries installed." >&5
-$as_echo "$as_me: You are doing a reduced build. Check that you have 32-bit libraries installed." >&6;}
+
+  # Print a helpful message on how to acquire the necessary build dependency.
+  # reduced is the help tag: freetype, cups, pulse, alsa etc
+  MISSING_DEPENDENCY=reduced
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
+
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
+  fi
+
+      { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a reduced build. Check that you have 32-bit libraries installed. $HELP_MSG" >&5
+$as_echo "$as_me: You are doing a reduced build. Check that you have 32-bit libraries installed. $HELP_MSG" >&6;}
     elif test "x$COMPILE_TYPE" = xcross; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a cross-compilation. Check that you have all target platform libraries installed." >&5
 $as_echo "$as_me: You are doing a cross-compilation. Check that you have all target platform libraries installed." >&6;}
@@ -41603,8 +41714,8 @@ $as_echo "$as_me: WARNING: The number of bits in the target could not be determi
       # Let's try to implicitely set the compilers target architecture and retry the test
       { $as_echo "$as_me:${as_lineno-$LINENO}: The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)." >&5
 $as_echo "$as_me: The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)." >&6;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: I'll retry after setting the platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}" >&5
-$as_echo "$as_me: I'll retry after setting the platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}" >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Retrying with platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}" >&5
+$as_echo "$as_me: Retrying with platforms compiler target bits flag to ${COMPILER_TARGET_BITS_FLAG}${OPENJDK_TARGET_CPU_BITS}" >&6;}
 
   # When we add flags to the "official" CFLAGS etc, we need to
   # keep track of these additions in ADDED_CFLAGS etc. These
@@ -41667,7 +41778,46 @@ _ACEOF
       TESTED_TARGET_CPU_BITS=`expr 8 \* $ac_cv_sizeof_int_p`
 
       if test "x$TESTED_TARGET_CPU_BITS" != "x$OPENJDK_TARGET_CPU_BITS"; then
-        as_fn_error $? "The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)" "$LINENO" 5
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)" >&5
+$as_echo "$as_me: The tested number of bits in the target ($TESTED_TARGET_CPU_BITS) differs from the number of bits expected to be found in the target ($OPENJDK_TARGET_CPU_BITS)" >&6;}
+        if test "x$COMPILE_TYPE" = xreduced; then
+
+  # Print a helpful message on how to acquire the necessary build dependency.
+  # reduced is the help tag: freetype, cups, pulse, alsa etc
+  MISSING_DEPENDENCY=reduced
+
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    cygwin_help $MISSING_DEPENDENCY
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    msys_help $MISSING_DEPENDENCY
+  else
+    PKGHANDLER_COMMAND=
+
+    case $PKGHANDLER in
+      apt-get)
+        apt_help     $MISSING_DEPENDENCY ;;
+      yum)
+        yum_help     $MISSING_DEPENDENCY ;;
+      port)
+        port_help    $MISSING_DEPENDENCY ;;
+      pkgutil)
+        pkgutil_help $MISSING_DEPENDENCY ;;
+      pkgadd)
+        pkgadd_help  $MISSING_DEPENDENCY ;;
+    esac
+
+    if test "x$PKGHANDLER_COMMAND" != x; then
+      HELP_MSG="You might be able to fix this by running '$PKGHANDLER_COMMAND'."
+    fi
+  fi
+
+          { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a reduced build. Check that you have 32-bit libraries installed. $HELP_MSG" >&5
+$as_echo "$as_me: You are doing a reduced build. Check that you have 32-bit libraries installed. $HELP_MSG" >&6;}
+        elif test "x$COMPILE_TYPE" = xcross; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: You are doing a cross-compilation. Check that you have all target platform libraries installed." >&5
+$as_echo "$as_me: You are doing a cross-compilation. Check that you have all target platform libraries installed." >&6;}
+        fi
+        as_fn_error $? "Cannot continue." "$LINENO" 5
       fi
     fi
   fi
@@ -42267,54 +42417,9 @@ $as_echo "$supports" >&6; }
     CXXFLAGS_JDK="${CXXFLAGS_JDK} -qchars=signed -qfullpath -qsaveopt"
   fi
 
-  if test "x$CFLAGS" != "x${ADDED_CFLAGS}"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring CFLAGS($CFLAGS) found in environment. Use --with-extra-cflags" >&5
-$as_echo "$as_me: WARNING: Ignoring CFLAGS($CFLAGS) found in environment. Use --with-extra-cflags" >&2;}
-  fi
-
-  if test "x$CXXFLAGS" != "x${ADDED_CXXFLAGS}"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring CXXFLAGS($CXXFLAGS) found in environment. Use --with-extra-cxxflags" >&5
-$as_echo "$as_me: WARNING: Ignoring CXXFLAGS($CXXFLAGS) found in environment. Use --with-extra-cxxflags" >&2;}
-  fi
-
-  if test "x$LDFLAGS" != "x${ADDED_LDFLAGS}"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring LDFLAGS($LDFLAGS) found in environment. Use --with-extra-ldflags" >&5
-$as_echo "$as_me: WARNING: Ignoring LDFLAGS($LDFLAGS) found in environment. Use --with-extra-ldflags" >&2;}
-  fi
-
-
-# Check whether --with-extra-cflags was given.
-if test "${with_extra_cflags+set}" = set; then :
-  withval=$with_extra_cflags;
-fi
-
-
-
-# Check whether --with-extra-cxxflags was given.
-if test "${with_extra_cxxflags+set}" = set; then :
-  withval=$with_extra_cxxflags;
-fi
-
-
-
-# Check whether --with-extra-ldflags was given.
-if test "${with_extra_ldflags+set}" = set; then :
-  withval=$with_extra_ldflags;
-fi
-
-
-  CFLAGS_JDK="${CFLAGS_JDK} $with_extra_cflags"
-  CXXFLAGS_JDK="${CXXFLAGS_JDK} $with_extra_cxxflags"
-  LDFLAGS_JDK="${LDFLAGS_JDK} $with_extra_ldflags"
-
-  # Hotspot needs these set in their legacy form
-  LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $with_extra_cflags"
-  LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $with_extra_cxxflags"
-  LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $with_extra_ldflags"
-
-
-
-
+  CFLAGS_JDK="${CFLAGS_JDK} $EXTRA_CFLAGS"
+  CXXFLAGS_JDK="${CXXFLAGS_JDK} $EXTRA_CXXFLAGS"
+  LDFLAGS_JDK="${LDFLAGS_JDK} $EXTRA_LDFLAGS"
 
   ###############################################################################
   #
