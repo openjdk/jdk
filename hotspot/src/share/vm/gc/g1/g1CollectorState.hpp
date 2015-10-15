@@ -121,10 +121,6 @@ class G1CollectorState VALUE_OBJ_CLASS_SPEC {
     return (_in_marking_window && !_in_marking_window_im);
   }
 
-  bool should_propagate() const { // XXX should have a more suitable state name or abstraction for this
-    return (_last_young_gc && !_in_marking_window);
-  }
-
   G1YCType yc_type() const {
     if (during_initial_mark_pause()) {
       return InitialMark;
