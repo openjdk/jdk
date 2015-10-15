@@ -23,11 +23,15 @@
 
 package jdk.test.lib;
 
+import java.io.File;
 import static jdk.test.lib.Asserts.assertTrue;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.ServerSocket;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -50,6 +54,11 @@ import sun.misc.Unsafe;
  * Common library for various test helper functions.
  */
 public final class Utils {
+
+    /**
+     * Returns the value of 'test.class.path' system property.
+     */
+    public static final String TEST_CLASS_PATH = System.getProperty("test.class.path", ".");
 
     /**
      * Returns the sequence used by operating system to separate lines.
@@ -473,6 +482,27 @@ public final class Utils {
             throw new Error("Class not found", e);
         }
     }
+    /**
+     * @param parent a class loader to be the parent for the returned one
+     * @return an UrlClassLoader with urls made of the 'test.class.path' jtreg
+     *         property and with the given parent
+     */
+    public static URLClassLoader getTestClassPathURLClassLoader(ClassLoader parent) {
+        URL[] urls = Arrays.stream(TEST_CLASS_PATH.split(File.pathSeparator))
+                .map(Paths::get)
+                .map(Path::toUri)
+                .map(x -> {
+                    try {
+                        return x.toURL();
+                    } catch (MalformedURLException ex) {
+                        throw new Error("Test issue. JTREG property"
+                                + " 'test.class.path'"
+                                + " is not defined correctly", ex);
+                    }
+                }).toArray(URL[]::new);
+        return new URLClassLoader(urls, parent);
+    }
+
     /**
      * Runs runnable and checks that it throws expected exception. If exceptionException is null it means
      * that we expect no exception to be thrown.
