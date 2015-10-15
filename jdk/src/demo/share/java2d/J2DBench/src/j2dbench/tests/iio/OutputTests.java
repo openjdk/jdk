@@ -156,7 +156,7 @@ abstract class OutputTests extends IIOTests {
         }
     }
 
-    protected static abstract class Context {
+    protected abstract static class Context {
         int size;
         Object output;
         int outputType;

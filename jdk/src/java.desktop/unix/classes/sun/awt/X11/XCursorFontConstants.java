@@ -25,7 +25,7 @@
 
 package sun.awt.X11;
 
-final public class XCursorFontConstants {
+public final class XCursorFontConstants {
 
     private XCursorFontConstants(){}
 

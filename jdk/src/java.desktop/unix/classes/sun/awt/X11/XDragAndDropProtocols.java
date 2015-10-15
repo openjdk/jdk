@@ -36,8 +36,8 @@ import java.util.List;
  * @since 1.5
  */
 final class XDragAndDropProtocols {
-    private final static List<XDragSourceProtocol> dragProtocols;
-    private final static List<XDropTargetProtocol> dropProtocols;
+    private static final List<XDragSourceProtocol> dragProtocols;
+    private static final List<XDropTargetProtocol> dropProtocols;
 
     public static final String XDnD = "XDnD";
     public static final String MotifDnD = "MotifDnD";

@@ -31,15 +31,34 @@ import org.testng.Assert;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import org.w3c.dom.Document;
+import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 /*
- * @bug 8135283
+ * @bug 8135283 8138721
  * @summary Tests for the Element Traversal interface.
  */
 
 public class ElementTraversal {
+    /*
+       Verifies that ElementTraversal is supported.
+     */
+    @Test(dataProvider = "doc")
+    public void testHasFeature(Document doc) {
+        DOMImplementation di = doc.getImplementation();
+
+        //return false if feasure == null
+        Assert.assertFalse(di.hasFeature(null, null));
+
+        //A feature is supported without specifying version
+        Assert.assertTrue(di.hasFeature("ElementTraversal", null));
+        Assert.assertTrue(di.hasFeature("ElementTraversal", ""));
+
+        //ElementTraversal Version 1.0 is supported
+        Assert.assertTrue(di.hasFeature("ElementTraversal", "1.0"));
+    }
+
     /*
        Verifies the ElementTraversal interface by exercising all of its five
        methods while reading through the xml document.

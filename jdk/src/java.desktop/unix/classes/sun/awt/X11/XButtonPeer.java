@@ -40,7 +40,7 @@ public class XButtonPeer extends XComponentPeer implements ButtonPeer {
     private Insets borderInsets;
     private Insets contentAreaInsets;
 
-    private final static String propertyPrefix = "Button" + ".";
+    private static final String propertyPrefix = "Button" + ".";
     protected Color focusColor =  SystemColor.windowText;
 
     private boolean disposed = false;

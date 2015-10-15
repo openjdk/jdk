@@ -63,7 +63,7 @@ public class NullSurfaceData extends SurfaceData {
         return this;
     }
 
-    private final static NullPipe nullpipe = new NullPipe();
+    private static final NullPipe nullpipe = new NullPipe();
 
     public void validatePipe(SunGraphics2D sg2d) {
         sg2d.drawpipe = nullpipe;

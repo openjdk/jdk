@@ -106,8 +106,8 @@ public class WindowsTreeUI extends BasicTreeUI {
         }
     }
 
-    static protected final int HALF_SIZE = 4;
-    static protected final int SIZE = 9;
+    protected static final int HALF_SIZE = 4;
+    protected static final int SIZE = 9;
 
     /**
      * Returns the default cell renderer that is used to do the
@@ -130,7 +130,7 @@ public class WindowsTreeUI extends BasicTreeUI {
     @SuppressWarnings("serial") // Same-version serialization only
     public static class ExpandedIcon implements Icon, Serializable {
 
-        static public Icon createExpandedIcon() {
+        public static Icon createExpandedIcon() {
             return new ExpandedIcon();
         }
 
@@ -182,7 +182,7 @@ public class WindowsTreeUI extends BasicTreeUI {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class CollapsedIcon extends ExpandedIcon {
-        static public Icon createCollapsedIcon() {
+        public static Icon createCollapsedIcon() {
             return new CollapsedIcon();
         }
 

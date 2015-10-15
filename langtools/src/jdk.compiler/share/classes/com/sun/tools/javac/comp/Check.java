@@ -808,7 +808,7 @@ public class Check {
      */
     List<Type> checkDiamondDenotable(ClassType t) {
         ListBuffer<Type> buf = new ListBuffer<>();
-        for (Type arg : t.getTypeArguments()) {
+        for (Type arg : t.allparams()) {
             if (!diamondTypeChecker.visit(arg, null)) {
                 buf.append(arg);
             }
@@ -831,7 +831,7 @@ public class Check {
                 if (t.isCompound()) {
                     return false;
                 }
-                for (Type targ : t.getTypeArguments()) {
+                for (Type targ : t.allparams()) {
                     if (!visit(targ, s)) {
                         return false;
                     }
@@ -842,13 +842,16 @@ public class Check {
             @Override
             public Boolean visitTypeVar(TypeVar t, Void s) {
                 /* Any type variable mentioned in the inferred type must have been declared as a type parameter
-                  (i.e cannot have been produced by capture conversion (5.1.10) or by inference (18.4)
+                  (i.e cannot have been produced by inference (18.4))
                 */
                 return t.tsym.owner.type.getTypeArguments().contains(t);
             }
 
             @Override
             public Boolean visitCapturedType(CapturedType t, Void s) {
+                /* Any type variable mentioned in the inferred type must have been declared as a type parameter
+                  (i.e cannot have been produced by capture conversion (5.1.10))
+                */
                 return false;
             }
 
