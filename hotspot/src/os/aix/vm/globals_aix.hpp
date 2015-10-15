@@ -39,15 +39,16 @@
   /* a scarce resource and there may be situations where we do not want the VM */   \
   /* to run with 16M pages. (Will fall back to 64K pages).                     */   \
   product_pd(bool, Use16MPages,                                                     \
-          "Use 16M pages if available.")                                            \
+             "Use 16M pages if available.")                                         \
                                                                                     \
   /*  use optimized addresses for the polling page, */                              \
   /* e.g. map it to a special 32-bit address.       */                              \
   product_pd(bool, OptimizePollingPageLocation,                                     \
-          "Optimize the location of the polling page used for Safepoints")          \
+             "Optimize the location of the polling page used for Safepoints")       \
                                                                                     \
   product_pd(intx, AttachListenerTimeout,                                           \
-          "Timeout in ms the attach listener waits for a request")                  \
+             "Timeout in ms the attach listener waits for a request")               \
+             range(0, 2147483)                                                      \
                                                                                     \
 
 // Per default, do not allow 16M pages. 16M pages have to be switched on specifically.
