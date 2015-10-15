@@ -397,6 +397,7 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _wrote_stable = false;
   _wrote_fields = false;
   _alloc_with_final = NULL;
+  _alloc_with_stable = NodeSentinel;
   _entry_bci = InvocationEntryBci;
   _tf = NULL;
   _block = NULL;
@@ -970,7 +971,7 @@ void Parse::do_exits() {
   // those also. If there is a predecessor allocation node, bind the
   // barrier there.
   if (wrote_stable()) {
-    _exits.insert_mem_bar(Op_MemBarRelease, alloc_with_final());
+    _exits.insert_mem_bar(Op_MemBarRelease, alloc_with_stable());
 #ifndef PRODUCT
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name();

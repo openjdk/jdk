@@ -343,6 +343,7 @@ class Parse : public GraphKit {
   bool          _count_invocations;  // update and test invocation counter
   bool          _method_data_update; // update method data oop
   Node*         _alloc_with_final;   // An allocation node with final field
+  Node*         _alloc_with_stable;  // An allocation node with stable field
 
   // Variables which track Java semantics during bytecode parsing:
 
@@ -396,6 +397,25 @@ class Parse : public GraphKit {
   void set_alloc_with_final(Node* n)  {
     assert((_alloc_with_final == NULL) || (_alloc_with_final == n), "different init objects?");
     _alloc_with_final = n;
+  }
+
+  Node*    alloc_with_stable() const  {
+    if (_alloc_with_stable == NodeSentinel) {
+      return NULL;
+    }
+    return _alloc_with_stable;
+  }
+
+  void set_alloc_with_stable(Node* n)  {
+    if (_alloc_with_stable == NodeSentinel) {
+      // uninitialized status, initialize with current input, can be
+      // null or valid node.
+      _alloc_with_stable = n;
+    } else if (_alloc_with_stable != n) {
+      // _alloc_with_stable isn't equal to n
+      _alloc_with_stable = NULL;
+    }
+    // _alloc_with_stable is equal with n, do nothing
   }
 
   Block*             block()    const { return _block; }
