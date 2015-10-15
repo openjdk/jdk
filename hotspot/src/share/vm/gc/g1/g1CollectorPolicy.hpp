@@ -344,7 +344,7 @@ public:
   double predict_survivor_regions_evac_time() const;
 
   bool should_update_surv_rate_group_predictors() {
-    return collector_state()->last_young_gc() && !collector_state()->in_marking_window();
+    return collector_state()->last_gc_was_young() && !collector_state()->in_marking_window();
   }
 
   void cset_regions_freed() {
