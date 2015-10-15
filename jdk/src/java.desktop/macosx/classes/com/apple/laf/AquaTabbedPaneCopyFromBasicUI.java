@@ -2011,20 +2011,20 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
     }
 
     private static class Actions extends UIAction {
-        final static String NEXT = "navigateNext";
-        final static String PREVIOUS = "navigatePrevious";
-        final static String RIGHT = "navigateRight";
-        final static String LEFT = "navigateLeft";
-        final static String UP = "navigateUp";
-        final static String DOWN = "navigateDown";
-        final static String PAGE_UP = "navigatePageUp";
-        final static String PAGE_DOWN = "navigatePageDown";
-        final static String REQUEST_FOCUS = "requestFocus";
-        final static String REQUEST_FOCUS_FOR_VISIBLE = "requestFocusForVisibleComponent";
-        final static String SET_SELECTED = "setSelectedIndex";
-        final static String SELECT_FOCUSED = "selectTabWithFocus";
-        final static String SCROLL_FORWARD = "scrollTabsForwardAction";
-        final static String SCROLL_BACKWARD = "scrollTabsBackwardAction";
+        static final String NEXT = "navigateNext";
+        static final String PREVIOUS = "navigatePrevious";
+        static final String RIGHT = "navigateRight";
+        static final String LEFT = "navigateLeft";
+        static final String UP = "navigateUp";
+        static final String DOWN = "navigateDown";
+        static final String PAGE_UP = "navigatePageUp";
+        static final String PAGE_DOWN = "navigatePageDown";
+        static final String REQUEST_FOCUS = "requestFocus";
+        static final String REQUEST_FOCUS_FOR_VISIBLE = "requestFocusForVisibleComponent";
+        static final String SET_SELECTED = "setSelectedIndex";
+        static final String SELECT_FOCUSED = "selectTabWithFocus";
+        static final String SCROLL_FORWARD = "scrollTabsForwardAction";
+        static final String SCROLL_BACKWARD = "scrollTabsBackwardAction";
 
         Actions(final String key) {
             super(key);

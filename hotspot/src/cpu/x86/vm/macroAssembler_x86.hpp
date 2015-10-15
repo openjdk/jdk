@@ -907,14 +907,14 @@ class MacroAssembler: public Assembler {
   // all corner cases and may result in NaN and require fallback to a
   // runtime call.
   void fast_pow();
-  void fast_exp();
+  void fast_exp(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rcx, Register rdx, Register tmp);
   void increase_precision();
   void restore_precision();
 
-  // computes exp(x). Fallback to runtime call included.
-  void exp_with_fallback(int num_fpu_regs_in_use) { pow_or_exp(true, num_fpu_regs_in_use); }
   // computes pow(x,y). Fallback to runtime call included.
-  void pow_with_fallback(int num_fpu_regs_in_use) { pow_or_exp(false, num_fpu_regs_in_use); }
+  void pow_with_fallback(int num_fpu_regs_in_use) { pow_or_exp(num_fpu_regs_in_use); }
 
 private:
 
@@ -925,7 +925,7 @@ private:
   void pow_exp_core_encoding();
 
   // computes pow(x,y) or exp(x). Fallback to runtime call included.
-  void pow_or_exp(bool is_exp, int num_fpu_regs_in_use);
+  void pow_or_exp(int num_fpu_regs_in_use);
 
   // these are private because users should be doing movflt/movdbl
 
@@ -970,6 +970,10 @@ public:
   void movsd(Address dst, XMMRegister src)     { Assembler::movsd(dst, src); }
   void movsd(XMMRegister dst, Address src)     { Assembler::movsd(dst, src); }
   void movsd(XMMRegister dst, AddressLiteral src);
+
+  void mulpd(XMMRegister dst, XMMRegister src)    { Assembler::mulpd(dst, src); }
+  void mulpd(XMMRegister dst, Address src)        { Assembler::mulpd(dst, src); }
+  void mulpd(XMMRegister dst, AddressLiteral src);
 
   void mulsd(XMMRegister dst, XMMRegister src)    { Assembler::mulsd(dst, src); }
   void mulsd(XMMRegister dst, Address src)        { Assembler::mulsd(dst, src); }

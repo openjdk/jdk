@@ -462,7 +462,7 @@ public class AquaButtonUI extends BasicButtonUI implements Sizeable {
         return d;
     }
 
-    final static RecyclableSingleton<AquaHierarchyButtonListener> fHierListener = new RecyclableSingletonFromDefaultConstructor<AquaHierarchyButtonListener>(AquaHierarchyButtonListener.class);
+    static final RecyclableSingleton<AquaHierarchyButtonListener> fHierListener = new RecyclableSingletonFromDefaultConstructor<AquaHierarchyButtonListener>(AquaHierarchyButtonListener.class);
     static AquaHierarchyButtonListener getAquaHierarchyButtonListener() {
         return fHierListener.get();
     }

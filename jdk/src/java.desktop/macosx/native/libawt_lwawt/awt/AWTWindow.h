@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,12 @@
 #define _AWTWINDOW_H
 
 #import <Cocoa/Cocoa.h>
-#import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "CMenuBar.h"
 #import "LWCToolkit.h"
 
-
 @class AWTView;
+@class JNFWeakJObjectWrapper;
 
 @interface AWTWindow : NSObject <NSWindowDelegate> {
 @private

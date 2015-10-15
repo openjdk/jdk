@@ -245,7 +245,7 @@ public abstract class PixelTests extends Test {
         }
     }
 
-    public static abstract class BufImgTest extends PixelTests {
+    public abstract static class BufImgTest extends PixelTests {
         public BufImgTest(String nodeName, String description) {
             super(bufimgtestroot, nodeName, description);
         }
@@ -281,7 +281,7 @@ public abstract class PixelTests extends Test {
         }
     }
 
-    public static abstract class RasTest extends PixelTests {
+    public abstract static class RasTest extends PixelTests {
         public RasTest(String nodeName, String description) {
             super(rastertestroot, nodeName, description);
         }
@@ -355,7 +355,7 @@ public abstract class PixelTests extends Test {
         }
     }
 
-    public static abstract class DataBufTest extends PixelTests {
+    public abstract static class DataBufTest extends PixelTests {
         public DataBufTest(String nodeName, String description) {
             super(dbtestroot, nodeName, description);
         }

@@ -63,14 +63,14 @@ public class FilePane extends JPanel implements PropertyChangeListener {
     // Constants for actions. These are used for the actions' ACTION_COMMAND_KEY
     // and as keys in the action maps for FilePane and the corresponding UI classes
 
-    public final static String ACTION_APPROVE_SELECTION = "approveSelection";
-    public final static String ACTION_CANCEL            = "cancelSelection";
-    public final static String ACTION_EDIT_FILE_NAME    = "editFileName";
-    public final static String ACTION_REFRESH           = "refresh";
-    public final static String ACTION_CHANGE_TO_PARENT_DIRECTORY = "Go Up";
-    public final static String ACTION_NEW_FOLDER        = "New Folder";
-    public final static String ACTION_VIEW_LIST         = "viewTypeList";
-    public final static String ACTION_VIEW_DETAILS      = "viewTypeDetails";
+    public static final String ACTION_APPROVE_SELECTION = "approveSelection";
+    public static final String ACTION_CANCEL            = "cancelSelection";
+    public static final String ACTION_EDIT_FILE_NAME    = "editFileName";
+    public static final String ACTION_REFRESH           = "refresh";
+    public static final String ACTION_CHANGE_TO_PARENT_DIRECTORY = "Go Up";
+    public static final String ACTION_NEW_FOLDER        = "New Folder";
+    public static final String ACTION_VIEW_LIST         = "viewTypeList";
+    public static final String ACTION_VIEW_DETAILS      = "viewTypeDetails";
 
     private Action[] actions;
 

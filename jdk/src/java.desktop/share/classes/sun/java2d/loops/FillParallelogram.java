@@ -40,10 +40,10 @@ import sun.java2d.SurfaceData;
  */
 public class FillParallelogram extends GraphicsPrimitive
 {
-    public final static String methodSignature =
+    public static final String methodSignature =
         "FillParallelogram(...)".toString();
 
-    public final static int primTypeID = makePrimTypeID();
+    public static final int primTypeID = makePrimTypeID();
 
     public static FillParallelogram locate(SurfaceType srctype,
                                            CompositeType comptype,

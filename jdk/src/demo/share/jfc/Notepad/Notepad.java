@@ -64,7 +64,7 @@ class Notepad extends JPanel {
 
     protected static Properties properties;
     private static ResourceBundle resources;
-    private final static String EXIT_AFTER_PAINT = "-exit";
+    private static final String EXIT_AFTER_PAINT = "-exit";
     private static boolean exitAfterFirstPaint;
 
     private static final String[] MENUBAR_KEYS = {"file", "edit", "debug"};

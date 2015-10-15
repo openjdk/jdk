@@ -71,36 +71,36 @@ public class InputMethodHighlight {
     /**
      * Constant for the raw text state.
      */
-    public final static int RAW_TEXT = 0;
+    public static final int RAW_TEXT = 0;
 
     /**
      * Constant for the converted text state.
      */
-    public final static int CONVERTED_TEXT = 1;
+    public static final int CONVERTED_TEXT = 1;
 
 
     /**
      * Constant for the default highlight for unselected raw text.
      */
-    public final static InputMethodHighlight UNSELECTED_RAW_TEXT_HIGHLIGHT =
+    public static final InputMethodHighlight UNSELECTED_RAW_TEXT_HIGHLIGHT =
         new InputMethodHighlight(false, RAW_TEXT);
 
     /**
      * Constant for the default highlight for selected raw text.
      */
-    public final static InputMethodHighlight SELECTED_RAW_TEXT_HIGHLIGHT =
+    public static final InputMethodHighlight SELECTED_RAW_TEXT_HIGHLIGHT =
         new InputMethodHighlight(true, RAW_TEXT);
 
     /**
      * Constant for the default highlight for unselected converted text.
      */
-    public final static InputMethodHighlight UNSELECTED_CONVERTED_TEXT_HIGHLIGHT =
+    public static final InputMethodHighlight UNSELECTED_CONVERTED_TEXT_HIGHLIGHT =
         new InputMethodHighlight(false, CONVERTED_TEXT);
 
     /**
      * Constant for the default highlight for selected converted text.
      */
-    public final static InputMethodHighlight SELECTED_CONVERTED_TEXT_HIGHLIGHT =
+    public static final InputMethodHighlight SELECTED_CONVERTED_TEXT_HIGHLIGHT =
         new InputMethodHighlight(true, CONVERTED_TEXT);
 
 

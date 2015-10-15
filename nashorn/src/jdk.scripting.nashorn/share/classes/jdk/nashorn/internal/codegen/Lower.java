@@ -74,7 +74,7 @@ import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
-import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.ir.visitor.SimpleNodeVisitor;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.Context;
@@ -331,7 +331,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
 
     @SuppressWarnings("unchecked")
     private static <T extends Node> T ensureUniqueNamesIn(final T node) {
-        return (T)node.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+        return (T)node.accept(new SimpleNodeVisitor() {
             @Override
             public Node leaveFunctionNode(final FunctionNode functionNode) {
                 final String name = functionNode.getName();
@@ -396,7 +396,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
         final Block finallyBlock = createFinallyBlock(finallyBody);
         final ArrayList<Block> inlinedFinallies = new ArrayList<>();
         final FunctionNode fn = lc.getCurrentFunction();
-        final TryNode newTryNode = (TryNode)tryNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+        final TryNode newTryNode = (TryNode)tryNode.accept(new SimpleNodeVisitor() {
 
             @Override
             public boolean enterFunctionNode(final FunctionNode functionNode) {
@@ -539,7 +539,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
         final Block catchAll = catchAllBlock(tryNode);
 
         final List<ThrowNode> rethrows = new ArrayList<>(1);
-        catchAll.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+        catchAll.accept(new SimpleNodeVisitor() {
             @Override
             public boolean enterThrowNode(final ThrowNode throwNode) {
                 rethrows.add(throwNode);
@@ -686,7 +686,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
     private static boolean controlFlowEscapes(final LexicalContext lex, final Block loopBody) {
         final List<Node> escapes = new ArrayList<>();
 
-        loopBody.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+        loopBody.accept(new SimpleNodeVisitor() {
             @Override
             public Node leaveBreakNode(final BreakNode node) {
                 escapes.add(node);

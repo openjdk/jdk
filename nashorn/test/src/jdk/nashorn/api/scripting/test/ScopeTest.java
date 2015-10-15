@@ -30,6 +30,7 @@ import static org.testng.Assert.assertFalse;
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 import javax.script.Bindings;
+import javax.script.Invocable;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -854,5 +855,60 @@ public class ScopeTest {
             ret = lookupVar(engine, VAR_NAME);
             assertTrue(ret, "Expected true in iteration " + i);
         }
+    }
+
+    // @bug 8138616: invokeFunction fails if function calls a function defined in GLOBAL_SCOPE
+    @Test
+    public void invokeFunctionInGlobalScopeTest() throws Exception {
+         final ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
+         final ScriptContext ctxt = engine.getContext();
+
+         // define a function called "func"
+         engine.eval("func = function() { return 42 }");
+
+         // move ENGINE_SCOPE Bindings to GLOBAL_SCOPE
+         ctxt.setBindings(ctxt.getBindings(ScriptContext.ENGINE_SCOPE), ScriptContext.GLOBAL_SCOPE);
+
+         // create a new Bindings and set as ENGINE_SCOPE
+         ctxt.setBindings(engine.createBindings(), ScriptContext.ENGINE_SCOPE);
+
+         // define new function that calls "func" now in GLOBAL_SCOPE
+         engine.eval("newfunc = function() { return func() }");
+
+         // call "newfunc" and check the return value
+         Object value = ((Invocable)engine).invokeFunction("newfunc");
+         assertTrue(((Number)value).intValue() == 42);
+    }
+
+
+    // @bug 8138616: invokeFunction fails if function calls a function defined in GLOBAL_SCOPE
+    // variant of above that replaces default ScriptContext of the engine with a fresh instance!
+    @Test
+    public void invokeFunctionInGlobalScopeTest2() throws Exception {
+         final ScriptEngine engine = new ScriptEngineManager().getEngineByName("nashorn");
+
+         // create a new ScriptContext instance
+         final ScriptContext ctxt = new SimpleScriptContext();
+         // set it as 'default' ScriptContext
+         engine.setContext(ctxt);
+
+         // create a new Bindings and set as ENGINE_SCOPE
+         ctxt.setBindings(engine.createBindings(), ScriptContext.ENGINE_SCOPE);
+
+         // define a function called "func"
+         engine.eval("func = function() { return 42 }");
+
+         // move ENGINE_SCOPE Bindings to GLOBAL_SCOPE
+         ctxt.setBindings(ctxt.getBindings(ScriptContext.ENGINE_SCOPE), ScriptContext.GLOBAL_SCOPE);
+
+         // create a new Bindings and set as ENGINE_SCOPE
+         ctxt.setBindings(engine.createBindings(), ScriptContext.ENGINE_SCOPE);
+
+         // define new function that calls "func" now in GLOBAL_SCOPE
+         engine.eval("newfunc = function() { return func() }");
+
+         // call "newfunc" and check the return value
+         Object value = ((Invocable)engine).invokeFunction("newfunc");
+         assertTrue(((Number)value).intValue() == 42);
     }
 }

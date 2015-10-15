@@ -59,7 +59,7 @@ public class Win32MediaTray extends MediaTray {
         winID = id;
     }
 
-    private synchronized static int nextValue(String name) {
+    private static synchronized int nextValue(String name) {
       winStringTable.add(name);
       return (getTraySize()-1);
     }

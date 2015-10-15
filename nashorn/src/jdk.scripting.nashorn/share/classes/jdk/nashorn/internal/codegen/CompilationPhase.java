@@ -36,13 +36,13 @@ import java.util.Set;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.ir.visitor.SimpleNodeVisitor;
 import jdk.nashorn.internal.runtime.CodeInstaller;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
@@ -118,7 +118,7 @@ abstract class CompilationPhase {
             FunctionNode newFunctionNode;
 
             //ensure elementTypes, postsets and presets exist for splitter and arraynodes
-            newFunctionNode = transformFunction(fn, new NodeVisitor<LexicalContext>(new LexicalContext()) {
+            newFunctionNode = transformFunction(fn, new SimpleNodeVisitor() {
                 @Override
                 public LiteralNode<?> leaveLiteralNode(final LiteralNode<?> literalNode) {
                     return literalNode.initialize(lc);
@@ -222,7 +222,7 @@ abstract class CompilationPhase {
             // correctness, it's just an optimization -- runtime type calculation is not used when the compilation
             // is not an on-demand optimistic compilation, so we can skip locals marking then.
             if (compiler.useOptimisticTypes() && compiler.isOnDemandCompilation()) {
-                fn.getBody().accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+                fn.getBody().accept(new SimpleNodeVisitor() {
                     @Override
                     public boolean enterFunctionNode(final FunctionNode functionNode) {
                         // OTOH, we must not declare symbols from nested functions to be locals. As we're doing on-demand

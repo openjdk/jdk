@@ -579,7 +579,7 @@ public abstract class TableView extends BoxView {
     SizeRequirements[] columnRequirements;
     Vector<TableRow> rows;
     boolean gridValid;
-    static final private BitSet EMPTY = new BitSet();
+    private static final BitSet EMPTY = new BitSet();
 
     /**
      * View of a row in a row-centric table.

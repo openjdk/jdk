@@ -65,6 +65,8 @@ import java.util.HashSet;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.StringJoiner;
+import jdk.internal.misc.JavaNetHttpCookieAccess;
+import jdk.internal.misc.SharedSecrets;
 import sun.net.*;
 import sun.net.www.*;
 import sun.net.www.http.HttpClient;
@@ -2878,8 +2880,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
             if (cookieHandler == null || value.length() == 0)
                 return value;
 
-            sun.misc.JavaNetHttpCookieAccess access =
-                    sun.misc.SharedSecrets.getJavaNetHttpCookieAccess();
+            JavaNetHttpCookieAccess access =
+                    SharedSecrets.getJavaNetHttpCookieAccess();
             StringJoiner retValue = new StringJoiner(",");  // RFC 2965, comma separated
             List<HttpCookie> cookies = access.parse(value);
             for (HttpCookie cookie : cookies) {

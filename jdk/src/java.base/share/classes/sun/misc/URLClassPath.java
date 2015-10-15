@@ -66,6 +66,8 @@ import java.util.jar.Attributes.Name;
 
 import jdk.internal.jimage.ImageLocation;
 import jdk.internal.jimage.ImageReader;
+import jdk.internal.misc.JavaUtilZipFileAccess;
+import jdk.internal.misc.SharedSecrets;
 
 import sun.net.util.URLUtil;
 import sun.net.www.ParseUtil;
@@ -622,8 +624,8 @@ public class URLClassPath {
         private URLStreamHandler handler;
         private HashMap<String, Loader> lmap;
         private boolean closed = false;
-        private static final sun.misc.JavaUtilZipFileAccess zipAccess =
-                sun.misc.SharedSecrets.getJavaUtilZipFileAccess();
+        private static final JavaUtilZipFileAccess zipAccess =
+                SharedSecrets.getJavaUtilZipFileAccess();
 
         /*
          * Creates a new JarLoader for the specified URL referring to

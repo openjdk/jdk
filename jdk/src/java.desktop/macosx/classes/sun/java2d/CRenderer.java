@@ -36,7 +36,7 @@ import sun.java2d.pipe.*;
 import sun.lwawt.macosx.*;
 
 public class CRenderer implements PixelDrawPipe, PixelFillPipe, ShapeDrawPipe, DrawImagePipe {
-    native static void init();
+    static native void init();
 
     // cache of the runtime options
     static {

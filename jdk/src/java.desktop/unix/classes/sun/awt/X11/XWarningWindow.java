@@ -33,14 +33,14 @@ import sun.awt.AWTAccessor;
 import sun.awt.SunToolkit;
 
 class XWarningWindow extends XWindow {
-    private final static int SHOWING_DELAY = 330;
-    private final static int HIDING_DELAY = 2000;
+    private static final int SHOWING_DELAY = 330;
+    private static final int HIDING_DELAY = 2000;
 
     private final Window ownerWindow;
     private WeakReference<XWindowPeer> ownerPeer;
     private long parentWindow;
 
-    private final static String OWNER = "OWNER";
+    private static final String OWNER = "OWNER";
     private InfoWindow.Tooltip tooltip;
 
     /**
