@@ -111,8 +111,6 @@ import jdk.internal.dynalink.support.TypeUtilities;
 /**
  * A base class for both {@link StaticClassLinker} and {@link BeanLinker}. Deals with common aspects of property
  * exposure and method calls for both static and instance facets of a class.
- *
- * @author Attila Szegedi
  */
 abstract class AbstractJavaLinker implements GuardingDynamicLinker {
 
