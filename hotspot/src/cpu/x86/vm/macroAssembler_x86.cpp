@@ -6247,7 +6247,9 @@ void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_
     // Save caller's stack pointer into RBP if the frame pointer is preserved.
     if (PreserveFramePointer) {
       movptr(rbp, rsp);
-      addptr(rbp, framesize + wordSize);
+      if (framesize > 0) {
+        addptr(rbp, framesize);
+      }
     }
   }
 
