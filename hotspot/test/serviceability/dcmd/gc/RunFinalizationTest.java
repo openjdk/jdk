@@ -21,13 +21,11 @@
  * questions.
  */
 
-import java.util.concurrent.Phaser;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.ArrayList;
+import java.util.List;
 
-import jdk.test.lib.dcmd.CommandExecutor;
-import jdk.test.lib.dcmd.JMXExecutor;
-import jdk.test.lib.Utils;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 
 /*
  * @test
@@ -39,71 +37,21 @@ import jdk.test.lib.Utils;
  *          jdk.jvmstat/sun.jvmstat.monitor
  * @build jdk.test.lib.*
  * @build jdk.test.lib.dcmd.*
- * @run main/othervm RunFinalizationTest
+ * @build RunFinalizationTest FinalizationRunner
+ * @run main RunFinalizationTest
  */
 public class RunFinalizationTest {
-    private static final long TIMEOUT = Utils.adjustTimeout(15000); // 15s
-    private static final Phaser ph = new Phaser(3);
-    static volatile boolean wasFinalized = false;
-    static volatile boolean wasInitialized = false;
+    private final static String TEST_APP_NAME = "FinalizationRunner";
 
-    static class MyObject {
-        public MyObject() {
-            /* Make sure object allocation/deallocation is not optimized out */
-            wasInitialized = true;
-        }
+    public static void main(String ... args) throws Exception {
+        List<String> javaArgs = new ArrayList<>();
+        javaArgs.add("-cp");
+        javaArgs.add(System.getProperty("test.class.path"));
+        javaArgs.add(TEST_APP_NAME);
+        ProcessBuilder testAppPb = ProcessTools.createJavaProcessBuilder(javaArgs.toArray(new String[javaArgs.size()]));
 
-        protected void finalize() {
-            if (!Thread.currentThread().getName().equals("Finalizer")) {
-                wasFinalized = true;
-                ph.arrive();
-            } else {
-                ph.arriveAndAwaitAdvance();
-            }
-        }
-    }
-
-    public static MyObject o;
-
-    private static void run(CommandExecutor executor) {
-        o = new MyObject();
-        o = null;
-        System.gc();
-        executor.execute("GC.run_finalization");
-
-        System.out.println("Waiting for signal from finalizer");
-
-        long targetTime = System.currentTimeMillis() + TIMEOUT;
-        while (System.currentTimeMillis() < targetTime) {
-            try {
-                ph.awaitAdvanceInterruptibly(ph.arrive(), 200, TimeUnit.MILLISECONDS);
-                System.out.println("Received signal");
-                break;
-            } catch (InterruptedException e) {
-                fail("Test error: Interrupted while waiting for signal from finalizer", e);
-            } catch (TimeoutException e) {
-                System.out.println("Haven't received signal in 200ms. Retrying ...");
-            }
-        }
-
-        if (!wasFinalized) {
-            fail("Test failure: Object was not finalized");
-        }
-    }
-
-    public static void main(String ... args) {
-        MyObject o = new MyObject();
-        o = null;
-        Runtime.getRuntime().addShutdownHook(new Thread(()->{
-            run(new JMXExecutor());
-        }));
-    }
-
-    private static void fail(String msg, Exception e) {
-        throw new Error(msg, e);
-    }
-
-    private static void fail(String msg) {
-        throw new Error(msg);
+        OutputAnalyzer out = ProcessTools.executeProcess(testAppPb);
+        out.stderrShouldNotMatch("^" + FinalizationRunner.FAILED + ".*")
+           .stdoutShouldMatch("^" + FinalizationRunner.PASSED + ".*");
     }
 }
