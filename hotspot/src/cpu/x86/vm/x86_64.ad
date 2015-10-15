@@ -867,7 +867,11 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
     st->print("movq    [rsp + #%d], rbp\t# Save rbp",framesize);
     if (PreserveFramePointer) {
       st->print("\n\t");
-      st->print("movq    rbp, [rsp + #%d]\t# Save the caller's SP into rbp", (framesize + wordSize));
+      st->print("movq    rbp, rsp\t# Save the caller's SP into rbp");
+      if (framesize > 0) {
+        st->print("\n\t");
+        st->print("addq    rbp, #%d", framesize);
+      }      
     }
   }
 
