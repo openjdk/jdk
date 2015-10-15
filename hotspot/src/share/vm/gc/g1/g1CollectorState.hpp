@@ -125,7 +125,7 @@ class G1CollectorState VALUE_OBJ_CLASS_SPEC {
     return (_last_young_gc && !_in_marking_window);
   }
 
-  G1YCType yc_type() {
+  G1YCType yc_type() const {
     if (during_initial_mark_pause()) {
       return InitialMark;
     } else if (mark_in_progress()) {

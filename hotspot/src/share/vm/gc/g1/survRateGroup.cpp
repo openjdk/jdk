@@ -24,15 +24,15 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/g1CollectorPolicy.hpp"
+#include "gc/g1/g1Predictions.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/survRateGroup.hpp"
 #include "memory/allocation.hpp"
 
-SurvRateGroup::SurvRateGroup(G1CollectorPolicy* g1p,
+SurvRateGroup::SurvRateGroup(G1Predictions* predictor,
                              const char* name,
                              size_t summary_surv_rates_len) :
-    _g1p(g1p), _name(name),
+    _predictor(predictor), _name(name),
     _summary_surv_rates_len(summary_surv_rates_len),
     _summary_surv_rates_max_len(0),
     _summary_surv_rates(NULL),
@@ -50,6 +50,10 @@ SurvRateGroup::SurvRateGroup(G1CollectorPolicy* g1p,
   }
 
   start_adding_regions();
+}
+
+double SurvRateGroup::get_new_prediction(TruncatedSeq const* seq) const {
+  return _predictor->get_new_prediction(seq);
 }
 
 void SurvRateGroup::reset() {
@@ -127,7 +131,7 @@ SurvRateGroup::accum_surv_rate(size_t adjustment) {
   double ret = _accum_surv_rate;
   if (adjustment > 0) {
     TruncatedSeq* seq = get_seq(_region_num+1);
-    double surv_rate = _g1p->get_new_prediction(seq);
+    double surv_rate = get_new_prediction(seq);
     ret += surv_rate;
   }
 
@@ -137,7 +141,7 @@ SurvRateGroup::accum_surv_rate(size_t adjustment) {
 int
 SurvRateGroup::next_age_index() {
   TruncatedSeq* seq = get_seq(_region_num);
-  double surv_rate = _g1p->get_new_prediction(seq);
+  double surv_rate = get_new_prediction(seq);
   _accum_surv_rate += surv_rate;
 
   ++_region_num;
@@ -175,7 +179,7 @@ SurvRateGroup::all_surviving_words_recorded(bool propagate) {
   double accum = 0.0;
   double pred = 0.0;
   for (size_t i = 0; i < _stats_arrays_length; ++i) {
-    pred = _g1p->get_new_prediction(_surv_rate_pred[i]);
+    pred = get_new_prediction(_surv_rate_pred[i]);
     if (pred > 1.0) pred = 1.0;
     accum += pred;
     _accum_surv_rate_pred[i] = accum;
@@ -192,7 +196,7 @@ SurvRateGroup::print() {
   for (size_t i = 0; i < _region_num; ++i) {
     gclog_or_tty->print_cr("    age " SIZE_FORMAT_W(4) "   surv rate %6.2lf %%   pred %6.2lf %%",
                   i, _surv_rate[i] * 100.0,
-                  _g1p->get_new_prediction(_surv_rate_pred[i]) * 100.0);
+                  _predictor->get_new_prediction(_surv_rate_pred[i]) * 100.0);
   }
 }
 

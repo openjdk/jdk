@@ -27,11 +27,14 @@
 
 #include "utilities/numberSeq.hpp"
 
-class G1CollectorPolicy;
+class G1Predictions;
 
 class SurvRateGroup : public CHeapObj<mtGC> {
 private:
-  G1CollectorPolicy* _g1p;
+  G1Predictions* _predictor;
+
+  double get_new_prediction(TruncatedSeq const* seq) const;
+
   const char* _name;
 
   size_t  _stats_arrays_length;
@@ -49,7 +52,7 @@ private:
   size_t _setup_seq_num;
 
 public:
-  SurvRateGroup(G1CollectorPolicy* g1p,
+  SurvRateGroup(G1Predictions* predictor,
                 const char* name,
                 size_t summary_surv_rates_len);
   void reset();
@@ -60,7 +63,7 @@ public:
   const char* name() { return _name; }
 
   size_t region_num() { return _region_num; }
-  double accum_surv_rate_pred(int age) {
+  double accum_surv_rate_pred(int age) const {
     assert(age >= 0, "must be");
     if ((size_t)age < _stats_arrays_length)
       return _accum_surv_rate_pred[age];
@@ -72,7 +75,7 @@ public:
 
   double accum_surv_rate(size_t adjustment);
 
-  TruncatedSeq* get_seq(size_t age) {
+  TruncatedSeq* get_seq(size_t age) const {
     if (age >= _setup_seq_num) {
       guarantee( _setup_seq_num > 0, "invariant" );
       age = _setup_seq_num-1;
