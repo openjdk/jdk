@@ -33,16 +33,22 @@
  *                              jdk.vm.ci.hotspot.CompilerToVMHelper
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *     -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
- *     -XX:CompileCommand=exclude,*::check -XX:+DoEscapeAnalysis
+ *     -XX:CompileCommand=exclude,*::check -XX:+DoEscapeAnalysis -Xbatch
+ *     -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=false
+ *     compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ *     -XX:CompileCommand=exclude,*::check -XX:+DoEscapeAnalysis -Xbatch
+ *     -Dcompiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate=true
  *     compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest
  */
 
 package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.CTVMUtilities;
+import compiler.testlibrary.CompilerUtils;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
-import jdk.test.lib.Utils;
 import sun.hotspot.WhiteBox;
 import java.lang.reflect.Method;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
@@ -50,64 +56,74 @@ import jdk.vm.ci.hotspot.HotSpotStackFrameReference;
 
 public class MaterializeVirtualObjectTest {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
-    private static final int INVOCATIONS = 100_000;
     private static final Method METHOD;
     private static final HotSpotResolvedJavaMethodImpl RESOLVED_METHOD;
-    private final boolean invalidate;
+    private static final boolean INVALIDATE = Boolean.getBoolean(
+            "compiler.jvmci.compilerToVM.MaterializeVirtualObjectTest.invalidate");
 
     static {
         try {
             METHOD = MaterializeVirtualObjectTest.class.getDeclaredMethod(
-                    "testFrame", String.class, Integer.class);
+                    "testFrame", String.class, boolean.class);
         } catch (NoSuchMethodException e) {
             throw new Error("Can't get executable for test method", e);
         }
         RESOLVED_METHOD = CTVMUtilities.getResolvedMethod(METHOD);
     }
 
-    public MaterializeVirtualObjectTest(boolean invalidate) {
-        this.invalidate = invalidate;
+    public static void main(String[] args) {
+        int levels[] = CompilerUtils.getAvailableCompilationLevels();
+        // we need compilation level 4 to use EscapeAnalysis
+        if (levels.length < 1 || levels[levels.length - 1] != 4) {
+            System.out.println("INFO: Test needs compilation level 4 to"
+                    + " be available. Skipping.");
+        } else {
+            new MaterializeVirtualObjectTest().test();
+        }
     }
 
-    public static void main(String[] args) {
-        new MaterializeVirtualObjectTest(true).test();
-        new MaterializeVirtualObjectTest(false).test();
+    private static String getName() {
+        return "CASE: invalidate=" + INVALIDATE;
     }
 
     private void test() {
-        System.out.printf("CASE: invalidate=%b%n", invalidate);
-        for (int i = 0; i < INVOCATIONS; i++) {
-            testFrame("someString", i);
-        }
-        Utils.waitForCondition(() -> WB.isMethodCompiled(METHOD), 100L);
-        Asserts.assertTrue(WB.isMethodCompiled(METHOD));
-        testFrame("someString", INVOCATIONS);
+        System.out.println(getName());
+        Asserts.assertFalse(WB.isMethodCompiled(METHOD), getName()
+                + " : method unexpectedly compiled");
+        /* need to call testFrame at least once to be able to compile it, so
+           calling with materialize=false, because testFrame is not compiled */
+        testFrame("someString", /* materialize= */ false);
+        WB.enqueueMethodForCompilation(METHOD, 4);
+        Asserts.assertTrue(WB.isMethodCompiled(METHOD), getName()
+                + "Method unexpectedly not compiled");
+        // calling with materialize=true to materialize compiled testFrame
+        testFrame("someString", /* materialize= */ true);
     }
 
-    private void testFrame(String str, Integer iteration) {
+    private void testFrame(String str, boolean materialize) {
         Helper helper = new Helper(str);
-        check(iteration);
+        check(materialize);
         Asserts.assertTrue((helper.string != null) && (this != null)
-                && (helper != null), "Some locals are null");
+                && (helper != null), getName() + " : some locals are null");
     }
 
-    private void check(int iteration) {
+    private void check(boolean materialize) {
         // Materialize virtual objects on last invocation
-        if (iteration == INVOCATIONS) {
+        if (materialize) {
             HotSpotStackFrameReference hsFrame = CompilerToVMHelper
                     .getNextStackFrame(/* topmost frame */ null,
                             new HotSpotResolvedJavaMethodImpl[]{
                                 RESOLVED_METHOD}, /* don't skip any */ 0);
-            Asserts.assertNotNull(hsFrame, "Got null frame");
-            Asserts.assertTrue(WB.isMethodCompiled(METHOD),
-                    "Expected test method to be compiled");
-            Asserts.assertTrue(hsFrame.hasVirtualObjects(),
-                    "Has no virtual object before materialization");
-            CompilerToVMHelper.materializeVirtualObjects(hsFrame, invalidate);
-            Asserts.assertFalse(hsFrame.hasVirtualObjects(),
-                    "Has virtual object after materialization");
-            Asserts.assertEQ(WB.isMethodCompiled(METHOD), !invalidate,
-                    "Unexpected compiled status");
+            Asserts.assertNotNull(hsFrame, getName() + " : got null frame");
+            Asserts.assertTrue(WB.isMethodCompiled(METHOD), getName()
+                    + "Test method should be compiled");
+            Asserts.assertTrue(hsFrame.hasVirtualObjects(), getName()
+                    + ": has no virtual object before materialization");
+            CompilerToVMHelper.materializeVirtualObjects(hsFrame, INVALIDATE);
+            Asserts.assertFalse(hsFrame.hasVirtualObjects(), getName()
+                    + " : has virtual object after materialization");
+            Asserts.assertEQ(WB.isMethodCompiled(METHOD), !INVALIDATE, getName()
+                    + " : unexpected compiled status");
         }
     }
 
