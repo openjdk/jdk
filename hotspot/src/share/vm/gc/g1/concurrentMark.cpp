@@ -3731,8 +3731,7 @@ void CMTask::do_marking_step(double time_target_ms,
   // and do_marking_step() is not being called serially.
   bool do_stealing = do_termination && !is_serial;
 
-  double diff_prediction_ms =
-    g1_policy->get_new_prediction(&_marking_step_diffs_ms);
+  double diff_prediction_ms = _g1h->g1_policy()->predictor().get_new_prediction(&_marking_step_diffs_ms);
   _time_target_ms = time_target_ms - diff_prediction_ms;
 
   // set up the variables that are used in the work-based scheme to
