@@ -31,32 +31,15 @@
 #include "utilities/stack.inline.hpp"
 
 G1ParCopyHelper::G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par_scan_state) :
-  G1ParClosureSuper(g1, par_scan_state), _scanned_klass(NULL),
-  _cm(_g1->concurrent_mark()) { }
-
-G1ParCopyHelper::G1ParCopyHelper(G1CollectedHeap* g1) :
-  G1ParClosureSuper(g1), _scanned_klass(NULL),
-  _cm(_g1->concurrent_mark()) { }
-
-G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1) :
-  _g1(g1), _par_scan_state(NULL), _worker_id(UINT_MAX) { }
+  G1ParClosureSuper(g1, par_scan_state),
+  _worker_id(par_scan_state->worker_id()),
+  _scanned_klass(NULL),
+  _cm(_g1->concurrent_mark())
+{ }
 
 G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
-  _g1(g1), _par_scan_state(NULL),
-  _worker_id(UINT_MAX) {
-  set_par_scan_thread_state(par_scan_state);
-}
-
-void G1ParClosureSuper::set_par_scan_thread_state(G1ParScanThreadState* par_scan_state) {
-  assert(_par_scan_state == NULL, "_par_scan_state must only be set once");
-  assert(par_scan_state != NULL, "Must set par_scan_state to non-NULL.");
-
-  _par_scan_state = par_scan_state;
-  _worker_id = par_scan_state->worker_id();
-
-  assert(_worker_id < ParallelGCThreads,
-         "The given worker id %u must be less than the number of threads %u", _worker_id, ParallelGCThreads);
-}
+  _g1(g1), _par_scan_state(par_scan_state)
+{ }
 
 void G1KlassScanClosure::do_klass(Klass* klass) {
   // If the klass has not been dirtied we know that there's

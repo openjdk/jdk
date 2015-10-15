@@ -43,10 +43,9 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id,
     _worker_id(worker_id),
     _tenuring_threshold(g1h->g1_policy()->tenuring_threshold()),
     _age_table(false),
-    _scanner(g1h),
+    _scanner(g1h, this),
     _old_gen_is_full(false)
 {
-  _scanner.set_par_scan_thread_state(this);
   // we allocate G1YoungSurvRateNumRegions plus one entries, since
   // we "sacrifice" entry 0 to keep track of surviving bytes for
   // non-young regions (where the age is -1)

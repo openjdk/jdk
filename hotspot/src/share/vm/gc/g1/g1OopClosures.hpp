@@ -52,15 +52,12 @@ class G1ParClosureSuper : public OopsInHeapRegionClosure {
 protected:
   G1CollectedHeap* _g1;
   G1ParScanThreadState* _par_scan_state;
-  uint _worker_id;
-public:
-  // Initializes the instance, leaving _par_scan_state uninitialized. Must be done
-  // later using the set_par_scan_thread_state() method.
-  G1ParClosureSuper(G1CollectedHeap* g1);
-  G1ParClosureSuper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state);
-  bool apply_to_weak_ref_discovered_field() { return true; }
 
-  void set_par_scan_thread_state(G1ParScanThreadState* par_scan_state);
+  G1ParClosureSuper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state);
+  ~G1ParClosureSuper() { }
+
+public:
+  virtual bool apply_to_weak_ref_discovered_field() { return true; }
 };
 
 class G1ParPushHeapRSClosure : public G1ParClosureSuper {
@@ -76,7 +73,8 @@ public:
 
 class G1ParScanClosure : public G1ParClosureSuper {
 public:
-  G1ParScanClosure(G1CollectedHeap* g1) : G1ParClosureSuper(g1) { }
+  G1ParScanClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
+    G1ParClosureSuper(g1, par_scan_state) { }
 
   template <class T> void do_oop_nv(T* p);
   virtual void do_oop(oop* p)          { do_oop_nv(p); }
@@ -88,6 +86,7 @@ public:
 // Add back base class for metadata
 class G1ParCopyHelper : public G1ParClosureSuper {
 protected:
+  uint _worker_id;              // Cache value from par_scan_state.
   Klass* _scanned_klass;
   ConcurrentMark* _cm;
 
@@ -100,10 +99,11 @@ protected:
   // objects pointed to by roots that have been forwarded during a
   // GC. It is MT-safe.
   inline void mark_forwarded_object(oop from_obj, oop to_obj);
- public:
-  G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par_scan_state);
-  G1ParCopyHelper(G1CollectedHeap* g1);
 
+  G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par_scan_state);
+  ~G1ParCopyHelper() { }
+
+ public:
   void set_scanned_klass(Klass* k) { _scanned_klass = k; }
   template <class T> inline void do_klass_barrier(T* p, oop new_obj);
 };
@@ -127,10 +127,6 @@ private:
 public:
   G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
       G1ParCopyHelper(g1, par_scan_state) {
-    assert(_ref_processor == NULL, "sanity");
-  }
-
-  G1ParCopyClosure(G1CollectedHeap* g1) : G1ParCopyHelper(g1) {
     assert(_ref_processor == NULL, "sanity");
   }
 

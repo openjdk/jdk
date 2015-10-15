@@ -98,7 +98,7 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
   template <class T> void push_on_queue(T* ref);
 
-  template <class T> void update_rs(HeapRegion* from, T* p, uint tid) {
+  template <class T> void update_rs(HeapRegion* from, T* p) {
     // If the new value of the field points to the same region or
     // is the to-space, we don't need to include it in the Rset updates.
     if (!from->is_in_reserved(oopDesc::load_decode_heap_oop(p)) && !from->is_survivor()) {
