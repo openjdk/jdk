@@ -29,6 +29,7 @@
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1InCSetState.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
+#include "gc/g1/g1Predictions.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 
 // A G1CollectorPolicy makes policy decisions that determine the
@@ -161,17 +162,17 @@ public:
 };
 
 class G1CollectorPolicy: public CollectorPolicy {
-private:
+ private:
+  G1Predictions _predictor;
+
+  double get_new_prediction(TruncatedSeq const* seq) const;
+
   // either equal to the number of parallel threads, if ParallelGCThreads
   // has been set, or 1 otherwise
   int _parallel_gc_threads;
 
   // The number of GC threads currently active.
   uintx _no_of_gc_threads;
-
-  enum SomePrivateConstants {
-    NumPrevPausesForHeuristics = 10
-  };
 
   G1MMUTracker* _mmu_tracker;
 
@@ -211,7 +212,8 @@ private:
   uint   _reserve_regions;
 
   enum PredictionConstants {
-    TruncatedSeqLength = 10
+    TruncatedSeqLength = 10,
+    NumPrevPausesForHeuristics = 10
   };
 
   TruncatedSeq* _alloc_rate_ms_seq;
@@ -251,24 +253,8 @@ private:
 
   size_t _recorded_rs_lengths;
   size_t _max_rs_lengths;
-  double _sigma;
 
   size_t _rs_lengths_prediction;
-
-  double sigma() const { return _sigma; }
-
-  // A function that prevents us putting too much stock in small sample
-  // sets.  Returns a number between 2.0 and 1.0, depending on the number
-  // of samples.  5 or more samples yields one; fewer scales linearly from
-  // 2.0 at 1 sample to 1.0 at 5.
-  double confidence_factor(int samples) const {
-    if (samples > 4) return 1.0;
-    else return  1.0 + sigma() * ((double)(5 - samples))/2.0;
-  }
-
-  double get_new_neg_prediction(TruncatedSeq* seq) {
-    return seq->davg() - sigma() * seq->dsd();
-  }
 
 #ifndef PRODUCT
   bool verify_young_ages(HeapRegion* head, SurvRateGroup *surv_rate_group);
@@ -286,6 +272,8 @@ private:
   size_t _pending_cards;
 
 public:
+  G1Predictions& predictor() { return _predictor; }
+
   // Accessors
 
   void set_region_eden(HeapRegion* hr, int young_index_in_cset) {
@@ -304,106 +292,41 @@ public:
   bool verify_young_ages();
 #endif // PRODUCT
 
-  double get_new_prediction(TruncatedSeq* seq) const {
-    return MAX2(seq->davg() + sigma() * seq->dsd(),
-                seq->davg() * confidence_factor(seq->num()));
-  }
-
   void record_max_rs_lengths(size_t rs_lengths) {
     _max_rs_lengths = rs_lengths;
   }
 
-  size_t predict_rs_length_diff() const {
-    return (size_t) get_new_prediction(_rs_length_diff_seq);
-  }
+  size_t predict_rs_length_diff() const;
 
-  double predict_alloc_rate_ms() const {
-    return get_new_prediction(_alloc_rate_ms_seq);
-  }
+  double predict_alloc_rate_ms() const;
 
-  double predict_cost_per_card_ms() const {
-    return get_new_prediction(_cost_per_card_ms_seq);
-  }
+  double predict_cost_per_card_ms() const;
 
-  double predict_scan_hcc_ms() const {
-    return get_new_prediction(_cost_scan_hcc_seq);
-  }
+  double predict_scan_hcc_ms() const;
 
-  double predict_rs_update_time_ms(size_t pending_cards) const {
-    return (double) pending_cards * predict_cost_per_card_ms() + predict_scan_hcc_ms();
-  }
+  double predict_rs_update_time_ms(size_t pending_cards) const;
 
-  double predict_young_cards_per_entry_ratio() const {
-    return get_new_prediction(_young_cards_per_entry_ratio_seq);
-  }
+  double predict_young_cards_per_entry_ratio() const;
 
-  double predict_mixed_cards_per_entry_ratio() const {
-    if (_mixed_cards_per_entry_ratio_seq->num() < 2) {
-      return predict_young_cards_per_entry_ratio();
-    } else {
-      return get_new_prediction(_mixed_cards_per_entry_ratio_seq);
-    }
-  }
+  double predict_mixed_cards_per_entry_ratio() const;
 
-  size_t predict_young_card_num(size_t rs_length) const {
-    return (size_t) ((double) rs_length *
-                     predict_young_cards_per_entry_ratio());
-  }
+  size_t predict_young_card_num(size_t rs_length) const;
 
-  size_t predict_non_young_card_num(size_t rs_length) const {
-    return (size_t) ((double) rs_length *
-                     predict_mixed_cards_per_entry_ratio());
-  }
+  size_t predict_non_young_card_num(size_t rs_length) const;
 
-  double predict_rs_scan_time_ms(size_t card_num) const {
-    if (collector_state()->gcs_are_young()) {
-      return (double) card_num * get_new_prediction(_cost_per_entry_ms_seq);
-    } else {
-      return predict_mixed_rs_scan_time_ms(card_num);
-    }
-  }
+  double predict_rs_scan_time_ms(size_t card_num) const;
 
-  double predict_mixed_rs_scan_time_ms(size_t card_num) const {
-    if (_mixed_cost_per_entry_ms_seq->num() < 3) {
-      return (double) card_num * get_new_prediction(_cost_per_entry_ms_seq);
-    } else {
-      return (double) (card_num *
-                       get_new_prediction(_mixed_cost_per_entry_ms_seq));
-    }
-  }
+  double predict_mixed_rs_scan_time_ms(size_t card_num) const;
 
-  double predict_object_copy_time_ms_during_cm(size_t bytes_to_copy) const {
-    if (_cost_per_byte_ms_during_cm_seq->num() < 3) {
-      return (1.1 * (double) bytes_to_copy) *
-              get_new_prediction(_cost_per_byte_ms_seq);
-    } else {
-      return (double) bytes_to_copy *
-             get_new_prediction(_cost_per_byte_ms_during_cm_seq);
-    }
-  }
+  double predict_object_copy_time_ms_during_cm(size_t bytes_to_copy) const;
 
-  double predict_object_copy_time_ms(size_t bytes_to_copy) const {
-    if (collector_state()->during_concurrent_mark()) {
-      return predict_object_copy_time_ms_during_cm(bytes_to_copy);
-    } else {
-      return (double) bytes_to_copy *
-              get_new_prediction(_cost_per_byte_ms_seq);
-    }
-  }
+  double predict_object_copy_time_ms(size_t bytes_to_copy) const;
 
-  double predict_constant_other_time_ms() const {
-    return get_new_prediction(_constant_other_time_ms_seq);
-  }
+  double predict_constant_other_time_ms() const;
 
-  double predict_young_other_time_ms(size_t young_num) const {
-    return (double) young_num *
-           get_new_prediction(_young_other_cost_per_region_ms_seq);
-  }
+  double predict_young_other_time_ms(size_t young_num) const;
 
-  double predict_non_young_other_time_ms(size_t non_young_num) const {
-    return (double) non_young_num *
-           get_new_prediction(_non_young_other_cost_per_region_ms_seq);
-  }
+  double predict_non_young_other_time_ms(size_t non_young_num) const;
 
   double predict_base_elapsed_time_ms(size_t pending_cards) const;
   double predict_base_elapsed_time_ms(size_t pending_cards,
@@ -420,11 +343,15 @@ public:
 
   double predict_survivor_regions_evac_time() const;
 
+  bool should_update_surv_rate_group_predictors() {
+    return collector_state()->last_gc_was_young() && !collector_state()->in_marking_window();
+  }
+
   void cset_regions_freed() {
-    bool propagate = collector_state()->should_propagate();
-    _short_lived_surv_rate_group->all_surviving_words_recorded(propagate);
-    _survivor_surv_rate_group->all_surviving_words_recorded(propagate);
-    // also call it on any more surv rate groups
+    bool update = should_update_surv_rate_group_predictors();
+
+    _short_lived_surv_rate_group->all_surviving_words_recorded(update);
+    _survivor_surv_rate_group->all_surviving_words_recorded(update);
   }
 
   G1MMUTracker* mmu_tracker() {
@@ -439,34 +366,17 @@ public:
     return _mmu_tracker->max_gc_time() * 1000.0;
   }
 
-  double predict_remark_time_ms() const {
-    return get_new_prediction(_concurrent_mark_remark_times_ms);
-  }
+  double predict_remark_time_ms() const;
 
-  double predict_cleanup_time_ms() const {
-    return get_new_prediction(_concurrent_mark_cleanup_times_ms);
-  }
+  double predict_cleanup_time_ms() const;
 
   // Returns an estimate of the survival rate of the region at yg-age
   // "yg_age".
-  double predict_yg_surv_rate(int age, SurvRateGroup* surv_rate_group) const {
-    TruncatedSeq* seq = surv_rate_group->get_seq(age);
-    if (seq->num() == 0)
-      gclog_or_tty->print("BARF! age is %d", age);
-    guarantee( seq->num() > 0, "invariant" );
-    double pred = get_new_prediction(seq);
-    if (pred > 1.0)
-      pred = 1.0;
-    return pred;
-  }
+  double predict_yg_surv_rate(int age, SurvRateGroup* surv_rate_group) const;
 
-  double predict_yg_surv_rate(int age) const {
-    return predict_yg_surv_rate(age, _short_lived_surv_rate_group);
-  }
+  double predict_yg_surv_rate(int age) const;
 
-  double accum_yg_surv_rate_pred(int age) const {
-    return _short_lived_surv_rate_group->accum_surv_rate_pred(age);
-  }
+  double accum_yg_surv_rate_pred(int age) const;
 
 private:
   // Statistics kept per GC stoppage, pause or full.
@@ -613,8 +523,7 @@ public:
 
   virtual G1CollectorPolicy* as_g1_policy() { return this; }
 
-  const G1CollectorState* collector_state() const;
-  G1CollectorState* collector_state();
+  G1CollectorState* collector_state() const;
 
   G1GCPhaseTimes* phase_times() const { return _phase_times; }
 
@@ -887,16 +796,5 @@ public:
 
   virtual void post_heap_initialize();
 };
-
-// This should move to some place more general...
-
-// If we have "n" measurements, and we've kept track of their "sum" and the
-// "sum_of_squares" of the measurements, this returns the variance of the
-// sequence.
-inline double variance(int n, double sum_of_squares, double sum) {
-  double n_d = (double)n;
-  double avg = sum/n_d;
-  return (sum_of_squares - 2.0 * avg * sum + n_d * avg * avg) / n_d;
-}
 
 #endif // SHARE_VM_GC_G1_G1COLLECTORPOLICY_HPP

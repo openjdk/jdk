@@ -80,6 +80,7 @@ static double non_young_other_cost_per_region_ms_defaults[] = {
 };
 
 G1CollectorPolicy::G1CollectorPolicy() :
+  _predictor(G1ConfidencePercent / 100.0),
   _parallel_gc_threads(ParallelGCThreads),
 
   _recent_gc_times_ms(new TruncatedSeq(NumPrevPausesForHeuristics)),
@@ -127,8 +128,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _survivor_cset_region_length(0),
   _old_cset_region_length(0),
 
-  _sigma(G1ConfidencePercent / 100.0),
-
   _collection_set(NULL),
   _collection_set_bytes_used_before(0),
 
@@ -151,12 +150,12 @@ G1CollectorPolicy::G1CollectorPolicy() :
 
   _gc_overhead_perc(0.0) {
 
-  // SurvRateGroups below must be initialized after '_sigma' because they
-  // indirectly access '_sigma' through this object passed to their constructor.
+  // SurvRateGroups below must be initialized after the predictor because they
+  // indirectly use it through this object passed to their constructor.
   _short_lived_surv_rate_group =
-    new SurvRateGroup(this, "Short Lived", G1YoungSurvRateNumRegionsSummary);
+    new SurvRateGroup(&_predictor, "Short Lived", G1YoungSurvRateNumRegionsSummary);
   _survivor_surv_rate_group =
-    new SurvRateGroup(this, "Survivor", G1YoungSurvRateNumRegionsSummary);
+    new SurvRateGroup(&_predictor, "Survivor", G1YoungSurvRateNumRegionsSummary);
 
   // Set up the region size and associated fields. Given that the
   // policy is created before the heap, we have to set this up here,
@@ -289,6 +288,10 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _collectionSetChooser = new CollectionSetChooser();
 }
 
+double G1CollectorPolicy::get_new_prediction(TruncatedSeq const* seq) const {
+  return _predictor.get_new_prediction(seq);
+}
+
 void G1CollectorPolicy::initialize_alignments() {
   _space_alignment = HeapRegion::GrainBytes;
   size_t card_table_alignment = CardTableRS::ct_max_alignment_constraint();
@@ -316,8 +319,7 @@ void G1CollectorPolicy::post_heap_initialize() {
   }
 }
 
-const G1CollectorState* G1CollectorPolicy::collector_state() const { return _g1->collector_state(); }
-G1CollectorState* G1CollectorPolicy::collector_state() { return _g1->collector_state(); }
+G1CollectorState* G1CollectorPolicy::collector_state() const { return _g1->collector_state(); }
 
 G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(true),
         _min_desired_young_length(0), _max_desired_young_length(0) {
@@ -428,8 +430,8 @@ void G1CollectorPolicy::init() {
     _young_list_fixed_length = _young_gen_sizer->min_desired_young_length();
   }
   _free_regions_at_end_of_collection = _g1->num_free_regions();
-  update_young_list_target_length();
 
+  update_young_list_target_length();
   // We may immediately start allocating regions and placing them on the
   // collection set list. Initialize the per-collection set info
   start_incremental_cset_building();
@@ -460,9 +462,8 @@ bool G1CollectorPolicy::predict_will_fit(uint young_length,
     return false;
   }
 
-  size_t free_bytes =
-                   (base_free_regions - young_length) * HeapRegion::GrainBytes;
-  if ((2.0 * sigma()) * (double) bytes_to_copy > (double) free_bytes) {
+  size_t free_bytes = (base_free_regions - young_length) * HeapRegion::GrainBytes;
+  if ((2.0 /* magic */ * _predictor.sigma()) * bytes_to_copy > free_bytes) {
     // end condition 3: out-of-space (conservatively!)
     return false;
   }
@@ -1269,7 +1270,7 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
     cg1r->set_red_zone(g * k_gr);
     cg1r->reinitialize_threads();
 
-    int processing_threshold_delta = MAX2((int)(cg1r->green_zone() * sigma()), 1);
+    int processing_threshold_delta = MAX2((int)(cg1r->green_zone() * _predictor.sigma()), 1);
     int processing_threshold = MIN2(cg1r->green_zone() + processing_threshold_delta,
                                     cg1r->yellow_zone());
     // Change the barrier params
@@ -1286,17 +1287,125 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
   dcqs.notify_if_necessary();
 }
 
-double
-G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards,
-                                                size_t scanned_cards) const {
+size_t G1CollectorPolicy::predict_rs_length_diff() const {
+  return (size_t) get_new_prediction(_rs_length_diff_seq);
+}
+
+double G1CollectorPolicy::predict_alloc_rate_ms() const {
+  return get_new_prediction(_alloc_rate_ms_seq);
+}
+
+double G1CollectorPolicy::predict_cost_per_card_ms() const {
+  return get_new_prediction(_cost_per_card_ms_seq);
+}
+
+double G1CollectorPolicy::predict_scan_hcc_ms() const {
+  return get_new_prediction(_cost_scan_hcc_seq);
+}
+
+double G1CollectorPolicy::predict_rs_update_time_ms(size_t pending_cards) const {
+  return pending_cards * predict_cost_per_card_ms() + predict_scan_hcc_ms();
+}
+
+double G1CollectorPolicy::predict_young_cards_per_entry_ratio() const {
+  return get_new_prediction(_young_cards_per_entry_ratio_seq);
+}
+
+double G1CollectorPolicy::predict_mixed_cards_per_entry_ratio() const {
+  if (_mixed_cards_per_entry_ratio_seq->num() < 2) {
+    return predict_young_cards_per_entry_ratio();
+  } else {
+    return get_new_prediction(_mixed_cards_per_entry_ratio_seq);
+  }
+}
+
+size_t G1CollectorPolicy::predict_young_card_num(size_t rs_length) const {
+  return (size_t) (rs_length * predict_young_cards_per_entry_ratio());
+}
+
+size_t G1CollectorPolicy::predict_non_young_card_num(size_t rs_length) const {
+  return (size_t)(rs_length * predict_mixed_cards_per_entry_ratio());
+}
+
+double G1CollectorPolicy::predict_rs_scan_time_ms(size_t card_num) const {
+  if (collector_state()->gcs_are_young()) {
+    return card_num * get_new_prediction(_cost_per_entry_ms_seq);
+  } else {
+    return predict_mixed_rs_scan_time_ms(card_num);
+  }
+}
+
+double G1CollectorPolicy::predict_mixed_rs_scan_time_ms(size_t card_num) const {
+  if (_mixed_cost_per_entry_ms_seq->num() < 3) {
+    return card_num * get_new_prediction(_cost_per_entry_ms_seq);
+  } else {
+    return card_num * get_new_prediction(_mixed_cost_per_entry_ms_seq);
+  }
+}
+
+double G1CollectorPolicy::predict_object_copy_time_ms_during_cm(size_t bytes_to_copy) const {
+  if (_cost_per_byte_ms_during_cm_seq->num() < 3) {
+    return (1.1 * bytes_to_copy) * get_new_prediction(_cost_per_byte_ms_seq);
+  } else {
+    return bytes_to_copy * get_new_prediction(_cost_per_byte_ms_during_cm_seq);
+  }
+}
+
+double G1CollectorPolicy::predict_object_copy_time_ms(size_t bytes_to_copy) const {
+  if (collector_state()->during_concurrent_mark()) {
+    return predict_object_copy_time_ms_during_cm(bytes_to_copy);
+  } else {
+    return bytes_to_copy * get_new_prediction(_cost_per_byte_ms_seq);
+  }
+}
+
+double G1CollectorPolicy::predict_constant_other_time_ms() const {
+  return get_new_prediction(_constant_other_time_ms_seq);
+}
+
+double G1CollectorPolicy::predict_young_other_time_ms(size_t young_num) const {
+  return young_num * get_new_prediction(_young_other_cost_per_region_ms_seq);
+}
+
+double G1CollectorPolicy::predict_non_young_other_time_ms(size_t non_young_num) const {
+  return non_young_num * get_new_prediction(_non_young_other_cost_per_region_ms_seq);
+}
+
+double G1CollectorPolicy::predict_remark_time_ms() const {
+  return get_new_prediction(_concurrent_mark_remark_times_ms);
+}
+
+double G1CollectorPolicy::predict_cleanup_time_ms() const {
+  return get_new_prediction(_concurrent_mark_cleanup_times_ms);
+}
+
+double G1CollectorPolicy::predict_yg_surv_rate(int age, SurvRateGroup* surv_rate_group) const {
+  TruncatedSeq* seq = surv_rate_group->get_seq(age);
+  guarantee(seq->num() > 0, "There should be some young gen survivor samples available. Tried to access with age %d", age);
+  double pred = get_new_prediction(seq);
+  if (pred > 1.0) {
+    pred = 1.0;
+  }
+  return pred;
+}
+
+double G1CollectorPolicy::predict_yg_surv_rate(int age) const {
+  return predict_yg_surv_rate(age, _short_lived_surv_rate_group);
+}
+
+double G1CollectorPolicy::accum_yg_surv_rate_pred(int age) const {
+  return _short_lived_surv_rate_group->accum_surv_rate_pred(age);
+}
+
+double G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards,
+                                                       size_t scanned_cards) const {
   return
     predict_rs_update_time_ms(pending_cards) +
     predict_rs_scan_time_ms(scanned_cards) +
     predict_constant_other_time_ms();
 }
 
-double
-G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards) const {
+double G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards) const {
   size_t rs_length = predict_rs_length_diff();
   size_t card_num;
   if (collector_state()->gcs_are_young()) {
@@ -1315,14 +1424,13 @@ size_t G1CollectorPolicy::predict_bytes_to_copy(HeapRegion* hr) const {
     assert(hr->is_young() && hr->age_in_surv_rate_group() != -1, "invariant");
     int age = hr->age_in_surv_rate_group();
     double yg_surv_rate = predict_yg_surv_rate(age, hr->surv_rate_group());
-    bytes_to_copy = (size_t) ((double) hr->used() * yg_surv_rate);
+    bytes_to_copy = (size_t) (hr->used() * yg_surv_rate);
   }
   return bytes_to_copy;
 }
 
-double
-G1CollectorPolicy::predict_region_elapsed_time_ms(HeapRegion* hr,
-                                                  bool for_young_gc) const {
+double G1CollectorPolicy::predict_region_elapsed_time_ms(HeapRegion* hr,
+                                                         bool for_young_gc) const {
   size_t rs_length = hr->rem_set()->occupied();
   size_t card_num;
 
@@ -1349,9 +1457,8 @@ G1CollectorPolicy::predict_region_elapsed_time_ms(HeapRegion* hr,
   return region_elapsed_time_ms;
 }
 
-void
-G1CollectorPolicy::init_cset_region_lengths(uint eden_cset_region_length,
-                                            uint survivor_cset_region_length) {
+void G1CollectorPolicy::init_cset_region_lengths(uint eden_cset_region_length,
+                                                 uint survivor_cset_region_length) {
   _eden_cset_region_length     = eden_cset_region_length;
   _survivor_cset_region_length = survivor_cset_region_length;
   _old_cset_region_length      = 0;
