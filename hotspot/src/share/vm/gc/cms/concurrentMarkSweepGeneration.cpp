@@ -6045,8 +6045,8 @@ MarkRefsIntoClosure::MarkRefsIntoClosure(
     _span(span),
     _bitMap(bitMap)
 {
-    assert(_ref_processor == NULL, "deliberately left NULL");
-    assert(_bitMap->covers(_span), "_bitMap/_span mismatch");
+  assert(ref_processor() == NULL, "deliberately left NULL");
+  assert(_bitMap->covers(_span), "_bitMap/_span mismatch");
 }
 
 void MarkRefsIntoClosure::do_oop(oop obj) {
@@ -6067,8 +6067,8 @@ Par_MarkRefsIntoClosure::Par_MarkRefsIntoClosure(
     _span(span),
     _bitMap(bitMap)
 {
-    assert(_ref_processor == NULL, "deliberately left NULL");
-    assert(_bitMap->covers(_span), "_bitMap/_span mismatch");
+  assert(ref_processor() == NULL, "deliberately left NULL");
+  assert(_bitMap->covers(_span), "_bitMap/_span mismatch");
 }
 
 void Par_MarkRefsIntoClosure::do_oop(oop obj) {
@@ -6091,8 +6091,8 @@ MarkRefsIntoVerifyClosure::MarkRefsIntoVerifyClosure(
     _verification_bm(verification_bm),
     _cms_bm(cms_bm)
 {
-    assert(_ref_processor == NULL, "deliberately left NULL");
-    assert(_verification_bm->covers(_span), "_verification_bm/_span mismatch");
+  assert(ref_processor() == NULL, "deliberately left NULL");
+  assert(_verification_bm->covers(_span), "_verification_bm/_span mismatch");
 }
 
 void MarkRefsIntoVerifyClosure::do_oop(oop obj) {
@@ -6134,8 +6134,9 @@ MarkRefsIntoAndScanClosure::MarkRefsIntoAndScanClosure(MemRegion span,
   _concurrent_precleaning(concurrent_precleaning),
   _freelistLock(NULL)
 {
-  _ref_processor = rp;
-  assert(_ref_processor != NULL, "_ref_processor shouldn't be NULL");
+  // FIXME: Should initialize in base class constructor.
+  assert(rp != NULL, "ref_processor shouldn't be NULL");
+  set_ref_processor_internal(rp);
 }
 
 // This closure is used to mark refs into the CMS generation at the
@@ -6240,8 +6241,9 @@ Par_MarkRefsIntoAndScanClosure::Par_MarkRefsIntoAndScanClosure(
                        ((uint)CMSWorkQueueDrainThreshold * ParallelGCThreads))),
   _par_pushAndMarkClosure(collector, span, rp, bit_map, work_queue)
 {
-  _ref_processor = rp;
-  assert(_ref_processor != NULL, "_ref_processor shouldn't be NULL");
+  // FIXME: Should initialize in base class constructor.
+  assert(rp != NULL, "ref_processor shouldn't be NULL");
+  set_ref_processor_internal(rp);
 }
 
 // This closure is used to mark refs into the CMS generation at the
@@ -7091,7 +7093,7 @@ PushAndMarkClosure::PushAndMarkClosure(CMSCollector* collector,
   _mark_stack(mark_stack),
   _concurrent_precleaning(concurrent_precleaning)
 {
-  assert(_ref_processor != NULL, "_ref_processor shouldn't be NULL");
+  assert(ref_processor() != NULL, "ref_processor shouldn't be NULL");
 }
 
 // Grey object rescan during pre-cleaning and second checkpoint phases --
@@ -7162,7 +7164,7 @@ Par_PushAndMarkClosure::Par_PushAndMarkClosure(CMSCollector* collector,
   _bit_map(bit_map),
   _work_queue(work_queue)
 {
-  assert(_ref_processor != NULL, "_ref_processor shouldn't be NULL");
+  assert(ref_processor() != NULL, "ref_processor shouldn't be NULL");
 }
 
 void PushAndMarkClosure::do_oop(oop* p)       { PushAndMarkClosure::do_oop_work(p); }
