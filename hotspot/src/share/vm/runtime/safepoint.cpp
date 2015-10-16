@@ -338,7 +338,7 @@ void SafepointSynchronize::begin() {
       tty->print_cr("# SafepointSynchronize: Finished after "
                     INT64_FORMAT_W(6) " ms",
                     ((current_time - safepoint_limit_time) / MICROUNITS +
-                     SafepointTimeoutDelay));
+                     (jlong)SafepointTimeoutDelay));
     }
   }
 #endif
@@ -1050,10 +1050,6 @@ static void print_header() {
 void SafepointSynchronize::deferred_initialize_stat() {
   if (init_done) return;
 
-  if (PrintSafepointStatisticsCount <= 0) {
-    fatal("Wrong PrintSafepointStatisticsCount");
-  }
-
   // If PrintSafepointStatisticsTimeout is specified, the statistics data will
   // be printed right away, in which case, _safepoint_stats will regress to
   // a single element array. Otherwise, it is a circular ring buffer with default
@@ -1164,7 +1160,7 @@ void SafepointSynchronize::end_statistics(jlong vmop_end_time) {
   // PrintSafepointStatisticsTimeout will be printed out right away.
   // By default, it is -1 meaning all samples will be put into the list.
   if ( PrintSafepointStatisticsTimeout > 0) {
-    if (spstat->_time_to_sync > PrintSafepointStatisticsTimeout * MICROUNITS) {
+    if (spstat->_time_to_sync > (jlong)PrintSafepointStatisticsTimeout * MICROUNITS) {
       print_statistics();
     }
   } else {
@@ -1230,7 +1226,7 @@ void SafepointSynchronize::print_stat_on_exit() {
     os::javaTimeNanos() - cleanup_end_time;
 
   if ( PrintSafepointStatisticsTimeout < 0 ||
-       spstat->_time_to_sync > PrintSafepointStatisticsTimeout * MICROUNITS) {
+       spstat->_time_to_sync > (jlong)PrintSafepointStatisticsTimeout * MICROUNITS) {
     print_statistics();
   }
   tty->cr();
