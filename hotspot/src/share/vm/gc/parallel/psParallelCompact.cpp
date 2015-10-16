@@ -1349,13 +1349,6 @@ HeapWord*
 PSParallelCompact::compute_dense_prefix(const SpaceId id,
                                         bool maximum_compaction)
 {
-  if (ParallelOldGCSplitALot) {
-    if (_space_info[id].dense_prefix() != _space_info[id].space()->bottom()) {
-      // The value was chosen to provoke splitting a young gen space; use it.
-      return _space_info[id].dense_prefix();
-    }
-  }
-
   const size_t region_size = ParallelCompactData::RegionSize;
   const ParallelCompactData& sd = summary_data();
 
@@ -1428,219 +1421,8 @@ PSParallelCompact::compute_dense_prefix(const SpaceId id,
     }
   }
 
-#if     0
-  // Something to consider:  if the region with the best ratio is 'close to' the
-  // first region w/free space, choose the first region with free space
-  // ("first-free").  The first-free region is usually near the start of the
-  // heap, which means we are copying most of the heap already, so copy a bit
-  // more to get complete compaction.
-  if (pointer_delta(best_cp, full_cp, sizeof(RegionData)) < 4) {
-    _maximum_compaction_gc_num = total_invocations();
-    best_cp = full_cp;
-  }
-#endif  // #if 0
-
   return sd.region_to_addr(best_cp);
 }
-
-#ifndef PRODUCT
-void
-PSParallelCompact::fill_with_live_objects(SpaceId id, HeapWord* const start,
-                                          size_t words)
-{
-  if (TraceParallelOldGCSummaryPhase) {
-    tty->print_cr("fill_with_live_objects [" PTR_FORMAT " " PTR_FORMAT ") "
-                  SIZE_FORMAT, p2i(start), p2i(start + words), words);
-  }
-
-  ObjectStartArray* const start_array = _space_info[id].start_array();
-  CollectedHeap::fill_with_objects(start, words);
-  for (HeapWord* p = start; p < start + words; p += oop(p)->size()) {
-    _mark_bitmap.mark_obj(p, words);
-    _summary_data.add_obj(p, words);
-    start_array->allocate_block(p);
-  }
-}
-
-void
-PSParallelCompact::summarize_new_objects(SpaceId id, HeapWord* start)
-{
-  ParallelCompactData& sd = summary_data();
-  MutableSpace* space = _space_info[id].space();
-
-  // Find the source and destination start addresses.
-  HeapWord* const src_addr = sd.region_align_down(start);
-  HeapWord* dst_addr;
-  if (src_addr < start) {
-    dst_addr = sd.addr_to_region_ptr(src_addr)->destination();
-  } else if (src_addr > space->bottom()) {
-    // The start (the original top() value) is aligned to a region boundary so
-    // the associated region does not have a destination.  Compute the
-    // destination from the previous region.
-    RegionData* const cp = sd.addr_to_region_ptr(src_addr) - 1;
-    dst_addr = cp->destination() + cp->data_size();
-  } else {
-    // Filling the entire space.
-    dst_addr = space->bottom();
-  }
-  assert(dst_addr != NULL, "sanity");
-
-  // Update the summary data.
-  bool result = _summary_data.summarize(_space_info[id].split_info(),
-                                        src_addr, space->top(), NULL,
-                                        dst_addr, space->end(),
-                                        _space_info[id].new_top_addr());
-  assert(result, "should not fail:  bad filler object size");
-}
-
-void
-PSParallelCompact::provoke_split_fill_survivor(SpaceId id)
-{
-  if (total_invocations() % (ParallelOldGCSplitInterval * 3) != 0) {
-    return;
-  }
-
-  MutableSpace* const space = _space_info[id].space();
-  if (space->is_empty()) {
-    HeapWord* b = space->bottom();
-    HeapWord* t = b + space->capacity_in_words() / 2;
-    space->set_top(t);
-    if (ZapUnusedHeapArea) {
-      space->set_top_for_allocations();
-    }
-
-    size_t min_size = CollectedHeap::min_fill_size();
-    size_t obj_len = min_size;
-    while (b + obj_len <= t) {
-      CollectedHeap::fill_with_object(b, obj_len);
-      mark_bitmap()->mark_obj(b, obj_len);
-      summary_data().add_obj(b, obj_len);
-      b += obj_len;
-      obj_len = (obj_len & (min_size*3)) + min_size; // 8 16 24 32 8 16 24 32 ...
-    }
-    if (b < t) {
-      // The loop didn't completely fill to t (top); adjust top downward.
-      space->set_top(b);
-      if (ZapUnusedHeapArea) {
-        space->set_top_for_allocations();
-      }
-    }
-
-    HeapWord** nta = _space_info[id].new_top_addr();
-    bool result = summary_data().summarize(_space_info[id].split_info(),
-                                           space->bottom(), space->top(), NULL,
-                                           space->bottom(), space->end(), nta);
-    assert(result, "space must fit into itself");
-  }
-}
-
-void
-PSParallelCompact::provoke_split(bool & max_compaction)
-{
-  if (total_invocations() % ParallelOldGCSplitInterval != 0) {
-    return;
-  }
-
-  const size_t region_size = ParallelCompactData::RegionSize;
-  ParallelCompactData& sd = summary_data();
-
-  MutableSpace* const eden_space = _space_info[eden_space_id].space();
-  MutableSpace* const from_space = _space_info[from_space_id].space();
-  const size_t eden_live = pointer_delta(eden_space->top(),
-                                         _space_info[eden_space_id].new_top());
-  const size_t from_live = pointer_delta(from_space->top(),
-                                         _space_info[from_space_id].new_top());
-
-  const size_t min_fill_size = CollectedHeap::min_fill_size();
-  const size_t eden_free = pointer_delta(eden_space->end(), eden_space->top());
-  const size_t eden_fillable = eden_free >= min_fill_size ? eden_free : 0;
-  const size_t from_free = pointer_delta(from_space->end(), from_space->top());
-  const size_t from_fillable = from_free >= min_fill_size ? from_free : 0;
-
-  // Choose the space to split; need at least 2 regions live (or fillable).
-  SpaceId id;
-  MutableSpace* space;
-  size_t live_words;
-  size_t fill_words;
-  if (eden_live + eden_fillable >= region_size * 2) {
-    id = eden_space_id;
-    space = eden_space;
-    live_words = eden_live;
-    fill_words = eden_fillable;
-  } else if (from_live + from_fillable >= region_size * 2) {
-    id = from_space_id;
-    space = from_space;
-    live_words = from_live;
-    fill_words = from_fillable;
-  } else {
-    return; // Give up.
-  }
-  assert(fill_words == 0 || fill_words >= min_fill_size, "sanity");
-
-  if (live_words < region_size * 2) {
-    // Fill from top() to end() w/live objects of mixed sizes.
-    HeapWord* const fill_start = space->top();
-    live_words += fill_words;
-
-    space->set_top(fill_start + fill_words);
-    if (ZapUnusedHeapArea) {
-      space->set_top_for_allocations();
-    }
-
-    HeapWord* cur_addr = fill_start;
-    while (fill_words > 0) {
-      const size_t r = (size_t)os::random() % (region_size / 2) + min_fill_size;
-      size_t cur_size = MIN2(align_object_size_(r), fill_words);
-      if (fill_words - cur_size < min_fill_size) {
-        cur_size = fill_words; // Avoid leaving a fragment too small to fill.
-      }
-
-      CollectedHeap::fill_with_object(cur_addr, cur_size);
-      mark_bitmap()->mark_obj(cur_addr, cur_size);
-      sd.add_obj(cur_addr, cur_size);
-
-      cur_addr += cur_size;
-      fill_words -= cur_size;
-    }
-
-    summarize_new_objects(id, fill_start);
-  }
-
-  max_compaction = false;
-
-  // Manipulate the old gen so that it has room for about half of the live data
-  // in the target young gen space (live_words / 2).
-  id = old_space_id;
-  space = _space_info[id].space();
-  const size_t free_at_end = space->free_in_words();
-  const size_t free_target = align_object_size(live_words / 2);
-  const size_t dead = pointer_delta(space->top(), _space_info[id].new_top());
-
-  if (free_at_end >= free_target + min_fill_size) {
-    // Fill space above top() and set the dense prefix so everything survives.
-    HeapWord* const fill_start = space->top();
-    const size_t fill_size = free_at_end - free_target;
-    space->set_top(space->top() + fill_size);
-    if (ZapUnusedHeapArea) {
-      space->set_top_for_allocations();
-    }
-    fill_with_live_objects(id, fill_start, fill_size);
-    summarize_new_objects(id, fill_start);
-    _space_info[id].set_dense_prefix(sd.region_align_down(space->top()));
-  } else if (dead + free_at_end > free_target) {
-    // Find a dense prefix that makes the right amount of space available.
-    HeapWord* cur = sd.region_align_down(space->top());
-    HeapWord* cur_destination = sd.addr_to_region_ptr(cur)->destination();
-    size_t dead_to_right = pointer_delta(space->end(), cur_destination);
-    while (dead_to_right < free_target) {
-      cur -= region_size;
-      cur_destination = sd.addr_to_region_ptr(cur)->destination();
-      dead_to_right = pointer_delta(space->end(), cur_destination);
-    }
-    _space_info[id].set_dense_prefix(cur);
-  }
-}
-#endif // #ifndef PRODUCT
 
 void PSParallelCompact::summarize_spaces_quick()
 {
@@ -1653,12 +1435,6 @@ void PSParallelCompact::summarize_spaces_quick()
     assert(result, "space must fit into itself");
     _space_info[i].set_dense_prefix(space->bottom());
   }
-
-#ifndef PRODUCT
-  if (ParallelOldGCSplitALot) {
-    provoke_split_fill_survivor(to_space_id);
-  }
-#endif // #ifndef PRODUCT
 }
 
 void PSParallelCompact::fill_dense_prefix_end(SpaceId id)
@@ -1743,8 +1519,7 @@ void
 PSParallelCompact::summarize_space(SpaceId id, bool maximum_compaction)
 {
   assert(id < last_space_id, "id out of range");
-  assert(_space_info[id].dense_prefix() == _space_info[id].space()->bottom() ||
-         ParallelOldGCSplitALot && id == old_space_id,
+  assert(_space_info[id].dense_prefix() == _space_info[id].space()->bottom(),
          "should have been reset in summarize_spaces_quick()");
 
   const MutableSpace* space = _space_info[id].space();
@@ -1864,11 +1639,6 @@ void PSParallelCompact::summary_phase(ParCompactionManager* cm,
     // XXX - should also try to expand
     maximum_compaction = true;
   }
-#ifndef PRODUCT
-  if (ParallelOldGCSplitALot && old_space_total_live < old_capacity) {
-    provoke_split(maximum_compaction);
-  }
-#endif // #ifndef PRODUCT
 
   // Old generations.
   summarize_space(old_space_id, maximum_compaction);

@@ -297,11 +297,6 @@ bool PSScavenge::invoke_no_policy() {
     young_gen->eden_space()->accumulate_statistics();
   }
 
-  if (ZapUnusedHeapArea) {
-    // Save information needed to minimize mangling
-    heap->record_gen_tops_before_GC();
-  }
-
   heap->print_heap_before_gc();
   heap->trace_heap_before_gc(&_gc_tracer);
 
@@ -344,13 +339,10 @@ bool PSScavenge::invoke_no_policy() {
       CardTableExtension::verify_all_young_refs_imprecise();
     }
 
-    if (!ScavengeWithObjectsInToSpace) {
-      assert(young_gen->to_space()->is_empty(),
-             "Attempt to scavenge with live objects in to_space");
-      young_gen->to_space()->clear(SpaceDecorator::Mangle);
-    } else if (ZapUnusedHeapArea) {
-      young_gen->to_space()->mangle_unused_area();
-    }
+    assert(young_gen->to_space()->is_empty(),
+           "Attempt to scavenge with live objects in to_space");
+    young_gen->to_space()->clear(SpaceDecorator::Mangle);
+
     save_to_space_top_before_gc();
 
     COMPILER2_PRESENT(DerivedPointerTable::clear());
@@ -677,12 +669,6 @@ bool PSScavenge::invoke_no_policy() {
   heap->print_heap_after_gc();
   heap->trace_heap_after_gc(&_gc_tracer);
 
-  if (ZapUnusedHeapArea) {
-    young_gen->eden_space()->check_mangled_unused_area_complete();
-    young_gen->from_space()->check_mangled_unused_area_complete();
-    young_gen->to_space()->check_mangled_unused_area_complete();
-  }
-
   scavenge_exit.update();
 
   if (PrintGCTaskTimeStamps) {
@@ -764,15 +750,13 @@ bool PSScavenge::should_attempt_scavenge() {
   PSYoungGen* young_gen = heap->young_gen();
   PSOldGen* old_gen = heap->old_gen();
 
-  if (!ScavengeWithObjectsInToSpace) {
-    // Do not attempt to promote unless to_space is empty
-    if (!young_gen->to_space()->is_empty()) {
-      _consecutive_skipped_scavenges++;
-      if (UsePerfData) {
-        counters->update_scavenge_skipped(to_space_not_empty);
-      }
-      return false;
+  // Do not attempt to promote unless to_space is empty
+  if (!young_gen->to_space()->is_empty()) {
+    _consecutive_skipped_scavenges++;
+    if (UsePerfData) {
+      counters->update_scavenge_skipped(to_space_not_empty);
     }
+    return false;
   }
 
   // Test to see if the scavenge will likely fail.
