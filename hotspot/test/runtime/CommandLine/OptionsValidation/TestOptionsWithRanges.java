@@ -52,6 +52,18 @@ public class TestOptionsWithRanges {
         allOptionsAsMap.remove("CICompilerCount");
 
         /*
+         * JDK-8136766
+         * Temporarily remove ThreadStackSize from testing because Windows can set it to 0
+         * (for default OS size) but other platforms insist it must be greater than 0
+        */
+        allOptionsAsMap.remove("ThreadStackSize");
+
+        /*
+         * Exclude MallocMaxTestWords as it is expected to exit VM at small values (>=0)
+         */
+        allOptionsAsMap.remove("MallocMaxTestWords");
+
+        /*
          * Exclude below options as their maximum value would consume too much memory
          * and would affect other tests that run in parallel.
          */

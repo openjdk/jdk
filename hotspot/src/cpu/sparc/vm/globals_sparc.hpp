@@ -52,19 +52,27 @@ define_pd_global(intx, OptoLoopAlignment,     16);  // = 4*wordSize
 define_pd_global(intx, InlineFrequencyCount,  50);  // we can use more inlining on the SPARC
 define_pd_global(intx, InlineSmallCode,       1500);
 
+#define DEFAULT_STACK_YELLOW_PAGES (2)
+#define DEFAULT_STACK_RED_PAGES (1)
+
 #ifdef _LP64
 // Stack slots are 2X larger in LP64 than in the 32 bit VM.
 define_pd_global(intx, ThreadStackSize,       1024);
 define_pd_global(intx, VMThreadStackSize,     1024);
-define_pd_global(intx, StackShadowPages, 10 DEBUG_ONLY(+1));
+#define DEFAULT_STACK_SHADOW_PAGES (10 DEBUG_ONLY(+1))
 #else
 define_pd_global(intx, ThreadStackSize,       512);
 define_pd_global(intx, VMThreadStackSize,     512);
-define_pd_global(intx, StackShadowPages, 3 DEBUG_ONLY(+1));
-#endif
+#define DEFAULT_STACK_SHADOW_PAGES (3 DEBUG_ONLY(+1))
+#endif // _LP64
 
-define_pd_global(intx, StackYellowPages, 2);
-define_pd_global(intx, StackRedPages, 1);
+#define MIN_STACK_YELLOW_PAGES DEFAULT_STACK_YELLOW_PAGES
+#define MIN_STACK_RED_PAGES DEFAULT_STACK_RED_PAGES
+#define MIN_STACK_SHADOW_PAGES DEFAULT_STACK_SHADOW_PAGES
+
+define_pd_global(intx, StackYellowPages, DEFAULT_STACK_YELLOW_PAGES);
+define_pd_global(intx, StackRedPages, DEFAULT_STACK_RED_PAGES);
+define_pd_global(intx, StackShadowPages, DEFAULT_STACK_SHADOW_PAGES);
 
 define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);
