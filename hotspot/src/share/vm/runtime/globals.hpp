@@ -1569,14 +1569,6 @@ public:
   product(bool, TraceDynamicGCThreads, false,                               \
           "Trace the dynamic GC thread usage")                              \
                                                                             \
-  develop(bool, ParallelOldGCSplitALot, false,                              \
-          "Provoke splitting (copying data from a young gen space to "      \
-          "multiple destination spaces)")                                   \
-                                                                            \
-  develop(uintx, ParallelOldGCSplitInterval, 3,                             \
-          "How often to provoke splitting a young gen space")               \
-          range(0, max_uintx)                                               \
-                                                                            \
   product(uint, ConcGCThreads, 0,                                           \
           "Number of threads concurrent gc will use")                       \
           constraint(ConcGCThreadsConstraintFunc,AfterErgo)                 \
@@ -1594,9 +1586,6 @@ public:
                                                                             \
   product(bool, ScavengeBeforeFullGC, true,                                 \
           "Scavenge youngest generation before each full GC.")              \
-                                                                            \
-  develop(bool, ScavengeWithObjectsInToSpace, false,                        \
-          "Allow scavenges to occur when to-space contains objects")        \
                                                                             \
   product(bool, UseConcMarkSweepGC, false,                                  \
           "Use Concurrent Mark-Sweep GC in the old generation")             \
@@ -2239,12 +2228,6 @@ public:
   product(uintx, AdaptiveSizeThroughPutPolicy, 0,                           \
           "Policy for changing generation size for throughput goals")       \
           range(0, 1)                                                       \
-                                                                            \
-  develop(bool, PSAdjustTenuredGenForMinorPause, false,                     \
-          "Adjust tenured generation to achieve a minor pause goal")        \
-                                                                            \
-  develop(bool, PSAdjustYoungGenForMajorPause, false,                       \
-          "Adjust young generation to achieve a major pause goal")          \
                                                                             \
   product(uintx, AdaptiveSizePolicyInitializingSteps, 20,                   \
           "Number of steps where heuristics is used before data is used")   \

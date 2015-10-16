@@ -2431,20 +2431,6 @@ bool Arguments::check_vm_args_consistency() {
     MarkSweepAlwaysCompactCount = 1;  // Move objects every gc.
   }
 
-  if (UseParallelOldGC && ParallelOldGCSplitALot) {
-    // Settings to encourage splitting.
-    if (!FLAG_IS_CMDLINE(NewRatio)) {
-      if (FLAG_SET_CMDLINE(uintx, NewRatio, 2) != Flag::SUCCESS) {
-        status = false;
-      }
-    }
-    if (!FLAG_IS_CMDLINE(ScavengeBeforeFullGC)) {
-      if (FLAG_SET_CMDLINE(bool, ScavengeBeforeFullGC, false) != Flag::SUCCESS) {
-        status = false;
-      }
-    }
-  }
-
   if (!(UseParallelGC || UseParallelOldGC) && FLAG_IS_DEFAULT(ScavengeBeforeFullGC)) {
     FLAG_SET_DEFAULT(ScavengeBeforeFullGC, false);
   }
