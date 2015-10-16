@@ -26,13 +26,14 @@
  * @bug 6175517
  * @summary Test the PropertyNames annotation with MXBeans
  * @author Eamonn McManus
- * @modules java.management
+ * @modules java.desktop
+ *          java.management
  * @run clean PropertyNamesTest
  * @run build PropertyNamesTest
  * @run main PropertyNamesTest
  */
 
-import javax.management.ConstructorProperties;
+import java.beans.ConstructorProperties;
 import java.util.Collections;
 import java.util.List;
 import javax.management.JMX;

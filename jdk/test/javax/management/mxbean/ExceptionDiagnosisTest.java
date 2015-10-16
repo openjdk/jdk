@@ -26,10 +26,11 @@
  * @bug 6713777
  * @summary Test that exception messages include all relevant information
  * @author Eamonn McManus
- * @modules java.management
+ * @modules java.desktop
+ *          java.management
  */
 
-import javax.management.ConstructorProperties;
+import java.beans.ConstructorProperties;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
