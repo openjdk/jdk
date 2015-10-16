@@ -180,6 +180,7 @@ struct sun_jpeg_source_mgr {
       int               *ip;
       unsigned char     *bp;
   } outbuf;
+  size_t outbufSize;
   jobject hOutputBuffer;
 };
 
@@ -235,6 +236,7 @@ static int GET_ARRAYS(JNIEnv *env, sun_jpeg_source_ptr src)
         assert(src->outbuf.ip == 0);
         src->outbuf.ip = (int *)(*env)->GetPrimitiveArrayCritical
             (env, src->hOutputBuffer, 0);
+        src->outbufSize = (*env)->GetArrayLength(env, src->hOutputBuffer);
         if (src->outbuf.ip == 0) {
             RELEASE_ARRAYS(env, src);
             return 0;
@@ -677,8 +679,8 @@ Java_sun_awt_image_JPEGImageDecoder_readImage(JNIEnv *env,
                                               cinfo.output_scanline - 1);
           } else {
               if (hasalpha) {
-                  ip = jsrc.outbuf.ip + cinfo.image_width;
-                  bp = jsrc.outbuf.bp + cinfo.image_width * 4;
+                  ip = jsrc.outbuf.ip + jsrc.outbufSize;
+                  bp = jsrc.outbuf.bp + jsrc.outbufSize * 4;
                   while (ip > jsrc.outbuf.ip) {
                       pixel = (*--bp) << 24;
                       pixel |= (*--bp);
@@ -687,8 +689,8 @@ Java_sun_awt_image_JPEGImageDecoder_readImage(JNIEnv *env,
                       *--ip = pixel;
                   }
               } else {
-                  ip = jsrc.outbuf.ip + cinfo.image_width;
-                  bp = jsrc.outbuf.bp + cinfo.image_width * 3;
+                  ip = jsrc.outbuf.ip + jsrc.outbufSize;
+                  bp = jsrc.outbuf.bp + jsrc.outbufSize * 3;
                   while (ip > jsrc.outbuf.ip) {
                       pixel = (*--bp);
                       pixel |= (*--bp) << 8;
