@@ -520,6 +520,8 @@ void VMError::report(outputStream* st) {
 #if INCLUDE_JVMCI
                    EnableJVMCI ? ", jvmci" : "",
                    UseJVMCICompiler ? ", jvmci compiler" : "",
+#else
+                   "", "",
 #endif
                    UseCompressedOops ? ", compressed oops" : "",
                    gc_mode(),
