@@ -27,7 +27,8 @@
  * @summary Test that having a security manager doesn't trigger a
  *          NotCompliantMBeanException
  * @author Daniel Fuchs, Yves Joan
- * @modules java.management
+ * @modules java.desktop
+ *          java.management
  * @run clean AnnotationSecurityTest Described UnDescribed DescribedMBean
  *            UnDescribedMBean SqeDescriptorKey DescribedMX DescribedMXBean
  * @run build AnnotationSecurityTest Described UnDescribed DescribedMBean
@@ -39,8 +40,13 @@
 import java.io.File;
 import java.io.IOException;
 
+import java.lang.annotation.Annotation;
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
+import java.lang.reflect.UndeclaredThrowableException;
+
+import javax.management.JMException;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 /**

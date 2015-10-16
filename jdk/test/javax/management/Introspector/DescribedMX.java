@@ -25,7 +25,7 @@
  *
  * Used by AnnotationSecurityTest.java
  **/
-import javax.management.ConstructorProperties;
+import java.beans.ConstructorProperties;
 
 /**
  * An MXBean used by AnnotationSecurityTest.java

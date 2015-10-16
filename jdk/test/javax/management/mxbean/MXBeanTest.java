@@ -27,7 +27,8 @@
  * @summary General MXBean test.
  * @author Eamonn McManus
  * @author Jaroslav Bachorik
- * @modules java.management
+ * @modules java.desktop
+ *          java.management
  * @run clean MXBeanTest MerlinMXBean TigerMXBean
  * @run build MXBeanTest MerlinMXBean TigerMXBean
  * @run main MXBeanTest
