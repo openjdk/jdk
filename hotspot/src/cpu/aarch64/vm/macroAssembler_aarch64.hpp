@@ -152,6 +152,13 @@ class MacroAssembler: public Assembler {
     strw(scratch, a);
   }
 
+  void bind(Label& L) {
+    Assembler::bind(L);
+    code()->clear_last_membar();
+  }
+
+  void membar(Membar_mask_bits order_constraint);
+
   // Frame creation and destruction shared between JITs.
   void build_frame(int framesize);
   void remove_frame(int framesize);
