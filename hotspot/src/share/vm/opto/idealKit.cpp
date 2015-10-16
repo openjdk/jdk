@@ -368,7 +368,8 @@ Node* IdealKit::load(Node* ctl,
 
 Node* IdealKit::store(Node* ctl, Node* adr, Node *val, BasicType bt,
                       int adr_idx,
-                      MemNode::MemOrd mo, bool require_atomic_access) {
+                      MemNode::MemOrd mo, bool require_atomic_access,
+                      bool mismatched) {
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory");
   const TypePtr* adr_type = NULL;
   debug_only(adr_type = C->get_adr_type(adr_idx));
@@ -378,6 +379,9 @@ Node* IdealKit::store(Node* ctl, Node* adr, Node *val, BasicType bt,
     st = StoreLNode::make_atomic(ctl, mem, adr, adr_type, val, mo);
   } else {
     st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt, mo);
+  }
+  if (mismatched) {
+    st->as_Store()->set_mismatched_access();
   }
   st = transform(st);
   set_memory(st, adr_idx);
