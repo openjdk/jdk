@@ -3084,17 +3084,21 @@ public:
   }
 };
 
+static ReferenceProcessor* get_cm_oop_closure_ref_processor(G1CollectedHeap* g1h) {
+  ReferenceProcessor* result = NULL;
+  if (G1UseConcMarkReferenceProcessing) {
+    result = g1h->ref_processor_cm();
+    assert(result != NULL, "should not be NULL");
+  }
+  return result;
+}
+
 G1CMOopClosure::G1CMOopClosure(G1CollectedHeap* g1h,
                                ConcurrentMark* cm,
                                CMTask* task)
-  : _g1h(g1h), _cm(cm), _task(task) {
-  assert(_ref_processor == NULL, "should be initialized to NULL");
-
-  if (G1UseConcMarkReferenceProcessing) {
-    _ref_processor = g1h->ref_processor_cm();
-    assert(_ref_processor != NULL, "should not be NULL");
-  }
-}
+  : MetadataAwareOopClosure(get_cm_oop_closure_ref_processor(g1h)),
+    _g1h(g1h), _cm(cm), _task(task)
+{ }
 
 void CMTask::setup_for_region(HeapRegion* hr) {
   assert(hr != NULL,

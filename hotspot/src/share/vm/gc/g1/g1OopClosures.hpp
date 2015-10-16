@@ -80,7 +80,9 @@ public:
   virtual void do_oop(oop* p)          { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p)    { do_oop_nv(p); }
 
-  void set_ref_processor(ReferenceProcessor* ref_processor) { _ref_processor = ref_processor; }
+  void set_ref_processor(ReferenceProcessor* rp) {
+    set_ref_processor_internal(rp);
+  }
 };
 
 // Add back base class for metadata
@@ -127,7 +129,7 @@ private:
 public:
   G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
       G1ParCopyHelper(g1, par_scan_state) {
-    assert(_ref_processor == NULL, "sanity");
+    assert(ref_processor() == NULL, "sanity");
   }
 
   template <class T> void do_oop_nv(T* p) { do_oop_work(p); }
