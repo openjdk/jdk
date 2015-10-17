@@ -292,7 +292,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
 
   _frame.patch_pc(thread, pc);
 
-  assert (!method()->is_synchronized() || locks > 0 || _removed_monitors, "synchronized methods must have monitors");
+  assert (!method()->is_synchronized() || locks > 0 || _removed_monitors || raw_bci() == SynchronizationEntryBCI, "synchronized methods must have monitors");
 
   BasicObjectLock* top = iframe()->interpreter_frame_monitor_begin();
   for (int index = 0; index < locks; index++) {
@@ -315,6 +315,10 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     }
   }
 
+  if (PrintDeoptimizationDetails) {
+    tty->print_cr("Expressions size: %d", expressions()->size());
+  }
+
   // Unpack expression stack
   // If this is an intermediate frame (i.e. not top frame) then this
   // only unpacks the part of the expression stack not used by callee
@@ -327,9 +331,26 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     switch(value->type()) {
       case T_INT:
         *addr = value->get_int();
+#ifndef PRODUCT
+        if (PrintDeoptimizationDetails) {
+          tty->print_cr("Reconstructed expression %d (INT): %d", i, (int)(*addr));
+        }
+#endif
         break;
       case T_OBJECT:
         *addr = value->get_int(T_OBJECT);
+#ifndef PRODUCT
+        if (PrintDeoptimizationDetails) {
+          tty->print("Reconstructed expression %d (OBJECT): ", i);
+          oop o = (oop)(address)(*addr);
+          if (o == NULL) {
+            tty->print_cr("NULL");
+          } else {
+            ResourceMark rm;
+            tty->print_raw_cr(o->klass()->name()->as_C_string());
+          }
+        }
+#endif
         break;
       case T_CONFLICT:
         // A dead stack slot.  Initialize to null in case it is an oop.
@@ -348,9 +369,26 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     switch(value->type()) {
       case T_INT:
         *addr = value->get_int();
+#ifndef PRODUCT
+        if (PrintDeoptimizationDetails) {
+          tty->print_cr("Reconstructed local %d (INT): %d", i, (int)(*addr));
+        }
+#endif
         break;
       case T_OBJECT:
         *addr = value->get_int(T_OBJECT);
+#ifndef PRODUCT
+        if (PrintDeoptimizationDetails) {
+          tty->print("Reconstructed local %d (OBJECT): ", i);
+          oop o = (oop)(address)(*addr);
+          if (o == NULL) {
+            tty->print_cr("NULL");
+          } else {
+            ResourceMark rm;
+            tty->print_raw_cr(o->klass()->name()->as_C_string());
+          }
+        }
+#endif
         break;
       case T_CONFLICT:
         // A dead location. If it is an oop then we need a NULL to prevent GC from following it
@@ -392,7 +430,7 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
   }
 
 #ifndef PRODUCT
-  if (TraceDeoptimization && Verbose) {
+  if (PrintDeoptimizationDetails) {
     ttyLocker ttyl;
     tty->print_cr("[%d Interpreted Frame]", ++unpack_counter);
     iframe()->print_on(tty);

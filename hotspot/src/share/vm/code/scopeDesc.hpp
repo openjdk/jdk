@@ -41,7 +41,7 @@ class SimpleScopeDesc : public StackObj {
   int _bci;
 
  public:
-  SimpleScopeDesc(nmethod* code,address pc) {
+  SimpleScopeDesc(nmethod* code, address pc) {
     PcDesc* pc_desc = code->pc_desc_at(pc);
     assert(pc_desc != NULL, "Must be able to find matching PcDesc");
     DebugInfoReadStream buffer(code, pc_desc->scope_decode_offset());
@@ -60,17 +60,18 @@ class SimpleScopeDesc : public StackObj {
 class ScopeDesc : public ResourceObj {
  public:
   // Constructor
-  ScopeDesc(const nmethod* code, int decode_offset, int obj_decode_offset, bool reexecute, bool return_oop);
+  ScopeDesc(const nmethod* code, int decode_offset, int obj_decode_offset, bool reexecute, bool rethrow_exception, bool return_oop);
 
   // Calls above, giving default value of "serialized_null" to the
   // "obj_decode_offset" argument.  (We don't use a default argument to
   // avoid a .hpp-.hpp dependency.)
-  ScopeDesc(const nmethod* code, int decode_offset, bool reexecute, bool return_oop);
+  ScopeDesc(const nmethod* code, int decode_offset, bool reexecute, bool rethrow_exception, bool return_oop);
 
   // JVM state
   Method* method()      const { return _method; }
   int          bci()      const { return _bci;    }
   bool should_reexecute() const { return _reexecute; }
+  bool rethrow_exception() const { return _rethrow_exception; }
   bool return_oop()       const { return _return_oop; }
 
   GrowableArray<ScopeValue*>*   locals();
@@ -95,6 +96,7 @@ class ScopeDesc : public ResourceObj {
   Method*       _method;
   int           _bci;
   bool          _reexecute;
+  bool          _rethrow_exception;
   bool          _return_oop;
 
   // Decoding offsets

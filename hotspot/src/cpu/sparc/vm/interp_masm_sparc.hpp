@@ -30,6 +30,8 @@
 
 // This file specializes the assember with interpreter-specific macros
 
+typedef ByteSize (*OffsetFunction)(uint);
+
 REGISTER_DECLARATION(     Register, Otos_i , O0); // tos for ints, etc
 REGISTER_DECLARATION(     Register, Otos_l , O0); // for longs
 REGISTER_DECLARATION(     Register, Otos_l1, O0); // for 1st part of longs
@@ -301,7 +303,11 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void record_klass_in_profile(Register receiver, Register scratch, bool is_virtual_call);
   void record_klass_in_profile_helper(Register receiver, Register scratch,
-                                      int start_row, Label& done, bool is_virtual_call);
+                                      Label& done, bool is_virtual_call);
+  void record_item_in_profile_helper(Register item,
+                                     Register scratch, int start_row, Label& done, int total_rows,
+                                     OffsetFunction item_offset_fn, OffsetFunction item_count_offset_fn,
+                                     int non_profiled_offset);
 
   void update_mdp_by_offset(int offset_of_disp, Register scratch);
   void update_mdp_by_offset(Register reg, int offset_of_disp,
@@ -314,6 +320,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void profile_call(Register scratch);
   void profile_final_call(Register scratch);
   void profile_virtual_call(Register receiver, Register scratch, bool receiver_can_be_null = false);
+  void profile_called_method(Register method, Register scratch) NOT_JVMCI_RETURN;
   void profile_ret(TosState state, Register return_bci, Register scratch);
   void profile_null_seen(Register scratch);
   void profile_typecheck(Register klass, Register scratch);

@@ -145,6 +145,10 @@ ProjectCreatorIDEOptionsIgnoreCompiler1=\
  -ignorePath_TARGET tiered \
  -ignorePath_TARGET c1_
 
+ProjectCreatorIDEOptionsIgnoreJVMCI=\
+ -ignorePath_TARGET src/share/vm/jvmci \
+ -ignorePath_TARGET vm/jvmci
+
 ProjectCreatorIDEOptionsIgnoreCompiler2=\
  -ignorePath_TARGET compiler2 \
  -ignorePath_TARGET tiered \
@@ -165,6 +169,8 @@ ProjectCreatorIDEOptionsIgnoreCompiler2=\
 ##################################################
 ProjectCreatorIDEOptions=$(ProjectCreatorIDEOptions) \
  -define_compiler1 COMPILER1 \
+ -define_compiler1 INCLUDE_JVMCI=0 \
+$(ProjectCreatorIDEOptionsIgnoreJVMCI:TARGET=compiler1) \
 $(ProjectCreatorIDEOptionsIgnoreCompiler2:TARGET=compiler1)
 
 ##################################################

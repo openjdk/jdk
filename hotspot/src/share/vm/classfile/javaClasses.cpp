@@ -53,6 +53,10 @@
 #include "runtime/vframe.hpp"
 #include "utilities/preserveException.hpp"
 
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciJavaClasses.hpp"
+#endif
+
 #define INJECTED_FIELD_COMPUTE_OFFSET(klass, name, signature, may_be_java)    \
   klass::_##name##_offset = JavaClasses::compute_injected_offset(JavaClasses::klass##_##name##_enum);
 
@@ -1577,7 +1581,7 @@ void java_lang_Throwable::print_stack_trace(oop throwable, outputStream* st) {
   while (h_throwable.not_null()) {
     objArrayHandle result (THREAD, objArrayOop(backtrace(h_throwable())));
     if (result.is_null()) {
-      st->print_cr("%s", no_stack_trace_message());
+      st->print_raw_cr(no_stack_trace_message());
       return;
     }
 

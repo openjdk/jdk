@@ -94,10 +94,12 @@ bool CompiledIC::is_icholder_call_site(virtual_call_Relocation* call_site) {
 
 const int IC_pos_in_java_to_interp_stub = 8;
 #define __ _masm.
-address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf) {
+address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark/* = NULL*/) {
 #ifdef COMPILER2
-  // Get the mark within main instrs section which is set to the address of the call.
-  address call_addr = cbuf.insts_mark();
+  if (mark == NULL) {
+    // Get the mark within main instrs section which is set to the address of the call.
+    mark = cbuf.insts_mark();
+  }
 
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a stub.
@@ -117,7 +119,7 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf) {
   // Create a static stub relocation which relates this stub
   // with the call instruction at insts_call_instruction_offset in the
   // instructions code-section.
-  __ relocate(static_stub_Relocation::spec(call_addr));
+  __ relocate(static_stub_Relocation::spec(mark));
   const int stub_start_offset = __ offset();
 
   // Now, create the stub's code:

@@ -309,6 +309,18 @@ void CommandLineFlagRangeList::init(void) {
                                 EMIT_RANGE_CHECK,
                                 IGNORE_CONSTRAINT));
 
+#if INCLUDE_JVMCI
+  emit_range_no(NULL JVMCI_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
+                                 EMIT_RANGE_PD_DEVELOPER_FLAG,
+                                 EMIT_RANGE_PRODUCT_FLAG,
+                                 EMIT_RANGE_PD_PRODUCT_FLAG,
+                                 EMIT_RANGE_DIAGNOSTIC_FLAG,
+                                 EMIT_RANGE_EXPERIMENTAL_FLAG,
+                                 EMIT_RANGE_NOTPRODUCT_FLAG,
+                                 EMIT_RANGE_CHECK,
+                                 IGNORE_CONSTRAINT));
+#endif // INCLUDE_JVMCI
+
 #ifdef COMPILER1
   emit_range_no(NULL C1_FLAGS(EMIT_RANGE_DEVELOPER_FLAG,
                               EMIT_RANGE_PD_DEVELOPER_FLAG,

@@ -659,9 +659,16 @@ void frame::print_on_error(outputStream* st, char* buf, int buflen, bool verbose
       Method* m = nm->method();
       if (m != NULL) {
         m->name_and_sig_as_C_string(buf, buflen);
-        st->print("J %d%s %s %s (%d bytes) @ " PTR_FORMAT " [" PTR_FORMAT "+" INTPTR_FORMAT "]",
+        st->print("J %d%s %s ",
                   nm->compile_id(), (nm->is_osr_method() ? "%" : ""),
-                  ((nm->compiler() != NULL) ? nm->compiler()->name() : ""),
+                  ((nm->compiler() != NULL) ? nm->compiler()->name() : ""));
+#if INCLUDE_JVMCI
+        char* jvmciName = nm->jvmci_installed_code_name(buf, buflen);
+        if (jvmciName != NULL) {
+          st->print(" (%s)", jvmciName);
+        }
+#endif
+        st->print("%s (%d bytes) @ " PTR_FORMAT " [" PTR_FORMAT "+" INTPTR_FORMAT "]",
                   buf, m->code_size(), p2i(_pc), p2i(_cb->code_begin()), _pc - _cb->code_begin());
       } else {
         st->print("J  " PTR_FORMAT, p2i(pc()));
@@ -1121,7 +1128,9 @@ void frame::verify(const RegisterMap* map) {
       // make sure we have the right receiver type
     }
   }
-  COMPILER2_PRESENT(assert(DerivedPointerTable::is_empty(), "must be empty before verify");)
+#if defined(COMPILER2) || INCLUDE_JVMCI
+  assert(DerivedPointerTable::is_empty(), "must be empty before verify");
+#endif
   oops_do_internal(&VerifyOopClosure::verify_oop, NULL, NULL, (RegisterMap*)map, false);
 }
 

@@ -218,7 +218,7 @@ void Method::mask_for(int bci, InterpreterOopMap* mask) {
 
   Thread* myThread    = Thread::current();
   methodHandle h_this(myThread, this);
-#ifdef ASSERT
+#if defined(ASSERT) && !INCLUDE_JVMCI
   bool has_capability = myThread->is_VM_thread() ||
                         myThread->is_ConcurrentGC_thread() ||
                         myThread->is_GC_task_thread();
@@ -1373,7 +1373,7 @@ void Method::init_intrinsic_id() {
 
 // These two methods are static since a GC may move the Method
 bool Method::load_signature_classes(methodHandle m, TRAPS) {
-  if (THREAD->is_Compiler_thread()) {
+  if (!THREAD->can_call_java()) {
     // There is nothing useful this routine can do from within the Compile thread.
     // Hopefully, the signature contains only well-known classes.
     // We could scan for this and return true/false, but the caller won't care.
@@ -1491,14 +1491,20 @@ class SignatureTypePrinter : public SignatureTypeNames {
 void Method::print_name(outputStream* st) {
   Thread *thread = Thread::current();
   ResourceMark rm(thread);
-  SignatureTypePrinter sig(signature(), st);
   st->print("%s ", is_static() ? "static" : "virtual");
-  sig.print_returntype();
-  st->print(" %s.", method_holder()->internal_name());
-  name()->print_symbol_on(st);
-  st->print("(");
-  sig.print_parameters();
-  st->print(")");
+  if (WizardMode) {
+    st->print("%s.", method_holder()->internal_name());
+    name()->print_symbol_on(st);
+    signature()->print_symbol_on(st);
+  } else {
+    SignatureTypePrinter sig(signature(), st);
+    sig.print_returntype();
+    st->print(" %s.", method_holder()->internal_name());
+    name()->print_symbol_on(st);
+    st->print("(");
+    sig.print_parameters();
+    st->print(")");
+  }
 }
 #endif // !PRODUCT || INCLUDE_JVMTI
 

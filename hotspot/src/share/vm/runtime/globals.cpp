@@ -42,6 +42,9 @@
 #ifdef COMPILER1
 #include "c1/c1_globals.hpp"
 #endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmci_globals.hpp"
+#endif
 #ifdef COMPILER2
 #include "opto/c2_globals.hpp"
 #endif
@@ -439,6 +442,7 @@ void Flag::print_kind(outputStream* st) {
   };
 
   Data data[] = {
+      { KIND_JVMCI, "JVMCI" },
       { KIND_C1, "C1" },
       { KIND_C2, "C2" },
       { KIND_ARCH, "ARCH" },
@@ -546,6 +550,14 @@ const char* Flag::flag_error_str(Flag::Error error) {
 #define RUNTIME_PD_DEVELOP_FLAG_STRUCT(  type, name,        doc) { #type, XSTR(name), NAME(name), NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_DEVELOP | Flag::KIND_PLATFORM_DEPENDENT) },
 #define RUNTIME_NOTPRODUCT_FLAG_STRUCT(  type, name, value, doc) { #type, XSTR(name), NAME(name), NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_NOT_PRODUCT) },
 
+#define JVMCI_PRODUCT_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), &name,      NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_JVMCI | Flag::KIND_PRODUCT) },
+#define JVMCI_PD_PRODUCT_FLAG_STRUCT(    type, name,        doc) { #type, XSTR(name), &name,      NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_JVMCI | Flag::KIND_PRODUCT | Flag::KIND_PLATFORM_DEPENDENT) },
+#define JVMCI_DEVELOP_FLAG_STRUCT(       type, name, value, doc) { #type, XSTR(name), NAME(name), NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_JVMCI | Flag::KIND_DEVELOP) },
+#define JVMCI_PD_DEVELOP_FLAG_STRUCT(    type, name,        doc) { #type, XSTR(name), NAME(name), NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_JVMCI | Flag::KIND_DEVELOP | Flag::KIND_PLATFORM_DEPENDENT) },
+#define JVMCI_DIAGNOSTIC_FLAG_STRUCT(    type, name, value, doc) { #type, XSTR(name), &name,      NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_JVMCI | Flag::KIND_DIAGNOSTIC) },
+#define JVMCI_EXPERIMENTAL_FLAG_STRUCT(  type, name, value, doc) { #type, XSTR(name), &name,      NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_JVMCI | Flag::KIND_EXPERIMENTAL) },
+#define JVMCI_NOTPRODUCT_FLAG_STRUCT(    type, name, value, doc) { #type, XSTR(name), NAME(name), NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_JVMCI | Flag::KIND_NOT_PRODUCT) },
+
 #ifdef _LP64
 #define RUNTIME_LP64_PRODUCT_FLAG_STRUCT(type, name, value, doc) { #type, XSTR(name), &name,      NOT_PRODUCT_ARG(doc) Flag::Flags(Flag::DEFAULT | Flag::KIND_LP64_PRODUCT) },
 #else
@@ -614,6 +626,17 @@ static Flag flagTable[] = {
           IGNORE_RANGE, \
           IGNORE_CONSTRAINT)
 #endif // INCLUDE_ALL_GCS
+#if INCLUDE_JVMCI
+ JVMCI_FLAGS(JVMCI_DEVELOP_FLAG_STRUCT, \
+             JVMCI_PD_DEVELOP_FLAG_STRUCT, \
+             JVMCI_PRODUCT_FLAG_STRUCT, \
+             JVMCI_PD_PRODUCT_FLAG_STRUCT, \
+             JVMCI_DIAGNOSTIC_FLAG_STRUCT, \
+             JVMCI_EXPERIMENTAL_FLAG_STRUCT, \
+             JVMCI_NOTPRODUCT_FLAG_STRUCT, \
+             IGNORE_RANGE, \
+             IGNORE_CONSTRAINT)
+#endif // INCLUDE_JVMCI
 #ifdef COMPILER1
  C1_FLAGS(C1_DEVELOP_FLAG_STRUCT, \
           C1_PD_DEVELOP_FLAG_STRUCT, \

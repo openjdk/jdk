@@ -31,6 +31,10 @@
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciCompiler.hpp"
+#include "jvmci/jvmciRuntime.hpp"
+#endif
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.hpp"
@@ -234,7 +238,6 @@ void print_statistics() {
     Runtime1::print_statistics();
     Deoptimization::print_statistics();
     SharedRuntime::print_statistics();
-    nmethod::print_statistics();
   }
 #endif /* COMPILER1 */
 
@@ -244,7 +247,6 @@ void print_statistics() {
     Compile::print_statistics();
 #ifndef COMPILER1
     Deoptimization::print_statistics();
-    nmethod::print_statistics();
     SharedRuntime::print_statistics();
 #endif //COMPILER1
     os::print_statistics();
@@ -262,7 +264,21 @@ void print_statistics() {
     IndexSet::print_statistics();
   }
 #endif // ASSERT
-#endif // COMPILER2
+#else
+#ifdef INCLUDE_JVMCI
+#ifndef COMPILER1
+  if ((TraceDeoptimization || LogVMOutput || LogCompilation) && UseCompiler) {
+    FlagSetting fs(DisplayVMOutput, DisplayVMOutput && TraceDeoptimization);
+    Deoptimization::print_statistics();
+    SharedRuntime::print_statistics();
+  }
+#endif
+#endif
+#endif
+
+  if (PrintNMethodStatistics) {
+    nmethod::print_statistics();
+  }
   if (CountCompiledCalls) {
     print_method_invocation_histogram();
   }
@@ -406,6 +422,10 @@ void before_exit(JavaThread * thread) {
       return;
     }
   }
+
+#if INCLUDE_JVMCI
+  JVMCIRuntime::shutdown();
+#endif
 
   // Hang forever on exit if we're reporting an error.
   if (ShowMessageBoxOnError && is_error_reported()) {

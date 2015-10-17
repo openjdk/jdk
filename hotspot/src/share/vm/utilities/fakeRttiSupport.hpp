@@ -50,6 +50,7 @@
 // with.
 template<typename T, typename TagType>
 class FakeRttiSupport VALUE_OBJ_CLASS_SPEC {
+  friend class VMStructs;
 public:
   // Construct with the indicated concrete tag, and include the
   // concrete tag in the associated tag set.

@@ -24,6 +24,7 @@
 
 // no precompiled headers
 #include "asm/macroAssembler.hpp"
+#include "macroAssembler_sparc.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"

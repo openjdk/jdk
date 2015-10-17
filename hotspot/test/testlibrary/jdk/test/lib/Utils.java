@@ -23,11 +23,15 @@
 
 package jdk.test.lib;
 
+import java.io.File;
 import static jdk.test.lib.Asserts.assertTrue;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
+import java.net.MalformedURLException;
 import java.net.ServerSocket;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,15 +45,20 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.BooleanSupplier;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import sun.misc.Unsafe;
 
 /**
  * Common library for various test helper functions.
  */
 public final class Utils {
+
+    /**
+     * Returns the value of 'test.class.path' system property.
+     */
+    public static final String TEST_CLASS_PATH = System.getProperty("test.class.path", ".");
 
     /**
      * Returns the sequence used by operating system to separate lines.
@@ -459,29 +468,76 @@ public final class Utils {
     }
 
     /**
+     * Ensures a requested class is loaded
+     * @param aClass class to load
+     */
+    public static void ensureClassIsLoaded(Class<?> aClass) {
+        if (aClass == null) {
+            throw new Error("Requested null class");
+        }
+        try {
+            Class.forName(aClass.getName(), /* initialize = */ true,
+                    ClassLoader.getSystemClassLoader());
+        } catch (ClassNotFoundException e) {
+            throw new Error("Class not found", e);
+        }
+    }
+    /**
+     * @param parent a class loader to be the parent for the returned one
+     * @return an UrlClassLoader with urls made of the 'test.class.path' jtreg
+     *         property and with the given parent
+     */
+    public static URLClassLoader getTestClassPathURLClassLoader(ClassLoader parent) {
+        URL[] urls = Arrays.stream(TEST_CLASS_PATH.split(File.pathSeparator))
+                .map(Paths::get)
+                .map(Path::toUri)
+                .map(x -> {
+                    try {
+                        return x.toURL();
+                    } catch (MalformedURLException ex) {
+                        throw new Error("Test issue. JTREG property"
+                                + " 'test.class.path'"
+                                + " is not defined correctly", ex);
+                    }
+                }).toArray(URL[]::new);
+        return new URLClassLoader(urls, parent);
+    }
+
+    /**
      * Runs runnable and checks that it throws expected exception. If exceptionException is null it means
      * that we expect no exception to be thrown.
      * @param runnable what we run
      * @param expectedException expected exception
      */
     public static void runAndCheckException(Runnable runnable, Class<? extends Throwable> expectedException) {
-        boolean expectedExceptionWasNotThrown = false;
+        runAndCheckException(runnable, t -> {
+            if (t == null) {
+                if (expectedException != null) {
+                    throw new AssertionError("Didn't get expected exception " + expectedException.getSimpleName());
+                }
+            } else {
+                String message = "Got unexpected exception " + t.getClass().getSimpleName();
+                if (expectedException == null) {
+                    throw new AssertionError(message, t);
+                } else if (!expectedException.isAssignableFrom(t.getClass())) {
+                    message += " instead of " + expectedException.getSimpleName();
+                    throw new AssertionError(message, t);
+                }
+            }
+        });
+    }
+
+    /**
+     * Runs runnable and makes some checks to ensure that it throws expected exception.
+     * @param runnable what we run
+     * @param checkException a consumer which checks that we got expected exception and raises a new exception otherwise
+     */
+    public static void runAndCheckException(Runnable runnable, Consumer<Throwable> checkException) {
         try {
             runnable.run();
-            if (expectedException != null) {
-                expectedExceptionWasNotThrown = true;
-            }
+            checkException.accept(null);
         } catch (Throwable t) {
-            if (expectedException == null) {
-                throw new AssertionError("Got unexpected exception ", t);
-            }
-            if (!expectedException.isAssignableFrom(t.getClass())) {
-                throw new AssertionError(String.format("Got unexpected exception %s instead of %s",
-                        t.getClass().getSimpleName(), expectedException.getSimpleName()), t);
-            }
-        }
-        if (expectedExceptionWasNotThrown) {
-           throw new AssertionError("Didn't get expected exception " + expectedException.getSimpleName());
+            checkException.accept(t);
         }
     }
 

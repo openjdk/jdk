@@ -115,14 +115,16 @@ void VM_MarkActiveNMethods::doit() {
   NMethodSweeper::mark_active_nmethods();
 }
 
-VM_DeoptimizeFrame::VM_DeoptimizeFrame(JavaThread* thread, intptr_t* id) {
+VM_DeoptimizeFrame::VM_DeoptimizeFrame(JavaThread* thread, intptr_t* id, int reason) {
   _thread = thread;
   _id     = id;
+  _reason = reason;
 }
 
 
 void VM_DeoptimizeFrame::doit() {
-  Deoptimization::deoptimize_frame_internal(_thread, _id);
+  assert(_reason > Deoptimization::Reason_none && _reason < Deoptimization::Reason_LIMIT, "invalid deopt reason");
+  Deoptimization::deoptimize_frame_internal(_thread, _id, (Deoptimization::DeoptReason)_reason);
 }
 
 

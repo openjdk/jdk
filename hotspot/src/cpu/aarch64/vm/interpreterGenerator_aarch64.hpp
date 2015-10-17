@@ -48,7 +48,6 @@ private:
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
   address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return NULL; }
-  void lock_method(void);
   void generate_stack_overflow_check(void);
 
   void generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue);

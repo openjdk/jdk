@@ -57,7 +57,7 @@ ScopeValue* DebugInfoReadStream::read_object_value() {
 #ifdef ASSERT
   assert(_obj_pool != NULL, "object pool does not exist");
   for (int i = _obj_pool->length() - 1; i >= 0; i--) {
-    assert(((ObjectValue*) _obj_pool->at(i))->id() != id, "should not be read twice");
+    assert(_obj_pool->at(i)->as_ObjectValue()->id() != id, "should not be read twice");
   }
 #endif
   ObjectValue* result = new ObjectValue(id);
@@ -71,7 +71,7 @@ ScopeValue* DebugInfoReadStream::get_cached_object() {
   int id = read_int();
   assert(_obj_pool != NULL, "object pool does not exist");
   for (int i = _obj_pool->length() - 1; i >= 0; i--) {
-    ObjectValue* ov = (ObjectValue*) _obj_pool->at(i);
+    ObjectValue* ov = _obj_pool->at(i)->as_ObjectValue();
     if (ov->id() == id) {
       return ov;
     }
