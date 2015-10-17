@@ -66,6 +66,9 @@
 #include "classfile/sharedClassUtil.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciRuntime.hpp"
+#endif
 #if INCLUDE_TRACE
 #include "trace/tracing.hpp"
 #endif
@@ -228,7 +231,7 @@ Klass* SystemDictionary::resolve_or_fail(Symbol* class_name,
 // Forwards to resolve_instance_class_or_null
 
 Klass* SystemDictionary::resolve_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS) {
-  assert(!THREAD->is_Compiler_thread(),
+  assert(THREAD->can_call_java(),
          "can not load classes with compiler thread: class=%s, classloader=%s",
          class_name->as_C_string(),
          class_loader.is_null() ? "null" : class_loader->klass()->name()->as_C_string());
@@ -1917,7 +1920,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   WKID jsr292_group_end   = WK_KLASS_ENUM_NAME(VolatileCallSite_klass);
   initialize_wk_klasses_until(jsr292_group_start, scan, CHECK);
   initialize_wk_klasses_through(jsr292_group_end, scan, CHECK);
-  initialize_wk_klasses_until(WKID_LIMIT, scan, CHECK);
+  initialize_wk_klasses_until(NOT_JVMCI(WKID_LIMIT) JVMCI_ONLY(FIRST_JVMCI_WKID), scan, CHECK);
 
   _box_klasses[T_BOOLEAN] = WK_KLASS(Boolean_klass);
   _box_klasses[T_CHAR]    = WK_KLASS(Character_klass);
@@ -2343,7 +2346,7 @@ methodHandle SystemDictionary::find_method_handle_invoker(Symbol* name,
                                                           Handle *method_type_result,
                                                           TRAPS) {
   methodHandle empty;
-  assert(!THREAD->is_Compiler_thread(), "");
+  assert(THREAD->can_call_java() ,"");
   Handle method_type =
     SystemDictionary::find_method_handle_type(signature, accessing_klass, CHECK_(empty));
 
@@ -2411,7 +2414,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
   if (spe != NULL && spe->method_type() != NULL) {
     assert(java_lang_invoke_MethodType::is_instance(spe->method_type()), "");
     return Handle(THREAD, spe->method_type());
-  } else if (THREAD->is_Compiler_thread()) {
+  } else if (!THREAD->can_call_java()) {
     warning("SystemDictionary::find_method_handle_type called from compiler thread");  // FIXME
     return Handle();  // do not attempt from within compiler, unless it was cached
   }

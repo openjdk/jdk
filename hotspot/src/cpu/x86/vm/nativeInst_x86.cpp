@@ -39,7 +39,6 @@ void NativeInstruction::wrote(int offset) {
   ICache::invalidate_word(addr_at(offset));
 }
 
-
 void NativeCall::verify() {
   // Make sure code pattern is actually a call imm32 instruction.
   int inst = ubyte_at(0);
@@ -472,6 +471,7 @@ void NativeJump::check_verified_entry_alignment(address entry, address verified_
 //
 // In C2 the 5+ byte sized instruction is enforced by code in MachPrologNode::emit.
 // In C1 the restriction is enforced by CodeEmitter::method_entry
+// In JVMCI, the restriction is enforced by HotSpotFrameContext.enter(...)
 //
 void NativeJump::patch_verified_entry(address entry, address verified_entry, address dest) {
   // complete jump instruction (to be inserted) is in code_buffer;

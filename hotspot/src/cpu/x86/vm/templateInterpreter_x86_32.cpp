@@ -538,7 +538,7 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
 // Allocate monitor and lock method (asm interpreter)
 // rbx, - Method*
 //
-void InterpreterGenerator::lock_method(void) {
+void TemplateInterpreterGenerator::lock_method() {
   // synchronize method
   const Address access_flags      (rbx, Method::access_flags_offset());
   const Address monitor_block_top (rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize);

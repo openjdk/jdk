@@ -741,7 +741,7 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
 // Find preallocated  monitor and lock method (C++ interpreter)
 // rbx - Method*
 //
-void InterpreterGenerator::lock_method(void) {
+void CppInterpreterGenerator::lock_method() {
   // assumes state == rsi/r13 == pointer to current interpreterState
   // minimally destroys rax, rdx|c_rarg1, rdi
   //

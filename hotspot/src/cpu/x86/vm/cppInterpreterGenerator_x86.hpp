@@ -29,6 +29,7 @@
 
   void generate_more_monitors();
   void generate_deopt_handling();
+  void lock_method(void);
   address generate_interpreter_frame_manager(bool synchronized); // C++ interpreter only
   void generate_compute_interpreter_state(const Register state,
                                           const Register prev_state,

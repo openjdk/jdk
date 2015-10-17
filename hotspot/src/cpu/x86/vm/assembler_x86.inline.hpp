@@ -33,7 +33,7 @@
 inline int Assembler::prefix_and_encode(int reg_enc, bool byteinst) { return reg_enc; }
 inline int Assembler::prefixq_and_encode(int reg_enc) { return reg_enc; }
 
-inline int Assembler::prefix_and_encode(int dst_enc, int src_enc, bool byteinst) { return dst_enc << 3 | src_enc; }
+inline int Assembler::prefix_and_encode(int dst_enc, bool dst_is_byte, int src_enc, bool src_is_byte) { return dst_enc << 3 | src_enc; }
 inline int Assembler::prefixq_and_encode(int dst_enc, int src_enc) { return dst_enc << 3 | src_enc; }
 
 inline void Assembler::prefix(Register reg) {}

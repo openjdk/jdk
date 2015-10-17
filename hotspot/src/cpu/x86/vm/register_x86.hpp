@@ -165,6 +165,7 @@ class XMMRegisterImpl: public AbstractRegisterImpl {
   int   encoding() const                          { assert(is_valid(), "invalid register (%d)", (int)(intptr_t)this ); return (intptr_t)this; }
   bool  is_valid() const                          { return 0 <= (intptr_t)this && (intptr_t)this < number_of_registers; }
   const char* name() const;
+  const char* sub_word_name(int offset) const;
 };
 
 

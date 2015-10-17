@@ -1709,6 +1709,20 @@ int MacroAssembler::corrected_idivq(Register result, Register ra, Register rb,
   return idivq_offset;
 }
 
+void MacroAssembler::membar(Membar_mask_bits order_constraint) {
+  address prev = pc() - NativeMembar::instruction_size;
+  if (prev == code()->last_membar()) {
+    NativeMembar *bar = NativeMembar_at(prev);
+    // We are merging two memory barrier instructions.  On AArch64 we
+    // can do this simply by ORing them together.
+    bar->set_kind(bar->get_kind() | order_constraint);
+    BLOCK_COMMENT("merged membar");
+  } else {
+    code()->set_last_membar(pc());
+    dmb(Assembler::barrier(order_constraint));
+  }
+}
+
 // MacroAssembler routines found actually to be needed
 
 void MacroAssembler::push(Register src)
@@ -3037,6 +3051,24 @@ SkipIfEqual::SkipIfEqual(
 
 SkipIfEqual::~SkipIfEqual() {
   _masm->bind(_label);
+}
+
+void MacroAssembler::addptr(const Address &dst, int32_t src) {
+  Address adr;
+  switch(dst.getMode()) {
+  case Address::base_plus_offset:
+    // This is the expected mode, although we allow all the other
+    // forms below.
+    adr = form_address(rscratch2, dst.base(), dst.offset(), LogBytesPerWord);
+    break;
+  default:
+    lea(rscratch2, dst);
+    adr = Address(rscratch2);
+    break;
+  }
+  ldr(rscratch1, adr);
+  add(rscratch1, rscratch1, src);
+  str(rscratch1, adr);
 }
 
 void MacroAssembler::cmpptr(Register src1, Address src2) {

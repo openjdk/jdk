@@ -349,7 +349,7 @@ protected:
     guarantee(obj == NULL || (HeapWord*)obj >= _boundary,
               "pointer " PTR_FORMAT " at " PTR_FORMAT " on "
               "clean card crosses boundary" PTR_FORMAT,
-              p2i((HeapWord*)obj), p2i(jp), p2i(_boundary));
+              p2i(obj), p2i(jp), p2i(_boundary));
   }
 
 public:

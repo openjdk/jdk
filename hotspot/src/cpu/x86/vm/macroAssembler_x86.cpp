@@ -2887,7 +2887,7 @@ void MacroAssembler::divss(XMMRegister dst, AddressLiteral src) {
 }
 
 // !defined(COMPILER2) is because of stupid core builds
-#if !defined(_LP64) || defined(COMPILER1) || !defined(COMPILER2)
+#if !defined(_LP64) || defined(COMPILER1) || !defined(COMPILER2) || INCLUDE_JVMCI
 void MacroAssembler::empty_FPU_stack() {
   if (VM_Version::supports_mmx()) {
     emms();
@@ -2895,7 +2895,7 @@ void MacroAssembler::empty_FPU_stack() {
     for (int i = 8; i-- > 0; ) ffree(i);
   }
 }
-#endif // !LP64 || C1 || !C2
+#endif // !LP64 || C1 || !C2 || INCLUDE_JVMCI
 
 
 // Defines obj, preserves var_size_in_bytes
@@ -6245,7 +6245,9 @@ void MacroAssembler::verified_entry(int framesize, int stack_bang_size, bool fp_
     // Save caller's stack pointer into RBP if the frame pointer is preserved.
     if (PreserveFramePointer) {
       movptr(rbp, rsp);
-      addptr(rbp, framesize + wordSize);
+      if (framesize > 0) {
+        addptr(rbp, framesize);
+      }
     }
   }
 

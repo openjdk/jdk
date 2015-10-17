@@ -2367,7 +2367,9 @@ bool CMSCollector::verify_after_remark(bool silent) {
   // way with the marking information used by GC.
   NoRefDiscovery no_discovery(ref_processor());
 
-  COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact;)
+#if defined(COMPILER2) || INCLUDE_JVMCI
+  DerivedPointerTableDeactivate dpt_deact;
+#endif
 
   // Clear any marks from a previous round
   verification_mark_bm()->clear_all();
@@ -2984,7 +2986,9 @@ void CMSCollector::checkpointRootsInitialWork() {
   }
 
   {
-    COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact;)
+#if defined(COMPILER2) || INCLUDE_JVMCI
+    DerivedPointerTableDeactivate dpt_deact;
+#endif
     if (CMSParallelInitialMarkEnabled) {
       // The parallel version.
       WorkGang* workers = gch->workers();
@@ -4313,7 +4317,9 @@ void CMSCollector::checkpointRootsFinalWork() {
   }
 
   {
-    COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact;)
+#if defined(COMPILER2) || INCLUDE_JVMCI
+    DerivedPointerTableDeactivate dpt_deact;
+#endif
 
     // Note on the role of the mod union table:
     // Since the marker in "markFromRoots" marks concurrently with

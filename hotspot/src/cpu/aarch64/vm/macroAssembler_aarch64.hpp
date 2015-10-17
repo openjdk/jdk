@@ -152,6 +152,13 @@ class MacroAssembler: public Assembler {
     strw(scratch, a);
   }
 
+  void bind(Label& L) {
+    Assembler::bind(L);
+    code()->clear_last_membar();
+  }
+
+  void membar(Membar_mask_bits order_constraint);
+
   // Frame creation and destruction shared between JITs.
   void build_frame(int framesize);
   void remove_frame(int framesize);
@@ -908,13 +915,7 @@ public:
 
   // Arithmetics
 
-  void addptr(Address dst, int32_t src) {
-    lea(rscratch2, dst);
-    ldr(rscratch1, Address(rscratch2));
-    add(rscratch1, rscratch1, src);
-    str(rscratch1, Address(rscratch2));
-  }
-
+  void addptr(const Address &dst, int32_t src);
   void cmpptr(Register src1, Address src2);
 
   // Various forms of CAS

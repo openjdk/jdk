@@ -81,6 +81,10 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   if (_phase->C->method() != NULL) {
     _phase->C->method()->has_option_value("VectorizeDebug", _vector_loop_debug);
   }
+  _CountedLoopReserveKit_debug = 0;
+  if (_phase->C->method() != NULL) {
+    _phase->C->method()->has_option_value("DoReserveCopyInSuperWordDebug", _CountedLoopReserveKit_debug);
+  }
 #endif
 }
 
@@ -1763,6 +1767,22 @@ void SuperWord::co_locate_pack(Node_List* pk) {
   }
 }
 
+#ifndef PRODUCT
+void SuperWord::print_loop(bool whole) {
+  Node_Stack stack(_arena, _phase->C->unique() >> 2);
+  Node_List rpo_list;
+  VectorSet visited(_arena);
+  visited.set(lpt()->_head->_idx);
+  _phase->rpo(lpt()->_head, stack, visited, rpo_list);
+  _phase->dump(lpt(), rpo_list.size(), rpo_list );
+  if(whole) {
+    tty->print_cr("\n Whole loop tree");
+    _phase->dump();
+    tty->print_cr(" End of whole loop tree\n");
+  }
+}
+#endif
+
 //------------------------------output---------------------------
 // Convert packs into vector node operations
 void SuperWord::output() {
@@ -1770,7 +1790,7 @@ void SuperWord::output() {
 
 #ifndef PRODUCT
   if (TraceLoopOpts) {
-    tty->print("SuperWord    ");
+    tty->print("SuperWord::output    ");
     lpt()->dump_head();
   }
 #endif
@@ -1789,6 +1809,18 @@ void SuperWord::output() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   uint max_vlen_in_bytes = 0;
   uint max_vlen = 0;
+
+  NOT_PRODUCT(if(_CountedLoopReserveKit_debug > 0) {tty->print_cr("SWPointer::output: print loop before create_reserve_version_of_loop"); print_loop(true);})
+
+  CountedLoopReserveKit make_reversable(_phase, _lpt, DoReserveCopyInSuperWord);
+
+  NOT_PRODUCT(if(_CountedLoopReserveKit_debug > 0) {tty->print_cr("SWPointer::output: print loop after create_reserve_version_of_loop"); print_loop(true);})
+
+  if (DoReserveCopyInSuperWord && !make_reversable.has_reserved()) {
+    NOT_PRODUCT({tty->print_cr("SWPointer::output: loop was not reserved correctly, exiting SuperWord");})
+    return;
+  }
+
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
     Node_List* p = my_pack(n);
@@ -1888,6 +1920,7 @@ void SuperWord::output() {
     }
   }
   C->set_max_vector_size(max_vlen_in_bytes);
+
   if (SuperWordLoopUnrollAnalysis) {
     if (cl->has_passed_slp()) {
       uint slp_max_unroll_factor = cl->slp_max_unroll();
@@ -1900,6 +1933,12 @@ void SuperWord::output() {
       }
     }
   }
+
+  if (DoReserveCopyInSuperWord) {
+    make_reversable.use_new();
+  }
+  NOT_PRODUCT(if(_CountedLoopReserveKit_debug > 0) {tty->print_cr("\n Final loop after SuperWord"); print_loop(true);})
+  return;
 }
 
 //------------------------------vector_opd---------------------------

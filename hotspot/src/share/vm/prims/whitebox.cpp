@@ -1023,7 +1023,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   ThreadToNativeFromVM ttn(thread);
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, NULL);
-  result = env->NewObjectArray(4, clazz, NULL);
+  result = env->NewObjectArray(5, clazz, NULL);
   if (result == NULL) {
     return result;
   }
@@ -1044,6 +1044,10 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   jobject id = integerBox(thread, env, code->compile_id());
   CHECK_JNI_EXCEPTION_(env, NULL);
   env->SetObjectArrayElement(result, 3, id);
+
+  jobject address = longBox(thread, env, (jlong) code);
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  env->SetObjectArrayElement(result, 4, address);
 
   return result;
 WB_END
@@ -1131,6 +1135,13 @@ WB_ENTRY(jobjectArray, WB_GetCodeBlob(JNIEnv* env, jobject o, jlong addr))
   return codeBlob2objectArray(thread, env, &stub);
 WB_END
 
+WB_ENTRY(jlong, WB_GetMethodData(JNIEnv* env, jobject wv, jobject method))
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  CHECK_JNI_EXCEPTION_(env, 0);
+  methodHandle mh(thread, Method::checked_resolve_jmethod_id(jmid));
+  return (jlong) mh->method_data();
+WB_END
+
 WB_ENTRY(jlong, WB_GetThreadStackSize(JNIEnv* env, jobject o))
   return (jlong) Thread::current()->stack_size();
 WB_END
@@ -1139,6 +1150,7 @@ WB_ENTRY(jlong, WB_GetThreadRemainingStackSize(JNIEnv* env, jobject o))
   JavaThread* t = JavaThread::current();
   return (jlong) t->stack_available(os::current_stack_pointer()) - (jlong) StackShadowPages * os::vm_page_size();
 WB_END
+
 
 int WhiteBox::array_bytes_to_length(size_t bytes) {
   return Array<u1>::bytes_to_length(bytes);
@@ -1214,6 +1226,11 @@ WB_END
 WB_ENTRY(void, WB_ForceSafepoint(JNIEnv* env, jobject wb))
   VM_ForceSafepoint force_safepoint_op;
   VMThread::execute(&force_safepoint_op);
+WB_END
+
+WB_ENTRY(long, WB_GetConstantPool(JNIEnv* env, jobject wb, jclass klass))
+  instanceKlassHandle ikh(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
+  return (long) ikh->constants();
 WB_END
 
 template <typename T>
@@ -1507,12 +1524,15 @@ static JNINativeMethod methods[] = {
   {CC"getCodeHeapEntries", CC"(I)[Ljava/lang/Object;",(void*)&WB_GetCodeHeapEntries },
   {CC"getCompilationActivityMode",
                            CC"()I",                   (void*)&WB_GetCompilationActivityMode},
+  {CC"getMethodData0",     CC"(Ljava/lang/reflect/Executable;)J",
+                                                      (void*)&WB_GetMethodData      },
   {CC"getCodeBlob",        CC"(J)[Ljava/lang/Object;",(void*)&WB_GetCodeBlob        },
   {CC"getThreadStackSize", CC"()J",                   (void*)&WB_GetThreadStackSize },
   {CC"getThreadRemainingStackSize", CC"()J",          (void*)&WB_GetThreadRemainingStackSize },
   {CC"assertMatchingSafepointCalls", CC"(ZZ)V",       (void*)&WB_AssertMatchingSafepointCalls },
   {CC"isMonitorInflated0", CC"(Ljava/lang/Object;)Z", (void*)&WB_IsMonitorInflated  },
   {CC"forceSafepoint",     CC"()V",                   (void*)&WB_ForceSafepoint     },
+  {CC"getConstantPool0",   CC"(Ljava/lang/Class;)J",  (void*)&WB_GetConstantPool    },
   {CC"getMethodBooleanOption",
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)Ljava/lang/Boolean;",
                                                       (void*)&WB_GetMethodBooleaneOption},

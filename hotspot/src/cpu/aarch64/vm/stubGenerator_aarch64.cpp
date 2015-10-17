@@ -2398,6 +2398,274 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  /***
+   *  Arguments:
+   *
+   *  Inputs:
+   *   c_rarg0   - int   adler
+   *   c_rarg1   - byte* buff
+   *   c_rarg2   - int   len
+   *
+   * Output:
+   *   c_rarg0   - int adler result
+   */
+  address generate_updateBytesAdler32() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "updateBytesAdler32");
+    address start = __ pc();
+
+    Label L_simple_by1_loop, L_nmax, L_nmax_loop, L_by16, L_by16_loop, L_by1_loop, L_do_mod, L_combine, L_by1;
+
+    // Aliases
+    Register adler  = c_rarg0;
+    Register s1     = c_rarg0;
+    Register s2     = c_rarg3;
+    Register buff   = c_rarg1;
+    Register len    = c_rarg2;
+    Register nmax  = r4;
+    Register base = r5;
+    Register count = r6;
+    Register temp0 = rscratch1;
+    Register temp1 = rscratch2;
+    Register temp2 = r7;
+
+    // Max number of bytes we can process before having to take the mod
+    // 0x15B0 is 5552 in decimal, the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1
+    unsigned long BASE = 0xfff1;
+    unsigned long NMAX = 0x15B0;
+
+    __ mov(base, BASE);
+    __ mov(nmax, NMAX);
+
+    // s1 is initialized to the lower 16 bits of adler
+    // s2 is initialized to the upper 16 bits of adler
+    __ ubfx(s2, adler, 16, 16);  // s2 = ((adler >> 16) & 0xffff)
+    __ uxth(s1, adler);          // s1 = (adler & 0xffff)
+
+    // The pipelined loop needs at least 16 elements for 1 iteration
+    // It does check this, but it is more effective to skip to the cleanup loop
+    __ cmp(len, 16);
+    __ br(Assembler::HS, L_nmax);
+    __ cbz(len, L_combine);
+
+    __ bind(L_simple_by1_loop);
+    __ ldrb(temp0, Address(__ post(buff, 1)));
+    __ add(s1, s1, temp0);
+    __ add(s2, s2, s1);
+    __ subs(len, len, 1);
+    __ br(Assembler::HI, L_simple_by1_loop);
+
+    // s1 = s1 % BASE
+    __ subs(temp0, s1, base);
+    __ csel(s1, temp0, s1, Assembler::HS);
+
+    // s2 = s2 % BASE
+    __ lsr(temp0, s2, 16);
+    __ lsl(temp1, temp0, 4);
+    __ sub(temp1, temp1, temp0);
+    __ add(s2, temp1, s2, ext::uxth);
+
+    __ subs(temp0, s2, base);
+    __ csel(s2, temp0, s2, Assembler::HS);
+
+    __ b(L_combine);
+
+    __ bind(L_nmax);
+    __ subs(len, len, nmax);
+    __ sub(count, nmax, 16);
+    __ br(Assembler::LO, L_by16);
+
+    __ bind(L_nmax_loop);
+
+    __ ldp(temp0, temp1, Address(__ post(buff, 16)));
+
+    __ add(s1, s1, temp0, ext::uxtb);
+    __ ubfx(temp2, temp0, 8, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp0, 16, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp0, 24, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp0, 32, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp0, 40, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp0, 48, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp0, Assembler::LSR, 56);
+    __ add(s2, s2, s1);
+
+    __ add(s1, s1, temp1, ext::uxtb);
+    __ ubfx(temp2, temp1, 8, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp1, 16, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp1, 24, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp1, 32, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp1, 40, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp1, 48, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp1, Assembler::LSR, 56);
+    __ add(s2, s2, s1);
+
+    __ subs(count, count, 16);
+    __ br(Assembler::HS, L_nmax_loop);
+
+    // s1 = s1 % BASE
+    __ lsr(temp0, s1, 16);
+    __ lsl(temp1, temp0, 4);
+    __ sub(temp1, temp1, temp0);
+    __ add(temp1, temp1, s1, ext::uxth);
+
+    __ lsr(temp0, temp1, 16);
+    __ lsl(s1, temp0, 4);
+    __ sub(s1, s1, temp0);
+    __ add(s1, s1, temp1, ext:: uxth);
+
+    __ subs(temp0, s1, base);
+    __ csel(s1, temp0, s1, Assembler::HS);
+
+    // s2 = s2 % BASE
+    __ lsr(temp0, s2, 16);
+    __ lsl(temp1, temp0, 4);
+    __ sub(temp1, temp1, temp0);
+    __ add(temp1, temp1, s2, ext::uxth);
+
+    __ lsr(temp0, temp1, 16);
+    __ lsl(s2, temp0, 4);
+    __ sub(s2, s2, temp0);
+    __ add(s2, s2, temp1, ext:: uxth);
+
+    __ subs(temp0, s2, base);
+    __ csel(s2, temp0, s2, Assembler::HS);
+
+    __ subs(len, len, nmax);
+    __ sub(count, nmax, 16);
+    __ br(Assembler::HS, L_nmax_loop);
+
+    __ bind(L_by16);
+    __ adds(len, len, count);
+    __ br(Assembler::LO, L_by1);
+
+    __ bind(L_by16_loop);
+
+    __ ldp(temp0, temp1, Address(__ post(buff, 16)));
+
+    __ add(s1, s1, temp0, ext::uxtb);
+    __ ubfx(temp2, temp0, 8, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp0, 16, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp0, 24, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp0, 32, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp0, 40, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp0, 48, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp0, Assembler::LSR, 56);
+    __ add(s2, s2, s1);
+
+    __ add(s1, s1, temp1, ext::uxtb);
+    __ ubfx(temp2, temp1, 8, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp1, 16, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp1, 24, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp1, 32, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp1, 40, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ ubfx(temp2, temp1, 48, 8);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp2);
+    __ add(s2, s2, s1);
+    __ add(s1, s1, temp1, Assembler::LSR, 56);
+    __ add(s2, s2, s1);
+
+    __ subs(len, len, 16);
+    __ br(Assembler::HS, L_by16_loop);
+
+    __ bind(L_by1);
+    __ adds(len, len, 15);
+    __ br(Assembler::LO, L_do_mod);
+
+    __ bind(L_by1_loop);
+    __ ldrb(temp0, Address(__ post(buff, 1)));
+    __ add(s1, temp0, s1);
+    __ add(s2, s2, s1);
+    __ subs(len, len, 1);
+    __ br(Assembler::HS, L_by1_loop);
+
+    __ bind(L_do_mod);
+    // s1 = s1 % BASE
+    __ lsr(temp0, s1, 16);
+    __ lsl(temp1, temp0, 4);
+    __ sub(temp1, temp1, temp0);
+    __ add(temp1, temp1, s1, ext::uxth);
+
+    __ lsr(temp0, temp1, 16);
+    __ lsl(s1, temp0, 4);
+    __ sub(s1, s1, temp0);
+    __ add(s1, s1, temp1, ext:: uxth);
+
+    __ subs(temp0, s1, base);
+    __ csel(s1, temp0, s1, Assembler::HS);
+
+    // s2 = s2 % BASE
+    __ lsr(temp0, s2, 16);
+    __ lsl(temp1, temp0, 4);
+    __ sub(temp1, temp1, temp0);
+    __ add(temp1, temp1, s2, ext::uxth);
+
+    __ lsr(temp0, temp1, 16);
+    __ lsl(s2, temp0, 4);
+    __ sub(s2, s2, temp0);
+    __ add(s2, s2, temp1, ext:: uxth);
+
+    __ subs(temp0, s2, base);
+    __ csel(s2, temp0, s2, Assembler::HS);
+
+    // Combine lower bits and higher bits
+    __ bind(L_combine);
+    __ orr(s1, s1, s2, Assembler::LSL, 16); // adler = s1 | (s2 << 16)
+
+    __ ret(lr);
+
+    return start;
+  }
+
   /**
    *  Arguments:
    *
@@ -3614,6 +3882,11 @@ class StubGenerator: public StubCodeGenerator {
 
     if (UseCRC32CIntrinsics) {
       StubRoutines::_updateBytesCRC32C = generate_updateBytesCRC32C();
+    }
+
+    // generate Adler32 intrinsics code
+    if (UseAdler32Intrinsics) {
+      StubRoutines::_updateBytesAdler32 = generate_updateBytesAdler32();
     }
 
     // Safefetch stubs.

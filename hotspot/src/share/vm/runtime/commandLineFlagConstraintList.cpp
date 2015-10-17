@@ -33,6 +33,9 @@
 #include "runtime/commandLineFlagConstraintsRuntime.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/commandLineFlagConstraintsJVMCI.hpp"
+#endif
 
 class CommandLineFlagConstraint_bool : public CommandLineFlagConstraint {
   CommandLineFlagConstraintFunc_bool _constraint;
@@ -250,6 +253,18 @@ void CommandLineFlagConstraintList::init(void) {
                                      EMIT_CONSTRAINT_NOTPRODUCT_FLAG,
                                      IGNORE_RANGE,
                                      EMIT_CONSTRAINT_CHECK));
+
+#if INCLUDE_JVMCI
+  emit_constraint_no(NULL JVMCI_FLAGS(EMIT_CONSTRAINT_DEVELOPER_FLAG,
+                                      EMIT_CONSTRAINT_PD_DEVELOPER_FLAG,
+                                      EMIT_CONSTRAINT_PRODUCT_FLAG,
+                                      EMIT_CONSTRAINT_PD_PRODUCT_FLAG,
+                                      EMIT_CONSTRAINT_DIAGNOSTIC_FLAG,
+                                      EMIT_CONSTRAINT_EXPERIMENTAL_FLAG,
+                                      EMIT_CONSTRAINT_NOTPRODUCT_FLAG,
+                                      IGNORE_RANGE,
+                                      EMIT_CONSTRAINT_CHECK));
+#endif // INCLUDE_JVMCI
 
 #ifdef COMPILER1
   emit_constraint_no(NULL C1_FLAGS(EMIT_CONSTRAINT_DEVELOPER_FLAG,

@@ -40,7 +40,7 @@ CXX_FLAGS=$(CXX_FLAGS) /homeparams
 !endif
 
 !if "$(Variant)" == "compiler1"
-CXX_FLAGS=$(CXX_FLAGS) /D "COMPILER1"
+CXX_FLAGS=$(CXX_FLAGS) /D "COMPILER1" /D INCLUDE_JVMCI=0
 !endif
 
 !if "$(Variant)" == "compiler2"
@@ -152,6 +152,7 @@ VM_PATH=$(VM_PATH);../generated/adfiles
 VM_PATH=$(VM_PATH);../generated/jvmtifiles
 VM_PATH=$(VM_PATH);../generated/tracefiles
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/c1
+VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/jvmci
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/compiler
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/code
 VM_PATH=$(VM_PATH);$(WorkSpace)/src/share/vm/interpreter
@@ -231,6 +232,9 @@ bytecodeInterpreterWithChecks.obj: ..\generated\jvmtifiles\bytecodeInterpreterWi
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\classfile}.cpp.obj::
+        $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
+
+{$(COMMONSRC)\share\vm\jvmci}.cpp.obj::
         $(CXX) $(CXX_FLAGS) $(CXX_USE_PCH) /c $<
 
 {$(COMMONSRC)\share\vm\gc\parallel}.cpp.obj::
