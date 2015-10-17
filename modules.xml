@@ -237,6 +237,7 @@
       <to>java.instrument</to>
       <to>jdk.jfr</to>
       <to>jdk.scripting.nashorn</to>
+      <to>jdk.vm.ci</to>
     </export>
     <export>
       <name>jdk.internal.org.objectweb.asm.commons</name>
@@ -290,6 +291,7 @@
       <to>jdk.security.auth</to>
       <to>jdk.security.jgss</to>
       <to>jdk.snmp</to>
+      <to>jdk.vm.ci</to>
       <to>java.instrument</to>
     </export>
     <export>
@@ -1869,6 +1871,18 @@
     <depend>java.security.sasl</depend>
     <export>
       <name>com.sun.security.jgss</name>
+    </export>
+  </module>
+  <module>
+    <name>jdk.vm.ci</name>
+    <depend>java.base</depend>
+    <export>
+      <name>jdk.vm.ci.hotspot</name>
+      <to>jdk.jfr</to>
+    </export>
+    <export>
+      <name>jdk.vm.ci.hotspot.events</name>
+      <to>jdk.jfr</to>
     </export>
   </module>
   <module>
