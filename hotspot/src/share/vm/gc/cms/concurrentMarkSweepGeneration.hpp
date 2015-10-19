@@ -1121,12 +1121,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // over-rides
   MemRegion used_region_at_save_marks() const;
 
-  // Does a "full" (forced) collection invoked on this generation collect
-  // the young generation as well?
-  virtual bool full_collects_young_generation() const {
-    return !ScavengeBeforeFullGC;
-  }
-
   // Adjust quantities in the generation affected by
   // the compaction.
   void reset_after_compaction();
