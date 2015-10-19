@@ -32,7 +32,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.internal.dynalink.support.Guards;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 
@@ -92,7 +91,7 @@ public final class Undefined extends DefaultPropertyAccess {
      * @return GuardedInvocation to be invoked at call site.
      */
     public static GuardedInvocation lookup(final CallSiteDescriptor desc) {
-        final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
+        final String operator = desc.tokenizeOperators().get(0);
 
         switch (operator) {
         case "new":

@@ -81,91 +81,98 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
+package jdk.internal.dynalink;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
-import jdk.internal.dynalink.linker.ConversionComparator.Comparison;
-import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.linker.GuardingDynamicLinker;
-import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.linker.MethodHandleTransformer;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import jdk.internal.dynalink.support.Guards;
 
 /**
- * Default implementation of the {@link LinkerServices} interface.
+ * A dual map that can either strongly or weakly reference a given class depending on whether the class is visible from
+ * a class loader or not.
+ *
+ * @param <T> the type of the values in the map
  */
-public class LinkerServicesImpl implements LinkerServices {
-
-    private static final RuntimePermission GET_CURRENT_LINK_REQUEST = new RuntimePermission("dynalink.getCurrentLinkRequest");
-    private static final ThreadLocal<LinkRequest> threadLinkRequest = new ThreadLocal<>();
-
-    private final TypeConverterFactory typeConverterFactory;
-    private final GuardingDynamicLinker topLevelLinker;
-    private final MethodHandleTransformer internalObjectsFilter;
+abstract class ClassMap<T> {
+    private final ConcurrentMap<Class<?>, T> map = new ConcurrentHashMap<>();
+    private final Map<Class<?>, Reference<T>> weakMap = new WeakHashMap<>();
+    private final ClassLoader classLoader;
 
     /**
-     * Creates a new linker services object.
+     * Creates a new class map. It will use strong references for all keys and values where the key is a class visible
+     * from the class loader, and will use weak keys and soft values for all other classes.
      *
-     * @param typeConverterFactory the type converter factory exposed by the services.
-     * @param topLevelLinker the top level linker used by the services.
-     * @param internalObjectsFilter a method handle transformer that is supposed to act as the implementation of this
-     * services' {@link #filterInternalObjects(java.lang.invoke.MethodHandle)} method.
+     * @param classLoader the classloader that determines strong referenceability.
      */
-    public LinkerServicesImpl(final TypeConverterFactory typeConverterFactory,
-            final GuardingDynamicLinker topLevelLinker, final MethodHandleTransformer internalObjectsFilter) {
-        this.typeConverterFactory = typeConverterFactory;
-        this.topLevelLinker = topLevelLinker;
-        this.internalObjectsFilter = internalObjectsFilter;
-    }
-
-    @Override
-    public boolean canConvert(final Class<?> from, final Class<?> to) {
-        return typeConverterFactory.canConvert(from, to);
-    }
-
-    @Override
-    public MethodHandle asType(final MethodHandle handle, final MethodType fromType) {
-        return typeConverterFactory.asType(handle, fromType);
-    }
-
-    @Override
-    public MethodHandle getTypeConverter(final Class<?> sourceType, final Class<?> targetType) {
-        return typeConverterFactory.getTypeConverter(sourceType, targetType);
-    }
-
-    @Override
-    public Comparison compareConversion(final Class<?> sourceType, final Class<?> targetType1, final Class<?> targetType2) {
-        return typeConverterFactory.compareConversion(sourceType, targetType1, targetType2);
-    }
-
-    @Override
-    public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest) throws Exception {
-        final LinkRequest prevLinkRequest = threadLinkRequest.get();
-        threadLinkRequest.set(linkRequest);
-        try {
-            return topLevelLinker.getGuardedInvocation(linkRequest, this);
-        } finally {
-            threadLinkRequest.set(prevLinkRequest);
-        }
-    }
-
-    @Override
-    public MethodHandle filterInternalObjects(final MethodHandle target) {
-        return internalObjectsFilter != null ? internalObjectsFilter.transform(target) : target;
+    ClassMap(final ClassLoader classLoader) {
+        this.classLoader = classLoader;
     }
 
     /**
-     * Returns the currently processed link request, or null if the method is invoked outside of the linking process.
-     * @return the currently processed link request, or null.
-     * @throws SecurityException if the calling code doesn't have the {@code "dynalink.getCurrentLinkRequest"} runtime
-     * permission.
+     * Compute the value associated with the given class. It is possible that the method will be invoked several times
+     * (or even concurrently) for the same class parameter.
+     *
+     * @param clazz the class to compute the value for
+     * @return the return value. Must not be null.
      */
-    public static LinkRequest getCurrentLinkRequest() {
-        final SecurityManager sm = System.getSecurityManager();
-        if(sm != null) {
-            sm.checkPermission(GET_CURRENT_LINK_REQUEST);
+    abstract T computeValue(Class<?> clazz);
+
+    /**
+     * Returns the value associated with the class
+     *
+     * @param clazz the class
+     * @return the value associated with the class
+     */
+    T get(final Class<?> clazz) {
+        // Check in fastest first - objects we're allowed to strongly reference
+        final T v = map.get(clazz);
+        if(v != null) {
+            return v;
         }
-        return threadLinkRequest.get();
+        // Check objects we're not allowed to strongly reference
+        Reference<T> ref;
+        synchronized(weakMap) {
+            ref = weakMap.get(clazz);
+        }
+        if(ref != null) {
+            final T refv = ref.get();
+            if(refv != null) {
+                return refv;
+            }
+        }
+        // Not found in either place; create a new value
+        final T newV = computeValue(clazz);
+        assert newV != null;
+
+        final ClassLoader clazzLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+            @Override
+            public ClassLoader run() {
+                return clazz.getClassLoader();
+            }
+        }, ClassLoaderGetterContextProvider.GET_CLASS_LOADER_CONTEXT);
+
+        // If allowed to strongly reference, put it in the fast map
+        if(Guards.canReferenceDirectly(classLoader, clazzLoader)) {
+            final T oldV = map.putIfAbsent(clazz, newV);
+            return oldV != null ? oldV : newV;
+        }
+        // Otherwise, put it into the weak map
+        synchronized(weakMap) {
+            ref = weakMap.get(clazz);
+            if(ref != null) {
+                final T oldV = ref.get();
+                if(oldV != null) {
+                    return oldV;
+                }
+            }
+            weakMap.put(clazz, new SoftReference<>(newV));
+            return newV;
+        }
     }
 }

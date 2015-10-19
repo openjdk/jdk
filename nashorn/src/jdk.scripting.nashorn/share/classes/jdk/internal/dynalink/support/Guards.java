@@ -92,10 +92,9 @@ import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.linker.LinkerServices;
 
 /**
- * Utility methods for creating typical guards. TODO: introduce reasonable caching of created guards.
- *
+ * Utility methods for creating typical guards.
  */
-public class Guards {
+public final class Guards {
     private static final Logger LOG = Logger
             .getLogger(Guards.class.getName(), "jdk.internal.dynalink.support.messages");
 

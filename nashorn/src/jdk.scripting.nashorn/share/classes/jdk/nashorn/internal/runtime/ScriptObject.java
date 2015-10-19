@@ -68,7 +68,6 @@ import java.util.concurrent.atomic.LongAdder;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.codegen.types.Type;
@@ -1840,7 +1839,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         // JavaScript is "immune" to all currently defined Dynalink composite operation - getProp is the same as getElem
         // is the same as getMethod as JavaScript objects have a single namespace for all three. Therefore, we don't
         // care about them, and just link to whatever is the first operation.
-        final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
+        final String operator = desc.tokenizeOperators().get(0);
         // NOTE: we support getElem and setItem as JavaScript doesn't distinguish items from properties. Nashorn itself
         // emits "dyn:getProp:identifier" for "<expr>.<identifier>" and "dyn:getElem" for "<expr>[<expr>]", but we are
         // more flexible here and dispatch not on operation name (getProp vs. getElem), but rather on whether the

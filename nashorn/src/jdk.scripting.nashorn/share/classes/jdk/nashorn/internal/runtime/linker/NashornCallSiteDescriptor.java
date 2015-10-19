@@ -32,7 +32,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.support.AbstractCallSiteDescriptor;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.nashorn.internal.ir.debug.NashornTextifier;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
@@ -150,7 +149,7 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
      */
     public static NashornCallSiteDescriptor get(final MethodHandles.Lookup lookup, final String name,
             final MethodType methodType, final int flags) {
-        final String[] tokenizedName = CallSiteDescriptorFactory.tokenizeName(name);
+        final String[] tokenizedName = CallSiteDescriptor.tokenizeName(name);
         assert tokenizedName.length >= 2;
         assert "dyn".equals(tokenizedName[0]);
         assert tokenizedName[1] != null;

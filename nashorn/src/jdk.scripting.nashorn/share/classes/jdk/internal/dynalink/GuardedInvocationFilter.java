@@ -91,6 +91,7 @@ import jdk.internal.dynalink.linker.LinkerServices;
  * Interface for objects that are used to transform one guarded invocation into another one. Typical usage is for
  * implementing {@link DynamicLinkerFactory#setPrelinkFilter(GuardedInvocationFilter) pre-link filters}.
  */
+@FunctionalInterface
 public interface GuardedInvocationFilter {
     /**
      * Given a guarded invocation, return a potentially different guarded invocation.

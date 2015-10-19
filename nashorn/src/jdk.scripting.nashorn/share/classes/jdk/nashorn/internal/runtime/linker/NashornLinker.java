@@ -40,6 +40,7 @@ import java.util.Map;
 import java.util.Queue;
 import javax.script.Bindings;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.linker.ConversionComparator;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardedTypeConversion;
@@ -48,7 +49,6 @@ import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.Guards;
-import jdk.internal.dynalink.support.LinkerServicesImpl;
 import jdk.internal.dynalink.support.Lookup;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
@@ -175,7 +175,7 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
         final LinkRequest currentRequest = AccessController.doPrivileged(new PrivilegedAction<LinkRequest>() {
             @Override
             public LinkRequest run() {
-                return LinkerServicesImpl.getCurrentLinkRequest();
+                return DynamicLinker.getCurrentLinkRequest();
             }
         });
         return currentRequest == null ? MethodHandles.publicLookup() : currentRequest.getCallSiteDescriptor().getLookup();

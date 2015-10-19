@@ -36,7 +36,6 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
@@ -94,7 +93,7 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
     }
 
     private GuardedInvocation lookup(final CallSiteDescriptor desc, final LinkRequest request, final LinkerServices linkerServices) throws Exception {
-        final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
+        final String operator = desc.tokenizeOperators().get(0);
         final int c = desc.getNameTokenCount();
 
         switch (operator) {

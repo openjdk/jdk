@@ -44,7 +44,6 @@ import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.internal.dynalink.support.LinkRequestImpl;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.lookup.Lookup;
@@ -64,6 +63,7 @@ import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
 import jdk.nashorn.internal.runtime.linker.NashornBeansLinker;
+import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 
 /**
  * ECMA 15.2 Object objects
@@ -834,8 +834,8 @@ public final class NativeObject {
     }
 
     private static LinkRequest createLinkRequest(final String operation, final MethodType methodType, final Object source) {
-        return new LinkRequestImpl(CallSiteDescriptorFactory.create(MethodHandles.publicLookup(), operation,
-                methodType), null, 0, false, source);
+        return new LinkRequestImpl(NashornCallSiteDescriptor.get(MethodHandles.publicLookup(), operation,
+                methodType, 0), null, 0, false, source);
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

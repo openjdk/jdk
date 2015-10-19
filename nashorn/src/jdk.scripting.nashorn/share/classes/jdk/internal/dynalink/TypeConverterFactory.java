@@ -81,7 +81,7 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
+package jdk.internal.dynalink;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -98,13 +98,14 @@ import jdk.internal.dynalink.linker.GuardedTypeConversion;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.MethodTypeConversionStrategy;
+import jdk.internal.dynalink.support.TypeUtilities;
 
 /**
  * A factory for type converters. This class is the main implementation behind the
  * {@link LinkerServices#asType(MethodHandle, MethodType)}. It manages the known {@link GuardingTypeConverterFactory}
  * instances and creates appropriate converters for method handles.
  */
-public class TypeConverterFactory {
+final class TypeConverterFactory {
 
     private final GuardingTypeConverterFactory[] factories;
     private final ConversionComparator[] comparators;
@@ -193,7 +194,7 @@ public class TypeConverterFactory {
      * only be ones that can be subjected to method invocation conversions. Can be null, in which case no
      * custom strategy is employed.
      */
-    public TypeConverterFactory(final Iterable<? extends GuardingTypeConverterFactory> factories,
+    TypeConverterFactory(final Iterable<? extends GuardingTypeConverterFactory> factories,
             final MethodTypeConversionStrategy autoConversionStrategy) {
         final List<GuardingTypeConverterFactory> l = new LinkedList<>();
         final List<ConversionComparator> c = new LinkedList<>();
@@ -226,7 +227,7 @@ public class TypeConverterFactory {
      * {@link MethodHandles#filterArguments(MethodHandle, int, MethodHandle...)} with
      * {@link GuardingTypeConverterFactory} produced type converters as filters.
      */
-    public MethodHandle asType(final MethodHandle handle, final MethodType fromType) {
+    MethodHandle asType(final MethodHandle handle, final MethodType fromType) {
         MethodHandle newHandle = handle;
         final MethodType toType = newHandle.type();
         final int l = toType.parameterCount();
@@ -295,7 +296,7 @@ public class TypeConverterFactory {
      * @param to the target type for the conversion
      * @return true if there can be a conversion, false if there can not.
      */
-    public boolean canConvert(final Class<?> from, final Class<?> to) {
+    boolean canConvert(final Class<?> from, final Class<?> to) {
         return canAutoConvert(from, to) || canConvert.get(from).get(to);
     }
 
@@ -309,7 +310,7 @@ public class TypeConverterFactory {
      * @return one of Comparison constants that establish which - if any - of the target types is preferable for the
      * conversion.
      */
-    public Comparison compareConversion(final Class<?> sourceType, final Class<?> targetType1, final Class<?> targetType2) {
+    Comparison compareConversion(final Class<?> sourceType, final Class<?> targetType1, final Class<?> targetType2) {
         for(final ConversionComparator comparator: comparators) {
             final Comparison result = comparator.compareConversion(sourceType, targetType1, targetType2);
             if(result != Comparison.INDETERMINATE) {
@@ -363,7 +364,7 @@ public class TypeConverterFactory {
      * @param targetType the type to convert to
      * @return a method handle performing the conversion.
      */
-    public MethodHandle getTypeConverter(final Class<?> sourceType, final Class<?> targetType) {
+    MethodHandle getTypeConverter(final Class<?> sourceType, final Class<?> targetType) {
         try {
             return converterIdentityMap.get(sourceType).get(targetType);
         } catch(final NotCacheableConverter e) {

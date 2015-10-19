@@ -99,11 +99,6 @@ public abstract class AbstractCallSiteDescriptor implements CallSiteDescriptor {
         return appendName(new StringBuilder(getNameLength())).toString();
     }
 
-   @Override
-   public Lookup getLookup() {
-       return MethodHandles.publicLookup();
-   }
-
     @Override
     public boolean equals(final Object obj) {
         return obj instanceof CallSiteDescriptor && equals((CallSiteDescriptor)obj);
