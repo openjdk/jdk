@@ -85,23 +85,35 @@ package jdk.internal.dynalink;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MutableCallSite;
-import java.lang.invoke.VolatileCallSite;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 
 /**
- * Interface for relinkable call sites. Language runtimes wishing to use this framework must use subclasses of
- * {@link CallSite} that also implement this interface as their call sites. There is a readily usable
- * {@link MonomorphicCallSite} subclass that implements monomorphic inline caching strategy as well as a
- * {@link ChainedCallSite} that retains a chain of already linked method handles. The reason this is defined as an
- * interface instead of a concrete, albeit abstract class is that it allows independent implementations to choose
- * between {@link MutableCallSite} and {@link VolatileCallSite} as they see fit.
+ * Interface for call sites managed by a {@link DynamicLinker}. Users of
+ * Dynalink must use subclasses of {@link CallSite} that also implement this
+ * interface as their call site implementations. There is a readily usable
+ * {@link MonomorphicCallSite} subclass that implements monomorphic inline
+ * caching strategy as well as {@link ChainedCallSite} that implements a
+ * polymorphic inline caching strategy and retains a chain of previously linked
+ * method handles. A relinkable call site will be managed by a
+ * {@link DynamicLinker} object after being associated with it using its
+ * {@link DynamicLinker#link(RelinkableCallSite)} method.
  */
 public interface RelinkableCallSite {
     /**
-     * Initializes the relinkable call site by setting a relink-and-invoke method handle. The call site
-     * implementation is supposed to set this method handle as its target.
-     * @param relinkAndInvoke a relink-and-invoke method handle supplied by the {@link DynamicLinker}.
+     * Invoked by dynamic linker to initialize the relinkable call site by
+     * setting a relink-and-invoke method handle. The call site implementation
+     * is supposed to set this method handle as its target using
+     * {@link CallSite#setTarget(MethodHandle)}. Relink-and-invoke is the
+     * initial method handle set by
+     * {@link DynamicLinker#link(RelinkableCallSite)} that will cause the call
+     * site to be relinked to an appropriate target on its first invocation
+     * based on its arguments, and that linked target will then be invoked
+     * (hence the name). This linking protocol effectively delays linking until
+     * the call site is invoked with actual arguments and thus ensures that
+     * linkers can make nuanced linking decisions based on those arguments and
+     * not just on the static method type of the call site.
+     * @param relinkAndInvoke a relink-and-invoke method handle supplied by
+     * Dynalink.
      */
     public void initialize(MethodHandle relinkAndInvoke);
 
@@ -113,33 +125,52 @@ public interface RelinkableCallSite {
     public CallSiteDescriptor getDescriptor();
 
     /**
-     * This method will be called by the dynamic linker every time the call site is normally relinked. It will be passed
-     * a {@code GuardedInvocation} that the call site should incorporate into its target method handle. When this method
-     * is called, the call site is allowed to keep other non-invalidated invocations around for implementation of
-     * polymorphic inline caches and compose them with this invocation to form its final target.
+     * This method will be called by the dynamic linker every time the call site
+     * is relinked (but see
+     * {@link #resetAndRelink(GuardedInvocation, MethodHandle)} for an
+     * exception). It will be passed a {@code GuardedInvocation} that the call
+     * site should incorporate into its target method handle. When this method
+     * is called, the call site is allowed to keep other non-invalidated
+     * invocations around for implementation of polymorphic inline caches and
+     * compose them with this invocation to form its final target.
      *
-     * @param guardedInvocation the guarded invocation that the call site should incorporate into its target method
-     * handle.
-     * @param fallback the fallback method. This is a method matching the method type of the call site that is supplied
-     * by the {@link DynamicLinker} to be used by this call site as a fallback when it can't invoke its target with the
-     * passed arguments. The fallback method is such that when it's invoked, it'll try to discover the adequate target
-     * for the invocation, subsequently invoke {@link #relink(GuardedInvocation, MethodHandle)} or
-     * {@link #resetAndRelink(GuardedInvocation, MethodHandle)}, and finally invoke the target.
+     * @param guardedInvocation the guarded invocation that the call site should
+     * incorporate into its target method handle.
+     * @param relinkAndInvoke a relink-and-invoke method handle. This is a
+     * method handle matching the method type of the call site that is supplied
+     * by the {@link DynamicLinker} as a callback. It should be used by this
+     * call site as the ultimate fallback when it can't invoke its target with
+     * the passed arguments. The fallback method is such that when it's invoked,
+     * it'll try to obtain an adequate target {@link GuardedInvocation} for the
+     * invocation, and subsequently invoke
+     * {@link #relink(GuardedInvocation, MethodHandle)} or
+     * {@link #resetAndRelink(GuardedInvocation, MethodHandle)}, and finally
+     * invoke the target.
      */
-    public void relink(GuardedInvocation guardedInvocation, MethodHandle fallback);
+    public void relink(GuardedInvocation guardedInvocation, MethodHandle relinkAndInvoke);
 
     /**
-     * This method will be called by the dynamic linker every time the call site is relinked and the linker wishes the
-     * call site to throw away any prior linkage state. It will be passed a {@code GuardedInvocation} that the call site
-     * should use to build its target method handle. When this method is called, the call site is discouraged from
-     * keeping previous state around, and is supposed to only link the current invocation.
+     * This method will be called by the dynamic linker every time the call site
+     * is relinked <b>and</b> the linker wishes the call site to throw away any
+     * prior linkage state (that is how it differs from
+     * {@link #relink(GuardedInvocation, MethodHandle)}). It will be passed a
+     * {@code GuardedInvocation} that the call site should use to build its new
+     * target method handle. When this method is called, the call site is
+     * discouraged from keeping any previous state, and is supposed to only
+     * link the current invocation.
      *
-     * @param guardedInvocation the guarded invocation that the call site should use to build its target method handle.
-     * @param fallback the fallback method. This is a method matching the method type of the call site that is supplied
-     * by the {@link DynamicLinker} to be used by this call site as a fallback when it can't invoke its target with the
-     * passed arguments. The fallback method is such that when it's invoked, it'll try to discover the adequate target
-     * for the invocation, subsequently invoke {@link #relink(GuardedInvocation, MethodHandle)} or
-     * {@link #resetAndRelink(GuardedInvocation, MethodHandle)}, and finally invoke the target.
+     * @param guardedInvocation the guarded invocation that the call site should
+     * use to build its target method handle.
+     * @param relinkAndInvoke a relink-and-invoke method handle. This is a
+     * method handle matching the method type of the call site that is supplied
+     * by the {@link DynamicLinker} as a callback. It should be used by this
+     * call site as the ultimate fallback when it can't invoke its target with
+     * the passed arguments. The fallback method is such that when it's invoked,
+     * it'll try to obtain an adequate target {@link GuardedInvocation} for the
+     * invocation, and subsequently invoke
+     * {@link #relink(GuardedInvocation, MethodHandle)} or
+     * {@link #resetAndRelink(GuardedInvocation, MethodHandle)}, and finally
+     * invoke the target.
      */
-    public void resetAndRelink(GuardedInvocation guardedInvocation, MethodHandle fallback);
+    public void resetAndRelink(GuardedInvocation guardedInvocation, MethodHandle relinkAndInvoke);
 }

@@ -90,10 +90,15 @@ import jdk.internal.dynalink.DynamicLinkerFactory;
 import jdk.internal.dynalink.linker.MethodHandleTransformer;
 
 /**
- * Default implementation for a {@link DynamicLinkerFactory#setInternalObjectsFilter(MethodHandleTransformer)}.
- * Given a method handle of {@code Object(Object)} type for filtering parameter and another one of the same type for
- * filtering return values, applies them to passed method handles where their parameter types and/or return value types
- * are declared to be {@link Object}.
+ * Default implementation for a
+ * {@link DynamicLinkerFactory#setInternalObjectsFilter(MethodHandleTransformer)}
+ * that delegates to a pair of filtering method handles. Given a method handle
+ * of {@code Object(Object)} type for filtering parameter and another one of the
+ * same type for filtering return values, applies them to passed method handles,
+ * on those parameter types and/or return value types that are declared to be
+ * {@link Object}. Also handles {@link MethodHandle#isVarargsCollector() method
+ * handles that support variable arity calls} with a last {@code Object[]}
+ * parameter.
  */
 public class DefaultInternalObjectFilter implements MethodHandleTransformer {
     private static final MethodHandle FILTER_VARARGS = new Lookup(MethodHandles.lookup()).findStatic(
@@ -105,9 +110,12 @@ public class DefaultInternalObjectFilter implements MethodHandleTransformer {
 
     /**
      * Creates a new filter.
-     * @param parameterFilter the filter for method parameters. Must be of type {@code Object(Object)}, or null.
-     * @param returnFilter the filter for return values. Must be of type {@code Object(Object)}, or null.
-     * @throws IllegalArgumentException if one or both filters are not of the expected type.
+     * @param parameterFilter the filter for method parameters. Must be of type
+     * {@code Object(Object)}, or {@code null}.
+     * @param returnFilter the filter for return values. Must be of type
+     * {@code Object(Object)}, or {@code null}.
+     * @throws IllegalArgumentException if one or both filters are not of the
+     * expected type.
      */
     public DefaultInternalObjectFilter(final MethodHandle parameterFilter, final MethodHandle returnFilter) {
         this.parameterFilter = checkHandle(parameterFilter, "parameterFilter");

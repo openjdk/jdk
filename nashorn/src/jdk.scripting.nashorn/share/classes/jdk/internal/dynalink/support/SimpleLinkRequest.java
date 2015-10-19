@@ -98,8 +98,9 @@ public class SimpleLinkRequest implements LinkRequest {
     /**
      * Creates a new link request.
      *
-     * @param callSiteDescriptor the descriptor for the call site being linked
-     * @param callSiteUnstable true if the call site being linked is considered unstable
+     * @param callSiteDescriptor the descriptor for the call site being linked.
+     * @param callSiteUnstable true if the call site being linked is considered
+     * unstable.
      * @param arguments the arguments for the invocation
      */
     public SimpleLinkRequest(final CallSiteDescriptor callSiteDescriptor, final boolean callSiteUnstable, final Object... arguments) {

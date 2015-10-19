@@ -83,6 +83,7 @@
 
 package jdk.internal.dynalink;
 
+import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
@@ -93,64 +94,79 @@ import java.util.StringTokenizer;
 import jdk.internal.dynalink.support.NameCodec;
 
 /**
- * An immutable descriptor of a call site. It is an immutable object that contains all the information about a call
- * site: the class performing the lookups, the name of the method being invoked, and the method signature. Call site descriptors are used in this library in place of passing a real call site to
- * guarding linkers so they aren't tempted to directly manipulate the call sites. The constructors of built-in
- * {@link RelinkableCallSite} implementations all need a call site descriptor. Even if you create your own call site
- * descriptors consider using {@link CallSiteDescriptor#tokenizeName(String)} in your implementation.
+ * Interface for objects describing a call site. A call site descriptor contains
+ * all the information about a call site necessary for linking it: the class
+ * performing the lookups, the name of the method being invoked, and the method
+ * signature. Call site descriptors are used in Dynalink in place of passing
+ * {@link CallSite} objects to linkers so they can't directly manipulate them.
+ * The constructors of built-in {@link RelinkableCallSite} implementations all
+ * take a call site descriptor. Call site descriptors must be immutable.
  */
 public interface CallSiteDescriptor {
     /**
-     * A permission to invoke the {@link #getLookup()} method. It is named {@code "dynalink.getLookup"}.
+     * A runtime permission to invoke the {@link #getLookup()} method. It is
+     * named {@code "dynalink.getLookup"}.
      */
-    public static final RuntimePermission GET_LOOKUP_PERMISSION = new RuntimePermission("dynalink.getLookup");
+    public static final RuntimePermission GET_LOOKUP_PERMISSION =
+            new RuntimePermission("dynalink.getLookup");
 
     /**
-     * The index of the name token that will carry the operation scheme prefix (usually, "dyn").
+     * The index of the name token that will carry the operation scheme prefix,
+     * e.g. {@code "dyn"} for operations specified by Dynalink itself.
      */
     public static final int SCHEME = 0;
+
     /**
-     * The index of the name token that will usually carry the operation name.
+     * The index of the name token that carries the operation name, at least
+     * when using the {@code "dyn"} scheme.
      */
 
-    public static final int OPERATOR=1;
+    public static final int OPERATOR = 1;
+
     /**
-     * The index of the name token that will usually carry a name of an operand (of a property, method, etc.)
+     * The index of the name token that carries the name of an operand (e.g. a
+     * property or a method), at least when using the {@code "dyn"} scheme.
      */
-
-    public static final int NAME_OPERAND=2;
+    public static final int NAME_OPERAND = 2;
 
     /**
-     * Character used to delimit tokens in an call site name.
+     * String used to delimit tokens in a call site name; its value is
+     * {@code ":"}, that is the colon character.
      */
     public static final String TOKEN_DELIMITER = ":";
 
     /**
-     * Character used to delimit operation names in a composite operation specification.
+     * String used to delimit operation names in a composite operation name;
+     * its value is {@code "|"}, that is the pipe character.
      */
     public static final String OPERATOR_DELIMITER = "|";
 
     /**
-     * Returns the number of tokens in the name of the method at the call site. Method names are tokenized with the
-     * colon ":" character, i.e. "dyn:getProp:color" would be the name used to describe a method that retrieves the
-     * property named "color" on the object it is invoked on.
+     * Returns the number of tokens in the name of the method at the call site.
+     * Method names are tokenized with the {@link #TOKEN_DELIMITER} character
+     * character, e.g. {@code "dyn:getProp:color"} would be the name used to
+     * describe a method that retrieves the property named "color" on the object
+     * it is invoked on.
      * @return the number of tokens in the name of the method at the call site.
      */
     public int getNameTokenCount();
 
     /**
-     * Returns the <i>i<sup>th</sup></i> token in the method name at the call site. Method names are tokenized with the
-     * colon ":" character.
-     * @param i the index of the token. Must be between 0 (inclusive) and {@link #getNameTokenCount()} (exclusive)
-     * @throws IllegalArgumentException if the index is outside the allowed range.
-     * @return the <i>i<sup>th</sup></i> token in the method name at the call site. The returned strings are interned.
+     * Returns the <i>i<sup>th</sup></i> token in the method name at the call
+     * site. Method names are tokenized with the {@link #TOKEN_DELIMITER}
+     * character.
+     * @param i the index of the token. Must be between 0 (inclusive) and
+     * {@link #getNameTokenCount()} (exclusive).
+     * @throws IllegalArgumentException if the index is outside the allowed
+     * range.
+     * @return the <i>i<sup>th</sup></i> token in the method name at the call
+     * site.
      */
     public String getNameToken(int i);
 
     /**
-     * Returns the name of the method at the call site. Note that the object internally only stores the tokenized name,
-     * and has to reconstruct the full name from tokens on each invocation.
-     * @return the name of the method at the call site.
+     * Returns the full (untokenized) name of the method at the call site.
+     * @return the full (untokenized) name of the method at the call site.
      */
     public String getName();
 
@@ -162,17 +178,25 @@ public interface CallSiteDescriptor {
     public MethodType getMethodType();
 
     /**
-     * Returns the lookup passed to the bootstrap method.
-     * @return the lookup passed to the bootstrap method.
-     * @throws SecurityException if the lookup isn't the {@link MethodHandles#publicLookup()} and a security
-     * manager is present, and a check for {@code RuntimePermission("dynalink.getLookup")} (available as
+     * Returns the lookup that should be used to find method handles to set as
+     * targets of the call site described by this descriptor. When creating
+     * descriptors from a {@link java.lang.invoke} bootstrap method, it should
+     * be the lookup passed to the bootstrap. An implementation should use
+     * {@link #checkLookup(MethodHandles.Lookup)} to ensure the necessary
+     * security properties.
+     * @return the lookup that should be used to find method handles to set as
+     * targets of the call site described by this descriptor.
+     * @throws SecurityException if the lookup isn't the
+     * {@link MethodHandles#publicLookup()} and a security manager is present,
+     * and a check for {@code RuntimePermission("dynalink.getLookup")}
+     * (a canonical instance of which is available as
      * {@link #GET_LOOKUP_PERMISSION}) fails.
      */
     public Lookup getLookup();
 
     /**
-     * Creates a new call site descriptor from this descriptor, which is identical to this, except it changes the method
-     * type.
+     * Creates a new call site descriptor from this descriptor, which is
+     * identical to this, except it changes the method type.
      *
      * @param newMethodType the new method type
      * @return a new call site descriptor, with the method type changed.
@@ -181,9 +205,11 @@ public interface CallSiteDescriptor {
 
 
     /**
-     * Tokenizes a composite operation name along pipe characters. I.e. if you have a "dyn:getElem|getProp|getMethod"
-     * operation, returns a list of ["getElem", "getProp", "getMethod"]. The tokens are not interned.
-     * @return a list of tokens
+     * Tokenizes a composite operation name of this descriptor along
+     * {@link #OPERATOR_DELIMITER} characters. E.g. if this descriptor's name is
+     * {@code "dyn:getElem|getProp|getMethod"}, then it returns a list of
+     * {@code ["getElem", "getProp", "getMethod"]}.
+     * @return a list of operator tokens.
      */
     public default List<String> tokenizeOperators() {
         final String ops = getNameToken(CallSiteDescriptor.OPERATOR);
@@ -200,15 +226,19 @@ public interface CallSiteDescriptor {
     }
 
     /**
-     * Checks if the current access context is granted the {@code RuntimePermission("dynalink.getLookup")}
-     * permission, if the system contains a security manager, and the passed lookup is not the
-     * {@link MethodHandles#publicLookup()}.
+     * Checks if the current access context is granted the
+     * {@code RuntimePermission("dynalink.getLookup")} permission, if the
+     * system contains a security manager, and the passed lookup is not the
+     * {@link MethodHandles#publicLookup()}. This method should be used in all
+     * implementations of {@link #getLookup()} method to ensure that only
+     * code with permission can retrieve the lookup object.
      * @param lookup the lookup being checked for access
-     * @return the passed in lookup if there's either no security manager in the system, or the passed lookup
-     * is the public lookup, or the current access context is granted the relevant permission.
-     * @throws SecurityException if the system contains a security manager, and the passed lookup is not the
-     * {@link MethodHandles#publicLookup()}, and the current access context is not granted the relevant
-     * permission.
+     * @return the passed in lookup if there's either no security manager in
+     * the system, or the passed lookup is the public lookup, or the current
+     * access context is granted the relevant permission.
+     * @throws SecurityException if the system contains a security manager, and
+     * the passed lookup is not the public lookup, and the current access
+     * context is not granted the relevant permission.
      */
     public static Lookup checkLookup(final Lookup lookup) {
         final SecurityManager sm = System.getSecurityManager();
@@ -219,11 +249,14 @@ public interface CallSiteDescriptor {
     }
 
     /**
-     * Tokenizes the composite name along colons, as well as {@link NameCodec#decode(String) demangles} and interns
-     * the tokens. The first two tokens are not demangled as they are supposed to be the naming scheme and the name of
-     * the operation which can be expected to consist of just alphabetical characters.
-     * @param name the composite name consisting of colon-separated, possibly mangled tokens.
-     * @return an array of tokens
+     * Tokenizes the composite name along {@link #TOKEN_DELIMITER} characters,
+     * as well as {@link NameCodec#decode(String) demangles} and interns the
+     * tokens. The first two tokens are not demangled as they are supposed to
+     * be the naming scheme and the name of the operation which can be expected
+     * to consist of just alphabetical characters.
+     * @param name the composite name consisting of
+     * {@link #TOKEN_DELIMITER}-separated, possibly mangled tokens.
+     * @return an array of unmangled, interned tokens.
      */
     public static String[] tokenizeName(final String name) {
         final StringTokenizer tok = new StringTokenizer(name, CallSiteDescriptor.TOKEN_DELIMITER);

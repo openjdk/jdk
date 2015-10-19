@@ -185,7 +185,8 @@ public interface LinkerServices {
     /**
      * Modifies the method handle so that any parameters that can receive potentially internal language runtime objects
      * will have a filter added on them to prevent them from escaping, potentially by wrapping them.
-     * It can also potentially add an unwrapping filter to the return value.
+     * It can also potentially add an unwrapping filter to the return value. Basically transforms the method
+     * handle using the transformer configured by {@link DynamicLinkerFactory#setInternalObjectsFilter(MethodHandleTransformer)}.
      * @param target the target method handle
      * @return a method handle with parameters and/or return type potentially filtered for wrapping and unwrapping.
      */

@@ -97,14 +97,13 @@ import jdk.internal.dynalink.support.SimpleCallSiteDescriptor;
 import jdk.internal.dynalink.support.SimpleLinkRequest;
 
 /**
- * The linker for {@link RelinkableCallSite} objects. Users of it (scripting
- * frameworks and language runtimes) have to create a linker using the
- * {@link DynamicLinkerFactory} and invoke its link method from the invokedynamic
- * bootstrap methods to set the target of all the call sites in the code they
- * generate. Usual usage would be to create one class per language runtime to
- * contain one linker instance as:
- *
+ * The linker for {@link RelinkableCallSite} objects. Users of Dynalink have to
+ * create a linker using the {@link DynamicLinkerFactory} and invoke its
+ * {@link #link(RelinkableCallSite)} method from the invokedynamic bootstrap
+ * methods to let it manage all the call sites they create. Usual usage would be
+ * to create one class per language runtime to contain one linker instance as:
  * <pre>
+ *
  * class MyLanguageRuntime {
  *     private static final GuardingDynamicLinker myLanguageLinker = new MyLanguageLinker();
  *     private static final DynamicLinker dynamicLinker = createDynamicLinker();
@@ -116,7 +115,7 @@ import jdk.internal.dynalink.support.SimpleLinkRequest;
  *     }
  *
  *     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type) {
- *         return dynamicLinker.link(new MonomorphicCallSite(CallSiteDescriptorFactory.create(lookup, name, type)));
+ *         return dynamicLinker.link(new MonomorphicCallSite(new SimpleCallSiteDescriptor(lookup, name, type)));
  *     }
  * }
  * </pre>
@@ -148,8 +147,8 @@ import jdk.internal.dynalink.support.SimpleLinkRequest;
  */
 public final class DynamicLinker {
     /**
-     * A permission to invoke the {@link #getCurrentLinkRequest()} method. It is named
-     * {@code "dynalink.getCurrentLinkRequest"}.
+     * A permission to invoke the {@link #getCurrentLinkRequest()} method. It is
+     * named {@code "dynalink.getCurrentLinkRequest"}.
      */
     public static final RuntimePermission GET_CURRENT_LINK_REQUEST_PERMISSION = new RuntimePermission("dynalink.getCurrentLinkRequest");
 
@@ -202,8 +201,8 @@ public final class DynamicLinker {
     }
 
     /**
-     * Returns the object representing the lower level linker services of this
-     * class that are normally exposed to individual language-specific linkers.
+     * Returns the object representing the linker services of this class that
+     * are normally exposed to individual language-specific linkers.
      * While as a user of this class you normally only care about the
      * {@link #link(RelinkableCallSite)} method, in certain circumstances you
      * might want to use the lower level services directly; either to lookup
@@ -275,11 +274,11 @@ public final class DynamicLinker {
     }
 
     /**
-     * Returns a stack trace element describing the location of the call site
-     * currently being linked on the current thread. The operation internally
-     * creates a Throwable object and inspects its stack trace, so it's
-     * potentially expensive. The recommended usage for it is in writing
-     * diagnostics code.
+     * Returns a stack trace element describing the location of the
+     * {@code invokedynamic} call site currently being linked on the current
+     * thread. The operation is potentially expensive and is intended for use in
+     * diagnostics code. For "free-floating" call sites (not associated with an
+     * {@code invokedynamic} instruction), the result is not well-defined.
      *
      * @return a stack trace element describing the location of the call site
      *         currently being linked, or null if it is not invoked while a call
@@ -304,10 +303,12 @@ public final class DynamicLinker {
     }
 
     /**
-     * Returns the currently processed link request, or null if the method is invoked outside of the linking process.
+     * Returns the currently processed link request, or null if the method is
+     * invoked outside of the linking process.
      * @return the currently processed link request, or null.
-     * @throws SecurityException if the calling code doesn't have the {@code "dynalink.getCurrentLinkRequest"}
-     * runtime permission (available as {@link #GET_CURRENT_LINK_REQUEST_PERMISSION}).
+     * @throws SecurityException if the calling code doesn't have the
+     * {@code "dynalink.getCurrentLinkRequest"} runtime permission (available as
+     * {@link #GET_CURRENT_LINK_REQUEST_PERMISSION}).
      */
     public static LinkRequest getCurrentLinkRequest() {
         return LinkerServicesImpl.getCurrentLinkRequest();

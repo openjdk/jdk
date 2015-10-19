@@ -88,9 +88,10 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.support.AbstractRelinkableCallSite;
 
 /**
- * A relinkable call site that implements monomorphic inline caching strategy. After it linked a method, it will keep it
- * until either its guard evaluates to false, or its switchpoint is invalidated, at which time it will throw away the
- * previous linkage, and trigger relinking with its associated {@link DynamicLinker}.
+ * A relinkable call site that implements monomorphic inline caching strategy,
+ * only being linked to a single {@link GuardedInvocation}. If that invocation
+ * is invalidated, it will throw it away and ask its associated
+ * {@link DynamicLinker} to relink it.
  */
 public class MonomorphicCallSite extends AbstractRelinkableCallSite {
     /**
@@ -102,12 +103,12 @@ public class MonomorphicCallSite extends AbstractRelinkableCallSite {
     }
 
     @Override
-    public void relink(final GuardedInvocation guardedInvocation, final MethodHandle relink) {
-        setTarget(guardedInvocation.compose(relink));
+    public void relink(final GuardedInvocation guardedInvocation, final MethodHandle relinkAndInvoke) {
+        setTarget(guardedInvocation.compose(relinkAndInvoke));
     }
 
     @Override
-    public void resetAndRelink(final GuardedInvocation guardedInvocation, final MethodHandle relink) {
-        relink(guardedInvocation, relink);
+    public void resetAndRelink(final GuardedInvocation guardedInvocation, final MethodHandle relinkAndInvoke) {
+        relink(guardedInvocation, relinkAndInvoke);
     }
 }

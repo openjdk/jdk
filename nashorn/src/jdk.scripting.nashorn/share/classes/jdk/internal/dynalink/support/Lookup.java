@@ -91,14 +91,17 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 
 /**
- * A wrapper around MethodHandles.Lookup that masks checked exceptions in those cases when you're looking up methods
- * within your own codebase (therefore it is an error if they are not present).
+ * A wrapper around {@link java.lang.invoke.MethodHandles.Lookup} that masks
+ * checked exceptions. It is useful in those cases when you're looking up
+ * methods within your own codebase (therefore it is an error if they are not
+ * present).
  */
 public class Lookup {
     private final MethodHandles.Lookup lookup;
 
     /**
-     * Creates a new instance, bound to an instance of {@link java.lang.invoke.MethodHandles.Lookup}.
+     * Creates a new instance, bound to an instance of
+     * {@link java.lang.invoke.MethodHandles.Lookup}.
      *
      * @param lookup the {@link java.lang.invoke.MethodHandles.Lookup} it delegates to.
      */
@@ -112,23 +115,27 @@ public class Lookup {
     public static final Lookup PUBLIC = new Lookup(MethodHandles.publicLookup());
 
     /**
-     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflect(Method)}, converting any encountered
-     * {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflect(Method)},
+     * converting any encountered {@link IllegalAccessException} into an
+     * {@link IllegalAccessError}.
      *
      * @param m the method to unreflect
      * @return the unreflected method handle.
+     * @throws IllegalAccessError if the method is inaccessible.
      */
     public MethodHandle unreflect(final Method m) {
         return unreflect(lookup, m);
     }
 
     /**
-     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflect(Method)}, converting any encountered
-     * {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflect(Method)},
+     * converting any encountered {@link IllegalAccessException} into an
+     * {@link IllegalAccessError}.
      *
      * @param lookup the lookup used to unreflect
      * @param m the method to unreflect
      * @return the unreflected method handle.
+     * @throws IllegalAccessError if the method is inaccessible.
      */
     public static MethodHandle unreflect(final MethodHandles.Lookup lookup, final Method m) {
         try {
@@ -141,11 +148,12 @@ public class Lookup {
     }
 
     /**
-     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflectGetter(Field)}, converting any encountered
-     * {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflectGetter(Field)},
+     * converting any encountered {@link IllegalAccessException} into an {@link IllegalAccessError}.
      *
      * @param f the field for which a getter is unreflected
      * @return the unreflected field getter handle.
+     * @throws IllegalAccessError if the getter is inaccessible.
      */
     public MethodHandle unreflectGetter(final Field f) {
         try {
@@ -158,9 +166,10 @@ public class Lookup {
     }
 
     /**
-     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#findGetter(Class, String, Class)}, converting any
-     * encountered {@link IllegalAccessException} into an {@link IllegalAccessError} and {@link NoSuchFieldException}
-     * into a {@link NoSuchFieldError}.
+     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#findGetter(Class, String, Class)},
+     * converting any encountered {@link IllegalAccessException} into an
+     * {@link IllegalAccessError} and {@link NoSuchFieldException} into a
+     * {@link NoSuchFieldError}.
      *
      * @param refc the class declaring the field
      * @param name the name of the field
@@ -186,11 +195,14 @@ public class Lookup {
     }
 
     /**
-     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflectSetter(Field)}, converting any encountered
-     * {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflectSetter(Field)},
+     * converting any encountered {@link IllegalAccessException} into an
+     * {@link IllegalAccessError}.
      *
      * @param f the field for which a setter is unreflected
      * @return the unreflected field setter handle.
+     * @throws IllegalAccessError if the field is inaccessible.
+     * @throws NoSuchFieldError if the field does not exist.
      */
     public MethodHandle unreflectSetter(final Field f) {
         try {
@@ -203,23 +215,27 @@ public class Lookup {
     }
 
     /**
-     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflectConstructor(Constructor)}, converting any
-     * encountered {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflectConstructor(Constructor)},
+     * converting any encountered {@link IllegalAccessException} into an
+     * {@link IllegalAccessError}.
      *
      * @param c the constructor to unreflect
      * @return the unreflected constructor handle.
+     * @throws IllegalAccessError if the constructor is inaccessible.
      */
     public MethodHandle unreflectConstructor(final Constructor<?> c) {
         return unreflectConstructor(lookup, c);
     }
 
     /**
-     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflectConstructor(Constructor)}, converting any
-     * encountered {@link IllegalAccessException} into an {@link IllegalAccessError}.
+     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#unreflectConstructor(Constructor)},
+     * converting any encountered {@link IllegalAccessException} into an
+     * {@link IllegalAccessError}.
      *
      * @param lookup the lookup used to unreflect
      * @param c the constructor to unreflect
      * @return the unreflected constructor handle.
+     * @throws IllegalAccessError if the constructor is inaccessible.
      */
     public static MethodHandle unreflectConstructor(final MethodHandles.Lookup lookup, final Constructor<?> c) {
         try {
@@ -232,8 +248,10 @@ public class Lookup {
     }
 
     /**
-     * Performs a findSpecial on the underlying lookup. Converts any encountered {@link IllegalAccessException} into an
-     * {@link IllegalAccessError} and a {@link NoSuchMethodException} into a {@link NoSuchMethodError}.
+     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#findSpecial(Class, String, MethodType, Class)}
+     * on the underlying lookup. Converts any encountered
+     * {@link IllegalAccessException} into an {@link IllegalAccessError} and
+     * {@link NoSuchMethodException} into a {@link NoSuchMethodError}.
      *
      * @param declaringClass class declaring the method
      * @param name the name of the method
@@ -263,8 +281,10 @@ public class Lookup {
     }
 
     /**
-     * Performs a findStatic on the underlying lookup. Converts any encountered {@link IllegalAccessException} into an
-     * {@link IllegalAccessError} and a {@link NoSuchMethodException} into a {@link NoSuchMethodError}.
+     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#findStatic(Class, String, MethodType)}
+     * on the underlying lookup. Converts any encountered
+     * {@link IllegalAccessException} into an {@link IllegalAccessError} and
+     * {@link NoSuchMethodException} into a {@link NoSuchMethodError}.
      *
      * @param declaringClass class declaring the method
      * @param name the name of the method
@@ -290,8 +310,10 @@ public class Lookup {
     }
 
     /**
-     * Performs a findVirtual on the underlying lookup. Converts any encountered {@link IllegalAccessException} into an
-     * {@link IllegalAccessError} and a {@link NoSuchMethodException} into a {@link NoSuchMethodError}.
+     * Performs a {@link java.lang.invoke.MethodHandles.Lookup#findVirtual(Class, String, MethodType)}
+     * on the underlying lookup. Converts any encountered
+     * {@link IllegalAccessException} into an {@link IllegalAccessError} and
+     * {@link NoSuchMethodException} into a {@link NoSuchMethodError}.
      *
      * @param declaringClass class declaring the method
      * @param name the name of the method
@@ -317,8 +339,9 @@ public class Lookup {
     }
 
     /**
-     * Given a lookup, finds using {@link #findSpecial(Class, String, MethodType)} a method on that lookup's class.
-     * Useful in classes' code for convenient linking to their own privates.
+     * Given a lookup, finds using {@link #findSpecial(Class, String, MethodType)}
+     * a method on that lookup's class. Useful in classes' code for convenient
+     * linking to their own privates.
      * @param lookup the lookup for the class
      * @param name the name of the method
      * @param rtype the return type of the method
@@ -331,9 +354,11 @@ public class Lookup {
 
 
     /**
-     * Finds using {@link #findSpecial(Class, String, MethodType)} a method on that lookup's class. Useful in classes'
-     * code for convenient linking to their own privates. It's easier to use than {@code findSpecial} in that you can
-     * just list the parameter types, and don't have to specify lookup class.
+     * Finds using {@link #findSpecial(Class, String, MethodType)} a method on
+     * that lookup's class. Useful in classes' code for convenient linking to
+     * their own privates. It's also more convenient than {@code findSpecial}
+     * in that you can just list the parameter types, and don't have to specify
+     * lookup class.
      * @param name the name of the method
      * @param rtype the return type of the method
      * @param ptypes the parameter types of the method
@@ -344,9 +369,11 @@ public class Lookup {
     }
 
     /**
-     * Given a lookup, finds using {@link #findStatic(Class, String, MethodType)} a method on that lookup's class.
-     * Useful in classes' code for convenient linking to their own privates. It's easier to use than {@code findStatic}
-     * in that you can just list the parameter types, and don't have to specify lookup class.
+     * Given a lookup, finds using {@link #findStatic(Class, String, MethodType)}
+     * a method on that lookup's class. Useful in classes' code for convenient
+     * linking to their own privates. It's easier to use than {@code findStatic}
+     * in that you can just list the parameter types, and don't have to specify
+     * lookup class.
      * @param lookup the lookup for the class
      * @param name the name of the method
      * @param rtype the return type of the method
@@ -358,9 +385,11 @@ public class Lookup {
     }
 
     /**
-     * Finds using {@link #findStatic(Class, String, MethodType)} a method on that lookup's class. Useful in classes'
-     * code for convenient linking to their own privates. It's easier to use than {@code findStatic} in that you can
-     * just list the parameter types, and don't have to specify lookup class.
+     * Finds using {@link #findStatic(Class, String, MethodType)} a method on
+     * that lookup's class. Useful in classes' code for convenient linking to
+     * their own privates. It's easier to use than {@code findStatic}
+     * in that you can just list the parameter types, and don't have to specify
+     * lookup class.
      * @param name the name of the method
      * @param rtype the return type of the method
      * @param ptypes the parameter types of the method

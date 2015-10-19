@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,59 +81,50 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.linker;
-
-import jdk.internal.dynalink.CallSiteDescriptor;
-import jdk.internal.dynalink.DynamicLinkerFactory;
-
 /**
- * Represents a request to link a particular invocation at a particular call site. Instances of these requests are being
- * passed to {@link GuardingDynamicLinker}.
+ * <p>
+ * Dynalink is a library for dynamic linking high-level operations on objects
+ * such as "read a property", "write a property", "invoke a function" and so on,
+ * expressed as {@link java.lang.invoke.CallSite call sites}. As such, it is
+ * closely related to, and relies on, the {@link java.lang.invoke} package.
+ * </p><p>
+ * While {@link java.lang.invoke} provides a JVM-level foundation for
+ * application-specific dynamic linking of methods, it does not provide a way to
+ * express higher level operations on objects, nor methods that implement them.
+ * These operations are the usual regimen of operations in object-oriented
+ * environments: property access, access of elements of collections, invocation
+ * of constructors, invocation of named methods (potentially with multiple
+ * dispatch, e.g. link- and run-time equivalents of Java overloaded method
+ * resolution). These are all functions that are normally desired in a language
+ * on the JVM. When a JVM language is statically typed and its type system
+ * matches that of the JVM, it can accomplish this with use of the usual
+ * invocation bytecodes ({@code INVOKEVIRTUAL} etc.) as well as field access
+ * bytecodes ({@code GETFIELD}, {@code PUTFIELD}). However, if the language is
+ * dynamic (hence, types of some expressions are not known at the time the
+ * program is compiled to bytecode), or its type system doesn't match closely
+ * that of the JVM, then it should use {@code invokedynamic} call sites and let
+ * Dynalink link those.
+ * </p><p>
+ * Dynalink lets programs have their operations on objects of unknown static
+ * types linked dynamically at run time. It also lets a language expose a linker
+ * for its own object model. Finally, it provides a default linker for ordinary
+ * Java objects. Two languages both exporting their linkers in the same JVM will
+ * even be able to cross-link their operations with each other if an object
+ * belonging to one language is passed to code from the other language.
+ * </p>
+ * <p>
+ * Languages that use Dynalink will create and configure a
+ * {@link jdk.internal.dynalink.DynamicLinkerFactory} and use it to create a
+ * {@link jdk.internal.dynalink.DynamicLinker}.
+ * The thus created dynamic linker will have to be used to link any
+ * {@link jdk.internal.dynalink.RelinkableCallSite}s they create, most often from a
+ * {@link java.lang.invoke} bootstrap method.
+ * </p>
+ * <p>
+ * Languages that wish to define and use their own linkers will also need to
+ * use the {@link jdk.internal.dynalink.linker} package.
+ * </p>
+ * @since 1.9
  */
-public interface LinkRequest {
-    /**
-     * Returns the call site descriptor for the call site being linked.
-     *
-     * @return the call site descriptor for the call site being linked.
-     */
-    public CallSiteDescriptor getCallSiteDescriptor();
-
-    /**
-     * Returns the arguments for the invocation being linked. The returned array
-     * must be a clone; modifications to it must not affect the arguments in
-     * this request.
-     *
-     * @return the arguments for the invocation being linked.
-     */
-    public Object[] getArguments();
-
-    /**
-     * Returns the first argument for the invocation being linked; this is
-     * typically the receiver object. This is a shorthand for
-     * {@code getArguments()[0]} that also avoids the cloning of the arguments
-     * array.
-     *
-     * @return the receiver object.
-     */
-    public Object getReceiver();
-
-    /**
-     * Returns true if the call site is considered unstable, that is, it has been relinked more times than was
-     * specified in {@link DynamicLinkerFactory#setUnstableRelinkThreshold(int)}. Linkers should use this as a
-     * hint to prefer producing linkage that is more stable (its guard fails less frequently), even if that assumption
-     * causes a less effective version of an operation to be linked. This is just a hint, though, and linkers are
-     * allowed to ignore this property.
-     * @return true if the call site is considered unstable.
-     */
-    public boolean isCallSiteUnstable();
-
-    /**
-     * Returns a request identical to this one with call site descriptor and arguments replaced with the ones specified.
-     *
-     * @param callSiteDescriptor the new call site descriptor
-     * @param arguments the new arguments
-     * @return a new request identical to this one, except with the call site descriptor and arguments replaced with the
-     * specified ones.
-     */
-    public LinkRequest replaceArguments(CallSiteDescriptor callSiteDescriptor, Object[] arguments);
-}
+@jdk.Exported
+package jdk.internal.dynalink;

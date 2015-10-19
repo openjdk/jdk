@@ -107,16 +107,19 @@ import jdk.internal.dynalink.support.CompositeTypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.support.TypeUtilities;
 
 /**
- * A factory class for creating {@link DynamicLinker}s. The usual dynamic linker is a linker composed of all
- * {@link GuardingDynamicLinker}s known and pre-created by the caller as well as any
- * guarding linkers automatically discovered as declared in
- * {@code /META-INF/services/jdk.internal.dynalink.linker.GuardingDynamicLinker} resources in the classpath (see
- * {@link ServiceLoader} for the description of this mechanism), and the standard fallback {@link BeansLinker}.
+ * A factory class for creating {@link DynamicLinker} objects. The usual dynamic
+ * linker is a linker composed of all {@link GuardingDynamicLinker} objects
+ * known and pre-created by the caller as well as any guarding linkers
+ * automatically discovered as declared in
+ * {@code /META-INF/services/jdk.internal.dynalink.linker.GuardingDynamicLinker}
+ * resources in the classpath (see {@link ServiceLoader} for the description of
+ * this mechanism), and the standard fallback {@link BeansLinker}.
  * See {@link DynamicLinker} documentation for tips on how to use this class.
  */
 public final class DynamicLinkerFactory {
     /**
-     * Default value for {@link #setUnstableRelinkThreshold(int) unstable relink threshold}.
+     * Default value for {@link #setUnstableRelinkThreshold(int) unstable relink
+     * threshold}.
      */
     public static final int DEFAULT_UNSTABLE_RELINK_THRESHOLD = 8;
 
@@ -132,10 +135,21 @@ public final class DynamicLinkerFactory {
     private MethodHandleTransformer internalObjectsFilter;
 
     /**
-     * Sets the class loader for automatic discovery of available linkers. If not set explicitly, then the thread
-     * context class loader at the time of {@link #createLinker()} invocation will be used.
+     * Creates a new dynamic linker factory with default configuration. Upon
+     * creation, the factory can be configured using various {@code setXxx()}
+     * methods and used to create one or more dynamic linkers according to its
+     * current configuration using {@link #createLinker()}.
+     */
+    public DynamicLinkerFactory() {
+    }
+
+    /**
+     * Sets the class loader for automatic discovery of available linkers. If
+     * not set explicitly, then the thread context class loader of the thread
+     * invoking {@link #createLinker()} invocation will be used.
      *
-     * @param classLoader the class loader used for the autodiscovery of available linkers.
+     * @param classLoader the class loader used for the automatic discovery of
+     * available linkers.
      */
     public void setClassLoader(final ClassLoader classLoader) {
         this.classLoader = classLoader;

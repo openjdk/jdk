@@ -87,8 +87,10 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 
 /**
- * Interface for objects representing a strategy for converting a method handle to a new type.
+ * Interface for objects representing a strategy for converting a method handle
+ * to a new type.
  */
+@FunctionalInterface
 public interface MethodTypeConversionStrategy {
     /**
      * Converts a method handle to a new type.

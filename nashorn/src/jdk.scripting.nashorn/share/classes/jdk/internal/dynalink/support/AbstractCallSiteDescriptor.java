@@ -89,10 +89,18 @@ import java.util.Objects;
 import jdk.internal.dynalink.CallSiteDescriptor;
 
 /**
- * A base class for call site descriptor implementations. Provides reconstruction of the name from the tokens,
- * as well as generally useful {@code equals}, {@code hashCode}, and {@code toString} methods. For security
- * and performance reasons, subclasses must implement {@link #lookupEquals(AbstractCallSiteDescriptor)},
+ * A base class for call site descriptor implementations. Provides
+ * reconstruction of the name from the tokens, as well as generally useful
+ * {@code equals}, {@code hashCode}, and {@code toString} methods. In order to
+ * both prevent unprivileged access to its internal {@link MethodHandles.Lookup}
+ * object, and at the same time not force privileged access to it from
+ * {@code equals}, {@code hashCode}, and {@code toString} methods, subclasses
+ * must implement {@link #lookupEquals(AbstractCallSiteDescriptor)},
  * {@link #lookupHashCode()} and {@link #lookupToString()} methods.
+ * Additionally, {@link #equalsInKind(AbstractCallSiteDescriptor)} should be
+ * overridden instead of {@link #equals(Object)} to compare descriptors in
+ * subclasses; it is only necessary if they have implementation-specific
+ * properties other than the standard name, type, and lookup.
  * @param <T> The call site descriptor subclass
  */
 public abstract class AbstractCallSiteDescriptor<T extends AbstractCallSiteDescriptor<T>> implements CallSiteDescriptor {
@@ -102,6 +110,15 @@ public abstract class AbstractCallSiteDescriptor<T extends AbstractCallSiteDescr
         return appendName(new StringBuilder(getNameLength())).toString();
     }
 
+    /**
+     * Checks if this call site descriptor is equality to another object. It is
+     * considered equal iff and only if they belong to the exact same class, and
+     * have the same name, method type, and lookup. Subclasses with additional
+     * properties should override
+     * {@link #equalsInKind(AbstractCallSiteDescriptor)} instead of this method.
+     * @param obj the object checked for equality
+     * @return true if they are equal, false otherwise
+     */
     @SuppressWarnings("unchecked")
     @Override
     public boolean equals(final Object obj) {
@@ -109,8 +126,8 @@ public abstract class AbstractCallSiteDescriptor<T extends AbstractCallSiteDescr
     }
 
     /**
-     * Returns true if this call site descriptor is equal to the passed, non-null call site descriptor of the
-     * same class.
+     * Returns true if this call site descriptor is equal to the passed,
+     * non-null call site descriptor of the same class.
      * @param csd the other call site descriptor.
      * @return true if they are equal.
      */
@@ -134,20 +151,32 @@ public abstract class AbstractCallSiteDescriptor<T extends AbstractCallSiteDescr
     }
 
     /**
-     * Returns true if this call site descriptor's lookup is equal to the other call site descriptor's lookup.
-     * Typical implementation should try to obtain the other lookup directly without going through
-     * {@link #getLookup()} (e.g. directly using the implementation) and then delegate to
+     * Returns true if this call site descriptor's lookup is equal to the other
+     * call site descriptor's lookup. Typical implementation should try to
+     * obtain the other lookup directly without going through privileged
+     * {@link #getLookup()} (e.g. by reading the field as the type system
+     * enforces that they are of the same class) and then delegate to
      * {@link #lookupsEqual(MethodHandles.Lookup, MethodHandles.Lookup)}.
      * @param other the other lookup
      * @return true if the lookups are equal
      */
     protected abstract boolean lookupEquals(T other);
 
+    /**
+     * Compares two lookup objects for value-based equality. They are considered
+     * equal if they have the same
+     * {@link java.lang.invoke.MethodHandles.Lookup#lookupClass()} and
+     * {@link java.lang.invoke.MethodHandles.Lookup#lookupModes()}.
+     * @param l1 first lookup
+     * @param l2 second lookup
+     * @return true if the two lookups are equal, false otherwise.
+     */
     protected static boolean lookupsEqual(final Lookup l1, final Lookup l2) {
         if(l1 == l2) {
             return true;
-        }
-        if(l1.lookupClass() != l2.lookupClass()) {
+        } else if (l1 == null || l2 == null) {
+            return false;
+        } else if(l1.lookupClass() != l2.lookupClass()) {
             return false;
         }
         return l1.lookupModes() == l2.lookupModes();
@@ -164,14 +193,24 @@ public abstract class AbstractCallSiteDescriptor<T extends AbstractCallSiteDescr
     }
 
     /**
-     * Return the hash code of this call site descriptor's {@link Lookup} object. Typical
-     * implementation should delegate to {@link #lookupHashCode(MethodHandles.Lookup)}.
-     * @return the hash code of this call site descriptor's {@link Lookup} object.
+     * Return the hash code of this call site descriptor's {@link Lookup}
+     * object. Typical implementation should delegate to
+     * {@link #lookupHashCode(MethodHandles.Lookup)}.
+     * @return the hash code of this call site descriptor's {@link Lookup}
+     * object.
      */
     protected abstract int lookupHashCode();
 
+    /**
+     * Returns a value-based hash code for the passed lookup object. It is
+     * based on the lookup object's
+     * {@link java.lang.invoke.MethodHandles.Lookup#lookupClass()} and
+     * {@link java.lang.invoke.MethodHandles.Lookup#lookupModes()} values.
+     * @param lookup the lookup object.
+     * @return a hash code for the object. Returns 0 for null.
+     */
     protected static int lookupHashCode(final Lookup lookup) {
-        return lookup.lookupClass().hashCode() + 31 * lookup.lookupModes();
+        return lookup != null ? lookup.lookupClass().hashCode() + 31 * lookup.lookupModes() : 0;
     }
 
     @Override
@@ -183,9 +222,11 @@ public abstract class AbstractCallSiteDescriptor<T extends AbstractCallSiteDescr
     }
 
     /**
-     * Return a string representation of this call site descriptor's {@link Lookup} object. Typically will
-     * return {@link Lookup#toString()}.
-     * @return a string representation of this call site descriptor's {@link Lookup} object.
+     * Return a string representation of this call site descriptor's
+     * {@link Lookup} object. Typically will return
+     * {@link java.lang.invoke.MethodHandles.Lookup#toString()}.
+     * @return a string representation of this call site descriptor's
+     * {@link Lookup} object.
      */
     protected abstract String lookupToString();
 
