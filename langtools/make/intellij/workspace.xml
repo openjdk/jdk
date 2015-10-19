@@ -103,6 +103,24 @@
         <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/.idea/build.xml" target="build-all-classes" />
       </method>
     </configuration>
+    <configuration default="false" name="jshell" type="Application" factoryName="Application">
+      <extension name="coverage" enabled="false" merge="false" sample_coverage="true" runner="idea" />
+      <option name="MAIN_CLASS_NAME" value="jdk.internal.jshell.tool.JShellTool" />
+      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build/jdk.internal.le/classes:build/jdk.jdi/classes:build/jdk.jshell/classes:build/java.compiler/classes:build/jdk.compiler/classes:build/jdk.javadoc/classes:build/jdk.jdeps/classes" />
+      <option name="PROGRAM_PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="$PROJECT_DIR$/../../dev/build/linux-x86_64-normal-server-release/images/jre" />
+      <option name="ENABLE_SWING_INSPECTOR" value="false" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <module name="langtools" />
+      <envs />
+      <method>
+        <option name="Make" enabled="false" />
+        <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/.idea/build.xml" target="build-all-classes" />
+      </method>
+    </configuration>
     <!-- bootstrap javac -->
     <configuration default="false" name="javac (bootstrap)" type="Application" factoryName="Application">
       <option name="MAIN_CLASS_NAME" value="com.sun.tools.javac.Main" />
