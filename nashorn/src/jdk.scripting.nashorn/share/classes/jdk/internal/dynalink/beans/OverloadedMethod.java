@@ -104,15 +104,20 @@ import jdk.internal.dynalink.support.TypeUtilities;
 class OverloadedMethod {
     private final Map<ClassString, MethodHandle> argTypesToMethods = new ConcurrentHashMap<>();
     private final OverloadedDynamicMethod parent;
+    private final ClassLoader callSiteClassLoader;
     private final MethodType callSiteType;
     private final MethodHandle invoker;
     private final LinkerServices linkerServices;
     private final ArrayList<MethodHandle> fixArgMethods;
     private final ArrayList<MethodHandle> varArgMethods;
 
-    OverloadedMethod(final List<MethodHandle> methodHandles, final OverloadedDynamicMethod parent, final MethodType callSiteType,
+    OverloadedMethod(final List<MethodHandle> methodHandles,
+            final OverloadedDynamicMethod parent,
+            final ClassLoader callSiteClassLoader,
+            final MethodType callSiteType,
             final LinkerServices linkerServices) {
         this.parent = parent;
+        this.callSiteClassLoader = callSiteClassLoader;
         final Class<?> commonRetType = getCommonReturnType(methodHandles);
         this.callSiteType = callSiteType.changeReturnType(commonRetType);
         this.linkerServices = linkerServices;
@@ -179,7 +184,7 @@ class OverloadedMethod {
             }
             // Avoid keeping references to unrelated classes; this ruins the performance a bit, but avoids class loader
             // memory leaks.
-            if(classString.isVisibleFrom(parent.getClassLoader())) {
+            if(classString.isVisibleFrom(callSiteClassLoader)) {
                 argTypesToMethods.put(classString, method);
             }
         }

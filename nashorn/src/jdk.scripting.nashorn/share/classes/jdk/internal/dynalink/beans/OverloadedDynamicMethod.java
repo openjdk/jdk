@@ -85,6 +85,11 @@ package jdk.internal.dynalink.beans;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.Permissions;
+import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -218,10 +223,27 @@ class OverloadedDynamicMethod extends DynamicMethod {
                 for(final SingleDynamicMethod method: invokables) {
                     methodHandles.add(method.getTarget(callSiteDescriptor));
                 }
-                return new OverloadedMethod(methodHandles, this, callSiteType, linkerServices).getInvoker();
+                return new OverloadedMethod(methodHandles, this, getCallSiteClassLoader(callSiteDescriptor), callSiteType, linkerServices).getInvoker();
             }
         }
+    }
 
+    private static final AccessControlContext GET_CALL_SITE_CLASS_LOADER_CONTEXT;
+    static {
+        final Permissions perms = new Permissions();
+        perms.add(new RuntimePermission("getClassLoader"));
+        perms.add(CallSiteDescriptor.GET_LOOKUP_PERMISSION);
+        GET_CALL_SITE_CLASS_LOADER_CONTEXT = new AccessControlContext(
+                new ProtectionDomain[] { new ProtectionDomain(null, perms) });
+    }
+
+    private static ClassLoader getCallSiteClassLoader(final CallSiteDescriptor callSiteDescriptor) {
+        return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+            @Override
+            public ClassLoader run() {
+                return callSiteDescriptor.getLookup().lookupClass().getClassLoader();
+            }
+        }, GET_CALL_SITE_CLASS_LOADER_CONTEXT);
     }
 
     @Override

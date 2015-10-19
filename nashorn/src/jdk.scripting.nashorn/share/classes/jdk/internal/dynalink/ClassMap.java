@@ -150,15 +150,15 @@ abstract class ClassMap<T> {
         final T newV = computeValue(clazz);
         assert newV != null;
 
-        final ClassLoader clazzLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+        final Boolean canReferenceDirectly = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
             @Override
-            public ClassLoader run() {
-                return clazz.getClassLoader();
+            public Boolean run() {
+                return Guards.canReferenceDirectly(classLoader, clazz.getClassLoader());
             }
         }, ClassLoaderGetterContextProvider.GET_CLASS_LOADER_CONTEXT);
 
         // If allowed to strongly reference, put it in the fast map
-        if(Guards.canReferenceDirectly(classLoader, clazzLoader)) {
+        if(canReferenceDirectly) {
             final T oldV = map.putIfAbsent(clazz, newV);
             return oldV != null ? oldV : newV;
         }
