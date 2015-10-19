@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 #include <jni.h>
+#include "jni_util.h"
 #include "impl/ecc_impl.h"
 
 #define ILLEGAL_STATE_EXCEPTION "java/lang/IllegalStateException"
@@ -34,6 +35,11 @@
 #define KEY_EXCEPTION   "java/security/KeyException"
 
 extern "C" {
+
+/*
+ * Declare library specific JNI_Onload entry if static build
+ */
+DEF_STATIC_JNI_OnLoad
 
 /*
  * Throws an arbitrary Java exception.

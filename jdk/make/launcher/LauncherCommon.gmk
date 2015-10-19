@@ -106,10 +106,30 @@ define SetupLauncher
       endif
     endif
 
-    $1_LDFLAGS += -Wl,-all_load $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a \
-        -framework Cocoa -framework Security -framework ApplicationServices \
-        -sectcreate __TEXT __info_plist $(MACOSX_PLIST_DIR)/$$($1_PLIST_FILE)
-        $1_LDFLAGS_SUFFIX += -pthread
+    ifeq ($(STATIC_BUILD), true)
+      $1_LDFLAGS += -Wl,-all_load \
+          $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs/java.base -name "*.a") \
+          $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libdt_socket.a \
+          $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libjdwp.a \
+          $(SUPPORT_OUTPUTDIR)/native/java.base/$(LIBRARY_PREFIX)fdlibm$(STATIC_LIBRARY_SUFFIX) \
+          -framework CoreFoundation \
+          -framework Foundation \
+          -framework SystemConfiguration \
+          -framework Cocoa -framework Security \
+          -framework ApplicationServices \
+          -lstdc++ -liconv \
+          -sectcreate __TEXT __info_plist \
+          $(MACOSX_PLIST_DIR)/$$($1_PLIST_FILE) \
+          -exported_symbols_list \
+              $(SUPPORT_OUTPUTDIR)/build-static/exported.symbols
+    else
+      $1_LDFLAGS += -Wl,-all_load $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a \
+          -framework Cocoa -framework Security -framework ApplicationServices \
+          -sectcreate __TEXT __info_plist $(MACOSX_PLIST_DIR)/$$($1_PLIST_FILE)
+          $1_LDFLAGS_SUFFIX += -pthread
+    endif
+
+
   endif
 
   ifeq ($(OPENJDK_TARGET_OS), aix)

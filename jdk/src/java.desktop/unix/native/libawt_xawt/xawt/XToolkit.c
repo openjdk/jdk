@@ -151,7 +151,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_X11_XToolkit_getDefaultScreenData
 
 
 JNIEXPORT jint JNICALL
-JNI_OnLoad(JavaVM *vm, void *reserved)
+DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
 {
     jvm = vm;
     return JNI_VERSION_1_2;
