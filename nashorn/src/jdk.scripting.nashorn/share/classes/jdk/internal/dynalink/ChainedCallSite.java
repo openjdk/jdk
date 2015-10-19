@@ -93,14 +93,21 @@ import jdk.internal.dynalink.support.AbstractRelinkableCallSite;
 import jdk.internal.dynalink.support.Lookup;
 
 /**
- * A relinkable call site that maintains a chain of linked method handles. In the default implementation, up to 8 method
- * handles can be chained, cascading from one to the other through
- * {@link MethodHandles#guardWithTest(MethodHandle, MethodHandle, MethodHandle)}. When this call site has to link a new
- * method handle and the length of the chain is already at the maximum, it will throw away the oldest method handle.
- * Switchpoint-invalidated handles in the chain are removed eagerly (on each linking request, and whenever a
- * switchpoint-invalidated method handle is traversed during invocation). There is currently no profiling
- * attached to the handles in the chain, so they are never reordered based on usage; the most recently linked method
- * handle is always at the start of the chain.
+ * A relinkable call site that implements a polymorphic inline caching strategy.
+ * It remembers up to 8 {@link GuardedInvocation}s it was linked with, and on
+ * each relink request builds a cascading chain of method handles of one
+ * invocation falling back to the next one. The number of remembered invocations
+ * can be customized by overriding {@link #getMaxChainLength()} in a subclass.
+ * When this call site is relinked with a new invocation and the length of the
+ * chain is already at the maximum, it will throw away the oldest invocation.
+ * Invocations with invalidated switch points and ones for which their
+ * invalidating exception triggered are removed eagerly from the chain. The
+ * invocations are never reordered; the most recently linked method handle is
+ * always at the start of the chain and the least recently linked at its end.
+ * The call site can be safely relinked on more than one thread concurrently.
+ * Race conditions in linking are resolved by throwing away the
+ * {@link GuardedInvocation} produced on the losing thread without incorporating
+ * it into the chain, so it can lead to repeated linking for the same arguments.
  */
 public class ChainedCallSite extends AbstractRelinkableCallSite {
     private static final MethodHandle PRUNE_CATCHES;
@@ -130,22 +137,24 @@ public class ChainedCallSite extends AbstractRelinkableCallSite {
     }
 
     /**
-     * The maximum number of method handles in the chain. Defaults to 8. You can override it in a subclass if you need
-     * to change the value. If your override returns a value less than 1, the code will break.
-     * @return the maximum number of method handles in the chain.
+     * The maximum number of method handles in the chain. Defaults to 8. You can
+     * override it in a subclass if you need to change the value.
+     * @return the maximum number of method handles in the chain. The return
+     * value is checked, and if your override returns a value less than 1, a
+     * {@link RuntimeException} will be thrown.
      */
     protected int getMaxChainLength() {
         return 8;
     }
 
     @Override
-    public void relink(final GuardedInvocation guardedInvocation, final MethodHandle fallback) {
-        relinkInternal(guardedInvocation, fallback, false, false);
+    public void relink(final GuardedInvocation guardedInvocation, final MethodHandle relinkAndInvoke) {
+        relinkInternal(guardedInvocation, relinkAndInvoke, false, false);
     }
 
     @Override
-    public void resetAndRelink(final GuardedInvocation guardedInvocation, final MethodHandle fallback) {
-        relinkInternal(guardedInvocation, fallback, true, false);
+    public void resetAndRelink(final GuardedInvocation guardedInvocation, final MethodHandle relinkAndInvoke) {
+        relinkInternal(guardedInvocation, relinkAndInvoke, true, false);
     }
 
     private MethodHandle relinkInternal(final GuardedInvocation invocation, final MethodHandle relink, final boolean reset, final boolean removeCatches) {
@@ -216,12 +225,12 @@ public class ChainedCallSite extends AbstractRelinkableCallSite {
     /**
      * Creates a method that rebuilds our call chain, pruning it of any invalidated switchpoints, and then invokes that
      * chain.
-     * @param relink the ultimate fallback for the chain (the {@code DynamicLinker}'s relink).
+     * @param relinkAndInvoke the ultimate fallback for the chain passed from the dynamic linker.
      * @return a method handle for prune-and-invoke
      */
-    private MethodHandle makePruneAndInvokeMethod(final MethodHandle relink, final MethodHandle prune) {
+    private MethodHandle makePruneAndInvokeMethod(final MethodHandle relinkAndInvoke, final MethodHandle prune) {
         // Bind prune to (this, relink)
-        final MethodHandle boundPrune = MethodHandles.insertArguments(prune, 0, this, relink);
+        final MethodHandle boundPrune = MethodHandles.insertArguments(prune, 0, this, relinkAndInvoke);
         // Make it ignore all incoming arguments
         final MethodHandle ignoreArgsPrune = MethodHandles.dropArguments(boundPrune, 0, type().parameterList());
         // Invoke prune, then invoke the call site target with original arguments

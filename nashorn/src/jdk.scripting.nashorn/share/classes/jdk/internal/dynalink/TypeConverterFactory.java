@@ -382,7 +382,6 @@ final class TypeConverterFactory {
             if(next != null) {
                 cacheable = cacheable && next.isCacheable();
                 final GuardedInvocation conversionInvocation = next.getConversionInvocation();
-                conversionInvocation.assertType(type);
                 last = conversionInvocation.compose(last);
             }
         }

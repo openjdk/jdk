@@ -83,14 +83,15 @@
 
 package jdk.internal.dynalink.linker;
 
+import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.support.TypeUtilities;
 
 /**
  * Optional interface that can be implemented by {@link GuardingDynamicLinker} implementations to provide
  * language-runtime specific implicit type conversion capabilities. Note that if you implement this interface, you will
  * very likely want to implement {@link ConversionComparator} interface too, as your additional language-specific
- * conversions, in absence of a strategy for prioritizing these conversions, will cause more ambiguity in selecting the
- * correct overload when trying to link to an overloaded POJO method.
+ * conversions, in absence of a strategy for prioritizing these conversions, will cause more ambiguity for
+ * {@link BeansLinker} in selecting the correct overload when trying to link to an overloaded Java method.
  */
 public interface GuardingTypeConverterFactory {
     /**

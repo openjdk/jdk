@@ -83,17 +83,27 @@
 
 package jdk.internal.dynalink.linker;
 
+
 /**
- * Guarded type conversion
+ * A tuple of a {@link GuardedInvocation} describing a conditional type
+ * conversion and a boolean flag indicating whether the result is allowed to
+ * be cached. While most type conversions are cacheable, some can have security
+ * implications. An example is converting e.g. function objects from the source
+ * language into implementations of Java functional interface objects, with
+ * adapter classes for those interfaces being created on the fly and being
+ * sensitive to the protection domain of their creator. Such converter
+ * invocation must be marked as non-cacheable so that Dynalink will know not to
+ * keep and reuse them in different contexts.
  */
 public class GuardedTypeConversion {
     private final GuardedInvocation conversionInvocation;
     private final boolean cacheable;
 
     /**
-     * Constructor
-     * @param conversionInvocation guarded invocation for this type conversion
-     * @param cacheable is this invocation cacheable
+     * Creates a new guarded type conversion.
+     * @param conversionInvocation guarded invocation implementing this type
+     * conversion.
+     * @param cacheable true if this invocation is cacheable, false otherwise.
      */
     public GuardedTypeConversion(final GuardedInvocation conversionInvocation, final boolean cacheable) {
         this.conversionInvocation = conversionInvocation;
@@ -101,16 +111,18 @@ public class GuardedTypeConversion {
     }
 
     /**
-     * Get the invocation
-     * @return invocation
+     * Returns the invocation implementing the type conversion.
+     * @return the invocation implementing the type conversion.
      */
     public GuardedInvocation getConversionInvocation() {
         return conversionInvocation;
     }
 
     /**
-     * Check if invocation is cacheable
-     * @return true if cacheable, false otherwise
+     * Returns true if this conversion is allowed to be cached and reused by
+     * Dynalink.
+     * @return true if this conversion is allowed to be cached and reused by
+     * Dynalink.
      */
     public boolean isCacheable() {
         return cacheable;

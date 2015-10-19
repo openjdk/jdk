@@ -83,11 +83,14 @@
 
 package jdk.internal.dynalink.linker;
 
+import jdk.internal.dynalink.support.CompositeTypeBasedGuardingDynamicLinker;
+
 /**
  * A guarding dynamic linker that can determine whether it can link the call site solely based on the type of the first
- * argument at linking invocation time. (The first argument is usually the receiver class). Most language-specific
+ * argument at linking invocation time. (The first argument is usually the receiver). Most language-specific
  * linkers will fall into this category, as they recognize their native objects as Java objects of classes implementing
- * a specific language-native interface or superclass. The linker mechanism can optimize the dispatch for these linkers.
+ * a specific language-native interface or superclass. The linker mechanism can optimize the dispatch for these linkers,
+ * see {@link CompositeTypeBasedGuardingDynamicLinker}.
  */
 public interface TypeBasedGuardingDynamicLinker extends GuardingDynamicLinker {
     /**

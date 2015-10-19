@@ -87,12 +87,22 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * Object that represents the static facet of a class (its static methods, properties, and fields, as well as
- * construction of instances using "dyn:new"). Objects of this class are recognized by the {@link BeansLinker} as being
- * special, and operations on them will be linked against the represented class' static facet. The "class" synthetic
- * property is additionally recognized and returns the Java {@link Class} object, as per {@link #getRepresentedClass()}
- * method. Conversely, {@link Class} objects exposed through {@link BeansLinker} expose the "static" synthetic property
- * which returns an instance of this class.
+ * Object that represents the static aspect of a class (its static methods,
+ * properties, and fields, as well as construction of instances using
+ * {@code "dyn:new"} operation). Objects of this class are recognized by the
+ * {@link BeansLinker} as being special, and operations on them will be linked
+ * against the represented class' static aspect. The {@code "class"} synthetic
+ * property is additionally recognized and returns the Java {@link Class}
+ * object, as per {@link #getRepresentedClass()} method. Conversely,
+ * {@link Class} objects exposed through {@link BeansLinker} expose the
+ * {@code "static"} synthetic property which returns an instance of this class.
+ * Instances of this class act as namespaces for static members and as
+ * constructors for classes, much the same way as specifying a class name in
+ * Java does, except that in Dynalink they are expressed as actual objects
+ * exposing static methods and properties of classes. As a special case,
+ * {@code StaticClass} objects representing Java array types will act as
+ * constructors taking a single int argument and create an array of the
+ * specified size.
  */
 public class StaticClass implements Serializable {
     private static final ClassValue<StaticClass> staticClasses = new ClassValue<StaticClass>() {

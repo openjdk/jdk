@@ -88,6 +88,7 @@ import java.lang.invoke.MethodHandle;
 /**
  * A generic interface describing operations that transform method handles.
  */
+@FunctionalInterface
 public interface MethodHandleTransformer {
     /**
      * Transforms a method handle.
