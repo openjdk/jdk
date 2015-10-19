@@ -22,6 +22,8 @@
  */
 
 import java.net.BindException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import org.testng.annotations.*;
@@ -31,23 +33,25 @@ import jdk.testlibrary.ProcessTools;
 
 /**
  * @test
- * @bug 8023093
+ * @bug 8023093 8138748
  * @summary Performs a sanity test for the ManagementAgent.status diagnostic command.
- *          Management agent may be disable, started (only local connections) and started.
+ *          Management agent may be disabled, started (only local connections) and started.
  *          The test asserts that the expected text is being printed.
  * @library /lib/testlibrary
  * @modules java.management/sun.management
  * @build jdk.testlibrary.* PortAllocator TestApp ManagementAgentJcmd
- * @run testng/othervm -XX:+UsePerfData JMXStatusTest
+ *        JMXStatusTest JMXStatus1Test JMXStatus2Test
+ * @run testng/othervm -XX:+UsePerfData JMXStatus1Test
+ * @run testng/othervm -XX:+UsePerfData JMXStatus2Test
  */
-public class JMXStatusTest {
+abstract public class JMXStatusTest {
     private final static String TEST_APP_NAME = "TestApp";
 
-    private final static Pattern DISABLE_AGENT_STATUS = Pattern.compile(
+    protected final static Pattern DISABLED_AGENT_STATUS = Pattern.compile(
         "Agent\\s*\\: disabled$"
     );
 
-    private final static Pattern LOCAL_AGENT_STATUS = Pattern.compile(
+    protected final static Pattern LOCAL_AGENT_STATUS = Pattern.compile(
         "Agent\\s*\\:\\s*enabled\\n+" +
         "Connection Type\\s*\\:\\s*local\\n+" +
         "Protocol\\s*\\:\\s*[a-z]+\\n+" +
@@ -56,14 +60,15 @@ public class JMXStatusTest {
         Pattern.MULTILINE
     );
 
-    private final static Pattern REMOTE_AGENT_STATUS = Pattern.compile(
+    protected final static Pattern REMOTE_AGENT_STATUS = Pattern.compile(
         "Agent\\s*\\: enabled\\n+" +
+        ".*" +
         "Connection Type\\s*\\: remote\\n+" +
         "Protocol\\s*\\: [a-z]+\\n+" +
         "Host\\s*\\: .+\\n+" +
         "URL\\s*\\: service\\:jmx\\:.+\\n+" +
         "Properties\\s*\\:\\n+(\\s*\\S+\\s*=\\s*\\S+\\n*)+",
-        Pattern.MULTILINE
+        Pattern.MULTILINE | Pattern.DOTALL
     );
 
     private static ProcessBuilder testAppPb;
@@ -71,22 +76,24 @@ public class JMXStatusTest {
 
     private ManagementAgentJcmd jcmd;
 
-    @BeforeClass
-    public static void setupClass() throws Exception {
-        testAppPb = ProcessTools.createJavaProcessBuilder(
-            "-cp", System.getProperty("test.class.path"),
-            "-XX:+UsePerfData",
-            TEST_APP_NAME
-        );
-    }
+    abstract protected List<String> getCustomVmArgs();
+    abstract protected Pattern getDefaultPattern();
 
     @BeforeTest
-    public void setup() {
+    public final void setup() throws Exception {
+        List<String> args = new ArrayList<>();
+        args.add("-cp");
+        args.add(System.getProperty("test.class.path"));
+        args.add("-XX:+UsePerfData");
+        args.addAll(getCustomVmArgs());
+        args.add(TEST_APP_NAME);
+        testAppPb = ProcessTools.createJavaProcessBuilder(args.toArray(new String[args.size()]));
+
         jcmd = new ManagementAgentJcmd(TEST_APP_NAME, false);
     }
 
     @BeforeMethod
-    public void startTestApp() throws Exception {
+    public final void startTestApp() throws Exception {
         testApp = ProcessTools.startProcess(
             TEST_APP_NAME, testAppPb,
             (Predicate<String>)l->l.trim().equals("main enter")
@@ -94,7 +101,7 @@ public class JMXStatusTest {
     }
 
     @AfterMethod
-    public void stopTestApp() throws Exception {
+    public final void stopTestApp() throws Exception {
         testApp.getOutputStream().write(1);
         testApp.getOutputStream().flush();
         testApp.waitFor();
@@ -102,13 +109,7 @@ public class JMXStatusTest {
     }
 
     @Test
-    public void testAgentDisabled() throws Exception {
-        String status = jcmd.status();
-        assertStatusMatches(DISABLE_AGENT_STATUS, status);
-    }
-
-    @Test
-    public void testAgentLocal() throws Exception {
+    public final void testAgentLocal() throws Exception {
         jcmd.startLocal();
         String status = jcmd.status();
 
@@ -116,7 +117,7 @@ public class JMXStatusTest {
     }
 
     @Test
-    public void testAgentRemote() throws Exception {
+    public final void testAgentRemote() throws Exception {
         while (true) {
             try {
                 int[] ports = PortAllocator.allocatePorts(1);
@@ -135,11 +136,17 @@ public class JMXStatusTest {
         }
     }
 
-    private void assertStatusMatches(Pattern expected, String value) {
+    @Test
+    public final void testAgentDefault() throws Exception {
+        String status = jcmd.status();
+        assertStatusMatches(getDefaultPattern(), status);
+    }
+
+    protected void assertStatusMatches(Pattern expected, String value) {
         assertStatusMatches(expected, value, "");
     }
 
-    private void assertStatusMatches(Pattern expected, String value, String msg) {
+    protected void assertStatusMatches(Pattern expected, String value, String msg) {
         int idx = value.indexOf('\n');
         if (idx > -1) {
             value = value.substring(idx + 1).trim();
