@@ -386,7 +386,4 @@ sun/tools/jinfo/JInfoRunningProcessFlagTest.java		generic-all
 # 8057732
 sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    generic-all
 
-# 8132648
-sun/tools/jhsdb/BasicLauncherTest.java                  generic-all
-
 ############################################################################
