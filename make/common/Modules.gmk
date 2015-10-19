@@ -33,6 +33,7 @@ include SetupJavaCompilers.gmk
 # Module list macros
 
 ALL_TOP_SRC_DIRS := \
+    $(HOTSPOT_TOPDIR)/src \
     $(JDK_TOPDIR)/src \
     $(LANGTOOLS_TOPDIR)/src \
     $(CORBA_TOPDIR)/src \
