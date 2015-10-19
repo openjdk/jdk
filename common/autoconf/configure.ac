@@ -155,6 +155,9 @@ SRCDIRS_SETUP_OUTPUT_DIRS
 #
 ###############################################################################
 
+# See if we are doing a complete static build or not
+JDKOPT_SETUP_STATIC_BUILD
+
 # First determine the toolchain type (compiler family)
 TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE
 
