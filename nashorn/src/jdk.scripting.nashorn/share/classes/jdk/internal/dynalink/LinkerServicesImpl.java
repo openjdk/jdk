@@ -81,53 +81,87 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
+package jdk.internal.dynalink;
 
-import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
-import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.linker.ConversionComparator.Comparison;
+import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.GuardingDynamicLinker;
+import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.internal.dynalink.linker.LinkerServices;
+import jdk.internal.dynalink.linker.MethodHandleTransformer;
 
 /**
- * A default, fairly light implementation of a call site descriptor used for describing non-standard operations. It does
- * not store {@link Lookup} objects but always returns the public lookup from its {@link #getLookup()} method. If you
- * need to support non-public lookup, you can use {@link LookupCallSiteDescriptor}.
+ * Default implementation of the {@link LinkerServices} interface.
  */
-class DefaultCallSiteDescriptor extends AbstractCallSiteDescriptor {
+final class LinkerServicesImpl implements LinkerServices {
+    private static final RuntimePermission GET_CURRENT_LINK_REQUEST = new RuntimePermission("dynalink.getCurrentLinkRequest");
+    private static final ThreadLocal<LinkRequest> threadLinkRequest = new ThreadLocal<>();
 
-    private final String[] tokenizedName;
-    private final MethodType methodType;
+    private final TypeConverterFactory typeConverterFactory;
+    private final GuardingDynamicLinker topLevelLinker;
+    private final MethodHandleTransformer internalObjectsFilter;
 
-    DefaultCallSiteDescriptor(final String[] tokenizedName, final MethodType methodType) {
-        this.tokenizedName = tokenizedName;
-        this.methodType = methodType;
+    /**
+     * Creates a new linker services object.
+     *
+     * @param typeConverterFactory the type converter factory exposed by the services.
+     * @param topLevelLinker the top level linker used by the services.
+     * @param internalObjectsFilter a method handle transformer that is supposed to act as the implementation of this
+     * services' {@link #filterInternalObjects(java.lang.invoke.MethodHandle)} method.
+     */
+    LinkerServicesImpl(final TypeConverterFactory typeConverterFactory,
+            final GuardingDynamicLinker topLevelLinker, final MethodHandleTransformer internalObjectsFilter) {
+        this.typeConverterFactory = typeConverterFactory;
+        this.topLevelLinker = topLevelLinker;
+        this.internalObjectsFilter = internalObjectsFilter;
     }
 
     @Override
-    public int getNameTokenCount() {
-        return tokenizedName.length;
+    public boolean canConvert(final Class<?> from, final Class<?> to) {
+        return typeConverterFactory.canConvert(from, to);
     }
 
     @Override
-    public String getNameToken(final int i) {
+    public MethodHandle asType(final MethodHandle handle, final MethodType fromType) {
+        return typeConverterFactory.asType(handle, fromType);
+    }
+
+    @Override
+    public MethodHandle getTypeConverter(final Class<?> sourceType, final Class<?> targetType) {
+        return typeConverterFactory.getTypeConverter(sourceType, targetType);
+    }
+
+    @Override
+    public Comparison compareConversion(final Class<?> sourceType, final Class<?> targetType1, final Class<?> targetType2) {
+        return typeConverterFactory.compareConversion(sourceType, targetType1, targetType2);
+    }
+
+    @Override
+    public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest) throws Exception {
+        final LinkRequest prevLinkRequest = threadLinkRequest.get();
+        threadLinkRequest.set(linkRequest);
         try {
-            return tokenizedName[i];
-        } catch(final ArrayIndexOutOfBoundsException e) {
-            throw new IllegalArgumentException(e.getMessage());
+            return topLevelLinker.getGuardedInvocation(linkRequest, this);
+        } finally {
+            threadLinkRequest.set(prevLinkRequest);
         }
     }
 
-    String[] getTokenizedName() {
-        return tokenizedName;
+    @Override
+    public MethodHandle filterInternalObjects(final MethodHandle target) {
+        return internalObjectsFilter != null ? internalObjectsFilter.transform(target) : target;
     }
 
-    @Override
-    public MethodType getMethodType() {
-        return methodType;
-    }
-
-    @Override
-    public CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
-        return CallSiteDescriptorFactory.getCanonicalPublicDescriptor(new DefaultCallSiteDescriptor(tokenizedName,
-                newMethodType));
+    static LinkRequest getCurrentLinkRequest() {
+        final LinkRequest currentRequest = threadLinkRequest.get();
+        if (currentRequest != null) {
+            final SecurityManager sm = System.getSecurityManager();
+            if(sm != null) {
+                sm.checkPermission(GET_CURRENT_LINK_REQUEST);
+            }
+        }
+        return currentRequest;
     }
 }

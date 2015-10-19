@@ -119,9 +119,10 @@ public class RuntimeContextLinkRequestImpl extends LinkRequestImpl {
     @Override
     public LinkRequest withoutRuntimeContext() {
         if(contextStrippedRequest == null) {
+            final CallSiteDescriptor desc = getCallSiteDescriptor();
             contextStrippedRequest =
-                    new LinkRequestImpl(CallSiteDescriptorFactory.dropParameterTypes(getCallSiteDescriptor(), 1,
-                            runtimeContextArgCount + 1), getCallSiteToken(), getLinkCount(), isCallSiteUnstable(), getTruncatedArguments());
+                    new LinkRequestImpl(desc.changeMethodType(desc.getMethodType().dropParameterTypes(1, runtimeContextArgCount + 1)),
+                            getCallSiteToken(), getLinkCount(), isCallSiteUnstable(), getTruncatedArguments());
         }
         return contextStrippedRequest;
     }

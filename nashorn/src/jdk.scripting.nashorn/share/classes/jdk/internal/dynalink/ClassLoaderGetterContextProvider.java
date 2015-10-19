@@ -81,37 +81,30 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
+package jdk.internal.dynalink;
 
-import java.lang.invoke.MethodType;
-import jdk.internal.dynalink.CallSiteDescriptor;
+import java.security.AccessControlContext;
+import java.security.Permissions;
+import java.security.ProtectionDomain;
 
-class NamedDynCallSiteDescriptor extends UnnamedDynCallSiteDescriptor {
-    private final String name;
-
-    NamedDynCallSiteDescriptor(final String op, final String name, final MethodType methodType) {
-        super(op, methodType);
-        this.name = name;
+/**
+ * This class exposes a canonical {@link AccessControlContext} with a single {@link RuntimePermission} for
+ * {@code "getClassLoader"} permission that is used by other parts of the code to narrow their set of permissions when
+ * they're retrieving class loaders in privileged blocks.
+ */
+final class ClassLoaderGetterContextProvider {
+    /**
+     * Canonical instance of {@link AccessControlContext} with a single {@link RuntimePermission} for
+     * {@code "getClassLoader"} permission.
+     */
+    static final AccessControlContext GET_CLASS_LOADER_CONTEXT;
+    static {
+        final Permissions perms = new Permissions();
+        perms.add(new RuntimePermission("getClassLoader"));
+        GET_CLASS_LOADER_CONTEXT = new AccessControlContext(
+                new ProtectionDomain[] { new ProtectionDomain(null, perms) });
     }
 
-    @Override
-    public int getNameTokenCount() {
-        return 3;
-    }
-
-    @Override
-    public String getNameToken(final int i) {
-        switch(i) {
-            case 0: return "dyn";
-            case 1: return getOp();
-            case 2: return name;
-            default: throw new IndexOutOfBoundsException(String.valueOf(i));
-        }
-    }
-
-    @Override
-    public CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
-        return CallSiteDescriptorFactory.getCanonicalPublicDescriptor(new NamedDynCallSiteDescriptor(getOp(), name,
-                newMethodType));
+    private ClassLoaderGetterContextProvider() {
     }
 }

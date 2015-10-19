@@ -90,7 +90,6 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.internal.dynalink.support.Guards;
 
 /**
@@ -119,8 +118,8 @@ class DynamicMethodLinker implements TypeBasedGuardingDynamicLinker {
         final MethodHandle invocation;
 
         if (operator == "call" && !constructor) {
-            invocation = dynMethod.getInvocation(
-                    CallSiteDescriptorFactory.dropParameterTypes(desc, 0, 1), linkerServices);
+            invocation = dynMethod.getInvocation(desc.changeMethodType(
+                    desc.getMethodType().dropParameterTypes(0, 1)), linkerServices);
         } else if (operator == "new" && constructor) {
             final MethodHandle ctorInvocation = dynMethod.getInvocation(desc, linkerServices);
             if(ctorInvocation == null) {

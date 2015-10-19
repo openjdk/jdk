@@ -35,7 +35,6 @@ import java.lang.invoke.SwitchPoint;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.internal.dynalink.support.Guards;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.FindProperty;
@@ -109,7 +108,7 @@ public final class PrimitiveLookup {
             find = null;
         }
 
-        final String firstOp = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
+        final String firstOp = desc.tokenizeOperators().get(0);
 
         switch (firstOp) {
         case "getProp":

@@ -92,30 +92,27 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.Set;
 import jdk.internal.dynalink.beans.BeansLinker;
+import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.MethodHandleTransformer;
 import jdk.internal.dynalink.linker.MethodTypeConversionStrategy;
-import jdk.internal.dynalink.support.AutoDiscovery;
-import jdk.internal.dynalink.support.BottomGuardingDynamicLinker;
-import jdk.internal.dynalink.support.ClassLoaderGetterContextProvider;
 import jdk.internal.dynalink.support.CompositeGuardingDynamicLinker;
 import jdk.internal.dynalink.support.CompositeTypeBasedGuardingDynamicLinker;
-import jdk.internal.dynalink.support.DefaultPrelinkFilter;
-import jdk.internal.dynalink.support.LinkerServicesImpl;
-import jdk.internal.dynalink.support.TypeConverterFactory;
 import jdk.internal.dynalink.support.TypeUtilities;
 
 /**
  * A factory class for creating {@link DynamicLinker}s. The usual dynamic linker is a linker composed of all
  * {@link GuardingDynamicLinker}s known and pre-created by the caller as well as any
- * {@link AutoDiscovery automatically discovered} guarding linkers and the standard fallback
- * {@link BeansLinker} and a {@link DefaultPrelinkFilter}. See {@link DynamicLinker} documentation for tips on
- * how to use this class.
+ * guarding linkers automatically discovered as declared in
+ * {@code /META-INF/services/jdk.internal.dynalink.linker.GuardingDynamicLinker} resources in the classpath (see
+ * {@link ServiceLoader} for the description of this mechanism), and the standard fallback {@link BeansLinker}.
+ * See {@link DynamicLinker} documentation for tips on how to use this class.
  */
 public final class DynamicLinkerFactory {
     /**
@@ -255,7 +252,8 @@ public final class DynamicLinkerFactory {
      * Set the pre-link filter. This is a {@link GuardedInvocationFilter} that will get the final chance to modify the
      * guarded invocation after it has been created by a component linker and before the dynamic linker links it into
      * the call site. It is normally used to adapt the return value type of the invocation to the type of the call site.
-     * When not set explicitly, {@link DefaultPrelinkFilter} will be used.
+     * When not set explicitly, a default pre-link filter will be used that simply calls
+     * {@link GuardedInvocation#asType(LinkerServices, java.lang.invoke.MethodType)}
      * @param prelinkFilter the pre-link filter for the dynamic linker.
      */
     public void setPrelinkFilter(final GuardedInvocationFilter prelinkFilter) {
@@ -317,7 +315,12 @@ public final class DynamicLinkerFactory {
         addClasses(knownLinkerClasses, fallbackLinkers);
 
         final ClassLoader effectiveClassLoader = classLoaderExplicitlySet ? classLoader : getThreadContextClassLoader();
-        final List<GuardingDynamicLinker> discovered = AutoDiscovery.loadLinkers(effectiveClassLoader);
+        final List<GuardingDynamicLinker> discovered = new LinkedList<>();
+        final ServiceLoader<GuardingDynamicLinker> linkerLoader = ServiceLoader.load(GuardingDynamicLinker.class, effectiveClassLoader);
+        for(final GuardingDynamicLinker linker: linkerLoader) {
+            discovered.add(linker);
+        }
+
         // Now, concatenate ...
         final List<GuardingDynamicLinker> linkers =
                 new ArrayList<>(prioritizedLinkers.size() + discovered.size()
@@ -336,7 +339,7 @@ public final class DynamicLinkerFactory {
         final GuardingDynamicLinker composite;
         switch(linkers.size()) {
             case 0: {
-                composite = BottomGuardingDynamicLinker.INSTANCE;
+                composite = (r, s) -> null; // linker that can't link anything
                 break;
             }
             case 1: {
@@ -357,7 +360,7 @@ public final class DynamicLinkerFactory {
         }
 
         if(prelinkFilter == null) {
-            prelinkFilter = new DefaultPrelinkFilter();
+            prelinkFilter = (inv, request, linkerServices) -> inv.asType(linkerServices, request.getCallSiteDescriptor().getMethodType());
         }
 
         return new DynamicLinker(new LinkerServicesImpl(new TypeConverterFactory(typeConverters,

@@ -34,10 +34,9 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.nashorn.api.scripting.ClassFilter;
-import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.objects.Global;
+import jdk.nashorn.internal.runtime.Context;
 
 /**
  * Check java reflection permission for java reflective and java.lang.invoke access from scripts
@@ -130,7 +129,7 @@ final class ReflectionCheckLinker implements TypeBasedGuardingDynamicLinker{
             // allow 'static' access on Class objects representing public classes of non-restricted packages
             if ((self instanceof Class) && Modifier.isPublic(((Class<?>)self).getModifiers())) {
                 final CallSiteDescriptor desc = requestWithoutContext.getCallSiteDescriptor();
-                if(CallSiteDescriptorFactory.tokenizeOperators(desc).contains("getProp")) {
+                if(desc.tokenizeOperators().contains("getProp")) {
                     if (desc.getNameTokenCount() > CallSiteDescriptor.NAME_OPERAND &&
                         "static".equals(desc.getNameToken(CallSiteDescriptor.NAME_OPERAND))) {
                         if (Context.isAccessibleClass((Class<?>)self) && !isReflectionClass((Class<?>)self)) {

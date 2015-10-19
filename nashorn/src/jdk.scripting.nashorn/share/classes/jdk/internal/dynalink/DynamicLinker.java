@@ -93,10 +93,10 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.internal.dynalink.support.LinkRequestImpl;
 import jdk.internal.dynalink.support.Lookup;
 import jdk.internal.dynalink.support.RuntimeContextLinkRequestImpl;
+import jdk.internal.dynalink.support.SimpleCallSiteDescriptor;
 
 /**
  * The linker for {@link RelinkableCallSite} objects. Users of it (scripting
@@ -130,7 +130,7 @@ import jdk.internal.dynalink.support.RuntimeContextLinkRequestImpl;
  * language. If your runtime doesn't have its own language and/or object model
  * (i.e., it's a generic scripting shell), you don't need to implement a dynamic
  * linker; you would simply not invoke the {@code setPrioritizedLinker} method
- * on the factory, or even better, simply use {@link DefaultBootstrapper}.</li>
+ * on the factory.</li>
  *
  * <li>The performance of the programs can depend on your choice of the class to
  * represent call sites. The above example used {@link MonomorphicCallSite}, but
@@ -141,10 +141,10 @@ import jdk.internal.dynalink.support.RuntimeContextLinkRequestImpl;
  * <li>You also need to provide {@link CallSiteDescriptor}s to your call sites.
  * They are immutable objects that contain all the information about the call
  * site: the class performing the lookups, the name of the method being invoked,
- * and the method signature. The library has a default {@link CallSiteDescriptorFactory}
- * for descriptors that you can use, or you can create your own descriptor
- * classes, especially if you need to add further information (values passed in
- * additional parameters to the bootstrap method) to them.</li>
+ * and the method signature. The library provides a {@link SimpleCallSiteDescriptor},
+ * or you can create your own descriptor classes, especially if you need to add
+ * further information (values passed in additional parameters to the bootstrap method)
+ * to them.</li>
  *
  * </ul>
  */
@@ -316,6 +316,16 @@ public final class DynamicLinker {
             }
         }
         return null;
+    }
+
+    /**
+     * Returns the currently processed link request, or null if the method is invoked outside of the linking process.
+     * @return the currently processed link request, or null.
+     * @throws SecurityException if the calling code doesn't have the {@code "dynalink.getCurrentLinkRequest"} runtime
+     * permission.
+     */
+    public static LinkRequest getCurrentLinkRequest() {
+        return LinkerServicesImpl.getCurrentLinkRequest();
     }
 
     /**

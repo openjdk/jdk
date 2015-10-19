@@ -83,19 +83,21 @@
 
 package jdk.internal.dynalink;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.StringTokenizer;
+import jdk.internal.dynalink.support.NameCodec;
 
 /**
  * An immutable descriptor of a call site. It is an immutable object that contains all the information about a call
- * site: the class performing the lookups, the name of the method being invoked, and the method signature. The library
- * has a default {@link CallSiteDescriptorFactory} for descriptors that you can use, or you can create your own
- * descriptor classes, especially if you need to add further information (values passed in additional parameters to the
- * bootstrap method) to them. Call site descriptors are used in this library in place of passing a real call site to
+ * site: the class performing the lookups, the name of the method being invoked, and the method signature. Call site descriptors are used in this library in place of passing a real call site to
  * guarding linkers so they aren't tempted to directly manipulate the call sites. The constructors of built-in
  * {@link RelinkableCallSite} implementations all need a call site descriptor. Even if you create your own call site
- * descriptors consider using {@link CallSiteDescriptorFactory#tokenizeName(String)} in your implementation.
+ * descriptors consider using {@link CallSiteDescriptor#tokenizeName(String)} in your implementation.
  */
 public interface CallSiteDescriptor {
     /**
@@ -155,10 +157,10 @@ public interface CallSiteDescriptor {
     public MethodType getMethodType();
 
     /**
-     * Returns the lookup passed to the bootstrap method. If the lookup isn't the public lookup, the
-     * implementation must check the {@code RuntimePermission("dynalink.getLookup")} permission if a security
-     * manager is present.
+     * Returns the lookup passed to the bootstrap method.
      * @return the lookup passed to the bootstrap method.
+     * @throws SecurityException if the lookup isn't the {@link MethodHandles#publicLookup()} and a security
+     * manager is present, and a check for {@code RuntimePermission("dynalink.getLookup")} fails.
      */
     public Lookup getLookup();
 
@@ -171,4 +173,43 @@ public interface CallSiteDescriptor {
      */
     public CallSiteDescriptor changeMethodType(MethodType newMethodType);
 
+
+    /**
+     * Tokenizes a composite operation name along pipe characters. I.e. if you have a "dyn:getElem|getProp|getMethod"
+     * operation, returns a list of ["getElem", "getProp", "getMethod"]. The tokens are not interned.
+     * @return a list of tokens
+     */
+    public default List<String> tokenizeOperators() {
+        final String ops = getNameToken(CallSiteDescriptor.OPERATOR);
+        final StringTokenizer tok = new StringTokenizer(ops, CallSiteDescriptor.OPERATOR_DELIMITER);
+        final int count = tok.countTokens();
+        if(count == 1) {
+            return Collections.singletonList(ops);
+        }
+        final String[] tokens = new String[count];
+        for(int i = 0; i < count; ++i) {
+            tokens[i] = tok.nextToken();
+        }
+        return Arrays.asList(tokens);
+    }
+
+    /**
+     * Tokenizes the composite name along colons, as well as {@link NameCodec#decode(String) demangles} and interns
+     * the tokens. The first two tokens are not demangled as they are supposed to be the naming scheme and the name of
+     * the operation which can be expected to consist of just alphabetical characters.
+     * @param name the composite name consisting of colon-separated, possibly mangled tokens.
+     * @return an array of tokens
+     */
+    public static String[] tokenizeName(final String name) {
+        final StringTokenizer tok = new StringTokenizer(name, CallSiteDescriptor.TOKEN_DELIMITER);
+        final String[] tokens = new String[tok.countTokens()];
+        for(int i = 0; i < tokens.length; ++i) {
+            String token = tok.nextToken();
+            if(i > 1) {
+                token = NameCodec.decode(token);
+            }
+            tokens[i] = token.intern();
+        }
+        return tokens;
+    }
 }

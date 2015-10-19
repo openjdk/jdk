@@ -37,7 +37,6 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.internal.dynalink.support.Lookup;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
@@ -78,7 +77,7 @@ final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
         }
 
         final CallSiteDescriptor descriptor = linkRequest.getCallSiteDescriptor();
-        if(!CallSiteDescriptorFactory.tokenizeOperators(descriptor).contains(GET_METHOD)) {
+        if(!descriptor.tokenizeOperators().contains(GET_METHOD)) {
             // We only handle getMethod
             return null;
         }

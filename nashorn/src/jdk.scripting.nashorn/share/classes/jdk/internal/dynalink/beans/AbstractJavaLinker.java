@@ -103,10 +103,10 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.internal.dynalink.support.Guards;
 import jdk.internal.dynalink.support.Lookup;
 import jdk.internal.dynalink.support.TypeUtilities;
+import sun.reflect.CallerSensitive;
 
 /**
  * A base class for both {@link StaticClassLinker} and {@link BeanLinker}. Deals with common aspects of property
@@ -284,7 +284,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
      * @return the single dynamic method representing the reflective member
      */
     private static SingleDynamicMethod createDynamicMethod(final AccessibleObject m) {
-        if(CallerSensitiveDetector.isCallerSensitive(m)) {
+        if (m.isAnnotationPresent(CallerSensitive.class)) {
             // Method has @CallerSensitive annotation
             return new CallerSensitiveDynamicMethod(m);
         }
@@ -350,7 +350,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         if("callMethod" == op) {
             return getCallPropWithThis(callSiteDescriptor, linkerServices);
         }
-        List<String> operations = CallSiteDescriptorFactory.tokenizeOperators(callSiteDescriptor);
+        List<String> operations = callSiteDescriptor.tokenizeOperators();
         while(!operations.isEmpty()) {
             final GuardedInvocationComponent gic = getGuardedInvocationComponent(callSiteDescriptor, linkerServices,
                     operations);

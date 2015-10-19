@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * license:
  */
 /*
-   Copyright 2009-2013 Attila Szegedi
+   Copyright 2015 Attila Szegedi
 
    Licensed under both the Apache License, Version 2.0 (the "Apache License")
    and the BSD License (the "BSD License"), with licensee being free to
@@ -85,32 +85,64 @@ package jdk.internal.dynalink.support;
 
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.security.Permission;
+import java.util.Objects;
 import jdk.internal.dynalink.CallSiteDescriptor;
 
 /**
- * A call site descriptor that stores a specific {@link Lookup}. It does not, however, store static bootstrap arguments.
+ * A simple implementation of the call site descriptor. It stores the lookup, the name, and the method type.
  */
-class LookupCallSiteDescriptor extends DefaultCallSiteDescriptor {
+public class SimpleCallSiteDescriptor extends AbstractCallSiteDescriptor {
+    private static final Permission GET_LOOKUP_PERMISSION = new RuntimePermission("dynalink.getLookup");
+
     private final Lookup lookup;
+    private final String[] tokenizedName;
+    private final MethodType methodType;
 
     /**
-     * Create a new call site descriptor from explicit information.
-     * @param tokenizedName the name of the method
-     * @param methodType the method type
-     * @param lookup the lookup
+     * Creates a new simple call site descriptor.
+     * @param lookup the lookup at the call site, as passed to the bootstrap method. Must not be null.
+     * @param name the name of the operation at the call site, as passed to the bootstrap method. Must not be null.
+     * @param methodType the signature of operation at the call site, as passed to the bootstrap method. Must not be null.
      */
-    LookupCallSiteDescriptor(final String[] tokenizedName, final MethodType methodType, final Lookup lookup) {
-        super(tokenizedName, methodType);
+    public SimpleCallSiteDescriptor(final Lookup lookup, final String name, final MethodType methodType) {
+        this(Objects.requireNonNull(lookup, "lookup"),
+                CallSiteDescriptor.tokenizeName(Objects.requireNonNull(name, "name")),
+                Objects.requireNonNull(methodType, "methodType"));
+    }
+
+    private SimpleCallSiteDescriptor(final Lookup lookup, final String[] tokenizedName, final MethodType methodType) {
         this.lookup = lookup;
+        this.tokenizedName = tokenizedName;
+        this.methodType = methodType;
     }
 
     @Override
-    public Lookup getLookup() {
+    public int getNameTokenCount() {
+        return tokenizedName.length;
+    }
+
+    @Override
+    public String getNameToken(final int i) {
+        try {
+            return tokenizedName[i];
+        } catch(final ArrayIndexOutOfBoundsException e) {
+            throw new IllegalArgumentException(e.getMessage());
+        }
+    }
+
+    @Override
+    public MethodType getMethodType() {
+        return methodType;
+    }
+
+    @Override
+    public final Lookup getLookup() {
         return lookup;
     }
 
     @Override
     public CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
-        return new LookupCallSiteDescriptor(getTokenizedName(), newMethodType, lookup);
+        return new SimpleCallSiteDescriptor(lookup, tokenizedName, newMethodType);
     }
 }

@@ -175,7 +175,7 @@ public class ChainedCallSite extends AbstractRelinkableCallSite {
         // adding any new invocations to it.
         if(invocation != null) {
             // Remove oldest entry if we're at max length
-            if(newInvocations.size() == getMaxChainLength()) {
+            if(newInvocations.size() == checkMaxChainLength(getMaxChainLength())) {
                 newInvocations.removeFirst();
             }
             newInvocations.addLast(invocation);
@@ -206,6 +206,13 @@ public class ChainedCallSite extends AbstractRelinkableCallSite {
         return target;
     }
 
+    private static int checkMaxChainLength(final int maxChainLength) {
+        if (maxChainLength > 0) {
+            return maxChainLength;
+        }
+        throw new RuntimeException("getMaxChainLength() returned a non-positive value");
+
+    }
     /**
      * Creates a method that rebuilds our call chain, pruning it of any invalidated switchpoints, and then invokes that
      * chain.

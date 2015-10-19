@@ -39,7 +39,6 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
 import jdk.nashorn.internal.runtime.JSType;
@@ -119,12 +118,12 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
     }
 
     private GuardedInvocation lookup(final CallSiteDescriptor desc, final LinkRequest request, final LinkerServices linkerServices) throws Exception {
-        final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
+        final String operator = desc.tokenizeOperators().get(0);
         final int c = desc.getNameTokenCount();
         GuardedInvocation inv;
         try {
             inv = nashornBeansLinker.getGuardedInvocation(request, linkerServices);
-        } catch (Throwable th) {
+        } catch (final Throwable th) {
             inv = null;
         }
 

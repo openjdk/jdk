@@ -35,7 +35,6 @@ import java.lang.invoke.SwitchPoint;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.nashorn.api.scripting.AbstractJSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
@@ -137,7 +136,7 @@ public final class WithObject extends Scope {
         if (self != null) {
             final String fallBack;
 
-            final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
+            final String operator = desc.tokenizeOperators().get(0);
 
             switch (operator) {
             case "callMethod":
@@ -211,7 +210,7 @@ public final class WithObject extends Scope {
 
     @Override
     protected Object invokeNoSuchProperty(final String name, final boolean isScope, final int programPoint) {
-        FindProperty find = expression.findProperty(NO_SUCH_PROPERTY_NAME, true);
+        final FindProperty find = expression.findProperty(NO_SUCH_PROPERTY_NAME, true);
         if (find != null) {
             final Object func = find.getObjectValue();
             if (func instanceof ScriptFunction) {

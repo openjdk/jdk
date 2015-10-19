@@ -94,7 +94,7 @@ import jdk.internal.dynalink.CallSiteDescriptor;
  * individual tokens, and not the whole name at the call site, i.e. the colon character normally separating the tokens
  * is never mangled. I.e. you wouldn't mangle {@code dyn:getProp:color} into {@code dyn\!getProp\!color}, but you would
  * mangle {@code dyn:getProp:color$} into {@code dyn:getProp:\=color\%} (only mangling the individual token containing
- * the symbol {@code color$}). {@link CallSiteDescriptorFactory#tokenizeName(String)} (and by implication, all call site
+ * the symbol {@code color$}). {@link CallSiteDescriptor#tokenizeName(String)} (and by implication, all call site
  * descriptors it creates) will automatically perform demangling on the passed names. If you use this factory, or you
  * have your own way of creating call site descriptors, but you still delegate to this method of the default factory
  * (it is recommended that you do), then you have demangling handled for you already, and only need to ensure that you
