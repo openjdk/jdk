@@ -96,7 +96,6 @@ import jdk.internal.dynalink.linker.MethodHandleTransformer;
  * Default implementation of the {@link LinkerServices} interface.
  */
 final class LinkerServicesImpl implements LinkerServices {
-    private static final RuntimePermission GET_CURRENT_LINK_REQUEST = new RuntimePermission("dynalink.getCurrentLinkRequest");
     private static final ThreadLocal<LinkRequest> threadLinkRequest = new ThreadLocal<>();
 
     private final TypeConverterFactory typeConverterFactory;
@@ -159,7 +158,7 @@ final class LinkerServicesImpl implements LinkerServices {
         if (currentRequest != null) {
             final SecurityManager sm = System.getSecurityManager();
             if(sm != null) {
-                sm.checkPermission(GET_CURRENT_LINK_REQUEST);
+                sm.checkPermission(DynamicLinker.GET_CURRENT_LINK_REQUEST_PERMISSION);
             }
         }
         return currentRequest;

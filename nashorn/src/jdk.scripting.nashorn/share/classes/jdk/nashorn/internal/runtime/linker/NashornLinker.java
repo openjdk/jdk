@@ -171,14 +171,14 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
         return null;
     }
 
-    private static java.lang.invoke.MethodHandles.Lookup getCurrentLookup() {
-        final LinkRequest currentRequest = AccessController.doPrivileged(new PrivilegedAction<LinkRequest>() {
+    private static MethodHandles.Lookup getCurrentLookup() {
+        return AccessController.doPrivileged(new PrivilegedAction<MethodHandles.Lookup>() {
             @Override
-            public LinkRequest run() {
-                return DynamicLinker.getCurrentLinkRequest();
+            public MethodHandles.Lookup run() {
+                final LinkRequest currentRequest = DynamicLinker.getCurrentLinkRequest();
+                return currentRequest == null ? MethodHandles.publicLookup() : currentRequest.getCallSiteDescriptor().getLookup();
             }
-        });
-        return currentRequest == null ? MethodHandles.publicLookup() : currentRequest.getCallSiteDescriptor().getLookup();
+        }, null, CallSiteDescriptor.GET_LOOKUP_PERMISSION, DynamicLinker.GET_CURRENT_LINK_REQUEST_PERMISSION);
     }
 
     /**

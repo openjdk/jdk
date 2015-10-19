@@ -91,12 +91,15 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.support.Lookup;
 
 /**
  * A dynamic method bound to exactly one Java method or constructor that is caller sensitive. Since the target method is
  * caller sensitive, it doesn't cache a method handle but rather uses the passed lookup object in
- * {@link #getTarget(java.lang.invoke.MethodHandles.Lookup)} to unreflect a method handle from the reflective member on
+ * {@link #getTarget(CallSiteDescriptor)} to unreflect a method handle from the reflective member on
  * every request.
  */
 class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
@@ -143,7 +146,11 @@ class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
     }
 
     @Override
-    MethodHandle getTarget(final MethodHandles.Lookup lookup) {
+    MethodHandle getTarget(final CallSiteDescriptor desc) {
+        final MethodHandles.Lookup lookup = AccessController.doPrivileged(
+                (PrivilegedAction<MethodHandles.Lookup>)()->desc.getLookup(), null,
+                CallSiteDescriptor.GET_LOOKUP_PERMISSION);
+
         if(target instanceof Method) {
             final MethodHandle mh = Lookup.unreflect(lookup, (Method)target);
             if(Modifier.isStatic(((Member)target).getModifiers())) {

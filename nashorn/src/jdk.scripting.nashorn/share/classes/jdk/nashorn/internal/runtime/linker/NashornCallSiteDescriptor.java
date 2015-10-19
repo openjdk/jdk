@@ -28,6 +28,8 @@ package jdk.nashorn.internal.runtime.linker;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import jdk.internal.dynalink.CallSiteDescriptor;
@@ -40,7 +42,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * we can have a more compact representation, as we know that we're always only using {@code "dyn:*"} operations; also
  * we're storing flags in an additional primitive field.
  */
-public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor {
+public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor<NashornCallSiteDescriptor> {
     /** Flags that the call site references a scope variable (it's an identifier reference or a var declaration, not a
      * property access expression. */
     public static final int CALLSITE_SCOPE         = 1 << 0;
@@ -199,12 +201,20 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
 
     @Override
     public Lookup getLookup() {
-        return lookup;
+        return CallSiteDescriptor.checkLookup(lookup);
+    }
+
+    static Lookup getLookupPrivileged(final CallSiteDescriptor csd) {
+        if (csd instanceof NashornCallSiteDescriptor) {
+            return ((NashornCallSiteDescriptor)csd).lookup;
+        }
+        return AccessController.doPrivileged((PrivilegedAction<Lookup>)()->csd.getLookup(), null,
+                CallSiteDescriptor.GET_LOOKUP_PERMISSION);
     }
 
     @Override
-    public boolean equals(final CallSiteDescriptor csd) {
-        return super.equals(csd) && flags == getFlags(csd);
+    protected boolean equalsInKind(final NashornCallSiteDescriptor csd) {
+        return super.equalsInKind(csd) && flags == csd.flags;
     }
 
     @Override
@@ -444,7 +454,22 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor 
 
     @Override
     public CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
-        return get(getLookup(), operator, operand, newMethodType, flags);
+        return get(lookup, operator, operand, newMethodType, flags);
     }
 
+
+    @Override
+    protected boolean lookupEquals(final NashornCallSiteDescriptor other) {
+        return AbstractCallSiteDescriptor.lookupsEqual(lookup, other.lookup);
+    }
+
+    @Override
+    protected int lookupHashCode() {
+        return AbstractCallSiteDescriptor.lookupHashCode(lookup);
+    }
+
+    @Override
+    protected String lookupToString() {
+        return lookup.toString();
+    }
 }
