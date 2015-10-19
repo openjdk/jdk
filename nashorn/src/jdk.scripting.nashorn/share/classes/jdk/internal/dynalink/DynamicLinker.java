@@ -146,12 +146,6 @@ import jdk.internal.dynalink.support.SimpleLinkRequest;
  * </ul>
  */
 public final class DynamicLinker {
-    /**
-     * A permission to invoke the {@link #getCurrentLinkRequest()} method. It is
-     * named {@code "dynalink.getCurrentLinkRequest"}.
-     */
-    public static final RuntimePermission GET_CURRENT_LINK_REQUEST_PERMISSION = new RuntimePermission("dynalink.getCurrentLinkRequest");
-
     private static final String CLASS_NAME = DynamicLinker.class.getName();
     private static final String RELINK_METHOD_NAME = "relink";
 
@@ -300,18 +294,6 @@ public final class DynamicLinker {
             }
         }
         return null;
-    }
-
-    /**
-     * Returns the currently processed link request, or null if the method is
-     * invoked outside of the linking process.
-     * @return the currently processed link request, or null.
-     * @throws SecurityException if the calling code doesn't have the
-     * {@code "dynalink.getCurrentLinkRequest"} runtime permission (available as
-     * {@link #GET_CURRENT_LINK_REQUEST_PERMISSION}).
-     */
-    public static LinkRequest getCurrentLinkRequest() {
-        return LinkerServicesImpl.getCurrentLinkRequest();
     }
 
     /**

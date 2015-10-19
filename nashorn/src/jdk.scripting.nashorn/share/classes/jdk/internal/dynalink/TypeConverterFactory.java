@@ -85,16 +85,17 @@ package jdk.internal.dynalink;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.WrongMethodTypeException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Supplier;
 import jdk.internal.dynalink.linker.ConversionComparator;
 import jdk.internal.dynalink.linker.ConversionComparator.Comparison;
 import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.linker.GuardedTypeConversion;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.MethodTypeConversionStrategy;
@@ -372,25 +373,49 @@ final class TypeConverterFactory {
         }
     }
 
+    private static class LookupSupplier implements Supplier<MethodHandles.Lookup> {
+        volatile boolean returnedLookup;
+        volatile boolean closed;
+
+        @Override
+        public Lookup get() {
+            if (closed) {
+                // Something held on to this supplier and tried to invoke it
+                // after we're done with it.
+                throw new IllegalStateException();
+            }
+            final Lookup lookup = LinkerServicesImpl.getCurrentLookup();
+            returnedLookup = true;
+            return lookup;
+        }
+    }
+
     /*private*/ MethodHandle createConverter(final Class<?> sourceType, final Class<?> targetType) throws Exception {
         final MethodType type = MethodType.methodType(targetType, sourceType);
         final MethodHandle identity = IDENTITY_CONVERSION.asType(type);
         MethodHandle last = identity;
-        boolean cacheable = true;
-        for(int i = factories.length; i-- > 0;) {
-            final GuardedTypeConversion next = factories[i].convertToType(sourceType, targetType);
-            if(next != null) {
-                cacheable = cacheable && next.isCacheable();
-                final GuardedInvocation conversionInvocation = next.getConversionInvocation();
-                last = conversionInvocation.compose(last);
+
+        final LookupSupplier lookupSupplier = new LookupSupplier();
+        try {
+            for(int i = factories.length; i-- > 0;) {
+                final GuardedInvocation next = factories[i].convertToType(sourceType, targetType, lookupSupplier);
+                if(next != null) {
+                    last = next.compose(last);
+                }
             }
+        } finally {
+            lookupSupplier.closed = true;
         }
+
         if(last == identity) {
             return IDENTITY_CONVERSION;
         }
-        if(cacheable) {
+        if(!lookupSupplier.returnedLookup) {
             return last;
         }
+        // At least one of the consulted converter factories obtained the
+        // lookup, so we must presume the created converter is sensitive to the
+        // lookup class and thus we will not cache it.
         throw new NotCacheableConverter(last);
     }
 
