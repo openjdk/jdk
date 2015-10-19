@@ -535,7 +535,7 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
 //      r0
 //      c_rarg0, c_rarg1, c_rarg2, c_rarg3, ...(param regs)
 //      rscratch1, rscratch2 (scratch regs)
-void InterpreterGenerator::lock_method(void) {
+void TemplateInterpreterGenerator::lock_method() {
   // synchronize method
   const Address access_flags(rmethod, Method::access_flags_offset());
   const Address monitor_block_top(
@@ -721,8 +721,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
     // generate a vanilla interpreter entry as the slow path
     __ bind(slow_path);
-    (void) generate_normal_entry(false);
-
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
     return entry;
   }
 #endif // INCLUDE_ALL_GCS
@@ -779,12 +778,10 @@ address InterpreterGenerator::generate_CRC32_update_entry() {
 
     // generate a vanilla native entry as the slow path
     __ bind(slow_path);
-
-    (void) generate_native_entry(false);
-
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
     return entry;
   }
-  return generate_native_entry(false);
+  return NULL;
 }
 
 /**
@@ -841,12 +838,10 @@ address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpret
 
     // generate a vanilla native entry as the slow path
     __ bind(slow_path);
-
-    (void) generate_native_entry(false);
-
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
     return entry;
   }
-  return generate_native_entry(false);
+  return NULL;
 }
 
 void InterpreterGenerator::bang_stack_shadow_pages(bool native_call) {

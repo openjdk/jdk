@@ -41,8 +41,6 @@
 #include "utilities/events.hpp"
 #include "utilities/xmlstream.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Dummy VM operation to act as first element in our circular double-linked list
 class VM_Dummy: public VM_Operation {
   VMOp_Type type() const { return VMOp_Dummy; }
@@ -410,7 +408,7 @@ void VMThread::loop() {
           !_cur_vm_operation->evaluate_concurrently()) {
         long stall = os::javaTimeMillis() - _cur_vm_operation->timestamp();
         if (stall > 0)
-          tty->print_cr("%s stall: %Ld",  _cur_vm_operation->name(), stall);
+          tty->print_cr("%s stall: %ld",  _cur_vm_operation->name(), stall);
       }
 
       while (!should_terminate() && _cur_vm_operation == NULL) {
@@ -630,8 +628,8 @@ void VMThread::execute(VM_Operation* op) {
       // Check the VM operation allows nested VM operation. This normally not the case, e.g., the compiler
       // does not allow nested scavenges or compiles.
       if (!prev_vm_operation->allow_nested_vm_operations()) {
-        fatal(err_msg("Nested VM operation %s requested by operation %s",
-                      op->name(), vm_operation()->name()));
+        fatal("Nested VM operation %s requested by operation %s",
+              op->name(), vm_operation()->name());
       }
       op->set_calling_thread(prev_vm_operation->calling_thread(), prev_vm_operation->priority());
     }

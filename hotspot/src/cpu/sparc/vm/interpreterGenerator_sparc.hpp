@@ -34,11 +34,9 @@
   address generate_abstract_entry(void);
   // there are no math intrinsics on sparc
   address generate_math_entry(AbstractInterpreter::MethodKind kind) { return NULL; }
-  address generate_jump_to_normal_entry(void);
-  address generate_accessor_entry(void) { return generate_jump_to_normal_entry(); }
-  address generate_empty_entry(void) { return generate_jump_to_normal_entry(); }
+  address generate_accessor_entry(void) { return NULL; }
+  address generate_empty_entry(void) { return NULL; }
   address generate_Reference_get_entry(void);
-  void lock_method(void);
   void save_native_result(void);
   void restore_native_result(void);
 
@@ -48,4 +46,5 @@
   // Not supported
   address generate_CRC32_update_entry() { return NULL; }
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return NULL; }
+  address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return NULL; }
 #endif // CPU_SPARC_VM_INTERPRETERGENERATOR_SPARC_HPP

@@ -67,7 +67,7 @@ struct InCSetState {
   };
 
   InCSetState(in_cset_state_t value = NotInCSet) : _value(value) {
-    assert(is_valid(), err_msg("Invalid state %d", _value));
+    assert(is_valid(), "Invalid state %d", _value);
   }
 
   in_cset_state_t value() const        { return _value; }
@@ -104,7 +104,7 @@ class G1InCSetStateFastTestBiasedMappedArray : public G1BiasedMappedArray<InCSet
  public:
   void set_humongous(uintptr_t index) {
     assert(get_by_index(index).is_default(),
-           err_msg("State at index " INTPTR_FORMAT " should be default but is " CSETSTATE_FORMAT, index, get_by_index(index).value()));
+           "State at index " INTPTR_FORMAT " should be default but is " CSETSTATE_FORMAT, index, get_by_index(index).value());
     set_by_index(index, InCSetState::Humongous);
   }
 
@@ -114,13 +114,13 @@ class G1InCSetStateFastTestBiasedMappedArray : public G1BiasedMappedArray<InCSet
 
   void set_in_young(uintptr_t index) {
     assert(get_by_index(index).is_default(),
-           err_msg("State at index " INTPTR_FORMAT " should be default but is " CSETSTATE_FORMAT, index, get_by_index(index).value()));
+           "State at index " INTPTR_FORMAT " should be default but is " CSETSTATE_FORMAT, index, get_by_index(index).value());
     set_by_index(index, InCSetState::Young);
   }
 
   void set_in_old(uintptr_t index) {
     assert(get_by_index(index).is_default(),
-           err_msg("State at index " INTPTR_FORMAT " should be default but is " CSETSTATE_FORMAT, index, get_by_index(index).value()));
+           "State at index " INTPTR_FORMAT " should be default but is " CSETSTATE_FORMAT, index, get_by_index(index).value());
     set_by_index(index, InCSetState::Old);
   }
 

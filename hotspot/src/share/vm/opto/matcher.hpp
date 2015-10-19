@@ -269,6 +269,9 @@ public:
   // should generate this one.
   static const bool match_rule_supported(int opcode);
 
+  // Some uarchs have different sized float register resources
+  static const int float_pressure(int default_pressure_threshold);
+
   // Used to determine if we have fast l2f conversion
   // USII has it, USIII doesn't
   static const bool convL2FSupported(void);

@@ -325,7 +325,8 @@ bool Compilation::setup_code_buffer(CodeBuffer* code, int call_stub_estimate) {
                                         locs_buffer_size / sizeof(relocInfo));
   code->initialize_consts_size(Compilation::desired_max_constant_size());
   // Call stubs + two deopt handlers (regular and MH) + exception handler
-  int stub_size = (call_stub_estimate * LIR_Assembler::call_stub_size) +
+  int call_stub_size = LIR_Assembler::call_stub_size;
+  int stub_size = (call_stub_estimate * call_stub_size) +
                    LIR_Assembler::exception_handler_size +
                    (2 * LIR_Assembler::deopt_handler_size);
   if (stub_size >= code->insts_capacity()) return false;

@@ -38,4 +38,34 @@ Flag::Error AliasLevelConstraintFunc(intx value, bool verbose);
 
 Flag::Error CICompilerCountConstraintFunc(intx value, bool verbose);
 
+Flag::Error AllocatePrefetchDistanceConstraintFunc(intx value, bool verbose);
+
+Flag::Error AllocatePrefetchInstrConstraintFunc(intx value, bool verbose);
+
+Flag::Error AllocatePrefetchStepSizeConstraintFunc(intx value, bool verbose);
+
+Flag::Error CompileThresholdConstraintFunc(intx value, bool verbose);
+
+Flag::Error OnStackReplacePercentageConstraintFunc(intx value, bool verbose);
+
+Flag::Error CodeCacheSegmentSizeConstraintFunc(uintx value, bool verbose);
+
+Flag::Error CompilerThreadPriorityConstraintFunc(intx value, bool verbose);
+
+Flag::Error CodeEntryAlignmentConstraintFunc(intx value, bool verbose);
+
+Flag::Error OptoLoopAlignmentConstraintFunc(intx value, bool verbose);
+
+Flag::Error ArraycopyDstPrefetchDistanceConstraintFunc(uintx value, bool verbose);
+
+Flag::Error ArraycopySrcPrefetchDistanceConstraintFunc(uintx value, bool verbose);
+
+Flag::Error TypeProfileLevelConstraintFunc(uintx value, bool verbose);
+
+#ifdef COMPILER2
+Flag::Error InteriorEntryAlignmentConstraintFunc(intx value, bool verbose);
+
+Flag::Error NodeLimitFudgeFactorConstraintFunc(intx value, bool verbose);
+#endif
+
 #endif /* SHARE_VM_RUNTIME_COMMANDLINEFLAGCONSTRAINTSCOMPILER_HPP */

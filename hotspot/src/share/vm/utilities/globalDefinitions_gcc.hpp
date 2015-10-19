@@ -301,10 +301,6 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 #define PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
 #endif
 
-#ifndef __clang_major__
-#define PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC _Pragma("GCC diagnostic ignored \"-Wformat\"") _Pragma("GCC diagnostic error \"-Wformat-nonliteral\"") _Pragma("GCC diagnostic error \"-Wformat-security\"")
-#endif
-
 #if (__GNUC__ == 2) && (__GNUC_MINOR__ < 95)
 #define TEMPLATE_TABLE_BUG
 #endif
