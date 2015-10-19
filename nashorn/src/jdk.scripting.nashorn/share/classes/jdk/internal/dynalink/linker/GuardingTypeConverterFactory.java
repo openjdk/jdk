@@ -83,6 +83,9 @@
 
 package jdk.internal.dynalink.linker;
 
+import java.lang.invoke.MethodHandles;
+import java.util.function.Supplier;
+import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.support.TypeUtilities;
 
@@ -103,11 +106,24 @@ public interface GuardingTypeConverterFactory {
      *
      * @param sourceType source type
      * @param targetType the target type.
-     * @return a guarded type conversion that contains a guarded invocation that can take an object (if it passes guard)
+     * @param lookupSupplier a supplier for retrieving the lookup of the class
+     * on whose behalf a type converter is requested. When a converter is
+     * requested as part of linking an {@code invokedynamic} instruction the
+     * supplier will return the lookup passed to the bootstrap method, otherwise
+     * it will return the public lookup. For most conversions, the lookup is
+     * irrelevant. A typical case where the lookup might be needed is when the
+     * converter creates a Java adapter class on the fly (e.g. to convert some
+     * object from the dynamic language into a Java interface for
+     * interoperability). Invoking the {@link Supplier#get()} method on the
+     * passed supplier will be subject to the same security checks as
+     * {@link CallSiteDescriptor#getLookup()}. An implementation should avoid
+     * retrieving the lookup if it is not needed so to avoid the expense of
+     * {@code AccessController.doPrivileged} call.
+     * @return a guarded invocation that can take an object (if it passes guard)
      * and return another object that is its representation coerced into the target type. In case the factory is certain
      * it is unable to handle a conversion, it can return null. In case the factory is certain that it can always handle
      * the conversion, it can return an unconditional invocation (one whose guard is null).
      * @throws Exception if there was an error during creation of the converter
      */
-    public GuardedTypeConversion convertToType(Class<?> sourceType, Class<?> targetType) throws Exception;
+    public GuardedInvocation convertToType(Class<?> sourceType, Class<?> targetType, Supplier<MethodHandles.Lookup> lookupSupplier) throws Exception;
 }

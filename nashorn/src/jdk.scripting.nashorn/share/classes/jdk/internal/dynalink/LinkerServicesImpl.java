@@ -84,6 +84,7 @@
 package jdk.internal.dynalink;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import jdk.internal.dynalink.linker.ConversionComparator.Comparison;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -153,14 +154,11 @@ final class LinkerServicesImpl implements LinkerServices {
         return internalObjectsFilter != null ? internalObjectsFilter.transform(target) : target;
     }
 
-    static LinkRequest getCurrentLinkRequest() {
+    static MethodHandles.Lookup getCurrentLookup() {
         final LinkRequest currentRequest = threadLinkRequest.get();
         if (currentRequest != null) {
-            final SecurityManager sm = System.getSecurityManager();
-            if(sm != null) {
-                sm.checkPermission(DynamicLinker.GET_CURRENT_LINK_REQUEST_PERMISSION);
-            }
+            return currentRequest.getCallSiteDescriptor().getLookup();
         }
-        return currentRequest;
+        return MethodHandles.publicLookup();
     }
 }

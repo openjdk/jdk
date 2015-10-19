@@ -38,12 +38,11 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.function.Supplier;
 import javax.script.Bindings;
 import jdk.internal.dynalink.CallSiteDescriptor;
-import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.linker.ConversionComparator;
 import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.linker.GuardedTypeConversion;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
@@ -111,16 +110,12 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
     }
 
     @Override
-    public GuardedTypeConversion convertToType(final Class<?> sourceType, final Class<?> targetType) throws Exception {
+    public GuardedInvocation convertToType(final Class<?> sourceType, final Class<?> targetType, final Supplier<MethodHandles.Lookup> lookupSupplier) throws Exception {
         GuardedInvocation gi = convertToTypeNoCast(sourceType, targetType);
-        if(gi != null) {
-            return new GuardedTypeConversion(gi.asType(MH.type(targetType, sourceType)), true);
+        if(gi == null) {
+            gi = getSamTypeConverter(sourceType, targetType, lookupSupplier);
         }
-        gi = getSamTypeConverter(sourceType, targetType);
-        if(gi != null) {
-            return new GuardedTypeConversion(gi.asType(MH.type(targetType, sourceType)), false);
-        }
-        return null;
+        return gi == null ? null : gi.asType(MH.type(targetType, sourceType));
     }
 
     /**
@@ -158,26 +153,25 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
      * @throws Exception if something goes wrong; generally, if there's an issue with creation of the SAM proxy type
      * constructor.
      */
-    private static GuardedInvocation getSamTypeConverter(final Class<?> sourceType, final Class<?> targetType) throws Exception {
+    private static GuardedInvocation getSamTypeConverter(final Class<?> sourceType, final Class<?> targetType, final Supplier<MethodHandles.Lookup> lookupSupplier) throws Exception {
         // If source type is more generic than ScriptFunction class, we'll need to use a guard
         final boolean isSourceTypeGeneric = sourceType.isAssignableFrom(ScriptFunction.class);
 
         if ((isSourceTypeGeneric || ScriptFunction.class.isAssignableFrom(sourceType)) && isAutoConvertibleFromFunction(targetType)) {
-            final MethodHandle ctor = JavaAdapterFactory.getConstructor(ScriptFunction.class, targetType, getCurrentLookup());
+            final MethodHandle ctor = JavaAdapterFactory.getConstructor(ScriptFunction.class, targetType, getCurrentLookup(lookupSupplier));
             assert ctor != null; // if isAutoConvertibleFromFunction() returned true, then ctor must exist.
             return new GuardedInvocation(ctor, isSourceTypeGeneric ? IS_SCRIPT_FUNCTION : null);
         }
         return null;
     }
 
-    private static MethodHandles.Lookup getCurrentLookup() {
+    private static MethodHandles.Lookup getCurrentLookup(final Supplier<MethodHandles.Lookup> lookupSupplier) {
         return AccessController.doPrivileged(new PrivilegedAction<MethodHandles.Lookup>() {
             @Override
             public MethodHandles.Lookup run() {
-                final LinkRequest currentRequest = DynamicLinker.getCurrentLinkRequest();
-                return currentRequest == null ? MethodHandles.publicLookup() : currentRequest.getCallSiteDescriptor().getLookup();
+                return lookupSupplier.get();
             }
-        }, null, CallSiteDescriptor.GET_LOOKUP_PERMISSION, DynamicLinker.GET_CURRENT_LINK_REQUEST_PERMISSION);
+        }, null, CallSiteDescriptor.GET_LOOKUP_PERMISSION);
     }
 
     /**

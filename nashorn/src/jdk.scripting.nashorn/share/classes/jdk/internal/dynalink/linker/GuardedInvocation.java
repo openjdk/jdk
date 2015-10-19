@@ -89,6 +89,7 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Supplier;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.support.Guards;
 
@@ -96,17 +97,18 @@ import jdk.internal.dynalink.support.Guards;
  * Represents a conditionally valid method handle. Usually produced as a return
  * value of
  * {@link GuardingDynamicLinker#getGuardedInvocation(LinkRequest, LinkerServices)}
- * and {@link GuardingTypeConverterFactory#convertToType(Class, Class)}. It is
- * an immutable tuple of an invocation method handle, a guard method handle that
- * defines the applicability of the invocation handle, zero or more switch
- * points that can be used for external invalidation of the invocation handle,
- * and an exception type that if thrown during an invocation of the method
- * handle also invalidates it. The invocation handle is suitable for invocation
- * if the guard handle returns true for its arguments, and as long as any of the
- * switch points are not invalidated, and as long as it does not throw an
- * exception of the designated type. The guard, the switch point, and the
- * exception type are all optional (a guarded invocation having none of them is
- * unconditionally valid).
+ * and
+ * {@link GuardingTypeConverterFactory#convertToType(Class, Class, Supplier)}.
+ * It is an immutable tuple of an invocation method handle, a guard method
+ * handle that defines the applicability of the invocation handle, zero or more
+ * switch points that can be used for external invalidation of the invocation
+ * handle, and an exception type that if thrown during an invocation of the
+ * method handle also invalidates it. The invocation handle is suitable for
+ * invocation if the guard handle returns true for its arguments, and as long
+ * as any of the switch points are not invalidated, and as long as it does not
+ * throw an exception of the designated type. The guard, the switch points, and
+ * the exception type are all optional (a guarded invocation having none of them
+ * is unconditionally valid).
  */
 public class GuardedInvocation {
     private final MethodHandle invocation;
