@@ -95,7 +95,8 @@ final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
         final String opName = hasFixedName ? (DYN_GET_METHOD_FIXED + descriptor.getNameToken(
                 CallSiteDescriptor.NAME_OPERAND)) : DYN_GET_METHOD;
 
-        final CallSiteDescriptor newDescriptor = NashornCallSiteDescriptor.get(descriptor.getLookup(), opName,
+        final CallSiteDescriptor newDescriptor = NashornCallSiteDescriptor.get(
+                NashornCallSiteDescriptor.getLookupPrivileged(descriptor), opName,
                 type.changeParameterType(0, adapterClass), 0);
 
         // Delegate to BeansLinker

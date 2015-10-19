@@ -29,10 +29,14 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -914,7 +918,7 @@ public class ScriptFunction extends ScriptObject {
         } else if (data.isBuiltin() && "extend".equals(data.getName())) {
             // NOTE: the only built-in named "extend" is NativeJava.extend. As a special-case we're binding the
             // current lookup as its "this" so it can do security-sensitive creation of adapter classes.
-            boundHandle = MH.dropArguments(MH.bindTo(callHandle, desc.getLookup()), 0, type.parameterType(0), type.parameterType(1));
+            boundHandle = MH.dropArguments(MH.bindTo(callHandle, getLookupPrivileged(desc)), 0, type.parameterType(0), type.parameterType(1));
         } else if (scopeCall && needsWrappedThis()) {
             // Make a handle that drops the passed "this" argument and substitutes either Global or Undefined
             // (this, args...) => ([this], args...)
@@ -953,6 +957,12 @@ public class ScriptFunction extends ScriptObject {
                         guard,
                 spsArray,
                 exceptionGuard);
+    }
+
+    private static Lookup getLookupPrivileged(final CallSiteDescriptor desc) {
+        // NOTE: we'd rather not make NashornCallSiteDescriptor.getLookupPrivileged public.
+        return AccessController.doPrivileged((PrivilegedAction<Lookup>)()->desc.getLookup(), null,
+                CallSiteDescriptor.GET_LOOKUP_PERMISSION);
     }
 
     private GuardedInvocation createApplyOrCallCall(final boolean isApply, final CallSiteDescriptor desc, final LinkRequest request, final Object[] args) {

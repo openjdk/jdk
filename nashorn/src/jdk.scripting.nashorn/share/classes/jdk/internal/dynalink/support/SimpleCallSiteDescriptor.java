@@ -83,18 +83,19 @@
 
 package jdk.internal.dynalink.support;
 
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import java.security.Permission;
 import java.util.Objects;
 import jdk.internal.dynalink.CallSiteDescriptor;
 
 /**
  * A simple implementation of the call site descriptor. It stores the lookup, the name, and the method type.
+  * Even if you roll your own implementation of {@link CallSiteDescriptor}, you might want to use
+  * {@link CallSiteDescriptor#checkLookup(MethodHandles.Lookup)} as a ready-made utility method to ensure you're handing
+  * out lookup objects securely.
  */
-public class SimpleCallSiteDescriptor extends AbstractCallSiteDescriptor {
-    private static final Permission GET_LOOKUP_PERMISSION = new RuntimePermission("dynalink.getLookup");
-
+public class SimpleCallSiteDescriptor extends AbstractCallSiteDescriptor<SimpleCallSiteDescriptor> {
     private final Lookup lookup;
     private final String[] tokenizedName;
     private final MethodType methodType;
@@ -138,11 +139,26 @@ public class SimpleCallSiteDescriptor extends AbstractCallSiteDescriptor {
 
     @Override
     public final Lookup getLookup() {
-        return lookup;
+        return CallSiteDescriptor.checkLookup(lookup);
     }
 
     @Override
     public CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
         return new SimpleCallSiteDescriptor(lookup, tokenizedName, newMethodType);
+    }
+
+    @Override
+    protected boolean lookupEquals(final SimpleCallSiteDescriptor other) {
+        return AbstractCallSiteDescriptor.lookupsEqual(lookup, other.lookup);
+    }
+
+    @Override
+    protected int lookupHashCode() {
+        return AbstractCallSiteDescriptor.lookupHashCode(lookup);
+    }
+
+    @Override
+    protected String lookupToString() {
+        return lookup.toString();
     }
 }

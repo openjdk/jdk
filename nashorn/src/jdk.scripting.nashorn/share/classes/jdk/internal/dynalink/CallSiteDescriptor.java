@@ -101,6 +101,11 @@ import jdk.internal.dynalink.support.NameCodec;
  */
 public interface CallSiteDescriptor {
     /**
+     * A permission to invoke the {@link #getLookup()} method. It is named {@code "dynalink.getLookup"}.
+     */
+    public static final RuntimePermission GET_LOOKUP_PERMISSION = new RuntimePermission("dynalink.getLookup");
+
+    /**
      * The index of the name token that will carry the operation scheme prefix (usually, "dyn").
      */
     public static final int SCHEME = 0;
@@ -160,7 +165,8 @@ public interface CallSiteDescriptor {
      * Returns the lookup passed to the bootstrap method.
      * @return the lookup passed to the bootstrap method.
      * @throws SecurityException if the lookup isn't the {@link MethodHandles#publicLookup()} and a security
-     * manager is present, and a check for {@code RuntimePermission("dynalink.getLookup")} fails.
+     * manager is present, and a check for {@code RuntimePermission("dynalink.getLookup")} (available as
+     * {@link #GET_LOOKUP_PERMISSION}) fails.
      */
     public Lookup getLookup();
 
@@ -191,6 +197,25 @@ public interface CallSiteDescriptor {
             tokens[i] = tok.nextToken();
         }
         return Arrays.asList(tokens);
+    }
+
+    /**
+     * Checks if the current access context is granted the {@code RuntimePermission("dynalink.getLookup")}
+     * permission, if the system contains a security manager, and the passed lookup is not the
+     * {@link MethodHandles#publicLookup()}.
+     * @param lookup the lookup being checked for access
+     * @return the passed in lookup if there's either no security manager in the system, or the passed lookup
+     * is the public lookup, or the current access context is granted the relevant permission.
+     * @throws SecurityException if the system contains a security manager, and the passed lookup is not the
+     * {@link MethodHandles#publicLookup()}, and the current access context is not granted the relevant
+     * permission.
+     */
+    public static Lookup checkLookup(final Lookup lookup) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null && lookup != MethodHandles.publicLookup()) {
+            sm.checkPermission(GET_LOOKUP_PERMISSION);
+        }
+        return lookup;
     }
 
     /**

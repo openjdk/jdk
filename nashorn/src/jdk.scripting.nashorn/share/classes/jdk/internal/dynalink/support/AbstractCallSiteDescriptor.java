@@ -89,30 +89,32 @@ import java.util.Objects;
 import jdk.internal.dynalink.CallSiteDescriptor;
 
 /**
- * A base class for call site descriptor implementations. Provides reconstruction of the name from the tokens, as well
- * as a generally useful {@code equals} and {@code hashCode} methods.
+ * A base class for call site descriptor implementations. Provides reconstruction of the name from the tokens,
+ * as well as generally useful {@code equals}, {@code hashCode}, and {@code toString} methods. For security
+ * and performance reasons, subclasses must implement {@link #lookupEquals(AbstractCallSiteDescriptor)},
+ * {@link #lookupHashCode()} and {@link #lookupToString()} methods.
+ * @param <T> The call site descriptor subclass
  */
-public abstract class AbstractCallSiteDescriptor implements CallSiteDescriptor {
+public abstract class AbstractCallSiteDescriptor<T extends AbstractCallSiteDescriptor<T>> implements CallSiteDescriptor {
 
     @Override
     public String getName() {
         return appendName(new StringBuilder(getNameLength())).toString();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean equals(final Object obj) {
-        return obj instanceof CallSiteDescriptor && equals((CallSiteDescriptor)obj);
+        return obj != null && obj.getClass() == getClass() && equalsInKind((T)obj);
     }
 
     /**
-     * Returns true if this call site descriptor is equal to the passed call site descriptor.
+     * Returns true if this call site descriptor is equal to the passed, non-null call site descriptor of the
+     * same class.
      * @param csd the other call site descriptor.
      * @return true if they are equal.
      */
-    public boolean equals(final CallSiteDescriptor csd) {
-        if(csd == null) {
-            return false;
-        }
+    protected boolean equalsInKind(final T csd) {
         if(csd == this) {
             return true;
         }
@@ -128,13 +130,32 @@ public abstract class AbstractCallSiteDescriptor implements CallSiteDescriptor {
         if(!getMethodType().equals(csd.getMethodType())) {
             return false;
         }
-        return lookupsEqual(getLookup(), csd.getLookup());
+        return lookupEquals(csd);
+    }
+
+    /**
+     * Returns true if this call site descriptor's lookup is equal to the other call site descriptor's lookup.
+     * Typical implementation should try to obtain the other lookup directly without going through
+     * {@link #getLookup()} (e.g. directly using the implementation) and then delegate to
+     * {@link #lookupsEqual(MethodHandles.Lookup, MethodHandles.Lookup)}.
+     * @param other the other lookup
+     * @return true if the lookups are equal
+     */
+    protected abstract boolean lookupEquals(T other);
+
+    protected static boolean lookupsEqual(final Lookup l1, final Lookup l2) {
+        if(l1 == l2) {
+            return true;
+        }
+        if(l1.lookupClass() != l2.lookupClass()) {
+            return false;
+        }
+        return l1.lookupModes() == l2.lookupModes();
     }
 
     @Override
     public int hashCode() {
-        final MethodHandles.Lookup lookup = getLookup();
-        int h = lookup.lookupClass().hashCode() + 31 * lookup.lookupModes();
+        int h = lookupHashCode();
         final int c = getNameTokenCount();
         for(int i = 0; i < c; ++i) {
             h = h * 31 + getNameToken(i).hashCode();
@@ -142,13 +163,31 @@ public abstract class AbstractCallSiteDescriptor implements CallSiteDescriptor {
         return h * 31 + getMethodType().hashCode();
     }
 
+    /**
+     * Return the hash code of this call site descriptor's {@link Lookup} object. Typical
+     * implementation should delegate to {@link #lookupHashCode(MethodHandles.Lookup)}.
+     * @return the hash code of this call site descriptor's {@link Lookup} object.
+     */
+    protected abstract int lookupHashCode();
+
+    protected static int lookupHashCode(final Lookup lookup) {
+        return lookup.lookupClass().hashCode() + 31 * lookup.lookupModes();
+    }
+
     @Override
     public String toString() {
         final String mt = getMethodType().toString();
-        final String l = getLookup().toString();
+        final String l = lookupToString();
         final StringBuilder b = new StringBuilder(l.length() + 1 + mt.length() + getNameLength());
         return appendName(b).append(mt).append("@").append(l).toString();
     }
+
+    /**
+     * Return a string representation of this call site descriptor's {@link Lookup} object. Typically will
+     * return {@link Lookup#toString()}.
+     * @return a string representation of this call site descriptor's {@link Lookup} object.
+     */
+    protected abstract String lookupToString();
 
     private int getNameLength() {
         final int c = getNameTokenCount();
@@ -166,15 +205,5 @@ public abstract class AbstractCallSiteDescriptor implements CallSiteDescriptor {
             b.append(':').append(getNameToken(i));
         }
         return b;
-    }
-
-    private static boolean lookupsEqual(final Lookup l1, final Lookup l2) {
-        if(l1 == l2) {
-            return true;
-        }
-        if(l1.lookupClass() != l2.lookupClass()) {
-            return false;
-        }
-        return l1.lookupModes() == l2.lookupModes();
     }
 }

@@ -84,7 +84,6 @@
 package jdk.internal.dynalink.beans;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.text.Collator;
 import java.util.ArrayList;
@@ -216,9 +215,8 @@ class OverloadedDynamicMethod extends DynamicMethod {
                 // methods here to their handles, as the OverloadedMethod instance is specific to a call site, so it
                 // has an already determined Lookup.
                 final List<MethodHandle> methodHandles = new ArrayList<>(invokables.size());
-                final MethodHandles.Lookup lookup = callSiteDescriptor.getLookup();
                 for(final SingleDynamicMethod method: invokables) {
-                    methodHandles.add(method.getTarget(lookup));
+                    methodHandles.add(method.getTarget(callSiteDescriptor));
                 }
                 return new OverloadedMethod(methodHandles, this, callSiteType, linkerServices).getInvoker();
             }
