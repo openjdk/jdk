@@ -87,16 +87,14 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
-import java.util.List;
 import java.util.Objects;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.support.LinkRequestImpl;
 import jdk.internal.dynalink.support.Lookup;
-import jdk.internal.dynalink.support.RuntimeContextLinkRequestImpl;
 import jdk.internal.dynalink.support.SimpleCallSiteDescriptor;
+import jdk.internal.dynalink.support.SimpleLinkRequest;
 
 /**
  * The linker for {@link RelinkableCallSite} objects. Users of it (scripting
@@ -164,7 +162,6 @@ public final class DynamicLinker {
 
     private final LinkerServices linkerServices;
     private final GuardedInvocationFilter prelinkFilter;
-    private final int runtimeContextArgCount;
     private final boolean syncOnRelink;
     private final int unstableRelinkThreshold;
 
@@ -173,19 +170,16 @@ public final class DynamicLinker {
      *
      * @param linkerServices the linkerServices used by the linker, created by the factory.
      * @param prelinkFilter see {@link DynamicLinkerFactory#setPrelinkFilter(GuardedInvocationFilter)}
-     * @param runtimeContextArgCount see {@link DynamicLinkerFactory#setRuntimeContextArgCount(int)}
+     * @param syncOnRelink see {@link DynamicLinkerFactory#setSyncOnRelink(boolean)}
+     * @param unstableRelinkThreshold see {@link DynamicLinkerFactory#setUnstableRelinkThreshold(int)}
      */
-    DynamicLinker(final LinkerServices linkerServices, final GuardedInvocationFilter prelinkFilter, final int runtimeContextArgCount,
+    DynamicLinker(final LinkerServices linkerServices, final GuardedInvocationFilter prelinkFilter,
             final boolean syncOnRelink, final int unstableRelinkThreshold) {
-        if(runtimeContextArgCount < 0) {
-            throw new IllegalArgumentException("runtimeContextArgCount < 0");
-        }
         if(unstableRelinkThreshold < 0) {
             throw new IllegalArgumentException("unstableRelinkThreshold < 0");
         }
         this.linkerServices = linkerServices;
         this.prelinkFilter = prelinkFilter;
-        this.runtimeContextArgCount = runtimeContextArgCount;
         this.syncOnRelink = syncOnRelink;
         this.unstableRelinkThreshold = unstableRelinkThreshold;
     }
@@ -250,28 +244,13 @@ public final class DynamicLinker {
         final CallSiteDescriptor callSiteDescriptor = callSite.getDescriptor();
         final boolean unstableDetectionEnabled = unstableRelinkThreshold > 0;
         final boolean callSiteUnstable = unstableDetectionEnabled && relinkCount >= unstableRelinkThreshold;
-        final LinkRequest linkRequest =
-                runtimeContextArgCount == 0 ?
-                        new LinkRequestImpl(callSiteDescriptor, callSite, relinkCount, callSiteUnstable, arguments) :
-                        new RuntimeContextLinkRequestImpl(callSiteDescriptor, callSite, relinkCount, callSiteUnstable, arguments, runtimeContextArgCount);
+        final LinkRequest linkRequest = new SimpleLinkRequest(callSiteDescriptor, callSiteUnstable, arguments);
 
         GuardedInvocation guardedInvocation = linkerServices.getGuardedInvocation(linkRequest);
 
         // None found - throw an exception
         if(guardedInvocation == null) {
             throw new NoSuchDynamicMethodException(callSiteDescriptor.toString());
-        }
-
-        // If our call sites have a runtime context, and the linker produced a context-stripped invocation, adapt the
-        // produced invocation into contextual invocation (by dropping the context...)
-        if(runtimeContextArgCount > 0) {
-            final MethodType origType = callSiteDescriptor.getMethodType();
-            final MethodHandle invocation = guardedInvocation.getInvocation();
-            if(invocation.type().parameterCount() == origType.parameterCount() - runtimeContextArgCount) {
-                final List<Class<?>> prefix = origType.parameterList().subList(1, runtimeContextArgCount + 1);
-                final MethodHandle guard = guardedInvocation.getGuard();
-                guardedInvocation = guardedInvocation.dropArguments(1, prefix);
-            }
         }
 
         // Make sure we filter the invocation before linking it into the call site. This is typically used to match the

@@ -67,9 +67,8 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
 
     @Override
     public GuardedInvocation getGuardedInvocation(final LinkRequest request, final LinkerServices linkerServices) throws Exception {
-        final LinkRequest requestWithoutContext = request.withoutRuntimeContext(); // Nashorn has no runtime context
-        final Object self = requestWithoutContext.getReceiver();
-        final CallSiteDescriptor desc = requestWithoutContext.getCallSiteDescriptor();
+        final Object self = request.getReceiver();
+        final CallSiteDescriptor desc = request.getCallSiteDescriptor();
 
         if (desc.getNameTokenCount() < 2 || !"dyn".equals(desc.getNameToken(CallSiteDescriptor.SCHEME))) {
             // We only support standard "dyn:*[:*]" operations

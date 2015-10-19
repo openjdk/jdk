@@ -99,17 +99,6 @@ public interface LinkRequest {
     public CallSiteDescriptor getCallSiteDescriptor();
 
     /**
-     * Returns the call site token for the call site being linked. This token is an opaque object that is guaranteed to
-     * have different identity for different call sites, and is also guaranteed to not become weakly reachable before
-     * the call site does and to become weakly reachable some time after the call site does. This makes it ideal as a
-     * candidate for a key in a weak hash map in which a linker might want to keep per-call site linking state (usually
-     * profiling information).
-     *
-     * @return the call site token for the call site being linked.
-     */
-    public Object getCallSiteToken();
-
-    /**
      * Returns the arguments for the invocation being linked. The returned array is a clone; modifications to it won't
      * affect the arguments in this request.
      *
@@ -125,17 +114,6 @@ public interface LinkRequest {
     public Object getReceiver();
 
     /**
-     * Returns the number of times this callsite has been linked/relinked. This can be useful if you want to
-     * change e.g. exception based relinking to guard based relinking. It's probably not a good idea to keep,
-     * for example, expensive exception throwing relinkage based on failed type checks/ClassCastException in
-     * a nested callsite tree where the exception is thrown repeatedly for the common case. There it would be
-     * much more performant to use exact type guards instead.
-     *
-     * @return link count for call site
-     */
-    public int getLinkCount();
-
-    /**
      * Returns true if the call site is considered unstable, that is, it has been relinked more times than was
      * specified in {@link DynamicLinkerFactory#setUnstableRelinkThreshold(int)}. Linkers should use this as a
      * hint to prefer producing linkage that is more stable (its guard fails less frequently), even if that assumption
@@ -144,18 +122,6 @@ public interface LinkRequest {
      * @return true if the call site is considered unstable.
      */
     public boolean isCallSiteUnstable();
-
-    /**
-     * Returns a request stripped from runtime context arguments. Some language runtimes will include runtime-specific
-     * context parameters in their call sites as few arguments between 0th argument "this" and the normal arguments. If
-     * a linker does not recognize such contexts at all, or does not recognize the call site as one with its own
-     * context, it can ask for the alternative link request with context parameters and arguments removed, and link
-     * against it instead.
-     *
-     * @return the context-stripped request. If the link request does not have any language runtime specific context
-     * parameters, the same link request is returned.
-     */
-    public LinkRequest withoutRuntimeContext();
 
     /**
      * Returns a request identical to this one with call site descriptor and arguments replaced with the ones specified.

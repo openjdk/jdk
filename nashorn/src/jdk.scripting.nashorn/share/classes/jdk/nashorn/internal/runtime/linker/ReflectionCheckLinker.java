@@ -115,7 +115,7 @@ final class ReflectionCheckLinker implements TypeBasedGuardingDynamicLinker{
         }
     }
 
-    private static void checkLinkRequest(final LinkRequest origRequest) {
+    private static void checkLinkRequest(final LinkRequest request) {
         final Global global = Context.getGlobal();
         final ClassFilter cf = global.getClassFilter();
         if (cf != null) {
@@ -124,11 +124,10 @@ final class ReflectionCheckLinker implements TypeBasedGuardingDynamicLinker{
 
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            final LinkRequest requestWithoutContext = origRequest.withoutRuntimeContext(); // Nashorn has no runtime context
-            final Object self = requestWithoutContext.getReceiver();
+            final Object self = request.getReceiver();
             // allow 'static' access on Class objects representing public classes of non-restricted packages
             if ((self instanceof Class) && Modifier.isPublic(((Class<?>)self).getModifiers())) {
-                final CallSiteDescriptor desc = requestWithoutContext.getCallSiteDescriptor();
+                final CallSiteDescriptor desc = request.getCallSiteDescriptor();
                 if(desc.tokenizeOperators().contains("getProp")) {
                     if (desc.getNameTokenCount() > CallSiteDescriptor.NAME_OPERAND &&
                         "static".equals(desc.getNameToken(CallSiteDescriptor.NAME_OPERAND))) {

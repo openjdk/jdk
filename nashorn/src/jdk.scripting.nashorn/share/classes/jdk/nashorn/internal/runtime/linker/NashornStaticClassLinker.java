@@ -59,8 +59,7 @@ final class NashornStaticClassLinker implements TypeBasedGuardingDynamicLinker {
     }
 
     @Override
-    public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest, final LinkerServices linkerServices) throws Exception {
-        final LinkRequest request = linkRequest.withoutRuntimeContext(); // Nashorn has no runtime context
+    public GuardedInvocation getGuardedInvocation(final LinkRequest request, final LinkerServices linkerServices) throws Exception {
         final Object self = request.getReceiver();
         if (self.getClass() != StaticClass.class) {
             return null;
@@ -83,7 +82,7 @@ final class NashornStaticClassLinker implements TypeBasedGuardingDynamicLinker {
                 // Change this link request into a link request on the adapter class.
                 final Object[] args = request.getArguments();
                 args[0] = JavaAdapterFactory.getAdapterClassFor(new Class<?>[] { receiverClass }, null,
-                        NashornCallSiteDescriptor.getLookupPrivileged(linkRequest.getCallSiteDescriptor()));
+                        NashornCallSiteDescriptor.getLookupPrivileged(request.getCallSiteDescriptor()));
                 final LinkRequest adapterRequest = request.replaceArguments(request.getCallSiteDescriptor(), args);
                 final GuardedInvocation gi = checkNullConstructor(delegate(linkerServices, adapterRequest), receiverClass);
                 // Finally, modify the guard to test for the original abstract class.

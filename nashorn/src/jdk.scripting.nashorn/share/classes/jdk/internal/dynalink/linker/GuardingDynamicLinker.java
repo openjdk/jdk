@@ -102,9 +102,7 @@ public interface GuardingDynamicLinker {
      * invocation can also have a switch point for asynchronous invalidation of the linkage, as well as a
      * {@link Throwable} subclass that describes an expected exception condition that also triggers relinking (often it
      * is faster to rely on an infrequent but expected {@link ClassCastException} than on an always evaluated
-     * {@code instanceof} guard). If the linker does not recognize any native language runtime contexts in arguments, or
-     * does recognize its own, but receives a call site descriptor without its recognized context in the arguments, it
-     * should invoke {@link LinkRequest#withoutRuntimeContext()} and link for that. While the linker must produce an
+     * {@code instanceof} guard). While the linker must produce an
      * invocation with parameter types matching those in the call site descriptor of the link request, it should not try
      * to match the return type expected at the call site except when it can do it with only the conversions that lose
      * neither precision nor magnitude, see {@link LinkerServices#asTypeLosslessReturn(java.lang.invoke.MethodHandle,

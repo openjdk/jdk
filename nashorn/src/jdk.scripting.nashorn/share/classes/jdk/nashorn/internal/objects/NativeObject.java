@@ -44,7 +44,7 @@ import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.internal.dynalink.support.LinkRequestImpl;
+import jdk.internal.dynalink.support.SimpleLinkRequest;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.objects.annotations.Attribute;
@@ -834,8 +834,8 @@ public final class NativeObject {
     }
 
     private static LinkRequest createLinkRequest(final String operation, final MethodType methodType, final Object source) {
-        return new LinkRequestImpl(NashornCallSiteDescriptor.get(MethodHandles.publicLookup(), operation,
-                methodType, 0), null, 0, false, source);
+        return new SimpleLinkRequest(NashornCallSiteDescriptor.get(MethodHandles.publicLookup(), operation,
+                methodType, 0), false, source);
     }
 
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {

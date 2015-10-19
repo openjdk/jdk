@@ -61,10 +61,8 @@ final class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, Gu
     }
 
     @Override
-    public GuardedInvocation getGuardedInvocation(final LinkRequest origRequest, final LinkerServices linkerServices)
+    public GuardedInvocation getGuardedInvocation(final LinkRequest request, final LinkerServices linkerServices)
             throws Exception {
-        final LinkRequest request = origRequest.withoutRuntimeContext(); // Nashorn has no runtime context
-
         final Object self = request.getReceiver();
         final NashornCallSiteDescriptor desc = (NashornCallSiteDescriptor) request.getCallSiteDescriptor();
 
