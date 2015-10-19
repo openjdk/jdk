@@ -292,6 +292,8 @@ private:
 
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
+  void process_weak_jni_handles();
+
   // These are macros so that, if the assert fires, we get the correct
   // line number, file, etc.
 

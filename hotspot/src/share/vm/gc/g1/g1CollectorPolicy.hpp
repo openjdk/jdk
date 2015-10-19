@@ -783,6 +783,10 @@ public:
     return _young_gen_sizer->adaptive_young_list_length();
   }
 
+  virtual bool should_process_references() const {
+    return true;
+  }
+
 private:
   //
   // Survivor regions policy.
