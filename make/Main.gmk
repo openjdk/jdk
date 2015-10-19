@@ -93,7 +93,10 @@ import-hotspot:
 unpack-sec:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f UnpackSecurity.gmk)
 
-ALL_TARGETS += import-hotspot unpack-sec
+generate-exported-symbols:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f BuildStatic.gmk)
+
+ALL_TARGETS += import-hotspot unpack-sec generate-exported-symbols
 
 ################################################################################
 # Gensrc targets, generating source before java compilation can be done
@@ -364,9 +367,15 @@ else
 
   import-hotspot: hotspot
 
+  generate-exported-symbols: java.base-libs jdk.jdwp.agent-libs
+
   $(LIBS_TARGETS): import-hotspot
 
   $(LAUNCHER_TARGETS): java.base-libs
+
+  ifeq ($(STATIC_BUILD), true)
+    $(LAUNCHER_TARGETS): generate-exported-symbols
+  endif
 
   # The demos are currently linking to libjvm and libjava, just like all other
   # jdk libs, even though they don't need to. To avoid warnings, make sure they
