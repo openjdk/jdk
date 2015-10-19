@@ -3826,7 +3826,11 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       // reference processing currently works in G1.
 
       // Enable discovery in the STW reference processor
-      ref_processor_stw()->enable_discovery();
+      if (g1_policy()->should_process_references()) {
+        ref_processor_stw()->enable_discovery();
+      } else {
+        ref_processor_stw()->disable_discovery();
+      }
 
       {
         // We want to temporarily turn off discovery by the
@@ -4973,6 +4977,17 @@ public:
   }
 };
 
+void G1CollectedHeap::process_weak_jni_handles() {
+  double ref_proc_start = os::elapsedTime();
+
+  G1STWIsAliveClosure is_alive(this);
+  G1KeepAliveClosure keep_alive(this);
+  JNIHandles::weak_oops_do(&is_alive, &keep_alive);
+
+  double ref_proc_time = os::elapsedTime() - ref_proc_start;
+  g1_policy()->phase_times()->record_ref_proc_time(ref_proc_time * 1000.0);
+}
+
 // Weak Reference processing during an evacuation pause (part 1).
 void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per_thread_states) {
   double ref_proc_start = os::elapsedTime();
@@ -5157,7 +5172,12 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G
   // as we may have to copy some 'reachable' referent
   // objects (and their reachable sub-graphs) that were
   // not copied during the pause.
-  process_discovered_references(per_thread_states);
+  if (g1_policy()->should_process_references()) {
+    process_discovered_references(per_thread_states);
+  } else {
+    ref_processor_stw()->verify_no_references_recorded();
+    process_weak_jni_handles();
+  }
 
   if (G1StringDedup::is_enabled()) {
     double fixup_start = os::elapsedTime();
@@ -5188,7 +5208,11 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G
   // will log these updates (and dirty their associated
   // cards). We need these updates logged to update any
   // RSets.
-  enqueue_discovered_references(per_thread_states);
+  if (g1_policy()->should_process_references()) {
+    enqueue_discovered_references(per_thread_states);
+  } else {
+    g1_policy()->phase_times()->record_ref_enq_time(0);
+  }
 }
 
 void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
