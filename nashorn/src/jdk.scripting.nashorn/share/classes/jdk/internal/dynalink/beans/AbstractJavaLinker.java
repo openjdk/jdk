@@ -342,9 +342,8 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
     @Override
     public GuardedInvocation getGuardedInvocation(final LinkRequest request, final LinkerServices linkerServices)
             throws Exception {
-        final LinkRequest ncrequest = request.withoutRuntimeContext();
         // BeansLinker already checked that the name is at least 2 elements long and the first element is "dyn".
-        final CallSiteDescriptor callSiteDescriptor = ncrequest.getCallSiteDescriptor();
+        final CallSiteDescriptor callSiteDescriptor = request.getCallSiteDescriptor();
         final String op = callSiteDescriptor.getNameToken(CallSiteDescriptor.OPERATOR);
         // Either dyn:callMethod:name(this[,args]) or dyn:callMethod(this,name[,args]).
         if("callMethod" == op) {
