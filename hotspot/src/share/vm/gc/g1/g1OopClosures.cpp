@@ -55,7 +55,7 @@ void G1ParClosureSuper::set_par_scan_thread_state(G1ParScanThreadState* par_scan
   _worker_id = par_scan_state->worker_id();
 
   assert(_worker_id < ParallelGCThreads,
-         err_msg("The given worker id %u must be less than the number of threads %u", _worker_id, ParallelGCThreads));
+         "The given worker id %u must be less than the number of threads %u", _worker_id, ParallelGCThreads);
 }
 
 // Generate G1 specialized oop_oop_iterate functions.

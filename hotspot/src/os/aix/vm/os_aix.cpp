@@ -2286,7 +2286,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   if (!pd_commit_memory(addr, size, exec)) {
     // Add extra info in product mode for vm_exit_out_of_memory():
     PRODUCT_ONLY(warn_fail_commit_memory(addr, size, exec, errno);)
-    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, mesg);
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
   }
 }
 
@@ -3120,8 +3120,8 @@ void os::Aix::set_signal_handler(int sig, bool set_installed) {
       // libjsig also interposes the sigaction() call below and saves the
       // old sigaction on it own.
     } else {
-      fatal(err_msg("Encountered unexpected pre-existing sigaction handler "
-                    "%#lx for signal %d.", (long)oldhand, sig));
+      fatal("Encountered unexpected pre-existing sigaction handler "
+            "%#lx for signal %d.", (long)oldhand, sig);
     }
   }
 
@@ -3699,7 +3699,7 @@ void os::make_polling_page_unreadable(void) {
 void os::make_polling_page_readable(void) {
   // Changed according to os_linux.cpp.
   if (!checked_mprotect((char *)_polling_page, Aix::page_size(), PROT_READ)) {
-    fatal(err_msg("Could not enable polling page at " PTR_FORMAT, _polling_page));
+    fatal("Could not enable polling page at " PTR_FORMAT, _polling_page);
   }
 };
 

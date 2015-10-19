@@ -26,8 +26,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/osThread.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 OSThread::OSThread(OSThreadStartFunc start_proc, void* start_parm) {
   pd_initialize();
   set_start_proc(start_proc);
@@ -41,7 +39,7 @@ OSThread::~OSThread() {
 
 // Printing
 void OSThread::print_on(outputStream *st) const {
-  st->print("nid=0x%lx ", thread_id());
+  st->print("nid=0x%x ", thread_id());
   switch (_state) {
     case ALLOCATED:               st->print("allocated ");                 break;
     case INITIALIZED:             st->print("initialized ");               break;

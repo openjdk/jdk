@@ -95,6 +95,11 @@ typedef struct {
   uint64_t value;                  // Value of constant
 } VMLongConstantEntry;
 
+typedef struct {
+  const char* name;                // Name of address (example: "SharedRuntime::register_finalizer")
+  void* value;                     // Value of address
+} VMAddressEntry;
+
 // This class is a friend of most classes, to be able to access
 // private fields
 class VMStructs {
@@ -116,6 +121,11 @@ public:
   // The last entry is identified over in the serviceability agent by
   // the fact that it has a NULL typeName
   static VMLongConstantEntry localHotSpotVMLongConstants[];
+
+  /**
+   * Table of addresses.
+   */
+  static VMAddressEntry localHotSpotVMAddresses[];
 
   // This is used to run any checking code necessary for validation of
   // the data structure (debug build only)

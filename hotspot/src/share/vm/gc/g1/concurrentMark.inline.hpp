@@ -197,9 +197,9 @@ inline bool CMBitMapRO::iterate(BitMapClosure* cl) {
   assert(_bmStartWord <= (addr) && (addr) < (_bmStartWord + _bmWordSize),      \
          "outside underlying space?");                                         \
   assert(G1CollectedHeap::heap()->is_in_exact(addr),                           \
-         err_msg("Trying to access not available bitmap " PTR_FORMAT           \
-                 " corresponding to " PTR_FORMAT " (%u)",                      \
-                 p2i(this), p2i(addr), G1CollectedHeap::heap()->addr_to_region(addr)));
+         "Trying to access not available bitmap " PTR_FORMAT                   \
+         " corresponding to " PTR_FORMAT " (%u)",                              \
+         p2i(this), p2i(addr), G1CollectedHeap::heap()->addr_to_region(addr));
 
 inline void CMBitMap::mark(HeapWord* addr) {
   check_mark(addr);
@@ -225,8 +225,7 @@ inline bool CMBitMap::parClear(HeapWord* addr) {
 
 template<typename Fn>
 inline void CMMarkStack::iterate(Fn fn) {
-  assert(_saved_index == _index,
-         err_msg("saved index: %d index: %d", _saved_index, _index));
+  assert(_saved_index == _index, "saved index: %d index: %d", _saved_index, _index);
   for (int i = 0; i < _index; ++i) {
     fn(_base[i]);
   }
@@ -385,7 +384,7 @@ inline void CMTask::deal_with_reference(oop obj) {
   increment_refs_reached();
 
   HeapWord* objAddr = (HeapWord*) obj;
-  assert(obj->is_oop_or_null(true /* ignore mark word */), err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(obj)));
+  assert(obj->is_oop_or_null(true /* ignore mark word */), "Expected an oop or NULL at " PTR_FORMAT, p2i(obj));
   if (_g1h->is_in_g1_reserved(objAddr)) {
     assert(obj != NULL, "null check is implicit");
     if (!_nextMarkBitMap->isMarked(objAddr)) {
@@ -427,9 +426,9 @@ inline void ConcurrentMark::grayRoot(oop obj, size_t word_size,
   // assert that word_size is under an upper bound which is its
   // containing region's capacity.
   assert(word_size * HeapWordSize <= hr->capacity(),
-         err_msg("size: " SIZE_FORMAT " capacity: " SIZE_FORMAT " " HR_FORMAT,
-                 word_size * HeapWordSize, hr->capacity(),
-                 HR_FORMAT_PARAMS(hr)));
+         "size: " SIZE_FORMAT " capacity: " SIZE_FORMAT " " HR_FORMAT,
+         word_size * HeapWordSize, hr->capacity(),
+         HR_FORMAT_PARAMS(hr));
 
   if (addr < hr->next_top_at_mark_start()) {
     if (!_nextMarkBitMap->isMarked(addr)) {

@@ -186,7 +186,6 @@ VerificationType StackMapReader::parse_verification_type(u1* flags, TRAPS) {
     u2 offset = _stream->get_u2(THREAD);
     if (offset >= _code_length ||
         _code_data[offset] != ClassVerifier::NEW_OFFSET) {
-      ResourceMark rm(THREAD);
       _verifier->class_format_error(
         "StackMapTable format error: bad offset for Uninitialized");
       return VerificationType::bogus_type();

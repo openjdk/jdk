@@ -34,8 +34,6 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 PerfDataList*   PerfDataManager::_all = NULL;
 PerfDataList*   PerfDataManager::_sampled = NULL;
 PerfDataList*   PerfDataManager::_constants = NULL;
@@ -170,14 +168,14 @@ void PerfData::create_entry(BasicType dtype, size_t dsize, size_t vlen) {
 
   if (PerfTraceDataCreation) {
     tty->print("name = %s, dtype = %d, variability = %d,"
-               " units = %d, dsize = %d, vlen = %d,"
-               " pad_length = %d, size = %d, on_c_heap = %s,"
+               " units = %d, dsize = " SIZE_FORMAT ", vlen = " SIZE_FORMAT ","
+               " pad_length = " SIZE_FORMAT ", size = " SIZE_FORMAT ", on_c_heap = %s,"
                " address = " INTPTR_FORMAT ","
                " data address = " INTPTR_FORMAT "\n",
                cname, dtype, variability(),
                units(), dsize, vlen,
                pad_length, size, is_on_c_heap() ? "TRUE":"FALSE",
-               psmp, valuep);
+               p2i(psmp), p2i(valuep));
   }
 
   // record the start of the entry and the location of the data field.

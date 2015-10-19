@@ -913,7 +913,7 @@ Klass* ClassLoaderDataGraphKlassIteratorAtomic::next_klass() {
   }
 
   // Nothing more for the iterator to hand out.
-  assert(head == NULL, err_msg("head is " PTR_FORMAT ", expected not null:", p2i(head)));
+  assert(head == NULL, "head is " PTR_FORMAT ", expected not null:", p2i(head));
   return NULL;
 }
 

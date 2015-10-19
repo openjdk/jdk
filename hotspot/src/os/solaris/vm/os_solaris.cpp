@@ -1118,8 +1118,7 @@ sigset_t* os::Solaris::allowdebug_blocked_signals() {
 
 
 void _handle_uncaught_cxx_exception() {
-  VMError err("An uncaught C++ exception");
-  err.report_and_die();
+  VMError::report_and_die("An uncaught C++ exception");
 }
 
 
@@ -1330,7 +1329,7 @@ jlong getTimeMillis() {
 jlong os::javaTimeMillis() {
   timeval t;
   if (gettimeofday(&t, NULL) == -1) {
-    fatal(err_msg("os::javaTimeMillis: gettimeofday (%s)", strerror(errno)));
+    fatal("os::javaTimeMillis: gettimeofday (%s)", strerror(errno));
   }
   return jlong(t.tv_sec) * 1000  +  jlong(t.tv_usec) / 1000;
 }
@@ -1338,7 +1337,7 @@ jlong os::javaTimeMillis() {
 void os::javaTimeSystemUTC(jlong &seconds, jlong &nanos) {
   timeval t;
   if (gettimeofday(&t, NULL) == -1) {
-    fatal(err_msg("os::javaTimeSystemUTC: gettimeofday (%s)", strerror(errno)));
+    fatal("os::javaTimeSystemUTC: gettimeofday (%s)", strerror(errno));
   }
   seconds = jlong(t.tv_sec);
   nanos = jlong(t.tv_usec) * 1000;
@@ -2392,14 +2391,14 @@ void os::pd_commit_memory_or_exit(char* addr, size_t bytes, bool exec,
   if (err != 0) {
     // the caller wants all commit errors to exit with the specified mesg:
     warn_fail_commit_memory(addr, bytes, exec, err);
-    vm_exit_out_of_memory(bytes, OOM_MMAP_ERROR, mesg);
+    vm_exit_out_of_memory(bytes, OOM_MMAP_ERROR, "%s", mesg);
   }
 }
 
 size_t os::Solaris::page_size_for_alignment(size_t alignment) {
   assert(is_size_aligned(alignment, (size_t) vm_page_size()),
-         err_msg(SIZE_FORMAT " is not aligned to " SIZE_FORMAT,
-                 alignment, (size_t) vm_page_size()));
+         SIZE_FORMAT " is not aligned to " SIZE_FORMAT,
+         alignment, (size_t) vm_page_size());
 
   for (int i = 0; _page_sizes[i] != 0; i++) {
     if (is_size_aligned(alignment, _page_sizes[i])) {
@@ -2415,7 +2414,7 @@ int os::Solaris::commit_memory_impl(char* addr, size_t bytes,
   int err = Solaris::commit_memory_impl(addr, bytes, exec);
   if (err == 0 && UseLargePages && alignment_hint > 0) {
     assert(is_size_aligned(bytes, alignment_hint),
-           err_msg(SIZE_FORMAT " is not aligned to " SIZE_FORMAT, bytes, alignment_hint));
+           SIZE_FORMAT " is not aligned to " SIZE_FORMAT, bytes, alignment_hint);
 
     // The syscall memcntl requires an exact page size (see man memcntl for details).
     size_t page_size = page_size_for_alignment(alignment_hint);
@@ -2439,7 +2438,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t bytes,
   if (err != 0) {
     // the caller wants all commit errors to exit with the specified mesg:
     warn_fail_commit_memory(addr, bytes, alignment_hint, exec, err);
-    vm_exit_out_of_memory(bytes, OOM_MMAP_ERROR, mesg);
+    vm_exit_out_of_memory(bytes, OOM_MMAP_ERROR, "%s", mesg);
   }
 }
 
@@ -2969,11 +2968,11 @@ bool os::Solaris::is_valid_page_size(size_t bytes) {
 }
 
 bool os::Solaris::setup_large_pages(caddr_t start, size_t bytes, size_t align) {
-  assert(is_valid_page_size(align), err_msg(SIZE_FORMAT " is not a valid page size", align));
+  assert(is_valid_page_size(align), SIZE_FORMAT " is not a valid page size", align);
   assert(is_ptr_aligned((void*) start, align),
-         err_msg(PTR_FORMAT " is not aligned to " SIZE_FORMAT, p2i((void*) start), align));
+         PTR_FORMAT " is not aligned to " SIZE_FORMAT, p2i((void*) start), align);
   assert(is_size_aligned(bytes, align),
-         err_msg(SIZE_FORMAT " is not aligned to " SIZE_FORMAT, bytes, align));
+         SIZE_FORMAT " is not aligned to " SIZE_FORMAT, bytes, align);
 
   // Signal to OS that we want large pages for addresses
   // from addr, addr + bytes
@@ -3956,8 +3955,8 @@ void os::Solaris::set_signal_handler(int sig, bool set_installed,
       // libjsig also interposes the sigaction() call below and saves the
       // old sigaction on it own.
     } else {
-      fatal(err_msg("Encountered unexpected pre-existing sigaction handler "
-                    "%#lx for signal %d.", (long)oldhand, sig));
+      fatal("Encountered unexpected pre-existing sigaction handler "
+            "%#lx for signal %d.", (long)oldhand, sig);
     }
   }
 
@@ -4403,8 +4402,7 @@ void os::init(void) {
 
   page_size = sysconf(_SC_PAGESIZE);
   if (page_size == -1) {
-    fatal(err_msg("os_solaris.cpp: os::init: sysconf failed (%s)",
-                  strerror(errno)));
+    fatal("os_solaris.cpp: os::init: sysconf failed (%s)", strerror(errno));
   }
   init_page_sizes((size_t) page_size);
 
@@ -4416,7 +4414,7 @@ void os::init(void) {
 
   int fd = ::open("/dev/zero", O_RDWR);
   if (fd < 0) {
-    fatal(err_msg("os::init: cannot open /dev/zero (%s)", strerror(errno)));
+    fatal("os::init: cannot open /dev/zero (%s)", strerror(errno));
   } else {
     Solaris::set_dev_zero_fd(fd);
 

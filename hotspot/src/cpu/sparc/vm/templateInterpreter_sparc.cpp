@@ -204,6 +204,20 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step) {
   address entry = __ pc();
   __ get_constant_pool_cache(LcpoolCache); // load LcpoolCache
+#if INCLUDE_JVMCI
+  // Check if we need to take lock at entry of synchronized method.
+  if (UseJVMCICompiler) {
+    Label L;
+    Address pending_monitor_enter_addr(G2_thread, JavaThread::pending_monitorenter_offset());
+    __ ldbool(pending_monitor_enter_addr, Gtemp);  // Load if pending monitor enter
+    __ cmp_and_br_short(Gtemp, G0, Assembler::equal, Assembler::pn, L);
+    // Clear flag.
+    __ stbool(G0, pending_monitor_enter_addr);
+    // Take lock.
+    lock_method();
+    __ bind(L);
+  }
+#endif
   { Label L;
     Address exception_addr(G2_thread, Thread::pending_exception_offset());
     __ ld_ptr(exception_addr, Gtemp);  // Load pending exception.
@@ -349,7 +363,7 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
 // Allocate monitor and lock method (asm interpreter)
 // ebx - Method*
 //
-void InterpreterGenerator::lock_method(void) {
+void TemplateInterpreterGenerator::lock_method() {
   __ ld(Lmethod, in_bytes(Method::access_flags_offset()), O0);  // Load access flags.
 
 #ifdef ASSERT
@@ -779,14 +793,14 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
     // Generate regular method entry
     __ bind(slow_path);
-    (void) generate_normal_entry(false);
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
     return entry;
   }
 #endif // INCLUDE_ALL_GCS
 
   // If G1 is not enabled then attempt to go through the accessor entry point
   // Reference.get is an accessor
-  return generate_jump_to_normal_entry();
+  return NULL;
 }
 
 //

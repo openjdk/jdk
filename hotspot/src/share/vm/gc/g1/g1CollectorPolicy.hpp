@@ -155,7 +155,7 @@ public:
   uint max_desired_young_length() {
     return _max_desired_young_length;
   }
-  bool adaptive_young_list_length() {
+  bool adaptive_young_list_length() const {
     return _adaptive_size;
   }
 };
@@ -242,9 +242,9 @@ private:
   void init_cset_region_lengths(uint eden_cset_region_length,
                                 uint survivor_cset_region_length);
 
-  uint eden_cset_region_length()     { return _eden_cset_region_length;     }
-  uint survivor_cset_region_length() { return _survivor_cset_region_length; }
-  uint old_cset_region_length()      { return _old_cset_region_length;      }
+  uint eden_cset_region_length() const     { return _eden_cset_region_length;     }
+  uint survivor_cset_region_length() const { return _survivor_cset_region_length; }
+  uint old_cset_region_length() const      { return _old_cset_region_length;      }
 
   uint _free_regions_at_end_of_collection;
 
@@ -254,13 +254,13 @@ private:
 
   size_t _rs_lengths_prediction;
 
-  double sigma() { return _sigma; }
+  double sigma() const { return _sigma; }
 
   // A function that prevents us putting too much stock in small sample
   // sets.  Returns a number between 2.0 and 1.0, depending on the number
   // of samples.  5 or more samples yields one; fewer scales linearly from
   // 2.0 at 1 sample to 1.0 at 5.
-  double confidence_factor(int samples) {
+  double confidence_factor(int samples) const {
     if (samples > 4) return 1.0;
     else return  1.0 + sigma() * ((double)(5 - samples))/2.0;
   }
@@ -303,7 +303,7 @@ public:
   bool verify_young_ages();
 #endif // PRODUCT
 
-  double get_new_prediction(TruncatedSeq* seq) {
+  double get_new_prediction(TruncatedSeq* seq) const {
     return MAX2(seq->davg() + sigma() * seq->dsd(),
                 seq->davg() * confidence_factor(seq->num()));
   }
@@ -312,27 +312,27 @@ public:
     _max_rs_lengths = rs_lengths;
   }
 
-  size_t predict_rs_length_diff() {
+  size_t predict_rs_length_diff() const {
     return (size_t) get_new_prediction(_rs_length_diff_seq);
   }
 
-  double predict_alloc_rate_ms() {
+  double predict_alloc_rate_ms() const {
     return get_new_prediction(_alloc_rate_ms_seq);
   }
 
-  double predict_cost_per_card_ms() {
+  double predict_cost_per_card_ms() const {
     return get_new_prediction(_cost_per_card_ms_seq);
   }
 
-  double predict_rs_update_time_ms(size_t pending_cards) {
+  double predict_rs_update_time_ms(size_t pending_cards) const {
     return (double) pending_cards * predict_cost_per_card_ms();
   }
 
-  double predict_young_cards_per_entry_ratio() {
+  double predict_young_cards_per_entry_ratio() const {
     return get_new_prediction(_young_cards_per_entry_ratio_seq);
   }
 
-  double predict_mixed_cards_per_entry_ratio() {
+  double predict_mixed_cards_per_entry_ratio() const {
     if (_mixed_cards_per_entry_ratio_seq->num() < 2) {
       return predict_young_cards_per_entry_ratio();
     } else {
@@ -340,17 +340,17 @@ public:
     }
   }
 
-  size_t predict_young_card_num(size_t rs_length) {
+  size_t predict_young_card_num(size_t rs_length) const {
     return (size_t) ((double) rs_length *
                      predict_young_cards_per_entry_ratio());
   }
 
-  size_t predict_non_young_card_num(size_t rs_length) {
+  size_t predict_non_young_card_num(size_t rs_length) const {
     return (size_t) ((double) rs_length *
                      predict_mixed_cards_per_entry_ratio());
   }
 
-  double predict_rs_scan_time_ms(size_t card_num) {
+  double predict_rs_scan_time_ms(size_t card_num) const {
     if (collector_state()->gcs_are_young()) {
       return (double) card_num * get_new_prediction(_cost_per_entry_ms_seq);
     } else {
@@ -358,7 +358,7 @@ public:
     }
   }
 
-  double predict_mixed_rs_scan_time_ms(size_t card_num) {
+  double predict_mixed_rs_scan_time_ms(size_t card_num) const {
     if (_mixed_cost_per_entry_ms_seq->num() < 3) {
       return (double) card_num * get_new_prediction(_cost_per_entry_ms_seq);
     } else {
@@ -367,7 +367,7 @@ public:
     }
   }
 
-  double predict_object_copy_time_ms_during_cm(size_t bytes_to_copy) {
+  double predict_object_copy_time_ms_during_cm(size_t bytes_to_copy) const {
     if (_cost_per_byte_ms_during_cm_seq->num() < 3) {
       return (1.1 * (double) bytes_to_copy) *
               get_new_prediction(_cost_per_byte_ms_seq);
@@ -377,7 +377,7 @@ public:
     }
   }
 
-  double predict_object_copy_time_ms(size_t bytes_to_copy) {
+  double predict_object_copy_time_ms(size_t bytes_to_copy) const {
     if (collector_state()->during_concurrent_mark()) {
       return predict_object_copy_time_ms_during_cm(bytes_to_copy);
     } else {
@@ -386,34 +386,34 @@ public:
     }
   }
 
-  double predict_constant_other_time_ms() {
+  double predict_constant_other_time_ms() const {
     return get_new_prediction(_constant_other_time_ms_seq);
   }
 
-  double predict_young_other_time_ms(size_t young_num) {
+  double predict_young_other_time_ms(size_t young_num) const {
     return (double) young_num *
            get_new_prediction(_young_other_cost_per_region_ms_seq);
   }
 
-  double predict_non_young_other_time_ms(size_t non_young_num) {
+  double predict_non_young_other_time_ms(size_t non_young_num) const {
     return (double) non_young_num *
            get_new_prediction(_non_young_other_cost_per_region_ms_seq);
   }
 
-  double predict_base_elapsed_time_ms(size_t pending_cards);
+  double predict_base_elapsed_time_ms(size_t pending_cards) const;
   double predict_base_elapsed_time_ms(size_t pending_cards,
-                                      size_t scanned_cards);
-  size_t predict_bytes_to_copy(HeapRegion* hr);
-  double predict_region_elapsed_time_ms(HeapRegion* hr, bool for_young_gc);
+                                      size_t scanned_cards) const;
+  size_t predict_bytes_to_copy(HeapRegion* hr) const;
+  double predict_region_elapsed_time_ms(HeapRegion* hr, bool for_young_gc) const;
 
   void set_recorded_rs_lengths(size_t rs_lengths);
 
-  uint cset_region_length()       { return young_cset_region_length() +
+  uint cset_region_length() const       { return young_cset_region_length() +
                                            old_cset_region_length(); }
-  uint young_cset_region_length() { return eden_cset_region_length() +
+  uint young_cset_region_length() const { return eden_cset_region_length() +
                                            survivor_cset_region_length(); }
 
-  double predict_survivor_regions_evac_time();
+  double predict_survivor_regions_evac_time() const;
 
   void cset_regions_freed() {
     bool propagate = collector_state()->should_propagate();
@@ -426,21 +426,25 @@ public:
     return _mmu_tracker;
   }
 
-  double max_pause_time_ms() {
+  const G1MMUTracker* mmu_tracker() const {
+    return _mmu_tracker;
+  }
+
+  double max_pause_time_ms() const {
     return _mmu_tracker->max_gc_time() * 1000.0;
   }
 
-  double predict_remark_time_ms() {
+  double predict_remark_time_ms() const {
     return get_new_prediction(_concurrent_mark_remark_times_ms);
   }
 
-  double predict_cleanup_time_ms() {
+  double predict_cleanup_time_ms() const {
     return get_new_prediction(_concurrent_mark_cleanup_times_ms);
   }
 
   // Returns an estimate of the survival rate of the region at yg-age
   // "yg_age".
-  double predict_yg_surv_rate(int age, SurvRateGroup* surv_rate_group) {
+  double predict_yg_surv_rate(int age, SurvRateGroup* surv_rate_group) const {
     TruncatedSeq* seq = surv_rate_group->get_seq(age);
     if (seq->num() == 0)
       gclog_or_tty->print("BARF! age is %d", age);
@@ -451,11 +455,11 @@ public:
     return pred;
   }
 
-  double predict_yg_surv_rate(int age) {
+  double predict_yg_surv_rate(int age) const {
     return predict_yg_surv_rate(age, _short_lived_surv_rate_group);
   }
 
-  double accum_yg_surv_rate_pred(int age) {
+  double accum_yg_surv_rate_pred(int age) const {
     return _short_lived_surv_rate_group->accum_surv_rate_pred(age);
   }
 
@@ -536,7 +540,7 @@ private:
   // The ratio of gc time to elapsed time, computed over recent pauses.
   double _recent_avg_pause_time_ratio;
 
-  double recent_avg_pause_time_ratio() {
+  double recent_avg_pause_time_ratio() const {
     return _recent_avg_pause_time_ratio;
   }
 
@@ -556,12 +560,12 @@ private:
   // Calculate and return the minimum desired young list target
   // length. This is the minimum desired young list length according
   // to the user's inputs.
-  uint calculate_young_list_desired_min_length(uint base_min_length);
+  uint calculate_young_list_desired_min_length(uint base_min_length) const;
 
   // Calculate and return the maximum desired young list target
   // length. This is the maximum desired young list length according
   // to the user's inputs.
-  uint calculate_young_list_desired_max_length();
+  uint calculate_young_list_desired_max_length() const;
 
   // Calculate and return the maximum young list target length that
   // can fit into the pause time goal. The parameters are: rs_lengths
@@ -572,11 +576,11 @@ private:
   uint calculate_young_list_target_length(size_t rs_lengths,
                                           uint base_min_length,
                                           uint desired_min_length,
-                                          uint desired_max_length);
+                                          uint desired_max_length) const;
 
   // Calculate and return chunk size (in number of regions) for parallel
   // concurrent mark cleanup.
-  uint calculate_parallel_work_chunk_size(uint n_workers, uint n_regions);
+  uint calculate_parallel_work_chunk_size(uint n_workers, uint n_regions) const;
 
   // Check whether a given young length (young_length) fits into the
   // given target pause time and whether the prediction for the amount
@@ -584,19 +588,19 @@ private:
   // given free space (expressed by base_free_regions).  It is used by
   // calculate_young_list_target_length().
   bool predict_will_fit(uint young_length, double base_time_ms,
-                        uint base_free_regions, double target_pause_time_ms);
+                        uint base_free_regions, double target_pause_time_ms) const;
 
   // Calculate the minimum number of old regions we'll add to the CSet
   // during a mixed GC.
-  uint calc_min_old_cset_length();
+  uint calc_min_old_cset_length() const;
 
   // Calculate the maximum number of old regions we'll add to the CSet
   // during a mixed GC.
-  uint calc_max_old_cset_length();
+  uint calc_max_old_cset_length() const;
 
   // Returns the given amount of uncollected reclaimable space
   // as a percentage of the current heap capacity.
-  double reclaimable_bytes_perc(size_t reclaimable_bytes);
+  double reclaimable_bytes_perc(size_t reclaimable_bytes) const;
 
 public:
 
@@ -604,6 +608,7 @@ public:
 
   virtual G1CollectorPolicy* as_g1_policy() { return this; }
 
+  const G1CollectorState* collector_state() const;
   G1CollectorState* collector_state();
 
   G1GCPhaseTimes* phase_times() const { return _phase_times; }
@@ -658,9 +663,9 @@ public:
 
   // Print heap sizing transition (with less and more detail).
 
-  void print_heap_transition(size_t bytes_before);
-  void print_heap_transition();
-  void print_detailed_heap_transition(bool full = false);
+  void print_heap_transition(size_t bytes_before) const;
+  void print_heap_transition() const;
+  void print_detailed_heap_transition(bool full = false) const;
 
   void record_stop_world_start();
   void record_concurrent_pause();
@@ -672,7 +677,7 @@ public:
   }
 
   // The amount of space we copied during a GC.
-  size_t bytes_copied_during_gc() {
+  size_t bytes_copied_during_gc() const {
     return _bytes_copied_during_gc;
   }
 
@@ -684,7 +689,7 @@ public:
   // next GC should be mixed. The two action strings are used
   // in the ergo output when the method returns true or false.
   bool next_gc_should_be_mixed(const char* true_action_str,
-                               const char* false_action_str);
+                               const char* false_action_str) const;
 
   // Choose a new collection set.  Marks the chosen regions as being
   // "in_collection_set", and links them together.  The head and number of
@@ -764,7 +769,7 @@ public:
 
   // If an expansion would be appropriate, because recent GC overhead had
   // exceeded the desired limit, return an amount to expand by.
-  virtual size_t expansion_amount();
+  virtual size_t expansion_amount() const;
 
   // Print tracing information.
   void print_tracing_info() const;
@@ -783,15 +788,15 @@ public:
 
   size_t young_list_target_length() const { return _young_list_target_length; }
 
-  bool is_young_list_full();
+  bool is_young_list_full() const;
 
-  bool can_expand_young_list();
+  bool can_expand_young_list() const;
 
-  uint young_list_max_length() {
+  uint young_list_max_length() const {
     return _young_list_max_length;
   }
 
-  bool adaptive_young_list_length() {
+  bool adaptive_young_list_length() const {
     return _young_gen_sizer->adaptive_young_list_length();
   }
 
@@ -832,14 +837,14 @@ public:
 
   static const uint REGIONS_UNLIMITED = (uint) -1;
 
-  uint max_regions(InCSetState dest) {
+  uint max_regions(InCSetState dest) const {
     switch (dest.value()) {
       case InCSetState::Young:
         return _max_survivor_regions;
       case InCSetState::Old:
         return REGIONS_UNLIMITED;
       default:
-        assert(false, err_msg("Unknown dest state: " CSETSTATE_FORMAT, dest.value()));
+        assert(false, "Unknown dest state: " CSETSTATE_FORMAT, dest.value());
         break;
     }
     // keep some compilers happy
@@ -862,7 +867,7 @@ public:
     _recorded_survivor_tail    = tail;
   }
 
-  uint recorded_survivor_regions() {
+  uint recorded_survivor_regions() const {
     return _recorded_survivor_regions;
   }
 

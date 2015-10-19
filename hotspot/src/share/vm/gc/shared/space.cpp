@@ -592,8 +592,8 @@ ALL_SINCE_SAVE_MARKS_CLOSURES(ContigSpace_OOP_SINCE_SAVE_MARKS_DEFN)
 // Very general, slow implementation.
 HeapWord* ContiguousSpace::block_start_const(const void* p) const {
   assert(MemRegion(bottom(), end()).contains(p),
-         err_msg("p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
-                  p2i(p), p2i(bottom()), p2i(end())));
+         "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
+         p2i(p), p2i(bottom()), p2i(end()));
   if (p >= top()) {
     return top();
   } else {
@@ -603,24 +603,23 @@ HeapWord* ContiguousSpace::block_start_const(const void* p) const {
       last = cur;
       cur += oop(cur)->size();
     }
-    assert(oop(last)->is_oop(),
-           err_msg(PTR_FORMAT " should be an object start", p2i(last)));
+    assert(oop(last)->is_oop(), PTR_FORMAT " should be an object start", p2i(last));
     return last;
   }
 }
 
 size_t ContiguousSpace::block_size(const HeapWord* p) const {
   assert(MemRegion(bottom(), end()).contains(p),
-         err_msg("p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
-                  p2i(p), p2i(bottom()), p2i(end())));
+         "p (" PTR_FORMAT ") not in space [" PTR_FORMAT ", " PTR_FORMAT ")",
+         p2i(p), p2i(bottom()), p2i(end()));
   HeapWord* current_top = top();
   assert(p <= current_top,
-         err_msg("p > current top - p: " PTR_FORMAT ", current top: " PTR_FORMAT,
-                  p2i(p), p2i(current_top)));
+         "p > current top - p: " PTR_FORMAT ", current top: " PTR_FORMAT,
+         p2i(p), p2i(current_top));
   assert(p == current_top || oop(p)->is_oop(),
-         err_msg("p (" PTR_FORMAT ") is not a block start - "
-                 "current_top: " PTR_FORMAT ", is_oop: %s",
-                 p2i(p), p2i(current_top), BOOL_TO_STR(oop(p)->is_oop())));
+         "p (" PTR_FORMAT ") is not a block start - "
+         "current_top: " PTR_FORMAT ", is_oop: %s",
+         p2i(p), p2i(current_top), BOOL_TO_STR(oop(p)->is_oop()));
   if (p < current_top) {
     return oop(p)->size();
   } else {

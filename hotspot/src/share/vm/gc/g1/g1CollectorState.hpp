@@ -104,24 +104,24 @@ class G1CollectorState VALUE_OBJ_CLASS_SPEC {
   void set_full_collection(bool v) { _full_collection = v; }
 
   // Getters
-  bool gcs_are_young() { return _gcs_are_young; }
-  bool last_gc_was_young() { return _last_gc_was_young; }
-  bool last_young_gc() { return _last_young_gc; }
-  bool during_initial_mark_pause() { return _during_initial_mark_pause; }
-  bool initiate_conc_mark_if_possible() { return _initiate_conc_mark_if_possible; }
-  bool during_marking() { return _during_marking; }
-  bool mark_in_progress() { return _mark_in_progress; }
-  bool in_marking_window() { return _in_marking_window; }
-  bool in_marking_window_im() { return _in_marking_window_im; }
-  bool concurrent_cycle_started() { return _concurrent_cycle_started; }
-  bool full_collection() { return _full_collection; }
+  bool gcs_are_young() const { return _gcs_are_young; }
+  bool last_gc_was_young() const { return _last_gc_was_young; }
+  bool last_young_gc() const { return _last_young_gc; }
+  bool during_initial_mark_pause() const { return _during_initial_mark_pause; }
+  bool initiate_conc_mark_if_possible() const { return _initiate_conc_mark_if_possible; }
+  bool during_marking() const { return _during_marking; }
+  bool mark_in_progress() const { return _mark_in_progress; }
+  bool in_marking_window() const { return _in_marking_window; }
+  bool in_marking_window_im() const { return _in_marking_window_im; }
+  bool concurrent_cycle_started() const { return _concurrent_cycle_started; }
+  bool full_collection() const { return _full_collection; }
 
   // Composite booleans (clients worry about flickering)
-  bool during_concurrent_mark() {
+  bool during_concurrent_mark() const {
     return (_in_marking_window && !_in_marking_window_im);
   }
 
-  bool should_propagate() { // XXX should have a more suitable state name or abstraction for this
+  bool should_propagate() const { // XXX should have a more suitable state name or abstraction for this
     return (_last_young_gc && !_in_marking_window);
   }
 
