@@ -48,7 +48,8 @@ PROVIDER_MODULES += jdk.charsets jdk.crypto.ec jdk.crypto.pkcs11 jdk.jvmstat jdk
 # tools
 TOOLS_MODULES += jdk.attach jdk.compiler jdk.dev \
                jdk.javadoc jdk.jcmd jdk.jconsole jdk.hotspot.agent jdk.jartool \
-               jdk.jdeps jdk.jdi jdk.jdwp.agent jdk.policytool jdk.rmic jdk.xml.bind jdk.xml.ws
+               jdk.jdeps jdk.jdi jdk.jdwp.agent jdk.jshell jdk.policytool jdk.rmic \
+               jdk.xml.bind jdk.xml.ws
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   PROVIDER_MODULES += jdk.crypto.mscapi
