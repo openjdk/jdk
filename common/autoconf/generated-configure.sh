@@ -815,6 +815,7 @@ JAXWS_TOPDIR
 JAXP_TOPDIR
 CORBA_TOPDIR
 LANGTOOLS_TOPDIR
+BOOT_JDK_BITS
 JAVAC_FLAGS
 BOOT_JDK_SOURCETARGET
 JARSIGNER
@@ -4587,7 +4588,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1444643341
+DATE_WHEN_GENERATED=1445354942
 
 ###############################################################################
 #
@@ -26918,6 +26919,18 @@ $as_echo "$tool_specified" >&6; }
   # When compiling code to be executed by the Boot JDK, force jdk8 compatibility.
   BOOT_JDK_SOURCETARGET="-source 8 -target 8"
 
+
+
+  # Check if the boot jdk is 32 or 64 bit
+  if "$JAVA" -d64 -version > /dev/null 2>&1; then
+    BOOT_JDK_BITS="64"
+  else
+    BOOT_JDK_BITS="32"
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if Boot JDK is 32 or 64 bits" >&5
+$as_echo_n "checking if Boot JDK is 32 or 64 bits... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BOOT_JDK_BITS" >&5
+$as_echo "$BOOT_JDK_BITS" >&6; }
 
 
 
@@ -53099,7 +53112,7 @@ $as_echo_n "checking flags for boot jdk java command for big workloads... " >&6;
   # Maximum amount of heap memory.
   # Maximum stack size.
   JVM_MAX_HEAP=`expr $MEMORY_SIZE / 2`
-  if test "x$BUILD_NUM_BITS" = x32; then
+  if test "x$BOOT_JDK_BITS" = "x32"; then
     if test "$JVM_MAX_HEAP" -gt "1100"; then
       JVM_MAX_HEAP=1100
     elif test "$JVM_MAX_HEAP" -lt "512"; then
@@ -53107,10 +53120,7 @@ $as_echo_n "checking flags for boot jdk java command for big workloads... " >&6;
     fi
     STACK_SIZE=768
   else
-    # Running Javac on a JVM on a 64-bit machine, takes more space since 64-bit
-    # pointers are used. Apparently, we need to increase the heap and stack
-    # space for the jvm. More specifically, when running javac to build huge
-    # jdk batch
+    # Running a 64 bit JVM allows for and requires a bigger heap
     if test "$JVM_MAX_HEAP" -gt "1600"; then
       JVM_MAX_HEAP=1600
     elif test "$JVM_MAX_HEAP" -lt "512"; then

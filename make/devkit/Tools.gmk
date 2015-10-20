@@ -49,9 +49,9 @@ ARCH := $(word 1,$(subst -, ,$(TARGET)))
 # Define external dependencies
 
 # Latest that could be made to work.
-gcc_ver := gcc-4.8.2
-binutils_ver := binutils-2.24
-ccache_ver := ccache-3.1.9
+gcc_ver := gcc-4.9.2
+binutils_ver := binutils-2.25
+ccache_ver := ccache-3.2.1
 mpfr_ver := mpfr-3.0.1
 gmp_ver := gmp-4.3.2
 mpc_ver := mpc-1.0.1
