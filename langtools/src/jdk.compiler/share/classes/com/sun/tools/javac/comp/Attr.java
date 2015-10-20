@@ -2817,8 +2817,10 @@ public class Attr extends JCTree.Visitor {
                 //omitted as we don't know at this stage as to whether this is a
                 //raw selector (because of inference)
                 chk.validate(that.expr, env, false);
+            } else {
+                Symbol lhsSym = TreeInfo.symbol(that.expr);
+                localEnv.info.selectSuper = lhsSym != null && lhsSym.name == names._super;
             }
-
             //attrib type-arguments
             List<Type> typeargtypes = List.nil();
             if (that.typeargs != null) {

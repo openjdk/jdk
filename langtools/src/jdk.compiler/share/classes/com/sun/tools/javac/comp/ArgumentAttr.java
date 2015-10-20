@@ -263,6 +263,8 @@ public class ArgumentAttr extends JCTree.Visitor {
                 attr.memberReferenceQualifierResult(tree));
         JCMemberReference mref2 = new TreeCopier<Void>(attr.make).copy(tree);
         mref2.expr = exprTree;
+        Symbol lhsSym = TreeInfo.symbol(exprTree);
+        localEnv.info.selectSuper = lhsSym != null && lhsSym.name == lhsSym.name.table.names._super;
         Symbol res =
                 attr.rs.getMemberReference(tree, localEnv, mref2,
                         exprTree.type, tree.name);
