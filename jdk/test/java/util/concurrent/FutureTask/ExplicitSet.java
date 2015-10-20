@@ -58,7 +58,7 @@ public class ExplicitSet {
         SettableTask() {
             super(new Callable<Boolean>() {
                     public Boolean call() {
-                        fail ("The task should never be run!");
+                        fail("The task should never be run!");
                         return null;
                     };
                 });

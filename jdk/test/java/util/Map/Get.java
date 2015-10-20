@@ -119,7 +119,7 @@ public class Get {
     static void check(boolean cond) { if (cond) pass(); else fail(); }
     static void check(String desc, boolean cond) { if (cond) pass(); else fail(desc); }
     static void equal(Object x, Object y) {
-        if(Objects.equals(x,y)) pass(); else fail(x + " not equal to " + y);
+        if (Objects.equals(x,y)) pass(); else fail(x + " not equal to " + y);
     }
 
     public static void main(String[] args) throws Throwable {

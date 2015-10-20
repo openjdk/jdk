@@ -47,10 +47,10 @@ public class ConcurrentQueueLoops {
     AtomicInteger totalItems;
     boolean print;
 
-    // Suitable for benchmarking.  Overriden by args[0] for testing.
+    // Suitable for benchmarking.  Overridden by args[0] for testing.
     int maxStages = 20;
 
-    // Suitable for benchmarking.  Overriden by args[1] for testing.
+    // Suitable for benchmarking.  Overridden by args[1] for testing.
     int items = 1024 * 1024;
 
     Collection<Queue<Integer>> concurrentQueues() {

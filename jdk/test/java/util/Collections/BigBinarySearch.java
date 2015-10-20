@@ -61,13 +61,13 @@ public class BigBinarySearch {
         }
     }
 
-    /** Check that binarySearch finds an element where we got it */
+    /** Checks that binarySearch finds an element where we got it. */
     private static void checkBinarySearch(List<Integer> l, int i) {
         try { equal(i, Collections.binarySearch(l, l.get(i))); }
         catch (Throwable t) { unexpected(t); }
     }
 
-    /** Check that binarySearch finds an element where we got it */
+    /** Checks that binarySearch finds an element where we got it. */
     private static void checkBinarySearch(List<Integer> l, int i,
                                           Comparator<Integer> comparator) {
         try { equal(i, Collections.binarySearch(l, l.get(i), comparator)); }

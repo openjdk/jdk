@@ -228,8 +228,8 @@ public class LockStep {
         if (maybe(4) && s instanceof Serializable) {
             try {
                 equal2(s, serialClone(s));
-            } catch(RuntimeException uhoh) {
-                if(!(uhoh.getCause() instanceof NotSerializableException)) {
+            } catch (RuntimeException uhoh) {
+                if (!(uhoh.getCause() instanceof NotSerializableException)) {
                     throw uhoh;
                 }
             }

@@ -120,7 +120,7 @@ public class Basic {
     //----------------------------------------------------------------
     // One thread interrupted
     //----------------------------------------------------------------
-    public static void threadInterrupted() throws Throwable{
+    public static void threadInterrupted() throws Throwable {
         int count = 0;
         Basic test = new Basic();
         CountDownLatch latch = new CountDownLatch(3);

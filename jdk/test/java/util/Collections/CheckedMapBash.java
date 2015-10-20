@@ -134,7 +134,7 @@ public class CheckedMapBash {
             fail("clear failed.");
 
         Iterator i = m.entrySet().iterator();
-        while(i.hasNext()) {
+        while (i.hasNext()) {
             i.next();
             i.remove();
         }
@@ -142,12 +142,11 @@ public class CheckedMapBash {
             fail("Iterator.remove() failed");
     }
 
-
     @DataProvider(name = "Bash.Supplier<Map<Integer,Integer>>", parallel = true)
     public static Iterator<Object[]> bashNavigableMapProvider() {
         ArrayList<Object[]> iters = new ArrayList<>(makeCheckedMaps());
         iters.ensureCapacity(numItr * iters.size());
-        for(int each=1; each < numItr; each++) {
+        for (int each=1; each < numItr; each++) {
             iters.addAll( makeCheckedMaps());
         }
         return iters.iterator();

@@ -60,7 +60,7 @@ import static java.util.zip.ZipConstants64.*;
  */
 public
 class ZipFile implements ZipConstants, Closeable {
-    private long jzfile;           // address of jzfile data
+    private long jzfile;  // address of jzfile data
     private final String name;     // zip file name
     private final int total;       // total number of entries
     private final boolean locsig;  // if zip file starts with LOCSIG (usually true)
@@ -691,7 +691,7 @@ class ZipFile implements ZipConstants, Closeable {
      * (possibly compressed) zip file entry.
      */
    private class ZipFileInputStream extends InputStream {
-        private volatile boolean closeRequested = false;
+        private volatile boolean zfisCloseRequested = false;
         protected long jzentry; // address of jzentry data
         private   long pos;     // current position within entry data
         protected long rem;     // number of remaining bytes within entry
@@ -718,6 +718,7 @@ class ZipFile implements ZipConstants, Closeable {
                     len = (int) rem;
                 }
 
+                // Check if ZipFile open
                 ensureOpenOrZipException();
                 len = ZipFile.read(ZipFile.this.jzfile, jzentry, pos, b,
                                    off, len);
@@ -761,9 +762,9 @@ class ZipFile implements ZipConstants, Closeable {
         }
 
         public void close() {
-            if (closeRequested)
+            if (zfisCloseRequested)
                 return;
-            closeRequested = true;
+            zfisCloseRequested = true;
 
             rem = 0;
             synchronized (ZipFile.this) {

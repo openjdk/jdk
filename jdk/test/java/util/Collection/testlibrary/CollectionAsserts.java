@@ -113,7 +113,7 @@ public class CollectionAsserts {
         }
 
         Set<T> uniq = new HashSet<>();
-        while(iter.hasNext()) {
+        while (iter.hasNext()) {
             T each = iter.next();
             assertTrue(!uniq.contains(each));
             uniq.add(each);
@@ -209,7 +209,7 @@ public class CollectionAsserts {
             assertTrue(!pI.hasNext());
         }
 
-        while(mI.hasNext()) {
+        while (mI.hasNext()) {
             pI = mI.next().iterator();
             assertTrue(!pI.hasNext());
         }

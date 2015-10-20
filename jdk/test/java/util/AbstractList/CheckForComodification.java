@@ -42,7 +42,7 @@ public class CheckForComodification {
             for (int i : list)
                 if (i == LENGTH - 2)
                     list.remove(i);
-        } catch(ConcurrentModificationException e) {
+        } catch (ConcurrentModificationException e) {
             return;
         }
         throw new RuntimeException("No ConcurrentModificationException");

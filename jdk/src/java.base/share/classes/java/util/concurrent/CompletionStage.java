@@ -34,12 +34,11 @@
  */
 
 package java.util.concurrent;
-import java.util.function.Supplier;
-import java.util.function.Consumer;
+
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 import java.util.function.BiFunction;
-import java.util.concurrent.Executor;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 /**
  * A stage of a possibly asynchronous computation, that performs an
@@ -56,9 +55,9 @@ import java.util.concurrent.Executor;
  * For example, {@code stage.thenApply(x -> square(x)).thenAccept(x ->
  * System.out.print(x)).thenRun(() -> System.out.println())}. An
  * additional form (<em>compose</em>) applies functions of stages
- * themselves, rather than their results. </li>
+ * themselves, rather than their results.
  *
- * <li> One stage's execution may be triggered by completion of a
+ * <li>One stage's execution may be triggered by completion of a
  * single stage, or both of two stages, or either of two stages.
  * Dependencies on a single stage are arranged using methods with
  * prefix <em>then</em>. Those triggered by completion of
@@ -66,9 +65,9 @@ import java.util.concurrent.Executor;
  * effects, using correspondingly named methods. Those triggered by
  * <em>either</em> of two stages make no guarantees about which of the
  * results or effects are used for the dependent stage's
- * computation.</li>
+ * computation.
  *
- * <li> Dependencies among stages control the triggering of
+ * <li>Dependencies among stages control the triggering of
  * computations, but do not otherwise guarantee any particular
  * ordering. Additionally, execution of a new stage's computations may
  * be arranged in any of three ways: default execution, default
@@ -81,7 +80,7 @@ import java.util.concurrent.Executor;
  * properties, and might not even support concurrent execution, but
  * are arranged for processing in a way that accommodates asynchrony.
  *
- * <li> Two method forms support processing whether the triggering
+ * <li>Two method forms support processing whether the triggering
  * stage completed normally or exceptionally: Method {@link
  * #whenComplete whenComplete} allows injection of an action
  * regardless of outcome, otherwise preserving the outcome in its
@@ -100,7 +99,7 @@ import java.util.concurrent.Executor;
  * stage completes normally or exceptionally. In the case of method
  * {@code whenComplete}, when the supplied action itself encounters an
  * exception, then the stage exceptionally completes with this
- * exception if not already completed exceptionally.</li>
+ * exception if not already completed exceptionally.
  *
  * </ul>
  *
@@ -587,7 +586,7 @@ public interface CompletionStage<T> {
 
     /**
      * Returns a new CompletionStage that, when this stage completes
-     * normally, is executed with this stage as the argument
+     * normally, is executed with this stage's result as the argument
      * to the supplied function.
      *
      * See the {@link CompletionStage} documentation for rules
@@ -603,7 +602,7 @@ public interface CompletionStage<T> {
     /**
      * Returns a new CompletionStage that, when this stage completes
      * normally, is executed using this stage's default asynchronous
-     * execution facility, with this stage as the argument to the
+     * execution facility, with this stage's result as the argument to the
      * supplied function.
      *
      * See the {@link CompletionStage} documentation for rules
@@ -652,12 +651,14 @@ public interface CompletionStage<T> {
      * Returns a new CompletionStage with the same result or exception as
      * this stage, that executes the given action when this stage completes.
      *
-     * <p>When this stage is complete, the given action is invoked with the
-     * result (or {@code null} if none) and the exception (or {@code null}
-     * if none) of this stage as arguments.  The returned stage is completed
-     * when the action returns.  If the supplied action itself encounters an
-     * exception, then the returned stage exceptionally completes with this
-     * exception unless this stage also completed exceptionally.
+     * <p>When this stage is complete, the given action is invoked
+     * with the result (or {@code null} if none) and the exception (or
+     * {@code null} if none) of this stage as arguments.  The returned
+     * stage is completed when the action returns.  If the supplied
+     * action itself encounters an exception, then the returned stage
+     * exceptionally completes with this exception unless this stage
+     * also completed exceptionally (in which case, the returned stage
+     * exceptionally completes with the original exception).
      *
      * @param action the action to perform
      * @return the new CompletionStage

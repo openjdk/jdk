@@ -57,13 +57,13 @@ public class ReadObject extends Hashtable {
     public Object get(Object key) {
         ValueWrapper valueWrapper = (ValueWrapper)super.get(key);
         Object value = valueWrapper.getValue();
-        if(value instanceof ValueWrapper)
+        if (value instanceof ValueWrapper)
             throw new RuntimeException("Hashtable.get bug");
         return value;
     }
 
     public Object put(Object key, Object value) {
-        if(value instanceof ValueWrapper)
+        if (value instanceof ValueWrapper)
             throw new RuntimeException(
                 "Hashtable.put bug: value is already wrapped");
         ValueWrapper valueWrapper = new ValueWrapper(value);
@@ -98,4 +98,4 @@ public class ReadObject extends Hashtable {
         ReadObject myHashtableCopy = (ReadObject)copyObject(myHashtable);
         String value = (String)myHashtableCopy.get("key");
     }
-};
+}

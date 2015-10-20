@@ -25,7 +25,7 @@
  * @test
  * @bug 4298133
  * @summary Due to a bug in Vector's removeAllElements(),
- *          the modification counter  would not get incremented.
+ *          the modification counter would not get incremented.
  * @author Konstantin Kladko
  */
 
@@ -37,7 +37,7 @@ public class ComodifiedRemoveAllElements {
         v.addElement(null);
         Iterator it = v.iterator();
         v.removeAllElements();
-        try{
+        try {
             it.next();
         } catch (ConcurrentModificationException cme) {
             return;

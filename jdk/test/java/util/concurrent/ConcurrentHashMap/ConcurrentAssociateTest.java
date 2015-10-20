@@ -23,14 +23,18 @@
 
 import org.testng.annotations.Test;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
@@ -39,48 +43,52 @@ import java.util.stream.Stream;
 /**
  * @test
  * @bug 8028564
- * @run testng ConcurrentAssociateTest
+ * @run testng/timeout=1200 ConcurrentAssociateTest
  * @summary Test that association operations, such as put and compute,
  * place entries in the map
  */
 @Test
 public class ConcurrentAssociateTest {
 
-    // The number of entries for each thread to place in a map
-    private static final int N = Integer.getInteger("n", 128);
-    // The number of iterations of the test
-    private static final int I = Integer.getInteger("i", 256);
+    /** Maximum time (in seconds) to wait for a test method to complete. */
+    private static final int TIMEOUT = Integer.getInteger("timeout", 200);
 
-    // Object to be placed in the concurrent map
+    /** The number of entries for each thread to place in a map. */
+    private static final int N = Integer.getInteger("n", 128);
+
+    /** The number of iterations of the test. */
+    private static final int I = Integer.getInteger("i", 64);
+
+    /** Objects to be placed in the concurrent map. */
     static class X {
         // Limit the hash code to trigger collisions
-        int hc = ThreadLocalRandom.current().nextInt(1, 9);
+        final int hc = ThreadLocalRandom.current().nextInt(1, 9);
 
         public int hashCode() { return hc; }
     }
 
     @Test
-    public void testPut() {
+    public void testPut() throws Throwable {
         test("CHM.put", (m, o) -> m.put(o, o));
     }
 
     @Test
-    public void testCompute() {
+    public void testCompute() throws Throwable {
         test("CHM.compute", (m, o) -> m.compute(o, (k, v) -> o));
     }
 
     @Test
-    public void testComputeIfAbsent() {
+    public void testComputeIfAbsent() throws Throwable {
         test("CHM.computeIfAbsent", (m, o) -> m.computeIfAbsent(o, (k) -> o));
     }
 
     @Test
-    public void testMerge() {
+    public void testMerge() throws Throwable {
         test("CHM.merge", (m, o) -> m.merge(o, o, (v1, v2) -> v1));
     }
 
     @Test
-    public void testPutAll() {
+    public void testPutAll() throws Throwable {
         test("CHM.putAll", (m, o) -> {
             Map<Object, Object> hm = new HashMap<>();
             hm.put(o, o);
@@ -88,7 +96,7 @@ public class ConcurrentAssociateTest {
         });
     }
 
-    private static void test(String desc, BiConsumer<ConcurrentMap<Object, Object>, Object> associator) {
+    private static void test(String desc, BiConsumer<ConcurrentMap<Object, Object>, Object> associator) throws Throwable {
         for (int i = 0; i < I; i++) {
             testOnce(desc, associator);
         }
@@ -100,13 +108,16 @@ public class ConcurrentAssociateTest {
         }
     }
 
-    private static void testOnce(String desc, BiConsumer<ConcurrentMap<Object, Object>, Object> associator) {
+    private static void testOnce(String desc, BiConsumer<ConcurrentMap<Object, Object>, Object> associator) throws Throwable {
         ConcurrentHashMap<Object, Object> m = new ConcurrentHashMap<>();
         CountDownLatch s = new CountDownLatch(1);
 
         Supplier<Runnable> sr = () -> () -> {
             try {
-                s.await();
+                if (!s.await(TIMEOUT, TimeUnit.SECONDS)) {
+                    dumpTestThreads();
+                    throw new AssertionError("timed out");
+                }
             }
             catch (InterruptedException e) {
             }
@@ -121,7 +132,7 @@ public class ConcurrentAssociateTest {
         };
 
         // Bound concurrency to avoid degenerate performance
-        int ps = Math.min(Runtime.getRuntime().availableProcessors(), 32);
+        int ps = Math.min(Runtime.getRuntime().availableProcessors(), 8);
         Stream<CompletableFuture> runners = IntStream.range(0, ps)
                 .mapToObj(i -> sr.get())
                 .map(CompletableFuture::runAsync);
@@ -131,16 +142,41 @@ public class ConcurrentAssociateTest {
 
         // Trigger the runners to start associating
         s.countDown();
+
         try {
-            all.join();
-        } catch (CompletionException e) {
-            Throwable t = e.getCause();
-            if (t instanceof AssociationFailure) {
-                throw (AssociationFailure) t;
+            all.get(TIMEOUT, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            dumpTestThreads();
+            throw e;
+        } catch (Throwable e) {
+            dumpTestThreads();
+            Throwable cause = e.getCause();
+            if (cause instanceof AssociationFailure) {
+                throw cause;
             }
-            else {
-                throw e;
-            }
+            throw e;
         }
+    }
+
+    /**
+     * A debugging tool to print stack traces of most threads, as jstack does.
+     * Uninteresting threads are filtered out.
+     */
+    static void dumpTestThreads() {
+        ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+        System.err.println("------ stacktrace dump start ------");
+        for (ThreadInfo info : threadMXBean.dumpAllThreads(true, true)) {
+            String name = info.getThreadName();
+            if ("Signal Dispatcher".equals(name))
+                continue;
+            if ("Reference Handler".equals(name)
+                && info.getLockName().startsWith("java.lang.ref.Reference$Lock"))
+                continue;
+            if ("Finalizer".equals(name)
+                && info.getLockName().startsWith("java.lang.ref.ReferenceQueue$Lock"))
+                continue;
+            System.err.print(info);
+        }
+        System.err.println("------ stacktrace dump end ------");
     }
 }

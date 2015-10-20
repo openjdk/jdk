@@ -80,7 +80,6 @@ public class ConcurrentContainsKeyTest {
         test(content, m);
     }
 
-
     private static void test(X[] content, ConcurrentHashMap<Object, Object> m) {
         for (int i = 0; i < I; i++) {
             testOnce(content, m);

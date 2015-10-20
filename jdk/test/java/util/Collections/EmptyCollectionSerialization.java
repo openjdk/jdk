@@ -62,7 +62,7 @@ public class EmptyCollectionSerialization {
                 copy.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(copy)) +
                 " is not the singleton " +
                 singleton.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(singleton)));
-        } catch(Exception all) {
+        } catch (Exception all) {
             fail(description + ": Unexpected Exception", all);
         }
     }

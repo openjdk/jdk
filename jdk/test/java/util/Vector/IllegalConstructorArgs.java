@@ -39,7 +39,7 @@ public class IllegalConstructorArgs {
       public static void main(String argv[]) {
           int testSucceeded=0;
 
-        try{
+        try {
            // this should generate an IllegalArgumentException
            Vector bad1 = new Vector(-100, 10);
         }
@@ -50,8 +50,8 @@ public class IllegalConstructorArgs {
             testSucceeded =0;
         }
 
-        if(testSucceeded == 0)
-             throw new RuntimeException("Wrong exception thrown.");
+        if (testSucceeded == 0)
+            throw new RuntimeException("Wrong exception thrown.");
 
      }
 

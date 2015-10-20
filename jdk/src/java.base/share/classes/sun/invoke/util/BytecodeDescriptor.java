@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,14 +37,20 @@ public class BytecodeDescriptor {
 
     private BytecodeDescriptor() { }  // cannot instantiate
 
+    /**
+     * @param loader the class loader in which to look up the types (null means
+     *               bootstrap class loader)
+     */
     public static List<Class<?>> parseMethod(String bytecodeSignature, ClassLoader loader) {
         return parseMethod(bytecodeSignature, 0, bytecodeSignature.length(), loader);
     }
 
+    /**
+     * @param loader the class loader in which to look up the types (null means
+     *               bootstrap class loader)
+     */
     static List<Class<?>> parseMethod(String bytecodeSignature,
             int start, int end, ClassLoader loader) {
-        if (loader == null)
-            loader = ClassLoader.getSystemClassLoader();
         String str = bytecodeSignature;
         int[] i = {start};
         ArrayList<Class<?>> ptypes = new ArrayList<Class<?>>();
@@ -71,6 +77,10 @@ public class BytecodeDescriptor {
         throw new IllegalArgumentException("bad signature: "+str+": "+msg);
     }
 
+    /**
+     * @param loader the class loader in which to look up the types (null means
+     *               bootstrap class loader)
+     */
     private static Class<?> parseSig(String str, int[] i, int end, ClassLoader loader) {
         if (i[0] == end)  return null;
         char c = str.charAt(i[0]++);
@@ -80,7 +90,9 @@ public class BytecodeDescriptor {
             i[0] = endc+1;
             String name = str.substring(begc, endc).replace('/', '.');
             try {
-                return loader.loadClass(name);
+                return (loader == null)
+                    ? Class.forName(name, false, null)
+                    : loader.loadClass(name);
             } catch (ClassNotFoundException ex) {
                 throw new TypeNotPresentException(name, ex);
             }
