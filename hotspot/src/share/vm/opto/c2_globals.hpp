@@ -368,18 +368,18 @@
   product(bool, UseRDPCForConstantTableBase, false,                         \
           "Use Sparc RDPC instruction for the constant table base.")        \
                                                                             \
-  develop(bool, PrintIdealGraph, false,                                     \
+  notproduct(bool, PrintIdealGraph, false,                                  \
           "Print ideal graph to XML file / network interface. "             \
           "By default attempts to connect to the visualizer on a socket.")  \
                                                                             \
-  develop(intx, PrintIdealGraphLevel, 0,                                    \
+  notproduct(intx, PrintIdealGraphLevel, 0,                                 \
           "Level of detail of the ideal graph printout. "                   \
           "System-wide value, 0=nothing is printed, 4=all details printed. "\
           "Level of detail of printouts can be set on a per-method level "  \
           "as well by using CompileCommand=option.")                        \
           range(0, 4)                                                       \
                                                                             \
-  develop(intx, PrintIdealGraphPort, 4444,                                  \
+  notproduct(intx, PrintIdealGraphPort, 4444,                               \
           "Ideal graph printer to network port")                            \
           range(0, SHRT_MAX)                                                \
                                                                             \
