@@ -29,13 +29,14 @@
 
 import static java.util.Collections.*;
 import java.util.*;
+import java.util.concurrent.SynchronousQueue;
 
 public class EmptyIterator {
 
     void test(String[] args) throws Throwable {
         testEmptyCollection(emptyList());
         testEmptyCollection(emptySet());
-
+        testEmptyCollection(new SynchronousQueue<Object>());
         testEmptyMap(emptyMap());
 
         Hashtable<?,?> emptyTable = new Hashtable<>();

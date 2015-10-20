@@ -34,14 +34,16 @@
  */
 
 package java.util.concurrent;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
+
 import java.security.AccessControlContext;
+import java.security.AccessControlException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
-import java.security.AccessControlException;
+import java.security.PrivilegedExceptionAction;
+import java.util.Collection;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -51,18 +53,18 @@ import sun.security.util.SecurityConstants;
  * package. This class supports the following kinds of methods:
  *
  * <ul>
- *   <li> Methods that create and return an {@link ExecutorService}
- *        set up with commonly useful configuration settings.
- *   <li> Methods that create and return a {@link ScheduledExecutorService}
- *        set up with commonly useful configuration settings.
- *   <li> Methods that create and return a "wrapped" ExecutorService, that
- *        disables reconfiguration by making implementation-specific methods
- *        inaccessible.
- *   <li> Methods that create and return a {@link ThreadFactory}
- *        that sets newly created threads to a known state.
- *   <li> Methods that create and return a {@link Callable}
- *        out of other closure-like forms, so they can be used
- *        in execution methods requiring {@code Callable}.
+ *   <li>Methods that create and return an {@link ExecutorService}
+ *       set up with commonly useful configuration settings.
+ *   <li>Methods that create and return a {@link ScheduledExecutorService}
+ *       set up with commonly useful configuration settings.
+ *   <li>Methods that create and return a "wrapped" ExecutorService, that
+ *       disables reconfiguration by making implementation-specific methods
+ *       inaccessible.
+ *   <li>Methods that create and return a {@link ThreadFactory}
+ *       that sets newly created threads to a known state.
+ *   <li>Methods that create and return a {@link Callable}
+ *       out of other closure-like forms, so they can be used
+ *       in execution methods requiring {@code Callable}.
  * </ul>
  *
  * @since 1.5
@@ -114,9 +116,10 @@ public class Executors {
     }
 
     /**
-     * Creates a work-stealing thread pool using all
-     * {@link Runtime#availableProcessors available processors}
+     * Creates a work-stealing thread pool using the number of
+     * {@linkplain Runtime#availableProcessors available processors}
      * as its target parallelism level.
+     *
      * @return the newly created thread pool
      * @see #newWorkStealingPool(int)
      * @since 1.8
@@ -498,11 +501,11 @@ public class Executors {
     // Non-public classes supporting the public methods
 
     /**
-     * A callable that runs given task and returns given result
+     * A callable that runs given task and returns given result.
      */
-    static final class RunnableAdapter<T> implements Callable<T> {
-        final Runnable task;
-        final T result;
+    private static final class RunnableAdapter<T> implements Callable<T> {
+        private final Runnable task;
+        private final T result;
         RunnableAdapter(Runnable task, T result) {
             this.task = task;
             this.result = result;
@@ -514,11 +517,11 @@ public class Executors {
     }
 
     /**
-     * A callable that runs under established access control settings
+     * A callable that runs under established access control settings.
      */
-    static final class PrivilegedCallable<T> implements Callable<T> {
-        private final Callable<T> task;
-        private final AccessControlContext acc;
+    private static final class PrivilegedCallable<T> implements Callable<T> {
+        final Callable<T> task;
+        final AccessControlContext acc;
 
         PrivilegedCallable(Callable<T> task) {
             this.task = task;
@@ -541,12 +544,13 @@ public class Executors {
 
     /**
      * A callable that runs under established access control settings and
-     * current ClassLoader
+     * current ClassLoader.
      */
-    static final class PrivilegedCallableUsingCurrentClassLoader<T> implements Callable<T> {
-        private final Callable<T> task;
-        private final AccessControlContext acc;
-        private final ClassLoader ccl;
+    private static final class PrivilegedCallableUsingCurrentClassLoader<T>
+            implements Callable<T> {
+        final Callable<T> task;
+        final AccessControlContext acc;
+        final ClassLoader ccl;
 
         PrivilegedCallableUsingCurrentClassLoader(Callable<T> task) {
             SecurityManager sm = System.getSecurityManager();
@@ -591,9 +595,9 @@ public class Executors {
     }
 
     /**
-     * The default thread factory
+     * The default thread factory.
      */
-    static class DefaultThreadFactory implements ThreadFactory {
+    private static class DefaultThreadFactory implements ThreadFactory {
         private static final AtomicInteger poolNumber = new AtomicInteger(1);
         private final ThreadGroup group;
         private final AtomicInteger threadNumber = new AtomicInteger(1);
@@ -621,11 +625,11 @@ public class Executors {
     }
 
     /**
-     * Thread factory capturing access control context and class loader
+     * Thread factory capturing access control context and class loader.
      */
-    static class PrivilegedThreadFactory extends DefaultThreadFactory {
-        private final AccessControlContext acc;
-        private final ClassLoader ccl;
+    private static class PrivilegedThreadFactory extends DefaultThreadFactory {
+        final AccessControlContext acc;
+        final ClassLoader ccl;
 
         PrivilegedThreadFactory() {
             super();
@@ -662,7 +666,8 @@ public class Executors {
      * A wrapper class that exposes only the ExecutorService methods
      * of an ExecutorService implementation.
      */
-    static class DelegatedExecutorService extends AbstractExecutorService {
+    private static class DelegatedExecutorService
+            extends AbstractExecutorService {
         private final ExecutorService e;
         DelegatedExecutorService(ExecutorService executor) { e = executor; }
         public void execute(Runnable command) { e.execute(command); }
@@ -703,8 +708,8 @@ public class Executors {
         }
     }
 
-    static class FinalizableDelegatedExecutorService
-        extends DelegatedExecutorService {
+    private static class FinalizableDelegatedExecutorService
+            extends DelegatedExecutorService {
         FinalizableDelegatedExecutorService(ExecutorService executor) {
             super(executor);
         }
@@ -717,7 +722,7 @@ public class Executors {
      * A wrapper class that exposes only the ScheduledExecutorService
      * methods of a ScheduledExecutorService implementation.
      */
-    static class DelegatedScheduledExecutorService
+    private static class DelegatedScheduledExecutorService
             extends DelegatedExecutorService
             implements ScheduledExecutorService {
         private final ScheduledExecutorService e;

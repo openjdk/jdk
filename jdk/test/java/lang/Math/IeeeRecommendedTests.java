@@ -24,7 +24,7 @@
 /*
  * @test
  * @library /lib/testlibrary/
- * @build jdk.testlibrary.*
+ * @build jdk.testlibrary.RandomFactory
  * @run main IeeeRecommendedTests
  * @bug 4860891 4826732 4780454 4939441 4826652 8078672
  * @summary Tests for IEEE 754[R] recommended functions and similar methods (use -Dseed=X to set PRNG seed)

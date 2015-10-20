@@ -89,12 +89,6 @@ Java_java_lang_StrictMath_sqrt(JNIEnv *env, jclass unused, jdouble d)
 }
 
 JNIEXPORT jdouble JNICALL
-Java_java_lang_StrictMath_cbrt(JNIEnv *env, jclass unused, jdouble d)
-{
-    return (jdouble) jcbrt((double)d);
-}
-
-JNIEXPORT jdouble JNICALL
 Java_java_lang_StrictMath_atan2(JNIEnv *env, jclass unused, jdouble d1, jdouble d2)
 {
     return (jdouble) jatan2((double)d1, (double)d2);

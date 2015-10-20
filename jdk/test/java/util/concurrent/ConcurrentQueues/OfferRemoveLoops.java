@@ -32,6 +32,7 @@
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import static java.util.concurrent.TimeUnit.*;
 
 @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
 public class OfferRemoveLoops {
@@ -65,15 +66,16 @@ public class OfferRemoveLoops {
     }
 
     void testQueue(final Queue q) throws Throwable {
-        System.out.println(q.getClass().getSimpleName());
+        System.err.println(q.getClass().getSimpleName());
         final long testDurationNanos = testDurationMillis * 1000L * 1000L;
         final long quittingTimeNanos = System.nanoTime() + testDurationNanos;
         final long timeoutMillis = 10L * 1000L;
         final int maxChunkSize = 1042;
         final int maxQueueSize = 10 * maxChunkSize;
+        final CountDownLatch done = new CountDownLatch(3);
 
-        /** Poor man's bounded buffer. */
-        final AtomicLong approximateCount = new AtomicLong(0L);
+        /** Poor man's bounded buffer; prevents unbounded queue expansion. */
+        final Semaphore offers = new Semaphore(maxQueueSize);
 
         abstract class CheckedThread extends Thread {
             CheckedThread(String name) {
@@ -89,42 +91,44 @@ public class OfferRemoveLoops {
             protected boolean quittingTime(long i) {
                 return (i % 1024) == 0 && quittingTime();
             }
-            protected abstract void realRun();
+            protected abstract void realRun() throws Exception;
             public void run() {
                 try { realRun(); } catch (Throwable t) { unexpected(t); }
             }
         }
 
         Thread offerer = new CheckedThread("offerer") {
-            protected void realRun() {
-                final long chunkSize = getRandom().nextInt(maxChunkSize) + 2;
+            protected void realRun() throws InterruptedException {
+                final int chunkSize = getRandom().nextInt(maxChunkSize) + 20;
                 long c = 0;
-                for (long i = 0; ! quittingTime(i); i++) {
+                while (! quittingTime()) {
                     if (q.offer(Long.valueOf(c))) {
                         if ((++c % chunkSize) == 0) {
-                            approximateCount.getAndAdd(chunkSize);
-                            while (approximateCount.get() > maxQueueSize)
-                                Thread.yield();
+                            offers.acquire(chunkSize);
                         }
                     } else {
                         Thread.yield();
-                    }}}};
+                    }
+                }
+                done.countDown();
+            }};
 
         Thread remover = new CheckedThread("remover") {
             protected void realRun() {
-                final long chunkSize = getRandom().nextInt(maxChunkSize) + 2;
+                final int chunkSize = getRandom().nextInt(maxChunkSize) + 20;
                 long c = 0;
-                for (long i = 0; ! quittingTime(i); i++) {
+                while (! quittingTime()) {
                     if (q.remove(Long.valueOf(c))) {
                         if ((++c % chunkSize) == 0) {
-                            approximateCount.getAndAdd(-chunkSize);
+                            offers.release(chunkSize);
                         }
                     } else {
                         Thread.yield();
                     }
                 }
                 q.clear();
-                approximateCount.set(0); // Releases waiting offerer thread
+                offers.release(1<<30);  // Releases waiting offerer thread
+                done.countDown();
             }};
 
         Thread scanner = new CheckedThread("scanner") {
@@ -139,18 +143,19 @@ public class OfferRemoveLoops {
                         break;
                     }
                     Thread.yield();
-                }}};
+                }
+                done.countDown();
+            }};
 
-        for (Thread thread : new Thread[] { offerer, remover, scanner }) {
-            thread.join(timeoutMillis + testDurationMillis);
-            if (thread.isAlive()) {
-                System.err.printf("Hung thread: %s%n", thread.getName());
-                failed++;
-                for (StackTraceElement e : thread.getStackTrace())
-                    System.err.println(e);
-                // Kludge alert
-                thread.stop();
-                thread.join(timeoutMillis);
+        if (! done.await(timeoutMillis + testDurationMillis, MILLISECONDS)) {
+            for (Thread thread : new Thread[] { offerer, remover, scanner }) {
+                if (thread.isAlive()) {
+                    System.err.printf("Hung thread: %s%n", thread.getName());
+                    failed++;
+                    for (StackTraceElement e : thread.getStackTrace())
+                        System.err.println(e);
+                    thread.interrupt();
+                }
             }
         }
     }

@@ -36,11 +36,12 @@
  * @author Doug Lea
  * @bug 8004138
  * @summary Check if ForkJoinPool table leaks thrown exceptions.
- * @run main/othervm -Xmx32m FJExceptionTableLeak
+ * @run main/othervm/timeout=1200 -Xmx32m FJExceptionTableLeak
  */
 import java.util.concurrent.*;
 
 public class FJExceptionTableLeak {
+    // TODO: make this test use less time!
 
     // Run with TASKS_PER_STEP * 40 < Xmx < STEPS * TASKS_PER_STEP * 40
     // These work for Xmx32m:

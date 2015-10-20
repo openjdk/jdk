@@ -74,7 +74,7 @@ public class Clone {
             throw new RuntimeException("TreeMap.clone() is broken.");
     }
 
-    private static class LinkedList2 extends LinkedList {};
-    private static class TreeSet2    extends TreeSet {};
-    private static class TreeMap2    extends TreeMap {};
+    private static class LinkedList2 extends LinkedList {}
+    private static class TreeSet2    extends TreeSet {}
+    private static class TreeMap2    extends TreeMap {}
 }
