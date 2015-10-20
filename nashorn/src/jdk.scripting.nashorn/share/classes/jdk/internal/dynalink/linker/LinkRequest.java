@@ -84,11 +84,14 @@
 package jdk.internal.dynalink.linker;
 
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.DynamicLinkerFactory;
 
 /**
- * Represents a request to link a particular invocation at a particular call site. Instances of these requests are being
- * passed to {@link GuardingDynamicLinker}.
+ * Represents a request to link a particular invocation at a particular call
+ * site. Instances of these requests will be constructed and passed to all
+ * {@link GuardingDynamicLinker} objects managed by the {@link DynamicLinker}
+ * that is trying to link the call site.
  */
 public interface LinkRequest {
     /**
@@ -135,5 +138,5 @@ public interface LinkRequest {
      * @return a new request identical to this one, except with the call site descriptor and arguments replaced with the
      * specified ones.
      */
-    public LinkRequest replaceArguments(CallSiteDescriptor callSiteDescriptor, Object[] arguments);
+    public LinkRequest replaceArguments(CallSiteDescriptor callSiteDescriptor, Object... arguments);
 }

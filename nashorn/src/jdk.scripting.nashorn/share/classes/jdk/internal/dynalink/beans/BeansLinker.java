@@ -210,10 +210,17 @@ public class BeansLinker implements GuardingDynamicLinker {
      * selecting an overloaded constructor based on an explicit signature, as
      * this functionality is not otherwise exposed by Dynalink as
      * {@link StaticClass} objects act as overloaded constructors without
-     * explicit signature selection.
+     * explicit signature selection. Example usage would be:
+     * {@code getConstructorMethod(java.awt.Color.class, "int, int, int")}.
      * @param clazz the class
-     * @param signature full signature of the constructor
-     * @return dynamic method for the constructor
+     * @param signature full signature of the constructor. Note how you can use
+     * names of primitive types, array names with normal Java notation (e.g.
+     * {@code "int[]"}), and normally you can even use unqualified class names
+     * (e.g. {@code "String, List"} instead of
+     * {@code "java.lang.String, java.util.List"} as long as they don't cause
+     * ambiguity in the specific parameter position.
+     * @return dynamic method for the constructor or null if no constructor with
+     * the specified signature exists.
      */
     public static Object getConstructorMethod(final Class<?> clazz, final String signature) {
         return StaticClassLinker.getConstructorMethod(clazz, signature);

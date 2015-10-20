@@ -92,13 +92,17 @@ import jdk.internal.dynalink.linker.MethodHandleTransformer;
 /**
  * Default implementation for a
  * {@link DynamicLinkerFactory#setInternalObjectsFilter(MethodHandleTransformer)}
- * that delegates to a pair of filtering method handles. Given a method handle
- * of {@code Object(Object)} type for filtering parameter and another one of the
- * same type for filtering return values, applies them to passed method handles,
- * on those parameter types and/or return value types that are declared to be
- * {@link Object}. Also handles {@link MethodHandle#isVarargsCollector() method
- * handles that support variable arity calls} with a last {@code Object[]}
- * parameter.
+ * that delegates to a pair of filtering method handles. It takes a method
+ * handle of {@code Object(Object)} type for filtering parameter values and
+ * another one of the same type for filtering return values. It applies them as
+ * parameter and return value filters on method handles passed to its
+ * {@link #transform(MethodHandle)} method, on those parameters and return values
+ * that are declared to have type {@link Object}. Also handles
+ * {@link MethodHandle#isVarargsCollector() method handles that support variable
+ * arity calls} with a last {@code Object[]} parameter. You can broadly think of
+ * the parameter filter as being a wrapping method for exposing internal runtime
+ * objects wrapped into an adapter with some public interface, and the return
+ * value filter as being its inverse unwrapping method.
  */
 public class DefaultInternalObjectFilter implements MethodHandleTransformer {
     private static final MethodHandle FILTER_VARARGS = new Lookup(MethodHandles.lookup()).findStatic(

@@ -83,47 +83,322 @@
 
 /**
  * <p>
- * Dynalink is a library for dynamic linking high-level operations on objects
- * such as "read a property", "write a property", "invoke a function" and so on,
- * expressed as {@link java.lang.invoke.CallSite call sites}. As such, it is
- * closely related to, and relies on, the {@link java.lang.invoke} package.
- * </p><p>
- * While {@link java.lang.invoke} provides a JVM-level foundation for
- * application-specific dynamic linking of methods, it does not provide a way to
- * express higher level operations on objects, nor methods that implement them.
- * These operations are the usual regimen of operations in object-oriented
- * environments: property access, access of elements of collections, invocation
- * of constructors, invocation of named methods (potentially with multiple
- * dispatch, e.g. link- and run-time equivalents of Java overloaded method
- * resolution). These are all functions that are normally desired in a language
- * on the JVM. When a JVM language is statically typed and its type system
- * matches that of the JVM, it can accomplish this with use of the usual
- * invocation bytecodes ({@code INVOKEVIRTUAL} etc.) as well as field access
- * bytecodes ({@code GETFIELD}, {@code PUTFIELD}). However, if the language is
- * dynamic (hence, types of some expressions are not known at the time the
- * program is compiled to bytecode), or its type system doesn't match closely
- * that of the JVM, then it should use {@code invokedynamic} call sites and let
- * Dynalink link those.
- * </p><p>
- * Dynalink lets programs have their operations on objects of unknown static
- * types linked dynamically at run time. It also lets a language expose a linker
- * for its own object model. Finally, it provides a default linker for ordinary
- * Java objects. Two languages both exporting their linkers in the same JVM will
- * even be able to cross-link their operations with each other if an object
- * belonging to one language is passed to code from the other language.
- * </p>
+ * Dynalink is a library for dynamic linking high-level operations on objects.
+ * These operations include "read a property",
+ * "write a property", "invoke a function" and so on. Dynalink is primarily
+ * useful for implementing programming languages where at least some expressions
+ * have dynamic types (that is, types that can not be decided statically), and
+ * the operations on dynamic types are expressed as
+ * {@link java.lang.invoke.CallSite call sites}. These call sites will be
+ * linked to appropriate target {@link java.lang.invoke.MethodHandle method handles}
+ * at run time based on actual types of the values the expressions evaluated to.
+ * These can change between invocations, necessitating relinking the call site
+ * multiple times to accommodate new types; Dynalink handles all that and more.
  * <p>
- * Languages that use Dynalink will create and configure a
- * {@link jdk.internal.dynalink.DynamicLinkerFactory} and use it to create a
- * {@link jdk.internal.dynalink.DynamicLinker}.
- * The thus created dynamic linker will have to be used to link any
- * {@link jdk.internal.dynalink.RelinkableCallSite}s they create, most often from a
- * {@link java.lang.invoke} bootstrap method.
- * </p>
+ * Dynalink supports implementation of programming languages with object models
+ * that differ (even radically) from the JVM's class-based model and have their
+ * custom type conversions.
  * <p>
- * Languages that wish to define and use their own linkers will also need to
- * use the {@link jdk.internal.dynalink.linker} package.
- * </p>
+ * Dynalink is closely related to, and relies on, the {@link java.lang.invoke}
+ * package.
+ * <p>
+ *
+ * While {@link java.lang.invoke} provides a low level API for dynamic linking
+ * of {@code invokedynamic} call sites, it does not provide a way to express
+ * higher level operations on objects, nor methods that implement them. These
+ * operations are the usual ones in object-oriented environments: property
+ * access, access of elements of collections, invocation of methods and
+ * constructors (potentially with multiple dispatch, e.g. link- and run-time
+ * equivalents of Java overloaded method resolution). These are all functions
+ * that are normally desired in a language on the JVM. If a language is
+ * statically typed and its type system matches that of the JVM, it can
+ * accomplish this with use of the usual invocation, field access, etc.
+ * instructions (e.g. {@code invokevirtual}, {@code getfield}). However, if the
+ * language is dynamic (hence, types of some expressions are not known until
+ * evaluated at run time), or its object model or type system don't match
+ * closely that of the JVM, then it should use {@code invokedynamic} call sites
+ * instead and let Dynalink manage them.
+ * <h2>Example</h2>
+ * Dynalink is probably best explained by an example showing its use. Let's
+ * suppose you have a program in a language where you don't have to declare the
+ * type of an object and you want to access a property on it:
+ * <pre>
+ * var color = obj.color;
+ * </pre>
+ * If you generated a Java class to represent the above one-line program, its
+ * bytecode would look something like this:
+ * <pre>
+ * aload 2 // load "obj" on stack
+ * invokedynamic "dyn:getProp:color"(Object)Object // invoke property getter on object of unknown type
+ * astore 3 // store the return value into local variable "color"
+ * </pre>
+ * In order to link the {@code invokedynamic} instruction, we need a bootstrap
+ * method. A minimalist bootstrap method with Dynalink could look like this:
+ * <pre>
+ * import java.lang.invoke.*;
+ * import jdk.internal.dynalink.*;
+ * import jdk.internal.dynalink.support.*;
+ *
+ * class MyLanguageRuntime {
+ *     private static final DynamicLinker dynamicLinker = new DynamicLinkerFactory().createLinker();
+ *
+ *     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type) {
+ *         return dynamicLinker.link(
+ *             new SimpleRelinkableCallSite(
+ *                 new SimpleCallSiteDescriptor(lookup, name, type)));
+ *     }
+ * }
+ * </pre>
+ * There are several objects of significance in the above code snippet:
+ * <ul>
+ * <li>{@link jdk.internal.dynalink.DynamicLinker} is the main object in Dynalink, it
+ * coordinates the linking of call sites to method handles that implement the
+ * operations named in them. It is configured and created using a
+ * {@link jdk.internal.dynalink.DynamicLinkerFactory}.</li>
+ * <li>When the bootstrap method is invoked, it needs to create a
+ * {@link java.lang.invoke.CallSite} object. In Dynalink, these call sites need
+ * to additionally implement the {@link jdk.internal.dynalink.RelinkableCallSite}
+ * interface. "Relinkable" here alludes to the fact that if the call site
+ * encounters objects of different types at run time, its target will be changed
+ * to a method handle that can perform the operation on the newly encountered
+ * type. {@link jdk.internal.dynalink.support.SimpleRelinkableCallSite} and
+ * {@link jdk.internal.dynalink.support.ChainedCallSite} (not used in the above example)
+ * are two implementations already provided by the library.</li>
+ * <li>Finally, Dynalink uses {@link jdk.internal.dynalink.CallSiteDescriptor} objects to
+ * preserve the parameters to the bootstrap method as it will need them whenever
+ * it needs to relink a call site. Again,
+ * {@link jdk.internal.dynalink.support.SimpleCallSiteDescriptor} is a simple
+ * implementation already provided by the library.</li>
+ * </ul>
+ * <p>What can you already do with the above setup? {@code DynamicLinkerFactory}
+ * by default creates a {@code DynamicLinker} that can link Java objects with the
+ * usual Java semantics. If you have these three simple classes:
+ * <pre>
+ * public class A {
+ *     public String color;
+ *     public A(String color) { this.color = color; }
+ * }
+ *
+ * public class B {
+ *     private String color;
+ *     public B(String color) { this.color = color; }
+ *     public String getColor() { return color; }
+ * }
+ *
+ * public class C {
+ *     private int color;
+ *     public C(int color) { this.color = color; }
+ *     public int getColor() { return color; }
+ * }
+ * </pre>
+ * and you somehow create their instances and pass them to your call site in your
+ * programming language:
+ * <pre>
+ * for each(var obj in [new A("red"), new B("green"), new C(0x0000ff)]) {
+ *     print(obj.color);
+ * }
+ * </pre>
+ * then on first invocation, Dynalink will link the {@code .color} getter
+ * operation to a field getter for {@code A.color}, on second invocation it will
+ * relink it to {@code B.getColor()} returning a {@code String}, and finally on
+ * third invocation it will relink it to {@code C.getColor()} returning an {@code int}.
+ * The {@code SimpleRelinkableCallSite} we used above only remembers the linkage
+ * for the last encountered type (it implements what is known as a <i>monomorphic
+ * inline cache</i>). Another already provided implementation,
+ * {@link jdk.internal.dynalink.support.ChainedCallSite} will remember linkages for
+ * several different types (it is a <i>polymorphic inline cache</i>) and is
+ * probably a better choice in serious applications.
+ * <h2>Dynalink and bytecode creation</h2>
+ * {@code CallSite} objects are usually created as part of bootstrapping
+ * {@code invokedynamic} instructions in bytecode. Hence, Dynalink is typically
+ * used as part of language runtimes that compile programs into Java
+ * {@code .class} bytecode format. Dynalink does not address the aspects of
+ * either creating bytecode classes or loading them into the JVM. That said,
+ * Dynalink can also be used without bytecode compilation (e.g. in language
+ * interpreters) by creating {@code CallSite} objects explicitly and associating
+ * them with representations of dynamic operations in the interpreted program
+ * (e.g. a typical representation would be some node objects in a syntax tree).
+ * <h2>Available operations</h2>
+ * The table below contains all operations defined by Dynalink. All of them have
+ * the prefix {@code "dyn:"} and this prefix is reserved for Dynalink use, with
+ * potential of future extensions. Elements of the name are separated with the
+ * COLON character. {@code $id} is used as a placeholder for an identifier for
+ * those operations that contain an identifier as part of their name.
+ * Identifiers in operation names need to be
+ * {@link jdk.internal.dynalink.support.NameCodec#encode(String) encoded}. Signatures are
+ * expressed in the usual JVM
+ * {@code (parameter-type1, parameter-type2, ...)return-type} format. The type
+ * "any" means that any type, either primitive or reference can be used (with
+ * obvious JVM limitation that {@code void} is disallowed as a parameter type
+ * but allowed as a return type.
+ * <p>&nbsp;
+ * <table summary="Dynalink defined operations" border="1" frame="border" cellpadding="5">
+ *   <thead>
+ *     <tr>
+ *       <th>Name</th>
+ *       <th>Signature</th>
+ *       <th>Semantics</th>
+ *     </tr>
+ *   </thead>
+ *   <tbody>
+ *     <tr>
+ *       <td>{@code dyn:getProp:$id}</td>
+ *       <td>(any)any</td>
+ *       <td>Retrieve the value of a named property on the object, with the
+ *           receiver being passed as the argument, and the property identifier
+ *           encoded in the operation name as {@code $id}.</td>
+ *     </tr>
+ *     <tr>
+ *       <td>{@code dyn:getProp}</td>
+ *       <td>(any,&nbsp;any)any</td>
+ *       <td>Retrieve the value of a named property on the object, with the
+ *           receiver being passed as the first, and the property identifier
+ *           being passed as the second argument.</td>
+ *     </tr>
+ *     <tr>
+ *       <td>{@code dyn:setProp:$id}</td>
+ *       <td>(any,&nbsp;any)void</td>
+ *       <td>Set the value of a named property on the object, with the
+ *           receiver being passed as the first, and the value to set being
+ *           passed as the second argument, with the property identifier
+ *           encoded in the operation name as {@code $id}.</td>
+ *     </tr>
+ *     <tr>
+ *       <td>{@code dyn:setProp}</td>
+ *       <td>(any,&nbsp;any,&nbsp;any)void</td>
+ *       <td>Set the value of a named property on the object, with the
+ *           receiver being passed as the first, the property identifier as the
+ *           second, and the value to set as the third argument.</td>
+ *     </tr>
+ *     <tr>
+ *       <td>{@code dyn:getElem:$id}</td>
+ *       <td>(any)any</td>
+ *       <td>Retrieve an element of a collection object (array, list, map,
+ *           etc.) with a fixed key encoded in the operation name as {@code $id}.
+ *           In this form, the key is necessarily a string as it is part of the
+ *           operation name, but runtimes are allowed to parse it as a number
+ *           literal when linking to a collection using numeric indices.</td>
+ *     </tr>
+ *     <tr>
+ *       <td>{@code dyn:getElem}</td>
+ *       <td>(any,&nbsp;any)any</td>
+ *       <td>Retrieve an element of a collection object (array, list, map,
+ *           etc.) with the receiver being passed as the first and the index
+ *           passed as the second argument.</td>
+ *     </tr>
+ *     <tr>
+ *       <td>{@code dyn:setElem:$id}</td>
+ *       <td>(any,&nbsp;any)void</td>
+ *       <td>Set an element of a collection object (array, list, map,
+ *           etc.) with a fixed key encoded in the operation name as {@code $id}.
+ *           The receiver is passed as the first, and the new element value as
+ *           the second argument. In this form, the key is necessarily a string
+ *           as it is part of the operation name, but runtimes are allowed to
+ *           parse it as a number literal when linking to a collection using
+ *           numeric indices.</td>
+ *     </tr>
+ *     <tr>
+ *       <td>{@code dyn:setElem}</td>
+ *       <td>(any,&nbsp;any,&nbsp;any)void</td>
+ *       <td>Set an element of a collection object (array, list, map,
+ *           etc.) with the receiver being passed as the first, the index
+ *           passed as the second, and the new element value as the third argument.</td>
+ *     </tr>
+ *     <tr>
+ *       <td>{@code dyn:getMethod:$id}</td>
+ *       <td>(any)any</td>
+ *       <td>Retrieve a named method on the object, identified by {@code $id}.
+ *           It is expected that at least the {@code "dyn:call"} operation is
+ *           applicable to the returned value.</td>
+ *     </tr>
+ *     <tr>
+ *       <td>{@code dyn:getMethod}</td>
+ *       <td>(any,&nbsp;any)any</td>
+ *       <td>Retrieve a named method on the object, with the receiver passed as
+ *           the first and the name of the method passed as the second argument.
+ *           It is expected that {@code "dyn:call"} operation is applicable to
+ *           the returned value.</td>
+ *     </tr>
+ *     <tr>
+ *       <td>{@code dyn:call}</td>
+ *       <td>(any[,&nbsp;any,&nbsp;any,...])any</td>
+ *       <td>Call a callable (method, function, etc.). The first argument
+ *           is the callable itself, and the rest are arguments passed to the
+ *           call. If the callable is an instance method, the {@code this}
+ *           argument should be the second argument, immediately following the
+ *           callable.</td>
+ *     </tr>
+ *     <tr>
+ *       <td>{@code dyn:callMethod:$id}</td>
+ *       <td>(any[,&nbsp;any,&nbsp;any,...])any</td>
+ *       <td>Call a named instance method on an object. The first argument
+ *           is the object on which the method is invoked, and the rest are
+ *           arguments passed to the call. Note that this method is not strictly
+ *           necessary, as it can be implemented as a composition of
+ *           {@code dyn:getMethod:$id} and {@code dyn:call}. It is a frequent
+ *           enough object-oriented pattern so it is convenient to provide it as
+ *           a separate operation.</td>
+ *     </tr>
+ *     <tr>
+ *       <td>{@code dyn:new}</td>
+ *       <td>(any[,&nbsp;any,&nbsp;any,...])any</td>
+ *       <td>Call a constructor. The first argument is the constructor itself,
+ *       and the rest are arguments passed to the constructor call.</td>
+ *     </tr>
+ *   </tbody>
+ * </table>
+ * <h2>Composite operations</h2>
+ * Some languages might not have separate namespaces on objects for
+ * properties, elements, and methods. Dynalink supports specifying composite
+ * operations for this purpose using the VERTICAL LINE character as the
+ * separator. Typical syntax would be e.g.
+ * {@code "dyn:getProp|getElem|getMethod:color"}. Any combination of
+ * {@code "getProp"}, {@code "getElem"}, and {@code "getMethod"} in any order can be
+ * specified. The semantics of this is "return the first matching member, trying
+ * them in the specified order". Similarly, {@code "setProp"} and {@code "setElem"}
+ * can be combined too in both orders. Only compositions consisting of getter
+ * operations only and setter operations only are allowed. They can either have
+ * an identifier encoded in the name or not.
+ * <p>
+ * Even if the language itself doesn't distinguish some of the namespaces, it
+ * can be helpful to map different syntaxes to different compositions. E.g.
+ * source expression {@code obj.color} could map to
+ * {@code "dyn:getProp|getElem|getMethod:color"}, but a different source
+ * expression that looks like collection element access {@code obj[key]} could
+ * be expressed instead as {@code "dyn:getElem|getProp|getMethod"}. Finally, if
+ * the retrieved value is subsequently called, then it makes sense to bring
+ * {@code getMethod} to the front of the list: the getter part of the source
+ * expression {@code obj.color()} should be
+ * {@code "dyn:getMethod|getProp|getElem:color"} and the one for
+ * {@code obj[key]()} should be {@code "dyn:getMethod|getElem|getProp"}.
+ * <h2>Language-specific linkers</h2>
+ * Languages that define their own object model different than the JVM
+ * class-based model and/or use their own type conversions will need to create
+ * their own language-specific linkers. See the {@link jdk.internal.dynalink.linker}
+ * package and specifically the {@link jdk.internal.dynalink.linker.GuardingDynamicLinker}
+ * interface to get started.
+ * <h2>Dynalink and Java objects</h2>
+ * The {@code DynamicLinker} objects created by {@code DynamicLinkerFactory} by
+ * default contain an internal instance of
+ * {@code BeansLinker}, which is a language-specific linker
+ * that implements the usual Java semantics for all of the above operations and
+ * can link any Java object that no other language-specific linker has managed
+ * to link. This way, all language runtimes have built-in interoperability with
+ * ordinary Java objects. See {@link jdk.internal.dynalink.beans.BeansLinker} for details
+ * on how it links the various operations.
+ * <h2>Cross-language interoperability</h2>
+ * A {@code DynamicLinkerFactory} can be configured with a
+ * {@link jdk.internal.dynalink.DynamicLinkerFactory#setClassLoader(ClassLoader) class
+ * loader}. It will try to instantiate all linker classes declared in
+ * {@code META-INF/services/jdk.internal.dynalink.linker.GuardingDynamicLinker} resources
+ * visible to that class loader and compose them into the {@code DynamicLinker}
+ * it creates. This allows for interoperability between languages because if you
+ * have two language runtimes A and B deployed in your JVM and they expose their
+ * linkers through the above mechanism, language runtime A will have a
+ * language-specific linker instance from B and vice versa inside their
+ * {@code DynamicLinker} objects. This means that if an object from language
+ * runtime B gets passed to code from language runtime A, the linker from B will
+ * get a chance to link the call site in A when it encounters the object from B.
  * @since 1.9
  */
 @jdk.Exported

@@ -83,7 +83,6 @@
 
 package jdk.internal.dynalink;
 
-import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
@@ -94,13 +93,18 @@ import java.util.StringTokenizer;
 import jdk.internal.dynalink.support.NameCodec;
 
 /**
- * Interface for objects describing a call site. A call site descriptor contains
- * all the information about a call site necessary for linking it: the class
- * performing the lookups, the name of the method being invoked, and the method
- * signature. Call site descriptors are used in Dynalink in place of passing
- * {@link CallSite} objects to linkers so they can't directly manipulate them.
+ * Interface for objects containing the information necessary for linking a call
+ * site. This information is normally passed as parameters to bootstrap methods
+ * and consists of the {@code MethodHandles.Lookup} object on the caller class
+ * in which the call site occurs, the method name mentioned in the call site,
+ * and the method type of the call site. {@code CallSiteDescriptor} objects are
+ * used in Dynalink to capture and store these parameters for subsequent use by
+ * the {@link DynamicLinker}.
+ * <p>
  * The constructors of built-in {@link RelinkableCallSite} implementations all
- * take a call site descriptor. Call site descriptors must be immutable.
+ * take a call site descriptor.
+ * <p>
+ * Call site descriptors must be immutable.
  */
 public interface CallSiteDescriptor {
     /**

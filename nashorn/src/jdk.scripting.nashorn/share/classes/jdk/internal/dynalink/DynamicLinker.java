@@ -100,11 +100,17 @@ import jdk.internal.dynalink.support.SimpleCallSiteDescriptor;
 import jdk.internal.dynalink.support.SimpleRelinkableCallSite;
 
 /**
- * The linker for {@link RelinkableCallSite} objects. Users of Dynalink have to
- * create a linker using the {@link DynamicLinkerFactory} and invoke its
- * {@link #link(RelinkableCallSite)} method from the invokedynamic bootstrap
- * methods to let it manage all the call sites they create. Usual usage would be
- * to create one class per language runtime to contain one linker instance as:
+ * The linker for {@link RelinkableCallSite} objects. A dynamic linker is a main
+ * objects when using Dynalink, it coordinates linking of call sites with
+ * linkers of available language runtimes that are represented by
+ * {@link GuardingDynamicLinker} objects (you only need to deal with these if
+ * you are yourself implementing a language runtime with its own object model
+ * and/or type conversions). To use Dynalink, you have to create one or more
+ * dynamic linkers using a {@link DynamicLinkerFactory}. Subsequently, you need
+ * to invoke its {@link #link(RelinkableCallSite)} method from
+ * {@code invokedynamic} bootstrap methods to let it manage all the call sites
+ * they create. Usual usage would be to create at least one class per language
+ * runtime to contain one linker instance as:
  * <pre>
  *
  * class MyLanguageRuntime {
@@ -122,29 +128,37 @@ import jdk.internal.dynalink.support.SimpleRelinkableCallSite;
  *     }
  * }
  * </pre>
- *
- * Note how there are three components you will need to provide here:
+ * The above setup of one static linker instance is often too simple. You will
+ * often have your language runtime have a concept of some kind of
+ * "context class loader" and you will want to create one dynamic linker per
+ * such class loader, to ensure it incorporates linkers for all other language
+ * runtimes visible to that class loader (see
+ * {@link DynamicLinkerFactory#setClassLoader(ClassLoader)}).
+ * <p>
+ * There are three components you need to provide in the above example:
  * <ul>
  *
- * <li>You're expected to provide a {@link GuardingDynamicLinker} for your own
- * language. If your runtime doesn't have its own language and/or object model
- * (i.e., it's a generic scripting shell), you don't need to implement a dynamic
- * linker; you would simply not invoke the {@code setPrioritizedLinker} method
- * on the factory.</li>
+ * <li>You are expected to provide a {@link GuardingDynamicLinker} for your own
+ * language. If your runtime doesn't have its own object model or type
+ * conversions, you don't need to implement a {@code GuardingDynamicLinker}; you
+ * would simply not invoke the {@code setPrioritizedLinker} method on the factory.</li>
  *
  * <li>The performance of the programs can depend on your choice of the class to
- * represent call sites. The above example used {@link SimpleRelinkableCallSite}, but
- * you might want to use {@link ChainedCallSite} instead. You'll need to
- * experiment and decide what fits your language runtime the best. You can
- * subclass either of these or roll your own if you need to.</li>
+ * represent call sites. The above example used
+ * {@link SimpleRelinkableCallSite}, but you might want to use
+ * {@link ChainedCallSite} instead. You'll need to experiment and decide what
+ * fits your runtime the best. You can further subclass either of these or
+ * implement your own.</li>
  *
  * <li>You also need to provide {@link CallSiteDescriptor}s to your call sites.
  * They are immutable objects that contain all the information about the call
  * site: the class performing the lookups, the name of the method being invoked,
- * and the method signature. The library provides a {@link SimpleCallSiteDescriptor},
- * or you can create your own descriptor classes, especially if you need to add
- * further information (values passed in additional parameters to the bootstrap method)
- * to them.</li>
+ * and the method signature. The library provides a
+ * {@link SimpleCallSiteDescriptor}, or you can create your own descriptor
+ * classes, especially if you need to add further information to them
+ * (typically, values passed in additional parameters to the bootstrap method).
+ * Since they are specified to be immutable, you can set up a cache for
+ * equivalent descriptors to have the call sites share them.</li>
  *
  * </ul>
  */
@@ -199,11 +213,12 @@ public final class DynamicLinker {
 
     /**
      * Returns the object representing the linker services of this class that
-     * are normally exposed to individual language-specific linkers.
-     * While as a user of this class you normally only care about the
-     * {@link #link(RelinkableCallSite)} method, in certain circumstances you
-     * might want to use the lower level services directly; either to lookup
-     * specific method handles, to access the type converters, and so on.
+     * are normally exposed to individual {@link GuardingDynamicLinker
+     * language-specific linkers}. While as a user of this class you normally
+     * only care about the {@link #link(RelinkableCallSite)} method, in certain
+     * circumstances you might want to use the lower level services directly;
+     * either to lookup specific method handles, to access the type converters,
+     * and so on.
      *
      * @return the object representing the linker services of this class.
      */
@@ -273,8 +288,9 @@ public final class DynamicLinker {
     /**
      * Returns a stack trace element describing the location of the
      * {@code invokedynamic} call site currently being linked on the current
-     * thread. The operation is potentially expensive and is intended for use in
-     * diagnostics code. For "free-floating" call sites (not associated with an
+     * thread. The operation is potentially expensive as it needs to generate a
+     * stack trace to inspect it and is intended for use in diagnostics code.
+     * For "free-floating" call sites (not associated with an
      * {@code invokedynamic} instruction), the result is not well-defined.
      *
      * @return a stack trace element describing the location of the call site

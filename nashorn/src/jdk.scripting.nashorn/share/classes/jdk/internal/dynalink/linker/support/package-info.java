@@ -31,7 +31,7 @@
  * license:
  */
 /*
-   Copyright 2009-2015 Attila Szegedi
+   Copyright 2015 Attila Szegedi
 
    Licensed under both the Apache License, Version 2.0 (the "Apache License")
    and the BSD License (the "BSD License"), with licensee being free to
@@ -81,23 +81,13 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.linker;
-
-import java.lang.invoke.MethodHandle;
-import jdk.internal.dynalink.DynamicLinkerFactory;
-
 /**
- * A generic interface describing operations that transform method handles.
- * Typical usage is for implementing
- * {@link DynamicLinkerFactory#setInternalObjectsFilter(MethodHandleTransformer)
- * internal objects filters}.
+ * <p>Contains classes that make it more convenient for language runtimes to
+ * implement their own language-specific object models and type conversions
+ * by providing basic implementations of some classes as well as various
+ * utilities.
+ * </p>
+ * @since 1.9
  */
-@FunctionalInterface
-public interface MethodHandleTransformer {
-    /**
-     * Transforms a method handle.
-     * @param target the method handle being transformed.
-     * @return transformed method handle.
-     */
-    public MethodHandle transform(final MethodHandle target);
-}
+@jdk.Exported
+package jdk.internal.dynalink.linker.support;

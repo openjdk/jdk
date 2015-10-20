@@ -105,7 +105,7 @@ import jdk.internal.dynalink.CallSiteDescriptor;
  * ensure that you mangle the names using {@link #encode(String)} when you're
  * emitting them in the bytecode.
  */
-public class NameCodec {
+public final class NameCodec {
     private static final char ESCAPE_CHAR = '\\';
     private static final char EMPTY_ESCAPE = '=';
     private static final String EMPTY_NAME = new String(new char[] { ESCAPE_CHAR, EMPTY_ESCAPE });
