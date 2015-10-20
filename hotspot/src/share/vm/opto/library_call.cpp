@@ -326,9 +326,10 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     // methods access VM-internal data.
     VM_ENTRY_MARK;
     methodHandle mh(THREAD, m->get_Method());
-    methodHandle ct(THREAD, method()->get_Method());
     is_available = compiler->is_intrinsic_supported(mh, is_virtual) &&
-                   !vmIntrinsics::is_disabled_by_flags(mh, ct);
+                   !C->directive()->is_intrinsic_disabled(mh) &&
+                   !vmIntrinsics::is_disabled_by_flags(mh);
+
   }
 
   if (is_available) {

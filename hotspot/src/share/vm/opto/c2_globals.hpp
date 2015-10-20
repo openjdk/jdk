@@ -154,7 +154,7 @@
   notproduct(bool, PrintOptoStatistics, false,                              \
           "Print New compiler statistics")                                  \
                                                                             \
-  notproduct(bool, PrintOptoAssembly, false,                                \
+  diagnostic(bool, PrintOptoAssembly, false,                                \
           "Print New compiler assembly output")                             \
                                                                             \
   develop_pd(bool, OptoPeephole,                                            \
@@ -632,7 +632,7 @@
   develop(bool, PrintDominators, false,                                     \
           "Print out dominator trees for GVN")                              \
                                                                             \
-  notproduct(bool, TraceSpilling, false,                                    \
+  diagnostic(bool, TraceSpilling, false,                                    \
           "Trace spilling")                                                 \
                                                                             \
   diagnostic(bool, TraceTypeProfile, false,                                 \

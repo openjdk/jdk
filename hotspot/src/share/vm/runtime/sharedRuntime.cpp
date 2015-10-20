@@ -2696,6 +2696,12 @@ void AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
 
       if (nm != NULL) {
         method->set_code(method, nm);
+
+        DirectiveSet* directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler(CompLevel_simple));
+        if (directive->PrintAssemblyOption) {
+          Disassembler::decode(nm, tty);
+        }
+        DirectivesStack::release(directive);
       }
     }
   } // Unlock AdapterHandlerLibrary_lock

@@ -79,11 +79,12 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
 #ifndef PRODUCT
   _vector_loop_debug = 0;
   if (_phase->C->method() != NULL) {
-    _phase->C->method()->has_option_value("VectorizeDebug", _vector_loop_debug);
+    _vector_loop_debug = phase->C->directive()->VectorizeDebugOption;
   }
+
   _CountedLoopReserveKit_debug = 0;
   if (_phase->C->method() != NULL) {
-    _phase->C->method()->has_option_value("DoReserveCopyInSuperWordDebug", _CountedLoopReserveKit_debug);
+    _CountedLoopReserveKit_debug = phase->C->directive()->DoReserveCopyInSuperWordDebugOption;
   }
 #endif
 }

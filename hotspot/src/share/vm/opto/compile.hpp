@@ -391,6 +391,7 @@ class Compile : public Phase {
   // Compilation environment.
   Arena                 _comp_arena;            // Arena with lifetime equivalent to Compile
   ciEnv*                _env;                   // CI interface
+  DirectiveSet*         _directive;             // Compiler directive
   CompileLog*           _log;                   // from CompilerThread
   const char*           _failure_reason;        // for record_failure/failing pattern
   GrowableArray<CallGenerator*>* _intrinsics;   // List of intrinsics.
@@ -527,6 +528,10 @@ class Compile : public Phase {
     print_inlining_stream()->print("%s", ss.as_string());
   }
 
+#ifndef PRODUCT
+  IdealGraphPrinter* printer() { return _printer; }
+#endif
+
   void log_late_inline(CallGenerator* cg);
   void log_inline_id(CallGenerator* cg);
   void log_inline_failure(const char* msg);
@@ -578,6 +583,7 @@ class Compile : public Phase {
 
   // ID for this compilation.  Useful for setting breakpoints in the debugger.
   int               compile_id() const          { return _compile_id; }
+  DirectiveSet*     directive() const           { return _directive; }
 
   // Does this compilation allow instructions to subsume loads?  User
   // instructions that subsume a load may result in an unschedulable
@@ -671,10 +677,7 @@ class Compile : public Phase {
   bool          method_has_option(const char * option) {
     return method() != NULL && method()->has_option(option);
   }
-  template<typename T>
-  bool          method_has_option_value(const char * option, T& value) {
-    return method() != NULL && method()->has_option_value(option, value);
-  }
+
 #ifndef PRODUCT
   bool          trace_opto_output() const       { return _trace_opto_output; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
@@ -692,8 +695,8 @@ class Compile : public Phase {
 
   void begin_method() {
 #ifndef PRODUCT
-    if (_printer && _printer->should_print(_method)) {
-      _printer->begin_method(this);
+    if (_printer && _printer->should_print(1)) {
+      _printer->begin_method();
     }
 #endif
     C->_latest_stage_start_counter.stamp();
@@ -711,8 +714,8 @@ class Compile : public Phase {
 
 
 #ifndef PRODUCT
-    if (_printer && _printer->should_print(_method)) {
-      _printer->print_method(this, CompilerPhaseTypeHelper::to_string(cpt), level);
+    if (_printer && _printer->should_print(level)) {
+      _printer->print_method(CompilerPhaseTypeHelper::to_string(cpt), level);
     }
 #endif
     C->_latest_stage_start_counter.stamp();
@@ -728,7 +731,7 @@ class Compile : public Phase {
       event.commit();
     }
 #ifndef PRODUCT
-    if (_printer && _printer->should_print(_method)) {
+    if (_printer && _printer->should_print(level)) {
       _printer->end_method();
     }
 #endif
@@ -1107,7 +1110,7 @@ class Compile : public Phase {
   // continuation.
   Compile(ciEnv* ci_env, C2Compiler* compiler, ciMethod* target,
           int entry_bci, bool subsume_loads, bool do_escape_analysis,
-          bool eliminate_boxing);
+          bool eliminate_boxing, DirectiveSet* directive);
 
   // Second major entry point.  From the TypeFunc signature, generate code
   // to pass arguments from the Java calling convention to the C calling
@@ -1115,7 +1118,7 @@ class Compile : public Phase {
   Compile(ciEnv* ci_env, const TypeFunc *(*gen)(),
           address stub_function, const char *stub_name,
           int is_fancy_jump, bool pass_tls,
-          bool save_arg_registers, bool return_pc);
+          bool save_arg_registers, bool return_pc, DirectiveSet* directive);
 
   // From the TypeFunc signature, generate code to pass arguments
   // from Compiled calling convention to Interpreter's calling convention
