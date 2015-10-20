@@ -99,13 +99,13 @@ import java.util.List;
 import java.util.Map;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.beans.GuardedInvocationComponent.ValidationType;
+import jdk.internal.dynalink.internal.InternalTypeUtilities;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.support.Guards;
 import jdk.internal.dynalink.linker.support.Lookup;
-import jdk.internal.dynalink.linker.support.TypeUtilities;
 import sun.reflect.CallerSensitive;
 
 /**
@@ -689,7 +689,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
                 assertParameterCount(callSiteDescriptor, 2);
                 final GuardedInvocationComponent nextComponent = getGuardedInvocationComponent(callSiteDescriptor,
                         linkerServices, ops);
-                if(nextComponent == null || !TypeUtilities.areAssignable(DynamicMethod.class,
+                if(nextComponent == null || !InternalTypeUtilities.areAssignable(DynamicMethod.class,
                         nextComponent.getGuardedInvocation().getInvocation().type().returnType())) {
                     // No next component operation, or it can never produce a dynamic method; just return a component
                     // for this operation.
@@ -756,7 +756,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
     static MethodPair matchReturnTypes(final MethodHandle m1, final MethodHandle m2) {
         final MethodType type1 = m1.type();
         final MethodType type2 = m2.type();
-        final Class<?> commonRetType = TypeUtilities.getCommonLosslessConversionType(type1.returnType(),
+        final Class<?> commonRetType = InternalTypeUtilities.getCommonLosslessConversionType(type1.returnType(),
                 type2.returnType());
         return new MethodPair(
                 m1.asType(type1.changeReturnType(commonRetType)),

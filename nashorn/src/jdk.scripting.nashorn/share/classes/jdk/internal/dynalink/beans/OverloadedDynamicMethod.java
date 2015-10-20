@@ -93,13 +93,16 @@ import java.security.ProtectionDomain;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.beans.ApplicableOverloadedMethods.ApplicabilityTest;
+import jdk.internal.dynalink.internal.InternalTypeUtilities;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
  * Represents a group of {@link SingleDynamicMethod} objects that represents all overloads of a particular name (or all
@@ -344,7 +347,7 @@ class OverloadedDynamicMethod extends DynamicMethod {
 
     private static boolean isApplicableDynamically(final LinkerServices linkerServices, final Class<?> callSiteType,
             final Class<?> methodType) {
-        return TypeUtilities.isPotentiallyConvertible(callSiteType, methodType)
+        return isPotentiallyConvertible(callSiteType, methodType)
                 || linkerServices.canConvert(callSiteType, methodType);
     }
 
@@ -364,5 +367,73 @@ class OverloadedDynamicMethod extends DynamicMethod {
 
     private boolean constructorFlagConsistent(final SingleDynamicMethod method) {
         return methods.isEmpty()? true : (methods.getFirst().isConstructor() == method.isConstructor());
+    }
+
+    /**
+     * Determines whether one type can be potentially converted to another type at runtime. Allows a conversion between
+     * any subtype and supertype in either direction, and also allows a conversion between any two primitive types, as
+     * well as between any primitive type and any reference type that can hold a boxed primitive.
+     *
+     * @param callSiteType the parameter type at the call site
+     * @param methodType the parameter type in the method declaration
+     * @return true if callSiteType is potentially convertible to the methodType.
+     */
+    private static boolean isPotentiallyConvertible(final Class<?> callSiteType, final Class<?> methodType) {
+        // Widening or narrowing reference conversion
+        if(InternalTypeUtilities.areAssignable(callSiteType, methodType)) {
+            return true;
+        }
+        if(callSiteType.isPrimitive()) {
+            // Allow any conversion among primitives, as well as from any
+            // primitive to any type that can receive a boxed primitive.
+            // TODO: narrow this a bit, i.e. allow, say, boolean to Character?
+            // MethodHandles.convertArguments() allows it, so we might need to
+            // too.
+            return methodType.isPrimitive() || isAssignableFromBoxedPrimitive(methodType);
+        }
+        if(methodType.isPrimitive()) {
+            // Allow conversion from any reference type that can contain a
+            // boxed primitive to any primitive.
+            // TODO: narrow this a bit too?
+            return isAssignableFromBoxedPrimitive(callSiteType);
+        }
+        return false;
+    }
+
+    private static final Set<Class<?>> PRIMITIVE_WRAPPER_TYPES = createPrimitiveWrapperTypes();
+
+    private static Set<Class<?>> createPrimitiveWrapperTypes() {
+        final Map<Class<?>, Class<?>> classes = new IdentityHashMap<>();
+        addClassHierarchy(classes, Boolean.class);
+        addClassHierarchy(classes, Byte.class);
+        addClassHierarchy(classes, Character.class);
+        addClassHierarchy(classes, Short.class);
+        addClassHierarchy(classes, Integer.class);
+        addClassHierarchy(classes, Long.class);
+        addClassHierarchy(classes, Float.class);
+        addClassHierarchy(classes, Double.class);
+        return classes.keySet();
+    }
+
+    private static void addClassHierarchy(final Map<Class<?>, Class<?>> map, final Class<?> clazz) {
+        if(clazz == null) {
+            return;
+        }
+        map.put(clazz, clazz);
+        addClassHierarchy(map, clazz.getSuperclass());
+        for(final Class<?> itf: clazz.getInterfaces()) {
+            addClassHierarchy(map, itf);
+        }
+    }
+
+    /**
+     * Returns true if the class can be assigned from any boxed primitive.
+     *
+     * @param clazz the class
+     * @return true if the class can be assigned from any boxed primitive. Basically, it is true if the class is any
+     * primitive wrapper class, or a superclass or superinterface of any primitive wrapper class.
+     */
+    private static boolean isAssignableFromBoxedPrimitive(final Class<?> clazz) {
+        return PRIMITIVE_WRAPPER_TYPES.contains(clazz);
     }
 }
