@@ -99,4 +99,12 @@ public class CommandGenerator {
         int compiler = RANDOM.nextInt(compilers.length + 1) - 1;
         return (compiler != -1) ? compilers[compiler] : null;
     }
+
+    /**
+     * Generates random diagnostic command
+     * {@link Scenario.Type}
+     */
+    public Scenario.JcmdType generateJcmdType() {
+        return Utils.getRandomElement(Scenario.JcmdType.values());
+    }
 }

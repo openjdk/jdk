@@ -33,6 +33,8 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.Pair;
 import jdk.test.lib.ProcessTools;
+import jdk.test.lib.dcmd.CommandExecutorException;
+import jdk.test.lib.dcmd.JcmdExecutor;
 import pool.PoolHelper;
 
 import java.io.BufferedReader;
@@ -43,6 +45,7 @@ import java.lang.reflect.Executable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -60,11 +63,13 @@ public final class Scenario {
     private final List<String> vmopts;
     private final Map<Executable, State> states;
     private final List<Consumer<OutputAnalyzer>> processors;
+    private final List<String> jcmdExecCommands;
 
     private Scenario(boolean isValid,
                      List<String> vmopts,
                      Map<Executable, State> states,
-                     List<CompileCommand> compileCommands) {
+                     List<CompileCommand> compileCommands,
+                     List<JcmdCommand> jcmdCommands) {
         this.isValid = isValid;
         this.vmopts = vmopts;
         this.states = states;
@@ -84,6 +89,21 @@ public final class Scenario {
         }
         processors.add(new CommandProcessor(nonQuieted));
         processors.add(new QuietProcessor(quieted));
+        jcmdExecCommands = new ArrayList<>();
+        boolean addCommandMet = false;
+        for (JcmdCommand cmd : jcmdCommands) {
+            switch (cmd.jcmdType) {
+                case ADD:
+                    if (!addCommandMet) {
+                        jcmdExecCommands.add(JcmdType.ADD.command);
+                    }
+                    addCommandMet = true;
+                    break;
+                default:
+                    jcmdExecCommands.add(cmd.jcmdType.command);
+                    break;
+            }
+        }
     }
 
     /**
@@ -128,7 +148,8 @@ public final class Scenario {
     }
 
     /*
-     * Performs connection with a test VM, sends method states
+     * Performs connection with a test VM, sends method states and performs
+     * JCMD operations on a test VM.
      */
     private void connectTestVM(ServerSocket serverSocket) {
         /*
@@ -145,6 +166,7 @@ public final class Scenario {
             // Get pid of the executed process
             int pid = Integer.parseInt(in.readLine());
             Asserts.assertNE(pid, 0, "Got incorrect pid");
+            executeJCMD(pid);
             // serialize and send state map
             for (Executable x : states.keySet()) {
                 pw.println("{");
@@ -154,6 +176,20 @@ public final class Scenario {
             }
         } catch (IOException e) {
             throw new Error("Failed to write data", e);
+        }
+    }
+
+    // Executes all diagnostic commands
+    private void executeJCMD(int pid) {
+        for (String command : jcmdExecCommands) {
+            new JcmdExecutor() {
+                @Override
+                protected List<String> createCommandLine(String cmd)
+                        throws CommandExecutorException {
+                    return Arrays.asList(jcmdBinary, Integer.toString(pid),
+                            cmd);
+                }
+            }.execute(command);
         }
     }
 
@@ -178,12 +214,35 @@ public final class Scenario {
     }
 
     /**
+     * Type of diagnostic (jcmd) command
+     */
+    public static enum JcmdType {
+        ADD("Compiler.directives_add " + Type.JCMD.fileName),
+        PRINT("Compiler.directives_print"),
+        CLEAR("Compiler.directives_clear"),
+        REMOVE("Compiler.directives_remove");
+
+        public final String command;
+        private JcmdType(String command) {
+            this.command = command;
+        }
+    }
+
+    /**
      * Type of the compile command
      */
     public static enum Type {
         OPTION(""),
         FILE("command_file"),
-        DIRECTIVE("directives.json");
+        DIRECTIVE("directives.json"),
+        JCMD("jcmd_directives.json") {
+            @Override
+            public CompileCommand createCompileCommand(Command command,
+                    MethodDescriptor md, Compiler compiler) {
+                return new JcmdCommand(command, md, compiler, this,
+                        JcmdType.ADD);
+            }
+        };
 
         public final String fileName;
 
@@ -205,23 +264,30 @@ public final class Scenario {
         private final Set<String> vmopts = new LinkedHashSet<>();
         private final Map<Type, StateBuilder<CompileCommand>> builders
                 = new HashMap<>();
+        private final JcmdStateBuilder jcmdStateBuilder;
 
         public Builder() {
             builders.put(Type.FILE, new CommandFileBuilder(Type.FILE.fileName));
             builders.put(Type.OPTION, new CommandOptionsBuilder());
             builders.put(Type.DIRECTIVE, new DirectiveBuilder(
                     Type.DIRECTIVE.fileName));
+            jcmdStateBuilder = new JcmdStateBuilder(Type.JCMD.fileName);
         }
 
         public void add(CompileCommand compileCommand) {
             String[] vmOptions = compileCommand.command.vmOpts;
             Collections.addAll(vmopts, vmOptions);
-            StateBuilder builder = builders.get(compileCommand.type);
-            if (builder == null) {
-                throw new Error("TESTBUG: Missing builder for the type: "
-                        + compileCommand.type);
+            if (compileCommand.type == Type.JCMD) {
+                jcmdStateBuilder.add((JcmdCommand) compileCommand);
+            } else {
+                StateBuilder<CompileCommand> builder = builders.get(
+                        compileCommand.type);
+                if (builder == null) {
+                    throw new Error("TESTBUG: Missing builder for the type: "
+                            + compileCommand.type);
+                }
+                builder.add(compileCommand);
             }
-            builder.add(compileCommand);
         }
 
         public Scenario build() {
@@ -235,19 +301,33 @@ public final class Scenario {
             Map<Executable, State> directiveFileStates
                     = builders.get(Type.DIRECTIVE).getStates();
 
+            // get all jcmd commands
+            List<JcmdCommand> jcmdCommands = jcmdStateBuilder
+                    .getCompileCommands();
+            boolean isClearedState = false;
+            if (jcmdClearedState(jcmdCommands)) {
+                isClearedState = true;
+            }
+
             // Merge states
             List<Pair<Executable, Callable<?>>> methods = new PoolHelper()
                     .getAllMethods();
             Map<Executable, State> finalStates = new HashMap<>();
+            Map<Executable, State> jcmdStates = jcmdStateBuilder.getStates();
             for (Pair<Executable, Callable<?>> pair : methods) {
                 Executable x = pair.first;
                 State commandOptionState = commandOptionStates.get(x);
                 State commandFileState = commandFileStates.get(x);
                 State st = State.merge(commandOptionState, commandFileState);
-                State directiveState = directiveFileStates.get(x);
-                if (directiveState != null) {
-                    st = directiveState;
+                if (!isClearedState) {
+                    State directiveState = directiveFileStates.get(x);
+                    if (directiveState != null) {
+                        st = directiveState;
+                    }
                 }
+                State jcmdState = jcmdStates.get(x);
+                st = State.merge(st, jcmdState);
+
                 finalStates.put(x, st);
             }
 
@@ -266,7 +346,19 @@ public final class Scenario {
                 options.addAll(builder.getOptions());
                 isValid &= builder.isValid();
             }
-            return new Scenario(isValid, options, finalStates, ccList);
+            options.addAll(jcmdStateBuilder.getOptions());
+            return new Scenario(isValid, options, finalStates, ccList,
+                    jcmdCommands);
+        }
+
+        // shows if jcmd have passed a clear command
+        private boolean jcmdClearedState(List<JcmdCommand> jcmdCommands) {
+            for (JcmdCommand jcmdCommand : jcmdCommands) {
+                if (jcmdCommand.jcmdType == JcmdType.CLEAR) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 }
