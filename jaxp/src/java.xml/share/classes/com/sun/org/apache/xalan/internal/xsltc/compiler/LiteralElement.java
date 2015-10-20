@@ -36,6 +36,7 @@ import com.sun.org.apache.xml.internal.serializer.ElemDesc;
 import com.sun.org.apache.xml.internal.serializer.ToHTMLStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -104,9 +105,9 @@ final class LiteralElement extends Instruction {
             }
         }
 
-        // Check if we have any declared namesaces
+        // Check if we have any declared namespaces
         if (_accessedPrefixes == null) {
-            _accessedPrefixes = new HashMap<>();
+            _accessedPrefixes = new Hashtable<>();
         }
         else {
             if (!declared) {
