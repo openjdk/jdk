@@ -389,17 +389,17 @@
  * <h2>Cross-language interoperability</h2>
  * A {@code DynamicLinkerFactory} can be configured with a
  * {@link jdk.internal.dynalink.DynamicLinkerFactory#setClassLoader(ClassLoader) class
- * loader}. It will try to instantiate all linker classes declared in
- * {@code META-INF/services/jdk.internal.dynalink.linker.GuardingDynamicLinker} resources
- * visible to that class loader and compose them into the {@code DynamicLinker}
- * it creates. This allows for interoperability between languages because if you
- * have two language runtimes A and B deployed in your JVM and they expose their
- * linkers through the above mechanism, language runtime A will have a
- * language-specific linker instance from B and vice versa inside their
- * {@code DynamicLinker} objects. This means that if an object from language
- * runtime B gets passed to code from language runtime A, the linker from B will
- * get a chance to link the call site in A when it encounters the object from B.
- * @since 1.9
+ * loader}. It will try to instantiate all
+ * {@link jdk.internal.dynalink.linker.GuardingDynamicLinkerExporter} classes visible to
+ * that class loader and compose the linkers they provide into the
+ * {@code DynamicLinker} it creates. This allows for interoperability between
+ * languages: if you have two language runtimes A and B deployed in your JVM and
+ * they export their linkers through the above mechanism, language runtime A
+ * will have a language-specific linker instance from B and vice versa inside
+ * their {@code DynamicLinker} objects. This means that if an object from
+ * language runtime B gets passed to code from language runtime A, the linker
+ * from B will get a chance to link the call site in A when it encounters the
+ * object from B.
  */
 @jdk.Exported
 package jdk.internal.dynalink;

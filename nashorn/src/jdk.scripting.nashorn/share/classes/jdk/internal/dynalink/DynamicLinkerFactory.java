@@ -92,15 +92,19 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.function.Supplier;
 import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardedInvocationTransformer;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
+import jdk.internal.dynalink.linker.GuardingDynamicLinkerExporter;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
@@ -141,6 +145,8 @@ public final class DynamicLinkerFactory {
     private MethodTypeConversionStrategy autoConversionStrategy;
     private MethodHandleTransformer internalObjectsFilter;
 
+    private List<ServiceConfigurationError> autoLoadingErrors = Collections.emptyList();
+
     /**
      * Creates a new dynamic linker factory with default configuration. Upon
      * creation, the factory can be configured using various {@code setXxx()}
@@ -152,17 +158,18 @@ public final class DynamicLinkerFactory {
 
     /**
      * Sets the class loader for automatic discovery of available guarding
-     * dynamic linkers. Guarding dynamic linker classes declared in
-     * {@code /META-INF/services/jdk.internal.dynalink.linker.GuardingDynamicLinker}
-     * resources available through this class loader will be automatically
-     * instantiated using the {@link ServiceLoader} mechanism and incorporated
-     * into {@code DynamicLinker}s that this factory creates. This allows for
-     * cross-language interoperability where call sites belonging to this language
-     * runtime can be linked by linkers from these autodiscovered runtimes if
-     * their native objects are passed to this runtime. If class loader is not
-     * set explicitly, then the thread context class loader of the thread
-     * invoking {@link #createLinker()} will be used. Can be invoked with null
-     * to signify system class loader.
+     * dynamic linkers. {@link GuardingDynamicLinkerExporter} implementations
+     * available through this class loader will be automatically instantiated
+     * using the {@link ServiceLoader} mechanism and the linkers they provide
+     * will be incorporated into {@code DynamicLinker}s that this factory
+     * creates. This allows for cross-language interoperability where call sites
+     * belonging to this language runtime can be linked by linkers from these
+     * automatically discovered runtimes if their native objects are passed to
+     * this runtime. If class loader is not set explicitly by invoking this
+     * method, then the thread context class loader of the thread invoking
+     * {@link #createLinker()} will be used. If this method is invoked
+     * explicitly with null then {@link ServiceLoader#loadInstalled(Class)} will
+     * be used to load the linkers.
      *
      * @param classLoader the class loader used for the automatic discovery of
      * available linkers.
@@ -185,7 +192,7 @@ public final class DynamicLinkerFactory {
      * @throws NullPointerException if any of the list elements are null.
      */
     public void setPrioritizedLinkers(final List<? extends GuardingDynamicLinker> prioritizedLinkers) {
-        this.prioritizedLinkers = reqireNonNullElements(prioritizedLinkers);
+        this.prioritizedLinkers = copyListRequireNonNullElements(prioritizedLinkers);
     }
 
     /**
@@ -227,7 +234,7 @@ public final class DynamicLinkerFactory {
      * @throws NullPointerException if any of the list elements are null.
      */
     public void setFallbackLinkers(final List<? extends GuardingDynamicLinker> fallbackLinkers) {
-        this.fallbackLinkers = reqireNonNullElements(fallbackLinkers);
+        this.fallbackLinkers = copyListRequireNonNullElements(fallbackLinkers);
     }
 
     /**
@@ -345,9 +352,14 @@ public final class DynamicLinkerFactory {
     /**
      * Creates a new dynamic linker based on the current configuration. This
      * method can be invoked more than once to create multiple dynamic linkers.
-     * Autodiscovered linkers are newly instantiated on every invocation of this
-     * method. It is allowed to change the factory's configuration between
-     * invocations. The method is not thread safe.
+     * Automatically discovered linkers are newly instantiated on every
+     * invocation of this method. It is allowed to change the factory's
+     * configuration between invocations. The method is not thread safe. After
+     * invocation, callers can invoke {@link #getAutoLoadingErrors()} to
+     * retrieve a list of {@link ServiceConfigurationError}s that occurred while
+     * trying to load automatically discovered linkers. These are never thrown
+     * from the call to this method as it makes every effort to recover from
+     * them and ignore the failing linkers.
      * @return the new dynamic Linker
      */
     public DynamicLinker createLinker() {
@@ -366,12 +378,7 @@ public final class DynamicLinkerFactory {
         addClasses(knownLinkerClasses, prioritizedLinkers);
         addClasses(knownLinkerClasses, fallbackLinkers);
 
-        final ClassLoader effectiveClassLoader = classLoaderExplicitlySet ? classLoader : getThreadContextClassLoader();
-        final List<GuardingDynamicLinker> discovered = new LinkedList<>();
-        final ServiceLoader<GuardingDynamicLinker> linkerLoader = ServiceLoader.load(GuardingDynamicLinker.class, effectiveClassLoader);
-        for(final GuardingDynamicLinker linker: linkerLoader) {
-            discovered.add(linker);
-        }
+        final List<GuardingDynamicLinker> discovered = discoverAutoLoadLinkers();
 
         // Now, concatenate ...
         final List<GuardingDynamicLinker> linkers =
@@ -420,6 +427,68 @@ public final class DynamicLinkerFactory {
                 syncOnRelink, unstableRelinkThreshold);
     }
 
+    /**
+     * Returns a list of {@link ServiceConfigurationError}s that were
+     * encountered while loading automatically discovered linkers during the
+     * last invocation of {@link #createLinker()}. They can be any non-Dynalink
+     * specific service configuration issues, as well as some Dynalink-specific
+     * errors when an exporter that the factory tried to automatically load:
+     * <ul>
+     * <li>did not have the runtime permission named
+     * {@link GuardingDynamicLinkerExporter#AUTOLOAD_PERMISSION_NAME} in a
+     * system with a security manager, or</li>
+     * <li>returned null from {@link GuardingDynamicLinkerExporter#get()}, or</li>
+     * <li>the list returned from {@link GuardingDynamicLinkerExporter#get()}
+     * had a null element.</li>
+     * </ul>
+     * @return an immutable list of encountered
+     * {@link ServiceConfigurationError}s. Can be empty.
+     */
+    public List<ServiceConfigurationError> getAutoLoadingErrors() {
+        return Collections.unmodifiableList(autoLoadingErrors);
+    }
+
+    private List<GuardingDynamicLinker> discoverAutoLoadLinkers() {
+        autoLoadingErrors = new LinkedList<>();
+        final ClassLoader effectiveClassLoader = classLoaderExplicitlySet ? classLoader : getThreadContextClassLoader();
+        final List<GuardingDynamicLinker> discovered = new LinkedList<>();
+        try {
+            final ServiceLoader<GuardingDynamicLinkerExporter> linkerLoader =
+                    AccessController.doPrivileged((PrivilegedAction<ServiceLoader<GuardingDynamicLinkerExporter>>)()-> {
+                        if (effectiveClassLoader == null) {
+                            return ServiceLoader.loadInstalled(GuardingDynamicLinkerExporter.class);
+                        }
+                        return ServiceLoader.load(GuardingDynamicLinkerExporter.class, effectiveClassLoader);
+                    });
+
+            for(final Iterator<GuardingDynamicLinkerExporter> it = linkerLoader.iterator(); it.hasNext();) {
+                try {
+                    final GuardingDynamicLinkerExporter autoLoader = it.next();
+                    try {
+                        discovered.addAll(requireNonNullElements(
+                                Objects.requireNonNull(autoLoader.get(),
+                                        ()->(autoLoader.getClass().getName() + " returned null from get()")),
+                                ()->(autoLoader.getClass().getName() + " returned a list with at least one null element")));
+                    } catch (final ServiceConfigurationError|VirtualMachineError e) {
+                        // Don't wrap a SCE in another SCE. Also, don't ignore
+                        // any VME (e.g. StackOverflowError or OutOfMemoryError).
+                        throw e;
+                    } catch (final Throwable t) {
+                        throw new ServiceConfigurationError(t.getMessage(), t);
+                    }
+                } catch (final ServiceConfigurationError e) {
+                    // Catch SCE with an individual exporter, carry on with it.hasNext().
+                    autoLoadingErrors.add(e);
+                }
+            }
+        } catch (final ServiceConfigurationError e) {
+            // Catch a top-level SCE; one either in ServiceLoader.load(),
+            // ServiceLoader.iterator(), or Iterator.hasNext().
+            autoLoadingErrors.add(e);
+        }
+        return discovered;
+    }
+
     private static ClassLoader getThreadContextClassLoader() {
         return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
             @Override
@@ -436,14 +505,18 @@ public final class DynamicLinkerFactory {
         }
     }
 
-    private static <T> List<T> reqireNonNullElements(final List<T> list) {
+    private static <T> List<T> copyListRequireNonNullElements(final List<T> list) {
         if (list == null) {
             return null;
         }
+        return new ArrayList<>(requireNonNullElements(list, ()->"List has at least one null element"));
+    }
+
+    private static <T> List<T> requireNonNullElements(final List<T> list, final Supplier<String> msgSupplier) {
         for(final T t: list) {
-            Objects.requireNonNull(t);
+            Objects.requireNonNull(t, msgSupplier);
         }
-        return new ArrayList<>(list);
+        return list;
     }
 
 }
