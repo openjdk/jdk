@@ -538,7 +538,7 @@ public:
   // Returns true if the heap was expanded by the requested amount;
   // false otherwise.
   // (Rounds up to a HeapRegion boundary.)
-  bool expand(size_t expand_bytes);
+  bool expand(size_t expand_bytes, double* expand_time_ms = NULL);
 
   // Returns the PLAB statistics for a given destination.
   inline G1EvacStats* alloc_buffer_stats(InCSetState dest);
