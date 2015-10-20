@@ -272,7 +272,8 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
     }
 
     protected String[] getWMClass() {
-        return new String[] {XToolkit.getCorrectXIDString(getClass().getName()), XToolkit.getAWTAppClassName()};
+        return new String[] {XToolkit.getAWTAppClassName(),
+                XToolkit.getAWTAppClassName()};
     }
 
     void setReparented(boolean newValue) {
