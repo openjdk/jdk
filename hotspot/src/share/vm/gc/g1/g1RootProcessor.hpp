@@ -32,8 +32,10 @@
 class CLDClosure;
 class CodeBlobClosure;
 class G1CollectedHeap;
+class G1EvacuationRootClosures;
 class G1GCPhaseTimes;
 class G1ParPushHeapRSClosure;
+class G1RootClosures;
 class Monitor;
 class OopClosure;
 class SubTasksDone;
@@ -71,16 +73,11 @@ class G1RootProcessor : public StackObj {
   void worker_has_discovered_all_strong_classes();
   void wait_until_all_strong_classes_discovered();
 
-  void process_java_roots(OopClosure* scan_non_heap_roots,
-                          CLDClosure* thread_stack_clds,
-                          CLDClosure* scan_strong_clds,
-                          CLDClosure* scan_weak_clds,
-                          CodeBlobClosure* scan_strong_code,
+  void process_java_roots(G1RootClosures* closures,
                           G1GCPhaseTimes* phase_times,
                           uint worker_i);
 
-  void process_vm_roots(OopClosure* scan_non_heap_roots,
-                        OopClosure* scan_non_heap_weak_roots,
+  void process_vm_roots(G1RootClosures* closures,
                         G1GCPhaseTimes* phase_times,
                         uint worker_i);
 
@@ -90,12 +87,7 @@ public:
   // Apply closures to the strongly and weakly reachable roots in the system
   // in a single pass.
   // Record and report timing measurements for sub phases using the worker_i
-  void evacuate_roots(OopClosure* scan_non_heap_roots,
-                      OopClosure* scan_non_heap_weak_roots,
-                      CLDClosure* scan_strong_clds,
-                      CLDClosure* scan_weak_clds,
-                      bool trace_metadata,
-                      uint worker_i);
+  void evacuate_roots(G1EvacuationRootClosures* closures, uint worker_i);
 
   // Apply oops, clds and blobs to all strongly reachable roots in the system
   void process_strong_roots(OopClosure* oops,

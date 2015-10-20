@@ -56,7 +56,7 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p, HeapRegion* from
   }
 
   assert(obj != NULL, "Must be");
-  update_rs(from, p, _worker_id);
+  update_rs(from, p);
 }
 
 template <class T> inline void G1ParScanThreadState::push_on_queue(T* ref) {

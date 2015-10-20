@@ -39,6 +39,7 @@
 #include "gc/g1/hSpaceCounters.hpp"
 #include "gc/g1/heapRegionManager.hpp"
 #include "gc/g1/heapRegionSet.hpp"
+#include "gc/g1/youngList.hpp"
 #include "gc/shared/barrierSet.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/plab.hpp"
@@ -64,7 +65,6 @@ class SpaceClosure;
 class CompactibleSpaceClosure;
 class Space;
 class G1CollectorPolicy;
-class GenRemSet;
 class G1RemSet;
 class HeapRegionRemSetIterator;
 class ConcurrentMark;
@@ -87,79 +87,6 @@ typedef GenericTaskQueueSet<RefToScanQueue, mtGC> RefToScanQueueSet;
 
 typedef int RegionIdx_t;   // needs to hold [ 0..max_regions() )
 typedef int CardIdx_t;     // needs to hold [ 0..CardsPerRegion )
-
-class YoungList : public CHeapObj<mtGC> {
-private:
-  G1CollectedHeap* _g1h;
-
-  HeapRegion* _head;
-
-  HeapRegion* _survivor_head;
-  HeapRegion* _survivor_tail;
-
-  HeapRegion* _curr;
-
-  uint        _length;
-  uint        _survivor_length;
-
-  size_t      _last_sampled_rs_lengths;
-  size_t      _sampled_rs_lengths;
-
-  void         empty_list(HeapRegion* list);
-
-public:
-  YoungList(G1CollectedHeap* g1h);
-
-  void         push_region(HeapRegion* hr);
-  void         add_survivor_region(HeapRegion* hr);
-
-  void         empty_list();
-  bool         is_empty() { return _length == 0; }
-  uint         length() { return _length; }
-  uint         eden_length() { return length() - survivor_length(); }
-  uint         survivor_length() { return _survivor_length; }
-
-  // Currently we do not keep track of the used byte sum for the
-  // young list and the survivors and it'd be quite a lot of work to
-  // do so. When we'll eventually replace the young list with
-  // instances of HeapRegionLinkedList we'll get that for free. So,
-  // we'll report the more accurate information then.
-  size_t       eden_used_bytes() {
-    assert(length() >= survivor_length(), "invariant");
-    return (size_t) eden_length() * HeapRegion::GrainBytes;
-  }
-  size_t       survivor_used_bytes() {
-    return (size_t) survivor_length() * HeapRegion::GrainBytes;
-  }
-
-  void rs_length_sampling_init();
-  bool rs_length_sampling_more();
-  void rs_length_sampling_next();
-
-  void reset_sampled_info() {
-    _last_sampled_rs_lengths =   0;
-  }
-  size_t sampled_rs_lengths() { return _last_sampled_rs_lengths; }
-
-  // for development purposes
-  void reset_auxilary_lists();
-  void clear() { _head = NULL; _length = 0; }
-
-  void clear_survivors() {
-    _survivor_head    = NULL;
-    _survivor_tail    = NULL;
-    _survivor_length  = 0;
-  }
-
-  HeapRegion* first_region() { return _head; }
-  HeapRegion* first_survivor_region() { return _survivor_head; }
-  HeapRegion* last_survivor_region() { return _survivor_tail; }
-
-  // debugging
-  bool          check_list_well_formed();
-  bool          check_list_empty(bool check_sample = true);
-  void          print();
-};
 
 // The G1 STW is alive closure.
 // An instance is embedded into the G1CH and used as the
@@ -1083,9 +1010,11 @@ public:
   // continues humongous regions too.
   void reset_gc_time_stamps(HeapRegion* hr);
 
-  void iterate_dirty_card_closure(CardTableEntryClosure* cl,
-                                  DirtyCardQueue* into_cset_dcq,
-                                  bool concurrent, uint worker_i);
+  // Apply the given closure on all cards in the Hot Card Cache, emptying it.
+  void iterate_hcc_closure(CardTableEntryClosure* cl, uint worker_i);
+
+  // Apply the given closure on all cards in the Dirty Card Queue Set, emptying it.
+  void iterate_dirty_card_closure(CardTableEntryClosure* cl, uint worker_i);
 
   // The shared block offset table array.
   G1BlockOffsetSharedArray* bot_shared() const { return _bot_shared; }

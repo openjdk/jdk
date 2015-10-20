@@ -27,6 +27,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
+#include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -37,15 +38,14 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id,
     _refs(g1h->task_queue(worker_id)),
     _dcq(&g1h->dirty_card_queue_set()),
     _ct_bs(g1h->g1_barrier_set()),
-    _g1_rem(g1h->g1_rem_set()),
+    _closures(NULL),
     _hash_seed(17),
     _worker_id(worker_id),
     _tenuring_threshold(g1h->g1_policy()->tenuring_threshold()),
     _age_table(false),
-    _scanner(g1h),
+    _scanner(g1h, this),
     _old_gen_is_full(false)
 {
-  _scanner.set_par_scan_thread_state(this);
   // we allocate G1YoungSurvRateNumRegions plus one entries, since
   // we "sacrifice" entry 0 to keep track of surviving bytes for
   // non-young regions (where the age is -1)
@@ -69,6 +69,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id,
   // need to be moved to the next space.
   _dest[InCSetState::Young]        = InCSetState::Old;
   _dest[InCSetState::Old]          = InCSetState::Old;
+
+  _closures = G1EvacuationRootClosures::create_root_closures(this, _g1h);
 }
 
 // Pass locally gathered statistics to global state.
@@ -86,6 +88,7 @@ void G1ParScanThreadState::flush(size_t* surviving_young_words) {
 
 G1ParScanThreadState::~G1ParScanThreadState() {
   delete _plab_allocator;
+  delete _closures;
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
 }
 

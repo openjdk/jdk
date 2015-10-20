@@ -152,7 +152,7 @@ bool CollectorPolicy::use_should_clear_all_soft_refs(bool v) {
   return result;
 }
 
-GenRemSet* CollectorPolicy::create_rem_set(MemRegion whole_heap) {
+CardTableRS* CollectorPolicy::create_rem_set(MemRegion whole_heap) {
   return new CardTableRS(whole_heap);
 }
 
@@ -173,7 +173,7 @@ size_t CollectorPolicy::compute_heap_alignment() {
   // byte entry and the os page size is 4096, the maximum heap size should
   // be 512*4096 = 2MB aligned.
 
-  size_t alignment = GenRemSet::max_alignment_constraint();
+  size_t alignment = CardTableRS::ct_max_alignment_constraint();
 
   if (UseLargePages) {
       // In presence of large pages we have to make sure that our

@@ -72,17 +72,14 @@ Method* Method::allocate(ClassLoaderData* loader_data,
                                           sizes,
                                           method_type,
                                           CHECK_NULL);
-
   int size = Method::size(access_flags.is_native());
-
-  return new (loader_data, size, false, MetaspaceObj::MethodType, THREAD) Method(cm, access_flags, size);
+  return new (loader_data, size, false, MetaspaceObj::MethodType, THREAD) Method(cm, access_flags);
 }
 
-Method::Method(ConstMethod* xconst, AccessFlags access_flags, int size) {
+Method::Method(ConstMethod* xconst, AccessFlags access_flags) {
   No_Safepoint_Verifier no_safepoint;
   set_constMethod(xconst);
   set_access_flags(access_flags);
-  set_method_size(size);
 #ifdef CC_INTERP
   set_result_index(T_VOID);
 #endif
@@ -1227,7 +1224,6 @@ methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int n
                                       m->method_type(),
                                       CHECK_(methodHandle()));
   methodHandle newm (THREAD, newm_oop);
-  int new_method_size = newm->method_size();
 
   // Create a shallow copy of Method part, but be careful to preserve the new ConstMethod*
   ConstMethod* newcm = newm->constMethod();
@@ -1242,7 +1238,6 @@ methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int n
   newm->set_constMethod(newcm);
   newm->constMethod()->set_code_size(new_code_length);
   newm->constMethod()->set_constMethod_size(new_const_method_size);
-  newm->set_method_size(new_method_size);
   assert(newm->code_size() == new_code_length, "check");
   assert(newm->method_parameters_length() == method_parameters_len, "check");
   assert(newm->checked_exceptions_length() == checked_exceptions_len, "check");

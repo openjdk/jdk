@@ -157,7 +157,7 @@ class FilteringClosure: public ExtendedOopClosure {
   }
  public:
   FilteringClosure(HeapWord* boundary, ExtendedOopClosure* cl) :
-    ExtendedOopClosure(cl->_ref_processor), _boundary(boundary),
+    ExtendedOopClosure(cl->ref_processor()), _boundary(boundary),
     _cl(cl) {}
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
+#include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
@@ -33,7 +34,6 @@
 #include "gc/shared/gcTraceTime.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
-#include "gc/shared/genRemSet.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/space.inline.hpp"
@@ -69,8 +69,7 @@ bool DefNewGeneration::IsAliveClosure::do_object_b(oop p) {
 
 DefNewGeneration::KeepAliveClosure::
 KeepAliveClosure(ScanWeakRefClosure* cl) : _cl(cl) {
-  GenRemSet* rs = GenCollectedHeap::heap()->rem_set();
-  _rs = (CardTableRS*)rs;
+  _rs = GenCollectedHeap::heap()->rem_set();
 }
 
 void DefNewGeneration::KeepAliveClosure::do_oop(oop* p)       { DefNewGeneration::KeepAliveClosure::do_oop_work(p); }
