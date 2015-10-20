@@ -89,7 +89,7 @@ import java.lang.invoke.MethodType;
 import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.DynamicLinkerFactory;
 import jdk.internal.dynalink.linker.ConversionComparator.Comparison;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
  * Interface for services provided to {@link GuardingDynamicLinker} instances by the {@link DynamicLinker} that owns
@@ -118,7 +118,7 @@ public interface LinkerServices {
      * Similar to {@link #asType(MethodHandle, MethodType)} except it only converts the return type of the method handle
      * when it can be done using a conversion that loses neither precision nor magnitude, otherwise it leaves it
      * unchanged. The idea is that other conversions should not be performed by individual linkers, but instead the
-     * {@link DynamicLinkerFactory#setPrelinkFilter(jdk.internal.dynalink.GuardedInvocationFilter) pre-link filter of
+     * {@link DynamicLinkerFactory#setPrelinkTransformer(GuardedInvocationTransformer) pre-link transformer of
      * the dynamic linker} should implement the strategy of dealing with potentially lossy return type conversions in a
      * manner specific to the language runtime.
      *

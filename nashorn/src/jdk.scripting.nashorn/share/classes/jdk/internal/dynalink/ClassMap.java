@@ -91,7 +91,7 @@ import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import jdk.internal.dynalink.support.Guards;
+import jdk.internal.dynalink.linker.support.Guards;
 
 /**
  * A dual map that can either strongly or weakly reference a given class depending on whether the class is visible from

@@ -32,7 +32,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.support.Guards;
+import jdk.internal.dynalink.linker.support.Guards;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 
 /**

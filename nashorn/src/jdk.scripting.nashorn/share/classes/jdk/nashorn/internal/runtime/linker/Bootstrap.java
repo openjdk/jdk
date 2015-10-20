@@ -37,14 +37,14 @@ import java.lang.invoke.MethodType;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.DynamicLinkerFactory;
-import jdk.internal.dynalink.GuardedInvocationFilter;
 import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.GuardedInvocationTransformer;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.MethodTypeConversionStrategy;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
@@ -102,7 +102,7 @@ public final class Bootstrap {
             new ReflectionCheckLinker());
         factory.setFallbackLinkers(nashornBeansLinker, new NashornBottomLinker());
         factory.setSyncOnRelink(true);
-        factory.setPrelinkFilter(new GuardedInvocationFilter() {
+        factory.setPrelinkTransformer(new GuardedInvocationTransformer() {
             @Override
             public GuardedInvocation filter(final GuardedInvocation inv, final LinkRequest request, final LinkerServices linkerServices) {
                 final CallSiteDescriptor desc = request.getCallSiteDescriptor();

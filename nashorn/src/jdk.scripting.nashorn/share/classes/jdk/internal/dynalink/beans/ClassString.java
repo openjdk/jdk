@@ -91,8 +91,8 @@ import java.security.PrivilegedAction;
 import java.util.LinkedList;
 import java.util.List;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.support.Guards;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.Guards;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
  * Represents a sequence of {@link Class} objects, useful for representing method signatures. Provides value

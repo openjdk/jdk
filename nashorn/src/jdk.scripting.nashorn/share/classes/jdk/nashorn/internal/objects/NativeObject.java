@@ -44,7 +44,7 @@ import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.internal.dynalink.support.SimpleLinkRequest;
+import jdk.internal.dynalink.linker.support.SimpleLinkRequest;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.objects.annotations.Attribute;

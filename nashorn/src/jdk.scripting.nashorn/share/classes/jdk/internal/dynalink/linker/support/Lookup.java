@@ -81,7 +81,7 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
+package jdk.internal.dynalink.linker.support;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;

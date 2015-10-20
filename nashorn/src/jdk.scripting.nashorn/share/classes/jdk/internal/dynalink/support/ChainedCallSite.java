@@ -81,16 +81,16 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink;
+package jdk.internal.dynalink.support;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
+import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.support.AbstractRelinkableCallSite;
-import jdk.internal.dynalink.support.Lookup;
+import jdk.internal.dynalink.linker.support.Lookup;
 
 /**
  * A relinkable call site that implements a polymorphic inline caching strategy.

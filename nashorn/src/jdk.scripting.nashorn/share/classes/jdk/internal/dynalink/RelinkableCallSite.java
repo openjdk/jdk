@@ -86,12 +86,14 @@ package jdk.internal.dynalink;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.support.ChainedCallSite;
+import jdk.internal.dynalink.support.SimpleRelinkableCallSite;
 
 /**
  * Interface for call sites managed by a {@link DynamicLinker}. Users of
  * Dynalink must use subclasses of {@link CallSite} that also implement this
  * interface as their call site implementations. There is a readily usable
- * {@link MonomorphicCallSite} subclass that implements monomorphic inline
+ * {@link SimpleRelinkableCallSite} subclass that implements monomorphic inline
  * caching strategy as well as {@link ChainedCallSite} that implements a
  * polymorphic inline caching strategy and retains a chain of previously linked
  * method handles. A relinkable call site will be managed by a

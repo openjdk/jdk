@@ -89,12 +89,15 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.util.Objects;
 import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.GuardedInvocationTransformer;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.support.Lookup;
+import jdk.internal.dynalink.linker.support.Lookup;
+import jdk.internal.dynalink.linker.support.SimpleLinkRequest;
+import jdk.internal.dynalink.support.ChainedCallSite;
 import jdk.internal.dynalink.support.SimpleCallSiteDescriptor;
-import jdk.internal.dynalink.support.SimpleLinkRequest;
+import jdk.internal.dynalink.support.SimpleRelinkableCallSite;
 
 /**
  * The linker for {@link RelinkableCallSite} objects. Users of Dynalink have to
@@ -115,7 +118,7 @@ import jdk.internal.dynalink.support.SimpleLinkRequest;
  *     }
  *
  *     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type) {
- *         return dynamicLinker.link(new MonomorphicCallSite(new SimpleCallSiteDescriptor(lookup, name, type)));
+ *         return dynamicLinker.link(new SimpleRelinkableCallSite(new SimpleCallSiteDescriptor(lookup, name, type)));
  *     }
  * }
  * </pre>
@@ -130,7 +133,7 @@ import jdk.internal.dynalink.support.SimpleLinkRequest;
  * on the factory.</li>
  *
  * <li>The performance of the programs can depend on your choice of the class to
- * represent call sites. The above example used {@link MonomorphicCallSite}, but
+ * represent call sites. The above example used {@link SimpleRelinkableCallSite}, but
  * you might want to use {@link ChainedCallSite} instead. You'll need to
  * experiment and decide what fits your language runtime the best. You can
  * subclass either of these or roll your own if you need to.</li>
@@ -154,7 +157,7 @@ public final class DynamicLinker {
     private static final String INVOKE_PACKAGE_PREFIX = "java.lang.invoke.";
 
     private final LinkerServices linkerServices;
-    private final GuardedInvocationFilter prelinkFilter;
+    private final GuardedInvocationTransformer prelinkTransformer;
     private final boolean syncOnRelink;
     private final int unstableRelinkThreshold;
 
@@ -162,17 +165,17 @@ public final class DynamicLinker {
      * Creates a new dynamic linker.
      *
      * @param linkerServices the linkerServices used by the linker, created by the factory.
-     * @param prelinkFilter see {@link DynamicLinkerFactory#setPrelinkFilter(GuardedInvocationFilter)}
+     * @param prelinkTransformer see {@link DynamicLinkerFactory#setPrelinkTransformer(GuardedInvocationTransformer)}
      * @param syncOnRelink see {@link DynamicLinkerFactory#setSyncOnRelink(boolean)}
      * @param unstableRelinkThreshold see {@link DynamicLinkerFactory#setUnstableRelinkThreshold(int)}
      */
-    DynamicLinker(final LinkerServices linkerServices, final GuardedInvocationFilter prelinkFilter,
+    DynamicLinker(final LinkerServices linkerServices, final GuardedInvocationTransformer prelinkTransformer,
             final boolean syncOnRelink, final int unstableRelinkThreshold) {
         if(unstableRelinkThreshold < 0) {
             throw new IllegalArgumentException("unstableRelinkThreshold < 0");
         }
         this.linkerServices = linkerServices;
-        this.prelinkFilter = prelinkFilter;
+        this.prelinkTransformer = prelinkTransformer;
         this.syncOnRelink = syncOnRelink;
         this.unstableRelinkThreshold = unstableRelinkThreshold;
     }
@@ -246,9 +249,9 @@ public final class DynamicLinker {
             throw new NoSuchDynamicMethodException(callSiteDescriptor.toString());
         }
 
-        // Make sure we filter the invocation before linking it into the call site. This is typically used to match the
+        // Make sure we transform the invocation before linking it into the call site. This is typically used to match the
         // return type of the invocation to the call site.
-        guardedInvocation = prelinkFilter.filter(guardedInvocation, linkRequest, linkerServices);
+        guardedInvocation = prelinkTransformer.filter(guardedInvocation, linkRequest, linkerServices);
         Objects.requireNonNull(guardedInvocation);
 
         int newRelinkCount = relinkCount;

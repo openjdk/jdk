@@ -47,7 +47,7 @@ import java.util.concurrent.atomic.LongAdder;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.internal.dynalink.support.Guards;
+import jdk.internal.dynalink.linker.support.Guards;
 import jdk.nashorn.internal.codegen.ApplySpecialization;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;

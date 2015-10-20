@@ -36,7 +36,7 @@ import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSType;

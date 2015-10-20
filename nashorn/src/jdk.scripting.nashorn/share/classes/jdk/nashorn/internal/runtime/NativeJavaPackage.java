@@ -36,7 +36,7 @@ import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.internal.dynalink.support.Guards;
+import jdk.internal.dynalink.linker.support.Guards;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
 import jdk.nashorn.internal.objects.annotations.Attribute;

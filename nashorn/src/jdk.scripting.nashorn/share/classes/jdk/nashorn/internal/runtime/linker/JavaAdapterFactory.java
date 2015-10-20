@@ -47,7 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import jdk.internal.dynalink.beans.StaticClass;
-import jdk.internal.dynalink.support.SimpleLinkRequest;
+import jdk.internal.dynalink.linker.support.SimpleLinkRequest;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.ScriptFunction;

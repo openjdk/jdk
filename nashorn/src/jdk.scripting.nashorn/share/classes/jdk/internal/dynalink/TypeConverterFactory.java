@@ -99,7 +99,7 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.MethodTypeConversionStrategy;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
  * A factory for type converters. This class is the main implementation behind the

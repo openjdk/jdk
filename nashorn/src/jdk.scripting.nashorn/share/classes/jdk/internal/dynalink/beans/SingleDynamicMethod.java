@@ -90,8 +90,8 @@ import java.lang.reflect.Array;
 import java.util.StringTokenizer;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.support.Guards;
-import jdk.internal.dynalink.support.Lookup;
+import jdk.internal.dynalink.linker.support.Guards;
+import jdk.internal.dynalink.linker.support.Lookup;
 
 /**
  * Base class for dynamic methods that dispatch to a single target Java method or constructor. Handles adaptation of the

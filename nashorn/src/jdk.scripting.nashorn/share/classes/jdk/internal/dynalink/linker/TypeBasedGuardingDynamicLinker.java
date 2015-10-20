@@ -83,7 +83,7 @@
 
 package jdk.internal.dynalink.linker;
 
-import jdk.internal.dynalink.support.CompositeTypeBasedGuardingDynamicLinker;
+import jdk.internal.dynalink.linker.support.CompositeTypeBasedGuardingDynamicLinker;
 
 /**
  * A guarding dynamic linker that can determine whether it can link the call site solely based on the type of the first

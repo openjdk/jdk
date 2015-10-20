@@ -81,34 +81,56 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink;
+package jdk.internal.dynalink.linker.support;
 
-import java.lang.invoke.MethodHandle;
-import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.support.AbstractRelinkableCallSite;
+import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.linker.LinkRequest;
 
 /**
- * A relinkable call site that implements monomorphic inline caching strategy,
- * only being linked to a single {@link GuardedInvocation}. If that invocation
- * is invalidated, it will throw it away and ask its associated
- * {@link DynamicLinker} to relink it.
+ * Default simple implementation of {@link LinkRequest}.
  */
-public class MonomorphicCallSite extends AbstractRelinkableCallSite {
+public class SimpleLinkRequest implements LinkRequest {
+
+    private final CallSiteDescriptor callSiteDescriptor;
+    private final Object[] arguments;
+    private final boolean callSiteUnstable;
+
     /**
-     * Creates a new call site with monomorphic inline caching strategy.
-     * @param descriptor the descriptor for this call site
+     * Creates a new link request.
+     *
+     * @param callSiteDescriptor the descriptor for the call site being linked.
+     * @param callSiteUnstable true if the call site being linked is considered
+     * unstable.
+     * @param arguments the arguments for the invocation
      */
-    public MonomorphicCallSite(final CallSiteDescriptor descriptor) {
-        super(descriptor);
+    public SimpleLinkRequest(final CallSiteDescriptor callSiteDescriptor, final boolean callSiteUnstable, final Object... arguments) {
+        this.callSiteDescriptor = callSiteDescriptor;
+        this.callSiteUnstable = callSiteUnstable;
+        this.arguments = arguments;
     }
 
     @Override
-    public void relink(final GuardedInvocation guardedInvocation, final MethodHandle relinkAndInvoke) {
-        setTarget(guardedInvocation.compose(relinkAndInvoke));
+    public Object[] getArguments() {
+        return arguments != null ? arguments.clone() : null;
     }
 
     @Override
-    public void resetAndRelink(final GuardedInvocation guardedInvocation, final MethodHandle relinkAndInvoke) {
-        relink(guardedInvocation, relinkAndInvoke);
+    public Object getReceiver() {
+        return arguments != null && arguments.length > 0 ? arguments[0] : null;
+    }
+
+    @Override
+    public CallSiteDescriptor getCallSiteDescriptor() {
+        return callSiteDescriptor;
+    }
+
+    @Override
+    public boolean isCallSiteUnstable() {
+        return callSiteUnstable;
+    }
+
+    @Override
+    public LinkRequest replaceArguments(final CallSiteDescriptor newCallSiteDescriptor, final Object[] newArguments) {
+        return new SimpleLinkRequest(newCallSiteDescriptor, callSiteUnstable, newArguments);
     }
 }

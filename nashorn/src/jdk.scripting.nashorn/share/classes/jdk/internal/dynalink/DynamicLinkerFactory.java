@@ -83,6 +83,8 @@
 
 package jdk.internal.dynalink;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -96,15 +98,16 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.GuardedInvocationTransformer;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.MethodHandleTransformer;
 import jdk.internal.dynalink.linker.MethodTypeConversionStrategy;
-import jdk.internal.dynalink.support.CompositeGuardingDynamicLinker;
-import jdk.internal.dynalink.support.CompositeTypeBasedGuardingDynamicLinker;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.CompositeGuardingDynamicLinker;
+import jdk.internal.dynalink.linker.support.CompositeTypeBasedGuardingDynamicLinker;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
  * A factory class for creating {@link DynamicLinker} objects. The usual dynamic
@@ -130,7 +133,7 @@ public final class DynamicLinkerFactory {
     private List<? extends GuardingDynamicLinker> fallbackLinkers;
     private boolean syncOnRelink = false;
     private int unstableRelinkThreshold = DEFAULT_UNSTABLE_RELINK_THRESHOLD;
-    private GuardedInvocationFilter prelinkFilter;
+    private GuardedInvocationTransformer prelinkTransformer;
     private MethodTypeConversionStrategy autoConversionStrategy;
     private MethodHandleTransformer internalObjectsFilter;
 
@@ -245,29 +248,29 @@ public final class DynamicLinkerFactory {
     }
 
     /**
-     * Set the pre-link filter. This is a {@link GuardedInvocationFilter} that will get the final chance to modify the
+     * Set the pre-link transformer. This is a {@link GuardedInvocationTransformer} that will get the final chance to modify the
      * guarded invocation after it has been created by a component linker and before the dynamic linker links it into
      * the call site. It is normally used to adapt the return value type of the invocation to the type of the call site.
-     * When not set explicitly, a default pre-link filter will be used that simply calls
-     * {@link GuardedInvocation#asType(LinkerServices, java.lang.invoke.MethodType)}
-     * @param prelinkFilter the pre-link filter for the dynamic linker.
+     * When not set explicitly, a default pre-link transformer will be used that simply calls
+     * {@link GuardedInvocation#asType(LinkerServices, MethodType)}
+     * @param prelinkTransformer the pre-link transformer for the dynamic linker.
      */
-    public void setPrelinkFilter(final GuardedInvocationFilter prelinkFilter) {
-        this.prelinkFilter = prelinkFilter;
+    public void setPrelinkTransformer(final GuardedInvocationTransformer prelinkTransformer) {
+        this.prelinkTransformer = prelinkTransformer;
     }
 
     /**
      * Sets an object representing the conversion strategy for automatic type conversions. After
-     * {@link TypeConverterFactory#asType(java.lang.invoke.MethodHandle, java.lang.invoke.MethodType)} has
+     * {@link TypeConverterFactory#asType(MethodHandle, MethodType)} has
      * applied all custom conversions to a method handle, it still needs to effect
      * {@link TypeUtilities#isMethodInvocationConvertible(Class, Class) method invocation conversions} that
      * can usually be automatically applied as per
-     * {@link java.lang.invoke.MethodHandle#asType(java.lang.invoke.MethodType)}.
+     * {@link java.lang.invoke.MethodHandle#asType(MethodType)}.
      * However, sometimes language runtimes will want to customize even those conversions for their own call
      * sites. A typical example is allowing unboxing of null return values, which is by default prohibited by
      * ordinary {@code MethodHandles.asType}. In this case, a language runtime can install its own custom
      * automatic conversion strategy, that can deal with null values. Note that when the strategy's
-     * {@link MethodTypeConversionStrategy#asType(java.lang.invoke.MethodHandle, java.lang.invoke.MethodType)}
+     * {@link MethodTypeConversionStrategy#asType(MethodHandle, MethodType)}
      * is invoked, the custom language conversions will already have been applied to the method handle, so by
      * design the difference between the handle's current method type and the desired final type will always
      * only be ones that can be subjected to method invocation conversions. The strategy also doesn't need to
@@ -290,7 +293,7 @@ public final class DynamicLinkerFactory {
 
     /**
      * Creates a new dynamic linker consisting of all the prioritized, autodiscovered, and fallback linkers as well as
-     * the pre-link filter.
+     * the pre-link transformer.
      *
      * @return the new dynamic Linker
      */
@@ -355,12 +358,12 @@ public final class DynamicLinkerFactory {
             }
         }
 
-        if(prelinkFilter == null) {
-            prelinkFilter = (inv, request, linkerServices) -> inv.asType(linkerServices, request.getCallSiteDescriptor().getMethodType());
+        if(prelinkTransformer == null) {
+            prelinkTransformer = (inv, request, linkerServices) -> inv.asType(linkerServices, request.getCallSiteDescriptor().getMethodType());
         }
 
         return new DynamicLinker(new LinkerServicesImpl(new TypeConverterFactory(typeConverters,
-                autoConversionStrategy), composite, internalObjectsFilter), prelinkFilter,
+                autoConversionStrategy), composite, internalObjectsFilter), prelinkTransformer,
                 syncOnRelink, unstableRelinkThreshold);
     }
 
