@@ -342,6 +342,107 @@ void MethodMatcher::print_base(outputStream* st) {
   }
 }
 
+BasicMatcher* BasicMatcher::parse_method_pattern(char* line, const char*& error_msg) {
+  assert(error_msg == NULL, "Don't call here with error_msg already set");
+  BasicMatcher* bm = new BasicMatcher();
+  MethodMatcher::parse_method_pattern(line, error_msg, bm);
+  if (error_msg != NULL) {
+    delete bm;
+    return NULL;
+  }
 
+  // check for bad trailing characters
+  int bytes_read = 0;
+  sscanf(line, "%*[ \t]%n", &bytes_read);
+  if (line[bytes_read] != '\0') {
+    error_msg = "Unrecognized trailing text after method pattern";
+    delete bm;
+    return NULL;
+  }
+  return bm;
+}
 
+bool BasicMatcher::match(methodHandle method) {
+  for (BasicMatcher* current = this; current != NULL; current = current->next()) {
+    if (current->matches(method)) {
+      return true;
+    }
+  }
+  return false;
+}
 
+void InlineMatcher::print(outputStream* st) {
+  if (_inline_action == InlineMatcher::force_inline) {
+    st->print("+");
+  } else {
+    st->print("-");
+  }
+  print_base(st);
+}
+
+InlineMatcher* InlineMatcher::parse_method_pattern(char* line, const char*& error_msg) {
+  assert(error_msg == NULL, "Dont call here with error_msg already set");
+  InlineMatcher* im = new InlineMatcher();
+  MethodMatcher::parse_method_pattern(line, error_msg, im);
+  if (error_msg != NULL) {
+    delete im;
+    return NULL;
+  }
+  return im;
+}
+
+bool InlineMatcher::match(methodHandle method, int inline_action) {
+  for (InlineMatcher* current = this; current != NULL; current = current->next()) {
+    if (current->matches(method)) {
+      return (current->_inline_action == inline_action);
+    }
+  }
+  return false;
+}
+
+InlineMatcher* InlineMatcher::parse_inline_pattern(char* str, const char*& error_msg) {
+  // check first token is +/-
+  InlineType _inline_action;
+   switch (str[0]) {
+   case '-':
+     _inline_action = InlineMatcher::dont_inline;
+     break;
+   case '+':
+     _inline_action = InlineMatcher::force_inline;
+     break;
+   default:
+     error_msg = "Missing leading inline type (+/-)";
+     return NULL;
+   }
+   str++;
+
+   int bytes_read = 0;
+   assert(error_msg== NULL, "error_msg must not be set yet");
+   InlineMatcher* im = InlineMatcher::parse_method_pattern(str, error_msg);
+   if (im == NULL) {
+     assert(error_msg != NULL, "Must have error message");
+     return NULL;
+   }
+   im->set_action(_inline_action);
+   return im;
+}
+
+InlineMatcher* InlineMatcher::clone() {
+   InlineMatcher* m = new InlineMatcher();
+   m->_class_mode =  _class_mode;
+   m->_method_mode = _method_mode;
+   m->_inline_action = _inline_action;
+   m->_class_name = _class_name;
+   if(_class_name != NULL) {
+     _class_name->increment_refcount();
+   }
+   m->_method_name = _method_name;
+   if (_method_name != NULL) {
+     _method_name->increment_refcount();
+   }
+   m->_signature = _signature;
+   if (_signature != NULL) {
+     _signature->increment_refcount();
+   }
+   return m;
+}

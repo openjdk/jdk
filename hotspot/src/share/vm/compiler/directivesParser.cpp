@@ -1,0 +1,726 @@
+/*
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ *
+ */
+
+#include "precompiled.hpp"
+#include "compiler/compileBroker.hpp"
+#include "compiler/directivesParser.hpp"
+#include "memory/allocation.inline.hpp"
+#include "runtime/os.hpp"
+#include <string.h>
+
+void DirectivesParser::push_tmp(CompilerDirectives* dir) {
+  dir->set_next(_tmp_top);
+  _tmp_top = dir;
+}
+
+CompilerDirectives* DirectivesParser::pop_tmp() {
+  if (_tmp_top == NULL) {
+    return NULL;
+  }
+  CompilerDirectives* tmp = _tmp_top;
+  _tmp_top = _tmp_top->next();
+  tmp->set_next(NULL);
+  return tmp;
+}
+
+bool DirectivesParser::parse_string(const char* text, outputStream* st) {
+  DirectivesParser cd(text, st);
+  if (cd.valid()) {
+    return cd.install_directives();
+  }
+  st->flush();
+  st->print_cr("Parsing of compiler directives failed");
+  return false;
+}
+
+bool DirectivesParser::has_file() {
+  return CompilerDirectivesFile != NULL;
+}
+
+bool DirectivesParser::parse_from_flag() {
+  return parse_from_file(CompilerDirectivesFile, tty);
+}
+
+bool DirectivesParser::parse_from_file(const char* filename, outputStream* st) {
+  assert(filename != NULL, "Test before calling this");
+  if (!parse_from_file_inner(filename, st)) {
+    st->print_cr("Could not load file: %s", filename);
+    return false;
+  }
+  return true;
+}
+
+bool DirectivesParser::parse_from_file_inner(const char* filename, outputStream* stream) {
+  struct stat st;
+  ResourceMark rm;
+  if (os::stat(filename, &st) == 0) {
+    // found file, open it
+    int file_handle = os::open(filename, 0, 0);
+    if (file_handle != -1) {
+      // read contents into resource array
+      char* buffer = NEW_RESOURCE_ARRAY(char, st.st_size+1);
+      size_t num_read = os::read(file_handle, (char*) buffer, st.st_size);
+      buffer[num_read] = '\0';
+      // close file
+      os::close(file_handle);
+      return parse_string(buffer, stream);
+    }
+  }
+  return false;
+}
+
+bool DirectivesParser::install_directives() {
+  // Pop from internal temporary stack and push to compileBroker.
+  CompilerDirectives* tmp = pop_tmp();
+  int i = 0;
+  while (tmp != NULL) {
+    i++;
+    DirectivesStack::push(tmp);
+    tmp = pop_tmp();
+  }
+  if (i == 0) {
+    _st->print_cr("No directives in file");
+    return false;
+  } else {
+    _st->print_cr("%i compiler directives added", i);
+    if (PrintCompilerDirectives) {
+      // Print entire directives stack after new has been pushed.
+      DirectivesStack::print(_st);
+    }
+    return true;
+  }
+}
+
+DirectivesParser::DirectivesParser(const char* text, outputStream* st)
+: JSON(text, false, st), depth(0), current_directive(NULL), current_directiveset(NULL), _tmp_top(NULL) {
+#ifndef PRODUCT
+  memset(stack, 0, MAX_DEPTH * sizeof(stack[0]));
+#endif
+  parse();
+}
+
+DirectivesParser::~DirectivesParser() {
+}
+
+const DirectivesParser::key DirectivesParser::keys[] = {
+    // name, keytype, allow_array, allowed_mask, set_function
+    { "c1",     type_c1,     0, mask(type_directives), NULL, UnknownFlagType },
+    { "c2",     type_c2,     0, mask(type_directives), NULL, UnknownFlagType },
+    { "match",  type_match,  1, mask(type_directives), NULL, UnknownFlagType },
+    { "inline", type_inline, 1, mask(type_directives) | mask(type_c1) | mask(type_c2), NULL, UnknownFlagType },
+    { "enable", type_enable, 1, mask(type_directives) | mask(type_c1) | mask(type_c2), NULL, UnknownFlagType },
+    { "preset", type_preset, 0, mask(type_c1) | mask(type_c2), NULL, UnknownFlagType },
+
+    // Global flags
+    #define common_flag_key(name, type, dvalue, compiler) \
+    { #name, type_flag, 0, mask(type_directives) | mask(type_c1) | mask(type_c2), &DirectiveSet::set_##name, type##Flag},
+    compilerdirectives_common_flags(common_flag_key)
+    compilerdirectives_c2_flags(common_flag_key)
+    compilerdirectives_c1_flags(common_flag_key)
+    #undef common_flag_key
+};
+
+const DirectivesParser::key DirectivesParser::dir_array_key = {
+     "top level directives array", type_dir_array, 0, 1 // Lowest bit means allow at top level
+};
+const DirectivesParser::key DirectivesParser::dir_key = {
+   "top level directive", type_directives, 0, mask(type_dir_array) | 1 // Lowest bit means allow at top level
+};
+const DirectivesParser::key DirectivesParser::value_array_key = {
+   "value array", type_value_array, 0, UINT_MAX // Allow all, checked by allow_array on other keys, not by allowed_mask from this key
+};
+
+const DirectivesParser::key* DirectivesParser::lookup_key(const char* str, size_t len) {
+  for (size_t i = 0; i < (sizeof(keys) / sizeof(keys[0])); i++) {
+    if (strncasecmp(keys[i].name, str, len) == 0) {
+      return &keys[i];
+    }
+  }
+  return NULL;
+}
+
+uint DirectivesParser::mask(keytype kt) {
+  return 1 << (kt + 1);
+}
+
+bool DirectivesParser::push_key(const char* str, size_t len) {
+  bool result = true;
+  const key* k = lookup_key(str, len);
+
+  if (k == NULL) {
+    // os::strdup
+    char* s = NEW_C_HEAP_ARRAY(char, len + 1, mtCompiler);
+    strncpy(s, str, len);
+    s[len] = '\0';
+    error(KEY_ERROR, "No such key: '%s'.", s);
+    FREE_C_HEAP_ARRAY(char, s);
+    return false;
+  }
+
+  return push_key(k);
+}
+
+bool DirectivesParser::push_key(const key* k) {
+  assert(k->allowedmask != 0, "not allowed anywhere?");
+
+  // Exceeding the stack should not be possible with a valid compiler directive,
+  // and an invalid should abort before this happens
+  assert(depth < MAX_DEPTH, "exceeded stack depth");
+  if (depth >= MAX_DEPTH) {
+    error(INTERNAL_ERROR, "Stack depth exceeded.");
+    return false;
+  }
+
+  assert(stack[depth] == NULL, "element not nulled, something is wrong");
+
+  if (depth == 0 && !(k->allowedmask & 1)) {
+    error(KEY_ERROR, "Key '%s' not allowed at top level.", k->name);
+    return false;
+  }
+
+  if (depth > 0) {
+    const key* prev = stack[depth - 1];
+    if (!(k->allowedmask & mask(prev->type))) {
+      error(KEY_ERROR, "Key '%s' not allowed after '%s' key.", k->name, prev->name);
+      return false;
+    }
+  }
+
+  stack[depth] = k;
+  depth++;
+  return true;
+}
+
+const DirectivesParser::key* DirectivesParser::current_key() {
+  assert(depth > 0, "getting key from empty stack");
+  if (depth == 0) {
+    return NULL;
+  }
+  return stack[depth - 1];
+}
+
+const DirectivesParser::key* DirectivesParser::pop_key() {
+  assert(depth > 0, "popping empty stack");
+  if (depth == 0) {
+    error(INTERNAL_ERROR, "Popping empty stack.");
+    return NULL;
+  }
+  depth--;
+
+  const key* k = stack[depth];
+#ifndef PRODUCT
+  stack[depth] = NULL;
+#endif
+
+  return k;
+}
+
+bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* option_key, DirectiveSet* set) {
+
+  void (DirectiveSet::*test)(void *args);
+  test = option_key->set;
+
+  switch (t) {
+    case JSON_TRUE:
+      if (option_key->flag_type != boolFlag) {
+        error(VALUE_ERROR, "Cannot use bool value for an %s flag", flag_type_names[option_key->flag_type]);
+        return false;
+      } else {
+        bool val = true;
+        (set->*test)((void *)&val);
+      }
+      break;
+
+    case JSON_FALSE:
+      if (option_key->flag_type != boolFlag) {
+        error(VALUE_ERROR, "Cannot use bool value for an %s flag", flag_type_names[option_key->flag_type]);
+        return false;
+      } else {
+        bool val = false;
+        (set->*test)((void *)&val);
+      }
+      break;
+
+    case JSON_NUMBER_INT:
+      if (option_key->flag_type != intxFlag) {
+        if (option_key->flag_type == doubleFlag) {
+          double dval = (double)v->int_value;
+          (set->*test)((void *)&dval);
+          break;
+        }
+        error(VALUE_ERROR, "Cannot use int value for an %s flag", flag_type_names[option_key->flag_type]);
+        return false;
+      } else {
+        intx ival = v->int_value;
+        (set->*test)((void *)&ival);
+      }
+      break;
+
+    case JSON_NUMBER_FLOAT:
+      if (option_key->flag_type != doubleFlag) {
+        error(VALUE_ERROR, "Cannot use double value for an %s flag", flag_type_names[option_key->flag_type]);
+        return false;
+      } else {
+        double dval = v->double_value;
+        (set->*test)((void *)&dval);
+      }
+      break;
+
+    case JSON_STRING:
+      if (option_key->flag_type != ccstrFlag) {
+        error(VALUE_ERROR, "Cannot use string value for a %s flag", flag_type_names[option_key->flag_type]);
+        return false;
+      } else {
+        char* s = NEW_C_HEAP_ARRAY(char, v->str.length+1,  mtCompiler);
+        strncpy(s, v->str.start, v->str.length + 1);
+        s[v->str.length] = '\0';
+        (set->*test)((void *)&s);
+      }
+      break;
+
+    default:
+      assert(0, "Should not reach here.");
+    }
+  return true;
+}
+
+bool DirectivesParser::set_option(JSON_TYPE t, JSON_VAL* v) {
+
+  const key* option_key = pop_key();
+  const key* enclosing_key = current_key();
+
+  if (option_key->type == value_array_key.type) {
+    // Multi value array, we are really setting the value
+    // for the key one step further up.
+    option_key = pop_key();
+    enclosing_key = current_key();
+
+    // Repush option_key and multi value marker, since
+    // we need to keep them until all multi values are set.
+    push_key(option_key);
+    push_key(&value_array_key);
+  }
+
+  switch (option_key->type) {
+  case type_flag:
+  {
+    if (current_directiveset == NULL) {
+      assert(depth == 2, "Must not have active directive set");
+
+      if (!set_option_flag(t, v, option_key, current_directive->_c1_store)) {
+        return false;
+      }
+      if(!set_option_flag(t, v, option_key, current_directive->_c2_store)) {
+        return false;
+      }
+    } else {
+      assert(depth > 2, "Must have active current directive set");
+      if (!set_option_flag(t, v, option_key, current_directiveset)) {
+        return false;
+      }
+    }
+    break;
+  }
+
+  case type_match:
+    if (t != JSON_STRING) {
+      error(VALUE_ERROR, "Key of type %s needs a value of type string", option_key->name);
+      return false;
+    }
+    if (enclosing_key->type != type_directives) {
+      error(SYNTAX_ERROR, "Match keyword can only exist inside a directive");
+      return false;
+    }
+    {
+      char* s = NEW_C_HEAP_ARRAY(char, v->str.length + 1, mtCompiler);
+      strncpy(s, v->str.start, v->str.length);
+      s[v->str.length] = '\0';
+
+      const char* error_msg = NULL;
+      if (!current_directive->add_match(s, error_msg)) {
+        assert (error_msg != NULL, "Must have valid error message");
+        error(VALUE_ERROR, "Method pattern error: %s", error_msg);
+      }
+      FREE_C_HEAP_ARRAY(char, s);
+    }
+    break;
+
+  case type_inline:
+    if (t != JSON_STRING) {
+      error(VALUE_ERROR, "Key of type %s needs a value of type string", option_key->name);
+      return false;
+    }
+    {
+      //char* s = strndup(v->str.start, v->str.length);
+      char* s = NEW_C_HEAP_ARRAY(char, v->str.length + 1, mtCompiler);
+      strncpy(s, v->str.start, v->str.length);
+      s[v->str.length] = '\0';
+
+      const char* error_msg = NULL;
+      if (current_directiveset == NULL) {
+        if (!current_directive->_c1_store->parse_and_add_inline(s, error_msg)) {
+          assert (error_msg != NULL, "Must have valid error message");
+          error(VALUE_ERROR, "Method pattern error: %s", error_msg);
+        }
+        if (!current_directive->_c2_store->parse_and_add_inline(s, error_msg)) {
+          assert (error_msg != NULL, "Must have valid error message");
+          error(VALUE_ERROR, "Method pattern error: %s", error_msg);
+        }
+      } else {
+        if (!current_directiveset->parse_and_add_inline(s, error_msg)) {
+          assert (error_msg != NULL, "Must have valid error message");
+          error(VALUE_ERROR, "Method pattern error: %s", error_msg);
+        }
+      }
+      FREE_C_HEAP_ARRAY(char, s);
+    }
+    break;
+
+  case type_c1:
+    current_directiveset = current_directive->_c1_store;
+    if (t != JSON_TRUE && t != JSON_FALSE) {
+      error(VALUE_ERROR, "Key of type %s needs a true or false value", option_key->name);
+      return false;
+    }
+    break;
+
+  case type_c2:
+    current_directiveset = current_directive->_c2_store;
+    if (t != JSON_TRUE && t != JSON_FALSE) {
+      error(VALUE_ERROR, "Key of type %s needs a true or false value", option_key->name);
+      return false;
+    }
+    break;
+
+  case type_enable:
+    switch (enclosing_key->type) {
+    case type_c1:
+    case type_c2:
+    {
+      if (t != JSON_TRUE && t != JSON_FALSE) {
+        error(VALUE_ERROR, "Key of type %s enclosed in a %s key needs a true or false value", option_key->name, enclosing_key->name);
+        return false;
+      }
+      int val = (t == JSON_TRUE);
+      current_directiveset->set_Enable(&val);
+      break;
+    }
+
+    case type_directives:
+      error(VALUE_ERROR, "Enable keyword not available for generic directive");
+      return false;
+
+    default:
+      error(INTERNAL_ERROR, "Unexpected enclosing type for key %s: %s", option_key->name, enclosing_key->name);
+      ShouldNotReachHere();
+      return false;
+    }
+    break;
+
+  default:
+    break;
+  }
+
+  return true;
+}
+
+bool DirectivesParser::callback(JSON_TYPE t, JSON_VAL* v, uint rlimit) {
+  const key* k;
+
+  if (depth == 0) {
+    switch (t) {
+      case JSON_ARRAY_BEGIN:
+        return push_key(&dir_array_key);
+
+      case JSON_OBJECT_BEGIN:
+        // push synthetic dir_array
+        push_key(&dir_array_key);
+        assert(depth == 1, "Make sure the stack are aligned with the directives");
+        break;
+
+      default:
+        error(SYNTAX_ERROR, "DirectivesParser can only start with an array containing directive objects, or one single directive.");
+        return false;
+      }
+  }
+  if (depth == 1) {
+    switch (t) {
+      case JSON_OBJECT_BEGIN:
+        // Parsing a new directive.
+        current_directive = new CompilerDirectives();
+        return push_key(&dir_key);
+
+      case JSON_ARRAY_END:
+        k = pop_key();
+
+        if (k->type != type_dir_array) {
+          error(SYNTAX_ERROR, "Expected end of directives array");
+          return false;
+        }
+        return true;
+
+    default:
+      error(SYNTAX_ERROR, "DirectivesParser can only start with an array containing directive objects, or one single directive.");
+      return false;
+    }
+  } else {
+    switch (t) {
+    case JSON_OBJECT_BEGIN:
+      k = current_key();
+      switch (k->type) {
+      case type_c1:
+        current_directiveset = current_directive->_c1_store;
+        return true;
+      case type_c2:
+        current_directiveset = current_directive->_c2_store;
+        return true;
+
+      case type_dir_array:
+        return push_key(&dir_key);
+
+      default:
+        error(SYNTAX_ERROR, "The key '%s' does not allow an object to follow.", k->name);
+        return false;
+      }
+      return false;
+
+    case JSON_OBJECT_END:
+      k = pop_key();
+      switch (k->type) {
+      case type_c1:
+      case type_c2:
+        // This is how we now if options apply to a single or both directive sets
+        current_directiveset = NULL;
+        break;
+
+      case type_directives:
+        // Check, finish and push to stack!
+        if (current_directive->match() == NULL) {
+          error(INTERNAL_ERROR, "Directive missing required match.");
+          return false;
+        }
+        current_directive->finalize();
+        push_tmp(current_directive);
+        current_directive = NULL;
+        break;
+
+      default:
+        error(INTERNAL_ERROR, "Object end with wrong key type on stack: %s.", k->name);
+        ShouldNotReachHere();
+        return false;
+      }
+      return true;
+
+    case JSON_ARRAY_BEGIN:
+      k = current_key();
+      if (!(k->allow_array_value)) {
+        if (k->type == type_dir_array) {
+          error(SYNTAX_ERROR, "Array not allowed inside top level array, expected directive object.");
+        } else {
+          error(VALUE_ERROR, "The key '%s' does not allow an array of values.", k->name);
+        }
+        return false;
+      }
+      return push_key(&value_array_key);
+
+    case JSON_ARRAY_END:
+      k = pop_key(); // Pop multi value marker
+      assert(k->type == value_array_key.type, "array end for level != 0 should terminate multi value");
+      k = pop_key(); // Pop key for option that was set
+      return true;
+
+    case JSON_KEY:
+      return push_key(v->str.start, v->str.length);
+
+    case JSON_STRING:
+    case JSON_NUMBER_INT:
+    case JSON_NUMBER_FLOAT:
+    case JSON_TRUE:
+    case JSON_FALSE:
+    case JSON_NULL:
+      return set_option(t, v);
+
+    default:
+      error(INTERNAL_ERROR, "Unknown JSON type: %d.", t);
+      ShouldNotReachHere();
+      return false;
+    }
+  }
+}
+
+#ifndef PRODUCT
+void DirectivesParser::test(const char* text, bool should_pass) {
+  DirectivesParser cd(text, tty);
+  if (should_pass) {
+    assert(cd.valid() == true, "failed on a valid DirectivesParser string");
+    if (VerboseInternalVMTests) {
+      tty->print("-- DirectivesParser test passed as expected --\n");
+    }
+  } else {
+    assert(cd.valid() == false, "succeeded on an invalid DirectivesParser string");
+    if (VerboseInternalVMTests) {
+      tty->print("-- DirectivesParser test failed as expected --\n");
+    }
+  }
+}
+
+bool DirectivesParser::test() {
+  DirectivesParser::test("{}", false);
+  DirectivesParser::test("[]", true);
+  DirectivesParser::test("[{}]", false);
+  DirectivesParser::test("[{},{}]", false);
+  DirectivesParser::test("{},{}", false);
+
+  DirectivesParser::test(
+    "[" "\n"
+    "  {" "\n"
+    "    match: \"foo/bar.*\"," "\n"
+    "    inline : \"+java/util.*\"," "\n"
+    "    PrintAssembly: true," "\n"
+    "    BreakAtExecute: true," "\n"
+    "  }" "\n"
+    "]" "\n", true);
+
+  DirectivesParser::test(
+    "[" "\n"
+    "  [" "\n"
+    "    {" "\n"
+    "      match: \"foo/bar.*\"," "\n"
+    "      inline : \"+java/util.*\"," "\n"
+    "      PrintAssembly: true," "\n"
+    "      BreakAtExecute: true," "\n"
+    "    }" "\n"
+    "  ]" "\n"
+    "]" "\n", false);
+
+  /*DirectivesParser::test(
+    "[" "\n"
+    "  {" "\n"
+    "    match: \"foo/bar.*\"," "\n"
+    "    c1: {"
+    "      PrintIntrinsics: false," "\n"
+    "    }" "\n"
+    "  }" "\n"
+    "]" "\n", false);*/
+
+  DirectivesParser::test(
+    "[" "\n"
+    "  {" "\n"
+    "    match: \"foo/bar.*\"," "\n"
+    "    c2: {" "\n"
+    "      PrintInlining: false," "\n"
+    "    }" "\n"
+    "  }" "\n"
+    "]" "\n", true);
+
+  DirectivesParser::test(
+    "[" "\n"
+    "  {" "\n"
+    "    match: \"foo/bar.*\"," "\n"
+    "    PrintInlining: [" "\n"
+    "      true," "\n"
+    "      false" "\n"
+    "    ]," "\n"
+    "  }" "\n"
+    "]" "\n", false);
+
+  DirectivesParser::test(
+    "[" "\n"
+    "  {"
+    "    // pattern to match against class+method+signature" "\n"
+    "    // leading and trailing wildcard (*) allowed" "\n"
+    "    match: \"foo/bar.*\"," "\n"
+    "" "\n"
+    "    // override defaults for specified compiler" "\n"
+    "    // we may differentiate between levels too. TBD." "\n"
+    "    c1:  {" "\n"
+    "      //override c1 presets " "\n"
+    "      DumpReplay: false," "\n"
+    "      BreakAtCompile: true," "\n"
+    "    }," "\n"
+    "" "\n"
+    "    c2: {" "\n"
+    "        // control inlining of method" "\n"
+    "        // + force inline, - dont inline" "\n"
+    "        inline : \"+java/util.*\"," "\n"
+    "        PrintInlining: true," "\n"
+    "    }," "\n"
+    "" "\n"
+    "    // directives outside a specific preset applies to all compilers" "\n"
+    "    inline : [ \"+java/util.*\", \"-com/sun.*\"]," "\n"
+    "    BreakAtExecute: true," "\n"
+    "    Log: true," "\n"
+    "  }," "\n"
+    "  {" "\n"
+    "    // matching several patterns require an array" "\n"
+    "    match: [\"baz.*\",\"frob.*\"]," "\n"
+    "" "\n"
+    "    // applies to all compilers" "\n"
+    "    // + force inline, - dont inline" "\n"
+    "    inline : [ \"+java/util.*\", \"-com/sun.*\" ]," "\n"
+    "    PrintInlining: true," "\n"
+    "" "\n"
+    "    // force matching compiles to be blocking/syncronous" "\n"
+    "    PrintNMethods: true" "\n"
+    "  }," "\n"
+    "]" "\n", true);
+
+  // Test max stack depth
+    DirectivesParser::test(
+      "[" "\n"             // depth 1: type_dir_array
+      "  {" "\n"           // depth 2: type_directives
+      "    match: \"*.*\"," // match required
+      "    c1:" "\n"       // depth 3: type_c1
+      "    {" "\n"
+      "      inline:" "\n" // depth 4: type_inline
+      "      [" "\n"       // depth 5: type_value_array
+      "        \"foo\"," "\n"
+      "        \"bar\"," "\n"
+      "      ]" "\n"       // depth 3: pop type_value_array and type_inline keys
+      "    }" "\n"         // depth 2: pop type_c1 key
+      "  }" "\n"           // depth 1: pop type_directives key
+      "]" "\n", true);     // depth 0: pop type_dir_array key
+
+    // Test max stack depth
+    DirectivesParser::test(
+      "[{c1:{c1:{c1:{c1:{c1:{c1:{c1:{}}}}}}}}]", false);
+
+  DirectivesParser::test(
+    "[" "\n"
+    "  {" "\n"
+    "    c1: true," "\n"
+    "    c2: true," "\n"
+    "    match: true," "\n"
+    "    inline: true," "\n"
+    "    enable: true," "\n"
+    "    c1: {" "\n"
+    "      preset: true," "\n"
+    "    }" "\n"
+    "  }" "\n"
+    "]" "\n", false);
+
+  return true;
+}
+
+#endif

@@ -613,4 +613,90 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class CompilerDirectivesPrintDCmd : public DCmd {
+public:
+  CompilerDirectivesPrintDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
+  static const char* name() {
+    return "Compiler.directives_print";
+  }
+  static const char* description() {
+    return "Print all active compiler directives.";
+  }
+  static const char* impact() {
+    return "Low";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  static int num_arguments() { return 0; }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class CompilerDirectivesRemoveDCmd : public DCmd {
+public:
+  CompilerDirectivesRemoveDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
+  static const char* name() {
+    return "Compiler.directives_remove";
+  }
+  static const char* description() {
+    return "Remove latest added compiler directive.";
+  }
+  static const char* impact() {
+    return "Low";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  static int num_arguments() { return 0; }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class CompilerDirectivesAddDCmd : public DCmdWithParser {
+protected:
+  DCmdArgument<char*> _filename;
+public:
+  CompilerDirectivesAddDCmd(outputStream* output, bool heap);
+  static const char* name() {
+    return "Compiler.directives_add";
+  }
+  static const char* description() {
+    return "Add compiler directives from file.";
+  }
+  static const char* impact() {
+    return "Low";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  static int num_arguments();
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
+class CompilerDirectivesClearDCmd : public DCmd {
+public:
+  CompilerDirectivesClearDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
+  static const char* name() {
+    return "Compiler.directives_clear";
+  }
+  static const char* description() {
+    return "Remove all compiler directives.";
+  }
+  static const char* impact() {
+    return "Low";
+  }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  static int num_arguments() { return 0; }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 #endif // SHARE_VM_SERVICES_DIAGNOSTICCOMMAND_HPP

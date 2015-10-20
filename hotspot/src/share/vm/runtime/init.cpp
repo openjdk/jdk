@@ -71,7 +71,7 @@ void vmStructs_init();
 void vtableStubs_init();
 void InlineCacheBuffer_init();
 void compilerOracle_init();
-void compileBroker_init();
+bool compileBroker_init();
 
 // Initialization after compiler initialization
 bool universe_post_init();  // must happen after compiler_init
@@ -131,7 +131,9 @@ jint init_globals() {
   vtableStubs_init();
   InlineCacheBuffer_init();
   compilerOracle_init();
-  compileBroker_init();
+  if (!compileBroker_init()) {
+    return JNI_EINVAL;
+  }
   VMRegImpl::set_regName();
 
   if (!universe_post_init()) {
