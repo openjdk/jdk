@@ -96,7 +96,7 @@ import java.lang.reflect.Method;
  * methods within your own codebase (therefore it is an error if they are not
  * present).
  */
-public class Lookup {
+public final class Lookup {
     private final MethodHandles.Lookup lookup;
 
     /**

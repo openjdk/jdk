@@ -182,8 +182,8 @@ class OverloadedMethod {
                     break;
                 }
             }
-            // Avoid keeping references to unrelated classes; this ruins the performance a bit, but avoids class loader
-            // memory leaks.
+            // Avoid keeping references to unrelated classes; this ruins the
+            // performance a bit, but avoids class loader memory leaks.
             if(classString.isVisibleFrom(callSiteClassLoader)) {
                 argTypesToMethods.put(classString, method);
             }

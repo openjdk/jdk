@@ -164,11 +164,12 @@ public class CompositeTypeBasedGuardingDynamicLinker implements TypeBasedGuardin
     }
 
     /**
-     * Returns true if any of the composite linkers return true from
+     * Returns true if at least one of the composite linkers returns true from
      * {@link TypeBasedGuardingDynamicLinker#canLinkType(Class)} for the type.
      * @param type the type to link
-     * @return true if any of the composite linkers can link calls for the
-     * receiver type, false otherwise.
+     * @return true true if at least one of the composite linkers returns true
+     * from {@link TypeBasedGuardingDynamicLinker#canLinkType(Class)}, false
+     * otherwise.
      */
     @Override
     public boolean canLinkType(final Class<?> type) {

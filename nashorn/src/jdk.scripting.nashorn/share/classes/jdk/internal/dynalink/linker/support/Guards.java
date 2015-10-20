@@ -92,7 +92,9 @@ import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.linker.LinkerServices;
 
 /**
- * Utility methods for creating typical guards.
+ * Utility methods for creating typical guards for
+ * {@link MethodHandles#guardWithTest(MethodHandle, MethodHandle, MethodHandle)}
+ * and for adjusting their method types.
  */
 public final class Guards {
     private static final Logger LOG = Logger
@@ -189,8 +191,11 @@ public final class Guards {
     }
 
     /**
-     * Takes a guard-test method handle, and adapts it to the requested type, returning a boolean. Only applies
-     * conversions as per {@link MethodHandle#asType(MethodType)}.
+     * Takes a method handle intended to be used as a guard, and adapts it to
+     * the requested type, but returning a boolean. Applies
+     * {@link MethodHandle#asType(MethodType)} to convert types and uses
+     * {@link MethodHandles#dropArguments(MethodHandle, int, Class...)} to match
+     * the requested type arity.
      * @param test the test method handle
      * @param type the type to adapt the method handle to
      * @return the adapted method handle
@@ -200,8 +205,12 @@ public final class Guards {
     }
 
     /**
-     * Takes a guard-test method handle, and adapts it to the requested type, returning a boolean. Applies the passed
-     * {@link LinkerServices} object's {@link LinkerServices#asType(MethodHandle, MethodType)}.
+     * Takes a method handle intended to be used as a guard, and adapts it to
+     * the requested type, but returning a boolean. Applies
+     * {@link LinkerServices#asType(MethodHandle, MethodType)} to convert types
+     * and uses
+     * {@link MethodHandles#dropArguments(MethodHandle, int, Class...)} to match
+     * the requested type arity.
      * @param linkerServices the linker services to use for type conversions
      * @param test the test method handle
      * @param type the type to adapt the method handle to

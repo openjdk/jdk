@@ -83,6 +83,7 @@
 
 package jdk.internal.dynalink.linker.support;
 
+import java.util.Objects;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.LinkRequest;
 
@@ -99,24 +100,27 @@ public class SimpleLinkRequest implements LinkRequest {
      * Creates a new link request.
      *
      * @param callSiteDescriptor the descriptor for the call site being linked.
+     * Must not be null.
      * @param callSiteUnstable true if the call site being linked is considered
      * unstable.
-     * @param arguments the arguments for the invocation
+     * @param arguments the arguments for the invocation. Must not be null.
+     * @throws NullPointerException if either {@code callSiteDescriptor} or
+     * {@code arguments} is null.
      */
     public SimpleLinkRequest(final CallSiteDescriptor callSiteDescriptor, final boolean callSiteUnstable, final Object... arguments) {
-        this.callSiteDescriptor = callSiteDescriptor;
+        this.callSiteDescriptor = Objects.requireNonNull(callSiteDescriptor);
         this.callSiteUnstable = callSiteUnstable;
-        this.arguments = arguments;
+        this.arguments = arguments.clone();
     }
 
     @Override
     public Object[] getArguments() {
-        return arguments != null ? arguments.clone() : null;
+        return arguments.clone();
     }
 
     @Override
     public Object getReceiver() {
-        return arguments != null && arguments.length > 0 ? arguments[0] : null;
+        return arguments.length > 0 ? arguments[0] : null;
     }
 
     @Override
@@ -130,7 +134,7 @@ public class SimpleLinkRequest implements LinkRequest {
     }
 
     @Override
-    public LinkRequest replaceArguments(final CallSiteDescriptor newCallSiteDescriptor, final Object[] newArguments) {
+    public LinkRequest replaceArguments(final CallSiteDescriptor newCallSiteDescriptor, final Object... newArguments) {
         return new SimpleLinkRequest(newCallSiteDescriptor, callSiteUnstable, newArguments);
     }
 }

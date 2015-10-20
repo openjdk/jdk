@@ -31,7 +31,7 @@
  * license:
  */
 /*
-   Copyright 2009-2015 Attila Szegedi
+   Copyright 2009-2013 Attila Szegedi
 
    Licensed under both the Apache License, Version 2.0 (the "Apache License")
    and the BSD License (the "BSD License"), with licensee being free to
@@ -81,23 +81,37 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.linker;
-
-import java.lang.invoke.MethodHandle;
-import jdk.internal.dynalink.DynamicLinkerFactory;
-
 /**
- * A generic interface describing operations that transform method handles.
- * Typical usage is for implementing
- * {@link DynamicLinkerFactory#setInternalObjectsFilter(MethodHandleTransformer)
- * internal objects filters}.
+ * <p>
+ * Contains interfaces and classes needed by language runtimes to implement
+ * their own language-specific object models and type conversions. The main
+ * entry point is the
+ * {@link jdk.internal.dynalink.linker.GuardingDynamicLinker} interface. It needs to be
+ * implemented in order to provide linking for the runtime's own object model.
+ * A language runtime can have more than one guarding dynamic linker
+ * implementation. When a runtime is configuring Dynalink for itself, it will
+ * normally set these guarding linkers as the prioritized linkers in its
+ * {@link jdk.internal.dynalink.DynamicLinkerFactory} (and maybe some of them as fallback
+ * linkers, for e.g. handling "method not found" and similar errors in a
+ * language-specific manner if no other linker managed to handle the operation.)
+ * </p><p>
+ * A language runtime that wishes to make at least some of its linkers available
+ * to other language runtimes for interoperability will need to declare the
+ * class names of those linkers in
+ * {@code /META-INF/services/jdk.internal.dynalink.linker.GuardingDynamicLinker} file in
+ * its distribution (typically, JAR file).
+ * </p><p>
+ * Most language runtimes will be able to implement their own linking logic by
+ * implementing {@link jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker}
+ * instead of {@link jdk.internal.dynalink.linker.GuardingDynamicLinker}; it allows for
+ * faster type-based linking dispatch.
+ * </p><p>
+ * Language runtimes that allow type conversions other than those provided by
+ * Java will need to have their guarding dynamic linker (or linkers) also
+ * implement the {@link jdk.internal.dynalink.linker.GuardingTypeConverterFactory}
+ * interface to provide the logic for these conversions.
+ * </p>
+ * @since 1.9
  */
-@FunctionalInterface
-public interface MethodHandleTransformer {
-    /**
-     * Transforms a method handle.
-     * @param target the method handle being transformed.
-     * @return transformed method handle.
-     */
-    public MethodHandle transform(final MethodHandle target);
-}
+@jdk.Exported
+package jdk.internal.dynalink.linker;

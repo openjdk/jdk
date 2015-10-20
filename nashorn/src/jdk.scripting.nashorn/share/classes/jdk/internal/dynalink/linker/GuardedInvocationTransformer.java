@@ -106,8 +106,8 @@ public interface GuardedInvocationTransformer {
      * request and the differing invocation created with the assistance of the
      * linker services. Whether or not {@code null} is an accepted return value
      * is dependent on the user of the filter.
-     * @throws NullPointerException is allowed if any of the passed arguments
-     * is null.
+     * @throws NullPointerException is allowed to be thrown by implementations
+     * if any of the passed arguments is null.
      */
     public GuardedInvocation filter(GuardedInvocation inv, LinkRequest linkRequest, LinkerServices linkerServices);
 }
