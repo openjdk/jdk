@@ -85,7 +85,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     AC_MSG_ERROR([--with-version-string must have a value])
   elif test "x$with_version_string" != x; then
     # Additional [] needed to keep m4 from mangling shell constructs.
-    if [ [[ $with_version_string =~ ^([0-9]+)(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(-([a-zA-Z]+))?((\+)([0-9]+)?(-([-a-zA-Z0-9.]+))?(_([a-zA-Z]+))?)?$ ]] ]; then
+    if [ [[ $with_version_string =~ ^([0-9]+)(\.([0-9]+))?(\.([0-9]+))?(\.([0-9]+))?(-([a-zA-Z]+))?((\+)([0-9]+)?(-([-a-zA-Z0-9.]+))?)?$ ]] ]; then
       VERSION_MAJOR=${BASH_REMATCH[[1]]}
       VERSION_MINOR=${BASH_REMATCH[[3]]}
       VERSION_SECURITY=${BASH_REMATCH[[5]]}
@@ -93,8 +93,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       VERSION_PRE=${BASH_REMATCH[[9]]}
       version_plus_separator=${BASH_REMATCH[[11]]}
       VERSION_BUILD=${BASH_REMATCH[[12]]}
-      VERSION_OPT_BASE=${BASH_REMATCH[[14]]}
-      VERSION_OPT_DEBUGLEVEL=${BASH_REMATCH[[16]]}
+      VERSION_OPT=${BASH_REMATCH[[14]]}
       # Unspecified numerical fields are interpreted as 0.
       if test "x$VERSION_MINOR" = x; then
         VERSION_MINOR=0
@@ -106,7 +105,7 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
         VERSION_PATCH=0
       fi
       if test "x$version_plus_separator" != x \
-          && test "x$VERSION_BUILD$VERSION_OPT_BASE$VERSION_OPT_DEBUGLEVEL" = x; then
+          && test "x$VERSION_BUILD$VERSION_OPT" = x; then
         AC_MSG_ERROR([Version string contains + but both 'BUILD' and 'OPT' are missing])
       fi
       # Stop the version part process from setting default values.
@@ -141,21 +140,21 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
     fi
   fi
 
-  AC_ARG_WITH(version-opt-base, [AS_HELP_STRING([--with-version-opt-base],
-      [Set version 'OPT' base field. Debug level will be appended. (build metadata) @<:@<timestamp>.<user>.<dirname>@:>@])],
-      [with_version_opt_base_present=true], [with_version_opt_base_present=false])
+  AC_ARG_WITH(version-opt, [AS_HELP_STRING([--with-version-opt],
+      [Set version 'OPT' field (build metadata) @<:@<timestamp>.<user>.<dirname>@:>@])],
+      [with_version_opt_present=true], [with_version_opt_present=false])
 
-  if test "x$with_version_opt_base_present" = xtrue; then
-    if test "x$with_version_opt_base" = xyes; then
-      AC_MSG_ERROR([--with-version-opt-base must have a value])
-    elif test "x$with_version_opt_base" = xno; then
+  if test "x$with_version_opt_present" = xtrue; then
+    if test "x$with_version_opt" = xyes; then
+      AC_MSG_ERROR([--with-version-opt must have a value])
+    elif test "x$with_version_opt" = xno; then
       # Interpret --without-* as empty string instead of the literal "no"
-      VERSION_OPT_BASE=
+      VERSION_OPT=
     else
-      # Only [-.a-zA-Z0-9] is allowed in the VERSION_OPT_BASE. Outer [ ] to quote m4.
-      [ VERSION_OPT_BASE=`$ECHO "$with_version_opt_base" | $TR -c -d '[a-z][A-Z][0-9].-'` ]
-      if test "x$VERSION_OPT_BASE" != "x$with_version_opt_base"; then
-        AC_MSG_WARN([--with-version-opt-base value has been sanitized from '$with_version_opt_base' to '$VERSION_OPT_BASE'])
+      # Only [-.a-zA-Z0-9] is allowed in the VERSION_OPT. Outer [ ] to quote m4.
+      [ VERSION_OPT=`$ECHO "$with_version_opt" | $TR -c -d '[a-z][A-Z][0-9].-'` ]
+      if test "x$VERSION_OPT" != "x$with_version_opt"; then
+        AC_MSG_WARN([--with-version-opt value has been sanitized from '$with_version_opt' to '$VERSION_OPT'])
       fi
     fi
   else
@@ -165,37 +164,10 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
       # Outer [ ] to quote m4.
       [ username=`$ECHO "$USER" | $TR -d -c '[a-z][A-Z][0-9]'` ]
       [ basedirname=`$BASENAME "$TOPDIR" | $TR -d -c '[a-z][A-Z][0-9].-'` ]
-      VERSION_OPT_BASE="$timestamp.$username.$basedirname"
+      VERSION_OPT="$timestamp.$username.$basedirname"
     fi
   fi
 
-  AC_ARG_WITH(version-opt-debuglevel, [AS_HELP_STRING([--with-version-opt-debuglevel],
-      [Set version 'OPT' field (build metadata) @<:@<timestamp>.<user>.<dirname>@:>@])],
-      [with_version_opt_debuglevel_present=true], [with_version_opt_debuglevel_present=false])
-
-  if test "x$with_version_opt_debuglevel_present" = xtrue; then
-    if test "x$with_version_opt_debuglevel" = xyes; then
-      AC_MSG_ERROR([--with-version-opt-debuglevel must have a value])
-    elif test "x$with_version_opt_debuglevel" = xno; then
-      # Interpret --without-* as empty string instead of the literal "no"
-      VERSION_OPT_DEBUGLEVEL=
-    else
-      # Only [-.a-zA-Z0-9] is allowed in the VERSION_OPT_DEBUGLEVEL. Outer [ ] to quote m4.
-      [ VERSION_OPT_DEBUGLEVEL=`$ECHO "$with_version_opt_debuglevel" | $TR -c -d '[a-z][A-Z][0-9].-'` ]
-      if test "x$VERSION_OPT_DEBUGLEVEL" != "x$with_version_opt_debuglevel"; then
-        AC_MSG_WARN([--with-version-opt-debuglevel value has been sanitized from '$with_version_opt_debuglevel' to '$VERSION_OPT_DEBUGLEVEL'])
-      fi
-    fi
-  else
-    if test "x$NO_DEFAULT_VERSION_PARTS" != xtrue; then
-      # Default is to use the debug level name, except for release which is empty.
-      if test "x$DEBUG_LEVEL" != "xrelease"; then
-        VERSION_OPT_DEBUGLEVEL="$DEBUG_LEVEL"
-      else
-        VERSION_OPT_DEBUGLEVEL=""
-      fi
-    fi
-  fi
   AC_ARG_WITH(version-build, [AS_HELP_STRING([--with-version-build],
       [Set version 'BUILD' field (build number) @<:@not specified@:>@])],
       [with_version_build_present=true], [with_version_build_present=false])
@@ -304,10 +276,6 @@ AC_DEFUN_ONCE([JDKVER_SETUP_JDK_VERSION_NUMBERS],
   fi
 
   # Calculate derived version properties
-
-  # Set opt to "opt-base" if debug level is empty (i.e. release), or
-  # "opt-base_debug-level" otherwise.
-  VERSION_OPT=$VERSION_OPT_BASE${VERSION_OPT_DEBUGLEVEL:+_$VERSION_OPT_DEBUGLEVEL}
 
   # Set VERSION_IS_GA based on if VERSION_PRE has a value
   if test "x$VERSION_PRE" = x; then
