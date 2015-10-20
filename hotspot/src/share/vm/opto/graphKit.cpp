@@ -1457,7 +1457,11 @@ void GraphKit::set_all_memory_call(Node* call, bool separate_io_proj) {
 // factory methods in "int adr_idx"
 Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
                           int adr_idx,
-                          MemNode::MemOrd mo, LoadNode::ControlDependency control_dependency, bool require_atomic_access) {
+                          MemNode::MemOrd mo,
+                          LoadNode::ControlDependency control_dependency,
+                          bool require_atomic_access,
+                          bool unaligned,
+                          bool mismatched) {
   assert(adr_idx != Compile::AliasIdxTop, "use other make_load factory" );
   const TypePtr* adr_type = NULL; // debug-mode-only argument
   debug_only(adr_type = C->get_adr_type(adr_idx));
@@ -1470,6 +1474,12 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
   } else {
     ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, mo, control_dependency);
   }
+  if (unaligned) {
+    ld->as_Load()->set_unaligned_access();
+  }
+  if (mismatched) {
+    ld->as_Load()->set_mismatched_access();
+  }
   ld = _gvn.transform(ld);
   if ((bt == T_OBJECT) && C->do_escape_analysis() || C->eliminate_boxing()) {
     // Improve graph before escape analysis and boxing elimination.
@@ -1481,7 +1491,9 @@ Node* GraphKit::make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
 Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
                                 int adr_idx,
                                 MemNode::MemOrd mo,
-                                bool require_atomic_access) {
+                                bool require_atomic_access,
+                                bool unaligned,
+                                bool mismatched) {
   assert(adr_idx != Compile::AliasIdxTop, "use other store_to_memory factory" );
   const TypePtr* adr_type = NULL;
   debug_only(adr_type = C->get_adr_type(adr_idx));
@@ -1493,6 +1505,12 @@ Node* GraphKit::store_to_memory(Node* ctl, Node* adr, Node *val, BasicType bt,
     st = StoreDNode::make_atomic(ctl, mem, adr, adr_type, val, mo);
   } else {
     st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt, mo);
+  }
+  if (unaligned) {
+    st->as_Store()->set_unaligned_access();
+  }
+  if (mismatched) {
+    st->as_Store()->set_mismatched_access();
   }
   st = _gvn.transform(st);
   set_memory(st, adr_idx);
@@ -1587,7 +1605,8 @@ Node* GraphKit::store_oop(Node* ctl,
                           const TypeOopPtr* val_type,
                           BasicType bt,
                           bool use_precise,
-                          MemNode::MemOrd mo) {
+                          MemNode::MemOrd mo,
+                          bool mismatched) {
   // Transformation of a value which could be NULL pointer (CastPP #NULL)
   // could be delayed during Parse (for example, in adjust_map_after_if()).
   // Execute transformation here to avoid barrier generation in such case.
@@ -1607,7 +1626,7 @@ Node* GraphKit::store_oop(Node* ctl,
               NULL /* pre_val */,
               bt);
 
-  Node* store = store_to_memory(control(), adr, val, bt, adr_idx, mo);
+  Node* store = store_to_memory(control(), adr, val, bt, adr_idx, mo, mismatched);
   post_barrier(control(), store, obj, adr, adr_idx, val, bt, use_precise);
   return store;
 }
@@ -1619,7 +1638,8 @@ Node* GraphKit::store_oop_to_unknown(Node* ctl,
                              const TypePtr* adr_type,
                              Node* val,
                              BasicType bt,
-                             MemNode::MemOrd mo) {
+                             MemNode::MemOrd mo,
+                             bool mismatched) {
   Compile::AliasType* at = C->alias_type(adr_type);
   const TypeOopPtr* val_type = NULL;
   if (adr_type->isa_instptr()) {
@@ -1638,7 +1658,7 @@ Node* GraphKit::store_oop_to_unknown(Node* ctl,
   if (val_type == NULL) {
     val_type = TypeInstPtr::BOTTOM;
   }
-  return store_oop(ctl, obj, adr, adr_type, val, val_type, bt, true, mo);
+  return store_oop(ctl, obj, adr, adr_type, val, val_type, bt, true, mo, mismatched);
 }
 
 
