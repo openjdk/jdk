@@ -108,7 +108,11 @@ $(GENSRC_DIR)/_providers_converted: $(GENSRC_DIR)/_gensrc_proc_done
 	($(CD) $(GENSRC_DIR)/META-INF/jvmci.providers && \
 	    for i in $$($(LS)); do \
 	      c=$$($(CAT) $$i | $(TR) -d '\n\r'); \
-	      $(ECHO) $$i >> $(GENSRC_DIR)/META-INF/services/$$c; \
+	      $(ECHO) $$i >> $(GENSRC_DIR)/META-INF/services/$$c.tmp; \
+	    done)
+	($(CD) $(GENSRC_DIR)/META-INF/services && \
+	    for i in $$($(LS) *.tmp); do \
+	      $(MV) $$i $${i%.tmp}; \
 	    done)
 	$(TOUCH) $@
 
