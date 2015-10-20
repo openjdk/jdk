@@ -525,7 +525,10 @@ public final class AppContext {
         }
 
         // Then, we stop any remaining Threads
-        this.threadGroup.stop();
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            threadGroup.stop();
+            return null;
+        });
 
         // Next, we sleep 10ms at a time, waiting for all of the active
         // Threads in the ThreadGroup to die.

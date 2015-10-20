@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,27 +22,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package javax.swing;
 
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Insets;
-import java.awt.Point;
-import java.awt.Rectangle;
 import java.awt.event.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 import java.beans.Transient;
 import java.util.Vector;
-import java.util.Enumeration;
 
 import java.io.Serializable;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.IOException;
 
-import javax.swing.event.*;
-import javax.swing.border.Border;
 import javax.swing.plaf.*;
 import javax.accessibility.*;
 
@@ -78,9 +73,6 @@ import javax.accessibility.*;
  * of <code>JMenuBar</code> is set to <code>false</code>. To resolve this,
  * you should call the <code>JMenuBar.setFocusTraversalKeysEnabled(true)</code>
  * method.
- * @beaninfo
- *   attribute: isContainer true
- * description: A container for holding and displaying menus.
  *
  * @author Georges Saab
  * @author David Karlton
@@ -90,6 +82,8 @@ import javax.accessibility.*;
  * @see JMenuItem
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UI", description = "A container for holding and displaying menus.")
+@SwingContainer
 @SuppressWarnings("serial")
 public class JMenuBar extends JComponent implements Accessible,MenuElement
 {
@@ -137,12 +131,9 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      *
      * @param ui the new MenuBarUI L&amp;F object
      * @see UIDefaults#getUI
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *    attribute: visualUpdate true
-     *  description: The UI object that implements the Component's LookAndFeel.
      */
+    @BeanProperty(hidden = true, visualUpdate = true, description
+            = "The UI object that implements the Component's LookAndFeel.")
     public void setUI(MenuBarUI ui) {
         super.setUI(ui);
     }
@@ -164,6 +155,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -184,10 +176,8 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      *
      * @param model the <code>SingleSelectionModel</code> to use
      * @see SingleSelectionModel
-     * @beaninfo
-     *       bound: true
-     * description: The selection model, recording which child is selected.
      */
+    @BeanProperty(description = "The selection model, recording which child is selected.")
     public void setSelectionModel(SingleSelectionModel model) {
         SingleSelectionModel oldValue = selectionModel;
         this.selectionModel = model;
@@ -227,6 +217,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      *
      * @return the number of items in the menu bar
      */
+    @BeanProperty(bound = false)
     public int getMenuCount() {
         return getComponentCount();
     }
@@ -304,6 +295,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      *
      * @return true if a selection has been made, else false
      */
+    @BeanProperty(bound = false)
     public boolean isSelected() {
         return selectionModel.isSelected();
     }
@@ -323,11 +315,9 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      * @param b if true and border property is not <code>null</code>,
      *          the border is painted.
      * @see #isBorderPainted
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: Whether the border should be painted.
      */
+    @BeanProperty(visualUpdate = true, description
+            = "Whether the border should be painted.")
     public void setBorderPainted(boolean b) {
         boolean oldValue = paintBorder;
         paintBorder = b;
@@ -359,11 +349,9 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      *
      * @param m an Insets object containing the margin values
      * @see Insets
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: The space between the menubar's border and its contents
      */
+    @BeanProperty(visualUpdate = true, description
+            = "The space between the menubar's border and its contents")
     public void setMargin(Insets m) {
         Insets old = margin;
         this.margin = m;
@@ -423,6 +411,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      * other menu elements.
      * @return an array of menu items in the menu bar.
      */
+    @BeanProperty(bound = false)
     public MenuElement[] getSubElements() {
         MenuElement result[];
         Vector<MenuElement> tmp = new Vector<MenuElement>();
@@ -487,6 +476,7 @@ public class JMenuBar extends JComponent implements Accessible,MenuElement
      * @return an AccessibleJMenuBar that serves as the
      *         AccessibleContext of this JMenuBar
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJMenuBar();

@@ -56,6 +56,8 @@ NSMutableDictionary *getMappingTable() {
                               forKey:[NSNumber numberWithLong:sun_lwawt_macosx_CDataTransferer_CF_PNG]];
         [sStandardMappings setObject:(NSString*)kUTTypeJPEG
                               forKey:[NSNumber numberWithLong:sun_lwawt_macosx_CDataTransferer_CF_JPEG]];
+        [sStandardMappings setObject:NSPICTPboardType
+                              forKey:[NSNumber numberWithLong:sun_lwawt_macosx_CDataTransferer_CF_XPICT]];
     }
     return sStandardMappings;
 }

@@ -1763,8 +1763,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * is returned
      * @see #setForeground
      * @since 1.0
-     * @beaninfo
-     *       bound: true
      */
     @Transient
     public Color getForeground() {
@@ -1843,8 +1841,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *          component will inherit the background color of its parent
      * @see #getBackground
      * @since 1.0
-     * @beaninfo
-     *       bound: true
      */
     public void setBackground(Color c) {
         Color oldColor = background;
@@ -1911,8 +1907,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getFont
      * @see #invalidate
      * @since 1.0
-     * @beaninfo
-     *       bound: true
      */
     public void setFont(Font f) {
         Font oldFont, newFont;
@@ -7234,8 +7228,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @param focusable indicates whether this Component is focusable
      * @see #isFocusable
      * @since 1.4
-     * @beaninfo
-     *       bound: true
      */
     public void setFocusable(boolean focusable) {
         boolean oldFocusable;
@@ -7327,8 +7319,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      *         or if any keystroke already maps to another focus traversal
      *         operation for this Component
      * @since 1.4
-     * @beaninfo
-     *       bound: true
      */
     public void setFocusTraversalKeys(int id,
                                       Set<? extends AWTKeyStroke> keystrokes)
@@ -7479,8 +7469,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #setFocusTraversalKeys
      * @see #getFocusTraversalKeys
      * @since 1.4
-     * @beaninfo
-     *       bound: true
      */
     public void setFocusTraversalKeysEnabled(boolean
                                              focusTraversalKeysEnabled) {
@@ -8995,8 +8983,6 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #invalidate
      *
      * @author Laura Werner, IBM
-     * @beaninfo
-     *       bound: true
      */
     public void setComponentOrientation(ComponentOrientation o) {
         ComponentOrientation oldValue = componentOrientation;

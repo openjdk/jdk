@@ -528,8 +528,6 @@ public abstract class KeyboardFocusManager
      *         current KeyboardFocusManager for the calling thread's context
      *         and if the calling thread does not have "replaceKeyboardFocusManager"
      *         permission
-     * @beaninfo
-     *       bound: true
      */
     protected void setGlobalFocusOwner(Component focusOwner)
         throws SecurityException
@@ -744,8 +742,6 @@ public abstract class KeyboardFocusManager
      *         current KeyboardFocusManager for the calling thread's context
      *         and if the calling thread does not have "replaceKeyboardFocusManager"
      *         permission
-     * @beaninfo
-     *       bound: true
      */
     protected void setGlobalPermanentFocusOwner(Component permanentFocusOwner)
         throws SecurityException
@@ -847,8 +843,6 @@ public abstract class KeyboardFocusManager
      *         current KeyboardFocusManager for the calling thread's context
      *         and if the calling thread does not have "replaceKeyboardFocusManager"
      *         permission
-     * @beaninfo
-     *       bound: true
      */
     protected void setGlobalFocusedWindow(Window focusedWindow)
         throws SecurityException
@@ -952,8 +946,6 @@ public abstract class KeyboardFocusManager
      *         current KeyboardFocusManager for the calling thread's context
      *         and if the calling thread does not have "replaceKeyboardFocusManager"
      *         permission
-     * @beaninfo
-     *       bound: true
      */
     protected void setGlobalActiveWindow(Window activeWindow)
         throws SecurityException
@@ -1008,8 +1000,6 @@ public abstract class KeyboardFocusManager
      * @see Container#setFocusTraversalPolicy
      * @see Container#getFocusTraversalPolicy
      * @throws IllegalArgumentException if defaultPolicy is null
-     * @beaninfo
-     *       bound: true
      */
     public void setDefaultFocusTraversalPolicy(FocusTraversalPolicy
                                                defaultPolicy) {
@@ -1113,8 +1103,6 @@ public abstract class KeyboardFocusManager
      *         represents a {@code KEY_TYPED} event,
      *         or if any keystroke already maps
      *         to another default focus traversal operation
-     * @beaninfo
-     *       bound: true
      */
     public void
         setDefaultFocusTraversalKeys(int id,
@@ -1272,8 +1260,6 @@ public abstract class KeyboardFocusManager
      * @see #getGlobalCurrentFocusCycleRoot
      * @throws SecurityException if the calling thread does not have
      *         "replaceKeyboardFocusManager" permission
-     * @beaninfo
-     *       bound: true
      */
     public void setGlobalCurrentFocusCycleRoot(Container newFocusCycleRoot)
         throws SecurityException
