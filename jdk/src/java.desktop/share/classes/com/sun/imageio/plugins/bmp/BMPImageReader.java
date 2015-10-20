@@ -290,6 +290,8 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                 imageType = VERSION_2_8_BIT;
             } else if (bitsPerPixel == 24) {
                 imageType = VERSION_2_24_BIT;
+            } else {
+                throw new IIOException(I18N.getString("BMPImageReader8"));
             }
 
             // Read in the palette
@@ -364,6 +366,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                         metadata.redMask = redMask;
                         metadata.greenMask = greenMask;
                         metadata.blueMask = blueMask;
+                    } else {
+                        throw new
+                            IIOException(I18N.getString("BMPImageReader8"));
                     }
 
                     metadata.bmpVersion = VERSION_3;
@@ -375,6 +380,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                         imageType = VERSION_3_NT_16_BIT;
                     } else if (bitsPerPixel == 32) {
                         imageType = VERSION_3_NT_32_BIT;
+                    } else {
+                        throw new
+                            IIOException(I18N.getString("BMPImageReader8"));
                     }
 
                     // BitsField encoding
@@ -493,6 +501,9 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
                             greenMask = 0x0000FF00;
                             blueMask  = 0x000000FF;
                         }
+                    } else {
+                        throw new
+                            IIOException(I18N.getString("BMPImageReader8"));
                     }
 
                     metadata.redMask = redMask;

@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package javax.swing;
 
 import java.util.*;
@@ -32,7 +31,10 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.print.*;
 
-import java.beans.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
@@ -207,11 +209,6 @@ import sun.swing.PrintingStatus;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- *
- * @beaninfo
- *   attribute: isContainer false
- * description: A component which displays data in a two dimensional grid.
- *
  * @author Philip Milne
  * @author Shannon Hickey (printing support)
  * @see javax.swing.table.DefaultTableModel
@@ -221,6 +218,8 @@ import sun.swing.PrintingStatus;
 /* The first versions of the JTable, contained in Swing-0.1 through
  * Swing-0.4, were written by Alan Chung.
  */
+@JavaBean(defaultProperty = "UI", description = "A component which displays data in a two dimensional grid.")
+@SwingContainer(false)
 @SuppressWarnings("serial") // Same-version serialization only
 public class JTable extends JComponent implements TableModelListener, Scrollable,
     TableColumnModelListener, ListSelectionListener, CellEditorListener,
@@ -894,10 +893,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *
      * @param   tableHeader                       new tableHeader
      * @see     #getTableHeader
-     * @beaninfo
-     *  bound: true
-     *  description: The JTableHeader instance which renders the column headers.
      */
+    @BeanProperty(description
+            = "The JTableHeader instance which renders the column headers.")
     public void setTableHeader(JTableHeader tableHeader) {
         if (this.tableHeader != tableHeader) {
             JTableHeader old = this.tableHeader;
@@ -933,10 +931,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @exception IllegalArgumentException      if <code>rowHeight</code> is
      *                                          less than 1
      * @see     #getRowHeight
-     * @beaninfo
-     *  bound: true
-     *  description: The height of the specified row.
      */
+    @BeanProperty(description
+            = "The height of the specified row.")
     public void setRowHeight(int rowHeight) {
         if (rowHeight <= 0) {
             throw new IllegalArgumentException("New row height less than 1");
@@ -979,11 +976,10 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @param   rowHeight                       new row height, in pixels
      * @exception IllegalArgumentException      if <code>rowHeight</code> is
      *                                          less than 1
-     * @beaninfo
-     *  bound: true
-     *  description: The height in pixels of the cells in <code>row</code>
      * @since 1.3
      */
+    @BeanProperty(description
+            = "The height in pixels of the cells in <code>row</code>")
     public void setRowHeight(int row, int rowHeight) {
         if (rowHeight <= 0) {
             throw new IllegalArgumentException("New row height less than 1");
@@ -1010,10 +1006,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *
      * @param  rowMargin  the number of pixels between cells in a row
      * @see     #getRowMargin
-     * @beaninfo
-     *  bound: true
-     *  description: The amount of space between cells.
      */
+    @BeanProperty(description
+            = "The amount of space between cells.")
     public void setRowMargin(int rowMargin) {
         int old = this.rowMargin;
         this.rowMargin = rowMargin;
@@ -1041,10 +1036,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *                                  specifying the new width
      *                                  and height between cells
      * @see     #getIntercellSpacing
-     * @beaninfo
-     *  description: The spacing between the cells,
-     *               drawn in the background color of the JTable.
      */
+    @BeanProperty(bound = false, description
+            = "The spacing between the cells, drawn in the background color of the JTable.")
     public void setIntercellSpacing(Dimension intercellSpacing) {
         // Set the rowMargin here and columnMargin in the TableColumnModel
         setRowMargin(intercellSpacing.height);
@@ -1071,10 +1065,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @param   gridColor                       the new color of the grid lines
      * @exception IllegalArgumentException      if <code>gridColor</code> is <code>null</code>
      * @see     #getGridColor
-     * @beaninfo
-     *  bound: true
-     *  description: The grid color.
      */
+    @BeanProperty(description
+            = "The grid color.")
     public void setGridColor(Color gridColor) {
         if (gridColor == null) {
             throw new IllegalArgumentException("New color is null");
@@ -1108,9 +1101,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *
      * @see     #setShowVerticalLines
      * @see     #setShowHorizontalLines
-     * @beaninfo
-     *  description: The color used to draw the grid lines.
      */
+    @BeanProperty(description
+            = "The color used to draw the grid lines.")
     public void setShowGrid(boolean showGrid) {
         setShowHorizontalLines(showGrid);
         setShowVerticalLines(showGrid);
@@ -1127,10 +1120,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see     #getShowHorizontalLines
      * @see     #setShowGrid
      * @see     #setShowVerticalLines
-     * @beaninfo
-     *  bound: true
-     *  description: Whether horizontal lines should be drawn in between the cells.
      */
+    @BeanProperty(description
+            = "Whether horizontal lines should be drawn in between the cells.")
     public void setShowHorizontalLines(boolean showHorizontalLines) {
         boolean old = this.showHorizontalLines;
         this.showHorizontalLines = showHorizontalLines;
@@ -1148,10 +1140,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see     #getShowVerticalLines
      * @see     #setShowGrid
      * @see     #setShowHorizontalLines
-     * @beaninfo
-     *  bound: true
-     *  description: Whether vertical lines should be drawn in between the cells.
      */
+    @BeanProperty(description
+            = "Whether vertical lines should be drawn in between the cells.")
     public void setShowVerticalLines(boolean showVerticalLines) {
         boolean old = this.showVerticalLines;
         this.showVerticalLines = showVerticalLines;
@@ -1198,15 +1189,14 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *
      * @see     #getAutoResizeMode
      * @see     #doLayout
-     * @beaninfo
-     *  bound: true
-     *  description: Whether the columns should adjust themselves automatically.
-     *        enum: AUTO_RESIZE_OFF                JTable.AUTO_RESIZE_OFF
-     *              AUTO_RESIZE_NEXT_COLUMN        JTable.AUTO_RESIZE_NEXT_COLUMN
-     *              AUTO_RESIZE_SUBSEQUENT_COLUMNS JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS
-     *              AUTO_RESIZE_LAST_COLUMN        JTable.AUTO_RESIZE_LAST_COLUMN
-     *              AUTO_RESIZE_ALL_COLUMNS        JTable.AUTO_RESIZE_ALL_COLUMNS
      */
+    @BeanProperty(enumerationValues = {
+            "JTable.AUTO_RESIZE_OFF",
+            "JTable.AUTO_RESIZE_NEXT_COLUMN",
+            "JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS",
+            "JTable.AUTO_RESIZE_LAST_COLUMN",
+            "JTable.AUTO_RESIZE_ALL_COLUMNS"}, description
+            = "Whether the columns should adjust themselves automatically.")
     public void setAutoResizeMode(int mode) {
         if (isValidAutoResizeMode(mode)) {
             int old = autoResizeMode;
@@ -1248,10 +1238,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @param   autoCreateColumnsFromModel   true if <code>JTable</code> should automatically create columns
      * @see     #getAutoCreateColumnsFromModel
      * @see     #createDefaultColumnsFromModel
-     * @beaninfo
-     *  bound: true
-     *  description: Automatically populates the columnModel when a new TableModel is submitted.
      */
+    @BeanProperty(description
+            = "Automatically populates the columnModel when a new TableModel is submitted.")
     public void setAutoCreateColumnsFromModel(boolean autoCreateColumnsFromModel) {
         if (this.autoCreateColumnsFromModel != autoCreateColumnsFromModel) {
             boolean old = this.autoCreateColumnsFromModel;
@@ -1442,11 +1431,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #setTransferHandler
      * @see TransferHandler
      * @since 1.4
-     *
-     * @beaninfo
-     *  description: determines whether automatic drag handling is enabled
-     *        bound: false
      */
+    @BeanProperty(bound = false, description
+            = "determines whether automatic drag handling is enabled")
     public void setDragEnabled(boolean b) {
         checkDragEnabled(b);
         dragEnabled = b;
@@ -1834,6 +1821,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see TransferHandler#canImport(TransferHandler.TransferSupport)
      * @since 1.6
      */
+    @BeanProperty(bound = false)
     public final DropLocation getDropLocation() {
         return dropLocation;
     }
@@ -1853,12 +1841,10 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @param autoCreateRowSorter whether or not a {@code RowSorter}
      *        should be automatically created
      * @see javax.swing.table.TableRowSorter
-     * @beaninfo
-     *        bound: true
-     *    preferred: true
-     *  description: Whether or not to turn on sorting by default.
      * @since 1.6
      */
+    @BeanProperty(preferred = true, description
+            = "Whether or not to turn on sorting by default.")
     public void setAutoCreateRowSorter(boolean autoCreateRowSorter) {
         boolean oldValue = this.autoCreateRowSorter;
         this.autoCreateRowSorter = autoCreateRowSorter;
@@ -1889,12 +1875,10 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * is true.
      *
      * @param update whether or not to update the selection on sorting
-     * @beaninfo
-     *        bound: true
-     *       expert: true
-     *  description: Whether or not to update the selection on sorting
      * @since 1.6
      */
+    @BeanProperty(expert = true, description
+            = "Whether or not to update the selection on sorting")
     public void setUpdateSelectionOnSort(boolean update) {
         if (updateSelectionOnSort != update) {
             updateSelectionOnSort = update;
@@ -1929,11 +1913,10 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @param sorter the <code>RowSorter</code>; <code>null</code> turns
      *        sorting off
      * @see javax.swing.table.TableRowSorter
-     * @beaninfo
-     *        bound: true
-     *  description: The table's RowSorter
      * @since 1.6
      */
+    @BeanProperty(description
+            = "The table's RowSorter")
     public void setRowSorter(RowSorter<? extends TableModel> sorter) {
         RowSorter<? extends TableModel> oldRowSorter = null;
         if (sortManager != null) {
@@ -1985,12 +1968,12 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *
      * @param selectionMode the mode used by the row and column selection models
      * @see JList#setSelectionMode
-     * @beaninfo
-     * description: The selection mode used by the row and column selection models.
-     *        enum: SINGLE_SELECTION            ListSelectionModel.SINGLE_SELECTION
-     *              SINGLE_INTERVAL_SELECTION   ListSelectionModel.SINGLE_INTERVAL_SELECTION
-     *              MULTIPLE_INTERVAL_SELECTION ListSelectionModel.MULTIPLE_INTERVAL_SELECTION
      */
+    @BeanProperty(enumerationValues = {
+            "ListSelectionModel.SINGLE_SELECTION",
+            "ListSelectionModel.SINGLE_INTERVAL_SELECTION",
+            "ListSelectionModel.MULTIPLE_INTERVAL_SELECTION"}, description
+            = "The selection mode used by the row and column selection models.")
     public void setSelectionMode(int selectionMode) {
         clearSelection();
         getSelectionModel().setSelectionMode(selectionMode);
@@ -2002,11 +1985,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *
      * @param rowSelectionAllowed   true if this model will allow row selection
      * @see #getRowSelectionAllowed
-     * @beaninfo
-     *  bound: true
-     *    attribute: visualUpdate true
-     *  description: If true, an entire row is selected for each selected cell.
      */
+    @BeanProperty(visualUpdate = true, description
+            = "If true, an entire row is selected for each selected cell.")
     public void setRowSelectionAllowed(boolean rowSelectionAllowed) {
         boolean old = this.rowSelectionAllowed;
         this.rowSelectionAllowed = rowSelectionAllowed;
@@ -2031,11 +2012,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *
      * @param columnSelectionAllowed   true if this model will allow column selection
      * @see #getColumnSelectionAllowed
-     * @beaninfo
-     *  bound: true
-     *    attribute: visualUpdate true
-     *  description: If true, an entire column is selected for each selected cell.
      */
+    @BeanProperty(visualUpdate = true, description
+            = "If true, an entire column is selected for each selected cell.")
     public void setColumnSelectionAllowed(boolean columnSelectionAllowed) {
         boolean old = columnModel.getColumnSelectionAllowed();
         columnModel.setColumnSelectionAllowed(columnSelectionAllowed);
@@ -2069,12 +2048,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *                                  selection is allowed
      * @see #getCellSelectionEnabled
      * @see #isCellSelected
-     * @beaninfo
-     *  bound: true
-     *    attribute: visualUpdate true
-     *  description: Select a rectangular region of cells rather than
-     *               rows or columns.
      */
+    @BeanProperty(visualUpdate = true, description
+            = "Select a rectangular region of cells rather than rows or columns.")
     public void setCellSelectionEnabled(boolean cellSelectionEnabled) {
         setRowSelectionAllowed(cellSelectionEnabled);
         setColumnSelectionAllowed(cellSelectionEnabled);
@@ -2262,6 +2238,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * Returns the index of the first selected row, -1 if no row is selected.
      * @return the index of the first selected row
      */
+    @BeanProperty(bound = false)
     public int getSelectedRow() {
         return selectionModel.getMinSelectionIndex();
     }
@@ -2271,6 +2248,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * -1 if no column is selected.
      * @return the index of the first selected column
      */
+    @BeanProperty(bound = false)
     public int getSelectedColumn() {
         return columnModel.getSelectionModel().getMinSelectionIndex();
     }
@@ -2282,6 +2260,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *         or an empty array if no row is selected
      * @see #getSelectedRow
      */
+    @BeanProperty(bound = false)
     public int[] getSelectedRows() {
         int iMin = selectionModel.getMinSelectionIndex();
         int iMax = selectionModel.getMaxSelectionIndex();
@@ -2309,6 +2288,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *         or an empty array if no column is selected
      * @see #getSelectedColumn
      */
+    @BeanProperty(bound = false)
     public int[] getSelectedColumns() {
         return columnModel.getSelectedColumns();
     }
@@ -2318,6 +2298,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *
      * @return the number of selected rows, 0 if no rows are selected
      */
+    @BeanProperty(bound = false)
     public int getSelectedRowCount() {
         int iMin = selectionModel.getMinSelectionIndex();
         int iMax = selectionModel.getMaxSelectionIndex();
@@ -2336,6 +2317,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *
      * @return the number of selected columns, 0 if no columns are selected
      */
+    @BeanProperty(bound = false)
     public int getSelectedColumnCount() {
         return columnModel.getSelectedColumnCount();
     }
@@ -2523,10 +2505,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #setForeground
      * @see #setBackground
      * @see #setFont
-     * @beaninfo
-     *       bound: true
-     * description: A default foreground color for selected cells.
      */
+    @BeanProperty(description
+            = "A default foreground color for selected cells.")
     public void setSelectionForeground(Color selectionForeground) {
         Color old = this.selectionForeground;
         this.selectionForeground = selectionForeground;
@@ -2561,10 +2542,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #setForeground
      * @see #setBackground
      * @see #setFont
-     * @beaninfo
-     *       bound: true
-     * description: A default background color for selected cells.
      */
+    @BeanProperty(description
+            = "A default background color for selected cells.")
     public void setSelectionBackground(Color selectionBackground) {
         Color old = this.selectionBackground;
         this.selectionBackground = selectionBackground;
@@ -2680,6 +2660,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @return the number of rows shown in the <code>JTable</code>
      * @see #getColumnCount
      */
+    @BeanProperty(bound = false)
     public int getRowCount() {
         RowSorter<?> sorter = getRowSorter();
         if (sorter != null) {
@@ -2696,6 +2677,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #getRowCount
      * @see #removeColumn
      */
+    @BeanProperty(bound = false)
     public int getColumnCount() {
         return getColumnModel().getColumnCount();
     }
@@ -3564,6 +3546,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see     #editingColumn
      * @see     #editingRow
      */
+    @BeanProperty(bound = false)
     public boolean isEditing() {
         return cellEditor != null;
     }
@@ -3574,6 +3557,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *
      * @return  Component handling editing session
      */
+    @BeanProperty(bound = false)
     public Component getEditorComponent() {
         return editorComp;
     }
@@ -3620,12 +3604,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *
      * @param ui  the TableUI L&amp;F object
      * @see UIDefaults#getUI
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *    attribute: visualUpdate true
-     *  description: The UI object that implements the Component's LookAndFeel.
      */
+    @BeanProperty(hidden = true, visualUpdate = true, description
+            = "The UI object that implements the Component's LookAndFeel.")
     public void setUI(TableUI ui) {
         if (this.ui != ui) {
             super.setUI(ui);
@@ -3681,6 +3662,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -3697,10 +3679,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @param  dataModel the new data source for this table
      * @throws IllegalArgumentException if {@code dataModel} is {@code null}
      * @see #getModel
-     * @beaninfo
-     *  bound: true
-     *  description: The model that is the source of the data for this view.
      */
+    @BeanProperty(description
+            = "The model that is the source of the data for this view.")
     public void setModel(final TableModel dataModel) {
         if (dataModel == null) {
             throw new IllegalArgumentException("Cannot set a null TableModel");
@@ -3743,10 +3724,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @param  columnModel the new data source for this table
      * @throws IllegalArgumentException if {@code columnModel} is {@code null}
      * @see #getColumnModel
-     * @beaninfo
-     *  bound: true
-     *  description: The object governing the way columns appear in the view.
      */
+    @BeanProperty(description
+            = "The object governing the way columns appear in the view.")
     public void setColumnModel(final TableColumnModel columnModel) {
         if (columnModel == null) {
             throw new IllegalArgumentException("Cannot set a null ColumnModel");
@@ -3788,10 +3768,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @throws IllegalArgumentException if {@code selectionModel} is
      *         {@code null}
      * @see #getSelectionModel
-     * @beaninfo
-     *      bound: true
-     *      description: The selection model for rows.
      */
+    @BeanProperty(description
+            = "The selection model for rows.")
     public void setSelectionModel(final ListSelectionModel selectionModel) {
         if (selectionModel == null) {
             throw new IllegalArgumentException("Cannot set a null SelectionModel");
@@ -4784,9 +4763,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @param size  a <code>Dimension</code> object specifying the <code>preferredSize</code> of a
      *              <code>JViewport</code> whose view is this table
      * @see Scrollable#getPreferredScrollableViewportSize
-     * @beaninfo
-     * description: The preferred size of the viewport.
      */
+    @BeanProperty(bound = false, description
+            = "The preferred size of the viewport.")
     public void setPreferredScrollableViewportSize(Dimension size) {
         preferredViewportSize = size;
     }
@@ -5222,6 +5201,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *   to <code>AUTO_RESIZE_OFF</code>, otherwise returns true
      * @see Scrollable#getScrollableTracksViewportWidth
      */
+    @BeanProperty(bound = false)
     public boolean getScrollableTracksViewportWidth() {
         return !(autoResizeMode == AUTO_RESIZE_OFF);
     }
@@ -5239,6 +5219,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #setFillsViewportHeight
      * @see #getFillsViewportHeight
      */
+    @BeanProperty(bound = false)
     public boolean getScrollableTracksViewportHeight() {
         Container parent = SwingUtilities.getUnwrappedParent(this);
         return getFillsViewportHeight()
@@ -5260,11 +5241,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #getFillsViewportHeight
      * @see #getScrollableTracksViewportHeight
      * @since 1.6
-     * @beaninfo
-     *      bound: true
-     *      description: Whether or not this table is always made large enough
-     *                   to fill the height of an enclosing viewport
      */
+    @BeanProperty(description
+            = "Whether or not this table is always made large enough to fill the height of an enclosing viewport")
     public void setFillsViewportHeight(boolean fillsViewportHeight) {
         boolean old = this.fillsViewportHeight;
         this.fillsViewportHeight = fillsViewportHeight;
@@ -5661,10 +5640,9 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      *
      * @param anEditor the active cell editor
      * @see #cellEditor
-     * @beaninfo
-     *  bound: true
-     *  description: The table's active cell editor.
      */
+    @BeanProperty(description
+            = "The table's active cell editor.")
     public void setCellEditor(TableCellEditor anEditor) {
         TableCellEditor oldEditor = cellEditor;
         cellEditor = anEditor;
@@ -6656,6 +6634,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @return an AccessibleJTable that serves as the
      *         AccessibleContext of this JTable
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJTable();

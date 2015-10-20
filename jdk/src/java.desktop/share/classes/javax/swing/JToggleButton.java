@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,14 @@ package javax.swing;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 
-import javax.swing.event.*;
 import javax.swing.plaf.*;
 import javax.accessibility.*;
 
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-
 
 /**
  * An implementation of a two-state button.
@@ -68,15 +67,13 @@ import java.io.IOException;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- *   attribute: isContainer false
- * description: An implementation of a two-state button.
- *
  * @see JRadioButton
  * @see JCheckBox
  * @author Jeff Dinkins
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UIClassID", description = "An implementation of a two-state button.")
+@SwingContainer(false)
 @SuppressWarnings("serial") // Same-version serialization only
 public class JToggleButton extends AbstractButton implements Accessible {
 
@@ -195,9 +192,9 @@ public class JToggleButton extends AbstractButton implements Accessible {
      * @return String "ToggleButtonUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
-     * @beaninfo
-     *  description: A string that specifies the name of the L&amp;F class
      */
+    @BeanProperty(bound = false, description
+            = "A string that specifies the name of the L&amp;F class")
     public String getUIClassID() {
         return uiClassID;
     }
@@ -362,10 +359,9 @@ public class JToggleButton extends AbstractButton implements Accessible {
      *
      * @return an AccessibleJToggleButton that serves as the
      *         AccessibleContext of this JToggleButton
-     * @beaninfo
-     *       expert: true
-     *  description: The AccessibleContext associated with this ToggleButton.
      */
+    @BeanProperty(bound = false, expert = true, description
+            = "The AccessibleContext associated with this ToggleButton.")
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJToggleButton();

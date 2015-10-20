@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package javax.swing.colorchooser;
 
 import java.awt.*;
+import java.beans.BeanProperty;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import javax.swing.*;
@@ -222,13 +223,10 @@ public abstract class AbstractColorChooserPanel extends JPanel {
      * <p>The default value is {@code true}.
      *
      * @param b true if the transparency of a color can be selected
-     *
-     * @beaninfo
-     *       bound: true
-     * description: Sets the transparency of a color selection on or off.
-     *
      * @see #isColorTransparencySelectionEnabled()
      */
+    @BeanProperty(description
+            = "Sets the transparency of a color selection on or off.")
     public void setColorTransparencySelectionEnabled(boolean b){
     }
 

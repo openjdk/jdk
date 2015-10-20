@@ -174,6 +174,12 @@ public class FileDialog extends Dialog {
      * Creates a file dialog for loading a file.  The title of the
      * file dialog is initially empty.  This is a convenience method for
      * <code>FileDialog(parent, "", LOAD)</code>.
+     * <p>
+     * <strong>Note:</strong> Some platforms may not support
+     * showing the user-specified title in a file dialog.
+     * In this situation, either no title will be displayed in the file dialog's
+     * title bar or, on some systems, the file dialog's title bar will not be
+     * displayed.
      *
      * @param parent the owner of the dialog
      * @since 1.1
@@ -187,6 +193,12 @@ public class FileDialog extends Dialog {
      * a file. The files shown are those in the current directory.
      * This is a convenience method for
      * <code>FileDialog(parent, title, LOAD)</code>.
+     * <p>
+     * <strong>Note:</strong> Some platforms may not support
+     * showing the user-specified title in a file dialog.
+     * In this situation, either no title will be displayed in the file dialog's
+     * title bar or, on some systems, the file dialog's title bar will not be
+     * displayed.
      *
      * @param     parent   the owner of the dialog
      * @param     title    the title of the dialog
@@ -204,6 +216,12 @@ public class FileDialog extends Dialog {
      * in the current directory.   If the value of
      * <code>mode</code> is <code>SAVE</code>, the file dialog is finding
      * a place to write a file.
+     * <p>
+     * <strong>Note:</strong> Some platforms may not support
+     * showing the user-specified title in a file dialog.
+     * In this situation, either no title will be displayed in the file dialog's
+     * title bar or, on some systems, the file dialog's title bar will not be
+     * displayed.
      *
      * @param     parent   the owner of the dialog
      * @param     title   the title of the dialog
@@ -224,6 +242,12 @@ public class FileDialog extends Dialog {
      * Creates a file dialog for loading a file.  The title of the
      * file dialog is initially empty.  This is a convenience method for
      * <code>FileDialog(parent, "", LOAD)</code>.
+     * <p>
+     * <strong>Note:</strong> Some platforms may not support
+     * showing the user-specified title in a file dialog.
+     * In this situation, either no title will be displayed in the file dialog's
+     * title bar or, on some systems, the file dialog's title bar will not be
+     * displayed.
      *
      * @param     parent   the owner of the dialog
      * @exception java.lang.IllegalArgumentException if the <code>parent</code>'s
@@ -245,6 +269,12 @@ public class FileDialog extends Dialog {
      * a file. The files shown are those in the current directory.
      * This is a convenience method for
      * <code>FileDialog(parent, title, LOAD)</code>.
+     * <p>
+     * <strong>Note:</strong> Some platforms may not support
+     * showing the user-specified title in a file dialog.
+     * In this situation, either no title will be displayed in the file dialog's
+     * title bar or, on some systems, the file dialog's title bar will not be
+     * displayed.
      *
      * @param     parent   the owner of the dialog
      * @param     title    the title of the dialog; a <code>null</code> value
@@ -273,6 +303,12 @@ public class FileDialog extends Dialog {
      * in the current directory.   If the value of
      * <code>mode</code> is <code>SAVE</code>, the file dialog is finding
      * a place to write a file.
+     * <p>
+     * <strong>Note:</strong> Some platforms may not support
+     * showing the user-specified title in a file dialog.
+     * In this situation, either no title will be displayed in the file dialog's
+     * title bar or, on some systems, the file dialog's title bar will not be
+     * displayed.
      *
      * @param     parent   the owner of the dialog
      * @param     title    the title of the dialog; a <code>null</code> value
@@ -299,6 +335,22 @@ public class FileDialog extends Dialog {
         this.setMode(mode);
         setLayout(null);
     }
+
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * <strong>Note:</strong> Some platforms may not support
+     * showing the user-specified title in a file dialog.
+     * In this situation, either no title will be displayed in the file dialog's
+     * title bar or, on some systems, the file dialog's title bar will not be
+     * displayed.
+     */
+    @Override
+    public void setTitle(String title) {
+        super.setTitle(title);
+    }
+
 
     /**
      * Constructs a name for this component. Called by <code>getName()</code>

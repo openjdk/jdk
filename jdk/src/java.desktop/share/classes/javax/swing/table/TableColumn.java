@@ -26,6 +26,7 @@
 package javax.swing.table;
 
 import java.awt.Component;
+import java.beans.BeanProperty;
 import java.beans.PropertyChangeListener;
 import java.io.Serializable;
 
@@ -308,10 +309,9 @@ public class TableColumn extends Object implements Serializable {
      * <code>TableColumn</code>. As the <code>TableColumn</code>
      * is moved around in the view the model index remains constant.
      * @param  modelIndex  the new modelIndex
-     * @beaninfo
-     *  bound: true
-     *  description: The model index.
      */
+    @BeanProperty(description
+            = "The model index.")
     public void setModelIndex(int modelIndex) {
         int old = this.modelIndex;
         this.modelIndex = modelIndex;
@@ -335,10 +335,9 @@ public class TableColumn extends Object implements Serializable {
      *
      * @param      identifier           an identifier for this column
      * @see        #getIdentifier
-     * @beaninfo
-     *  bound: true
-     *  description: A unique identifier for this column.
      */
+    @BeanProperty(description
+            = "A unique identifier for this column.")
     public void setIdentifier(Object identifier) {
         Object old = this.identifier;
         this.identifier = identifier;
@@ -369,10 +368,9 @@ public class TableColumn extends Object implements Serializable {
      * is <code>null</code>.
      * @param headerValue  the new headerValue
      * @see       #getHeaderValue
-     * @beaninfo
-     *  bound: true
-     *  description: The text to be used by the header renderer.
      */
+    @BeanProperty(description
+            = "The text to be used by the header renderer.")
     public void setHeaderValue(Object headerValue) {
         Object old = this.headerValue;
         this.headerValue = headerValue;
@@ -405,10 +403,9 @@ public class TableColumn extends Object implements Serializable {
      * @param headerRenderer  the new headerRenderer
      *
      * @see       #getHeaderRenderer
-     * @beaninfo
-     *  bound: true
-     *  description: The header renderer.
      */
+    @BeanProperty(description
+            = "The header renderer.")
     public void setHeaderRenderer(TableCellRenderer headerRenderer) {
         TableCellRenderer old = this.headerRenderer;
         this.headerRenderer = headerRenderer;
@@ -437,10 +434,9 @@ public class TableColumn extends Object implements Serializable {
      *
      * @param cellRenderer  the new cellRenderer
      * @see     #getCellRenderer
-     * @beaninfo
-     *  bound: true
-     *  description: The renderer to use for cell values.
      */
+    @BeanProperty(description
+            = "The renderer to use for cell values.")
     public void setCellRenderer(TableCellRenderer cellRenderer) {
         TableCellRenderer old = this.cellRenderer;
         this.cellRenderer = cellRenderer;
@@ -471,10 +467,9 @@ public class TableColumn extends Object implements Serializable {
      *
      * @param cellEditor  the new cellEditor
      * @see     #getCellEditor
-     * @beaninfo
-     *  bound: true
-     *  description: The editor to use for cell values.
      */
+    @BeanProperty(description
+            = "The editor to use for cell values.")
     public void setCellEditor(TableCellEditor cellEditor){
         TableCellEditor old = this.cellEditor;
         this.cellEditor = cellEditor;
@@ -515,10 +510,9 @@ public class TableColumn extends Object implements Serializable {
      * @see     #setMaxWidth
      * @see     #setPreferredWidth
      * @see     JTable#doLayout()
-     * @beaninfo
-     *  bound: true
-     *  description: The width of the column.
      */
+    @BeanProperty(description
+            = "The width of the column.")
     public void setWidth(int width) {
         int old = this.width;
         this.width = Math.min(Math.max(width, minWidth), maxWidth);
@@ -549,10 +543,9 @@ public class TableColumn extends Object implements Serializable {
      * @param  preferredWidth the new preferred width
      * @see     #getPreferredWidth
      * @see     JTable#doLayout()
-     * @beaninfo
-     *  bound: true
-     *  description: The preferred width of the column.
      */
+    @BeanProperty(description
+            = "The preferred width of the column.")
     public void setPreferredWidth(int preferredWidth) {
         int old = this.preferredWidth;
         this.preferredWidth = Math.min(Math.max(preferredWidth, minWidth), maxWidth);
@@ -588,10 +581,9 @@ public class TableColumn extends Object implements Serializable {
      * @see     #getMinWidth
      * @see     #setPreferredWidth
      * @see     #setMaxWidth
-     * @beaninfo
-     *  bound: true
-     *  description: The minimum width of the column.
      */
+    @BeanProperty(description
+            = "The minimum width of the column.")
     public void setMinWidth(int minWidth) {
         int old = this.minWidth;
         this.minWidth = Math.max(Math.min(minWidth, maxWidth), 0);
@@ -633,10 +625,9 @@ public class TableColumn extends Object implements Serializable {
      * @see     #getMaxWidth
      * @see     #setPreferredWidth
      * @see     #setMinWidth
-     * @beaninfo
-     *  bound: true
-     *  description: The maximum width of the column.
      */
+    @BeanProperty(description
+            = "The maximum width of the column.")
     public void setMaxWidth(int maxWidth) {
         int old = this.maxWidth;
         this.maxWidth = Math.max(minWidth, maxWidth);
@@ -667,10 +658,9 @@ public class TableColumn extends Object implements Serializable {
      *
      * @param isResizable  if true, resizing is allowed; otherwise false
      * @see     #getResizable
-     * @beaninfo
-     *  bound: true
-     *  description: Whether or not this column can be resized.
      */
+    @BeanProperty(description
+            = "Whether or not this column can be resized.")
     public void setResizable(boolean isResizable) {
         boolean old = this.isResizable;
         this.isResizable = isResizable;

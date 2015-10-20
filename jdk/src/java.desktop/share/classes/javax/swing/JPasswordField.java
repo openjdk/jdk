@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,12 @@
 package javax.swing;
 
 import javax.swing.text.*;
-import javax.swing.plaf.*;
 import javax.accessibility.*;
 
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-import java.io.*;
 import java.util.Arrays;
 
 /**
@@ -68,13 +67,11 @@ import java.util.Arrays;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- *  attribute: isContainer false
- * description: Allows the editing of a line of text but doesn't show the characters.
- *
  * @author  Timothy Prinzing
  * @since 1.2
  */
+@JavaBean(description = "Allows the editing of a line of text but doesn't show the characters.")
+@SwingContainer(false)
 @SuppressWarnings("serial") // Same-version serialization only
 public class JPasswordField extends JTextField {
 
@@ -151,6 +148,7 @@ public class JPasswordField extends JTextField {
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -191,10 +189,9 @@ public class JPasswordField extends JTextField {
      * @param c the echo character to display
      * @see #echoCharIsSet
      * @see #getEchoChar
-     * @beaninfo
-     * description: character to display in place of the real characters
-     *   attribute: visualUpdate true
      */
+    @BeanProperty(bound = false, visualUpdate = true, description
+            = "character to display in place of the real characters")
     public void setEchoChar(char c) {
         echoChar = c;
         echoCharSet = true;
@@ -292,6 +289,7 @@ public class JPasswordField extends JTextField {
      *
      * @return the text
      */
+    @BeanProperty(bound = false)
     public char[] getPassword() {
         Document doc = getDocument();
         Segment txt = new Segment();
@@ -383,6 +381,7 @@ public class JPasswordField extends JTextField {
      *         <code>AccessibleContext</code> of this
      *         <code>JPasswordField</code>
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJPasswordField();

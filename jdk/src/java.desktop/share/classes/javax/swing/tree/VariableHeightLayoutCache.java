@@ -22,11 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package javax.swing.tree;
 
 import javax.swing.event.TreeModelEvent;
 import java.awt.Rectangle;
+import java.beans.BeanProperty;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.NoSuchElementException;
@@ -103,10 +103,9 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
      * Sets the <code>TreeModel</code> that will provide the data.
      *
      * @param newModel the <code>TreeModel</code> that is to provide the data
-     * @beaninfo
-     *        bound: true
-     *  description: The TreeModel that will provide the data.
      */
+    @BeanProperty(description
+            = "The TreeModel that will provide the data.")
     public void setModel(TreeModel newModel) {
         super.setModel(newModel);
         rebuild(false);
@@ -118,11 +117,9 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
      *
      * @param rootVisible true if the root node of the tree is to be displayed
      * @see #rootVisible
-     * @beaninfo
-     *        bound: true
-     *  description: Whether or not the root node
-     *               from the TreeModel is visible.
      */
+    @BeanProperty(description
+            = "Whether or not the root node from the TreeModel is visible.")
     public void setRootVisible(boolean rootVisible) {
         if(isRootVisible() != rootVisible && root != null) {
             if(rootVisible) {
@@ -151,10 +148,9 @@ public class VariableHeightLayoutCache extends AbstractLayoutCache {
      * queried for each row's height.
      *
      * @param rowHeight the height of each cell, in pixels
-     * @beaninfo
-     *        bound: true
-     *  description: The height of each cell.
      */
+    @BeanProperty(description
+            = "The height of each cell.")
     public void setRowHeight(int rowHeight) {
         if(rowHeight != getRowHeight()) {
             super.setRowHeight(rowHeight);

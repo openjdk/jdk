@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,13 +24,11 @@
  */
 package javax.swing;
 
-import java.util.EventListener;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.*;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 
 import java.io.Serializable;
 import java.io.ObjectOutputStream;
@@ -38,7 +36,6 @@ import java.io.ObjectInputStream;
 import java.io.IOException;
 
 import javax.swing.plaf.*;
-import javax.swing.plaf.basic.*;
 import javax.swing.event.*;
 import javax.accessibility.*;
 
@@ -76,10 +73,6 @@ import javax.accessibility.*;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- *   attribute: isContainer false
- * description: An item which can be selected in a menu.
- *
  * @author Georges Saab
  * @author David Karlton
  * @see JPopupMenu
@@ -88,6 +81,8 @@ import javax.accessibility.*;
  * @see JRadioButtonMenuItem
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UIClassID", description = "An item which can be selected in a menu.")
+@SwingContainer(false)
 @SuppressWarnings("serial")
 public class JMenuItem extends AbstractButton implements Accessible,MenuElement  {
 
@@ -232,12 +227,9 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      *
      * @param ui  the <code>JMenuItemUI</code> L&amp;F object
      * @see UIDefaults#getUI
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *    attribute: visualUpdate true
-     *  description: The UI object that implements the Component's LookAndFeel.
      */
+    @BeanProperty(hidden = true, visualUpdate = true, description
+            = "The UI object that implements the LookAndFeel.")
     public void setUI(MenuItemUI ui) {
         super.setUI(ui);
     }
@@ -260,6 +252,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -272,10 +265,9 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * event will not fire and the menu item will be disarmed.
      *
      * @param b true to arm the menu item so it can be selected
-     * @beaninfo
-     *    description: Mouse release will fire an action event
-     *         hidden: true
      */
+    @BeanProperty(bound = false, hidden = true, description
+            = "Mouse release will fire an action event")
     public void setArmed(boolean b) {
         ButtonModel model = getModel();
 
@@ -300,11 +292,9 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * Enables or disables the menu item.
      *
      * @param b  true to enable the item
-     * @beaninfo
-     *    description: Does the component react to user interaction
-     *          bound: true
-     *      preferred: true
      */
+    @BeanProperty(preferred = true, description
+            = "The enabled state of the component.")
     public void setEnabled(boolean b) {
         // Make sure we aren't armed!
         if (!b && !UIManager.getBoolean("MenuItem.disabledAreNavigable")) {
@@ -344,13 +334,9 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      *
      * @param keyStroke the <code>KeyStroke</code> which will
      *          serve as an accelerator
-     * @beaninfo
-     *     description: The keystroke combination which will invoke the
-     *                  JMenuItem's actionlisteners without navigating the
-     *                  menu hierarchy
-     *           bound: true
-     *       preferred: true
      */
+    @BeanProperty(preferred = true, description
+            = "The keystroke combination which will invoke the JMenuItem's actionlisteners without navigating the menu hierarchy")
     public void setAccelerator(KeyStroke keyStroke) {
         KeyStroke oldAccelerator = accelerator;
         this.accelerator = keyStroke;
@@ -681,6 +667,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      *
      * @return an array of <code>MenuElement</code>s
      */
+    @BeanProperty(bound = false)
     public MenuElement[] getSubElements() {
         return new MenuElement[0];
     }
@@ -722,6 +709,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      *         array if no listeners have been added
      * @since 1.4
      */
+    @BeanProperty(bound = false)
     public MenuDragMouseListener[] getMenuDragMouseListeners() {
         return listenerList.getListeners(MenuDragMouseListener.class);
     }
@@ -752,6 +740,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      *         array if no listeners have been added
      * @since 1.4
      */
+    @BeanProperty(bound = false)
     public MenuKeyListener[] getMenuKeyListeners() {
         return listenerList.getListeners(MenuKeyListener.class);
     }
@@ -808,6 +797,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * @return an <code>AccessibleJMenuItem</code> that serves as the
      *         <code>AccessibleContext</code> of this <code>JMenuItem</code>
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJMenuItem();

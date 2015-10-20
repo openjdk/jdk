@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,26 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package javax.swing;
 
-import java.awt.Color;
 import java.awt.Component;
-import java.awt.ComponentOrientation;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Insets;
 import java.awt.LayoutManager;
 import java.awt.LayoutManager2;
-import java.awt.event.*;
-import java.beans.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
-import javax.swing.border.Border;
 import javax.swing.plaf.*;
 import javax.accessibility.*;
 
 import java.io.Serializable;
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-import java.util.Hashtable;
-
 
 /**
  * <code>JToolBar</code> provides a component that is useful for
@@ -78,15 +73,13 @@ import java.util.Hashtable;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- *   attribute: isContainer true
- * description: A component which displays commonly used controls or Actions.
- *
  * @author Georges Saab
  * @author Jeff Shapiro
  * @see Action
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UI", description = "A component which displays commonly used controls or Actions.")
+@SwingContainer
 @SuppressWarnings("serial") // Same-version serialization only
 public class JToolBar extends JComponent implements SwingConstants, Accessible
 {
@@ -175,12 +168,9 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
      *
      * @param ui  the <code>ToolBarUI</code> L&amp;F object
      * @see UIDefaults#getUI
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *    attribute: visualUpdate true
-     *  description: The UI object that implements the Component's LookAndFeel.
      */
+    @BeanProperty(hidden = true, visualUpdate = true, description
+            = "The UI object that implements the Component's LookAndFeel.")
     public void setUI(ToolBarUI ui) {
         super.setUI(ui);
     }
@@ -212,6 +202,7 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -266,11 +257,9 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
       * @param m an <code>Insets</code> object that defines the space
       *         between the border and the buttons
       * @see Insets
-      * @beaninfo
-      * description: The margin between the tool bar's border and contents
-      *       bound: true
-      *      expert: true
       */
+     @BeanProperty(expert = true, description
+             = "The margin between the tool bar's border and contents")
      public void setMargin(Insets m)
      {
          Insets old = margin;
@@ -317,11 +306,9 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
       *
       * @param b if true, the border is painted
       * @see #isBorderPainted
-      * @beaninfo
-      * description: Does the tool bar paint its borders?
-      *       bound: true
-      *      expert: true
       */
+     @BeanProperty(expert = true, description
+             = "Does the tool bar paint its borders?")
      public void setBorderPainted(boolean b)
      {
          if ( paintBorder != b )
@@ -376,11 +363,9 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
       * @param b if <code>true</code>, the tool bar can be moved;
       *          <code>false</code> otherwise
       * @see #isFloatable
-      * @beaninfo
-      * description: Can the tool bar be made to float by the user?
-      *       bound: true
-      *   preferred: true
       */
+     @BeanProperty(preferred = true, description
+             = "Can the tool bar be made to float by the user?")
     public void setFloatable( boolean b )
     {
         if ( floatable != b )
@@ -418,13 +403,11 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
      * @exception IllegalArgumentException if orientation is neither
      *          <code>HORIZONTAL</code> nor <code>VERTICAL</code>
      * @see #getOrientation
-     * @beaninfo
-     * description: The current orientation of the tool bar
-     *       bound: true
-     *   preferred: true
-     *        enum: HORIZONTAL SwingConstants.HORIZONTAL
-     *              VERTICAL   SwingConstants.VERTICAL
      */
+    @BeanProperty(preferred = true, enumerationValues = {
+            "SwingConstants.HORIZONTAL",
+            "SwingConstants.VERTICAL"}, description
+            = "The current orientation of the tool bar")
     public void setOrientation( int o )
     {
         checkOrientation( o );
@@ -451,12 +434,9 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
      *
      * @param rollover true for rollover toolbar buttons; otherwise false
      * @since 1.4
-     * @beaninfo
-     *        bound: true
-     *    preferred: true
-     *    attribute: visualUpdate true
-     *  description: Will draw rollover button borders in the toolbar.
      */
+    @BeanProperty(preferred = true, visualUpdate = true, description
+            = "Will draw rollover button borders in the toolbar.")
     public void setRollover(boolean rollover) {
         putClientProperty("JToolBar.isRollover",
                           rollover ? Boolean.TRUE : Boolean.FALSE);
@@ -836,6 +816,7 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
      * @return an AccessibleJToolBar that serves as the
      *         AccessibleContext of this JToolBar
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJToolBar();

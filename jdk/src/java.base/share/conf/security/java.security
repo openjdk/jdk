@@ -90,6 +90,31 @@ security.provider.tbd=apple.security.AppleProvider
 security.provider.tbd=sun.security.pkcs11.SunPKCS11
 #endif
 
+#
+# A list of preferred providers for specific algorithms. These providers will
+# be searched for matching algorithms before the list of registered providers.
+# Entries containing errors (parsing, etc) will be ignored. Use the
+# -Djava.security.debug=jca property to debug these errors.
+#
+# The property is a comma-separated list of serviceType.algorithm:provider
+# entries. The serviceType (example: "MessageDigest") is optional, and if
+# not specified, the algorithm applies to all service types that support it.
+# The algorithm is the standard algorithm name or transformation.
+# Transformations can be specified in their full standard name
+# (ex: AES/CBC/PKCS5Padding), or as partial matches (ex: AES, AES/CBC).
+# The provider is the name of the provider. Any provider that does not
+# also appear in the registered list will be ignored.
+#
+# Example:
+#   jdk.security.provider.preferred=AES/GCM/NoPadding:SunJCE, \
+#         MessageDigest.SHA-256:SUN
+#ifdef solaris-sparc
+jdk.security.provider.preferred=AES:SunJCE, SHA-256:SUN, SHA-384:SUN, SHA-512:SUN
+#endif
+#ifdef solaris-x86
+jdk.security.provider.preferred=AES:SunJCE, RSA:SunRsaSign
+#endif
+
 
 #
 # Sun Provider SecureRandom seed source.
