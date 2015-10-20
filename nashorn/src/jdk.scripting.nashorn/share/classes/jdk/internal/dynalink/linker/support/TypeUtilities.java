@@ -83,119 +83,21 @@
 
 package jdk.internal.dynalink.linker.support;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import jdk.internal.dynalink.DynamicLinkerFactory;
+import jdk.internal.dynalink.linker.MethodTypeConversionStrategy;
 
 /**
- * Various static utility methods for testing type relationships.
+ * Various static utility methods for working with Java types.
  */
 public class TypeUtilities {
     static final Class<Object> OBJECT_CLASS = Object.class;
 
     private TypeUtilities() {
-    }
-
-    /**
-     * Given two types represented by c1 and c2, returns a type that is their most specific common supertype for
-     * purposes of lossless conversions.
-     *
-     * @param c1 one type
-     * @param c2 another type
-     * @return their most common superclass or superinterface for purposes of lossless conversions. If they have several
-     * unrelated superinterfaces as their most specific common type, or the types themselves are completely
-     * unrelated interfaces, {@link java.lang.Object} is returned.
-     */
-    public static Class<?> getCommonLosslessConversionType(final Class<?> c1, final Class<?> c2) {
-        if(c1 == c2) {
-            return c1;
-        } else if (c1 == void.class || c2 == void.class) {
-            return Object.class;
-        } else if(isConvertibleWithoutLoss(c2, c1)) {
-            return c1;
-        } else if(isConvertibleWithoutLoss(c1, c2)) {
-            return c2;
-        } else if(c1.isPrimitive() && c2.isPrimitive()) {
-            if((c1 == byte.class && c2 == char.class) || (c1 == char.class && c2 == byte.class)) {
-                // byte + char = int
-                return int.class;
-            } else if((c1 == short.class && c2 == char.class) || (c1 == char.class && c2 == short.class)) {
-                // short + char = int
-                return int.class;
-            } else if((c1 == int.class && c2 == float.class) || (c1 == float.class && c2 == int.class)) {
-                // int + float = double
-                return double.class;
-            }
-        }
-        // For all other cases. This will handle long + (float|double) = Number case as well as boolean + anything = Object case too.
-        return getMostSpecificCommonTypeUnequalNonprimitives(c1, c2);
-    }
-
-    private static Class<?> getMostSpecificCommonTypeUnequalNonprimitives(final Class<?> c1, final Class<?> c2) {
-        final Class<?> npc1 = c1.isPrimitive() ? getWrapperType(c1) : c1;
-        final Class<?> npc2 = c2.isPrimitive() ? getWrapperType(c2) : c2;
-        final Set<Class<?>> a1 = getAssignables(npc1, npc2);
-        final Set<Class<?>> a2 = getAssignables(npc2, npc1);
-        a1.retainAll(a2);
-        if(a1.isEmpty()) {
-            // Can happen when at least one of the arguments is an interface,
-            // as they don't have Object at the root of their hierarchy.
-            return Object.class;
-        }
-        // Gather maximally specific elements. Yes, there can be more than one
-        // thank to interfaces. I.e., if you call this method for String.class
-        // and Number.class, you'll have Comparable, Serializable, and Object
-        // as maximal elements.
-        final List<Class<?>> max = new ArrayList<>();
-        outer: for(final Class<?> clazz: a1) {
-            for(final Iterator<Class<?>> maxiter = max.iterator(); maxiter.hasNext();) {
-                final Class<?> maxClazz = maxiter.next();
-                if(isSubtype(maxClazz, clazz)) {
-                    // It can't be maximal, if there's already a more specific
-                    // maximal than it.
-                    continue outer;
-                }
-                if(isSubtype(clazz, maxClazz)) {
-                    // If it's more specific than a currently maximal element,
-                    // that currently maximal is no longer a maximal.
-                    maxiter.remove();
-                }
-            }
-            // If we get here, no current maximal is more specific than the
-            // current class, so it is considered maximal as well
-            max.add(clazz);
-        }
-        if(max.size() > 1) {
-            return Object.class;
-        }
-        return max.get(0);
-    }
-
-    private static Set<Class<?>> getAssignables(final Class<?> c1, final Class<?> c2) {
-        final Set<Class<?>> s = new HashSet<>();
-        collectAssignables(c1, c2, s);
-        return s;
-    }
-
-    private static void collectAssignables(final Class<?> c1, final Class<?> c2, final Set<Class<?>> s) {
-        if(c1.isAssignableFrom(c2)) {
-            s.add(c1);
-        }
-        final Class<?> sc = c1.getSuperclass();
-        if(sc != null) {
-            collectAssignables(sc, c2, s);
-        }
-        final Class<?>[] itf = c1.getInterfaces();
-        for(int i = 0; i < itf.length; ++i) {
-            collectAssignables(itf[i], c2, s);
-        }
     }
 
     private static final Map<Class<?>, Class<?>> WRAPPER_TYPES = createWrapperTypes();
@@ -204,6 +106,7 @@ public class TypeUtilities {
 
     private static Map<Class<?>, Class<?>> createWrapperTypes() {
         final Map<Class<?>, Class<?>> wrapperTypes = new IdentityHashMap<>(8);
+        wrapperTypes.put(Void.TYPE, Void.class);
         wrapperTypes.put(Boolean.TYPE, Boolean.class);
         wrapperTypes.put(Byte.TYPE, Byte.class);
         wrapperTypes.put(Character.TYPE, Character.class);
@@ -249,23 +152,32 @@ public class TypeUtilities {
             if(targetType.isPrimitive()) {
                 return isProperPrimitiveSubtype(sourceType, targetType);
             }
-            // Boxing + widening reference conversion
-            assert WRAPPER_TYPES.get(sourceType) != null : sourceType.getName();
-            return targetType.isAssignableFrom(WRAPPER_TYPES.get(sourceType));
+            return isBoxingAndWideningReferenceConversion(sourceType, targetType);
         }
         if(targetType.isPrimitive()) {
-            final Class<?> unboxedCallSiteType = PRIMITIVE_TYPES.get(sourceType);
+            final Class<?> unboxedCallSiteType = getPrimitiveType(sourceType);
             return unboxedCallSiteType != null
                     && (unboxedCallSiteType == targetType || isProperPrimitiveSubtype(unboxedCallSiteType, targetType));
         }
         return false;
     }
 
+    private static boolean isBoxingAndWideningReferenceConversion(final Class<?> sourceType, final Class<?> targetType) {
+        final Class<?> wrapperType = getWrapperType(sourceType);
+        assert wrapperType != null : sourceType.getName();
+        return targetType.isAssignableFrom(wrapperType);
+    }
+
     /**
-     * Determines whether a type can be converted to another without losing any precision. As a special case,
-     * void is considered convertible only to Object and void, while anything can be converted to void. This
-     * is because a target type of void means we don't care about the value, so the conversion is always
-     * permissible.
+     * Determines whether a type can be converted to another without losing any
+     * precision. As a special case, void is considered convertible only to void
+     * and {@link Object} (either as {@code null} or as a custom value set in
+     * {@link DynamicLinkerFactory#setAutoConversionStrategy(MethodTypeConversionStrategy)}).
+     * Somewhat unintuitively, we consider anything to be convertible to void
+     * even though converting to void causes the ultimate loss of data. On the
+     * other hand, conversion to void essentially means that the value is of no
+     * interest and should be discarded, thus there's no expectation of
+     * preserving any precision.
      *
      * @param sourceType the source type
      * @param targetType the target type
@@ -284,9 +196,7 @@ public class TypeUtilities {
             if(targetType.isPrimitive()) {
                 return isProperPrimitiveLosslessSubtype(sourceType, targetType);
             }
-            // Boxing + widening reference conversion
-            assert WRAPPER_TYPES.get(sourceType) != null : sourceType.getName();
-            return targetType.isAssignableFrom(WRAPPER_TYPES.get(sourceType));
+            return isBoxingAndWideningReferenceConversion(sourceType, targetType);
         }
         // Can't convert from any non-primitive type to any primitive type without data loss because of null.
         // Also, can't convert non-assignable reference types.
@@ -294,51 +204,11 @@ public class TypeUtilities {
     }
 
     /**
-     * Determines whether one type can be potentially converted to another type at runtime. Allows a conversion between
-     * any subtype and supertype in either direction, and also allows a conversion between any two primitive types, as
-     * well as between any primitive type and any reference type that can hold a boxed primitive.
-     *
-     * @param callSiteType the parameter type at the call site
-     * @param methodType the parameter type in the method declaration
-     * @return true if callSiteType is potentially convertible to the methodType.
-     */
-    public static boolean isPotentiallyConvertible(final Class<?> callSiteType, final Class<?> methodType) {
-        // Widening or narrowing reference conversion
-        if(areAssignable(callSiteType, methodType)) {
-            return true;
-        }
-        if(callSiteType.isPrimitive()) {
-            // Allow any conversion among primitives, as well as from any
-            // primitive to any type that can receive a boxed primitive.
-            // TODO: narrow this a bit, i.e. allow, say, boolean to Character?
-            // MethodHandles.convertArguments() allows it, so we might need to
-            // too.
-            return methodType.isPrimitive() || isAssignableFromBoxedPrimitive(methodType);
-        }
-        if(methodType.isPrimitive()) {
-            // Allow conversion from any reference type that can contain a
-            // boxed primitive to any primitive.
-            // TODO: narrow this a bit too?
-            return isAssignableFromBoxedPrimitive(callSiteType);
-        }
-        return false;
-    }
-
-    /**
-     * Returns true if either of the types is assignable from the other.
-     * @param c1 one of the types
-     * @param c2 another one of the types
-     * @return true if either c1 is assignable from c2 or c2 is assignable from c1.
-     */
-    public static boolean areAssignable(final Class<?> c1, final Class<?> c2) {
-        return c1.isAssignableFrom(c2) || c2.isAssignableFrom(c1);
-    }
-
-    /**
-     * Determines whether one type is a subtype of another type, as per JLS 4.10 "Subtyping". Note: this is not strict
-     * or proper subtype, therefore true is also returned for identical types; to be completely precise, it allows
-     * identity conversion (JLS 5.1.1), widening primitive conversion (JLS 5.1.2) and widening reference conversion (JLS
-     * 5.1.5).
+     * Determines whether one type is a subtype of another type, as per JLS
+     * 4.10 "Subtyping". Note: this is not strict or proper subtype, therefore
+     * true is also returned for identical types; to be completely precise, it
+     * allows identity conversion (JLS 5.1.1), widening primitive conversion
+     * (JLS 5.1.2) and widening reference conversion (JLS 5.1.5).
      *
      * @param subType the supposed subtype
      * @param superType the supposed supertype of the subtype
@@ -432,81 +302,30 @@ public class TypeUtilities {
         return false;
     }
 
-    private static final Map<Class<?>, Class<?>> WRAPPER_TO_PRIMITIVE_TYPES = createWrapperToPrimitiveTypes();
-
-    private static Map<Class<?>, Class<?>> createWrapperToPrimitiveTypes() {
-        final Map<Class<?>, Class<?>> classes = new IdentityHashMap<>();
-        classes.put(Void.class, Void.TYPE);
-        classes.put(Boolean.class, Boolean.TYPE);
-        classes.put(Byte.class, Byte.TYPE);
-        classes.put(Character.class, Character.TYPE);
-        classes.put(Short.class, Short.TYPE);
-        classes.put(Integer.class, Integer.TYPE);
-        classes.put(Long.class, Long.TYPE);
-        classes.put(Float.class, Float.TYPE);
-        classes.put(Double.class, Double.TYPE);
-        return classes;
-    }
-
-    private static final Set<Class<?>> PRIMITIVE_WRAPPER_TYPES = createPrimitiveWrapperTypes();
-
-    private static Set<Class<?>> createPrimitiveWrapperTypes() {
-        final Map<Class<?>, Class<?>> classes = new IdentityHashMap<>();
-        addClassHierarchy(classes, Boolean.class);
-        addClassHierarchy(classes, Byte.class);
-        addClassHierarchy(classes, Character.class);
-        addClassHierarchy(classes, Short.class);
-        addClassHierarchy(classes, Integer.class);
-        addClassHierarchy(classes, Long.class);
-        addClassHierarchy(classes, Float.class);
-        addClassHierarchy(classes, Double.class);
-        return classes.keySet();
-    }
-
-    private static void addClassHierarchy(final Map<Class<?>, Class<?>> map, final Class<?> clazz) {
-        if(clazz == null) {
-            return;
-        }
-        map.put(clazz, clazz);
-        addClassHierarchy(map, clazz.getSuperclass());
-        for(final Class<?> itf: clazz.getInterfaces()) {
-            addClassHierarchy(map, itf);
-        }
-    }
-
     /**
-     * Returns true if the class can be assigned from any boxed primitive.
-     *
-     * @param clazz the class
-     * @return true if the class can be assigned from any boxed primitive. Basically, it is true if the class is any
-     * primitive wrapper class, or a superclass or superinterface of any primitive wrapper class.
-     */
-    private static boolean isAssignableFromBoxedPrimitive(final Class<?> clazz) {
-        return PRIMITIVE_WRAPPER_TYPES.contains(clazz);
-    }
-
-    /**
-     * Given a name of a primitive type (except "void"), returns the class representing it. I.e. when invoked with
-     * "int", returns {@link Integer#TYPE}.
+     * Given a name of a primitive type returns the class representing it. I.e.
+     * when invoked with "int", returns {@link Integer#TYPE}.
      * @param name the name of the primitive type
-     * @return the class representing the primitive type, or null if the name does not correspond to a primitive type
-     * or is "void".
+     * @return the class representing the primitive type, or null if the name
+     * does not correspond to a primitive type.
      */
     public static Class<?> getPrimitiveTypeByName(final String name) {
         return PRIMITIVE_TYPES_BY_NAME.get(name);
     }
 
     /**
-     * When passed a class representing a wrapper for a primitive type, returns the class representing the corresponding
-     * primitive type. I.e. calling it with {@code Integer.class} will return {@code Integer.TYPE}. If passed a class
-     * that is not a wrapper for primitive type, returns null.
-     * @param wrapperType the class object representing a wrapper for a primitive type
-     * @return the class object representing the primitive type, or null if the passed class is not a primitive wrapper.
+     * When passed a class representing a wrapper for a primitive type, returns
+     * the class representing the corresponding primitive type. I.e. calling it
+     * with {@code Integer.class} will return {@code Integer.TYPE}. If passed a
+     * class that is not a wrapper for primitive type, returns null.
+     * @param wrapperType the class object representing a wrapper for a
+     * primitive type.
+     * @return the class object representing the primitive type, or null if the
+     * passed class is not a primitive wrapper.
      */
     public static Class<?> getPrimitiveType(final Class<?> wrapperType) {
-        return WRAPPER_TO_PRIMITIVE_TYPES.get(wrapperType);
+        return PRIMITIVE_TYPES.get(wrapperType);
     }
-
 
     /**
      * When passed a class representing a primitive type, returns the class representing the corresponding

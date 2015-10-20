@@ -183,36 +183,6 @@ public final class Guards {
         return asType(IS_ARRAY, pos, type);
     }
 
-    /**
-     * Return true if it is safe to strongly reference a class from the referred class loader from a class associated
-     * with the referring class loader without risking a class loader memory leak.
-     *
-     * @param referrerLoader the referrer class loader
-     * @param referredLoader the referred class loader
-     * @return true if it is safe to strongly reference the class
-     */
-    public static boolean canReferenceDirectly(final ClassLoader referrerLoader, final ClassLoader referredLoader) {
-        if(referredLoader == null) {
-            // Can always refer directly to a system class
-            return true;
-        }
-        if(referrerLoader == null) {
-            // System classes can't refer directly to any non-system class
-            return false;
-        }
-        // Otherwise, can only refer directly to classes residing in same or
-        // parent class loader.
-
-        ClassLoader referrer = referrerLoader;
-        do {
-            if(referrer == referredLoader) {
-                return true;
-            }
-            referrer = referrer.getParent();
-        } while(referrer != null);
-        return false;
-    }
-
     private static MethodHandle getClassBoundArgumentTest(final MethodHandle test, final Class<?> clazz, final int pos, final MethodType type) {
         // Bind the class to the first argument of the test
         return asType(test.bindTo(clazz), pos, type);

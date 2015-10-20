@@ -90,8 +90,8 @@ import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.util.LinkedList;
 import java.util.List;
+import jdk.internal.dynalink.internal.InternalTypeUtilities;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.linker.support.Guards;
 import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
@@ -152,7 +152,7 @@ final class ClassString {
             @Override
             public Boolean run() {
                 for(final Class<?> clazz: classes) {
-                    if(!Guards.canReferenceDirectly(classLoader, clazz.getClassLoader())) {
+                    if(!InternalTypeUtilities.canReferenceDirectly(classLoader, clazz.getClassLoader())) {
                         return false;
                     }
                 }

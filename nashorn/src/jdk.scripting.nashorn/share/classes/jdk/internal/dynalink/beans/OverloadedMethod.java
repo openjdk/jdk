@@ -91,9 +91,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import jdk.internal.dynalink.internal.InternalTypeUtilities;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.support.Lookup;
-import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
  * Represents a subset of overloaded methods for a certain method name on a certain class. It can be either a fixarg or
@@ -273,7 +273,7 @@ class OverloadedMethod {
         final Iterator<MethodHandle> it = methodHandles.iterator();
         Class<?> retType = it.next().type().returnType();
         while(it.hasNext()) {
-            retType = TypeUtilities.getCommonLosslessConversionType(retType, it.next().type().returnType());
+            retType = InternalTypeUtilities.getCommonLosslessConversionType(retType, it.next().type().returnType());
         }
         return retType;
     }
