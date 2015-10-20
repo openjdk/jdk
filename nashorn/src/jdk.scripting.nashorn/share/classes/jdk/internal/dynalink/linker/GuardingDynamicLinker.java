@@ -101,16 +101,15 @@ import jdk.internal.dynalink.DynamicLinkerFactory;
  * set some as {@link DynamicLinkerFactory#setFallbackLinkers(List) fallback
  * linkers} to handle language-specific "property not found" etc. conditions.
  * <p>
- * Languages can declare the linkers they want to expose to other runtimes for
- * {@link DynamicLinkerFactory#setClassLoader(ClassLoader) automatic discovery}
- * in <tt>META-INF/services/jdk.internal.dynalink.linker.GuardingDynamicLinker</tt>
- * resources of their JAR files.
- * <p>
  * Consider implementing {@link TypeBasedGuardingDynamicLinker} interface
  * instead of this interface for those linkers that are based on the Java class
  * of the objects. If you need to implement language-specific type conversions,
  * have your {@code GuardingDynamicLinker} also implement the
  * {@link GuardingTypeConverterFactory} interface.
+ * <p>
+ * Languages can export linkers to other language runtimes for
+ * {@link DynamicLinkerFactory#setClassLoader(ClassLoader) automatic discovery}
+ * using a {@link GuardingDynamicLinkerExporter}.
  */
 public interface GuardingDynamicLinker {
     /**
