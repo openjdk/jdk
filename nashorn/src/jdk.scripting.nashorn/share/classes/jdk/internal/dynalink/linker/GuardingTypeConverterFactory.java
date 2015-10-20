@@ -87,7 +87,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.function.Supplier;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.beans.BeansLinker;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
  * Optional interface that can be implemented by {@link GuardingDynamicLinker} implementations to provide

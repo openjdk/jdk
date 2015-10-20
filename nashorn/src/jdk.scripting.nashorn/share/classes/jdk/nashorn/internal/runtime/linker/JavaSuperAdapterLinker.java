@@ -37,7 +37,7 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
-import jdk.internal.dynalink.support.Lookup;
+import jdk.internal.dynalink.linker.support.Lookup;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**

@@ -92,8 +92,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.support.Lookup;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.Lookup;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
  * Represents a subset of overloaded methods for a certain method name on a certain class. It can be either a fixarg or

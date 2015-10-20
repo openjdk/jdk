@@ -91,7 +91,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 import jdk.internal.dynalink.CallSiteDescriptor;
-import jdk.internal.dynalink.support.Guards;
+import jdk.internal.dynalink.linker.support.Guards;
 
 /**
  * Represents a conditionally valid method handle. Usually produced as a return

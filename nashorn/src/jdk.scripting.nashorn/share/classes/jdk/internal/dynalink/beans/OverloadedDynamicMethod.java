@@ -99,7 +99,7 @@ import java.util.List;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.beans.ApplicableOverloadedMethods.ApplicabilityTest;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
  * Represents a group of {@link SingleDynamicMethod} objects that represents all overloads of a particular name (or all

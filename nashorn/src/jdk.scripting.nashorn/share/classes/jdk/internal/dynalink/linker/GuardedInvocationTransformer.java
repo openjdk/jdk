@@ -81,62 +81,33 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
+package jdk.internal.dynalink.linker;
 
-import java.io.Serializable;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.linker.GuardingDynamicLinker;
-import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.internal.dynalink.linker.LinkerServices;
+import jdk.internal.dynalink.DynamicLinkerFactory;
 
 /**
- * A {@link GuardingDynamicLinker} that delegates sequentially to a list of
- * other guarding dynamic linkers in its
- * {@link #getGuardedInvocation(LinkRequest, LinkerServices)}.
+ * Interface for objects that are used to transform one guarded invocation into
+ * another one. Typical usage is for implementing
+ * {@link DynamicLinkerFactory#setPrelinkTransformer(GuardedInvocationTransformer)
+ * pre-link transformers}.
  */
-public class CompositeGuardingDynamicLinker implements GuardingDynamicLinker, Serializable {
-
-    private static final long serialVersionUID = 1L;
-
-    private final GuardingDynamicLinker[] linkers;
-
+@FunctionalInterface
+public interface GuardedInvocationTransformer {
     /**
-     * Creates a new composite linker.
-     *
-     * @param linkers a list of component linkers.
-     * @throws NullPointerException if {@code linkers} or any of its elements
-     * are null.
+     * Given a guarded invocation, return either the same or potentially
+     * different guarded invocation.
+     * @param inv the original guarded invocation.
+     * @param linkRequest the link request for which the invocation was
+     * generated (usually by some linker).
+     * @param linkerServices the linker services that can be used during
+     * creation of a new invocation.
+     * @return either the passed guarded invocation or a different one, with
+     * the difference usually determined based on information in the link
+     * request and the differing invocation created with the assistance of the
+     * linker services. Whether or not {@code null} is an accepted return value
+     * is dependent on the user of the filter.
+     * @throws NullPointerException is allowed if any of the passed arguments
+     * is null.
      */
-    public CompositeGuardingDynamicLinker(final Iterable<? extends GuardingDynamicLinker> linkers) {
-        final List<GuardingDynamicLinker> l = new LinkedList<>();
-        for(final GuardingDynamicLinker linker: linkers) {
-            l.add(Objects.requireNonNull(linker));
-        }
-        this.linkers = l.toArray(new GuardingDynamicLinker[l.size()]);
-    }
-
-    /**
-     * Delegates the call to its component linkers. The first non-null value
-     * returned from a component linker is returned. If no component linker
-     * returns a non-null invocation, null is returned.
-     * @param linkRequest the object describing the request for linking a
-     * particular invocation
-     * @param linkerServices linker services
-     * @return the first non-null return value from a component linker, or null
-     * if none of the components returned a non-null.
-     */
-    @Override
-    public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest, final LinkerServices linkerServices)
-            throws Exception {
-        for(final GuardingDynamicLinker linker: linkers) {
-            final GuardedInvocation invocation = linker.getGuardedInvocation(linkRequest, linkerServices);
-            if(invocation != null) {
-                return invocation;
-            }
-        }
-        return null;
-    }
+    public GuardedInvocation filter(GuardedInvocation inv, LinkRequest linkRequest, LinkerServices linkerServices);
 }

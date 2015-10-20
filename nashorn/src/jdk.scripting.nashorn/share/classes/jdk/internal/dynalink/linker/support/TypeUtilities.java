@@ -81,7 +81,7 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
+package jdk.internal.dynalink.linker.support;
 
 import java.util.ArrayList;
 import java.util.Collection;
