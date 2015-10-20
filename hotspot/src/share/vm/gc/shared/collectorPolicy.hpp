@@ -26,7 +26,7 @@
 #define SHARE_VM_GC_SHARED_COLLECTORPOLICY_HPP
 
 #include "gc/shared/barrierSet.hpp"
-#include "gc/shared/genRemSet.hpp"
+#include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/macros.hpp"
@@ -143,7 +143,7 @@ class CollectorPolicy : public CHeapObj<mtGC> {
 #endif // INCLUDE_ALL_GCS
 
 
-  virtual GenRemSet* create_rem_set(MemRegion reserved);
+  virtual CardTableRS* create_rem_set(MemRegion reserved);
 
   // This method controls how a collector satisfies a request
   // for a block of memory.  "gc_time_limit_was_exceeded" will

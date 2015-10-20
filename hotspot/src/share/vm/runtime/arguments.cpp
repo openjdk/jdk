@@ -2436,20 +2436,6 @@ bool Arguments::check_vm_args_consistency() {
     MarkSweepAlwaysCompactCount = 1;  // Move objects every gc.
   }
 
-  if (UseParallelOldGC && ParallelOldGCSplitALot) {
-    // Settings to encourage splitting.
-    if (!FLAG_IS_CMDLINE(NewRatio)) {
-      if (FLAG_SET_CMDLINE(uintx, NewRatio, 2) != Flag::SUCCESS) {
-        status = false;
-      }
-    }
-    if (!FLAG_IS_CMDLINE(ScavengeBeforeFullGC)) {
-      if (FLAG_SET_CMDLINE(bool, ScavengeBeforeFullGC, false) != Flag::SUCCESS) {
-        status = false;
-      }
-    }
-  }
-
   if (!(UseParallelGC || UseParallelOldGC) && FLAG_IS_DEFAULT(ScavengeBeforeFullGC)) {
     FLAG_SET_DEFAULT(ScavengeBeforeFullGC, false);
   }
@@ -3350,19 +3336,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         return JNI_EINVAL;
       }
 #endif
-    } else if (match_option(option, "-XX:MaxDirectMemorySize=", &tail)) {
-      julong max_direct_memory_size = 0;
-      ArgsRange errcode = parse_memory_size(tail, &max_direct_memory_size, 0);
-      if (errcode != arg_in_range) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid maximum direct memory size: %s\n",
-                    option->optionString);
-        describe_range_error(errcode);
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(size_t, MaxDirectMemorySize, max_direct_memory_size) != Flag::SUCCESS) {
-        return JNI_EINVAL;
-      }
 #if !INCLUDE_MANAGEMENT
     } else if (match_option(option, "-XX:+ManagementServer")) {
         jio_fprintf(defaultStream::error_stream(),
@@ -3990,16 +3963,8 @@ jint Arguments::insert_vm_options_file(const JavaVMInitArgs* args,
     return code;
   }
 
-  // Now set global settings from the vm_option file, giving an error if
-  // it has VMOptionsFile in it
-  code = match_special_option_and_act(vm_options_file_args->get(), flags_file,
-                                      NULL, NULL, NULL);
-  if (code != JNI_OK) {
-    return code;
-  }
-
   if (vm_options_file_args->get()->nOptions < 1) {
-    return 0;
+    return JNI_OK;
   }
 
   return args_out->insert(args, vm_options_file_args->get(),
@@ -4034,17 +3999,29 @@ jint Arguments::match_special_option_and_act(const JavaVMInitArgs* args,
         // The caller accepts -XX:VMOptionsFile
         if (*vm_options_file != NULL) {
           jio_fprintf(defaultStream::error_stream(),
-                      "Only one VM Options file is supported "
-                      "on the command line\n");
+                      "The VM Options file can only be specified once and "
+                      "only on the command line.\n");
           return JNI_EINVAL;
         }
 
         *vm_options_file = (char *) tail;
         vm_options_file_pos = index;  // save position of -XX:VMOptionsFile
-        if (*vm_options_file == NULL) {
-          jio_fprintf(defaultStream::error_stream(),
-                      "Cannot copy vm_options_file name.\n");
-          return JNI_ENOMEM;
+        // If there's a VMOptionsFile, parse that (also can set flags_file)
+        jint code = insert_vm_options_file(args, flags_file, vm_options_file,
+                                           vm_options_file_pos,
+                                           vm_options_file_args, args_out);
+        if (code != JNI_OK) {
+          return code;
+        }
+        if (args_out->is_set()) {
+          // The VMOptions file inserted some options so switch 'args'
+          // to the new set of options, and continue processing which
+          // preserves "last option wins" semantics.
+          args = args_out->get();
+          // The first option from the VMOptionsFile replaces the
+          // current option.  So we back track to process the
+          // replacement option.
+          index--;
         }
       } else {
         jio_fprintf(defaultStream::error_stream(),
@@ -4103,12 +4080,6 @@ jint Arguments::match_special_option_and_act(const JavaVMInitArgs* args,
       vm_exit(0);
     }
 #endif
-  }
-
-  // If there's a VMOptionsFile, parse that (also can set flags_file)
-  if ((vm_options_file != NULL) && (*vm_options_file != NULL)) {
-    return insert_vm_options_file(args, flags_file, vm_options_file,
-                                  vm_options_file_pos, vm_options_file_args, args_out);
   }
   return JNI_OK;
 }

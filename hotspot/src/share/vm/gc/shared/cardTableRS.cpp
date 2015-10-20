@@ -34,8 +34,48 @@
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 
+class HasAccumulatedModifiedOopsClosure : public KlassClosure {
+  bool _found;
+ public:
+  HasAccumulatedModifiedOopsClosure() : _found(false) {}
+  void do_klass(Klass* klass) {
+    if (_found) {
+      return;
+    }
+
+    if (klass->has_accumulated_modified_oops()) {
+      _found = true;
+    }
+  }
+  bool found() {
+    return _found;
+  }
+};
+
+bool KlassRemSet::mod_union_is_clear() {
+  HasAccumulatedModifiedOopsClosure closure;
+  ClassLoaderDataGraph::classes_do(&closure);
+
+  return !closure.found();
+}
+
+
+class ClearKlassModUnionClosure : public KlassClosure {
+ public:
+  void do_klass(Klass* klass) {
+    if (klass->has_accumulated_modified_oops()) {
+      klass->clear_accumulated_modified_oops();
+    }
+  }
+};
+
+void KlassRemSet::clear_mod_union() {
+  ClearKlassModUnionClosure closure;
+  ClassLoaderDataGraph::classes_do(&closure);
+}
+
 CardTableRS::CardTableRS(MemRegion whole_heap) :
-  GenRemSet(),
+  _bs(NULL),
   _cur_youngergen_card_val(youngergenP1_card)
 {
   _ct_bs = new CardTableModRefBSForCTRS(whole_heap);

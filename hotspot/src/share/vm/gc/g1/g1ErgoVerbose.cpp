@@ -56,6 +56,7 @@ const char* G1ErgoVerbose::to_string(int tag) {
   case ErgoCSetConstruction:  return "CSet Construction";
   case ErgoConcCycles:        return "Concurrent Cycles";
   case ErgoMixedGCs:          return "Mixed GCs";
+  case ErgoTiming:            return "Timing";
   default:
     ShouldNotReachHere();
     // Keep the Windows compiler happy

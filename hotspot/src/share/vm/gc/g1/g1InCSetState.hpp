@@ -51,15 +51,11 @@ struct InCSetState {
   enum {
     // Selection of the values were driven to micro-optimize the encoding and
     // frequency of the checks.
-    // The most common check is whether the region is in the collection set or not.
-    // This encoding allows us to use an != 0 check which in some architectures
-    // (x86*) can be encoded slightly more efficently than a normal comparison
-    // against zero.
-    // The same situation occurs when checking whether the region is humongous
-    // or not, which is encoded by values < 0.
+    // The most common check is whether the region is in the collection set or not,
+    // this encoding allows us to use an > 0 check.
     // The other values are simply encoded in increasing generation order, which
     // makes getting the next generation fast by a simple increment.
-    Humongous    = -1,    // The region is humongous - note that actually any value < 0 would be possible here.
+    Humongous    = -1,    // The region is humongous
     NotInCSet    =  0,    // The region is not in the collection set.
     Young        =  1,    // The region is in the collection set and a young region.
     Old          =  2,    // The region is in the collection set and an old region.
@@ -74,9 +70,10 @@ struct InCSetState {
 
   void set_old()                       { _value = Old; }
 
-  bool is_in_cset_or_humongous() const { return _value != NotInCSet; }
+  bool is_in_cset_or_humongous() const { return is_in_cset() || is_humongous(); }
   bool is_in_cset() const              { return _value > NotInCSet; }
-  bool is_humongous() const            { return _value < NotInCSet; }
+
+  bool is_humongous() const            { return _value == Humongous; }
   bool is_young() const                { return _value == Young; }
   bool is_old() const                  { return _value == Old; }
 

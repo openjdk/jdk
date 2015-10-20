@@ -3084,17 +3084,21 @@ public:
   }
 };
 
+static ReferenceProcessor* get_cm_oop_closure_ref_processor(G1CollectedHeap* g1h) {
+  ReferenceProcessor* result = NULL;
+  if (G1UseConcMarkReferenceProcessing) {
+    result = g1h->ref_processor_cm();
+    assert(result != NULL, "should not be NULL");
+  }
+  return result;
+}
+
 G1CMOopClosure::G1CMOopClosure(G1CollectedHeap* g1h,
                                ConcurrentMark* cm,
                                CMTask* task)
-  : _g1h(g1h), _cm(cm), _task(task) {
-  assert(_ref_processor == NULL, "should be initialized to NULL");
-
-  if (G1UseConcMarkReferenceProcessing) {
-    _ref_processor = g1h->ref_processor_cm();
-    assert(_ref_processor != NULL, "should not be NULL");
-  }
-}
+  : MetadataAwareOopClosure(get_cm_oop_closure_ref_processor(g1h)),
+    _g1h(g1h), _cm(cm), _task(task)
+{ }
 
 void CMTask::setup_for_region(HeapRegion* hr) {
   assert(hr != NULL,
@@ -3731,8 +3735,7 @@ void CMTask::do_marking_step(double time_target_ms,
   // and do_marking_step() is not being called serially.
   bool do_stealing = do_termination && !is_serial;
 
-  double diff_prediction_ms =
-    g1_policy->get_new_prediction(&_marking_step_diffs_ms);
+  double diff_prediction_ms = _g1h->g1_policy()->predictor().get_new_prediction(&_marking_step_diffs_ms);
   _time_target_ms = time_target_ms - diff_prediction_ms;
 
   // set up the variables that are used in the work-based scheme to

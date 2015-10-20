@@ -433,7 +433,7 @@ void GenCollectedHeap::do_collection(bool           full,
     return; // GC is disabled (e.g. JNI GetXXXCritical operation)
   }
 
-  GCIdMark gc_id_mark;
+  GCIdMarkAndRestore gc_id_mark;
 
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
                           collector_policy()->should_clear_all_soft_refs();
@@ -823,7 +823,7 @@ bool GenCollectedHeap::create_cms_collector() {
   assert(_gen_policy->is_concurrent_mark_sweep_policy(), "Unexpected policy type");
   CMSCollector* collector =
     new CMSCollector((ConcurrentMarkSweepGeneration*)_old_gen,
-                     _rem_set->as_CardTableRS(),
+                     _rem_set,
                      _gen_policy->as_concurrent_mark_sweep_policy());
 
   if (collector == NULL || !collector->completed_initialization()) {
