@@ -788,6 +788,19 @@
     </export>
   </module>
   <module>
+    <name>jdk.jshell</name>
+    <depend>java.base</depend>
+    <depend re-exports="true">java.compiler</depend>
+    <depend>jdk.compiler</depend>
+    <depend>java.desktop</depend>
+    <depend>java.prefs</depend>
+    <depend>jdk.jdi</depend>
+    <depend>jdk.internal.le</depend>
+    <export>
+      <name>jdk.jshell</name>
+    </export>
+  </module>
+  <module>
     <name>java.instrument</name>
     <depend>java.base</depend>
     <export>
@@ -1547,14 +1560,17 @@
     </export>
     <export>
       <name>com.sun.tools.javac.api</name>
+      <to>jdk.jshell</to>
       <to>jdk.javadoc</to>
     </export>
     <export>
       <name>com.sun.tools.javac.code</name>
+      <to>jdk.jshell</to>
       <to>jdk.javadoc</to>
     </export>
     <export>
       <name>com.sun.tools.javac.comp</name>
+      <to>jdk.jshell</to>
       <to>jdk.javadoc</to>
     </export>
     <export>
@@ -1564,15 +1580,21 @@
     </export>
     <export>
       <name>com.sun.tools.javac.jvm</name>
+      <to>jdk.jshell</to>
       <to>jdk.javadoc</to>
     </export>
     <export>
       <name>com.sun.tools.javac.main</name>
+      <to>jdk.jshell</to>
       <to>jdk.javadoc</to>
     </export>
     <export>
       <name>com.sun.tools.javac.nio</name>
       <to>jdk.javadoc</to>
+    </export>
+    <export>
+      <name>com.sun.tools.javac.parser</name>
+      <to>jdk.jshell</to>
     </export>
     <export>
       <name>com.sun.tools.javac.platform</name>
@@ -1584,10 +1606,12 @@
     </export>
     <export>
       <name>com.sun.tools.javac.tree</name>
+      <to>jdk.jshell</to>
       <to>jdk.javadoc</to>
     </export>
     <export>
       <name>com.sun.tools.javac.util</name>
+      <to>jdk.jshell</to>
       <to>jdk.javadoc</to>
       <to>jdk.jdeps</to>
     </export>
@@ -1648,22 +1672,27 @@
     <depend>java.base</depend>
     <export>
       <name>jdk.internal.jline</name>
+      <to>jdk.jshell</to>
       <to>jdk.scripting.nashorn.shell</to>
     </export>
     <export>
       <name>jdk.internal.jline.console</name>
+      <to>jdk.jshell</to>
       <to>jdk.scripting.nashorn.shell</to>
     </export>
     <export>
       <name>jdk.internal.jline.console.completer</name>
+      <to>jdk.jshell</to>
       <to>jdk.scripting.nashorn.shell</to>
     </export>
     <export>
       <name>jdk.internal.jline.console.history</name>
+      <to>jdk.jshell</to>
       <to>jdk.scripting.nashorn.shell</to>
     </export>
     <export>
       <name>jdk.internal.jline.internal</name>
+      <to>jdk.jshell</to>
       <to>jdk.scripting.nashorn.shell</to>
     </export>
   </module>
