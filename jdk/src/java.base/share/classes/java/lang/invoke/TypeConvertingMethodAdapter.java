@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,7 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
     }
 
     private static String boxingDescriptor(Wrapper w) {
-        return String.format("(%s)L%s;", w.basicTypeChar(), wrapperName(w));
+        return "(" + w.basicTypeChar() + ")L" + wrapperName(w) + ";";
     }
 
     private static String unboxingDescriptor(Wrapper w) {

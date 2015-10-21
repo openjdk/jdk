@@ -34,7 +34,6 @@
  */
 
 package java.util.concurrent.locks;
-import sun.misc.Unsafe;
 
 /**
  * Basic thread blocking primitives for creating locks and other
@@ -47,6 +46,10 @@ import sun.misc.Unsafe;
  * it <em>may</em> block.  A call to {@code unpark} makes the permit
  * available, if it was not already available. (Unlike with Semaphores
  * though, permits do not accumulate. There is at most one.)
+ * Reliable usage requires the use of volatile (or atomic) variables
+ * to control when to park or unpark.  Orderings of calls to these
+ * methods are maintained with respect to volatile variable accesses,
+ * but not necessarily non-volatile variable accesses.
  *
  * <p>Methods {@code park} and {@code unpark} provide efficient
  * means of blocking and unblocking threads that do not encounter the
@@ -77,7 +80,7 @@ import sun.misc.Unsafe;
  * useful for most concurrency control applications.  The {@code park}
  * method is designed for use only in constructions of the form:
  *
- *  <pre> {@code
+ * <pre> {@code
  * while (!canProceed()) { ... LockSupport.park(this); }}</pre>
  *
  * where neither {@code canProceed} nor any other actions prior to the
@@ -87,11 +90,11 @@ import sun.misc.Unsafe;
  *
  * <p><b>Sample Usage.</b> Here is a sketch of a first-in-first-out
  * non-reentrant lock class:
- *  <pre> {@code
+ * <pre> {@code
  * class FIFOMutex {
  *   private final AtomicBoolean locked = new AtomicBoolean(false);
  *   private final Queue<Thread> waiters
- *     = new ConcurrentLinkedQueue<Thread>();
+ *     = new ConcurrentLinkedQueue<>();
  *
  *   public void lock() {
  *     boolean wasInterrupted = false;
@@ -122,7 +125,7 @@ public class LockSupport {
 
     private static void setBlocker(Thread t, Object arg) {
         // Even though volatile, hotspot doesn't need a write barrier here.
-        UNSAFE.putObject(t, parkBlockerOffset, arg);
+        U.putObject(t, PARKBLOCKER, arg);
     }
 
     /**
@@ -138,7 +141,7 @@ public class LockSupport {
      */
     public static void unpark(Thread thread) {
         if (thread != null)
-            UNSAFE.unpark(thread);
+            U.unpark(thread);
     }
 
     /**
@@ -172,7 +175,7 @@ public class LockSupport {
     public static void park(Object blocker) {
         Thread t = Thread.currentThread();
         setBlocker(t, blocker);
-        UNSAFE.park(false, 0L);
+        U.park(false, 0L);
         setBlocker(t, null);
     }
 
@@ -212,7 +215,7 @@ public class LockSupport {
         if (nanos > 0) {
             Thread t = Thread.currentThread();
             setBlocker(t, blocker);
-            UNSAFE.park(false, nanos);
+            U.park(false, nanos);
             setBlocker(t, null);
         }
     }
@@ -253,7 +256,7 @@ public class LockSupport {
     public static void parkUntil(Object blocker, long deadline) {
         Thread t = Thread.currentThread();
         setBlocker(t, blocker);
-        UNSAFE.park(true, deadline);
+        U.park(true, deadline);
         setBlocker(t, null);
     }
 
@@ -272,7 +275,7 @@ public class LockSupport {
     public static Object getBlocker(Thread t) {
         if (t == null)
             throw new NullPointerException();
-        return UNSAFE.getObjectVolatile(t, parkBlockerOffset);
+        return U.getObjectVolatile(t, PARKBLOCKER);
     }
 
     /**
@@ -301,7 +304,7 @@ public class LockSupport {
      * for example, the interrupt status of the thread upon return.
      */
     public static void park() {
-        UNSAFE.park(false, 0L);
+        U.park(false, 0L);
     }
 
     /**
@@ -335,7 +338,7 @@ public class LockSupport {
      */
     public static void parkNanos(long nanos) {
         if (nanos > 0)
-            UNSAFE.park(false, nanos);
+            U.park(false, nanos);
     }
 
     /**
@@ -369,7 +372,7 @@ public class LockSupport {
      *        to wait until
      */
     public static void parkUntil(long deadline) {
-        UNSAFE.park(true, deadline);
+        U.park(true, deadline);
     }
 
     /**
@@ -379,36 +382,30 @@ public class LockSupport {
     static final int nextSecondarySeed() {
         int r;
         Thread t = Thread.currentThread();
-        if ((r = UNSAFE.getInt(t, SECONDARY)) != 0) {
+        if ((r = U.getInt(t, SECONDARY)) != 0) {
             r ^= r << 13;   // xorshift
             r ^= r >>> 17;
             r ^= r << 5;
         }
         else if ((r = java.util.concurrent.ThreadLocalRandom.current().nextInt()) == 0)
             r = 1; // avoid zero
-        UNSAFE.putInt(t, SECONDARY, r);
+        U.putInt(t, SECONDARY, r);
         return r;
     }
 
     // Hotspot implementation via intrinsics API
-    private static final sun.misc.Unsafe UNSAFE;
-    private static final long parkBlockerOffset;
-    private static final long SEED;
-    private static final long PROBE;
+    private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+    private static final long PARKBLOCKER;
     private static final long SECONDARY;
     static {
         try {
-            UNSAFE = sun.misc.Unsafe.getUnsafe();
-            Class<?> tk = Thread.class;
-            parkBlockerOffset = UNSAFE.objectFieldOffset
-                (tk.getDeclaredField("parkBlocker"));
-            SEED = UNSAFE.objectFieldOffset
-                (tk.getDeclaredField("threadLocalRandomSeed"));
-            PROBE = UNSAFE.objectFieldOffset
-                (tk.getDeclaredField("threadLocalRandomProbe"));
-            SECONDARY = UNSAFE.objectFieldOffset
-                (tk.getDeclaredField("threadLocalRandomSecondarySeed"));
-        } catch (Exception ex) { throw new Error(ex); }
+            PARKBLOCKER = U.objectFieldOffset
+                (Thread.class.getDeclaredField("parkBlocker"));
+            SECONDARY = U.objectFieldOffset
+                (Thread.class.getDeclaredField("threadLocalRandomSecondarySeed"));
+        } catch (ReflectiveOperationException e) {
+            throw new Error(e);
+        }
     }
 
 }
