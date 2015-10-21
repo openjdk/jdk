@@ -196,12 +196,10 @@ void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   {
     StrongRootsScope srs(1);
 
-    gch->gen_process_roots(&srs,
-                           GenCollectedHeap::OldGen,
+    gch->old_process_roots(&srs,
                            false, // Younger gens are not roots.
                            GenCollectedHeap::SO_None,
                            ClassUnloading,
-                           &follow_root_closure,
                            &follow_root_closure,
                            &follow_cld_closure);
   }
@@ -295,12 +293,10 @@ void GenMarkSweep::mark_sweep_phase3() {
   {
     StrongRootsScope srs(1);
 
-    gch->gen_process_roots(&srs,
-                           GenCollectedHeap::OldGen,
+    gch->old_process_roots(&srs,
                            false, // Younger gens are not roots.
                            GenCollectedHeap::SO_AllCodeCache,
-                           GenCollectedHeap::StrongAndWeakRoots,
-                           &adjust_pointer_closure,
+                           false,
                            &adjust_pointer_closure,
                            &adjust_cld_closure);
   }
