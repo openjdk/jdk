@@ -31,6 +31,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Modifier;
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collection;
@@ -53,6 +54,7 @@ import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.ScriptUtils;
 import jdk.nashorn.internal.objects.NativeArray;
+import jdk.nashorn.internal.runtime.AccessControlContextFactory;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ListAdapter;
 import jdk.nashorn.internal.runtime.ScriptFunction;
@@ -64,6 +66,9 @@ import jdk.nashorn.internal.runtime.Undefined;
  * includes {@link ScriptFunction} and its subclasses) as well as {@link Undefined}.
  */
 final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTypeConverterFactory, ConversionComparator {
+    private static final AccessControlContext GET_LOOKUP_PERMISSION_CONTEXT =
+            AccessControlContextFactory.createAccessControlContext(CallSiteDescriptor.GET_LOOKUP_PERMISSION);
+
     private static final ClassValue<MethodHandle> ARRAY_CONVERTERS = new ClassValue<MethodHandle>() {
         @Override
         protected MethodHandle computeValue(final Class<?> type) {
@@ -171,7 +176,7 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
             public MethodHandles.Lookup run() {
                 return lookupSupplier.get();
             }
-        }, null, CallSiteDescriptor.GET_LOOKUP_PERMISSION);
+        }, GET_LOOKUP_PERMISSION_CONTEXT);
     }
 
     /**

@@ -85,12 +85,14 @@ package jdk.internal.dynalink;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import jdk.internal.dynalink.internal.AccessControlContextFactory;
 import jdk.internal.dynalink.internal.InternalTypeUtilities;
 
 /**
@@ -100,6 +102,9 @@ import jdk.internal.dynalink.internal.InternalTypeUtilities;
  * @param <T> the type of the values in the map
  */
 abstract class ClassMap<T> {
+    private static final AccessControlContext GET_CLASS_LOADER_CONTEXT =
+            AccessControlContextFactory.createAccessControlContext("getClassLoader");
+
     private final ConcurrentMap<Class<?>, T> map = new ConcurrentHashMap<>();
     private final Map<Class<?>, Reference<T>> weakMap = new WeakHashMap<>();
     private final ClassLoader classLoader;
@@ -155,7 +160,7 @@ abstract class ClassMap<T> {
             public Boolean run() {
                 return InternalTypeUtilities.canReferenceDirectly(classLoader, clazz.getClassLoader());
             }
-        }, ClassLoaderGetterContextProvider.GET_CLASS_LOADER_CONTEXT);
+        }, GET_CLASS_LOADER_CONTEXT);
 
         // If allowed to strongly reference, put it in the fast map
         if(canReferenceDirectly) {

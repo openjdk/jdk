@@ -29,12 +29,12 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -126,6 +126,9 @@ public class ScriptFunction extends ScriptObject {
 
     // Marker object for lazily initialized prototype object
     private static final Object LAZY_PROTOTYPE = new Object();
+
+    private static final AccessControlContext GET_LOOKUP_PERMISSION_CONTEXT =
+            AccessControlContextFactory.createAccessControlContext(CallSiteDescriptor.GET_LOOKUP_PERMISSION);
 
     private static PropertyMap createStrictModeMap(final PropertyMap map) {
         final int flags = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE;
@@ -961,8 +964,8 @@ public class ScriptFunction extends ScriptObject {
 
     private static Lookup getLookupPrivileged(final CallSiteDescriptor desc) {
         // NOTE: we'd rather not make NashornCallSiteDescriptor.getLookupPrivileged public.
-        return AccessController.doPrivileged((PrivilegedAction<Lookup>)()->desc.getLookup(), null,
-                CallSiteDescriptor.GET_LOOKUP_PERMISSION);
+        return AccessController.doPrivileged((PrivilegedAction<Lookup>)()->desc.getLookup(),
+                GET_LOOKUP_PERMISSION_CONTEXT);
     }
 
     private GuardedInvocation createApplyOrCallCall(final boolean isApply, final CallSiteDescriptor desc, final LinkRequest request, final Object[] args) {

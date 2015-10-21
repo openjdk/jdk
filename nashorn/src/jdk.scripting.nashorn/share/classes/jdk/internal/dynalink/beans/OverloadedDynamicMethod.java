@@ -87,9 +87,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.security.AccessControlContext;
 import java.security.AccessController;
-import java.security.Permissions;
 import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.text.Collator;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -101,6 +99,7 @@ import java.util.Map;
 import java.util.Set;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.beans.ApplicableOverloadedMethods.ApplicabilityTest;
+import jdk.internal.dynalink.internal.AccessControlContextFactory;
 import jdk.internal.dynalink.internal.InternalTypeUtilities;
 import jdk.internal.dynalink.linker.LinkerServices;
 
@@ -231,14 +230,10 @@ class OverloadedDynamicMethod extends DynamicMethod {
         }
     }
 
-    private static final AccessControlContext GET_CALL_SITE_CLASS_LOADER_CONTEXT;
-    static {
-        final Permissions perms = new Permissions();
-        perms.add(new RuntimePermission("getClassLoader"));
-        perms.add(CallSiteDescriptor.GET_LOOKUP_PERMISSION);
-        GET_CALL_SITE_CLASS_LOADER_CONTEXT = new AccessControlContext(
-                new ProtectionDomain[] { new ProtectionDomain(null, perms) });
-    }
+    private static final AccessControlContext GET_CALL_SITE_CLASS_LOADER_CONTEXT =
+            AccessControlContextFactory.createAccessControlContext(
+                    new RuntimePermission("getClassLoader"),
+                    CallSiteDescriptor.GET_LOOKUP_PERMISSION);
 
     private static ClassLoader getCallSiteClassLoader(final CallSiteDescriptor callSiteDescriptor) {
         return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {

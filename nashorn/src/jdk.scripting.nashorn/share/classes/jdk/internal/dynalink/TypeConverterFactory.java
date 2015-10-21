@@ -88,11 +88,13 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.WrongMethodTypeException;
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Supplier;
+import jdk.internal.dynalink.internal.AccessControlContextFactory;
 import jdk.internal.dynalink.linker.ConversionComparator;
 import jdk.internal.dynalink.linker.ConversionComparator.Comparison;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -107,6 +109,8 @@ import jdk.internal.dynalink.linker.support.TypeUtilities;
  * instances and creates appropriate converters for method handles.
  */
 final class TypeConverterFactory {
+    private static final AccessControlContext GET_CLASS_LOADER_CONTEXT =
+            AccessControlContextFactory.createAccessControlContext("getClassLoader");
 
     private final GuardingTypeConverterFactory[] factories;
     private final ConversionComparator[] comparators;
@@ -172,7 +176,7 @@ final class TypeConverterFactory {
             public ClassLoader run() {
                 return clazz.getClassLoader();
             }
-        }, ClassLoaderGetterContextProvider.GET_CLASS_LOADER_CONTEXT);
+        }, GET_CLASS_LOADER_CONTEXT);
     }
 
     /**
