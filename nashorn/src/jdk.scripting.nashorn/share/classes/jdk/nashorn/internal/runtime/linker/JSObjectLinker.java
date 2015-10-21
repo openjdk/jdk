@@ -32,6 +32,7 @@ import java.lang.invoke.MethodHandles;
 import java.util.Map;
 import javax.script.Bindings;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.StandardOperation;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
@@ -70,11 +71,6 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
         final Object self = request.getReceiver();
         final CallSiteDescriptor desc = request.getCallSiteDescriptor();
 
-        if (desc.getNameTokenCount() < 2 || !"dyn".equals(desc.getNameToken(CallSiteDescriptor.SCHEME))) {
-            // We only support standard "dyn:*[:*]" operations
-            return null;
-        }
-
         GuardedInvocation inv;
         if (self instanceof JSObject) {
             inv = lookup(desc, request, linkerServices);
@@ -92,33 +88,34 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
     }
 
     private GuardedInvocation lookup(final CallSiteDescriptor desc, final LinkRequest request, final LinkerServices linkerServices) throws Exception {
-        final String operator = desc.tokenizeOperators().get(0);
-        final int c = desc.getNameTokenCount();
-
-        switch (operator) {
-            case "getProp":
-            case "getElem":
-            case "getMethod":
-                if (c > 2) {
-                    return findGetMethod(desc);
-                }
+        final StandardOperation op = NashornCallSiteDescriptor.getFirstStandardOperation(desc);
+        if (op == null) {
+            return null;
+        }
+        final String name = NashornCallSiteDescriptor.getOperand(desc);
+        switch (op) {
+        case GET_PROPERTY:
+        case GET_ELEMENT:
+        case GET_METHOD:
+            if (name != null) {
+                return findGetMethod(name);
+            }
             // For indexed get, we want get GuardedInvocation beans linker and pass it.
             // JSObjectLinker.get uses this fallback getter for explicit signature method access.
             return findGetIndexMethod(nashornBeansLinker.getGuardedInvocation(request, linkerServices));
-            case "setProp":
-            case "setElem":
-                return c > 2 ? findSetMethod(desc) : findSetIndexMethod();
-            case "call":
-                return findCallMethod(desc);
-            case "new":
-                return findNewMethod(desc);
-            default:
-                return null;
+        case SET_PROPERTY:
+        case SET_ELEMENT:
+            return name != null ? findSetMethod(name) : findSetIndexMethod();
+        case CALL:
+            return findCallMethod(desc);
+        case NEW:
+            return findNewMethod(desc);
+        default:
         }
+        return null;
     }
 
-    private static GuardedInvocation findGetMethod(final CallSiteDescriptor desc) {
-        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+    private static GuardedInvocation findGetMethod(final String name) {
         final MethodHandle getter = MH.insertArguments(JSOBJECT_GETMEMBER, 1, name);
         return new GuardedInvocation(getter, IS_JSOBJECT_GUARD);
     }
@@ -128,8 +125,8 @@ final class JSObjectLinker implements TypeBasedGuardingDynamicLinker {
         return inv.replaceMethods(getter, inv.getGuard());
     }
 
-    private static GuardedInvocation findSetMethod(final CallSiteDescriptor desc) {
-        final MethodHandle getter = MH.insertArguments(JSOBJECT_SETMEMBER, 1, desc.getNameToken(2));
+    private static GuardedInvocation findSetMethod(final String name) {
+        final MethodHandle getter = MH.insertArguments(JSOBJECT_SETMEMBER, 1, name);
         return new GuardedInvocation(getter, IS_JSOBJECT_GUARD);
     }
 

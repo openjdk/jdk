@@ -90,18 +90,13 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
 
     @Override
     public GuardedInvocation getGuardedInvocation(final LinkRequest request, final LinkerServices linkerServices) throws Exception {
-        final Object self = request.getReceiver();
         final CallSiteDescriptor desc = request.getCallSiteDescriptor();
-
-        if (desc.getNameTokenCount() < 2 || !"dyn".equals(desc.getNameToken(CallSiteDescriptor.SCHEME))) {
-            // We only support standard "dyn:*[:*]" operations
-            return null;
-        }
-
-        return Bootstrap.asTypeSafeReturn(getGuardedInvocation(self,  request, desc), linkerServices, desc);
+        return Bootstrap.asTypeSafeReturn(getGuardedInvocation(request, desc), linkerServices, desc);
     }
 
-    private static GuardedInvocation getGuardedInvocation(final Object self, final LinkRequest request, final CallSiteDescriptor desc) {
+    private static GuardedInvocation getGuardedInvocation(final LinkRequest request, final CallSiteDescriptor desc) {
+        final Object self = request.getReceiver();
+
         final GuardedInvocation inv;
         if (self instanceof ScriptObject) {
             inv = ((ScriptObject)self).lookup(desc, request);

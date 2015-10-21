@@ -86,19 +86,13 @@ package jdk.internal.dynalink;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.StringTokenizer;
-import jdk.internal.dynalink.support.NameCodec;
 
 /**
  * Call site descriptors contain all the information necessary for linking a
  * call site. This information is normally passed as parameters to bootstrap
  * methods and consists of the {@code MethodHandles.Lookup} object on the caller
- * class in which the call site occurs, the method name mentioned in the call
+ * class in which the call site occurs, the dynamic operation at the call
  * site, and the method type of the call site. {@code CallSiteDescriptor}
  * objects are used in Dynalink to capture and store these parameters for
  * subsequent use by the {@link DynamicLinker}.
@@ -109,13 +103,12 @@ import jdk.internal.dynalink.support.NameCodec;
  * Call site descriptors must be immutable. You can use this class as-is or you
  * can subclass it, especially if you need to add further information to the
  * descriptors (typically, values passed in additional parameters to the
- * bootstrap method) or want to cache results of name tokenization. Since the
- * descriptors must be immutable, you can set up a cache for equivalent
- * descriptors to have the call sites share them.
+ * bootstrap method. Since the descriptors must be immutable, you can set up a
+ * cache for equivalent descriptors to have the call sites share them.
  */
 public class CallSiteDescriptor {
     private final MethodHandles.Lookup lookup;
-    private final String name;
+    private final Operation operation;
     private final MethodType methodType;
 
     /**
@@ -127,98 +120,23 @@ public class CallSiteDescriptor {
     private static final RuntimePermission GET_LOOKUP_PERMISSION = new RuntimePermission(GET_LOOKUP_PERMISSION_NAME);
 
     /**
-     * The index of the name token that will carry the operation scheme prefix,
-     * e.g. {@code "dyn"} for operations specified by Dynalink itself.
-     */
-    public static final int SCHEME = 0;
-
-    /**
-     * The index of the name token that carries the operation name, at least
-     * when using the {@code "dyn"} scheme.
-     */
-
-    public static final int OPERATOR = 1;
-
-    /**
-     * The index of the name token that carries the name of an operand (e.g. a
-     * property or a method), at least when using the {@code "dyn"} scheme.
-     */
-    public static final int NAME_OPERAND = 2;
-
-    /**
-     * String used to delimit tokens in a call site name; its value is
-     * {@code ":"}, that is the colon character.
-     */
-    public static final String TOKEN_DELIMITER = ":";
-
-    /**
-     * String used to delimit operation names in a composite operation name;
-     * its value is {@code "|"}, that is the pipe character.
-     */
-    public static final String OPERATOR_DELIMITER = "|";
-
-    /**
      * Creates a new call site descriptor.
      * @param lookup the lookup object describing the class the call site belongs to.
-     * @param name the name of the method at the call site.
+     * @param operation the dynamic operation at the call site.
      * @param methodType the method type of the call site.
      */
-    public CallSiteDescriptor(final Lookup lookup, final String name, final MethodType methodType) {
+    public CallSiteDescriptor(final Lookup lookup, final Operation operation, final MethodType methodType) {
         this.lookup = Objects.requireNonNull(lookup, "lookup");
-        this.name = Objects.requireNonNull(name, "name");
+        this.operation = Objects.requireNonNull(operation, "name");
         this.methodType = Objects.requireNonNull(methodType, "methodType");
     }
 
     /**
-     * Returns the number of tokens in the name of the method at the call site.
-     * Method names are tokenized with the {@link #TOKEN_DELIMITER} character
-     * character, e.g. {@code "dyn:getProp:color"} would be the name used to
-     * describe a method that retrieves the property named "color" on the object
-     * it is invoked on. This method will count the tokens in the name on every
-     * invocation. Subclasses can override this method with a more efficient
-     * implementation that caches the tokens.
-     * @return the number of tokens in the name of the method at the call site.
+     * Returns the operation at the call site.
+     * @return the operation at the call site.
      */
-    public int getNameTokenCount() {
-        return getNameTokenizer().countTokens();
-    }
-
-    /**
-     * Returns the <i>i<sup>th</sup></i> token in the method name at the call
-     * site. Method names are tokenized with the {@link #TOKEN_DELIMITER}
-     * character. This method will tokenize the name on every invocation.
-     * Subclasses can override this method with a more efficient implementation
-     * that caches the tokens.
-     * @param i the index of the token. Must be between 0 (inclusive) and
-     * {@link #getNameTokenCount()} (exclusive).
-     * @throws NoSuchElementException if the index is outside the allowed
-     * range.
-     * @return the <i>i<sup>th</sup></i> token in the method name at the call
-     * site.
-     */
-    public String getNameToken(final int i) {
-        final StringTokenizer tok = getNameTokenizer();
-        for (int j = 0; j < i; ++j) {
-            tok.nextToken();
-        }
-        final String token = tok.nextToken();
-        return (i > 1 ? NameCodec.decode(token) : token).intern();
-    }
-
-    private StringTokenizer getNameTokenizer() {
-        return getNameTokenizer(name);
-    }
-
-    private static StringTokenizer getNameTokenizer(final String name) {
-        return new StringTokenizer(name, CallSiteDescriptor.TOKEN_DELIMITER);
-    }
-
-    /**
-     * Returns the full (untokenized) name of the method at the call site.
-     * @return the full (untokenized) name of the method at the call site.
-     */
-    public final String getName() {
-        return name;
+    public final Operation getOperation() {
+        return operation;
     }
 
     /**
@@ -260,11 +178,16 @@ public class CallSiteDescriptor {
 
     /**
      * Creates a new call site descriptor from this descriptor, which is
-     * identical to this, except it changes the method type. Subclasses must
-     * override the
+     * identical to this, except it changes the method type. Invokes
+     * {@link #changeMethodTypeInternal(MethodType)} and checks that it returns
+     * a descriptor of the same class as this descriptor.
      *
      * @param newMethodType the new method type
      * @return a new call site descriptor, with the method type changed.
+     * @throws RuntimeException if {@link #changeMethodTypeInternal(MethodType)}
+     * returned a descriptor of different class than this object.
+     * @throws NullPointerException if {@link #changeMethodTypeInternal(MethodType)}
+     * returned null.
      */
     public final CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
         final CallSiteDescriptor changed = Objects.requireNonNull(
@@ -288,53 +211,16 @@ public class CallSiteDescriptor {
      * @return a new call site descriptor, with the method type changed.
      */
     protected CallSiteDescriptor changeMethodTypeInternal(final MethodType newMethodType) {
-        return new CallSiteDescriptor(lookup, name, newMethodType);
+        return new CallSiteDescriptor(lookup, operation, newMethodType);
     }
 
     /**
-     * Tokenizes a composite operation name of this descriptor along
-     * {@link #OPERATOR_DELIMITER} characters. E.g. if this descriptor's name is
-     * {@code "dyn:getElem|getProp|getMethod"}, then it returns a list of
-     * {@code ["getElem", "getProp", "getMethod"]}.
-     * @return a list of operator tokens.
+     * Returns true if this call site descriptor is equal to the passed object.
+     * It is considered equal if the other object is of the exact same class,
+     * their operations and method types are equal, and their lookups have the
+     * same {@link java.lang.invoke.MethodHandles.Lookup#lookupClass()} and
+     * {@link java.lang.invoke.MethodHandles.Lookup#lookupModes()}.
      */
-    public final List<String> tokenizeOperators() {
-        final String ops = getNameToken(CallSiteDescriptor.OPERATOR);
-        final StringTokenizer tok = new StringTokenizer(ops, CallSiteDescriptor.OPERATOR_DELIMITER);
-        final int count = tok.countTokens();
-        if(count == 1) {
-            return Collections.singletonList(ops);
-        }
-        final String[] tokens = new String[count];
-        for(int i = 0; i < count; ++i) {
-            tokens[i] = tok.nextToken();
-        }
-        return Arrays.asList(tokens);
-    }
-
-    /**
-     * Tokenizes the composite name along {@link #TOKEN_DELIMITER} characters,
-     * as well as {@link NameCodec#decode(String) demangles} and interns the
-     * tokens. The first two tokens are not demangled as they are supposed to
-     * be the naming scheme and the name of the operation which can be expected
-     * to consist of just alphabetical characters.
-     * @param name the composite name consisting of
-     * {@link #TOKEN_DELIMITER}-separated, possibly mangled tokens.
-     * @return an array of unmangled, interned tokens.
-     */
-    public static String[] tokenizeName(final String name) {
-        final StringTokenizer tok = getNameTokenizer(name);
-        final String[] tokens = new String[tok.countTokens()];
-        for(int i = 0; i < tokens.length; ++i) {
-            String token = tok.nextToken();
-            if(i > 1) {
-                token = NameCodec.decode(token);
-            }
-            tokens[i] = token.intern();
-        }
-        return tokens;
-    }
-
     @Override
     public boolean equals(final Object obj) {
         if (obj == this) {
@@ -345,8 +231,9 @@ public class CallSiteDescriptor {
             return false;
         }
         final CallSiteDescriptor other = (CallSiteDescriptor)obj;
-        return name.equals(other.name) && methodType.equals(other.methodType) &&
-                lookupsEqual(lookup, other.lookup);
+        return operation.equals(other.operation) &&
+               methodType.equals(other.methodType) &&
+               lookupsEqual(lookup, other.lookup);
     }
 
     /**
@@ -362,9 +249,15 @@ public class CallSiteDescriptor {
         return l1.lookupClass() == l2.lookupClass() && l1.lookupModes() == l2.lookupModes();
     }
 
+    /**
+     * Returns a value-based hash code of this call site descriptor computed
+     * from its operation, method type, and lookup object's lookup class and
+     * lookup modes.
+     * @return value-based hash code for this call site descriptor.
+     */
     @Override
     public int hashCode() {
-        return name.hashCode() + 31 * methodType.hashCode() + 31 * 31 * lookupHashCode(lookup);
+        return operation.hashCode() + 31 * methodType.hashCode() + 31 * 31 * lookupHashCode(lookup);
     }
 
     /**
@@ -375,7 +268,7 @@ public class CallSiteDescriptor {
      * @param lookup the lookup object.
      * @return a hash code for the object..
      */
-    protected static int lookupHashCode(final Lookup lookup) {
+    private static int lookupHashCode(final Lookup lookup) {
         return lookup.lookupClass().hashCode() + 31 * lookup.lookupModes();
     }
 
@@ -387,7 +280,8 @@ public class CallSiteDescriptor {
     public String toString() {
         final String mt = methodType.toString();
         final String l = lookup.toString();
-        final StringBuilder b = new StringBuilder(name.length() + mt.length() + 1 + l.length());
-        return b.append(name).append(mt).append("@").append(l).toString();
+        final String o = operation.toString();
+        final StringBuilder b = new StringBuilder(o.length() + mt.length() + 1 + l.length());
+        return b.append(o).append(mt).append('@').append(l).toString();
     }
 }

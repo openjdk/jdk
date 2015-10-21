@@ -124,7 +124,7 @@ public class LinkerCallSite extends ChainedCallSite {
     }
 
     private MethodHandle getIncreaseMissCounter(final Class<?> type) {
-        final MethodHandle missCounterWithDesc = MH.bindTo(INCREASE_MISS_COUNTER, getDescriptor().getName() + " @ " + getScriptLocation());
+        final MethodHandle missCounterWithDesc = MH.bindTo(INCREASE_MISS_COUNTER, getDescriptor().getOperation() + " @ " + getScriptLocation());
         if (type == Object.class) {
             return missCounterWithDesc;
         }
@@ -291,7 +291,7 @@ public class LinkerCallSite extends ChainedCallSite {
                 int index = 0;
                 for (final ProfilingLinkerCallSite callSite : profileCallSites) {
                    out.println("" + (index++) + '\t' +
-                                  callSite.getDescriptor().getName() + '\t' +
+                                  callSite.getDescriptor().getOperation() + '\t' +
                                   callSite.totalTime + '\t' +
                                   callSite.hitCount);
                 }
@@ -402,7 +402,7 @@ public class LinkerCallSite extends ChainedCallSite {
         private void tracePrint(final PrintWriter out, final String tag, final Object[] args, final Object result) {
             //boolean isVoid = type().returnType() == void.class;
             out.print(Debug.id(this) + " TAG " + tag);
-            out.print(getDescriptor().getName() + "(");
+            out.print(getDescriptor().getOperation() + "(");
 
             if (args.length > 0) {
                 printObject(out, args[0]);

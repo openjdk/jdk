@@ -66,6 +66,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.LongAdder;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.NamedOperation;
+import jdk.internal.dynalink.StandardOperation;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
@@ -1835,32 +1837,35 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @return GuardedInvocation for the callsite
      */
     public GuardedInvocation lookup(final CallSiteDescriptor desc, final LinkRequest request) {
-        final int c = desc.getNameTokenCount();
-        // JavaScript is "immune" to all currently defined Dynalink composite operation - getProp is the same as getElem
-        // is the same as getMethod as JavaScript objects have a single namespace for all three. Therefore, we don't
-        // care about them, and just link to whatever is the first operation.
-        final String operator = desc.tokenizeOperators().get(0);
-        // NOTE: we support getElem and setItem as JavaScript doesn't distinguish items from properties. Nashorn itself
-        // emits "dyn:getProp:identifier" for "<expr>.<identifier>" and "dyn:getElem" for "<expr>[<expr>]", but we are
+        // NOTE: we support GET_ELEMENT and SET_ELEMENT as JavaScript doesn't distinguish items from properties. Nashorn itself
+        // emits "GET_PROPERTY|GET_ELEMENT|GET_METHOD:identifier" for "<expr>.<identifier>" and "GET_ELEMENT|GET_PROPERTY|GET_METHOD" for "<expr>[<expr>]", but we are
         // more flexible here and dispatch not on operation name (getProp vs. getElem), but rather on whether the
         // operation has an associated name or not.
-        switch (operator) {
-        case "getProp":
-        case "getElem":
-        case "getMethod":
-            return c > 2 ? findGetMethod(desc, request, operator) : findGetIndexMethod(desc, request);
-        case "setProp":
-        case "setElem":
-            return c > 2 ? findSetMethod(desc, request) : findSetIndexMethod(desc, request);
-        case "call":
-            return findCallMethod(desc, request);
-        case "new":
-            return findNewMethod(desc, request);
-        case "callMethod":
-            return findCallMethodMethod(desc, request);
-        default:
+        final StandardOperation op = NashornCallSiteDescriptor.getFirstStandardOperation(desc);
+        if (op == null) {
             return null;
         }
+        switch (op) {
+        case GET_PROPERTY:
+        case GET_ELEMENT:
+        case GET_METHOD:
+            return desc.getOperation() instanceof NamedOperation
+                    ? findGetMethod(desc, request, op)
+                    : findGetIndexMethod(desc, request);
+        case SET_PROPERTY:
+        case SET_ELEMENT:
+            return desc.getOperation() instanceof NamedOperation
+                    ? findSetMethod(desc, request)
+                    : findSetIndexMethod(desc, request);
+        case CALL:
+            return findCallMethod(desc, request);
+        case NEW:
+            return findNewMethod(desc, request);
+        case CALL_METHOD:
+            return findCallMethodMethod(desc, request);
+        default:
+        }
+        return null;
     }
 
     /**
@@ -1893,10 +1898,10 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     /**
-     * Find an implementation for a "dyn:callMethod" operation. Note that Nashorn internally never uses
-     * "dyn:callMethod", but instead always emits two call sites in bytecode, one for "dyn:getMethod", and then another
-     * one for "dyn:call". Explicit support for "dyn:callMethod" is provided for the benefit of potential external
-     * callers. The implementation itself actually folds a "dyn:getMethod" method handle into a "dyn:call" method handle.
+     * Find an implementation for a CALL_METHOD operation. Note that Nashorn internally never uses
+     * CALL_METHOD, but instead always emits two call sites in bytecode, one for GET_METHOD, and then another
+     * one for CALL. Explicit support for CALL_METHOD is provided for the benefit of potential external
+     * callers. The implementation itself actually folds a GET_METHOD method handle into a CALL method handle.
      *
      * @param desc    the call site descriptor.
      * @param request the link request
@@ -1908,12 +1913,12 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         final MethodType callType = desc.getMethodType();
         // use type Object(P0) for the getter
         final CallSiteDescriptor getterType = desc.changeMethodType(MethodType.methodType(Object.class, callType.parameterType(0)));
-        final GuardedInvocation getter = findGetMethod(getterType, request, "getMethod");
+        final GuardedInvocation getter = findGetMethod(getterType, request, StandardOperation.GET_METHOD);
 
         // Object(P0) => Object(P0, P1, ...)
         final MethodHandle argDroppingGetter = MH.dropArguments(getter.getInvocation(), 1, callType.parameterList().subList(1, callType.parameterCount()));
         // R(Object, P0, P1, ...)
-        final MethodHandle invoker = Bootstrap.createDynamicInvoker("dyn:call", callType.insertParameterTypes(0, argDroppingGetter.type().returnType()));
+        final MethodHandle invoker = Bootstrap.createDynamicInvoker("", NashornCallSiteDescriptor.CALL, callType.insertParameterTypes(0, argDroppingGetter.type().returnType()));
         // Fold Object(P0, P1, ...) into R(Object, P0, P1, ...) => R(P0, P1, ...)
         return getter.replaceMethods(MH.foldArguments(invoker, argDroppingGetter), getter.getGuard());
     }
@@ -1954,15 +1959,14 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      *
      * @param desc     the call site descriptor
      * @param request  the link request
-     * @param operator operator for get: getProp, getMethod, getElem etc
+     * @param operation operation for get: getProp, getMethod, getElem etc
      *
      * @return GuardedInvocation to be invoked at call site.
      */
-    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
+    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final StandardOperation operation) {
         final boolean explicitInstanceOfCheck = explicitInstanceOfCheck(desc, request);
 
-        String name;
-        name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        String name = NashornCallSiteDescriptor.getOperand(desc);
         if (NashornCallSiteDescriptor.isApplyToCall(desc)) {
             if (Global.isBuiltinFunctionPrototypeApply()) {
                 name = "call";
@@ -1970,21 +1974,21 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         }
 
         if (request.isCallSiteUnstable() || hasWithScope()) {
-            return findMegaMorphicGetMethod(desc, name, "getMethod".equals(operator));
+            return findMegaMorphicGetMethod(desc, name, operation == StandardOperation.GET_METHOD);
         }
 
         final FindProperty find = findProperty(name, true);
         MethodHandle mh;
 
         if (find == null) {
-            switch (operator) {
-            case "getElem": // getElem only gets here if element name is constant, so treat it like a property access
-            case "getProp":
+            switch (operation) {
+            case GET_ELEMENT: // getElem only gets here if element name is constant, so treat it like a property access
+            case GET_PROPERTY:
                 return noSuchProperty(desc, request);
-            case "getMethod":
+            case GET_METHOD:
                 return noSuchMethod(desc, request);
             default:
-                throw new AssertionError(operator); // never invoked with any other operation
+                throw new AssertionError(operation); // never invoked with any other operation
             }
         }
 
@@ -2162,7 +2166,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @return GuardedInvocation to be invoked at call site.
      */
     protected GuardedInvocation findSetMethod(final CallSiteDescriptor desc, final LinkRequest request) {
-        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        final String name = NashornCallSiteDescriptor.getOperand(desc);
 
         if (request.isCallSiteUnstable() || hasWithScope()) {
             return findMegaMorphicSetMethod(desc, name);
@@ -2224,7 +2228,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     private GuardedInvocation createEmptySetMethod(final CallSiteDescriptor desc, final boolean explicitInstanceOfCheck, final String strictErrorMessage, final boolean canBeFastScope) {
-        final String  name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        final String  name = NashornCallSiteDescriptor.getOperand(desc);
         if (NashornCallSiteDescriptor.isStrict(desc)) {
             throw typeError(strictErrorMessage, name, ScriptRuntime.safeToString(this));
         }
@@ -2306,7 +2310,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @return GuardedInvocation to be invoked at call site.
      */
     public GuardedInvocation noSuchMethod(final CallSiteDescriptor desc, final LinkRequest request) {
-        final String       name      = desc.getNameToken(2);
+        final String       name      = NashornCallSiteDescriptor.getOperand(desc);
         final FindProperty find      = findProperty(NO_SUCH_METHOD_NAME, true);
         final boolean      scopeCall = isScope() && NashornCallSiteDescriptor.isScope(desc);
 
@@ -2344,7 +2348,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
      * @return GuardedInvocation to be invoked at call site.
      */
     public GuardedInvocation noSuchProperty(final CallSiteDescriptor desc, final LinkRequest request) {
-        final String       name        = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        final String       name        = NashornCallSiteDescriptor.getOperand(desc);
         final FindProperty find        = findProperty(NO_SUCH_PROPERTY_NAME, true);
         final boolean      scopeAccess = isScope() && NashornCallSiteDescriptor.isScope(desc);
 
@@ -2684,7 +2688,7 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
       * @param newLength new length to set
       */
     public final void setLength(final long newLength) {
-        ArrayData data = getArray();
+        final ArrayData data = getArray();
         final long arrayLength = data.length();
         if (newLength == arrayLength) {
             return;

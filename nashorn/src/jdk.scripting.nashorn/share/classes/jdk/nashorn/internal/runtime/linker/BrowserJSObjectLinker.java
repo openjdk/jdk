@@ -35,6 +35,7 @@ import static jdk.nashorn.internal.runtime.linker.BrowserJSObjectLinker.JSObject
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.StandardOperation;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
@@ -100,11 +101,6 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
         final CallSiteDescriptor desc = request.getCallSiteDescriptor();
         checkJSObjectClass();
 
-        if (desc.getNameTokenCount() < 2 || !"dyn".equals(desc.getNameToken(CallSiteDescriptor.SCHEME))) {
-            // We only support standard "dyn:*[:*]" operations
-            return null;
-        }
-
         GuardedInvocation inv;
         if (jsObjectClass.isInstance(self)) {
             inv = lookup(desc, request, linkerServices);
@@ -117,8 +113,6 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
     }
 
     private GuardedInvocation lookup(final CallSiteDescriptor desc, final LinkRequest request, final LinkerServices linkerServices) throws Exception {
-        final String operator = desc.tokenizeOperators().get(0);
-        final int c = desc.getNameTokenCount();
         GuardedInvocation inv;
         try {
             inv = nashornBeansLinker.getGuardedInvocation(request, linkerServices);
@@ -126,26 +120,30 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
             inv = null;
         }
 
-        switch (operator) {
-            case "getProp":
-            case "getElem":
-            case "getMethod":
-                return c > 2? findGetMethod(desc, inv) : findGetIndexMethod(inv);
-            case "setProp":
-            case "setElem":
-                return c > 2? findSetMethod(desc, inv) : findSetIndexMethod();
-            case "call":
-                return findCallMethod(desc);
-            default:
-                return null;
+        final StandardOperation op = NashornCallSiteDescriptor.getFirstStandardOperation(desc);
+        if (op == null) {
+            return null;
         }
+        final String name = NashornCallSiteDescriptor.getOperand(desc);
+        switch (op) {
+        case GET_PROPERTY:
+        case GET_ELEMENT:
+        case GET_METHOD:
+            return name != null ? findGetMethod(name, inv) : findGetIndexMethod(inv);
+        case SET_PROPERTY:
+        case SET_ELEMENT:
+            return name != null ? findSetMethod(name, inv) : findSetIndexMethod();
+        case CALL:
+            return findCallMethod(desc);
+        default:
+        }
+        return null;
     }
 
-    private static GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final GuardedInvocation inv) {
+    private static GuardedInvocation findGetMethod(final String name, final GuardedInvocation inv) {
         if (inv != null) {
             return inv;
         }
-        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
         final MethodHandle getter = MH.insertArguments(JSOBJECT_GETMEMBER, 1, name);
         return new GuardedInvocation(getter, IS_JSOBJECT_GUARD);
     }
@@ -155,11 +153,11 @@ final class BrowserJSObjectLinker implements TypeBasedGuardingDynamicLinker {
         return inv.replaceMethods(getter, inv.getGuard());
     }
 
-    private static GuardedInvocation findSetMethod(final CallSiteDescriptor desc, final GuardedInvocation inv) {
+    private static GuardedInvocation findSetMethod(final String name, final GuardedInvocation inv) {
         if (inv != null) {
             return inv;
         }
-        final MethodHandle getter = MH.insertArguments(JSOBJECT_SETMEMBER, 1, desc.getNameToken(2));
+        final MethodHandle getter = MH.insertArguments(JSOBJECT_SETMEMBER, 1, name);
         return new GuardedInvocation(getter, IS_JSOBJECT_GUARD);
     }
 
