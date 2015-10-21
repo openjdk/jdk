@@ -41,7 +41,9 @@
 
 void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  ce->store_parameter(_method->as_register(), 1);
+  Metadata *m = _method->as_constant_ptr()->as_metadata();
+  __ mov_metadata(rscratch1, m);
+  ce->store_parameter(rscratch1, 1);
   ce->store_parameter(_bci, 0);
   __ far_call(RuntimeAddress(Runtime1::entry_for(Runtime1::counter_overflow_id)));
   ce->add_call_info_here(_info);

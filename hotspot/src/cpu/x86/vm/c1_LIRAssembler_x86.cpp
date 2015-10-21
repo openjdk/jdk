@@ -2971,6 +2971,14 @@ void LIR_Assembler::store_parameter(jobject o,  int offset_from_rsp_in_words) {
 }
 
 
+void LIR_Assembler::store_parameter(Metadata* m,  int offset_from_rsp_in_words) {
+  assert(offset_from_rsp_in_words >= 0, "invalid offset from rsp");
+  int offset_from_rsp_in_bytes = offset_from_rsp_in_words * BytesPerWord;
+  assert(offset_from_rsp_in_bytes < frame_map()->reserved_argument_area_size(), "invalid offset");
+  __ mov_metadata(Address(rsp, offset_from_rsp_in_bytes), m);
+}
+
+
 // This code replaces a call to arraycopy; no exception may
 // be thrown in this code, they must be thrown in the System.arraycopy
 // activation frame; we could save some checks if this would not be the case
