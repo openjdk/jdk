@@ -3429,14 +3429,18 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   __ add(result, LIR_OprFact::intConst(InvocationCounter::count_increment), result);
   __ store(result, counter);
   if (notify) {
-    LIR_Opr mask = load_immediate(frequency << InvocationCounter::count_shift, T_INT);
-    LIR_Opr meth = new_register(T_METADATA);
-    __ metadata2reg(method->constant_encoding(), meth);
-    __ logical_and(result, mask, result);
-    __ cmp(lir_cond_equal, result, LIR_OprFact::intConst(0));
+    LIR_Opr meth = LIR_OprFact::metadataConst(method->constant_encoding());
     // The bci for info can point to cmp for if's we want the if bci
     CodeStub* overflow = new CounterOverflowStub(info, bci, meth);
-    __ branch(lir_cond_equal, T_INT, overflow);
+    int freq = frequency << InvocationCounter::count_shift;
+    if (freq == 0) {
+      __ branch(lir_cond_always, T_ILLEGAL, overflow);
+    } else {
+      LIR_Opr mask = load_immediate(freq, T_INT);
+      __ logical_and(result, mask, result);
+      __ cmp(lir_cond_equal, result, LIR_OprFact::intConst(0));
+      __ branch(lir_cond_equal, T_INT, overflow);
+    }
     __ branch_destination(overflow->continuation());
   }
 }
