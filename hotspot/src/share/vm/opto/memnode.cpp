@@ -72,15 +72,8 @@ void MemNode::dump_spec(outputStream *st) const {
   dump_adr_type(this, _adr_type, st);
 
   Compile* C = Compile::current();
-  if (C->alias_type(_adr_type)->is_volatile()) {
+  if( C->alias_type(_adr_type)->is_volatile() )
     st->print(" Volatile!");
-  }
-  if (_unaligned_access) {
-    st->print(" unaligned");
-  }
-  if (_mismatched_access) {
-    st->print(" mismatched");
-  }
 }
 
 void MemNode::dump_adr_type(const Node* mem, const TypePtr* adr_type, outputStream *st) {
@@ -2400,8 +2393,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
              st->Opcode() == Op_StoreVector ||
              Opcode() == Op_StoreVector ||
              phase->C->get_alias_index(adr_type()) == Compile::AliasIdxRaw ||
-             (Opcode() == Op_StoreL && st->Opcode() == Op_StoreI) || // expanded ClearArrayNode
-             (is_mismatched_access() || st->as_Store()->is_mismatched_access()),
+             (Opcode() == Op_StoreL && st->Opcode() == Op_StoreI), // expanded ClearArrayNode
              "no mismatched stores, except on raw memory: %s %s", NodeClassNames[Opcode()], NodeClassNames[st->Opcode()]);
 
       if (st->in(MemNode::Address)->eqv_uncast(address) &&
@@ -3221,9 +3213,6 @@ bool InitializeNode::detect_init_independence(Node* n, int& count) {
 // within the initialized memory.
 intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseTransform* phase, bool can_reshape) {
   const int FAIL = 0;
-  if (st->is_unaligned_access()) {
-    return FAIL;
-  }
   if (st->req() != MemNode::ValueIn + 1)
     return FAIL;                // an inscrutable StoreNode (card mark?)
   Node* ctl = st->in(MemNode::Control);

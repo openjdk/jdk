@@ -228,9 +228,7 @@ class IdealKit: public StackObj {
               BasicType bt,
               int adr_idx,
               MemNode::MemOrd mo,
-              bool require_atomic_access = false,
-              bool mismatched = false
-              );
+              bool require_atomic_access = false);
 
   // Store a card mark ordered after store_oop
   Node* storeCM(Node* ctl,
