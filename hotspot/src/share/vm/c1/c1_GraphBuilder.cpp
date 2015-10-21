@@ -1438,7 +1438,9 @@ void GraphBuilder::method_return(Value x) {
 
   bool need_mem_bar = false;
   if (method()->name() == ciSymbol::object_initializer_name() &&
-      (scope()->wrote_final() || (AlwaysSafeConstructors && scope()->wrote_fields()))) {
+      (scope()->wrote_final() || (AlwaysSafeConstructors && scope()->wrote_fields())
+                              || (support_IRIW_for_not_multiple_copy_atomic_cpu && scope()->wrote_volatile())
+     )){
     need_mem_bar = true;
   }
 
@@ -1554,6 +1556,9 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
 
   if (code == Bytecodes::_putfield) {
     scope()->set_wrote_fields();
+    if (field->is_volatile()) {
+      scope()->set_wrote_volatile();
+    }
   }
 
   const int offset = !needs_patching ? field->offset() : -1;
