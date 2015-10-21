@@ -145,7 +145,7 @@
  *     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type) {
  *         return dynamicLinker.link(
  *             new SimpleRelinkableCallSite(
- *                 new SimpleCallSiteDescriptor(lookup, name, type)));
+ *                 new CallSiteDescriptor(lookup, name, type)));
  *     }
  * }
  * </pre>
@@ -166,9 +166,7 @@
  * are two implementations already provided by the library.</li>
  * <li>Finally, Dynalink uses {@link jdk.internal.dynalink.CallSiteDescriptor} objects to
  * preserve the parameters to the bootstrap method as it will need them whenever
- * it needs to relink a call site. Again,
- * {@link jdk.internal.dynalink.support.SimpleCallSiteDescriptor} is a simple
- * implementation already provided by the library.</li>
+ * it needs to relink a call site.</li>
  * </ul>
  * <p>What can you already do with the above setup? {@code DynamicLinkerFactory}
  * by default creates a {@code DynamicLinker} that can link Java objects with the

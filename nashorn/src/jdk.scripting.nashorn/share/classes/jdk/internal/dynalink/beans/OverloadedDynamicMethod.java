@@ -232,8 +232,7 @@ class OverloadedDynamicMethod extends DynamicMethod {
 
     private static final AccessControlContext GET_CALL_SITE_CLASS_LOADER_CONTEXT =
             AccessControlContextFactory.createAccessControlContext(
-                    new RuntimePermission("getClassLoader"),
-                    CallSiteDescriptor.GET_LOOKUP_PERMISSION);
+                    "getClassLoader", CallSiteDescriptor.GET_LOOKUP_PERMISSION_NAME);
 
     private static ClassLoader getCallSiteClassLoader(final CallSiteDescriptor callSiteDescriptor) {
         return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {

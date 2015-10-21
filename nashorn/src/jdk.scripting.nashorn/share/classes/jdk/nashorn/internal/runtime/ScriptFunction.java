@@ -128,7 +128,7 @@ public class ScriptFunction extends ScriptObject {
     private static final Object LAZY_PROTOTYPE = new Object();
 
     private static final AccessControlContext GET_LOOKUP_PERMISSION_CONTEXT =
-            AccessControlContextFactory.createAccessControlContext(CallSiteDescriptor.GET_LOOKUP_PERMISSION);
+            AccessControlContextFactory.createAccessControlContext(CallSiteDescriptor.GET_LOOKUP_PERMISSION_NAME);
 
     private static PropertyMap createStrictModeMap(final PropertyMap map) {
         final int flags = Property.NOT_ENUMERABLE | Property.NOT_CONFIGURABLE;

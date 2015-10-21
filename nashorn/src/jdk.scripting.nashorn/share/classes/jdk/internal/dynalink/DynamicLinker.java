@@ -96,7 +96,6 @@ import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.support.Lookup;
 import jdk.internal.dynalink.linker.support.SimpleLinkRequest;
 import jdk.internal.dynalink.support.ChainedCallSite;
-import jdk.internal.dynalink.support.SimpleCallSiteDescriptor;
 import jdk.internal.dynalink.support.SimpleRelinkableCallSite;
 
 /**
@@ -124,7 +123,7 @@ import jdk.internal.dynalink.support.SimpleRelinkableCallSite;
  *     }
  *
  *     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type) {
- *         return dynamicLinker.link(new SimpleRelinkableCallSite(new SimpleCallSiteDescriptor(lookup, name, type)));
+ *         return dynamicLinker.link(new SimpleRelinkableCallSite(new CallSiteDescriptor(lookup, name, type)));
  *     }
  * }
  * </pre>
@@ -153,12 +152,7 @@ import jdk.internal.dynalink.support.SimpleRelinkableCallSite;
  * <li>You also need to provide {@link CallSiteDescriptor}s to your call sites.
  * They are immutable objects that contain all the information about the call
  * site: the class performing the lookups, the name of the method being invoked,
- * and the method signature. The library provides a
- * {@link SimpleCallSiteDescriptor}, or you can create your own descriptor
- * classes, especially if you need to add further information to them
- * (typically, values passed in additional parameters to the bootstrap method).
- * Since they are specified to be immutable, you can set up a cache for
- * equivalent descriptors to have the call sites share them.</li>
+ * and the method signature.</li>
  *
  * </ul>
  */

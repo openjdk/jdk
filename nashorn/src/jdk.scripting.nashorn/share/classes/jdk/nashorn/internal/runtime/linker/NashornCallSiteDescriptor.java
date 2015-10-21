@@ -34,7 +34,6 @@ import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import jdk.internal.dynalink.CallSiteDescriptor;
-import jdk.internal.dynalink.support.AbstractCallSiteDescriptor;
 import jdk.nashorn.internal.ir.debug.NashornTextifier;
 import jdk.nashorn.internal.runtime.AccessControlContextFactory;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -44,7 +43,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * we can have a more compact representation, as we know that we're always only using {@code "dyn:*"} operations; also
  * we're storing flags in an additional primitive field.
  */
-public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor<NashornCallSiteDescriptor> {
+public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
     /** Flags that the call site references a scope variable (it's an identifier reference or a var declaration, not a
      * property access expression. */
     public static final int CALLSITE_SCOPE         = 1 << 0;
@@ -109,12 +108,10 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor<
     };
 
     private static final AccessControlContext GET_LOOKUP_PERMISSION_CONTEXT =
-            AccessControlContextFactory.createAccessControlContext(CallSiteDescriptor.GET_LOOKUP_PERMISSION);
+            AccessControlContextFactory.createAccessControlContext(CallSiteDescriptor.GET_LOOKUP_PERMISSION_NAME);
 
-    private final MethodHandles.Lookup lookup;
     private final String operator;
     private final String operand;
-    private final MethodType methodType;
     private final int flags;
 
     /**
@@ -161,12 +158,12 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor<
         assert "dyn".equals(tokenizedName[0]);
         assert tokenizedName[1] != null;
         // TODO: see if we can move mangling/unmangling into Dynalink
-        return get(lookup, tokenizedName[1], tokenizedName.length == 3 ? tokenizedName[2].intern() : null,
+        return get(lookup, name, tokenizedName[1], tokenizedName.length == 3 ? tokenizedName[2].intern() : null,
                 methodType, flags);
     }
 
-    private static NashornCallSiteDescriptor get(final MethodHandles.Lookup lookup, final String operator, final String operand, final MethodType methodType, final int flags) {
-        final NashornCallSiteDescriptor csd = new NashornCallSiteDescriptor(lookup, operator, operand, methodType, flags);
+    private static NashornCallSiteDescriptor get(final MethodHandles.Lookup lookup, final String name, final String operator, final String operand, final MethodType methodType, final int flags) {
+        final NashornCallSiteDescriptor csd = new NashornCallSiteDescriptor(lookup, name, operator, operand, methodType, flags);
         // Many of these call site descriptors are identical (e.g. every getter for a property color will be
         // "dyn:getProp:color(Object)Object", so it makes sense canonicalizing them.
         final ConcurrentMap<NashornCallSiteDescriptor, NashornCallSiteDescriptor> classCanonicals = canonicals.get(lookup.lookupClass());
@@ -174,12 +171,11 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor<
         return canonical != null ? canonical : csd;
     }
 
-    private NashornCallSiteDescriptor(final MethodHandles.Lookup lookup, final String operator, final String operand,
+    private NashornCallSiteDescriptor(final MethodHandles.Lookup lookup, final String name, final String operator, final String operand,
             final MethodType methodType, final int flags) {
-        this.lookup = lookup;
+        super(lookup, name, methodType);
         this.operator = operator;
         this.operand = operand;
-        this.methodType = methodType;
         this.flags = flags;
     }
 
@@ -197,34 +193,25 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor<
             if(operand != null) {
                 return operand;
             }
-            break;
-        default:
-            break;
         }
         throw new IndexOutOfBoundsException(String.valueOf(i));
     }
 
-    @Override
-    public Lookup getLookup() {
-        return CallSiteDescriptor.checkLookup(lookup);
-    }
-
-    static Lookup getLookupPrivileged(final CallSiteDescriptor csd) {
+    static Lookup getLookupInternal(final CallSiteDescriptor csd) {
         if (csd instanceof NashornCallSiteDescriptor) {
-            return ((NashornCallSiteDescriptor)csd).lookup;
+            return ((NashornCallSiteDescriptor)csd).getLookupPrivileged();
         }
-        return AccessController.doPrivileged((PrivilegedAction<Lookup>)()->csd.getLookup(),
-                GET_LOOKUP_PERMISSION_CONTEXT);
+        return AccessController.doPrivileged((PrivilegedAction<Lookup>)()->csd.getLookup(), GET_LOOKUP_PERMISSION_CONTEXT);
     }
 
     @Override
-    protected boolean equalsInKind(final NashornCallSiteDescriptor csd) {
-        return super.equalsInKind(csd) && flags == csd.flags;
+    public boolean equals(final Object obj) {
+        return super.equals(obj) && flags == ((NashornCallSiteDescriptor)obj).flags;
     }
 
     @Override
-    public MethodType getMethodType() {
-        return methodType;
+    public int hashCode() {
+        return super.hashCode() ^ flags;
     }
 
     /**
@@ -458,23 +445,7 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor<
     }
 
     @Override
-    public CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
-        return get(lookup, operator, operand, newMethodType, flags);
-    }
-
-
-    @Override
-    protected boolean lookupEquals(final NashornCallSiteDescriptor other) {
-        return AbstractCallSiteDescriptor.lookupsEqual(lookup, other.lookup);
-    }
-
-    @Override
-    protected int lookupHashCode() {
-        return AbstractCallSiteDescriptor.lookupHashCode(lookup);
-    }
-
-    @Override
-    protected String lookupToString() {
-        return lookup.toString();
+    public CallSiteDescriptor changeMethodTypeInternal(final MethodType newMethodType) {
+        return get(getLookupPrivileged(), getName(), operator, operand, newMethodType, flags);
     }
 }

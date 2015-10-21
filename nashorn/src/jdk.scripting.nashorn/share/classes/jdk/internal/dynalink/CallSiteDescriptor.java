@@ -89,30 +89,42 @@ import java.lang.invoke.MethodType;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.StringTokenizer;
 import jdk.internal.dynalink.support.NameCodec;
 
 /**
- * Interface for objects containing the information necessary for linking a call
- * site. This information is normally passed as parameters to bootstrap methods
- * and consists of the {@code MethodHandles.Lookup} object on the caller class
- * in which the call site occurs, the method name mentioned in the call site,
- * and the method type of the call site. {@code CallSiteDescriptor} objects are
- * used in Dynalink to capture and store these parameters for subsequent use by
- * the {@link DynamicLinker}.
+ * Call site descriptors contain all the information necessary for linking a
+ * call site. This information is normally passed as parameters to bootstrap
+ * methods and consists of the {@code MethodHandles.Lookup} object on the caller
+ * class in which the call site occurs, the method name mentioned in the call
+ * site, and the method type of the call site. {@code CallSiteDescriptor}
+ * objects are used in Dynalink to capture and store these parameters for
+ * subsequent use by the {@link DynamicLinker}.
  * <p>
  * The constructors of built-in {@link RelinkableCallSite} implementations all
  * take a call site descriptor.
  * <p>
- * Call site descriptors must be immutable.
+ * Call site descriptors must be immutable. You can use this class as-is or you
+ * can subclass it, especially if you need to add further information to the
+ * descriptors (typically, values passed in additional parameters to the
+ * bootstrap method) or want to cache results of name tokenization. Since the
+ * descriptors must be immutable, you can set up a cache for equivalent
+ * descriptors to have the call sites share them.
  */
-public interface CallSiteDescriptor {
+public class CallSiteDescriptor {
+    private final MethodHandles.Lookup lookup;
+    private final String name;
+    private final MethodType methodType;
+
     /**
-     * A runtime permission to invoke the {@link #getLookup()} method. It is
-     * named {@code "dynalink.getLookup"}.
+     * The name of a runtime permission to invoke the {@link #getLookup()}
+     * method.
      */
-    public static final RuntimePermission GET_LOOKUP_PERMISSION =
-            new RuntimePermission("dynalink.getLookup");
+    public static final String GET_LOOKUP_PERMISSION_NAME = "dynalink.getLookup";
+
+    private static final RuntimePermission GET_LOOKUP_PERMISSION = new RuntimePermission(GET_LOOKUP_PERMISSION_NAME);
 
     /**
      * The index of the name token that will carry the operation scheme prefix,
@@ -146,67 +158,138 @@ public interface CallSiteDescriptor {
     public static final String OPERATOR_DELIMITER = "|";
 
     /**
+     * Creates a new call site descriptor.
+     * @param lookup the lookup object describing the class the call site belongs to.
+     * @param name the name of the method at the call site.
+     * @param methodType the method type of the call site.
+     */
+    public CallSiteDescriptor(final Lookup lookup, final String name, final MethodType methodType) {
+        this.lookup = Objects.requireNonNull(lookup, "lookup");
+        this.name = Objects.requireNonNull(name, "name");
+        this.methodType = Objects.requireNonNull(methodType, "methodType");
+    }
+
+    /**
      * Returns the number of tokens in the name of the method at the call site.
      * Method names are tokenized with the {@link #TOKEN_DELIMITER} character
      * character, e.g. {@code "dyn:getProp:color"} would be the name used to
      * describe a method that retrieves the property named "color" on the object
-     * it is invoked on.
+     * it is invoked on. This method will count the tokens in the name on every
+     * invocation. Subclasses can override this method with a more efficient
+     * implementation that caches the tokens.
      * @return the number of tokens in the name of the method at the call site.
      */
-    public int getNameTokenCount();
+    public int getNameTokenCount() {
+        return getNameTokenizer().countTokens();
+    }
 
     /**
      * Returns the <i>i<sup>th</sup></i> token in the method name at the call
      * site. Method names are tokenized with the {@link #TOKEN_DELIMITER}
-     * character.
+     * character. This method will tokenize the name on every invocation.
+     * Subclasses can override this method with a more efficient implementation
+     * that caches the tokens.
      * @param i the index of the token. Must be between 0 (inclusive) and
      * {@link #getNameTokenCount()} (exclusive).
-     * @throws IllegalArgumentException if the index is outside the allowed
+     * @throws NoSuchElementException if the index is outside the allowed
      * range.
      * @return the <i>i<sup>th</sup></i> token in the method name at the call
      * site.
      */
-    public String getNameToken(int i);
+    public String getNameToken(final int i) {
+        final StringTokenizer tok = getNameTokenizer();
+        for (int j = 0; j < i; ++j) {
+            tok.nextToken();
+        }
+        final String token = tok.nextToken();
+        return (i > 1 ? NameCodec.decode(token) : token).intern();
+    }
+
+    private StringTokenizer getNameTokenizer() {
+        return getNameTokenizer(name);
+    }
+
+    private static StringTokenizer getNameTokenizer(final String name) {
+        return new StringTokenizer(name, CallSiteDescriptor.TOKEN_DELIMITER);
+    }
 
     /**
      * Returns the full (untokenized) name of the method at the call site.
      * @return the full (untokenized) name of the method at the call site.
      */
-    public String getName();
+    public final String getName() {
+        return name;
+    }
 
     /**
      * The type of the method at the call site.
      *
      * @return type of the method at the call site.
      */
-    public MethodType getMethodType();
+    public final MethodType getMethodType() {
+        return methodType;
+    }
 
     /**
      * Returns the lookup that should be used to find method handles to set as
      * targets of the call site described by this descriptor. When creating
      * descriptors from a {@link java.lang.invoke} bootstrap method, it should
-     * be the lookup passed to the bootstrap. An implementation should use
-     * {@link #checkLookup(MethodHandles.Lookup)} to ensure the necessary
-     * security properties.
+     * be the lookup passed to the bootstrap.
      * @return the lookup that should be used to find method handles to set as
      * targets of the call site described by this descriptor.
      * @throws SecurityException if the lookup isn't the
      * {@link MethodHandles#publicLookup()} and a security manager is present,
-     * and a check for {@code RuntimePermission("dynalink.getLookup")}
-     * (a canonical instance of which is available as
-     * {@link #GET_LOOKUP_PERMISSION}) fails.
+     * and a check for {@code RuntimePermission("dynalink.getLookup")} fails.
      */
-    public Lookup getLookup();
+    public final Lookup getLookup() {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null && lookup != MethodHandles.publicLookup()) {
+            sm.checkPermission(GET_LOOKUP_PERMISSION);
+        }
+        return lookup;
+    }
+
+    /**
+     * Returns the value of {@link #getLookup()} without a security check. Can
+     * be used by subclasses to access the lookup quickly.
+     * @return same as returned value of {@link #getLookup()}.
+     */
+    protected final Lookup getLookupPrivileged() {
+        return lookup;
+    }
 
     /**
      * Creates a new call site descriptor from this descriptor, which is
-     * identical to this, except it changes the method type.
+     * identical to this, except it changes the method type. Subclasses must
+     * override the
      *
      * @param newMethodType the new method type
      * @return a new call site descriptor, with the method type changed.
      */
-    public CallSiteDescriptor changeMethodType(MethodType newMethodType);
+    public final CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
+        final CallSiteDescriptor changed = Objects.requireNonNull(
+                changeMethodTypeInternal(newMethodType),
+                "changeMethodTypeInternal() must not return null.");
 
+        if (getClass() != changed.getClass()) {
+            throw new RuntimeException(
+                    "changeMethodTypeInternal() must return an object of the same class it is invoked on.");
+        }
+
+        return changed;
+    }
+
+    /**
+     * Creates a new call site descriptor from this descriptor, which is
+     * identical to this, except it changes the method type. Subclasses must
+     * override this method to return an object of their exact class.
+     *
+     * @param newMethodType the new method type
+     * @return a new call site descriptor, with the method type changed.
+     */
+    protected CallSiteDescriptor changeMethodTypeInternal(final MethodType newMethodType) {
+        return new CallSiteDescriptor(lookup, name, newMethodType);
+    }
 
     /**
      * Tokenizes a composite operation name of this descriptor along
@@ -215,7 +298,7 @@ public interface CallSiteDescriptor {
      * {@code ["getElem", "getProp", "getMethod"]}.
      * @return a list of operator tokens.
      */
-    public default List<String> tokenizeOperators() {
+    public final List<String> tokenizeOperators() {
         final String ops = getNameToken(CallSiteDescriptor.OPERATOR);
         final StringTokenizer tok = new StringTokenizer(ops, CallSiteDescriptor.OPERATOR_DELIMITER);
         final int count = tok.countTokens();
@@ -230,29 +313,6 @@ public interface CallSiteDescriptor {
     }
 
     /**
-     * Checks if the current access context is granted the
-     * {@code RuntimePermission("dynalink.getLookup")} permission, if the
-     * system contains a security manager, and the passed lookup is not the
-     * {@link MethodHandles#publicLookup()}. This method should be used in all
-     * implementations of {@link #getLookup()} method to ensure that only
-     * code with permission can retrieve the lookup object.
-     * @param lookup the lookup being checked for access
-     * @return the passed in lookup if there's either no security manager in
-     * the system, or the passed lookup is the public lookup, or the current
-     * access context is granted the relevant permission.
-     * @throws SecurityException if the system contains a security manager, and
-     * the passed lookup is not the public lookup, and the current access
-     * context is not granted the relevant permission.
-     */
-    public static Lookup checkLookup(final Lookup lookup) {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null && lookup != MethodHandles.publicLookup()) {
-            sm.checkPermission(GET_LOOKUP_PERMISSION);
-        }
-        return lookup;
-    }
-
-    /**
      * Tokenizes the composite name along {@link #TOKEN_DELIMITER} characters,
      * as well as {@link NameCodec#decode(String) demangles} and interns the
      * tokens. The first two tokens are not demangled as they are supposed to
@@ -263,7 +323,7 @@ public interface CallSiteDescriptor {
      * @return an array of unmangled, interned tokens.
      */
     public static String[] tokenizeName(final String name) {
-        final StringTokenizer tok = new StringTokenizer(name, CallSiteDescriptor.TOKEN_DELIMITER);
+        final StringTokenizer tok = getNameTokenizer(name);
         final String[] tokens = new String[tok.countTokens()];
         for(int i = 0; i < tokens.length; ++i) {
             String token = tok.nextToken();
@@ -273,5 +333,61 @@ public interface CallSiteDescriptor {
             tokens[i] = token.intern();
         }
         return tokens;
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        if (obj == this) {
+            return true;
+        } else if (obj == null) {
+            return false;
+        } else if (obj.getClass() != getClass()) {
+            return false;
+        }
+        final CallSiteDescriptor other = (CallSiteDescriptor)obj;
+        return name.equals(other.name) && methodType.equals(other.methodType) &&
+                lookupsEqual(lookup, other.lookup);
+    }
+
+    /**
+     * Compares two lookup objects for value-based equality. They are considered
+     * equal if they have the same
+     * {@link java.lang.invoke.MethodHandles.Lookup#lookupClass()} and
+     * {@link java.lang.invoke.MethodHandles.Lookup#lookupModes()}.
+     * @param l1 first lookup
+     * @param l2 second lookup
+     * @return true if the two lookups are equal, false otherwise.
+     */
+    private static boolean lookupsEqual(final Lookup l1, final Lookup l2) {
+        return l1.lookupClass() == l2.lookupClass() && l1.lookupModes() == l2.lookupModes();
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode() + 31 * methodType.hashCode() + 31 * 31 * lookupHashCode(lookup);
+    }
+
+    /**
+     * Returns a value-based hash code for the passed lookup object. It is
+     * based on the lookup object's
+     * {@link java.lang.invoke.MethodHandles.Lookup#lookupClass()} and
+     * {@link java.lang.invoke.MethodHandles.Lookup#lookupModes()} values.
+     * @param lookup the lookup object.
+     * @return a hash code for the object..
+     */
+    protected static int lookupHashCode(final Lookup lookup) {
+        return lookup.lookupClass().hashCode() + 31 * lookup.lookupModes();
+    }
+
+    /**
+     * Returns the string representation of this call site descriptor, of the
+     * format {@code name(parameterTypes)returnType@lookup}.
+     */
+    @Override
+    public String toString() {
+        final String mt = methodType.toString();
+        final String l = lookup.toString();
+        final StringBuilder b = new StringBuilder(name.length() + mt.length() + 1 + l.length());
+        return b.append(name).append(mt).append("@").append(l).toString();
     }
 }
