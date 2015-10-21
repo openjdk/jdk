@@ -298,6 +298,7 @@ void G1GCPhaseTimes::note_gc_start(uint active_gc_threads, bool mark_in_progress
   assert(active_gc_threads > 0, "The number of threads must be > 0");
   assert(active_gc_threads <= _max_gc_threads, "The number of active threads must be <= the max number of threads");
   _active_gc_threads = active_gc_threads;
+  _cur_expand_heap_time_ms = 0.0;
 
   for (int i = 0; i < GCParPhasesSentinel; i++) {
     _gc_par_phases[i]->reset();
@@ -362,6 +363,9 @@ double G1GCPhaseTimes::accounted_time_ms() {
     // Subtract the time taken to clean the card table from the
     // current value of "other time"
     misc_time_ms += _cur_clear_ct_time_ms;
+
+    // Remove expand heap time from "other time"
+    misc_time_ms += _cur_expand_heap_time_ms;
 
     return misc_time_ms;
 }
@@ -536,6 +540,8 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
     }
   }
   print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
+  print_stats(1, "Expand Heap After Collection", _cur_expand_heap_time_ms);
+
   double misc_time_ms = pause_time_sec * MILLIUNITS - accounted_time_ms();
   print_stats(1, "Other", misc_time_ms);
   if (_cur_verify_before_time_ms > 0.0) {
