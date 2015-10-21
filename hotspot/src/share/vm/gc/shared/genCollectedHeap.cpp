@@ -644,46 +644,47 @@ void GenCollectedHeap::process_roots(StrongRootsScope* scope,
   }
 }
 
-void GenCollectedHeap::gen_process_roots(StrongRootsScope* scope,
-                                         GenerationType type,
+void GenCollectedHeap::young_process_roots(StrongRootsScope* scope,
+                                           OopsInGenClosure* root_closure,
+                                           OopsInGenClosure* old_gen_closure,
+                                           CLDClosure* cld_closure) {
+  MarkingCodeBlobClosure mark_code_closure(root_closure, CodeBlobToOopClosure::FixRelocations);
+
+  process_roots(scope, SO_ScavengeCodeCache, root_closure, root_closure,
+                cld_closure, cld_closure, &mark_code_closure);
+
+  if (!_process_strong_tasks->is_task_claimed(GCH_PS_younger_gens)) {
+    root_closure->reset_generation();
+  }
+
+  // When collection is parallel, all threads get to cooperate to do
+  // old generation scanning.
+  old_gen_closure->set_generation(_old_gen);
+  rem_set()->younger_refs_iterate(_old_gen, old_gen_closure, scope->n_threads());
+  old_gen_closure->reset_generation();
+
+  _process_strong_tasks->all_tasks_completed(scope->n_threads());
+}
+
+void GenCollectedHeap::old_process_roots(StrongRootsScope* scope,
                                          bool young_gen_as_roots,
                                          ScanningOption so,
                                          bool only_strong_roots,
-                                         OopsInGenClosure* not_older_gens,
-                                         OopsInGenClosure* older_gens,
+                                         OopsInGenClosure* root_closure,
                                          CLDClosure* cld_closure) {
-  const bool is_adjust_phase = !only_strong_roots && !young_gen_as_roots;
+  const bool is_moving_collection = !only_strong_roots && !young_gen_as_roots;
 
-  bool is_moving_collection = false;
-  if (type == YoungGen || is_adjust_phase) {
-    // young collections are always moving
-    is_moving_collection = true;
-  }
-
-  MarkingCodeBlobClosure mark_code_closure(not_older_gens, is_moving_collection);
-  OopsInGenClosure* weak_roots = only_strong_roots ? NULL : not_older_gens;
+  MarkingCodeBlobClosure mark_code_closure(root_closure, is_moving_collection);
+  OopsInGenClosure* weak_roots = only_strong_roots ? NULL : root_closure;
   CLDClosure* weak_cld_closure = only_strong_roots ? NULL : cld_closure;
 
-  process_roots(scope, so,
-                not_older_gens, weak_roots,
-                cld_closure, weak_cld_closure,
-                &mark_code_closure);
+  process_roots(scope, so, root_closure, weak_roots, cld_closure, weak_cld_closure, &mark_code_closure);
 
-  if (young_gen_as_roots) {
-    if (!_process_strong_tasks->is_task_claimed(GCH_PS_younger_gens)) {
-      if (type == OldGen) {
-        not_older_gens->set_generation(_young_gen);
-        _young_gen->oop_iterate(not_older_gens);
-      }
-      not_older_gens->reset_generation();
-    }
-  }
-  // When collection is parallel, all threads get to cooperate to do
-  // old generation scanning.
-  if (type == YoungGen) {
-    older_gens->set_generation(_old_gen);
-    rem_set()->younger_refs_iterate(_old_gen, older_gens, scope->n_threads());
-    older_gens->reset_generation();
+  if (young_gen_as_roots &&
+      !_process_strong_tasks->is_task_claimed(GCH_PS_younger_gens)) {
+    root_closure->set_generation(_young_gen);
+    _young_gen->oop_iterate(root_closure);
+    root_closure->reset_generation();
   }
 
   _process_strong_tasks->all_tasks_completed(scope->n_threads());

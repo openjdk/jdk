@@ -374,16 +374,7 @@ public:
   // asserted to be this type.
   static GenCollectedHeap* heap();
 
-  // Invoke the "do_oop" method of one of the closures "not_older_gens"
-  // or "older_gens" on root locations for the generations depending on
-  // the type.  (The "older_gens" closure is used for scanning references
-  // from older generations; "not_older_gens" is used everywhere else.)
-  // If "younger_gens_as_roots" is false, younger generations are
-  // not scanned as roots; in this case, the caller must be arranging to
-  // scan the younger generations itself.  (For example, a generation might
-  // explicitly mark reachable objects in younger generations, to avoid
-  // excess storage retention.)
-  // The "so" argument determines which of the roots
+  // The ScanningOption determines which of the roots
   // the closure is applied to:
   // "SO_None" does none;
   enum ScanningOption {
@@ -402,16 +393,21 @@ public:
                      CodeBlobToOopClosure* code_roots);
 
  public:
-  static const bool StrongAndWeakRoots = false;
-  static const bool StrongRootsOnly    = true;
+  void young_process_roots(StrongRootsScope* scope,
+                           OopsInGenClosure* root_closure,
+                           OopsInGenClosure* old_gen_closure,
+                           CLDClosure* cld_closure);
 
-  void gen_process_roots(StrongRootsScope* scope,
-                         GenerationType type,
+  // If "young_gen_as_roots" is false, younger generations are
+  // not scanned as roots; in this case, the caller must be arranging to
+  // scan the younger generations itself.  (For example, a generation might
+  // explicitly mark reachable objects in younger generations, to avoid
+  // excess storage retention.)
+  void old_process_roots(StrongRootsScope* scope,
                          bool young_gen_as_roots,
                          ScanningOption so,
                          bool only_strong_roots,
-                         OopsInGenClosure* not_older_gens,
-                         OopsInGenClosure* older_gens,
+                         OopsInGenClosure* root_closure,
                          CLDClosure* cld_closure);
 
   // Apply "root_closure" to all the weak roots of the system.

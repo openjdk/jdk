@@ -2340,13 +2340,11 @@ void CMSCollector::verify_after_remark_work_1() {
   {
     StrongRootsScope srs(1);
 
-    gch->gen_process_roots(&srs,
-                           GenCollectedHeap::OldGen,
+    gch->old_process_roots(&srs,
                            true,   // young gen as roots
                            GenCollectedHeap::ScanningOption(roots_scanning_options()),
                            should_unload_classes(),
                            &notOlder,
-                           NULL,
                            NULL);
   }
 
@@ -2414,13 +2412,11 @@ void CMSCollector::verify_after_remark_work_2() {
   {
     StrongRootsScope srs(1);
 
-    gch->gen_process_roots(&srs,
-                           GenCollectedHeap::OldGen,
+    gch->old_process_roots(&srs,
                            true,   // young gen as roots
                            GenCollectedHeap::ScanningOption(roots_scanning_options()),
                            should_unload_classes(),
                            &notOlder,
-                           NULL,
                            &cld_closure);
   }
 
@@ -2903,13 +2899,11 @@ void CMSCollector::checkpointRootsInitialWork() {
 
       StrongRootsScope srs(1);
 
-      gch->gen_process_roots(&srs,
-                             GenCollectedHeap::OldGen,
+      gch->old_process_roots(&srs,
                              true,   // young gen as roots
                              GenCollectedHeap::ScanningOption(roots_scanning_options()),
                              should_unload_classes(),
                              &notOlder,
-                             NULL,
                              &cld_closure);
     }
   }
@@ -4290,13 +4284,11 @@ void CMSParInitialMarkTask::work(uint worker_id) {
 
   CLDToOopClosure cld_closure(&par_mri_cl, true);
 
-  gch->gen_process_roots(_strong_roots_scope,
-                         GenCollectedHeap::OldGen,
+  gch->old_process_roots(_strong_roots_scope,
                          false,     // yg was scanned above
                          GenCollectedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
                          _collector->should_unload_classes(),
                          &par_mri_cl,
-                         NULL,
                          &cld_closure);
   assert(_collector->should_unload_classes()
          || (_collector->CMSCollector::roots_scanning_options() & GenCollectedHeap::SO_AllCodeCache),
@@ -4421,13 +4413,11 @@ void CMSParRemarkTask::work(uint worker_id) {
   // ---------- remaining roots --------------
   _timer.reset();
   _timer.start();
-  gch->gen_process_roots(_strong_roots_scope,
-                         GenCollectedHeap::OldGen,
+  gch->old_process_roots(_strong_roots_scope,
                          false,     // yg was scanned above
                          GenCollectedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
                          _collector->should_unload_classes(),
                          &par_mrias_cl,
-                         NULL,
                          NULL);     // The dirty klasses will be handled below
 
   assert(_collector->should_unload_classes()
@@ -4970,13 +4960,11 @@ void CMSCollector::do_remark_non_parallel() {
     gch->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
     StrongRootsScope srs(1);
 
-    gch->gen_process_roots(&srs,
-                           GenCollectedHeap::OldGen,
+    gch->old_process_roots(&srs,
                            true,  // young gen as roots
                            GenCollectedHeap::ScanningOption(roots_scanning_options()),
                            should_unload_classes(),
                            &mrias_cl,
-                           NULL,
                            NULL); // The dirty klasses will be handled below
 
     assert(should_unload_classes()
