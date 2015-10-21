@@ -30,8 +30,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 JNIHandleBlock* JNIHandles::_global_handles       = NULL;
 JNIHandleBlock* JNIHandles::_weak_global_handles  = NULL;
 oop             JNIHandles::_deleted_handle       = NULL;
@@ -281,7 +279,7 @@ JNIHandleBlock* JNIHandleBlock::allocate_block(Thread* thread)  {
       _blocks_allocated++;
       if (TraceJNIHandleAllocation) {
         tty->print_cr("JNIHandleBlock " INTPTR_FORMAT " allocated (%d total blocks)",
-                      block, _blocks_allocated);
+                      p2i(block), _blocks_allocated);
       }
       if (ZapJNIHandleArea) block->zap();
       #ifndef PRODUCT
@@ -396,7 +394,7 @@ void JNIHandleBlock::weak_oops_do(BoolObjectClosure* is_alive,
         } else {
           // The weakly referenced object is not alive, clear the reference by storing NULL
           if (TraceReferenceGC) {
-            tty->print_cr("Clearing JNI weak reference (" INTPTR_FORMAT ")", root);
+            tty->print_cr("Clearing JNI weak reference (" INTPTR_FORMAT ")", p2i(root));
           }
           *root = NULL;
         }
@@ -504,7 +502,7 @@ void JNIHandleBlock::rebuild_free_list() {
   }
   if (TraceJNIHandleAllocation) {
     tty->print_cr("Rebuild free list JNIHandleBlock " INTPTR_FORMAT " blocks=%d used=%d free=%d add=%d",
-      this, blocks, total-free, free, _allocate_before_rebuild);
+                  p2i(this), blocks, total-free, free, _allocate_before_rebuild);
   }
 }
 

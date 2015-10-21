@@ -25,7 +25,9 @@
 #ifndef SHARE_VM_RUNTIME_GLOBALS_HPP
 #define SHARE_VM_RUNTIME_GLOBALS_HPP
 
+#include <float.h>
 #include "utilities/debug.hpp"
+#include <float.h> // for DBL_MAX
 
 // use this for flags that are true per default in the tiered build
 // but false in non-tiered builds, and vice versa
@@ -176,7 +178,7 @@
 #endif
 #endif
 
-#if !defined(COMPILER1) && !defined(COMPILER2) && !defined(SHARK)
+#if !defined(COMPILER1) && !defined(COMPILER2) && !defined(SHARK) && !INCLUDE_JVMCI
 define_pd_global(bool, BackgroundCompilation,        false);
 define_pd_global(bool, UseTLAB,                      false);
 define_pd_global(bool, CICompileOSR,                 false);
@@ -211,11 +213,11 @@ define_pd_global(uint64_t,MaxRAM,                    1ULL*G);
 #define CI_COMPILER_COUNT 0
 #else
 
-#ifdef COMPILER2
+#if defined(COMPILER2) || INCLUDE_JVMCI
 #define CI_COMPILER_COUNT 2
 #else
 #define CI_COMPILER_COUNT 1
-#endif // COMPILER2
+#endif // COMPILER2 || INCLUDE_JVMCI
 
 #endif // no compilers
 
@@ -254,6 +256,7 @@ struct Flag {
     KIND_SHARK              = 1 << 15,
     KIND_LP64_PRODUCT       = 1 << 16,
     KIND_COMMERCIAL         = 1 << 17,
+    KIND_JVMCI              = 1 << 18,
 
     KIND_MASK = ~VALUE_ORIGIN_MASK
   };
@@ -527,7 +530,7 @@ public:
 // notproduct flags are settable / visible only during development and are not declared in the PRODUCT version
 
 // A flag must be declared with one of the following types:
-// bool, intx, uintx, size_t, ccstr, double, or uint64_t.
+// bool, int, uint, intx, uintx, size_t, ccstr, double, or uint64_t.
 // The type "ccstr" is an alias for "const char*" and is used
 // only in this file, because the macrology requires single-token type names.
 
@@ -700,6 +703,7 @@ public:
                                                                             \
   product(intx, UseSSE, 99,                                                 \
           "Highest supported SSE instructions set on x86/x64")              \
+          range(0, 99)                                                      \
                                                                             \
   product(bool, UseAES, false,                                              \
           "Control whether AES instructions can be used on x86/x64")        \
@@ -890,9 +894,11 @@ public:
   /* typically, at most a few retries are needed                    */      \
   product(intx, SuspendRetryCount, 50,                                      \
           "Maximum retry count for an external suspend request")            \
+          range(0, max_intx)                                                \
                                                                             \
   product(intx, SuspendRetryDelay, 5,                                       \
           "Milliseconds to delay per retry (* current_retry_count)")        \
+          range(0, max_intx)                                                \
                                                                             \
   product(bool, AssertOnSuspendWaitFailure, false,                          \
           "Assert/Guarantee on external suspend wait failure")              \
@@ -936,16 +942,6 @@ public:
                                                                             \
   notproduct(bool, VerifyCodeCache, false,                                  \
           "Verify code cache on memory allocation/deallocation")            \
-                                                                            \
-  develop(bool, ZapDeadCompiledLocals, false,                               \
-          "Zap dead locals in compiler frames")                             \
-                                                                            \
-  notproduct(bool, ZapDeadLocalsOld, false,                                 \
-          "Zap dead locals (old version, zaps all frames when "             \
-          "entering the VM")                                                \
-                                                                            \
-  notproduct(bool, CheckOopishValues, false,                                \
-          "Warn if value contains oop (requires ZapDeadLocals)")            \
                                                                             \
   develop(bool, UseMallocOnly, false,                                       \
           "Use only malloc/free for allocation (no resource area/arena)")   \
@@ -1108,8 +1104,14 @@ public:
   diagnostic(ccstr, PrintAssemblyOptions, NULL,                             \
           "Print options string passed to disassembler.so")                 \
                                                                             \
+  notproduct(bool, PrintNMethodStatistics, false,                           \
+          "Print a summary statistic for the generated nmethods")           \
+                                                                            \
   diagnostic(bool, PrintNMethods, false,                                    \
           "Print assembly code for nmethods when generated")                \
+                                                                            \
+  diagnostic(intx, PrintNMethodsAtLevel, -1,                                \
+          "Only print code for nmethods at the given compilation level")    \
                                                                             \
   diagnostic(bool, PrintNativeNMethods, false,                              \
           "Print assembly code for native nmethods when generated")         \
@@ -1258,6 +1260,7 @@ public:
                "Control emission of inline sync fast-path code")            \
                                                                             \
   product(intx, MonitorBound, 0, "Bound Monitor population")                \
+          range(0, max_jint)                                                \
                                                                             \
   product(bool, MonitorInUseLists, false, "Track Monitors for Deflation")   \
                                                                             \
@@ -1341,6 +1344,7 @@ public:
           "Maximum allowable local JNI handle capacity to "                 \
           "EnsureLocalCapacity() and PushLocalFrame(), "                    \
           "where <= 0 is unlimited, default: 65536")                        \
+          range(min_intx, max_intx)                                         \
                                                                             \
   product(bool, EagerXrunInit, false,                                       \
           "Eagerly initialize -Xrun libraries; allows startup profiling, "  \
@@ -1376,7 +1380,7 @@ public:
   product(intx, ContendedPaddingWidth, 128,                                 \
           "How many bytes to pad the fields/classes marked @Contended with")\
           range(0, 8192)                                                    \
-          constraint(ContendedPaddingWidthConstraintFunc,AtParse)           \
+          constraint(ContendedPaddingWidthConstraintFunc,AfterErgo)         \
                                                                             \
   product(bool, EnableContended, true,                                      \
           "Enable @Contended annotation support")                           \
@@ -1389,6 +1393,8 @@ public:
                                                                             \
   product(intx, BiasedLockingStartupDelay, 4000,                            \
           "Number of milliseconds to wait before enabling biased locking")  \
+          range(0, (intx)(max_jint-(max_jint%PeriodicTask::interval_gran))) \
+          constraint(BiasedLockingStartupDelayFunc,AfterErgo)               \
                                                                             \
   diagnostic(bool, PrintBiasedLockingStatistics, false,                     \
           "Print statistics of biased locking in JVM")                      \
@@ -1396,14 +1402,20 @@ public:
   product(intx, BiasedLockingBulkRebiasThreshold, 20,                       \
           "Threshold of number of revocations per type to try to "          \
           "rebias all objects in the heap of that type")                    \
+          range(0, max_intx)                                                \
+          constraint(BiasedLockingBulkRebiasThresholdFunc,AfterErgo)        \
                                                                             \
   product(intx, BiasedLockingBulkRevokeThreshold, 40,                       \
           "Threshold of number of revocations per type to permanently "     \
           "revoke biases of all objects in the heap of that type")          \
+          range(0, max_intx)                                                \
+          constraint(BiasedLockingBulkRevokeThresholdFunc,AfterErgo)        \
                                                                             \
   product(intx, BiasedLockingDecayTime, 25000,                              \
           "Decay time (in milliseconds) to re-enable bulk rebiasing of a "  \
           "type after previous bulk rebias")                                \
+          range(500, max_intx)                                              \
+          constraint(BiasedLockingDecayTimeFunc,AfterErgo)                  \
                                                                             \
   /* tracing */                                                             \
                                                                             \
@@ -1428,8 +1440,9 @@ public:
   product(bool, StressLdcRewrite, false,                                    \
           "Force ldc -> ldc_w rewrite during RedefineClasses")              \
                                                                             \
-  product(intx, TraceRedefineClasses, 0,                                    \
+  product(uintx, TraceRedefineClasses, 0,                                   \
           "Trace level for JVMTI RedefineClasses")                          \
+          range(0, 0xFFFFFFFF)                                              \
                                                                             \
   /* change to false by default sometime after Mustang */                   \
   product(bool, VerifyMergedCPBytecodes, true,                              \
@@ -1489,9 +1502,6 @@ public:
   develop(bool, TraceCompiledIC, false,                                     \
           "Trace changes of compiled IC")                                   \
                                                                             \
-  notproduct(bool, TraceZapDeadLocals, false,                               \
-          "Trace zapping dead locals")                                      \
-                                                                            \
   develop(bool, TraceStartupTime, false,                                    \
           "Trace setup time")                                               \
                                                                             \
@@ -1547,6 +1557,7 @@ public:
                                                                             \
   product(uint, ParallelGCThreads, 0,                                       \
           "Number of parallel threads parallel gc will use")                \
+          constraint(ParallelGCThreadsConstraintFunc,AfterErgo)             \
                                                                             \
   diagnostic(bool, UseSemaphoreGCThreadsSynchronization, true,              \
             "Use semaphore synchronization for the GC Threads, "            \
@@ -1568,24 +1579,9 @@ public:
   product(bool, TraceDynamicGCThreads, false,                               \
           "Trace the dynamic GC thread usage")                              \
                                                                             \
-  develop(bool, ParallelOldGCSplitALot, false,                              \
-          "Provoke splitting (copying data from a young gen space to "      \
-          "multiple destination spaces)")                                   \
-                                                                            \
-  develop(uintx, ParallelOldGCSplitInterval, 3,                             \
-          "How often to provoke splitting a young gen space")               \
-          range(0, max_uintx)                                               \
-                                                                            \
   product(uint, ConcGCThreads, 0,                                           \
           "Number of threads concurrent gc will use")                       \
-                                                                            \
-  product(size_t, YoungPLABSize, 4096,                                      \
-          "Size of young gen promotion LAB's (in HeapWords)")               \
-          constraint(YoungPLABSizeConstraintFunc,AfterMemoryInit)           \
-                                                                            \
-  product(size_t, OldPLABSize, 1024,                                        \
-          "Size of old gen promotion LAB's (in HeapWords), or Number        \
-          of blocks to attempt to claim when refilling CMS LAB's")          \
+          constraint(ConcGCThreadsConstraintFunc,AfterErgo)                 \
                                                                             \
   product(uintx, GCTaskTimeStampEntries, 200,                               \
           "Number of time stamp entries per gc worker thread")              \
@@ -1600,9 +1596,6 @@ public:
                                                                             \
   product(bool, ScavengeBeforeFullGC, true,                                 \
           "Scavenge youngest generation before each full GC.")              \
-                                                                            \
-  develop(bool, ScavengeWithObjectsInToSpace, false,                        \
-          "Allow scavenges to occur when to-space contains objects")        \
                                                                             \
   product(bool, UseConcMarkSweepGC, false,                                  \
           "Use Concurrent Mark-Sweep GC in the old generation")             \
@@ -1693,6 +1686,7 @@ public:
           "The number of strides per worker thread that we divide up the "  \
           "card table scanning work into")                                  \
           range(1, max_uintx)                                               \
+          constraint(ParGCStridesPerThreadConstraintFunc,AfterErgo)         \
                                                                             \
   diagnostic(intx, ParGCCardsPerStrideChunk, 256,                           \
           "The number of cards in each chunk of the parallel chunks used "  \
@@ -1715,12 +1709,13 @@ public:
           "Maximum size of CMS gen promotion LAB caches per worker "        \
           "per block size")                                                 \
           range(1, max_uintx)                                               \
+          constraint(CMSOldPLABMaxConstraintFunc,AfterMemoryInit)           \
                                                                             \
   product(size_t, CMSOldPLABMin, 16,                                        \
           "Minimum size of CMS gen promotion LAB caches per worker "        \
           "per block size")                                                 \
           range(1, max_uintx)                                               \
-          constraint(CMSOldPLABMinConstraintFunc,AfterErgo)                 \
+          constraint(CMSOldPLABMinConstraintFunc,AfterMemoryInit)           \
                                                                             \
   product(uintx, CMSOldPLABNumRefills, 4,                                   \
           "Nominal number of refills of CMS gen promotion LAB cache "       \
@@ -1779,24 +1774,29 @@ public:
   product(double, FLSLargestBlockCoalesceProximity, 0.99,                   \
           "CMS: the smaller the percentage the greater the coalescing "     \
           "force")                                                          \
+          range(0.0, 1.0)                                                   \
                                                                             \
   product(double, CMSSmallCoalSurplusPercent, 1.05,                         \
           "CMS: the factor by which to inflate estimated demand of small "  \
           "block sizes to prevent coalescing with an adjoining block")      \
+          range(0.0, DBL_MAX)                                               \
                                                                             \
   product(double, CMSLargeCoalSurplusPercent, 0.95,                         \
           "CMS: the factor by which to inflate estimated demand of large "  \
           "block sizes to prevent coalescing with an adjoining block")      \
+          range(0.0, DBL_MAX)                                               \
                                                                             \
   product(double, CMSSmallSplitSurplusPercent, 1.10,                        \
           "CMS: the factor by which to inflate estimated demand of small "  \
           "block sizes to prevent splitting to supply demand for smaller "  \
           "blocks")                                                         \
+          range(0.0, DBL_MAX)                                               \
                                                                             \
   product(double, CMSLargeSplitSurplusPercent, 1.00,                        \
           "CMS: the factor by which to inflate estimated demand of large "  \
           "block sizes to prevent splitting to supply demand for smaller "  \
           "blocks")                                                         \
+          range(0.0, DBL_MAX)                                               \
                                                                             \
   product(bool, CMSExtrapolateSweep, false,                                 \
           "CMS: cushion for block demand during sweep")                     \
@@ -1824,9 +1824,11 @@ public:
                                                                             \
   develop(intx, CMSDictionaryChoice, 0,                                     \
           "Use BinaryTreeDictionary as default in the CMS generation")      \
+          range(0, 2)                                                       \
                                                                             \
   product(uintx, CMSIndexedFreeListReplenish, 4,                            \
           "Replenish an indexed free list with this number of chunks")      \
+          range(1, max_uintx)                                               \
                                                                             \
   product(bool, CMSReplenishIntermediate, true,                             \
           "Replenish all intermediate free-list caches")                    \
@@ -1841,13 +1843,14 @@ public:
   develop(bool, CMSOverflowEarlyRestoration, false,                         \
           "Restore preserved marks early")                                  \
                                                                             \
-  product(size_t, MarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),             \
-          "Size of marking stack")                                          \
-                                                                            \
   /* where does the range max value of (max_jint - 1) come from? */         \
   product(size_t, MarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),         \
           "Maximum size of marking stack")                                  \
           range(1, (max_jint - 1))                                          \
+                                                                            \
+  product(size_t, MarkStackSize, NOT_LP64(32*K) LP64_ONLY(4*M),             \
+          "Size of marking stack")                                          \
+          constraint(MarkStackSizeConstraintFunc,AfterErgo)                 \
                                                                             \
   notproduct(bool, CMSMarkStackOverflowALot, false,                         \
           "Simulate frequent marking stack / work queue overflow")          \
@@ -1861,6 +1864,7 @@ public:
                                                                             \
   product(intx, CMSMaxAbortablePrecleanTime, 5000,                          \
           "Maximum time in abortable preclean (in milliseconds)")           \
+          range(0, max_intx)                                                \
                                                                             \
   product(uintx, CMSAbortablePrecleanMinWorkPerIteration, 100,              \
           "Nominal minimum work per abortable preclean iteration")          \
@@ -1868,6 +1872,7 @@ public:
   manageable(intx, CMSAbortablePrecleanWaitMillis, 100,                     \
           "Time that we sleep between iterations when not given "           \
           "enough work per iteration")                                      \
+          range(0, max_intx)                                                \
                                                                             \
   product(size_t, CMSRescanMultiple, 32,                                    \
           "Size (in cards) of CMS parallel rescan task")                    \
@@ -1974,6 +1979,8 @@ public:
                                                                             \
   product(uintx, CMSWorkQueueDrainThreshold, 10,                            \
           "Don't drain below this size per parallel worker/thief")          \
+          range(1, max_juint)                                               \
+          constraint(CMSWorkQueueDrainThresholdConstraintFunc,AfterErgo)    \
                                                                             \
   manageable(intx, CMSWaitDuration, 2000,                                   \
           "Time in milliseconds that CMS thread waits for young GC")        \
@@ -2173,6 +2180,7 @@ public:
                                                                             \
   product_pd(uint64_t, MaxRAM,                                              \
           "Real memory size (in bytes) used to set maximum heap size")      \
+          range(0, 0XFFFFFFFFFFFFFFFF)                                      \
                                                                             \
   product(size_t, ErgoHeapSizeLimit, 0,                                     \
           "Maximum ergonomically set heap size (in bytes); zero means use " \
@@ -2225,15 +2233,11 @@ public:
                                                                             \
   develop(intx, PSAdaptiveSizePolicyResizeVirtualSpaceAlot, -1,             \
           "Resize the virtual spaces of the young or old generations")      \
+          range(-1, 1)                                                      \
                                                                             \
   product(uintx, AdaptiveSizeThroughPutPolicy, 0,                           \
           "Policy for changing generation size for throughput goals")       \
-                                                                            \
-  develop(bool, PSAdjustTenuredGenForMinorPause, false,                     \
-          "Adjust tenured generation to achieve a minor pause goal")        \
-                                                                            \
-  develop(bool, PSAdjustYoungGenForMajorPause, false,                       \
-          "Adjust young generation to achieve a major pause goal")          \
+          range(0, 1)                                                       \
                                                                             \
   product(uintx, AdaptiveSizePolicyInitializingSteps, 20,                   \
           "Number of steps where heuristics is used before data is used")   \
@@ -2299,9 +2303,12 @@ public:
   product(uintx, MaxGCPauseMillis, max_uintx,                               \
           "Adaptive size policy maximum GC pause time goal in millisecond, "\
           "or (G1 Only) the maximum GC time per MMU time slice")            \
+          range(1, max_uintx)                                               \
+          constraint(MaxGCPauseMillisConstraintFunc,AfterMemoryInit)        \
                                                                             \
   product(uintx, GCPauseIntervalMillis, 0,                                  \
           "Time slice for MMU specification")                               \
+          constraint(GCPauseIntervalMillisConstraintFunc,AfterMemoryInit)   \
                                                                             \
   product(uintx, MaxGCMinorPauseMillis, max_uintx,                          \
           "Adaptive size policy maximum GC minor pause time goal "          \
@@ -2322,6 +2329,7 @@ public:
                                                                             \
   product(uintx, MinSurvivorRatio, 3,                                       \
           "Minimum ratio of young generation/survivor space size")          \
+          range(3, max_uintx)                                               \
                                                                             \
   product(uintx, InitialSurvivorRatio, 8,                                   \
           "Initial ratio of young generation/survivor space size")          \
@@ -2345,6 +2353,7 @@ public:
                                                                             \
   develop(uintx, AdaptiveSizePolicyGCTimeLimitThreshold, 5,                 \
           "Number of consecutive collections before gc time limit fires")   \
+          range(1, max_uintx)                                               \
                                                                             \
   product(bool, PrintAdaptiveSizePolicy, false,                             \
           "Print information about AdaptiveSizePolicy")                     \
@@ -2444,6 +2453,7 @@ public:
   develop(intx, ConcGCYieldTimeout, 0,                                      \
           "If non-zero, assert that GC threads yield within this "          \
           "number of milliseconds")                                         \
+          range(0, max_intx)                                                \
                                                                             \
   product(bool, PrintReferenceGC, false,                                    \
           "Print times spent handling reference objects during GC "         \
@@ -2482,6 +2492,8 @@ public:
   product(size_t, InitialBootClassLoaderMetaspaceSize,                      \
           NOT_LP64(2200*K) LP64_ONLY(4*M),                                  \
           "Initial size of the boot class loader data metaspace")           \
+          range(30*K, max_uintx/BytesPerWord)                               \
+          constraint(InitialBootClassLoaderMetaspaceSizeConstraintFunc, AfterErgo)\
                                                                             \
   product(bool, TraceYoungGenTime, false,                                   \
           "Trace accumulated time for young collection")                    \
@@ -2558,6 +2570,7 @@ public:
   experimental(double, ObjectCountCutOffPercent, 0.5,                       \
           "The percentage of the used heap that the instances of a class "  \
           "must occupy for the class to generate a trace event")            \
+          range(0.0, 100.0)                                                 \
                                                                             \
   /* GC log rotation setting */                                             \
                                                                             \
@@ -2670,10 +2683,13 @@ public:
   product(intx, PrintSafepointStatisticsCount, 300,                         \
           "Total number of safepoint statistics collected "                 \
           "before printing them out")                                       \
+          range(1, max_intx)                                                \
                                                                             \
   product(intx, PrintSafepointStatisticsTimeout,  -1,                       \
           "Print safepoint statistics only when safepoint takes "           \
           "more than PrintSafepointSatisticsTimeout in millis")             \
+  LP64_ONLY(range(-1, max_intx/MICROUNITS))                                 \
+  NOT_LP64(range(-1, max_intx))                                             \
                                                                             \
   product(bool, TraceSafepointCleanupTime, false,                           \
           "Print the break down of clean up tasks performed during "        \
@@ -2718,10 +2734,12 @@ public:
   diagnostic(intx, HotMethodDetectionLimit, 100000,                         \
           "Number of compiled code invocations after which "                \
           "the method is considered as hot by the flusher")                 \
+          range(1, max_jint)                                                \
                                                                             \
   diagnostic(intx, MinPassesBeforeFlush, 10,                                \
           "Minimum number of sweeper passes before an nmethod "             \
           "can be flushed")                                                 \
+          range(0, max_intx)                                                \
                                                                             \
   product(bool, UseCodeAging, true,                                         \
           "Insert counter to detect warm methods")                          \
@@ -2800,11 +2818,11 @@ public:
           "standard exit from VM if bytecode verify error "                 \
           "(only in debug mode)")                                           \
                                                                             \
-  notproduct(ccstr, AbortVMOnException, NULL,                               \
+  diagnostic(ccstr, AbortVMOnException, NULL,                               \
           "Call fatal if this exception is thrown.  Example: "              \
           "java -XX:AbortVMOnException=java.lang.NullPointerException Foo") \
                                                                             \
-  notproduct(ccstr, AbortVMOnExceptionMessage, NULL,                        \
+  diagnostic(ccstr, AbortVMOnExceptionMessage, NULL,                        \
           "Call fatal if the exception pointed by AbortVMOnException "      \
           "has this message")                                               \
                                                                             \
@@ -2838,7 +2856,7 @@ public:
                                                                             \
   develop(bool, CompileTheWorld, false,                                     \
           "Compile all methods in all classes in bootstrap class path "     \
-          "(stress test)")                                                  \
+            "(stress test)")                                                \
                                                                             \
   develop(bool, CompileTheWorldPreloadClasses, true,                        \
           "Preload all classes used by a class before start loading")       \
@@ -2876,13 +2894,16 @@ public:
                      "Y: Type profiling of return value at call; "          \
                      "X: Type profiling of parameters to methods; "         \
           "X, Y and Z in 0=off ; 1=jsr292 only; 2=all methods")             \
+          constraint(TypeProfileLevelConstraintFunc, AfterErgo)             \
                                                                             \
   product(intx, TypeProfileArgsLimit,     2,                                \
           "max number of call arguments to consider for type profiling")    \
+          range(0, 16)                                                      \
                                                                             \
   product(intx, TypeProfileParmsLimit,    2,                                \
           "max number of incoming parameters to consider for type profiling"\
           ", -1 for all")                                                   \
+          range(-1, 64)                                                     \
                                                                             \
   /* statistics */                                                          \
   develop(bool, CountCompiledCalls, false,                                  \
@@ -3041,13 +3062,17 @@ public:
           "Analyze bytecodes to estimate escape state of arguments")        \
                                                                             \
   product(intx, BCEATraceLevel, 0,                                          \
-          "How much tracing to do of bytecode escape analysis estimates")   \
+          "How much tracing to do of bytecode escape analysis estimates "   \
+          "(0-3)")                                                          \
+          range(0, 3)                                                       \
                                                                             \
   product(intx, MaxBCEAEstimateLevel, 5,                                    \
           "Maximum number of nested calls that are analyzed by BC EA")      \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, MaxBCEAEstimateSize, 150,                                   \
           "Maximum bytecode size of a method to be analyzed by BC EA")      \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx,  AllocatePrefetchStyle, 1,                                  \
           "0 = no prefetch, "                                               \
@@ -3057,24 +3082,33 @@ public:
           range(0, 3)                                                       \
                                                                             \
   product(intx,  AllocatePrefetchDistance, -1,                              \
-          "Distance to prefetch ahead of allocation pointer")               \
+          "Distance to prefetch ahead of allocation pointer. "              \
+          "-1: use system-specific value (automatically determined")        \
+          constraint(AllocatePrefetchDistanceConstraintFunc, AfterMemoryInit)\
                                                                             \
   product(intx,  AllocatePrefetchLines, 3,                                  \
           "Number of lines to prefetch ahead of array allocation pointer")  \
+          range(1, max_jint / 2)                                            \
                                                                             \
   product(intx,  AllocateInstancePrefetchLines, 1,                          \
           "Number of lines to prefetch ahead of instance allocation "       \
           "pointer")                                                        \
+          range(1, max_jint / 2)                                            \
                                                                             \
   product(intx,  AllocatePrefetchStepSize, 16,                              \
           "Step size in bytes of sequential prefetch instructions")         \
+          constraint(AllocatePrefetchStepSizeConstraintFunc,AfterMemoryInit)\
                                                                             \
   product(intx,  AllocatePrefetchInstr, 0,                                  \
           "Prefetch instruction to prefetch ahead of allocation pointer")   \
+          constraint(AllocatePrefetchInstrConstraintFunc, AfterErgo)        \
                                                                             \
   /* deoptimization */                                                      \
   develop(bool, TraceDeoptimization, false,                                 \
           "Trace deoptimization")                                           \
+                                                                            \
+  develop(bool, PrintDeoptimizationDetails, false,                          \
+          "Print more information about deoptimization")                    \
                                                                             \
   develop(bool, DebugDeoptimization, false,                                 \
           "Tracing various information while debugging deoptimization")     \
@@ -3082,21 +3116,29 @@ public:
   product(intx, SelfDestructTimer, 0,                                       \
           "Will cause VM to terminate after a given time (in minutes) "     \
           "(0 means off)")                                                  \
+          range(0, max_intx)                                                \
                                                                             \
   product(intx, MaxJavaStackTraceDepth, 1024,                               \
           "The maximum number of lines in the stack trace for Java "        \
           "exceptions (0 means all)")                                       \
+          range(0, max_jint/2)                                              \
                                                                             \
+  /* notice: the max range value here is max_jint, not max_intx  */         \
+  /* because of overflow issue                                   */         \
   NOT_EMBEDDED(diagnostic(intx, GuaranteedSafepointInterval, 1000,          \
           "Guarantee a safepoint (at least) every so many milliseconds "    \
           "(0 means none)"))                                                \
+  NOT_EMBEDDED(range(0, max_jint))                                          \
                                                                             \
   EMBEDDED_ONLY(product(intx, GuaranteedSafepointInterval, 0,               \
           "Guarantee a safepoint (at least) every so many milliseconds "    \
           "(0 means none)"))                                                \
+  EMBEDDED_ONLY(range(0, max_jint))                                         \
                                                                             \
   product(intx, SafepointTimeoutDelay, 10000,                               \
           "Delay in milliseconds for option SafepointTimeout")              \
+  LP64_ONLY(range(0, max_intx/MICROUNITS))                                  \
+  NOT_LP64(range(0, max_intx))                                              \
                                                                             \
   product(intx, NmethodSweepActivity, 10,                                   \
           "Removes cold nmethods from code cache if > 0. Higher values "    \
@@ -3137,30 +3179,38 @@ public:
                                                                             \
   product(intx, MaxInlineLevel, 9,                                          \
           "maximum number of nested calls that are inlined")                \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, MaxRecursiveInlineLevel, 1,                                 \
           "maximum number of nested recursive calls that are inlined")      \
+          range(0, max_jint)                                                \
                                                                             \
   develop(intx, MaxForceInlineLevel, 100,                                   \
           "maximum number of nested calls that are forced for inlining "    \
-          "(using CompilerOracle or marked w/ @ForceInline)")               \
+          "(using CompileCommand or marked w/ @ForceInline)")               \
+          range(0, max_jint)                                                \
                                                                             \
   product_pd(intx, InlineSmallCode,                                         \
           "Only inline already compiled methods if their code size is "     \
           "less than this")                                                 \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, MaxInlineSize, 35,                                          \
           "The maximum bytecode size of a method to be inlined")            \
+          range(0, max_jint)                                                \
                                                                             \
   product_pd(intx, FreqInlineSize,                                          \
           "The maximum bytecode size of a frequent method to be inlined")   \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, MaxTrivialSize, 6,                                          \
           "The maximum bytecode size of a trivial method to be inlined")    \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, MinInliningThreshold, 250,                                  \
           "The minimum invocation count a method needs to have to be "      \
           "inlined")                                                        \
+          range(0, max_jint)                                                \
                                                                             \
   develop(intx, MethodHistogramCutoff, 100,                                 \
           "The cutoff value for method invocation histogram (+CountCalls)") \
@@ -3180,6 +3230,7 @@ public:
   product(intx, ProfileIntervalsTicks, 100,                                 \
           "Number of ticks between printing of interval profile "           \
           "(+ProfileIntervals)")                                            \
+          range(0, max_intx)                                                \
                                                                             \
   notproduct(intx, ScavengeALotInterval,     1,                             \
           "Interval between which scavenge will occur with +ScavengeALot")  \
@@ -3213,17 +3264,24 @@ public:
   diagnostic(intx, MallocVerifyInterval,     0,                             \
           "If non-zero, verify C heap after every N calls to "              \
           "malloc/realloc/free")                                            \
+          range(0, max_intx)                                                \
                                                                             \
   diagnostic(intx, MallocVerifyStart,     0,                                \
           "If non-zero, start verifying C heap after Nth call to "          \
           "malloc/realloc/free")                                            \
+          range(0, max_intx)                                                \
                                                                             \
   diagnostic(uintx, MallocMaxTestWords,     0,                              \
           "If non-zero, maximum number of words that malloc/realloc can "   \
           "allocate (for testing only)")                                    \
+          range(0, max_uintx)                                               \
                                                                             \
-  product(intx, TypeProfileWidth,     2,                                    \
+  product(intx, TypeProfileWidth, 2,                                        \
           "Number of receiver types to record in call/cast profile")        \
+          range(0, 8)                                                       \
+                                                                            \
+  experimental(intx, MethodProfileWidth, 0,                                 \
+          "Number of methods to record in call profile")                    \
                                                                             \
   develop(intx, BciProfileWidth,      2,                                    \
           "Number of return bci's to record in ret profile")                \
@@ -3238,45 +3296,56 @@ public:
                                                                             \
   product(intx, PerMethodTrapLimit,  100,                                   \
           "Limit on traps (of one kind) in a method (includes inlines)")    \
+          range(0, max_jint)                                                \
                                                                             \
   experimental(intx, PerMethodSpecTrapLimit,  5000,                         \
           "Limit on speculative traps (of one kind) in a method "           \
           "(includes inlines)")                                             \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, PerBytecodeTrapLimit,  4,                                   \
           "Limit on traps (of one kind) at a particular BCI")               \
+          range(0, max_jint)                                                \
                                                                             \
   experimental(intx, SpecTrapLimitExtraEntries,  3,                         \
           "Extra method data trap entries for speculation")                 \
                                                                             \
   develop(intx, InlineFrequencyRatio,    20,                                \
           "Ratio of call site execution to caller method invocation")       \
+          range(0, max_jint)                                                \
                                                                             \
   develop_pd(intx, InlineFrequencyCount,                                    \
           "Count of call site execution necessary to trigger frequent "     \
           "inlining")                                                       \
+          range(0, max_jint)                                                \
                                                                             \
   develop(intx, InlineThrowCount,    50,                                    \
           "Force inlining of interpreted methods that throw this often")    \
+          range(0, max_jint)                                                \
                                                                             \
   develop(intx, InlineThrowMaxSize,   200,                                  \
           "Force inlining of throwing methods smaller than this")           \
+          range(0, max_jint)                                                \
                                                                             \
   develop(intx, ProfilerNodeSize,  1024,                                    \
           "Size in K to allocate for the Profile Nodes of each thread")     \
+          range(0, 1024)                                                    \
                                                                             \
   /* gc parameters */                                                       \
   product(size_t, InitialHeapSize, 0,                                       \
           "Initial heap size (in bytes); zero means use ergonomics")        \
+          constraint(InitialHeapSizeConstraintFunc,AfterErgo)               \
                                                                             \
   product(size_t, MaxHeapSize, ScaleForWordSize(96*M),                      \
           "Maximum heap size (in bytes)")                                   \
+          constraint(MaxHeapSizeConstraintFunc,AfterErgo)                   \
                                                                             \
   product(size_t, OldSize, ScaleForWordSize(4*M),                           \
           "Initial tenured generation size (in bytes)")                     \
                                                                             \
   product(size_t, NewSize, ScaleForWordSize(1*M),                           \
           "Initial new generation size (in bytes)")                         \
+          constraint(NewSizeConstraintFunc,AfterErgo)                       \
                                                                             \
   product(size_t, MaxNewSize, max_uintx,                                    \
           "Maximum new generation size (in bytes), max_uintx means set "    \
@@ -3286,12 +3355,23 @@ public:
           "Maximum size in bytes of objects allocated in DefNew "           \
           "generation; zero means no maximum")                              \
                                                                             \
-  product(size_t, TLABSize, 0,                                              \
-          "Starting TLAB size (in bytes); zero means set ergonomically")    \
-                                                                            \
   product(size_t, MinTLABSize, 2*K,                                         \
           "Minimum allowed TLAB size (in bytes)")                           \
           range(1, max_uintx)                                               \
+          constraint(MinTLABSizeConstraintFunc,AfterMemoryInit)             \
+                                                                            \
+  product(size_t, TLABSize, 0,                                              \
+          "Starting TLAB size (in bytes); zero means set ergonomically")    \
+          constraint(TLABSizeConstraintFunc,AfterMemoryInit)                \
+                                                                            \
+  product(size_t, YoungPLABSize, 4096,                                      \
+          "Size of young gen promotion LAB's (in HeapWords)")               \
+          constraint(YoungPLABSizeConstraintFunc,AfterMemoryInit)           \
+                                                                            \
+  product(size_t, OldPLABSize, 1024,                                        \
+          "Size of old gen promotion LAB's (in HeapWords), or Number "      \
+          "of blocks to attempt to claim when refilling CMS LAB's")         \
+          constraint(OldPLABSizeConstraintFunc,AfterMemoryInit)             \
                                                                             \
   product(uintx, TLABAllocationWeight, 35,                                  \
           "Allocation averaging weight")                                    \
@@ -3312,9 +3392,12 @@ public:
                                                                             \
   product(uintx, SurvivorRatio, 8,                                          \
           "Ratio of eden/survivor space size")                              \
+          range(1, max_uintx-2)                                             \
+          constraint(SurvivorRatioConstraintFunc,AfterMemoryInit)           \
                                                                             \
   product(uintx, NewRatio, 2,                                               \
           "Ratio of old/new generation sizes")                              \
+          range(0, max_uintx-1)                                             \
                                                                             \
   product_pd(size_t, NewSizeThreadIncrease,                                 \
           "Additional size added to desired new generation size per "       \
@@ -3322,9 +3405,11 @@ public:
                                                                             \
   product_pd(size_t, MetaspaceSize,                                         \
           "Initial size of Metaspaces (in bytes)")                          \
+          constraint(MetaspaceSizeConstraintFunc,AfterErgo)                 \
                                                                             \
   product(size_t, MaxMetaspaceSize, max_uintx,                              \
           "Maximum size of Metaspaces (in bytes)")                          \
+          constraint(MaxMetaspaceSizeConstraintFunc,AfterErgo)              \
                                                                             \
   product(size_t, CompressedClassSpaceSize, 1*G,                            \
           "Maximum size of class area in Metaspace when compressed "        \
@@ -3347,6 +3432,8 @@ public:
                                                                             \
   product(intx, SoftRefLRUPolicyMSPerMB, 1000,                              \
           "Number of milliseconds per MB of free space in the heap")        \
+          range(0, max_intx)                                                \
+          constraint(SoftRefLRUPolicyMSPerMBConstraintFunc,AfterMemoryInit) \
                                                                             \
   product(size_t, MinHeapDeltaBytes, ScaleForWordSize(128*K),               \
           "The minimum change in heap space due to GC (in bytes)")          \
@@ -3378,6 +3465,7 @@ public:
                                                                             \
   diagnostic(intx, VerifyGCLevel,     0,                                    \
           "Generation level at which to start +VerifyBefore/AfterGC")       \
+          range(0, 1)                                                       \
                                                                             \
   product(uintx, MaxTenuringThreshold,    15,                               \
           "Maximum value for tenuring threshold")                           \
@@ -3430,12 +3518,15 @@ public:
   product(intx, DeferThrSuspendLoopCount,     4000,                         \
           "(Unstable) Number of times to iterate in safepoint loop "        \
           "before blocking VM threads ")                                    \
+          range(-1, max_jint-1)                                             \
                                                                             \
   product(intx, DeferPollingPageLoopCount,     -1,                          \
           "(Unsafe,Unstable) Number of iterations in safepoint loop "       \
           "before changing safepoint polling page to RO ")                  \
+          range(-1, max_jint-1)                                             \
                                                                             \
   product(intx, SafepointSpinBeforeYield, 2000, "(Unstable)")               \
+          range(0, max_intx)                                                \
                                                                             \
   product(bool, PSChunkLargeArrays, true,                                   \
           "Process large arrays in chunks")                                 \
@@ -3447,66 +3538,80 @@ public:
   /* stack parameters */                                                    \
   product_pd(intx, StackYellowPages,                                        \
           "Number of yellow zone (recoverable overflows) pages")            \
-          range(1, max_intx)                                                \
+          range(MIN_STACK_YELLOW_PAGES, (DEFAULT_STACK_YELLOW_PAGES+5))     \
                                                                             \
   product_pd(intx, StackRedPages,                                           \
           "Number of red zone (unrecoverable overflows) pages")             \
-          range(1, max_intx)                                                \
+          range(MIN_STACK_RED_PAGES, (DEFAULT_STACK_RED_PAGES+2))           \
                                                                             \
   /* greater stack shadow pages can't generate instruction to bang stack */ \
   product_pd(intx, StackShadowPages,                                        \
           "Number of shadow zone (for overflow checking) pages "            \
           "this should exceed the depth of the VM and native call stack")   \
-          range(1, 50)                                                      \
+          range(MIN_STACK_SHADOW_PAGES, (DEFAULT_STACK_SHADOW_PAGES+30))    \
                                                                             \
   product_pd(intx, ThreadStackSize,                                         \
           "Thread Stack Size (in Kbytes)")                                  \
+          range(0, max_intx-os::vm_page_size())                             \
                                                                             \
   product_pd(intx, VMThreadStackSize,                                       \
           "Non-Java Thread Stack Size (in Kbytes)")                         \
+          range(0, max_intx/(1 * K))                                        \
                                                                             \
   product_pd(intx, CompilerThreadStackSize,                                 \
           "Compiler Thread Stack Size (in Kbytes)")                         \
+          range(0, max_intx)                                                \
                                                                             \
   develop_pd(size_t, JVMInvokeMethodSlack,                                  \
           "Stack space (bytes) required for JVM_InvokeMethod to complete")  \
                                                                             \
   /* code cache parameters                                    */            \
   /* ppc64/tiered compilation has large code-entry alignment. */            \
-  develop(uintx, CodeCacheSegmentSize, 64 PPC64_ONLY(+64) NOT_PPC64(TIERED_ONLY(+64)),\
+  develop(uintx, CodeCacheSegmentSize,                                      \
+          64 PPC64_ONLY(+64) NOT_PPC64(TIERED_ONLY(+64)),                   \
           "Code cache segment size (in bytes) - smallest unit of "          \
           "allocation")                                                     \
           range(1, 1024)                                                    \
+          constraint(CodeCacheSegmentSizeConstraintFunc, AfterErgo)         \
                                                                             \
   develop_pd(intx, CodeEntryAlignment,                                      \
           "Code entry alignment for generated code (in bytes)")             \
+          constraint(CodeEntryAlignmentConstraintFunc, AfterErgo)           \
                                                                             \
   product_pd(intx, OptoLoopAlignment,                                       \
           "Align inner loops to zero relative to this modulus")             \
+          constraint(OptoLoopAlignmentConstraintFunc, AfterErgo)            \
                                                                             \
   product_pd(uintx, InitialCodeCacheSize,                                   \
           "Initial code cache size (in bytes)")                             \
+          range(0, max_uintx)                                               \
                                                                             \
   develop_pd(uintx, CodeCacheMinimumUseSpace,                               \
           "Minimum code cache size (in bytes) required to start VM.")       \
+          range(0, max_uintx)                                               \
                                                                             \
   product(bool, SegmentedCodeCache, false,                                  \
           "Use a segmented code cache")                                     \
                                                                             \
   product_pd(uintx, ReservedCodeCacheSize,                                  \
           "Reserved code cache size (in bytes) - maximum code cache size")  \
+          range(0, max_uintx)                                               \
                                                                             \
   product_pd(uintx, NonProfiledCodeHeapSize,                                \
           "Size of code heap with non-profiled methods (in bytes)")         \
+          range(0, max_uintx)                                               \
                                                                             \
   product_pd(uintx, ProfiledCodeHeapSize,                                   \
           "Size of code heap with profiled methods (in bytes)")             \
+          range(0, max_uintx)                                               \
                                                                             \
   product_pd(uintx, NonNMethodCodeHeapSize,                                 \
           "Size of code heap with non-nmethods (in bytes)")                 \
+          range(0, max_uintx)                                               \
                                                                             \
   product_pd(uintx, CodeCacheExpansionSize,                                 \
           "Code cache expansion size (in bytes)")                           \
+          range(0, max_uintx)                                               \
                                                                             \
   develop_pd(uintx, CodeCacheMinBlockLength,                                \
           "Minimum number of segments in a code cache block")               \
@@ -3636,10 +3741,12 @@ public:
   product(intx, CompilerThreadPriority, -1,                                 \
           "The native priority at which compiler threads should run "       \
           "(-1 means no change)")                                           \
+          constraint(CompilerThreadPriorityConstraintFunc, AfterErgo)       \
                                                                             \
   product(intx, VMThreadPriority, -1,                                       \
           "The native priority at which the VM thread should run "          \
           "(-1 means no change)")                                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(bool, CompilerThreadHintNoPreempt, true,                          \
           "(Solaris only) Give compiler threads an extra quanta")           \
@@ -3649,33 +3756,43 @@ public:
                                                                             \
   product(intx, JavaPriority1_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority2_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority3_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority4_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority5_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority6_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority7_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority8_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority9_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority10_To_OSPriority,-1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   experimental(bool, UseCriticalJavaThreadPriority, false,                  \
           "Java thread priority 10 maps to critical scheduling priority")   \
@@ -3708,6 +3825,7 @@ public:
   /* recompilation */                                                       \
   product_pd(intx, CompileThreshold,                                        \
           "number of interpreted method invocations before (re-)compiling") \
+          constraint(CompileThresholdConstraintFunc, AfterErgo)             \
                                                                             \
   product(double, CompileThresholdScaling, 1.0,                             \
           "Factor to control when first compilation happens "               \
@@ -3721,90 +3839,115 @@ public:
           "If a value is specified for a method, compilation thresholds "   \
           "for that method are scaled by both the value of the global flag "\
           "and the value of the per-method flag.")                          \
+          range(0.0, DBL_MAX)                                               \
                                                                             \
   product(intx, Tier0InvokeNotifyFreqLog, 7,                                \
           "Interpreter (tier 0) invocation notification frequency")         \
+          range(0, 30)                                                      \
                                                                             \
   product(intx, Tier2InvokeNotifyFreqLog, 11,                               \
           "C1 without MDO (tier 2) invocation notification frequency")      \
+          range(0, 30)                                                      \
                                                                             \
   product(intx, Tier3InvokeNotifyFreqLog, 10,                               \
           "C1 with MDO profiling (tier 3) invocation notification "         \
           "frequency")                                                      \
+          range(0, 30)                                                      \
                                                                             \
   product(intx, Tier23InlineeNotifyFreqLog, 20,                             \
           "Inlinee invocation (tiers 2 and 3) notification frequency")      \
+          range(0, 30)                                                      \
                                                                             \
   product(intx, Tier0BackedgeNotifyFreqLog, 10,                             \
           "Interpreter (tier 0) invocation notification frequency")         \
+          range(0, 30)                                                      \
                                                                             \
   product(intx, Tier2BackedgeNotifyFreqLog, 14,                             \
           "C1 without MDO (tier 2) invocation notification frequency")      \
+          range(0, 30)                                                      \
                                                                             \
   product(intx, Tier3BackedgeNotifyFreqLog, 13,                             \
           "C1 with MDO profiling (tier 3) invocation notification "         \
           "frequency")                                                      \
+          range(0, 30)                                                      \
                                                                             \
   product(intx, Tier2CompileThreshold, 0,                                   \
           "threshold at which tier 2 compilation is invoked")               \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier2BackEdgeThreshold, 0,                                  \
           "Back edge threshold at which tier 2 compilation is invoked")     \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3InvocationThreshold, 200,                              \
           "Compile if number of method invocations crosses this "           \
           "threshold")                                                      \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3MinInvocationThreshold, 100,                           \
           "Minimum invocation to compile at tier 3")                        \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3CompileThreshold, 2000,                                \
           "Threshold at which tier 3 compilation is invoked (invocation "   \
-          "minimum must be satisfied")                                      \
+          "minimum must be satisfied)")                                     \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3BackEdgeThreshold,  60000,                             \
           "Back edge threshold at which tier 3 OSR compilation is invoked") \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier4InvocationThreshold, 5000,                             \
           "Compile if number of method invocations crosses this "           \
           "threshold")                                                      \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier4MinInvocationThreshold, 600,                           \
           "Minimum invocation to compile at tier 4")                        \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier4CompileThreshold, 15000,                               \
           "Threshold at which tier 4 compilation is invoked (invocation "   \
           "minimum must be satisfied")                                      \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier4BackEdgeThreshold, 40000,                              \
           "Back edge threshold at which tier 4 OSR compilation is invoked") \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3DelayOn, 5,                                            \
           "If C2 queue size grows over this amount per compiler thread "    \
           "stop compiling at tier 3 and start compiling at tier 2")         \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3DelayOff, 2,                                           \
           "If C2 queue size is less than this amount per compiler thread "  \
           "allow methods compiled at tier 2 transition to tier 3")          \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier3LoadFeedback, 5,                                       \
           "Tier 3 thresholds will increase twofold when C1 queue size "     \
           "reaches this amount per compiler thread")                        \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, Tier4LoadFeedback, 3,                                       \
           "Tier 4 thresholds will increase twofold when C2 queue size "     \
           "reaches this amount per compiler thread")                        \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, TieredCompileTaskTimeout, 50,                               \
           "Kill compile task if method was not used within "                \
           "given timeout in milliseconds")                                  \
+          range(0, max_intx)                                                \
                                                                             \
   product(intx, TieredStopAtLevel, 4,                                       \
           "Stop at given compilation level")                                \
+          range(0, 4)                                                       \
                                                                             \
   product(intx, Tier0ProfilingStartPercentage, 200,                         \
           "Start profiling in interpreter if the counters exceed tier 3 "   \
           "thresholds by the specified percentage")                         \
+          range(0, max_jint)                                                \
                                                                             \
   product(uintx, IncreaseFirstTierCompileThresholdAt, 50,                   \
           "Increase the compile threshold for C1 compilation if the code "  \
@@ -3813,9 +3956,11 @@ public:
                                                                             \
   product(intx, TieredRateUpdateMinTime, 1,                                 \
           "Minimum rate sampling interval (in milliseconds)")               \
+          range(0, max_intx)                                                \
                                                                             \
   product(intx, TieredRateUpdateMaxTime, 25,                                \
           "Maximum rate sampling interval (in milliseconds)")               \
+          range(0, max_intx)                                                \
                                                                             \
   product_pd(bool, TieredCompilation,                                       \
           "Enable tiered compilation")                                      \
@@ -3826,6 +3971,7 @@ public:
   product_pd(intx, OnStackReplacePercentage,                                \
           "NON_TIERED number of method invocations/branches (expressed as " \
           "% of CompileThreshold) before (re-)compiling OSR code")          \
+          constraint(OnStackReplacePercentageConstraintFunc, AfterErgo)     \
                                                                             \
   product(intx, InterpreterProfilePercentage, 33,                           \
           "NON_TIERED number of method invocations/branches (expressed as " \
@@ -3856,6 +4002,7 @@ public:
                                                                             \
   product(size_t, MaxDirectMemorySize, 0,                                   \
           "Maximum total size of NIO direct-buffer allocations")            \
+          range(0, (size_t)SIZE_MAX)                                        \
                                                                             \
   /* Flags used for temporary code during development  */                   \
                                                                             \
@@ -3884,6 +4031,8 @@ public:
                                                                             \
   product(intx, PerfDataSamplingInterval, 50,                               \
           "Data sampling interval (in milliseconds)")                       \
+          range(PeriodicTask::min_interval, max_jint)                       \
+          constraint(PerfDataSamplingIntervalFunc, AfterErgo)               \
                                                                             \
   develop(bool, PerfTraceDataCreation, false,                               \
           "Trace creation of Performance Data Entries")                     \
@@ -3897,9 +4046,11 @@ public:
   product(intx, PerfDataMemorySize, 64*K,                                   \
           "Size of performance data memory region. Will be rounded "        \
           "up to a multiple of the native os page size.")                   \
+          range(128, 32*64*K)                                               \
                                                                             \
   product(intx, PerfMaxStringConstLength, 1024,                             \
           "Maximum PerfStringConstant string length before truncation")     \
+          range(32, 32*K)                                                   \
                                                                             \
   product(bool, PerfAllowAtExitRegistration, false,                         \
           "Allow registration of atexit() methods")                         \
@@ -3959,10 +4110,10 @@ public:
           "If PrintSharedArchiveAndExit is true, also print the shared "    \
           "dictionary")                                                     \
                                                                             \
-  product(size_t, SharedReadWriteSize,  NOT_LP64(12*M) LP64_ONLY(16*M),     \
+  product(size_t, SharedReadWriteSize, NOT_LP64(12*M) LP64_ONLY(16*M),      \
           "Size of read-write space for metadata (in bytes)")               \
                                                                             \
-  product(size_t, SharedReadOnlySize,  NOT_LP64(12*M) LP64_ONLY(16*M),      \
+  product(size_t, SharedReadOnlySize, NOT_LP64(12*M) LP64_ONLY(16*M),       \
           "Size of read-only space for metadata (in bytes)")                \
                                                                             \
   product(uintx, SharedMiscDataSize,    NOT_LP64(2*M) LP64_ONLY(4*M),       \
@@ -3977,6 +4128,7 @@ public:
                                                                             \
   product(uintx, SharedSymbolTableBucketSize, 4,                            \
           "Average number of symbols per bucket in shared table")           \
+          range(2, 246)                                                     \
                                                                             \
   diagnostic(bool, IgnoreUnverifiableClassesDuringDump, false,              \
           "Do not quit -Xshare:dump even if we encounter unverifiable "     \

@@ -117,6 +117,7 @@ class InstanceKlass: public Klass {
                 int itable_len,
                 int static_field_size,
                 int nonstatic_oop_map_size,
+                unsigned kind,
                 ReferenceType rt,
                 AccessFlags access_flags,
                 bool is_anonymous);
@@ -199,16 +200,30 @@ class InstanceKlass: public Klass {
   bool            _is_marked_dependent;  // used for marking during flushing and deoptimization
   bool            _has_unloaded_dependent;
 
+  // The low two bits of _misc_flags contains the kind field.
+  // This can be used to quickly discriminate among the four kinds of
+  // InstanceKlass.
+
+  static const unsigned _misc_kind_field_size = 2;
+  static const unsigned _misc_kind_field_pos  = 0;
+  static const unsigned _misc_kind_field_mask = (1u << _misc_kind_field_size) - 1u;
+
+  static const unsigned _misc_kind_other        = 0; // concrete InstanceKlass
+  static const unsigned _misc_kind_reference    = 1; // InstanceRefKlass
+  static const unsigned _misc_kind_class_loader = 2; // InstanceClassLoaderKlass
+  static const unsigned _misc_kind_mirror       = 3; // InstanceMirrorKlass
+
+  // Start after _misc_kind field.
   enum {
-    _misc_rewritten                = 1 << 0, // methods rewritten.
-    _misc_has_nonstatic_fields     = 1 << 1, // for sizing with UseCompressedOops
-    _misc_should_verify_class      = 1 << 2, // allow caching of preverification
-    _misc_is_anonymous             = 1 << 3, // has embedded _host_klass field
-    _misc_is_contended             = 1 << 4, // marked with contended annotation
-    _misc_has_default_methods      = 1 << 5, // class/superclass/implemented interfaces has default methods
-    _misc_declares_default_methods = 1 << 6, // directly declares default methods (any access)
-    _misc_has_been_redefined       = 1 << 7, // class has been redefined
-    _misc_is_scratch_class         = 1 << 8  // class is the redefined scratch class
+    _misc_rewritten                = 1 << 2, // methods rewritten.
+    _misc_has_nonstatic_fields     = 1 << 3, // for sizing with UseCompressedOops
+    _misc_should_verify_class      = 1 << 4, // allow caching of preverification
+    _misc_is_anonymous             = 1 << 5, // has embedded _host_klass field
+    _misc_is_contended             = 1 << 6, // marked with contended annotation
+    _misc_has_default_methods      = 1 << 7, // class/superclass/implemented interfaces has default methods
+    _misc_declares_default_methods = 1 << 8, // directly declares default methods (any access)
+    _misc_has_been_redefined       = 1 << 9, // class has been redefined
+    _misc_is_scratch_class         = 1 << 10 // class is the redefined scratch class
   };
   u2              _misc_flags;
   u2              _minor_version;        // minor version number of class file
@@ -667,6 +682,28 @@ class InstanceKlass: public Klass {
     _misc_flags |= _misc_is_scratch_class;
   }
 
+private:
+
+  void set_kind(unsigned kind) {
+    assert(kind <= _misc_kind_field_mask, "Invalid InstanceKlass kind");
+    unsigned fmask = _misc_kind_field_mask << _misc_kind_field_pos;
+    unsigned flags = _misc_flags & ~fmask;
+    _misc_flags = (flags | (kind << _misc_kind_field_pos));
+  }
+
+  bool is_kind(unsigned desired) const {
+    unsigned kind = (_misc_flags >> _misc_kind_field_pos) & _misc_kind_field_mask;
+    return kind == desired;
+  }
+
+public:
+
+  // Other is anything that is not one of the more specialized kinds of InstanceKlass.
+  bool is_other_instance_klass() const        { return is_kind(_misc_kind_other); }
+  bool is_reference_instance_klass() const    { return is_kind(_misc_kind_reference); }
+  bool is_mirror_instance_klass() const       { return is_kind(_misc_kind_mirror); }
+  bool is_class_loader_instance_klass() const { return is_kind(_misc_kind_class_loader); }
+
   void init_previous_versions() {
     _previous_versions = NULL;
   }
@@ -800,7 +837,7 @@ class InstanceKlass: public Klass {
   // maintenance of deoptimization dependencies
   int mark_dependent_nmethods(DepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
-  void remove_dependent_nmethod(nmethod* nm);
+  void remove_dependent_nmethod(nmethod* nm, bool delete_immediately);
 
   // On-stack replacement support
   nmethod* osr_nmethods_head() const         { return _osr_nmethods_head; };
@@ -885,9 +922,8 @@ class InstanceKlass: public Klass {
 
   // Casting from Klass*
   static InstanceKlass* cast(Klass* k) {
-    assert(k == NULL || k->is_klass(), "must be");
     assert(k == NULL || k->oop_is_instance(), "cast to InstanceKlass");
-    return (InstanceKlass*) k;
+    return static_cast<InstanceKlass*>(k);
   }
 
   InstanceKlass* java_super() const {
@@ -985,6 +1021,7 @@ class InstanceKlass: public Klass {
   void adjust_default_methods(InstanceKlass* holder, bool* trace_name_printed);
 #endif // INCLUDE_JVMTI
 
+  void clean_weak_instanceklass_links(BoolObjectClosure* is_alive);
   void clean_implementors_list(BoolObjectClosure* is_alive);
   void clean_method_data(BoolObjectClosure* is_alive);
   void clean_dependent_nmethods();
@@ -1313,6 +1350,7 @@ class nmethodBucket: public CHeapObj<mtClass> {
 
   static int mark_dependent_nmethods(nmethodBucket* deps, DepChange& changes);
   static nmethodBucket* add_dependent_nmethod(nmethodBucket* deps, nmethod* nm);
+  static bool remove_dependent_nmethod(nmethodBucket** deps, nmethod* nm, bool delete_immediately);
   static bool remove_dependent_nmethod(nmethodBucket* deps, nmethod* nm);
   static nmethodBucket* clean_dependent_nmethods(nmethodBucket* deps);
 #ifndef PRODUCT

@@ -58,12 +58,12 @@ Generation::Generation(ReservedSpace rs, size_t initial_size) :
           (HeapWord*)_virtual_space.high_boundary());
 }
 
-GenerationSpec* Generation::spec() {
+size_t Generation::initial_size() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   if (gch->is_young_gen(this)) {
-    return gch->gen_policy()->young_gen_spec();
+    return gch->gen_policy()->young_gen_spec()->init_size();
   }
-  return gch->gen_policy()->old_gen_spec();
+  return gch->gen_policy()->old_gen_spec()->init_size();
 }
 
 size_t Generation::max_capacity() const {
@@ -293,7 +293,7 @@ void Generation::oop_iterate(ExtendedOopClosure* cl) {
 void Generation::younger_refs_in_space_iterate(Space* sp,
                                                OopsInGenClosure* cl,
                                                uint n_threads) {
-  GenRemSet* rs = GenCollectedHeap::heap()->rem_set();
+  CardTableRS* rs = GenCollectedHeap::heap()->rem_set();
   rs->younger_refs_in_space_iterate(sp, cl, n_threads);
 }
 

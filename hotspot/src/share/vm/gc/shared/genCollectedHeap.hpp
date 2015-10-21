@@ -64,8 +64,8 @@ private:
   Generation* _young_gen;
   Generation* _old_gen;
 
-  // The singleton Gen Remembered Set.
-  GenRemSet* _rem_set;
+  // The singleton CardTable Remembered Set.
+  CardTableRS* _rem_set;
 
   // The generational collector policy.
   GenCollectorPolicy* _gen_policy;
@@ -125,8 +125,6 @@ public:
   GenCollectedHeap(GenCollectorPolicy *policy);
 
   WorkGang* workers() const { return _workers; }
-
-  GCStats* gc_stats(Generation* generation) const;
 
   // Returns JNI_OK on success
   virtual jint initialize();
@@ -361,9 +359,9 @@ public:
   // collection.
   virtual bool is_maximal_no_gc() const;
 
-  // This function returns the "GenRemSet" object that allows us to scan
+  // This function returns the CardTableRS object that allows us to scan
   // generations in a fully generational heap.
-  GenRemSet* rem_set() { return _rem_set; }
+  CardTableRS* rem_set() { return _rem_set; }
 
   // Convenience function to be used in situations where the heap type can be
   // asserted to be this type.

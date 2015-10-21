@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @ignore 8134286
  * @bug 8023014
  * @summary Test ensures that there is no crash if there is not enough ReservedCodeCacheSize
  *          to initialize all compiler threads. The option -Xcomp gives the VM more time to

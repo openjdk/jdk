@@ -114,7 +114,7 @@ bool InlineTree::should_inline(ciMethod* callee_method, ciMethod* caller_method,
       CompileTask::print_inline_indent(inline_level());
       tty->print_cr("Inlined method is hot: ");
     }
-    set_msg("force inline by CompilerOracle");
+    set_msg("force inline by CompileCommand");
     _forced_inline = true;
     return true;
   }
@@ -223,12 +223,12 @@ bool InlineTree::should_not_inline(ciMethod *callee_method,
 
   // ignore heuristic controls on inlining
   if (callee_method->should_inline()) {
-    set_msg("force inline by CompilerOracle");
+    set_msg("force inline by CompileCommand");
     return false;
   }
 
   if (callee_method->should_not_inline()) {
-    set_msg("disallowed by CompilerOracle");
+    set_msg("disallowed by CompileCommand");
     return true;
   }
 
@@ -470,11 +470,6 @@ bool pass_initial_checks(ciMethod* caller_method, int caller_bci, ciMethod* call
       }
     }
   }
-  // We will attempt to see if a class/field/etc got properly loaded.  If it
-  // did not, it may attempt to throw an exception during our probing.  Catch
-  // and ignore such exceptions and do not attempt to compile the method.
-  if( callee_method->should_exclude() )  return false;
-
   return true;
 }
 

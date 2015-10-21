@@ -191,7 +191,7 @@ uint LiveRangeMap::find_const(uint lrg) const {
   return next;
 }
 
-PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher)
+PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool scheduling_info_generated)
   : PhaseRegAlloc(unique, cfg, matcher,
 #ifndef PRODUCT
        print_chaitin_statistics
@@ -205,6 +205,11 @@ PhaseChaitin::PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher)
   , _spilled_twice(Thread::current()->resource_area())
   , _lo_degree(0), _lo_stk_degree(0), _hi_degree(0), _simplified(0)
   , _oldphi(unique)
+  , _scheduling_info_generated(scheduling_info_generated)
+  , _sched_int_pressure(0, INTPRESSURE)
+  , _sched_float_pressure(0, FLOATPRESSURE)
+  , _scratch_int_pressure(0, INTPRESSURE)
+  , _scratch_float_pressure(0, FLOATPRESSURE)
 #ifndef PRODUCT
   , _trace_spilling(TraceSpilling || C->method_has_option("TraceSpilling"))
 #endif
@@ -350,7 +355,7 @@ void PhaseChaitin::Register_Allocate() {
   // all copy-related live ranges low and then using the max copy-related
   // live range as a cut-off for LIVE and the IFG.  In other words, I can
   // build a subset of LIVE and IFG just for copies.
-  PhaseLive live(_cfg, _lrg_map.names(), &live_arena);
+  PhaseLive live(_cfg, _lrg_map.names(), &live_arena, false);
 
   // Need IFG for coalescing and coloring
   PhaseIFG ifg(&live_arena);
@@ -690,6 +695,29 @@ void PhaseChaitin::de_ssa() {
   _lrg_map.reset_uf_map(lr_counter);
 }
 
+void PhaseChaitin::mark_ssa() {
+  // Use ssa names to populate the live range maps or if no mask
+  // is available, use the 0 entry.
+  uint max_idx = 0;
+  for ( uint i = 0; i < _cfg.number_of_blocks(); i++ ) {
+    Block* block = _cfg.get_block(i);
+    uint cnt = block->number_of_nodes();
+
+    // Handle all the normal Nodes in the block
+    for ( uint j = 0; j < cnt; j++ ) {
+      Node *n = block->get_node(j);
+      // Pre-color to the zero live range, or pick virtual register
+      const RegMask &rm = n->out_RegMask();
+      _lrg_map.map(n->_idx, rm.is_NotEmpty() ? n->_idx : 0);
+      max_idx = (n->_idx > max_idx) ? n->_idx : max_idx;
+    }
+  }
+  _lrg_map.set_max_lrg_id(max_idx+1);
+
+  // Reset the Union-Find mapping to be identity
+  _lrg_map.reset_uf_map(max_idx+1);
+}
+
 
 // Gather LiveRanGe information, including register masks.  Modification of
 // cisc spillable in_RegMasks should not be done before AggressiveCoalesce.
@@ -707,7 +735,9 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
     for (uint j = 1; j < block->number_of_nodes(); j++) {
       Node* n = block->get_node(j);
       uint input_edge_start =1; // Skip control most nodes
+      bool is_machine_node = false;
       if (n->is_Mach()) {
+        is_machine_node = true;
         input_edge_start = n->as_Mach()->oper_input_base();
       }
       uint idx = n->is_Copy();
@@ -929,6 +959,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           // Convert operand number to edge index number
           inp = n->as_Mach()->operand_index(inp);
       }
+
       // Prepare register mask for each input
       for( uint k = input_edge_start; k < cnt; k++ ) {
         uint vreg = _lrg_map.live_range_id(n->in(k));
@@ -946,6 +977,12 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
           }
 #endif
           n->as_Mach()->use_cisc_RegMask();
+        }
+
+        if (is_machine_node && _scheduling_info_generated) {
+          MachNode* cur_node = n->as_Mach();
+          // this is cleaned up by register allocation
+          if (k >= cur_node->num_opnds()) continue;
         }
 
         LRG &lrg = lrgs(vreg);
@@ -989,7 +1026,7 @@ void PhaseChaitin::gather_lrg_masks( bool after_aggressive ) {
         // double can interfere with TWO aligned pairs, or effectively
         // FOUR registers!
 #ifdef ASSERT
-        if (is_vect) {
+        if (is_vect && !_scheduling_info_generated) {
           if (lrg.num_regs() != 0) {
             assert(lrgmask.is_aligned_sets(lrg.num_regs()), "vector should be aligned");
             assert(!lrg._fat_proj, "sanity");
@@ -1733,7 +1770,7 @@ Node *PhaseChaitin::find_base_for_derived( Node **derived_base_map, Node *derive
 
   // Check for AddP-related opcodes
   if (!derived->is_Phi()) {
-    assert(derived->as_Mach()->ideal_Opcode() == Op_AddP, err_msg_res("but is: %s", derived->Name()));
+    assert(derived->as_Mach()->ideal_Opcode() == Op_AddP, "but is: %s", derived->Name());
     Node *base = derived->in(AddPNode::Base);
     derived_base_map[derived->_idx] = base;
     return base;

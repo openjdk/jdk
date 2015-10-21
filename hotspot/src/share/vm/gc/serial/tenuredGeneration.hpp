@@ -58,20 +58,13 @@ class TenuredGeneration: public CardGeneration {
  public:
   TenuredGeneration(ReservedSpace rs,
                     size_t initial_byte_size,
-                    GenRemSet* remset);
+                    CardTableRS* remset);
 
   Generation::Name kind() { return Generation::MarkSweepCompact; }
 
   // Printing
   const char* name() const { return "tenured generation"; }
   const char* short_name() const { return "Tenured"; }
-
-  // Does a "full" (forced) collection invoked on this generation collect
-  // the young generation as well? Note that this is a hack to allow the
-  // collection of the young gen first if the flag is set.
-  virtual bool full_collects_young_generation() const {
-    return !ScavengeBeforeFullGC;
-  }
 
   size_t unsafe_max_alloc_nogc() const;
   size_t contiguous_available() const;

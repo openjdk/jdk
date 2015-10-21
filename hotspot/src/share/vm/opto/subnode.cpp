@@ -1532,18 +1532,6 @@ const Type *Log10DNode::Value( PhaseTransform *phase ) const {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
-// Compute exp
-const Type *ExpDNode::Value( PhaseTransform *phase ) const {
-  const Type *t1 = phase->type( in(1) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
-  double d = t1->getd();
-  return TypeD::make( StubRoutines::intrinsic_exp( d ) );
-}
-
-
-//=============================================================================
-//------------------------------Value------------------------------------------
 // Compute pow
 const Type *PowDNode::Value( PhaseTransform *phase ) const {
   const Type *t1 = phase->type( in(1) );

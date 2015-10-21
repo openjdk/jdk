@@ -42,10 +42,6 @@ define_pd_global(intx, CompilerThreadStackSize,  4096);
 // Allow extra space in DEBUG builds for asserts.
 define_pd_global(size_t, JVMInvokeMethodSlack,   8192);
 
-define_pd_global(intx, StackYellowPages,         6);
-define_pd_global(intx, StackRedPages,            1);
-define_pd_global(intx, StackShadowPages,         6 DEBUG_ONLY(+2));
-
 // Only used on 64 bit platforms
 define_pd_global(size_t, HeapBaseMinAddress,     2*G);
 

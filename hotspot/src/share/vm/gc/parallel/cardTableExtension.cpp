@@ -285,7 +285,7 @@ void CardTableExtension::scavenge_contents_parallel(ObjectStartArray* start_arra
           while (p < to) {
             Prefetch::write(p, interval);
             oop m = oop(p);
-            assert(m->is_oop_or_null(), err_msg("Expected an oop or NULL for header field at " PTR_FORMAT, p2i(m)));
+            assert(m->is_oop_or_null(), "Expected an oop or NULL for header field at " PTR_FORMAT, p2i(m));
             pm->push_contents(m);
             p += m->size();
           }
@@ -293,7 +293,7 @@ void CardTableExtension::scavenge_contents_parallel(ObjectStartArray* start_arra
         } else {
           while (p < to) {
             oop m = oop(p);
-            assert(m->is_oop_or_null(), err_msg("Expected an oop or NULL for header field at " PTR_FORMAT, p2i(m)));
+            assert(m->is_oop_or_null(), "Expected an oop or NULL for header field at " PTR_FORMAT, p2i(m));
             pm->push_contents(m);
             p += m->size();
           }

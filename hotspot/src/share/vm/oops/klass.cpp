@@ -442,8 +442,7 @@ void Klass::clean_weak_klass_links(BoolObjectClosure* is_alive, bool clean_alive
     // Clean the implementors list and method data.
     if (clean_alive_klasses && current->oop_is_instance()) {
       InstanceKlass* ik = InstanceKlass::cast(current);
-      ik->clean_implementors_list(is_alive);
-      ik->clean_method_data(is_alive);
+      ik->clean_weak_instanceklass_links(is_alive);
     }
   }
 }
@@ -690,11 +689,11 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
 bool Klass::verify_vtable_index(int i) {
   if (oop_is_instance()) {
     int limit = ((InstanceKlass*)this)->vtable_length()/vtableEntry::size();
-    assert(i >= 0 && i < limit, err_msg("index %d out of bounds %d", i, limit));
+    assert(i >= 0 && i < limit, "index %d out of bounds %d", i, limit);
   } else {
     assert(oop_is_array(), "Must be");
     int limit = ((ArrayKlass*)this)->vtable_length()/vtableEntry::size();
-    assert(i >= 0 && i < limit, err_msg("index %d out of bounds %d", i, limit));
+    assert(i >= 0 && i < limit, "index %d out of bounds %d", i, limit);
   }
   return true;
 }
@@ -715,8 +714,14 @@ bool Klass::verify_itable_index(int i) {
 class TestKlass {
  public:
   static void test_oop_is_instanceClassLoader() {
-    assert(SystemDictionary::ClassLoader_klass()->oop_is_instanceClassLoader(), "assert");
-    assert(!SystemDictionary::String_klass()->oop_is_instanceClassLoader(), "assert");
+    Klass* klass = SystemDictionary::ClassLoader_klass();
+    guarantee(klass->oop_is_instance(), "assert");
+    guarantee(InstanceKlass::cast(klass)->is_class_loader_instance_klass(), "test failed");
+
+    klass = SystemDictionary::String_klass();
+    guarantee(!klass->oop_is_instance() ||
+              !InstanceKlass::cast(klass)->is_class_loader_instance_klass(),
+              "test failed");
   }
 };
 

@@ -30,6 +30,7 @@
 #include "code/icBuffer.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/collectorCounters.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.hpp"
@@ -162,8 +163,8 @@ char* GenCollectedHeap::allocate(size_t alignment,
                                   "the maximum representable size");
   }
   assert(total_reserved % alignment == 0,
-         err_msg("Gen size; total_reserved=" SIZE_FORMAT ", alignment="
-                 SIZE_FORMAT, total_reserved, alignment));
+         "Gen size; total_reserved=" SIZE_FORMAT ", alignment="
+         SIZE_FORMAT, total_reserved, alignment);
 
   *heap_rs = Universe::reserve_heap(total_reserved, alignment);
   return heap_rs->base();
@@ -315,9 +316,7 @@ void GenCollectedHeap::collect_generation(Generation* gen, bool full, size_t siz
                                           bool restore_marks_for_biased_locking) {
   // Timer for individual generations. Last argument is false: no CR
   // FIXME: We should try to start the timing earlier to cover more of the GC pause
-  // The PrintGCDetails logging starts before we have incremented the GC id. We will do that later
-  // so we can assume here that the next GC id is what we want.
-  GCTraceTime t1(gen->short_name(), PrintGCDetails, false, NULL, GCId::peek());
+  GCTraceTime t1(gen->short_name(), PrintGCDetails, false, NULL);
   TraceCollectorStats tcs(gen->counters());
   TraceMemoryManagerStats tmms(gen->kind(),gc_cause());
 
@@ -434,6 +433,8 @@ void GenCollectedHeap::do_collection(bool           full,
     return; // GC is disabled (e.g. JNI GetXXXCritical operation)
   }
 
+  GCIdMarkAndRestore gc_id_mark;
+
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
                           collector_policy()->should_clear_all_soft_refs();
 
@@ -449,9 +450,7 @@ void GenCollectedHeap::do_collection(bool           full,
     bool complete = full && (max_generation == OldGen);
     const char* gc_cause_prefix = complete ? "Full GC" : "GC";
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-    // The PrintGCDetails logging starts before we have incremented the GC id. We will do that later
-    // so we can assume here that the next GC id is what we want.
-    GCTraceTime t(GCCauseString(gc_cause_prefix, gc_cause()), PrintGCDetails, false, NULL, GCId::peek());
+    GCTraceTime t(GCCauseString(gc_cause_prefix, gc_cause()), PrintGCDetails, false, NULL);
 
     gc_prologue(complete);
     increment_total_collections(complete);
@@ -461,10 +460,9 @@ void GenCollectedHeap::do_collection(bool           full,
 
     bool prepared_for_verification = false;
     bool collected_old = false;
-    bool old_collects_young = complete &&
-                              _old_gen->full_collects_young_generation();
-    if (!old_collects_young &&
-        _young_gen->should_collect(full, size, is_tlab)) {
+    bool old_collects_young = complete && !ScavengeBeforeFullGC;
+
+    if (!old_collects_young && _young_gen->should_collect(full, size, is_tlab)) {
       if (run_verification && VerifyGCLevel <= 0 && VerifyBeforeGC) {
         prepare_for_verify();
         prepared_for_verification = true;
@@ -489,6 +487,7 @@ void GenCollectedHeap::do_collection(bool           full,
     bool must_restore_marks_for_biased_locking = false;
 
     if (max_generation == OldGen && _old_gen->should_collect(full, size, is_tlab)) {
+      GCIdMarkAndRestore gc_id_mark;
       if (!complete) {
         // The full_collections increment was missed above.
         increment_total_full_collections();
@@ -823,7 +822,7 @@ bool GenCollectedHeap::create_cms_collector() {
   assert(_gen_policy->is_concurrent_mark_sweep_policy(), "Unexpected policy type");
   CMSCollector* collector =
     new CMSCollector((ConcurrentMarkSweepGeneration*)_old_gen,
-                     _rem_set->as_CardTableRS(),
+                     _rem_set,
                      _gen_policy->as_concurrent_mark_sweep_policy());
 
   if (collector == NULL || !collector->completed_initialization()) {
@@ -891,7 +890,7 @@ void GenCollectedHeap::do_full_collection(bool clear_all_soft_refs,
 bool GenCollectedHeap::is_in_young(oop p) {
   bool result = ((HeapWord*)p) < _old_gen->reserved().start();
   assert(result == _young_gen->is_in_reserved(p),
-         err_msg("incorrect test - result=%d, p=" INTPTR_FORMAT, result, p2i((void*)p)));
+         "incorrect test - result=%d, p=" INTPTR_FORMAT, result, p2i((void*)p));
   return result;
 }
 
@@ -1107,10 +1106,6 @@ void GenCollectedHeap::prepare_for_compaction() {
   _young_gen->prepare_for_compaction(&cp);
 }
 
-GCStats* GenCollectedHeap::gc_stats(Generation* gen) const {
-  return gen->gc_stats();
-}
-
 void GenCollectedHeap::verify(bool silent, VerifyOption option /* ignored */) {
   if (!silent) {
     gclog_or_tty->print("%s", _old_gen->name());
@@ -1224,11 +1219,11 @@ class GenGCEpilogueClosure: public GenCollectedHeap::GenClosure {
 };
 
 void GenCollectedHeap::gc_epilogue(bool full) {
-#ifdef COMPILER2
+#if defined(COMPILER2) || INCLUDE_JVMCI
   assert(DerivedPointerTable::is_empty(), "derived pointer present");
   size_t actual_gap = pointer_delta((HeapWord*) (max_uintx-3), *(end_addr()));
   guarantee(actual_gap > (size_t)FastAllocateSizeLimit, "inline allocation wraps");
-#endif /* COMPILER2 */
+#endif /* COMPILER2 || INCLUDE_JVMCI */
 
   resize_all_tlabs();
 
