@@ -3215,8 +3215,7 @@ public class Resolve {
                 findDiamond(env, site, argtypes, typeargtypes, phase.isBoxingRequired(), phase.isVarargsRequired()) :
                 findMethod(env, site, name, argtypes, typeargtypes,
                         phase.isBoxingRequired(), phase.isVarargsRequired());
-            return site.getEnclosingType().hasTag(CLASS) && !hasEnclosingInstance(env, site) ?
-                        new BadConstructorReferenceError(sym) : sym;
+            return enclosingInstanceMissing(env, site) ? new BadConstructorReferenceError(sym) : sym;
         }
 
         @Override
@@ -3349,9 +3348,12 @@ public class Resolve {
         }
     }
 
-    boolean hasEnclosingInstance(Env<AttrContext> env, Type type) {
-        Symbol encl = resolveSelfContainingInternal(env, type.tsym, false);
-        return encl != null && !encl.kind.isResolutionError();
+    boolean enclosingInstanceMissing(Env<AttrContext> env, Type type) {
+        if (type.hasTag(CLASS) && type.getEnclosingType().hasTag(CLASS)) {
+            Symbol encl = resolveSelfContainingInternal(env, type.tsym, false);
+            return encl == null || encl.kind.isResolutionError();
+        }
+        return false;
     }
 
     private Symbol resolveSelfContainingInternal(Env<AttrContext> env,
