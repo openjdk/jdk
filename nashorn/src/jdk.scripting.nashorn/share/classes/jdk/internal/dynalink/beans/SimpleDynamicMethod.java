@@ -93,8 +93,6 @@ import java.lang.invoke.MethodType;
  * {@link #getTarget(Lookup)}. Can be used in general to represents dynamic methods bound to a single method handle,
  * even if that handle is not mapped to a Java method, i.e. as a wrapper around field getters/setters, array element
  * getters/setters, etc.
- *
- * @author Attila Szegedi
  */
 class SimpleDynamicMethod extends SingleDynamicMethod {
     private final MethodHandle target;

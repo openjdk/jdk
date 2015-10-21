@@ -92,8 +92,9 @@ import jdk.internal.dynalink.support.Guards;
 import jdk.internal.dynalink.support.TypeUtilities;
 
 /**
- *
- * @author Attila Szegedi
+ * Represents a sequence of {@link Class} objects, useful for representing method signatures. Provides value
+ * semantics for using them as map keys, as well as specificity calculations and applicability checks as per
+ * JLS.
  */
 final class ClassString {
     /**
