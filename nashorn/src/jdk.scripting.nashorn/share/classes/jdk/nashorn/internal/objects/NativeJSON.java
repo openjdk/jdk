@@ -76,7 +76,7 @@ public final class NativeJSON extends ScriptObject {
                 new Callable<MethodHandle>() {
                     @Override
                     public MethodHandle call() {
-                        return Bootstrap.createDynamicInvoker("dyn:call", Object.class,
+                        return Bootstrap.createDynamicCallInvoker(Object.class,
                             ScriptFunction.class, ScriptObject.class, Object.class, Object.class);
                     }
                 });

@@ -86,8 +86,8 @@ package jdk.internal.dynalink.beans;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.util.Collection;
 import java.util.Collections;
-import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.DynamicLinkerFactory;
+import jdk.internal.dynalink.StandardOperation;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -101,24 +101,26 @@ import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
  * linker will:
  * <ul>
  * <li>expose all public methods of form {@code setXxx()}, {@code getXxx()},
- * and {@code isXxx()} as property setters and getters for {@code dyn:setProp}
- * and {@code dyn:getProp} operations;</li>
- * <li>expose all public methods for invocation through {@code dyn:callMethod}
- * operation;</li>
- * <li>expose all public methods for retrieval for {@code dyn:getMethod}
- * operation; the methods thus retrieved can then be invoked using
- * {@code dyn:call};</li>
+ * and {@code isXxx()} as property setters and getters for
+ * {@link StandardOperation#SET_PROPERTY} and {@link StandardOperation#GET_PROPERTY}
+ * operations;</li>
+ * <li>expose all public methods for invocation through
+ * {@link StandardOperation#CALL_METHOD} operation;</li>
+ * <li>expose all public methods for retrieval for
+ * {@link StandardOperation#GET_METHOD} operation; the methods thus retrieved
+ * can then be invoked using {@link StandardOperation#CALL}.</li>
  * <li>expose all public fields as properties, unless there are getters or
  * setters for the properties of the same name;</li>
- * <li>expose {@code dyn:getLength}, {@code dyn:getElem} and
- * {@code dyn:setElem} on native Java arrays, as well as {@link java.util.List}
- * and {@link java.util.Map} objects; ({@code dyn:getLength} works on any
- * {@link java.util.Collection});</li>
+ * <li>expose {@link StandardOperation#GET_LENGTH},
+ * {@link StandardOperation#GET_ELEMENT} and {@link StandardOperation#SET_ELEMENT}
+ * on native Java arrays, as well as {@link java.util.List} and
+ * {@link java.util.Map} objects; ({@link StandardOperation#GET_LENGTH} works on
+ * any {@link java.util.Collection});</li>
  * <li>expose a virtual property named {@code length} on Java arrays;</li>
- * <li>expose {@code dyn:new} on instances of {@link StaticClass} as calls to
- * constructors, including those static class objects that represent Java arrays
- * (their constructors take a single {@code int} parameter representing the
- * length of the array to create);</li>
+ * <li>expose {@link StandardOperation#NEW} on instances of {@link StaticClass}
+ * as calls to constructors, including those static class objects that represent
+ * Java arrays (their constructors take a single {@code int} parameter
+ * representing the length of the array to create);</li>
  * <li>expose static methods, fields, and properties of classes in a similar
  * manner to how instance method, fields, and properties are exposed, on
  * {@link StaticClass} objects.</li>
@@ -129,15 +131,15 @@ import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
  * for property setters, methods, and constructors. Additionally, manual
  * overloaded method selection is supported by having a call site specify a name
  * for a method that contains an explicit signature, i.e.
- * {@code dyn:getMethod:parseInt(String,int)}. You can use non-qualified class
- * names in such signatures regardless of those classes' packages, they will
- * match any class with the same non-qualified name. You only have to use a
- * fully qualified class name in case non-qualified class names would cause
- * selection ambiguity (that is extremely rare). Overloaded resolution for
- * constructors is not automatic as there is no logical place to attach that
- * functionality to but if a language wishes to provide this functionality, it
- * can use {@link #getConstructorMethod(Class, String)} as a useful building
- * block for it.</p>
+ * {@code NamedMethod(GET_METHOD, "parseInt(String,int)")}. You can use
+ * non-qualified class names in such signatures regardless of those classes'
+ * packages, they will match any class with the same non-qualified name. You
+ * only have to use a fully qualified class name in case non-qualified class
+ * names would cause selection ambiguity (that is extremely rare). Overloaded
+ * resolution for constructors is not automatic as there is no logical place to
+ * attach that functionality to but if a language wishes to provide this
+ * functionality, it can use {@link #getConstructorMethod(Class, String)} as a
+ * useful building block for it.</p>
  * <p><strong>Variable argument invocation</strong> is handled for both methods
  * and constructors.</p>
  * <p><strong>Caller sensitive methods</strong> can be linked as long as they
@@ -182,7 +184,7 @@ public class BeansLinker implements GuardingDynamicLinker {
 
     /**
      * Returns true if the object is a Java dynamic method (e.g., one
-     * obtained through a {@code dyn:getMethod} call on a Java object or
+     * obtained through a {@code GET_METHOD} operation on a Java object or
      * {@link StaticClass} or through
      * {@link #getConstructorMethod(Class, String)}.
      *
@@ -295,13 +297,6 @@ public class BeansLinker implements GuardingDynamicLinker {
     @Override
     public GuardedInvocation getGuardedInvocation(final LinkRequest request, final LinkerServices linkerServices)
             throws Exception {
-        final CallSiteDescriptor callSiteDescriptor = request.getCallSiteDescriptor();
-        final int l = callSiteDescriptor.getNameTokenCount();
-        // All names conforming to the dynalang MOP should have at least two tokens, the first one being "dyn"
-        if(l < 2 || "dyn" != callSiteDescriptor.getNameToken(CallSiteDescriptor.SCHEME)) {
-            return null;
-        }
-
         final Object receiver = request.getReceiver();
         if(receiver == null) {
             // Can't operate on null

@@ -813,7 +813,7 @@ public class ScriptFunction extends ScriptObject {
     }
 
     /**
-     * dyn:call call site signature: (callee, thiz, [args...]) generated method
+     * StandardOperation.CALL call site signature: (callee, thiz, [args...]) generated method
      * signature: (callee, thiz, [args...])
      *
      * cases:

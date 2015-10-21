@@ -48,6 +48,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.StandardOperation;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.api.scripting.ClassFilter;
@@ -2148,17 +2149,17 @@ public final class Global extends Scope {
     }
 
     @Override
-    public GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
-        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+    public GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final StandardOperation operation) {
+        final String name = NashornCallSiteDescriptor.getOperand(desc);
         final boolean isScope = NashornCallSiteDescriptor.isScope(desc);
 
         if (lexicalScope != null && isScope && !NashornCallSiteDescriptor.isApplyToCall(desc)) {
             if (lexicalScope.hasOwnProperty(name)) {
-                return lexicalScope.findGetMethod(desc, request, operator);
+                return lexicalScope.findGetMethod(desc, request, operation);
             }
         }
 
-        final GuardedInvocation invocation =  super.findGetMethod(desc, request, operator);
+        final GuardedInvocation invocation =  super.findGetMethod(desc, request, operation);
 
         // We want to avoid adding our generic lexical scope switchpoint to global constant invocations,
         // because those are invalidated per-key in the addBoundProperties method above.
@@ -2188,7 +2189,7 @@ public final class Global extends Scope {
         final boolean isScope = NashornCallSiteDescriptor.isScope(desc);
 
         if (lexicalScope != null && isScope) {
-            final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+            final String name = NashornCallSiteDescriptor.getOperand(desc);
             if (lexicalScope.hasOwnProperty(name)) {
                 return lexicalScope.findSetMethod(desc, request);
             }
@@ -2725,8 +2726,8 @@ public final class Global extends Scope {
         }
 
         @Override
-        protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
-            return filterInvocation(super.findGetMethod(desc, request, operator));
+        protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final StandardOperation operation) {
+            return filterInvocation(super.findGetMethod(desc, request, operation));
         }
 
         @Override

@@ -41,6 +41,7 @@ import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Function;
+import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 
 /**
  * An object that exposes Java packages and classes as its properties. Packages are exposed as objects that have further
@@ -200,7 +201,7 @@ public final class NativeJavaPackage extends ScriptObject {
      */
     @Override
     public GuardedInvocation noSuchProperty(final CallSiteDescriptor desc, final LinkRequest request) {
-        final String propertyName = desc.getNameToken(2);
+        final String propertyName = NashornCallSiteDescriptor.getOperand(desc);
         createProperty(propertyName);
         return super.lookup(desc, request);
     }

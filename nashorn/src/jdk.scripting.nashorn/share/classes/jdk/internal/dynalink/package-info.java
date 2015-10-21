@@ -129,7 +129,7 @@
  * bytecode would look something like this:
  * <pre>
  * aload 2 // load "obj" on stack
- * invokedynamic "dyn:getProp:color"(Object)Object // invoke property getter on object of unknown type
+ * invokedynamic "GET_PROPERTY:color"(Object)Object // invoke property getter on object of unknown type
  * astore 3 // store the return value into local variable "color"
  * </pre>
  * In order to link the {@code invokedynamic} instruction, we need a bootstrap
@@ -145,7 +145,11 @@
  *     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type) {
  *         return dynamicLinker.link(
  *             new SimpleRelinkableCallSite(
- *                 new CallSiteDescriptor(lookup, name, type)));
+ *                 new CallSiteDescriptor(lookup, parseOperation(name), type)));
+ *     }
+ *
+ *     private static Operation parseOperation(String name) {
+ *         ...
  *     }
  * }
  * </pre>
@@ -164,9 +168,16 @@
  * type. {@link jdk.internal.dynalink.support.SimpleRelinkableCallSite} and
  * {@link jdk.internal.dynalink.support.ChainedCallSite} (not used in the above example)
  * are two implementations already provided by the library.</li>
- * <li>Finally, Dynalink uses {@link jdk.internal.dynalink.CallSiteDescriptor} objects to
- * preserve the parameters to the bootstrap method as it will need them whenever
- * it needs to relink a call site.</li>
+ * <li>Dynalink uses {@link jdk.internal.dynalink.CallSiteDescriptor} objects to
+ * preserve the parameters to the bootstrap method: the lookup and the method type,
+ * as it will need them whenever it needs to relink a call site.</li>
+ * <li>Dynalink uses {@link jdk.internal.dynalink.Operation} objects to express
+ * dynamic operations. It does not prescribe how would you encode the operations
+ * in your call site, though. That is why in the above example the
+ * {@code parseOperation} function is left empty, and you would be expected to
+ * provide the code to parse the string {@code "GET_PROPERTY:color"}
+ * in the call site's name into a named property getter operation object as
+ * {@code new NamedOperation(StandardOperation.GET_PROPERTY), "color")}.
  * </ul>
  * <p>What can you already do with the above setup? {@code DynamicLinkerFactory}
  * by default creates a {@code DynamicLinker} that can link Java objects with the
@@ -217,158 +228,21 @@
  * them with representations of dynamic operations in the interpreted program
  * (e.g. a typical representation would be some node objects in a syntax tree).
  * <h2>Available operations</h2>
- * The table below contains all operations defined by Dynalink. All of them have
- * the prefix {@code "dyn:"} and this prefix is reserved for Dynalink use, with
- * potential of future extensions. Elements of the name are separated with the
- * COLON character. {@code $id} is used as a placeholder for an identifier for
- * those operations that contain an identifier as part of their name.
- * Identifiers in operation names need to be
- * {@link jdk.internal.dynalink.support.NameCodec#encode(String) encoded}. Signatures are
- * expressed in the usual JVM
- * {@code (parameter-type1, parameter-type2, ...)return-type} format. The type
- * "any" means that any type, either primitive or reference can be used (with
- * obvious JVM limitation that {@code void} is disallowed as a parameter type
- * but allowed as a return type.
- * <p>&nbsp;
- * <table summary="Dynalink defined operations" border="1" frame="border" cellpadding="5">
- *   <thead>
- *     <tr>
- *       <th>Name</th>
- *       <th>Signature</th>
- *       <th>Semantics</th>
- *     </tr>
- *   </thead>
- *   <tbody>
- *     <tr>
- *       <td>{@code dyn:getProp:$id}</td>
- *       <td>(any)any</td>
- *       <td>Retrieve the value of a named property on the object, with the
- *           receiver being passed as the argument, and the property identifier
- *           encoded in the operation name as {@code $id}.</td>
- *     </tr>
- *     <tr>
- *       <td>{@code dyn:getProp}</td>
- *       <td>(any,&nbsp;any)any</td>
- *       <td>Retrieve the value of a named property on the object, with the
- *           receiver being passed as the first, and the property identifier
- *           being passed as the second argument.</td>
- *     </tr>
- *     <tr>
- *       <td>{@code dyn:setProp:$id}</td>
- *       <td>(any,&nbsp;any)void</td>
- *       <td>Set the value of a named property on the object, with the
- *           receiver being passed as the first, and the value to set being
- *           passed as the second argument, with the property identifier
- *           encoded in the operation name as {@code $id}.</td>
- *     </tr>
- *     <tr>
- *       <td>{@code dyn:setProp}</td>
- *       <td>(any,&nbsp;any,&nbsp;any)void</td>
- *       <td>Set the value of a named property on the object, with the
- *           receiver being passed as the first, the property identifier as the
- *           second, and the value to set as the third argument.</td>
- *     </tr>
- *     <tr>
- *       <td>{@code dyn:getElem:$id}</td>
- *       <td>(any)any</td>
- *       <td>Retrieve an element of a collection object (array, list, map,
- *           etc.) with a fixed key encoded in the operation name as {@code $id}.
- *           In this form, the key is necessarily a string as it is part of the
- *           operation name, but runtimes are allowed to parse it as a number
- *           literal when linking to a collection using numeric indices.</td>
- *     </tr>
- *     <tr>
- *       <td>{@code dyn:getElem}</td>
- *       <td>(any,&nbsp;any)any</td>
- *       <td>Retrieve an element of a collection object (array, list, map,
- *           etc.) with the receiver being passed as the first and the index
- *           passed as the second argument.</td>
- *     </tr>
- *     <tr>
- *       <td>{@code dyn:setElem:$id}</td>
- *       <td>(any,&nbsp;any)void</td>
- *       <td>Set an element of a collection object (array, list, map,
- *           etc.) with a fixed key encoded in the operation name as {@code $id}.
- *           The receiver is passed as the first, and the new element value as
- *           the second argument. In this form, the key is necessarily a string
- *           as it is part of the operation name, but runtimes are allowed to
- *           parse it as a number literal when linking to a collection using
- *           numeric indices.</td>
- *     </tr>
- *     <tr>
- *       <td>{@code dyn:setElem}</td>
- *       <td>(any,&nbsp;any,&nbsp;any)void</td>
- *       <td>Set an element of a collection object (array, list, map,
- *           etc.) with the receiver being passed as the first, the index
- *           passed as the second, and the new element value as the third argument.</td>
- *     </tr>
- *     <tr>
- *       <td>{@code dyn:getMethod:$id}</td>
- *       <td>(any)any</td>
- *       <td>Retrieve a named method on the object, identified by {@code $id}.
- *           It is expected that at least the {@code "dyn:call"} operation is
- *           applicable to the returned value.</td>
- *     </tr>
- *     <tr>
- *       <td>{@code dyn:getMethod}</td>
- *       <td>(any,&nbsp;any)any</td>
- *       <td>Retrieve a named method on the object, with the receiver passed as
- *           the first and the name of the method passed as the second argument.
- *           It is expected that {@code "dyn:call"} operation is applicable to
- *           the returned value.</td>
- *     </tr>
- *     <tr>
- *       <td>{@code dyn:call}</td>
- *       <td>(any[,&nbsp;any,&nbsp;any,...])any</td>
- *       <td>Call a callable (method, function, etc.). The first argument
- *           is the callable itself, and the rest are arguments passed to the
- *           call. If the callable is an instance method, the {@code this}
- *           argument should be the second argument, immediately following the
- *           callable.</td>
- *     </tr>
- *     <tr>
- *       <td>{@code dyn:callMethod:$id}</td>
- *       <td>(any[,&nbsp;any,&nbsp;any,...])any</td>
- *       <td>Call a named instance method on an object. The first argument
- *           is the object on which the method is invoked, and the rest are
- *           arguments passed to the call. Note that this method is not strictly
- *           necessary, as it can be implemented as a composition of
- *           {@code dyn:getMethod:$id} and {@code dyn:call}. It is a frequent
- *           enough object-oriented pattern so it is convenient to provide it as
- *           a separate operation.</td>
- *     </tr>
- *     <tr>
- *       <td>{@code dyn:new}</td>
- *       <td>(any[,&nbsp;any,&nbsp;any,...])any</td>
- *       <td>Call a constructor. The first argument is the constructor itself,
- *       and the rest are arguments passed to the constructor call.</td>
- *     </tr>
- *   </tbody>
- * </table>
+ * Dynalink defines several standard operations in its
+ * {@link jdk.internal.dynalink.StandardOperation} class. The linker for Java
+ * objects can link all of these operations, and you are encouraged to at
+ * minimum support and use these operations in your language too. To associate
+ * a fixed name with an operation, you can use
+ * {@link jdk.internal.dynalink.NamedOperation} as in the above example where
+ * {@code StandardOperation.GET_PROPERTY} was combined with the name
+ * {@code "color"} in a {@code NamedOperation} to form a property getter for the
+ * property named "color".
  * <h2>Composite operations</h2>
  * Some languages might not have separate namespaces on objects for
- * properties, elements, and methods. Dynalink supports specifying composite
- * operations for this purpose using the VERTICAL LINE character as the
- * separator. Typical syntax would be e.g.
- * {@code "dyn:getProp|getElem|getMethod:color"}. Any combination of
- * {@code "getProp"}, {@code "getElem"}, and {@code "getMethod"} in any order can be
- * specified. The semantics of this is "return the first matching member, trying
- * them in the specified order". Similarly, {@code "setProp"} and {@code "setElem"}
- * can be combined too in both orders. Only compositions consisting of getter
- * operations only and setter operations only are allowed. They can either have
- * an identifier encoded in the name or not.
- * <p>
- * Even if the language itself doesn't distinguish some of the namespaces, it
- * can be helpful to map different syntaxes to different compositions. E.g.
- * source expression {@code obj.color} could map to
- * {@code "dyn:getProp|getElem|getMethod:color"}, but a different source
- * expression that looks like collection element access {@code obj[key]} could
- * be expressed instead as {@code "dyn:getElem|getProp|getMethod"}. Finally, if
- * the retrieved value is subsequently called, then it makes sense to bring
- * {@code getMethod} to the front of the list: the getter part of the source
- * expression {@code obj.color()} should be
- * {@code "dyn:getMethod|getProp|getElem:color"} and the one for
- * {@code obj[key]()} should be {@code "dyn:getMethod|getElem|getProp"}.
+ * properties, elements, and methods, and a source language construct might
+ * address two or three of them. Dynalink supports specifying composite
+ * operations for this purpose using the
+ * {@link jdk.internal.dynalink.CompositeOperation} class.
  * <h2>Language-specific linkers</h2>
  * Languages that define their own object model different than the JVM
  * class-based model and/or use their own type conversions will need to create

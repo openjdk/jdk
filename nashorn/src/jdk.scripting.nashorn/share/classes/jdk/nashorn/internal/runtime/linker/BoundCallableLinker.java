@@ -30,6 +30,9 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Arrays;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.NamedOperation;
+import jdk.internal.dynalink.Operation;
+import jdk.internal.dynalink.StandardOperation;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
@@ -38,7 +41,7 @@ import jdk.internal.dynalink.linker.support.Guards;
 
 /**
  * Links {@link BoundCallable} objects. Passes through to linker services for linking a callable (for either
- * "dyn:call" or "dyn:new"), and modifies the returned invocation to deal with the receiver and argument binding.
+ * StandardOperation.CALL or .NEW, and modifies the returned invocation to deal with the receiver and argument binding.
  */
 final class BoundCallableLinker implements TypeBasedGuardingDynamicLinker {
     @Override
@@ -54,19 +57,16 @@ final class BoundCallableLinker implements TypeBasedGuardingDynamicLinker {
         }
 
         final CallSiteDescriptor descriptor = linkRequest.getCallSiteDescriptor();
-        if (descriptor.getNameTokenCount() < 2 || !"dyn".equals(descriptor.getNameToken(CallSiteDescriptor.SCHEME))) {
-            return null;
-        }
-        final String operation = descriptor.getNameToken(CallSiteDescriptor.OPERATOR);
-        // We need to distinguish "dyn:new" from "dyn:call" because "dyn:call" sites have parameter list of the form
-        // "callee, this, args", while "dyn:call" sites have "callee, args" -- they lack the "this" parameter.
+        final Operation operation = NamedOperation.getBaseOperation(descriptor.getOperation());
+        // We need to distinguish NEW from CALL because CALL sites have parameter list of the form
+        // "callee, this, args", while NEW sites have "callee, args" -- they lack the "this" parameter.
         final boolean isCall;
-        if ("new".equals(operation)) {
+        if (operation == StandardOperation.NEW) {
             isCall = false;
-        } else if ("call".equals(operation)) {
+        } else if (operation == StandardOperation.CALL) {
             isCall = true;
         } else {
-            // Only dyn:call and dyn:new are supported.
+            // Only CALL and NEW are supported.
             return null;
         }
         final BoundCallable boundCallable = (BoundCallable)objBoundCallable;
@@ -93,7 +93,7 @@ final class BoundCallableLinker implements TypeBasedGuardingDynamicLinker {
         System.arraycopy(args, firstArgIndex, newArgs, firstArgIndex + boundArgsLen, argsLen - firstArgIndex);
 
         // Use R(T0, T1, T2, ...) => R(callable.class, boundThis.class, boundArg0.class, ..., boundArgn.class, T2, ...)
-        // call site type when delegating to underlying linker (for dyn:new, there's no this).
+        // call site type when delegating to underlying linker (for NEW, there's no this).
         final MethodType type = descriptor.getMethodType();
         // Use R(T0, ...) => R(callable.class, ...)
         MethodType newMethodType = descriptor.getMethodType().changeParameterType(0, callable.getClass());

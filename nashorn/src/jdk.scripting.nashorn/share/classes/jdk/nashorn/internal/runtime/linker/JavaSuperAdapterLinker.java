@@ -32,6 +32,9 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.NamedOperation;
+import jdk.internal.dynalink.Operation;
+import jdk.internal.dynalink.StandardOperation;
 import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -46,10 +49,6 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  *
  */
 final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
-    private static final String GET_METHOD = "getMethod";
-    private static final String DYN_GET_METHOD = "dyn:" + GET_METHOD;
-    private static final String DYN_GET_METHOD_FIXED = DYN_GET_METHOD + ":" + SUPER_PREFIX;
-
     private static final MethodHandle ADD_PREFIX_TO_METHOD_NAME;
     private static final MethodHandle BIND_DYNAMIC_METHOD;
     private static final MethodHandle GET_ADAPTER;
@@ -77,8 +76,9 @@ final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
         }
 
         final CallSiteDescriptor descriptor = linkRequest.getCallSiteDescriptor();
-        if(!descriptor.tokenizeOperators().contains(GET_METHOD)) {
-            // We only handle getMethod
+
+        if(NashornCallSiteDescriptor.getFirstStandardOperation(descriptor) != StandardOperation.GET_METHOD) {
+            // We only handle GET_METHOD
             return null;
         }
 
@@ -91,13 +91,13 @@ final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
         // Use R(T0, ...) => R(adapter.class, ...) call site type when delegating to BeansLinker.
         final MethodType type = descriptor.getMethodType();
         final Class<?> adapterClass = adapter.getClass();
-        final boolean hasFixedName = descriptor.getNameTokenCount() > 2;
-        final String opName = hasFixedName ? (DYN_GET_METHOD_FIXED + descriptor.getNameToken(
-                CallSiteDescriptor.NAME_OPERAND)) : DYN_GET_METHOD;
+        final String name = NashornCallSiteDescriptor.getOperand(descriptor);
+        final Operation newOp = name == null ? StandardOperation.GET_METHOD :
+            new NamedOperation(StandardOperation.GET_METHOD, SUPER_PREFIX + name);
 
-        final CallSiteDescriptor newDescriptor = NashornCallSiteDescriptor.get(
-                NashornCallSiteDescriptor.getLookupInternal(descriptor), opName,
-                type.changeParameterType(0, adapterClass), 0);
+        final CallSiteDescriptor newDescriptor = new CallSiteDescriptor(
+                NashornCallSiteDescriptor.getLookupInternal(descriptor), newOp,
+                type.changeParameterType(0, adapterClass));
 
         // Delegate to BeansLinker
         final GuardedInvocation guardedInv = NashornBeansLinker.getGuardedInvocation(
@@ -122,16 +122,16 @@ final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
         final MethodHandle droppingBinder = MethodHandles.dropArguments(typedBinder, 2,
                 invType.parameterList().subList(1, invType.parameterCount()));
         // Finally, fold the invocation into the binder to produce a method handle that will bind every returned
-        // DynamicMethod object from dyn:getMethod calls to the actual receiver
+        // DynamicMethod object from StandardOperation.GET_METHOD calls to the actual receiver
         // Object(R(T0, T1, ...), T0, T1, ...)
         final MethodHandle bindingInvocation = MethodHandles.foldArguments(droppingBinder, invocation);
 
         final MethodHandle typedGetAdapter = asFilterType(GET_ADAPTER, 0, invType, type);
         final MethodHandle adaptedInvocation;
-        if(hasFixedName) {
+        if(name != null) {
             adaptedInvocation = MethodHandles.filterArguments(bindingInvocation, 0, typedGetAdapter);
         } else {
-            // Add a filter that'll prepend "super$" to each name passed to the variable-name "dyn:getMethod".
+            // Add a filter that'll prepend "super$" to each name passed to the variable-name StandardOperation.GET_METHOD.
             final MethodHandle typedAddPrefix = asFilterType(ADD_PREFIX_TO_METHOD_NAME, 1, invType, type);
             adaptedInvocation = MethodHandles.filterArguments(bindingInvocation, 0, typedGetAdapter, typedAddPrefix);
         }

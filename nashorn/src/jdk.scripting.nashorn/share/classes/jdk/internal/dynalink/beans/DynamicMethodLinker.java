@@ -86,6 +86,9 @@ package jdk.internal.dynalink.beans;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.NamedOperation;
+import jdk.internal.dynalink.Operation;
+import jdk.internal.dynalink.StandardOperation;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
@@ -93,8 +96,9 @@ import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.internal.dynalink.linker.support.Guards;
 
 /**
- * Simple linker that implements the "dyn:call" operation for {@link DynamicMethod} objects - the objects returned by
- * "dyn:getMethod" from {@link AbstractJavaLinker}.
+ * Simple linker that implements the {@link StandardOperation#CALL} operation
+ * for {@link DynamicMethod} objects - the objects returned by
+ * {@link StandardOperation#GET_METHOD} through {@link AbstractJavaLinker}.
  */
 class DynamicMethodLinker implements TypeBasedGuardingDynamicLinker {
     @Override
@@ -108,19 +112,16 @@ class DynamicMethodLinker implements TypeBasedGuardingDynamicLinker {
         if(!(receiver instanceof DynamicMethod)) {
             return null;
         }
-        final CallSiteDescriptor desc = linkRequest.getCallSiteDescriptor();
-        if(desc.getNameTokenCount() != 2 && desc.getNameToken(CallSiteDescriptor.SCHEME) != "dyn") {
-            return null;
-        }
-        final String operator = desc.getNameToken(CallSiteDescriptor.OPERATOR);
         final DynamicMethod dynMethod = (DynamicMethod)receiver;
         final boolean constructor = dynMethod.isConstructor();
         final MethodHandle invocation;
 
-        if (operator == "call" && !constructor) {
+        final CallSiteDescriptor desc = linkRequest.getCallSiteDescriptor();
+        final Operation op = NamedOperation.getBaseOperation(desc.getOperation());
+        if (op == StandardOperation.CALL && !constructor) {
             invocation = dynMethod.getInvocation(desc.changeMethodType(
                     desc.getMethodType().dropParameterTypes(0, 1)), linkerServices);
-        } else if (operator == "new" && constructor) {
+        } else if (op == StandardOperation.NEW && constructor) {
             final MethodHandle ctorInvocation = dynMethod.getInvocation(desc, linkerServices);
             if(ctorInvocation == null) {
                 return null;

@@ -31,6 +31,8 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.NamedOperation;
+import jdk.internal.dynalink.StandardOperation;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.support.Guards;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
@@ -91,44 +93,39 @@ public final class Undefined extends DefaultPropertyAccess {
      * @return GuardedInvocation to be invoked at call site.
      */
     public static GuardedInvocation lookup(final CallSiteDescriptor desc) {
-        final String operator = desc.tokenizeOperators().get(0);
-
-        switch (operator) {
-        case "new":
-        case "call": {
-            final String name = NashornCallSiteDescriptor.getFunctionDescription(desc);
+        final StandardOperation op = NashornCallSiteDescriptor.getFirstStandardOperation(desc);
+        switch (op) {
+        case CALL:
+        case NEW:
+            final String name = NashornCallSiteDescriptor.getOperand(desc);
             final String msg = name != null? "not.a.function" : "cant.call.undefined";
             throw typeError(msg, name);
-        }
-
-        case "callMethod":
+        case CALL_METHOD:
             throw lookupTypeError("cant.read.property.of.undefined", desc);
-        // NOTE: we support getElem and setItem as JavaScript doesn't distinguish items from properties. Nashorn itself
-        // emits "dyn:getProp:identifier" for "<expr>.<identifier>" and "dyn:getElem" for "<expr>[<expr>]", but we are
-        // more flexible here and dispatch not on operation name (getProp vs. getElem), but rather on whether the
-        // operation has an associated name or not.
-        case "getProp":
-        case "getElem":
-        case "getMethod":
-            if (desc.getNameTokenCount() < 3) {
+        case GET_PROPERTY:
+        case GET_ELEMENT:
+        case GET_METHOD:
+            // NOTE: we support GET_ELEMENT and SET_ELEMENT as JavaScript doesn't distinguish items from properties. Nashorn itself
+            // emits "GET_PROPERTY|GET_ELEMENT|GET_METHOD:identifier" for "<expr>.<identifier>" and "GET_ELEMENT|GET_PROPERTY|GET_METHOD" for "<expr>[<expr>]", but we are
+            // more flexible here and dispatch not on operation name (getProp vs. getElem), but rather on whether the
+            // operation has an associated name or not.
+            if (!(desc.getOperation() instanceof NamedOperation)) {
                 return findGetIndexMethod(desc);
             }
             return findGetMethod(desc);
-        case "setProp":
-        case "setElem":
-            if (desc.getNameTokenCount() < 3) {
+        case SET_PROPERTY:
+        case SET_ELEMENT:
+            if (!(desc.getOperation() instanceof NamedOperation)) {
                 return findSetIndexMethod(desc);
             }
             return findSetMethod(desc);
         default:
-            break;
         }
-
         return null;
     }
 
     private static ECMAException lookupTypeError(final String msg, final CallSiteDescriptor desc) {
-        final String name = desc.getNameToken(2);
+        final String name = NashornCallSiteDescriptor.getOperand(desc);
         return typeError(msg, name != null && !name.isEmpty()? name : null);
     }
 
@@ -136,7 +133,7 @@ public final class Undefined extends DefaultPropertyAccess {
     private static final MethodHandle SET_METHOD = MH.insertArguments(findOwnMH("set", void.class, Object.class, Object.class, int.class), 3, NashornCallSiteDescriptor.CALLSITE_STRICT);
 
     private static GuardedInvocation findGetMethod(final CallSiteDescriptor desc) {
-        return new GuardedInvocation(MH.insertArguments(GET_METHOD, 1, desc.getNameToken(2)), UNDEFINED_GUARD).asType(desc);
+        return new GuardedInvocation(MH.insertArguments(GET_METHOD, 1, NashornCallSiteDescriptor.getOperand(desc)), UNDEFINED_GUARD).asType(desc);
     }
 
     private static GuardedInvocation findGetIndexMethod(final CallSiteDescriptor desc) {
@@ -144,7 +141,7 @@ public final class Undefined extends DefaultPropertyAccess {
     }
 
     private static GuardedInvocation findSetMethod(final CallSiteDescriptor desc) {
-        return new GuardedInvocation(MH.insertArguments(SET_METHOD, 1, desc.getNameToken(2)), UNDEFINED_GUARD).asType(desc);
+        return new GuardedInvocation(MH.insertArguments(SET_METHOD, 1, NashornCallSiteDescriptor.getOperand(desc)), UNDEFINED_GUARD).asType(desc);
     }
 
     private static GuardedInvocation findSetIndexMethod(final CallSiteDescriptor desc) {

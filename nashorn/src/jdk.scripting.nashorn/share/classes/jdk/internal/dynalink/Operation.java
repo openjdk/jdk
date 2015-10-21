@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * license:
  */
 /*
-   Copyright 2009-2013 Attila Szegedi
+   Copyright 2015 Attila Szegedi
 
    Licensed under both the Apache License, Version 2.0 (the "Apache License")
    and the BSD License (the "BSD License"), with licensee being free to
@@ -81,90 +81,19 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.beans;
-
-import java.io.Serializable;
-import java.util.Objects;
-import jdk.internal.dynalink.StandardOperation;
+package jdk.internal.dynalink;
 
 /**
- * Object that allows access to the static members of a class (its static
- * methods, properties, and fields), as well as construction of instances using
- * {@link StandardOperation#NEW} operation. In Dynalink, {@link Class} objects
- * are not treated specially and act as ordinary Java objects; you can use e.g.
- * {@code NamedOperation(GET_PROPERTY, "superclass")} as a property getter to
- * invoke {@code clazz.getSuperclass()}. On the other hand, you can not use
- * {@code Class} objects to access static members of a class, nor to create new
- * instances of the class using {@code NEW}. This is consistent with how
- * {@code Class} objects behave in Java: in Java, you write e.g.
- * {@code new BitSet()} instead of {@code new BitSet.class()}. Similarly, you
- * write {@code System.out} and not {@code System.class.out}. It is this aspect
- * of using a class name as the constructor and a namespace for static members
- * that {@code StaticClass} embodies.
- * <p>
- * Objects of this class are recognized by the {@link BeansLinker} as being
- * special, and operations on them will be linked against the represented class'
- * static members. The {@code "class"} synthetic property is additionally
- * recognized and returns the Java {@link Class} object, just as in Java
- * {@code System.class} evaluates to the {@code Class} object for the
- * {@code} System class. Conversely, {@link Class} objects exposed through
- * {@link BeansLinker} expose the {@code "static"} synthetic property which
- * returns their {@code StaticClass} object (there is no equivalent to this in
- * Java).
- * <p>
- * In summary, instances of this class act as namespaces for static members and
- * as constructors for classes, much the same way as specifying a class name in
- * Java language does, except that in Java this is just a syntactic element,
- * while in Dynalink they are expressed as actual objects.
- * <p>{@code StaticClass} objects representing Java array types will act as
- * constructors taking a single int argument and create an array of the
- * specified size.
- * <p>
- * If the class has several constructors, {@link StandardOperation#NEW} on
- * {@code StaticClass} will try to select the most specific applicable
- * constructor. You might want to expose a mechanism in your language for
- * selecting a constructor with an explicit signature through
- * {@link BeansLinker#getConstructorMethod(Class, String)}.
+ * An object that describes a dynamic operation. Dynalink defines a set of
+ * standard operations with the {@link StandardOperation} class, as well as a
+ * way to attach a fixed name to an operation using {@link NamedOperation} and
+ * to express a set of alternative operations using {@link CompositeOperation}.
+ * When presenting examples in this documentation, we will refer to standard
+ * operations using their name (e.g. {@code GET_PROPERTY}), to composite
+ * operations by separating their components with the vertical line character
+ * (e.g. {@code GET_PROPERTY|GET_ELEMENT}), and finally to named operations by
+ * separating the base operation and the name with the colon character (e.g.
+ * {@code GET_PROPERTY|GET_ELEMENT:color}).
  */
-public final class StaticClass implements Serializable {
-    private static final ClassValue<StaticClass> staticClasses = new ClassValue<StaticClass>() {
-        @Override
-        protected StaticClass computeValue(final Class<?> type) {
-            return new StaticClass(type);
-        }
-    };
-
-    private static final long serialVersionUID = 1L;
-
-    private final Class<?> clazz;
-
-    /*private*/ StaticClass(final Class<?> clazz) {
-        this.clazz = Objects.requireNonNull(clazz);
-    }
-
-    /**
-     * Retrieves the {@link StaticClass} instance for the specified class.
-     * @param clazz the class for which the static facet is requested.
-     * @return the {@link StaticClass} instance representing the specified class.
-     */
-    public static StaticClass forClass(final Class<?> clazz) {
-        return staticClasses.get(clazz);
-    }
-
-    /**
-     * Returns the represented Java class.
-     * @return the represented Java class.
-     */
-    public Class<?> getRepresentedClass() {
-        return clazz;
-    }
-
-    @Override
-    public String toString() {
-        return "StaticClass[" + clazz.getName() + "]";
-    }
-
-    private Object readResolve() {
-        return forClass(clazz);
-    }
+public interface Operation {
 }
