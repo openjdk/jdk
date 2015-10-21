@@ -304,13 +304,17 @@ test:
 test-hotspot-jtreg-native:
 	$(call RunTests, "hotspot_native_sanity")
 
+test-hotspot-internal:
+	$(call RunTests, "hotspot_internal")
+
 test-jdk-jtreg-native:
 	$(call RunTests, "jdk_native_sanity")
 
 test-make:
 	($(CD) $(SRC_ROOT)/test/make && $(MAKE) $(MAKE_ARGS) -f TestMake.gmk $(TEST_TARGET))
 
-ALL_TARGETS += test test-hotspot-jtreg-native test-jdk-jtreg-native test-make
+ALL_TARGETS += test test-hotspot-jtreg-native test-hotspot-internal \
+    test-jdk-jtreg-native test-make
 
 ################################################################################
 # Verification targets
@@ -468,6 +472,8 @@ else
   test-image-hotspot-jtreg-native: build-test-hotspot-jtreg-native
 
   test-image-jdk-jtreg-native: build-test-jdk-jtreg-native
+
+  test-hotspot-internal: exploded-image
 
 endif
 
