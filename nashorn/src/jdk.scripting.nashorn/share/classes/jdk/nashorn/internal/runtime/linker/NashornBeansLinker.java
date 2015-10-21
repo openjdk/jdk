@@ -109,7 +109,7 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
                 final MethodType callType = desc.getMethodType();
                 // drop callee (Undefined ScriptFunction) and change the request to be dyn:callMethod:<name>
                 final NashornCallSiteDescriptor newDesc = NashornCallSiteDescriptor.get(
-                        NashornCallSiteDescriptor.getLookupPrivileged(desc), "dyn:callMethod:" + name,
+                        NashornCallSiteDescriptor.getLookupInternal(desc), "dyn:callMethod:" + name,
                         desc.getMethodType().dropParameterTypes(1, 2),
                         NashornCallSiteDescriptor.getFlags(desc));
                 final GuardedInvocation gi = getGuardedInvocation(beansLinker,
