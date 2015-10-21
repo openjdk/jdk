@@ -1597,6 +1597,10 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             }
         }
 
+        public boolean isLambdaMethod() {
+            return (flags() & LAMBDA_METHOD) == LAMBDA_METHOD;
+        }
+
         /** The implementation of this (abstract) symbol in class origin;
          *  null if none exists. Synthetic methods are not considered
          *  as possible implementations.
