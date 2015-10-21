@@ -86,6 +86,7 @@ package jdk.internal.dynalink;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -101,6 +102,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.function.Supplier;
 import jdk.internal.dynalink.beans.BeansLinker;
+import jdk.internal.dynalink.internal.AccessControlContextFactory;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.GuardedInvocationTransformer;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
@@ -128,6 +130,9 @@ import jdk.internal.dynalink.linker.support.TypeUtilities;
  * category usually includes {@link BeansLinker}.
  */
 public final class DynamicLinkerFactory {
+    private static final AccessControlContext GET_CLASS_LOADER_CONTEXT =
+            AccessControlContextFactory.createAccessControlContext("getClassLoader");
+
     /**
      * Default value for {@link #setUnstableRelinkThreshold(int) unstable relink
      * threshold}.
@@ -495,7 +500,7 @@ public final class DynamicLinkerFactory {
             public ClassLoader run() {
                 return Thread.currentThread().getContextClassLoader();
             }
-        }, ClassLoaderGetterContextProvider.GET_CLASS_LOADER_CONTEXT);
+        }, GET_CLASS_LOADER_CONTEXT);
     }
 
     private static void addClasses(final Set<Class<? extends GuardingDynamicLinker>> knownLinkerClasses,

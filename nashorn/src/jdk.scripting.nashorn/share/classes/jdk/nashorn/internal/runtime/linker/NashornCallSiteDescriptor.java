@@ -28,6 +28,7 @@ package jdk.nashorn.internal.runtime.linker;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,6 +36,7 @@ import java.util.concurrent.ConcurrentMap;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.support.AbstractCallSiteDescriptor;
 import jdk.nashorn.internal.ir.debug.NashornTextifier;
+import jdk.nashorn.internal.runtime.AccessControlContextFactory;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
 /**
@@ -105,6 +107,9 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor<
             return new ConcurrentHashMap<>();
         }
     };
+
+    private static final AccessControlContext GET_LOOKUP_PERMISSION_CONTEXT =
+            AccessControlContextFactory.createAccessControlContext(CallSiteDescriptor.GET_LOOKUP_PERMISSION);
 
     private final MethodHandles.Lookup lookup;
     private final String operator;
@@ -208,8 +213,8 @@ public final class NashornCallSiteDescriptor extends AbstractCallSiteDescriptor<
         if (csd instanceof NashornCallSiteDescriptor) {
             return ((NashornCallSiteDescriptor)csd).lookup;
         }
-        return AccessController.doPrivileged((PrivilegedAction<Lookup>)()->csd.getLookup(), null,
-                CallSiteDescriptor.GET_LOOKUP_PERMISSION);
+        return AccessController.doPrivileged((PrivilegedAction<Lookup>)()->csd.getLookup(),
+                GET_LOOKUP_PERMISSION_CONTEXT);
     }
 
     @Override

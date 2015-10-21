@@ -85,11 +85,12 @@ package jdk.internal.dynalink.beans;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import java.security.AccessControlContext;
 import java.security.AccessController;
-import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.util.LinkedList;
 import java.util.List;
+import jdk.internal.dynalink.internal.AccessControlContextFactory;
 import jdk.internal.dynalink.internal.InternalTypeUtilities;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.support.TypeUtilities;
@@ -100,7 +101,8 @@ import jdk.internal.dynalink.linker.support.TypeUtilities;
  * JLS.
  */
 final class ClassString {
-    private static final Permission GET_CLASS_LOADER_PERMISSION = new RuntimePermission("getClassLoader");
+    private static final AccessControlContext GET_CLASS_LOADER_CONTEXT =
+            AccessControlContextFactory.createAccessControlContext("getClassLoader");
 
     /**
      * An anonymous inner class used solely to represent the "type" of null values for method applicability checking.
@@ -158,7 +160,7 @@ final class ClassString {
                 }
                 return true;
             }
-        }, null, GET_CLASS_LOADER_PERMISSION);
+        }, GET_CLASS_LOADER_CONTEXT);
     }
 
     List<MethodHandle> getMaximallySpecifics(final List<MethodHandle> methods, final LinkerServices linkerServices, final boolean varArg) {
