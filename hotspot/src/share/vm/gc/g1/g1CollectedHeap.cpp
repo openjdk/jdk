@@ -1716,7 +1716,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size, AllocationConte
   return NULL;
 }
 
-bool G1CollectedHeap::expand(size_t expand_bytes) {
+bool G1CollectedHeap::expand(size_t expand_bytes, double* expand_time_ms) {
   size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
   aligned_expand_bytes = align_size_up(aligned_expand_bytes,
                                        HeapRegion::GrainBytes);
@@ -1733,10 +1733,14 @@ bool G1CollectedHeap::expand(size_t expand_bytes) {
     return false;
   }
 
+  double expand_heap_start_time_sec = os::elapsedTime();
   uint regions_to_expand = (uint)(aligned_expand_bytes / HeapRegion::GrainBytes);
   assert(regions_to_expand > 0, "Must expand by at least one region");
 
   uint expanded_by = _hrm.expand_by(regions_to_expand);
+  if (expand_time_ms != NULL) {
+    *expand_time_ms = (os::elapsedTime() - expand_heap_start_time_sec) * MILLIUNITS;
+  }
 
   if (expanded_by > 0) {
     size_t actual_expand_bytes = expanded_by * HeapRegion::GrainBytes;
@@ -3997,9 +4001,11 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
             size_t bytes_before = capacity();
             // No need for an ergo verbose message here,
             // expansion_amount() does this when it returns a value > 0.
-            if (!expand(expand_bytes)) {
+            double expand_ms;
+            if (!expand(expand_bytes, &expand_ms)) {
               // We failed to expand the heap. Cannot do anything about it.
             }
+            g1_policy()->phase_times()->record_expand_heap_time(expand_ms);
           }
         }
 
