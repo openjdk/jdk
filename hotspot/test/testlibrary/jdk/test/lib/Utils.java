@@ -412,6 +412,23 @@ public final class Utils {
     }
 
     /**
+     * Returns random element of non empty array
+     *
+     * @param <T> a type of array element
+     * @param array array of elements
+     * @return random element of array
+     * @throws IllegalArgumentException if array is empty
+     */
+    public static <T> T getRandomElement(T[] array)
+            throws IllegalArgumentException {
+        if (array == null || array.length == 0) {
+            throw new IllegalArgumentException("Empty or null array");
+        }
+        Random random = getRandomInstance();
+        return array[random.nextInt(array.length)];
+    }
+
+    /**
      * Wait for condition to be true
      *
      * @param condition, a condition to wait for
