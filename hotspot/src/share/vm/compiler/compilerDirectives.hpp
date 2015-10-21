@@ -67,7 +67,7 @@
     cflags(VectorizeDebug,          bool, false, VectorizeDebug) \
     cflags(CloneMapDebug,           bool, false, CloneMapDebug) \
     cflags(DoReserveCopyInSuperWordDebug, bool, false, DoReserveCopyInSuperWordDebug) \
-    cflags(IGVPrintLevel,           intx, PrintIdealGraphLevel, IGVPrintLevel) \
+    NOT_PRODUCT( cflags(IGVPrintLevel, intx, PrintIdealGraphLevel, IGVPrintLevel)) \
     cflags(MaxNodeLimit,            intx, MaxNodeLimit, MaxNodeLimit)
 #else
   #define compilerdirectives_c2_flags(cflags)
