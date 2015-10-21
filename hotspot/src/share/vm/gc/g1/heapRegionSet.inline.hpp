@@ -29,9 +29,9 @@
 
 inline void HeapRegionSetBase::add(HeapRegion* hr) {
   check_mt_safety();
-  assert(hr->containing_set() == NULL, hrs_ext_msg(this, "should not already have a containing set %u"));
-  assert(hr->next() == NULL, hrs_ext_msg(this, "should not already be linked"));
-  assert(hr->prev() == NULL, hrs_ext_msg(this, "should not already be linked"));
+  assert(hr->containing_set() == NULL, "%s", hrs_ext_msg(this, "should not already have a containing set %u").buffer());
+  assert(hr->next() == NULL, "%s", hrs_ext_msg(this, "should not already be linked").buffer());
+  assert(hr->prev() == NULL, "%s", hrs_ext_msg(this, "should not already be linked").buffer());
 
   _count.increment(1u, hr->capacity());
   hr->set_containing_set(this);
@@ -41,18 +41,18 @@ inline void HeapRegionSetBase::add(HeapRegion* hr) {
 inline void HeapRegionSetBase::remove(HeapRegion* hr) {
   check_mt_safety();
   verify_region(hr);
-  assert(hr->next() == NULL, hrs_ext_msg(this, "should already be unlinked"));
-  assert(hr->prev() == NULL, hrs_ext_msg(this, "should already be unlinked"));
+  assert(hr->next() == NULL, "%s", hrs_ext_msg(this, "should already be unlinked").buffer());
+  assert(hr->prev() == NULL, "%s", hrs_ext_msg(this, "should already be unlinked").buffer());
 
   hr->set_containing_set(NULL);
-  assert(_count.length() > 0, hrs_ext_msg(this, "pre-condition"));
+  assert(_count.length() > 0, "%s", hrs_ext_msg(this, "pre-condition").buffer());
   _count.decrement(1u, hr->capacity());
 }
 
 inline void FreeRegionList::add_ordered(HeapRegion* hr) {
   assert((length() == 0 && _head == NULL && _tail == NULL && _last == NULL) ||
          (length() >  0 && _head != NULL && _tail != NULL),
-         hrs_ext_msg(this, "invariant"));
+         "%s", hrs_ext_msg(this, "invariant").buffer());
   // add() will verify the region and check mt safety.
   add(hr);
 
@@ -129,7 +129,7 @@ inline HeapRegion* FreeRegionList::remove_region(bool from_head) {
     return NULL;
   }
   assert(length() > 0 && _head != NULL && _tail != NULL,
-         hrs_ext_msg(this, "invariant"));
+         "%s", hrs_ext_msg(this, "invariant").buffer());
 
   HeapRegion* hr;
 

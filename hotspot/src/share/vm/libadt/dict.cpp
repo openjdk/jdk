@@ -31,8 +31,6 @@
 
 #include <assert.h>
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 //------------------------------data-----------------------------------------
 // String hash tables
 #define MAXID 20
@@ -288,9 +286,9 @@ int32_t Dict::operator ==(const Dict &d2) const {
 // Handier print routine
 void Dict::print() {
   DictI i(this); // Moved definition in iterator here because of g++.
-  tty->print("Dict@0x%lx[%d] = {", this, _cnt);
+  tty->print("Dict@" INTPTR_FORMAT "[%d] = {", p2i(this), _cnt);
   for( ; i.test(); ++i ) {
-    tty->print("(0x%lx,0x%lx),", i._key, i._value);
+    tty->print("(" INTPTR_FORMAT "," INTPTR_FORMAT "),", p2i(i._key), p2i(i._value));
   }
   tty->print_cr("}");
 }

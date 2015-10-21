@@ -23,7 +23,7 @@
 
 /*
  * @test TestGCLogMessages
- * @bug 8035406 8027295 8035398 8019342 8027959 8048179 8027962
+ * @bug 8035406 8027295 8035398 8019342 8027959 8048179 8027962 8069330
  * @summary Ensure that the PrintGCDetails output for a minor GC with G1
  * includes the expected necessary messages.
  * @key gc
@@ -55,6 +55,8 @@ public class TestGCLogMessages {
     };
 
     private LogMessageWithLevel allLogMessages[] = new LogMessageWithLevel[] {
+        // Update RS
+        new LogMessageWithLevel("Scan HCC (ms)", Level.FINER),
         // Ext Root Scan
         new LogMessageWithLevel("Thread Roots (ms)", Level.FINEST),
         new LogMessageWithLevel("StringTable Roots (ms)", Level.FINEST),
@@ -77,6 +79,7 @@ public class TestGCLogMessages {
         // Misc Top-level
         new LogMessageWithLevel("Code Root Purge", Level.FINER),
         new LogMessageWithLevel("String Dedup Fixup", Level.FINER),
+        new LogMessageWithLevel("Expand Heap After Collection", Level.FINER),
         // Free CSet
         new LogMessageWithLevel("Young Free CSet", Level.FINEST),
         new LogMessageWithLevel("Non-Young Free CSet", Level.FINEST),

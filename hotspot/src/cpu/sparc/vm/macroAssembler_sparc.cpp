@@ -1596,7 +1596,7 @@ void MacroAssembler::debug(char* msg, RegistersForDebugging* regs) {
   else {
      ::tty->print_cr("=============== DEBUG MESSAGE: %s ================\n", msg);
   }
-  assert(false, err_msg("DEBUG MESSAGE: %s", msg));
+  assert(false, "DEBUG MESSAGE: %s", msg);
 }
 
 

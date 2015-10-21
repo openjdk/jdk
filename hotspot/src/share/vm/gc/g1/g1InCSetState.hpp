@@ -51,15 +51,11 @@ struct InCSetState {
   enum {
     // Selection of the values were driven to micro-optimize the encoding and
     // frequency of the checks.
-    // The most common check is whether the region is in the collection set or not.
-    // This encoding allows us to use an != 0 check which in some architectures
-    // (x86*) can be encoded slightly more efficently than a normal comparison
-    // against zero.
-    // The same situation occurs when checking whether the region is humongous
-    // or not, which is encoded by values < 0.
+    // The most common check is whether the region is in the collection set or not,
+    // this encoding allows us to use an > 0 check.
     // The other values are simply encoded in increasing generation order, which
     // makes getting the next generation fast by a simple increment.
-    Humongous    = -1,    // The region is humongous - note that actually any value < 0 would be possible here.
+    Humongous    = -1,    // The region is humongous
     NotInCSet    =  0,    // The region is not in the collection set.
     Young        =  1,    // The region is in the collection set and a young region.
     Old          =  2,    // The region is in the collection set and an old region.
@@ -67,16 +63,17 @@ struct InCSetState {
   };
 
   InCSetState(in_cset_state_t value = NotInCSet) : _value(value) {
-    assert(is_valid(), err_msg("Invalid state %d", _value));
+    assert(is_valid(), "Invalid state %d", _value);
   }
 
   in_cset_state_t value() const        { return _value; }
 
   void set_old()                       { _value = Old; }
 
-  bool is_in_cset_or_humongous() const { return _value != NotInCSet; }
+  bool is_in_cset_or_humongous() const { return is_in_cset() || is_humongous(); }
   bool is_in_cset() const              { return _value > NotInCSet; }
-  bool is_humongous() const            { return _value < NotInCSet; }
+
+  bool is_humongous() const            { return _value == Humongous; }
   bool is_young() const                { return _value == Young; }
   bool is_old() const                  { return _value == Old; }
 
@@ -104,7 +101,7 @@ class G1InCSetStateFastTestBiasedMappedArray : public G1BiasedMappedArray<InCSet
  public:
   void set_humongous(uintptr_t index) {
     assert(get_by_index(index).is_default(),
-           err_msg("State at index " INTPTR_FORMAT " should be default but is " CSETSTATE_FORMAT, index, get_by_index(index).value()));
+           "State at index " INTPTR_FORMAT " should be default but is " CSETSTATE_FORMAT, index, get_by_index(index).value());
     set_by_index(index, InCSetState::Humongous);
   }
 
@@ -114,13 +111,13 @@ class G1InCSetStateFastTestBiasedMappedArray : public G1BiasedMappedArray<InCSet
 
   void set_in_young(uintptr_t index) {
     assert(get_by_index(index).is_default(),
-           err_msg("State at index " INTPTR_FORMAT " should be default but is " CSETSTATE_FORMAT, index, get_by_index(index).value()));
+           "State at index " INTPTR_FORMAT " should be default but is " CSETSTATE_FORMAT, index, get_by_index(index).value());
     set_by_index(index, InCSetState::Young);
   }
 
   void set_in_old(uintptr_t index) {
     assert(get_by_index(index).is_default(),
-           err_msg("State at index " INTPTR_FORMAT " should be default but is " CSETSTATE_FORMAT, index, get_by_index(index).value()));
+           "State at index " INTPTR_FORMAT " should be default but is " CSETSTATE_FORMAT, index, get_by_index(index).value());
     set_by_index(index, InCSetState::Old);
   }
 

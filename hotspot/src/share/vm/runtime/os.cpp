@@ -61,8 +61,6 @@
 
 # include <signal.h>
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 OSThread*         os::_starting_thread    = NULL;
 address           os::_polling_page       = NULL;
 volatile int32_t* os::_mem_serialize_page = NULL;
@@ -621,12 +619,12 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   ptr = guarded.get_user_ptr();
 #endif
   if ((intptr_t)ptr == (intptr_t)MallocCatchPtr) {
-    tty->print_cr("os::malloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, ptr);
+    tty->print_cr("os::malloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, p2i(ptr));
     breakpoint();
   }
   debug_only(if (paranoid) verify_memory(ptr));
   if (PrintMalloc && tty != NULL) {
-    tty->print_cr("os::malloc " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, ptr);
+    tty->print_cr("os::malloc " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, p2i(ptr));
   }
 
   // we do not track guard memory
@@ -658,7 +656,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     return os::malloc(size, memflags, stack);
   }
   if ((intptr_t)memblock == (intptr_t)MallocCatchPtr) {
-    tty->print_cr("os::realloc caught " PTR_FORMAT, memblock);
+    tty->print_cr("os::realloc caught " PTR_FORMAT, p2i(memblock));
     breakpoint();
   }
   // NMT support
@@ -671,7 +669,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
   // always move the block
   void* ptr = os::malloc(size, memflags, stack);
   if (PrintMalloc && tty != NULL) {
-    tty->print_cr("os::realloc " SIZE_FORMAT " bytes, " PTR_FORMAT " --> " PTR_FORMAT, size, memblock, ptr);
+    tty->print_cr("os::realloc " SIZE_FORMAT " bytes, " PTR_FORMAT " --> " PTR_FORMAT, size, p2i(memblock), p2i(ptr));
   }
   // Copy to new memory if malloc didn't fail
   if ( ptr != NULL ) {
@@ -681,7 +679,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCa
     memcpy(ptr, memblock, MIN2(size, memblock_size));
     if (paranoid) verify_memory(MemTracker::malloc_base(ptr));
     if ((intptr_t)ptr == (intptr_t)MallocCatchPtr) {
-      tty->print_cr("os::realloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, ptr);
+      tty->print_cr("os::realloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, p2i(ptr));
       breakpoint();
     }
     os::free(memblock);
@@ -696,7 +694,7 @@ void  os::free(void *memblock) {
 #ifdef ASSERT
   if (memblock == NULL) return;
   if ((intptr_t)memblock == (intptr_t)MallocCatchPtr) {
-    if (tty != NULL) tty->print_cr("os::free caught " PTR_FORMAT, memblock);
+    if (tty != NULL) tty->print_cr("os::free caught " PTR_FORMAT, p2i(memblock));
     breakpoint();
   }
   void* membase = MemTracker::record_free(memblock);
@@ -796,7 +794,7 @@ void os::print_hex_dump(outputStream* st, address start, address end, int unitsi
   }
 
   address p = start;
-  st->print(PTR_FORMAT ":   ", start);
+  st->print(PTR_FORMAT ":   ", p2i(start));
   while (p < end) {
     switch (unitsize) {
       case 1: st->print("%02x", *(u1*)p); break;
@@ -809,7 +807,7 @@ void os::print_hex_dump(outputStream* st, address start, address end, int unitsi
     if (cols >= cols_per_line && p < end) {
        cols = 0;
        st->cr();
-       st->print(PTR_FORMAT ":   ", p);
+       st->print(PTR_FORMAT ":   ", p2i(p));
     } else {
        st->print(" ");
     }
@@ -856,9 +854,9 @@ void os::print_summary_info(outputStream* st, char* buf, size_t buflen) {
   size_t mem = physical_memory()/G;
   if (mem == 0) {  // for low memory systems
     mem = physical_memory()/M;
-    st->print("%d cores, %dM, ", processor_count(), mem);
+    st->print("%d cores, " SIZE_FORMAT "M, ", processor_count(), mem);
   } else {
-    st->print("%d cores, %dG, ", processor_count(), mem);
+    st->print("%d cores, " SIZE_FORMAT "G, ", processor_count(), mem);
   }
   get_summary_os_info(buf, buflen);
   st->print_raw(buf);
@@ -914,41 +912,40 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       // the interpreter is generated into a buffer blob
       InterpreterCodelet* i = Interpreter::codelet_containing(addr);
       if (i != NULL) {
-        st->print_cr(INTPTR_FORMAT " is at code_begin+%d in an Interpreter codelet", addr, (int)(addr - i->code_begin()));
+        st->print_cr(INTPTR_FORMAT " is at code_begin+%d in an Interpreter codelet", p2i(addr), (int)(addr - i->code_begin()));
         i->print_on(st);
         return;
       }
       if (Interpreter::contains(addr)) {
         st->print_cr(INTPTR_FORMAT " is pointing into interpreter code"
-                     " (not bytecode specific)", addr);
+                     " (not bytecode specific)", p2i(addr));
         return;
       }
       //
       if (AdapterHandlerLibrary::contains(b)) {
-        st->print_cr(INTPTR_FORMAT " is at code_begin+%d in an AdapterHandler", addr, (int)(addr - b->code_begin()));
+        st->print_cr(INTPTR_FORMAT " is at code_begin+%d in an AdapterHandler", p2i(addr), (int)(addr - b->code_begin()));
         AdapterHandlerLibrary::print_handler_on(st, b);
       }
       // the stubroutines are generated into a buffer blob
       StubCodeDesc* d = StubCodeDesc::desc_for(addr);
       if (d != NULL) {
-        st->print_cr(INTPTR_FORMAT " is at begin+%d in a stub", addr, (int)(addr - d->begin()));
+        st->print_cr(INTPTR_FORMAT " is at begin+%d in a stub", p2i(addr), (int)(addr - d->begin()));
         d->print_on(st);
         st->cr();
         return;
       }
       if (StubRoutines::contains(addr)) {
-        st->print_cr(INTPTR_FORMAT " is pointing to an (unnamed) "
-                     "stub routine", addr);
+        st->print_cr(INTPTR_FORMAT " is pointing to an (unnamed) stub routine", p2i(addr));
         return;
       }
       // the InlineCacheBuffer is using stubs generated into a buffer blob
       if (InlineCacheBuffer::contains(addr)) {
-        st->print_cr(INTPTR_FORMAT " is pointing into InlineCacheBuffer", addr);
+        st->print_cr(INTPTR_FORMAT " is pointing into InlineCacheBuffer", p2i(addr));
         return;
       }
       VtableStub* v = VtableStubs::stub_containing(addr);
       if (v != NULL) {
-        st->print_cr(INTPTR_FORMAT " is at entry_point+%d in a vtable stub", addr, (int)(addr - v->entry_point()));
+        st->print_cr(INTPTR_FORMAT " is at entry_point+%d in a vtable stub", p2i(addr), (int)(addr - v->entry_point()));
         v->print_on(st);
         st->cr();
         return;
@@ -958,7 +955,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     if (nm != NULL) {
       ResourceMark rm;
       st->print(INTPTR_FORMAT " is at entry_point+%d in (nmethod*)" INTPTR_FORMAT,
-                addr, (int)(addr - nm->entry_point()), nm);
+                p2i(addr), (int)(addr - nm->entry_point()), p2i(nm));
       if (verbose) {
         st->print(" for ");
         nm->method()->print_value_on(st);
@@ -967,7 +964,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       nm->print_nmethod(verbose);
       return;
     }
-    st->print_cr(INTPTR_FORMAT " is at code_begin+%d in ", addr, (int)(addr - b->code_begin()));
+    st->print_cr(INTPTR_FORMAT " is at code_begin+%d in ", p2i(addr), (int)(addr - b->code_begin()));
     b->print_on(st);
     return;
   }
@@ -985,9 +982,9 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     }
     if (print) {
       if (p == (HeapWord*) addr) {
-        st->print_cr(INTPTR_FORMAT " is an oop", addr);
+        st->print_cr(INTPTR_FORMAT " is an oop", p2i(addr));
       } else {
-        st->print_cr(INTPTR_FORMAT " is pointing into object: " INTPTR_FORMAT, addr, p);
+        st->print_cr(INTPTR_FORMAT " is pointing into object: " INTPTR_FORMAT, p2i(addr), p2i(p));
       }
       oop(p)->print_on(st);
       return;
@@ -995,22 +992,22 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   } else {
     if (Universe::heap()->is_in_reserved(addr)) {
       st->print_cr(INTPTR_FORMAT " is an unallocated location "
-                   "in the heap", addr);
+                   "in the heap", p2i(addr));
       return;
     }
   }
   if (JNIHandles::is_global_handle((jobject) addr)) {
-    st->print_cr(INTPTR_FORMAT " is a global jni handle", addr);
+    st->print_cr(INTPTR_FORMAT " is a global jni handle", p2i(addr));
     return;
   }
   if (JNIHandles::is_weak_global_handle((jobject) addr)) {
-    st->print_cr(INTPTR_FORMAT " is a weak global jni handle", addr);
+    st->print_cr(INTPTR_FORMAT " is a weak global jni handle", p2i(addr));
     return;
   }
 #ifndef PRODUCT
   // we don't keep the block list in product mode
   if (JNIHandleBlock::any_contains((jobject) addr)) {
-    st->print_cr(INTPTR_FORMAT " is a local jni handle", addr);
+    st->print_cr(INTPTR_FORMAT " is a local jni handle", p2i(addr));
     return;
   }
 #endif
@@ -1020,7 +1017,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     if (thread->privileged_stack_top() != NULL &&
         thread->privileged_stack_top()->contains(addr)) {
       st->print_cr(INTPTR_FORMAT " is pointing into the privilege stack "
-                   "for thread: " INTPTR_FORMAT, addr, thread);
+                   "for thread: " INTPTR_FORMAT, p2i(addr), p2i(thread));
       if (verbose) thread->print_on(st);
       return;
     }
@@ -1029,7 +1026,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       if (verbose) {
         thread->print_on(st);
       } else {
-        st->print_cr(INTPTR_FORMAT " is a thread", addr);
+        st->print_cr(INTPTR_FORMAT " is a thread", p2i(addr));
       }
       return;
     }
@@ -1038,7 +1035,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     if (thread->stack_base() >= addr &&
         addr > (thread->stack_base() - thread->stack_size())) {
       st->print_cr(INTPTR_FORMAT " is pointing into the stack for thread: "
-                   INTPTR_FORMAT, addr, thread);
+                   INTPTR_FORMAT, p2i(addr), p2i(thread));
       if (verbose) thread->print_on(st);
       return;
     }
@@ -1052,7 +1049,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
       st->cr();
     } else {
       // Use addr->print() from the debugger instead (not here)
-      st->print_cr(INTPTR_FORMAT " is pointing into metadata", addr);
+      st->print_cr(INTPTR_FORMAT " is pointing into metadata", p2i(addr));
     }
     return;
   }
@@ -1062,7 +1059,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
     return;
   }
 
-  st->print_cr(INTPTR_FORMAT " is an unknown value", addr);
+  st->print_cr(INTPTR_FORMAT " is an unknown value", p2i(addr));
 }
 
 // Looks like all platforms except IA64 can use the same function to check
@@ -1461,7 +1458,7 @@ void os::trace_page_sizes(const char* str, const size_t region_min_size,
                   " pg_sz=" SIZE_FORMAT " base=" PTR_FORMAT
                   " size=" SIZE_FORMAT,
                   str, region_min_size, region_max_size,
-                  page_size, base, size);
+                  page_size, p2i(base), size);
   }
 }
 #endif  // #ifndef PRODUCT
@@ -1679,7 +1676,7 @@ os::SuspendResume::State os::SuspendResume::switch_state(os::SuspendResume::Stat
 
 #ifndef PRODUCT
 
-#define assert_eq(a,b) assert(a == b, err_msg(SIZE_FORMAT " != " SIZE_FORMAT, a, b))
+#define assert_eq(a,b) assert(a == b, SIZE_FORMAT " != " SIZE_FORMAT, a, b)
 
 class TestOS : AllStatic {
   static size_t small_page_size() {

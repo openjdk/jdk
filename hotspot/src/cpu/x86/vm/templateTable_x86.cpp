@@ -3595,6 +3595,8 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ profile_virtual_call(rax, rlocals, rdx);
   // get target Method* & entry point
   __ lookup_virtual_method(rax, index, method);
+  __ profile_called_method(method, rdx, rbcp);
+
   __ profile_arguments_type(rdx, method, rbcp, true);
   __ jump_from_interpreted(method, rdx);
 }
@@ -3694,6 +3696,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ testptr(rbx, rbx);
   __ jcc(Assembler::zero, no_such_method);
 
+  __ profile_called_method(rbx, rbcp, rdx);
   __ profile_arguments_type(rdx, rbx, rbcp, true);
 
   // do the call

@@ -39,7 +39,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void null_check_throw(Register a, int offset, Register temp_reg);
 
-  void branch_to_entry(address entry, Register Rscratch);
+  void jump_to_entry(address entry, Register Rscratch);
 
   // Handy address generation macros.
 #define thread_(field_name) in_bytes(JavaThread::field_name ## _offset()), R16_thread

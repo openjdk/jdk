@@ -106,8 +106,6 @@
 # include <inttypes.h>
 # include <sys/ioctl.h>
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // if RUSAGE_THREAD for getrusage() has not been defined, do it here. The code calling
 // getrusage() is prepared to handle the associated failure.
 #ifndef RUSAGE_THREAD
@@ -1969,7 +1967,8 @@ int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *pa
       char name[PATH_MAX + 1];
 
       // Parse fields from line
-      sscanf(line, "%lx-%lx %4s %lx %5s %ld %s", &base, &top, permissions, &offset, device, &inode, name);
+      sscanf(line, UINT64_FORMAT_X "-" UINT64_FORMAT_X " %4s " UINT64_FORMAT_X " %5s " INT64_FORMAT " %s",
+             &base, &top, permissions, &offset, device, &inode, name);
 
       // Filter by device id '00:00' so that we only get file system mapped files.
       if (strcmp(device, "00:00") != 0) {
@@ -2632,7 +2631,7 @@ static bool recoverable_mmap_error(int err) {
 static void warn_fail_commit_memory(char* addr, size_t size, bool exec,
                                     int err) {
   warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
-          ", %d) failed; error='%s' (errno=%d)", addr, size, exec,
+          ", %d) failed; error='%s' (errno=%d)", p2i(addr), size, exec,
           strerror(err), err);
 }
 
@@ -2640,7 +2639,7 @@ static void warn_fail_commit_memory(char* addr, size_t size,
                                     size_t alignment_hint, bool exec,
                                     int err) {
   warning("INFO: os::commit_memory(" PTR_FORMAT ", " SIZE_FORMAT
-          ", " SIZE_FORMAT ", %d) failed; error='%s' (errno=%d)", addr, size,
+          ", " SIZE_FORMAT ", %d) failed; error='%s' (errno=%d)", p2i(addr), size,
           alignment_hint, exec, strerror(err), err);
 }
 
@@ -2680,7 +2679,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   if (err != 0) {
     // the caller wants all commit errors to exit with the specified mesg:
     warn_fail_commit_memory(addr, size, exec, err);
-    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, mesg);
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
   }
 }
 
@@ -2716,7 +2715,7 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
   if (err != 0) {
     // the caller wants all commit errors to exit with the specified mesg:
     warn_fail_commit_memory(addr, size, alignment_hint, exec, err);
-    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, mesg);
+    vm_exit_out_of_memory(size, OOM_MMAP_ERROR, "%s", mesg);
   }
 }
 
@@ -4278,8 +4277,8 @@ void os::Linux::set_signal_handler(int sig, bool set_installed) {
       // libjsig also interposes the sigaction() call below and saves the
       // old sigaction on it own.
     } else {
-      fatal(err_msg("Encountered unexpected pre-existing sigaction handler "
-                    "%#lx for signal %d.", (long)oldhand, sig));
+      fatal("Encountered unexpected pre-existing sigaction handler "
+            "%#lx for signal %d.", (long)oldhand, sig);
     }
   }
 
@@ -4611,8 +4610,8 @@ void os::init(void) {
 
   Linux::set_page_size(sysconf(_SC_PAGESIZE));
   if (Linux::page_size() == -1) {
-    fatal(err_msg("os_linux.cpp: os::init: sysconf failed (%s)",
-                  strerror(errno)));
+    fatal("os_linux.cpp: os::init: sysconf failed (%s)",
+          strerror(errno));
   }
   init_page_sizes((size_t) Linux::page_size());
 
@@ -4628,7 +4627,7 @@ void os::init(void) {
   int status;
   pthread_condattr_t* _condattr = os::Linux::condAttr();
   if ((status = pthread_condattr_init(_condattr)) != 0) {
-    fatal(err_msg("pthread_condattr_init: %s", strerror(status)));
+    fatal("pthread_condattr_init: %s", strerror(status));
   }
   // Only set the clock if CLOCK_MONOTONIC is available
   if (os::supports_monotonic_clock()) {
@@ -4637,7 +4636,7 @@ void os::init(void) {
         warning("Unable to use monotonic clock with relative timed-waits" \
                 " - changes to the time-of-day clock may have adverse affects");
       } else {
-        fatal(err_msg("pthread_condattr_setclock: %s", strerror(status)));
+        fatal("pthread_condattr_setclock: %s", strerror(status));
       }
     }
   }
@@ -4717,7 +4716,7 @@ jint os::init_2(void) {
   if (threadStackSizeInBytes != 0 &&
       threadStackSizeInBytes < os::Linux::min_stack_allowed) {
     tty->print_cr("\nThe stack size specified is too small, "
-                  "Specify at least %dk",
+                  "Specify at least " SIZE_FORMAT "k",
                   os::Linux::min_stack_allowed/ K);
     return JNI_ERR;
   }
@@ -4918,12 +4917,12 @@ bool os::find(address addr, outputStream* st) {
   Dl_info dlinfo;
   memset(&dlinfo, 0, sizeof(dlinfo));
   if (dladdr(addr, &dlinfo) != 0) {
-    st->print(PTR_FORMAT ": ", addr);
+    st->print(PTR_FORMAT ": ", p2i(addr));
     if (dlinfo.dli_sname != NULL && dlinfo.dli_saddr != NULL) {
-      st->print("%s+%#x", dlinfo.dli_sname,
-                addr - (intptr_t)dlinfo.dli_saddr);
+      st->print("%s+" PTR_FORMAT, dlinfo.dli_sname,
+                p2i(addr) - p2i(dlinfo.dli_saddr));
     } else if (dlinfo.dli_fbase != NULL) {
-      st->print("<offset %#x>", addr - (intptr_t)dlinfo.dli_fbase);
+      st->print("<offset " PTR_FORMAT ">", p2i(addr) - p2i(dlinfo.dli_fbase));
     } else {
       st->print("<absolute address>");
     }
@@ -4931,7 +4930,7 @@ bool os::find(address addr, outputStream* st) {
       st->print(" in %s", dlinfo.dli_fname);
     }
     if (dlinfo.dli_fbase != NULL) {
-      st->print(" at " PTR_FORMAT, dlinfo.dli_fbase);
+      st->print(" at " PTR_FORMAT, p2i(dlinfo.dli_fbase));
     }
     st->cr();
 
@@ -5323,7 +5322,7 @@ int os::loadavg(double loadavg[], int nelem) {
 void os::pause() {
   char filename[MAX_PATH];
   if (PauseAtStartupFile && PauseAtStartupFile[0]) {
-    jio_snprintf(filename, MAX_PATH, PauseAtStartupFile);
+    jio_snprintf(filename, MAX_PATH, "%s", PauseAtStartupFile);
   } else {
     jio_snprintf(filename, MAX_PATH, "./vm.paused.%d", current_process_id());
   }
@@ -5959,7 +5958,7 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
   int written;
 
   if (core_pattern[0] == '/') {
-    written = jio_snprintf(buffer, bufferSize, core_pattern);
+    written = jio_snprintf(buffer, bufferSize, "%s", core_pattern);
   } else {
     char cwd[PATH_MAX];
 
@@ -6095,7 +6094,7 @@ class TestReserveMemorySpecial : AllStatic {
       for (size_t alignment = ag; is_size_aligned(size, alignment); alignment *= 2) {
         char* p = os::Linux::reserve_memory_special_huge_tlbfs_mixed(size, alignment, NULL, false);
         test_log(SIZE_FORMAT_HEX " " SIZE_FORMAT_HEX " ->  " PTR_FORMAT " %s",
-            size, alignment, p, (p != NULL ? "" : "(failed)"));
+                 size, alignment, p2i(p), (p != NULL ? "" : "(failed)"));
         if (p != NULL) {
           assert(is_ptr_aligned(p, alignment), "must be");
           small_page_write(p, size);
@@ -6114,8 +6113,8 @@ class TestReserveMemorySpecial : AllStatic {
         char* const req_addr = (char*) align_ptr_up(mapping1, alignment);
         char* p = os::Linux::reserve_memory_special_huge_tlbfs_mixed(size, alignment, req_addr, false);
         test_log(SIZE_FORMAT_HEX " " SIZE_FORMAT_HEX " " PTR_FORMAT " ->  " PTR_FORMAT " %s",
-            size, alignment, req_addr, p,
-            ((p != NULL ? (p == req_addr ? "(exact match)" : "") : "(failed)")));
+                 size, alignment, p2i(req_addr), p2i(p),
+                 ((p != NULL ? (p == req_addr ? "(exact match)" : "") : "(failed)")));
         if (p != NULL) {
           assert(p == req_addr, "must be");
           small_page_write(p, size);
@@ -6134,8 +6133,7 @@ class TestReserveMemorySpecial : AllStatic {
         char* const req_addr = (char*) align_ptr_up(mapping2, alignment);
         char* p = os::Linux::reserve_memory_special_huge_tlbfs_mixed(size, alignment, req_addr, false);
         test_log(SIZE_FORMAT_HEX " " SIZE_FORMAT_HEX " " PTR_FORMAT " ->  " PTR_FORMAT " %s",
-            size, alignment, req_addr, p,
-            ((p != NULL ? "" : "(failed)")));
+                 size, alignment, p2i(req_addr), p2i(p), ((p != NULL ? "" : "(failed)")));
         // as the area around req_addr contains already existing mappings, the API should always
         // return NULL (as per contract, it cannot return another address)
         assert(p == NULL, "must be");

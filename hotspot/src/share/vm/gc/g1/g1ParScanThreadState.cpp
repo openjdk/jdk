@@ -27,6 +27,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
+#include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -37,15 +38,14 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id,
     _refs(g1h->task_queue(worker_id)),
     _dcq(&g1h->dirty_card_queue_set()),
     _ct_bs(g1h->g1_barrier_set()),
-    _g1_rem(g1h->g1_rem_set()),
+    _closures(NULL),
     _hash_seed(17),
     _worker_id(worker_id),
     _tenuring_threshold(g1h->g1_policy()->tenuring_threshold()),
     _age_table(false),
-    _scanner(g1h),
+    _scanner(g1h, this),
     _old_gen_is_full(false)
 {
-  _scanner.set_par_scan_thread_state(this);
   // we allocate G1YoungSurvRateNumRegions plus one entries, since
   // we "sacrifice" entry 0 to keep track of surviving bytes for
   // non-young regions (where the age is -1)
@@ -69,6 +69,8 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint worker_id,
   // need to be moved to the next space.
   _dest[InCSetState::Young]        = InCSetState::Old;
   _dest[InCSetState::Old]          = InCSetState::Old;
+
+  _closures = G1EvacuationRootClosures::create_root_closures(this, _g1h);
 }
 
 // Pass locally gathered statistics to global state.
@@ -86,6 +88,7 @@ void G1ParScanThreadState::flush(size_t* surviving_young_words) {
 
 G1ParScanThreadState::~G1ParScanThreadState() {
   delete _plab_allocator;
+  delete _closures;
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base);
 }
 
@@ -97,10 +100,10 @@ void G1ParScanThreadState::waste(size_t& wasted, size_t& undo_wasted) {
 bool G1ParScanThreadState::verify_ref(narrowOop* ref) const {
   assert(ref != NULL, "invariant");
   assert(UseCompressedOops, "sanity");
-  assert(!has_partial_array_mask(ref), err_msg("ref=" PTR_FORMAT, p2i(ref)));
+  assert(!has_partial_array_mask(ref), "ref=" PTR_FORMAT, p2i(ref));
   oop p = oopDesc::load_decode_heap_oop(ref);
   assert(_g1h->is_in_g1_reserved(p),
-         err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, p2i(ref), p2i(p)));
+         "ref=" PTR_FORMAT " p=" PTR_FORMAT, p2i(ref), p2i(p));
   return true;
 }
 
@@ -110,11 +113,11 @@ bool G1ParScanThreadState::verify_ref(oop* ref) const {
     // Must be in the collection set--it's already been copied.
     oop p = clear_partial_array_mask(ref);
     assert(_g1h->obj_in_cs(p),
-           err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, p2i(ref), p2i(p)));
+           "ref=" PTR_FORMAT " p=" PTR_FORMAT, p2i(ref), p2i(p));
   } else {
     oop p = oopDesc::load_decode_heap_oop(ref);
     assert(_g1h->is_in_g1_reserved(p),
-           err_msg("ref=" PTR_FORMAT " p=" PTR_FORMAT, p2i(ref), p2i(p)));
+           "ref=" PTR_FORMAT " p=" PTR_FORMAT, p2i(ref), p2i(p));
   }
   return true;
 }
@@ -147,8 +150,8 @@ HeapWord* G1ParScanThreadState::allocate_in_next_plab(InCSetState const state,
                                                       size_t word_sz,
                                                       AllocationContext_t const context,
                                                       bool previous_plab_refill_failed) {
-  assert(state.is_in_cset_or_humongous(), err_msg("Unexpected state: " CSETSTATE_FORMAT, state.value()));
-  assert(dest->is_in_cset_or_humongous(), err_msg("Unexpected dest: " CSETSTATE_FORMAT, dest->value()));
+  assert(state.is_in_cset_or_humongous(), "Unexpected state: " CSETSTATE_FORMAT, state.value());
+  assert(dest->is_in_cset_or_humongous(), "Unexpected dest: " CSETSTATE_FORMAT, dest->value());
 
   // Right now we only have two types of regions (young / old) so
   // let's keep the logic here simple. We can generalize it when necessary.
@@ -177,7 +180,7 @@ HeapWord* G1ParScanThreadState::allocate_in_next_plab(InCSetState const state,
     return obj_ptr;
   } else {
     _old_gen_is_full = previous_plab_refill_failed;
-    assert(dest->is_old(), err_msg("Unexpected dest: " CSETSTATE_FORMAT, dest->value()));
+    assert(dest->is_old(), "Unexpected dest: " CSETSTATE_FORMAT, dest->value());
     // no other space to try.
     return NULL;
   }
@@ -359,8 +362,7 @@ void G1ParScanThreadStateSet::flush() {
 }
 
 oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markOop m) {
-  assert(_g1h->obj_in_cs(old),
-         err_msg("Object " PTR_FORMAT " should be in the CSet", p2i(old)));
+  assert(_g1h->obj_in_cs(old), "Object " PTR_FORMAT " should be in the CSet", p2i(old));
 
   oop forward_ptr = old->forward_to_atomic(old);
   if (forward_ptr == NULL) {
@@ -383,9 +385,9 @@ oop G1ParScanThreadState::handle_evacuation_failure_par(oop old, markOop m) {
     // space for this object (old != forward_ptr) or they beat us in
     // self-forwarding it (old == forward_ptr).
     assert(old == forward_ptr || !_g1h->obj_in_cs(forward_ptr),
-           err_msg("Object " PTR_FORMAT " forwarded to: " PTR_FORMAT " "
-                   "should not be in the CSet",
-                   p2i(old), p2i(forward_ptr)));
+           "Object " PTR_FORMAT " forwarded to: " PTR_FORMAT " "
+           "should not be in the CSet",
+           p2i(old), p2i(forward_ptr));
     return forward_ptr;
   }
 }

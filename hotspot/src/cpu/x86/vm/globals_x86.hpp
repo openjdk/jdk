@@ -46,7 +46,7 @@ define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap NULLs 
 // the the vep is aligned at CodeEntryAlignment whereas c2 only aligns
 // the uep and the vep doesn't get real alignment but just slops on by
 // only assured that the entry instruction meets the 5 byte size requirement.
-#ifdef COMPILER2
+#if defined(COMPILER2) || INCLUDE_JVMCI
 define_pd_global(intx, CodeEntryAlignment,       32);
 #else
 define_pd_global(intx, CodeEntryAlignment,       16);
@@ -55,15 +55,27 @@ define_pd_global(intx, OptoLoopAlignment,        16);
 define_pd_global(intx, InlineFrequencyCount,     100);
 define_pd_global(intx, InlineSmallCode,          1000);
 
-define_pd_global(intx, StackYellowPages, NOT_WINDOWS(2) WINDOWS_ONLY(3));
-define_pd_global(intx, StackRedPages, 1);
+#define DEFAULT_STACK_YELLOW_PAGES (NOT_WINDOWS(2) WINDOWS_ONLY(3))
+#define DEFAULT_STACK_RED_PAGES (1)
+
+#define MIN_STACK_YELLOW_PAGES DEFAULT_STACK_YELLOW_PAGES
+#define MIN_STACK_RED_PAGES DEFAULT_STACK_RED_PAGES
+
 #ifdef AMD64
 // Very large C++ stack frames using solaris-amd64 optimized builds
 // due to lack of optimization caused by C++ compiler bugs
-define_pd_global(intx, StackShadowPages, NOT_WIN64(20) WIN64_ONLY(6) DEBUG_ONLY(+2));
+#define DEFAULT_STACK_SHADOW_PAGES (NOT_WIN64(20) WIN64_ONLY(6) DEBUG_ONLY(+2))
+// For those clients that do not use write socket, we allow
+// the min range value to be below that of the default
+#define MIN_STACK_SHADOW_PAGES (NOT_WIN64(10) WIN64_ONLY(6) DEBUG_ONLY(+2))
 #else
-define_pd_global(intx, StackShadowPages, 4 DEBUG_ONLY(+5));
+#define DEFAULT_STACK_SHADOW_PAGES (4 DEBUG_ONLY(+5))
+#define MIN_STACK_SHADOW_PAGES DEFAULT_STACK_SHADOW_PAGES
 #endif // AMD64
+
+define_pd_global(intx, StackYellowPages, DEFAULT_STACK_YELLOW_PAGES);
+define_pd_global(intx, StackRedPages, DEFAULT_STACK_RED_PAGES);
+define_pd_global(intx, StackShadowPages, DEFAULT_STACK_SHADOW_PAGES);
 
 define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);
@@ -91,6 +103,7 @@ define_pd_global(bool, PreserveFramePointer, false);
                                                                             \
   product(intx, UseAVX, 99,                                                 \
           "Highest supported AVX instructions set on x86/x64")              \
+          range(0, 99)                                                      \
                                                                             \
   product(bool, UseCLMUL, false,                                            \
           "Control whether CLMUL instructions can be used on x86/x64")      \
@@ -134,6 +147,7 @@ define_pd_global(bool, PreserveFramePointer, false);
                                                                             \
   product(uintx, RTMRetryCount, 5,                                          \
           "Number of RTM retries on lock abort or busy")                    \
+          range(0, max_uintx)                                               \
                                                                             \
   experimental(intx, RTMSpinLoopCount, 100,                                 \
           "Spin count for lock to become free before RTM retry")            \

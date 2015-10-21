@@ -30,5 +30,6 @@
 
   void generate_more_monitors();
   void generate_deopt_handling();
+  void lock_method(void);
 
 #endif // CPU_AARCH64_VM_CPPINTERPRETERGENERATOR_AARCH64_HPP

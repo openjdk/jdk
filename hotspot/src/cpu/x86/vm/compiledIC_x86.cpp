@@ -50,13 +50,15 @@ bool CompiledIC::is_icholder_call_site(virtual_call_Relocation* call_site) {
 // ----------------------------------------------------------------------------
 
 #define __ _masm.
-address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf) {
+address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) {
   // Stub is fixed up when the corresponding call is converted from
   // calling compiled code to calling interpreted code.
   // movq rbx, 0
   // jmp -5 # to self
 
-  address mark = cbuf.insts_mark();  // Get mark within main instrs section.
+  if (mark == NULL) {
+    mark = cbuf.insts_mark();  // Get mark within main instrs section.
+  }
 
   // Note that the code buffer's insts_mark is always relative to insts.
   // That's why we must use the macroassembler to generate a stub.
@@ -72,6 +74,8 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf) {
   __ mov_metadata(rbx, (Metadata*) NULL);  // Method is zapped till fixup time.
   // This is recognized as unresolved by relocs/nativeinst/ic code.
   __ jump(RuntimeAddress(__ pc()));
+
+  assert(__ pc() - base <= to_interp_stub_size(), "wrong stub size");
 
   // Update current stubs pointer and restore insts_end.
   __ end_a_stub();
@@ -104,10 +108,15 @@ void CompiledStaticCall::set_to_interpreted(methodHandle callee, address entry) 
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub);
   NativeJump*        jump          = nativeJump_at(method_holder->next_instruction_address());
 
-  assert(method_holder->data() == 0 || method_holder->data() == (intptr_t)callee(),
+#ifdef ASSERT
+  // read the value once
+  intptr_t data = method_holder->data();
+  address destination = jump->jump_destination();
+  assert(data == 0 || data == (intptr_t)callee(),
          "a) MT-unsafe modification of inline cache");
-  assert(jump->jump_destination() == (address)-1 || jump->jump_destination() == entry,
+  assert(destination == (address)-1 || destination == entry,
          "b) MT-unsafe modification of inline cache");
+#endif
 
   // Update stub.
   method_holder->set_data((intptr_t)callee());
@@ -124,10 +133,11 @@ void CompiledStaticCall::set_stub_to_clean(static_stub_Relocation* static_stub) 
   assert(stub != NULL, "stub not found");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub);
-  NativeJump*        jump          = nativeJump_at(method_holder->next_instruction_address());
   method_holder->set_data(0);
+  NativeJump* jump = nativeJump_at(method_holder->next_instruction_address());
   jump->set_jump_destination((address)-1);
 }
+
 
 //-----------------------------------------------------------------------------
 // Non-product mode code
@@ -150,5 +160,4 @@ void CompiledStaticCall::verify() {
   // Verify state.
   assert(is_clean() || is_call_to_compiled() || is_call_to_interpreted(), "sanity check");
 }
-
 #endif // !PRODUCT
