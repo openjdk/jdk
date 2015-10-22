@@ -969,6 +969,7 @@ TAR
 TAIL
 SORT
 SH
+RMDIR
 RM
 PRINTF
 NAWK
@@ -1147,6 +1148,7 @@ MV
 NAWK
 PRINTF
 RM
+RMDIR
 SH
 SORT
 TAIL
@@ -2026,6 +2028,7 @@ Some influential environment variables:
   NAWK        Override default value for NAWK
   PRINTF      Override default value for PRINTF
   RM          Override default value for RM
+  RMDIR       Override default value for RMDIR
   SH          Override default value for SH
   SORT        Override default value for SORT
   TAIL        Override default value for TAIL
@@ -4588,7 +4591,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1445354942
+DATE_WHEN_GENERATED=1445524829
 
 ###############################################################################
 #
@@ -9506,6 +9509,209 @@ $as_echo "$tool_specified" >&6; }
 
   if test "x$RM" = x; then
     as_fn_error $? "Could not find required tool for RM" "$LINENO" 5
+  fi
+
+
+
+
+
+  # Publish this variable in the help.
+
+
+  if [ -z "${RMDIR+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in rmdir
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_RMDIR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $RMDIR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_RMDIR="$RMDIR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_RMDIR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+RMDIR=$ac_cv_path_RMDIR
+if test -n "$RMDIR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RMDIR" >&5
+$as_echo "$RMDIR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$RMDIR" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !RMDIR! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!RMDIR!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xRMDIR" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of RMDIR from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of RMDIR from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in rmdir
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_RMDIR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $RMDIR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_RMDIR="$RMDIR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_RMDIR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+RMDIR=$ac_cv_path_RMDIR
+if test -n "$RMDIR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RMDIR" >&5
+$as_echo "$RMDIR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$RMDIR" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$RMDIR" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool RMDIR= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool RMDIR= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for RMDIR" >&5
+$as_echo_n "checking for RMDIR... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$RMDIR"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool RMDIR=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool RMDIR=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_RMDIR+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $RMDIR in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_RMDIR="$RMDIR" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_RMDIR="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+RMDIR=$ac_cv_path_RMDIR
+if test -n "$RMDIR"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RMDIR" >&5
+$as_echo "$RMDIR" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$RMDIR" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool RMDIR=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool RMDIR=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for RMDIR" >&5
+$as_echo_n "checking for RMDIR... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool RMDIR=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+  fi
+
+
+
+  if test "x$RMDIR" = x; then
+    as_fn_error $? "Could not find required tool for RMDIR" "$LINENO" 5
   fi
 
 
