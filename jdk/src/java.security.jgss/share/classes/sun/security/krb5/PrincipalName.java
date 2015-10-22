@@ -123,6 +123,13 @@ public class PrincipalName implements Cloneable {
      */
     private final Realm nameRealm;      // not null
 
+
+    /**
+     * When constructing a PrincipalName, whether the realm is included in
+     * the input, or deduced from default realm or domain-realm mapping.
+     */
+    private final boolean realmDeduced;
+
     // cached default salt, not used in clone
     private transient String salt = null;
 
@@ -143,16 +150,12 @@ public class PrincipalName implements Cloneable {
         this.nameType = nameType;
         this.nameStrings = nameStrings.clone();
         this.nameRealm = nameRealm;
+        this.realmDeduced = false;
     }
 
     // This method is called by Windows NativeCred.c
     public PrincipalName(String[] nameParts, String realm) throws RealmException {
         this(KRB_NT_UNKNOWN, nameParts, new Realm(realm));
-    }
-
-    public PrincipalName(String[] nameParts, int type)
-            throws IllegalArgumentException, RealmException {
-        this(type, nameParts, Realm.getDefault());
     }
 
     // Validate a nameStrings argument
@@ -226,7 +229,7 @@ public class PrincipalName implements Cloneable {
      * <a href="http://www.ietf.org/rfc/rfc4120.txt">
      * http://www.ietf.org/rfc/rfc4120.txt</a>.
      *
-     * @param encoding a Der-encoded data.
+     * @param encoding DER-encoded PrincipalName (without Realm)
      * @param realm the realm for this name
      * @exception Asn1Exception if an error occurs while decoding
      * an ASN1 encoded data.
@@ -240,6 +243,7 @@ public class PrincipalName implements Cloneable {
         if (realm == null) {
             throw new IllegalArgumentException("Null realm not allowed");
         }
+        realmDeduced = false;
         nameRealm = realm;
         DerValue der;
         if (encoding == null) {
@@ -394,6 +398,10 @@ public class PrincipalName implements Cloneable {
         if (realm == null) {
             realm = Realm.parseRealmAtSeparator(name);
         }
+
+        // No realm info from parameter and string, must deduce later
+        realmDeduced = realm == null;
+
         switch (type) {
         case KRB_NT_SRV_HST:
             if (nameParts.length >= 2) {
@@ -413,8 +421,8 @@ public class PrincipalName implements Cloneable {
                                 hostName.toLowerCase(Locale.ENGLISH)+".")) {
                         hostName = canonicalized;
                     }
-                } catch (UnknownHostException e) {
-                    // no canonicalization, use old
+                } catch (UnknownHostException | SecurityException e) {
+                    // not canonicalized or no permission to do so, use old
                 }
                 nameParts[1] = hostName.toLowerCase(Locale.ENGLISH);
             }
@@ -681,4 +689,7 @@ public class PrincipalName implements Cloneable {
         return result;
     }
 
+    public boolean isRealmDeduced() {
+        return realmDeduced;
+    }
 }

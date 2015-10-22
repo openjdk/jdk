@@ -35,11 +35,17 @@ import java.net.MulticastSocket;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.CountDownLatch;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import jdk.testlibrary.JDKToolLauncher;
+import jdk.testlibrary.Utils;
 
 public class MultiDead {
     private static final int THREAD_PAIR_COUNT = 4;
     private static final int CHILDREN_COUNT = 20;
+    // at least 2.5 seconds for a child to complete
+    private static final long CHILD_TIMEOUT = 2500;
+    private static final long TIMEOUT =
+        Utils.adjustTimeout(CHILDREN_COUNT * CHILD_TIMEOUT * 2);
 
     public static void main(String[] args) throws Throwable {
         if (args.length == 0 || args[0].equals("parent")) {
@@ -65,6 +71,7 @@ public class MultiDead {
             for (int i = 0; i < CHILDREN_COUNT; ++i) {
                 System.out.println("child #" + (i + 1) + " of " +
                         CHILDREN_COUNT);
+                long start = System.nanoTime();
                 try {
                     child.set(pb.start());
                     child.get().waitFor();
@@ -74,11 +81,18 @@ public class MultiDead {
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
+                if (System.nanoTime() - start >
+                        MILLISECONDS.toNanos(CHILD_TIMEOUT)) {
+                    System.err.println("Machine is too slow, " +
+                            "skipping the test...");
+                    break;
+                }
             }
         });
 
         th.start();
-        th.join(CHILDREN_COUNT * 1000); // 1 sec for a child to complete
+        th.join(TIMEOUT);
+
         stopFlag.set(true);
         if (th.isAlive()) {
             if (child.get() != null) {

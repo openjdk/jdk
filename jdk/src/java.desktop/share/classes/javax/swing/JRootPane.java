@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import javax.swing.plaf.RootPaneUI;
 import java.util.Vector;
 import java.io.Serializable;
 import javax.swing.border.*;
+
 import sun.awt.AWTAccessor;
 import sun.security.action.GetBooleanAction;
 
@@ -421,21 +422,18 @@ public class JRootPane extends JComponent implements Accessible {
      *        <code>FILE_CHOOSER_DIALOG</code>, <code>QUESTION_DIALOG</code>, or
      *        <code>WARNING_DIALOG</code>.
      * @since 1.4
-     * @beaninfo
-     *        bound: true
-     *         enum: NONE                   JRootPane.NONE
-     *               FRAME                  JRootPane.FRAME
-     *               PLAIN_DIALOG           JRootPane.PLAIN_DIALOG
-     *               INFORMATION_DIALOG     JRootPane.INFORMATION_DIALOG
-     *               ERROR_DIALOG           JRootPane.ERROR_DIALOG
-     *               COLOR_CHOOSER_DIALOG   JRootPane.COLOR_CHOOSER_DIALOG
-     *               FILE_CHOOSER_DIALOG    JRootPane.FILE_CHOOSER_DIALOG
-     *               QUESTION_DIALOG        JRootPane.QUESTION_DIALOG
-     *               WARNING_DIALOG         JRootPane.WARNING_DIALOG
-     *       expert: true
-     *    attribute: visualUpdate true
-     *  description: Identifies the type of Window decorations to provide
      */
+    @BeanProperty(expert = true, visualUpdate = true, enumerationValues = {
+            "JRootPane.NONE",
+            "JRootPane.FRAME",
+            "JRootPane.PLAIN_DIALOG",
+            "JRootPane.INFORMATION_DIALOG",
+            "JRootPane.ERROR_DIALOG",
+            "JRootPane.COLOR_CHOOSER_DIALOG",
+            "JRootPane.FILE_CHOOSER_DIALOG",
+            "JRootPane.QUESTION_DIALOG",
+            "JRootPane.WARNING_DIALOG"}, description
+            = "Identifies the type of Window decorations to provide")
     public void setWindowDecorationStyle(int windowDecorationStyle) {
         if (windowDecorationStyle < 0 ||
                   windowDecorationStyle > WARNING_DIALOG) {
@@ -463,14 +461,10 @@ public class JRootPane extends JComponent implements Accessible {
      *
      * @param ui  the <code>LabelUI</code> L&amp;F object
      * @see UIDefaults#getUI
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *      expert: true
-     *    attribute: visualUpdate true
-     *  description: The UI object that implements the Component's LookAndFeel.
      * @since 1.3
      */
+    @BeanProperty(expert = true, hidden = true, visualUpdate = true, description
+            = "The UI object that implements the Component's LookAndFeel.")
     public void setUI(RootPaneUI ui) {
         super.setUI(ui);
     }
@@ -783,10 +777,9 @@ public class JRootPane extends JComponent implements Accessible {
      *
      * @see JButton#isDefaultButton
      * @param defaultButton the <code>JButton</code> which is to be the default button
-     *
-     * @beaninfo
-     *  description: The button activated by default in this root pane
      */
+    @BeanProperty(description
+            = "The button activated by default in this root pane")
     public void setDefaultButton(JButton defaultButton) {
         JButton oldDefault = this.defaultButton;
 
