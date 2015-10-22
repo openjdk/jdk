@@ -247,12 +247,6 @@
 #ifndef REG_COUNT
   #define REG_COUNT 0
 #endif
-// whole purpose of this function is to work around bug c++/27724 in gcc 4.1.1
-// with optimization turned on it doesn't affect produced code
-static inline uint64_t cast_uint64_t(size_t x)
-{
-  return x;
-}
 
 #if INCLUDE_JVMTI
   #define JVMTI_STRUCTS(static_field) \
@@ -2903,7 +2897,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 
 // This macro generates a VMStructEntry line for a nonstatic field
 #define GENERATE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)              \
- { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 0, cast_uint64_t(offset_of(typeName, fieldName)), NULL },
+ { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 0, offset_of(typeName, fieldName), NULL },
 
 // This macro generates a VMStructEntry line for a static field
 #define GENERATE_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                 \
@@ -2913,7 +2907,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 // nonstatic field, in which the size of the type is also specified.
 // The type string is given as NULL, indicating an "opaque" type.
 #define GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, size)    \
-  { QUOTE(typeName), QUOTE(fieldName), NULL, 0, cast_uint64_t(offset_of(typeName, fieldName)), NULL },
+  { QUOTE(typeName), QUOTE(fieldName), NULL, 0, offset_of(typeName, fieldName), NULL },
 
 // This macro generates a VMStructEntry line for an unchecked
 // static field, in which the size of the type is also specified.
@@ -3096,10 +3090,10 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 //
 
 #define GENERATE_VM_LONG_CONSTANT_ENTRY(name) \
-  { QUOTE(name), cast_uint64_t(name) },
+  { QUOTE(name), name },
 
 #define GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY(name, value) \
-  { name, cast_uint64_t(value) },
+  { name, value },
 
 // This macro generates the sentinel value indicating the end of the list
 #define GENERATE_VM_LONG_CONSTANT_LAST_ENTRY() \
@@ -3547,43 +3541,40 @@ VMStructs::init() {
 
 extern "C" {
 
-// see comments on cast_uint64_t at the top of this file
-#define ASSIGN_CONST_TO_64BIT_VAR(var, expr) \
-    JNIEXPORT uint64_t var = cast_uint64_t(expr);
-#define ASSIGN_OFFSET_TO_64BIT_VAR(var, type, field)   \
-  ASSIGN_CONST_TO_64BIT_VAR(var, offset_of(type, field))
-#define ASSIGN_STRIDE_TO_64BIT_VAR(var, array) \
-  ASSIGN_CONST_TO_64BIT_VAR(var, (char*)&array[1] - (char*)&array[0])
+#define STRIDE(array) ((char*)&array[1] - (char*)&array[0])
 
-JNIEXPORT VMStructEntry* gHotSpotVMStructs                 = VMStructs::localHotSpotVMStructs;
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMStructEntryTypeNameOffset,  VMStructEntry, typeName);
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMStructEntryFieldNameOffset, VMStructEntry, fieldName);
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMStructEntryTypeStringOffset, VMStructEntry, typeString);
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMStructEntryIsStaticOffset, VMStructEntry, isStatic);
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMStructEntryOffsetOffset, VMStructEntry, offset);
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMStructEntryAddressOffset, VMStructEntry, address);
-ASSIGN_STRIDE_TO_64BIT_VAR(gHotSpotVMStructEntryArrayStride, gHotSpotVMStructs);
-JNIEXPORT VMTypeEntry*   gHotSpotVMTypes                   = VMStructs::localHotSpotVMTypes;
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMTypeEntryTypeNameOffset, VMTypeEntry, typeName);
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMTypeEntrySuperclassNameOffset, VMTypeEntry, superclassName);
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMTypeEntryIsOopTypeOffset, VMTypeEntry, isOopType);
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMTypeEntryIsIntegerTypeOffset, VMTypeEntry, isIntegerType);
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMTypeEntryIsUnsignedOffset, VMTypeEntry, isUnsigned);
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMTypeEntrySizeOffset, VMTypeEntry, size);
-ASSIGN_STRIDE_TO_64BIT_VAR(gHotSpotVMTypeEntryArrayStride,gHotSpotVMTypes);
-JNIEXPORT VMIntConstantEntry* gHotSpotVMIntConstants       = VMStructs::localHotSpotVMIntConstants;
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMIntConstantEntryNameOffset, VMIntConstantEntry, name);
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMIntConstantEntryValueOffset, VMIntConstantEntry, value);
-ASSIGN_STRIDE_TO_64BIT_VAR(gHotSpotVMIntConstantEntryArrayStride, gHotSpotVMIntConstants);
-JNIEXPORT VMLongConstantEntry* gHotSpotVMLongConstants     = VMStructs::localHotSpotVMLongConstants;
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMLongConstantEntryNameOffset, VMLongConstantEntry, name);
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMLongConstantEntryValueOffset, VMLongConstantEntry, value);
-ASSIGN_STRIDE_TO_64BIT_VAR(gHotSpotVMLongConstantEntryArrayStride, gHotSpotVMLongConstants);
+JNIEXPORT VMStructEntry* gHotSpotVMStructs = VMStructs::localHotSpotVMStructs;
+JNIEXPORT uint64_t gHotSpotVMStructEntryTypeNameOffset = offset_of(VMStructEntry, typeName);
+JNIEXPORT uint64_t gHotSpotVMStructEntryFieldNameOffset = offset_of(VMStructEntry, fieldName);
+JNIEXPORT uint64_t gHotSpotVMStructEntryTypeStringOffset = offset_of(VMStructEntry, typeString);
+JNIEXPORT uint64_t gHotSpotVMStructEntryIsStaticOffset = offset_of(VMStructEntry, isStatic);
+JNIEXPORT uint64_t gHotSpotVMStructEntryOffsetOffset = offset_of(VMStructEntry, offset);
+JNIEXPORT uint64_t gHotSpotVMStructEntryAddressOffset = offset_of(VMStructEntry, address);
+JNIEXPORT uint64_t gHotSpotVMStructEntryArrayStride = STRIDE(gHotSpotVMStructs);
+
+JNIEXPORT VMTypeEntry* gHotSpotVMTypes = VMStructs::localHotSpotVMTypes;
+JNIEXPORT uint64_t gHotSpotVMTypeEntryTypeNameOffset = offset_of(VMTypeEntry, typeName);
+JNIEXPORT uint64_t gHotSpotVMTypeEntrySuperclassNameOffset = offset_of(VMTypeEntry, superclassName);
+JNIEXPORT uint64_t gHotSpotVMTypeEntryIsOopTypeOffset = offset_of(VMTypeEntry, isOopType);
+JNIEXPORT uint64_t gHotSpotVMTypeEntryIsIntegerTypeOffset = offset_of(VMTypeEntry, isIntegerType);
+JNIEXPORT uint64_t gHotSpotVMTypeEntryIsUnsignedOffset = offset_of(VMTypeEntry, isUnsigned);
+JNIEXPORT uint64_t gHotSpotVMTypeEntrySizeOffset = offset_of(VMTypeEntry, size);
+JNIEXPORT uint64_t gHotSpotVMTypeEntryArrayStride = STRIDE(gHotSpotVMTypes);
+
+JNIEXPORT VMIntConstantEntry* gHotSpotVMIntConstants = VMStructs::localHotSpotVMIntConstants;
+JNIEXPORT uint64_t gHotSpotVMIntConstantEntryNameOffset = offset_of(VMIntConstantEntry, name);
+JNIEXPORT uint64_t gHotSpotVMIntConstantEntryValueOffset = offset_of(VMIntConstantEntry, value);
+JNIEXPORT uint64_t gHotSpotVMIntConstantEntryArrayStride = STRIDE(gHotSpotVMIntConstants);
+
+JNIEXPORT VMLongConstantEntry* gHotSpotVMLongConstants = VMStructs::localHotSpotVMLongConstants;
+JNIEXPORT uint64_t gHotSpotVMLongConstantEntryNameOffset = offset_of(VMLongConstantEntry, name);
+JNIEXPORT uint64_t gHotSpotVMLongConstantEntryValueOffset = offset_of(VMLongConstantEntry, value);
+JNIEXPORT uint64_t gHotSpotVMLongConstantEntryArrayStride = STRIDE(gHotSpotVMLongConstants);
 
 JNIEXPORT VMAddressEntry* gHotSpotVMAddresses = VMStructs::localHotSpotVMAddresses;
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMAddressEntryNameOffset, VMAddressEntry, name);
-ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMAddressEntryValueOffset, VMAddressEntry, value);
-ASSIGN_STRIDE_TO_64BIT_VAR(gHotSpotVMAddressEntryArrayStride, gHotSpotVMAddresses);
+JNIEXPORT uint64_t gHotSpotVMAddressEntryNameOffset = offset_of(VMAddressEntry, name);
+JNIEXPORT uint64_t gHotSpotVMAddressEntryValueOffset = offset_of(VMAddressEntry, value);
+JNIEXPORT uint64_t gHotSpotVMAddressEntryArrayStride = STRIDE(gHotSpotVMAddresses);
 }
 
 #ifdef ASSERT
