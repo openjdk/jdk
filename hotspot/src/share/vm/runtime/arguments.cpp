@@ -3858,6 +3858,7 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
 
     JavaVMOption option;
     option.optionString = opt_hd;
+    option.extraInfo = NULL;
 
     options->append(option);                // Fill in option
 

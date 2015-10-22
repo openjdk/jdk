@@ -3823,8 +3823,8 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
   caller_state->truncate_stack(args_base);
   assert(callee_state->stack_size() == 0, "callee stack must be empty");
 
-  Value lock;
-  BlockBegin* sync_handler;
+  Value lock = NULL;
+  BlockBegin* sync_handler = NULL;
 
   // Inline the locking of the receiver if the callee is synchronized
   if (callee->is_synchronized()) {

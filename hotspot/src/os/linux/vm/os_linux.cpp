@@ -2794,7 +2794,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected,
 
 
 int os::Linux::sched_getcpu_syscall(void) {
-  unsigned int cpu;
+  unsigned int cpu = 0;
   int retval = -1;
 
 #if defined(IA32)
@@ -4187,8 +4187,8 @@ static bool call_chained_handler(struct sigaction *actp, int sig,
       sigaddset(&(actp->sa_mask), sig);
     }
 
-    sa_handler_t hand;
-    sa_sigaction_t sa;
+    sa_handler_t hand = NULL;
+    sa_sigaction_t sa = NULL;
     bool siginfo_flag_set = (actp->sa_flags & SA_SIGINFO) != 0;
     // retrieve the chained handler
     if (siginfo_flag_set) {
@@ -4393,7 +4393,7 @@ jlong os::Linux::fast_thread_cpu_time(clockid_t clockid) {
 
 static const char* get_signal_handler_name(address handler,
                                            char* buf, int buflen) {
-  int offset;
+  int offset = 0;
   bool found = os::dll_address_to_library_name(handler, buf, buflen, &offset);
   if (found) {
     // skip directory names
