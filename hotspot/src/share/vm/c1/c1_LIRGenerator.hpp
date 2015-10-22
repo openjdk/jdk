@@ -409,7 +409,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   }
 
   static LIR_Condition lir_cond(If::Condition cond) {
-    LIR_Condition l;
+    LIR_Condition l = lir_cond_unknown;
     switch (cond) {
     case If::eql: l = lir_cond_equal;        break;
     case If::neq: l = lir_cond_notEqual;     break;
@@ -419,6 +419,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
     case If::gtr: l = lir_cond_greater;      break;
     case If::aeq: l = lir_cond_aboveEqual;   break;
     case If::beq: l = lir_cond_belowEqual;   break;
+    default: fatal("You must pass valid If::Condition");
     };
     return l;
   }

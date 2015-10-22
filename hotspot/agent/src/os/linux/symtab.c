@@ -545,6 +545,7 @@ uintptr_t search_symbol(struct symtab* symtab, uintptr_t base,
      return (uintptr_t)NULL;
 
   item.key = (char*) strdup(sym_name);
+  item.data = NULL;
   hsearch_r(item, FIND, &ret, symtab->hash_table);
   if (ret) {
     struct elf_symbol * sym = (struct elf_symbol *)(ret->data);

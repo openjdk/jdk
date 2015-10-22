@@ -414,6 +414,7 @@ void ciObjectFactory::ensure_metadata_alive(ciMetadata* m) {
     metadata_owner_klass = m->as_method()->get_Method()->constants()->pool_holder();
   } else {
     fatal("Not implemented for other types of metadata");
+    return;
   }
 
   oop metadata_holder = metadata_owner_klass->klass_holder();

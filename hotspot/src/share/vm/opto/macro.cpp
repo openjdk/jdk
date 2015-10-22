@@ -779,10 +779,10 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
   ciKlass* klass = NULL;
   ciInstanceKlass* iklass = NULL;
   int nfields = 0;
-  int array_base;
-  int element_size;
-  BasicType basic_elem_type;
-  ciType* elem_type;
+  int array_base = 0;
+  int element_size = 0;
+  BasicType basic_elem_type = T_ILLEGAL;
+  ciType* elem_type = NULL;
 
   Node* res = alloc->result_cast();
   assert(res == NULL || res->is_CheckCastPP(), "unexpected AllocateNode result");
@@ -1305,10 +1305,10 @@ void PhaseMacroExpand::expand_allocate_common(
   // We need a Region and corresponding Phi's to merge the slow-path and fast-path results.
   // they will not be used if "always_slow" is set
   enum { slow_result_path = 1, fast_result_path = 2 };
-  Node *result_region;
-  Node *result_phi_rawmem;
-  Node *result_phi_rawoop;
-  Node *result_phi_i_o;
+  Node *result_region = NULL;
+  Node *result_phi_rawmem = NULL;
+  Node *result_phi_rawoop = NULL;
+  Node *result_phi_i_o = NULL;
 
   // The initial slow comparison is a size check, the comparison
   // we want to do is a BoolTest::gt

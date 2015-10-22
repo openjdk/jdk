@@ -422,7 +422,7 @@ int HashtableTextDump::scan_prefix(int* utf8_length) {
 
 int HashtableTextDump::scan_string_prefix() {
   // Expect /[0-9]+: /
-  int utf8_length;
+  int utf8_length = 0;
   get_num(':', &utf8_length);
   if (*_p != ' ') {
     corrupted(_p, "Wrong prefix format for string");
@@ -433,13 +433,13 @@ int HashtableTextDump::scan_string_prefix() {
 
 int HashtableTextDump::scan_symbol_prefix() {
   // Expect /[0-9]+ (-|)[0-9]+: /
-  int utf8_length;
+  int utf8_length = 0;
   get_num(' ', &utf8_length);
-    if (*_p == '-') {
-     _p++;
+  if (*_p == '-') {
+    _p++;
   }
   int ref_num;
-  (void)get_num(':', &ref_num);
+  get_num(':', &ref_num);
   if (*_p != ' ') {
     corrupted(_p, "Wrong prefix format for symbol");
   }
