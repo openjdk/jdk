@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_G1_G1_GLOBALS_HPP
 
 #include "runtime/globals.hpp"
+#include <float.h> // for DBL_MAX
 //
 // Defines all globals flags used by the garbage-first compiler.
 //
@@ -61,6 +62,7 @@
           "update buffer processing info "                                  \
           "(0 means do not periodically generate this info); "              \
           "it also requires -XX:+G1SummarizeRSetStats")                     \
+          range(0, max_intx)                                                \
                                                                             \
   diagnostic(bool, G1TraceConcRefinement, false,                            \
           "Trace G1 concurrent refinement")                                 \
@@ -71,7 +73,7 @@
   product(double, G1ConcMarkStepDurationMillis, 10.0,                       \
           "Target duration of individual concurrent marking steps "         \
           "in milliseconds.")                                               \
-          range(1.0, (double)max_uintx)                                     \
+          range(1.0, DBL_MAX)                                               \
                                                                             \
   product(intx, G1RefProcDrainInterval, 10,                                 \
           "The number of discovered reference objects to process before "   \
@@ -89,9 +91,11 @@
                                                                             \
   product(size_t, G1SATBBufferSize, 1*K,                                    \
           "Number of entries in an SATB log buffer.")                       \
+          range(1, max_uintx)                                               \
                                                                             \
   develop(intx, G1SATBProcessCompletedThreshold, 20,                        \
           "Number of completed buffers that triggers log processing.")      \
+          range(0, max_jint)                                                \
                                                                             \
   product(uintx, G1SATBBufferEnqueueingThresholdPercent, 60,                \
           "Before enqueueing them, each mutator thread tries to do some "   \
@@ -114,26 +118,31 @@
                                                                             \
   product(size_t, G1UpdateBufferSize, 256,                                  \
           "Size of an update buffer")                                       \
+          range(1, NOT_LP64(32*M) LP64_ONLY(1*G))                           \
                                                                             \
   product(intx, G1ConcRefinementYellowZone, 0,                              \
           "Number of enqueued update buffers that will "                    \
           "trigger concurrent processing. Will be selected ergonomically "  \
           "by default.")                                                    \
+          range(0, max_intx)                                                \
                                                                             \
   product(intx, G1ConcRefinementRedZone, 0,                                 \
           "Maximum number of enqueued update buffers before mutator "       \
           "threads start processing new ones instead of enqueueing them. "  \
           "Will be selected ergonomically by default. Zero will disable "   \
           "concurrent processing.")                                         \
+          range(0, max_intx)                                                \
                                                                             \
   product(intx, G1ConcRefinementGreenZone, 0,                               \
           "The number of update buffers that are left in the queue by the " \
           "concurrent processing threads. Will be selected ergonomically "  \
           "by default.")                                                    \
+          range(0, max_intx)                                                \
                                                                             \
   product(intx, G1ConcRefinementServiceIntervalMillis, 300,                 \
           "The last concurrent refinement thread wakes up every "           \
           "specified number of milliseconds to do miscellaneous work.")     \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, G1ConcRefinementThresholdStep, 0,                           \
           "Each time the rset update queue increases by this amount "       \
@@ -143,6 +152,7 @@
   product(intx, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \
           "process RS update buffers during the collection pause.")         \
+          range(0, 100)                                                     \
                                                                             \
   product(bool, G1UseAdaptiveConcRefinement, true,                          \
           "Select green, yellow and red zones adaptively to meet the "      \
@@ -158,18 +168,24 @@
                                                                             \
   develop(intx, G1RSetRegionEntriesBase, 256,                               \
           "Max number of regions in a fine-grain table per MB.")            \
+          range(1, max_jint/wordSize)                                       \
                                                                             \
   product(intx, G1RSetRegionEntries, 0,                                     \
           "Max number of regions for which we keep bitmaps."                \
           "Will be set ergonomically by default")                           \
+          range(0, max_jint/wordSize)                                       \
+          constraint(G1RSetRegionEntriesConstraintFunc,AfterErgo)           \
                                                                             \
   develop(intx, G1RSetSparseRegionEntriesBase, 4,                           \
           "Max number of entries per region in a sparse table "             \
           "per MB.")                                                        \
+          range(1, max_jint/wordSize)                                       \
                                                                             \
   product(intx, G1RSetSparseRegionEntries, 0,                               \
           "Max number of entries per region in a sparse table."             \
           "Will be set ergonomically by default.")                          \
+          range(0, max_jint/wordSize)                                       \
+          constraint(G1RSetSparseRegionEntriesConstraintFunc,AfterErgo)     \
                                                                             \
   develop(bool, G1RecordHRRSOops, false,                                    \
           "When true, record recent calls to rem set operations.")          \
@@ -180,6 +196,7 @@
   develop(intx, G1MaxVerifyFailures, -1,                                    \
           "The maximum number of verification failures to print.  "         \
           "-1 means print all.")                                            \
+          range(-1, max_jint)                                               \
                                                                             \
   develop(bool, G1ScrubRemSets, true,                                       \
           "When true, do RS scrubbing after cleanup.")                      \
@@ -193,11 +210,13 @@
   develop(intx, G1YoungSurvRateNumRegionsSummary, 0,                        \
           "the number of regions for which we'll print a surv rate "        \
           "summary.")                                                       \
+          range(0, max_intx)                                                \
+          constraint(G1YoungSurvRateNumRegionsSummaryConstraintFunc,AfterErgo)\
                                                                             \
   product(uintx, G1ReservePercent, 10,                                      \
           "It determines the minimum reserve we should have in the heap "   \
           "to minimize the probability of promotion failure.")              \
-          range(0, 100)                                                     \
+          range(0, 50)                                                      \
                                                                             \
   diagnostic(bool, G1PrintHeapRegions, false,                               \
           "If set G1 will print information on which regions are being "    \
@@ -215,10 +234,13 @@
                                                                             \
   product(size_t, G1HeapRegionSize, 0,                                      \
           "Size of the G1 regions.")                                        \
+          range(0, 32*M)                                                    \
+          constraint(G1HeapRegionSizeConstraintFunc,AfterMemoryInit)        \
                                                                             \
   product(uintx, G1ConcRefinementThreads, 0,                                \
           "If non-0 is the number of parallel rem set update threads, "     \
           "otherwise the value is determined ergonomically.")               \
+          range(0, (max_jint-1)/wordSize)                                   \
                                                                             \
   develop(bool, G1VerifyCTCleanup, false,                                   \
           "Verify card table cleanup.")                                     \
@@ -226,6 +248,7 @@
   product(size_t, G1RSetScanBlockSize, 64,                                  \
           "Size of a work unit of cards claimed by a worker thread"         \
           "during RSet scanning.")                                          \
+          range(1, max_uintx)                                               \
                                                                             \
   develop(uintx, G1SecondaryFreeListAppendLength, 5,                        \
           "The number of regions we will add to the secondary free list "   \
@@ -262,6 +285,7 @@
   experimental(uintx, G1NewSizePercent, 5,                                  \
           "Percentage (0-100) of the heap size to use as default "          \
           "minimum young gen size.")                                        \
+          range(0, 100)                                                     \
           constraint(G1NewSizePercentConstraintFunc,AfterErgo)              \
                                                                             \
   experimental(uintx, G1MixedGCLiveThresholdPercent, 85,                    \

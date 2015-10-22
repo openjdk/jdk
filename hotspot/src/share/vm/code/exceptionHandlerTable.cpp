@@ -27,8 +27,6 @@
 #include "code/nmethod.hpp"
 #include "memory/allocation.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 void ExceptionHandlerTable::add_entry(HandlerTableEntry entry) {
   _nesting.check();
   if (_length >= _size) {
@@ -102,9 +100,12 @@ void ExceptionHandlerTable::add_subtable(
 
 void ExceptionHandlerTable::copy_to(nmethod* nm) {
   assert(size_in_bytes() == nm->handler_table_size(), "size of space allocated in nmethod incorrect");
-  memmove(nm->handler_table_begin(), _table, size_in_bytes());
+  copy_bytes_to(nm->handler_table_begin());
 }
 
+void ExceptionHandlerTable::copy_bytes_to(address addr) {
+  memmove(addr, _table, size_in_bytes());
+}
 
 HandlerTableEntry* ExceptionHandlerTable::entry_for(int catch_pco, int handler_bci, int scope_depth) const {
   HandlerTableEntry* t = subtable_for(catch_pco);
@@ -186,7 +187,7 @@ uint ImplicitExceptionTable::at( uint exec_off ) const {
 void ImplicitExceptionTable::print(address base) const {
   tty->print("{");
   for( uint i=0; i<len(); i++ )
-    tty->print("< " INTPTR_FORMAT ", " INTPTR_FORMAT " > ",base + *adr(i), base + *(adr(i)+1));
+    tty->print("< " INTPTR_FORMAT ", " INTPTR_FORMAT " > ", p2i(base + *adr(i)), p2i(base + *(adr(i)+1)));
   tty->print_cr("}");
 }
 
@@ -225,6 +226,6 @@ void ImplicitExceptionTable::verify(nmethod *nm) const {
   for (uint i = 0; i < len(); i++) {
      if ((*adr(i) > (unsigned int)nm->insts_size()) ||
          (*(adr(i)+1) > (unsigned int)nm->insts_size()))
-       fatal(err_msg("Invalid offset in ImplicitExceptionTable at " PTR_FORMAT, _data));
+       fatal("Invalid offset in ImplicitExceptionTable at " PTR_FORMAT, p2i(_data));
   }
 }

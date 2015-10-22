@@ -112,6 +112,8 @@ G1CollectorPolicy::G1CollectorPolicy() :
                                 new TruncatedSeq(NumPrevPausesForHeuristics)),
 
   _recent_avg_pause_time_ratio(0.0),
+  _rs_lengths_prediction(0),
+  _max_survivor_regions(0),
 
   _eden_used_bytes_before_gc(0),
   _survivor_used_bytes_before_gc(0),
@@ -264,9 +266,6 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _concurrent_mark_remark_times_ms->add(0.05);
   _concurrent_mark_cleanup_times_ms->add(0.20);
   _tenuring_threshold = MaxTenuringThreshold;
-  // _max_survivor_regions will be calculated by
-  // update_young_list_target_length() during initialization.
-  _max_survivor_regions = 0;
 
   assert(GCTimeRatio > 0,
          "we should have set it to a default value set_g1_gc_flags() "
@@ -315,6 +314,7 @@ void G1CollectorPolicy::post_heap_initialize() {
   }
 }
 
+const G1CollectorState* G1CollectorPolicy::collector_state() const { return _g1->collector_state(); }
 G1CollectorState* G1CollectorPolicy::collector_state() { return _g1->collector_state(); }
 
 G1YoungGenSizer::G1YoungGenSizer() : _sizer_kind(SizerDefaults), _adaptive_size(true),
@@ -441,7 +441,7 @@ void G1CollectorPolicy::initialize_gc_policy_counters() {
 bool G1CollectorPolicy::predict_will_fit(uint young_length,
                                          double base_time_ms,
                                          uint base_free_regions,
-                                         double target_pause_time_ms) {
+                                         double target_pause_time_ms) const {
   if (young_length >= base_free_regions) {
     // end condition 1: not enough space for the young regions
     return false;
@@ -480,7 +480,7 @@ void G1CollectorPolicy::record_new_heap_size(uint new_number_of_regions) {
 }
 
 uint G1CollectorPolicy::calculate_young_list_desired_min_length(
-                                                       uint base_min_length) {
+                                                       uint base_min_length) const {
   uint desired_min_length = 0;
   if (adaptive_young_list_length()) {
     if (_alloc_rate_ms_seq->num() > 3) {
@@ -497,7 +497,7 @@ uint G1CollectorPolicy::calculate_young_list_desired_min_length(
   return MAX2(_young_gen_sizer->min_desired_young_length(), desired_min_length);
 }
 
-uint G1CollectorPolicy::calculate_young_list_desired_max_length() {
+uint G1CollectorPolicy::calculate_young_list_desired_max_length() const {
   // Here, we might want to also take into account any additional
   // constraints (i.e., user-defined minimum bound). Currently, we
   // effectively don't set this bound.
@@ -575,7 +575,7 @@ uint
 G1CollectorPolicy::calculate_young_list_target_length(size_t rs_lengths,
                                                      uint base_min_length,
                                                      uint desired_min_length,
-                                                     uint desired_max_length) {
+                                                     uint desired_max_length) const {
   assert(adaptive_young_list_length(), "pre-condition");
   assert(collector_state()->gcs_are_young(), "only call this for young GCs");
 
@@ -675,7 +675,7 @@ G1CollectorPolicy::calculate_young_list_target_length(size_t rs_lengths,
   return base_min_length + min_young_length;
 }
 
-double G1CollectorPolicy::predict_survivor_regions_evac_time() {
+double G1CollectorPolicy::predict_survivor_regions_evac_time() const {
   double survivor_regions_evac_time = 0.0;
   for (HeapRegion * r = _recorded_survivor_head;
        r != NULL && r != _recorded_survivor_tail->get_next_young_region();
@@ -813,8 +813,8 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec) {
   update_survivors_policy();
 
   assert(_g1->used() == _g1->recalculate_used(),
-         err_msg("sanity, used: " SIZE_FORMAT " recalculate_used: " SIZE_FORMAT,
-                 _g1->used(), _g1->recalculate_used()));
+         "sanity, used: " SIZE_FORMAT " recalculate_used: " SIZE_FORMAT,
+         _g1->used(), _g1->recalculate_used());
 
   double s_w_t_ms = (start_time_sec - _stop_world_start) * 1000.0;
   _trace_young_gen_time_data.record_start_collection(s_w_t_ms);
@@ -857,7 +857,7 @@ void G1CollectorPolicy::record_concurrent_mark_remark_end() {
   _cur_mark_stop_world_time_ms += elapsed_time_ms;
   _prev_collection_pause_end_ms += elapsed_time_ms;
 
-  _mmu_tracker->add_pause(_mark_remark_start_sec, end_time_sec, _g1->gc_tracer_cm()->gc_id());
+  _mmu_tracker->add_pause(_mark_remark_start_sec, end_time_sec);
 }
 
 void G1CollectorPolicy::record_concurrent_mark_cleanup_start() {
@@ -952,8 +952,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
     collector_state()->set_initiate_conc_mark_if_possible(true);
   }
 
-  _mmu_tracker->add_pause(end_time_sec - pause_time_ms/1000.0,
-                          end_time_sec, _g1->gc_tracer_stw()->gc_id());
+  _mmu_tracker->add_pause(end_time_sec - pause_time_ms/1000.0, end_time_sec);
 
   if (update_stats) {
     _trace_young_gen_time_data.record_end_collection(pause_time_ms, phase_times());
@@ -1174,7 +1173,7 @@ void G1CollectorPolicy::record_heap_size_info_at_start(bool full) {
   }
 }
 
-void G1CollectorPolicy::print_heap_transition(size_t bytes_before) {
+void G1CollectorPolicy::print_heap_transition(size_t bytes_before) const {
   size_t bytes_after = _g1->used();
   size_t capacity = _g1->capacity();
 
@@ -1187,11 +1186,11 @@ void G1CollectorPolicy::print_heap_transition(size_t bytes_before) {
       proper_unit_for_byte_size(capacity));
 }
 
-void G1CollectorPolicy::print_heap_transition() {
+void G1CollectorPolicy::print_heap_transition() const {
   print_heap_transition(_heap_used_bytes_before_gc);
 }
 
-void G1CollectorPolicy::print_detailed_heap_transition(bool full) {
+void G1CollectorPolicy::print_detailed_heap_transition(bool full) const {
   YoungList* young_list = _g1->young_list();
 
   size_t eden_used_bytes_after_gc = young_list->eden_used_bytes();
@@ -1268,7 +1267,7 @@ void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
 
 double
 G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards,
-                                                size_t scanned_cards) {
+                                                size_t scanned_cards) const {
   return
     predict_rs_update_time_ms(pending_cards) +
     predict_rs_scan_time_ms(scanned_cards) +
@@ -1276,7 +1275,7 @@ G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards,
 }
 
 double
-G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards) {
+G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards) const {
   size_t rs_length = predict_rs_length_diff();
   size_t card_num;
   if (collector_state()->gcs_are_young()) {
@@ -1287,7 +1286,7 @@ G1CollectorPolicy::predict_base_elapsed_time_ms(size_t pending_cards) {
   return predict_base_elapsed_time_ms(pending_cards, card_num);
 }
 
-size_t G1CollectorPolicy::predict_bytes_to_copy(HeapRegion* hr) {
+size_t G1CollectorPolicy::predict_bytes_to_copy(HeapRegion* hr) const {
   size_t bytes_to_copy;
   if (hr->is_marked())
     bytes_to_copy = hr->max_live_bytes();
@@ -1302,7 +1301,7 @@ size_t G1CollectorPolicy::predict_bytes_to_copy(HeapRegion* hr) {
 
 double
 G1CollectorPolicy::predict_region_elapsed_time_ms(HeapRegion* hr,
-                                                  bool for_young_gc) {
+                                                  bool for_young_gc) const {
   size_t rs_length = hr->rem_set()->occupied();
   size_t card_num;
 
@@ -1348,7 +1347,7 @@ void G1CollectorPolicy::update_recent_gc_times(double end_time_sec,
   _prev_collection_pause_end_ms = end_time_sec * 1000.0;
 }
 
-size_t G1CollectorPolicy::expansion_amount() {
+size_t G1CollectorPolicy::expansion_amount() const {
   double recent_gc_overhead = recent_avg_pause_time_ratio() * 100.0;
   double threshold = _gc_overhead_perc;
   if (recent_gc_overhead > threshold) {
@@ -1397,13 +1396,13 @@ void G1CollectorPolicy::print_yg_surv_rate_info() const {
 #endif // PRODUCT
 }
 
-bool G1CollectorPolicy::is_young_list_full() {
+bool G1CollectorPolicy::is_young_list_full() const {
   uint young_list_length = _g1->young_list()->length();
   uint young_list_target_length = _young_list_target_length;
   return young_list_length >= young_list_target_length;
 }
 
-bool G1CollectorPolicy::can_expand_young_list() {
+bool G1CollectorPolicy::can_expand_young_list() const {
   uint young_list_length = _g1->young_list()->length();
   uint young_list_max_length = _young_list_max_length;
   return young_list_length < young_list_max_length;
@@ -1557,7 +1556,7 @@ public:
   }
 };
 
-uint G1CollectorPolicy::calculate_parallel_work_chunk_size(uint n_workers, uint n_regions) {
+uint G1CollectorPolicy::calculate_parallel_work_chunk_size(uint n_workers, uint n_regions) const {
   assert(n_workers > 0, "Active gc workers should be greater than 0");
   const uint overpartition_factor = 4;
   const uint min_chunk_size = MAX2(n_regions / n_workers, 1U);
@@ -1584,7 +1583,7 @@ G1CollectorPolicy::record_concurrent_mark_cleanup_end() {
   _concurrent_mark_cleanup_times_ms->add(elapsed_time_ms);
   _cur_mark_stop_world_time_ms += elapsed_time_ms;
   _prev_collection_pause_end_ms += elapsed_time_ms;
-  _mmu_tracker->add_pause(_mark_cleanup_start_sec, end_sec, _g1->gc_tracer_cm()->gc_id());
+  _mmu_tracker->add_pause(_mark_cleanup_start_sec, end_sec);
 }
 
 // Add the heap region at the head of the non-incremental collection set
@@ -1783,7 +1782,7 @@ void G1CollectorPolicy::print_collection_set(HeapRegion* list_head, outputStream
 }
 #endif // !PRODUCT
 
-double G1CollectorPolicy::reclaimable_bytes_perc(size_t reclaimable_bytes) {
+double G1CollectorPolicy::reclaimable_bytes_perc(size_t reclaimable_bytes) const {
   // Returns the given amount of reclaimable bytes (that represents
   // the amount of reclaimable space still to be collected) as a
   // percentage of the current heap capacity.
@@ -1792,7 +1791,7 @@ double G1CollectorPolicy::reclaimable_bytes_perc(size_t reclaimable_bytes) {
 }
 
 bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
-                                                const char* false_action_str) {
+                                                const char* false_action_str) const {
   CollectionSetChooser* cset_chooser = _collectionSetChooser;
   if (cset_chooser->is_empty()) {
     ergo_verbose0(ErgoMixedGCs,
@@ -1830,7 +1829,7 @@ bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
   return true;
 }
 
-uint G1CollectorPolicy::calc_min_old_cset_length() {
+uint G1CollectorPolicy::calc_min_old_cset_length() const {
   // The min old CSet region bound is based on the maximum desired
   // number of mixed GCs after a cycle. I.e., even if some old regions
   // look expensive, we should add them to the CSet anyway to make
@@ -1851,13 +1850,13 @@ uint G1CollectorPolicy::calc_min_old_cset_length() {
   return (uint) result;
 }
 
-uint G1CollectorPolicy::calc_max_old_cset_length() {
+uint G1CollectorPolicy::calc_max_old_cset_length() const {
   // The max old CSet region bound is based on the threshold expressed
   // as a percentage of the heap size. I.e., it should bound the
   // number of old regions added to the CSet irrespective of how many
   // of them are available.
 
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  const G1CollectedHeap* g1h = G1CollectedHeap::heap();
   const size_t region_num = g1h->num_regions();
   const size_t perc = (size_t) G1OldCSetRegionThresholdPercent;
   size_t result = region_num * perc / 100;
@@ -1876,8 +1875,7 @@ double G1CollectorPolicy::finalize_young_cset_part(double target_pause_time_ms) 
   finalize_incremental_cset_building();
 
   guarantee(target_pause_time_ms > 0.0,
-            err_msg("target_pause_time_ms = %1.6lf should be positive",
-                    target_pause_time_ms));
+            "target_pause_time_ms = %1.6lf should be positive", target_pause_time_ms);
   guarantee(_collection_set == NULL, "Precondition");
 
   double base_time_ms = predict_base_elapsed_time_ms(_pending_cards);

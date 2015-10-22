@@ -56,7 +56,7 @@ protected:
   void initialize_base(address base, size_t length, size_t bias, size_t elem_size, uint shift_by) {
     assert(base != NULL, "just checking");
     assert(length > 0, "just checking");
-    assert(shift_by < sizeof(uintptr_t) * 8, err_msg("Shifting by %u, larger than word size?", shift_by));
+    assert(shift_by < sizeof(uintptr_t) * 8, "Shifting by %u, larger than word size?", shift_by);
     _base = base;
     _length = length;
     _biased_base = base - (bias * elem_size);
@@ -69,13 +69,13 @@ protected:
   void initialize(HeapWord* bottom, HeapWord* end, size_t target_elem_size_in_bytes, size_t mapping_granularity_in_bytes) {
     assert(mapping_granularity_in_bytes > 0, "just checking");
     assert(is_power_of_2(mapping_granularity_in_bytes),
-      err_msg("mapping granularity must be power of 2, is %zd", mapping_granularity_in_bytes));
+           "mapping granularity must be power of 2, is %zd", mapping_granularity_in_bytes);
     assert((uintptr_t)bottom % mapping_granularity_in_bytes == 0,
-      err_msg("bottom mapping area address must be a multiple of mapping granularity %zd, is  " PTR_FORMAT,
-        mapping_granularity_in_bytes, p2i(bottom)));
+           "bottom mapping area address must be a multiple of mapping granularity %zd, is  " PTR_FORMAT,
+           mapping_granularity_in_bytes, p2i(bottom));
     assert((uintptr_t)end % mapping_granularity_in_bytes == 0,
-      err_msg("end mapping area address must be a multiple of mapping granularity %zd, is " PTR_FORMAT,
-        mapping_granularity_in_bytes, p2i(end)));
+           "end mapping area address must be a multiple of mapping granularity %zd, is " PTR_FORMAT,
+           mapping_granularity_in_bytes, p2i(end));
     size_t num_target_elems = pointer_delta(end, bottom, mapping_granularity_in_bytes);
     idx_t bias = (uintptr_t)bottom / mapping_granularity_in_bytes;
     address base = create_new_base_array(num_target_elems, target_elem_size_in_bytes);

@@ -157,3 +157,48 @@ template <class T> int ValueRecorder<T>::maybe_find_index(T h) {
 // Explicitly instantiate these types
 template class ValueRecorder<Metadata*>;
 template class ValueRecorder<jobject>;
+
+oop ObjectLookup::ObjectEntry::oop_value() const { return JNIHandles::resolve(_value); }
+
+ObjectLookup::ObjectLookup(): _gc_count(Universe::heap()->total_collections()), _values(4) {}
+
+void ObjectLookup::maybe_resort() {
+  // The values are kept sorted by address which may be invalidated
+  // after a GC, so resort if a GC has occurred since last time.
+  if (_gc_count != Universe::heap()->total_collections()) {
+    _gc_count = Universe::heap()->total_collections();
+    _values.sort(sort_by_address);
+  }
+}
+
+int ObjectLookup::sort_by_address(oop a, oop b) {
+  if (b > a) return 1;
+  if (a > b) return -1;
+  return 0;
+}
+
+int ObjectLookup::sort_by_address(ObjectEntry* a, ObjectEntry* b) {
+  return sort_by_address(a->oop_value(), b->oop_value());
+}
+
+int ObjectLookup::sort_oop_by_address(oop const& a, ObjectEntry const& b) {
+  return sort_by_address(a, b.oop_value());
+}
+
+int ObjectLookup::find_index(jobject handle, OopRecorder* oop_recorder) {
+  if (handle == NULL) {
+    return 0;
+  }
+  oop object = JNIHandles::resolve(handle);
+  maybe_resort();
+  bool found;
+  int location = _values.find_sorted<oop, sort_oop_by_address>(object, found);
+  if (!found) {
+    jobject handle = JNIHandles::make_local(object);
+    ObjectEntry r(handle, oop_recorder->allocate_oop_index(handle));
+    _values.insert_before(location, r);
+    return r.index();
+  }
+  return _values.at(location).index();
+}
+

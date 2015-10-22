@@ -128,6 +128,7 @@
 # include "interpreter/templateInterpreter.hpp"
 # include "interpreter/templateTable.hpp"
 # include "jvmtifiles/jvmti.h"
+# include "logging/log.hpp"
 # include "memory/allocation.hpp"
 # include "memory/allocation.inline.hpp"
 # include "memory/heap.hpp"
@@ -290,6 +291,9 @@
 # include "c1/c1_ValueType.hpp"
 # include "c1/c1_globals.hpp"
 #endif // COMPILER1
+#if INCLUDE_JVMCI
+# include "jvmci/jvmci_globals.hpp"
+#endif // INCLUDE_JVMCI
 #if INCLUDE_ALL_GCS
 # include "gc/cms/compactibleFreeListSpace.hpp"
 # include "gc/cms/concurrentMarkSweepGeneration.hpp"

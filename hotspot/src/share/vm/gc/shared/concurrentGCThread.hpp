@@ -35,19 +35,6 @@ protected:
   bool _should_terminate;
   bool _has_terminated;
 
-  enum CGC_flag_type {
-    CGC_nil           = 0x0,
-    CGC_dont_suspend  = 0x1,
-    CGC_CGC_safepoint = 0x2,
-    CGC_VM_safepoint  = 0x4
-  };
-
-  static int _CGC_flag;
-
-  static bool CGC_flag_is_set(int b)       { return (_CGC_flag & b) != 0; }
-  static int set_CGC_flag(int b)           { return _CGC_flag |= b; }
-  static int reset_CGC_flag(int b)         { return _CGC_flag &= ~b; }
-
   // Create and start the thread (setting it's priority high.)
   void create_and_start();
 
@@ -63,13 +50,10 @@ protected:
   void terminate();
 
 public:
-  // Constructor
-
   ConcurrentGCThread();
-  ~ConcurrentGCThread() {} // Exists to call NamedThread destructor.
 
   // Tester
-  bool is_ConcurrentGC_thread() const          { return true;       }
+  bool is_ConcurrentGC_thread() const { return true; }
 };
 
 // The SurrogateLockerThread is used by concurrent GC threads for

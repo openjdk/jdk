@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/cms/yieldingWorkgroup.hpp"
+#include "gc/shared/gcId.hpp"
 #include "utilities/macros.hpp"
 
 YieldingFlexibleGangWorker::YieldingFlexibleGangWorker(YieldingFlexibleWorkGang* gang, int id)
@@ -340,6 +341,7 @@ void YieldingFlexibleGangWorker::loop() {
         // Now, release the gang mutex and do the work.
         {
           MutexUnlockerEx mul(gang_monitor, Mutex::_no_safepoint_check_flag);
+          GCIdMark gc_id_mark(data.task()->gc_id());
           data.task()->work(id);   // This might include yielding
         }
         // Reacquire monitor and note completion of this worker

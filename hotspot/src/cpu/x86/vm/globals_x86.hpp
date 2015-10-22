@@ -46,7 +46,7 @@ define_pd_global(bool, UncommonNullCast,         true);  // Uncommon-trap NULLs 
 // the the vep is aligned at CodeEntryAlignment whereas c2 only aligns
 // the uep and the vep doesn't get real alignment but just slops on by
 // only assured that the entry instruction meets the 5 byte size requirement.
-#ifdef COMPILER2
+#if defined(COMPILER2) || INCLUDE_JVMCI
 define_pd_global(intx, CodeEntryAlignment,       32);
 #else
 define_pd_global(intx, CodeEntryAlignment,       16);
@@ -91,6 +91,7 @@ define_pd_global(bool, PreserveFramePointer, false);
                                                                             \
   product(intx, UseAVX, 99,                                                 \
           "Highest supported AVX instructions set on x86/x64")              \
+          range(0, 99)                                                      \
                                                                             \
   product(bool, UseCLMUL, false,                                            \
           "Control whether CLMUL instructions can be used on x86/x64")      \

@@ -44,8 +44,6 @@
 #include "runtime/vm_operations.hpp"
 #include "utilities/hashtable.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 int MetaspaceShared::_max_alignment = 0;
 
 ReservedSpace* MetaspaceShared::_shared_rs = NULL;
@@ -578,7 +576,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   // Print shared spaces all the time
 // To make fmt_space be a syntactic constant (for format warnings), use #define.
-#define fmt_space "%s space: %9d [ %4.1f%% of total] out of %9d bytes [%4.1f%% used] at " INTPTR_FORMAT
+#define fmt_space "%s space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [%4.1f%% used] at " INTPTR_FORMAT
   Metaspace* ro_space = _loader_data->ro_metaspace();
   Metaspace* rw_space = _loader_data->rw_metaspace();
 
@@ -611,12 +609,12 @@ void VM_PopulateDumpSharedSpace::doit() {
   const double mc_u_perc = mc_bytes / double(mc_alloced) * 100.0;
   const double total_u_perc = total_bytes / double(total_alloced) * 100.0;
 
-  tty->print_cr(fmt_space, "ro", ro_bytes, ro_t_perc, ro_alloced, ro_u_perc, ro_space->bottom());
-  tty->print_cr(fmt_space, "rw", rw_bytes, rw_t_perc, rw_alloced, rw_u_perc, rw_space->bottom());
-  tty->print_cr(fmt_space, "md", md_bytes, md_t_perc, md_alloced, md_u_perc, md_low);
-  tty->print_cr(fmt_space, "mc", mc_bytes, mc_t_perc, mc_alloced, mc_u_perc, mc_low);
-  tty->print_cr(fmt_space, "st", ss_bytes, ss_t_perc, ss_bytes, 100.0, ss_low);
-  tty->print_cr("total   : %9d [100.0%% of total] out of %9d bytes [%4.1f%% used]",
+  tty->print_cr(fmt_space, "ro", ro_bytes, ro_t_perc, ro_alloced, ro_u_perc, p2i(ro_space->bottom()));
+  tty->print_cr(fmt_space, "rw", rw_bytes, rw_t_perc, rw_alloced, rw_u_perc, p2i(rw_space->bottom()));
+  tty->print_cr(fmt_space, "md", md_bytes, md_t_perc, md_alloced, md_u_perc, p2i(md_low));
+  tty->print_cr(fmt_space, "mc", mc_bytes, mc_t_perc, mc_alloced, mc_u_perc, p2i(mc_low));
+  tty->print_cr(fmt_space, "st", ss_bytes, ss_t_perc, ss_bytes,   100.0,     p2i(ss_low));
+  tty->print_cr("total   : " SIZE_FORMAT_W(9) " [100.0%% of total] out of " SIZE_FORMAT_W(9) " bytes [%4.1f%% used]",
                  total_bytes, total_alloced, total_u_perc);
 
   // Update the vtable pointers in all of the Klass objects in the
@@ -738,9 +736,9 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
   TraceTime timer("Dump Shared Spaces", TraceStartupTime);
   ResourceMark rm;
 
-  tty->print_cr("Allocated shared space: %d bytes at " PTR_FORMAT,
+  tty->print_cr("Allocated shared space: " SIZE_FORMAT " bytes at " PTR_FORMAT,
                 MetaspaceShared::shared_rs()->size(),
-                MetaspaceShared::shared_rs()->base());
+                p2i(MetaspaceShared::shared_rs()->base()));
 
   // Preload classes to be shared.
   // Should use some os:: method rather than fopen() here. aB.

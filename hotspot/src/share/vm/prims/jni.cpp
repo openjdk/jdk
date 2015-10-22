@@ -81,6 +81,10 @@
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #endif // INCLUDE_ALL_GCS
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciCompiler.hpp"
+#include "jvmci/jvmciRuntime.hpp"
+#endif
 
 static jint CurrentVersion = JNI_VERSION_1_8;
 
@@ -3985,6 +3989,19 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     /* thread is thread_in_vm here */
     *vm = (JavaVM *)(&main_vm);
     *(JNIEnv**)penv = thread->jni_environment();
+
+#if INCLUDE_JVMCI
+    if (EnableJVMCI) {
+      if (UseJVMCICompiler) {
+        // JVMCI is initialized on a CompilerThread
+        if (BootstrapJVMCI) {
+          JavaThread* THREAD = thread;
+          JVMCICompiler* compiler = JVMCICompiler::instance(CATCH);
+          compiler->bootstrap();
+        }
+      }
+    }
+#endif
 
     // Tracks the time application was running before GC
     RuntimeService::record_application_start();
