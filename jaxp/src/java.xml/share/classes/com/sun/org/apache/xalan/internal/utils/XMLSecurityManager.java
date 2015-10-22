@@ -65,27 +65,31 @@ public final class XMLSecurityManager {
      */
     public static enum Limit {
 
-        ENTITY_EXPANSION_LIMIT(XalanConstants.JDK_ENTITY_EXPANSION_LIMIT,
+        ENTITY_EXPANSION_LIMIT("EntityExpansionLimit", XalanConstants.JDK_ENTITY_EXPANSION_LIMIT,
                 XalanConstants.SP_ENTITY_EXPANSION_LIMIT, 0, 64000),
-        MAX_OCCUR_NODE_LIMIT(XalanConstants.JDK_MAX_OCCUR_LIMIT,
+        MAX_OCCUR_NODE_LIMIT("MaxOccurLimit", XalanConstants.JDK_MAX_OCCUR_LIMIT,
                 XalanConstants.SP_MAX_OCCUR_LIMIT, 0, 5000),
-        ELEMENT_ATTRIBUTE_LIMIT(XalanConstants.JDK_ELEMENT_ATTRIBUTE_LIMIT,
+        ELEMENT_ATTRIBUTE_LIMIT("ElementAttributeLimit", XalanConstants.JDK_ELEMENT_ATTRIBUTE_LIMIT,
                 XalanConstants.SP_ELEMENT_ATTRIBUTE_LIMIT, 0, 10000),
-        TOTAL_ENTITY_SIZE_LIMIT(XalanConstants.JDK_TOTAL_ENTITY_SIZE_LIMIT,
+        TOTAL_ENTITY_SIZE_LIMIT("TotalEntitySizeLimit", XalanConstants.JDK_TOTAL_ENTITY_SIZE_LIMIT,
                 XalanConstants.SP_TOTAL_ENTITY_SIZE_LIMIT, 0, 50000000),
-        GENERAL_ENTITY_SIZE_LIMIT(XalanConstants.JDK_GENERAL_ENTITY_SIZE_LIMIT,
+        GENERAL_ENTITY_SIZE_LIMIT("MaxEntitySizeLimit", XalanConstants.JDK_GENERAL_ENTITY_SIZE_LIMIT,
                 XalanConstants.SP_GENERAL_ENTITY_SIZE_LIMIT, 0, 0),
-        PARAMETER_ENTITY_SIZE_LIMIT(XalanConstants.JDK_PARAMETER_ENTITY_SIZE_LIMIT,
+        PARAMETER_ENTITY_SIZE_LIMIT("MaxEntitySizeLimit", XalanConstants.JDK_PARAMETER_ENTITY_SIZE_LIMIT,
                 XalanConstants.SP_PARAMETER_ENTITY_SIZE_LIMIT, 0, 1000000),
-        MAX_ELEMENT_DEPTH_LIMIT(XalanConstants.JDK_MAX_ELEMENT_DEPTH,
-                XalanConstants.SP_MAX_ELEMENT_DEPTH, 0, 0);
+        MAX_ELEMENT_DEPTH_LIMIT("MaxElementDepthLimit", XalanConstants.JDK_MAX_ELEMENT_DEPTH,
+                XalanConstants.SP_MAX_ELEMENT_DEPTH, 0, 0),
+        MAX_NAME_LIMIT("MaxXMLNameLimit", XalanConstants.JDK_XML_NAME_LIMIT,
+                XalanConstants.SP_XML_NAME_LIMIT, 1000, 1000);
 
+        final String key;
         final String apiProperty;
         final String systemProperty;
         final int defaultValue;
         final int secureValue;
 
-        Limit(String apiProperty, String systemProperty, int value, int secureValue) {
+        Limit(String key, String apiProperty, String systemProperty, int value, int secureValue) {
+            this.key = key;
             this.apiProperty = apiProperty;
             this.systemProperty = systemProperty;
             this.defaultValue = value;
@@ -100,6 +104,10 @@ public final class XMLSecurityManager {
             return (propertyName == null) ? false : systemProperty.equals(propertyName);
         }
 
+        public String key() {
+            return key;
+        }
+
         public String apiProperty() {
             return apiProperty;
         }
@@ -108,7 +116,7 @@ public final class XMLSecurityManager {
             return systemProperty;
         }
 
-        int defaultValue() {
+        public int defaultValue() {
             return defaultValue;
         }
 
@@ -160,7 +168,7 @@ public final class XMLSecurityManager {
     /**
      * Index of the special entityCountInfo property
      */
-    private int indexEntityCountInfo = 10000;
+    private final int indexEntityCountInfo = 10000;
     private String printEntityCountInfo = "";
 
     /**
