@@ -335,6 +335,18 @@ public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
     }
 
     /**
+     * Returns true if the passed call site descriptor's operation contains (or
+     * is) the specified standard operation.
+     * @param desc the call site descriptor.
+     * @param operation the operation whose presence is tested.
+     * @return Returns true if the call site descriptor's operation contains (or
+     * is) the specified standard operation.
+     */
+    public static boolean contains(final CallSiteDescriptor desc, final StandardOperation operation) {
+        return CompositeOperation.contains(NamedOperation.getBaseOperation(desc.getOperation()), operation);
+    }
+
+    /**
      * Returns the error message to be used when CALL or NEW is used on a non-function.
      *
      * @param obj object on which CALL or NEW is used
