@@ -1076,10 +1076,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   void assert_correct_size_change_locking();
 
  public:
-  ConcurrentMarkSweepGeneration(ReservedSpace rs, size_t initial_byte_size,
-                                CardTableRS* ct,
-                                bool use_adaptive_freelists,
-                                FreeBlockDictionary<FreeChunk>::DictionaryChoice);
+  ConcurrentMarkSweepGeneration(ReservedSpace rs, size_t initial_byte_size, CardTableRS* ct);
 
   // Accessors
   CMSCollector* collector() const { return _collector; }
