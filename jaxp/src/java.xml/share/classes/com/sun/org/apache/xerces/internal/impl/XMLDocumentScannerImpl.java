@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -1095,11 +1095,14 @@ public class XMLDocumentScannerImpl
                     again = false;
                     switch (fScannerState) {
                         case SCANNER_STATE_DTD_INTERNAL_DECLS: {
-                            // REVISIT: Should there be a feature for
-                            //          the "complete" parameter?
-                            boolean completeDTD = true;
+                            boolean moreToScan = false;
+                            if (!fDTDScanner.skipDTD(fSupportDTD)) {
+                                // REVISIT: Should there be a feature for
+                                //          the "complete" parameter?
+                                boolean completeDTD = true;
 
-                            boolean moreToScan = fDTDScanner.scanDTDInternalSubset(completeDTD, fStandalone, fHasExternalDTD && fLoadExternalDTD);
+                                moreToScan = fDTDScanner.scanDTDInternalSubset(completeDTD, fStandalone, fHasExternalDTD && fLoadExternalDTD);
+                            }
                             Entity entity = fEntityScanner.getCurrentEntity();
                             if(entity instanceof Entity.ScannedEntity){
                                 fEndPos=((Entity.ScannedEntity)entity).position;

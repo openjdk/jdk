@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -39,6 +39,8 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author Jacek Ambroziak
@@ -206,12 +208,12 @@ final class AttributeValueTemplate extends AttributeValue {
     }
 
     public Type typeCheck(SymbolTable stable) throws TypeCheckError {
-        final Vector contents = getContents();
+        final List<SyntaxTreeNode> contents = getContents();
         final int n = contents.size();
         for (int i = 0; i < n; i++) {
-            final Expression exp = (Expression)contents.elementAt(i);
+            final Expression exp = (Expression)contents.get(i);
             if (!exp.typeCheck(stable).identicalTo(Type.String)) {
-                contents.setElementAt(new CastExpr(exp, Type.String), i);
+                contents.set(i, new CastExpr(exp, Type.String));
             }
         }
         return _type = Type.String;
@@ -251,9 +253,9 @@ final class AttributeValueTemplate extends AttributeValue {
             il.append(DUP);
             il.append(new INVOKESPECIAL(initBuffer));
             // StringBuffer is on the stack
-            final Enumeration elements = elements();
-            while (elements.hasMoreElements()) {
-                final Expression exp = (Expression)elements.nextElement();
+            final Iterator<SyntaxTreeNode> elements = elements();
+            while (elements.hasNext()) {
+                final Expression exp = (Expression)elements.next();
                 exp.translate(classGen, methodGen);
                 il.append(append);
             }

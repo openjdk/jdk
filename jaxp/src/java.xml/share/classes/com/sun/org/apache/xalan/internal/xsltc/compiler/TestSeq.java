@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -23,14 +23,14 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Dictionary;
-import java.util.Vector;
-
 import com.sun.org.apache.bcel.internal.generic.GOTO_W;
 import com.sun.org.apache.bcel.internal.generic.InstructionHandle;
 import com.sun.org.apache.bcel.internal.generic.InstructionList;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.MethodGenerator;
+import java.util.Dictionary;
+import java.util.Map;
+import java.util.Vector;
 
 /**
  * A test sequence is a sequence of patterns that
@@ -179,7 +179,7 @@ final class TestSeq {
      * this test sequence. Note that a single template can occur
      * in several test sequences if its pattern is a union.
      */
-    public void findTemplates(Dictionary templates) {
+    public void findTemplates(Map<Template, Object> templates) {
         if (_default != null) {
             templates.put(_default, this);
         }
