@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8006582 8037546
+ * @bug 8006582 8037546 8138729
  * @summary javac should generate method parameters correctly.
  * @modules jdk.jdeps/com.sun.tools.classfile
  * @build Tester
@@ -32,8 +32,8 @@
  */
 
 /**
- * Post https://bugs.openjdk.java.net/browse/JDK-8037546, this test verifies
- * that MethodParameters attribute for lambdas are emitted properly.
+ * Post https://bugs.openjdk.java.net/browse/JDK-8138729, this test verifies
+ * that MethodParameters attribute are NOT emitted for lambdas.
  */
 class LambdaTest {
 

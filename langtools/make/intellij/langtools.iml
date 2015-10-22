@@ -13,6 +13,7 @@
       <sourceFolder url="file://$MODULE_DIR$/build/bootstrap/jdk.compiler/gensrc" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/build/bootstrap/jdk.javadoc/gensrc" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/build/bootstrap/jdk.jdeps/gensrc" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/jdk.jshell/share/classes" isTestSource="false" />
     </content>
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
