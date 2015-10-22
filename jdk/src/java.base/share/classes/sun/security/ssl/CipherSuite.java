@@ -350,8 +350,6 @@ final class CipherSuite implements Comparable<CipherSuite> {
     private static void add(String name, int id, int priority,
             KeyExchange keyExchange, BulkCipher cipher, MacAlg mac,
             boolean allowed, int obsoleted) {
-        // If this is an obsoleted suite, then don't let the TLS 1.2
-        // protocol have a valid PRF value.
         PRF prf = obsoleted < ProtocolVersion.TLS12.v ? P_NONE : P_SHA256;
 
         add(name, id, priority, keyExchange, cipher, mac, allowed, obsoleted,

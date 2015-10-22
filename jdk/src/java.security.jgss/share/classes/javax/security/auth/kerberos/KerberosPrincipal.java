@@ -100,9 +100,16 @@ public final class KerberosPrincipal
      * <p>If the input name does not contain a realm, the default realm
      * is used. The default realm can be specified either in a Kerberos
      * configuration file or via the java.security.krb5.realm
-     * system property. For more information,
+     * system property. For more information, see
      * <a href="../../../../../technotes/guides/security/jgss/tutorials/index.html">
-     * Kerberos Requirements </a>
+     * Kerberos Requirements</a>. Additionally, if a security manager is
+     * installed, a {@link ServicePermission} must be granted and the service
+     * principal of the permission must minimally be inside the
+     * {@code KerberosPrincipal}'s realm. For example, if the result of
+     * {@code new KerberosPrincipal("user")} is {@code user@EXAMPLE.COM},
+     * then a {@code ServicePermission} with service principal
+     * {@code host/www.example.com@EXAMPLE.COM} (and any action)
+     * must be granted.
      *
      * @param name the principal name
      * @throws IllegalArgumentException if name is improperly
@@ -110,20 +117,12 @@ public final class KerberosPrincipal
      * the realm to use and the default realm is not specified
      * in either a Kerberos configuration file or via the
      * java.security.krb5.realm system property.
+     * @throws SecurityException if a security manager is installed and
+     * {@code name} does not contain the realm to use, and a proper
+     * {@link ServicePermission} as described above is not granted.
      */
     public KerberosPrincipal(String name) {
-
-        PrincipalName krb5Principal = null;
-
-        try {
-            // Appends the default realm if it is missing
-            krb5Principal = new PrincipalName(name, KRB_NT_PRINCIPAL);
-        } catch (KrbException e) {
-            throw new IllegalArgumentException(e.getMessage());
-        }
-        nameType = KRB_NT_PRINCIPAL;  // default name type
-        fullName = krb5Principal.toString();
-        realm = krb5Principal.getRealmString();
+        this(name, KRB_NT_PRINCIPAL);
     }
 
     /**
@@ -138,12 +137,19 @@ public final class KerberosPrincipal
      * name type, KRB_NT_PRINCIPAL where <i>duke</i>
      * represents a principal, and <i>FOO.COM</i> represents a realm).
      *
-     * <p> If the input name does not contain a realm, the default realm
+     * <p>If the input name does not contain a realm, the default realm
      * is used. The default realm can be specified either in a Kerberos
      * configuration file or via the java.security.krb5.realm
      * system property. For more information, see
      * <a href="../../../../../technotes/guides/security/jgss/tutorials/index.html">
-     * Kerberos Requirements</a>.
+     * Kerberos Requirements</a>. Additionally, if a security manager is
+     * installed, a {@link ServicePermission} must be granted and the service
+     * principal of the permission must minimally be inside the
+     * {@code KerberosPrincipal}'s realm. For example, if the result of
+     * {@code new KerberosPrincipal("user")} is {@code user@EXAMPLE.COM},
+     * then a {@code ServicePermission} with service principal
+     * {@code host/www.example.com@EXAMPLE.COM} (and any action)
+     * must be granted.
      *
      * @param name the principal name
      * @param nameType the name type of the principal
@@ -152,6 +158,9 @@ public final class KerberosPrincipal
      * or if name does not contain the realm to use and the default
      * realm is not specified in either a Kerberos configuration
      * file or via the java.security.krb5.realm system property.
+     * @throws SecurityException if a security manager is installed and
+     * {@code name} does not contain the realm to use, and a proper
+     * {@link ServicePermission} as described above is not granted.
      */
 
     public KerberosPrincipal(String name, int nameType) {
@@ -165,6 +174,18 @@ public final class KerberosPrincipal
             throw new IllegalArgumentException(e.getMessage());
         }
 
+        if (krb5Principal.isRealmDeduced() && !Realm.AUTODEDUCEREALM) {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                try {
+                    sm.checkPermission(new ServicePermission(
+                            "@" + krb5Principal.getRealmAsString(), "-"));
+                } catch (SecurityException se) {
+                    // Swallow the actual exception to hide info
+                    throw new SecurityException("Cannot read realm info");
+                }
+            }
+        }
         this.nameType = nameType;
         fullName = krb5Principal.toString();
         realm = krb5Principal.getRealmString();
