@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * license:
  */
 /*
-   Copyright 2009-2013 Attila Szegedi
+   Copyright 2015 Attila Szegedi
 
    Licensed under both the Apache License, Version 2.0 (the "Apache License")
    and the BSD License (the "BSD License"), with licensee being free to
@@ -81,37 +81,19 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
+package jdk.internal.dynalink;
 
-import java.lang.invoke.MethodType;
-import jdk.internal.dynalink.CallSiteDescriptor;
-
-class NamedDynCallSiteDescriptor extends UnnamedDynCallSiteDescriptor {
-    private final String name;
-
-    NamedDynCallSiteDescriptor(final String op, final String name, final MethodType methodType) {
-        super(op, methodType);
-        this.name = name;
-    }
-
-    @Override
-    public int getNameTokenCount() {
-        return 3;
-    }
-
-    @Override
-    public String getNameToken(final int i) {
-        switch(i) {
-            case 0: return "dyn";
-            case 1: return getOp();
-            case 2: return name;
-            default: throw new IndexOutOfBoundsException(String.valueOf(i));
-        }
-    }
-
-    @Override
-    public CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
-        return CallSiteDescriptorFactory.getCanonicalPublicDescriptor(new NamedDynCallSiteDescriptor(getOp(), name,
-                newMethodType));
-    }
+/**
+ * An object that describes a dynamic operation. Dynalink defines a set of
+ * standard operations with the {@link StandardOperation} class, as well as a
+ * way to attach a fixed name to an operation using {@link NamedOperation} and
+ * to express a set of alternative operations using {@link CompositeOperation}.
+ * When presenting examples in this documentation, we will refer to standard
+ * operations using their name (e.g. {@code GET_PROPERTY}), to composite
+ * operations by separating their components with the vertical line character
+ * (e.g. {@code GET_PROPERTY|GET_ELEMENT}), and finally to named operations by
+ * separating the base operation and the name with the colon character (e.g.
+ * {@code GET_PROPERTY|GET_ELEMENT:color}).
+ */
+public interface Operation {
 }

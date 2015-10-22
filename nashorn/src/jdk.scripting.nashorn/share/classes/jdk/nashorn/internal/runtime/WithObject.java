@@ -33,9 +33,11 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.NamedOperation;
+import jdk.internal.dynalink.Operation;
+import jdk.internal.dynalink.StandardOperation;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
 import jdk.nashorn.api.scripting.AbstractJSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
@@ -103,9 +105,10 @@ public final class WithObject extends Scope {
 
         final boolean isNamedOperation;
         final String name;
-        if (desc.getNameTokenCount() > 2) {
+        final Operation op = desc.getOperation();
+        if (op instanceof NamedOperation) {
             isNamedOperation = true;
-            name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+            name = ((NamedOperation)op).getName().toString();
         } else {
             isNamedOperation = false;
             name = null;
@@ -137,16 +140,13 @@ public final class WithObject extends Scope {
         if (self != null) {
             final String fallBack;
 
-            final String operator = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
-
-            switch (operator) {
-            case "callMethod":
-                throw new AssertionError(); // Nashorn never emits callMethod
-            case "getMethod":
+            final StandardOperation firstOp = ndesc.getFirstOperation();
+            switch (firstOp) {
+            case GET_METHOD:
                 fallBack = NO_SUCH_METHOD_NAME;
                 break;
-            case "getProp":
-            case "getElem":
+            case GET_PROPERTY:
+            case GET_ELEMENT:
                 fallBack = NO_SUCH_PROPERTY_NAME;
                 break;
             default:
@@ -157,12 +157,12 @@ public final class WithObject extends Scope {
             if (fallBack != null) {
                 find = self.findProperty(fallBack, true);
                 if (find != null) {
-                    switch (operator) {
-                    case "getMethod":
+                    switch (firstOp) {
+                    case GET_METHOD:
                         link = self.noSuchMethod(desc, request);
                         break;
-                    case "getProp":
-                    case "getElem":
+                    case GET_PROPERTY:
+                    case GET_ELEMENT:
                         link = self.noSuchProperty(desc, request);
                         break;
                     default:
@@ -211,7 +211,7 @@ public final class WithObject extends Scope {
 
     @Override
     protected Object invokeNoSuchProperty(final String name, final boolean isScope, final int programPoint) {
-        FindProperty find = expression.findProperty(NO_SUCH_PROPERTY_NAME, true);
+        final FindProperty find = expression.findProperty(NO_SUCH_PROPERTY_NAME, true);
         if (find != null) {
             final Object func = find.getObjectValue();
             if (func instanceof ScriptFunction) {
@@ -263,7 +263,7 @@ public final class WithObject extends Scope {
     private static GuardedInvocation fixExpressionCallSite(final NashornCallSiteDescriptor desc, final GuardedInvocation link) {
         // If it's not a getMethod, just add an expression filter that converts WithObject in "this" position to its
         // expression.
-        if (!"getMethod".equals(desc.getFirstOperator())) {
+        if (desc.getFirstOperation() != StandardOperation.GET_METHOD) {
             return fixReceiverType(link, WITHEXPRESSIONFILTER).filterArguments(0, WITHEXPRESSIONFILTER);
         }
 

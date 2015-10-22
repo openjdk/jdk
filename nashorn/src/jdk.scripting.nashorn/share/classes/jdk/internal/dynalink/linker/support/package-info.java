@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
  * license:
  */
 /*
-   Copyright 2009-2013 Attila Szegedi
+   Copyright 2015 Attila Szegedi
 
    Licensed under both the Apache License, Version 2.0 (the "Apache License")
    and the BSD License (the "BSD License"), with licensee being free to
@@ -81,91 +81,13 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
-
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
-import jdk.internal.dynalink.linker.ConversionComparator.Comparison;
-import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.linker.GuardingDynamicLinker;
-import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.linker.MethodHandleTransformer;
-
 /**
- * Default implementation of the {@link LinkerServices} interface.
+ * <p>Contains classes that make it more convenient for language runtimes to
+ * implement their own language-specific object models and type conversions
+ * by providing basic implementations of some classes as well as various
+ * utilities.
+ * </p>
+ * @since 1.9
  */
-public class LinkerServicesImpl implements LinkerServices {
-
-    private static final RuntimePermission GET_CURRENT_LINK_REQUEST = new RuntimePermission("dynalink.getCurrentLinkRequest");
-    private static final ThreadLocal<LinkRequest> threadLinkRequest = new ThreadLocal<>();
-
-    private final TypeConverterFactory typeConverterFactory;
-    private final GuardingDynamicLinker topLevelLinker;
-    private final MethodHandleTransformer internalObjectsFilter;
-
-    /**
-     * Creates a new linker services object.
-     *
-     * @param typeConverterFactory the type converter factory exposed by the services.
-     * @param topLevelLinker the top level linker used by the services.
-     * @param internalObjectsFilter a method handle transformer that is supposed to act as the implementation of this
-     * services' {@link #filterInternalObjects(java.lang.invoke.MethodHandle)} method.
-     */
-    public LinkerServicesImpl(final TypeConverterFactory typeConverterFactory,
-            final GuardingDynamicLinker topLevelLinker, final MethodHandleTransformer internalObjectsFilter) {
-        this.typeConverterFactory = typeConverterFactory;
-        this.topLevelLinker = topLevelLinker;
-        this.internalObjectsFilter = internalObjectsFilter;
-    }
-
-    @Override
-    public boolean canConvert(final Class<?> from, final Class<?> to) {
-        return typeConverterFactory.canConvert(from, to);
-    }
-
-    @Override
-    public MethodHandle asType(final MethodHandle handle, final MethodType fromType) {
-        return typeConverterFactory.asType(handle, fromType);
-    }
-
-    @Override
-    public MethodHandle getTypeConverter(final Class<?> sourceType, final Class<?> targetType) {
-        return typeConverterFactory.getTypeConverter(sourceType, targetType);
-    }
-
-    @Override
-    public Comparison compareConversion(final Class<?> sourceType, final Class<?> targetType1, final Class<?> targetType2) {
-        return typeConverterFactory.compareConversion(sourceType, targetType1, targetType2);
-    }
-
-    @Override
-    public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest) throws Exception {
-        final LinkRequest prevLinkRequest = threadLinkRequest.get();
-        threadLinkRequest.set(linkRequest);
-        try {
-            return topLevelLinker.getGuardedInvocation(linkRequest, this);
-        } finally {
-            threadLinkRequest.set(prevLinkRequest);
-        }
-    }
-
-    @Override
-    public MethodHandle filterInternalObjects(final MethodHandle target) {
-        return internalObjectsFilter != null ? internalObjectsFilter.transform(target) : target;
-    }
-
-    /**
-     * Returns the currently processed link request, or null if the method is invoked outside of the linking process.
-     * @return the currently processed link request, or null.
-     * @throws SecurityException if the calling code doesn't have the {@code "dynalink.getCurrentLinkRequest"} runtime
-     * permission.
-     */
-    public static LinkRequest getCurrentLinkRequest() {
-        final SecurityManager sm = System.getSecurityManager();
-        if(sm != null) {
-            sm.checkPermission(GET_CURRENT_LINK_REQUEST);
-        }
-        return threadLinkRequest.get();
-    }
-}
+@jdk.Exported
+package jdk.internal.dynalink.linker.support;
