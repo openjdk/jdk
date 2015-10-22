@@ -23,7 +23,7 @@ package com.sun.org.apache.xerces.internal.impl.dv;
 import com.sun.org.apache.xerces.internal.impl.dv.dtd.DTDDVFactoryImpl;
 import com.sun.org.apache.xerces.internal.impl.dv.dtd.XML11DTDDVFactoryImpl;
 import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
-import java.util.Hashtable;
+import java.util.Map;
 
 /**
  * The factory to create and return DTD types. The implementation should
@@ -91,10 +91,10 @@ public abstract class DTDDVFactory {
     public abstract DatatypeValidator getBuiltInDV(String name);
 
     /**
-     * get all built-in DVs, which are stored in a hashtable keyed by the name
+     * get all built-in DVs, which are stored in a map keyed by the name
      *
-     * @return      a hashtable which contains all datatypes
+     * @return      a map which contains all datatypes
      */
-    public abstract Hashtable getBuiltInTypes();
+    public abstract Map<String, DatatypeValidator> getBuiltInTypes();
 
 }
