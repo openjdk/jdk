@@ -75,9 +75,9 @@ class G1ParScanThreadState : public CHeapObj<mtGC> {
 
   InCSetState dest(InCSetState original) const {
     assert(original.is_valid(),
-           err_msg("Original state invalid: " CSETSTATE_FORMAT, original.value()));
+           "Original state invalid: " CSETSTATE_FORMAT, original.value());
     assert(_dest[original.value()].is_valid_gen(),
-           err_msg("Dest state is invalid: " CSETSTATE_FORMAT, _dest[original.value()].value()));
+           "Dest state is invalid: " CSETSTATE_FORMAT, _dest[original.value()].value());
     return _dest[original.value()];
   }
 

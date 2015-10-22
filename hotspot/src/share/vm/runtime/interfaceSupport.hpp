@@ -84,10 +84,6 @@ class InterfaceSupport: AllStatic {
   static void walk_stack_from(vframe* start_vf);
   static void walk_stack();
 
-# ifdef ENABLE_ZAP_DEAD_LOCALS
-  static void zap_dead_locals_old();
-# endif
-
   static void zombieAll();
   static void unlinkSymbols();
   static void deoptimizeAll();
@@ -357,11 +353,6 @@ class VMEntryWrapper {
     if (WalkStackALot) {
       InterfaceSupport::walk_stack();
     }
-#ifdef ENABLE_ZAP_DEAD_LOCALS
-    if (ZapDeadLocalsOld) {
-      InterfaceSupport::zap_dead_locals_old();
-    }
-#endif
 #ifdef COMPILER2
     // This option is not used by Compiler 1
     if (StressDerivedPointers) {

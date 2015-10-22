@@ -27,7 +27,9 @@
 
 class WhiteBox;
 
+#include "code/codeCache.hpp"
 #include "utilities/ticks.hpp"
+
 // An NmethodSweeper is an incremental cleaner for:
 //    - cleanup inline caches
 //    - reclamation of nmethods

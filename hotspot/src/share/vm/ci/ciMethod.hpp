@@ -266,7 +266,6 @@ class ciMethod : public ciMetadata {
   int resolve_vtable_index(ciKlass* caller, ciKlass* receiver);
 
   // Compilation directives
-  bool should_exclude();
   bool should_inline();
   bool should_not_inline();
   bool should_print_assembly();

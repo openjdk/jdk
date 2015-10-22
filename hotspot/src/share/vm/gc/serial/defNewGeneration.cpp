@@ -583,7 +583,7 @@ void DefNewGeneration::collect(bool   full,
 
   init_assuming_no_promotion_failure();
 
-  GCTraceTime t1(GCCauseString("GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, NULL, gc_tracer.gc_id());
+  GCTraceTime t1(GCCauseString("GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, NULL);
   // Capture heap used before collection (for printing).
   size_t gch_prev_used = gch->used();
 
@@ -646,8 +646,9 @@ void DefNewGeneration::collect(bool   full,
   rp->setup_policy(clear_all_soft_refs);
   const ReferenceProcessorStats& stats =
   rp->process_discovered_references(&is_alive, &keep_alive, &evacuate_followers,
-                                    NULL, _gc_timer, gc_tracer.gc_id());
+                                    NULL, _gc_timer);
   gc_tracer.report_gc_reference_stats(stats);
+  gc_tracer.report_tenuring_threshold(tenuring_threshold());
 
   if (!_promotion_failed) {
     // Swap the survivor spaces.
@@ -712,7 +713,6 @@ void DefNewGeneration::collect(bool   full,
   update_time_of_last_gc(now);
 
   gch->trace_heap_after_gc(&gc_tracer);
-  gc_tracer.report_tenuring_threshold(tenuring_threshold());
 
   _gc_timer->register_gc_end();
 

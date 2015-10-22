@@ -41,6 +41,7 @@
 #include "gc/g1/heapRegionRemSet.hpp"
 #include "gc/g1/heapRegionSet.inline.hpp"
 #include "gc/g1/suspendibleThreadSet.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.hpp"
@@ -245,10 +246,6 @@ MemRegion CMBitMap::getAndClearMarkedRegion(HeapWord* addr,
 
 CMMarkStack::CMMarkStack(ConcurrentMark* cm) :
   _base(NULL), _cm(cm)
-#ifdef ASSERT
-  , _drain_in_progress(false)
-  , _drain_in_progress_yields(false)
-#endif
 {}
 
 bool CMMarkStack::allocate(size_t capacity) {
@@ -362,30 +359,6 @@ bool CMMarkStack::par_pop_arr(oop* ptr_arr, int max, int* n) {
   }
 }
 
-template<class OopClosureClass>
-bool CMMarkStack::drain(OopClosureClass* cl, CMBitMap* bm, bool yield_after) {
-  assert(!_drain_in_progress || !_drain_in_progress_yields || yield_after
-         || SafepointSynchronize::is_at_safepoint(),
-         "Drain recursion must be yield-safe.");
-  bool res = true;
-  debug_only(_drain_in_progress = true);
-  debug_only(_drain_in_progress_yields = yield_after);
-  while (!isEmpty()) {
-    oop newOop = pop();
-    assert(G1CollectedHeap::heap()->is_in_reserved(newOop), "Bad pop");
-    assert(newOop->is_oop(), "Expected an oop");
-    assert(bm == NULL || bm->isMarked((HeapWord*)newOop),
-           "only grey objects on this stack");
-    newOop->oop_iterate(cl);
-    if (yield_after && _cm->do_yield_check()) {
-      res = false;
-      break;
-    }
-  }
-  debug_only(_drain_in_progress = false);
-  return res;
-}
-
 void CMMarkStack::note_start_of_gc() {
   assert(_saved_index == -1,
          "note_start_of_gc()/end_of_gc() bracketed incorrectly");
@@ -399,7 +372,7 @@ void CMMarkStack::note_end_of_gc() {
   // only check this once per GC anyway, so it won't be a performance
   // issue in any way.
   guarantee(_saved_index == _index,
-            err_msg("saved index: %d index: %d", _saved_index, _index));
+            "saved index: %d index: %d", _saved_index, _index);
   _saved_index = -1;
 }
 
@@ -520,7 +493,6 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
   _has_overflown(false),
   _concurrent(false),
   _has_aborted(false),
-  _aborted_gc_id(GCId::undefined()),
   _restart_for_overflow(false),
   _concurrent_marking_in_progress(false),
 
@@ -794,8 +766,8 @@ void ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurren
     // in a STW phase.
     assert(!concurrent_marking_in_progress(), "invariant");
     assert(out_of_regions(),
-           err_msg("only way to get here: _finger: " PTR_FORMAT ", _heap_end: " PTR_FORMAT,
-                   p2i(_finger), p2i(_heap_end)));
+           "only way to get here: _finger: " PTR_FORMAT ", _heap_end: " PTR_FORMAT,
+           p2i(_finger), p2i(_heap_end));
   }
 }
 
@@ -991,7 +963,7 @@ void ConcurrentMark::enter_first_sync_barrier(uint worker_id) {
       force_overflow()->update();
 
       if (G1Log::fine()) {
-        gclog_or_tty->gclog_stamp(concurrent_gc_id());
+        gclog_or_tty->gclog_stamp();
         gclog_or_tty->print_cr("[GC concurrent-mark-reset-for-overflow]");
       }
     }
@@ -1181,7 +1153,7 @@ void ConcurrentMark::scanRootRegions() {
   // should not attempt to do any further work.
   if (root_regions()->scan_in_progress()) {
     if (G1Log::fine()) {
-      gclog_or_tty->gclog_stamp(concurrent_gc_id());
+      gclog_or_tty->gclog_stamp();
       gclog_or_tty->print_cr("[GC concurrent-root-region-scan-start]");
     }
 
@@ -1195,7 +1167,7 @@ void ConcurrentMark::scanRootRegions() {
     _parallel_workers->run_task(&task);
 
     if (G1Log::fine()) {
-      gclog_or_tty->gclog_stamp(concurrent_gc_id());
+      gclog_or_tty->gclog_stamp();
       gclog_or_tty->print_cr("[GC concurrent-root-region-scan-end, %1.7lf secs]", os::elapsedTime() - scan_start);
     }
 
@@ -1235,7 +1207,8 @@ void ConcurrentMark::markFromRoots() {
 }
 
 // Helper class to get rid of some boilerplate code.
-class G1CMTraceTime : public GCTraceTime {
+class G1CMTraceTime : public StackObj {
+  GCTraceTimeImpl _gc_trace_time;
   static bool doit_and_prepend(bool doit) {
     if (doit) {
       gclog_or_tty->put(' ');
@@ -1245,8 +1218,7 @@ class G1CMTraceTime : public GCTraceTime {
 
  public:
   G1CMTraceTime(const char* title, bool doit)
-    : GCTraceTime(title, doit_and_prepend(doit), false, G1CollectedHeap::heap()->gc_timer_cm(),
-        G1CollectedHeap::heap()->concurrent_mark()->concurrent_gc_id()) {
+    : _gc_trace_time(title, doit_and_prepend(doit), false, G1CollectedHeap::heap()->gc_timer_cm()) {
   }
 };
 
@@ -1415,9 +1387,9 @@ public:
     HeapWord* start = hr->bottom();
 
     assert(start <= hr->end() && start <= ntams && ntams <= hr->end(),
-           err_msg("Preconditions not met - "
-                   "start: " PTR_FORMAT ", ntams: " PTR_FORMAT ", end: " PTR_FORMAT,
-                   p2i(start), p2i(ntams), p2i(hr->end())));
+           "Preconditions not met - "
+           "start: " PTR_FORMAT ", ntams: " PTR_FORMAT ", end: " PTR_FORMAT,
+           p2i(start), p2i(ntams), p2i(hr->end()));
 
     // Find the first marked object at or after "start".
     start = _bm->getNextMarkedWordAddress(start, ntams);
@@ -1717,11 +1689,11 @@ class FinalCountDataUpdateClosure: public CMCountDataClosureBase {
       }
 
       assert(end_idx <= _card_bm->size(),
-             err_msg("oob: end_idx=  " SIZE_FORMAT ", bitmap size= " SIZE_FORMAT,
-                     end_idx, _card_bm->size()));
+             "oob: end_idx=  " SIZE_FORMAT ", bitmap size= " SIZE_FORMAT,
+             end_idx, _card_bm->size());
       assert(start_idx < _card_bm->size(),
-             err_msg("oob: start_idx=  " SIZE_FORMAT ", bitmap size= " SIZE_FORMAT,
-                     start_idx, _card_bm->size()));
+             "oob: start_idx=  " SIZE_FORMAT ", bitmap size= " SIZE_FORMAT,
+             start_idx, _card_bm->size());
 
       _cm->set_card_bitmap_range(_card_bm, start_idx, end_idx, true /* is_par */);
     }
@@ -2391,8 +2363,7 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
                                           &g1_keep_alive,
                                           &g1_drain_mark_stack,
                                           executor,
-                                          g1h->gc_timer_cm(),
-                                          concurrent_gc_id());
+                                          g1h->gc_timer_cm());
     g1h->gc_tracer_cm()->report_gc_reference_stats(stats);
 
     // The do_oop work routines of the keep_alive and drain_marking_stack
@@ -2471,7 +2442,7 @@ private:
       // object; it could instead have been a stale reference.
       oop obj = static_cast<oop>(entry);
       assert(obj->is_oop(true /* ignore mark word */),
-             err_msg("Invalid oop in SATB buffer: " PTR_FORMAT, p2i(obj)));
+             "Invalid oop in SATB buffer: " PTR_FORMAT, p2i(obj));
       _task->make_reference_grey(obj, hr);
     }
   }
@@ -2588,9 +2559,9 @@ void ConcurrentMark::checkpointRootsFinalWork() {
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
   guarantee(has_overflown() ||
             satb_mq_set.completed_buffers_num() == 0,
-            err_msg("Invariant: has_overflown = %s, num buffers = %d",
-                    BOOL_TO_STR(has_overflown()),
-                    satb_mq_set.completed_buffers_num()));
+            "Invariant: has_overflown = %s, num buffers = %d",
+            BOOL_TO_STR(has_overflown()),
+            satb_mq_set.completed_buffers_num());
 
   print_stats();
 }
@@ -2724,11 +2695,11 @@ public:
 
   void operator()(oop obj) const {
     guarantee(obj->is_oop(),
-              err_msg("Non-oop " PTR_FORMAT ", phase: %s, info: %d",
-                      p2i(obj), _phase, _info));
+              "Non-oop " PTR_FORMAT ", phase: %s, info: %d",
+              p2i(obj), _phase, _info);
     guarantee(!_g1h->obj_in_cs(obj),
-              err_msg("obj: " PTR_FORMAT " in CSet, phase: %s, info: %d",
-                      p2i(obj), _phase, _info));
+              "obj: " PTR_FORMAT " in CSet, phase: %s, info: %d",
+              p2i(obj), _phase, _info);
   }
 };
 
@@ -2761,8 +2732,8 @@ void ConcurrentMark::verify_no_cset_oops() {
     // here.
     HeapRegion* global_hr = _g1h->heap_region_containing_raw(global_finger);
     guarantee(global_hr == NULL || global_finger == global_hr->bottom(),
-              err_msg("global finger: " PTR_FORMAT " region: " HR_FORMAT,
-                      p2i(global_finger), HR_FORMAT_PARAMS(global_hr)));
+              "global finger: " PTR_FORMAT " region: " HR_FORMAT,
+              p2i(global_finger), HR_FORMAT_PARAMS(global_hr));
   }
 
   // Verify the task fingers
@@ -2775,8 +2746,8 @@ void ConcurrentMark::verify_no_cset_oops() {
       HeapRegion* task_hr = _g1h->heap_region_containing_raw(task_finger);
       guarantee(task_hr == NULL || task_finger == task_hr->bottom() ||
                 !task_hr->in_collection_set(),
-                err_msg("task finger: " PTR_FORMAT " region: " HR_FORMAT,
-                        p2i(task_finger), HR_FORMAT_PARAMS(task_hr)));
+                "task finger: " PTR_FORMAT " region: " HR_FORMAT,
+                p2i(task_finger), HR_FORMAT_PARAMS(task_hr));
     }
   }
 }
@@ -2816,10 +2787,10 @@ class AggregateCountDataHRClosure: public HeapRegionClosure {
     HeapWord* end = hr->end();
 
     assert(start <= limit && limit <= hr->top() && hr->top() <= hr->end(),
-           err_msg("Preconditions not met - "
-                   "start: " PTR_FORMAT ", limit: " PTR_FORMAT ", "
-                   "top: " PTR_FORMAT ", end: " PTR_FORMAT,
-                   p2i(start), p2i(limit), p2i(hr->top()), p2i(hr->end())));
+           "Preconditions not met - "
+           "start: " PTR_FORMAT ", limit: " PTR_FORMAT ", "
+           "top: " PTR_FORMAT ", end: " PTR_FORMAT,
+           p2i(start), p2i(limit), p2i(hr->top()), p2i(hr->end()));
 
     assert(hr->next_marked_bytes() == 0, "Precondition");
 
@@ -2988,8 +2959,6 @@ void ConcurrentMark::abort() {
   }
   _first_overflow_barrier_sync.abort();
   _second_overflow_barrier_sync.abort();
-  _aborted_gc_id = _g1h->gc_tracer_cm()->gc_id();
-  assert(!_aborted_gc_id.is_undefined(), "ConcurrentMark::abort() executed more than once?");
   _has_aborted = true;
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
@@ -3002,13 +2971,6 @@ void ConcurrentMark::abort() {
 
   _g1h->trace_heap_after_concurrent_cycle();
   _g1h->register_concurrent_cycle_end();
-}
-
-const GCId& ConcurrentMark::concurrent_gc_id() {
-  if (has_aborted()) {
-    return _aborted_gc_id;
-  }
-  return _g1h->gc_tracer_cm()->gc_id();
 }
 
 static void print_ms_time_info(const char* prefix, const char* name,

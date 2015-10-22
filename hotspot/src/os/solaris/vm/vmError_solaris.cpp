@@ -117,8 +117,7 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
     return;
   }
 
-  VMError err(NULL, sig, pc, info, ucVoid);
-  err.report_and_die();
+  VMError::report_and_die(NULL, sig, pc, info, ucVoid);
 }
 
 void VMError::reset_signal_handlers() {

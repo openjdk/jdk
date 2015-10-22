@@ -37,6 +37,7 @@ class elapsedTimer VALUE_OBJ_CLASS_SPEC {
   bool  _active;
  public:
   elapsedTimer()             { _active = false; reset(); }
+  elapsedTimer(jlong time, jlong timeUnitsPerSecond);
   void add(elapsedTimer t);
   void start();
   void stop();

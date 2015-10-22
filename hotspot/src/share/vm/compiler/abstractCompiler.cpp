@@ -58,7 +58,7 @@ bool AbstractCompiler::should_perform_shutdown() {
 }
 
 void AbstractCompiler::set_state(int state) {
-  // Ensure that ste is only set by one thread at a time
+  // Ensure that state is only set by one thread at a time
   MutexLocker only_one(CompileThread_lock);
   _compiler_state =  state;
   CompileThread_lock->notify_all();

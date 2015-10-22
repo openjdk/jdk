@@ -31,6 +31,10 @@
 #include "compiler/compilerOracle.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciCompiler.hpp"
+#include "jvmci/jvmciRuntime.hpp"
+#endif
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.hpp"
@@ -79,8 +83,6 @@
 #include "opto/indexSet.hpp"
 #include "opto/runtime.hpp"
 #endif
-
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 GrowableArray<Method*>* collected_profiled_methods;
 
@@ -159,7 +161,7 @@ void print_method_invocation_histogram() {
   collected_invoked_methods->sort(&compare_methods);
   //
   tty->cr();
-  tty->print_cr("Histogram Over MethodOop Invocation Counters (cutoff = %d):", MethodHistogramCutoff);
+  tty->print_cr("Histogram Over MethodOop Invocation Counters (cutoff = " INTX_FORMAT "):", MethodHistogramCutoff);
   tty->cr();
   tty->print_cr("____Count_(I+C)____Method________________________Module_________________");
   unsigned total = 0, int_total = 0, comp_total = 0, static_total = 0, final_total = 0,
@@ -236,7 +238,6 @@ void print_statistics() {
     Runtime1::print_statistics();
     Deoptimization::print_statistics();
     SharedRuntime::print_statistics();
-    nmethod::print_statistics();
   }
 #endif /* COMPILER1 */
 
@@ -246,7 +247,6 @@ void print_statistics() {
     Compile::print_statistics();
 #ifndef COMPILER1
     Deoptimization::print_statistics();
-    nmethod::print_statistics();
     SharedRuntime::print_statistics();
 #endif //COMPILER1
     os::print_statistics();
@@ -264,7 +264,21 @@ void print_statistics() {
     IndexSet::print_statistics();
   }
 #endif // ASSERT
-#endif // COMPILER2
+#else
+#ifdef INCLUDE_JVMCI
+#ifndef COMPILER1
+  if ((TraceDeoptimization || LogVMOutput || LogCompilation) && UseCompiler) {
+    FlagSetting fs(DisplayVMOutput, DisplayVMOutput && TraceDeoptimization);
+    Deoptimization::print_statistics();
+    SharedRuntime::print_statistics();
+  }
+#endif
+#endif
+#endif
+
+  if (PrintNMethodStatistics) {
+    nmethod::print_statistics();
+  }
   if (CountCompiledCalls) {
     print_method_invocation_histogram();
   }
@@ -331,14 +345,6 @@ void print_statistics() {
     BiasedLocking::print_counters();
   }
 
-#ifdef ENABLE_ZAP_DEAD_LOCALS
-#ifdef COMPILER2
-  if (ZapDeadCompiledLocals) {
-    tty->print_cr("Compile::CompiledZap_count = %d", Compile::CompiledZap_count);
-    tty->print_cr("OptoRuntime::ZapDeadCompiledLocals_count = %d", OptoRuntime::ZapDeadCompiledLocals_count);
-  }
-#endif // COMPILER2
-#endif // ENABLE_ZAP_DEAD_LOCALS
   // Native memory tracking data
   if (PrintNMTStatistics) {
     MemTracker::final_report(tty);
@@ -416,6 +422,10 @@ void before_exit(JavaThread * thread) {
       return;
     }
   }
+
+#if INCLUDE_JVMCI
+  JVMCIRuntime::shutdown();
+#endif
 
   // Hang forever on exit if we're reporting an error.
   if (ShowMessageBoxOnError && is_error_reported()) {

@@ -129,8 +129,8 @@ void TenuredGeneration::compute_new_size() {
   CardGeneration::compute_new_size();
 
   assert(used() == used_after_gc && used_after_gc <= capacity(),
-         err_msg("used: " SIZE_FORMAT " used_after_gc: " SIZE_FORMAT
-         " capacity: " SIZE_FORMAT, used(), used_after_gc, capacity()));
+         "used: " SIZE_FORMAT " used_after_gc: " SIZE_FORMAT
+         " capacity: " SIZE_FORMAT, used(), used_after_gc, capacity());
 }
 
 void TenuredGeneration::update_gc_stats(Generation* current_generation,

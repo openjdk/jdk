@@ -65,15 +65,15 @@ class PSOldGen : public CHeapObj<mtGC> {
     // Explictly capture current covered_region in a local
     MemRegion covered_region = this->start_array()->covered_region();
     assert(covered_region.contains(new_memregion),
-           err_msg("new region is not in covered_region [ " PTR_FORMAT ", " PTR_FORMAT " ], "
-                   "new region [ " PTR_FORMAT ", " PTR_FORMAT " ], "
-                   "object space [ " PTR_FORMAT ", " PTR_FORMAT " ]",
-                   p2i(covered_region.start()),
-                   p2i(covered_region.end()),
-                   p2i(new_memregion.start()),
-                   p2i(new_memregion.end()),
-                   p2i(this->object_space()->used_region().start()),
-                   p2i(this->object_space()->used_region().end())));
+           "new region is not in covered_region [ " PTR_FORMAT ", " PTR_FORMAT " ], "
+           "new region [ " PTR_FORMAT ", " PTR_FORMAT " ], "
+           "object space [ " PTR_FORMAT ", " PTR_FORMAT " ]",
+           p2i(covered_region.start()),
+           p2i(covered_region.end()),
+           p2i(new_memregion.start()),
+           p2i(new_memregion.end()),
+           p2i(this->object_space()->used_region().start()),
+           p2i(this->object_space()->used_region().end()));
   }
 #endif
 

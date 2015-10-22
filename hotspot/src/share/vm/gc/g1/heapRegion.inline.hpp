@@ -132,10 +132,10 @@ HeapRegion::block_size(const HeapWord *addr) const {
   }
 
   assert(ClassUnloadingWithConcurrentMark,
-      err_msg("All blocks should be objects if G1 Class Unloading isn't used. "
-              "HR: [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ") "
-              "addr: " PTR_FORMAT,
-              p2i(bottom()), p2i(top()), p2i(end()), p2i(addr)));
+         "All blocks should be objects if G1 Class Unloading isn't used. "
+         "HR: [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT ") "
+         "addr: " PTR_FORMAT,
+         p2i(bottom()), p2i(top()), p2i(end()), p2i(addr));
 
   // Old regions' dead objects may have dead classes
   // We need to find the next live object in some other

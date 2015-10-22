@@ -57,8 +57,6 @@
 #include "utilities/quickSort.hpp"
 #include "utilities/xmlstream.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Implementation of Method
 
 Method* Method::allocate(ClassLoaderData* loader_data,
@@ -220,7 +218,7 @@ void Method::mask_for(int bci, InterpreterOopMap* mask) {
 
   Thread* myThread    = Thread::current();
   methodHandle h_this(myThread, this);
-#ifdef ASSERT
+#if defined(ASSERT) && !INCLUDE_JVMCI
   bool has_capability = myThread->is_VM_thread() ||
                         myThread->is_ConcurrentGC_thread() ||
                         myThread->is_GC_task_thread();
@@ -246,9 +244,11 @@ int Method::bci_from(address bcp) const {
     return 0;
   }
 #ifdef ASSERT
-  { ResourceMark rm;
-  assert(is_native() && bcp == code_base() || contains(bcp) || is_error_reported(),
-         err_msg("bcp doesn't belong to this method: bcp: " INTPTR_FORMAT ", method: %s", bcp, name_and_sig_as_C_string()));
+  {
+    ResourceMark rm;
+    assert(is_native() && bcp == code_base() || contains(bcp) || is_error_reported(),
+           "bcp doesn't belong to this method: bcp: " INTPTR_FORMAT ", method: %s",
+           p2i(bcp), name_and_sig_as_C_string());
   }
 #endif
   return bcp - code_base();
@@ -279,7 +279,7 @@ int Method::validate_bci_from_bcp(address bcp) const {
 }
 
 address Method::bcp_from(int bci) const {
-  assert((is_native() && bci == 0)  || (!is_native() && 0 <= bci && bci < code_size()), err_msg("illegal bci: %d", bci));
+  assert((is_native() && bci == 0) || (!is_native() && 0 <= bci && bci < code_size()), "illegal bci: %d", bci);
   address bcp = code_base() + bci;
   assert(is_native() && bcp == code_base() || contains(bcp), "bcp doesn't belong to this method");
   return bcp;
@@ -573,7 +573,7 @@ bool Method::can_be_statically_bound(AccessFlags class_access_flags) const {
   ResourceMark rm;
   bool is_nonv = (vtable_index() == nonvirtual_vtable_index);
   if (class_access_flags.is_interface()) {
-      assert(is_nonv == is_static(), err_msg("is_nonv=%s", name_and_sig_as_C_string()));
+    assert(is_nonv == is_static(), "is_nonv=%s", name_and_sig_as_C_string());
   }
 #endif
   assert(valid_vtable_index() || valid_itable_index(), "method must be linked before we ask this question");
@@ -1373,7 +1373,7 @@ void Method::init_intrinsic_id() {
 
 // These two methods are static since a GC may move the Method
 bool Method::load_signature_classes(methodHandle m, TRAPS) {
-  if (THREAD->is_Compiler_thread()) {
+  if (!THREAD->can_call_java()) {
     // There is nothing useful this routine can do from within the Compile thread.
     // Hopefully, the signature contains only well-known classes.
     // We could scan for this and return true/false, but the caller won't care.
@@ -1491,14 +1491,20 @@ class SignatureTypePrinter : public SignatureTypeNames {
 void Method::print_name(outputStream* st) {
   Thread *thread = Thread::current();
   ResourceMark rm(thread);
-  SignatureTypePrinter sig(signature(), st);
   st->print("%s ", is_static() ? "static" : "virtual");
-  sig.print_returntype();
-  st->print(" %s.", method_holder()->internal_name());
-  name()->print_symbol_on(st);
-  st->print("(");
-  sig.print_parameters();
-  st->print(")");
+  if (WizardMode) {
+    st->print("%s.", method_holder()->internal_name());
+    name()->print_symbol_on(st);
+    signature()->print_symbol_on(st);
+  } else {
+    SignatureTypePrinter sig(signature(), st);
+    sig.print_returntype();
+    st->print(" %s.", method_holder()->internal_name());
+    name()->print_symbol_on(st);
+    st->print("(");
+    sig.print_parameters();
+    st->print(")");
+  }
 }
 #endif // !PRODUCT || INCLUDE_JVMTI
 
@@ -1572,7 +1578,7 @@ Bytecodes::Code Method::orig_bytecode_at(int bci) const {
   }
   {
     ResourceMark rm;
-    fatal(err_msg("no original bytecode found in %s at bci %d", name_and_sig_as_C_string(), bci));
+    fatal("no original bytecode found in %s at bci %d", name_and_sig_as_C_string(), bci);
   }
   return Bytecodes::_shouldnotreachhere;
 }
@@ -2024,9 +2030,9 @@ void Method::print_on(outputStream* st) const {
   assert(is_method(), "must be method");
   st->print_cr("%s", internal_name());
   // get the effect of PrintOopAddress, always, for methods:
-  st->print_cr(" - this oop:          " INTPTR_FORMAT, (intptr_t)this);
+  st->print_cr(" - this oop:          " INTPTR_FORMAT, p2i(this));
   st->print   (" - method holder:     "); method_holder()->print_value_on(st); st->cr();
-  st->print   (" - constants:         " INTPTR_FORMAT " ", (address)constants());
+  st->print   (" - constants:         " INTPTR_FORMAT " ", p2i(constants()));
   constants()->print_value_on(st); st->cr();
   st->print   (" - access:            0x%x  ", access_flags().as_int()); access_flags().print_on(st); st->cr();
   st->print   (" - name:              ");    name()->print_value_on(st); st->cr();
@@ -2040,26 +2046,26 @@ void Method::print_on(outputStream* st) const {
   if (highest_comp_level() != CompLevel_none)
     st->print_cr(" - highest level:     %d", highest_comp_level());
   st->print_cr(" - vtable index:      %d",   _vtable_index);
-  st->print_cr(" - i2i entry:         " INTPTR_FORMAT, interpreter_entry());
+  st->print_cr(" - i2i entry:         " INTPTR_FORMAT, p2i(interpreter_entry()));
   st->print(   " - adapters:          ");
   AdapterHandlerEntry* a = ((Method*)this)->adapter();
   if (a == NULL)
-    st->print_cr(INTPTR_FORMAT, a);
+    st->print_cr(INTPTR_FORMAT, p2i(a));
   else
     a->print_adapter_on(st);
-  st->print_cr(" - compiled entry     " INTPTR_FORMAT, from_compiled_entry());
+  st->print_cr(" - compiled entry     " INTPTR_FORMAT, p2i(from_compiled_entry()));
   st->print_cr(" - code size:         %d",   code_size());
   if (code_size() != 0) {
-    st->print_cr(" - code start:        " INTPTR_FORMAT, code_base());
-    st->print_cr(" - code end (excl):   " INTPTR_FORMAT, code_base() + code_size());
+    st->print_cr(" - code start:        " INTPTR_FORMAT, p2i(code_base()));
+    st->print_cr(" - code end (excl):   " INTPTR_FORMAT, p2i(code_base() + code_size()));
   }
   if (method_data() != NULL) {
-    st->print_cr(" - method data:       " INTPTR_FORMAT, (address)method_data());
+    st->print_cr(" - method data:       " INTPTR_FORMAT, p2i(method_data()));
   }
   st->print_cr(" - checked ex length: %d",   checked_exceptions_length());
   if (checked_exceptions_length() > 0) {
     CheckedExceptionElement* table = checked_exceptions_start();
-    st->print_cr(" - checked ex start:  " INTPTR_FORMAT, table);
+    st->print_cr(" - checked ex start:  " INTPTR_FORMAT, p2i(table));
     if (Verbose) {
       for (int i = 0; i < checked_exceptions_length(); i++) {
         st->print_cr("   - throws %s", constants()->printable_name_at(table[i].class_cp_index));
@@ -2068,7 +2074,7 @@ void Method::print_on(outputStream* st) const {
   }
   if (has_linenumber_table()) {
     u_char* table = compressed_linenumber_table();
-    st->print_cr(" - linenumber start:  " INTPTR_FORMAT, table);
+    st->print_cr(" - linenumber start:  " INTPTR_FORMAT, p2i(table));
     if (Verbose) {
       CompressedLineNumberReadStream stream(table);
       while (stream.read_pair()) {
@@ -2079,7 +2085,7 @@ void Method::print_on(outputStream* st) const {
   st->print_cr(" - localvar length:   %d",   localvariable_table_length());
   if (localvariable_table_length() > 0) {
     LocalVariableTableElement* table = localvariable_table_start();
-    st->print_cr(" - localvar start:    " INTPTR_FORMAT, table);
+    st->print_cr(" - localvar start:    " INTPTR_FORMAT, p2i(table));
     if (Verbose) {
       for (int i = 0; i < localvariable_table_length(); i++) {
         int bci = table[i].start_bci;
@@ -2096,8 +2102,8 @@ void Method::print_on(outputStream* st) const {
     code()->print_value_on(st);
   }
   if (is_native()) {
-    st->print_cr(" - native function:   " INTPTR_FORMAT, native_function());
-    st->print_cr(" - signature handler: " INTPTR_FORMAT, signature_handler());
+    st->print_cr(" - native function:   " INTPTR_FORMAT, p2i(native_function()));
+    st->print_cr(" - signature handler: " INTPTR_FORMAT, p2i(signature_handler()));
   }
 }
 

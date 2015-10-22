@@ -424,6 +424,8 @@ JVM_ENTRY(jobject, JVM_InitProperties(JNIEnv *env, jobject properties))
     const char* compiler_name = "HotSpot " CSIZE "Client Compiler";
 #elif defined(COMPILER2)
     const char* compiler_name = "HotSpot " CSIZE "Server Compiler";
+#elif INCLUDE_JVMCI
+    #error "INCLUDE_JVMCI should imply TIERED"
 #else
     const char* compiler_name = "";
 #endif // compilers
