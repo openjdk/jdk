@@ -77,7 +77,7 @@ final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
 
         final CallSiteDescriptor descriptor = linkRequest.getCallSiteDescriptor();
 
-        if(NashornCallSiteDescriptor.getFirstStandardOperation(descriptor) != StandardOperation.GET_METHOD) {
+        if(!NashornCallSiteDescriptor.contains(descriptor, StandardOperation.GET_METHOD)) {
             // We only handle GET_METHOD
             return null;
         }

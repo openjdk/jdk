@@ -204,6 +204,23 @@ public class CompositeOperation implements Operation {
     }
 
     /**
+     * Returns true if this composite operation contains an operation equal to
+     * the specified operation.
+     * @param operation the operation being searched for. Must not be null.
+     * @return true if the if this composite operation contains an operation
+     * equal to the specified operation.
+     */
+    public boolean contains(final Operation operation) {
+        Objects.requireNonNull(operation);
+        for(final Operation component: operations) {
+            if (component.equals(operation)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Returns true if the other object is also a composite operation and their
      * component operations are equal.
      * @param obj the object to compare to
@@ -256,5 +273,25 @@ public class CompositeOperation implements Operation {
         return op instanceof CompositeOperation
                 ? ((CompositeOperation)op).operations.clone()
                 : new Operation[] { op };
+    }
+
+    /**
+     * Returns true if the specified potentially composite operation is a
+     * {@link CompositeOperation} and contains an operation equal to the
+     * specified operation. If {@code composite} is not a
+     * {@link CompositeOperation}, then the two operations are compared for
+     * equality.
+     * @param composite the potentially composite operation. Must not be null.
+     * @param operation the operation being searched for. Must not be null.
+     * @return true if the if the passed operation is a
+     * {@link CompositeOperation} and contains a component operation equal to
+     * the specified operation, or if it is not a {@link CompositeOperation} and
+     * is equal to {@code operation}.
+     */
+    public static boolean contains(final Operation composite, final Operation operation) {
+        if (composite instanceof CompositeOperation) {
+            return ((CompositeOperation)composite).contains(operation);
+        }
+        return composite.equals(Objects.requireNonNull(operation));
     }
 }

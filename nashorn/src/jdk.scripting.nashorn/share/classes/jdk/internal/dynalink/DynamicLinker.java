@@ -123,7 +123,13 @@ import jdk.internal.dynalink.support.SimpleRelinkableCallSite;
  *     }
  *
  *     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type) {
- *         return dynamicLinker.link(new SimpleRelinkableCallSite(new CallSiteDescriptor(lookup, name, type)));
+ *         return dynamicLinker.link(
+ *             new SimpleRelinkableCallSite(
+ *                 new CallSiteDescriptor(lookup, parseOperation(name), type)));
+ *     }
+ *
+ *     private static Operation parseOperation(String name) {
+ *         ...
  *     }
  * }
  * </pre>
@@ -151,8 +157,10 @@ import jdk.internal.dynalink.support.SimpleRelinkableCallSite;
  *
  * <li>You also need to provide {@link CallSiteDescriptor}s to your call sites.
  * They are immutable objects that contain all the information about the call
- * site: the class performing the lookups, the name of the method being invoked,
- * and the method signature.</li>
+ * site: the class performing the lookups, the operation being invoked, and the
+ * method signature. You will have to supply your own scheme to encode and
+ * decode operations in the call site name or static parameters, that is why
+ * in the above example the {@code parseOperation} method is left unimplemented.</li>
  *
  * </ul>
  */
