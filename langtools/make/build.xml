@@ -418,10 +418,14 @@
         <copy todir=".idea" >
             <fileset dir="make/intellij" excludes="**/src/**"/>
         </copy>
-        <condition property="jtreg.idea.home" value="${jtreg.home}" else = "[jtreg.home]">
+        <condition property="idea.jtreg.home" value="${jtreg.home}" else = "[jtreg.home]">
             <isset property="jtreg.home"/>
         </condition>
-        <replace file=".idea/ant.xml" token="@@@" value="${jtreg.idea.home}"/>
+        <condition property="idea.target.jdk" value="${target.java.home}" else = "$JDKPath$">
+            <isset property="target.java.home"/>
+        </condition>
+        <replace file=".idea/ant.xml" token="@IDEA_JTREG_HOME@" value="${idea.jtreg.home}"/>
+        <replace file=".idea/ant.xml" token="@IDEA_TARGET_JDK@" value="${idea.target.jdk}"/>
         <replace file=".idea/workspace.xml" token="@FILE_SEP@" value="${file.separator}"/>
         <replace file=".idea/workspace.xml" token="@PATH_SEP@" value="${path.separator}"/>
         <mkdir dir=".idea/classes"/>
