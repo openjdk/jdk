@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -49,7 +49,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Enumeration;
-import java.util.Hashtable;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Vector;
@@ -146,13 +145,13 @@ public class TransformerFactoryImpl
     private String _jarFileName = null;
 
     /**
-     * This Hashtable is used to store parameters for locating
+     * This Map is used to store parameters for locating
      * <?xml-stylesheet ...?> processing instructions in XML docs.
      */
-    private Hashtable _piParams = null;
+    private Map<Source, PIParamWrapper> _piParams = null;
 
     /**
-     * The above hashtable stores objects of this class.
+     * The above Map stores objects of this class.
      */
     private static class PIParamWrapper {
         public String _media = null;
@@ -935,7 +934,7 @@ public class TransformerFactoryImpl
         // <?xml-stylesheet ...?> PI in an XML input document
         if ((_piParams != null) && (_piParams.get(source) != null)) {
             // Get the parameters for this Source object
-            PIParamWrapper p = (PIParamWrapper)_piParams.get(source);
+            PIParamWrapper p = _piParams.get(source);
             // Pass them on to the compiler (which will pass then to the parser)
             if (p != null) {
                 xsltc.setPIParameters(p._media, p._title, p._charset);

@@ -186,7 +186,7 @@ public class XMLVersionDetector {
      * @throws IOException
      */
     public short determineDocVersion(XMLInputSource inputSource) throws IOException {
-        fEncoding = fEntityManager.setupCurrentEntity(fXMLSymbol, inputSource, false, true);
+        fEncoding = fEntityManager.setupCurrentEntity(false, fXMLSymbol, inputSource, false, true);
 
         // Must use XML 1.0 scanner to handle whitespace correctly
         // in the XML declaration.

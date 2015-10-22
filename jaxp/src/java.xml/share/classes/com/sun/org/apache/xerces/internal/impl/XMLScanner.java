@@ -946,7 +946,7 @@ public abstract class XMLScanner
                                                 new Object[]{entityName});
                                     }
                                 }
-                                fEntityManager.startEntity(entityName, true);
+                                fEntityManager.startEntity(false, entityName, true);
                             }
                         }
                     }

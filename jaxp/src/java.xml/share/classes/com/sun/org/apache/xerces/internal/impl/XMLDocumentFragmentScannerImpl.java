@@ -88,7 +88,7 @@ public class XMLDocumentFragmentScannerImpl
     // Constants
     //
 
-    protected int fElementAttributeLimit;
+    protected int fElementAttributeLimit, fXMLNameLimit;
 
     /** External subset resolver. **/
     protected ExternalSubsetResolver fExternalSubsetResolver;
@@ -426,7 +426,7 @@ public class XMLDocumentFragmentScannerImpl
      */
     public void setInputSource(XMLInputSource inputSource) throws IOException {
         fEntityManager.setEntityHandler(this);
-        fEntityManager.startEntity("$fragment$", inputSource, false, true);
+        fEntityManager.startEntity(false, "$fragment$", inputSource, false, true);
         // fDocumentSystemId = fEntityManager.expandSystemId(inputSource.getSystemId());
     } // setInputSource(XMLInputSource)
 
@@ -661,11 +661,12 @@ public class XMLDocumentFragmentScannerImpl
 
         if (fSecurityManager != null) {
             fElementAttributeLimit = fSecurityManager.getLimit(XMLSecurityManager.Limit.ELEMENT_ATTRIBUTE_LIMIT);
+            fXMLNameLimit = fSecurityManager.getLimit(XMLSecurityManager.Limit.MAX_NAME_LIMIT);
         } else {
             fElementAttributeLimit = 0;
+            fXMLNameLimit = XMLSecurityManager.Limit.MAX_NAME_LIMIT.defaultValue();
         }
-        fLimitAnalyzer = new XMLLimitAnalyzer();
-        fEntityManager.setLimitAnalyzer(fLimitAnalyzer);
+        fLimitAnalyzer = fEntityManager.fLimitAnalyzer;
     }
 
     /**
@@ -1906,7 +1907,7 @@ public class XMLDocumentFragmentScannerImpl
         //if that was the case it its taken care in XMLEntityManager.startEntity()
         //we immediately call the endEntity. Application gets to know if there was
         //any entity that was not declared.
-        fEntityManager.startEntity(name, false);
+        fEntityManager.startEntity(true, name, false);
         //set the scaner state to content.. parser will automatically revive itself at any point of time.
         //setScannerState(SCANNER_STATE_CONTENT);
         //return true ;
@@ -2855,8 +2856,6 @@ public class XMLDocumentFragmentScannerImpl
                             if(DEBUG){
                                 System.out.println("NOT USING THE BUFFER, STRING = " + fTempString.toString());
                             }
-                            //check limit before returning event
-                            checkLimit(fContentBuffer);
                             if(dtdGrammarUtil!= null && dtdGrammarUtil.isIgnorableWhiteSpace(fContentBuffer)){
                                 if(DEBUG)System.out.println("Return SPACE EVENT");
                                 return XMLEvent.SPACE;
@@ -2955,8 +2954,6 @@ public class XMLDocumentFragmentScannerImpl
                             fLastSectionWasCharacterData = true ;
                             continue;
                         }else{
-                            //check limit before returning event
-                            checkLimit(fContentBuffer);
                             if(dtdGrammarUtil!= null && dtdGrammarUtil.isIgnorableWhiteSpace(fContentBuffer)){
                                 if(DEBUG)System.out.println("Return SPACE EVENT");
                                 return XMLEvent.SPACE;
@@ -3171,31 +3168,6 @@ public class XMLDocumentFragmentScannerImpl
             }
             } //while loop
         }//next
-
-        /**
-         * Add the count of the content buffer and check if the accumulated
-         * value exceeds the limit
-         * @param buffer content buffer
-         */
-        protected void checkLimit(XMLStringBuffer buffer) {
-            if (fLimitAnalyzer.isTracking(fCurrentEntityName)) {
-                fLimitAnalyzer.addValue(Limit.GENERAL_ENTITY_SIZE_LIMIT, fCurrentEntityName, buffer.length);
-                if (fSecurityManager.isOverLimit(Limit.GENERAL_ENTITY_SIZE_LIMIT, fLimitAnalyzer)) {
-                    fSecurityManager.debugPrint(fLimitAnalyzer);
-                    reportFatalError("MaxEntitySizeLimit", new Object[]{fCurrentEntityName,
-                        fLimitAnalyzer.getValue(Limit.GENERAL_ENTITY_SIZE_LIMIT),
-                        fSecurityManager.getLimit(Limit.GENERAL_ENTITY_SIZE_LIMIT),
-                        fSecurityManager.getStateLiteral(Limit.GENERAL_ENTITY_SIZE_LIMIT)});
-                }
-                if (fSecurityManager.isOverLimit(Limit.TOTAL_ENTITY_SIZE_LIMIT, fLimitAnalyzer)) {
-                    fSecurityManager.debugPrint(fLimitAnalyzer);
-                    reportFatalError("TotalEntitySizeLimit",
-                        new Object[]{fLimitAnalyzer.getTotalValue(Limit.TOTAL_ENTITY_SIZE_LIMIT),
-                        fSecurityManager.getLimit(Limit.TOTAL_ENTITY_SIZE_LIMIT),
-                        fSecurityManager.getStateLiteral(Limit.TOTAL_ENTITY_SIZE_LIMIT)});
-                }
-            }
-        }
 
         //
         // Protected methods
