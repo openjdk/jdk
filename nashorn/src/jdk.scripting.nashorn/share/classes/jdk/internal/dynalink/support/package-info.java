@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,36 +81,11 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
-
-import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.invoke.MethodType;
-import jdk.internal.dynalink.CallSiteDescriptor;
-
 /**
- * A call site descriptor that stores a specific {@link Lookup}. It does not, however, store static bootstrap arguments.
+ * <p>Contains classes that make using Dynalink more convenient by providing
+ * basic implementations of some classes as well as various utilities.
+ * </p>
+ * @since 1.9
  */
-class LookupCallSiteDescriptor extends DefaultCallSiteDescriptor {
-    private final Lookup lookup;
-
-    /**
-     * Create a new call site descriptor from explicit information.
-     * @param tokenizedName the name of the method
-     * @param methodType the method type
-     * @param lookup the lookup
-     */
-    LookupCallSiteDescriptor(final String[] tokenizedName, final MethodType methodType, final Lookup lookup) {
-        super(tokenizedName, methodType);
-        this.lookup = lookup;
-    }
-
-    @Override
-    public Lookup getLookup() {
-        return lookup;
-    }
-
-    @Override
-    public CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
-        return new LookupCallSiteDescriptor(getTokenizedName(), newMethodType, lookup);
-    }
-}
+@jdk.Exported
+package jdk.internal.dynalink.support;

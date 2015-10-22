@@ -357,7 +357,7 @@ public final class GlobalConstants implements Loggable {
             return null;
         }
 
-        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        final String name = NashornCallSiteDescriptor.getOperand(desc);
 
         synchronized (this) {
             final Access acc  = getOrCreateSwitchPoint(name);
@@ -432,7 +432,7 @@ public final class GlobalConstants implements Loggable {
         final boolean  isOptimistic = NashornCallSiteDescriptor.isOptimistic(desc);
         final int      programPoint = isOptimistic ? getProgramPoint(desc) : INVALID_PROGRAM_POINT;
         final Class<?> retType      = desc.getMethodType().returnType();
-        final String   name         = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        final String   name         = NashornCallSiteDescriptor.getOperand(desc);
 
         synchronized (this) {
             final Access acc = getOrCreateSwitchPoint(name);

@@ -81,7 +81,7 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
+package jdk.internal.dynalink.linker.support;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -92,10 +92,11 @@ import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.linker.LinkerServices;
 
 /**
- * Utility methods for creating typical guards. TODO: introduce reasonable caching of created guards.
- *
+ * Utility methods for creating typical guards for
+ * {@link MethodHandles#guardWithTest(MethodHandle, MethodHandle, MethodHandle)}
+ * and for adjusting their method types.
  */
-public class Guards {
+public final class Guards {
     private static final Logger LOG = Logger
             .getLogger(Guards.class.getName(), "jdk.internal.dynalink.support.messages");
 
@@ -184,44 +185,17 @@ public class Guards {
         return asType(IS_ARRAY, pos, type);
     }
 
-    /**
-     * Return true if it is safe to strongly reference a class from the referred class loader from a class associated
-     * with the referring class loader without risking a class loader memory leak.
-     *
-     * @param referrerLoader the referrer class loader
-     * @param referredLoader the referred class loader
-     * @return true if it is safe to strongly reference the class
-     */
-    public static boolean canReferenceDirectly(final ClassLoader referrerLoader, final ClassLoader referredLoader) {
-        if(referredLoader == null) {
-            // Can always refer directly to a system class
-            return true;
-        }
-        if(referrerLoader == null) {
-            // System classes can't refer directly to any non-system class
-            return false;
-        }
-        // Otherwise, can only refer directly to classes residing in same or
-        // parent class loader.
-
-        ClassLoader referrer = referrerLoader;
-        do {
-            if(referrer == referredLoader) {
-                return true;
-            }
-            referrer = referrer.getParent();
-        } while(referrer != null);
-        return false;
-    }
-
     private static MethodHandle getClassBoundArgumentTest(final MethodHandle test, final Class<?> clazz, final int pos, final MethodType type) {
         // Bind the class to the first argument of the test
         return asType(test.bindTo(clazz), pos, type);
     }
 
     /**
-     * Takes a guard-test method handle, and adapts it to the requested type, returning a boolean. Only applies
-     * conversions as per {@link MethodHandle#asType(MethodType)}.
+     * Takes a method handle intended to be used as a guard, and adapts it to
+     * the requested type, but returning a boolean. Applies
+     * {@link MethodHandle#asType(MethodType)} to convert types and uses
+     * {@link MethodHandles#dropArguments(MethodHandle, int, Class...)} to match
+     * the requested type arity.
      * @param test the test method handle
      * @param type the type to adapt the method handle to
      * @return the adapted method handle
@@ -231,8 +205,12 @@ public class Guards {
     }
 
     /**
-     * Takes a guard-test method handle, and adapts it to the requested type, returning a boolean. Applies the passed
-     * {@link LinkerServices} object's {@link LinkerServices#asType(MethodHandle, MethodType)}.
+     * Takes a method handle intended to be used as a guard, and adapts it to
+     * the requested type, but returning a boolean. Applies
+     * {@link LinkerServices#asType(MethodHandle, MethodType)} to convert types
+     * and uses
+     * {@link MethodHandles#dropArguments(MethodHandle, int, Class...)} to match
+     * the requested type arity.
      * @param linkerServices the linker services to use for type conversions
      * @param test the test method handle
      * @param type the type to adapt the method handle to

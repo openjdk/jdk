@@ -81,16 +81,19 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
+package jdk.internal.dynalink;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Map;
 import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import jdk.internal.dynalink.internal.AccessControlContextFactory;
+import jdk.internal.dynalink.internal.InternalTypeUtilities;
 
 /**
  * A dual map that can either strongly or weakly reference a given class depending on whether the class is visible from
@@ -98,7 +101,10 @@ import java.util.concurrent.ConcurrentMap;
  *
  * @param <T> the type of the values in the map
  */
-public abstract class ClassMap<T> {
+abstract class ClassMap<T> {
+    private static final AccessControlContext GET_CLASS_LOADER_CONTEXT =
+            AccessControlContextFactory.createAccessControlContext("getClassLoader");
+
     private final ConcurrentMap<Class<?>, T> map = new ConcurrentHashMap<>();
     private final Map<Class<?>, Reference<T>> weakMap = new WeakHashMap<>();
     private final ClassLoader classLoader;
@@ -109,7 +115,7 @@ public abstract class ClassMap<T> {
      *
      * @param classLoader the classloader that determines strong referenceability.
      */
-    protected ClassMap(final ClassLoader classLoader) {
+    ClassMap(final ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 
@@ -120,7 +126,7 @@ public abstract class ClassMap<T> {
      * @param clazz the class to compute the value for
      * @return the return value. Must not be null.
      */
-    protected abstract T computeValue(Class<?> clazz);
+    abstract T computeValue(Class<?> clazz);
 
     /**
      * Returns the value associated with the class
@@ -128,7 +134,7 @@ public abstract class ClassMap<T> {
      * @param clazz the class
      * @return the value associated with the class
      */
-    public T get(final Class<?> clazz) {
+    T get(final Class<?> clazz) {
         // Check in fastest first - objects we're allowed to strongly reference
         final T v = map.get(clazz);
         if(v != null) {
@@ -149,15 +155,15 @@ public abstract class ClassMap<T> {
         final T newV = computeValue(clazz);
         assert newV != null;
 
-        final ClassLoader clazzLoader = AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+        final Boolean canReferenceDirectly = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
             @Override
-            public ClassLoader run() {
-                return clazz.getClassLoader();
+            public Boolean run() {
+                return InternalTypeUtilities.canReferenceDirectly(classLoader, clazz.getClassLoader());
             }
-        }, ClassLoaderGetterContextProvider.GET_CLASS_LOADER_CONTEXT);
+        }, GET_CLASS_LOADER_CONTEXT);
 
         // If allowed to strongly reference, put it in the fast map
-        if(Guards.canReferenceDirectly(classLoader, clazzLoader)) {
+        if(canReferenceDirectly) {
             final T oldV = map.putIfAbsent(clazz, newV);
             return oldV != null ? oldV : newV;
         }

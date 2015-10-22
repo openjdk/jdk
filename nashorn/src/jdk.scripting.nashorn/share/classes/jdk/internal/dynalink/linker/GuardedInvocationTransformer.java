@@ -81,53 +81,33 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
+package jdk.internal.dynalink.linker;
 
-import java.lang.invoke.MethodHandles.Lookup;
-import java.lang.invoke.MethodType;
-import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.DynamicLinkerFactory;
 
 /**
- * A default, fairly light implementation of a call site descriptor used for describing non-standard operations. It does
- * not store {@link Lookup} objects but always returns the public lookup from its {@link #getLookup()} method. If you
- * need to support non-public lookup, you can use {@link LookupCallSiteDescriptor}.
+ * Interface for objects that are used to transform one guarded invocation into
+ * another one. Typical usage is for implementing
+ * {@link DynamicLinkerFactory#setPrelinkTransformer(GuardedInvocationTransformer)
+ * pre-link transformers}.
  */
-class DefaultCallSiteDescriptor extends AbstractCallSiteDescriptor {
-
-    private final String[] tokenizedName;
-    private final MethodType methodType;
-
-    DefaultCallSiteDescriptor(final String[] tokenizedName, final MethodType methodType) {
-        this.tokenizedName = tokenizedName;
-        this.methodType = methodType;
-    }
-
-    @Override
-    public int getNameTokenCount() {
-        return tokenizedName.length;
-    }
-
-    @Override
-    public String getNameToken(final int i) {
-        try {
-            return tokenizedName[i];
-        } catch(final ArrayIndexOutOfBoundsException e) {
-            throw new IllegalArgumentException(e.getMessage());
-        }
-    }
-
-    String[] getTokenizedName() {
-        return tokenizedName;
-    }
-
-    @Override
-    public MethodType getMethodType() {
-        return methodType;
-    }
-
-    @Override
-    public CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
-        return CallSiteDescriptorFactory.getCanonicalPublicDescriptor(new DefaultCallSiteDescriptor(tokenizedName,
-                newMethodType));
-    }
+@FunctionalInterface
+public interface GuardedInvocationTransformer {
+    /**
+     * Given a guarded invocation, return either the same or potentially
+     * different guarded invocation.
+     * @param inv the original guarded invocation.
+     * @param linkRequest the link request for which the invocation was
+     * generated (usually by some linker).
+     * @param linkerServices the linker services that can be used during
+     * creation of a new invocation.
+     * @return either the passed guarded invocation or a different one, with
+     * the difference usually determined based on information in the link
+     * request and the differing invocation created with the assistance of the
+     * linker services. Whether or not {@code null} is an accepted return value
+     * is dependent on the user of the filter.
+     * @throws NullPointerException is allowed to be thrown by implementations
+     * if any of the passed arguments is null.
+     */
+    public GuardedInvocation filter(GuardedInvocation inv, LinkRequest linkRequest, LinkerServices linkerServices);
 }

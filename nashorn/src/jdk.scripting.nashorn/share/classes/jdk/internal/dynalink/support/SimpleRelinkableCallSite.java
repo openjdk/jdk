@@ -83,60 +83,33 @@
 
 package jdk.internal.dynalink.support;
 
+import java.lang.invoke.MethodHandle;
 import jdk.internal.dynalink.CallSiteDescriptor;
-import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.internal.dynalink.DynamicLinker;
+import jdk.internal.dynalink.linker.GuardedInvocation;
 
 /**
- * A link request implementation for call sites that pass language runtime specific context arguments on the stack. The
- * context specific arguments should be the first "n" arguments.
+ * A relinkable call site that implements monomorphic inline caching strategy,
+ * only being linked to a single {@link GuardedInvocation}. If that invocation
+ * is invalidated, it will throw it away and ask its associated
+ * {@link DynamicLinker} to relink it.
  */
-public class RuntimeContextLinkRequestImpl extends LinkRequestImpl {
-
-    private final int runtimeContextArgCount;
-    private LinkRequestImpl contextStrippedRequest;
-
+public class SimpleRelinkableCallSite extends AbstractRelinkableCallSite {
     /**
-     * Creates a new link request.
-     *
-     * @param callSiteDescriptor the descriptor for the call site being linked
-     * @param callSiteToken the opaque token for the call site being linked.
-     * @param arguments the arguments for the invocation
-     * @param linkCount number of times callsite has been linked/relinked
-     * @param callSiteUnstable true if the call site being linked is considered unstable
-     * @param runtimeContextArgCount the number of the leading arguments on the stack that represent the language
-     * runtime specific context arguments.
-     * @throws IllegalArgumentException if runtimeContextArgCount is less than 1.
+     * Creates a new call site with monomorphic inline caching strategy.
+     * @param descriptor the descriptor for this call site
      */
-    public RuntimeContextLinkRequestImpl(final CallSiteDescriptor callSiteDescriptor, final Object callSiteToken,
-            final int linkCount, final boolean callSiteUnstable, final Object[] arguments, final int runtimeContextArgCount) {
-        super(callSiteDescriptor, callSiteToken, linkCount, callSiteUnstable, arguments);
-        if(runtimeContextArgCount < 1) {
-            throw new IllegalArgumentException("runtimeContextArgCount < 1");
-        }
-        this.runtimeContextArgCount = runtimeContextArgCount;
+    public SimpleRelinkableCallSite(final CallSiteDescriptor descriptor) {
+        super(descriptor);
     }
 
     @Override
-    public LinkRequest withoutRuntimeContext() {
-        if(contextStrippedRequest == null) {
-            contextStrippedRequest =
-                    new LinkRequestImpl(CallSiteDescriptorFactory.dropParameterTypes(getCallSiteDescriptor(), 1,
-                            runtimeContextArgCount + 1), getCallSiteToken(), getLinkCount(), isCallSiteUnstable(), getTruncatedArguments());
-        }
-        return contextStrippedRequest;
+    public void relink(final GuardedInvocation guardedInvocation, final MethodHandle relinkAndInvoke) {
+        setTarget(guardedInvocation.compose(relinkAndInvoke));
     }
 
     @Override
-    public LinkRequest replaceArguments(final CallSiteDescriptor callSiteDescriptor, final Object[] arguments) {
-        return new RuntimeContextLinkRequestImpl(callSiteDescriptor, getCallSiteToken(), getLinkCount(), isCallSiteUnstable(), arguments,
-                runtimeContextArgCount);
-    }
-
-    private Object[] getTruncatedArguments() {
-        final Object[] args = getArguments();
-        final Object[] newargs = new Object[args.length - runtimeContextArgCount];
-        newargs[0] = args[0]; // "this" remains at the 0th position
-        System.arraycopy(args, runtimeContextArgCount + 1, newargs, 1, newargs.length - 1);
-        return newargs;
+    public void resetAndRelink(final GuardedInvocation guardedInvocation, final MethodHandle relinkAndInvoke) {
+        relink(guardedInvocation, relinkAndInvoke);
     }
 }

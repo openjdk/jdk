@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.StandardOperation;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.lookup.MethodHandleFactory.LookupException;
@@ -60,6 +61,7 @@ import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
+import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 import jdk.nashorn.internal.runtime.linker.PrimitiveLookup;
 
@@ -138,15 +140,15 @@ public final class NativeString extends ScriptObject implements OptimisticBuilti
 
     // This is to support length as method call as well.
     @Override
-    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
-        final String name = desc.getNameToken(2);
+    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final StandardOperation operation) {
+        final String name = NashornCallSiteDescriptor.getOperand(desc);
 
         // if str.length(), then let the bean linker handle it
-        if ("length".equals(name) && "getMethod".equals(operator)) {
+        if ("length".equals(name) && operation == StandardOperation.GET_METHOD) {
             return null;
         }
 
-        return super.findGetMethod(desc, request, operator);
+        return super.findGetMethod(desc, request, operation);
     }
 
     // This is to provide array-like access to string characters without creating a NativeString wrapper.

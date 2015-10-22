@@ -32,11 +32,9 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
-import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
-import jdk.internal.dynalink.support.Guards;
+import jdk.internal.dynalink.linker.support.Guards;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.FindProperty;
 import jdk.nashorn.internal.runtime.GlobalConstants;
@@ -97,24 +95,17 @@ public final class PrimitiveLookup {
     public static GuardedInvocation lookupPrimitive(final LinkRequest request, final MethodHandle guard,
                                                     final ScriptObject wrappedReceiver, final MethodHandle wrapFilter,
                                                     final MethodHandle protoFilter) {
-        final CallSiteDescriptor desc = request.getCallSiteDescriptor();
-        final String name;
-        final FindProperty find;
+        // lookupPrimitive is only ever invoked from NashornPrimitiveLinker,
+        // which is a linker private to Nashorn, therefore the call site
+        // descriptor class will always be NashornCallSiteDescriptor.
+        final NashornCallSiteDescriptor desc = (NashornCallSiteDescriptor)request.getCallSiteDescriptor();
+        final String name = desc.getOperand();
+        final FindProperty find = name != null ? wrappedReceiver.findProperty(name, true) : null;
 
-        if (desc.getNameTokenCount() > 2) {
-            name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
-            find = wrappedReceiver.findProperty(name, true);
-        } else {
-            name = null;
-            find = null;
-        }
-
-        final String firstOp = CallSiteDescriptorFactory.tokenizeOperators(desc).get(0);
-
-        switch (firstOp) {
-        case "getProp":
-        case "getElem":
-        case "getMethod":
+        switch (desc.getFirstOperation()) {
+        case GET_PROPERTY:
+        case GET_ELEMENT:
+        case GET_METHOD:
             //checks whether the property name is hard-coded in the call-site (i.e. a getProp vs a getElem, or setProp vs setElem)
             //if it is we can make assumptions on the property: that if it is not defined on primitive wrapper itself it never will be.
             //so in that case we can skip creation of primitive wrapper and start our search with the prototype.
@@ -145,8 +136,8 @@ public final class PrimitiveLookup {
                 }
             }
             break;
-        case "setProp":
-        case "setElem":
+        case SET_PROPERTY:
+        case SET_ELEMENT:
             return getPrimitiveSetter(name, guard, wrapFilter, NashornCallSiteDescriptor.isStrict(desc));
         default:
             break;
