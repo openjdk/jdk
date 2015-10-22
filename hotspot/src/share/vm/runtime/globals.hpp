@@ -1622,12 +1622,6 @@ public:
           "Number of times to retry allocations when "                      \
           "blocked by the GC locker")                                       \
                                                                             \
-  develop(bool, UseCMSAdaptiveFreeLists, true,                              \
-          "Use adaptive free lists in the CMS generation")                  \
-                                                                            \
-  develop(bool, UseAsyncConcMarkSweepGC, true,                              \
-          "Use Asynchronous Concurrent Mark-Sweep GC in the old generation")\
-                                                                            \
   product(bool, UseCMSBestFit, true,                                        \
           "Use CMS best fit allocation strategy")                           \
                                                                             \
@@ -1822,10 +1816,6 @@ public:
           "When CMS class unloading is enabled, the maximum CMS cycle "     \
           "count for which classes may not be unloaded")                    \
                                                                             \
-  develop(intx, CMSDictionaryChoice, 0,                                     \
-          "Use BinaryTreeDictionary as default in the CMS generation")      \
-          range(0, 2)                                                       \
-                                                                            \
   product(uintx, CMSIndexedFreeListReplenish, 4,                            \
           "Replenish an indexed free list with this number of chunks")      \
           range(1, max_uintx)                                               \
@@ -1839,9 +1829,6 @@ public:
                                                                             \
   product(bool, CMSLoopWarn, false,                                         \
           "Warn in case of excessive CMS looping")                          \
-                                                                            \
-  develop(bool, CMSOverflowEarlyRestoration, false,                         \
-          "Restore preserved marks early")                                  \
                                                                             \
   /* where does the range max value of (max_jint - 1) come from? */         \
   product(size_t, MarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),         \
@@ -2079,10 +2066,6 @@ public:
           "An absolute ceiling above which CMS will always consider the "   \
           "unloading of classes when class unloading is enabled")           \
           range(0, 100)                                                     \
-                                                                            \
-  develop(bool, CMSTestInFreeList, false,                                   \
-          "Check if the coalesced range is already in the "                 \
-          "free lists as claimed")                                          \
                                                                             \
   notproduct(bool, CMSVerifyReturnedBytes, false,                           \
           "Check that all the garbage collected was returned to the "       \

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -403,6 +403,8 @@ $(EXPORT_LIB_ARCH_DIR)/%.dSYM: 		$(C2_BUILD_DIR)/%.dSYM
 	$(install-dir)
 $(EXPORT_SERVER_DIR)/%.dSYM:       		$(C2_BUILD_DIR)/%.dSYM
 	$(install-dir)
+$(EXPORT_SERVER_DIR)/%.symbols:                 $(C2_BUILD_DIR)/%.symbols
+	$(install-file)
 endif
 
 # Client (C1)
