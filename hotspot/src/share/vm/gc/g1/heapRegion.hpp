@@ -31,7 +31,6 @@
 #include "gc/g1/survRateGroup.hpp"
 #include "gc/shared/ageTable.hpp"
 #include "gc/shared/spaceDecorator.hpp"
-#include "gc/shared/watermark.hpp"
 #include "utilities/macros.hpp"
 
 // A HeapRegion is the smallest piece of a G1CollectedHeap that

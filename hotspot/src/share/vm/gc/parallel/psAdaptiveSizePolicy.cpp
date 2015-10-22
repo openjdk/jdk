@@ -529,10 +529,7 @@ void PSAdaptiveSizePolicy::compute_old_gen_free_space(
       set_decide_at_full_gc(decide_at_full_gc_true);
       adjust_promo_for_pause_time(is_full_gc, &desired_promo_size, &desired_eden_size);
     }
-  } else if (_avg_minor_pause->padded_average() > gc_minor_pause_goal_sec()) {
-    // Adjust only for the minor pause time goal
-    adjust_promo_for_minor_pause_time(is_full_gc, &desired_promo_size, &desired_eden_size);
-  } else if(adjusted_mutator_cost() < _throughput_goal) {
+  } else if (adjusted_mutator_cost() < _throughput_goal) {
     // This branch used to require that (mutator_cost() > 0.0 in 1.4.2.
     // This sometimes resulted in skipping to the minimize footprint
     // code.  Change this to try and reduce GC time if mutator time is
@@ -670,36 +667,6 @@ void PSAdaptiveSizePolicy::decay_supplemental_growth(bool is_full_gc) {
   }
 }
 
-void PSAdaptiveSizePolicy::adjust_promo_for_minor_pause_time(bool is_full_gc,
-    size_t* desired_promo_size_ptr, size_t* desired_eden_size_ptr) {
-
-  if (PSAdjustTenuredGenForMinorPause) {
-    if (is_full_gc) {
-      set_decide_at_full_gc(decide_at_full_gc_true);
-    }
-    // If the desired eden size is as small as it will get,
-    // try to adjust the old gen size.
-    if (*desired_eden_size_ptr <= _space_alignment) {
-      // Vary the old gen size to reduce the young gen pause.  This
-      // may not be a good idea.  This is just a test.
-      if (minor_pause_old_estimator()->decrement_will_decrease()) {
-        set_change_old_gen_for_min_pauses(decrease_old_gen_for_min_pauses_true);
-        *desired_promo_size_ptr =
-          _promo_size - promo_decrement_aligned_down(*desired_promo_size_ptr);
-      } else {
-        set_change_old_gen_for_min_pauses(increase_old_gen_for_min_pauses_true);
-        size_t promo_heap_delta =
-          promo_increment_with_supplement_aligned_up(*desired_promo_size_ptr);
-        if ((*desired_promo_size_ptr + promo_heap_delta) >
-            *desired_promo_size_ptr) {
-          *desired_promo_size_ptr =
-            _promo_size + promo_heap_delta;
-        }
-      }
-    }
-  }
-}
-
 void PSAdaptiveSizePolicy::adjust_eden_for_minor_pause_time(bool is_full_gc,
     size_t* desired_eden_size_ptr) {
 
@@ -733,10 +700,7 @@ void PSAdaptiveSizePolicy::adjust_promo_for_pause_time(bool is_full_gc,
   // a change less than the required alignment is probably not worth
   // attempting.
 
-  if (_avg_minor_pause->padded_average() > _avg_major_pause->padded_average()) {
-    adjust_promo_for_minor_pause_time(is_full_gc, desired_promo_size_ptr, desired_eden_size_ptr);
-    // major pause adjustments
-  } else if (is_full_gc) {
+  if (_avg_minor_pause->padded_average() <= _avg_major_pause->padded_average() && is_full_gc) {
     // Adjust for the major pause time only at full gc's because the
     // affects of a change can only be seen at full gc's.
 
@@ -774,44 +738,8 @@ void PSAdaptiveSizePolicy::adjust_eden_for_pause_time(bool is_full_gc,
   // a change less than the required alignment is probably not worth
   // attempting.
   if (_avg_minor_pause->padded_average() > _avg_major_pause->padded_average()) {
-    adjust_eden_for_minor_pause_time(is_full_gc,
-                                desired_eden_size_ptr);
-    // major pause adjustments
-  } else if (is_full_gc) {
-    // Adjust for the major pause time only at full gc's because the
-    // affects of a change can only be seen at full gc's.
-    if (PSAdjustYoungGenForMajorPause) {
-      // If the promo size is at the minimum (i.e., the old gen
-      // size will not actually decrease), consider changing the
-      // young gen size.
-      if (*desired_promo_size_ptr < _space_alignment) {
-        // If increasing the young generation will decrease the old gen
-        // pause, do it.
-        // During startup there is noise in the statistics for deciding
-        // on whether to increase or decrease the young gen size.  For
-        // some number of iterations, just try to increase the young
-        // gen size if the major pause is too long to try and establish
-        // good statistics for later decisions.
-        if (major_pause_young_estimator()->increment_will_decrease() ||
-          (_young_gen_change_for_major_pause_count
-            <= AdaptiveSizePolicyInitializingSteps)) {
-          set_change_young_gen_for_maj_pauses(
-          increase_young_gen_for_maj_pauses_true);
-          eden_heap_delta = eden_increment_aligned_up(*desired_eden_size_ptr);
-          *desired_eden_size_ptr = _eden_size + eden_heap_delta;
-          _young_gen_change_for_major_pause_count++;
-        } else {
-          // Record that decreasing the young gen size would decrease
-          // the major pause
-          set_change_young_gen_for_maj_pauses(
-            decrease_young_gen_for_maj_pauses_true);
-          eden_heap_delta = eden_decrement_aligned_down(*desired_eden_size_ptr);
-          *desired_eden_size_ptr = _eden_size - eden_heap_delta;
-        }
-      }
-    }
+    adjust_eden_for_minor_pause_time(is_full_gc, desired_eden_size_ptr);
   }
-
   if (PrintAdaptiveSizePolicy && Verbose) {
     gclog_or_tty->print_cr(
       "PSAdaptiveSizePolicy::adjust_eden_for_pause_time "
