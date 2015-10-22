@@ -146,18 +146,57 @@ template <class T> class ValueRecorder : public StackObj {
 #endif
 };
 
+class OopRecorder;
+
+class ObjectLookup : public ResourceObj {
+ private:
+  class ObjectEntry {
+   private:
+    jobject _value;
+    int     _index;
+
+   public:
+    ObjectEntry(jobject value, int index) : _value(value), _index(index) {}
+    ObjectEntry() : _value(NULL), _index(0) {}
+    oop oop_value() const;
+    int index() { return _index; }
+  };
+
+  GrowableArray<ObjectEntry> _values;
+  unsigned int _gc_count;
+
+  // Utility sort functions
+  static int sort_by_address(oop a, oop b);
+  static int sort_by_address(ObjectEntry* a, ObjectEntry* b);
+  static int sort_oop_by_address(oop const& a, ObjectEntry const& b);
+
+ public:
+  ObjectLookup();
+
+  // Resort list if a GC has occurred since the last sort
+  void maybe_resort();
+  int find_index(jobject object, OopRecorder* oop_recorder);
+};
+
 class OopRecorder : public ResourceObj {
  private:
   ValueRecorder<jobject>      _oops;
   ValueRecorder<Metadata*>    _metadata;
+  ObjectLookup*               _object_lookup;
  public:
-  OopRecorder(Arena* arena = NULL): _oops(arena), _metadata(arena) {}
+  OopRecorder(Arena* arena = NULL, bool deduplicate = false): _oops(arena), _metadata(arena) {
+    if (deduplicate) {
+      _object_lookup = new ObjectLookup();
+    } else {
+      _object_lookup = NULL;
+    }
+  }
 
   int allocate_oop_index(jobject h) {
     return _oops.allocate_index(h);
   }
-  int find_index(jobject h) {
-    return _oops.find_index(h);
+  virtual int find_index(jobject h) {
+    return _object_lookup != NULL ? _object_lookup->find_index(h, this) : _oops.find_index(h);
   }
   jobject oop_at(int index) {
     return _oops.at(index);
@@ -175,7 +214,7 @@ class OopRecorder : public ResourceObj {
   int allocate_metadata_index(Metadata* oop) {
     return _metadata.allocate_index(oop);
   }
-  int find_index(Metadata* h) {
+  virtual int find_index(Metadata* h) {
     return _metadata.find_index(h);
   }
   Metadata* metadata_at(int index) {

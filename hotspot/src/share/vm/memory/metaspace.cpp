@@ -189,7 +189,7 @@ class ChunkManager : public CHeapObj<mtInternal> {
   assert(index == SpecializedIndex ||                                     \
          index == SmallIndex ||                                           \
          index == MediumIndex ||                                          \
-         index == HumongousIndex, err_msg("Bad index: %d", (int) index))
+         index == HumongousIndex, "Bad index: %d", (int) index)
 
   size_t num_free_chunks(ChunkIndex index) const {
     index_bounds_check(index);
@@ -378,13 +378,13 @@ class VirtualSpaceNode : public CHeapObj<mtClass> {
 
 #define assert_is_ptr_aligned(ptr, alignment) \
   assert(is_ptr_aligned(ptr, alignment),      \
-    err_msg(PTR_FORMAT " is not aligned to "  \
-      SIZE_FORMAT, p2i(ptr), alignment))
+         PTR_FORMAT " is not aligned to "     \
+         SIZE_FORMAT, p2i(ptr), alignment)
 
 #define assert_is_size_aligned(size, alignment) \
   assert(is_size_aligned(size, alignment),      \
-    err_msg(SIZE_FORMAT " is not aligned to "   \
-       SIZE_FORMAT, size, alignment))
+         SIZE_FORMAT " is not aligned to "      \
+         SIZE_FORMAT, size, alignment)
 
 
 // Decide if large pages should be committed when the memory is reserved.
@@ -801,8 +801,8 @@ void VirtualSpaceNode::dec_container_count() {
 #ifdef ASSERT
 void VirtualSpaceNode::verify_container_count() {
   assert(_container_count == container_count_slow(),
-    err_msg("Inconsistency in container_count _container_count " UINTX_FORMAT
-            " container_count_slow() " UINTX_FORMAT, _container_count, container_count_slow()));
+         "Inconsistency in container_count _container_count " UINTX_FORMAT
+         " container_count_slow() " UINTX_FORMAT, _container_count, container_count_slow());
 }
 #endif
 
@@ -965,12 +965,12 @@ bool VirtualSpaceNode::initialize() {
                  (HeapWord*)(_rs.base() + _rs.size())));
 
     assert(reserved()->start() == (HeapWord*) _rs.base(),
-      err_msg("Reserved start was not set properly " PTR_FORMAT
-        " != " PTR_FORMAT, p2i(reserved()->start()), p2i(_rs.base())));
+           "Reserved start was not set properly " PTR_FORMAT
+           " != " PTR_FORMAT, p2i(reserved()->start()), p2i(_rs.base()));
     assert(reserved()->word_size() == _rs.size() / BytesPerWord,
-      err_msg("Reserved size was not set properly " SIZE_FORMAT
-        " != " SIZE_FORMAT, reserved()->word_size(),
-        _rs.size() / BytesPerWord));
+           "Reserved size was not set properly " SIZE_FORMAT
+           " != " SIZE_FORMAT, reserved()->word_size(),
+           _rs.size() / BytesPerWord);
   }
 
   return result;
@@ -1016,11 +1016,11 @@ void VirtualSpaceList::dec_reserved_words(size_t v) {
   _reserved_words = _reserved_words - v;
 }
 
-#define assert_committed_below_limit()                             \
-  assert(MetaspaceAux::committed_bytes() <= MaxMetaspaceSize,      \
-      err_msg("Too much committed memory. Committed: " SIZE_FORMAT \
-              " limit (MaxMetaspaceSize): " SIZE_FORMAT,           \
-          MetaspaceAux::committed_bytes(), MaxMetaspaceSize));
+#define assert_committed_below_limit()                        \
+  assert(MetaspaceAux::committed_bytes() <= MaxMetaspaceSize, \
+         "Too much committed memory. Committed: " SIZE_FORMAT \
+         " limit (MaxMetaspaceSize): " SIZE_FORMAT,           \
+         MetaspaceAux::committed_bytes(), MaxMetaspaceSize);
 
 void VirtualSpaceList::inc_committed_words(size_t v) {
   assert_lock_strong(SpaceManager::expand_lock());
@@ -1461,8 +1461,8 @@ size_t MetaspaceGC::allowed_expansion() {
   size_t capacity_until_gc = capacity_until_GC();
 
   assert(capacity_until_gc >= committed_bytes,
-        err_msg("capacity_until_gc: " SIZE_FORMAT " < committed_bytes: " SIZE_FORMAT,
-                capacity_until_gc, committed_bytes));
+         "capacity_until_gc: " SIZE_FORMAT " < committed_bytes: " SIZE_FORMAT,
+         capacity_until_gc, committed_bytes);
 
   size_t left_until_max  = MaxMetaspaceSize - committed_bytes;
   size_t left_until_GC = capacity_until_gc - committed_bytes;
@@ -1543,8 +1543,8 @@ void MetaspaceGC::compute_new_size() {
   // No expansion, now see if we want to shrink
   // We would never want to shrink more than this
   assert(capacity_until_GC >= minimum_desired_capacity,
-         err_msg(SIZE_FORMAT " >= " SIZE_FORMAT,
-                 capacity_until_GC, minimum_desired_capacity));
+         SIZE_FORMAT " >= " SIZE_FORMAT,
+         capacity_until_GC, minimum_desired_capacity);
   size_t max_shrink_bytes = capacity_until_GC - minimum_desired_capacity;
 
   // Should shrinking be considered?
@@ -1585,8 +1585,8 @@ void MetaspaceGC::compute_new_size() {
       shrink_bytes = align_size_down(shrink_bytes, Metaspace::commit_alignment());
 
       assert(shrink_bytes <= max_shrink_bytes,
-        err_msg("invalid shrink size " SIZE_FORMAT " not <= " SIZE_FORMAT,
-          shrink_bytes, max_shrink_bytes));
+             "invalid shrink size " SIZE_FORMAT " not <= " SIZE_FORMAT,
+             shrink_bytes, max_shrink_bytes);
       if (current_shrink_factor == 0) {
         _shrink_factor = 10;
       } else {
@@ -1676,9 +1676,9 @@ size_t ChunkManager::free_chunks_count() {
 void ChunkManager::locked_verify_free_chunks_total() {
   assert_lock_strong(SpaceManager::expand_lock());
   assert(sum_free_chunks() == _free_chunks_total,
-    err_msg("_free_chunks_total " SIZE_FORMAT " is not the"
-           " same as sum " SIZE_FORMAT, _free_chunks_total,
-           sum_free_chunks()));
+         "_free_chunks_total " SIZE_FORMAT " is not the"
+         " same as sum " SIZE_FORMAT, _free_chunks_total,
+         sum_free_chunks());
 }
 
 void ChunkManager::verify_free_chunks_total() {
@@ -1690,9 +1690,9 @@ void ChunkManager::verify_free_chunks_total() {
 void ChunkManager::locked_verify_free_chunks_count() {
   assert_lock_strong(SpaceManager::expand_lock());
   assert(sum_free_chunks_count() == _free_chunks_count,
-    err_msg("_free_chunks_count " SIZE_FORMAT " is not the"
-           " same as sum " SIZE_FORMAT, _free_chunks_count,
-           sum_free_chunks_count()));
+         "_free_chunks_count " SIZE_FORMAT " is not the"
+         " same as sum " SIZE_FORMAT, _free_chunks_count,
+         sum_free_chunks_count());
 }
 
 void ChunkManager::verify_free_chunks_count() {
@@ -1891,9 +1891,9 @@ void SpaceManager::get_initial_chunk_sizes(Metaspace::MetaspaceType type,
     break;
   }
   assert(*chunk_word_size != 0 && *class_chunk_word_size != 0,
-    err_msg("Initial chunks sizes bad: data  " SIZE_FORMAT
-            " class " SIZE_FORMAT,
-            *chunk_word_size, *class_chunk_word_size));
+         "Initial chunks sizes bad: data  " SIZE_FORMAT
+         " class " SIZE_FORMAT,
+         *chunk_word_size, *class_chunk_word_size);
 }
 
 size_t SpaceManager::sum_free_in_chunks_in_use() const {
@@ -2036,9 +2036,9 @@ size_t SpaceManager::calc_chunk_size(size_t word_size) {
 
   assert(!SpaceManager::is_humongous(word_size) ||
          chunk_word_size == if_humongous_sized_chunk,
-         err_msg("Size calculation is wrong, word_size " SIZE_FORMAT
-                 " chunk_word_size " SIZE_FORMAT,
-                 word_size, chunk_word_size));
+         "Size calculation is wrong, word_size " SIZE_FORMAT
+         " chunk_word_size " SIZE_FORMAT,
+         word_size, chunk_word_size);
   if (TraceMetadataHumongousAllocation &&
       SpaceManager::is_humongous(word_size)) {
     gclog_or_tty->print_cr("Metadata humongous allocation:");
@@ -2202,9 +2202,9 @@ void ChunkManager::return_chunks(ChunkIndex index, Metachunk* chunks) {
 SpaceManager::~SpaceManager() {
   // This call this->_lock which can't be done while holding expand_lock()
   assert(sum_capacity_in_chunks_in_use() == allocated_chunks_words(),
-    err_msg("sum_capacity_in_chunks_in_use() " SIZE_FORMAT
-            " allocated_chunks_words() " SIZE_FORMAT,
-            sum_capacity_in_chunks_in_use(), allocated_chunks_words()));
+         "sum_capacity_in_chunks_in_use() " SIZE_FORMAT
+         " allocated_chunks_words() " SIZE_FORMAT,
+         sum_capacity_in_chunks_in_use(), allocated_chunks_words());
 
   MutexLockerEx fcl(SpaceManager::expand_lock(),
                     Mutex::_no_safepoint_check_flag);
@@ -2275,9 +2275,9 @@ SpaceManager::~SpaceManager() {
     assert(humongous_chunks->word_size() == (size_t)
            align_size_up(humongous_chunks->word_size(),
                              smallest_chunk_size()),
-           err_msg("Humongous chunk size is wrong: word size " SIZE_FORMAT
-                   " granularity " SIZE_FORMAT,
-                   humongous_chunks->word_size(), smallest_chunk_size()));
+           "Humongous chunk size is wrong: word size " SIZE_FORMAT
+           " granularity " SIZE_FORMAT,
+           humongous_chunks->word_size(), smallest_chunk_size());
     Metachunk* next_humongous_chunks = humongous_chunks->next();
     humongous_chunks->container()->dec_container_count();
     chunk_manager()->humongous_dictionary()->return_chunk(humongous_chunks);
@@ -2331,7 +2331,7 @@ void SpaceManager::deallocate(MetaWord* p, size_t word_size) {
   size_t raw_word_size = get_raw_word_size(word_size);
   size_t min_size = TreeChunk<Metablock, FreeList<Metablock> >::min_size();
   assert(raw_word_size >= min_size,
-         err_msg("Should not deallocate dark matter " SIZE_FORMAT "<" SIZE_FORMAT, word_size, min_size));
+         "Should not deallocate dark matter " SIZE_FORMAT "<" SIZE_FORMAT, word_size, min_size);
   block_freelists()->return_block(p, raw_word_size);
 }
 
@@ -2541,9 +2541,9 @@ void SpaceManager::verify_allocated_blocks_words() {
   assert(SafepointSynchronize::is_at_safepoint() || !Universe::is_fully_initialized(),
     "Verification can fail if the applications is running");
   assert(allocated_blocks_words() == sum_used_in_chunks_in_use(),
-    err_msg("allocation total is not consistent " SIZE_FORMAT
-            " vs " SIZE_FORMAT,
-            allocated_blocks_words(), sum_used_in_chunks_in_use()));
+         "allocation total is not consistent " SIZE_FORMAT
+         " vs " SIZE_FORMAT,
+         allocated_blocks_words(), sum_used_in_chunks_in_use());
 }
 
 #endif
@@ -2616,9 +2616,9 @@ size_t MetaspaceAux::free_bytes() {
 void MetaspaceAux::dec_capacity(Metaspace::MetadataType mdtype, size_t words) {
   assert_lock_strong(SpaceManager::expand_lock());
   assert(words <= capacity_words(mdtype),
-    err_msg("About to decrement below 0: words " SIZE_FORMAT
-            " is greater than _capacity_words[%u] " SIZE_FORMAT,
-            words, mdtype, capacity_words(mdtype)));
+         "About to decrement below 0: words " SIZE_FORMAT
+         " is greater than _capacity_words[%u] " SIZE_FORMAT,
+         words, mdtype, capacity_words(mdtype));
   _capacity_words[mdtype] -= words;
 }
 
@@ -2630,9 +2630,9 @@ void MetaspaceAux::inc_capacity(Metaspace::MetadataType mdtype, size_t words) {
 
 void MetaspaceAux::dec_used(Metaspace::MetadataType mdtype, size_t words) {
   assert(words <= used_words(mdtype),
-    err_msg("About to decrement below 0: words " SIZE_FORMAT
-            " is greater than _used_words[%u] " SIZE_FORMAT,
-            words, mdtype, used_words(mdtype)));
+         "About to decrement below 0: words " SIZE_FORMAT
+         " is greater than _used_words[%u] " SIZE_FORMAT,
+         words, mdtype, used_words(mdtype));
   // For CMS deallocation of the Metaspaces occurs during the
   // sweep which is a concurrent phase.  Protection by the expand_lock()
   // is not enough since allocation is on a per Metaspace basis
@@ -2699,11 +2699,11 @@ size_t MetaspaceAux::capacity_bytes_slow() {
   size_t class_capacity = capacity_bytes_slow(Metaspace::ClassType);
   size_t non_class_capacity = capacity_bytes_slow(Metaspace::NonClassType);
   assert(capacity_bytes() == class_capacity + non_class_capacity,
-      err_msg("bad accounting: capacity_bytes() " SIZE_FORMAT
-        " class_capacity + non_class_capacity " SIZE_FORMAT
-        " class_capacity " SIZE_FORMAT " non_class_capacity " SIZE_FORMAT,
-        capacity_bytes(), class_capacity + non_class_capacity,
-        class_capacity, non_class_capacity));
+         "bad accounting: capacity_bytes() " SIZE_FORMAT
+         " class_capacity + non_class_capacity " SIZE_FORMAT
+         " class_capacity " SIZE_FORMAT " non_class_capacity " SIZE_FORMAT,
+         capacity_bytes(), class_capacity + non_class_capacity,
+         class_capacity, non_class_capacity);
 
   return class_capacity + non_class_capacity;
 }
@@ -2904,17 +2904,17 @@ void MetaspaceAux::verify_capacity() {
   // For purposes of the running sum of capacity, verify against capacity
   size_t capacity_in_use_bytes = capacity_bytes_slow();
   assert(running_sum_capacity_bytes == capacity_in_use_bytes,
-    err_msg("capacity_words() * BytesPerWord " SIZE_FORMAT
-            " capacity_bytes_slow()" SIZE_FORMAT,
-            running_sum_capacity_bytes, capacity_in_use_bytes));
+         "capacity_words() * BytesPerWord " SIZE_FORMAT
+         " capacity_bytes_slow()" SIZE_FORMAT,
+         running_sum_capacity_bytes, capacity_in_use_bytes);
   for (Metaspace::MetadataType i = Metaspace::ClassType;
        i < Metaspace:: MetadataTypeCount;
        i = (Metaspace::MetadataType)(i + 1)) {
     size_t capacity_in_use_bytes = capacity_bytes_slow(i);
     assert(capacity_bytes(i) == capacity_in_use_bytes,
-      err_msg("capacity_bytes(%u) " SIZE_FORMAT
-              " capacity_bytes_slow(%u)" SIZE_FORMAT,
-              i, capacity_bytes(i), i, capacity_in_use_bytes));
+           "capacity_bytes(%u) " SIZE_FORMAT
+           " capacity_bytes_slow(%u)" SIZE_FORMAT,
+           i, capacity_bytes(i), i, capacity_in_use_bytes);
   }
 #endif
 }
@@ -2925,17 +2925,17 @@ void MetaspaceAux::verify_used() {
   // For purposes of the running sum of used, verify against used
   size_t used_in_use_bytes = used_bytes_slow();
   assert(used_bytes() == used_in_use_bytes,
-    err_msg("used_bytes() " SIZE_FORMAT
-            " used_bytes_slow()" SIZE_FORMAT,
-            used_bytes(), used_in_use_bytes));
+         "used_bytes() " SIZE_FORMAT
+         " used_bytes_slow()" SIZE_FORMAT,
+         used_bytes(), used_in_use_bytes);
   for (Metaspace::MetadataType i = Metaspace::ClassType;
        i < Metaspace:: MetadataTypeCount;
        i = (Metaspace::MetadataType)(i + 1)) {
     size_t used_in_use_bytes = used_bytes_slow(i);
     assert(used_bytes(i) == used_in_use_bytes,
-      err_msg("used_bytes(%u) " SIZE_FORMAT
-              " used_bytes_slow(%u)" SIZE_FORMAT,
-              i, used_bytes(i), i, used_in_use_bytes));
+           "used_bytes(%u) " SIZE_FORMAT
+           " used_bytes_slow(%u)" SIZE_FORMAT,
+           i, used_bytes(i), i, used_in_use_bytes);
   }
 #endif
 }
@@ -3157,7 +3157,7 @@ void Metaspace::print_compressed_class_space(outputStream* st, const char* reque
 void Metaspace::initialize_class_space(ReservedSpace rs) {
   // The reserved space size may be bigger because of alignment, esp with UseLargePages
   assert(rs.size() >= CompressedClassSpaceSize,
-         err_msg(SIZE_FORMAT " != " SIZE_FORMAT, rs.size(), CompressedClassSpaceSize));
+         SIZE_FORMAT " != " SIZE_FORMAT, rs.size(), CompressedClassSpaceSize);
   assert(using_class_space(), "Must be using class space");
   _class_space_list = new VirtualSpaceList(rs);
   _chunk_manager_class = new ChunkManager(SpecializedChunk, ClassSmallChunk, ClassMediumChunk);
@@ -3688,7 +3688,7 @@ const char* Metaspace::metadata_type_name(Metaspace::MetadataType mdtype) {
     case Metaspace::ClassType: return "Class";
     case Metaspace::NonClassType: return "Metadata";
     default:
-      assert(false, err_msg("Got bad mdtype: %d", (int) mdtype));
+      assert(false, "Got bad mdtype: %d", (int) mdtype);
       return NULL;
   }
 }
@@ -3970,15 +3970,15 @@ class TestVirtualSpaceNodeTest {
 
 #define assert_is_available_positive(word_size) \
   assert(vsn.is_available(word_size), \
-    err_msg(#word_size ": " PTR_FORMAT " bytes were not available in " \
-            "VirtualSpaceNode [" PTR_FORMAT ", " PTR_FORMAT ")", \
-            (uintptr_t)(word_size * BytesPerWord), p2i(vsn.bottom()), p2i(vsn.end())));
+         #word_size ": " PTR_FORMAT " bytes were not available in " \
+         "VirtualSpaceNode [" PTR_FORMAT ", " PTR_FORMAT ")", \
+         (uintptr_t)(word_size * BytesPerWord), p2i(vsn.bottom()), p2i(vsn.end()));
 
 #define assert_is_available_negative(word_size) \
   assert(!vsn.is_available(word_size), \
-    err_msg(#word_size ": " PTR_FORMAT " bytes should not be available in " \
-            "VirtualSpaceNode [" PTR_FORMAT ", " PTR_FORMAT ")", \
-            (uintptr_t)(word_size * BytesPerWord), p2i(vsn.bottom()), p2i(vsn.end())));
+         #word_size ": " PTR_FORMAT " bytes should not be available in " \
+         "VirtualSpaceNode [" PTR_FORMAT ", " PTR_FORMAT ")", \
+         (uintptr_t)(word_size * BytesPerWord), p2i(vsn.bottom()), p2i(vsn.end()));
 
   static void test_is_available_positive() {
     // Reserve some memory.

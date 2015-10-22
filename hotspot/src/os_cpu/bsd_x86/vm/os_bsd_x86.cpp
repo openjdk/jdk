@@ -276,8 +276,6 @@
 # endif
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 address os::current_stack_pointer() {
 #if defined(__clang__) || defined(__llvm__)
   register void *esp;
@@ -731,8 +729,7 @@ JVM_handle_bsd_signal(int sig,
   sigaddset(&newset, sig);
   sigprocmask(SIG_UNBLOCK, &newset, NULL);
 
-  VMError err(t, sig, pc, info, ucVoid);
-  err.report_and_die();
+  VMError::report_and_die(t, sig, pc, info, ucVoid);
 
   ShouldNotReachHere();
   return false;
@@ -865,7 +862,7 @@ static void current_stack_region(address * bottom, size_t * size) {
   int rslt = pthread_stackseg_np(pthread_self(), &ss);
 
   if (rslt != 0)
-    fatal(err_msg("pthread_stackseg_np failed with err = %d", rslt));
+    fatal("pthread_stackseg_np failed with err = %d", rslt);
 
   *bottom = (address)((char *)ss.ss_sp - ss.ss_size);
   *size   = ss.ss_size;
@@ -876,12 +873,12 @@ static void current_stack_region(address * bottom, size_t * size) {
 
   // JVM needs to know exact stack location, abort if it fails
   if (rslt != 0)
-    fatal(err_msg("pthread_attr_init failed with err = %d", rslt));
+    fatal("pthread_attr_init failed with err = %d", rslt);
 
   rslt = pthread_attr_get_np(pthread_self(), &attr);
 
   if (rslt != 0)
-    fatal(err_msg("pthread_attr_get_np failed with err = %d", rslt));
+    fatal("pthread_attr_get_np failed with err = %d", rslt);
 
   if (pthread_attr_getstackaddr(&attr, (void **)bottom) != 0 ||
     pthread_attr_getstacksize(&attr, size) != 0) {

@@ -37,8 +37,6 @@
 #include "runtime/mutexLocker.hpp"
 #include "utilities/hashtable.inline.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // --------------------------------------------------------------------------
 // the number of buckets a thread claims
 const int ClaimChunkSize = 32;
@@ -623,8 +621,8 @@ void SymbolTable::print_histogram() {
           ((float)_symbols_removed/(float)_symbols_counted)* 100);
   }
   tty->print_cr("  Reference counts         %7d", Symbol::_total_count);
-  tty->print_cr("  Symbol arena used        %7dK", arena()->used()/1024);
-  tty->print_cr("  Symbol arena size        %7dK", arena()->size_in_bytes()/1024);
+  tty->print_cr("  Symbol arena used        " SIZE_FORMAT_W(7) "K", arena()->used()/1024);
+  tty->print_cr("  Symbol arena size        " SIZE_FORMAT_W(7) "K", arena()->size_in_bytes()/1024);
   tty->print_cr("  Total symbol length      %7d", total_length);
   tty->print_cr("  Maximum symbol length    %7d", max_length);
   tty->print_cr("  Average symbol length    %7.2f", ((float) total_length / (float) total_count));
@@ -645,7 +643,7 @@ void SymbolTable::print() {
     HashtableEntry<Symbol*, mtSymbol>* entry = the_table()->bucket(i);
     if (entry != NULL) {
       while (entry != NULL) {
-        tty->print(PTR_FORMAT " ", entry->literal());
+        tty->print(PTR_FORMAT " ", p2i(entry->literal()));
         entry->literal()->print();
         tty->print(" %d", entry->literal()->refcount());
         p = entry->next_addr();

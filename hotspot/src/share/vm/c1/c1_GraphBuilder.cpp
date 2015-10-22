@@ -3363,11 +3363,9 @@ const char* GraphBuilder::check_can_parse(ciMethod* callee) const {
   return NULL;
 }
 
-
 // negative filter: should callee NOT be inlined?  returns NULL, ok to inline, or rejection msg
 const char* GraphBuilder::should_not_inline(ciMethod* callee) const {
-  if ( callee->should_exclude())       return "excluded by CompilerOracle";
-  if ( callee->should_not_inline())    return "disallowed by CompilerOracle";
+  if ( callee->should_not_inline())    return "disallowed by CompileCommand";
   if ( callee->dont_inline())          return "don't inline by annotation";
   return NULL;
 }
@@ -3698,7 +3696,7 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
 
     const char* msg = "";
     if (callee->force_inline())  msg = "force inline by annotation";
-    if (callee->should_inline()) msg = "force inline by CompileOracle";
+    if (callee->should_inline()) msg = "force inline by CompileCommand";
     print_inlining(callee, msg);
   } else {
     // use heuristic controls on inlining
@@ -4020,7 +4018,7 @@ bool GraphBuilder::try_method_handle_inline(ciMethod* callee) {
     break;
 
   default:
-    fatal(err_msg("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid)));
+    fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
     break;
   }
   set_state(state_before);

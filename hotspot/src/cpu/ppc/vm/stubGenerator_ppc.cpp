@@ -841,7 +841,7 @@ class StubGenerator: public StubCodeGenerator {
   // Only called by MacroAssembler::verify_oop
   static void verify_oop_helper(const char* message, oop o) {
     if (!o->is_oop_or_null()) {
-      fatal(message);
+      fatal("%s", message);
     }
     ++ StubRoutines::_verify_oop_count;
   }

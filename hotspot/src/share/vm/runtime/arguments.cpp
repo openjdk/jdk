@@ -32,6 +32,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "logging/logConfiguration.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -50,6 +51,9 @@
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/stringUtils.hpp"
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciRuntime.hpp"
+#endif
 #if INCLUDE_ALL_GCS
 #include "gc/cms/compactibleFreeListSpace.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -213,6 +217,8 @@ void Arguments::init_system_properties() {
 
   // Set OS specific system properties values
   os::init_system_properties_values();
+
+  JVMCI_ONLY(JVMCIRuntime::init_system_properties(&_system_properties);)
 }
 
 // Update/Initialize System properties after JDK version number is known
@@ -793,8 +799,10 @@ static bool set_bool_flag(const char* name, bool value, Flag::Flags origin) {
 }
 
 static bool set_fp_numeric_flag(const char* name, char* value, Flag::Flags origin) {
-  double v;
-  if (sscanf(value, "%lf", &v) != 1) {
+  char* end;
+  errno = 0;
+  double v = strtod(value, &end);
+  if ((errno != 0) || (*end != 0)) {
     return false;
   }
 
@@ -978,9 +986,9 @@ bool Arguments::parse_argument(const char* arg, Flag::Flags origin) {
     return set_string_flag(real_name, value, origin);
   }
 
-#define SIGNED_FP_NUMBER_RANGE "[-0123456789.]"
+#define SIGNED_FP_NUMBER_RANGE "[-0123456789.eE+]"
 #define SIGNED_NUMBER_RANGE    "[-0123456789]"
-#define        NUMBER_RANGE    "[0123456789]"
+#define        NUMBER_RANGE    "[0123456789eE+-]"
   char value[BUFLEN + 1];
   char value2[BUFLEN + 1];
   if (sscanf(arg, "%" XSTR(BUFLEN) NAME_RANGE "=" "%" XSTR(BUFLEN) SIGNED_NUMBER_RANGE "." "%" XSTR(BUFLEN) NUMBER_RANGE "%c", name, value, value2, &dummy) == 3) {
@@ -1374,7 +1382,7 @@ void Arguments::set_mode_flags(Mode mode) {
   }
 }
 
-#if defined(COMPILER2) || defined(_LP64) || !INCLUDE_CDS
+#if defined(COMPILER2) || INCLUDE_JVMCI || defined(_LP64) || !INCLUDE_CDS
 // Conflict: required to use shared spaces (-Xshare:on), but
 // incompatible command line options were chosen.
 
@@ -1834,7 +1842,7 @@ void Arguments::select_gc() {
 void Arguments::set_ergonomics_flags() {
   select_gc();
 
-#ifdef COMPILER2
+#if defined(COMPILER2) || INCLUDE_JVMCI
   // Shared spaces work fine with other GCs but causes bytecode rewriting
   // to be disabled, which hurts interpreter performance and decreases
   // server performance.  When -server is specified, keep the default off
@@ -1918,7 +1926,7 @@ void Arguments::set_parallel_gc_flags() {
 
 void Arguments::set_g1_gc_flags() {
   assert(UseG1GC, "Error");
-#ifdef COMPILER1
+#if defined(COMPILER1) || INCLUDE_JVMCI
   FastTLABRefill = false;
 #endif
   FLAG_SET_DEFAULT(ParallelGCThreads, Abstract_VM_Version::parallel_worker_threads());
@@ -2495,6 +2503,22 @@ bool Arguments::check_vm_args_consistency() {
     }
 #endif
   }
+#if INCLUDE_JVMCI
+  if (EnableJVMCI) {
+    if (!ScavengeRootsInCode) {
+      warning("forcing ScavengeRootsInCode non-zero because JVMCI is enabled");
+      ScavengeRootsInCode = 1;
+    }
+    if (FLAG_IS_DEFAULT(TypeProfileLevel)) {
+      TypeProfileLevel = 0;
+    }
+    if (UseJVMCICompiler) {
+      if (FLAG_IS_DEFAULT(TypeProfileWidth)) {
+        TypeProfileWidth = 8;
+      }
+    }
+  }
+#endif
 
   // Check lower bounds of the code cache
   // Template Interpreter code is approximately 3X larger in debug builds.
@@ -3190,6 +3214,26 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       if (FLAG_SET_CMDLINE(bool, PrintGCTimeStamps, true) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
+    } else if (match_option(option, "-Xlog", &tail)) {
+      bool ret = false;
+      if (strcmp(tail, ":help") == 0) {
+        LogConfiguration::print_command_line_help(defaultStream::output_stream());
+        vm_exit(0);
+      } else if (strcmp(tail, ":disable") == 0) {
+        LogConfiguration::disable_logging();
+        ret = true;
+      } else if (*tail == '\0') {
+        ret = LogConfiguration::parse_command_line_arguments();
+        assert(ret, "-Xlog without arguments should never fail to parse");
+      } else if (*tail == ':') {
+        ret = LogConfiguration::parse_command_line_arguments(tail + 1);
+      }
+      if (ret == false) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Invalid -Xlog option '-Xlog%s'\n",
+                    tail);
+        return JNI_EINVAL;
+      }
     // JNI hooks
     } else if (match_option(option, "-Xcheck", &tail)) {
       if (!strcmp(tail, ":jni")) {
@@ -3463,6 +3507,37 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
   const char* fileSep = os::file_separator();
   sprintf(path, "%s%slib%sendorsed", Arguments::get_java_home(), fileSep, fileSep);
 
+#if INCLUDE_JVMCI
+  jint res = JVMCIRuntime::save_options(_system_properties);
+  if (res != JNI_OK) {
+    return res;
+  }
+
+  if (EnableJVMCI) {
+    // Append lib/jvmci/*.jar to boot class path
+    char jvmciDir[JVM_MAXPATHLEN];
+    const char* fileSep = os::file_separator();
+    jio_snprintf(jvmciDir, sizeof(jvmciDir), "%s%slib%sjvmci", Arguments::get_java_home(), fileSep, fileSep);
+    DIR* dir = os::opendir(jvmciDir);
+    if (dir != NULL) {
+      struct dirent *entry;
+      char *dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(jvmciDir), mtInternal);
+      while ((entry = os::readdir(dir, (dirent *) dbuf)) != NULL) {
+        const char* name = entry->d_name;
+        const char* ext = name + strlen(name) - 4;
+        if (ext > name && strcmp(ext, ".jar") == 0) {
+          char fileName[JVM_MAXPATHLEN];
+          jio_snprintf(fileName, sizeof(fileName), "%s%s%s", jvmciDir, fileSep, name);
+          scp_p->add_suffix(fileName);
+          scp_assembly_required = true;
+        }
+      }
+      FREE_C_HEAP_ARRAY(char, dbuf);
+      os::closedir(dir);
+    }
+  }
+#endif // INCLUDE_JVMCI
+
   if (CheckEndorsedAndExtDirs) {
     int nonEmptyDirs = 0;
     // check endorsed directory
@@ -3521,7 +3596,7 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     FLAG_SET_ERGO(uintx, InitialTenuringThreshold, MaxTenuringThreshold);
   }
 
-#ifndef COMPILER2
+#if !defined(COMPILER2) && !INCLUDE_JVMCI
   // Don't degrade server performance for footprint
   if (FLAG_IS_DEFAULT(UseLargePages) &&
       MaxHeapSize < LargePageHeapSizeThreshold) {
@@ -3531,7 +3606,7 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
     FLAG_SET_DEFAULT(UseLargePages, false);
   }
 
-#else
+#elif defined(COMPILER2)
   if (!FLAG_IS_DEFAULT(OptoLoopAlignment) && FLAG_IS_DEFAULT(MaxLoopPad)) {
     FLAG_SET_DEFAULT(MaxLoopPad, OptoLoopAlignment-1);
   }
@@ -3690,8 +3765,6 @@ jint Arguments::parse_options_environment_variable(const char* name,
   return retcode;
 }
 
-const int OPTION_BUFFER_SIZE = 1024;
-
 jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* vm_args) {
   // read file into buffer
   int fd = ::open(file_name, O_RDONLY);
@@ -3702,8 +3775,24 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
     return JNI_ERR;
   }
 
+  struct stat stbuf;
+  int retcode = os::stat(file_name, &stbuf);
+  if (retcode != 0) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Could not stat options file '%s'\n",
+                file_name);
+    os::close(fd);
+    return JNI_ERR;
+  }
+
+  if (stbuf.st_size == 0) {
+    // tell caller there is no option data and that is ok
+    os::close(fd);
+    return JNI_OK;
+  }
+
   // '+ 1' for NULL termination even with max bytes
-  int bytes_alloc = OPTION_BUFFER_SIZE + 1;
+  size_t bytes_alloc = stbuf.st_size + 1;
 
   char *buf = NEW_C_HEAP_ARRAY_RETURN_NULL(char, bytes_alloc, mtInternal);
   if (NULL == buf) {
@@ -3713,14 +3802,14 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
     return JNI_ENOMEM;
   }
 
-  memset(buf, 0, (unsigned)bytes_alloc);
+  memset(buf, 0, bytes_alloc);
 
   // Fill buffer
   // Use ::read() instead of os::read because os::read()
   // might do a thread state transition
   // and it is too early for that here
 
-  int bytes_read = ::read(fd, (void *)buf, (unsigned)bytes_alloc);
+  ssize_t bytes_read = ::read(fd, (void *)buf, (unsigned)bytes_alloc);
   os::close(fd);
   if (bytes_read < 0) {
     FREE_C_HEAP_ARRAY(char, buf);
@@ -3735,16 +3824,7 @@ jint Arguments::parse_vm_options_file(const char* file_name, ScopedVMInitArgs* v
     return JNI_OK;
   }
 
-  // file is larger than OPTION_BUFFER_SIZE
-  if (bytes_read > bytes_alloc - 1) {
-    FREE_C_HEAP_ARRAY(char, buf);
-    jio_fprintf(defaultStream::error_stream(),
-                "Options file '%s' is larger than %d bytes.\n",
-                file_name, bytes_alloc - 1);
-    return JNI_EINVAL;
-  }
-
-  int retcode = parse_options_buffer(file_name, buf, bytes_read, vm_args);
+  retcode = parse_options_buffer(file_name, buf, bytes_read, vm_args);
 
   FREE_C_HEAP_ARRAY(char, buf);
   return retcode;
@@ -4279,6 +4359,9 @@ jint Arguments::apply_ergo() {
 #ifdef COMPILER1
       || !UseFastLocking
 #endif // COMPILER1
+#if INCLUDE_JVMCI
+      || !JVMCIUseFastLocking
+#endif
     ) {
     if (!FLAG_IS_DEFAULT(UseBiasedLocking) && UseBiasedLocking) {
       // flag set to true on command line; warn the user that they

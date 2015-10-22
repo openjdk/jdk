@@ -773,7 +773,7 @@ bool StringConcat::validate_mem_flow() {
             return false;
           }
         } else {
-          assert(mem->is_Store() || mem->is_LoadStore(), err_msg_res("unexpected node type: %s", mem->Name()));
+          assert(mem->is_Store() || mem->is_LoadStore(), "unexpected node type: %s", mem->Name());
 #ifndef PRODUCT
           if (PrintOptimizeStringConcat) {
             tty->print("fusion has incorrect memory flow (unexpected source) for ");
@@ -814,7 +814,7 @@ bool StringConcat::validate_mem_flow() {
               for (SimpleDUIterator i(true_proj); i.has_next(); i.next()) {
                 Node* use = i.get();
                 assert(use == ctrl || use->is_ConstraintCast(),
-                       err_msg_res("unexpected user: %s", use->Name()));
+                       "unexpected user: %s", use->Name());
               }
 
               iff = ctrl->in(1)->in(0)->as_If();
@@ -838,7 +838,7 @@ bool StringConcat::validate_mem_flow() {
         for (SimpleDUIterator i(ctrl); i.has_next(); i.next()) {
           Node* use = i.get();
           assert(use == copy || use == iff || use == curr || use->is_CheckCastPP() || use->is_Load(),
-                 err_msg_res("unexpected user: %s", use->Name()));
+                 "unexpected user: %s", use->Name());
         }
 #endif // ASSERT
       }

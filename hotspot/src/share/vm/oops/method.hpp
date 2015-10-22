@@ -685,8 +685,10 @@ class Method : public Metadata {
                                                    TRAPS);
   static Klass* check_non_bcp_klass(Klass* klass);
 
-  // How many extra stack entries for invokedynamic when it's enabled
-  static const int extra_stack_entries_for_jsr292 = 1;
+  enum {
+    // How many extra stack entries for invokedynamic
+    extra_stack_entries_for_jsr292 = 1
+  };
 
   // this operates only on invoke methods:
   // presize interpreter frames for extra interpreter stack entries, if needed

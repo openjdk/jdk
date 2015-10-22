@@ -2311,6 +2311,12 @@ public:
 
 #define MSG "invalid arrangement"
 
+#define ASSERTION (T == T2S || T == T4S || T == T2D)
+  INSN(fsqrt, 1, 0b11111);
+  INSN(fabs,  0, 0b01111);
+  INSN(fneg,  1, 0b01111);
+#undef ASSERTION
+
 #define ASSERTION (T == T8B || T == T16B || T == T4H || T == T8H || T == T2S || T == T4S)
   INSN(rev64, 0, 0b00000);
 #undef ASSERTION

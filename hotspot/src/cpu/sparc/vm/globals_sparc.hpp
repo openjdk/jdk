@@ -82,6 +82,7 @@ define_pd_global(uintx, TypeProfileLevel, 111);
                                                                             \
   product(intx, UseVIS, 99,                                                 \
           "Highest supported VIS instructions set on Sparc")                \
+          range(0, 99)                                                      \
                                                                             \
   product(bool, UseCBCond, false,                                           \
           "Use compare and branch instruction on SPARC")                    \
@@ -91,12 +92,14 @@ define_pd_global(uintx, TypeProfileLevel, 111);
                                                                             \
   product(intx, BlockZeroingLowLimit, 2048,                                 \
           "Minimum size in bytes when block zeroing will be used")          \
+          range(1, max_jint)                                                \
                                                                             \
   product(bool, UseBlockCopy, false,                                        \
           "Use special cpu instructions for block copy")                    \
                                                                             \
   product(intx, BlockCopyLowLimit, 2048,                                    \
           "Minimum size in bytes when block copy will be used")             \
+          range(1, max_jint)                                                \
                                                                             \
   develop(bool, UseV8InstrsOnly, false,                                     \
           "Use SPARC-V8 Compliant instruction subset")                      \
@@ -108,9 +111,11 @@ define_pd_global(uintx, TypeProfileLevel, 111);
           "Do not use swap instructions, but only CAS (in a loop) on SPARC")\
                                                                             \
   product(uintx,  ArraycopySrcPrefetchDistance, 0,                          \
-          "Distance to prefetch source array in arracopy")                  \
+          "Distance to prefetch source array in arraycopy")                 \
+          constraint(ArraycopySrcPrefetchDistanceConstraintFunc, AfterErgo) \
                                                                             \
   product(uintx,  ArraycopyDstPrefetchDistance, 0,                          \
-          "Distance to prefetch destination array in arracopy")             \
+          "Distance to prefetch destination array in arraycopy")            \
+          constraint(ArraycopyDstPrefetchDistanceConstraintFunc, AfterErgo) \
 
 #endif // CPU_SPARC_VM_GLOBALS_SPARC_HPP

@@ -51,6 +51,32 @@ public class TestOptionsWithRanges {
          */
         allOptionsAsMap.remove("CICompilerCount");
 
+        /*
+         * Exclude below options as their maximum value would consume too much memory
+         * and would affect other tests that run in parallel.
+         */
+        allOptionsAsMap.remove("G1ConcRefinementThreads");
+        allOptionsAsMap.remove("G1RSetRegionEntries");
+        allOptionsAsMap.remove("G1RSetSparseRegionEntries");
+
+        /*
+         * Remove parameters controlling the code cache. As these
+         * parameters have implications on the physical memory
+         * reserved by the VM, setting them to large values may hang
+         * the system and/or may cause concurrently executed tests to
+         * fail. These parameters are rigorously checked when the code
+         * cache is initialized (see
+         * hotspot/src/shared/vm/code/codeCache.cpp), therefore
+         * omitting testing for them does not pose a problem.
+         */
+        allOptionsAsMap.remove("InitialCodeCacheSize");
+        allOptionsAsMap.remove("CodeCacheMinimumUseSpace");
+        allOptionsAsMap.remove("ReservedCodeCacheSize");
+        allOptionsAsMap.remove("NonProfiledCodeHeapSize");
+        allOptionsAsMap.remove("ProfiledCodeHeapSize");
+        allOptionsAsMap.remove("NonNMethodCodeHeapSize");
+        allOptionsAsMap.remove("CodeCacheExpansionSize");
+
         allOptions = new ArrayList<>(allOptionsAsMap.values());
 
         Asserts.assertGT(allOptions.size(), 0, "Options with ranges not found!");

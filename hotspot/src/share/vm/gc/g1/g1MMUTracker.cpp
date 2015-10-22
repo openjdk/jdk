@@ -76,7 +76,7 @@ double G1MMUTrackerQueue::calculate_gc_time(double current_time) {
   return gc_time;
 }
 
-void G1MMUTrackerQueue::add_pause(double start, double end, const GCId& gcId) {
+void G1MMUTrackerQueue::add_pause(double start, double end) {
   double duration = end - start;
 
   remove_expired_entries(end);
@@ -106,7 +106,7 @@ void G1MMUTrackerQueue::add_pause(double start, double end, const GCId& gcId) {
 
   // Current entry needs to be added before calculating the value
   double slice_time = calculate_gc_time(end);
-  G1MMUTracer::report_mmu(gcId, _time_slice, slice_time, _max_gc_time);
+  G1MMUTracer::report_mmu(_time_slice, slice_time, _max_gc_time);
 }
 
 // basically the _internal call does not remove expired entries

@@ -37,9 +37,9 @@
 #ifdef _LP64
   // The sethi() instruction generates lots more instructions when shell
   // stack limit is unlimited, so that's why this is much bigger.
-  const static int InterpreterCodeSize = 210 * K;
+  const static int InterpreterCodeSize = 260 * K;
 #else
-  const static int InterpreterCodeSize = 180 * K;
+  const static int InterpreterCodeSize = 230 * K;
 #endif
 
 #endif // CPU_SPARC_VM_TEMPLATEINTERPRETER_SPARC_HPP

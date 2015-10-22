@@ -78,11 +78,11 @@ void CollectorPolicy::initialize_flags() {
   assert(_space_alignment != 0, "Space alignment not set up properly");
   assert(_heap_alignment != 0, "Heap alignment not set up properly");
   assert(_heap_alignment >= _space_alignment,
-         err_msg("heap_alignment: " SIZE_FORMAT " less than space_alignment: " SIZE_FORMAT,
-                 _heap_alignment, _space_alignment));
+         "heap_alignment: " SIZE_FORMAT " less than space_alignment: " SIZE_FORMAT,
+         _heap_alignment, _space_alignment);
   assert(_heap_alignment % _space_alignment == 0,
-         err_msg("heap_alignment: " SIZE_FORMAT " not aligned by space_alignment: " SIZE_FORMAT,
-                 _heap_alignment, _space_alignment));
+         "heap_alignment: " SIZE_FORMAT " not aligned by space_alignment: " SIZE_FORMAT,
+         _heap_alignment, _space_alignment);
 
   if (FLAG_IS_CMDLINE(MaxHeapSize)) {
     if (FLAG_IS_CMDLINE(InitialHeapSize) && InitialHeapSize > MaxHeapSize) {
@@ -275,14 +275,14 @@ void GenCollectorPolicy::initialize_flags() {
 
   assert(_gen_alignment != 0, "Generation alignment not set up properly");
   assert(_heap_alignment >= _gen_alignment,
-         err_msg("heap_alignment: " SIZE_FORMAT " less than gen_alignment: " SIZE_FORMAT,
-                 _heap_alignment, _gen_alignment));
+         "heap_alignment: " SIZE_FORMAT " less than gen_alignment: " SIZE_FORMAT,
+         _heap_alignment, _gen_alignment);
   assert(_gen_alignment % _space_alignment == 0,
-         err_msg("gen_alignment: " SIZE_FORMAT " not aligned by space_alignment: " SIZE_FORMAT,
-                 _gen_alignment, _space_alignment));
+         "gen_alignment: " SIZE_FORMAT " not aligned by space_alignment: " SIZE_FORMAT,
+         _gen_alignment, _space_alignment);
   assert(_heap_alignment % _gen_alignment == 0,
-         err_msg("heap_alignment: " SIZE_FORMAT " not aligned by gen_alignment: " SIZE_FORMAT,
-                 _heap_alignment, _gen_alignment));
+         "heap_alignment: " SIZE_FORMAT " not aligned by gen_alignment: " SIZE_FORMAT,
+         _heap_alignment, _gen_alignment);
 
   // All generational heaps have a youngest gen; handle those flags here
 
@@ -1012,14 +1012,14 @@ public:
     MarkSweepPolicy msp;
     msp.initialize_all();
 
-    assert(msp.min_young_size() <= expected, err_msg("%zu  > %zu", msp.min_young_size(), expected));
+    assert(msp.min_young_size() <= expected, "%zu  > %zu", msp.min_young_size(), expected);
   }
 
   static void verify_young_initial(size_t expected) {
     MarkSweepPolicy msp;
     msp.initialize_all();
 
-    assert(msp.initial_young_size() == expected, err_msg("%zu != %zu", msp.initial_young_size(), expected));
+    assert(msp.initial_young_size() == expected, "%zu != %zu", msp.initial_young_size(), expected);
   }
 
   static void verify_scaled_young_initial(size_t initial_heap_size) {
@@ -1033,23 +1033,23 @@ public:
     }
 
     size_t expected = msp.scale_by_NewRatio_aligned(initial_heap_size);
-    assert(msp.initial_young_size() == expected, err_msg("%zu != %zu", msp.initial_young_size(), expected));
+    assert(msp.initial_young_size() == expected, "%zu != %zu", msp.initial_young_size(), expected);
     assert(FLAG_IS_ERGO(NewSize) && NewSize == expected,
-        err_msg("NewSize should have been set ergonomically to %zu, but was %zu", expected, NewSize));
+        "NewSize should have been set ergonomically to %zu, but was %zu", expected, NewSize);
   }
 
   static void verify_old_min(size_t expected) {
     MarkSweepPolicy msp;
     msp.initialize_all();
 
-    assert(msp.min_old_size() <= expected, err_msg("%zu  > %zu", msp.min_old_size(), expected));
+    assert(msp.min_old_size() <= expected, "%zu  > %zu", msp.min_old_size(), expected);
   }
 
   static void verify_old_initial(size_t expected) {
     MarkSweepPolicy msp;
     msp.initialize_all();
 
-    assert(msp.initial_old_size() == expected, err_msg("%zu != %zu", msp.initial_old_size(), expected));
+    assert(msp.initial_old_size() == expected, "%zu != %zu", msp.initial_old_size(), expected);
   }
 
 

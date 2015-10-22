@@ -183,6 +183,10 @@ void CompileTask::print_impl(outputStream* st, Method* method, int compile_id, i
   if (!short_form) {
     st->print("%7d ", (int) st->time_stamp().milliseconds());  // print timestamp
   }
+  // print compiler name if requested
+  if (CIPrintCompilerName) {
+    st->print("%s:", CompileBroker::compiler_name(comp_level));
+  }
   st->print("%4d ", compile_id);    // print compilation number
 
   // For unloaded methods the transition to zombie occurs after the
@@ -271,7 +275,8 @@ void CompileTask::log_task(xmlStream* log) {
   if (_osr_bci != CompileBroker::standard_entry_bci) {
     log->print(" osr_bci='%d'", _osr_bci);
   }
-  if (_comp_level != CompLevel_highest_tier) {
+  // Always print the level in tiered.
+  if (_comp_level != CompLevel_highest_tier || TieredCompilation) {
     log->print(" level='%d'", _comp_level);
   }
   if (_is_blocking) {
@@ -303,6 +308,24 @@ void CompileTask::log_task_queued() {
     xtty->print(" hot_count='%d'", _hot_count);
   }
   xtty->end_elem();
+}
+
+
+// ------------------------------------------------------------------
+// CompileTask::log_task_dequeued
+void CompileTask::log_task_dequeued(const char* comment) {
+  if (LogCompilation && xtty != NULL) {
+    Thread* thread = Thread::current();
+    ttyLocker ttyl;
+    ResourceMark rm(thread);
+
+    xtty->begin_elem("task_dequeued");
+    log_task(xtty);
+    if (comment != NULL) {
+      xtty->print(" comment='%s'", comment);
+    }
+    xtty->end_elem();
+  }
 }
 
 
