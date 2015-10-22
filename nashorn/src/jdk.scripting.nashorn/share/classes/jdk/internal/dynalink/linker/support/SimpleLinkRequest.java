@@ -81,48 +81,46 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
+package jdk.internal.dynalink.linker.support;
 
+import java.util.Objects;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.LinkRequest;
 
 /**
- * Default implementation of the {@link LinkRequest}, representing a link request to a call site that passes no language
- * runtime specific native context arguments on the stack.
+ * Default simple implementation of {@link LinkRequest}.
  */
-public class LinkRequestImpl implements LinkRequest {
+public class SimpleLinkRequest implements LinkRequest {
 
     private final CallSiteDescriptor callSiteDescriptor;
-    private final Object callSiteToken;
     private final Object[] arguments;
     private final boolean callSiteUnstable;
-    private final int linkCount;
 
     /**
      * Creates a new link request.
      *
-     * @param callSiteDescriptor the descriptor for the call site being linked
-     * @param callSiteToken the opaque token for the call site being linked.
-     * @param linkCount how many times this callsite has been linked/relinked
-     * @param callSiteUnstable true if the call site being linked is considered unstable
-     * @param arguments the arguments for the invocation
+     * @param callSiteDescriptor the descriptor for the call site being linked.
+     * Must not be null.
+     * @param callSiteUnstable true if the call site being linked is considered
+     * unstable.
+     * @param arguments the arguments for the invocation. Must not be null.
+     * @throws NullPointerException if either {@code callSiteDescriptor} or
+     * {@code arguments} is null.
      */
-    public LinkRequestImpl(final CallSiteDescriptor callSiteDescriptor, final Object callSiteToken, final int linkCount, final boolean callSiteUnstable, final Object... arguments) {
-        this.callSiteDescriptor = callSiteDescriptor;
-        this.callSiteToken = callSiteToken;
-        this.linkCount = linkCount;
+    public SimpleLinkRequest(final CallSiteDescriptor callSiteDescriptor, final boolean callSiteUnstable, final Object... arguments) {
+        this.callSiteDescriptor = Objects.requireNonNull(callSiteDescriptor);
         this.callSiteUnstable = callSiteUnstable;
-        this.arguments = arguments;
+        this.arguments = arguments.clone();
     }
 
     @Override
     public Object[] getArguments() {
-        return arguments != null ? arguments.clone() : null;
+        return arguments.clone();
     }
 
     @Override
     public Object getReceiver() {
-        return arguments != null && arguments.length > 0 ? arguments[0] : null;
+        return arguments.length > 0 ? arguments[0] : null;
     }
 
     @Override
@@ -131,27 +129,12 @@ public class LinkRequestImpl implements LinkRequest {
     }
 
     @Override
-    public Object getCallSiteToken() {
-        return callSiteToken;
-    }
-
-    @Override
     public boolean isCallSiteUnstable() {
         return callSiteUnstable;
     }
 
     @Override
-    public int getLinkCount() {
-        return linkCount;
-    }
-
-    @Override
-    public LinkRequest withoutRuntimeContext() {
-        return this;
-    }
-
-    @Override
-    public LinkRequest replaceArguments(final CallSiteDescriptor newCallSiteDescriptor, final Object[] newArguments) {
-        return new LinkRequestImpl(newCallSiteDescriptor, callSiteToken, linkCount, callSiteUnstable, newArguments);
+    public LinkRequest replaceArguments(final CallSiteDescriptor newCallSiteDescriptor, final Object... newArguments) {
+        return new SimpleLinkRequest(newCallSiteDescriptor, callSiteUnstable, newArguments);
     }
 }

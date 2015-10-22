@@ -81,7 +81,7 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
+package jdk.internal.dynalink.linker.support;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -90,10 +90,19 @@ import jdk.internal.dynalink.DynamicLinkerFactory;
 import jdk.internal.dynalink.linker.MethodHandleTransformer;
 
 /**
- * Default implementation for a {@link DynamicLinkerFactory#setInternalObjectsFilter(MethodHandleTransformer)}.
- * Given a method handle of {@code Object(Object)} type for filtering parameter and another one of the same type for
- * filtering return values, applies them to passed method handles where their parameter types and/or return value types
- * are declared to be {@link Object}.
+ * Default implementation for a
+ * {@link DynamicLinkerFactory#setInternalObjectsFilter(MethodHandleTransformer)}
+ * that delegates to a pair of filtering method handles. It takes a method
+ * handle of {@code Object(Object)} type for filtering parameter values and
+ * another one of the same type for filtering return values. It applies them as
+ * parameter and return value filters on method handles passed to its
+ * {@link #transform(MethodHandle)} method, on those parameters and return values
+ * that are declared to have type {@link Object}. Also handles
+ * {@link MethodHandle#isVarargsCollector() method handles that support variable
+ * arity calls} with a last {@code Object[]} parameter. You can broadly think of
+ * the parameter filter as being a wrapping method for exposing internal runtime
+ * objects wrapped into an adapter with some public interface, and the return
+ * value filter as being its inverse unwrapping method.
  */
 public class DefaultInternalObjectFilter implements MethodHandleTransformer {
     private static final MethodHandle FILTER_VARARGS = new Lookup(MethodHandles.lookup()).findStatic(
@@ -105,9 +114,12 @@ public class DefaultInternalObjectFilter implements MethodHandleTransformer {
 
     /**
      * Creates a new filter.
-     * @param parameterFilter the filter for method parameters. Must be of type {@code Object(Object)}, or null.
-     * @param returnFilter the filter for return values. Must be of type {@code Object(Object)}, or null.
-     * @throws IllegalArgumentException if one or both filters are not of the expected type.
+     * @param parameterFilter the filter for method parameters. Must be of type
+     * {@code Object(Object)}, or {@code null}.
+     * @param returnFilter the filter for return values. Must be of type
+     * {@code Object(Object)}, or {@code null}.
+     * @throws IllegalArgumentException if one or both filters are not of the
+     * expected type.
      */
     public DefaultInternalObjectFilter(final MethodHandle parameterFilter, final MethodHandle returnFilter) {
         this.parameterFilter = checkHandle(parameterFilter, "parameterFilter");

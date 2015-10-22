@@ -31,6 +31,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Modifier;
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collection;
@@ -38,22 +39,22 @@ import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.function.Supplier;
 import javax.script.Bindings;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.ConversionComparator;
 import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.linker.GuardedTypeConversion;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
-import jdk.internal.dynalink.support.Guards;
-import jdk.internal.dynalink.support.LinkerServicesImpl;
-import jdk.internal.dynalink.support.Lookup;
+import jdk.internal.dynalink.linker.support.Guards;
+import jdk.internal.dynalink.linker.support.Lookup;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.api.scripting.ScriptUtils;
 import jdk.nashorn.internal.objects.NativeArray;
+import jdk.nashorn.internal.runtime.AccessControlContextFactory;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ListAdapter;
 import jdk.nashorn.internal.runtime.ScriptFunction;
@@ -65,6 +66,9 @@ import jdk.nashorn.internal.runtime.Undefined;
  * includes {@link ScriptFunction} and its subclasses) as well as {@link Undefined}.
  */
 final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTypeConverterFactory, ConversionComparator {
+    private static final AccessControlContext GET_LOOKUP_PERMISSION_CONTEXT =
+            AccessControlContextFactory.createAccessControlContext(CallSiteDescriptor.GET_LOOKUP_PERMISSION_NAME);
+
     private static final ClassValue<MethodHandle> ARRAY_CONVERTERS = new ClassValue<MethodHandle>() {
         @Override
         protected MethodHandle computeValue(final Class<?> type) {
@@ -86,19 +90,13 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
 
     @Override
     public GuardedInvocation getGuardedInvocation(final LinkRequest request, final LinkerServices linkerServices) throws Exception {
-        final LinkRequest requestWithoutContext = request.withoutRuntimeContext(); // Nashorn has no runtime context
-        final Object self = requestWithoutContext.getReceiver();
-        final CallSiteDescriptor desc = requestWithoutContext.getCallSiteDescriptor();
-
-        if (desc.getNameTokenCount() < 2 || !"dyn".equals(desc.getNameToken(CallSiteDescriptor.SCHEME))) {
-            // We only support standard "dyn:*[:*]" operations
-            return null;
-        }
-
-        return Bootstrap.asTypeSafeReturn(getGuardedInvocation(self,  request, desc), linkerServices, desc);
+        final CallSiteDescriptor desc = request.getCallSiteDescriptor();
+        return Bootstrap.asTypeSafeReturn(getGuardedInvocation(request, desc), linkerServices, desc);
     }
 
-    private static GuardedInvocation getGuardedInvocation(final Object self, final LinkRequest request, final CallSiteDescriptor desc) {
+    private static GuardedInvocation getGuardedInvocation(final LinkRequest request, final CallSiteDescriptor desc) {
+        final Object self = request.getReceiver();
+
         final GuardedInvocation inv;
         if (self instanceof ScriptObject) {
             inv = ((ScriptObject)self).lookup(desc, request);
@@ -112,16 +110,12 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
     }
 
     @Override
-    public GuardedTypeConversion convertToType(final Class<?> sourceType, final Class<?> targetType) throws Exception {
+    public GuardedInvocation convertToType(final Class<?> sourceType, final Class<?> targetType, final Supplier<MethodHandles.Lookup> lookupSupplier) throws Exception {
         GuardedInvocation gi = convertToTypeNoCast(sourceType, targetType);
-        if(gi != null) {
-            return new GuardedTypeConversion(gi.asType(MH.type(targetType, sourceType)), true);
+        if(gi == null) {
+            gi = getSamTypeConverter(sourceType, targetType, lookupSupplier);
         }
-        gi = getSamTypeConverter(sourceType, targetType);
-        if(gi != null) {
-            return new GuardedTypeConversion(gi.asType(MH.type(targetType, sourceType)), false);
-        }
-        return null;
+        return gi == null ? null : gi.asType(MH.type(targetType, sourceType));
     }
 
     /**
@@ -159,26 +153,25 @@ final class NashornLinker implements TypeBasedGuardingDynamicLinker, GuardingTyp
      * @throws Exception if something goes wrong; generally, if there's an issue with creation of the SAM proxy type
      * constructor.
      */
-    private static GuardedInvocation getSamTypeConverter(final Class<?> sourceType, final Class<?> targetType) throws Exception {
+    private static GuardedInvocation getSamTypeConverter(final Class<?> sourceType, final Class<?> targetType, final Supplier<MethodHandles.Lookup> lookupSupplier) throws Exception {
         // If source type is more generic than ScriptFunction class, we'll need to use a guard
         final boolean isSourceTypeGeneric = sourceType.isAssignableFrom(ScriptFunction.class);
 
         if ((isSourceTypeGeneric || ScriptFunction.class.isAssignableFrom(sourceType)) && isAutoConvertibleFromFunction(targetType)) {
-            final MethodHandle ctor = JavaAdapterFactory.getConstructor(ScriptFunction.class, targetType, getCurrentLookup());
+            final MethodHandle ctor = JavaAdapterFactory.getConstructor(ScriptFunction.class, targetType, getCurrentLookup(lookupSupplier));
             assert ctor != null; // if isAutoConvertibleFromFunction() returned true, then ctor must exist.
             return new GuardedInvocation(ctor, isSourceTypeGeneric ? IS_SCRIPT_FUNCTION : null);
         }
         return null;
     }
 
-    private static java.lang.invoke.MethodHandles.Lookup getCurrentLookup() {
-        final LinkRequest currentRequest = AccessController.doPrivileged(new PrivilegedAction<LinkRequest>() {
+    private static MethodHandles.Lookup getCurrentLookup(final Supplier<MethodHandles.Lookup> lookupSupplier) {
+        return AccessController.doPrivileged(new PrivilegedAction<MethodHandles.Lookup>() {
             @Override
-            public LinkRequest run() {
-                return LinkerServicesImpl.getCurrentLinkRequest();
+            public MethodHandles.Lookup run() {
+                return lookupSupplier.get();
             }
-        });
-        return currentRequest == null ? MethodHandles.publicLookup() : currentRequest.getCallSiteDescriptor().getLookup();
+        }, GET_LOOKUP_PERMISSION_CONTEXT);
     }
 
     /**

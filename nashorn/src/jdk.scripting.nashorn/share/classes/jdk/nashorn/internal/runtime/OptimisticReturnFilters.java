@@ -34,7 +34,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 

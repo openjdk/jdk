@@ -29,14 +29,14 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.function.Supplier;
 import jdk.internal.dynalink.linker.ConversionComparator;
 import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.linker.GuardedTypeConversion;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSType;
@@ -48,8 +48,8 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * primitive type conversions for these types when linking to Java methods.
  */
 final class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, GuardingTypeConverterFactory, ConversionComparator {
-    private static final GuardedTypeConversion VOID_TO_OBJECT = new GuardedTypeConversion(
-            new GuardedInvocation(MethodHandles.constant(Object.class, ScriptRuntime.UNDEFINED)), true);
+    private static final GuardedInvocation VOID_TO_OBJECT =
+            new GuardedInvocation(MethodHandles.constant(Object.class, ScriptRuntime.UNDEFINED));
 
     @Override
     public boolean canLinkType(final Class<?> type) {
@@ -61,10 +61,8 @@ final class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, Gu
     }
 
     @Override
-    public GuardedInvocation getGuardedInvocation(final LinkRequest origRequest, final LinkerServices linkerServices)
+    public GuardedInvocation getGuardedInvocation(final LinkRequest request, final LinkerServices linkerServices)
             throws Exception {
-        final LinkRequest request = origRequest.withoutRuntimeContext(); // Nashorn has no runtime context
-
         final Object self = request.getReceiver();
         final NashornCallSiteDescriptor desc = (NashornCallSiteDescriptor) request.getCallSiteDescriptor();
 
@@ -79,7 +77,7 @@ final class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, Gu
      * @return a conditional converter from source to target type
      */
     @Override
-    public GuardedTypeConversion convertToType(final Class<?> sourceType, final Class<?> targetType) {
+    public GuardedInvocation convertToType(final Class<?> sourceType, final Class<?> targetType, final Supplier<MethodHandles.Lookup> lookupSupplier) {
         final MethodHandle mh = JavaArgumentConverters.getConverter(targetType);
         if (mh == null) {
             if(targetType == Object.class && sourceType == void.class) {
@@ -88,7 +86,7 @@ final class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, Gu
             return null;
         }
 
-        return new GuardedTypeConversion(new GuardedInvocation(mh, canLinkTypeStatic(sourceType) ? null : GUARD_PRIMITIVE).asType(mh.type().changeParameterType(0, sourceType)), true);
+        return new GuardedInvocation(mh, canLinkTypeStatic(sourceType) ? null : GUARD_PRIMITIVE).asType(mh.type().changeParameterType(0, sourceType));
     }
 
     /**

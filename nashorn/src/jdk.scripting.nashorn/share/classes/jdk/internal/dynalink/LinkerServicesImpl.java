@@ -83,23 +83,82 @@
 
 package jdk.internal.dynalink;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import jdk.internal.dynalink.linker.ConversionComparator.Comparison;
 import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
+import jdk.internal.dynalink.linker.MethodHandleTransformer;
 
 /**
- * Interface for objects that are used to transform one guarded invocation into another one. Typical usage is for
- * implementing {@link DynamicLinkerFactory#setPrelinkFilter(GuardedInvocationFilter) pre-link filters}.
+ * Default implementation of the {@link LinkerServices} interface.
  */
-public interface GuardedInvocationFilter {
+final class LinkerServicesImpl implements LinkerServices {
+    private static final ThreadLocal<LinkRequest> threadLinkRequest = new ThreadLocal<>();
+
+    private final TypeConverterFactory typeConverterFactory;
+    private final GuardingDynamicLinker topLevelLinker;
+    private final MethodHandleTransformer internalObjectsFilter;
+
     /**
-     * Given a guarded invocation, return a potentially different guarded invocation.
-     * @param inv the original guarded invocation. Null is never passed.
-     * @param linkRequest the link request for which the invocation was generated (usually by some linker).
-     * @param linkerServices the linker services that can be used during creation of a new invocation.
-     * @return either the passed guarded invocation or a different one, with the difference usually determined based on
-     * information in the link request and the differing invocation created with the assistance of the linker services.
-     * Whether or not {@code null} is an accepted return value is dependent on the user of the filter.
+     * Creates a new linker services object.
+     *
+     * @param typeConverterFactory the type converter factory exposed by the services.
+     * @param topLevelLinker the top level linker used by the services.
+     * @param internalObjectsFilter a method handle transformer that is supposed to act as the implementation of this
+     * services' {@link #filterInternalObjects(java.lang.invoke.MethodHandle)} method.
      */
-    public GuardedInvocation filter(GuardedInvocation inv, LinkRequest linkRequest, LinkerServices linkerServices);
+    LinkerServicesImpl(final TypeConverterFactory typeConverterFactory,
+            final GuardingDynamicLinker topLevelLinker, final MethodHandleTransformer internalObjectsFilter) {
+        this.typeConverterFactory = typeConverterFactory;
+        this.topLevelLinker = topLevelLinker;
+        this.internalObjectsFilter = internalObjectsFilter;
+    }
+
+    @Override
+    public boolean canConvert(final Class<?> from, final Class<?> to) {
+        return typeConverterFactory.canConvert(from, to);
+    }
+
+    @Override
+    public MethodHandle asType(final MethodHandle handle, final MethodType fromType) {
+        return typeConverterFactory.asType(handle, fromType);
+    }
+
+    @Override
+    public MethodHandle getTypeConverter(final Class<?> sourceType, final Class<?> targetType) {
+        return typeConverterFactory.getTypeConverter(sourceType, targetType);
+    }
+
+    @Override
+    public Comparison compareConversion(final Class<?> sourceType, final Class<?> targetType1, final Class<?> targetType2) {
+        return typeConverterFactory.compareConversion(sourceType, targetType1, targetType2);
+    }
+
+    @Override
+    public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest) throws Exception {
+        final LinkRequest prevLinkRequest = threadLinkRequest.get();
+        threadLinkRequest.set(linkRequest);
+        try {
+            return topLevelLinker.getGuardedInvocation(linkRequest, this);
+        } finally {
+            threadLinkRequest.set(prevLinkRequest);
+        }
+    }
+
+    @Override
+    public MethodHandle filterInternalObjects(final MethodHandle target) {
+        return internalObjectsFilter != null ? internalObjectsFilter.transform(target) : target;
+    }
+
+    static MethodHandles.Lookup getCurrentLookup() {
+        final LinkRequest currentRequest = threadLinkRequest.get();
+        if (currentRequest != null) {
+            return currentRequest.getCallSiteDescriptor().getLookup();
+        }
+        return MethodHandles.publicLookup();
+    }
 }
