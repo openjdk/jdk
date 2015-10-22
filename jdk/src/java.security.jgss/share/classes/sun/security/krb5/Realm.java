@@ -46,6 +46,12 @@ import sun.security.krb5.internal.util.KerberosString;
  * This class is immutable.
  */
 public class Realm implements Cloneable {
+
+    public static final boolean AUTODEDUCEREALM =
+        java.security.AccessController.doPrivileged(
+                new sun.security.action.GetBooleanAction(
+                        "sun.security.krb5.autodeducerealm"));
+
     private final String realm; // not null nor empty
 
     public Realm(String name) throws RealmException {

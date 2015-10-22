@@ -66,7 +66,7 @@ public final class Utils {
     public static final double TIMEOUT_FACTOR;
     static {
         String toFactor = System.getProperty("test.timeout.factor", "1.0");
-       TIMEOUT_FACTOR = Double.parseDouble(toFactor);
+        TIMEOUT_FACTOR = Double.parseDouble(toFactor);
     }
 
     /**

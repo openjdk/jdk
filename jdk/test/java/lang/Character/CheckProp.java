@@ -24,7 +24,7 @@
 
 /**
  * @test
- * @bug 7037261 7070436 7198195 8032446
+ * @bug 7037261 7070436 7198195 8032446 8072600
  * @summary  Check j.l.Character.isLowerCase/isUppercase/isAlphabetic/isIdeographic
  */
 

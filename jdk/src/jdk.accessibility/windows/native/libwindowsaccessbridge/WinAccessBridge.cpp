@@ -262,34 +262,6 @@ WinAccessBridge::WinAccessBridge(HINSTANCE hInstance) {
     theWindowsAccessBridge = this;
     isVMInstanceChainInUse = false;
 
-
-    // notify the user if new JVMs are found
-    /*
-      newJVMs = (char **)malloc(MAX_NEW_JVMS_FOUND);
-      for (int i = 0; i < MAX_NEW_JVMS_FOUND; i++) {
-      newJVMs[i] = (char *)malloc(SHORT_STRING_SIZE);
-      newJVMs[i][0] = 0;
-      }
-
-      BOOL newJ2SEFound = findNewJVMs(J2SE_REG_PATH, newJVMs);
-      BOOL newJ2REFound = TRUE; // findNewJVMs(J2RE_REG_PATH, newJVMs);
-
-      if (newJ2SEFound || newJ2REFound) {
-
-      int result = DialogBox(windowsInstance,
-      "FOUNDNEWJVMDIALOG",
-      NULL,
-      (DLGPROC)newJVMFoundDialogProc);
-      if (result < 0) {
-      printError("DialogBox failed");
-      }
-
-      PrintDebugString("  FOUNDNEWJVMDIALOG: result = %d", result);
-
-      ShowWindow((HWND)result, SW_SHOW);
-      }
-    */
-
     ShowWindow(theDialogWindow, SW_SHOW);
 }
 
