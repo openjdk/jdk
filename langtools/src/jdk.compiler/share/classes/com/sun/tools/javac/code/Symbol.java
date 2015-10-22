@@ -1528,9 +1528,33 @@ public abstract class Symbol extends AnnoConstruct implements Element {
          *  It is assumed that both symbols have the same name.  The static
          *  modifier is ignored for this test.
          *
+         *  A quirk in the works is that if the receiver is a method symbol for
+         *  an inherited abstract method we answer false summarily all else being
+         *  immaterial. Abstract "own" methods (i.e `this' is a direct member of
+         *  origin) don't get rejected as summarily and are put to test against the
+         *  suitable criteria.
+         *
          *  See JLS 8.4.6.1 (without transitivity) and 8.4.6.4
          */
         public boolean overrides(Symbol _other, TypeSymbol origin, Types types, boolean checkResult) {
+            return overrides(_other, origin, types, checkResult, true);
+        }
+
+        /** Does this symbol override `other' symbol, when both are seen as
+         *  members of class `origin'?  It is assumed that _other is a member
+         *  of origin.
+         *
+         *  Caveat: If `this' is an abstract inherited member of origin, it is
+         *  deemed to override `other' only when `requireConcreteIfInherited'
+         *  is false.
+         *
+         *  It is assumed that both symbols have the same name.  The static
+         *  modifier is ignored for this test.
+         *
+         *  See JLS 8.4.6.1 (without transitivity) and 8.4.6.4
+         */
+        public boolean overrides(Symbol _other, TypeSymbol origin, Types types, boolean checkResult,
+                                            boolean requireConcreteIfInherited) {
             if (isConstructor() || _other.kind != MTH) return false;
 
             if (this == _other) return true;
@@ -1550,7 +1574,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             }
 
             // check for an inherited implementation
-            if ((flags() & ABSTRACT) != 0 ||
+            if (((flags() & ABSTRACT) != 0 && requireConcreteIfInherited) ||
                     ((other.flags() & ABSTRACT) == 0 && (other.flags() & DEFAULT) == 0) ||
                     !other.isOverridableIn(origin) ||
                     !this.isMemberOf(origin, types))
@@ -1595,6 +1619,10 @@ public abstract class Symbol extends AnnoConstruct implements Element {
                 default:
                     return super.isInheritedIn(clazz, types);
             }
+        }
+
+        public boolean isLambdaMethod() {
+            return (flags() & LAMBDA_METHOD) == LAMBDA_METHOD;
         }
 
         /** The implementation of this (abstract) symbol in class origin;

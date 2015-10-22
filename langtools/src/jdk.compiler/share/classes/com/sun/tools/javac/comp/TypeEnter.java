@@ -54,7 +54,6 @@ import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.ERROR;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
-import com.sun.tools.javac.util.Dependencies.AttributionKind;
 import com.sun.tools.javac.util.Dependencies.CompletionCause;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -372,7 +371,6 @@ public class TypeEnter implements Completer {
         }
 
         private void doImport(JCImport tree) {
-            dependencies.push(AttributionKind.IMPORT, tree);
             JCFieldAccess imp = (JCFieldAccess)tree.qualid;
             Name name = TreeInfo.name(imp);
 
@@ -399,7 +397,6 @@ public class TypeEnter implements Completer {
                     importNamed(tree.pos(), c, env, tree);
                 }
             }
-            dependencies.pop();
         }
 
         Type attribImportType(JCTree tree, Env<AttrContext> env) {
@@ -647,13 +644,7 @@ public class TypeEnter implements Completer {
 
             if (tree.extending != null) {
                 extending = clearTypeParams(tree.extending);
-                dependencies.push(AttributionKind.EXTENDS, tree.extending);
-                try {
-                    supertype = attr.attribBase(extending, baseEnv,
-                                                true, false, true);
-                } finally {
-                    dependencies.pop();
-                }
+                supertype = attr.attribBase(extending, baseEnv, true, false, true);
             } else {
                 extending = null;
                 supertype = ((tree.mods.flags & Flags.ENUM) != 0)
@@ -671,20 +662,14 @@ public class TypeEnter implements Completer {
             List<JCExpression> interfaceTrees = tree.implementing;
             for (JCExpression iface : interfaceTrees) {
                 iface = clearTypeParams(iface);
-                dependencies.push(AttributionKind.IMPLEMENTS, iface);
-                try {
-                    Type it = attr.attribBase(iface, baseEnv, false, true, true);
-                    if (it.hasTag(CLASS)) {
-                        interfaces.append(it);
-                        if (all_interfaces != null) all_interfaces.append(it);
-                    } else {
-                        if (all_interfaces == null)
-                            all_interfaces = new ListBuffer<Type>().appendList(interfaces);
-                        all_interfaces.append(modelMissingTypes(it, iface, true));
-
-                    }
-                } finally {
-                    dependencies.pop();
+                Type it = attr.attribBase(iface, baseEnv, false, true, true);
+                if (it.hasTag(CLASS)) {
+                    interfaces.append(it);
+                    if (all_interfaces != null) all_interfaces.append(it);
+                } else {
+                    if (all_interfaces == null)
+                        all_interfaces = new ListBuffer<Type>().appendList(interfaces);
+                    all_interfaces.append(modelMissingTypes(it, iface, true));
                 }
             }
 
