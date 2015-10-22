@@ -145,6 +145,14 @@ public class RemoteObjectInvocationHandler
     public Object invoke(Object proxy, Method method, Object[] args)
         throws Throwable
     {
+        if (! Proxy.isProxyClass(proxy.getClass())) {
+            throw new IllegalArgumentException("not a proxy");
+        }
+
+        if (Proxy.getInvocationHandler(proxy) != this) {
+            throw new IllegalArgumentException("handler mismatch");
+        }
+
         if (method.getDeclaringClass() == Object.class) {
             return invokeObjectMethod(proxy, method, args);
         } else if ("finalize".equals(method.getName()) && method.getParameterCount() == 0) {
@@ -168,11 +176,13 @@ public class RemoteObjectInvocationHandler
 
         } else if (name.equals("equals")) {
             Object obj = args[0];
+            InvocationHandler hdlr;
             return
                 proxy == obj ||
                 (obj != null &&
                  Proxy.isProxyClass(obj.getClass()) &&
-                 equals(Proxy.getInvocationHandler(obj)));
+                 (hdlr = Proxy.getInvocationHandler(obj)) instanceof RemoteObjectInvocationHandler &&
+                 this.equals(hdlr));
 
         } else if (name.equals("toString")) {
             return proxyToString(proxy);

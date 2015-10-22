@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,20 +24,15 @@
  */
 package javax.swing;
 
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 import java.beans.ConstructorProperties;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.image.*;
-
 import javax.swing.plaf.*;
-import javax.swing.event.*;
 import javax.accessibility.*;
 
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-
 
 /**
  * An implementation of a "push" button.
@@ -69,13 +64,11 @@ import java.io.IOException;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- *   attribute: isContainer false
- * description: An implementation of a \"push\" button.
- *
  * @author Jeff Dinkins
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UIClassID", description = "An implementation of a \"push\" button.")
+@SwingContainer(false)
 @SuppressWarnings("serial")
 public class JButton extends AbstractButton implements Accessible {
 
@@ -156,10 +149,9 @@ public class JButton extends AbstractButton implements Accessible {
      * @return the string "ButtonUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
-     * @beaninfo
-     *        expert: true
-     *   description: A string that specifies the name of the L&amp;F class.
      */
+    @BeanProperty(bound = false, expert = true, description
+            = "A string that specifies the name of the L&amp;F class.")
     public String getUIClassID() {
         return uiClassID;
     }
@@ -176,9 +168,9 @@ public class JButton extends AbstractButton implements Accessible {
      * @return the value of the <code>defaultButton</code> property
      * @see JRootPane#setDefaultButton
      * @see #isDefaultCapable
-     * @beaninfo
-     *  description: Whether or not this button is the default button
      */
+    @BeanProperty(bound = false, description
+            = "Whether or not this button is the default button")
     public boolean isDefaultButton() {
         JRootPane root = SwingUtilities.getRootPane(this);
         if (root != null) {
@@ -211,11 +203,9 @@ public class JButton extends AbstractButton implements Accessible {
      *        capable of being the default button on the
      *        <code>RootPane</code>; otherwise <code>false</code>
      * @see #isDefaultCapable
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: Whether or not this button can be the default button
      */
+    @BeanProperty(visualUpdate = true, description
+            = "Whether or not this button can be the default button")
     public void setDefaultCapable(boolean defaultCapable) {
         boolean oldDefaultCapable = this.defaultCapable;
         this.defaultCapable = defaultCapable;
@@ -283,10 +273,9 @@ public class JButton extends AbstractButton implements Accessible {
      *
      * @return an <code>AccessibleJButton</code> that serves as the
      *         <code>AccessibleContext</code> of this <code>JButton</code>
-     * @beaninfo
-     *       expert: true
-     *  description: The AccessibleContext associated with this Button.
      */
+    @BeanProperty(bound = false, expert = true, description
+            = "The AccessibleContext associated with this Button.")
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJButton();
