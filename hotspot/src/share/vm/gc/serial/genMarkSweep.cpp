@@ -117,7 +117,7 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
   // can clear the card table.  Otherwise, we must invalidate
   // it (consider all cards dirty).  In the future, we might consider doing
   // compaction within generations only, and doing card-table sliding.
-  GenRemSet* rs = gch->rem_set();
+  CardTableRS* rs = gch->rem_set();
   Generation* old_gen = gch->old_gen();
 
   // Clear/invalidate below make use of the "prev_used_regions" saved earlier.

@@ -419,7 +419,7 @@ void VMThread::loop() {
 
         // Support for self destruction
         if ((SelfDestructTimer != 0) && !is_error_reported() &&
-            (os::elapsedTime() > SelfDestructTimer * 60)) {
+            (os::elapsedTime() > (double)SelfDestructTimer * 60.0)) {
           tty->print_cr("VM self-destructed");
           exit(-1);
         }

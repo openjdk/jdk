@@ -70,6 +70,7 @@ typedef enum {
   ErgoCSetConstruction,
   ErgoConcCycles,
   ErgoMixedGCs,
+  ErgoTiming,
 
   ErgoHeuristicNum
 } ErgoHeuristic;

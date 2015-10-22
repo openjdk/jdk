@@ -27,7 +27,6 @@
 
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/referenceProcessor.hpp"
-#include "gc/shared/watermark.hpp"
 #include "memory/allocation.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/universe.hpp"
@@ -67,7 +66,6 @@ class OopClosure;
 class ScanClosure;
 class FastScanClosure;
 class GenCollectedHeap;
-class GenRemSet;
 class GCStats;
 
 // A "ScratchBlock" represents a block of memory in one generation usable by

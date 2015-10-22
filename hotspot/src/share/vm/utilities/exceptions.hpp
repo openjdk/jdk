@@ -174,8 +174,9 @@ class Exceptions {
   static void print_exception_counts_on_error(outputStream* st);
 
   // for AbortVMOnException flag
-  NOT_PRODUCT(static void debug_check_abort(Handle exception, const char* message = NULL);)
-  NOT_PRODUCT(static void debug_check_abort(const char *value_string, const char* message = NULL);)
+  static void debug_check_abort(Handle exception, const char* message = NULL);
+  static void debug_check_abort_helper(Handle exception, const char* message = NULL);
+  static void debug_check_abort(const char *value_string, const char* message = NULL);
 };
 
 

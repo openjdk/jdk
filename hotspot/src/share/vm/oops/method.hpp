@@ -71,7 +71,6 @@ class Method : public Metadata {
 #ifdef CC_INTERP
   int               _result_index;               // C++ interpreter needs for converting results to/from stack
 #endif
-  u2                _method_size;                // size of this object
   u2                _intrinsic_id;               // vmSymbols::intrinsic_id (0 == _none)
 
   // Flags
@@ -106,7 +105,7 @@ class Method : public Metadata {
   volatile address           _from_interpreted_entry; // Cache of _code ? _adapter->i2c_entry() : _i2i_entry
 
   // Constructor
-  Method(ConstMethod* xconst, AccessFlags access_flags, int size);
+  Method(ConstMethod* xconst, AccessFlags access_flags);
  public:
 
   static Method* allocate(ClassLoaderData* loader_data,
@@ -241,12 +240,8 @@ class Method : public Metadata {
   // code size
   int code_size() const                  { return constMethod()->code_size(); }
 
-  // method size
-  int method_size() const                        { return _method_size; }
-  void set_method_size(int size) {
-    assert(0 <= size && size < (1 << 16), "invalid method size");
-    _method_size = size;
-  }
+  // method size in words
+  int method_size() const                { return sizeof(Method)/wordSize + is_native() ? 2 : 0; }
 
   // constant pool for Klass* holding this method
   ConstantPool* constants() const              { return constMethod()->constants(); }

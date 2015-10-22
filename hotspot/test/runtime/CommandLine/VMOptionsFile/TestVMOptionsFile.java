@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8061999
+ * @bug 8061999 8135195 8136552
  * @summary Test "-XX:VMOptionsFile" VM option
  * @library /testlibrary
  * @modules jdk.management
@@ -478,6 +478,7 @@ public class TestVMOptionsFile {
         runJavaCheckExitValue(pb, JVM_SUCCESS);
 
         outputShouldContain("interpreted mode");
+        outputShouldNotContain("VM option '+PrintVMOptions'");
         checkProperty("shared.property", "command_line_after");
         checkVMOption("MinHeapFreeRatio", "9");
 
@@ -547,13 +548,13 @@ public class TestVMOptionsFile {
         addVMOptionsFile(VM_OPTION_FILE_WITH_SAME_VM_OPTION_FILE);
 
         runJavaCheckExitValue(JVM_FAIL_WITH_EXIT_CODE_1);
-        outputShouldContain("VM options file is only supported on the command line");
+        outputShouldContain("The VM Options file can only be specified once and only on the command line.");
 
         /* Pass VM option file with VM option file option in it */
         addVMOptionsFile(VM_OPTION_FILE_WITH_VM_OPTION_FILE);
 
         runJavaCheckExitValue(JVM_FAIL_WITH_EXIT_CODE_1);
-        outputShouldContain("VM options file is only supported on the command line");
+        outputShouldContain("The VM Options file can only be specified once and only on the command line.");
 
         /* Pass VM option file which is not accessible (without read permissions) */
         addVMOptionsFile(getAbsolutePathFromSource(VM_OPTION_FILE_WITHOUT_READ_PERMISSIONS));
@@ -566,7 +567,7 @@ public class TestVMOptionsFile {
         addVMOptionsFile(VM_OPTION_FILE_2);
 
         runJavaCheckExitValue(JVM_FAIL_WITH_EXIT_CODE_1);
-        outputShouldContain("Only one VM Options file is supported on the command line");
+        outputShouldContain("The VM Options file can only be specified once and only on the command line.");
 
         /* Pass empty option file i.e. pass "-XX:VMOptionsFile=" */
         addVMOptionsFile("");
@@ -585,6 +586,22 @@ public class TestVMOptionsFile {
 
         runJavaCheckExitValue(JVM_FAIL_WITH_EXIT_CODE_1);
         outputShouldContain("Unmatched quote in");
+
+        /* Pass VM Option file in _JAVA_OPTIONS environment variable */
+        pb = createProcessBuilder();
+
+        updateEnvironment(pb, JAVA_OPTIONS, "-XX:VMOptionsFile=" + getAbsolutePathFromSource(VM_OPTION_FILE_1));
+
+        runJavaCheckExitValue(pb, JVM_FAIL_WITH_EXIT_CODE_1);
+        outputShouldContain("VM options file is only supported on the command line");
+
+        /* Pass VM Option file in JAVA_TOOL_OPTIONS environment variable */
+        pb = createProcessBuilder();
+
+        updateEnvironment(pb, JAVA_TOOL_OPTIONS, "-XX:VMOptionsFile=" + getAbsolutePathFromSource(VM_OPTION_FILE_1));
+
+        runJavaCheckExitValue(pb, JVM_FAIL_WITH_EXIT_CODE_1);
+        outputShouldContain("VM options file is only supported on the command line");
     }
 
     public static void main(String[] args) throws Exception {
