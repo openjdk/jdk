@@ -2469,16 +2469,6 @@ bool Arguments::check_vm_args_consistency() {
     }
   }
 
-  // Note: only executed in non-PRODUCT mode
-  if (!UseAsyncConcMarkSweepGC &&
-      (ExplicitGCInvokesConcurrent ||
-       ExplicitGCInvokesConcurrentAndUnloadsClasses)) {
-    jio_fprintf(defaultStream::error_stream(),
-                "error: +ExplicitGCInvokesConcurrent[AndUnloadsClasses] conflicts"
-                " with -UseAsyncConcMarkSweepGC");
-    status = false;
-  }
-
   if (PrintNMTStatistics) {
 #if INCLUDE_NMT
     if (MemTracker::tracking_level() == NMT_off) {
