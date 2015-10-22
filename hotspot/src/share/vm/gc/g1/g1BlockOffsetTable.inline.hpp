@@ -81,8 +81,8 @@ inline size_t G1BlockOffsetSharedArray::index_for(const void* p) const {
   char* pc = (char*)p;
   assert(pc >= (char*)_reserved.start() &&
          pc <  (char*)_reserved.end(),
-         err_msg("p (" PTR_FORMAT ") not in reserved [" PTR_FORMAT ", " PTR_FORMAT ")",
-                 p2i(p), p2i(_reserved.start()), p2i(_reserved.end())));
+         "p (" PTR_FORMAT ") not in reserved [" PTR_FORMAT ", " PTR_FORMAT ")",
+         p2i(p), p2i(_reserved.start()), p2i(_reserved.end()));
   size_t result = index_for_raw(p);
   check_index(result, "bad index from address");
   return result;
@@ -93,10 +93,9 @@ G1BlockOffsetSharedArray::address_for_index(size_t index) const {
   check_index(index, "index out of range");
   HeapWord* result = address_for_index_raw(index);
   assert(result >= _reserved.start() && result < _reserved.end(),
-         err_msg("bad address from index result " PTR_FORMAT
-                 " _reserved.start() " PTR_FORMAT " _reserved.end() "
-                 PTR_FORMAT,
-                 p2i(result), p2i(_reserved.start()), p2i(_reserved.end())));
+         "bad address from index result " PTR_FORMAT
+         " _reserved.start() " PTR_FORMAT " _reserved.end() " PTR_FORMAT,
+         p2i(result), p2i(_reserved.start()), p2i(_reserved.end()));
   return result;
 }
 

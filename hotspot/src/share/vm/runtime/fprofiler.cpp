@@ -42,8 +42,6 @@
 #include "runtime/vframe.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Static fields of FlatProfiler
 int               FlatProfiler::received_gc_ticks   = 0;
 int               FlatProfiler::vm_operation_ticks  = 0;
@@ -186,7 +184,7 @@ void PCRecorder::print() {
   if (counters == NULL) return;
 
   tty->cr();
-  tty->print_cr("Printing compiled methods with PC buckets having more than %d ticks", ProfilerPCTickThreshold);
+  tty->print_cr("Printing compiled methods with PC buckets having more than " INTX_FORMAT " ticks", ProfilerPCTickThreshold);
   tty->print_cr("===================================================================");
   tty->cr();
 
@@ -1494,7 +1492,7 @@ void ThreadProfiler::print(const char* thread_name) {
   }
 
   if (WizardMode) {
-    tty->print_cr("Node area used: %dKb", (area_top - area_bottom) / 1024);
+    tty->print_cr("Node area used: " INTX_FORMAT " Kb", (area_top - area_bottom) / 1024);
   }
   reset();
 }

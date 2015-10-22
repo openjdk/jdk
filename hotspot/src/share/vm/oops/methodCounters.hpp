@@ -42,7 +42,7 @@ class MethodCounters: public MetaspaceObj {
   // The counter is reset by the sweeper and is decremented by some of the compiled
   // code. The counter values are interpreted as follows:
   // 1. (HotMethodDetection..INT_MAX] - initial value, no counters inserted
-  // 2. (1..HotMethodDetectionLimit)  - the method is warm, the counter is used
+  // 2. [1..HotMethodDetectionLimit)  - the method is warm, the counter is used
   //                                    to figure out which methods can be flushed.
   // 3. (INT_MIN..0]                  - method is hot and will deopt and get
   //                                    recompiled without the counters

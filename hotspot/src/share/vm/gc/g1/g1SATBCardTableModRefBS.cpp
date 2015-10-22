@@ -247,3 +247,52 @@ G1SATBCardTableLoggingModRefBS::invalidate(MemRegion mr, bool whole_heap) {
     }
   }
 }
+
+void G1SATBCardTableModRefBS::write_ref_nmethod_post(oop* dst, nmethod* nm) {
+  oop obj = oopDesc::load_heap_oop(dst);
+  if (obj != NULL) {
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    HeapRegion* hr = g1h->heap_region_containing(obj);
+    hr->add_strong_code_root(nm);
+  }
+}
+
+class G1EnsureLastRefToRegion : public OopClosure {
+  G1CollectedHeap* _g1h;
+  HeapRegion* _hr;
+  oop* _dst;
+
+  bool _value;
+public:
+  G1EnsureLastRefToRegion(G1CollectedHeap* g1h, HeapRegion* hr, oop* dst) :
+    _g1h(g1h), _hr(hr), _dst(dst), _value(true) {}
+
+  void do_oop(oop* p) {
+    if (_value && p != _dst) {
+      oop obj = oopDesc::load_heap_oop(p);
+      if (obj != NULL) {
+        HeapRegion* hr = _g1h->heap_region_containing(obj);
+        if (hr == _hr) {
+          // Another reference to the same region.
+          _value = false;
+        }
+      }
+    }
+  }
+  void do_oop(narrowOop* p) { ShouldNotReachHere(); }
+  bool value() const        { return _value;  }
+};
+
+void G1SATBCardTableModRefBS::write_ref_nmethod_pre(oop* dst, nmethod* nm) {
+  oop obj = oopDesc::load_heap_oop(dst);
+  if (obj != NULL) {
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+    HeapRegion* hr = g1h->heap_region_containing(obj);
+    G1EnsureLastRefToRegion ensure_last_ref(g1h, hr, dst);
+    nm->oops_do(&ensure_last_ref);
+    if (ensure_last_ref.value()) {
+      // Last reference to this region, remove the nmethod from the rset.
+      hr->remove_strong_code_root(nm);
+    }
+  }
+}

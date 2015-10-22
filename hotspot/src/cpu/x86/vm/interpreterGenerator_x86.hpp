@@ -36,19 +36,18 @@
   address generate_native_entry(bool synchronized);
   address generate_abstract_entry(void);
   address generate_math_entry(AbstractInterpreter::MethodKind kind);
-  address generate_jump_to_normal_entry(void);
-  address generate_accessor_entry(void) { return generate_jump_to_normal_entry(); }
-  address generate_empty_entry(void) { return generate_jump_to_normal_entry(); }
+  address generate_accessor_entry(void) { return NULL; }
+  address generate_empty_entry(void) { return NULL; }
   address generate_Reference_get_entry();
   address generate_CRC32_update_entry();
   address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind);
+  address generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind);
 #ifndef _LP64
   address generate_Float_intBitsToFloat_entry();
   address generate_Float_floatToRawIntBits_entry();
   address generate_Double_longBitsToDouble_entry();
   address generate_Double_doubleToRawLongBits_entry();
 #endif
-  void lock_method(void);
   void generate_stack_overflow_check(void);
 
   void generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue);

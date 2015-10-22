@@ -51,18 +51,11 @@ class InstanceRefKlass: public InstanceKlass {
 
   // Constructor
   InstanceRefKlass(int vtable_len, int itable_len, int static_field_size, int nonstatic_oop_map_size, ReferenceType rt, AccessFlags access_flags, bool is_anonymous)
-    : InstanceKlass(vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt, access_flags, is_anonymous) {}
+    : InstanceKlass(vtable_len, itable_len, static_field_size, nonstatic_oop_map_size,
+                    InstanceKlass::_misc_kind_reference, rt, access_flags, is_anonymous) {}
 
  public:
   InstanceRefKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
-  // Type testing
-  bool oop_is_instanceRef() const             { return true; }
-
-  // Casting from Klass*
-  static InstanceRefKlass* cast(Klass* k) {
-    assert(k->oop_is_instanceRef(), "cast to InstanceRefKlass");
-    return (InstanceRefKlass*) k;
-  }
 
   // GC specific object visitors
   //

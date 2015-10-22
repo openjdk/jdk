@@ -52,7 +52,7 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p, HeapRegion* from
     _g1h->set_humongous_is_live(obj);
   } else {
     assert(!in_cset_state.is_in_cset_or_humongous(),
-           err_msg("In_cset_state must be NotInCSet here, but is " CSETSTATE_FORMAT, in_cset_state.value()));
+           "In_cset_state must be NotInCSet here, but is " CSETSTATE_FORMAT, in_cset_state.value());
   }
 
   assert(obj != NULL, "Must be");
@@ -82,7 +82,7 @@ inline void G1ParScanThreadState::do_oop_partial_array(oop* p) {
   // to-space object.
   int next_index             = to_obj_array->length();
   assert(0 <= next_index && next_index < length,
-         err_msg("invariant, next index: %d, length: %d", next_index, length));
+         "invariant, next index: %d, length: %d", next_index, length);
 
   int start                  = next_index;
   int end                    = length;

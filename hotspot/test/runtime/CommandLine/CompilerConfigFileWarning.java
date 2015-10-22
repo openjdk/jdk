@@ -46,7 +46,7 @@ public class CompilerConfigFileWarning {
         pb = ProcessTools.createJavaProcessBuilder("-XX:CompileCommandFile=hs_comp.txt", "-version");
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("CompileCommand: unrecognized command");
-        output.shouldContain("aaa  aaa");
+        output.shouldContain("aaa, aaa");
 
         // Skip on debug builds since we'll always read the file there
         if (!Platform.isDebugBuild()) {

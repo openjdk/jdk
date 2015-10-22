@@ -98,9 +98,11 @@ class DebugInformationRecorder: public ResourceObj {
   // by add_non_safepoint, and the locals, expressions, and monitors
   // must all be null.
   void describe_scope(int         pc_offset,
+                      methodHandle methodH,
                       ciMethod*   method,
                       int         bci,
                       bool        reexecute,
+                      bool        rethrow_exception = false,
                       bool        is_method_handle_invoke = false,
                       bool        return_oop = false,
                       DebugToken* locals      = NULL,
@@ -143,6 +145,12 @@ class DebugInformationRecorder: public ResourceObj {
 
   bool recording_non_safepoints() { return _recording_non_safepoints; }
 
+  PcDesc* pcs() const { return _pcs; }
+  int pcs_length() const { return _pcs_length; }
+
+  DebugInfoWriteStream* stream() const { return _stream; }
+
+
  private:
   friend class ScopeDesc;
   friend class vframeStreamCommon;
@@ -155,13 +163,13 @@ class DebugInformationRecorder: public ResourceObj {
 
   DebugInfoWriteStream* _stream;
 
-  DebugInfoWriteStream* stream() const { return _stream; }
-
   OopRecorder* _oop_recorder;
 
   // Scopes that have been described so far.
   GrowableArray<DIR_Chunk*>* _all_chunks;
+#if !INCLUDE_JVMCI
   GrowableArray<DIR_Chunk*>* _shared_chunks;
+#endif
   DIR_Chunk* _next_chunk;
   DIR_Chunk* _next_chunk_limit;
 

@@ -92,20 +92,20 @@ void TaskQueueStats::print(outputStream* stream, unsigned int width) const
 void TaskQueueStats::verify() const
 {
   assert(get(push) == get(pop) + get(steal),
-         err_msg("push=" SIZE_FORMAT " pop=" SIZE_FORMAT " steal=" SIZE_FORMAT,
-                 get(push), get(pop), get(steal)));
+         "push=" SIZE_FORMAT " pop=" SIZE_FORMAT " steal=" SIZE_FORMAT,
+         get(push), get(pop), get(steal));
   assert(get(pop_slow) <= get(pop),
-         err_msg("pop_slow=" SIZE_FORMAT " pop=" SIZE_FORMAT,
-                 get(pop_slow), get(pop)));
+         "pop_slow=" SIZE_FORMAT " pop=" SIZE_FORMAT,
+         get(pop_slow), get(pop));
   assert(get(steal) <= get(steal_attempt),
-         err_msg("steal=" SIZE_FORMAT " steal_attempt=" SIZE_FORMAT,
-                 get(steal), get(steal_attempt)));
+         "steal=" SIZE_FORMAT " steal_attempt=" SIZE_FORMAT,
+         get(steal), get(steal_attempt));
   assert(get(overflow) == 0 || get(push) != 0,
-         err_msg("overflow=" SIZE_FORMAT " push=" SIZE_FORMAT,
-                 get(overflow), get(push)));
+         "overflow=" SIZE_FORMAT " push=" SIZE_FORMAT,
+         get(overflow), get(push));
   assert(get(overflow_max_len) == 0 || get(overflow) != 0,
-         err_msg("overflow_max_len=" SIZE_FORMAT " overflow=" SIZE_FORMAT,
-                 get(overflow_max_len), get(overflow)));
+         "overflow_max_len=" SIZE_FORMAT " overflow=" SIZE_FORMAT,
+         get(overflow_max_len), get(overflow));
 }
 #endif // ASSERT
 #endif // TASKQUEUE_STATS

@@ -1139,7 +1139,7 @@ Node* LoadNode::eliminate_autobox(PhaseGVN* phase) {
             // Only integer types have boxing cache.
             assert(bt == T_BOOLEAN || bt == T_CHAR  ||
                    bt == T_BYTE    || bt == T_SHORT ||
-                   bt == T_INT     || bt == T_LONG, err_msg_res("wrong type = %s", type2name(bt)));
+                   bt == T_INT     || bt == T_LONG, "wrong type = %s", type2name(bt));
             jlong cache_low = (bt == T_LONG) ? c.as_long() : c.as_int();
             if (cache_low != (int)cache_low) {
               return NULL; // should not happen since cache is array indexed by value
@@ -2394,7 +2394,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
              Opcode() == Op_StoreVector ||
              phase->C->get_alias_index(adr_type()) == Compile::AliasIdxRaw ||
              (Opcode() == Op_StoreL && st->Opcode() == Op_StoreI), // expanded ClearArrayNode
-             err_msg_res("no mismatched stores, except on raw memory: %s %s", NodeClassNames[Opcode()], NodeClassNames[st->Opcode()]));
+             "no mismatched stores, except on raw memory: %s %s", NodeClassNames[Opcode()], NodeClassNames[st->Opcode()]);
 
       if (st->in(MemNode::Address)->eqv_uncast(address) &&
           st->as_Store()->memory_size() <= this->memory_size()) {
@@ -2945,7 +2945,7 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // Final field stores.
       Node* alloc = AllocateNode::Ideal_allocation(in(MemBarNode::Precedent), phase);
       if ((alloc != NULL) && alloc->is_Allocate() &&
-          alloc->as_Allocate()->_is_non_escaping) {
+          alloc->as_Allocate()->does_not_escape_thread()) {
         // The allocated object does not escape.
         eliminate = true;
       }
@@ -3289,7 +3289,7 @@ intptr_t InitializeNode::can_capture_store(StoreNode* st, PhaseTransform* phase,
                 // the store control then we cannot capture the store.
                 assert(!n->is_Store(), "2 stores to same slice on same control?");
                 Node* base = other_adr;
-                assert(base->is_AddP(), err_msg_res("should be addp but is %s", base->Name()));
+                assert(base->is_AddP(), "should be addp but is %s", base->Name());
                 base = base->in(AddPNode::Base);
                 if (base != NULL) {
                   base = base->uncast();
