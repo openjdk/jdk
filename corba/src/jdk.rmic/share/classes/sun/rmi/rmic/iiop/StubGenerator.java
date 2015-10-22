@@ -446,6 +446,9 @@ public class StubGenerator extends sun.rmi.rmic.iiop.Generator {
         if (emitPermissionCheck) {
 
             // produce the following generated code for example
+            //
+            // private transient boolean _instantiated = false;
+            //
             // private static Void checkPermission() {
             // SecurityManager sm = System.getSecurityManager();
             // if (sm != null) {
@@ -460,11 +463,21 @@ public class StubGenerator extends sun.rmi.rmic.iiop.Generator {
             //
             // public _XXXXX_Stub() {
             // this(checkPermission());
+            // _instantiated = true;
+            // }
+            //
+            // private void readObject(java.io.ObjectInputStream s) throws IOException, ClassNotFoundException {
+            //    checkPermission();
+            //    s.defaultReadObject();
+            //    _instantiated = true;
             // }
             //
             // where XXXXX is the name of the remote interface
 
                 p.pln();
+                p.plnI("private transient boolean _instantiated = false;");
+                p.pln();
+                p.pO();
                 p.plnI("private static Void checkPermission() {");
                 p.plnI("SecurityManager sm = System.getSecurityManager();");
                 p.pln("if (sm != null) {");
@@ -481,13 +494,23 @@ public class StubGenerator extends sun.rmi.rmic.iiop.Generator {
                 p.pO();
 
                 p.pI();
-                p.pln("private " + currentClass + "(Void ignore) {  }");
+                p.plnI("private " + currentClass + "(Void ignore) {  }");
                 p.pln();
+                p.pO();
 
                 p.plnI("public " + currentClass + "() { ");
                 p.pln("this(checkPermission());");
+                p.pln("_instantiated = true;");
                 p.pOln("}");
                 p.pln();
+                p.plnI("private void readObject(java.io.ObjectInputStream s) throws IOException, ClassNotFoundException {");
+                p.plnI("checkPermission();");
+                p.pO();
+                p.pln("s.defaultReadObject();");
+                p.pln("_instantiated = true;");
+                p.pOln("}");
+                p.pln();
+                //p.pO();
         }
 
        if (!emitPermissionCheck) {
@@ -894,6 +917,7 @@ public class StubGenerator extends sun.rmi.rmic.iiop.Generator {
         String paramNames[] = method.getArgumentNames();
         Type returnType = method.getReturnType();
         ValueType[] exceptions = getStubExceptions(method,false);
+        boolean hasIOException = false;
 
         addNamesInUse(method);
         addNameInUse("_type_ids");
@@ -921,6 +945,13 @@ public class StubGenerator extends sun.rmi.rmic.iiop.Generator {
         p.plnI(" {");
 
         // Now create the method body...
+        if (emitPermissionCheck) {
+            p.pln("if ((System.getSecurityManager() != null) && (!_instantiated)) {");
+            p.plnI("    throw new java.io.IOError(new java.io.IOException(\"InvalidObject \"));");
+            p.pOln("}");
+            p.pln();
+        }
+
 
         if (localStubs) {
             writeLocalStubMethodBody(p,method,theType);
