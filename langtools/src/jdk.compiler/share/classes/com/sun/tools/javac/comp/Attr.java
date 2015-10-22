@@ -56,7 +56,6 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCPolyExpression.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.Dependencies.AttributionKind;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import com.sun.tools.javac.util.List;
@@ -760,7 +759,6 @@ public class Attr extends JCTree.Visitor {
      */
     void attribTypeVariables(List<JCTypeParameter> typarams, Env<AttrContext> env) {
         for (JCTypeParameter tvar : typarams) {
-            dependencies.push(AttributionKind.TVAR, tvar);
             TypeVar a = (TypeVar)tvar.type;
             a.tsym.flags_field |= UNATTRIBUTED;
             a.bound = Type.noType;
@@ -775,7 +773,6 @@ public class Attr extends JCTree.Visitor {
                 types.setBounds(a, List.of(syms.objectType));
             }
             a.tsym.flags_field &= ~UNATTRIBUTED;
-            dependencies.pop();
         }
         for (JCTypeParameter tvar : typarams) {
             chk.checkNonCyclic(tvar.pos(), (TypeVar)tvar.type);
