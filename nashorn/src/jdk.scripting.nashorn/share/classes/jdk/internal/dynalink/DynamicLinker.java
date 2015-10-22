@@ -87,26 +87,31 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
-import java.util.List;
 import java.util.Objects;
 import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.GuardedInvocationTransformer;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
-import jdk.internal.dynalink.support.LinkRequestImpl;
-import jdk.internal.dynalink.support.Lookup;
-import jdk.internal.dynalink.support.RuntimeContextLinkRequestImpl;
+import jdk.internal.dynalink.linker.support.Lookup;
+import jdk.internal.dynalink.linker.support.SimpleLinkRequest;
+import jdk.internal.dynalink.support.ChainedCallSite;
+import jdk.internal.dynalink.support.SimpleRelinkableCallSite;
 
 /**
- * The linker for {@link RelinkableCallSite} objects. Users of it (scripting
- * frameworks and language runtimes) have to create a linker using the
- * {@link DynamicLinkerFactory} and invoke its link method from the invokedynamic
- * bootstrap methods to set the target of all the call sites in the code they
- * generate. Usual usage would be to create one class per language runtime to
- * contain one linker instance as:
- *
+ * The linker for {@link RelinkableCallSite} objects. A dynamic linker is a main
+ * objects when using Dynalink, it coordinates linking of call sites with
+ * linkers of available language runtimes that are represented by
+ * {@link GuardingDynamicLinker} objects (you only need to deal with these if
+ * you are yourself implementing a language runtime with its own object model
+ * and/or type conversions). To use Dynalink, you have to create one or more
+ * dynamic linkers using a {@link DynamicLinkerFactory}. Subsequently, you need
+ * to invoke its {@link #link(RelinkableCallSite)} method from
+ * {@code invokedynamic} bootstrap methods to let it manage all the call sites
+ * they create. Usual usage would be to create at least one class per language
+ * runtime to contain one linker instance as:
  * <pre>
+ *
  * class MyLanguageRuntime {
  *     private static final GuardingDynamicLinker myLanguageLinker = new MyLanguageLinker();
  *     private static final DynamicLinker dynamicLinker = createDynamicLinker();
@@ -118,33 +123,36 @@ import jdk.internal.dynalink.support.RuntimeContextLinkRequestImpl;
  *     }
  *
  *     public static CallSite bootstrap(MethodHandles.Lookup lookup, String name, MethodType type) {
- *         return dynamicLinker.link(new MonomorphicCallSite(CallSiteDescriptorFactory.create(lookup, name, type)));
+ *         return dynamicLinker.link(new SimpleRelinkableCallSite(new CallSiteDescriptor(lookup, name, type)));
  *     }
  * }
  * </pre>
- *
- * Note how there are three components you will need to provide here:
+ * The above setup of one static linker instance is often too simple. You will
+ * often have your language runtime have a concept of some kind of
+ * "context class loader" and you will want to create one dynamic linker per
+ * such class loader, to ensure it incorporates linkers for all other language
+ * runtimes visible to that class loader (see
+ * {@link DynamicLinkerFactory#setClassLoader(ClassLoader)}).
+ * <p>
+ * There are three components you need to provide in the above example:
  * <ul>
  *
- * <li>You're expected to provide a {@link GuardingDynamicLinker} for your own
- * language. If your runtime doesn't have its own language and/or object model
- * (i.e., it's a generic scripting shell), you don't need to implement a dynamic
- * linker; you would simply not invoke the {@code setPrioritizedLinker} method
- * on the factory, or even better, simply use {@link DefaultBootstrapper}.</li>
+ * <li>You are expected to provide a {@link GuardingDynamicLinker} for your own
+ * language. If your runtime doesn't have its own object model or type
+ * conversions, you don't need to implement a {@code GuardingDynamicLinker}; you
+ * would simply not invoke the {@code setPrioritizedLinker} method on the factory.</li>
  *
  * <li>The performance of the programs can depend on your choice of the class to
- * represent call sites. The above example used {@link MonomorphicCallSite}, but
- * you might want to use {@link ChainedCallSite} instead. You'll need to
- * experiment and decide what fits your language runtime the best. You can
- * subclass either of these or roll your own if you need to.</li>
+ * represent call sites. The above example used
+ * {@link SimpleRelinkableCallSite}, but you might want to use
+ * {@link ChainedCallSite} instead. You'll need to experiment and decide what
+ * fits your runtime the best. You can further subclass either of these or
+ * implement your own.</li>
  *
  * <li>You also need to provide {@link CallSiteDescriptor}s to your call sites.
  * They are immutable objects that contain all the information about the call
  * site: the class performing the lookups, the name of the method being invoked,
- * and the method signature. The library has a default {@link CallSiteDescriptorFactory}
- * for descriptors that you can use, or you can create your own descriptor
- * classes, especially if you need to add further information (values passed in
- * additional parameters to the bootstrap method) to them.</li>
+ * and the method signature.</li>
  *
  * </ul>
  */
@@ -157,8 +165,7 @@ public final class DynamicLinker {
     private static final String INVOKE_PACKAGE_PREFIX = "java.lang.invoke.";
 
     private final LinkerServices linkerServices;
-    private final GuardedInvocationFilter prelinkFilter;
-    private final int runtimeContextArgCount;
+    private final GuardedInvocationTransformer prelinkTransformer;
     private final boolean syncOnRelink;
     private final int unstableRelinkThreshold;
 
@@ -166,20 +173,17 @@ public final class DynamicLinker {
      * Creates a new dynamic linker.
      *
      * @param linkerServices the linkerServices used by the linker, created by the factory.
-     * @param prelinkFilter see {@link DynamicLinkerFactory#setPrelinkFilter(GuardedInvocationFilter)}
-     * @param runtimeContextArgCount see {@link DynamicLinkerFactory#setRuntimeContextArgCount(int)}
+     * @param prelinkTransformer see {@link DynamicLinkerFactory#setPrelinkTransformer(GuardedInvocationTransformer)}
+     * @param syncOnRelink see {@link DynamicLinkerFactory#setSyncOnRelink(boolean)}
+     * @param unstableRelinkThreshold see {@link DynamicLinkerFactory#setUnstableRelinkThreshold(int)}
      */
-    DynamicLinker(final LinkerServices linkerServices, final GuardedInvocationFilter prelinkFilter, final int runtimeContextArgCount,
+    DynamicLinker(final LinkerServices linkerServices, final GuardedInvocationTransformer prelinkTransformer,
             final boolean syncOnRelink, final int unstableRelinkThreshold) {
-        if(runtimeContextArgCount < 0) {
-            throw new IllegalArgumentException("runtimeContextArgCount < 0");
-        }
         if(unstableRelinkThreshold < 0) {
             throw new IllegalArgumentException("unstableRelinkThreshold < 0");
         }
         this.linkerServices = linkerServices;
-        this.prelinkFilter = prelinkFilter;
-        this.runtimeContextArgCount = runtimeContextArgCount;
+        this.prelinkTransformer = prelinkTransformer;
         this.syncOnRelink = syncOnRelink;
         this.unstableRelinkThreshold = unstableRelinkThreshold;
     }
@@ -202,12 +206,13 @@ public final class DynamicLinker {
     }
 
     /**
-     * Returns the object representing the lower level linker services of this
-     * class that are normally exposed to individual language-specific linkers.
-     * While as a user of this class you normally only care about the
-     * {@link #link(RelinkableCallSite)} method, in certain circumstances you
-     * might want to use the lower level services directly; either to lookup
-     * specific method handles, to access the type converters, and so on.
+     * Returns the object representing the linker services of this class that
+     * are normally exposed to individual {@link GuardingDynamicLinker
+     * language-specific linkers}. While as a user of this class you normally
+     * only care about the {@link #link(RelinkableCallSite)} method, in certain
+     * circumstances you might want to use the lower level services directly;
+     * either to lookup specific method handles, to access the type converters,
+     * and so on.
      *
      * @return the object representing the linker services of this class.
      */
@@ -244,10 +249,7 @@ public final class DynamicLinker {
         final CallSiteDescriptor callSiteDescriptor = callSite.getDescriptor();
         final boolean unstableDetectionEnabled = unstableRelinkThreshold > 0;
         final boolean callSiteUnstable = unstableDetectionEnabled && relinkCount >= unstableRelinkThreshold;
-        final LinkRequest linkRequest =
-                runtimeContextArgCount == 0 ?
-                        new LinkRequestImpl(callSiteDescriptor, callSite, relinkCount, callSiteUnstable, arguments) :
-                        new RuntimeContextLinkRequestImpl(callSiteDescriptor, callSite, relinkCount, callSiteUnstable, arguments, runtimeContextArgCount);
+        final LinkRequest linkRequest = new SimpleLinkRequest(callSiteDescriptor, callSiteUnstable, arguments);
 
         GuardedInvocation guardedInvocation = linkerServices.getGuardedInvocation(linkRequest);
 
@@ -256,21 +258,9 @@ public final class DynamicLinker {
             throw new NoSuchDynamicMethodException(callSiteDescriptor.toString());
         }
 
-        // If our call sites have a runtime context, and the linker produced a context-stripped invocation, adapt the
-        // produced invocation into contextual invocation (by dropping the context...)
-        if(runtimeContextArgCount > 0) {
-            final MethodType origType = callSiteDescriptor.getMethodType();
-            final MethodHandle invocation = guardedInvocation.getInvocation();
-            if(invocation.type().parameterCount() == origType.parameterCount() - runtimeContextArgCount) {
-                final List<Class<?>> prefix = origType.parameterList().subList(1, runtimeContextArgCount + 1);
-                final MethodHandle guard = guardedInvocation.getGuard();
-                guardedInvocation = guardedInvocation.dropArguments(1, prefix);
-            }
-        }
-
-        // Make sure we filter the invocation before linking it into the call site. This is typically used to match the
+        // Make sure we transform the invocation before linking it into the call site. This is typically used to match the
         // return type of the invocation to the call site.
-        guardedInvocation = prelinkFilter.filter(guardedInvocation, linkRequest, linkerServices);
+        guardedInvocation = prelinkTransformer.filter(guardedInvocation, linkRequest, linkerServices);
         Objects.requireNonNull(guardedInvocation);
 
         int newRelinkCount = relinkCount;
@@ -290,11 +280,12 @@ public final class DynamicLinker {
     }
 
     /**
-     * Returns a stack trace element describing the location of the call site
-     * currently being linked on the current thread. The operation internally
-     * creates a Throwable object and inspects its stack trace, so it's
-     * potentially expensive. The recommended usage for it is in writing
-     * diagnostics code.
+     * Returns a stack trace element describing the location of the
+     * {@code invokedynamic} call site currently being linked on the current
+     * thread. The operation is potentially expensive as it needs to generate a
+     * stack trace to inspect it and is intended for use in diagnostics code.
+     * For "free-floating" call sites (not associated with an
+     * {@code invokedynamic} instruction), the result is not well-defined.
      *
      * @return a stack trace element describing the location of the call site
      *         currently being linked, or null if it is not invoked while a call

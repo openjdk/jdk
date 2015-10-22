@@ -92,10 +92,10 @@ public final class UserAccessorProperty extends SpillProperty {
 
     static MethodHandle getINVOKE_UA_GETTER(final Class<?> returnType, final int programPoint) {
         if (UnwarrantedOptimismException.isValid(programPoint)) {
-            final int flags = NashornCallSiteDescriptor.CALLSITE_OPTIMISTIC | programPoint << CALLSITE_PROGRAM_POINT_SHIFT;
-            return Bootstrap.createDynamicInvoker("dyn:call", flags, returnType, Object.class, Object.class);
+            final int flags = NashornCallSiteDescriptor.CALL | NashornCallSiteDescriptor.CALLSITE_OPTIMISTIC | programPoint << CALLSITE_PROGRAM_POINT_SHIFT;
+            return Bootstrap.createDynamicInvoker("", flags, returnType, Object.class, Object.class);
         } else {
-            return Bootstrap.createDynamicInvoker("dyn:call", Object.class, Object.class, Object.class);
+            return Bootstrap.createDynamicCallInvoker(Object.class, Object.class, Object.class);
         }
     }
 
@@ -110,7 +110,7 @@ public final class UserAccessorProperty extends SpillProperty {
     }
 
     static MethodHandle getINVOKE_UA_SETTER(final Class<?> valueType) {
-        return Bootstrap.createDynamicInvoker("dyn:call", void.class, Object.class, Object.class, valueType);
+        return Bootstrap.createDynamicCallInvoker(void.class, Object.class, Object.class, valueType);
     }
 
     /**
@@ -295,7 +295,7 @@ public final class UserAccessorProperty extends SpillProperty {
         return super.getGetter(Object.class).asType(MethodType.methodType(Accessors.class, Object.class));
     }
 
-    // User defined getter and setter are always called by "dyn:call". Note that the user
+    // User defined getter and setter are always called by StandardOperation.CALL. Note that the user
     // getter/setter may be inherited. If so, proto is bound during lookup. In either
     // inherited or self case, slot is also bound during lookup. Actual ScriptFunction
     // to be called is retrieved everytime and applied.

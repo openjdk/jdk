@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,105 +81,37 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
-
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodHandles.Lookup;
-import java.util.Objects;
-import jdk.internal.dynalink.CallSiteDescriptor;
-
 /**
- * A base class for call site descriptor implementations. Provides reconstruction of the name from the tokens, as well
- * as a generally useful {@code equals} and {@code hashCode} methods.
+ * <p>
+ * Contains interfaces and classes needed by language runtimes to implement
+ * their own language-specific object models and type conversions. The main
+ * entry point is the
+ * {@link jdk.internal.dynalink.linker.GuardingDynamicLinker} interface. It needs to be
+ * implemented in order to provide linking for the runtime's own object model.
+ * A language runtime can have more than one guarding dynamic linker
+ * implementation. When a runtime is configuring Dynalink for itself, it will
+ * normally set these guarding linkers as the prioritized linkers in its
+ * {@link jdk.internal.dynalink.DynamicLinkerFactory} (and maybe some of them as fallback
+ * linkers, for e.g. handling "method not found" and similar errors in a
+ * language-specific manner if no other linker managed to handle the operation.)
+ * </p><p>
+ * A language runtime that wishes to make at least some of its linkers available
+ * to other language runtimes for interoperability will need to declare the
+ * class names of those linkers in
+ * {@code /META-INF/services/jdk.internal.dynalink.linker.GuardingDynamicLinker} file in
+ * its distribution (typically, JAR file).
+ * </p><p>
+ * Most language runtimes will be able to implement their own linking logic by
+ * implementing {@link jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker}
+ * instead of {@link jdk.internal.dynalink.linker.GuardingDynamicLinker}; it allows for
+ * faster type-based linking dispatch.
+ * </p><p>
+ * Language runtimes that allow type conversions other than those provided by
+ * Java will need to have their guarding dynamic linker (or linkers) also
+ * implement the {@link jdk.internal.dynalink.linker.GuardingTypeConverterFactory}
+ * interface to provide the logic for these conversions.
+ * </p>
+ * @since 1.9
  */
-public abstract class AbstractCallSiteDescriptor implements CallSiteDescriptor {
-
-    @Override
-    public String getName() {
-        return appendName(new StringBuilder(getNameLength())).toString();
-    }
-
-   @Override
-   public Lookup getLookup() {
-       return MethodHandles.publicLookup();
-   }
-
-    @Override
-    public boolean equals(final Object obj) {
-        return obj instanceof CallSiteDescriptor && equals((CallSiteDescriptor)obj);
-    }
-
-    /**
-     * Returns true if this call site descriptor is equal to the passed call site descriptor.
-     * @param csd the other call site descriptor.
-     * @return true if they are equal.
-     */
-    public boolean equals(final CallSiteDescriptor csd) {
-        if(csd == null) {
-            return false;
-        }
-        if(csd == this) {
-            return true;
-        }
-        final int ntc = getNameTokenCount();
-        if(ntc != csd.getNameTokenCount()) {
-            return false;
-        }
-        for(int i = ntc; i-- > 0;) { // Reverse order as variability is higher at the end
-            if(!Objects.equals(getNameToken(i), csd.getNameToken(i))) {
-                return false;
-            }
-        }
-        if(!getMethodType().equals(csd.getMethodType())) {
-            return false;
-        }
-        return lookupsEqual(getLookup(), csd.getLookup());
-    }
-
-    @Override
-    public int hashCode() {
-        final MethodHandles.Lookup lookup = getLookup();
-        int h = lookup.lookupClass().hashCode() + 31 * lookup.lookupModes();
-        final int c = getNameTokenCount();
-        for(int i = 0; i < c; ++i) {
-            h = h * 31 + getNameToken(i).hashCode();
-        }
-        return h * 31 + getMethodType().hashCode();
-    }
-
-    @Override
-    public String toString() {
-        final String mt = getMethodType().toString();
-        final String l = getLookup().toString();
-        final StringBuilder b = new StringBuilder(l.length() + 1 + mt.length() + getNameLength());
-        return appendName(b).append(mt).append("@").append(l).toString();
-    }
-
-    private int getNameLength() {
-        final int c = getNameTokenCount();
-        int l = 0;
-        for(int i = 0; i < c; ++i) {
-            l += getNameToken(i).length();
-        }
-        return l +  c - 1;
-    }
-
-    private StringBuilder appendName(final StringBuilder b) {
-        b.append(getNameToken(0));
-        final int c = getNameTokenCount();
-        for(int i = 1; i < c; ++i) {
-            b.append(':').append(getNameToken(i));
-        }
-        return b;
-    }
-
-    private static boolean lookupsEqual(final Lookup l1, final Lookup l2) {
-        if(l1 == l2) {
-            return true;
-        }
-        if(l1.lookupClass() != l2.lookupClass()) {
-            return false;
-        }
-        return l1.lookupModes() == l2.lookupModes();
-    }
-}
+@jdk.Exported
+package jdk.internal.dynalink.linker;

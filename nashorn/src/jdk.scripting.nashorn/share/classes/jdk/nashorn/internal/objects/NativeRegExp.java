@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
-
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -808,7 +807,7 @@ public final class NativeRegExp extends ScriptObject {
                 new Callable<MethodHandle>() {
                     @Override
                     public MethodHandle call() {
-                        return Bootstrap.createDynamicInvoker("dyn:call", String.class, ScriptFunction.class, Object.class, Object[].class);
+                        return Bootstrap.createDynamicCallInvoker(String.class, ScriptFunction.class, Object.class, Object[].class);
                     }
                 });
     }

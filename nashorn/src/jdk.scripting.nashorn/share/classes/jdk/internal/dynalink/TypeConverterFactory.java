@@ -81,30 +81,36 @@
        ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-package jdk.internal.dynalink.support;
+package jdk.internal.dynalink;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.WrongMethodTypeException;
+import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Supplier;
+import jdk.internal.dynalink.internal.AccessControlContextFactory;
 import jdk.internal.dynalink.linker.ConversionComparator;
 import jdk.internal.dynalink.linker.ConversionComparator.Comparison;
 import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.linker.GuardedTypeConversion;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.MethodTypeConversionStrategy;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
  * A factory for type converters. This class is the main implementation behind the
  * {@link LinkerServices#asType(MethodHandle, MethodType)}. It manages the known {@link GuardingTypeConverterFactory}
  * instances and creates appropriate converters for method handles.
  */
-public class TypeConverterFactory {
+final class TypeConverterFactory {
+    private static final AccessControlContext GET_CLASS_LOADER_CONTEXT =
+            AccessControlContextFactory.createAccessControlContext("getClassLoader");
 
     private final GuardingTypeConverterFactory[] factories;
     private final ConversionComparator[] comparators;
@@ -170,7 +176,7 @@ public class TypeConverterFactory {
             public ClassLoader run() {
                 return clazz.getClassLoader();
             }
-        }, ClassLoaderGetterContextProvider.GET_CLASS_LOADER_CONTEXT);
+        }, GET_CLASS_LOADER_CONTEXT);
     }
 
     /**
@@ -193,7 +199,7 @@ public class TypeConverterFactory {
      * only be ones that can be subjected to method invocation conversions. Can be null, in which case no
      * custom strategy is employed.
      */
-    public TypeConverterFactory(final Iterable<? extends GuardingTypeConverterFactory> factories,
+    TypeConverterFactory(final Iterable<? extends GuardingTypeConverterFactory> factories,
             final MethodTypeConversionStrategy autoConversionStrategy) {
         final List<GuardingTypeConverterFactory> l = new LinkedList<>();
         final List<ConversionComparator> c = new LinkedList<>();
@@ -226,7 +232,7 @@ public class TypeConverterFactory {
      * {@link MethodHandles#filterArguments(MethodHandle, int, MethodHandle...)} with
      * {@link GuardingTypeConverterFactory} produced type converters as filters.
      */
-    public MethodHandle asType(final MethodHandle handle, final MethodType fromType) {
+    MethodHandle asType(final MethodHandle handle, final MethodType fromType) {
         MethodHandle newHandle = handle;
         final MethodType toType = newHandle.type();
         final int l = toType.parameterCount();
@@ -295,7 +301,7 @@ public class TypeConverterFactory {
      * @param to the target type for the conversion
      * @return true if there can be a conversion, false if there can not.
      */
-    public boolean canConvert(final Class<?> from, final Class<?> to) {
+    boolean canConvert(final Class<?> from, final Class<?> to) {
         return canAutoConvert(from, to) || canConvert.get(from).get(to);
     }
 
@@ -309,7 +315,7 @@ public class TypeConverterFactory {
      * @return one of Comparison constants that establish which - if any - of the target types is preferable for the
      * conversion.
      */
-    public Comparison compareConversion(final Class<?> sourceType, final Class<?> targetType1, final Class<?> targetType2) {
+    Comparison compareConversion(final Class<?> sourceType, final Class<?> targetType1, final Class<?> targetType2) {
         for(final ConversionComparator comparator: comparators) {
             final Comparison result = comparator.compareConversion(sourceType, targetType1, targetType2);
             if(result != Comparison.INDETERMINATE) {
@@ -363,7 +369,7 @@ public class TypeConverterFactory {
      * @param targetType the type to convert to
      * @return a method handle performing the conversion.
      */
-    public MethodHandle getTypeConverter(final Class<?> sourceType, final Class<?> targetType) {
+    MethodHandle getTypeConverter(final Class<?> sourceType, final Class<?> targetType) {
         try {
             return converterIdentityMap.get(sourceType).get(targetType);
         } catch(final NotCacheableConverter e) {
@@ -371,26 +377,49 @@ public class TypeConverterFactory {
         }
     }
 
+    private static class LookupSupplier implements Supplier<MethodHandles.Lookup> {
+        volatile boolean returnedLookup;
+        volatile boolean closed;
+
+        @Override
+        public Lookup get() {
+            if (closed) {
+                // Something held on to this supplier and tried to invoke it
+                // after we're done with it.
+                throw new IllegalStateException();
+            }
+            final Lookup lookup = LinkerServicesImpl.getCurrentLookup();
+            returnedLookup = true;
+            return lookup;
+        }
+    }
+
     /*private*/ MethodHandle createConverter(final Class<?> sourceType, final Class<?> targetType) throws Exception {
         final MethodType type = MethodType.methodType(targetType, sourceType);
         final MethodHandle identity = IDENTITY_CONVERSION.asType(type);
         MethodHandle last = identity;
-        boolean cacheable = true;
-        for(int i = factories.length; i-- > 0;) {
-            final GuardedTypeConversion next = factories[i].convertToType(sourceType, targetType);
-            if(next != null) {
-                cacheable = cacheable && next.isCacheable();
-                final GuardedInvocation conversionInvocation = next.getConversionInvocation();
-                conversionInvocation.assertType(type);
-                last = conversionInvocation.compose(last);
+
+        final LookupSupplier lookupSupplier = new LookupSupplier();
+        try {
+            for(int i = factories.length; i-- > 0;) {
+                final GuardedInvocation next = factories[i].convertToType(sourceType, targetType, lookupSupplier);
+                if(next != null) {
+                    last = next.compose(last);
+                }
             }
+        } finally {
+            lookupSupplier.closed = true;
         }
+
         if(last == identity) {
             return IDENTITY_CONVERSION;
         }
-        if(cacheable) {
+        if(!lookupSupplier.returnedLookup) {
             return last;
         }
+        // At least one of the consulted converter factories obtained the
+        // lookup, so we must presume the created converter is sensitive to the
+        // lookup class and thus we will not cache it.
         throw new NotCacheableConverter(last);
     }
 
