@@ -558,7 +558,7 @@ void nmethod::init_defaults() {
 #endif
 }
 
-nmethod* nmethod::new_native_nmethod(methodHandle method,
+nmethod* nmethod::new_native_nmethod(const methodHandle& method,
   int compile_id,
   CodeBuffer *code_buffer,
   int vep_offset,
@@ -596,7 +596,7 @@ nmethod* nmethod::new_native_nmethod(methodHandle method,
   return nm;
 }
 
-nmethod* nmethod::new_nmethod(methodHandle method,
+nmethod* nmethod::new_nmethod(const methodHandle& method,
   int compile_id,
   int entry_bci,
   CodeOffsets* offsets,

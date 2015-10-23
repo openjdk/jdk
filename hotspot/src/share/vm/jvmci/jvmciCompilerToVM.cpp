@@ -60,7 +60,7 @@
 
 #define C2V_END }
 
-oop CompilerToVM::get_jvmci_method(methodHandle method, TRAPS) {
+oop CompilerToVM::get_jvmci_method(const methodHandle& method, TRAPS) {
   if (method() != NULL) {
     JavaValue result(T_OBJECT);
     JavaCallArguments args;

@@ -84,7 +84,7 @@ class BytecodePrinter: public BytecodeClosure {
 
   // This method is called while executing the raw bytecodes, so none of
   // the adjustments that BytecodeStream performs applies.
-  void trace(methodHandle method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
+  void trace(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
     ResourceMark rm;
     if (_current_method != method()) {
       // Note 1: This code will not work as expected with true MT/MP.
@@ -126,7 +126,7 @@ class BytecodePrinter: public BytecodeClosure {
 
   // Used for Method*::print_codes().  The input bcp comes from
   // BytecodeStream, which will skip wide bytecodes.
-  void trace(methodHandle method, address bcp, outputStream* st) {
+  void trace(const methodHandle& method, address bcp, outputStream* st) {
     _current_method = method();
     ResourceMark rm;
     Bytecodes::Code code = Bytecodes::code_at(method(), bcp);
@@ -166,7 +166,7 @@ BytecodeClosure* BytecodeTracer::std_closure() {
 }
 
 
-void BytecodeTracer::trace(methodHandle method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
+void BytecodeTracer::trace(const methodHandle& method, address bcp, uintptr_t tos, uintptr_t tos2, outputStream* st) {
   if (TraceBytecodes && BytecodeCounter::counter_value() >= TraceBytecodesAt) {
     ttyLocker ttyl;  // 5065316: keep the following output coherent
     // The ttyLocker also prevents races between two threads
@@ -185,7 +185,7 @@ void BytecodeTracer::trace(methodHandle method, address bcp, uintptr_t tos, uint
   }
 }
 
-void BytecodeTracer::trace(methodHandle method, address bcp, outputStream* st) {
+void BytecodeTracer::trace(const methodHandle& method, address bcp, outputStream* st) {
   ttyLocker ttyl;  // 5065316: keep the following output coherent
   _closure->trace(method, bcp, st);
 }

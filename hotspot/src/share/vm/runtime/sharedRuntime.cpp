@@ -1697,7 +1697,7 @@ methodHandle SharedRuntime::reresolve_call_site(JavaThread *thread, TRAPS) {
 }
 
 #ifdef ASSERT
-void SharedRuntime::check_member_name_argument_is_last_argument(methodHandle method,
+void SharedRuntime::check_member_name_argument_is_last_argument(const methodHandle& method,
                                                                 const BasicType* sig_bt,
                                                                 const VMRegPair* regs) {
   ResourceMark rm;
@@ -2430,7 +2430,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::new_entry(AdapterFingerPrint* finger
   return _adapters->new_entry(fingerprint, i2c_entry, c2i_entry, c2i_unverified_entry);
 }
 
-AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
+AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(const methodHandle& method) {
   // Use customized signature handler.  Need to lock around updates to
   // the AdapterHandlerTable (it is not safe for concurrent readers
   // and a single writer: this could be fixed if it becomes a
@@ -2640,7 +2640,7 @@ bool AdapterHandlerEntry::compare_code(unsigned char* buffer, int length) {
  * arguments, and transitions to native.  On return from the native we transition
  * back to java blocking if a safepoint is in progress.
  */
-void AdapterHandlerLibrary::create_native_wrapper(methodHandle method) {
+void AdapterHandlerLibrary::create_native_wrapper(const methodHandle& method) {
   ResourceMark rm;
   nmethod* nm = NULL;
 

@@ -241,7 +241,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
 
   void print_field_layout(Symbol* name,
                           Array<u2>* fields,
-                          constantPoolHandle cp,
+                          const constantPoolHandle& cp,
                           int instance_size,
                           int instance_fields_start,
                           int instance_fields_end,
@@ -403,7 +403,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     assert(!has_cp_patch_at(index), "");
     return patch;
   }
-  void patch_constant_pool(constantPoolHandle cp, int index, Handle patch, TRAPS);
+  void patch_constant_pool(const constantPoolHandle& cp, int index, Handle patch, TRAPS);
 
   // Wrapper for constantTag.is_klass_[or_]reference.
   // In older versions of the VM, Klass*s cannot sneak into early phases of

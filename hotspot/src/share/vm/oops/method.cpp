@@ -366,7 +366,7 @@ void Method::print_invocation_count() {
 
 // Build a MethodData* object to hold information about this method
 // collected in the interpreter.
-void Method::build_interpreter_method_data(methodHandle method, TRAPS) {
+void Method::build_interpreter_method_data(const methodHandle& method, TRAPS) {
   // Do not profile the method if metaspace has hit an OOM previously
   // allocating profiling data. Callers clear pending exception so don't
   // add one here.
@@ -897,7 +897,7 @@ void Method::unlink_method() {
 
 // Called when the method_holder is getting linked. Setup entrypoints so the method
 // is ready to be called from interpreter, compiler, and vtables.
-void Method::link_method(methodHandle h_method, TRAPS) {
+void Method::link_method(const methodHandle& h_method, TRAPS) {
   // If the code cache is full, we may reenter this function for the
   // leftover methods that weren't linked.
   if (_i2i_entry != NULL) return;

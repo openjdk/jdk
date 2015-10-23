@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,10 +75,10 @@ void CompileTask::free(CompileTask* task) {
 
 
 void CompileTask::initialize(int compile_id,
-                             methodHandle method,
+                             const methodHandle& method,
                              int osr_bci,
                              int comp_level,
-                             methodHandle hot_method,
+                             const methodHandle& hot_method,
                              int hot_count,
                              const char* comment,
                              bool is_blocking) {

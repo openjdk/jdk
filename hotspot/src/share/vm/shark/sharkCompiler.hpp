@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -46,7 +46,7 @@ class SharkCompiler : public AbstractCompiler {
   // Missing feature tests
   bool supports_native() { return true; }
   bool supports_osr()    { return true; }
-  bool can_compile_method(methodHandle method)  {
+  bool can_compile_method(const methodHandle& method)  {
     return ! (method->is_method_handle_intrinsic() || method->is_compiled_lambda_form());
   }
 
@@ -61,7 +61,7 @@ class SharkCompiler : public AbstractCompiler {
 
   // Generate a wrapper for a native (JNI) method
   nmethod* generate_native_wrapper(MacroAssembler* masm,
-                                   methodHandle    target,
+                                   const methodHandle& target,
                                    int             compile_id,
                                    BasicType*      arg_types,
                                    BasicType       return_type);

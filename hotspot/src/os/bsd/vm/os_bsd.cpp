@@ -3745,7 +3745,7 @@ bool os::find(address addr, outputStream* st) {
 // able to use structured exception handling (thread-local exception filters)
 // on, e.g., Win32.
 void os::os_exception_wrapper(java_call_t f, JavaValue* value,
-                              methodHandle* method, JavaCallArguments* args,
+                              const methodHandle& method, JavaCallArguments* args,
                               Thread* thread) {
   f(value, method, args, thread);
 }

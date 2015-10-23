@@ -237,7 +237,7 @@ void CallInfo::print() {
 //------------------------------------------------------------------------------------------------------------------------
 // Implementation of LinkInfo
 
-LinkInfo::LinkInfo(constantPoolHandle pool, int index, TRAPS) {
+LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, TRAPS) {
    // resolve klass
   Klass* result = pool->klass_ref_at(index, CHECK);
   _resolved_klass = KlassHandle(THREAD, result);
@@ -559,7 +559,7 @@ void LinkResolver::check_method_accessability(KlassHandle ref_klass,
 }
 
 methodHandle LinkResolver::resolve_method_statically(Bytecodes::Code code,
-                                                     constantPoolHandle pool, int index, TRAPS) {
+                                                     const constantPoolHandle& pool, int index, TRAPS) {
   // This method is used only
   // (1) in C2 from InlineTree::ok_to_inline (via ciMethod::check_call),
   // and
@@ -816,7 +816,7 @@ void LinkResolver::check_field_accessability(KlassHandle ref_klass,
   }
 }
 
-void LinkResolver::resolve_field_access(fieldDescriptor& fd, constantPoolHandle pool, int index, Bytecodes::Code byte, TRAPS) {
+void LinkResolver::resolve_field_access(fieldDescriptor& fd, const constantPoolHandle& pool, int index, Bytecodes::Code byte, TRAPS) {
   LinkInfo link_info(pool, index, CHECK);
   resolve_field(fd, link_info, byte, true, CHECK);
 }
@@ -1442,7 +1442,7 @@ methodHandle LinkResolver::resolve_special_call_or_null(const LinkInfo& link_inf
 //------------------------------------------------------------------------------------------------------------------------
 // ConstantPool entries
 
-void LinkResolver::resolve_invoke(CallInfo& result, Handle recv, constantPoolHandle pool, int index, Bytecodes::Code byte, TRAPS) {
+void LinkResolver::resolve_invoke(CallInfo& result, Handle recv, const constantPoolHandle& pool, int index, Bytecodes::Code byte, TRAPS) {
   switch (byte) {
     case Bytecodes::_invokestatic   : resolve_invokestatic   (result,       pool, index, CHECK); break;
     case Bytecodes::_invokespecial  : resolve_invokespecial  (result,       pool, index, CHECK); break;
@@ -1454,20 +1454,20 @@ void LinkResolver::resolve_invoke(CallInfo& result, Handle recv, constantPoolHan
   return;
 }
 
-void LinkResolver::resolve_invokestatic(CallInfo& result, constantPoolHandle pool, int index, TRAPS) {
+void LinkResolver::resolve_invokestatic(CallInfo& result, const constantPoolHandle& pool, int index, TRAPS) {
   LinkInfo link_info(pool, index, CHECK);
   resolve_static_call(result, link_info, /*initialize_class*/true, CHECK);
 }
 
 
-void LinkResolver::resolve_invokespecial(CallInfo& result, constantPoolHandle pool, int index, TRAPS) {
+void LinkResolver::resolve_invokespecial(CallInfo& result, const constantPoolHandle& pool, int index, TRAPS) {
   LinkInfo link_info(pool, index, CHECK);
   resolve_special_call(result, link_info, CHECK);
 }
 
 
 void LinkResolver::resolve_invokevirtual(CallInfo& result, Handle recv,
-                                          constantPoolHandle pool, int index,
+                                          const constantPoolHandle& pool, int index,
                                           TRAPS) {
 
   LinkInfo link_info(pool, index, CHECK);
@@ -1476,14 +1476,14 @@ void LinkResolver::resolve_invokevirtual(CallInfo& result, Handle recv,
 }
 
 
-void LinkResolver::resolve_invokeinterface(CallInfo& result, Handle recv, constantPoolHandle pool, int index, TRAPS) {
+void LinkResolver::resolve_invokeinterface(CallInfo& result, Handle recv, const constantPoolHandle& pool, int index, TRAPS) {
   LinkInfo link_info(pool, index, CHECK);
   KlassHandle recvrKlass (THREAD, recv.is_null() ? (Klass*)NULL : recv->klass());
   resolve_interface_call(result, recv, recvrKlass, link_info, true, CHECK);
 }
 
 
-void LinkResolver::resolve_invokehandle(CallInfo& result, constantPoolHandle pool, int index, TRAPS) {
+void LinkResolver::resolve_invokehandle(CallInfo& result, const constantPoolHandle& pool, int index, TRAPS) {
   // This guy is reached from InterpreterRuntime::resolve_invokehandle.
   LinkInfo link_info(pool, index, CHECK);
   if (TraceMethodHandles) {
@@ -1528,7 +1528,7 @@ static void wrap_invokedynamic_exception(TRAPS) {
   }
 }
 
-void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle pool, int index, TRAPS) {
+void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int index, TRAPS) {
   Symbol* method_name       = pool->name_ref_at(index);
   Symbol* method_signature  = pool->signature_ref_at(index);
   KlassHandle current_klass = KlassHandle(THREAD, pool->pool_holder());

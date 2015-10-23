@@ -246,7 +246,7 @@ void ConstantPoolCacheEntry::set_vtable_call(Bytecodes::Code invoke_code, method
   set_direct_or_vtable_call(invoke_code, method, index);
 }
 
-void ConstantPoolCacheEntry::set_itable_call(Bytecodes::Code invoke_code, methodHandle method, int index) {
+void ConstantPoolCacheEntry::set_itable_call(Bytecodes::Code invoke_code, const methodHandle& method, int index) {
   assert(method->method_holder()->verify_itable_index(index), "");
   assert(invoke_code == Bytecodes::_invokeinterface, "");
   InstanceKlass* interf = method->method_holder();
@@ -261,15 +261,15 @@ void ConstantPoolCacheEntry::set_itable_call(Bytecodes::Code invoke_code, method
 }
 
 
-void ConstantPoolCacheEntry::set_method_handle(constantPoolHandle cpool, const CallInfo &call_info) {
+void ConstantPoolCacheEntry::set_method_handle(const constantPoolHandle& cpool, const CallInfo &call_info) {
   set_method_handle_common(cpool, Bytecodes::_invokehandle, call_info);
 }
 
-void ConstantPoolCacheEntry::set_dynamic_call(constantPoolHandle cpool, const CallInfo &call_info) {
+void ConstantPoolCacheEntry::set_dynamic_call(const constantPoolHandle& cpool, const CallInfo &call_info) {
   set_method_handle_common(cpool, Bytecodes::_invokedynamic, call_info);
 }
 
-void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
+void ConstantPoolCacheEntry::set_method_handle_common(const constantPoolHandle& cpool,
                                                       Bytecodes::Code invoke_code,
                                                       const CallInfo &call_info) {
   // NOTE: This CPCE can be the subject of data races.
@@ -361,7 +361,7 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
   }
 }
 
-Method* ConstantPoolCacheEntry::method_if_resolved(constantPoolHandle cpool) {
+Method* ConstantPoolCacheEntry::method_if_resolved(const constantPoolHandle& cpool) {
   // Decode the action of set_method and set_interface_call
   Bytecodes::Code invoke_code = bytecode_1();
   if (invoke_code != (Bytecodes::Code)0) {
@@ -406,7 +406,7 @@ Method* ConstantPoolCacheEntry::method_if_resolved(constantPoolHandle cpool) {
 }
 
 
-oop ConstantPoolCacheEntry::appendix_if_resolved(constantPoolHandle cpool) {
+oop ConstantPoolCacheEntry::appendix_if_resolved(const constantPoolHandle& cpool) {
   if (!has_appendix())
     return NULL;
   const int ref_index = f2_as_index() + _indy_resolved_references_appendix_offset;
@@ -415,7 +415,7 @@ oop ConstantPoolCacheEntry::appendix_if_resolved(constantPoolHandle cpool) {
 }
 
 
-oop ConstantPoolCacheEntry::method_type_if_resolved(constantPoolHandle cpool) {
+oop ConstantPoolCacheEntry::method_type_if_resolved(const constantPoolHandle& cpool) {
   if (!has_method_type())
     return NULL;
   const int ref_index = f2_as_index() + _indy_resolved_references_method_type_offset;

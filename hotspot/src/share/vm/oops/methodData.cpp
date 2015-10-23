@@ -708,7 +708,7 @@ void SpeculativeTrapData::print_data_on(outputStream* st, const char* extra) con
 // A MethodData* holds information which has been collected about
 // a method.
 
-MethodData* MethodData::allocate(ClassLoaderData* loader_data, methodHandle method, TRAPS) {
+MethodData* MethodData::allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS) {
   int size = MethodData::compute_allocation_size_in_words(method);
 
   return new (loader_data, size, false, MetaspaceObj::MethodDataType, THREAD)
@@ -898,7 +898,7 @@ int MethodData::compute_extra_data_count(int data_size, int empty_bc_count, bool
 
 // Compute the size of the MethodData* necessary to store
 // profiling information about a given method.  Size is in bytes.
-int MethodData::compute_allocation_size_in_bytes(methodHandle method) {
+int MethodData::compute_allocation_size_in_bytes(const methodHandle& method) {
   int data_size = 0;
   BytecodeStream stream(method);
   Bytecodes::Code c;
@@ -931,7 +931,7 @@ int MethodData::compute_allocation_size_in_bytes(methodHandle method) {
 
 // Compute the size of the MethodData* necessary to store
 // profiling information about a given method.  Size is in words
-int MethodData::compute_allocation_size_in_words(methodHandle method) {
+int MethodData::compute_allocation_size_in_words(const methodHandle& method) {
   int byte_size = compute_allocation_size_in_bytes(method);
   int word_size = align_size_up(byte_size, BytesPerWord) / BytesPerWord;
   return align_object_size(word_size);
@@ -1129,7 +1129,7 @@ void MethodData::post_initialize(BytecodeStream* stream) {
 }
 
 // Initialize the MethodData* corresponding to a given method.
-MethodData::MethodData(methodHandle method, int size, TRAPS)
+MethodData::MethodData(const methodHandle& method, int size, TRAPS)
   : _extra_data_lock(Monitor::leaf, "MDO extra data lock"),
     _parameters_type_data_di(parameters_uninitialized) {
   // Set the method back-pointer.
@@ -1513,7 +1513,7 @@ void MethodData::verify_data_on(outputStream* st) {
   // not yet implemented.
 }
 
-bool MethodData::profile_jsr292(methodHandle m, int bci) {
+bool MethodData::profile_jsr292(const methodHandle& m, int bci) {
   if (m->is_compiled_lambda_form()) {
     return true;
   }
@@ -1538,7 +1538,7 @@ bool MethodData::profile_all_arguments() {
   return profile_arguments_flag() == type_profile_all;
 }
 
-bool MethodData::profile_arguments_for_invoke(methodHandle m, int bci) {
+bool MethodData::profile_arguments_for_invoke(const methodHandle& m, int bci) {
   if (!profile_arguments()) {
     return false;
   }
@@ -1567,7 +1567,7 @@ bool MethodData::profile_all_return() {
   return profile_return_flag() == type_profile_all;
 }
 
-bool MethodData::profile_return_for_invoke(methodHandle m, int bci) {
+bool MethodData::profile_return_for_invoke(const methodHandle& m, int bci) {
   if (!profile_return()) {
     return false;
   }
@@ -1596,7 +1596,7 @@ bool MethodData::profile_all_parameters() {
   return profile_parameters_flag() == type_profile_all;
 }
 
-bool MethodData::profile_parameters_for_method(methodHandle m) {
+bool MethodData::profile_parameters_for_method(const methodHandle& m) {
   if (!profile_parameters()) {
     return false;
   }

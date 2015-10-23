@@ -1141,7 +1141,7 @@ void InstanceKlass::call_class_initializer_impl(instanceKlassHandle this_k, TRAP
 }
 
 
-void InstanceKlass::mask_for(methodHandle method, int bci,
+void InstanceKlass::mask_for(const methodHandle& method, int bci,
   InterpreterOopMap* entry_for) {
   // Dirty read, then double-check under a lock.
   if (_oop_map_cache == NULL) {
@@ -1645,7 +1645,7 @@ void InstanceKlass::set_enclosing_method_indices(u2 class_index,
 // locking has to be done very carefully to avoid deadlocks
 // and/or other cache consistency problems.
 //
-jmethodID InstanceKlass::get_jmethod_id(instanceKlassHandle ik_h, methodHandle method_h) {
+jmethodID InstanceKlass::get_jmethod_id(instanceKlassHandle ik_h, const methodHandle& method_h) {
   size_t idnum = (size_t)method_h->method_idnum();
   jmethodID* jmeths = ik_h->methods_jmethod_ids_acquire();
   size_t length = 0;
@@ -2413,7 +2413,7 @@ bool InstanceKlass::is_same_class_package(oop class_loader1, Symbol* class_name1
 // Assumes name-signature match
 // "this" is InstanceKlass of super_method which must exist
 // note that the InstanceKlass of the method in the targetclassname has not always been created yet
-bool InstanceKlass::is_override(methodHandle super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS) {
+bool InstanceKlass::is_override(const methodHandle& super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS) {
    // Private methods can not be overridden
    if (super_method->is_private()) {
      return false;

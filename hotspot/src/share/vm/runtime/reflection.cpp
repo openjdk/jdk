@@ -612,7 +612,7 @@ oop get_mirror_from_signature(methodHandle method, SignatureStream* ss, TRAPS) {
 }
 
 
-objArrayHandle Reflection::get_parameter_types(methodHandle method, int parameter_count, oop* return_type, TRAPS) {
+objArrayHandle Reflection::get_parameter_types(const methodHandle& method, int parameter_count, oop* return_type, TRAPS) {
   // Allocate array holding parameter types (java.lang.Class instances)
   objArrayOop m = oopFactory::new_objArray(SystemDictionary::Class_klass(), parameter_count, CHECK_(objArrayHandle()));
   objArrayHandle mirrors (THREAD, m);
@@ -635,7 +635,7 @@ objArrayHandle Reflection::get_parameter_types(methodHandle method, int paramete
   return mirrors;
 }
 
-objArrayHandle Reflection::get_exception_types(methodHandle method, TRAPS) {
+objArrayHandle Reflection::get_exception_types(const methodHandle& method, TRAPS) {
   return method->resolved_checked_exceptions(THREAD);
 }
 
@@ -663,7 +663,7 @@ Handle Reflection::new_type(Symbol* signature, KlassHandle k, TRAPS) {
 }
 
 
-oop Reflection::new_method(methodHandle method, bool for_constant_pool_access, TRAPS) {
+oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_access, TRAPS) {
   // Allow sun.reflect.ConstantPool to refer to <clinit> methods as java.lang.reflect.Methods.
   assert(!method()->is_initializer() ||
          (for_constant_pool_access && method()->is_static()),
@@ -726,7 +726,7 @@ oop Reflection::new_method(methodHandle method, bool for_constant_pool_access, T
 }
 
 
-oop Reflection::new_constructor(methodHandle method, TRAPS) {
+oop Reflection::new_constructor(const methodHandle& method, TRAPS) {
   assert(method()->is_initializer(), "should call new_method instead");
 
   instanceKlassHandle  holder (THREAD, method->method_holder());
@@ -824,7 +824,7 @@ oop Reflection::new_parameter(Handle method, int index, Symbol* sym,
 }
 
 
-methodHandle Reflection::resolve_interface_call(instanceKlassHandle klass, methodHandle method,
+methodHandle Reflection::resolve_interface_call(instanceKlassHandle klass, const methodHandle& method,
                                                 KlassHandle recv_klass, Handle receiver, TRAPS) {
   assert(!method.is_null() , "method should not be null");
 
@@ -839,7 +839,7 @@ methodHandle Reflection::resolve_interface_call(instanceKlassHandle klass, metho
 }
 
 
-oop Reflection::invoke(instanceKlassHandle klass, methodHandle reflected_method,
+oop Reflection::invoke(instanceKlassHandle klass, const methodHandle& reflected_method,
                        Handle receiver, bool override, objArrayHandle ptypes,
                        BasicType rtype, objArrayHandle args, bool is_method_invoke, TRAPS) {
   ResourceMark rm(THREAD);

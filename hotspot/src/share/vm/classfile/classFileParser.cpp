@@ -646,7 +646,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
 }
 
 
-void ClassFileParser::patch_constant_pool(constantPoolHandle cp, int index, Handle patch, TRAPS) {
+void ClassFileParser::patch_constant_pool(const constantPoolHandle& cp, int index, Handle patch, TRAPS) {
   BasicType patch_type = T_VOID;
 
   switch (cp->tag_at(index).value()) {
@@ -4411,7 +4411,7 @@ ClassFileParser::~ClassFileParser() {
 
 void ClassFileParser::print_field_layout(Symbol* name,
                                          Array<u2>* fields,
-                                         constantPoolHandle cp,
+                                         const constantPoolHandle& cp,
                                          int instance_size,
                                          int instance_fields_start,
                                          int instance_fields_end,

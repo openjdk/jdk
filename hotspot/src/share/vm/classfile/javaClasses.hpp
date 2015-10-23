@@ -532,7 +532,7 @@ class java_lang_Throwable: AllStatic {
   static Symbol* detail_message(oop throwable);
   static void print_stack_element(outputStream *st, Handle mirror, int method,
                                   int version, int bci, int cpref);
-  static void print_stack_element(outputStream *st, methodHandle method, int bci);
+  static void print_stack_element(outputStream *st, const methodHandle& method, int bci);
   static void print_stack_usage(Handle stream);
 
   // Allocate space for backtrace (created but stack trace not filled in)
@@ -540,8 +540,8 @@ class java_lang_Throwable: AllStatic {
   // Fill in current stack trace for throwable with preallocated backtrace (no GC)
   static void fill_in_stack_trace_of_preallocated_backtrace(Handle throwable);
   // Fill in current stack trace, can cause GC
-  static void fill_in_stack_trace(Handle throwable, methodHandle method, TRAPS);
-  static void fill_in_stack_trace(Handle throwable, methodHandle method = methodHandle());
+  static void fill_in_stack_trace(Handle throwable, const methodHandle& method, TRAPS);
+  static void fill_in_stack_trace(Handle throwable, const methodHandle& method = methodHandle());
   // Programmatic access to stack trace
   static oop  get_stack_trace_element(oop throwable, int index, TRAPS);
   static int  get_stack_trace_depth(oop throwable, TRAPS);
@@ -1347,7 +1347,7 @@ class java_lang_StackTraceElement: AllStatic {
 
   // Create an instance of StackTraceElement
   static oop create(Handle mirror, int method, int version, int bci, int cpref, TRAPS);
-  static oop create(methodHandle method, int bci, TRAPS);
+  static oop create(const methodHandle& method, int bci, TRAPS);
 
   // Debugging
   friend class JavaClasses;

@@ -110,7 +110,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // Missing feature tests
   virtual bool supports_native()                 { return true; }
   virtual bool supports_osr   ()                 { return true; }
-  virtual bool can_compile_method(methodHandle method)  { return true; }
+  virtual bool can_compile_method(const methodHandle& method)  { return true; }
 
   // Determine if the current compiler provides an intrinsic
   // for method 'method'. An intrinsic is available if:
@@ -141,7 +141,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // disable intrinsics on a per-method basis. In cases (2) and (3) the
   // compilation context is aClass::aMethod and java.lang.ref.Reference::get,
   // respectively.
-  virtual bool is_intrinsic_available(methodHandle method, methodHandle compilation_context) {
+  virtual bool is_intrinsic_available(const methodHandle& method, const methodHandle& compilation_context) {
     return is_intrinsic_supported(method) &&
            !vmIntrinsics::is_disabled_by_flags(method, compilation_context);
   }
@@ -154,7 +154,7 @@ class AbstractCompiler : public CHeapObj<mtCompiler> {
   // by default no intrinsics are supported by a compiler except
   // the ones listed in the method. Overriding methods should conform
   // to this behavior.
-  virtual bool is_intrinsic_supported(methodHandle method) {
+  virtual bool is_intrinsic_supported(const methodHandle& method) {
     return false;
   }
 
