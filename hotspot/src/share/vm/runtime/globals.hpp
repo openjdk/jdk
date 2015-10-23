@@ -282,6 +282,14 @@ struct Flag {
     ERR_OTHER
   };
 
+  enum MsgType {
+    NONE = 0,
+    DIAGNOSTIC_FLAG_BUT_LOCKED,
+    EXPERIMENTAL_FLAG_BUT_LOCKED,
+    DEVELOPER_FLAG_BUT_PRODUCT_BUILD,
+    NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD
+  };
+
   const char* _type;
   const char* _name;
   void* _addr;
@@ -367,7 +375,7 @@ struct Flag {
 
   void unlock_diagnostic();
 
-  void get_locked_message(char*, int) const;
+  Flag::MsgType get_locked_message(char*, int) const;
   void get_locked_message_ext(char*, int) const;
 
   // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges

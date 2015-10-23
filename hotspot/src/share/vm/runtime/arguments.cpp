@@ -1120,7 +1120,7 @@ bool Arguments::process_argument(const char* arg,
                                  Flag::Flags origin) {
   JDK_Version since = JDK_Version();
 
-  if (parse_argument(arg, origin) || ignore_unrecognized) {
+  if (parse_argument(arg, origin)) {
     return true;
   }
 
@@ -1156,7 +1156,7 @@ bool Arguments::process_argument(const char* arg,
   Flag* found_flag = Flag::find_flag((const char*)argname, arg_len, true, true);
   if (found_flag != NULL) {
     char locked_message_buf[BUFLEN];
-    found_flag->get_locked_message(locked_message_buf, BUFLEN);
+    Flag::MsgType msg_type = found_flag->get_locked_message(locked_message_buf, BUFLEN);
     if (strlen(locked_message_buf) == 0) {
       if (found_flag->is_bool() && !has_plus_minus) {
         jio_fprintf(defaultStream::error_stream(),
@@ -1169,9 +1169,19 @@ bool Arguments::process_argument(const char* arg,
           "Improperly specified VM option '%s'\n", argname);
       }
     } else {
+#ifdef PRODUCT
+      bool mismatched = ((msg_type == Flag::NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD) ||
+                         (msg_type == Flag::DEVELOPER_FLAG_BUT_PRODUCT_BUILD));
+      if (ignore_unrecognized && mismatched) {
+        return true;
+      }
+#endif
       jio_fprintf(defaultStream::error_stream(), "%s", locked_message_buf);
     }
   } else {
+    if (ignore_unrecognized) {
+      return true;
+    }
     jio_fprintf(defaultStream::error_stream(),
                 "Unrecognized VM option '%s'\n", argname);
     Flag* fuzzy_matched = Flag::fuzzy_match((const char*)argname, arg_len, true);
