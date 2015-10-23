@@ -1,8 +1,8 @@
-# PropertyValueAliases-7.0.0.txt
-# Date: 2014-05-14, 23:55:16 GMT [MD]
+# PropertyValueAliases-8.0.0.txt
+# Date: 2015-03-11, 22:29:33 GMT [MD]
 #
 # Unicode Character Database
-# Copyright (c) 1991-2014 Unicode, Inc.
+# Copyright (c) 1991-2015 Unicode, Inc.
 # For terms of use, see http://www.unicode.org/terms_of_use.html
 # For documentation, see http://www.unicode.org/reports/tr44/
 #
@@ -77,6 +77,7 @@ age; 6.1                              ; V6_1
 age; 6.2                              ; V6_2
 age; 6.3                              ; V6_3
 age; 7.0                              ; V7_0
+age; 8.0                              ; V8_0
 age; NA                               ; Unassigned
 
 # Alphabetic (Alpha)
@@ -138,8 +139,10 @@ bpt; o                                ; Open
 # Block (blk)
 
 blk; Aegean_Numbers                   ; Aegean_Numbers
+blk; Ahom                             ; Ahom
 blk; Alchemical                       ; Alchemical_Symbols
 blk; Alphabetic_PF                    ; Alphabetic_Presentation_Forms
+blk; Anatolian_Hieroglyphs            ; Anatolian_Hieroglyphs
 blk; Ancient_Greek_Music              ; Ancient_Greek_Musical_Notation
 blk; Ancient_Greek_Numbers            ; Ancient_Greek_Numbers
 blk; Ancient_Symbols                  ; Ancient_Symbols
@@ -173,6 +176,7 @@ blk; Caucasian_Albanian               ; Caucasian_Albanian
 blk; Chakma                           ; Chakma
 blk; Cham                             ; Cham
 blk; Cherokee                         ; Cherokee
+blk; Cherokee_Sup                     ; Cherokee_Supplement
 blk; CJK                              ; CJK_Unified_Ideographs
 blk; CJK_Compat                       ; CJK_Compatibility
 blk; CJK_Compat_Forms                 ; CJK_Compatibility_Forms
@@ -182,6 +186,7 @@ blk; CJK_Ext_A                        ; CJK_Unified_Ideographs_Extension_A
 blk; CJK_Ext_B                        ; CJK_Unified_Ideographs_Extension_B
 blk; CJK_Ext_C                        ; CJK_Unified_Ideographs_Extension_C
 blk; CJK_Ext_D                        ; CJK_Unified_Ideographs_Extension_D
+blk; CJK_Ext_E                        ; CJK_Unified_Ideographs_Extension_E
 blk; CJK_Radicals_Sup                 ; CJK_Radicals_Supplement
 blk; CJK_Strokes                      ; CJK_Strokes
 blk; CJK_Symbols                      ; CJK_Symbols_And_Punctuation
@@ -208,6 +213,7 @@ blk; Diacriticals_Sup                 ; Combining_Diacritical_Marks_Supplement
 blk; Dingbats                         ; Dingbats
 blk; Domino                           ; Domino_Tiles
 blk; Duployan                         ; Duployan
+blk; Early_Dynastic_Cuneiform         ; Early_Dynastic_Cuneiform
 blk; Egyptian_Hieroglyphs             ; Egyptian_Hieroglyphs
 blk; Elbasan                          ; Elbasan
 blk; Emoticons                        ; Emoticons
@@ -234,6 +240,7 @@ blk; Half_And_Full_Forms              ; Halfwidth_And_Fullwidth_Forms
 blk; Half_Marks                       ; Combining_Half_Marks
 blk; Hangul                           ; Hangul_Syllables
 blk; Hanunoo                          ; Hanunoo
+blk; Hatran                           ; Hatran
 blk; Hebrew                           ; Hebrew
 blk; High_PU_Surrogates               ; High_Private_Use_Surrogates
 blk; High_Surrogates                  ; High_Surrogates
@@ -303,6 +310,7 @@ blk; Modifier_Letters                 ; Spacing_Modifier_Letters
 blk; Modifier_Tone_Letters            ; Modifier_Tone_Letters
 blk; Mongolian                        ; Mongolian
 blk; Mro                              ; Mro
+blk; Multani                          ; Multani
 blk; Music                            ; Musical_Symbols
 blk; Myanmar                          ; Myanmar
 blk; Myanmar_Ext_A                    ; Myanmar_Extended_A
@@ -315,6 +323,7 @@ blk; Number_Forms                     ; Number_Forms
 blk; OCR                              ; Optical_Character_Recognition
 blk; Ogham                            ; Ogham
 blk; Ol_Chiki                         ; Ol_Chiki
+blk; Old_Hungarian                    ; Old_Hungarian
 blk; Old_Italic                       ; Old_Italic
 blk; Old_North_Arabian                ; Old_North_Arabian
 blk; Old_Permic                       ; Old_Permic
@@ -359,7 +368,9 @@ blk; Sup_Math_Operators               ; Supplemental_Mathematical_Operators
 blk; Sup_PUA_A                        ; Supplementary_Private_Use_Area_A
 blk; Sup_PUA_B                        ; Supplementary_Private_Use_Area_B
 blk; Sup_Punctuation                  ; Supplemental_Punctuation
+blk; Sup_Symbols_And_Pictographs      ; Supplemental_Symbols_And_Pictographs
 blk; Super_And_Sub                    ; Superscripts_And_Subscripts
+blk; Sutton_SignWriting               ; Sutton_SignWriting
 blk; Syloti_Nagri                     ; Syloti_Nagri
 blk; Syriac                           ; Syriac
 blk; Tagalog                          ; Tagalog
@@ -709,22 +720,22 @@ IDS; Y                                ; Yes                              ; T    
 Ideo; N                               ; No                               ; F                                ; False
 Ideo; Y                               ; Yes                              ; T                                ; True
 
-# Indic_Matra_Category (InMC)
+# Indic_Positional_Category (InPC)
 
-InMC; Bottom                          ; Bottom
-InMC; Bottom_And_Right                ; Bottom_And_Right
-InMC; Left                            ; Left
-InMC; Left_And_Right                  ; Left_And_Right
-InMC; NA                              ; NA
-InMC; Overstruck                      ; Overstruck
-InMC; Right                           ; Right
-InMC; Top                             ; Top
-InMC; Top_And_Bottom                  ; Top_And_Bottom
-InMC; Top_And_Bottom_And_Right        ; Top_And_Bottom_And_Right
-InMC; Top_And_Left                    ; Top_And_Left
-InMC; Top_And_Left_And_Right          ; Top_And_Left_And_Right
-InMC; Top_And_Right                   ; Top_And_Right
-InMC; Visual_Order_Left               ; Visual_Order_Left
+InPC; Bottom                          ; Bottom
+InPC; Bottom_And_Right                ; Bottom_And_Right
+InPC; Left                            ; Left
+InPC; Left_And_Right                  ; Left_And_Right
+InPC; NA                              ; NA
+InPC; Overstruck                      ; Overstruck
+InPC; Right                           ; Right
+InPC; Top                             ; Top
+InPC; Top_And_Bottom                  ; Top_And_Bottom
+InPC; Top_And_Bottom_And_Right        ; Top_And_Bottom_And_Right
+InPC; Top_And_Left                    ; Top_And_Left
+InPC; Top_And_Left_And_Right          ; Top_And_Left_And_Right
+InPC; Top_And_Right                   ; Top_And_Right
+InPC; Visual_Order_Left               ; Visual_Order_Left
 
 # Indic_Syllabic_Category (InSC)
 
@@ -736,11 +747,14 @@ InSC; Consonant                       ; Consonant
 InSC; Consonant_Dead                  ; Consonant_Dead
 InSC; Consonant_Final                 ; Consonant_Final
 InSC; Consonant_Head_Letter           ; Consonant_Head_Letter
+InSC; Consonant_Killer                ; Consonant_Killer
 InSC; Consonant_Medial                ; Consonant_Medial
 InSC; Consonant_Placeholder           ; Consonant_Placeholder
 InSC; Consonant_Preceding_Repha       ; Consonant_Preceding_Repha
+InSC; Consonant_Prefixed              ; Consonant_Prefixed
 InSC; Consonant_Subjoined             ; Consonant_Subjoined
 InSC; Consonant_Succeeding_Repha      ; Consonant_Succeeding_Repha
+InSC; Consonant_With_Stacker          ; Consonant_With_Stacker
 InSC; Gemination_Mark                 ; Gemination_Mark
 InSC; Invisible_Stacker               ; Invisible_Stacker
 InSC; Joiner                          ; Joiner
@@ -752,6 +766,7 @@ InSC; Number_Joiner                   ; Number_Joiner
 InSC; Other                           ; Other
 InSC; Pure_Killer                     ; Pure_Killer
 InSC; Register_Shifter                ; Register_Shifter
+InSC; Syllable_Modifier               ; Syllable_Modifier
 InSC; Tone_Letter                     ; Tone_Letter
 InSC; Tone_Mark                       ; Tone_Mark
 InSC; Virama                          ; Virama
@@ -1099,6 +1114,7 @@ STerm; Y                              ; Yes                              ; T    
 # Script (sc)
 
 sc ; Aghb                             ; Caucasian_Albanian
+sc ; Ahom                             ; Ahom
 sc ; Arab                             ; Arabic
 sc ; Armi                             ; Imperial_Aramaic
 sc ; Armn                             ; Armenian
@@ -1137,10 +1153,13 @@ sc ; Guru                             ; Gurmukhi
 sc ; Hang                             ; Hangul
 sc ; Hani                             ; Han
 sc ; Hano                             ; Hanunoo
+sc ; Hatr                             ; Hatran
 sc ; Hebr                             ; Hebrew
 sc ; Hira                             ; Hiragana
+sc ; Hluw                             ; Anatolian_Hieroglyphs
 sc ; Hmng                             ; Pahawh_Hmong
 sc ; Hrkt                             ; Katakana_Or_Hiragana
+sc ; Hung                             ; Old_Hungarian
 sc ; Ital                             ; Old_Italic
 sc ; Java                             ; Javanese
 sc ; Kali                             ; Kayah_Li
@@ -1171,6 +1190,7 @@ sc ; Modi                             ; Modi
 sc ; Mong                             ; Mongolian
 sc ; Mroo                             ; Mro
 sc ; Mtei                             ; Meetei_Mayek
+sc ; Mult                             ; Multani
 sc ; Mymr                             ; Myanmar
 sc ; Narb                             ; Old_North_Arabian
 sc ; Nbat                             ; Nabataean
@@ -1194,6 +1214,7 @@ sc ; Runr                             ; Runic
 sc ; Samr                             ; Samaritan
 sc ; Sarb                             ; Old_South_Arabian
 sc ; Saur                             ; Saurashtra
+sc ; Sgnw                             ; SignWriting
 sc ; Shaw                             ; Shavian
 sc ; Shrd                             ; Sharada
 sc ; Sidd                             ; Siddham

@@ -125,8 +125,6 @@ import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
  * <p><strong>Variable argument invocation</strong> is handled for both methods and constructors.</p>
  * <p>Currently, only public fields and methods are supported. Any Lookup objects passed in the
  * {@link LinkRequest}s are ignored and {@link MethodHandles#publicLookup()} is used instead.</p>
- *
- * @author Attila Szegedi
  */
 public class BeansLinker implements GuardingDynamicLinker {
     private static final ClassValue<TypeBasedGuardingDynamicLinker> linkers = new ClassValue<TypeBasedGuardingDynamicLinker>() {
