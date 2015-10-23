@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -218,7 +218,7 @@ int NonTieredCompPolicy::compiler_count(CompLevel comp_level) {
   return 0;
 }
 
-void NonTieredCompPolicy::reset_counter_for_invocation_event(methodHandle m) {
+void NonTieredCompPolicy::reset_counter_for_invocation_event(const methodHandle& m) {
   // Make sure invocation and backedge counter doesn't overflow again right away
   // as would be the case for native methods.
 
@@ -232,7 +232,7 @@ void NonTieredCompPolicy::reset_counter_for_invocation_event(methodHandle m) {
   assert(!m->was_never_executed(), "don't reset to 0 -- could be mistaken for never-executed");
 }
 
-void NonTieredCompPolicy::reset_counter_for_back_branch_event(methodHandle m) {
+void NonTieredCompPolicy::reset_counter_for_back_branch_event(const methodHandle& m) {
   // Delay next back-branch event but pump up invocation counter to trigger
   // whole method compilation.
   MethodCounters* mcs = m->method_counters();
@@ -357,7 +357,7 @@ bool NonTieredCompPolicy::is_mature(Method* method) {
   return (current >= initial + target);
 }
 
-nmethod* NonTieredCompPolicy::event(methodHandle method, methodHandle inlinee, int branch_bci,
+nmethod* NonTieredCompPolicy::event(const methodHandle& method, const methodHandle& inlinee, int branch_bci,
                                     int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread) {
   assert(comp_level == CompLevel_none, "This should be only called from the interpreter");
   NOT_PRODUCT(trace_frequency_counter_overflow(method, branch_bci, bci));
@@ -417,7 +417,7 @@ nmethod* NonTieredCompPolicy::event(methodHandle method, methodHandle inlinee, i
 
 #ifndef PRODUCT
 PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
-void NonTieredCompPolicy::trace_frequency_counter_overflow(methodHandle m, int branch_bci, int bci) {
+void NonTieredCompPolicy::trace_frequency_counter_overflow(const methodHandle& m, int branch_bci, int bci) {
   if (TraceInvocationCounterOverflow) {
     MethodCounters* mcs = m->method_counters();
     assert(mcs != NULL, "MethodCounters cannot be NULL for profiling");
@@ -448,7 +448,7 @@ PRAGMA_DIAG_POP
   }
 }
 
-void NonTieredCompPolicy::trace_osr_request(methodHandle method, nmethod* osr, int bci) {
+void NonTieredCompPolicy::trace_osr_request(const methodHandle& method, nmethod* osr, int bci) {
   if (TraceOnStackReplacement) {
     ResourceMark rm;
     tty->print(osr != NULL ? "Reused OSR entry for " : "Requesting OSR entry for ");
@@ -460,7 +460,7 @@ void NonTieredCompPolicy::trace_osr_request(methodHandle method, nmethod* osr, i
 
 // SimpleCompPolicy - compile current method
 
-void SimpleCompPolicy::method_invocation_event(methodHandle m, JavaThread* thread) {
+void SimpleCompPolicy::method_invocation_event(const methodHandle& m, JavaThread* thread) {
   const int comp_level = CompLevel_highest_tier;
   const int hot_count = m->invocation_count();
   reset_counter_for_invocation_event(m);
@@ -474,7 +474,7 @@ void SimpleCompPolicy::method_invocation_event(methodHandle m, JavaThread* threa
   }
 }
 
-void SimpleCompPolicy::method_back_branch_event(methodHandle m, int bci, JavaThread* thread) {
+void SimpleCompPolicy::method_back_branch_event(const methodHandle& m, int bci, JavaThread* thread) {
   const int comp_level = CompLevel_highest_tier;
   const int hot_count = m->backedge_count();
   const char* comment = "backedge_count";
@@ -491,7 +491,7 @@ const char* StackWalkCompPolicy::_msg = NULL;
 
 
 // Consider m for compilation
-void StackWalkCompPolicy::method_invocation_event(methodHandle m, JavaThread* thread) {
+void StackWalkCompPolicy::method_invocation_event(const methodHandle& m, JavaThread* thread) {
   const int comp_level = CompLevel_highest_tier;
   const int hot_count = m->invocation_count();
   reset_counter_for_invocation_event(m);
@@ -530,7 +530,7 @@ void StackWalkCompPolicy::method_invocation_event(methodHandle m, JavaThread* th
   }
 }
 
-void StackWalkCompPolicy::method_back_branch_event(methodHandle m, int bci, JavaThread* thread) {
+void StackWalkCompPolicy::method_back_branch_event(const methodHandle& m, int bci, JavaThread* thread) {
   const int comp_level = CompLevel_highest_tier;
   const int hot_count = m->backedge_count();
   const char* comment = "backedge_count";
@@ -663,7 +663,7 @@ RFrame* StackWalkCompPolicy::senderOf(RFrame* rf, GrowableArray<RFrame*>* stack)
 }
 
 
-const char* StackWalkCompPolicy::shouldInline(methodHandle m, float freq, int cnt) {
+const char* StackWalkCompPolicy::shouldInline(const methodHandle& m, float freq, int cnt) {
   // Allows targeted inlining
   // positive filter: should send be inlined?  returns NULL (--> yes)
   // or rejection msg
@@ -690,7 +690,7 @@ const char* StackWalkCompPolicy::shouldInline(methodHandle m, float freq, int cn
 }
 
 
-const char* StackWalkCompPolicy::shouldNotInline(methodHandle m) {
+const char* StackWalkCompPolicy::shouldNotInline(const methodHandle& m) {
   // negative filter: should send NOT be inlined?  returns NULL (--> inline) or rejection msg
   if (m->is_abstract()) return (_msg = "abstract method");
   // note: we allow ik->is_abstract()

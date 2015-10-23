@@ -1402,7 +1402,7 @@ public:
 
   // Returns true if a compiler intrinsic is disabled by command-line flags
   // and false otherwise.
-  static bool is_disabled_by_flags(methodHandle method, methodHandle compilation_context);
+  static bool is_disabled_by_flags(const methodHandle& method, const methodHandle& compilation_context);
 };
 
 #endif // SHARE_VM_CLASSFILE_VMSYMBOLS_HPP

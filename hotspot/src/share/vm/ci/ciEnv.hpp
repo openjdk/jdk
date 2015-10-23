@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,34 +118,34 @@ private:
                              bool require_local);
 
   // Constant pool access.
-  ciKlass*   get_klass_by_index(constantPoolHandle cpool,
+  ciKlass*   get_klass_by_index(const constantPoolHandle& cpool,
                                 int klass_index,
                                 bool& is_accessible,
                                 ciInstanceKlass* loading_klass);
-  ciConstant get_constant_by_index(constantPoolHandle cpool,
+  ciConstant get_constant_by_index(const constantPoolHandle& cpool,
                                    int pool_index, int cache_index,
                                    ciInstanceKlass* accessor);
   ciField*   get_field_by_index(ciInstanceKlass* loading_klass,
                                 int field_index);
-  ciMethod*  get_method_by_index(constantPoolHandle cpool,
+  ciMethod*  get_method_by_index(const constantPoolHandle& cpool,
                                  int method_index, Bytecodes::Code bc,
                                  ciInstanceKlass* loading_klass);
 
   // Implementation methods for loading and constant pool access.
   ciKlass* get_klass_by_name_impl(ciKlass* accessing_klass,
-                                  constantPoolHandle cpool,
+                                  const constantPoolHandle& cpool,
                                   ciSymbol* klass_name,
                                   bool require_local);
-  ciKlass*   get_klass_by_index_impl(constantPoolHandle cpool,
+  ciKlass*   get_klass_by_index_impl(const constantPoolHandle& cpool,
                                      int klass_index,
                                      bool& is_accessible,
                                      ciInstanceKlass* loading_klass);
-  ciConstant get_constant_by_index_impl(constantPoolHandle cpool,
+  ciConstant get_constant_by_index_impl(const constantPoolHandle& cpool,
                                         int pool_index, int cache_index,
                                         ciInstanceKlass* loading_klass);
   ciField*   get_field_by_index_impl(ciInstanceKlass* loading_klass,
                                      int field_index);
-  ciMethod*  get_method_by_index_impl(constantPoolHandle cpool,
+  ciMethod*  get_method_by_index_impl(const constantPoolHandle& cpool,
                                       int method_index, Bytecodes::Code bc,
                                       ciInstanceKlass* loading_klass);
 

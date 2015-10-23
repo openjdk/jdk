@@ -414,7 +414,7 @@ class InstanceKlass: public Klass {
   };
 
   // method override check
-  bool is_override(methodHandle super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS);
+  bool is_override(const methodHandle& super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS);
 
   // package
   bool is_same_class_package(Klass* class2);
@@ -780,7 +780,7 @@ public:
 
   // jmethodID support
   static jmethodID get_jmethod_id(instanceKlassHandle ik_h,
-                     methodHandle method_h);
+                     const methodHandle& method_h);
   static jmethodID get_jmethod_id_fetch_or_update(instanceKlassHandle ik_h,
                      size_t idnum, jmethodID new_id, jmethodID* new_jmeths,
                      jmethodID* to_dealloc_id_p,
@@ -827,7 +827,7 @@ public:
   // OopMapCache support
   OopMapCache* oop_map_cache()               { return _oop_map_cache; }
   void set_oop_map_cache(OopMapCache *cache) { _oop_map_cache = cache; }
-  void mask_for(methodHandle method, int bci, InterpreterOopMap* entry);
+  void mask_for(const methodHandle& method, int bci, InterpreterOopMap* entry);
 
   // JNI identifier support (for static fields - for jni performance)
   JNIid* jni_ids()                               { return _jni_ids; }

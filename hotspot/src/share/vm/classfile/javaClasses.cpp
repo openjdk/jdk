@@ -1561,7 +1561,7 @@ void java_lang_Throwable::print_stack_element(outputStream *st, Handle mirror,
   st->print_cr("%s", buf);
 }
 
-void java_lang_Throwable::print_stack_element(outputStream *st, methodHandle method, int bci) {
+void java_lang_Throwable::print_stack_element(outputStream *st, const methodHandle& method, int bci) {
   Handle mirror = method->method_holder()->java_mirror();
   int method_id = method->orig_method_idnum();
   int version = method->constants()->version();
@@ -1632,7 +1632,7 @@ void java_lang_Throwable::print_stack_trace(oop throwable, outputStream* st) {
   }
 }
 
-void java_lang_Throwable::fill_in_stack_trace(Handle throwable, methodHandle method, TRAPS) {
+void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHandle& method, TRAPS) {
   if (!StackTraceInThrowable) return;
   ResourceMark rm(THREAD);
 
@@ -1763,7 +1763,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, methodHandle met
   set_backtrace(throwable(), bt.backtrace());
 }
 
-void java_lang_Throwable::fill_in_stack_trace(Handle throwable, methodHandle method) {
+void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHandle& method) {
   // No-op if stack trace is disabled
   if (!StackTraceInThrowable) {
     return;
@@ -1945,7 +1945,7 @@ oop java_lang_StackTraceElement::create(Handle mirror, int method_id,
   return element();
 }
 
-oop java_lang_StackTraceElement::create(methodHandle method, int bci, TRAPS) {
+oop java_lang_StackTraceElement::create(const methodHandle& method, int bci, TRAPS) {
   Handle mirror (THREAD, method->method_holder()->java_mirror());
   int method_id = method->orig_method_idnum();
   int cpref = method->name_index();

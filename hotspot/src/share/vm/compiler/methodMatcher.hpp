@@ -60,7 +60,7 @@ class MethodMatcher : public CHeapObj<mtCompiler> {
   void init(Symbol* class_name, Mode class_mode, Symbol* method_name, Mode method_mode, Symbol* signature);
   static void parse_method_pattern(char*& line, const char*& error_msg, MethodMatcher* m);
   static void print_symbol(outputStream* st, Symbol* h, Mode mode);
-  bool matches(methodHandle method) const;
+  bool matches(const methodHandle& method) const;
   void print_base(outputStream* st);
 
  private:
@@ -101,7 +101,7 @@ public:
     return bm;
   }
 
-  bool match(methodHandle method) {
+  bool match(const methodHandle& method) {
     for (BasicMatcher* current = this; current != NULL; current = current->next()) {
       if (current->matches(method)) {
         return true;

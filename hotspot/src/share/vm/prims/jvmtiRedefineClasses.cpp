@@ -216,7 +216,7 @@ bool VM_RedefineClasses::is_modifiable_class(oop klass_mirror) {
 // referenced CP entries may already exist in *merge_cp_p in which case
 // there is nothing extra to append and only the current entry is
 // appended.
-void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
+void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
        int scratch_i, constantPoolHandle *merge_cp_p, int *merge_cp_length_p,
        TRAPS) {
 
@@ -475,7 +475,7 @@ void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
 } // end append_entry()
 
 
-int VM_RedefineClasses::find_or_append_indirect_entry(constantPoolHandle scratch_cp,
+int VM_RedefineClasses::find_or_append_indirect_entry(const constantPoolHandle& scratch_cp,
       int ref_i, constantPoolHandle *merge_cp_p, int *merge_cp_length_p, TRAPS) {
 
   int new_ref_i = ref_i;
@@ -507,7 +507,7 @@ int VM_RedefineClasses::find_or_append_indirect_entry(constantPoolHandle scratch
 // Append a bootstrap specifier into the merge_cp operands that is semantically equal
 // to the scratch_cp operands bootstrap specifier passed by the old_bs_i index.
 // Recursively append new merge_cp entries referenced by the new bootstrap specifier.
-void VM_RedefineClasses::append_operand(constantPoolHandle scratch_cp, int old_bs_i,
+void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, int old_bs_i,
        constantPoolHandle *merge_cp_p, int *merge_cp_length_p, TRAPS) {
 
   int old_ref_i = scratch_cp->operand_bootstrap_method_ref_index_at(old_bs_i);
@@ -551,7 +551,7 @@ void VM_RedefineClasses::append_operand(constantPoolHandle scratch_cp, int old_b
 } // end append_operand()
 
 
-int VM_RedefineClasses::find_or_append_operand(constantPoolHandle scratch_cp,
+int VM_RedefineClasses::find_or_append_operand(const constantPoolHandle& scratch_cp,
       int old_bs_i, constantPoolHandle *merge_cp_p, int *merge_cp_length_p, TRAPS) {
 
   int new_bs_i = old_bs_i; // bootstrap specifier index
@@ -577,7 +577,7 @@ int VM_RedefineClasses::find_or_append_operand(constantPoolHandle scratch_cp,
 } // end find_or_append_operand()
 
 
-void VM_RedefineClasses::finalize_operands_merge(constantPoolHandle merge_cp, TRAPS) {
+void VM_RedefineClasses::finalize_operands_merge(const constantPoolHandle& merge_cp, TRAPS) {
   if (merge_cp->operands() == NULL) {
     return;
   }
@@ -910,8 +910,8 @@ int VM_RedefineClasses::find_new_operand_index(int old_index) {
 
 // Returns true if the current mismatch is due to a resolved/unresolved
 // class pair. Otherwise, returns false.
-bool VM_RedefineClasses::is_unresolved_class_mismatch(constantPoolHandle cp1,
-       int index1, constantPoolHandle cp2, int index2) {
+bool VM_RedefineClasses::is_unresolved_class_mismatch(const constantPoolHandle& cp1,
+       int index1, const constantPoolHandle& cp2, int index2) {
 
   jbyte t1 = cp1->tag_at(index1).value();
   if (t1 != JVM_CONSTANT_Class && t1 != JVM_CONSTANT_UnresolvedClass) {
@@ -1149,7 +1149,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
 
 // Map old_index to new_index as needed. scratch_cp is only needed
 // for RC_TRACE() calls.
-void VM_RedefineClasses::map_index(constantPoolHandle scratch_cp,
+void VM_RedefineClasses::map_index(const constantPoolHandle& scratch_cp,
        int old_index, int new_index) {
   if (find_new_index(old_index) != 0) {
     // old_index is already mapped
@@ -1195,8 +1195,8 @@ void VM_RedefineClasses::map_operand_index(int old_index, int new_index) {
 // scratch_cp to the corresponding entry in *merge_cp_p. Index map
 // entries are only created for entries in scratch_cp that occupy a
 // different location in *merged_cp_p.
-bool VM_RedefineClasses::merge_constant_pools(constantPoolHandle old_cp,
-       constantPoolHandle scratch_cp, constantPoolHandle *merge_cp_p,
+bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
+       const constantPoolHandle& scratch_cp, constantPoolHandle *merge_cp_p,
        int *merge_cp_length_p, TRAPS) {
 
   if (merge_cp_p == NULL) {
@@ -2867,7 +2867,7 @@ bool VM_RedefineClasses::skip_type_annotation_type_path(
 // }
 //
 void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
-       methodHandle method, TRAPS) {
+       const methodHandle& method, TRAPS) {
 
   if (!method->has_stackmap_table()) {
     return;

@@ -1394,7 +1394,7 @@ void os::serialize_thread_states() {
 // Returns true if the current stack pointer is above the stack shadow
 // pages, false otherwise.
 
-bool os::stack_shadow_pages_available(Thread *thread, methodHandle method) {
+bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method) {
   assert(StackRedPages > 0 && StackYellowPages > 0,"Sanity check");
   address sp = current_stack_pointer();
   // Check if we have StackShadowPages above the yellow zone.  This parameter

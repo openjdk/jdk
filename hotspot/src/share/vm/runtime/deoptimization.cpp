@@ -1345,7 +1345,7 @@ Deoptimization::get_method_data(JavaThread* thread, methodHandle m,
 }
 
 #if defined(COMPILER2) || defined(SHARK) || INCLUDE_JVMCI
-void Deoptimization::load_class_by_index(constantPoolHandle constant_pool, int index, TRAPS) {
+void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool, int index, TRAPS) {
   // in case of an unresolved klass entry, load the class.
   if (constant_pool->tag_at(index).is_unresolved_klass()) {
     Klass* tk = constant_pool->klass_at_ignore_error(index, CHECK);
@@ -1376,7 +1376,7 @@ void Deoptimization::load_class_by_index(constantPoolHandle constant_pool, int i
 }
 
 
-void Deoptimization::load_class_by_index(constantPoolHandle constant_pool, int index) {
+void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool, int index) {
   EXCEPTION_MARK;
   load_class_by_index(constant_pool, index, THREAD);
   if (HAS_PENDING_EXCEPTION) {

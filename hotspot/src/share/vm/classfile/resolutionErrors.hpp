@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,15 +56,15 @@ public:
   }
 
   void add_entry(int index, unsigned int hash,
-                 constantPoolHandle pool, int which, Symbol* error, Symbol* message);
+                 const constantPoolHandle& pool, int which, Symbol* error, Symbol* message);
 
 
   // find error given the constant pool and constant pool index
   ResolutionErrorEntry* find_entry(int index, unsigned int hash,
-                                   constantPoolHandle pool, int cp_index);
+                                   const constantPoolHandle& pool, int cp_index);
 
 
-  unsigned int compute_hash(constantPoolHandle pool, int cp_index) {
+  unsigned int compute_hash(const constantPoolHandle& pool, int cp_index) {
     return (unsigned int) pool->identity_hash() + cp_index;
   }
 

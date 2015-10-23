@@ -222,7 +222,7 @@ void Exceptions::_throw_cause(Thread* thread, const char* file, int line, Symbol
 }
 
 
-void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file, int line, methodHandle method) {
+void Exceptions::throw_stack_overflow_exception(Thread* THREAD, const char* file, int line, const methodHandle& method) {
   Handle exception;
   if (!THREAD->has_pending_exception()) {
     Klass* k = SystemDictionary::StackOverflowError_klass();

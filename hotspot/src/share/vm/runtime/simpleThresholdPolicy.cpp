@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -185,7 +185,7 @@ void SimpleThresholdPolicy::reprofile(ScopeDesc* trap_scope, bool is_osr) {
   }
 }
 
-nmethod* SimpleThresholdPolicy::event(methodHandle method, methodHandle inlinee,
+nmethod* SimpleThresholdPolicy::event(const methodHandle& method, const methodHandle& inlinee,
                                       int branch_bci, int bci, CompLevel comp_level, nmethod* nm, JavaThread* thread) {
   if (comp_level == CompLevel_none &&
       JvmtiExport::can_post_interpreter_events() &&
@@ -222,7 +222,7 @@ nmethod* SimpleThresholdPolicy::event(methodHandle method, methodHandle inlinee,
 }
 
 // Check if the method can be compiled, change level if necessary
-void SimpleThresholdPolicy::compile(methodHandle mh, int bci, CompLevel level, JavaThread* thread) {
+void SimpleThresholdPolicy::compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread) {
   assert(level <= TieredStopAtLevel, "Invalid compilation level");
   if (level == CompLevel_none) {
     return;
@@ -249,7 +249,7 @@ void SimpleThresholdPolicy::compile(methodHandle mh, int bci, CompLevel level, J
 }
 
 // Tell the broker to compile the method
-void SimpleThresholdPolicy::submit_compile(methodHandle mh, int bci, CompLevel level, JavaThread* thread) {
+void SimpleThresholdPolicy::submit_compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread) {
   int hot_count = (bci == InvocationEntryBci) ? mh->invocation_count() : mh->backedge_count();
   CompileBroker::compile_method(mh, bci, level, mh, hot_count, "tiered", thread);
 }
@@ -377,7 +377,7 @@ CompLevel SimpleThresholdPolicy::loop_event(Method* method, CompLevel cur_level)
 
 
 // Handle the invocation event.
-void SimpleThresholdPolicy::method_invocation_event(methodHandle mh, methodHandle imh,
+void SimpleThresholdPolicy::method_invocation_event(const methodHandle& mh, const methodHandle& imh,
                                               CompLevel level, nmethod* nm, JavaThread* thread) {
   if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh)) {
     CompLevel next_level = call_event(mh(), level);
@@ -389,7 +389,7 @@ void SimpleThresholdPolicy::method_invocation_event(methodHandle mh, methodHandl
 
 // Handle the back branch event. Notice that we can compile the method
 // with a regular entry from here.
-void SimpleThresholdPolicy::method_back_branch_event(methodHandle mh, methodHandle imh,
+void SimpleThresholdPolicy::method_back_branch_event(const methodHandle& mh, const methodHandle& imh,
                                                      int bci, CompLevel level, nmethod* nm, JavaThread* thread) {
   // If the method is already compiling, quickly bail out.
   if (is_compilation_enabled() && !CompileBroker::compilation_is_in_queue(mh)) {

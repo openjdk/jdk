@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -2145,9 +2145,9 @@ private:
 
   Mutex _extra_data_lock;
 
-  MethodData(methodHandle method, int size, TRAPS);
+  MethodData(const methodHandle& method, int size, TRAPS);
 public:
-  static MethodData* allocate(ClassLoaderData* loader_data, methodHandle method, TRAPS);
+  static MethodData* allocate(ClassLoaderData* loader_data, const methodHandle& method, TRAPS);
   MethodData() : _extra_data_lock(Monitor::leaf, "MDO extra data lock") {}; // For ciMethodData
 
   bool is_methodData() const volatile { return true; }
@@ -2283,13 +2283,13 @@ private:
     type_profile_all = 2
   };
 
-  static bool profile_jsr292(methodHandle m, int bci);
+  static bool profile_jsr292(const methodHandle& m, int bci);
   static int profile_arguments_flag();
   static bool profile_all_arguments();
-  static bool profile_arguments_for_invoke(methodHandle m, int bci);
+  static bool profile_arguments_for_invoke(const methodHandle& m, int bci);
   static int profile_return_flag();
   static bool profile_all_return();
-  static bool profile_return_for_invoke(methodHandle m, int bci);
+  static bool profile_return_for_invoke(const methodHandle& m, int bci);
   static int profile_parameters_flag();
   static bool profile_parameters_jsr292_only();
   static bool profile_all_parameters();
@@ -2304,8 +2304,8 @@ public:
   }
 
   // Compute the size of a MethodData* before it is created.
-  static int compute_allocation_size_in_bytes(methodHandle method);
-  static int compute_allocation_size_in_words(methodHandle method);
+  static int compute_allocation_size_in_bytes(const methodHandle& method);
+  static int compute_allocation_size_in_words(const methodHandle& method);
   static int compute_extra_data_count(int data_size, int empty_bc_count, bool needs_speculative_traps);
 
   // Determine if a given bytecode can have profile information.
@@ -2589,7 +2589,7 @@ public:
   void verify_on(outputStream* st);
   void verify_data_on(outputStream* st);
 
-  static bool profile_parameters_for_method(methodHandle m);
+  static bool profile_parameters_for_method(const methodHandle& m);
   static bool profile_arguments();
   static bool profile_arguments_jsr292_only();
   static bool profile_return();
