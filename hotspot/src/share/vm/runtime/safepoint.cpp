@@ -122,7 +122,7 @@ void SafepointSynchronize::begin() {
 
   // Save the starting time, so that it can be compared to see if this has taken
   // too long to complete.
-  jlong safepoint_limit_time;
+  jlong safepoint_limit_time = 0;
   timeout_error_printed = false;
 
   // PrintSafepointStatisticsTimeout can be specified separately. When
@@ -901,7 +901,7 @@ void ThreadSafepointState::restart() {
 
 
 void ThreadSafepointState::print_on(outputStream *st) const {
-  const char *s;
+  const char *s = NULL;
 
   switch(_type) {
     case _running                : s = "_running";              break;

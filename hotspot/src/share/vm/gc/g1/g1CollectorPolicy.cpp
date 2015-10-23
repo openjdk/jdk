@@ -431,7 +431,7 @@ void G1CollectorPolicy::init() {
   }
   _free_regions_at_end_of_collection = _g1->num_free_regions();
 
-  update_young_list_target_length();
+  update_young_list_max_and_target_length();
   // We may immediately start allocating regions and placing them on the
   // collection set list. Initialize the per-collection set info
   start_incremental_cset_building();
@@ -507,13 +507,24 @@ uint G1CollectorPolicy::calculate_young_list_desired_max_length() const {
   return _young_gen_sizer->max_desired_young_length();
 }
 
-void G1CollectorPolicy::update_young_list_target_length(size_t rs_lengths) {
-  if (rs_lengths == (size_t) -1) {
-    // if it's set to the default value (-1), we should predict it;
-    // otherwise, use the given value.
-    rs_lengths = (size_t) get_new_prediction(_rs_lengths_seq);
-  }
+void G1CollectorPolicy::update_young_list_max_and_target_length() {
+  update_young_list_max_and_target_length(get_new_prediction(_rs_lengths_seq));
+}
 
+void G1CollectorPolicy::update_young_list_max_and_target_length(size_t rs_lengths) {
+  update_young_list_target_length(rs_lengths);
+  update_max_gc_locker_expansion();
+}
+
+void G1CollectorPolicy::update_young_list_target_length(size_t rs_lengths) {
+  _young_list_target_length = bounded_young_list_target_length(rs_lengths);
+}
+
+void G1CollectorPolicy::update_young_list_target_length() {
+  update_young_list_target_length(get_new_prediction(_rs_lengths_seq));
+}
+
+uint G1CollectorPolicy::bounded_young_list_target_length(size_t rs_lengths) const {
   // Calculate the absolute and desired min bounds.
 
   // This is how many young regions we already have (currently: the survivors).
@@ -544,7 +555,6 @@ void G1CollectorPolicy::update_young_list_target_length(size_t rs_lengths) {
                                                            base_min_length,
                                                            desired_min_length,
                                                            desired_max_length);
-      _rs_lengths_prediction = rs_lengths;
     } else {
       // Don't calculate anything and let the code below bound it to
       // the desired_min_length, i.e., do the next GC as soon as
@@ -569,9 +579,8 @@ void G1CollectorPolicy::update_young_list_target_length(size_t rs_lengths) {
   assert(young_list_target_length > recorded_survivor_regions(),
          "we should be able to allocate at least one eden region");
   assert(young_list_target_length >= absolute_min_length, "post-condition");
-  _young_list_target_length = young_list_target_length;
 
-  update_max_gc_locker_expansion();
+  return young_list_target_length;
 }
 
 uint
@@ -695,11 +704,21 @@ void G1CollectorPolicy::revise_young_list_target_length_if_necessary() {
   if (rs_lengths > _rs_lengths_prediction) {
     // add 10% to avoid having to recalculate often
     size_t rs_lengths_prediction = rs_lengths * 1100 / 1000;
-    update_young_list_target_length(rs_lengths_prediction);
+    update_rs_lengths_prediction(rs_lengths_prediction);
+
+    update_young_list_max_and_target_length(rs_lengths_prediction);
   }
 }
 
+void G1CollectorPolicy::update_rs_lengths_prediction() {
+  update_rs_lengths_prediction(get_new_prediction(_rs_lengths_seq));
+}
 
+void G1CollectorPolicy::update_rs_lengths_prediction(size_t prediction) {
+  if (collector_state()->gcs_are_young() && adaptive_young_list_length()) {
+    _rs_lengths_prediction = prediction;
+  }
+}
 
 HeapWord* G1CollectorPolicy::mem_allocate_work(size_t size,
                                                bool is_tlab,
@@ -801,7 +820,8 @@ void G1CollectorPolicy::record_full_collection_end() {
   _free_regions_at_end_of_collection = _g1->num_free_regions();
   // Reset survivors SurvRateGroup.
   _survivor_surv_rate_group->reset();
-  update_young_list_target_length();
+  update_young_list_max_and_target_length();
+  update_rs_lengths_prediction();
   _collectionSetChooser->clear();
 }
 
@@ -1147,7 +1167,8 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
   collector_state()->set_in_marking_window(new_in_marking_window);
   collector_state()->set_in_marking_window_im(new_in_marking_window_im);
   _free_regions_at_end_of_collection = _g1->num_free_regions();
-  update_young_list_target_length();
+  update_young_list_max_and_target_length();
+  update_rs_lengths_prediction();
 
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;

@@ -223,6 +223,8 @@ ifeq ($(USE_CLANG),)
     WARNING_FLAGS += -Wtype-limits
     # GCC < 4.8 don't accept this flag for C++.
     WARNING_FLAGS += -Wno-format-zero-length
+    # GCC 4.8 reports less false positives than the older compilers.
+    WARNING_FLAGS += -Wuninitialized
   endif
 endif
 
