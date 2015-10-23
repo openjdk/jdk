@@ -221,14 +221,13 @@ public final class LocaleServiceProviderPool {
 
     /**
      * Returns whether any provider for this locale sensitive
-     * service is available or not, excluding JRE's one.
+     * service is available or not, excluding JRE/CLDR's one.
      *
-     * @return true if any provider (other than JRE) is available
+     * @return true if any provider (other than JRE/CLDR) is available
      */
     boolean hasProviders() {
         return providers.size() != 1 ||
-               (providers.get(LocaleProviderAdapter.Type.JRE) == null &&
-                providers.get(LocaleProviderAdapter.Type.FALLBACK) == null);
+               providers.get(LocaleProviderAdapter.defaultLocaleProviderAdapter) == null;
     }
 
     /**
@@ -275,7 +274,7 @@ public final class LocaleServiceProviderPool {
             throw new NullPointerException();
         }
 
-        // Check whether JRE is the sole locale data provider or not,
+        // Check whether JRE/CLDR is the sole locale data provider or not,
         // and directly call it if it is.
         if (!hasProviders()) {
             return getter.getObject((P)providers.get(LocaleProviderAdapter.defaultLocaleProviderAdapter),

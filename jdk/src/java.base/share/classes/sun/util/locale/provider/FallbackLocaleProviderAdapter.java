@@ -70,5 +70,5 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     public boolean isSupportedProviderLocale(Locale locale, Set<String>langtags) {
         return Locale.ROOT.equals(locale);
-}
+    }
 }

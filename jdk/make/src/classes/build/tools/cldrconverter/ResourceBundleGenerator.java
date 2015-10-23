@@ -28,6 +28,7 @@ package build.tools.cldrconverter;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.Formatter;
 import java.util.HashSet;
 import java.util.HashMap;
@@ -285,15 +286,16 @@ class ResourceBundleGenerator implements BundleGenerator {
                         out.printf("        parentLocalesMap.put(Locale.forLanguageTag(\"%s\"),\n",
                                    parentTag);
                     }
-                    String[] childlen = toLocaleList(metaInfo.get(key), true).split(" ");
+                    String[] children = toLocaleList(metaInfo.get(key), true).split(" ");
+                    Arrays.sort(children);
                     out.printf("             new String[] {\n" +
                                "                 ");
                     int count = 0;
-                    for (int i = 0; i < childlen.length; i++) {
-                        String child = childlen[i];
+                    for (int i = 0; i < children.length; i++) {
+                        String child = children[i];
                         out.printf("\"%s\", ", child);
                         count += child.length() + 4;
-                        if (i != childlen.length - 1 && count > 64) {
+                        if (i != children.length - 1 && count > 64) {
                             out.printf("\n                 ");
                             count = 0;
                         }

@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,22 +61,28 @@ public abstract class LocaleProviderAdapter {
      * Adapter type.
      */
     public static enum Type {
-        JRE("sun.util.resources", "sun.text.resources"),
-        CLDR("sun.util.resources.cldr", "sun.text.resources.cldr"),
-        SPI,
-        HOST,
-        FALLBACK("sun.util.resources", "sun.text.resources");
+        JRE("sun.util.locale.provider.JRELocaleProviderAdapter", "sun.util.resources", "sun.text.resources"),
+        CLDR("sun.util.cldr.CLDRLocaleProviderAdapter", "sun.util.resources.cldr", "sun.text.resources.cldr"),
+        SPI("sun.util.locale.provider.SPILocaleProviderAdapter"),
+        HOST("sun.util.locale.provider.HostLocaleProviderAdapter"),
+        FALLBACK("sun.util.locale.provider.FallbackLocaleProviderAdapter", "sun.util.resources", "sun.text.resources");
 
+        private final String CLASSNAME;
         private final String UTIL_RESOURCES_PACKAGE;
         private final String TEXT_RESOURCES_PACKAGE;
 
-        private Type() {
-            this(null, null);
+        private Type(String className) {
+            this(className, null, null);
         }
 
-        private Type(String util, String text) {
+        private Type(String className, String util, String text) {
+            CLASSNAME = className;
             UTIL_RESOURCES_PACKAGE = util;
             TEXT_RESOURCES_PACKAGE = text;
+        }
+
+        public String getAdapterClassName() {
+            return CLASSNAME;
         }
 
         public String getUtilResourcesPackage() {
@@ -93,36 +100,15 @@ public abstract class LocaleProviderAdapter {
     private static final List<Type> adapterPreference;
 
     /**
-     * JRE Locale Data Adapter instance
+     * LocaleProviderAdapter instances
      */
-    private static LocaleProviderAdapter jreLocaleProviderAdapter = new JRELocaleProviderAdapter();
-
-    /**
-     * SPI Locale Data Adapter instance
-     */
-    private static LocaleProviderAdapter spiLocaleProviderAdapter = new SPILocaleProviderAdapter();
-
-    /**
-     * CLDR Locale Data Adapter instance, if any.
-     */
-    private static LocaleProviderAdapter cldrLocaleProviderAdapter = null;
-
-    /**
-     * HOST Locale Data Adapter instance, if any.
-     */
-    private static LocaleProviderAdapter hostLocaleProviderAdapter = null;
-
-    /**
-     * FALLBACK Locale Data Adapter instance. It's basically the same with JRE, but only kicks
-     * in for the root locale.
-     */
-    private static LocaleProviderAdapter fallbackLocaleProviderAdapter = null;
+    private static final Map<Type, LocaleProviderAdapter> adapterInstances = new ConcurrentHashMap<>();
 
     /**
      * Default fallback adapter type, which should return something meaningful in any case.
-     * This is either JRE or FALLBACK.
+     * This is either CLDR or FALLBACK.
      */
-    static LocaleProviderAdapter.Type defaultLocaleProviderAdapter = null;
+    static volatile LocaleProviderAdapter.Type defaultLocaleProviderAdapter = null;
 
     /**
      * Adapter lookup cache.
@@ -141,20 +127,6 @@ public abstract class LocaleProviderAdapter {
             for (String type : types) {
                 try {
                     Type aType = Type.valueOf(type.trim().toUpperCase(Locale.ROOT));
-
-                    // load adapter if necessary
-                    switch (aType) {
-                        case CLDR:
-                            if (cldrLocaleProviderAdapter == null) {
-                                cldrLocaleProviderAdapter = new CLDRLocaleProviderAdapter();
-                            }
-                            break;
-                        case HOST:
-                            if (hostLocaleProviderAdapter == null) {
-                                hostLocaleProviderAdapter = new HostLocaleProviderAdapter();
-                            }
-                            break;
-                    }
                     if (!typeList.contains(aType)) {
                         typeList.add(aType);
                     }
@@ -166,28 +138,19 @@ public abstract class LocaleProviderAdapter {
             }
         }
 
+        defaultLocaleProviderAdapter = Type.CLDR;
         if (!typeList.isEmpty()) {
-            if (!typeList.contains(Type.JRE)) {
+            // bona fide preference exists
+            if (!typeList.contains(Type.CLDR)) {
                 // Append FALLBACK as the last resort.
-                fallbackLocaleProviderAdapter = new FallbackLocaleProviderAdapter();
                 typeList.add(Type.FALLBACK);
                 defaultLocaleProviderAdapter = Type.FALLBACK;
-            } else {
-                defaultLocaleProviderAdapter = Type.JRE;
             }
         } else {
             // Default preference list.
-            try {
-                cldrLocaleProviderAdapter = new CLDRLocaleProviderAdapter();
-                typeList.add(Type.CLDR);
-                defaultLocaleProviderAdapter = Type.CLDR;
-            } catch (UnsupportedOperationException e) {
-                LocaleServiceProviderPool.config(LocaleProviderAdapter.class, e.toString());
-            }
+            typeList.add(Type.CLDR);
             typeList.add(Type.JRE);
-            defaultLocaleProviderAdapter = Type.JRE;
         }
-
         adapterPreference = Collections.unmodifiableList(typeList);
     }
 
@@ -197,22 +160,42 @@ public abstract class LocaleProviderAdapter {
     public static LocaleProviderAdapter forType(Type type) {
         switch (type) {
         case JRE:
-            return jreLocaleProviderAdapter;
         case CLDR:
-            return cldrLocaleProviderAdapter;
         case SPI:
-            return spiLocaleProviderAdapter;
         case HOST:
-            return hostLocaleProviderAdapter;
         case FALLBACK:
-            return fallbackLocaleProviderAdapter;
+            LocaleProviderAdapter adapter = null;
+            LocaleProviderAdapter cached = adapterInstances.get(type);
+            if (cached == null) {
+                try {
+                    // lazily load adapters here
+                    adapter = (LocaleProviderAdapter)Class.forName(type.getAdapterClassName())
+                        .newInstance();
+                    cached = adapterInstances.putIfAbsent(type, adapter);
+                    if (cached != null) {
+                        adapter = cached;
+                    }
+                } catch (ClassNotFoundException |
+                         IllegalAccessException |
+                         InstantiationException |
+                         UnsupportedOperationException e) {
+                    LocaleServiceProviderPool.config(LocaleProviderAdapter.class, e.toString());
+                    adapterInstances.putIfAbsent(type, NONEXISTENT_ADAPTER);
+                    if (defaultLocaleProviderAdapter == type) {
+                        defaultLocaleProviderAdapter = Type.FALLBACK;
+                    }
+                }
+            } else if (cached != NONEXISTENT_ADAPTER) {
+                adapter = cached;
+            }
+            return adapter;
         default:
             throw new InternalError("unknown locale data adapter type");
         }
     }
 
     public static LocaleProviderAdapter forJRE() {
-        return jreLocaleProviderAdapter;
+        return forType(Type.JRE);
     }
 
     public static LocaleProviderAdapter getResourceBundleBased() {
@@ -227,6 +210,7 @@ public abstract class LocaleProviderAdapter {
         // Shouldn't happen.
         throw new InternalError();
     }
+
     /**
      * Returns the preference order of LocaleProviderAdapter.Type
      */
@@ -281,18 +265,20 @@ public abstract class LocaleProviderAdapter {
         }
 
         // returns the adapter for FALLBACK as the last resort
-        adapterMap.putIfAbsent(locale, fallbackLocaleProviderAdapter);
-        return fallbackLocaleProviderAdapter;
+        adapterMap.putIfAbsent(locale, forType(Type.FALLBACK));
+        return forType(Type.FALLBACK);
     }
 
     private static LocaleProviderAdapter findAdapter(Class<? extends LocaleServiceProvider> providerClass,
                                                  Locale locale) {
         for (Type type : getAdapterPreference()) {
             LocaleProviderAdapter adapter = forType(type);
-            LocaleServiceProvider provider = adapter.getLocaleServiceProvider(providerClass);
-            if (provider != null) {
-                if (provider.isSupportedLocale(locale)) {
-                    return adapter;
+            if (adapter != null) {
+                LocaleServiceProvider provider = adapter.getLocaleServiceProvider(providerClass);
+                if (provider != null) {
+                    if (provider.isSupportedLocale(locale)) {
+                        return adapter;
+                    }
                 }
             }
         }
@@ -442,4 +428,14 @@ public abstract class LocaleProviderAdapter {
     public abstract LocaleResources getLocaleResources(Locale locale);
 
     public abstract Locale[] getAvailableLocales();
+
+    private static final LocaleProviderAdapter NONEXISTENT_ADAPTER = new NonExistentAdapter();
+    private static final class NonExistentAdapter extends FallbackLocaleProviderAdapter {
+        @Override
+        public LocaleProviderAdapter.Type getAdapterType() {
+            return null;
+        }
+
+        private NonExistentAdapter() {};
+    }
 }
