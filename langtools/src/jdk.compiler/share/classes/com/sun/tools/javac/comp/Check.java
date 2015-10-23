@@ -409,6 +409,9 @@ public class Check {
  * Class name generation
  **************************************************************************/
 
+
+    private Map<Pair<Name, Name>, Integer> localClassNameIndexes = new HashMap<>();
+
     /** Return name of local class.
      *  This is of the form   {@code <enclClass> $ n <classname> }
      *  where
@@ -416,17 +419,28 @@ public class Check {
      *    classname is the simple name of the local class
      */
     Name localClassName(ClassSymbol c) {
-        for (int i=1; ; i++) {
-            Name flatname = names.
-                fromString("" + c.owner.enclClass().flatname +
-                           syntheticNameChar + i +
-                           c.name);
-            if (compiled.get(flatname) == null) return flatname;
+        Name enclFlatname = c.owner.enclClass().flatname;
+        String enclFlatnameStr = enclFlatname.toString();
+        Pair<Name, Name> key = new Pair<>(enclFlatname, c.name);
+        Integer index = localClassNameIndexes.get(key);
+        for (int i = (index == null) ? 1 : index; ; i++) {
+            Name flatname = names.fromString(enclFlatnameStr
+                    + syntheticNameChar + i + c.name);
+            if (compiled.get(flatname) == null) {
+                localClassNameIndexes.put(key, i + 1);
+                return flatname;
+            }
         }
+    }
+
+    void clearLocalClassNameIndexes(ClassSymbol c) {
+        localClassNameIndexes.remove(new Pair<>(
+                c.owner.enclClass().flatname, c.name));
     }
 
     public void newRound() {
         compiled.clear();
+        localClassNameIndexes.clear();
     }
 
 /* *************************************************************************

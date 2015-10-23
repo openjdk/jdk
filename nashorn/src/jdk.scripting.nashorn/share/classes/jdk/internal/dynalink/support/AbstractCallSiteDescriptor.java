@@ -91,7 +91,6 @@ import jdk.internal.dynalink.CallSiteDescriptor;
 /**
  * A base class for call site descriptor implementations. Provides reconstruction of the name from the tokens, as well
  * as a generally useful {@code equals} and {@code hashCode} methods.
- * @author Attila Szegedi
  */
 public abstract class AbstractCallSiteDescriptor implements CallSiteDescriptor {
 
