@@ -4006,7 +4006,6 @@ int MatchRule::is_expensive() const {
         strcmp(opType,"DivD")==0 ||
         strcmp(opType,"DivF")==0 ||
         strcmp(opType,"DivI")==0 ||
-        strcmp(opType,"LogD")==0 ||
         strcmp(opType,"Log10D")==0 ||
         strcmp(opType,"ModD")==0 ||
         strcmp(opType,"ModF")==0 ||

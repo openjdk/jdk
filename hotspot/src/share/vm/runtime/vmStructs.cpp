@@ -872,6 +872,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(StubRoutines,                _squareToLen,                                  address)                               \
      static_field(StubRoutines,                _mulAdd,                                       address)                               \
      static_field(StubRoutines,                _dexp,                                         address)                               \
+     static_field(StubRoutines,                _dlog,                                         address)                               \
      static_field(StubRoutines,                _jbyte_arraycopy,                              address)                               \
      static_field(StubRoutines,                _jshort_arraycopy,                             address)                               \
      static_field(StubRoutines,                _jint_arraycopy,                               address)                               \
@@ -2076,7 +2077,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(TanDNode, Node)                                         \
   declare_c2_type(AtanDNode, Node)                                        \
   declare_c2_type(SqrtDNode, Node)                                        \
-  declare_c2_type(LogDNode, Node)                                         \
   declare_c2_type(Log10DNode, Node)                                       \
   declare_c2_type(PowDNode, Node)                                         \
   declare_c2_type(ReverseBytesINode, Node)                                \
