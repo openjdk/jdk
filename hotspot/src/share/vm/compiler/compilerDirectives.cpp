@@ -487,6 +487,15 @@ DirectiveSet* DirectivesStack::getMatchingDirective(methodHandle method, Abstrac
     while (dir != NULL) {
       if (dir->is_default_directive() || dir->match(method)) {
         match = dir->get_for(comp);
+        if (match == NULL) {
+          // temporary workaround for compilers without directives.
+          if (dir->is_default_directive()) {
+            // default dir is always enabled
+            // match c1 store - it contains all common flags even if C1 is unavailable
+            match = dir->_c1_store;
+            break;
+          }
+        }
         if (match->EnableOption) {
           // The directiveSet for this compile is also enabled -> success
           break;
