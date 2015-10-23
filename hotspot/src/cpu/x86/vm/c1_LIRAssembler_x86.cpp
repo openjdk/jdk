@@ -1667,8 +1667,8 @@ void LIR_Assembler::emit_typecheck_helper(LIR_OpTypeCheck *op, Label* success, L
   Register Rtmp1 = noreg;
 
   // check if it needs to be profiled
-  ciMethodData* md;
-  ciProfileData* data;
+  ciMethodData* md = NULL;
+  ciProfileData* data = NULL;
 
   if (op->should_profile()) {
     ciMethod* method = op->profiled_method();
@@ -1827,8 +1827,8 @@ void LIR_Assembler::emit_opTypeCheck(LIR_OpTypeCheck* op) {
     CodeStub* stub = op->stub();
 
     // check if it needs to be profiled
-    ciMethodData* md;
-    ciProfileData* data;
+    ciMethodData* md = NULL;
+    ciProfileData* data = NULL;
 
     if (op->should_profile()) {
       ciMethod* method = op->profiled_method();
@@ -2005,7 +2005,8 @@ void LIR_Assembler::cmove(LIR_Condition condition, LIR_Opr opr1, LIR_Opr opr2, L
     case lir_cond_greater:      acond = Assembler::greater;      ncond = Assembler::lessEqual;    break;
     case lir_cond_belowEqual:   acond = Assembler::belowEqual;   ncond = Assembler::above;        break;
     case lir_cond_aboveEqual:   acond = Assembler::aboveEqual;   ncond = Assembler::below;        break;
-    default:                    ShouldNotReachHere();
+    default:                    acond = Assembler::equal;        ncond = Assembler::notEqual;
+                                ShouldNotReachHere();
   }
 
   if (opr1->is_cpu_register()) {
@@ -3182,27 +3183,23 @@ void LIR_Assembler::emit_arraycopy(LIR_OpArrayCopy* op) {
   assert(default_type != NULL && default_type->is_array_klass() && default_type->is_loaded(), "must be true at this point");
 
   int elem_size = type2aelembytes(basic_type);
-  int shift_amount;
   Address::ScaleFactor scale;
 
   switch (elem_size) {
     case 1 :
-      shift_amount = 0;
       scale = Address::times_1;
       break;
     case 2 :
-      shift_amount = 1;
       scale = Address::times_2;
       break;
     case 4 :
-      shift_amount = 2;
       scale = Address::times_4;
       break;
     case 8 :
-      shift_amount = 3;
       scale = Address::times_8;
       break;
     default:
+      scale = Address::no_scale;
       ShouldNotReachHere();
   }
 

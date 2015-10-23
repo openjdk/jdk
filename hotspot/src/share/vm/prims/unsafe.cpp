@@ -783,7 +783,7 @@ static void getBaseAndScale(int& base, int& scale, jclass acls, TRAPS) {
 
 UNSAFE_ENTRY(jint, Unsafe_ArrayBaseOffset(JNIEnv *env, jobject unsafe, jclass acls))
   UnsafeWrapper("Unsafe_ArrayBaseOffset");
-  int base, scale;
+  int base = 0, scale = 0;
   getBaseAndScale(base, scale, acls, CHECK_0);
   return field_offset_from_byte_offset(base);
 UNSAFE_END
@@ -791,7 +791,7 @@ UNSAFE_END
 
 UNSAFE_ENTRY(jint, Unsafe_ArrayIndexScale(JNIEnv *env, jobject unsafe, jclass acls))
   UnsafeWrapper("Unsafe_ArrayIndexScale");
-  int base, scale;
+  int base = 0, scale = 0;
   getBaseAndScale(base, scale, acls, CHECK_0);
   // This VM packs both fields and array elements down to the byte.
   // But watch out:  If this changes, so that array references for

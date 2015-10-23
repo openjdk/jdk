@@ -440,6 +440,10 @@ void os::init_system_properties_values() {
     if (pslash != NULL) {
       *pslash = '\0';            // Get rid of /{client|server|hotspot}.
     }
+#ifdef STATIC_BUILD
+    strcat(buf, "/lib");
+#endif
+
     Arguments::set_dll_dir(buf);
 
     if (pslash != NULL) {
@@ -1388,6 +1392,9 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 
 #ifdef __APPLE__
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
+#ifdef STATIC_BUILD
+  return os::get_default_process_handle();
+#else
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
     // Successful loading
@@ -1399,9 +1406,13 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   ebuf[ebuflen-1]='\0';
 
   return NULL;
+#endif // STATIC_BUILD
 }
 #else
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
+#ifdef STATIC_BUILD
+  return os::get_default_process_handle();
+#else
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
     // Successful loading
@@ -1574,6 +1585,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   return NULL;
+#endif // STATIC_BUILD
 }
 #endif // !__APPLE__
 
