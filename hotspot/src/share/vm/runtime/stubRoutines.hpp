@@ -208,6 +208,7 @@ class StubRoutines: AllStatic {
   static address _montgomerySquare;
 
   static address _dexp;
+  static address _dlog;
 
   // These are versions of the java.lang.Math methods which perform
   // the same operations as the intrinsic version.  They are used for
@@ -376,7 +377,8 @@ class StubRoutines: AllStatic {
   static address montgomeryMultiply()  { return _montgomeryMultiply; }
   static address montgomerySquare()    { return _montgomerySquare; }
 
-  static address dexp()                {return _dexp; }
+  static address dexp()                { return _dexp; }
+  static address dlog()                { return _dlog; }
 
   static address select_fill_function(BasicType t, bool aligned, const char* &name);
 

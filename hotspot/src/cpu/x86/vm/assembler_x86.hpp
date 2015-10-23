@@ -1504,6 +1504,8 @@ private:
   void movb(Address dst, int imm8);
   void movb(Register dst, Address src);
 
+  void movddup(XMMRegister dst, XMMRegister src);
+
   void kmovql(KRegister dst, KRegister src);
   void kmovql(KRegister dst, Register src);
   void kmovdl(KRegister dst, Register src);
@@ -1767,6 +1769,10 @@ private:
   void rclq(Register dst, int imm8);
 
   void rcrq(Register dst, int imm8);
+
+  void rcpps(XMMRegister dst, XMMRegister src);
+
+  void rcpss(XMMRegister dst, XMMRegister src);
 
   void rdtsc();
 
