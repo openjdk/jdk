@@ -4061,6 +4061,10 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     OrderAccess::release_store(&vm_created, 0);
   }
 
+  // Flush stdout and stderr before exit.
+  fflush(stdout);
+  fflush(stderr);
+
   return result;
 
 }
