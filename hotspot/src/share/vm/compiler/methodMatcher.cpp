@@ -320,13 +320,11 @@ bool MethodMatcher::matches(methodHandle method) const {
 }
 
 void MethodMatcher::print_symbol(outputStream* st, Symbol* h, Mode mode) {
-  ResourceMark rm;
-
   if (mode == Suffix || mode == Substring || mode == Any) {
     st->print("*");
   }
   if (mode != Any) {
-    h->print_symbol_on(st);
+    h->print_utf8_on(st);
   }
   if (mode == Prefix || mode == Substring) {
     st->print("*");
@@ -334,11 +332,13 @@ void MethodMatcher::print_symbol(outputStream* st, Symbol* h, Mode mode) {
 }
 
 void MethodMatcher::print_base(outputStream* st) {
+  ResourceMark rm;
+
   print_symbol(st, class_name(), _class_mode);
   st->print(".");
   print_symbol(st, method_name(), _method_mode);
   if (signature() != NULL) {
-    signature()->print_symbol_on(st);
+    signature()->print_utf8_on(st);
   }
 }
 
