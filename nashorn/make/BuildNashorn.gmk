@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -30,19 +30,12 @@ default: all
 include MakeBase.gmk
 include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
+include TextFileProcessing.gmk
 
 JDK_CLASSES := $(call PathList, $(strip $(addprefix $(JDK_OUTPUTDIR)/modules/, \
       java.base java.logging java.scripting)))
 
 NASHORN_JAR := $(IMAGES_OUTPUTDIR)/nashorn.jar
-NASHORN_VERSION := $(JDK_VERSION)
-NASHORN_FULL_VERSION := $(FULL_VERSION)
-
-ifdef MILESTONE
-  ifeq ($(MILESTONE), internal)
-    NASHORN_VERSION = $(FULL_VERSION)
-  endif
-endif
 
 # Need to use source and target 8 for nasgen to work.
 $(eval $(call SetupJavaCompiler,GENERATE_NEWBYTECODE_DEBUG, \
@@ -92,25 +85,23 @@ $(NASGEN_RUN_FILE): $(BUILD_NASGEN)
 	$(TOUCH) $@
 
 # Version file needs to be processed with version numbers
-VERSION_FILE := $(JDK_OUTPUTDIR)/modules/jdk.scripting.nashorn/jdk/nashorn/internal/runtime/resources/version.properties
-VERSION_SRC := $(NASHORN_TOPDIR)/src/jdk.scripting.nashorn/share/classes/jdk/nashorn/internal/runtime/resources/version.properties-template
+$(eval $(call SetupTextFileProcessing, BUILD_VERSION_FILE, \
+  SOURCE_FILES := $(NASHORN_TOPDIR)/src/jdk.scripting.nashorn/share/classes/jdk/nashorn/internal/runtime/resources/version.properties.template, \
+  OUTPUT_FILE := $(JDK_OUTPUTDIR)/modules/jdk.scripting.nashorn/jdk/nashorn/internal/runtime/resources/version.properties, \
+  REPLACEMENTS := \
+      @@VERSION_STRING@@ => $(VERSION_STRING) ; \
+      @@VERSION_SHORT@@ => $(VERSION_SHORT) , \
+))
 
-# Needs to happen after nasgen run since nasgen run deletes it
-$(VERSION_FILE): $(NASGEN_RUN_FILE)
-$(VERSION_FILE): $(VERSION_SRC)
-	$(ECHO) Creating version.properties
-	$(MKDIR) -p $(@D)
-	$(CAT) $< | $(SED) -e 's/$$(FULL_VERSION)/$(NASHORN_FULL_VERSION)/g' \
-	    -e 's/$$(RELEASE)/$(NASHORN_VERSION)/g' \
-	    -e '/^#.*$$/d' -e '/^$$/d'  > $@
+# Version processing needs to happen after nasgen run since nasgen run deletes it
+$(BUILD_VERSION_FILE): $(NASGEN_RUN_FILE)
 
 
-MANIFEST_ATTRIBUTES := Name: jdk/nashorn/\nImplementation-Title: Oracle Nashorn\nImplementation-Version: $(NASHORN_FULL_VERSION)
+MANIFEST_ATTRIBUTES := Name: jdk/nashorn/\nImplementation-Title: Oracle Nashorn\nImplementation-Version: $(VERSION_SHORT)
 
 # Create nashorn.jar from the final classes dir
 $(eval $(call SetupArchive,BUILD_NASHORN_JAR, \
-    DEPENDENCIES := $(NASGEN_RUN_FILE) \
-        $(VERSION_FILE), \
+    DEPENDENCIES := $(NASGEN_RUN_FILE) $(BUILD_VERSION_FILE), \
     SRCS := $(NASHORN_CLASSES_DIR), \
     SUFFIXES := .class .js .properties Factory, \
     MANIFEST := $(NASHORN_TOPDIR)/src/jdk.scripting.nashorn/share/classes/META-INF/MANIFEST.MF, \
@@ -118,7 +109,7 @@ $(eval $(call SetupArchive,BUILD_NASHORN_JAR, \
     SKIP_METAINF := true, \
     JAR := $(NASHORN_JAR)))
 
-compile: $(NASHORN_RUN_FILE) $(VERSION_FILE)
+compile: $(NASHORN_RUN_FILE) $(BUILD_VERSION_FILE)
 all: $(NASHORN_JAR)
 
 .PHONY: compile all
