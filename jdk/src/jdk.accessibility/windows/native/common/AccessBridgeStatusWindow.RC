@@ -44,7 +44,7 @@ BEGIN
     LTEXT           "Status:",IDC_STATIC,11,149,23,8
     EDITTEXT        cWindowsID,67,39,121,13,ES_READONLY
     LTEXT           "Windows ID:",IDC_STATIC,21,41,42,8
-    EDITTEXT        cCallInfo,12,65,184,75,ES_MULTILINE | ES_AUTOVSCROLL | 
+    EDITTEXT        cCallInfo,12,65,184,75,ES_MULTILINE | ES_AUTOVSCROLL |
                     ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL
     GROUPBOX        "Call info",IDC_STATIC,4,55,197,90
     EDITTEXT        cInvokedByText,67,1,121,13,ES_READONLY
@@ -67,12 +67,12 @@ END
 // TEXTINCLUDE
 //
 
-1 TEXTINCLUDE DISCARDABLE 
+1 TEXTINCLUDE DISCARDABLE
 BEGIN
     "resource.h\0"
 END
 
-2 TEXTINCLUDE DISCARDABLE 
+2 TEXTINCLUDE DISCARDABLE
 BEGIN
     "#define APSTUDIO_HIDDEN_SYMBOLS\r\n"
     "#include ""windows.h""\r\n"
@@ -80,7 +80,7 @@ BEGIN
     "\0"
 END
 
-3 TEXTINCLUDE DISCARDABLE 
+3 TEXTINCLUDE DISCARDABLE
 BEGIN
     "\r\n"
     "\0"
@@ -95,7 +95,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO DISCARDABLE 
+GUIDELINES DESIGNINFO DISCARDABLE
 BEGIN
     "ACCESSBRIDGESTATUSWINDOW", DIALOG
     BEGIN
@@ -142,7 +142,7 @@ BEGIN
             VALUE "CompanyName", XSTR(JDK_COMPANY) "\0"
             VALUE "FileDescription", XSTR(JDK_COMPONENT) "\0"
             VALUE "FileVersion", XSTR(JDK_VER) "\0"
-            VALUE "Full Version", XSTR(JDK_BUILD_ID) "\0"
+            VALUE "Full Version", XSTR(JDK_VERSION_STRING) "\0"
             VALUE "InternalName", XSTR(JDK_INTERNAL_NAME) "\0"
             VALUE "LegalCopyright", XSTR(JDK_COPYRIGHT) "\0"
             VALUE "OriginalFilename", XSTR(JDK_FNAME) "\0"
@@ -172,4 +172,3 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
-

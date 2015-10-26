@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ public abstract class SunJSSE extends java.security.Provider {
 
     // standard constructor
     protected SunJSSE() {
-        super("SunJSSE", 1.9d, info);
+        super("SunJSSE", 9.0d, info);
         subclassCheck();
         if (Boolean.TRUE.equals(fips)) {
             throw new ProviderException
@@ -132,7 +132,7 @@ public abstract class SunJSSE extends java.security.Provider {
 
     private SunJSSE(java.security.Provider cryptoProvider,
             String providerName) {
-        super("SunJSSE", 1.9d, fipsInfo + providerName + ")");
+        super("SunJSSE", 9.0d, fipsInfo + providerName + ")");
         subclassCheck();
         if (cryptoProvider == null) {
             // Calling Security.getProvider() will cause other providers to be
