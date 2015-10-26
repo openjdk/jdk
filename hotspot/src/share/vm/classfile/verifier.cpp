@@ -184,7 +184,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
     if (HAS_PENDING_EXCEPTION) {
       tty->print("Verification for %s has", klassName);
       tty->print_cr(" exception pending %s ",
-        InstanceKlass::cast(PENDING_EXCEPTION->klass())->external_name());
+        PENDING_EXCEPTION->klass()->external_name());
     } else if (exception_name != NULL) {
       tty->print_cr("Verification for %s failed", klassName);
     }

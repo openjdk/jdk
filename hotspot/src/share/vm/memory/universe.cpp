@@ -409,7 +409,7 @@ void Universe::genesis(TRAPS) {
     int i = 0;
     while (i < size) {
         // Allocate dummy in old generation
-      oop dummy = InstanceKlass::cast(SystemDictionary::Object_klass())->allocate_instance(CHECK);
+      oop dummy = SystemDictionary::Object_klass()->allocate_instance(CHECK);
       dummy_array->obj_at_put(i++, dummy);
     }
     {
@@ -484,8 +484,8 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
     _mirrors[T_LONG]    = _long_mirror;
     _mirrors[T_SHORT]   = _short_mirror;
     _mirrors[T_VOID]    = _void_mirror;
-  //_mirrors[T_OBJECT]  = InstanceKlass::cast(_object_klass)->java_mirror();
-  //_mirrors[T_ARRAY]   = InstanceKlass::cast(_object_klass)->java_mirror();
+  //_mirrors[T_OBJECT]  = _object_klass->java_mirror();
+  //_mirrors[T_ARRAY]   = _object_klass->java_mirror();
 }
 
 void Universe::fixup_mirrors(TRAPS) {
@@ -546,8 +546,7 @@ void Universe::reinitialize_vtable_of(KlassHandle k_h, TRAPS) {
   klassVtable* vt = ko->vtable();
   if (vt) vt->initialize_vtable(false, CHECK);
   if (ko->oop_is_instance()) {
-    InstanceKlass* ik = (InstanceKlass*)ko;
-    for (KlassHandle s_h(THREAD, ik->subklass());
+    for (KlassHandle s_h(THREAD, ko->subklass());
          s_h() != NULL;
          s_h = KlassHandle(THREAD, s_h()->next_sibling())) {
       reinitialize_vtable_of(s_h, CHECK);
@@ -998,8 +997,8 @@ bool universe_post_init() {
   // Setup static method for registering finalizers
   // The finalizer klass must be linked before looking up the method, in
   // case it needs to get rewritten.
-  InstanceKlass::cast(SystemDictionary::Finalizer_klass())->link_class(CHECK_false);
-  Method* m = InstanceKlass::cast(SystemDictionary::Finalizer_klass())->find_method(
+  SystemDictionary::Finalizer_klass()->link_class(CHECK_false);
+  Method* m = SystemDictionary::Finalizer_klass()->find_method(
                                   vmSymbols::register_method_name(),
                                   vmSymbols::register_method_signature());
   if (m == NULL || !m->is_static()) {
@@ -1009,8 +1008,8 @@ bool universe_post_init() {
   Universe::_finalizer_register_cache->init(
     SystemDictionary::Finalizer_klass(), m);
 
-  InstanceKlass::cast(SystemDictionary::misc_Unsafe_klass())->link_class(CHECK_false);
-  m = InstanceKlass::cast(SystemDictionary::misc_Unsafe_klass())->find_method(
+  SystemDictionary::misc_Unsafe_klass()->link_class(CHECK_false);
+  m = SystemDictionary::misc_Unsafe_klass()->find_method(
                                   vmSymbols::throwIllegalAccessError_name(),
                                   vmSymbols::void_method_signature());
   if (m != NULL && !m->is_static()) {
@@ -1023,8 +1022,8 @@ bool universe_post_init() {
     SystemDictionary::misc_Unsafe_klass(), m);
 
   // Setup method for registering loaded classes in class loader vector
-  InstanceKlass::cast(SystemDictionary::ClassLoader_klass())->link_class(CHECK_false);
-  m = InstanceKlass::cast(SystemDictionary::ClassLoader_klass())->find_method(vmSymbols::addClass_name(), vmSymbols::class_void_signature());
+  SystemDictionary::ClassLoader_klass()->link_class(CHECK_false);
+  m = SystemDictionary::ClassLoader_klass()->find_method(vmSymbols::addClass_name(), vmSymbols::class_void_signature());
   if (m == NULL || m->is_static()) {
     tty->print_cr("Unable to link/verify ClassLoader.addClass method");
     return false; // initialization failed (cannot throw exception yet)
@@ -1033,8 +1032,8 @@ bool universe_post_init() {
     SystemDictionary::ClassLoader_klass(), m);
 
   // Setup method for checking protection domain
-  InstanceKlass::cast(SystemDictionary::ProtectionDomain_klass())->link_class(CHECK_false);
-  m = InstanceKlass::cast(SystemDictionary::ProtectionDomain_klass())->
+  SystemDictionary::ProtectionDomain_klass()->link_class(CHECK_false);
+  m = SystemDictionary::ProtectionDomain_klass()->
             find_method(vmSymbols::impliesCreateAccessControlContext_name(),
                         vmSymbols::void_boolean_signature());
   // Allow NULL which should only happen with bootstrapping.

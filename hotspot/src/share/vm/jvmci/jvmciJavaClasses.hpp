@@ -306,7 +306,7 @@ class name : AllStatic {                                                        
     }                                                                                                                                                          \
     static void compute_offsets();                                                                                                                             \
   public:                                                                                                                                                      \
-    static InstanceKlass* klass() { return SystemDictionary::name##_klass() == NULL ? NULL : InstanceKlass::cast(SystemDictionary::name##_klass()); }
+    static InstanceKlass* klass() { return SystemDictionary::name##_klass(); }
 
 #define END_CLASS };
 

@@ -323,8 +323,7 @@ class DictionaryEntry : public HashtableEntry<Klass*, mtClass> {
 
   bool equals(Symbol* class_name, ClassLoaderData* loader_data) const {
     Klass* klass = (Klass*)literal();
-    return (InstanceKlass::cast(klass)->name() == class_name &&
-            _loader_data == loader_data);
+    return (klass->name() == class_name && _loader_data == loader_data);
   }
 
   void print() {

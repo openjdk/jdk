@@ -822,7 +822,7 @@ Array<Klass*>* ClassFileParser::parse_interfaces(int length,
       debug_only(No_Safepoint_Verifier nsv;)
       for (index = 0; index < length; index++) {
         Klass* k = _local_interfaces->at(index);
-        Symbol* name = InstanceKlass::cast(k)->name();
+        Symbol* name = k->name();
         // If no duplicates, add (name, NULL) in hashtable interface_names.
         if (!put_after_lookup(name, NULL, interface_names)) {
           dup = true;
@@ -4315,13 +4315,13 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
         if (caller != NULL) {
           tty->print("[Loaded %s by instance of %s]\n",
                      this_klass->external_name(),
-                     InstanceKlass::cast(caller)->external_name());
+                     caller->external_name());
         } else {
           tty->print("[Loaded %s]\n", this_klass->external_name());
         }
       } else {
         tty->print("[Loaded %s from %s]\n", this_klass->external_name(),
-                   InstanceKlass::cast(class_loader->klass())->external_name());
+                   class_loader->klass()->external_name());
       }
     }
 
@@ -4330,7 +4330,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       // print out the superclass.
       const char * from = this_klass()->external_name();
       if (this_klass->java_super() != NULL) {
-        tty->print("RESOLVE %s %s (super)\n", from, InstanceKlass::cast(this_klass->java_super())->external_name());
+        tty->print("RESOLVE %s %s (super)\n", from, this_klass->java_super()->external_name());
       }
       // print out each of the interface classes referred to by this class.
       Array<Klass*>* local_interfaces = this_klass->local_interfaces();
@@ -4338,8 +4338,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
         int length = local_interfaces->length();
         for (int i = 0; i < length; i++) {
           Klass* k = local_interfaces->at(i);
-          InstanceKlass* to_class = InstanceKlass::cast(k);
-          const char * to = to_class->external_name();
+          const char * to = k->external_name();
           tty->print("RESOLVE %s %s (interface)\n", from, to);
         }
       }
@@ -4687,7 +4686,7 @@ void ClassFileParser::check_super_class_access(instanceKlassHandle this_klass, T
       vmSymbols::java_lang_IllegalAccessError(),
       "class %s cannot access its superclass %s",
       this_klass->external_name(),
-      InstanceKlass::cast(super)->external_name()
+      super->external_name()
     );
     return;
   }
@@ -4707,7 +4706,7 @@ void ClassFileParser::check_super_interface_access(instanceKlassHandle this_klas
         vmSymbols::java_lang_IllegalAccessError(),
         "class %s cannot access its superinterface %s",
         this_klass->external_name(),
-        InstanceKlass::cast(k)->external_name()
+        k->external_name()
       );
       return;
     }

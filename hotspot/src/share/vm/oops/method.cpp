@@ -299,10 +299,7 @@ int Method::size(bool is_native) {
 
 
 Symbol* Method::klass_name() const {
-  Klass* k = method_holder();
-  assert(k->is_klass(), "must be klass");
-  InstanceKlass* ik = (InstanceKlass*) k;
-  return ik->name();
+  return method_holder()->name();
 }
 
 
