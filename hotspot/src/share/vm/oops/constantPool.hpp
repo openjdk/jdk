@@ -185,7 +185,7 @@ class ConstantPool : public Metadata {
 
   // Create object cache in the constant pool
   void initialize_resolved_references(ClassLoaderData* loader_data,
-                                      intStack reference_map,
+                                      const intStack& reference_map,
                                       int constant_pool_map_length,
                                       TRAPS);
 
