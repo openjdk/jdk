@@ -403,15 +403,15 @@ public:
   static void initialize(TRAPS);
 
   // Fast access to commonly used classes (preloaded)
-  static Klass* check_klass(Klass* k) {
+  static InstanceKlass* check_klass(InstanceKlass* k) {
     assert(k != NULL, "preloaded klass not initialized");
     return k;
   }
 
-  static Klass* check_klass_Pre(       Klass* k) { return check_klass(k); }
-  static Klass* check_klass_Opt(       Klass* k) { return k; }
+  static InstanceKlass* check_klass_Pre(InstanceKlass* k) { return check_klass(k); }
+  static InstanceKlass* check_klass_Opt(InstanceKlass* k) { return k; }
 
-  JVMCI_ONLY(static Klass* check_klass_Jvmci(Klass* k) { return k; })
+  JVMCI_ONLY(static InstanceKlass* check_klass_Jvmci(InstanceKlass* k) { return k; })
 
   static bool initialize_wk_klass(WKID id, int init_opt, TRAPS);
   static void initialize_wk_klasses_until(WKID limit_id, WKID &start_id, TRAPS);
@@ -422,19 +422,19 @@ public:
 
 public:
   #define WK_KLASS_DECLARE(name, symbol, option) \
-    static Klass* name() { return check_klass_##option(_well_known_klasses[WK_KLASS_ENUM_NAME(name)]); } \
-    static Klass** name##_addr() {                                                                       \
+    static InstanceKlass* name() { return check_klass_##option(_well_known_klasses[WK_KLASS_ENUM_NAME(name)]); } \
+    static InstanceKlass** name##_addr() {                                                                       \
       return &SystemDictionary::_well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)];           \
     }
   WK_KLASSES_DO(WK_KLASS_DECLARE);
   #undef WK_KLASS_DECLARE
 
-  static Klass* well_known_klass(WKID id) {
+  static InstanceKlass* well_known_klass(WKID id) {
     assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
     return _well_known_klasses[id];
   }
 
-  static Klass** well_known_klass_addr(WKID id) {
+  static InstanceKlass** well_known_klass_addr(WKID id) {
     assert(id >= (int)FIRST_WKID && id < (int)WKID_LIMIT, "oob");
     return &_well_known_klasses[id];
   }
@@ -442,7 +442,7 @@ public:
   // Local definition for direct access to the private array:
   #define WK_KLASS(name) _well_known_klasses[SystemDictionary::WK_KLASS_ENUM_NAME(name)]
 
-  static Klass* box_klass(BasicType t) {
+  static InstanceKlass* box_klass(BasicType t) {
     assert((uint)t < T_VOID+1, "range check");
     return check_klass(_box_klasses[t]);
   }
@@ -450,7 +450,7 @@ public:
 
   // methods returning lazily loaded klasses
   // The corresponding method to load the class must be called before calling them.
-  static Klass* abstract_ownable_synchronizer_klass() { return check_klass(_abstract_ownable_synchronizer_klass); }
+  static InstanceKlass* abstract_ownable_synchronizer_klass() { return check_klass(_abstract_ownable_synchronizer_klass); }
 
   static void load_abstract_ownable_synchronizer_klass(TRAPS);
 
@@ -700,13 +700,13 @@ protected:
                                 TRAPS);
 
   // Variables holding commonly used klasses (preloaded)
-  static Klass* _well_known_klasses[];
+  static InstanceKlass* _well_known_klasses[];
 
   // Lazily loaded klasses
-  static Klass* volatile _abstract_ownable_synchronizer_klass;
+  static InstanceKlass* volatile _abstract_ownable_synchronizer_klass;
 
   // table of box klasses (int_klass, etc.)
-  static Klass* _box_klasses[T_VOID+1];
+  static InstanceKlass* _box_klasses[T_VOID+1];
 
   static oop  _java_system_loader;
 

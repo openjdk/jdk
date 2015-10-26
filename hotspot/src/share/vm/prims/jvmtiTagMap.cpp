@@ -588,7 +588,7 @@ class CallbackWrapper : public StackObj {
     _obj_tag = (_entry == NULL) ? 0 : _entry->tag();
 
     // get the class and the class's tag value
-    assert(InstanceKlass::cast(SystemDictionary::Class_klass())->is_mirror_instance_klass(), "Is not?");
+    assert(SystemDictionary::Class_klass()->is_mirror_instance_klass(), "Is not?");
 
     _klass_tag = tag_for(tag_map, _o->klass()->java_mirror());
   }
