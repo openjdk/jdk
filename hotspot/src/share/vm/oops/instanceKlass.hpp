@@ -862,7 +862,7 @@ public:
 
 #ifdef ASSERT
   // check whether this class or one of its superclasses was redefined
-  bool has_redefined_this_or_super() const;
+  bool has_redefined_this_or_super();
 #endif
 
   // Access to the implementor of an interface.
@@ -922,7 +922,8 @@ public:
 
   // Casting from Klass*
   static InstanceKlass* cast(Klass* k) {
-    assert(k == NULL || k->oop_is_instance(), "cast to InstanceKlass");
+    assert(k != NULL, "k should not be null");
+    assert(k->oop_is_instance(), "cast to InstanceKlass");
     return static_cast<InstanceKlass*>(k);
   }
 

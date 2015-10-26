@@ -2101,7 +2101,7 @@ void JavaThread::check_and_handle_async_exceptions(bool check_unsafe_error) {
           frame f = last_frame();
           tty->print(" (pc: " INTPTR_FORMAT " sp: " INTPTR_FORMAT " )", p2i(f.pc()), p2i(f.sp()));
         }
-        tty->print_cr(" of type: %s", InstanceKlass::cast(_pending_async_exception->klass())->external_name());
+        tty->print_cr(" of type: %s", _pending_async_exception->klass()->external_name());
       }
       _pending_async_exception = NULL;
       clear_has_async_exception();
@@ -2219,10 +2219,10 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
 
       if (TraceExceptions) {
         ResourceMark rm;
-        tty->print_cr("Pending Async. exception installed of type: %s", InstanceKlass::cast(_pending_async_exception->klass())->external_name());
+        tty->print_cr("Pending Async. exception installed of type: %s", _pending_async_exception->klass()->external_name());
       }
       // for AbortVMOnException flag
-      Exceptions::debug_check_abort(InstanceKlass::cast(_pending_async_exception->klass())->external_name());
+      Exceptions::debug_check_abort(_pending_async_exception->klass()->external_name());
     }
   }
 

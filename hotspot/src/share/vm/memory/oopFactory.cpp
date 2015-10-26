@@ -82,9 +82,8 @@ typeArrayOop oopFactory::new_typeArray_nozero(BasicType type, int length, TRAPS)
 objArrayOop oopFactory::new_objArray(Klass* klass, int length, TRAPS) {
   assert(klass->is_klass(), "must be instance class");
   if (klass->oop_is_array()) {
-    return ((ArrayKlass*)klass)->allocate_arrayArray(1, length, THREAD);
+    return ArrayKlass::cast(klass)->allocate_arrayArray(1, length, THREAD);
   } else {
-    assert (klass->oop_is_instance(), "new object array with klass not an InstanceKlass");
-    return ((InstanceKlass*)klass)->allocate_objArray(1, length, THREAD);
+    return InstanceKlass::cast(klass)->allocate_objArray(1, length, THREAD);
   }
 }

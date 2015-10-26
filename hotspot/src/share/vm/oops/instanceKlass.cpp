@@ -742,7 +742,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
   // A class could already be verified, since it has been reflected upon.
   this_k->link_class(CHECK);
 
-  DTRACE_CLASSINIT_PROBE(required, InstanceKlass::cast(this_k()), -1);
+  DTRACE_CLASSINIT_PROBE(required, this_k(), -1);
 
   bool wait = false;
 
@@ -765,19 +765,19 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
 
     // Step 3
     if (this_k->is_being_initialized() && this_k->is_reentrant_initialization(self)) {
-      DTRACE_CLASSINIT_PROBE_WAIT(recursive, InstanceKlass::cast(this_k()), -1,wait);
+      DTRACE_CLASSINIT_PROBE_WAIT(recursive, this_k(), -1,wait);
       return;
     }
 
     // Step 4
     if (this_k->is_initialized()) {
-      DTRACE_CLASSINIT_PROBE_WAIT(concurrent, InstanceKlass::cast(this_k()), -1,wait);
+      DTRACE_CLASSINIT_PROBE_WAIT(concurrent, this_k(), -1,wait);
       return;
     }
 
     // Step 5
     if (this_k->is_in_error_state()) {
-      DTRACE_CLASSINIT_PROBE_WAIT(erroneous, InstanceKlass::cast(this_k()), -1,wait);
+      DTRACE_CLASSINIT_PROBE_WAIT(erroneous, this_k(), -1,wait);
       ResourceMark rm(THREAD);
       const char* desc = "Could not initialize class ";
       const char* className = this_k->external_name();
@@ -810,7 +810,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
         this_k->set_initialization_state_and_notify(initialization_error, THREAD); // Locks object, set state, and notify all waiting threads
         CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, superclass initialization error is thrown below
       }
-      DTRACE_CLASSINIT_PROBE_WAIT(super__failed, InstanceKlass::cast(this_k()), -1,wait);
+      DTRACE_CLASSINIT_PROBE_WAIT(super__failed, this_k(), -1,wait);
       THROW_OOP(e());
     }
   }
@@ -826,7 +826,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
   {
     assert(THREAD->is_Java_thread(), "non-JavaThread in initialize_impl");
     JavaThread* jt = (JavaThread*)THREAD;
-    DTRACE_CLASSINIT_PROBE_WAIT(clinit, InstanceKlass::cast(this_k()), -1,wait);
+    DTRACE_CLASSINIT_PROBE_WAIT(clinit, this_k(), -1,wait);
     // Timer includes any side effects of class initialization (resolution,
     // etc), but not recursive entry into call_class_initializer().
     PerfClassTraceTime timer(ClassLoader::perf_class_init_time(),
@@ -860,7 +860,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
       // JVMTI internal flag reset is needed in order to report ExceptionInInitializerError
       JvmtiExport::clear_detected_exception((JavaThread*)THREAD);
     }
-    DTRACE_CLASSINIT_PROBE_WAIT(error, InstanceKlass::cast(this_k()), -1,wait);
+    DTRACE_CLASSINIT_PROBE_WAIT(error, this_k(), -1,wait);
     if (e->is_a(SystemDictionary::Error_klass())) {
       THROW_OOP(e());
     } else {
@@ -870,7 +870,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
                 &args);
     }
   }
-  DTRACE_CLASSINIT_PROBE_WAIT(end, InstanceKlass::cast(this_k()), -1,wait);
+  DTRACE_CLASSINIT_PROBE_WAIT(end, this_k(), -1,wait);
 }
 
 
@@ -907,7 +907,7 @@ void InstanceKlass::add_implementor(Klass* k) {
   // Filter out subclasses whose supers already implement me.
   // (Note: CHA must walk subclasses of direct implementors
   // in order to locate indirect implementors.)
-  Klass* sk = InstanceKlass::cast(k)->super();
+  Klass* sk = k->super();
   if (sk != NULL && InstanceKlass::cast(sk)->implements_interface(this))
     // We only need to check one immediate superclass, since the
     // implements_interface query looks at transitive_interfaces.
@@ -955,8 +955,7 @@ bool InstanceKlass::can_be_primary_super_slow() const {
 
 GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slots) {
   // The secondaries are the implemented interfaces.
-  InstanceKlass* ik = InstanceKlass::cast(this);
-  Array<Klass*>* interfaces = ik->transitive_interfaces();
+  Array<Klass*>* interfaces = transitive_interfaces();
   int num_secondaries = num_extra_slots + interfaces->length();
   if (num_secondaries == 0) {
     // Must share this for correct bootstrapping!
@@ -1532,7 +1531,7 @@ Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature, O
     if (method != NULL) {
       return method;
     }
-    klass = InstanceKlass::cast(klass)->super();
+    klass = klass->super();
     overpass_local_mode = skip_overpass;   // Always ignore overpass methods in superclasses
   }
   return NULL;
@@ -1541,13 +1540,13 @@ Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature, O
 #ifdef ASSERT
 // search through class hierarchy and return true if this class or
 // one of the superclasses was redefined
-bool InstanceKlass::has_redefined_this_or_super() const {
-  const InstanceKlass* klass = this;
+bool InstanceKlass::has_redefined_this_or_super() {
+  Klass* klass = this;
   while (klass != NULL) {
-    if (klass->has_been_redefined()) {
+    if (InstanceKlass::cast(klass)->has_been_redefined()) {
       return true;
     }
-    klass = InstanceKlass::cast(klass->super());
+    klass = klass->super();
   }
   return false;
 }
@@ -2325,32 +2324,18 @@ const char* InstanceKlass::signature_name() const {
 
 // different verisons of is_same_class_package
 bool InstanceKlass::is_same_class_package(Klass* class2) {
-  Klass* class1 = this;
-  oop classloader1 = InstanceKlass::cast(class1)->class_loader();
-  Symbol* classname1 = class1->name();
-
   if (class2->oop_is_objArray()) {
     class2 = ObjArrayKlass::cast(class2)->bottom_klass();
   }
-  oop classloader2;
-  if (class2->oop_is_instance()) {
-    classloader2 = InstanceKlass::cast(class2)->class_loader();
-  } else {
-    assert(class2->oop_is_typeArray(), "should be type array");
-    classloader2 = NULL;
-  }
+  oop classloader2 = class2->class_loader();
   Symbol* classname2 = class2->name();
 
-  return InstanceKlass::is_same_class_package(classloader1, classname1,
+  return InstanceKlass::is_same_class_package(class_loader(), name(),
                                               classloader2, classname2);
 }
 
 bool InstanceKlass::is_same_class_package(oop classloader2, Symbol* classname2) {
-  Klass* class1 = this;
-  oop classloader1 = InstanceKlass::cast(class1)->class_loader();
-  Symbol* classname1 = class1->name();
-
-  return InstanceKlass::is_same_class_package(classloader1, classname1,
+  return InstanceKlass::is_same_class_package(class_loader(), name(),
                                               classloader2, classname2);
 }
 
@@ -2910,7 +2895,8 @@ void InstanceKlass::print_on(outputStream* st) const {
   ((InstanceKlass*)this)->do_local_static_fields(&print_static_field);
   st->print_cr(BULLET"---- non-static fields (%d words):", nonstatic_field_size());
   FieldPrinter print_nonstatic_field(st);
-  ((InstanceKlass*)this)->do_nonstatic_fields(&print_nonstatic_field);
+  InstanceKlass* ik = const_cast<InstanceKlass*>(this);
+  ik->do_nonstatic_fields(&print_nonstatic_field);
 
   st->print(BULLET"non-static oop maps: ");
   OopMapBlock* map     = start_of_nonstatic_oop_maps();

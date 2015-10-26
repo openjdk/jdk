@@ -104,7 +104,7 @@ bool VM_RedefineClasses::doit_prologue() {
         ClassLoaderData* cld = _scratch_classes[i]->class_loader_data();
         // Free the memory for this class at class unloading time.  Not before
         // because CMS might think this is still live.
-        cld->add_to_deallocate_list((InstanceKlass*)_scratch_classes[i]);
+        cld->add_to_deallocate_list(InstanceKlass::cast(_scratch_classes[i]));
       }
     }
     // Free os::malloc allocated memory in load_new_class_version.
@@ -4133,7 +4133,7 @@ void VM_RedefineClasses::increment_class_counter(InstanceKlass *ik, TRAPS) {
        subk = subk->next_sibling()) {
     if (subk->oop_is_instance()) {
       // Only update instanceKlasses
-      InstanceKlass *subik = (InstanceKlass*)subk;
+      InstanceKlass *subik = InstanceKlass::cast(subk);
       // recursively do subclasses of the current subclass
       increment_class_counter(subik, THREAD);
     }

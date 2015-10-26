@@ -647,11 +647,9 @@ Handle Reflection::new_type(Symbol* signature, KlassHandle k, TRAPS) {
     return Handle(THREAD, Universe::java_mirror(type));
   }
 
-  oop loader = InstanceKlass::cast(k())->class_loader();
-  oop protection_domain = k()->protection_domain();
   Klass* result = SystemDictionary::resolve_or_fail(signature,
-                                    Handle(THREAD, loader),
-                                    Handle(THREAD, protection_domain),
+                                    Handle(THREAD, k->class_loader()),
+                                    Handle(THREAD, k->protection_domain()),
                                     true, CHECK_(Handle()));
 
   if (TraceClassResolution) {

@@ -373,8 +373,8 @@ protected:
 #endif
 
   // vtables
-  virtual klassVtable* vtable() const        { return NULL; }
-  virtual int vtable_length() const          { return 0; }
+  virtual klassVtable* vtable() const = 0;
+  virtual int vtable_length() const = 0;
 
   // subclass check
   bool is_subclass_of(const Klass* k) const;

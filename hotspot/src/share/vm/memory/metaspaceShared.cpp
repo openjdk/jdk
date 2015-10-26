@@ -680,7 +680,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 void MetaspaceShared::link_one_shared_class(Klass* obj, TRAPS) {
   Klass* k = obj;
   if (k->oop_is_instance()) {
-    InstanceKlass* ik = (InstanceKlass*) k;
+    InstanceKlass* ik = InstanceKlass::cast(k);
     // Link the class to cause the bytecodes to be rewritten and the
     // cpcache to be created. Class verification is done according
     // to -Xverify setting.
