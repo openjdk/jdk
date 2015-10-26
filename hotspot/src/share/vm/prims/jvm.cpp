@@ -1156,7 +1156,7 @@ static bool is_authorized(Handle context, instanceKlassHandle klass, TRAPS) {
 // Create an AccessControlContext with a protection domain with null codesource
 // and null permissions - which gives no permissions.
 oop create_dummy_access_control_context(TRAPS) {
-  InstanceKlass* pd_klass = InstanceKlass::cast(SystemDictionary::ProtectionDomain_klass());
+  InstanceKlass* pd_klass = SystemDictionary::ProtectionDomain_klass();
   Handle obj = pd_klass->allocate_instance_handle(CHECK_NULL);
   // Call constructor ProtectionDomain(null, null);
   JavaValue result(T_VOID);

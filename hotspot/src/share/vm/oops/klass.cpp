@@ -557,9 +557,11 @@ Klass* Klass::array_klass_impl(bool or_null, TRAPS) {
 
 oop Klass::class_loader() const { return class_loader_data()->class_loader(); }
 
+// In product mode, this function doesn't have virtual function calls so
+// there might be some performance advantage to handling InstanceKlass here.
 const char* Klass::external_name() const {
   if (oop_is_instance()) {
-    InstanceKlass* ik = (InstanceKlass*) this;
+    const InstanceKlass* ik = static_cast<const InstanceKlass*>(this);
     if (ik->is_anonymous()) {
       intptr_t hash = 0;
       if (ik->java_mirror() != NULL) {
@@ -687,14 +689,8 @@ void Klass::oop_verify_on(oop obj, outputStream* st) {
 #ifndef PRODUCT
 
 bool Klass::verify_vtable_index(int i) {
-  if (oop_is_instance()) {
-    int limit = ((InstanceKlass*)this)->vtable_length()/vtableEntry::size();
-    assert(i >= 0 && i < limit, "index %d out of bounds %d", i, limit);
-  } else {
-    assert(oop_is_array(), "Must be");
-    int limit = ((ArrayKlass*)this)->vtable_length()/vtableEntry::size();
-    assert(i >= 0 && i < limit, "index %d out of bounds %d", i, limit);
-  }
+  int limit = vtable_length()/vtableEntry::size();
+  assert(i >= 0 && i < limit, "index %d out of bounds %d", i, limit);
   return true;
 }
 

@@ -745,7 +745,7 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
 #ifndef PRODUCT
   if (TraceDependencies && target() != NULL && target() != root_m->get_Method()) {
     tty->print("found a non-root unique target method");
-    tty->print_cr("  context = %s", InstanceKlass::cast(actual_recv->get_Klass())->external_name());
+    tty->print_cr("  context = %s", actual_recv->get_Klass()->external_name());
     tty->print("  method  = ");
     target->print_short_name(tty);
     tty->cr();

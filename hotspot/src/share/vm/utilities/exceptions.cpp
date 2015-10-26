@@ -502,5 +502,5 @@ void Exceptions::debug_check_abort_helper(Handle exception, const char* message)
       message = java_lang_String::as_utf8_string(msg);
     }
   }
-  debug_check_abort(InstanceKlass::cast(exception()->klass())->external_name(), message);
+  debug_check_abort(exception()->klass()->external_name(), message);
 }

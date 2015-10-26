@@ -198,11 +198,11 @@ void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, Kla
     if (source_file != NULL) {
       tty->print("RESOLVE %s %s %s:%d\n",
                  this_cp->pool_holder()->external_name(),
-                 InstanceKlass::cast(k())->external_name(), source_file, line_number);
+                 k->external_name(), source_file, line_number);
     } else {
       tty->print("RESOLVE %s %s\n",
                  this_cp->pool_holder()->external_name(),
-                 InstanceKlass::cast(k())->external_name());
+                 k->external_name());
     }
   }
 }

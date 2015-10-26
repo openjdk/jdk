@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ void Dictionary::free_entry(DictionaryEntry* entry) {
 
 bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
 #ifdef ASSERT
-  if (protection_domain == InstanceKlass::cast(klass())->protection_domain()) {
+  if (protection_domain == klass()->protection_domain()) {
     // Ensure this doesn't show up in the pd_set (invariant)
     bool in_pd_set = false;
     for (ProtectionDomainEntry* current = _pd_set;
@@ -96,7 +96,7 @@ bool DictionaryEntry::contains_protection_domain(oop protection_domain) const {
   }
 #endif /* ASSERT */
 
-  if (protection_domain == InstanceKlass::cast(klass())->protection_domain()) {
+  if (protection_domain == klass()->protection_domain()) {
     // Succeeds trivially
     return true;
   }
@@ -275,7 +275,7 @@ void Dictionary::classes_do(void f(Klass*)) {
                           probe != NULL;
                           probe = probe->next()) {
       Klass* k = probe->klass();
-      if (probe->loader_data() == InstanceKlass::cast(k)->class_loader_data()) {
+      if (probe->loader_data() == k->class_loader_data()) {
         f(k);
       }
     }
@@ -290,7 +290,7 @@ void Dictionary::classes_do(void f(Klass*, TRAPS), TRAPS) {
                           probe != NULL;
                           probe = probe->next()) {
       Klass* k = probe->klass();
-      if (probe->loader_data() == InstanceKlass::cast(k)->class_loader_data()) {
+      if (probe->loader_data() == k->class_loader_data()) {
         f(k, CHECK);
       }
     }
@@ -322,7 +322,7 @@ void Dictionary::methods_do(void f(Method*)) {
                           probe != NULL;
                           probe = probe->next()) {
       Klass* k = probe->klass();
-      if (probe->loader_data() == InstanceKlass::cast(k)->class_loader_data()) {
+      if (probe->loader_data() == k->class_loader_data()) {
         // only take klass is we have the entry with the defining class loader
         InstanceKlass::cast(k)->methods_do(f);
       }
@@ -476,7 +476,7 @@ void Dictionary::reorder_dictionary() {
     DictionaryEntry* p = master_list;
     master_list = master_list->next();
     p->set_next(NULL);
-    Symbol* class_name = InstanceKlass::cast((Klass*)(p->klass()))->name();
+    Symbol* class_name = p->klass()->name();
     // Since the null class loader data isn't copied to the CDS archive,
     // compute the hash with NULL for loader data.
     unsigned int hash = compute_hash(class_name, NULL);
@@ -723,7 +723,7 @@ void Dictionary::print(bool details) {
       Klass* e = probe->klass();
       ClassLoaderData* loader_data =  probe->loader_data();
       bool is_defining_class =
-         (loader_data == InstanceKlass::cast(e)->class_loader_data());
+         (loader_data == e->class_loader_data());
       tty->print("%s%s", ((!details) || is_defining_class) ? " " : "^",
                    e->external_name());
 

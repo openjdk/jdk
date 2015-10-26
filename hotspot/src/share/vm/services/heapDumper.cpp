@@ -895,9 +895,7 @@ void DumperSupport::dump_instance(DumpWriter* writer, oop o) {
 // creates HPROF_GC_CLASS_DUMP record for the given class and each of
 // its array classes
 void DumperSupport::dump_class_and_array_classes(DumpWriter* writer, Klass* k) {
-  Klass* klass = k;
-  assert(klass->oop_is_instance(), "not an InstanceKlass");
-  InstanceKlass* ik = (InstanceKlass*)klass;
+  InstanceKlass* ik = InstanceKlass::cast(k);
 
   // Ignore the class if it hasn't been initialized yet
   if (!ik->is_linked()) {
@@ -939,7 +937,7 @@ void DumperSupport::dump_class_and_array_classes(DumpWriter* writer, Klass* k) {
   dump_instance_field_descriptors(writer, k);
 
   // array classes
-  k = klass->array_klass_or_null();
+  k = k->array_klass_or_null();
   while (k != NULL) {
     Klass* klass = k;
     assert(klass->oop_is_objArray(), "not an ObjArrayKlass");
@@ -1396,7 +1394,7 @@ class VM_HeapDumper : public VM_GC_Operation {
     if (oome) {
       assert(!Thread::current()->is_VM_thread(), "Dump from OutOfMemoryError cannot be called by the VMThread");
       // get OutOfMemoryError zero-parameter constructor
-      InstanceKlass* oome_ik = InstanceKlass::cast(SystemDictionary::OutOfMemoryError_klass());
+      InstanceKlass* oome_ik = SystemDictionary::OutOfMemoryError_klass();
       _oome_constructor = oome_ik->find_method(vmSymbols::object_initializer_name(),
                                                           vmSymbols::void_method_signature());
       // get thread throwing OOME when generating the heap dump at OOME

@@ -348,8 +348,7 @@ void KlassHierarchy::print_class_hierarchy(outputStream* st, bool print_interfac
 
   for(int i = 0; i < elements.length(); i++) {
     KlassInfoEntry* cie = elements.at(i);
-    const InstanceKlass* k = (InstanceKlass*)cie->klass();
-    Klass* super = ((InstanceKlass*)k)->java_super();
+    Klass* super = cie->klass()->super();
 
     // Set the index for the class.
     cie->set_index(i + 1);
