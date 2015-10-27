@@ -32,7 +32,7 @@
  * @build LambdaFormTestCase
  * @build LFCachingTestCase
  * @build LFMultiThreadCachingTest
- * @run main/othervm -Djava.lang.invoke.MethodHandle.OBSERVE_BMH_SPECIES_CREATION=true LFMultiThreadCachingTest
+ * @run main/othervm LFMultiThreadCachingTest
  */
 
 import java.lang.invoke.MethodHandle;
