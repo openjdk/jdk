@@ -6349,6 +6349,26 @@ void Assembler::emit_vex_arith_q(int opcode, XMMRegister dst, XMMRegister nds, X
   emit_int8((unsigned char)(0xC0 | encode));
 }
 
+void Assembler::cmppd(XMMRegister dst, XMMRegister nds, XMMRegister src, int cop, int vector_len) {
+  assert(VM_Version::supports_avx(), "");
+  assert(!VM_Version::supports_evex(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src, VEX_SIMD_66, vector_len, VEX_OPCODE_0F, /* no_mask_reg */ false);
+  emit_int8((unsigned char)0xC2);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8((unsigned char)(0xF & cop));
+}
+
+void Assembler::vpblendd(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len) {
+  assert(VM_Version::supports_avx(), "");
+  assert(!VM_Version::supports_evex(), "");
+  int encode = vex_prefix_and_encode(dst, nds, src1, VEX_SIMD_66, vector_len, VEX_OPCODE_0F_3A, /* no_mask_reg */ false);
+  emit_int8((unsigned char)0x4B);
+  emit_int8((unsigned char)(0xC0 | encode));
+  int src2_enc = src2->encoding();
+  emit_int8((unsigned char)(0xF0 & src2_enc<<4));
+}
+
+
 #ifndef _LP64
 
 void Assembler::incl(Register dst) {
