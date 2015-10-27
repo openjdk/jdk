@@ -41,7 +41,7 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
          which == Assembler::imm_operand, "format unpacks ok");
   if (which == Assembler::imm_operand) {
     if (verify_only) {
-      assert(*pd_address_in_code() == x, "instructions must match");
+      guarantee(*pd_address_in_code() == x, "instructions must match");
     } else {
       *pd_address_in_code() = x;
     }
@@ -50,13 +50,13 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
     // both compressed oops and compressed classes look the same
     if (Universe::heap()->is_in_reserved((oop)x)) {
     if (verify_only) {
-      assert(*(uint32_t*) disp == oopDesc::encode_heap_oop((oop)x), "instructions must match");
+      guarantee(*(uint32_t*) disp == oopDesc::encode_heap_oop((oop)x), "instructions must match");
     } else {
       *(int32_t*) disp = oopDesc::encode_heap_oop((oop)x);
     }
   } else {
       if (verify_only) {
-        assert(*(uint32_t*) disp == Klass::encode_klass((Klass*)x), "instructions must match");
+        guarantee(*(uint32_t*) disp == Klass::encode_klass((Klass*)x), "instructions must match");
       } else {
         *(int32_t*) disp = Klass::encode_klass((Klass*)x);
       }
@@ -67,14 +67,14 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
     address disp = Assembler::locate_operand(ip, which);
     address next_ip = Assembler::locate_next_instruction(ip);
     if (verify_only) {
-      assert(*(int32_t*) disp == (x - next_ip), "instructions must match");
+      guarantee(*(int32_t*) disp == (x - next_ip), "instructions must match");
     } else {
       *(int32_t*) disp = x - next_ip;
     }
   }
 #else
   if (verify_only) {
-    assert(*pd_address_in_code() == (x + o), "instructions must match");
+    guarantee(*pd_address_in_code() == (x + o), "instructions must match");
   } else {
     *pd_address_in_code() = x + o;
   }
