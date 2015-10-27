@@ -100,6 +100,64 @@ class FdLibm {
     }
 
     /**
+     * cbrt(x)
+     * Return cube root of x
+     */
+    public static class Cbrt {
+        // unsigned
+        private static final int B1 = 715094163; /* B1 = (682-0.03306235651)*2**20 */
+        private static final int B2 = 696219795; /* B2 = (664-0.03306235651)*2**20 */
+
+        private static final double C =  0x1.15f15f15f15f1p-1; //   19/35   ~= 5.42857142857142815906e-01
+        private static final double D = -0x1.691de2532c834p-1; // -864/1225 ~= 7.05306122448979611050e-01
+        private static final double E =  0x1.6a0ea0ea0ea0fp0;  //   99/70   ~= 1.41428571428571436819e+00
+        private static final double F =  0x1.9b6db6db6db6ep0;  //   45/28   ~= 1.60714285714285720630e+00
+        private static final double G =  0x1.6db6db6db6db7p-2; //    5/14   ~= 3.57142857142857150787e-01
+
+        public static strictfp double compute(double x) {
+            double  t = 0.0;
+            double sign;
+
+            if (x == 0.0 || !Double.isFinite(x))
+                return x; // Handles signed zeros properly
+
+            sign = (x < 0.0) ? -1.0:  1.0;
+
+            x = Math.abs(x);   // x <- |x|
+
+            // Rough cbrt to 5 bits
+            if (x < 0x1.0p-1022) {     // subnormal number
+                t = 0x1.0p54;          // set t= 2**54
+                t *= x;
+                t = __HI(t, __HI(t)/3 + B2);
+            } else {
+                int hx = __HI(x);           // high word of x
+                t = __HI(t, hx/3 + B1);
+            }
+
+            // New cbrt to 23 bits, may be implemented in single precision
+            double  r, s, w;
+            r = t * t/x;
+            s = C + r*t;
+            t *= G + F/(s + E + D/s);
+
+            // Chopped to 20 bits and make it larger than cbrt(x)
+            t = __LO(t, 0);
+            t = __HI(t, __HI(t) + 0x00000001);
+
+            // One step newton iteration to 53 bits with error less than 0.667 ulps
+            s = t * t;          // t*t is exact
+            r = x / s;
+            w = t + t;
+            r = (r - t)/(w + r);  // r-s is exact
+            t = t + t*r;
+
+            // Restore the original sign bit
+            return sign * t;
+        }
+    }
+
+    /**
      * hypot(x,y)
      *
      * Method :
@@ -182,7 +240,7 @@ class FdLibm {
             }
 
             int k = 0;
-            if (a > 0x1.0p500) {   // a > 2**500
+            if (a > 0x1.00000_ffff_ffffp500) {   // a > ~2**500
                 // scale a and b by 2**-600
                 ha -= 0x25800000;
                 hb -= 0x25800000;

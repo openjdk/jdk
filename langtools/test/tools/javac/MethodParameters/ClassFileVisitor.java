@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -147,7 +147,6 @@ class ClassFileVisitor extends Tester.Visitor {
         public int mAttrs;
         public int mNumParams;
         public boolean mSynthetic;
-        public boolean mIsLambda;
         public boolean mIsConstructor;
         public boolean mIsClinit;
         public boolean mIsBridge;
@@ -166,7 +165,6 @@ class ClassFileVisitor extends Tester.Visitor {
             mIsClinit = mName.equals("<clinit>");
             prefix = cname + "." + mName + "() - ";
             mIsBridge = method.access_flags.is(AccessFlags.ACC_BRIDGE);
-            mIsLambda = mSynthetic && mName.startsWith("lambda$");
 
             if (mIsClinit) {
                 sb = new StringBuilder(); // Discard output
@@ -227,7 +225,7 @@ class ClassFileVisitor extends Tester.Visitor {
 
             // IMPL: Whether MethodParameters attributes will be generated
             // for some synthetics is unresolved. For now, assume no.
-            if (mSynthetic && !mIsLambda) {
+            if (mSynthetic) {
                 warn(prefix + "synthetic has MethodParameter attribute");
             }
 
@@ -351,12 +349,10 @@ class ClassFileVisitor extends Tester.Visitor {
             } else if (isEnum && mNumParams == 1 && index == 0 && mName.equals("valueOf")) {
                 expect = "name";
                 allowMandated = true;
-            } else if (mIsBridge || mIsLambda) {
+            } else if (mIsBridge) {
                 allowSynthetic = true;
                 /*  you can't expect an special name for bridges' parameters.
-                 *  The name of the original parameters are now copied. Likewise
-                 *  for a method encoding the lambda expression, names are derived
-                 *  from source lambda's parameters and captured enclosing locals.
+                 *  The name of the original parameters are now copied.
                  */
                 expect = null;
             }

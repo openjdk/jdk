@@ -487,7 +487,8 @@ public class HttpURLConnection extends java.net.HttpURLConnection {
     private void checkMessageHeader(String key, String value) {
         char LF = '\n';
         int index = key.indexOf(LF);
-        if (index != -1) {
+        int index1 = key.indexOf(':');
+        if (index != -1 || index1 != -1) {
             throw new IllegalArgumentException(
                 "Illegal character(s) in message header field: " + key);
         }

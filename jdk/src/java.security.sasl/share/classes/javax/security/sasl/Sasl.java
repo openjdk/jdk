@@ -310,6 +310,13 @@ public class Sasl {
      * for information about how to install and configure security service
      *  providers.
      *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.provider.preferred} property to determine
+     * the preferred provider order for the specified algorithm. This
+     * may be different than the order of providers returned by
+     * {@link Security#getProviders() Security.getProviders()}.
+     *
      * @param mechanisms The non-null list of mechanism names to try. Each is the
      * IANA-registered name of a SASL mechanism. (e.g. "GSSAPI", "CRAM-MD5").
      * @param authorizationId The possibly null protocol-dependent
@@ -451,6 +458,13 @@ public class Sasl {
      * "Java Cryptography Architecture API Specification &amp; Reference"
      * for information about how to install and configure security
      * service providers.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.provider.preferred} property to determine
+     * the preferred provider order for the specified algorithm. This
+     * may be different than the order of providers returned by
+     * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param mechanism The non-null mechanism name. It must be an
      * IANA-registered name of a SASL mechanism. (e.g. "GSSAPI", "CRAM-MD5").

@@ -44,9 +44,9 @@ import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.LongAdder;
-import jdk.internal.dynalink.ChainedCallSite;
 import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.support.ChainedCallSite;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -64,9 +64,6 @@ public class LinkerCallSite extends ChainedCallSite {
     private static final String PROFILEFILE = Options.getStringProperty("nashorn.profilefile", "NashornProfile.txt");
 
     private static final MethodHandle INCREASE_MISS_COUNTER = MH.findStatic(MethodHandles.lookup(), LinkerCallSite.class, "increaseMissCount", MH.type(Object.class, String.class, Object.class));
-    private static final MethodHandle ON_CATCH_INVALIDATION = MH.findStatic(MethodHandles.lookup(), LinkerCallSite.class, "onCatchInvalidation", MH.type(ChainedCallSite.class, LinkerCallSite.class));
-
-    private int catchInvalidations;
 
     LinkerCallSite(final NashornCallSiteDescriptor descriptor) {
         super(descriptor);
@@ -75,34 +72,6 @@ public class LinkerCallSite extends ChainedCallSite {
         }
     }
 
-    @Override
-    protected MethodHandle getPruneCatches() {
-        return MH.filterArguments(super.getPruneCatches(), 0, ON_CATCH_INVALIDATION);
-    }
-
-    /**
-     * Action to perform when a catch guard around a callsite triggers. Increases
-     * catch invalidation counter
-     * @param callSite callsite
-     * @return the callsite, so this can be used as argument filter
-     */
-    @SuppressWarnings("unused")
-    private static ChainedCallSite onCatchInvalidation(final LinkerCallSite callSite) {
-        ++callSite.catchInvalidations;
-        return callSite;
-    }
-
-    /**
-     * Get the number of catch invalidations that have happened at this call site so far
-     * @param callSiteToken call site token, unique to the callsite.
-     * @return number of catch invalidations, i.e. thrown exceptions caught by the linker
-     */
-    public static int getCatchInvalidationCount(final Object callSiteToken) {
-        if (callSiteToken instanceof LinkerCallSite) {
-            return ((LinkerCallSite)callSiteToken).catchInvalidations;
-        }
-        return 0;
-    }
     /**
      * Construct a new linker call site.
      * @param name     Name of method.
@@ -155,7 +124,7 @@ public class LinkerCallSite extends ChainedCallSite {
     }
 
     private MethodHandle getIncreaseMissCounter(final Class<?> type) {
-        final MethodHandle missCounterWithDesc = MH.bindTo(INCREASE_MISS_COUNTER, getDescriptor().getName() + " @ " + getScriptLocation());
+        final MethodHandle missCounterWithDesc = MH.bindTo(INCREASE_MISS_COUNTER, getDescriptor().getOperation() + " @ " + getScriptLocation());
         if (type == Object.class) {
             return missCounterWithDesc;
         }
@@ -322,7 +291,7 @@ public class LinkerCallSite extends ChainedCallSite {
                 int index = 0;
                 for (final ProfilingLinkerCallSite callSite : profileCallSites) {
                    out.println("" + (index++) + '\t' +
-                                  callSite.getDescriptor().getName() + '\t' +
+                                  callSite.getDescriptor().getOperation() + '\t' +
                                   callSite.totalTime + '\t' +
                                   callSite.hitCount);
                 }
@@ -433,7 +402,7 @@ public class LinkerCallSite extends ChainedCallSite {
         private void tracePrint(final PrintWriter out, final String tag, final Object[] args, final Object result) {
             //boolean isVoid = type().returnType() == void.class;
             out.print(Debug.id(this) + " TAG " + tag);
-            out.print(getDescriptor().getName() + "(");
+            out.print(getDescriptor().getOperation() + "(");
 
             if (args.length > 0) {
                 printObject(out, args[0]);

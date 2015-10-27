@@ -36,7 +36,7 @@
  * @bug 6785442
  * @summary Checks race between poll and remove(Object), while
  * occasionally moonlighting as a microbenchmark.
- * @run main RemovePollRace 12345
+ * @run main RemovePollRace 1234
  */
 
 import java.util.concurrent.ArrayBlockingQueue;
@@ -56,7 +56,7 @@ import java.util.Queue;
 import java.util.Map;
 
 public class RemovePollRace {
-    // Suitable for benchmarking.  Overriden by args[0] for testing.
+    // Suitable for benchmarking.  Overridden by args[0] for testing.
     int count = 1024 * 1024;
 
     final Map<String,String> results = new ConcurrentHashMap<String,String>();
@@ -100,6 +100,7 @@ public class RemovePollRace {
     void test(String[] args) throws Throwable {
         if (args.length > 0)
             count = Integer.valueOf(args[0]);
+
         // Warmup
         for (Queue<Boolean> queue : concurrentQueues())
             test(queue);

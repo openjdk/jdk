@@ -91,7 +91,7 @@ inline void G1ParScanClosure::do_oop_nv(T* p) {
       if (state.is_humongous()) {
         _g1->set_humongous_is_live(obj);
       }
-      _par_scan_state->update_rs(_from, p, _worker_id);
+      _par_scan_state->update_rs(_from, p);
     }
   }
 }
@@ -222,6 +222,80 @@ inline void G1UpdateRSOrPushRefOopClosure::do_oop_nv(T* p) {
     // the referenced object.
     assert(to->rem_set() != NULL, "Need per-region 'into' remsets.");
     to->rem_set()->add_reference(p, _worker_i);
+  }
+}
+
+template <class T>
+void G1ParCopyHelper::do_klass_barrier(T* p, oop new_obj) {
+  if (_g1->heap_region_containing_raw(new_obj)->is_young()) {
+    _scanned_klass->record_modified_oops();
+  }
+}
+
+void G1ParCopyHelper::mark_object(oop obj) {
+  assert(!_g1->heap_region_containing(obj)->in_collection_set(), "should not mark objects in the CSet");
+
+  // We know that the object is not moving so it's safe to read its size.
+  _cm->grayRoot(obj, (size_t) obj->size(), _worker_id);
+}
+
+void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
+  assert(from_obj->is_forwarded(), "from obj should be forwarded");
+  assert(from_obj->forwardee() == to_obj, "to obj should be the forwardee");
+  assert(from_obj != to_obj, "should not be self-forwarded");
+
+  assert(_g1->heap_region_containing(from_obj)->in_collection_set(), "from obj should be in the CSet");
+  assert(!_g1->heap_region_containing(to_obj)->in_collection_set(), "should not mark objects in the CSet");
+
+  // The object might be in the process of being copied by another
+  // worker so we cannot trust that its to-space image is
+  // well-formed. So we have to read its size from its from-space
+  // image which we know should not be changing.
+  _cm->grayRoot(to_obj, (size_t) from_obj->size(), _worker_id);
+}
+
+template <G1Barrier barrier, G1Mark do_mark_object>
+template <class T>
+void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
+  T heap_oop = oopDesc::load_heap_oop(p);
+
+  if (oopDesc::is_null(heap_oop)) {
+    return;
+  }
+
+  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+
+  assert(_worker_id == _par_scan_state->worker_id(), "sanity");
+
+  const InCSetState state = _g1->in_cset_state(obj);
+  if (state.is_in_cset()) {
+    oop forwardee;
+    markOop m = obj->mark();
+    if (m->is_marked()) {
+      forwardee = (oop) m->decode_pointer();
+    } else {
+      forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
+    }
+    assert(forwardee != NULL, "forwardee should not be NULL");
+    oopDesc::encode_store_heap_oop(p, forwardee);
+    if (do_mark_object != G1MarkNone && forwardee != obj) {
+      // If the object is self-forwarded we don't need to explicitly
+      // mark it, the evacuation failure protocol will do so.
+      mark_forwarded_object(obj, forwardee);
+    }
+
+    if (barrier == G1BarrierKlass) {
+      do_klass_barrier(p, forwardee);
+    }
+  } else {
+    if (state.is_humongous()) {
+      _g1->set_humongous_is_live(obj);
+    }
+    // The object is not in collection set. If we're a root scanning
+    // closure during an initial mark pause then attempt to mark the object.
+    if (do_mark_object == G1MarkFromRoot) {
+      mark_object(obj);
+    }
   }
 }
 

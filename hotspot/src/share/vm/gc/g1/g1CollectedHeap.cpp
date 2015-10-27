@@ -44,6 +44,7 @@
 #include "gc/g1/g1ParScanThreadState.inline.hpp"
 #include "gc/g1/g1RegionToSpaceMapper.hpp"
 #include "gc/g1/g1RemSet.inline.hpp"
+#include "gc/g1/g1RootClosures.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1YCTypes.hpp"
@@ -125,213 +126,6 @@ class RedirtyLoggedCardTableEntryClosure : public CardTableEntryClosure {
   size_t num_processed() const { return _num_processed; }
 };
 
-YoungList::YoungList(G1CollectedHeap* g1h) :
-    _g1h(g1h), _head(NULL), _length(0), _last_sampled_rs_lengths(0),
-    _survivor_head(NULL), _survivor_tail(NULL), _survivor_length(0) {
-  guarantee(check_list_empty(false), "just making sure...");
-}
-
-void YoungList::push_region(HeapRegion *hr) {
-  assert(!hr->is_young(), "should not already be young");
-  assert(hr->get_next_young_region() == NULL, "cause it should!");
-
-  hr->set_next_young_region(_head);
-  _head = hr;
-
-  _g1h->g1_policy()->set_region_eden(hr, (int) _length);
-  ++_length;
-}
-
-void YoungList::add_survivor_region(HeapRegion* hr) {
-  assert(hr->is_survivor(), "should be flagged as survivor region");
-  assert(hr->get_next_young_region() == NULL, "cause it should!");
-
-  hr->set_next_young_region(_survivor_head);
-  if (_survivor_head == NULL) {
-    _survivor_tail = hr;
-  }
-  _survivor_head = hr;
-  ++_survivor_length;
-}
-
-void YoungList::empty_list(HeapRegion* list) {
-  while (list != NULL) {
-    HeapRegion* next = list->get_next_young_region();
-    list->set_next_young_region(NULL);
-    list->uninstall_surv_rate_group();
-    // This is called before a Full GC and all the non-empty /
-    // non-humongous regions at the end of the Full GC will end up as
-    // old anyway.
-    list->set_old();
-    list = next;
-  }
-}
-
-void YoungList::empty_list() {
-  assert(check_list_well_formed(), "young list should be well formed");
-
-  empty_list(_head);
-  _head = NULL;
-  _length = 0;
-
-  empty_list(_survivor_head);
-  _survivor_head = NULL;
-  _survivor_tail = NULL;
-  _survivor_length = 0;
-
-  _last_sampled_rs_lengths = 0;
-
-  assert(check_list_empty(false), "just making sure...");
-}
-
-bool YoungList::check_list_well_formed() {
-  bool ret = true;
-
-  uint length = 0;
-  HeapRegion* curr = _head;
-  HeapRegion* last = NULL;
-  while (curr != NULL) {
-    if (!curr->is_young()) {
-      gclog_or_tty->print_cr("### YOUNG REGION " PTR_FORMAT "-" PTR_FORMAT " "
-                             "incorrectly tagged (y: %d, surv: %d)",
-                             p2i(curr->bottom()), p2i(curr->end()),
-                             curr->is_young(), curr->is_survivor());
-      ret = false;
-    }
-    ++length;
-    last = curr;
-    curr = curr->get_next_young_region();
-  }
-  ret = ret && (length == _length);
-
-  if (!ret) {
-    gclog_or_tty->print_cr("### YOUNG LIST seems not well formed!");
-    gclog_or_tty->print_cr("###   list has %u entries, _length is %u",
-                           length, _length);
-  }
-
-  return ret;
-}
-
-bool YoungList::check_list_empty(bool check_sample) {
-  bool ret = true;
-
-  if (_length != 0) {
-    gclog_or_tty->print_cr("### YOUNG LIST should have 0 length, not %u",
-                  _length);
-    ret = false;
-  }
-  if (check_sample && _last_sampled_rs_lengths != 0) {
-    gclog_or_tty->print_cr("### YOUNG LIST has non-zero last sampled RS lengths");
-    ret = false;
-  }
-  if (_head != NULL) {
-    gclog_or_tty->print_cr("### YOUNG LIST does not have a NULL head");
-    ret = false;
-  }
-  if (!ret) {
-    gclog_or_tty->print_cr("### YOUNG LIST does not seem empty");
-  }
-
-  return ret;
-}
-
-void
-YoungList::rs_length_sampling_init() {
-  _sampled_rs_lengths = 0;
-  _curr               = _head;
-}
-
-bool
-YoungList::rs_length_sampling_more() {
-  return _curr != NULL;
-}
-
-void
-YoungList::rs_length_sampling_next() {
-  assert( _curr != NULL, "invariant" );
-  size_t rs_length = _curr->rem_set()->occupied();
-
-  _sampled_rs_lengths += rs_length;
-
-  // The current region may not yet have been added to the
-  // incremental collection set (it gets added when it is
-  // retired as the current allocation region).
-  if (_curr->in_collection_set()) {
-    // Update the collection set policy information for this region
-    _g1h->g1_policy()->update_incremental_cset_info(_curr, rs_length);
-  }
-
-  _curr = _curr->get_next_young_region();
-  if (_curr == NULL) {
-    _last_sampled_rs_lengths = _sampled_rs_lengths;
-    // gclog_or_tty->print_cr("last sampled RS lengths = %d", _last_sampled_rs_lengths);
-  }
-}
-
-void
-YoungList::reset_auxilary_lists() {
-  guarantee( is_empty(), "young list should be empty" );
-  assert(check_list_well_formed(), "young list should be well formed");
-
-  // Add survivor regions to SurvRateGroup.
-  _g1h->g1_policy()->note_start_adding_survivor_regions();
-  _g1h->g1_policy()->finished_recalculating_age_indexes(true /* is_survivors */);
-
-  int young_index_in_cset = 0;
-  for (HeapRegion* curr = _survivor_head;
-       curr != NULL;
-       curr = curr->get_next_young_region()) {
-    _g1h->g1_policy()->set_region_survivor(curr, young_index_in_cset);
-
-    // The region is a non-empty survivor so let's add it to
-    // the incremental collection set for the next evacuation
-    // pause.
-    _g1h->g1_policy()->add_region_to_incremental_cset_rhs(curr);
-    young_index_in_cset += 1;
-  }
-  assert((uint) young_index_in_cset == _survivor_length, "post-condition");
-  _g1h->g1_policy()->note_stop_adding_survivor_regions();
-
-  _head   = _survivor_head;
-  _length = _survivor_length;
-  if (_survivor_head != NULL) {
-    assert(_survivor_tail != NULL, "cause it shouldn't be");
-    assert(_survivor_length > 0, "invariant");
-    _survivor_tail->set_next_young_region(NULL);
-  }
-
-  // Don't clear the survivor list handles until the start of
-  // the next evacuation pause - we need it in order to re-tag
-  // the survivor regions from this evacuation pause as 'young'
-  // at the start of the next.
-
-  _g1h->g1_policy()->finished_recalculating_age_indexes(false /* is_survivors */);
-
-  assert(check_list_well_formed(), "young list should be well formed");
-}
-
-void YoungList::print() {
-  HeapRegion* lists[] = {_head,   _survivor_head};
-  const char* names[] = {"YOUNG", "SURVIVOR"};
-
-  for (uint list = 0; list < ARRAY_SIZE(lists); ++list) {
-    gclog_or_tty->print_cr("%s LIST CONTENTS", names[list]);
-    HeapRegion *curr = lists[list];
-    if (curr == NULL)
-      gclog_or_tty->print_cr("  empty");
-    while (curr != NULL) {
-      gclog_or_tty->print_cr("  " HR_FORMAT ", P: " PTR_FORMAT ", N: " PTR_FORMAT ", age: %4d",
-                             HR_FORMAT_PARAMS(curr),
-                             p2i(curr->prev_top_at_mark_start()),
-                             p2i(curr->next_top_at_mark_start()),
-                             curr->age_in_surv_rate_group_cond());
-      curr = curr->get_next_young_region();
-    }
-  }
-
-  gclog_or_tty->cr();
-}
 
 void G1RegionMappingChangedListener::reset_from_card_cache(uint start_idx, size_t num_regions) {
   HeapRegionRemSet::invalidate_from_card_cache(start_idx, num_regions);
@@ -2469,14 +2263,11 @@ void G1CollectedHeap::check_gc_time_stamps() {
 }
 #endif // PRODUCT
 
-void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl,
-                                                 DirtyCardQueue* into_cset_dcq,
-                                                 bool concurrent,
-                                                 uint worker_i) {
-  // Clean cards in the hot card cache
-  G1HotCardCache* hot_card_cache = _cg1r->hot_card_cache();
-  hot_card_cache->drain(worker_i, g1_rem_set(), into_cset_dcq);
+void G1CollectedHeap::iterate_hcc_closure(CardTableEntryClosure* cl, uint worker_i) {
+  _cg1r->hot_card_cache()->drain(cl, worker_i);
+}
 
+void G1CollectedHeap::iterate_dirty_card_closure(CardTableEntryClosure* cl, uint worker_i) {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   size_t n_completed_buffers = 0;
   while (dcqs.apply_closure_to_completed_buffer(cl, worker_i, 0, true)) {
@@ -4355,80 +4146,6 @@ void G1CollectedHeap::preserve_mark_during_evac_failure(uint worker_id, oop obj,
   }
 }
 
-void G1ParCopyHelper::mark_object(oop obj) {
-  assert(!_g1->heap_region_containing(obj)->in_collection_set(), "should not mark objects in the CSet");
-
-  // We know that the object is not moving so it's safe to read its size.
-  _cm->grayRoot(obj, (size_t) obj->size(), _worker_id);
-}
-
-void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
-  assert(from_obj->is_forwarded(), "from obj should be forwarded");
-  assert(from_obj->forwardee() == to_obj, "to obj should be the forwardee");
-  assert(from_obj != to_obj, "should not be self-forwarded");
-
-  assert(_g1->heap_region_containing(from_obj)->in_collection_set(), "from obj should be in the CSet");
-  assert(!_g1->heap_region_containing(to_obj)->in_collection_set(), "should not mark objects in the CSet");
-
-  // The object might be in the process of being copied by another
-  // worker so we cannot trust that its to-space image is
-  // well-formed. So we have to read its size from its from-space
-  // image which we know should not be changing.
-  _cm->grayRoot(to_obj, (size_t) from_obj->size(), _worker_id);
-}
-
-template <class T>
-void G1ParCopyHelper::do_klass_barrier(T* p, oop new_obj) {
-  if (_g1->heap_region_containing_raw(new_obj)->is_young()) {
-    _scanned_klass->record_modified_oops();
-  }
-}
-
-template <G1Barrier barrier, G1Mark do_mark_object>
-template <class T>
-void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
-  T heap_oop = oopDesc::load_heap_oop(p);
-
-  if (oopDesc::is_null(heap_oop)) {
-    return;
-  }
-
-  oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-
-  assert(_worker_id == _par_scan_state->worker_id(), "sanity");
-
-  const InCSetState state = _g1->in_cset_state(obj);
-  if (state.is_in_cset()) {
-    oop forwardee;
-    markOop m = obj->mark();
-    if (m->is_marked()) {
-      forwardee = (oop) m->decode_pointer();
-    } else {
-      forwardee = _par_scan_state->copy_to_survivor_space(state, obj, m);
-    }
-    assert(forwardee != NULL, "forwardee should not be NULL");
-    oopDesc::encode_store_heap_oop(p, forwardee);
-    if (do_mark_object != G1MarkNone && forwardee != obj) {
-      // If the object is self-forwarded we don't need to explicitly
-      // mark it, the evacuation failure protocol will do so.
-      mark_forwarded_object(obj, forwardee);
-    }
-
-    if (barrier == G1BarrierKlass) {
-      do_klass_barrier(p, forwardee);
-    }
-  } else {
-    if (state.is_humongous()) {
-      _g1->set_humongous_is_live(obj);
-    }
-    // The object is not in collection set. If we're a root scanning
-    // closure during an initial mark pause then attempt to mark the object.
-    if (do_mark_object == G1MarkFromRoot) {
-      mark_object(obj);
-    }
-  }
-}
-
 class G1ParEvacuateFollowersClosure : public VoidClosure {
 private:
   double _start_term;
@@ -4481,32 +4198,6 @@ void G1ParEvacuateFollowersClosure::do_void() {
   } while (!offer_termination());
 }
 
-class G1KlassScanClosure : public KlassClosure {
- G1ParCopyHelper* _closure;
- bool             _process_only_dirty;
- int              _count;
- public:
-  G1KlassScanClosure(G1ParCopyHelper* closure, bool process_only_dirty)
-      : _process_only_dirty(process_only_dirty), _closure(closure), _count(0) {}
-  void do_klass(Klass* klass) {
-    // If the klass has not been dirtied we know that there's
-    // no references into  the young gen and we can skip it.
-   if (!_process_only_dirty || klass->has_modified_oops()) {
-      // Clean the klass since we're going to scavenge all the metadata.
-      klass->clear_modified_oops();
-
-      // Tell the closure that this klass is the Klass to scavenge
-      // and is the one to dirty if oops are left pointing into the young gen.
-      _closure->set_scanned_klass(klass);
-
-      klass->oops_do(_closure);
-
-      _closure->set_scanned_klass(NULL);
-    }
-    _count++;
-  }
-};
-
 class G1ParTask : public AbstractGangTask {
 protected:
   G1CollectedHeap*         _g1h;
@@ -4527,42 +4218,6 @@ public:
       _n_workers(n_workers)
   {}
 
-  RefToScanQueueSet* queues() { return _queues; }
-
-  RefToScanQueue *work_queue(int i) {
-    return queues()->queue(i);
-  }
-
-  ParallelTaskTerminator* terminator() { return &_terminator; }
-
-  // Helps out with CLD processing.
-  //
-  // During InitialMark we need to:
-  // 1) Scavenge all CLDs for the young GC.
-  // 2) Mark all objects directly reachable from strong CLDs.
-  template <G1Mark do_mark_object>
-  class G1CLDClosure : public CLDClosure {
-    G1ParCopyClosure<G1BarrierNone,  do_mark_object>* _oop_closure;
-    G1ParCopyClosure<G1BarrierKlass, do_mark_object>  _oop_in_klass_closure;
-    G1KlassScanClosure                                _klass_in_cld_closure;
-    bool                                              _claim;
-
-   public:
-    G1CLDClosure(G1ParCopyClosure<G1BarrierNone, do_mark_object>* oop_closure,
-                 bool only_young, bool claim)
-        : _oop_closure(oop_closure),
-          _oop_in_klass_closure(oop_closure->g1(),
-                                oop_closure->pss()),
-          _klass_in_cld_closure(&_oop_in_klass_closure, only_young),
-          _claim(claim) {
-
-    }
-
-    void do_cld(ClassLoaderData* cld) {
-      cld->oops_do(_oop_closure, &_klass_in_cld_closure, _claim);
-    }
-  };
-
   void work(uint worker_id) {
     if (worker_id >= _n_workers) return;  // no work needed this round
 
@@ -4578,62 +4233,18 @@ public:
       G1ParScanThreadState*           pss = _pss->state_for_worker(worker_id);
       pss->set_ref_processor(rp);
 
-      bool only_young = _g1h->collector_state()->gcs_are_young();
-
-      // Non-IM young GC.
-      G1ParCopyClosure<G1BarrierNone, G1MarkNone>             scan_only_root_cl(_g1h, pss);
-      G1CLDClosure<G1MarkNone>                                scan_only_cld_cl(&scan_only_root_cl,
-                                                                               only_young, // Only process dirty klasses.
-                                                                               false);     // No need to claim CLDs.
-      // IM young GC.
-      //    Strong roots closures.
-      G1ParCopyClosure<G1BarrierNone, G1MarkFromRoot>         scan_mark_root_cl(_g1h, pss);
-      G1CLDClosure<G1MarkFromRoot>                            scan_mark_cld_cl(&scan_mark_root_cl,
-                                                                               false, // Process all klasses.
-                                                                               true); // Need to claim CLDs.
-      //    Weak roots closures.
-      G1ParCopyClosure<G1BarrierNone, G1MarkPromotedFromRoot> scan_mark_weak_root_cl(_g1h, pss);
-      G1CLDClosure<G1MarkPromotedFromRoot>                    scan_mark_weak_cld_cl(&scan_mark_weak_root_cl,
-                                                                                    false, // Process all klasses.
-                                                                                    true); // Need to claim CLDs.
-
-      OopClosure* strong_root_cl;
-      OopClosure* weak_root_cl;
-      CLDClosure* strong_cld_cl;
-      CLDClosure* weak_cld_cl;
-
-      bool trace_metadata = false;
-
-      if (_g1h->collector_state()->during_initial_mark_pause()) {
-        // We also need to mark copied objects.
-        strong_root_cl = &scan_mark_root_cl;
-        strong_cld_cl  = &scan_mark_cld_cl;
-        if (ClassUnloadingWithConcurrentMark) {
-          weak_root_cl = &scan_mark_weak_root_cl;
-          weak_cld_cl  = &scan_mark_weak_cld_cl;
-          trace_metadata = true;
-        } else {
-          weak_root_cl = &scan_mark_root_cl;
-          weak_cld_cl  = &scan_mark_cld_cl;
-        }
-      } else {
-        strong_root_cl = &scan_only_root_cl;
-        weak_root_cl   = &scan_only_root_cl;
-        strong_cld_cl  = &scan_only_cld_cl;
-        weak_cld_cl    = &scan_only_cld_cl;
-      }
-
       double start_strong_roots_sec = os::elapsedTime();
-      _root_processor->evacuate_roots(strong_root_cl,
-                                      weak_root_cl,
-                                      strong_cld_cl,
-                                      weak_cld_cl,
-                                      trace_metadata,
-                                      worker_id);
+
+      _root_processor->evacuate_roots(pss->closures(), worker_id);
 
       G1ParPushHeapRSClosure push_heap_rs_cl(_g1h, pss);
+
+      // We pass a weak code blobs closure to the remembered set scanning because we want to avoid
+      // treating the nmethods visited to act as roots for concurrent marking.
+      // We only want to make sure that the oops in the nmethods are adjusted with regard to the
+      // objects copied by the current evacuation.
       size_t cards_scanned = _g1h->g1_rem_set()->oops_into_collection_set_do(&push_heap_rs_cl,
-                                                                             weak_root_cl,
+                                                                             pss->closures()->weak_codeblobs(),
                                                                              worker_id);
 
       _pss->add_cards_scanned(worker_id, cards_scanned);
@@ -5294,19 +4905,8 @@ public:
     G1ParScanThreadState*          pss = _pss->state_for_worker(worker_id);
     pss->set_ref_processor(NULL);
 
-    G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, pss);
-
-    G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(_g1h, pss);
-
-    OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
-
-    if (_g1h->collector_state()->during_initial_mark_pause()) {
-      // We also need to mark copied objects.
-      copy_non_heap_cl = &copy_mark_non_heap_cl;
-    }
-
     // Keep alive closure.
-    G1CopyingKeepAliveClosure keep_alive(_g1h, copy_non_heap_cl, pss);
+    G1CopyingKeepAliveClosure keep_alive(_g1h, pss->closures()->raw_strong_oops(), pss);
 
     // Complete GC closure
     G1ParEvacuateFollowersClosure drain_queue(_g1h, pss, _task_queues, _terminator);
@@ -5394,23 +4994,12 @@ public:
     pss->set_ref_processor(NULL);
     assert(pss->queue_is_empty(), "both queue and overflow should be empty");
 
-    G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, pss);
-
-    G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(_g1h, pss);
-
-    OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
-
-    if (_g1h->collector_state()->during_initial_mark_pause()) {
-      // We also need to mark copied objects.
-      copy_non_heap_cl = &copy_mark_non_heap_cl;
-    }
-
     // Is alive closure
     G1AlwaysAliveClosure always_alive(_g1h);
 
     // Copying keep alive closure. Applied to referent objects that need
     // to be copied.
-    G1CopyingKeepAliveClosure keep_alive(_g1h, copy_non_heap_cl, pss);
+    G1CopyingKeepAliveClosure keep_alive(_g1h, pss->closures()->raw_strong_oops(), pss);
 
     ReferenceProcessor* rp = _g1h->ref_processor_cm();
 
@@ -5500,23 +5089,8 @@ void G1CollectedHeap::process_discovered_references(G1ParScanThreadStateSet* per
   pss->set_ref_processor(NULL);
   assert(pss->queue_is_empty(), "pre-condition");
 
-  // We do not embed a reference processor in the copying/scanning
-  // closures while we're actually processing the discovered
-  // reference objects.
-
-  G1ParScanExtRootClosure        only_copy_non_heap_cl(this, pss);
-
-  G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(this, pss);
-
-  OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
-
-  if (collector_state()->during_initial_mark_pause()) {
-    // We also need to mark copied objects.
-    copy_non_heap_cl = &copy_mark_non_heap_cl;
-  }
-
   // Keep alive closure.
-  G1CopyingKeepAliveClosure keep_alive(this, copy_non_heap_cl, pss);
+  G1CopyingKeepAliveClosure keep_alive(this, pss->closures()->raw_strong_oops(), pss);
 
   // Serial Complete GC closure
   G1STWDrainQueueClosure drain_queue(this, pss);

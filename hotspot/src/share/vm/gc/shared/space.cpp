@@ -529,8 +529,7 @@ void ContiguousSpace::oop_iterate(ExtendedOopClosure* blk) {
 
 void ContiguousSpace::object_iterate(ObjectClosure* blk) {
   if (is_empty()) return;
-  WaterMark bm = bottom_mark();
-  object_iterate_from(bm, blk);
+  object_iterate_from(bottom(), blk);
 }
 
 // For a ContiguousSpace object_iterate() and safe_object_iterate()
@@ -539,12 +538,10 @@ void ContiguousSpace::safe_object_iterate(ObjectClosure* blk) {
   object_iterate(blk);
 }
 
-void ContiguousSpace::object_iterate_from(WaterMark mark, ObjectClosure* blk) {
-  assert(mark.space() == this, "Mark does not match space");
-  HeapWord* p = mark.point();
-  while (p < top()) {
-    blk->do_object(oop(p));
-    p += oop(p)->size();
+void ContiguousSpace::object_iterate_from(HeapWord* mark, ObjectClosure* blk) {
+  while (mark < top()) {
+    blk->do_object(oop(mark));
+    mark += oop(mark)->size();
   }
 }
 

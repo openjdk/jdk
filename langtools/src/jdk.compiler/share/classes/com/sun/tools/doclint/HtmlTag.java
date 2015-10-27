@@ -25,18 +25,17 @@
 
 package com.sun.tools.doclint;
 
-import java.util.Set;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Map;
-
+import java.util.Set;
 import javax.lang.model.element.Name;
 
-import static com.sun.tools.doclint.HtmlTag.Attr.*;
-
 import com.sun.tools.javac.util.StringUtils;
+
+import static com.sun.tools.doclint.HtmlTag.Attr.*;
 
 /**
  * Enum representing HTML tags.
@@ -646,15 +645,14 @@ public enum HtmlTag {
         return map;
     }
 
-    private static final Map<String,HtmlTag> index = new HashMap<>();
+    private static final Map<String, HtmlTag> index = new HashMap<>();
     static {
         for (HtmlTag t: values()) {
             index.put(t.getText(), t);
         }
     }
 
-    static HtmlTag get(Name tagName) {
+    public static HtmlTag get(Name tagName) {
         return index.get(StringUtils.toLowerCase(tagName.toString()));
     }
-
 }

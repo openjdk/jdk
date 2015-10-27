@@ -90,14 +90,13 @@ import java.lang.reflect.Array;
 import java.util.StringTokenizer;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.support.Guards;
-import jdk.internal.dynalink.support.Lookup;
+import jdk.internal.dynalink.linker.support.Guards;
+import jdk.internal.dynalink.linker.support.Lookup;
 
 /**
  * Base class for dynamic methods that dispatch to a single target Java method or constructor. Handles adaptation of the
  * target method to a call site type (including mapping variable arity methods to a call site signature with different
  * arity).
- * @author Attila Szegedi
  */
 abstract class SingleDynamicMethod extends DynamicMethod {
 
@@ -120,15 +119,17 @@ abstract class SingleDynamicMethod extends DynamicMethod {
     abstract MethodType getMethodType();
 
     /**
-     * Given a specified lookup, returns a method handle to this method's target.
-     * @param lookup the lookup to use.
+     * Given a specified call site descriptor, returns a method handle to this method's target. The target
+     * should only depend on the descriptor's lookup, and it should only retrieve it (as a privileged
+     * operation) when it is absolutely needed.
+     * @param desc the call site descriptor to use.
      * @return the handle to this method's target method.
      */
-    abstract MethodHandle getTarget(MethodHandles.Lookup lookup);
+    abstract MethodHandle getTarget(CallSiteDescriptor desc);
 
     @Override
     MethodHandle getInvocation(final CallSiteDescriptor callSiteDescriptor, final LinkerServices linkerServices) {
-        return getInvocation(getTarget(callSiteDescriptor.getLookup()), callSiteDescriptor.getMethodType(),
+        return getInvocation(getTarget(callSiteDescriptor), callSiteDescriptor.getMethodType(),
                 linkerServices);
     }
 

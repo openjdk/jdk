@@ -168,7 +168,8 @@ package java.util.concurrent;
  * {@code tryComplete}) the pending count is set to one:
  *
  * <pre> {@code
- * class ForEach<E> ...
+ * class ForEach<E> ... {
+ *   ...
  *   public void compute() { // version 2
  *     if (hi - lo >= 2) {
  *       int mid = (lo + hi) >>> 1;
@@ -182,7 +183,7 @@ package java.util.concurrent;
  *       tryComplete();
  *     }
  *   }
- * }</pre>
+ * }}</pre>
  *
  * As a further improvement, notice that the left task need not even exist.
  * Instead of creating a new one, we can iterate using the original task,
@@ -191,9 +192,10 @@ package java.util.concurrent;
  * {@code tryComplete()} can be replaced with {@link #propagateCompletion}.
  *
  * <pre> {@code
- * class ForEach<E> ...
+ * class ForEach<E> ... {
+ *   ...
  *   public void compute() { // version 3
- *     int l = lo,  h = hi;
+ *     int l = lo, h = hi;
  *     while (h - l >= 2) {
  *       int mid = (l + h) >>> 1;
  *       addToPendingCount(1);
@@ -204,7 +206,7 @@ package java.util.concurrent;
  *       op.apply(array[l]);
  *     propagateCompletion();
  *   }
- * }</pre>
+ * }}</pre>
  *
  * Additional improvements of such classes might entail precomputing
  * pending counts so that they can be established in constructors,
@@ -233,7 +235,7 @@ package java.util.concurrent;
  *   }
  *   public E getRawResult() { return result.get(); }
  *   public void compute() { // similar to ForEach version 3
- *     int l = lo,  h = hi;
+ *     int l = lo, h = hi;
  *     while (result.get() == null && h >= l) {
  *       if (h - l >= 2) {
  *         int mid = (l + h) >>> 1;
@@ -363,7 +365,7 @@ package java.util.concurrent;
  *     this.next = next;
  *   }
  *   public void compute() {
- *     int l = lo,  h = hi;
+ *     int l = lo, h = hi;
  *     while (h - l >= 2) {
  *       int mid = (l + h) >>> 1;
  *       addToPendingCount(1);
@@ -374,7 +376,7 @@ package java.util.concurrent;
  *       result = mapper.apply(array[l]);
  *     // process completions by reducing along and advancing subtask links
  *     for (CountedCompleter<?> c = firstComplete(); c != null; c = c.nextComplete()) {
- *       for (MapReducer t = (MapReducer)c, s = t.forks;  s != null; s = t.forks = s.next)
+ *       for (MapReducer t = (MapReducer)c, s = t.forks; s != null; s = t.forks = s.next)
  *         t.result = reducer.apply(t.result, s.result);
  *     }
  *   }
@@ -402,8 +404,7 @@ package java.util.concurrent;
  * // sample use:
  * PacketSender p = new PacketSender();
  * new HeaderBuilder(p, ...).fork();
- * new BodyBuilder(p, ...).fork();
- * }</pre>
+ * new BodyBuilder(p, ...).fork();}</pre>
  *
  * @since 1.8
  * @author Doug Lea
@@ -733,7 +734,7 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
     }
 
     /**
-     * Returns the result of the computation. By default
+     * Returns the result of the computation.  By default,
      * returns {@code null}, which is appropriate for {@code Void}
      * actions, but in other cases should be overridden, almost
      * always to return a field or function of a field that
@@ -753,14 +754,13 @@ public abstract class CountedCompleter<T> extends ForkJoinTask<T> {
     protected void setRawResult(T t) { }
 
     // Unsafe mechanics
-    private static final sun.misc.Unsafe U;
+    private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
     private static final long PENDING;
     static {
         try {
-            U = sun.misc.Unsafe.getUnsafe();
             PENDING = U.objectFieldOffset
                 (CountedCompleter.class.getDeclaredField("pending"));
-        } catch (Exception e) {
+        } catch (ReflectiveOperationException e) {
             throw new Error(e);
         }
     }

@@ -28,9 +28,9 @@ package java.net;
 /**
  * This interface defines a factory for {@code URL} stream
  * protocol handlers.
- * <p>
- * It is used by the {@code URL} class to create a
- * {@code URLStreamHandler} for a specific protocol.
+ *
+ * <p> A URL stream handler factory is used as specified in the
+ * {@linkplain java.net.URL#URL(String,String,int,String) URL constructor}.
  *
  * @author  Arthur van Hoff
  * @see     java.net.URL

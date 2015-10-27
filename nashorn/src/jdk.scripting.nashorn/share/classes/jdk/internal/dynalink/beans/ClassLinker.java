@@ -87,13 +87,12 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import jdk.internal.dynalink.beans.GuardedInvocationComponent.ValidationType;
-import jdk.internal.dynalink.support.Lookup;
+import jdk.internal.dynalink.linker.support.Lookup;
 
 /**
  * A linker for java.lang.Class objects. Provides a synthetic property "static" that allows access to static fields and
  * methods on the class (respecting property getter/setter conventions). Note that Class objects are not recognized by
  * the Dynalink as constructors for the instances of the class, {@link StaticClass} is used for this purpose.
- * @author Attila Szegedi
  */
 class ClassLinker extends BeanLinker {
 

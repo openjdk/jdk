@@ -2222,7 +2222,7 @@ void JavaThread::send_thread_stop(oop java_throwable)  {
         tty->print_cr("Pending Async. exception installed of type: %s", InstanceKlass::cast(_pending_async_exception->klass())->external_name());
       }
       // for AbortVMOnException flag
-      NOT_PRODUCT(Exceptions::debug_check_abort(InstanceKlass::cast(_pending_async_exception->klass())->external_name()));
+      Exceptions::debug_check_abort(InstanceKlass::cast(_pending_async_exception->klass())->external_name());
     }
   }
 

@@ -328,12 +328,23 @@ AC_DEFUN_ONCE([BPERF_SETUP_SMART_JAVAC],
 
   AC_ARG_ENABLE([sjavac], [AS_HELP_STRING([--enable-sjavac],
       [use sjavac to do fast incremental compiles @<:@disabled@:>@])],
-      [ENABLE_SJAVAC="${enableval}"], [ENABLE_SJAVAC='no'])
+      [ENABLE_SJAVAC="${enableval}"], [ENABLE_SJAVAC="no"])
   if test "x$JVM_ARG_OK" = "xfalse"; then
     AC_MSG_WARN([Could not set -Xms${MS_VALUE}M -Xmx${MX_VALUE}M, disabling sjavac])
-    ENABLE_SJAVAC=no;
+    ENABLE_SJAVAC="no"
   fi
   AC_MSG_CHECKING([whether to use sjavac])
   AC_MSG_RESULT([$ENABLE_SJAVAC])
   AC_SUBST(ENABLE_SJAVAC)
+
+  AC_ARG_ENABLE([javac-server], [AS_HELP_STRING([--enable-javac-server],
+      [use only the server part of sjavac for faster javac compiles @<:@disabled@:>@])],
+      [ENABLE_JAVAC_SERVER="${enableval}"], [ENABLE_JAVAC_SERVER="no"])
+  if test "x$JVM_ARG_OK" = "xfalse"; then
+    AC_MSG_WARN([Could not set -Xms${MS_VALUE}M -Xmx${MX_VALUE}M, disabling javac server])
+    ENABLE_JAVAC_SERVER="no"
+  fi
+  AC_MSG_CHECKING([whether to use javac server])
+  AC_MSG_RESULT([$ENABLE_JAVAC_SERVER])
+  AC_SUBST(ENABLE_JAVAC_SERVER)
 ])
