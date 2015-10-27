@@ -103,7 +103,6 @@ Java_sun_font_FreetypeFontScaler_initIDs(
 }
 
 static void freeNativeResources(JNIEnv *env, FTScalerInfo* scalerInfo) {
-    void *stream;
 
     if (scalerInfo == NULL)
         return;
