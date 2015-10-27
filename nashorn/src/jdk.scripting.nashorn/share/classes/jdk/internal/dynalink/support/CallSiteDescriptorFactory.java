@@ -97,12 +97,12 @@ import java.util.WeakHashMap;
 import jdk.internal.dynalink.CallSiteDescriptor;
 
 /**
- * Usable as a default factory for call site descriptor implementations. It is weakly canonicalizing, meaning it will
- * return the same immutable call site descriptor for identical inputs, i.e. repeated requests for a descriptor
- * signifying public lookup for "dyn:getProp:color" of type "Object(Object)" will return the same object as long as
- * a previously created, at least softly reachable one exists. It also uses several different implementations of the
- * {@link CallSiteDescriptor} internally, and chooses the most space-efficient one based on the input.
- * @author Attila Szegedi
+ * Usable as a default factory for call site descriptor implementations. It is weakly canonicalizing, meaning
+ * it will return the same immutable call site descriptor for identical inputs, i.e. repeated requests for a
+ * descriptor signifying public lookup for {@code "dyn:getProp:color"} of type {@code Object(Object)} will
+ * return the same object as long as a previously created, at least softly reachable one exists. It also uses
+ * several different implementations of the {@link CallSiteDescriptor} internally, and chooses the most
+ * space-efficient one based on the input.
  */
 public class CallSiteDescriptorFactory {
     private static final WeakHashMap<CallSiteDescriptor, Reference<CallSiteDescriptor>> publicDescs =

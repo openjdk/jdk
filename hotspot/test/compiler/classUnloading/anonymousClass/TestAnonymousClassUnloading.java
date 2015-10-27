@@ -23,8 +23,8 @@
 
 import sun.hotspot.WhiteBox;
 import sun.misc.Unsafe;
-import sun.misc.IOUtils;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLConnection;
@@ -109,7 +109,13 @@ public class TestAnonymousClassUnloading {
         // (1) Load an anonymous version of this class using the corresponding Unsafe method
         URL classUrl = TestAnonymousClassUnloading.class.getResource("TestAnonymousClassUnloading.class");
         URLConnection connection = classUrl.openConnection();
-        byte[] classBytes = IOUtils.readFully(connection.getInputStream(), connection.getContentLength(), true);
+
+        int length = connection.getContentLength();
+        byte[] classBytes = connection.getInputStream().readAllBytes();
+        if (length != -1 && classBytes.length != length) {
+            throw new IOException("Expected:" + length + ", actual: " + classBytes.length);
+        }
+
         Class<?> anonymousClass = UNSAFE.defineAnonymousClass(TestAnonymousClassUnloading.class, classBytes, null);
 
         // (2) Make sure all paths of doWork are profiled and compiled

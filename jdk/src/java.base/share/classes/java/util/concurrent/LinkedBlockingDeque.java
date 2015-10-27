@@ -39,10 +39,10 @@ import java.util.AbstractQueue;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 /**
@@ -72,7 +72,7 @@ import java.util.function.Consumer;
  *
  * @since 1.6
  * @author  Doug Lea
- * @param <E> the type of elements held in this collection
+ * @param <E> the type of elements held in this deque
  */
 public class LinkedBlockingDeque<E>
     extends AbstractQueue<E>
@@ -412,7 +412,7 @@ public class LinkedBlockingDeque<E>
         lock.lockInterruptibly();
         try {
             while (!linkFirst(node)) {
-                if (nanos <= 0)
+                if (nanos <= 0L)
                     return false;
                 nanos = notFull.awaitNanos(nanos);
             }
@@ -435,7 +435,7 @@ public class LinkedBlockingDeque<E>
         lock.lockInterruptibly();
         try {
             while (!linkLast(node)) {
-                if (nanos <= 0)
+                if (nanos <= 0L)
                     return false;
                 nanos = notFull.awaitNanos(nanos);
             }
@@ -517,7 +517,7 @@ public class LinkedBlockingDeque<E>
         try {
             E x;
             while ( (x = unlinkFirst()) == null) {
-                if (nanos <= 0)
+                if (nanos <= 0L)
                     return null;
                 nanos = notEmpty.awaitNanos(nanos);
             }
@@ -535,7 +535,7 @@ public class LinkedBlockingDeque<E>
         try {
             E x;
             while ( (x = unlinkLast()) == null) {
-                if (nanos <= 0)
+                if (nanos <= 0L)
                     return null;
                 nanos = notEmpty.awaitNanos(nanos);
             }
@@ -924,7 +924,7 @@ public class LinkedBlockingDeque<E>
      * The following code can be used to dump the deque into a newly
      * allocated array of {@code String}:
      *
-     *  <pre> {@code String[] y = x.toArray(new String[0]);}</pre>
+     * <pre> {@code String[] y = x.toArray(new String[0]);}</pre>
      *
      * Note that {@code toArray(new Object[0])} is identical in function to
      * {@code toArray()}.
@@ -959,26 +959,7 @@ public class LinkedBlockingDeque<E>
     }
 
     public String toString() {
-        final ReentrantLock lock = this.lock;
-        lock.lock();
-        try {
-            Node<E> p = first;
-            if (p == null)
-                return "[]";
-
-            StringBuilder sb = new StringBuilder();
-            sb.append('[');
-            for (;;) {
-                E e = p.item;
-                sb.append(e == this ? "(this Collection)" : e);
-                p = p.next;
-                if (p == null)
-                    return sb.append(']').toString();
-                sb.append(',').append(' ');
-            }
-        } finally {
-            lock.unlock();
-        }
+        return Helpers.collectionToString(this);
     }
 
     /**
@@ -1032,11 +1013,11 @@ public class LinkedBlockingDeque<E>
     }
 
     /**
-     * Base class for Iterators for LinkedBlockingDeque
+     * Base class for LinkedBlockingDeque iterators.
      */
     private abstract class AbstractItr implements Iterator<E> {
         /**
-         * The next node to return in next()
+         * The next node to return in next().
          */
         Node<E> next;
 
@@ -1192,8 +1173,9 @@ public class LinkedBlockingDeque<E>
                 if (i > 0) {
                     batch = i;
                     return Spliterators.spliterator
-                        (a, 0, i, Spliterator.ORDERED | Spliterator.NONNULL |
-                         Spliterator.CONCURRENT);
+                        (a, 0, i, (Spliterator.ORDERED |
+                                   Spliterator.NONNULL |
+                                   Spliterator.CONCURRENT));
                 }
             }
             return null;

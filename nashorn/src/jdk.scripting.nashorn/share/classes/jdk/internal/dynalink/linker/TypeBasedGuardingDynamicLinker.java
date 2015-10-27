@@ -88,8 +88,6 @@ package jdk.internal.dynalink.linker;
  * argument at linking invocation time. (The first argument is usually the receiver class). Most language-specific
  * linkers will fall into this category, as they recognize their native objects as Java objects of classes implementing
  * a specific language-native interface or superclass. The linker mechanism can optimize the dispatch for these linkers.
- *
- * @author Attila Szegedi
  */
 public interface TypeBasedGuardingDynamicLinker extends GuardingDynamicLinker {
     /**

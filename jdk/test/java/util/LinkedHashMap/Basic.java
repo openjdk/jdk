@@ -83,12 +83,12 @@ public class Basic {
         Map<Integer,Integer> m = new LinkedHashMap();
         for (int i=0; i<mapSize; i++)
             if (m.put(new Integer(i), new Integer(2*i)) != null)
-                throw new Exception("put returns non-null value erroenously.");
+                throw new Exception("put returns non-null value erroneously.");
         for (int i=0; i<2*mapSize; i++)
             if (m.containsValue(new Integer(i)) != (i%2==0))
                 throw new Exception("contains value "+i);
         if (m.put(nil, nil) == null)
-            throw new Exception("put returns a null value erroenously.");
+            throw new Exception("put returns a null value erroneously.");
         Map<Integer,Integer> m2 = new LinkedHashMap(); m2.putAll(m);
         if (!m.equals(m2))
             throw new Exception("Clone not equal to original. (1)");
@@ -129,7 +129,7 @@ public class Basic {
             throw new Exception("clear failed.");
 
         Iterator it = m.entrySet().iterator();
-        while(it.hasNext()) {
+        while (it.hasNext()) {
             it.next();
             it.remove();
         }
@@ -240,8 +240,8 @@ public class Basic {
 
         for (int i=0; i<mapSize; i++) {
             Integer x = (Integer) l2.get(i);
-            if(!x.equals(m.remove(x)))
-              throw new Exception("Missing key: "+i+", "+x);
+            if (!x.equals(m.remove(x)))
+                throw new Exception("Missing key: "+i+", "+x);
             if (!x.equals(m.computeIfAbsent(x, Integer::valueOf)))
                 throw new Exception("Wrong value: "+i+", "+m.get(x)+", "+x);
         }
@@ -292,7 +292,7 @@ public class Basic {
             ObjectInputStream in = new ObjectInputStream(bis);
             result = (Map)in.readObject();
             in.close();
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return result;

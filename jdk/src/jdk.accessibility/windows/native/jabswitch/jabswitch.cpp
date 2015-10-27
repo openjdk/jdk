@@ -184,8 +184,8 @@ void disableJAB() {
 
 int modify(bool enable) {
     errno_t error = 0;
-    char path[512];
-    char tempPath[512];
+    char path[_MAX_PATH];
+    char tempPath[_MAX_PATH];
     // Get the path for %USERPROFILE%
     char *profilePath;
     size_t len;
@@ -195,11 +195,27 @@ int modify(bool enable) {
         perror("Error");
         return error;
     }
-    strcpy_s(path, profilePath);
-    strcat_s(path, "\\.accessibility.properties");
-    strcpy_s(tempPath, profilePath);
-    strcat_s(tempPath, "\\.acce$$ibility.properties");
+    const char acc_props1[] = "\\.accessibility.properties";
+    const char acc_props2[] = "\\.acce$$ibility.properties";
+    // len must be 234 or less (233 characters)
+    // sizeof(path) is 260 (room for 259 characters)
+    // sizeof(acc_props1) is 27 (26 characters)
+    // path will hold 233 path characters plus 26 file characters plus 1 null character)
+    // if len - 1 > 233 then error
+    if ( len - 1 > sizeof(path) - sizeof(acc_props1) ||
+         len - 1 > sizeof(tempPath) - sizeof(acc_props2) ) {
+        printf("The USERPROFILE environment variable is too long.\n");
+        printf("It must be no longer than 233 characters.\n");
+        return 123;
+     }
+    path[0] = 0;
+    strcat_s(path, _MAX_PATH, profilePath);
+    strcat_s(path, acc_props1);
+    tempPath[0] = 0;
+    strcat_s(tempPath, _MAX_PATH, profilePath);
+    strcat_s(tempPath, acc_props2);
     free(profilePath);
+    profilePath = 0;
     // Open the original file.  If it doesn't exist and this is an enable request then create it.
     error = fopen_s(&origFile, path, "r");
     if (error) {
@@ -470,6 +486,10 @@ void main(int argc, char* argv[]) {
             printf("enabled.\n");
         } else {
             printf("disabled.\n");
+        }
+        // Use exit so test case can sense for error.
+        if (error != 0) {
+            exit(error);
         }
     }
 }

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ AC_DEFUN_ONCE([HELP_SETUP_DEPENDENCY_HELP],
 AC_DEFUN([HELP_MSG_MISSING_DEPENDENCY],
 [
   # Print a helpful message on how to acquire the necessary build dependency.
-  # $1 is the help tag: freetype, cups, pulse, alsa etc
+  # $1 is the help tag: freetype, cups, alsa etc
   MISSING_DEPENDENCY=$1
 
   if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
@@ -109,8 +109,8 @@ apt_help() {
       PKGHANDLER_COMMAND="sudo apt-get install libcups2-dev" ;;
     freetype)
       PKGHANDLER_COMMAND="sudo apt-get install libfreetype6-dev" ;;
-    pulse)
-      PKGHANDLER_COMMAND="sudo apt-get install libpulse-dev" ;;
+    ffi)
+      PKGHANDLER_COMMAND="sudo apt-get install libffi-dev" ;;
     x11)
       PKGHANDLER_COMMAND="sudo apt-get install libX11-dev libxext-dev libxrender-dev libxtst-dev libxt-dev" ;;
     ccache)
@@ -130,8 +130,6 @@ yum_help() {
       PKGHANDLER_COMMAND="sudo yum install cups-devel" ;;
     freetype)
       PKGHANDLER_COMMAND="sudo yum install freetype-devel" ;;
-    pulse)
-      PKGHANDLER_COMMAND="sudo yum install pulseaudio-libs-devel" ;;
     x11)
       PKGHANDLER_COMMAND="sudo yum install libXtst-devel libXt-devel libXrender-devel libXi-devel" ;;
     ccache)

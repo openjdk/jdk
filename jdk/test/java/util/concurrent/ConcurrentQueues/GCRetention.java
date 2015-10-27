@@ -56,7 +56,7 @@ import java.util.Queue;
 import java.util.Map;
 
 public class GCRetention {
-    // Suitable for benchmarking.  Overriden by args[0] for testing.
+    // Suitable for benchmarking.  Overridden by args[0] for testing.
     int count = 1024 * 1024;
 
     final Map<String,String> results = new ConcurrentHashMap<String,String>();

@@ -108,11 +108,6 @@ import sun.util.locale.provider.LocaleResources;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- *   attribute: isContainer false
- * description: A single line input field that lets the user select a
- *     number or an object value from an ordered set.
- *
  * @see SpinnerModel
  * @see AbstractSpinnerModel
  * @see SpinnerListModel
@@ -124,6 +119,8 @@ import sun.util.locale.provider.LocaleResources;
  * @author Lynn Monsanto (accessibility)
  * @since 1.4
  */
+@JavaBean(defaultProperty = "UI", description = "A single line input field that lets the user select a number or an object value from an ordered set.")
+@SwingContainer(false)
 @SuppressWarnings("serial") // Same-version serialization only
 public class JSpinner extends JComponent implements Accessible
 {
@@ -199,6 +196,7 @@ public class JSpinner extends JComponent implements Accessible
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -273,12 +271,9 @@ public class JSpinner extends JComponent implements Accessible
      * @see #getEditor
      * @see #setEditor
      * @throws IllegalArgumentException if model is <code>null</code>
-     *
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: Model that represents the value of this spinner.
      */
+    @BeanProperty(visualUpdate = true, description
+            = "Model that represents the value of this spinner.")
     public void setModel(SpinnerModel model) {
         if (model == null) {
             throw new IllegalArgumentException("null model");
@@ -376,6 +371,7 @@ public class JSpinner extends JComponent implements Accessible
      * @see #getPreviousValue
      * @see SpinnerModel#getNextValue
      */
+    @BeanProperty(bound = false)
     public Object getNextValue() {
         return getModel().getNextValue();
     }
@@ -436,6 +432,7 @@ public class JSpinner extends JComponent implements Accessible
      *         array if no listeners have been added
      * @since 1.4
      */
+    @BeanProperty(bound = false)
     public ChangeListener[] getChangeListeners() {
         return listenerList.getListeners(ChangeListener.class);
     }
@@ -484,6 +481,7 @@ public class JSpinner extends JComponent implements Accessible
      * @see #getNextValue
      * @see SpinnerModel#getPreviousValue
      */
+    @BeanProperty(bound = false)
     public Object getPreviousValue() {
         return getModel().getPreviousValue();
     }
@@ -502,12 +500,9 @@ public class JSpinner extends JComponent implements Accessible
      * @see #createEditor
      * @see #getModel
      * @throws IllegalArgumentException if editor is <code>null</code>
-     *
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: JComponent that displays the current value of the model
      */
+    @BeanProperty(visualUpdate = true, description
+            = "JComponent that displays the current value of the model")
     public void setEditor(JComponent editor) {
         if (editor == null) {
             throw new IllegalArgumentException("null editor");
@@ -1427,6 +1422,7 @@ public class JSpinner extends JComponent implements Accessible
      * @return the <code>AccessibleContext</code> for the <code>JSpinner</code>
      * @since 1.5
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJSpinner();

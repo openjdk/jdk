@@ -58,7 +58,6 @@ public class T6433170 {
         checkEmpty(checked);
     }
 
-
     //--------------------- Infrastructure ---------------------------
     volatile int passed = 0, failed = 0;
     void pass() {passed++;}

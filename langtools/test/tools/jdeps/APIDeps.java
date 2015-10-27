@@ -25,7 +25,7 @@
  * @test
  * @bug 8015912 8029216 8048063 8050804
  * @summary Test -apionly and -jdkinternals options
- * @modules java.base/sun.misc
+ * @modules java.base/sun.security.x509
  *          java.management
  *          jdk.jdeps/com.sun.tools.classfile
  *          jdk.jdeps/com.sun.tools.jdeps
@@ -72,20 +72,20 @@ public class APIDeps {
              new String[] {testDirBasename},
              new String[] {"-classpath", testDir.getPath(), "-verbose:class", "-filter:none", "-P"});
         test(new File(mDir, "Gee.class"),
-             new String[] {"g.G", "sun.misc.Lock", "com.sun.tools.classfile.ClassFile",
+             new String[] {"g.G", "sun.security.x509.X509CertInfo", "com.sun.tools.classfile.ClassFile",
                            "com.sun.management.ThreadMXBean", "com.sun.source.tree.BinaryTree"},
              new String[] {testDirBasename, "JDK internal API", "compact3", ""},
              new String[] {"-classpath", testDir.getPath(), "-verbose", "-P"});
 
         // -jdkinternals
         test(new File(mDir, "Gee.class"),
-             new String[] {"sun.misc.Lock", "com.sun.tools.classfile.ClassFile"},
+             new String[] {"sun.security.x509.X509CertInfo", "com.sun.tools.classfile.ClassFile"},
              new String[] {"JDK internal API"},
              new String[] {"-jdkinternals"});
         // -jdkinternals parses all classes on -classpath and the input arguments
         test(new File(mDir, "Gee.class"),
              new String[] {"com.sun.tools.jdeps.Main", "com.sun.tools.classfile.ClassFile",
-                           "sun.misc.Lock", "sun.misc.Unsafe"},
+                           "sun.security.x509.X509CertInfo", "sun.misc.Unsafe"},
              new String[] {"JDK internal API"},
              new String[] {"-classpath", testDir.getPath(), "-jdkinternals"});
 

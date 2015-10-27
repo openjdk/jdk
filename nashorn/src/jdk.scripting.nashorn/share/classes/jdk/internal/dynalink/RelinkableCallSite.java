@@ -96,13 +96,11 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
  * {@link ChainedCallSite} that retains a chain of already linked method handles. The reason this is defined as an
  * interface instead of a concrete, albeit abstract class is that it allows independent implementations to choose
  * between {@link MutableCallSite} and {@link VolatileCallSite} as they see fit.
- *
- * @author Attila Szegedi
  */
 public interface RelinkableCallSite {
     /**
-     * Initializes the relinkable call site by setting a relink-and-invoke method handle. The call site implementation
-     * is supposed to set this method handle as its target.
+     * Initializes the relinkable call site by setting a relink-and-invoke method handle. The call site
+     * implementation is supposed to set this method handle as its target.
      * @param relinkAndInvoke a relink-and-invoke method handle supplied by the {@link DynamicLinker}.
      */
     public void initialize(MethodHandle relinkAndInvoke);
