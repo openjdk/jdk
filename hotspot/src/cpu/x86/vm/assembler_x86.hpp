@@ -2147,6 +2147,11 @@ private:
   // runtime code and native libraries.
   void vzeroupper();
 
+  // AVX support for vectorized conditional move (double). The following two instructions used only coupled.
+  void cmppd(XMMRegister dst, XMMRegister nds, XMMRegister src, int cop, int vector_len);
+  void vpblendd(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len);
+
+
  protected:
   // Next instructions require address alignment 16 bytes SSE mode.
   // They should be called only from corresponding MacroAssembler instructions.

@@ -1707,6 +1707,10 @@ const bool Matcher::match_rule_supported(int opcode) {
       if (!VM_Version::supports_cx8())
         ret_value = false;
       break;
+    case Op_CMoveVD:
+      if (UseAVX < 1 || UseAVX > 2)
+        ret_value = false;
+      break;
   }
 
   return ret_value;  // Per default match rules are supported.
@@ -2088,6 +2092,29 @@ operand vecZ() %{
   format %{ %}
   interface(REG_INTER);
 %}
+
+// Comparison Code for FP conditional move
+operand cmpOp_vcmppd() %{
+  match(Bool);
+
+  predicate(n->as_Bool()->_test._test != BoolTest::overflow &&
+            n->as_Bool()->_test._test != BoolTest::no_overflow);
+  format %{ "" %}
+  interface(COND_INTER) %{
+    equal        (0x0, "eq");
+    less         (0x1, "lt");
+    less_equal   (0x2, "le");
+    not_equal    (0xC, "ne");
+    greater_equal(0xD, "ge");
+    greater      (0xE, "gt");
+    //TODO cannot compile (adlc breaks) without two next lines with error:
+    // x86_64.ad(13987) Syntax Error: :In operand cmpOp_vcmppd: Do not support this encode constant: ' %{
+    // equal' for overflow.
+    overflow     (0x20, "o");  // not really supported by the instruction
+    no_overflow  (0x21, "no"); // not really supported by the instruction
+  %}
+%}
+
 
 // INSTRUCTIONS -- Platform independent definitions (same for 32- and 64-bit)
 
@@ -7389,6 +7416,22 @@ instruct vmul8D_mem(vecZ dst, vecZ src, memory mem) %{
   ins_encode %{
     int vector_len = 2;
     __ vmulpd($dst$$XMMRegister, $src$$XMMRegister, $mem$$Address, vector_len);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct vcmov4D_reg(vecY dst, vecY src1, vecY src2, immI8 cop, cmpOp_vcmppd copnd) %{
+  predicate(UseAVX > 0 && UseAVX < 3 && n->as_Vector()->length() == 4);
+  match(Set dst (CMoveVD (Binary copnd cop) (Binary src1 src2)));
+  effect(TEMP dst, USE src1, USE src2);
+  format %{ "cmppd.$copnd  $dst, $src1, $src2  ! vcmovevd, cond=$cop\n\t"
+            "vpblendd $dst,$src1,$src2,$dst ! vcmovevd\n\t"
+         %}
+  ins_encode %{
+    int vector_len = 1;
+    int cond = (Assembler::Condition)($copnd$$cmpcode);
+    __ cmppd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, cond, vector_len);
+    __ vpblendd($dst$$XMMRegister, $src1$$XMMRegister, $src2$$XMMRegister, $dst$$XMMRegister, vector_len);
   %}
   ins_pipe( pipe_slow );
 %}
