@@ -1697,6 +1697,11 @@ public class Gen extends JCTree.Visitor {
     public void visitReturn(JCReturn tree) {
         int limit = code.nextreg;
         final Env<GenContext> targetEnv;
+
+        /* Save and then restore the location of the return in case a finally
+         * is expanded (with unwind()) in the middle of our bytecodes.
+         */
+        int tmpPos = code.pendingStatPos;
         if (tree.expr != null) {
             Item r = genExpr(tree.expr, pt).load();
             if (hasFinally(env.enclMethod, env)) {
@@ -1704,17 +1709,10 @@ public class Gen extends JCTree.Visitor {
                 r.store();
             }
             targetEnv = unwind(env.enclMethod, env);
+            code.pendingStatPos = tmpPos;
             r.load();
             code.emitop0(ireturn + Code.truncate(Code.typecode(pt)));
         } else {
-            /*  If we have a statement like:
-             *
-             *  return;
-             *
-             *  we need to store the code.pendingStatPos value before generating
-             *  the finalizer.
-             */
-            int tmpPos = code.pendingStatPos;
             targetEnv = unwind(env.enclMethod, env);
             code.pendingStatPos = tmpPos;
             code.emitop0(return_);
