@@ -24,9 +24,18 @@
 /*
  * @test
  * @bug 4851638
+ * @key randomness
  * @summary Tests for StrictMath.hypot
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.RandomFactory
+ * @build Tests
+ * @build FdlibmTranslit
+ * @build HypotTests
+ * @run main HypotTests
  * @author Joseph D. Darcy
  */
+
+import jdk.testlibrary.RandomFactory;
 
 /**
  * The tests in ../Math/HypotTests.java test properties that should
@@ -41,6 +50,19 @@
 
 public class HypotTests {
     private HypotTests(){}
+
+    public static void main(String... args) {
+        int failures = 0;
+
+        failures += testHypot();
+        failures += testAgainstTranslit();
+
+        if (failures > 0) {
+            System.err.println("Testing hypot incurred "
+                               + failures + " failures.");
+            throw new RuntimeException();
+        }
+    }
 
     /**
      * The hypot implementation is commutative, {@code hypot(a, b) ==
@@ -663,6 +685,12 @@ public class HypotTests {
             {0x1.0p-450,              0x1.fffffffffffffp-499,  0x1.0p-450},
             {0x1.0000000000001p-450,  0x1.fffffffffffffp-499,  0x1.0000000000001p-450},
 
+            {0x1.00000_ffff_0000p500,  0x1.fffffffffffffp499,  0x1.6a09f1b837ccfp500},
+            {0x1.00000_0000_0001p500,  0x1.fffffffffffffp499,  0x1.6a09e667f3bcdp500},
+            {0x1.00000_ffff_ffffp500,  0x1.fffffffffffffp499,  0x1.6a09f1b8431d3p500},
+            {0x1.00001_0000_0000p500,  0x1.fffffffffffffp499,  0x1.6a09f1b8431d5p500},
+
+
             // 0x1.0p-1022 is MIN_NORMAL
             {0x1.0000000000001p-1022, 0x1.0000000000001p-1022, 0x1.6a09e667f3bcep-1022},
             {0x1.0000000000001p-1022, 0x1.0p-1022,             0x1.6a09e667f3bcdp-1022},
@@ -686,15 +714,30 @@ public class HypotTests {
         return failures;
     }
 
-    public static void main(String... args) {
+    // Initialize shared random number generator
+    private static java.util.Random random = RandomFactory.getRandom();
+
+    /**
+     * Test StrictMath.hypot against transliteration port of hypot.
+     */
+    private static int testAgainstTranslit() {
         int failures = 0;
+        double x = Tests.createRandomDouble(random);
+        double y = Tests.createRandomDouble(random);
 
-        failures += testHypot();
+        // Make the increment twice the ulp value in case the random
+        // value is near an exponent threshold.
+        double increment_x = 2.0 * Math.ulp(x);
+        double increment_y = 2.0 * Math.ulp(y);
 
-        if (failures > 0) {
-            System.err.println("Testing hypot incurred "
-                               + failures + " failures.");
-            throw new RuntimeException();
+        // Don't worry about x or y overflowing to infinity if their
+        // exponent is MAX_EXPONENT.
+        for (int i = 0; i < 200; i++, x += increment_x) {
+            for (int j = 0; j < 200; j++, y += increment_y) {
+                failures += testHypotCase(x, y, FdlibmTranslit.hypot(x, y));
+            }
         }
+
+        return failures;
     }
 }

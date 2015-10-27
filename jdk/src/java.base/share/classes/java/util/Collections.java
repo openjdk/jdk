@@ -537,8 +537,9 @@ public class Collections {
      * Copies all of the elements from one list into another.  After the
      * operation, the index of each copied element in the destination list
      * will be identical to its index in the source list.  The destination
-     * list must be at least as long as the source list.  If it is longer, the
-     * remaining elements in the destination list are unaffected. <p>
+     * list's size must be greater than or equal to the source list's size.
+     * If it is greater, the remaining elements in the destination list are
+     * unaffected. <p>
      *
      * This method runs in linear time.
      *

@@ -24,7 +24,7 @@
 /**
  * @test
  * @bug 4189896
- * @summary AbstractList iterators previously checked for co-modificatin
+ * @summary AbstractList iterators previously checked for co-modification
  *          *after* the set/add/remove operations were performed.
  */
 
@@ -44,7 +44,7 @@ public class FailFastIterator {
             copy.add(new Integer(99));
             i.remove();
             throw new Exception("remove: iterator didn't fail fast");
-        } catch(ConcurrentModificationException e) {
+        } catch (ConcurrentModificationException e) {
         }
         if (!copy.equals(orig))
             throw new Exception("remove: iterator didn't fail fast enough");
@@ -56,7 +56,7 @@ public class FailFastIterator {
             copy.add(new Integer(99));
             i.set(new Integer(666));
             throw new Exception("set: iterator didn't fail fast");
-        } catch(ConcurrentModificationException e) {
+        } catch (ConcurrentModificationException e) {
         }
         if (!copy.equals(orig))
             throw new Exception("set: iterator didn't fail fast enough");
@@ -67,7 +67,7 @@ public class FailFastIterator {
             copy.add(new Integer(99));
             i.add(new Integer(666));
             throw new Exception("add: iterator didn't fail fast");
-        } catch(ConcurrentModificationException e) {
+        } catch (ConcurrentModificationException e) {
         }
         if (!copy.equals(orig))
             throw new Exception("add: iterator didn't fail fast enough");

@@ -27,7 +27,7 @@
  * IOUtils: A collection of IO-related public static methods.
  */
 
-package sun.misc;
+package sun.security.util;
 
 import java.io.EOFException;
 import java.io.IOException;

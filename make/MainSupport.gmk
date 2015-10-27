@@ -50,6 +50,8 @@ define CleanTest
 	@$(PRINTF) "Cleaning test $(strip $1) ..."
 	@$(PRINTF) "\n" $(LOG_DEBUG)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/test/$(strip $(subst -,/,$1))
+        # Remove as much of the test directory structure as is empty
+	$(RMDIR) -p $(dir $(SUPPORT_OUTPUTDIR)/test/$(strip $(subst -,/,$1))) 2> /dev/null || true
 	@$(PRINTF) " done\n"
 endef
 

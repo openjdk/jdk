@@ -30,7 +30,7 @@
 import java.util.*;
 
 public class ContainsValue {
-    public static void main (String[] args) {
+    public static void main(String[] args) {
         Map map = new TreeMap();
 
         if (map.containsValue ("gemutlichkeit"))
