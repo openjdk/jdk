@@ -722,7 +722,7 @@ void DumperSupport::dump_field_value(DumpWriter* writer, char type, address addr
         o = oopDesc::load_decode_heap_oop((oop*)addr);
       }
 
-      // reflection and sun.misc.Unsafe classes may have a reference to a
+      // reflection and Unsafe classes may have a reference to a
       // Klass* so filter it out.
       assert(o->is_oop_or_null(), "Expected an oop or NULL at " PTR_FORMAT, p2i(o));
       writer->write_objectID(o);

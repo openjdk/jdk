@@ -812,7 +812,7 @@ public:
           "Inline Thread.currentThread, etc")                               \
                                                                             \
   develop(bool, InlineUnsafeOps, true,                                      \
-          "Inline memory ops (native methods) from sun.misc.Unsafe")        \
+          "Inline memory ops (native methods) from Unsafe")                 \
                                                                             \
   product(bool, CriticalJNINatives, true,                                   \
           "Check for critical JNI entry points")                            \
@@ -4241,7 +4241,7 @@ public:
           "Use locked-tracing when doing event-based tracing")              \
                                                                             \
   diagnostic(bool, UseUnalignedAccesses, false,                             \
-          "Use unaligned memory accesses in sun.misc.Unsafe")               \
+          "Use unaligned memory accesses in Unsafe")                        \
                                                                             \
   product_pd(bool, PreserveFramePointer,                                    \
              "Use the FP register for holding the frame pointer "           \

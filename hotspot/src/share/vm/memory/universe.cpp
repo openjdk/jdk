@@ -1008,8 +1008,8 @@ bool universe_post_init() {
   Universe::_finalizer_register_cache->init(
     SystemDictionary::Finalizer_klass(), m);
 
-  SystemDictionary::misc_Unsafe_klass()->link_class(CHECK_false);
-  m = SystemDictionary::misc_Unsafe_klass()->find_method(
+  SystemDictionary::internal_Unsafe_klass()->link_class(CHECK_false);
+  m = SystemDictionary::internal_Unsafe_klass()->find_method(
                                   vmSymbols::throwIllegalAccessError_name(),
                                   vmSymbols::void_method_signature());
   if (m != NULL && !m->is_static()) {
@@ -1019,7 +1019,7 @@ bool universe_post_init() {
     return false; // initialization failed (cannot throw exception yet)
   }
   Universe::_throw_illegal_access_error_cache->init(
-    SystemDictionary::misc_Unsafe_klass(), m);
+    SystemDictionary::internal_Unsafe_klass(), m);
 
   // Setup method for registering loaded classes in class loader vector
   SystemDictionary::ClassLoader_klass()->link_class(CHECK_false);
