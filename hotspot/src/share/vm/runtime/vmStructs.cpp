@@ -55,7 +55,6 @@
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/watermark.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
@@ -399,7 +398,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(Method,                      _method_counters,                              MethodCounters*)                       \
   nonstatic_field(Method,                      _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Method,                      _vtable_index,                                 int)                                   \
-  nonstatic_field(Method,                      _method_size,                                  u2)                                    \
   nonstatic_field(Method,                      _intrinsic_id,                                 u2)                                    \
   nonstatic_field(Method,                      _flags,                                        u1)                                    \
   nonproduct_nonstatic_field(Method,           _compiled_invocation_count,                    int)                                   \
@@ -529,7 +527,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
   nonstatic_field(BlockOffsetArrayNonContigSpace, _unallocated_block,                         HeapWord*)                             \
                                                                                                                                      \
-  nonstatic_field(CardGeneration,              _rs,                                           GenRemSet*)                            \
+  nonstatic_field(CardGeneration,              _rs,                                           CardTableRS*)                          \
   nonstatic_field(CardGeneration,              _bts,                                          BlockOffsetSharedArray*)               \
   nonstatic_field(CardGeneration,              _shrink_factor,                                size_t)                                \
   nonstatic_field(CardGeneration,              _capacity_at_prologue,                         size_t)                                \
@@ -619,8 +617,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(VirtualSpace,                _lower_high,                                   char*)                                 \
   nonstatic_field(VirtualSpace,                _middle_high,                                  char*)                                 \
   nonstatic_field(VirtualSpace,                _upper_high,                                   char*)                                 \
-  nonstatic_field(WaterMark,                   _point,                                        HeapWord*)                             \
-  nonstatic_field(WaterMark,                   _space,                                        Space*)                                \
                                                                                                                                      \
   /************************/                                                                                                         \
   /* PerfMemory - jvmstat */                                                                                                         \
@@ -1604,8 +1600,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
            declare_type(CardTableModRefBS,            ModRefBarrierSet)   \
            declare_type(CardTableModRefBSForCTRS,     CardTableModRefBS)  \
   declare_toplevel_type(BarrierSet::Name)                                 \
-  declare_toplevel_type(GenRemSet)                                        \
-           declare_type(CardTableRS,                  GenRemSet)          \
+  declare_toplevel_type(CardTableRS)                                      \
   declare_toplevel_type(BlockOffsetSharedArray)                           \
   declare_toplevel_type(BlockOffsetTable)                                 \
            declare_type(BlockOffsetArray,             BlockOffsetTable)   \
@@ -1621,7 +1616,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_toplevel_type(MemRegion)                                        \
   declare_toplevel_type(ThreadLocalAllocBuffer)                           \
   declare_toplevel_type(VirtualSpace)                                     \
-  declare_toplevel_type(WaterMark)                                        \
   declare_toplevel_type(ObjPtrQueue)                                      \
   declare_toplevel_type(DirtyCardQueue)                                   \
                                                                           \
@@ -1629,7 +1623,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                           \
   declare_toplevel_type(BarrierSet*)                                      \
   declare_toplevel_type(BlockOffsetSharedArray*)                          \
-  declare_toplevel_type(GenRemSet*)                                       \
   declare_toplevel_type(CardTableRS*)                                     \
   declare_toplevel_type(CardTableModRefBS*)                               \
   declare_toplevel_type(CardTableModRefBS**)                              \

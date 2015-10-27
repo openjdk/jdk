@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.api;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -86,9 +85,17 @@ import com.sun.tools.javac.tree.DCTree.DCIdentifier;
 import com.sun.tools.javac.tree.DCTree.DCParam;
 import com.sun.tools.javac.tree.DCTree.DCReference;
 import com.sun.tools.javac.tree.DCTree.DCText;
+import com.sun.tools.javac.tree.DocTreeMaker;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.tree.JCTree.JCBlock;
+import com.sun.tools.javac.tree.JCTree.JCCatch;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.tree.JCTree.JCExpression;
+import com.sun.tools.javac.tree.JCTree.JCIdent;
+import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
+import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.TreeCopier;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeMaker;
@@ -106,6 +113,7 @@ import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Pair;
 import com.sun.tools.javac.util.Position;
+
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 
@@ -132,6 +140,7 @@ public class JavacTrees extends DocTrees {
     private JavacTaskImpl javacTaskImpl;
     private Names names;
     private Types types;
+    private DocTreeMaker doctreeMaker;
 
     // called reflectively from Trees.instance(CompilationTask task)
     public static JavacTrees instance(JavaCompiler.CompilationTask task) {
@@ -173,6 +182,7 @@ public class JavacTrees extends DocTrees {
         memberEnter = MemberEnter.instance(context);
         names = Names.instance(context);
         types = Types.instance(context);
+        doctreeMaker = DocTreeMaker.instance(context);
 
         JavacTask t = context.get(JavacTask.class);
         if (t instanceof JavacTaskImpl)
@@ -259,7 +269,7 @@ public class JavacTrees extends DocTrees {
 
         tree.accept(new DocTreeScanner<Void, Void>() {
             @Override @DefinedBy(Api.COMPILER_TREE)
- public Void scan(DocTree node, Void p) {
+            public Void scan(DocTree node, Void p) {
                 if (node != null) last[0] = node;
                 return null;
             }
@@ -354,6 +364,11 @@ public class JavacTrees extends DocTrees {
             }
         }
         return null;
+    }
+
+    @Override @DefinedBy(Api.COMPILER_TREE)
+    public java.util.List<DocTree> getFirstSentence(java.util.List<? extends DocTree> list) {
+        return doctreeMaker.getFirstSentence(list);
     }
 
     private Symbol attributeDocReference(TreePath path, DCReference ref) {
@@ -762,7 +777,6 @@ public class JavacTrees extends DocTrees {
         if (javacTaskImpl != null) {
             javacTaskImpl.enter(null);
         }
-
 
         JCCompilationUnit unit = (JCCompilationUnit) path.getCompilationUnit();
         Copier copier = createCopier(treeMaker.forToplevel(unit));

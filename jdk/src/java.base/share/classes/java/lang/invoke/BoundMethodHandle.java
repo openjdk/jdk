@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -404,14 +404,6 @@ import jdk.internal.org.objectweb.asm.Type;
             d = lookupCache(types);
             // Class loading must have upgraded the cache.
             assert(d != null && !d.isPlaceholder());
-            if (OBSERVE_BMH_SPECIES_CREATION) {
-                if (d == null) {
-                    throw new IllegalStateException("d == null");
-                }
-                if (d.isPlaceholder()) {
-                    throw new IllegalStateException("d is place holder");
-                }
-            }
             return d;
         }
         static SpeciesData getForClass(String types, Class<? extends BoundMethodHandle> clazz) {
@@ -423,9 +415,6 @@ import jdk.internal.org.objectweb.asm.Type;
             if (d != null)  return d;
             d = new SpeciesData(types);
             assert(d.isPlaceholder());
-            if (OBSERVE_BMH_SPECIES_CREATION && !d.isPlaceholder()) {
-                throw new IllegalStateException("d is not place holder");
-            }
             CACHE.put(types, d);
             return d;
         }
@@ -433,15 +422,6 @@ import jdk.internal.org.objectweb.asm.Type;
             SpeciesData d2;
             assert((d2 = CACHE.get(types)) == null || d2.isPlaceholder());
             assert(!d.isPlaceholder());
-            if (OBSERVE_BMH_SPECIES_CREATION) {
-                d2 = CACHE.get(types);
-                if (d2 != null && !d2.isPlaceholder()) {
-                    throw new IllegalStateException("non-null d2 is not place holder");
-                }
-                if (d.isPlaceholder()) {
-                    throw new IllegalStateException("d is place holder");
-                }
-            }
             CACHE.put(types, d);
             return d;
         }
@@ -834,7 +814,7 @@ import jdk.internal.org.objectweb.asm.Type;
 
         static MethodHandle makeCbmhCtor(Class<? extends BoundMethodHandle> cbmh, String types) {
             try {
-                return LOOKUP.findStatic(cbmh, "make", MethodType.fromMethodDescriptorString(makeSignature(types, false), null));
+                return LOOKUP.findStatic(cbmh, "make", MethodType.fromDescriptor(makeSignature(types, false), null));
             } catch (NoSuchMethodException | IllegalAccessException | IllegalArgumentException | TypeNotPresentException e) {
                 throw newInternalError(e);
             }

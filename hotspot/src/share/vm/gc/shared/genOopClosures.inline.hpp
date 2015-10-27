@@ -29,7 +29,6 @@
 #include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.hpp"
-#include "gc/shared/genRemSet.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/space.hpp"
 
@@ -43,8 +42,7 @@ inline void OopsInGenClosure::set_generation(Generation* gen) {
   _gen_boundary = _gen->reserved().start();
   // Barrier set for the heap, must be set after heap is initialized
   if (_rs == NULL) {
-    GenRemSet* rs = GenCollectedHeap::heap()->rem_set();
-    _rs = (CardTableRS*)rs;
+    _rs = GenCollectedHeap::heap()->rem_set();
   }
 }
 

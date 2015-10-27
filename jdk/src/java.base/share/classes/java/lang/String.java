@@ -102,6 +102,10 @@ import jdk.internal.HotSpotIntrinsicCandidate;
  * Unicode code points (i.e., characters), in addition to those for
  * dealing with Unicode code units (i.e., {@code char} values).
  *
+ * <p>Unless otherwise noted, methods for comparing Strings do not take locale
+ * into account.  The {@link java.text.Collator} class provides methods for
+ * finer-grain, locale-sensitive String comparison.
+ *
  * @author  Lee Boynton
  * @author  Arthur van Hoff
  * @author  Martin Buchholz
@@ -971,6 +975,9 @@ public final class String
      * String} object that represents the same sequence of characters as this
      * object.
      *
+     * <p>For finer-grained String comparison, refer to
+     * {@link java.text.Collator}.
+     *
      * @param  anObject
      *         The object to compare this {@code String} against
      *
@@ -1008,6 +1015,9 @@ public final class String
      * sequence of characters as the specified {@code StringBuffer}. This method
      * synchronizes on the {@code StringBuffer}.
      *
+     * <p>For finer-grained String comparison, refer to
+     * {@link java.text.Collator}.
+     *
      * @param  sb
      *         The {@code StringBuffer} to compare this {@code String} against
      *
@@ -1042,6 +1052,9 @@ public final class String
      * same sequence of char values as the specified sequence. Note that if the
      * {@code CharSequence} is a {@code StringBuffer} then the method
      * synchronizes on it.
+     *
+     * <p>For finer-grained String comparison, refer to
+     * {@link java.text.Collator}.
      *
      * @param  cs
      *         The sequence to compare this {@code String} against
@@ -1092,13 +1105,13 @@ public final class String
      * <ul>
      *   <li> The two characters are the same (as compared by the
      *        {@code ==} operator)
-     *   <li> Applying the method {@link
-     *        java.lang.Character#toUpperCase(char)} to each character
-     *        produces the same result
-     *   <li> Applying the method {@link
-     *        java.lang.Character#toLowerCase(char)} to each character
-     *        produces the same result
+     *   <li> Calling {@code Character.toLowerCase(Character.toUpperCase(char))}
+     *        on each character produces the same result
      * </ul>
+     *
+     * <p>Note that this method does <em>not</em> take locale into account, and
+     * will result in unsatisfactory results for certain locales.  The
+     * {@link java.text.Collator} class provides locale-sensitive comparison.
      *
      * @param  anotherString
      *         The {@code String} to compare this {@code String} against
@@ -1150,6 +1163,9 @@ public final class String
      * this.length()-anotherString.length()
      * </pre></blockquote>
      *
+     * <p>For finer-grained String comparison, refer to
+     * {@link java.text.Collator}.
+     *
      * @param   anotherString   the {@code String} to be compared.
      * @return  the value {@code 0} if the argument string is equal to
      *          this string; a value less than {@code 0} if this string
@@ -1181,10 +1197,9 @@ public final class String
      * <p>
      * Note that this Comparator does <em>not</em> take locale into account,
      * and will result in an unsatisfactory ordering for certain locales.
-     * The java.text package provides <em>Collators</em> to allow
-     * locale-sensitive ordering.
+     * The {@link java.text.Collator} class provides locale-sensitive comparison.
      *
-     * @see     java.text.Collator#compare(String, String)
+     * @see     java.text.Collator
      * @since   1.2
      */
     public static final Comparator<String> CASE_INSENSITIVE_ORDER
@@ -1231,14 +1246,13 @@ public final class String
      * <p>
      * Note that this method does <em>not</em> take locale into account,
      * and will result in an unsatisfactory ordering for certain locales.
-     * The java.text package provides <em>collators</em> to allow
-     * locale-sensitive ordering.
+     * The {@link java.text.Collator} class provides locale-sensitive comparison.
      *
      * @param   str   the {@code String} to be compared.
      * @return  a negative integer, zero, or a positive integer as the
      *          specified String is greater than, equal to, or less
      *          than this String, ignoring case considerations.
-     * @see     java.text.Collator#compare(String, String)
+     * @see     java.text.Collator
      * @since   1.2
      */
     public int compareToIgnoreCase(String str) {
@@ -1267,6 +1281,9 @@ public final class String
      * {@code this.charAt(toffset + }<i>k</i>{@code ) != other.charAt(ooffset + }
      * <i>k</i>{@code )}
      * </ul>
+     *
+     * <p>Note that this method does <em>not</em> take locale into account.  The
+     * {@link java.text.Collator} class provides locale-sensitive comparison.
      *
      * @param   toffset   the starting offset of the subregion in this string.
      * @param   other     the string argument.
@@ -1323,15 +1340,15 @@ public final class String
      * <li>{@code ignoreCase} is {@code true} and there is some nonnegative
      * integer <i>k</i> less than {@code len} such that:
      * <blockquote><pre>
-     * Character.toLowerCase(this.charAt(toffset+k)) !=
-     Character.toLowerCase(other.charAt(ooffset+k))
-     * </pre></blockquote>
-     * and:
-     * <blockquote><pre>
-     * Character.toUpperCase(this.charAt(toffset+k)) !=
-     *         Character.toUpperCase(other.charAt(ooffset+k))
+     * Character.toLowerCase(Character.toUpperCase(this.charAt(toffset+k))) !=
+     Character.toLowerCase(Character.toUpperCase(other.charAt(ooffset+k)))
      * </pre></blockquote>
      * </ul>
+     *
+     * <p>Note that this method does <em>not</em> take locale into account,
+     * and will result in unsatisfactory results for certain locales when
+     * {@code ignoreCase} is {@code true}.  The {@link java.text.Collator} class
+     * provides locale-sensitive comparison.
      *
      * @param   ignoreCase   if {@code true}, ignore case when comparing
      *                       characters.

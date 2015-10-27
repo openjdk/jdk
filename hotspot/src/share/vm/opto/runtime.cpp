@@ -1239,7 +1239,7 @@ JRT_ENTRY_NO_ASYNC(address, OptoRuntime::handle_exception_C_helper(JavaThread* t
   }
 
   // for AbortVMOnException flag
-  NOT_PRODUCT(Exceptions::debug_check_abort(exception));
+  Exceptions::debug_check_abort(exception);
 
 #ifdef ASSERT
   if (!(exception->is_a(SystemDictionary::Throwable_klass()))) {

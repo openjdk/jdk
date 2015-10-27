@@ -35,10 +35,10 @@
  * @test
  * @bug 4486658
  * @run main/timeout=2800 CancelledLockLoops
- * @summary tests lockInterruptibly.
- * Checks for responsiveness of locks to interrupts. Runs under that
- * assumption that ITERS_VALUE computations require more than TIMEOUT
- * msecs to complete.
+ * @summary tests ReentrantLock.lockInterruptibly.
+ * Checks for responsiveness of locks to interrupts.  Runs under the
+ * assumption that ITERS computations require more than TIMEOUT msecs
+ * to complete.
  */
 
 import java.util.concurrent.*;
@@ -48,11 +48,12 @@ import java.util.*;
 public final class CancelledLockLoops {
     static final Random rng = new Random();
     static boolean print = false;
-    static final int ITERS = 5000000;
+    static final int ITERS = 1000000;
     static final long TIMEOUT = 100;
 
     public static void main(String[] args) throws Exception {
         int maxThreads = (args.length > 0) ? Integer.parseInt(args[0]) : 5;
+
         print = true;
 
         for (int i = 2; i <= maxThreads; i += (i+1) >>> 1) {
@@ -112,7 +113,7 @@ public final class CancelledLockLoops {
                 lock.unlock();
             }
             if (c != 2)
-                throw new Error("Completed != 2");
+                throw new Error("Completed == " + c + "; expected 2");
             int r = result;
             if (r == 0) // avoid overoptimization
                 System.out.println("useless result: " + r);

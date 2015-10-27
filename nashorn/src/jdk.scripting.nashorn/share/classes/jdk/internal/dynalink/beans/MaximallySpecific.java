@@ -90,12 +90,10 @@ import java.util.LinkedList;
 import java.util.List;
 import jdk.internal.dynalink.linker.ConversionComparator.Comparison;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
  * Utility class that encapsulates the algorithm for choosing the maximally specific methods.
- *
- * @author Attila Szegedi
  */
 class MaximallySpecific {
     /**

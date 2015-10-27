@@ -26,13 +26,11 @@
 package sun.util.cldr;
 
 import java.security.AccessController;
-import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.text.spi.BreakIteratorProvider;
 import java.text.spi.CollatorProvider;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -41,7 +39,7 @@ import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.stream.Stream;
+import java.util.concurrent.ConcurrentHashMap;
 import sun.util.locale.provider.JRELocaleProviderAdapter;
 import sun.util.locale.provider.LocaleProviderAdapter;
 import sun.util.locale.provider.LocaleDataMetaInfo;
@@ -59,12 +57,21 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     private final LocaleDataMetaInfo nonBaseMetaInfo;
 
     // parent locales map
-    private static volatile Map<Locale, Locale> parentLocalesMap = null;
+    private static volatile Map<Locale, Locale> parentLocalesMap;
+    static {
+        parentLocalesMap = new ConcurrentHashMap<>();
+        // Assuming these locales do NOT have irregular parent locales.
+        parentLocalesMap.put(Locale.ROOT, Locale.ROOT);
+        parentLocalesMap.put(Locale.ENGLISH, Locale.ENGLISH);
+        parentLocalesMap.put(Locale.US, Locale.US);
+    }
 
     public CLDRLocaleProviderAdapter() {
+        LocaleDataMetaInfo nbmi = null;
+
         try {
-            nonBaseMetaInfo = AccessController.doPrivileged(new PrivilegedExceptionAction<LocaleDataMetaInfo>() {
-                    @Override
+            nbmi = AccessController.doPrivileged(new PrivilegedExceptionAction<LocaleDataMetaInfo>() {
+                @Override
                 public LocaleDataMetaInfo run() {
                     for (LocaleDataMetaInfo ldmi : ServiceLoader.loadInstalled(LocaleDataMetaInfo.class)) {
                         if (ldmi.getType() == LocaleProviderAdapter.Type.CLDR) {
@@ -72,18 +79,13 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
                         }
                     }
                     return null;
-                    }
-                });
+                }
+            });
         }  catch (Exception e) {
-            // Catch any exception, and fail gracefully as if CLDR locales do not exist.
-            // It's ok ignore it if something wrong happens because there always is the
-            // JRE or FALLBACK LocaleProviderAdapter that will do the right thing.
-            throw new UnsupportedOperationException(e);
+            // Catch any exception, and continue as if only CLDR's base locales exist.
         }
 
-        if (nonBaseMetaInfo == null) {
-            throw new UnsupportedOperationException("CLDR locale data could not be found.");
-        }
+        nonBaseMetaInfo = nbmi;
     }
 
     /**
@@ -120,7 +122,11 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     protected Set<String> createLanguageTagSet(String category) {
         // Directly call Base tags, as we know it's in the base module.
         String supportedLocaleString = baseMetaInfo.availableLanguageTags(category);
-        String nonBaseTags = nonBaseMetaInfo.availableLanguageTags(category);
+        String nonBaseTags = null;
+
+        if (nonBaseMetaInfo != null) {
+            nonBaseTags = nonBaseMetaInfo.availableLanguageTags(category);
+        }
         if (nonBaseTags != null) {
             if (supportedLocaleString != null) {
                 supportedLocaleString += " " + nonBaseTags;
@@ -144,33 +150,49 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
     public List<Locale> getCandidateLocales(String baseName, Locale locale) {
         List<Locale> candidates = super.getCandidateLocales(baseName, locale);
         return applyParentLocales(baseName, candidates);
-}
+    }
 
     private List<Locale> applyParentLocales(String baseName, List<Locale> candidates) {
-        if (Objects.isNull(parentLocalesMap)) {
-            Map<Locale, Locale> map = new HashMap<>();
-            baseMetaInfo.parentLocales().forEach((parent, children) -> {
-                Stream.of(children).forEach(child -> {
-                    map.put(Locale.forLanguageTag(child), parent);
-                });
-            });
-            parentLocalesMap = Collections.unmodifiableMap(map);
-        }
-
         // check irregular parents
         for (int i = 0; i < candidates.size(); i++) {
             Locale l = candidates.get(i);
-            Locale p = parentLocalesMap.get(l);
-            if (!l.equals(Locale.ROOT) &&
-                Objects.nonNull(p) &&
-                !candidates.get(i+1).equals(p)) {
-                List<Locale> applied = candidates.subList(0, i+1);
-                applied.addAll(applyParentLocales(baseName, super.getCandidateLocales(baseName, p)));
-                return applied;
+            if (!l.equals(Locale.ROOT)) {
+                Locale p = getParentLocale(l);
+                if (p != null &&
+                    !candidates.get(i+1).equals(p)) {
+                    List<Locale> applied = candidates.subList(0, i+1);
+                    applied.addAll(applyParentLocales(baseName, super.getCandidateLocales(baseName, p)));
+                    return applied;
+                }
             }
         }
 
         return candidates;
+    }
+
+    private static Locale getParentLocale(Locale locale) {
+        Locale parent = parentLocalesMap.get(locale);
+
+        if (parent == null) {
+            String tag = locale.toLanguageTag();
+            for (Map.Entry<Locale, String[]> entry : baseMetaInfo.parentLocales().entrySet()) {
+                if (Arrays.binarySearch(entry.getValue(), tag) >= 0) {
+                    parent = entry.getKey();
+                    break;
+                }
+            }
+            if (parent == null) {
+                parent = locale; // non existent marker
+            }
+            parentLocalesMap.putIfAbsent(locale, parent);
+        }
+
+        if (locale.equals(parent)) {
+            // means no irregular parent.
+            parent = null;
+        }
+
+        return parent;
     }
 
     @Override

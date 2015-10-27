@@ -41,7 +41,6 @@ public class Custom {
         if (x == null ? y == null : x.equals(y)) pass();
         else {System.out.println(x + " not equal to " + y); fail(); }}
 
-
     private static class CustomTask<V> extends FutureTask<V> {
         public static final AtomicInteger births = new AtomicInteger(0);
         CustomTask(Callable<V> c) { super(c); births.getAndIncrement(); }

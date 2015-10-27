@@ -56,7 +56,6 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCPolyExpression.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
-import com.sun.tools.javac.util.Dependencies.AttributionKind;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.JCDiagnostic.Fragment;
 import com.sun.tools.javac.util.List;
@@ -760,7 +759,6 @@ public class Attr extends JCTree.Visitor {
      */
     void attribTypeVariables(List<JCTypeParameter> typarams, Env<AttrContext> env) {
         for (JCTypeParameter tvar : typarams) {
-            dependencies.push(AttributionKind.TVAR, tvar);
             TypeVar a = (TypeVar)tvar.type;
             a.tsym.flags_field |= UNATTRIBUTED;
             a.bound = Type.noType;
@@ -775,7 +773,6 @@ public class Attr extends JCTree.Visitor {
                 types.setBounds(a, List.of(syms.objectType));
             }
             a.tsym.flags_field &= ~UNATTRIBUTED;
-            dependencies.pop();
         }
         for (JCTypeParameter tvar : typarams) {
             chk.checkNonCyclic(tvar.pos(), (TypeVar)tvar.type);
@@ -2817,8 +2814,10 @@ public class Attr extends JCTree.Visitor {
                 //omitted as we don't know at this stage as to whether this is a
                 //raw selector (because of inference)
                 chk.validate(that.expr, env, false);
+            } else {
+                Symbol lhsSym = TreeInfo.symbol(that.expr);
+                localEnv.info.selectSuper = lhsSym != null && lhsSym.name == names._super;
             }
-
             //attrib type-arguments
             List<Type> typeargtypes = List.nil();
             if (that.typeargs != null) {
@@ -3733,17 +3732,17 @@ public class Attr extends JCTree.Visitor {
                                          " in tree " + tree);
             }
 
-            // Test (1): emit a `deprecation' warning if symbol is deprecated.
-            // (for constructors, the error was given when the constructor was
-            // resolved)
+            // Emit a `deprecation' warning if symbol is deprecated.
+            // (for constructors (but not for constructor references), the error
+            // was given when the constructor was resolved)
 
-            if (sym.name != names.init) {
+            if (sym.name != names.init || tree.hasTag(REFERENCE)) {
                 chk.checkDeprecated(tree.pos(), env.info.scope.owner, sym);
                 chk.checkSunAPI(tree.pos(), sym);
                 chk.checkProfile(tree.pos(), sym);
             }
 
-            // Test (3): if symbol is a variable, check that its type and
+            // If symbol is a variable, check that its type and
             // kind are compatible with the prototype and protokind.
             return check(tree, owntype, sym.kind.toSelector(), resultInfo);
         }

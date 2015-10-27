@@ -894,9 +894,11 @@ public:
   /* typically, at most a few retries are needed                    */      \
   product(intx, SuspendRetryCount, 50,                                      \
           "Maximum retry count for an external suspend request")            \
+          range(0, max_intx)                                                \
                                                                             \
   product(intx, SuspendRetryDelay, 5,                                       \
           "Milliseconds to delay per retry (* current_retry_count)")        \
+          range(0, max_intx)                                                \
                                                                             \
   product(bool, AssertOnSuspendWaitFailure, false,                          \
           "Assert/Guarantee on external suspend wait failure")              \
@@ -1342,6 +1344,7 @@ public:
           "Maximum allowable local JNI handle capacity to "                 \
           "EnsureLocalCapacity() and PushLocalFrame(), "                    \
           "where <= 0 is unlimited, default: 65536")                        \
+          range(min_intx, max_intx)                                         \
                                                                             \
   product(bool, EagerXrunInit, false,                                       \
           "Eagerly initialize -Xrun libraries; allows startup profiling, "  \
@@ -1377,7 +1380,7 @@ public:
   product(intx, ContendedPaddingWidth, 128,                                 \
           "How many bytes to pad the fields/classes marked @Contended with")\
           range(0, 8192)                                                    \
-          constraint(ContendedPaddingWidthConstraintFunc,AtParse)           \
+          constraint(ContendedPaddingWidthConstraintFunc,AfterErgo)         \
                                                                             \
   product(bool, EnableContended, true,                                      \
           "Enable @Contended annotation support")                           \
@@ -1390,6 +1393,8 @@ public:
                                                                             \
   product(intx, BiasedLockingStartupDelay, 4000,                            \
           "Number of milliseconds to wait before enabling biased locking")  \
+          range(0, (intx)(max_jint-(max_jint%PeriodicTask::interval_gran))) \
+          constraint(BiasedLockingStartupDelayFunc,AfterErgo)               \
                                                                             \
   diagnostic(bool, PrintBiasedLockingStatistics, false,                     \
           "Print statistics of biased locking in JVM")                      \
@@ -1397,14 +1402,20 @@ public:
   product(intx, BiasedLockingBulkRebiasThreshold, 20,                       \
           "Threshold of number of revocations per type to try to "          \
           "rebias all objects in the heap of that type")                    \
+          range(0, max_intx)                                                \
+          constraint(BiasedLockingBulkRebiasThresholdFunc,AfterErgo)        \
                                                                             \
   product(intx, BiasedLockingBulkRevokeThreshold, 40,                       \
           "Threshold of number of revocations per type to permanently "     \
           "revoke biases of all objects in the heap of that type")          \
+          range(0, max_intx)                                                \
+          constraint(BiasedLockingBulkRevokeThresholdFunc,AfterErgo)        \
                                                                             \
   product(intx, BiasedLockingDecayTime, 25000,                              \
           "Decay time (in milliseconds) to re-enable bulk rebiasing of a "  \
           "type after previous bulk rebias")                                \
+          range(500, max_intx)                                              \
+          constraint(BiasedLockingDecayTimeFunc,AfterErgo)                  \
                                                                             \
   /* tracing */                                                             \
                                                                             \
@@ -1429,8 +1440,9 @@ public:
   product(bool, StressLdcRewrite, false,                                    \
           "Force ldc -> ldc_w rewrite during RedefineClasses")              \
                                                                             \
-  product(intx, TraceRedefineClasses, 0,                                    \
+  product(uintx, TraceRedefineClasses, 0,                                   \
           "Trace level for JVMTI RedefineClasses")                          \
+          range(0, 0xFFFFFFFF)                                              \
                                                                             \
   /* change to false by default sometime after Mustang */                   \
   product(bool, VerifyMergedCPBytecodes, true,                              \
@@ -1567,14 +1579,6 @@ public:
   product(bool, TraceDynamicGCThreads, false,                               \
           "Trace the dynamic GC thread usage")                              \
                                                                             \
-  develop(bool, ParallelOldGCSplitALot, false,                              \
-          "Provoke splitting (copying data from a young gen space to "      \
-          "multiple destination spaces)")                                   \
-                                                                            \
-  develop(uintx, ParallelOldGCSplitInterval, 3,                             \
-          "How often to provoke splitting a young gen space")               \
-          range(0, max_uintx)                                               \
-                                                                            \
   product(uint, ConcGCThreads, 0,                                           \
           "Number of threads concurrent gc will use")                       \
           constraint(ConcGCThreadsConstraintFunc,AfterErgo)                 \
@@ -1592,9 +1596,6 @@ public:
                                                                             \
   product(bool, ScavengeBeforeFullGC, true,                                 \
           "Scavenge youngest generation before each full GC.")              \
-                                                                            \
-  develop(bool, ScavengeWithObjectsInToSpace, false,                        \
-          "Allow scavenges to occur when to-space contains objects")        \
                                                                             \
   product(bool, UseConcMarkSweepGC, false,                                  \
           "Use Concurrent Mark-Sweep GC in the old generation")             \
@@ -2179,6 +2180,7 @@ public:
                                                                             \
   product_pd(uint64_t, MaxRAM,                                              \
           "Real memory size (in bytes) used to set maximum heap size")      \
+          range(0, 0XFFFFFFFFFFFFFFFF)                                      \
                                                                             \
   product(size_t, ErgoHeapSizeLimit, 0,                                     \
           "Maximum ergonomically set heap size (in bytes); zero means use " \
@@ -2236,12 +2238,6 @@ public:
   product(uintx, AdaptiveSizeThroughPutPolicy, 0,                           \
           "Policy for changing generation size for throughput goals")       \
           range(0, 1)                                                       \
-                                                                            \
-  develop(bool, PSAdjustTenuredGenForMinorPause, false,                     \
-          "Adjust tenured generation to achieve a minor pause goal")        \
-                                                                            \
-  develop(bool, PSAdjustYoungGenForMajorPause, false,                       \
-          "Adjust young generation to achieve a major pause goal")          \
                                                                             \
   product(uintx, AdaptiveSizePolicyInitializingSteps, 20,                   \
           "Number of steps where heuristics is used before data is used")   \
@@ -2687,10 +2683,13 @@ public:
   product(intx, PrintSafepointStatisticsCount, 300,                         \
           "Total number of safepoint statistics collected "                 \
           "before printing them out")                                       \
+          range(1, max_intx)                                                \
                                                                             \
   product(intx, PrintSafepointStatisticsTimeout,  -1,                       \
           "Print safepoint statistics only when safepoint takes "           \
           "more than PrintSafepointSatisticsTimeout in millis")             \
+  LP64_ONLY(range(-1, max_intx/MICROUNITS))                                 \
+  NOT_LP64(range(-1, max_intx))                                             \
                                                                             \
   product(bool, TraceSafepointCleanupTime, false,                           \
           "Print the break down of clean up tasks performed during "        \
@@ -2740,6 +2739,7 @@ public:
   diagnostic(intx, MinPassesBeforeFlush, 10,                                \
           "Minimum number of sweeper passes before an nmethod "             \
           "can be flushed")                                                 \
+          range(0, max_intx)                                                \
                                                                             \
   product(bool, UseCodeAging, true,                                         \
           "Insert counter to detect warm methods")                          \
@@ -2818,11 +2818,11 @@ public:
           "standard exit from VM if bytecode verify error "                 \
           "(only in debug mode)")                                           \
                                                                             \
-  notproduct(ccstr, AbortVMOnException, NULL,                               \
+  diagnostic(ccstr, AbortVMOnException, NULL,                               \
           "Call fatal if this exception is thrown.  Example: "              \
           "java -XX:AbortVMOnException=java.lang.NullPointerException Foo") \
                                                                             \
-  notproduct(ccstr, AbortVMOnExceptionMessage, NULL,                        \
+  diagnostic(ccstr, AbortVMOnExceptionMessage, NULL,                        \
           "Call fatal if the exception pointed by AbortVMOnException "      \
           "has this message")                                               \
                                                                             \
@@ -3116,21 +3116,29 @@ public:
   product(intx, SelfDestructTimer, 0,                                       \
           "Will cause VM to terminate after a given time (in minutes) "     \
           "(0 means off)")                                                  \
+          range(0, max_intx)                                                \
                                                                             \
   product(intx, MaxJavaStackTraceDepth, 1024,                               \
           "The maximum number of lines in the stack trace for Java "        \
           "exceptions (0 means all)")                                       \
+          range(0, max_jint/2)                                              \
                                                                             \
+  /* notice: the max range value here is max_jint, not max_intx  */         \
+  /* because of overflow issue                                   */         \
   NOT_EMBEDDED(diagnostic(intx, GuaranteedSafepointInterval, 1000,          \
           "Guarantee a safepoint (at least) every so many milliseconds "    \
           "(0 means none)"))                                                \
+  NOT_EMBEDDED(range(0, max_jint))                                          \
                                                                             \
   EMBEDDED_ONLY(product(intx, GuaranteedSafepointInterval, 0,               \
           "Guarantee a safepoint (at least) every so many milliseconds "    \
           "(0 means none)"))                                                \
+  EMBEDDED_ONLY(range(0, max_jint))                                         \
                                                                             \
   product(intx, SafepointTimeoutDelay, 10000,                               \
           "Delay in milliseconds for option SafepointTimeout")              \
+  LP64_ONLY(range(0, max_intx/MICROUNITS))                                  \
+  NOT_LP64(range(0, max_intx))                                              \
                                                                             \
   product(intx, NmethodSweepActivity, 10,                                   \
           "Removes cold nmethods from code cache if > 0. Higher values "    \
@@ -3222,6 +3230,7 @@ public:
   product(intx, ProfileIntervalsTicks, 100,                                 \
           "Number of ticks between printing of interval profile "           \
           "(+ProfileIntervals)")                                            \
+          range(0, max_intx)                                                \
                                                                             \
   notproduct(intx, ScavengeALotInterval,     1,                             \
           "Interval between which scavenge will occur with +ScavengeALot")  \
@@ -3255,14 +3264,17 @@ public:
   diagnostic(intx, MallocVerifyInterval,     0,                             \
           "If non-zero, verify C heap after every N calls to "              \
           "malloc/realloc/free")                                            \
+          range(0, max_intx)                                                \
                                                                             \
   diagnostic(intx, MallocVerifyStart,     0,                                \
           "If non-zero, start verifying C heap after Nth call to "          \
           "malloc/realloc/free")                                            \
+          range(0, max_intx)                                                \
                                                                             \
   diagnostic(uintx, MallocMaxTestWords,     0,                              \
           "If non-zero, maximum number of words that malloc/realloc can "   \
           "allocate (for testing only)")                                    \
+          range(0, max_uintx)                                               \
                                                                             \
   product(intx, TypeProfileWidth, 2,                                        \
           "Number of receiver types to record in call/cast profile")        \
@@ -3506,10 +3518,12 @@ public:
   product(intx, DeferThrSuspendLoopCount,     4000,                         \
           "(Unstable) Number of times to iterate in safepoint loop "        \
           "before blocking VM threads ")                                    \
+          range(-1, max_jint-1)                                             \
                                                                             \
   product(intx, DeferPollingPageLoopCount,     -1,                          \
           "(Unsafe,Unstable) Number of iterations in safepoint loop "       \
           "before changing safepoint polling page to RO ")                  \
+          range(-1, max_jint-1)                                             \
                                                                             \
   product(intx, SafepointSpinBeforeYield, 2000, "(Unstable)")               \
           range(0, max_intx)                                                \
@@ -3524,23 +3538,25 @@ public:
   /* stack parameters */                                                    \
   product_pd(intx, StackYellowPages,                                        \
           "Number of yellow zone (recoverable overflows) pages")            \
-          range(1, max_intx)                                                \
+          range(MIN_STACK_YELLOW_PAGES, (DEFAULT_STACK_YELLOW_PAGES+5))     \
                                                                             \
   product_pd(intx, StackRedPages,                                           \
           "Number of red zone (unrecoverable overflows) pages")             \
-          range(1, max_intx)                                                \
+          range(MIN_STACK_RED_PAGES, (DEFAULT_STACK_RED_PAGES+2))           \
                                                                             \
   /* greater stack shadow pages can't generate instruction to bang stack */ \
   product_pd(intx, StackShadowPages,                                        \
           "Number of shadow zone (for overflow checking) pages "            \
           "this should exceed the depth of the VM and native call stack")   \
-          range(1, 50)                                                      \
+          range(MIN_STACK_SHADOW_PAGES, (DEFAULT_STACK_SHADOW_PAGES+30))    \
                                                                             \
   product_pd(intx, ThreadStackSize,                                         \
           "Thread Stack Size (in Kbytes)")                                  \
+          range(0, max_intx-os::vm_page_size())                             \
                                                                             \
   product_pd(intx, VMThreadStackSize,                                       \
           "Non-Java Thread Stack Size (in Kbytes)")                         \
+          range(0, max_intx/(1 * K))                                        \
                                                                             \
   product_pd(intx, CompilerThreadStackSize,                                 \
           "Compiler Thread Stack Size (in Kbytes)")                         \
@@ -3551,7 +3567,8 @@ public:
                                                                             \
   /* code cache parameters                                    */            \
   /* ppc64/tiered compilation has large code-entry alignment. */            \
-  develop(uintx, CodeCacheSegmentSize, 64 PPC64_ONLY(+64) NOT_PPC64(TIERED_ONLY(+64)),\
+  develop(uintx, CodeCacheSegmentSize,                                      \
+          64 PPC64_ONLY(+64) NOT_PPC64(TIERED_ONLY(+64)),                   \
           "Code cache segment size (in bytes) - smallest unit of "          \
           "allocation")                                                     \
           range(1, 1024)                                                    \
@@ -3732,6 +3749,7 @@ public:
   product(intx, VMThreadPriority, -1,                                       \
           "The native priority at which the VM thread should run "          \
           "(-1 means no change)")                                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(bool, CompilerThreadHintNoPreempt, true,                          \
           "(Solaris only) Give compiler threads an extra quanta")           \
@@ -3741,33 +3759,43 @@ public:
                                                                             \
   product(intx, JavaPriority1_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority2_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority3_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority4_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority5_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority6_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority7_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority8_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority9_To_OSPriority, -1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   product(intx, JavaPriority10_To_OSPriority,-1,                            \
           "Map Java priorities to OS priorities")                           \
+          range(-1, 127)                                                    \
                                                                             \
   experimental(bool, UseCriticalJavaThreadPriority, false,                  \
           "Java thread priority 10 maps to critical scheduling priority")   \
@@ -3977,6 +4005,7 @@ public:
                                                                             \
   product(size_t, MaxDirectMemorySize, 0,                                   \
           "Maximum total size of NIO direct-buffer allocations")            \
+          range(0, (size_t)SIZE_MAX)                                        \
                                                                             \
   /* Flags used for temporary code during development  */                   \
                                                                             \
@@ -4005,6 +4034,8 @@ public:
                                                                             \
   product(intx, PerfDataSamplingInterval, 50,                               \
           "Data sampling interval (in milliseconds)")                       \
+          range(PeriodicTask::min_interval, max_jint)                       \
+          constraint(PerfDataSamplingIntervalFunc, AfterErgo)               \
                                                                             \
   develop(bool, PerfTraceDataCreation, false,                               \
           "Trace creation of Performance Data Entries")                     \
@@ -4018,9 +4049,11 @@ public:
   product(intx, PerfDataMemorySize, 64*K,                                   \
           "Size of performance data memory region. Will be rounded "        \
           "up to a multiple of the native os page size.")                   \
+          range(128, 32*64*K)                                               \
                                                                             \
   product(intx, PerfMaxStringConstLength, 1024,                             \
           "Maximum PerfStringConstant string length before truncation")     \
+          range(32, 32*K)                                                   \
                                                                             \
   product(bool, PerfAllowAtExitRegistration, false,                         \
           "Allow registration of atexit() methods")                         \
@@ -4080,10 +4113,10 @@ public:
           "If PrintSharedArchiveAndExit is true, also print the shared "    \
           "dictionary")                                                     \
                                                                             \
-  product(size_t, SharedReadWriteSize,  NOT_LP64(12*M) LP64_ONLY(16*M),     \
+  product(size_t, SharedReadWriteSize, NOT_LP64(12*M) LP64_ONLY(16*M),      \
           "Size of read-write space for metadata (in bytes)")               \
                                                                             \
-  product(size_t, SharedReadOnlySize,  NOT_LP64(12*M) LP64_ONLY(16*M),      \
+  product(size_t, SharedReadOnlySize, NOT_LP64(12*M) LP64_ONLY(16*M),       \
           "Size of read-only space for metadata (in bytes)")                \
                                                                             \
   product(uintx, SharedMiscDataSize,    NOT_LP64(2*M) LP64_ONLY(4*M),       \
@@ -4098,6 +4131,7 @@ public:
                                                                             \
   product(uintx, SharedSymbolTableBucketSize, 4,                            \
           "Average number of symbols per bucket in shared table")           \
+          range(2, 246)                                                     \
                                                                             \
   diagnostic(bool, IgnoreUnverifiableClassesDuringDump, false,              \
           "Do not quit -Xshare:dump even if we encounter unverifiable "     \

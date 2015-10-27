@@ -137,7 +137,9 @@ ifeq ($(HAS_SPEC),)
 
     # The spec files depend on the autoconf source code. This check makes sure
     # the configuration is up to date after changes to configure.
-    $(SPECS): $(wildcard $(topdir)/common/autoconf/*)
+    CUSTOM_CONFIG_DIR ?= $(topdir)/closed/autoconf
+
+    $(SPECS): $(wildcard $(topdir)/common/autoconf/*) $(wildcard $(CUSTOM_CONFIG_DIR)/*)
         ifeq ($(CONF_CHECK), fail)
 	  @echo "Error: The configuration is not up to date for '$(lastword $(subst /, , $(dir $@)))'."
 	  $(call PrintConfCheckFailed)
@@ -287,7 +289,7 @@ else # HAS_SPEC=true
 	    $(call StartGlobalTimer)
 	    $(call PrepareSmartJavac)
 	    ( cd $(TOPDIR) && \
-	        $(BUILD_LOG_WRAPPER) $(MAKE) $(MAKE_ARGS) $(OUTPUT_SYNC_FLAG) \
+	        $(BUILD_LOG_WRAPPER) $(NICE) $(MAKE) $(MAKE_ARGS) $(OUTPUT_SYNC_FLAG) \
 	            -j $(JOBS) -f make/Main.gmk $(USER_MAKE_VARS) \
 	            $(PARALLEL_TARGETS) $(COMPARE_BUILD_MAKE) || \
 	        ( exitcode=$$? && $(BUILD_LOG_WRAPPER) \

@@ -31,31 +31,32 @@
 #include "utilities/stack.inline.hpp"
 
 G1ParCopyHelper::G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par_scan_state) :
-  G1ParClosureSuper(g1, par_scan_state), _scanned_klass(NULL),
-  _cm(_g1->concurrent_mark()) { }
-
-G1ParCopyHelper::G1ParCopyHelper(G1CollectedHeap* g1) :
-  G1ParClosureSuper(g1), _scanned_klass(NULL),
-  _cm(_g1->concurrent_mark()) { }
-
-G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1) :
-  _g1(g1), _par_scan_state(NULL), _worker_id(UINT_MAX) { }
+  G1ParClosureSuper(g1, par_scan_state),
+  _worker_id(par_scan_state->worker_id()),
+  _scanned_klass(NULL),
+  _cm(_g1->concurrent_mark())
+{ }
 
 G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
-  _g1(g1), _par_scan_state(NULL),
-  _worker_id(UINT_MAX) {
-  set_par_scan_thread_state(par_scan_state);
-}
+  _g1(g1), _par_scan_state(par_scan_state)
+{ }
 
-void G1ParClosureSuper::set_par_scan_thread_state(G1ParScanThreadState* par_scan_state) {
-  assert(_par_scan_state == NULL, "_par_scan_state must only be set once");
-  assert(par_scan_state != NULL, "Must set par_scan_state to non-NULL.");
+void G1KlassScanClosure::do_klass(Klass* klass) {
+  // If the klass has not been dirtied we know that there's
+  // no references into  the young gen and we can skip it.
+  if (!_process_only_dirty || klass->has_modified_oops()) {
+    // Clean the klass since we're going to scavenge all the metadata.
+    klass->clear_modified_oops();
 
-  _par_scan_state = par_scan_state;
-  _worker_id = par_scan_state->worker_id();
+    // Tell the closure that this klass is the Klass to scavenge
+    // and is the one to dirty if oops are left pointing into the young gen.
+    _closure->set_scanned_klass(klass);
 
-  assert(_worker_id < ParallelGCThreads,
-         "The given worker id %u must be less than the number of threads %u", _worker_id, ParallelGCThreads);
+    klass->oops_do(_closure);
+
+    _closure->set_scanned_klass(NULL);
+  }
+  _count++;
 }
 
 // Generate G1 specialized oop_oop_iterate functions.

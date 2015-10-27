@@ -32,9 +32,9 @@
 #include "runtime/thread.hpp"
 #include "utilities/globalDefinitions.hpp"
 
+class CardTableEntryClosure;
 class DirtyCardQueue;
 class G1CollectedHeap;
-class G1RemSet;
 class HeapRegion;
 
 // An evicting cache of cards that have been logged by the G1 post
@@ -84,11 +84,11 @@ class G1HotCardCache: public CHeapObj<mtGC> {
   // The number of cached cards a thread claims when flushing the cache
   static const int ClaimChunkSize = 32;
 
-  bool default_use_cache() const {
+ public:
+  static bool default_use_cache() {
     return (G1ConcRSLogCacheSize > 0);
   }
 
- public:
   G1HotCardCache(G1CollectedHeap* g1h);
   ~G1HotCardCache();
 
@@ -113,7 +113,7 @@ class G1HotCardCache: public CHeapObj<mtGC> {
 
   // Refine the cards that have delayed as a result of
   // being in the cache.
-  void drain(uint worker_i, G1RemSet* g1rs, DirtyCardQueue* into_cset_dcq);
+  void drain(CardTableEntryClosure* cl, uint worker_i);
 
   // Set up for parallel processing of the cards in the hot cache
   void reset_hot_cache_claimed_index() {

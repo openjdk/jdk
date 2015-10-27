@@ -33,6 +33,8 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.NamedOperation;
+import jdk.internal.dynalink.StandardOperation;
 import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.linker.ConversionComparator.Comparison;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -40,8 +42,8 @@ import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.MethodHandleTransformer;
-import jdk.internal.dynalink.support.DefaultInternalObjectFilter;
-import jdk.internal.dynalink.support.Lookup;
+import jdk.internal.dynalink.linker.support.DefaultInternalObjectFilter;
+import jdk.internal.dynalink.linker.support.Lookup;
 import jdk.nashorn.api.scripting.ScriptUtils;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
@@ -99,18 +101,19 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
             return invocation == null ? null : invocation.filterArguments(0, FILTER_CONSSTRING);
         }
 
-        if (self != null && "call".equals(desc.getNameToken(CallSiteDescriptor.OPERATOR))) {
-            // Support dyn:call on any object that supports some @FunctionalInterface
+        if (self != null && NamedOperation.getBaseOperation(desc.getOperation()) == StandardOperation.CALL) {
+            // Support CALL on any object that supports some @FunctionalInterface
             // annotated interface. This way Java method, constructor references or
             // implementations of java.util.function.* interfaces can be called as though
             // those are script functions.
             final String name = getFunctionalInterfaceMethodName(self.getClass());
             if (name != null) {
                 final MethodType callType = desc.getMethodType();
-                // drop callee (Undefined ScriptFunction) and change the request to be dyn:callMethod:<name>
-                final NashornCallSiteDescriptor newDesc = NashornCallSiteDescriptor.get(desc.getLookup(),
-                        "dyn:callMethod:" + name, desc.getMethodType().dropParameterTypes(1, 2),
-                        NashornCallSiteDescriptor.getFlags(desc));
+                // drop callee (Undefined ScriptFunction) and change the request to be CALL_METHOD:<name>
+                final CallSiteDescriptor newDesc = new CallSiteDescriptor(
+                        NashornCallSiteDescriptor.getLookupInternal(desc),
+                        new NamedOperation(StandardOperation.CALL_METHOD, name),
+                        desc.getMethodType().dropParameterTypes(1, 2));
                 final GuardedInvocation gi = getGuardedInvocation(beansLinker,
                         linkRequest.replaceArguments(newDesc, linkRequest.getArguments()),
                         new NashornBeansLinkerServices(linkerServices));
@@ -208,11 +211,6 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
         @Override
         public MethodHandle asType(final MethodHandle handle, final MethodType fromType) {
             return linkerServices.asType(handle, fromType);
-        }
-
-        @Override
-        public MethodHandle asTypeLosslessReturn(final MethodHandle handle, final MethodType fromType) {
-            return Implementation.asTypeLosslessReturn(this, handle, fromType);
         }
 
         @Override

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/concurrentG1Refine.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1Log.hpp"
@@ -269,6 +270,8 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _gc_par_phases[SATBFiltering] = new WorkerDataArray<double>(max_gc_threads, "SATB Filtering (ms)", true, G1Log::LevelFinest, 3);
 
   _gc_par_phases[UpdateRS] = new WorkerDataArray<double>(max_gc_threads, "Update RS (ms)", true, G1Log::LevelFiner, 2);
+  _gc_par_phases[ScanHCC] = new WorkerDataArray<double>(max_gc_threads, "Scan HCC (ms)", true, G1Log::LevelFiner, 3);
+  _gc_par_phases[ScanHCC]->set_enabled(ConcurrentG1Refine::hot_card_cache_enabled());
   _gc_par_phases[ScanRS] = new WorkerDataArray<double>(max_gc_threads, "Scan RS (ms)", true, G1Log::LevelFiner, 2);
   _gc_par_phases[CodeRoots] = new WorkerDataArray<double>(max_gc_threads, "Code Root Scanning (ms)", true, G1Log::LevelFiner, 2);
   _gc_par_phases[ObjCopy] = new WorkerDataArray<double>(max_gc_threads, "Object Copy (ms)", true, G1Log::LevelFiner, 2);

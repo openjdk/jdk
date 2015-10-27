@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -267,6 +267,13 @@ public class SecureRandom extends java.util.Random {
      * {@code nextBytes} will force the SecureRandom object to seed itself.
      * This self-seeding will not occur if {@code setSeed} was
      * previously called.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.provider.preferred} property to determine
+     * the preferred provider order for the specified algorithm. This
+     * may be different than the order of providers returned by
+     * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param algorithm the name of the RNG algorithm.
      * See the SecureRandom section in the <a href=
