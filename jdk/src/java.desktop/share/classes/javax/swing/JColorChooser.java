@@ -22,11 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package javax.swing;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 import java.io.*;
 import java.util.*;
 
@@ -35,7 +36,6 @@ import javax.swing.plaf.ColorChooserUI;
 import javax.accessibility.*;
 
 import sun.swing.SwingUtilities2;
-
 
 /**
  * <code>JColorChooser</code> provides a pane of controls designed to allow
@@ -73,17 +73,13 @@ import sun.swing.SwingUtilities2;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- *
- * @beaninfo
- *      attribute: isContainer false
- *    description: A component that supports selecting a Color.
- *
- *
  * @author James Gosling
  * @author Amy Fowler
  * @author Steve Wilson
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UI", description = "A component that supports selecting a Color.")
+@SwingContainer(false)
 @SuppressWarnings("serial") // Same-version serialization only
 public class JColorChooser extends JComponent implements Accessible {
 
@@ -261,12 +257,9 @@ public class JColorChooser extends JComponent implements Accessible {
      *
      * @param ui  the <code>ColorChooserUI</code> L&amp;F object
      * @see UIDefaults#getUI
-     *
-     * @beaninfo
-     *       bound: true
-     *      hidden: true
-     * description: The UI object that implements the color chooser's LookAndFeel.
      */
+    @BeanProperty(hidden = true, description
+            = "The UI object that implements the color chooser's LookAndFeel.")
     public void setUI(ColorChooserUI ui) {
         super.setUI(ui);
     }
@@ -289,6 +282,7 @@ public class JColorChooser extends JComponent implements Accessible {
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -308,12 +302,9 @@ public class JColorChooser extends JComponent implements Accessible {
      * The <code>ColorSelectionModel</code> will fire a <code>ChangeEvent</code>
      * @param color the color to be set in the color chooser
      * @see JComponent#addPropertyChangeListener
-     *
-     * @beaninfo
-     *       bound: false
-     *      hidden: false
-     * description: The current color the chooser is to display.
      */
+    @BeanProperty(bound = false, description
+            = "The current color the chooser is to display.")
     public void setColor(Color color) {
         selectionModel.setSelectedColor(color);
 
@@ -381,11 +372,9 @@ public class JColorChooser extends JComponent implements Accessible {
      * @see #getDragEnabled
      * @see #setTransferHandler
      * @see TransferHandler
-     *
-     * @beaninfo
-     *  description: Determines whether automatic drag handling is enabled.
-     *        bound: false
      */
+    @BeanProperty(bound = false, description
+            = "Determines whether automatic drag handling is enabled.")
     public void setDragEnabled(boolean b) {
         if (b && GraphicsEnvironment.isHeadless()) {
             throw new HeadlessException();
@@ -411,12 +400,9 @@ public class JColorChooser extends JComponent implements Accessible {
      *
      * @param preview the <code>JComponent</code> which displays the current color
      * @see JComponent#addPropertyChangeListener
-     *
-     * @beaninfo
-     *       bound: true
-     *      hidden: true
-     * description: The UI component which displays the current color.
      */
+    @BeanProperty(hidden = true, description
+            = "The UI component which displays the current color.")
     public void setPreviewPanel(JComponent preview) {
 
         if (previewPanel != preview) {
@@ -496,12 +482,9 @@ public class JColorChooser extends JComponent implements Accessible {
      *
      * @param panels  an array of <code>AbstractColorChooserPanel</code>
      *          objects
-     *
-     * @beaninfo
-     *       bound: true
-     *      hidden: true
-     * description: An array of different chooser types.
      */
+    @BeanProperty(hidden = true, description
+            = "An array of different chooser types.")
     public void setChooserPanels( AbstractColorChooserPanel[] panels) {
         AbstractColorChooserPanel[] oldValue = chooserPanels;
         chooserPanels = panels;
@@ -531,12 +514,9 @@ public class JColorChooser extends JComponent implements Accessible {
      * Sets the model containing the selected color.
      *
      * @param newModel   the new <code>ColorSelectionModel</code> object
-     *
-     * @beaninfo
-     *       bound: true
-     *      hidden: true
-     * description: The model which contains the currently selected color.
      */
+    @BeanProperty(hidden = true, description
+            = "The model which contains the currently selected color.")
     public void setSelectionModel(ColorSelectionModel newModel ) {
         ColorSelectionModel oldModel = selectionModel;
         selectionModel = newModel;
@@ -603,6 +583,7 @@ public class JColorChooser extends JComponent implements Accessible {
      * @return an AccessibleJColorChooser that serves as the
      *         AccessibleContext of this JColorChooser
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJColorChooser();

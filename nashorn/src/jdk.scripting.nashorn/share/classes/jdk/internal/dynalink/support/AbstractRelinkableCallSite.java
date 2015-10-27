@@ -90,8 +90,6 @@ import jdk.internal.dynalink.RelinkableCallSite;
 
 /**
  * A basic implementation of the {@link RelinkableCallSite} as a {@link MutableCallSite} subclass.
- *
- * @author Attila Szegedi
  */
 public abstract class AbstractRelinkableCallSite extends MutableCallSite implements RelinkableCallSite {
     private final CallSiteDescriptor descriptor;

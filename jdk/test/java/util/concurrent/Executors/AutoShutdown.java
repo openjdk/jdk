@@ -24,55 +24,71 @@
 /*
  * @test
  * @bug 6399443
- * @run main/othervm AutoShutdown
+ * @run main/othervm/timeout=1000 AutoShutdown
  * @summary Check for auto-shutdown and gc of singleThreadExecutors
  * @author Martin Buchholz
  */
 
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.*;
-import static java.util.concurrent.Executors.*;
-import java.util.concurrent.Phaser;
+import java.lang.ref.WeakReference;
+import java.util.Arrays;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
+import static java.util.concurrent.Executors.defaultThreadFactory;
+import static java.util.concurrent.Executors.newFixedThreadPool;
+import static java.util.concurrent.Executors.newSingleThreadScheduledExecutor;
+import static java.util.concurrent.Executors.newSingleThreadExecutor;
 
 public class AutoShutdown {
-    private static void waitForFinalizersToRun() {
-        for (int i = 0; i < 2; i++)
-            tryWaitForFinalizersToRun();
-    }
 
-    private static void tryWaitForFinalizersToRun() {
-        System.gc();
-        final CountDownLatch fin = new CountDownLatch(1);
-        new Object() { protected void finalize() { fin.countDown(); }};
-        System.gc();
-        try { fin.await(); }
-        catch (InterruptedException ie) { throw new Error(ie); }
+    static void await(CountDownLatch latch) throws InterruptedException {
+        if (!latch.await(100L, TimeUnit.SECONDS))
+            throw new AssertionError("timed out waiting for latch");
     }
 
     private static void realMain(String[] args) throws Throwable {
-        final Phaser phaser = new Phaser(3);
-        Runnable trivialRunnable = new Runnable() {
-            public void run() {
-                phaser.arriveAndAwaitAdvance();
-            }
+        final Executor[] executors = {
+            newSingleThreadExecutor(),
+            newSingleThreadExecutor(defaultThreadFactory()),
+            // TODO: should these executors also auto-shutdown?
+            //newFixedThreadPool(1),
+            //newSingleThreadScheduledExecutor(),
+            //newSingleThreadScheduledExecutor(defaultThreadFactory()),
         };
-        int count0 = Thread.activeCount();
-        Executor e1 = newSingleThreadExecutor();
-        Executor e2 = newSingleThreadExecutor(defaultThreadFactory());
-        e1.execute(trivialRunnable);
-        e2.execute(trivialRunnable);
-        phaser.arriveAndAwaitAdvance();
-        equal(Thread.activeCount(), count0 + 2);
-        e1 = e2 = null;
-        for (int i = 0; i < 10 && Thread.activeCount() > count0; i++)
-            tryWaitForFinalizersToRun();
-        for (int i = 0; i < 10; ++i) { // give JVM a chance to settle.
-            if (Thread.activeCount() == count0)
-                return;
-            Thread.sleep(1000);
+        final ConcurrentLinkedQueue<WeakReference<Thread>> poolThreads
+            = new ConcurrentLinkedQueue<>();
+        final CountDownLatch threadStarted
+            = new CountDownLatch(executors.length);
+        final CountDownLatch pleaseProceed
+            = new CountDownLatch(1);
+        Runnable task = new Runnable() { public void run() {
+            try {
+                poolThreads.add(new WeakReference<>(Thread.currentThread()));
+                threadStarted.countDown();
+                await(pleaseProceed);
+            } catch (Throwable t) { unexpected(t); }
+        }};
+        for (Executor executor : executors)
+            executor.execute(task);
+        await(threadStarted);
+        pleaseProceed.countDown();
+        Arrays.fill(executors, null);   // make executors unreachable
+        boolean done = false;
+        for (long timeout = 1L; !done && timeout <= 128L; timeout *= 2) {
+            System.gc();
+            done = true;
+            for (WeakReference<Thread> ref : poolThreads) {
+                Thread thread = ref.get();
+                if (thread != null) {
+                    TimeUnit.SECONDS.timedJoin(thread, timeout);
+                    if (thread.isAlive())
+                        done = false;
+                }
+            }
         }
-        equal(Thread.activeCount(), count0);
+        if (!done)
+            throw new AssertionError("pool threads did not terminate");
     }
 
     //--------------------- Infrastructure ---------------------------

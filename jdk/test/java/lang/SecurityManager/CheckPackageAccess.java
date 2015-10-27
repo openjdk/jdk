@@ -23,7 +23,7 @@
 
 /*
  *  @test
- *  @bug 6741606 7146431 8000450 8019830 8022945 8027144 8041633
+ *  @bug 6741606 7146431 8000450 8019830 8022945 8027144 8041633 8078427
  *  @summary Make sure all restricted packages listed in the package.access
  *           property in the java.security file are blocked
  *  @run main/othervm CheckPackageAccess

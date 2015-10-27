@@ -39,7 +39,7 @@ public class CombinedPerms {
 
         String host = "localhost";
 
-        URL u = new URL("file:/home/duke");
+        URL u = new URL("file:/tmp/duke");
         CodeSource cs =
             new CodeSource(u, (java.security.cert.Certificate[]) null);
         Permissions p = new Permissions();

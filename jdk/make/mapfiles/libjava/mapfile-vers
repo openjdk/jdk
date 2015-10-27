@@ -152,7 +152,6 @@ SUNWprivate_1.1 {
 		Java_java_lang_StrictMath_log10;
 		Java_java_lang_StrictMath_sin;
 		Java_java_lang_StrictMath_sqrt;
-		Java_java_lang_StrictMath_cbrt;
 		Java_java_lang_StrictMath_tan;
 		Java_java_lang_StrictMath_cosh;
 		Java_java_lang_StrictMath_sinh;

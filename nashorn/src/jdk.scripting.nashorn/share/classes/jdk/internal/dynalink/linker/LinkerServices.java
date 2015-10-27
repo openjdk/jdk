@@ -95,8 +95,6 @@ import jdk.internal.dynalink.support.TypeUtilities;
  * Interface for services provided to {@link GuardingDynamicLinker} instances by the {@link DynamicLinker} that owns
  * them. You can think of it as the interface of the {@link DynamicLinker} that faces the {@link GuardingDynamicLinker}
  * s.
- *
- * @author Attila Szegedi
  */
 public interface LinkerServices {
     /**
@@ -130,7 +128,11 @@ public interface LinkerServices {
      * {@link MethodHandles#filterArguments(MethodHandle, int, MethodHandle...)} with
      * {@link GuardingTypeConverterFactory}-produced type converters as filters.
      */
-    public MethodHandle asTypeLosslessReturn(MethodHandle handle, MethodType fromType);
+    public default MethodHandle asTypeLosslessReturn(final MethodHandle handle, final MethodType fromType) {
+        final Class<?> handleReturnType = handle.type().returnType();
+        return asType(handle, TypeUtilities.isConvertibleWithoutLoss(handleReturnType, fromType.returnType()) ?
+                fromType : fromType.changeReturnType(handleReturnType));
+    }
 
     /**
      * Given a source and target type, returns a method handle that converts between them. Never returns null; in worst
@@ -188,23 +190,4 @@ public interface LinkerServices {
      * @return a method handle with parameters and/or return type potentially filtered for wrapping and unwrapping.
      */
     public MethodHandle filterInternalObjects(final MethodHandle target);
-
-    /**
-     * If we could just use Java 8 constructs, then {@code asTypeSafeReturn} would be a method with default
-     * implementation. Since we can't do that, we extract common default implementations into this static class.
-     */
-    public static class Implementation {
-        /**
-         * Default implementation for {@link LinkerServices#asTypeLosslessReturn(MethodHandle, MethodType)}.
-         * @param linkerServices the linker services that delegates to this implementation
-         * @param handle the passed handle
-         * @param fromType the passed type
-         * @return the converted method handle, as per the {@code asTypeSafeReturn} semantics.
-         */
-        public static MethodHandle asTypeLosslessReturn(final LinkerServices linkerServices, final MethodHandle handle, final MethodType fromType) {
-            final Class<?> handleReturnType = handle.type().returnType();
-            return linkerServices.asType(handle, TypeUtilities.isConvertibleWithoutLoss(handleReturnType, fromType.returnType()) ?
-                    fromType : fromType.changeReturnType(handleReturnType));
-        }
-    }
 }

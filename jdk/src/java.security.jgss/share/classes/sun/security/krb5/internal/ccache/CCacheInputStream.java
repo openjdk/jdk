@@ -36,10 +36,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import sun.misc.IOUtils;
 import sun.security.krb5.*;
 import sun.security.krb5.internal.*;
 import sun.security.krb5.internal.util.KrbDataInputStream;
+import sun.security.util.IOUtils;
 
 /**
  * This class extends KrbDataInputStream. It is used for parsing FCC-format
@@ -146,8 +146,9 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
         }
         try {
             return new PrincipalName(
+                    type,
                     result.toArray(new String[result.size()]),
-                    type);
+                    Realm.getDefault());
         } catch (RealmException re) {
             return null;
         }

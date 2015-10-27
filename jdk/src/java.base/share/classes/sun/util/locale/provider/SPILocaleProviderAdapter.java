@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,7 +133,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
      */
     static class BreakIteratorProviderDelegate extends BreakIteratorProvider
                                         implements Delegate<BreakIteratorProvider> {
-        private ConcurrentMap<Locale, BreakIteratorProvider> map = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Locale, BreakIteratorProvider> map = new ConcurrentHashMap<>();
 
         @Override
         public void addImpl(BreakIteratorProvider impl) {
@@ -188,7 +188,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
     }
 
     static class CollatorProviderDelegate extends CollatorProvider implements Delegate<CollatorProvider> {
-        private ConcurrentMap<Locale, CollatorProvider> map = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Locale, CollatorProvider> map = new ConcurrentHashMap<>();
 
         @Override
         public void addImpl(CollatorProvider impl) {
@@ -222,7 +222,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class DateFormatProviderDelegate extends DateFormatProvider
                                      implements Delegate<DateFormatProvider> {
-        private ConcurrentMap<Locale, DateFormatProvider> map = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Locale, DateFormatProvider> map = new ConcurrentHashMap<>();
 
         @Override
         public void addImpl(DateFormatProvider impl) {
@@ -270,7 +270,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class DateFormatSymbolsProviderDelegate extends DateFormatSymbolsProvider
                                             implements Delegate<DateFormatSymbolsProvider> {
-        private ConcurrentMap<Locale, DateFormatSymbolsProvider> map = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Locale, DateFormatSymbolsProvider> map = new ConcurrentHashMap<>();
 
         @Override
         public void addImpl(DateFormatSymbolsProvider impl) {
@@ -304,7 +304,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class DecimalFormatSymbolsProviderDelegate extends DecimalFormatSymbolsProvider
                                                implements Delegate<DecimalFormatSymbolsProvider> {
-        private ConcurrentMap<Locale, DecimalFormatSymbolsProvider> map = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Locale, DecimalFormatSymbolsProvider> map = new ConcurrentHashMap<>();
 
         @Override
         public void addImpl(DecimalFormatSymbolsProvider impl) {
@@ -338,7 +338,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class NumberFormatProviderDelegate extends NumberFormatProvider
                                        implements Delegate<NumberFormatProvider> {
-        private ConcurrentMap<Locale, NumberFormatProvider> map = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Locale, NumberFormatProvider> map = new ConcurrentHashMap<>();
 
         @Override
         public void addImpl(NumberFormatProvider impl) {
@@ -393,7 +393,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class CalendarDataProviderDelegate extends CalendarDataProvider
                                        implements Delegate<CalendarDataProvider> {
-        private ConcurrentMap<Locale, CalendarDataProvider> map = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Locale, CalendarDataProvider> map = new ConcurrentHashMap<>();
 
         @Override
         public void addImpl(CalendarDataProvider impl) {
@@ -434,7 +434,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class CalendarNameProviderDelegate extends CalendarNameProvider
                                        implements Delegate<CalendarNameProvider> {
-        private ConcurrentMap<Locale, CalendarNameProvider> map = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Locale, CalendarNameProvider> map = new ConcurrentHashMap<>();
 
         @Override
         public void addImpl(CalendarNameProvider impl) {
@@ -479,7 +479,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class CurrencyNameProviderDelegate extends CurrencyNameProvider
                                        implements Delegate<CurrencyNameProvider> {
-        private ConcurrentMap<Locale, CurrencyNameProvider> map = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Locale, CurrencyNameProvider> map = new ConcurrentHashMap<>();
 
         @Override
         public void addImpl(CurrencyNameProvider impl) {
@@ -520,7 +520,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class LocaleNameProviderDelegate extends LocaleNameProvider
                                      implements Delegate<LocaleNameProvider> {
-        private ConcurrentMap<Locale, LocaleNameProvider> map = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Locale, LocaleNameProvider> map = new ConcurrentHashMap<>();
 
         @Override
         public void addImpl(LocaleNameProvider impl) {
@@ -575,7 +575,7 @@ public class SPILocaleProviderAdapter extends AuxLocaleProviderAdapter {
 
     static class TimeZoneNameProviderDelegate extends TimeZoneNameProvider
                                      implements Delegate<TimeZoneNameProvider> {
-        private ConcurrentMap<Locale, TimeZoneNameProvider> map = new ConcurrentHashMap<>();
+        private final ConcurrentMap<Locale, TimeZoneNameProvider> map = new ConcurrentHashMap<>();
 
         @Override
         public void addImpl(TimeZoneNameProvider impl) {
