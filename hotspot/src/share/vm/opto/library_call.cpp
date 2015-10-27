@@ -2779,9 +2779,9 @@ bool LibraryCallKit::inline_unsafe_load_store(BasicType type, LoadStoreKind kind
 }
 
 //----------------------------inline_unsafe_ordered_store----------------------
-// public native void sun.misc.Unsafe.putOrderedObject(Object o, long offset, Object x);
-// public native void sun.misc.Unsafe.putOrderedInt(Object o, long offset, int x);
-// public native void sun.misc.Unsafe.putOrderedLong(Object o, long offset, long x);
+// public native void Unsafe.putOrderedObject(Object o, long offset, Object x);
+// public native void Unsafe.putOrderedInt(Object o, long offset, int x);
+// public native void Unsafe.putOrderedLong(Object o, long offset, long x);
 bool LibraryCallKit::inline_unsafe_ordered_store(BasicType type) {
   // This is another variant of inline_unsafe_access, differing in
   // that it always issues store-store ("release") barrier and ensures
@@ -2875,7 +2875,7 @@ bool LibraryCallKit::klass_needs_init_guard(Node* kls) {
 }
 
 //----------------------------inline_unsafe_allocate---------------------------
-// public native Object sun.misc.Unsafe.allocateInstance(Class<?> cls);
+// public native Object Unsafe.allocateInstance(Class<?> cls);
 bool LibraryCallKit::inline_unsafe_allocate() {
   if (callee()->is_static())  return false;  // caller must have the capability!
 
@@ -4194,7 +4194,7 @@ bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {
 #endif //_LP64
 
 //----------------------inline_unsafe_copyMemory-------------------------
-// public native void sun.misc.Unsafe.copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
+// public native void Unsafe.copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
 bool LibraryCallKit::inline_unsafe_copyMemory() {
   if (callee()->is_static())  return false;  // caller must have the capability!
   null_check_receiver();  // null-check receiver
