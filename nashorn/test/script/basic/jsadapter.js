@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,8 @@ var obj = new JSAdapter() {
         print("new with " + arg1 + ", " + arg2);
     },
 
-    __getIds__: function() {
-        print("__getIds__ called");
+    __getKeys__: function() {
+        print("__getKeys__ called");
         return [ "foo", "bar" ];
     },
 
@@ -78,22 +78,28 @@ obj.func("hello", "world");
 // calls __new__
 new obj("hey!", "it works!");
 
+// calls __getKeys__
 for (i in obj) {
     print(i);
 }
 
+// calls __getValues__
 for each (i in obj) {
     print(i);
 }
 
+// calls __has__
 var x = "foo" in obj;
 print(x);
 
+// calls __has__
 var y = "js" in obj;
 print(y);
 
+// calls __delete__
 print(delete obj.prop);
 
+// call __get__ and __set__
 print(obj["js"]);
 obj["js"] = "javascript";
 print(obj["javascript"]);

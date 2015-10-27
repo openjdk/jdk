@@ -85,9 +85,9 @@ package jdk.internal.dynalink;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.concurrent.atomic.AtomicReference;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.support.AbstractRelinkableCallSite;
 import jdk.internal.dynalink.support.Lookup;
@@ -103,29 +103,23 @@ import jdk.internal.dynalink.support.Lookup;
  * handle is always at the start of the chain.
  */
 public class ChainedCallSite extends AbstractRelinkableCallSite {
-    private static final MethodHandle PRUNE_CATCHES =
-            MethodHandles.insertArguments(
-                    Lookup.findOwnSpecial(
-                            MethodHandles.lookup(),
-                            "prune",
-                            MethodHandle.class,
-                            MethodHandle.class,
-                            boolean.class),
-                    2,
-                    true);
+    private static final MethodHandle PRUNE_CATCHES;
+    private static final MethodHandle PRUNE_SWITCHPOINTS;
+    static {
+        final MethodHandle PRUNE = Lookup.findOwnSpecial(MethodHandles.lookup(), "prune", MethodHandle.class,
+                MethodHandle.class, boolean.class);
+        PRUNE_CATCHES      = MethodHandles.insertArguments(PRUNE, 2, true);
+        PRUNE_SWITCHPOINTS = MethodHandles.insertArguments(PRUNE, 2, false);
+    }
 
-    private static final MethodHandle PRUNE_SWITCHPOINTS =
-            MethodHandles.insertArguments(
-                    Lookup.findOwnSpecial(
-                            MethodHandles.lookup(),
-                            "prune",
-                            MethodHandle.class,
-                            MethodHandle.class,
-                            boolean.class),
-                    2,
-                    false);
-
-    private final AtomicReference<LinkedList<GuardedInvocation>> invocations = new AtomicReference<>();
+    /**
+     * Contains the invocations currently linked into this call site's target. They are used when we are
+     * relinking to rebuild the guardWithTest chain. Valid values for this field are: {@code null} if there's
+     * no linked invocations, or an instance of {@link GuardedInvocation} if there is exactly one previous
+     * invocation, or an instance of {@code GuardedInvocation[]} if there is more than one previous
+     * invocation.
+     */
+    private Object invocations;
 
     /**
      * Creates a new chained call site.
@@ -155,10 +149,18 @@ public class ChainedCallSite extends AbstractRelinkableCallSite {
     }
 
     private MethodHandle relinkInternal(final GuardedInvocation invocation, final MethodHandle relink, final boolean reset, final boolean removeCatches) {
-        final LinkedList<GuardedInvocation> currentInvocations = invocations.get();
-        @SuppressWarnings({ "unchecked", "rawtypes" })
-        final LinkedList<GuardedInvocation> newInvocations =
-            currentInvocations == null || reset ? new LinkedList<>() : (LinkedList)currentInvocations.clone();
+        final Object currentInvocations = invocations;
+        final LinkedList<GuardedInvocation> newInvocations;
+        if (currentInvocations == null || reset) {
+            newInvocations = new LinkedList<>();
+        } else if (currentInvocations instanceof GuardedInvocation) {
+            newInvocations = new LinkedList<>();
+            newInvocations.add((GuardedInvocation)currentInvocations);
+        } else if (currentInvocations instanceof GuardedInvocation[]) {
+            newInvocations = new LinkedList<>(Arrays.asList(((GuardedInvocation[])currentInvocations)));
+        } else {
+            throw new AssertionError();
+        }
 
         // First, prune the chain of invalidated switchpoints, we always do this
         // We also remove any catches if the remove catches flag is set
@@ -181,8 +183,8 @@ public class ChainedCallSite extends AbstractRelinkableCallSite {
 
         // prune-and-invoke is used as the fallback for invalidated switchpoints. If a switchpoint gets invalidated, we
         // rebuild the chain and get rid of all invalidated switchpoints instead of letting them linger.
-        final MethodHandle pruneAndInvokeSwitchPoints = makePruneAndInvokeMethod(relink, getPruneSwitchpoints());
-        final MethodHandle pruneAndInvokeCatches      = makePruneAndInvokeMethod(relink, getPruneCatches());
+        final MethodHandle pruneAndInvokeSwitchPoints = makePruneAndInvokeMethod(relink, PRUNE_SWITCHPOINTS);
+        final MethodHandle pruneAndInvokeCatches      = makePruneAndInvokeMethod(relink, PRUNE_CATCHES);
 
         // Fold the new chain
         MethodHandle target = relink;
@@ -190,29 +192,18 @@ public class ChainedCallSite extends AbstractRelinkableCallSite {
             target = inv.compose(target, pruneAndInvokeSwitchPoints, pruneAndInvokeCatches);
         }
 
-        // If nobody else updated the call site while we were rebuilding the chain, set the target to our chain. In case
-        // we lost the race for multithreaded update, just do nothing. Either the other thread installed the same thing
-        // we wanted to install, or otherwise, we'll be asked to relink again.
-        if(invocations.compareAndSet(currentInvocations, newInvocations)) {
-            setTarget(target);
+        switch (newInvocations.size()) {
+            case 0:
+                invocations = null;
+                break;
+            case 1:
+                invocations = newInvocations.getFirst();
+                break;
+            default:
+                invocations = newInvocations.toArray(new GuardedInvocation[newInvocations.size()]);
         }
+        setTarget(target);
         return target;
-    }
-
-    /**
-     * Get the switchpoint pruning function for a chained call site
-     * @return function that removes invalidated switchpoints tied to callsite guard chain and relinks
-     */
-    protected MethodHandle getPruneSwitchpoints() {
-        return PRUNE_SWITCHPOINTS;
-    }
-
-    /**
-     * Get the catch pruning function for a chained call site
-     * @return function that removes all catches tied to callsite guard chain and relinks
-     */
-    protected MethodHandle getPruneCatches() {
-        return PRUNE_CATCHES;
     }
 
     /**

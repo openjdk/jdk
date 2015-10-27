@@ -93,8 +93,6 @@ import java.lang.reflect.Method;
 /**
  * A wrapper around MethodHandles.Lookup that masks checked exceptions in those cases when you're looking up methods
  * within your own codebase (therefore it is an error if they are not present).
- *
- * @author Attila Szegedi
  */
 public class Lookup {
     private final MethodHandles.Lookup lookup;

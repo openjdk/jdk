@@ -464,7 +464,7 @@ public class Defaults {
     @Test(dataProvider = "MergeCases")
     private void testMerge(String description, Map<IntegerEnum, String> map, Merging.Value oldValue, Merging.Value newValue, Merging.Merger merger, Merging.Value put, Merging.Value result) {
             // add and check initial conditions.
-            switch(oldValue) {
+            switch (oldValue) {
                 case ABSENT :
                     map.remove(EXTRA_KEY);
                     assertFalse(map.containsKey(EXTRA_KEY), "key not absent");
@@ -490,7 +490,7 @@ public class Defaults {
 
             // check result
 
-            switch(result) {
+            switch (result) {
                 case NULL :
                     assertNull(returned, "wrong value");
                     break;
@@ -505,7 +505,7 @@ public class Defaults {
             }
 
             // check map
-            switch(put) {
+            switch (put) {
                 case ABSENT :
                     assertFalse(map.containsKey(EXTRA_KEY), "key not absent");
                     break;
@@ -610,7 +610,6 @@ public class Defaults {
         return all;
     }
 
-
     private static Collection<Object[]> makeRWMapsNoNulls() {
         Collection<Object[]> all = new ArrayList<>();
 
@@ -656,8 +655,8 @@ public class Defaults {
 
         return all;
     }
+
     /**
-     *
      * @param nullKeys include null keys
      * @param nullValues include null values
      * @return
@@ -674,7 +673,6 @@ public class Defaults {
     }
 
     /**
-     *
      * @param nulls include null values
      * @return
      */
@@ -702,7 +700,6 @@ public class Defaults {
     }
 
     /**
-     *
      * @param nulls include nulls
      * @return
      */
@@ -712,8 +709,7 @@ public class Defaults {
         });
     }
 
-     /**
-     *
+    /**
      * @param supplier a supplier of mutable map instances.
      *
      * @param nullKeys   include null keys
@@ -774,15 +770,15 @@ public class Defaults {
     static Collection<Object[]> makeMergeTestCases() {
         Collection<Object[]> cases = new ArrayList<>();
 
-        for( Object[] mapParams : makeAllRWMaps() ) {
+        for (Object[] mapParams : makeAllRWMaps() ) {
             cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.ABSENT, Merging.Value.NEWVALUE, Merging.Merger.UNUSED, Merging.Value.NEWVALUE, Merging.Value.NEWVALUE });
         }
 
-        for( Object[] mapParams : makeAllRWMaps() ) {
+        for (Object[] mapParams : makeAllRWMaps() ) {
             cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.OLDVALUE, Merging.Value.NEWVALUE, Merging.Merger.NULL, Merging.Value.ABSENT, Merging.Value.NULL });
         }
 
-        for( Object[] mapParams : makeAllRWMaps() ) {
+        for (Object[] mapParams : makeAllRWMaps() ) {
             cases.add(new Object[] { mapParams[0], mapParams[1], Merging.Value.OLDVALUE, Merging.Value.NEWVALUE, Merging.Merger.RESULT, Merging.Value.RESULT, Merging.Value.RESULT });
         }
 
@@ -813,7 +809,7 @@ public class Defaults {
     }
 
     public static <T extends Throwable> void assertThrows(Class<T> throwable, String message, Thrower<T>... throwers) {
-        for(Thrower<T> thrower : throwers) {
+        for (Thrower<T> thrower : throwers) {
             assertThrows(thrower, throwable, message);
         }
     }
@@ -834,7 +830,7 @@ public class Defaults {
      * @param <K> Type of keys
      * @param <V> Type of values
      */
-    public static class ExtendsAbstractMap<M extends Map<K,V>, K, V> extends AbstractMap<K, V> {
+    public static class ExtendsAbstractMap<M extends Map<K,V>, K, V> extends AbstractMap<K,V> {
 
         protected final M map;
 
@@ -842,8 +838,8 @@ public class Defaults {
 
         protected ExtendsAbstractMap(M map) { this.map = map; }
 
-        public Set<Map.Entry<K, V>> entrySet() {
-            return new AbstractSet<Map.Entry<K, V>>() {
+        public Set<Map.Entry<K,V>> entrySet() {
+            return new AbstractSet<Map.Entry<K,V>>() {
                 public int size() {
                     return map.size();
                 }
@@ -876,7 +872,7 @@ public class Defaults {
      * @param <K> Type of keys
      * @param <V> Type of values
      */
-    public static class ImplementsConcurrentMap<K, V> extends ExtendsAbstractMap<ConcurrentMap<K,V>, K, V> implements ConcurrentMap<K,V> {
+    public static class ImplementsConcurrentMap<K,V> extends ExtendsAbstractMap<ConcurrentMap<K,V>, K, V> implements ConcurrentMap<K,V> {
         public ImplementsConcurrentMap() { super(new ConcurrentHashMap<K,V>()); }
 
         // ConcurrentMap reabstracts these methods
