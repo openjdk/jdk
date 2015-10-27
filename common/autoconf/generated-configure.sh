@@ -632,6 +632,7 @@ LIBOBJS
 CFLAGS_CCACHE
 CCACHE
 USE_PRECOMPILED_HEADER
+ENABLE_JAVAC_SERVER
 ENABLE_SJAVAC
 SJAVAC_SERVER_JAVA_FLAGS
 SJAVAC_SERVER_JAVA
@@ -1117,6 +1118,7 @@ with_jobs
 with_boot_jdk_jvmargs
 with_sjavac_server_java
 enable_sjavac
+enable_javac_server
 enable_precompiled_headers
 enable_ccache
 with_ccache_dir
@@ -1867,6 +1869,8 @@ Optional Features:
                           --with-freetype, disabled otherwise]
   --enable-sjavac         use sjavac to do fast incremental compiles
                           [disabled]
+  --enable-javac-server   use only the server part of sjavac for faster javac
+                          compiles [disabled]
   --disable-precompiled-headers
                           disable using precompiled headers when compiling C++
                           [enabled]
@@ -4591,7 +4595,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1445524829
+DATE_WHEN_GENERATED=1445964676
 
 ###############################################################################
 #
@@ -53515,18 +53519,36 @@ fi
 if test "${enable_sjavac+set}" = set; then :
   enableval=$enable_sjavac; ENABLE_SJAVAC="${enableval}"
 else
-  ENABLE_SJAVAC='no'
+  ENABLE_SJAVAC="no"
 fi
 
   if test "x$JVM_ARG_OK" = "xfalse"; then
     { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Could not set -Xms${MS_VALUE}M -Xmx${MX_VALUE}M, disabling sjavac" >&5
 $as_echo "$as_me: WARNING: Could not set -Xms${MS_VALUE}M -Xmx${MX_VALUE}M, disabling sjavac" >&2;}
-    ENABLE_SJAVAC=no;
+    ENABLE_SJAVAC="no"
   fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use sjavac" >&5
 $as_echo_n "checking whether to use sjavac... " >&6; }
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ENABLE_SJAVAC" >&5
 $as_echo "$ENABLE_SJAVAC" >&6; }
+
+
+  # Check whether --enable-javac-server was given.
+if test "${enable_javac_server+set}" = set; then :
+  enableval=$enable_javac_server; ENABLE_JAVAC_SERVER="${enableval}"
+else
+  ENABLE_JAVAC_SERVER="no"
+fi
+
+  if test "x$JVM_ARG_OK" = "xfalse"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Could not set -Xms${MS_VALUE}M -Xmx${MX_VALUE}M, disabling javac server" >&5
+$as_echo "$as_me: WARNING: Could not set -Xms${MS_VALUE}M -Xmx${MX_VALUE}M, disabling javac server" >&2;}
+    ENABLE_JAVAC_SERVER="no"
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use javac server" >&5
+$as_echo_n "checking whether to use javac server... " >&6; }
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ENABLE_JAVAC_SERVER" >&5
+$as_echo "$ENABLE_JAVAC_SERVER" >&6; }
 
 
 
