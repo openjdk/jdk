@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@
 //
 // Loaded array klass.
 ciArrayKlass::ciArrayKlass(KlassHandle h_k) : ciKlass(h_k) {
-  assert(get_Klass()->oop_is_array(), "wrong type");
+  assert(get_Klass()->is_array_klass(), "wrong type");
   _dimension = get_ArrayKlass()->dimension();
 }
 

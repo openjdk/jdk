@@ -357,7 +357,7 @@ ciMetadata* ciObjectFactory::create_new_metadata(Metadata* o) {
   // Hold metadata from unloading by keeping it's holder alive.
   if (_initialized && o->is_klass()) {
     Klass* holder = ((Klass*)o);
-    if (holder->oop_is_instance() && InstanceKlass::cast(holder)->is_anonymous()) {
+    if (holder->is_instance_klass() && InstanceKlass::cast(holder)->is_anonymous()) {
       // Though ciInstanceKlass records class loader oop, it's not enough to keep
       // VM anonymous classes alive (loader == NULL). Klass holder should be used instead.
       // It is enough to record a ciObject, since cached elements are never removed
@@ -370,11 +370,11 @@ ciMetadata* ciObjectFactory::create_new_metadata(Metadata* o) {
   if (o->is_klass()) {
     KlassHandle h_k(THREAD, (Klass*)o);
     Klass* k = (Klass*)o;
-    if (k->oop_is_instance()) {
+    if (k->is_instance_klass()) {
       return new (arena()) ciInstanceKlass(h_k);
-    } else if (k->oop_is_objArray()) {
+    } else if (k->is_objArray_klass()) {
       return new (arena()) ciObjArrayKlass(h_k);
-    } else if (k->oop_is_typeArray()) {
+    } else if (k->is_typeArray_klass()) {
       return new (arena()) ciTypeArrayKlass(h_k);
     }
   } else if (o->is_method()) {
