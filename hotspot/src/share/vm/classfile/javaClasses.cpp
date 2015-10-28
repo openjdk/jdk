@@ -555,7 +555,7 @@ void java_lang_Class::fixup_mirror(KlassHandle k, TRAPS) {
 
   // If the offset was read from the shared archive, it was fixed up already
   if (!k->is_shared()) {
-    if (k->oop_is_instance()) {
+    if (k->is_instance_klass()) {
       // During bootstrap, java.lang.Class wasn't loaded so static field
       // offsets were computed without the size added it.  Go back and
       // update all the static field offsets to included the size.
@@ -613,13 +613,13 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
     java_lang_Class::set_static_oop_field_count(mirror(), mk->compute_static_oop_field_count(mirror()));
 
     // It might also have a component mirror.  This mirror must already exist.
-    if (k->oop_is_array()) {
+    if (k->is_array_klass()) {
       Handle comp_mirror;
-      if (k->oop_is_typeArray()) {
+      if (k->is_typeArray_klass()) {
         BasicType type = TypeArrayKlass::cast(k())->element_type();
         comp_mirror = Universe::java_mirror(type);
       } else {
-        assert(k->oop_is_objArray(), "Must be");
+        assert(k->is_objArray_klass(), "Must be");
         Klass* element_klass = ObjArrayKlass::cast(k())->element_klass();
         assert(element_klass != NULL, "Must have an element klass");
         comp_mirror = element_klass->java_mirror();
@@ -631,7 +631,7 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
       set_component_mirror(mirror(), comp_mirror());
       set_array_klass(comp_mirror(), k());
     } else {
-      assert(k->oop_is_instance(), "Must be");
+      assert(k->is_instance_klass(), "Must be");
 
       initialize_mirror_fields(k, mirror, protection_domain, THREAD);
       if (HAS_PENDING_EXCEPTION) {
@@ -770,7 +770,7 @@ void java_lang_Class::print_signature(oop java_class, outputStream* st) {
     name = vmSymbols::type_signature(primitive_type(java_class));
   } else {
     Klass* k = as_Klass(java_class);
-    is_instance = k->oop_is_instance();
+    is_instance = k->is_instance_klass();
     name = k->name();
   }
   if (name == NULL) {
@@ -793,7 +793,7 @@ Symbol* java_lang_Class::as_signature(oop java_class, bool intern_if_not_found, 
     name->increment_refcount();
   } else {
     Klass* k = as_Klass(java_class);
-    if (!k->oop_is_instance()) {
+    if (!k->is_instance_klass()) {
       name = k->name();
       name->increment_refcount();
     } else {
@@ -829,13 +829,13 @@ const char* java_lang_Class::as_external_name(oop java_class) {
 
 Klass* java_lang_Class::array_klass(oop java_class) {
   Klass* k = ((Klass*)java_class->metadata_field(_array_klass_offset));
-  assert(k == NULL || k->is_klass() && k->oop_is_array(), "should be array klass");
+  assert(k == NULL || k->is_klass() && k->is_array_klass(), "should be array klass");
   return k;
 }
 
 
 void java_lang_Class::set_array_klass(oop java_class, Klass* klass) {
-  assert(klass->is_klass() && klass->oop_is_array(), "should be array klass");
+  assert(klass->is_klass() && klass->is_array_klass(), "should be array klass");
   java_class->metadata_field_put(_array_klass_offset, klass);
 }
 
@@ -2506,7 +2506,7 @@ ConstantPool* sun_reflect_ConstantPool::get_cp(oop reflect) {
 
   oop mirror = reflect->obj_field(_oop_offset);
   Klass* k = java_lang_Class::as_Klass(mirror);
-  assert(k->oop_is_instance(), "Must be");
+  assert(k->is_instance_klass(), "Must be");
 
   // Get the constant pool back from the klass.  Since class redefinition
   // merges the new constant pool into the old, this is essentially the

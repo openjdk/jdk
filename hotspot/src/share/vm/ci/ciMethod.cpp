@@ -791,7 +791,7 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
    methodHandle m;
    // Only do exact lookup if receiver klass has been linked.  Otherwise,
    // the vtable has not been setup, and the LinkResolver will fail.
-   if (h_recv->oop_is_array()
+   if (h_recv->is_array_klass()
         ||
        InstanceKlass::cast(h_recv())->is_linked() && !exact_receiver->is_interface()) {
      if (holder()->is_interface()) {
