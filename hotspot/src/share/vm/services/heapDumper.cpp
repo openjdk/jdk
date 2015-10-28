@@ -722,7 +722,7 @@ void DumperSupport::dump_field_value(DumpWriter* writer, char type, address addr
         o = oopDesc::load_decode_heap_oop((oop*)addr);
       }
 
-      // reflection and sun.misc.Unsafe classes may have a reference to a
+      // reflection and Unsafe classes may have a reference to a
       // Klass* so filter it out.
       assert(o->is_oop_or_null(), "Expected an oop or NULL at " PTR_FORMAT, p2i(o));
       writer->write_objectID(o);
@@ -1848,7 +1848,6 @@ void VM_HeapDumper::dump_stack_traces() {
 }
 
 // dump the heap to given path.
-PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
 int HeapDumper::dump(const char* path) {
   assert(path != NULL && strlen(path) > 0, "path missing");
 
@@ -1886,13 +1885,8 @@ int HeapDumper::dump(const char* path) {
   if (print_to_tty()) {
     timer()->stop();
     if (error() == NULL) {
-      char msg[256];
-      sprintf(msg, "Heap dump file created [%s bytes in %3.3f secs]",
-        JLONG_FORMAT, timer()->seconds());
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
-      tty->print_cr(msg, writer.bytes_written());
-PRAGMA_DIAG_POP
+      tty->print_cr("Heap dump file created [" JLONG_FORMAT " bytes in %3.3f secs]",
+                    writer.bytes_written(), timer()->seconds());
     } else {
       tty->print_cr("Dump file is incomplete: %s", writer.error());
     }

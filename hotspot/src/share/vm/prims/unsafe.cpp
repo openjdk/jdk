@@ -45,7 +45,7 @@
 #endif // INCLUDE_ALL_GCS
 
 /*
- *      Implementation of class sun.misc.Unsafe
+ *      Implementation of class Unsafe
  */
 
 

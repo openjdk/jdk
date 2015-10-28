@@ -315,6 +315,7 @@ inline Symbol* check_symbol_at(constantPoolHandle cp, int index) {
     return NULL;
 }
 
+#ifdef ASSERT
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
 void ClassFileParser::report_assert_property_failure(const char* msg, TRAPS) {
@@ -327,6 +328,7 @@ void ClassFileParser::report_assert_property_failure(const char* msg, int index,
   fatal(msg, index, _class_name->as_C_string());
 }
 PRAGMA_DIAG_POP
+#endif
 
 constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
   ClassFileStream* cfs = stream();

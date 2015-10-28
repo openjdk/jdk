@@ -349,11 +349,6 @@ bool Flag::is_external() const {
   return is_manageable() || is_external_ext();
 }
 
-
-// Length of format string (e.g. "%.1234s") for printing ccstr below
-#define FORMAT_BUFFER_LEN 16
-
-PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
 void Flag::print_on(outputStream* st, bool withComments, bool printRanges) {
   // Don't print notproduct and develop flags in a product build.
   if (is_constant_in_binary()) {
@@ -385,14 +380,8 @@ void Flag::print_on(outputStream* st, bool withComments, bool printRanges) {
       if (cp != NULL) {
         const char* eol;
         while ((eol = strchr(cp, '\n')) != NULL) {
-          char format_buffer[FORMAT_BUFFER_LEN];
           size_t llen = pointer_delta(eol, cp, sizeof(char));
-          jio_snprintf(format_buffer, FORMAT_BUFFER_LEN,
-                       "%%." SIZE_FORMAT "s", llen);
-          PRAGMA_DIAG_PUSH
-          PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
-          st->print(format_buffer, cp);
-          PRAGMA_DIAG_POP
+          st->print("%.*s", (int)llen, cp);
           st->cr();
           cp = eol+1;
           st->print("%5s %-35s += ", "", _name);

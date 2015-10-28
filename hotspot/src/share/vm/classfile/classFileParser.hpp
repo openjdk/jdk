@@ -319,8 +319,8 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     if (!b) { classfile_parse_error(msg, CHECK); }
   }
 
-  void report_assert_property_failure(const char* msg, TRAPS);
-  void report_assert_property_failure(const char* msg, int index, TRAPS);
+  void report_assert_property_failure(const char* msg, TRAPS) PRODUCT_RETURN;
+  void report_assert_property_failure(const char* msg, int index, TRAPS) PRODUCT_RETURN;
 
   inline void assert_property(bool b, const char* msg, TRAPS) {
 #ifdef ASSERT
