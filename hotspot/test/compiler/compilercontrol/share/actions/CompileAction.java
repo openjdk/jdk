@@ -79,10 +79,10 @@ public class CompileAction {
                     return !WHITE_BOX.isMethodQueuedForCompilation(executable);
                 }, 100L);
         execute(executable);
-        boolean isCompiled = WHITE_BOX.isMethodCompiled(executable);
-        Asserts.assertEQ(isCompiled, expectedCompiled,
-                String.format("FAILED: method %s compiled: %b, but should: %b"
-                        + " on required level: %d", executable, isCompiled,
+        boolean isCompilable = WHITE_BOX.isMethodCompilable(executable, level);
+        Asserts.assertEQ(isCompilable, expectedCompiled,
+                String.format("FAILED: method %s compilable: %b, but should: %b"
+                        + " on required level: %d", executable, isCompilable,
                         expectedCompiled, level));
     }
 
