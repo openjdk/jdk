@@ -3175,8 +3175,9 @@ instanceKlassHandle ClassFileParser::parse_super_class(int super_class_index,
     bool is_array = false;
     if (_cp->tag_at(super_class_index).is_klass()) {
       super_klass = instanceKlassHandle(THREAD, _cp->resolved_klass_at(super_class_index));
-      if (_need_verify)
-        is_array = super_klass->oop_is_array();
+      if (_need_verify) {
+        is_array = super_klass->is_array_klass();
+      }
     } else if (_need_verify) {
       is_array = (_cp->klass_name_at(super_class_index)->byte_at(0) == JVM_SIGNATURE_ARRAY);
     }
@@ -4111,7 +4112,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     this_klass->set_should_verify_class(verify);
     jint lh = Klass::instance_layout_helper(info.instance_size, false);
     this_klass->set_layout_helper(lh);
-    assert(this_klass->oop_is_instance(), "layout is correct");
+    assert(this_klass->is_instance_klass(), "layout is correct");
     assert(this_klass->size_helper() == info.instance_size, "correct size_helper");
     // Not yet: supers are done below to support the new subtype-checking fields
     //this_klass->set_super(super_klass());

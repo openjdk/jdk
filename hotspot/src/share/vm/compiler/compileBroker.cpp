@@ -790,7 +790,7 @@ void CompileBroker::compile_method_base(const methodHandle& method,
   }
 
   guarantee(!method->is_abstract(), "cannot compile abstract methods");
-  assert(method->method_holder()->oop_is_instance(),
+  assert(method->method_holder()->is_instance_klass(),
          "sanity check");
   assert(!method->method_holder()->is_not_initialized(),
          "method holder must be initialized");
@@ -985,7 +985,7 @@ nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                        const methodHandle& hot_method, int hot_count,
                                        const char* comment, Thread* THREAD) {
   // make sure arguments make sense
-  assert(method->method_holder()->oop_is_instance(), "not an instance method");
+  assert(method->method_holder()->is_instance_klass(), "not an instance method");
   assert(osr_bci == InvocationEntryBci || (0 <= osr_bci && osr_bci < method->code_size()), "bci out of range");
   assert(!method->is_abstract() && (osr_bci == InvocationEntryBci || !method->is_native()), "cannot compile abstract/native methods");
   assert(!method->method_holder()->is_not_initialized(), "method holder must be initialized");

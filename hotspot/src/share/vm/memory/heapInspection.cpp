@@ -321,7 +321,7 @@ public:
 
   void do_cinfo(KlassInfoEntry* cie) {
     // ignore array classes
-    if (cie->klass()->oop_is_instance()) {
+    if (cie->klass()->is_instance_klass()) {
       _elements->append(cie);
     }
   }
@@ -543,8 +543,8 @@ void KlassInfoHisto::print_class_stats(outputStream* st,
       } else {
         int super_index = -1;
         // Print the stats for this class.
-        if (k->oop_is_instance()) {
-          Klass* super = ((InstanceKlass*)k)->java_super();
+        if (k->is_instance_klass()) {
+          Klass* super = k->super();
           if (super) {
             KlassInfoEntry* super_e = _cit->lookup(super);
             if (super_e) {

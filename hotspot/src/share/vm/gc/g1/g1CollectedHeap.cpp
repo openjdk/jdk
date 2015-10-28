@@ -4590,7 +4590,7 @@ class G1KlassCleaningTask : public StackObj {
     Klass* klass;
     do {
       klass =_klass_iterator.next_klass();
-    } while (klass != NULL && !klass->oop_is_instance());
+    } while (klass != NULL && !klass->is_instance_klass());
 
     // this can be null so don't call InstanceKlass::cast
     return static_cast<InstanceKlass*>(klass);

@@ -940,7 +940,7 @@ void DumperSupport::dump_class_and_array_classes(DumpWriter* writer, Klass* k) {
   k = k->array_klass_or_null();
   while (k != NULL) {
     Klass* klass = k;
-    assert(klass->oop_is_objArray(), "not an ObjArrayKlass");
+    assert(klass->is_objArray_klass(), "not an ObjArrayKlass");
 
     writer->write_u1(HPROF_GC_CLASS_DUMP);
     writer->write_classID(klass);
@@ -1124,7 +1124,7 @@ void DumperSupport::dump_stack_frame(DumpWriter* writer,
   writer->write_symbolID(m->name());                // method's name
   writer->write_symbolID(m->signature());           // method's signature
 
-  assert(m->method_holder()->oop_is_instance(), "not InstanceKlass");
+  assert(m->method_holder()->is_instance_klass(), "not InstanceKlass");
   writer->write_symbolID(m->method_holder()->source_file_name());  // source file name
   writer->write_u4(class_serial_num);               // class serial number
   writer->write_u4((u4) line_number);               // line number
@@ -1246,7 +1246,7 @@ class StickyClassDumper : public KlassClosure {
     _writer = writer;
   }
   void do_klass(Klass* k) {
-    if (k->oop_is_instance()) {
+    if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
         writer()->write_u1(HPROF_GC_ROOT_STICKY_CLASS);
         writer()->write_classID(ik);
@@ -1551,7 +1551,7 @@ void VM_HeapDumper::do_load_class(Klass* k) {
 
 // writes a HPROF_GC_CLASS_DUMP record for the given class
 void VM_HeapDumper::do_class_dump(Klass* k) {
-  if (k->oop_is_instance()) {
+  if (k->is_instance_klass()) {
     DumperSupport::dump_class_and_array_classes(writer(), k);
   }
 }

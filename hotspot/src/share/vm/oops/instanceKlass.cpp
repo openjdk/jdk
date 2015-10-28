@@ -2324,7 +2324,7 @@ const char* InstanceKlass::signature_name() const {
 
 // different verisons of is_same_class_package
 bool InstanceKlass::is_same_class_package(Klass* class2) {
-  if (class2->oop_is_objArray()) {
+  if (class2->is_objArray_klass()) {
     class2 = ObjArrayKlass::cast(class2)->bottom_klass();
   }
   oop classloader2 = class2->class_loader();
@@ -2424,7 +2424,7 @@ Klass* InstanceKlass::compute_enclosing_class_impl(instanceKlassHandle self,
 bool InstanceKlass::is_same_package_member_impl(instanceKlassHandle class1,
                                                 Klass* class2_oop, TRAPS) {
   if (class2_oop == class1())                       return true;
-  if (!class2_oop->oop_is_instance())  return false;
+  if (!class2_oop->is_instance_klass())  return false;
   instanceKlassHandle class2(THREAD, class2_oop);
 
   // must be in same package before we try anything else
@@ -2967,7 +2967,7 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
     st->print_cr(BULLET"fake entry for oop_size: %d", java_lang_Class::oop_size(obj));
     st->print_cr(BULLET"fake entry for static_oop_field_count: %d", java_lang_Class::static_oop_field_count(obj));
     Klass* real_klass = java_lang_Class::as_Klass(obj);
-    if (real_klass != NULL && real_klass->oop_is_instance()) {
+    if (real_klass != NULL && real_klass->is_instance_klass()) {
       InstanceKlass::cast(real_klass)->do_local_static_fields(&print_field);
     }
   } else if (this == SystemDictionary::MethodType_klass()) {
