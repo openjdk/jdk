@@ -513,23 +513,28 @@ class GraphKit : public Phase {
   // of volatile fields.
   Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt,
                   MemNode::MemOrd mo, LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest,
-                  bool require_atomic_access = false) {
+                  bool require_atomic_access = false, bool unaligned = false,
+                  bool mismatched = false) {
     // This version computes alias_index from bottom_type
     return make_load(ctl, adr, t, bt, adr->bottom_type()->is_ptr(),
-                     mo, control_dependency, require_atomic_access);
+                     mo, control_dependency, require_atomic_access,
+                     unaligned, mismatched);
   }
   Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt, const TypePtr* adr_type,
                   MemNode::MemOrd mo, LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest,
-                  bool require_atomic_access = false) {
+                  bool require_atomic_access = false, bool unaligned = false,
+                  bool mismatched = false) {
     // This version computes alias_index from an address type
     assert(adr_type != NULL, "use other make_load factory");
     return make_load(ctl, adr, t, bt, C->get_alias_index(adr_type),
-                     mo, control_dependency, require_atomic_access);
+                     mo, control_dependency, require_atomic_access,
+                     unaligned, mismatched);
   }
   // This is the base version which is given an alias index.
   Node* make_load(Node* ctl, Node* adr, const Type* t, BasicType bt, int adr_idx,
                   MemNode::MemOrd mo, LoadNode::ControlDependency control_dependency = LoadNode::DependsOnlyOnTest,
-                  bool require_atomic_access = false);
+                  bool require_atomic_access = false, bool unaligned = false,
+                  bool mismatched = false);
 
   // Create & transform a StoreNode and store the effect into the
   // parser's memory state.
@@ -542,19 +547,24 @@ class GraphKit : public Phase {
   Node* store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt,
                         const TypePtr* adr_type,
                         MemNode::MemOrd mo,
-                        bool require_atomic_access = false) {
+                        bool require_atomic_access = false,
+                        bool unaligned = false,
+                        bool mismatched = false) {
     // This version computes alias_index from an address type
     assert(adr_type != NULL, "use other store_to_memory factory");
     return store_to_memory(ctl, adr, val, bt,
                            C->get_alias_index(adr_type),
-                           mo, require_atomic_access);
+                           mo, require_atomic_access,
+                           unaligned, mismatched);
   }
   // This is the base version which is given alias index
   // Return the new StoreXNode
   Node* store_to_memory(Node* ctl, Node* adr, Node* val, BasicType bt,
                         int adr_idx,
                         MemNode::MemOrd,
-                        bool require_atomic_access = false);
+                        bool require_atomic_access = false,
+                        bool unaligned = false,
+                        bool mismatched = false);
 
 
   // All in one pre-barrier, store, post_barrier
@@ -577,7 +587,8 @@ class GraphKit : public Phase {
                   const TypeOopPtr* val_type,
                   BasicType bt,
                   bool use_precise,
-                  MemNode::MemOrd mo);
+                  MemNode::MemOrd mo,
+                  bool mismatched = false);
 
   Node* store_oop_to_object(Node* ctl,
                             Node* obj,   // containing obj
@@ -608,7 +619,8 @@ class GraphKit : public Phase {
                              const TypePtr* adr_type,
                              Node* val,
                              BasicType bt,
-                             MemNode::MemOrd mo);
+                             MemNode::MemOrd mo,
+                             bool mismatched = false);
 
   // For the few case where the barriers need special help
   void pre_barrier(bool do_load, Node* ctl,
