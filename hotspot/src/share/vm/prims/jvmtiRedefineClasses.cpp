@@ -1892,7 +1892,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_annotation_struct(
   }
 
   u2 type_index = rewrite_cp_ref_in_annotation_data(annotations_typeArray,
-                    byte_i_ref, "mapped old type_index=%d", THREAD);
+                    byte_i_ref, "type_index", THREAD);
 
   u2 num_element_value_pairs = Bytes::get_Java_u2((address)
                                  annotations_typeArray->adr_at(byte_i_ref));
@@ -1915,7 +1915,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_annotation_struct(
 
     u2 element_name_index = rewrite_cp_ref_in_annotation_data(
                               annotations_typeArray, byte_i_ref,
-                              "mapped old element_name_index=%d", THREAD);
+                              "element_name_index", THREAD);
 
     RC_TRACE_WITH_THREAD(0x02000000, THREAD,
       ("element_name_index=%d", element_name_index));
@@ -1939,8 +1939,6 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_annotation_struct(
 // annotations_typeArray if needed. Returns the original constant
 // pool reference if a rewrite was not needed or the new constant
 // pool reference if a rewrite was needed.
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED
 u2 VM_RedefineClasses::rewrite_cp_ref_in_annotation_data(
      AnnotationArray* annotations_typeArray, int &byte_i_ref,
      const char * trace_mesg, TRAPS) {
@@ -1950,14 +1948,13 @@ u2 VM_RedefineClasses::rewrite_cp_ref_in_annotation_data(
   u2 old_cp_index = Bytes::get_Java_u2(cp_index_addr);
   u2 new_cp_index = find_new_index(old_cp_index);
   if (new_cp_index != 0) {
-    RC_TRACE_WITH_THREAD(0x02000000, THREAD, (trace_mesg, old_cp_index));
+    RC_TRACE_WITH_THREAD(0x02000000, THREAD, ("mapped old %s=%d", trace_mesg, old_cp_index));
     Bytes::put_Java_u2(cp_index_addr, new_cp_index);
     old_cp_index = new_cp_index;
   }
   byte_i_ref += 2;
   return old_cp_index;
 }
-PRAGMA_DIAG_POP
 
 
 // Rewrite constant pool references in the element_value portion of an
@@ -2022,7 +2019,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_element_value(
 
       u2 const_value_index = rewrite_cp_ref_in_annotation_data(
                                annotations_typeArray, byte_i_ref,
-                               "mapped old const_value_index=%d", THREAD);
+                               "const_value_index", THREAD);
 
       RC_TRACE_WITH_THREAD(0x02000000, THREAD,
         ("const_value_index=%d", const_value_index));
@@ -2041,11 +2038,11 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_element_value(
 
       u2 type_name_index = rewrite_cp_ref_in_annotation_data(
                              annotations_typeArray, byte_i_ref,
-                             "mapped old type_name_index=%d", THREAD);
+                             "type_name_index", THREAD);
 
       u2 const_name_index = rewrite_cp_ref_in_annotation_data(
                               annotations_typeArray, byte_i_ref,
-                              "mapped old const_name_index=%d", THREAD);
+                              "const_name_index", THREAD);
 
       RC_TRACE_WITH_THREAD(0x02000000, THREAD,
         ("type_name_index=%d  const_name_index=%d", type_name_index,
@@ -2065,7 +2062,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_element_value(
 
       u2 class_info_index = rewrite_cp_ref_in_annotation_data(
                               annotations_typeArray, byte_i_ref,
-                              "mapped old class_info_index=%d", THREAD);
+                              "class_info_index", THREAD);
 
       RC_TRACE_WITH_THREAD(0x02000000, THREAD,
         ("class_info_index=%d", class_info_index));
@@ -3379,7 +3376,7 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
     // default_vtable_indices for methods already in the vtable.
     // If redefining Unsafe, walk all the vtables looking for entries.
     if (ik->vtable_length() > 0 && (_the_class_oop->is_interface()
-        || _the_class_oop == SystemDictionary::misc_Unsafe_klass()
+        || _the_class_oop == SystemDictionary::internal_Unsafe_klass()
         || ik->is_subtype_of(_the_class_oop))) {
       // ik->vtable() creates a wrapper object; rm cleans it up
       ResourceMark rm(_thread);
@@ -3396,7 +3393,7 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
     // subclass relationship between an interface and an InstanceKlass.
     // If redefining Unsafe, walk all the itables looking for entries.
     if (ik->itable_length() > 0 && (_the_class_oop->is_interface()
-        || _the_class_oop == SystemDictionary::misc_Unsafe_klass()
+        || _the_class_oop == SystemDictionary::internal_Unsafe_klass()
         || ik->is_subclass_of(_the_class_oop))) {
       // ik->itable() creates a wrapper object; rm cleans it up
       ResourceMark rm(_thread);

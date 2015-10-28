@@ -107,7 +107,9 @@ void G1EvacStats::adjust_desired_plab_sz() {
       gclog_or_tty->print(" (plab_sz = " SIZE_FORMAT " desired_plab_sz = " SIZE_FORMAT ") ", cur_plab_sz, plab_sz);
     }
   }
-  gclog_or_tty->cr();
+  if (PrintPLAB) {
+    gclog_or_tty->cr();
+  }
   // Clear accumulators for next round.
   reset();
 }

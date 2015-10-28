@@ -286,7 +286,6 @@ bool KlassInfoHisto::is_selected(const char *col_name) {
   return true;
 }
 
-PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
 void KlassInfoHisto::print_title(outputStream* st, bool csv_format,
                                  bool selected[], int width_table[],
                                  const char *name_table[]) {
@@ -298,11 +297,10 @@ void KlassInfoHisto::print_title(outputStream* st, bool csv_format,
     st->print(",ClassName");
   } else {
     st->print("Index Super");
-    for (int c=0; c<KlassSizeStats::_num_columns; c++) {
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
-      if (selected[c]) {st->print(str_fmt(width_table[c]), name_table[c]);}
-PRAGMA_DIAG_POP
+    for (int c = 0; c < KlassSizeStats::_num_columns; c++) {
+      if (selected[c]) {
+        st->print("%*s", width_table[c], name_table[c]);
+      }
     }
     st->print(" ClassName");
   }
@@ -607,18 +605,12 @@ void KlassInfoHisto::print_class_stats(outputStream* st,
           case KlassSizeStats::_index_inst_size:
           case KlassSizeStats::_index_inst_count:
           case KlassSizeStats::_index_method_count:
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
-            st->print(str_fmt(width_table[c]), "-");
-PRAGMA_DIAG_POP
+            st->print("%*s", width_table[c], "-");
             break;
           default:
             {
               double perc = (double)(100) * (double)(colsum_table[c]) / (double)sz_sum._total_bytes;
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
-              st->print(perc_fmt(width_table[c]), perc);
-PRAGMA_DIAG_POP
+              st->print("%*.1f%%", width_table[c]-1, perc);
             }
           }
         }

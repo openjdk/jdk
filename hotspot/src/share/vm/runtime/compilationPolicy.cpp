@@ -416,7 +416,6 @@ nmethod* NonTieredCompPolicy::event(const methodHandle& method, const methodHand
 }
 
 #ifndef PRODUCT
-PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
 void NonTieredCompPolicy::trace_frequency_counter_overflow(const methodHandle& m, int branch_bci, int bci) {
   if (TraceInvocationCounterOverflow) {
     MethodCounters* mcs = m->method_counters();
@@ -424,14 +423,11 @@ void NonTieredCompPolicy::trace_frequency_counter_overflow(const methodHandle& m
     InvocationCounter* ic = mcs->invocation_counter();
     InvocationCounter* bc = mcs->backedge_counter();
     ResourceMark rm;
-    const char* msg =
-      bci == InvocationEntryBci
-      ? "comp-policy cntr ovfl @ %d in entry of "
-      : "comp-policy cntr ovfl @ %d in loop of ";
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
-    tty->print(msg, bci);
-PRAGMA_DIAG_POP
+    if (bci == InvocationEntryBci) {
+      tty->print("comp-policy cntr ovfl @ %d in entry of ", bci);
+    } else {
+      tty->print("comp-policy cntr ovfl @ %d in loop of ", bci);
+    }
     m->print_value();
     tty->cr();
     ic->print();
