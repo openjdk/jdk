@@ -545,7 +545,7 @@ void Universe::reinitialize_vtable_of(KlassHandle k_h, TRAPS) {
   Klass* ko = k_h();
   klassVtable* vt = ko->vtable();
   if (vt) vt->initialize_vtable(false, CHECK);
-  if (ko->oop_is_instance()) {
+  if (ko->is_instance_klass()) {
     for (KlassHandle s_h(THREAD, ko->subklass());
          s_h() != NULL;
          s_h = KlassHandle(THREAD, s_h()->next_sibling())) {

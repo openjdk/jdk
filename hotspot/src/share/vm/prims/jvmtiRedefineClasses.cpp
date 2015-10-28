@@ -199,7 +199,7 @@ bool VM_RedefineClasses::is_modifiable_class(oop klass_mirror) {
   }
   Klass* the_class_oop = java_lang_Class::as_Klass(klass_mirror);
   // classes for arrays cannot be redefined
-  if (the_class_oop == NULL || !the_class_oop->oop_is_instance()) {
+  if (the_class_oop == NULL || !the_class_oop->is_instance_klass()) {
     return false;
   }
   return true;
@@ -3336,10 +3336,10 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
 
   // If the class being redefined is java.lang.Object, we need to fix all
   // array class vtables also
-  if (k->oop_is_array() && _the_class_oop == SystemDictionary::Object_klass()) {
+  if (k->is_array_klass() && _the_class_oop == SystemDictionary::Object_klass()) {
     k->vtable()->adjust_method_entries(the_class, &trace_name_printed);
 
-  } else if (k->oop_is_instance()) {
+  } else if (k->is_instance_klass()) {
     HandleMark hm(_thread);
     InstanceKlass *ik = InstanceKlass::cast(k);
 
@@ -3440,7 +3440,7 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
 
 // Clean method data for this class
 void VM_RedefineClasses::MethodDataCleaner::do_klass(Klass* k) {
-  if (k->oop_is_instance()) {
+  if (k->is_instance_klass()) {
     InstanceKlass *ik = InstanceKlass::cast(k);
     // Clean MethodData of this class's methods so they don't refer to
     // old methods that are no longer running.
@@ -4128,7 +4128,7 @@ void VM_RedefineClasses::increment_class_counter(InstanceKlass *ik, TRAPS) {
 
   for (Klass *subk = ik->subklass(); subk != NULL;
        subk = subk->next_sibling()) {
-    if (subk->oop_is_instance()) {
+    if (subk->is_instance_klass()) {
       // Only update instanceKlasses
       InstanceKlass *subik = InstanceKlass::cast(subk);
       // recursively do subclasses of the current subclass
@@ -4155,7 +4155,7 @@ void VM_RedefineClasses::CheckClass::do_klass(Klass* k) {
     no_old_methods = false;
   }
 
-  if (k->oop_is_instance()) {
+  if (k->is_instance_klass()) {
     HandleMark hm(_thread);
     InstanceKlass *ik = InstanceKlass::cast(k);
 

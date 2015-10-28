@@ -908,7 +908,9 @@ public:
   bool compute_is_subtype_of(Klass* k);
   bool can_be_primary_super_slow() const;
   int oop_size(oop obj)  const             { return size_helper(); }
-  bool oop_is_instance_slow() const        { return true; }
+  // slow because it's a virtual call and used for verifying the layout_helper.
+  // Using the layout_helper bits, we can call is_instance_klass without a virtual call.
+  DEBUG_ONLY(bool is_instance_klass_slow() const      { return true; })
 
   // Iterators
   void do_local_static_fields(FieldClosure* cl);
@@ -923,7 +925,7 @@ public:
   // Casting from Klass*
   static InstanceKlass* cast(Klass* k) {
     assert(k != NULL, "k should not be null");
-    assert(k->oop_is_instance(), "cast to InstanceKlass");
+    assert(k->is_instance_klass(), "cast to InstanceKlass");
     return static_cast<InstanceKlass*>(k);
   }
 
