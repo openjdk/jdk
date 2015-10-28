@@ -88,8 +88,8 @@ public class IgnoreUnrecognizedVMOptions {
 
     /*
       #1.4 develop & notproduct flag on product VM:
-                                    develop & !product_build        notproduct & !product_build
-                                    -XX:+DeoptimizeALot             -XX:+VerifyCodeCache
+                                    develop & !product_build           notproduct & product_build
+                                    -XX:+DeoptimizeALot                -XX:+VerifyCodeCache
       -IgnoreUnrecognizedVMOptions               ERR                           ERR
       +IgnoreUnrecognizedVMOptions               OK                            OK
     */
@@ -103,8 +103,8 @@ public class IgnoreUnrecognizedVMOptions {
 
     /*
       #1.5 malformed develop & notproduct flag on debug VM:
-                                  develop & !product_build          notproduct & !product_build
-                                  -XX:DeoptimizeALot                -XX:VerifyCodeCache
+                                  develop & !product_build             notproduct & !product_build
+                                  -XX:DeoptimizeALot                   -XX:VerifyCodeCache
       -IgnoreUnrecognizedVMOptions               ERR                           ERR
       +IgnoreUnrecognizedVMOptions               ERR                           ERR
     */
@@ -117,8 +117,8 @@ public class IgnoreUnrecognizedVMOptions {
 
     /*
       #1.6 malformed develop & notproduct flag on product VM:
-                                    develop & !product_build          .notproduct & !product_build
-                                    -XX:DeoptimizeALot                  -XX:VerifyCodeCache
+                                    develop & !product_build           notproduct & product_build
+                                    -XX:DeoptimizeALot                 -XX:VerifyCodeCache
       -IgnoreUnrecognizedVMOptions               ERR                           ERR
       +IgnoreUnrecognizedVMOptions               OK                            OK
     */
