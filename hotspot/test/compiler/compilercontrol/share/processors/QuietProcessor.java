@@ -23,8 +23,6 @@
 
 package compiler.compilercontrol.share.processors;
 
-import compiler.compilercontrol.share.method.MethodDescriptor;
-import compiler.compilercontrol.share.scenario.Command;
 import compiler.compilercontrol.share.scenario.CompileCommand;
 import jdk.test.lib.OutputAnalyzer;
 
@@ -41,12 +39,10 @@ public class QuietProcessor implements Consumer<OutputAnalyzer> {
     @Override
     public void accept(OutputAnalyzer outputAnalyzer) {
         for (CompileCommand command : commands) {
-            MethodDescriptor methodDescriptor = command.methodDescriptor;
-            if (methodDescriptor.isValid()) {
-                Command cmd = command.command;
-                String method = methodDescriptor.getCanonicalString();
+            if (command.isValid()) {
                 outputAnalyzer.shouldNotContain("CompileCommand: "
-                        + cmd.name + " " + method);
+                        + command.command.name + " "
+                        + command.methodDescriptor.getCanonicalString());
                 outputAnalyzer.shouldNotContain("CompileCommand: An error "
                         + "occurred during parsing");
             } else {
