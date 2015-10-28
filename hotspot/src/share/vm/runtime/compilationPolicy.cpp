@@ -283,7 +283,7 @@ void CounterDecay::decay() {
                                         CounterHalfLifeTime);
   for (int i = 0; i < classes_per_tick; i++) {
     Klass* k = SystemDictionary::try_get_next_class();
-    if (k != NULL && k->oop_is_instance()) {
+    if (k != NULL && k->is_instance_klass()) {
       InstanceKlass::cast(k)->methods_do(do_method);
     }
   }

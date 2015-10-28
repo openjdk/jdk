@@ -152,7 +152,7 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
   KlassHandle super (THREAD, klass()->java_super());
   int nofNewEntries = 0;
 
-  if (PrintVtables && !klass()->oop_is_array()) {
+  if (PrintVtables && !klass()->is_array_klass()) {
     ResourceMark rm(THREAD);
     tty->print_cr("Initializing: %s", _klass->name()->as_C_string());
   }
@@ -170,10 +170,10 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
   }
 
   int super_vtable_len = initialize_from_super(super);
-  if (klass()->oop_is_array()) {
+  if (klass()->is_array_klass()) {
     assert(super_vtable_len == _length, "arrays shouldn't introduce new methods");
   } else {
-    assert(_klass->oop_is_instance(), "must be InstanceKlass");
+    assert(_klass->is_instance_klass(), "must be InstanceKlass");
 
     Array<Method*>* methods = ik()->methods();
     int len = methods->length();
@@ -312,7 +312,7 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle tar
                                           bool checkconstraints, TRAPS) {
   ResourceMark rm;
   bool allocate_new = true;
-  assert(klass->oop_is_instance(), "must be InstanceKlass");
+  assert(klass->is_instance_klass(), "must be InstanceKlass");
 
   Array<int>* def_vtable_indices = NULL;
   bool is_default = false;
@@ -1110,7 +1110,7 @@ int klassItable::assign_itable_indices_for_interface(Klass* klass) {
 }
 
 int klassItable::method_count_for_interface(Klass* interf) {
-  assert(interf->oop_is_instance(), "must be");
+  assert(interf->is_instance_klass(), "must be");
   assert(interf->is_interface(), "must be");
   Array<Method*>* methods = InstanceKlass::cast(interf)->methods();
   int nof_methods = methods->length();
@@ -1527,11 +1527,11 @@ class VtableStats : AllStatic {
     klassVtable* vt = kl->vtable();
     if (vt == NULL) return;
     no_klasses++;
-    if (kl->oop_is_instance()) {
+    if (kl->is_instance_klass()) {
       no_instance_klasses++;
       kl->array_klasses_do(do_class);
     }
-    if (kl->oop_is_array()) {
+    if (kl->is_array_klass()) {
       no_array_klasses++;
       sum_of_array_vtable_len += vt->length();
     }

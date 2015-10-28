@@ -124,7 +124,7 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array(JavaThread* thread, Klass* array_k
   //       (This may have to change if this code changes!)
   assert(array_klass->is_klass(), "not a class");
   oop obj;
-  if (array_klass->oop_is_typeArray()) {
+  if (array_klass->is_typeArray_klass()) {
     BasicType elt_type = TypeArrayKlass::cast(array_klass)->element_type();
     obj = oopFactory::new_typeArray(elt_type, length, CHECK);
   } else {

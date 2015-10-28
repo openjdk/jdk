@@ -3021,7 +3021,7 @@ void nmethod::print_dependencies() {
     deps.print_dependency();
     Klass* ctxk = deps.context_type();
     if (ctxk != NULL) {
-      if (ctxk->oop_is_instance() && InstanceKlass::cast(ctxk)->is_dependent_nmethod(this)) {
+      if (ctxk->is_instance_klass() && InstanceKlass::cast(ctxk)->is_dependent_nmethod(this)) {
         tty->print_cr("   [nmethod<=klass]%s", ctxk->external_name());
       }
     }

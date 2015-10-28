@@ -140,7 +140,7 @@ void ClassLoaderData::classes_do(void f(Klass * const)) {
 
 void ClassLoaderData::methods_do(void f(Method*)) {
   for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
-    if (k->oop_is_instance()) {
+    if (k->is_instance_klass()) {
       InstanceKlass::cast(k)->methods_do(f);
     }
   }
@@ -151,7 +151,7 @@ void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
   MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
   for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
     // Do not filter ArrayKlass oops here...
-    if (k->oop_is_array() || (k->oop_is_instance() && InstanceKlass::cast(k)->is_loaded())) {
+    if (k->is_array_klass() || (k->is_instance_klass() && InstanceKlass::cast(k)->is_loaded())) {
       klass_closure->do_klass(k);
     }
   }
@@ -159,7 +159,7 @@ void ClassLoaderData::loaded_classes_do(KlassClosure* klass_closure) {
 
 void ClassLoaderData::classes_do(void f(InstanceKlass*)) {
   for (Klass* k = _klasses; k != NULL; k = k->next_link()) {
-    if (k->oop_is_instance()) {
+    if (k->is_instance_klass()) {
       f(InstanceKlass::cast(k));
     }
     assert(k != k->next_link(), "no loops!");

@@ -302,7 +302,7 @@ methodHandle LinkResolver::lookup_method_in_klasses(const LinkInfo& link_info,
   // Ignore overpasses so statics can be found during resolution
   Method* result = klass->uncached_lookup_method(name, signature, Klass::skip_overpass);
 
-  if (klass->oop_is_array()) {
+  if (klass->is_array_klass()) {
     // Only consider klass and super klass for arrays
     return methodHandle(THREAD, result);
   }
@@ -355,7 +355,7 @@ methodHandle LinkResolver::lookup_instance_method_in_klasses(KlassHandle klass,
     result = super_klass->uncached_lookup_method(name, signature, Klass::find_overpass);
   }
 
-  if (klass->oop_is_array()) {
+  if (klass->is_array_klass()) {
     // Only consider klass and super klass for arrays
     return methodHandle(THREAD, result);
   }
@@ -531,7 +531,7 @@ void LinkResolver::check_method_accessability(KlassHandle ref_klass,
   // to be false (so we'll short-circuit out of these tests).
   if (sel_method->name() == vmSymbols::clone_name() &&
       sel_klass() == SystemDictionary::Object_klass() &&
-      resolved_klass->oop_is_array()) {
+      resolved_klass->is_array_klass()) {
     // We need to change "protected" to "public".
     assert(flags.is_protected(), "clone not protected?");
     jint new_flags = flags.as_int();
@@ -684,7 +684,7 @@ methodHandle LinkResolver::resolve_method(const LinkInfo& link_info,
   // 2. lookup method in resolved klass and its super klasses
   methodHandle resolved_method = lookup_method_in_klasses(link_info, true, false, CHECK_NULL);
 
-  if (resolved_method.is_null() && !resolved_klass->oop_is_array()) { // not found in the class hierarchy
+  if (resolved_method.is_null() && !resolved_klass->is_array_klass()) { // not found in the class hierarchy
     // 3. lookup method in all the interfaces implemented by the resolved klass
     resolved_method = lookup_method_in_interfaces(link_info, CHECK_NULL);
 
@@ -744,7 +744,7 @@ methodHandle LinkResolver::resolve_interface_method(const LinkInfo& link_info,
   // JDK8: also look for static methods
   methodHandle resolved_method = lookup_method_in_klasses(link_info, false, true, CHECK_NULL);
 
-  if (resolved_method.is_null() && !resolved_klass->oop_is_array()) {
+  if (resolved_method.is_null() && !resolved_klass->is_array_klass()) {
     // lookup method in all the super-interfaces
     resolved_method = lookup_method_in_interfaces(link_info, CHECK_NULL);
   }
