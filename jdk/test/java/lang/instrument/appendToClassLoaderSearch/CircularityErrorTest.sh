@@ -26,7 +26,6 @@
 # @summary Unit tests for appendToBootstrapClassLoaderSearch and
 #   appendToSystemClasLoaderSearch methods.
 #
-# @modules java.instrument
 # @run shell/timeout=240 CircularityErrorTest.sh
 
 if [ "${TESTSRC}" = "" ]

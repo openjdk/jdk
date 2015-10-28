@@ -27,7 +27,6 @@
  * @summary make sure no transformers run when none are registered
  * @author Gabriel Adauto, Wily Technology
  *
- * @modules java.instrument
  * @run build NoTransformerAddedTest
  * @run shell MakeJAR.sh redefineAgent
  * @run main/othervm -javaagent:redefineAgent.jar NoTransformerAddedTest NoTransformerAddedTest

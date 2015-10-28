@@ -28,7 +28,6 @@
 #   verify that the right methods are called.
 # @author Daniel D. Daugherty
 #
-# @modules java.instrument
 # @run shell MakeJAR3.sh RedefineSubclassWithTwoInterfacesAgent 'Can-Redefine-Classes: true'
 # @run build RedefineSubclassWithTwoInterfacesApp
 # @run shell RedefineSubclassWithTwoInterfaces.sh
