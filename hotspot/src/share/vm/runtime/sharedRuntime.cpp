@@ -1142,7 +1142,7 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
            callee->is_method_handle_intrinsic() ||
            callee->is_compiled_lambda_form(),
            "actual receiver must be subclass of static receiver klass");
-    if (receiver_klass->oop_is_instance()) {
+    if (receiver_klass->is_instance_klass()) {
       if (InstanceKlass::cast(receiver_klass())->is_not_initialized()) {
         tty->print_cr("ERROR: Klass not yet initialized!!");
         receiver_klass()->print();

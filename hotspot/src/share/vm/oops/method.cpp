@@ -1175,7 +1175,7 @@ methodHandle Method::make_method_handle_intrinsic(vmIntrinsics::ID iid,
 
 Klass* Method::check_non_bcp_klass(Klass* klass) {
   if (klass != NULL && klass->class_loader() != NULL) {
-    if (klass->oop_is_objArray())
+    if (klass->is_objArray_klass())
       klass = ObjArrayKlass::cast(klass)->bottom_klass();
     return klass;
   }
