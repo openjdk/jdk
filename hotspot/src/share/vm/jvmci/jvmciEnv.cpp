@@ -64,18 +64,18 @@ JVMCIEnv::JVMCIEnv(CompileTask* task, int system_dictionary_modification_counter
 // Note: the logic of this method should mirror the logic of
 // constantPoolOopDesc::verify_constant_pool_resolve.
 bool JVMCIEnv::check_klass_accessibility(KlassHandle accessing_klass, KlassHandle resolved_klass) {
-  if (accessing_klass->oop_is_objArray()) {
+  if (accessing_klass->is_objArray_klass()) {
     accessing_klass = ObjArrayKlass::cast(accessing_klass())->bottom_klass();
   }
-  if (!accessing_klass->oop_is_instance()) {
+  if (!accessing_klass->is_instance_klass()) {
     return true;
   }
 
-  if (resolved_klass->oop_is_objArray()) {
+  if (resolved_klass->is_objArray_klass()) {
     // Find the element klass, if this is an array.
     resolved_klass = ObjArrayKlass::cast(resolved_klass())->bottom_klass();
   }
-  if (resolved_klass->oop_is_instance()) {
+  if (resolved_klass->is_instance_klass()) {
     return Reflection::verify_class_access(accessing_klass(), resolved_klass(), true);
   }
   return true;
@@ -383,9 +383,9 @@ instanceKlassHandle JVMCIEnv::get_instance_klass_for_declared_method_holder(Klas
   // For the case of <array>.clone(), the method holder can be an ArrayKlass*
   // instead of an InstanceKlass*.  For that case simply pretend that the
   // declared holder is Object.clone since that's where the call will bottom out.
-  if (method_holder->oop_is_instance()) {
+  if (method_holder->is_instance_klass()) {
     return instanceKlassHandle(method_holder());
-  } else if (method_holder->oop_is_array()) {
+  } else if (method_holder->is_array_klass()) {
     return instanceKlassHandle(SystemDictionary::Object_klass());
   } else {
     ShouldNotReachHere();

@@ -1982,7 +1982,7 @@ void SystemDictionary::check_constraints(int d_index, unsigned int d_hash,
       // system dictionary only holds instance classes, placeholders
       // also holds array classes
 
-      assert(check->oop_is_instance(), "noninstance in systemdictionary");
+      assert(check->is_instance_klass(), "noninstance in systemdictionary");
       if ((defining == true) || (k() != check)) {
         linkage_error = "loader (instance of  %s): attempted  duplicate class "
           "definition for name: \"%s\"";
@@ -2388,13 +2388,13 @@ methodHandle SystemDictionary::find_method_handle_invoker(Symbol* name,
 // Out of an abundance of caution, we do not include any other classes, not even for packages like java.util.
 static bool is_always_visible_class(oop mirror) {
   Klass* klass = java_lang_Class::as_Klass(mirror);
-  if (klass->oop_is_objArray()) {
+  if (klass->is_objArray_klass()) {
     klass = ObjArrayKlass::cast(klass)->bottom_klass(); // check element type
   }
-  if (klass->oop_is_typeArray()) {
+  if (klass->is_typeArray_klass()) {
     return true; // primitive array
   }
-  assert(klass->oop_is_instance(), "%s", klass->external_name());
+  assert(klass->is_instance_klass(), "%s", klass->external_name());
   return klass->is_public() &&
          (InstanceKlass::cast(klass)->is_same_class_package(SystemDictionary::Object_klass()) ||       // java.lang
           InstanceKlass::cast(klass)->is_same_class_package(SystemDictionary::MethodHandle_klass()));  // java.lang.invoke
@@ -2458,9 +2458,9 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
       Klass* sel_klass = java_lang_Class::as_Klass(mirror);
       mirror = NULL;  // safety
       // Emulate ConstantPool::verify_constant_pool_resolve.
-      if (sel_klass->oop_is_objArray())
+      if (sel_klass->is_objArray_klass())
         sel_klass = ObjArrayKlass::cast(sel_klass)->bottom_klass();
-      if (sel_klass->oop_is_instance()) {
+      if (sel_klass->is_instance_klass()) {
         KlassHandle sel_kh(THREAD, sel_klass);
         LinkResolver::check_klass_accessability(accessing_klass, sel_kh, CHECK_(empty));
       }

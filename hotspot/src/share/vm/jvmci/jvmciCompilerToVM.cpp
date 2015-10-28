@@ -549,7 +549,7 @@ C2V_VMENTRY(jobject, resolveMethod, (JNIEnv *, jobject, jobject receiver_jvmci_t
   Klass* caller_klass = CompilerToVM::asKlass(caller_jvmci_type);
   Method* method = CompilerToVM::asMethod(jvmci_method);
 
-  if (recv_klass->oop_is_array() || (InstanceKlass::cast(recv_klass)->is_linked())) {
+  if (recv_klass->is_array_klass() || (InstanceKlass::cast(recv_klass)->is_linked())) {
     Klass* holder_klass = method->method_holder();
     Symbol* method_name = method->name();
     Symbol* method_signature = method->signature();
