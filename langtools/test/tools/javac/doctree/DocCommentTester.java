@@ -27,10 +27,14 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.text.BreakIterator;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.Name;
 import javax.tools.JavaFileObject;
@@ -55,16 +59,28 @@ import com.sun.tools.javac.tree.DocPretty;
 
 public class DocCommentTester {
 
+    public static final String BI_MARKER = "BREAK_ITERATOR";
+    public final boolean useBreakIterator;
+
+    public DocCommentTester(boolean useBreakIterator) {
+        this.useBreakIterator = useBreakIterator;
+    }
     public static void main(String... args) throws Exception {
-        new DocCommentTester().run(args);
+        ArrayList<String> list = new ArrayList(Arrays.asList(args));
+        if (!list.isEmpty() && "-useBreakIterator".equals(list.get(0))) {
+            list.remove(0);
+            new DocCommentTester(true).run(list);
+        } else {
+            new DocCommentTester(false).run(list);
+        }
     }
 
-    public void run(String... args) throws Exception {
+    public void run(List<String> args) throws Exception {
         String testSrc = System.getProperty("test.src");
 
-        List<File> files = new ArrayList<File>();
-        for (String arg: args)
-            files.add(new File(testSrc, arg));
+        List<File> files = args.stream()
+                .map(arg -> new File(testSrc, arg))
+                .collect(Collectors.toList());
 
         JavacTool javac = JavacTool.create();
         StandardJavaFileManager fm = javac.getStandardFileManager(null, null, null);
@@ -73,6 +89,11 @@ public class DocCommentTester {
 
         JavacTask t = javac.getTask(null, fm, null, null, null, fos);
         final DocTrees trees = DocTrees.instance(t);
+
+        if (useBreakIterator) {
+            // BreakIterators are locale dependent wrt. behavior
+            trees.setBreakIterator(BreakIterator.getSentenceInstance(Locale.ENGLISH));
+        }
 
         final Checker[] checkers = {
             new ASTChecker(this, trees),
@@ -179,9 +200,11 @@ public class DocCommentTester {
         static final String NEWLINE = System.getProperty("line.separator");
         Printer printer = new Printer();
         String source;
+        DocCommentTester test;
 
         ASTChecker(DocCommentTester test, DocTrees t) {
             test.super(t);
+            this.test = test;
         }
 
         @Override
@@ -200,11 +223,21 @@ public class DocCommentTester {
             out.flush();
             String found = out.toString().replace(NEWLINE, "\n");
 
-            // Look for the first block comment after the first occurrence of name
-            int start = source.indexOf("\n/*\n", findName(source, name));
+            /*
+             * Look for the first block comment after the first occurrence
+             * of name, noting that, block comments with BI_MARKER may
+             * very well be present.
+             */
+            int start = test.useBreakIterator
+                    ? source.indexOf("\n/*\n" + BI_MARKER + "\n", findName(source, name))
+                    : source.indexOf("\n/*\n", findName(source, name));
             int end = source.indexOf("\n*/\n", start);
-            String expect = source.substring(start + 4, end + 1);
+            int startlen = start + (test.useBreakIterator ? BI_MARKER.length() + 1 : 0) + 4;
+            String expect = source.substring(startlen, end + 1);
             if (!found.equals(expect)) {
+                if (test.useBreakIterator) {
+                    System.err.println("Using BreakIterator");
+                }
                 System.err.println("Expect:\n" + expect);
                 System.err.println("Found:\n" + found);
                 error("AST mismatch for " + name);
