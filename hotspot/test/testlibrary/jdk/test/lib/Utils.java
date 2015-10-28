@@ -78,7 +78,7 @@ public final class Utils {
     /**
      * Returns the value of 'test.src' system property.
      */
-    public static final String TEST_SRC = System.getProperty("test.src", "").trim();
+    public static final String TEST_SRC = System.getProperty("test.src", ".").trim();
 
     private static Unsafe unsafe = null;
 
