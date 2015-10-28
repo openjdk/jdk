@@ -151,7 +151,7 @@ void Dependencies::assert_has_no_finalizable_subclasses(Klass* ctxk) {
 }
 
 void Dependencies::assert_leaf_type(Klass* ctxk) {
-  if (ctxk->oop_is_array()) {
+  if (ctxk->is_array_klass()) {
     // As a special case, support this assertion on an array type,
     // which reduces to an assertion on its element type.
     // Note that this cannot be done with assertions that
@@ -1084,7 +1084,7 @@ class ClassHierarchyWalker {
       return true;  // Must punt the assertion to true.
     Klass* k = ctxk;
     Method* lm = k->lookup_method(m->name(), m->signature());
-    if (lm == NULL && k->oop_is_instance()) {
+    if (lm == NULL && k->is_instance_klass()) {
       // It might be an interface method
       lm = InstanceKlass::cast(k)->lookup_method_in_ordered_interfaces(m->name(),
                                                                  m->signature());
@@ -1135,7 +1135,7 @@ class ClassHierarchyWalker {
   bool is_witness(Klass* k) {
     if (doing_subtype_search()) {
       return Dependencies::is_concrete_klass(k);
-    } else if (!k->oop_is_instance()) {
+    } else if (!k->is_instance_klass()) {
       return false; // no methods to find in an array type
     } else {
       // Search class hierarchy first.
@@ -1931,7 +1931,7 @@ KlassDepChange::~KlassDepChange() {
 }
 
 bool KlassDepChange::involves_context(Klass* k) {
-  if (k == NULL || !k->oop_is_instance()) {
+  if (k == NULL || !k->is_instance_klass()) {
     return false;
   }
   InstanceKlass* ik = InstanceKlass::cast(k);

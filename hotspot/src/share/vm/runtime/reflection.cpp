@@ -330,7 +330,7 @@ arrayOop Reflection::reflect_new_array(oop element_mirror, jint length, TRAPS) {
     return TypeArrayKlass::cast(tak)->allocate(length, THREAD);
   } else {
     Klass* k = java_lang_Class::as_Klass(element_mirror);
-    if (k->oop_is_array() && ArrayKlass::cast(k)->dimension() >= MAX_DIM) {
+    if (k->is_array_klass() && ArrayKlass::cast(k)->dimension() >= MAX_DIM) {
       THROW_0(vmSymbols::java_lang_IllegalArgumentException());
     }
     return oopFactory::new_objArray(k, length, THREAD);
@@ -366,7 +366,7 @@ arrayOop Reflection::reflect_new_multi_array(oop element_mirror, typeArrayOop di
     klass = basic_type_mirror_to_arrayklass(element_mirror, CHECK_NULL);
   } else {
     klass = java_lang_Class::as_Klass(element_mirror);
-    if (klass->oop_is_array()) {
+    if (klass->is_array_klass()) {
       int k_dim = ArrayKlass::cast(klass)->dimension();
       if (k_dim + len > MAX_DIM) {
         THROW_0(vmSymbols::java_lang_IllegalArgumentException());
@@ -387,7 +387,7 @@ oop Reflection::array_component_type(oop mirror, TRAPS) {
   }
 
   Klass* klass = java_lang_Class::as_Klass(mirror);
-  if (!klass->oop_is_array()) {
+  if (!klass->is_array_klass()) {
     return NULL;
   }
 
@@ -395,14 +395,14 @@ oop Reflection::array_component_type(oop mirror, TRAPS) {
 #ifdef ASSERT
   oop result2 = NULL;
   if (ArrayKlass::cast(klass)->dimension() == 1) {
-    if (klass->oop_is_typeArray()) {
+    if (klass->is_typeArray_klass()) {
       result2 = basic_type_arrayklass_to_mirror(klass, CHECK_NULL);
     } else {
       result2 = ObjArrayKlass::cast(klass)->element_klass()->java_mirror();
     }
   } else {
     Klass* lower_dim = ArrayKlass::cast(klass)->lower_dimension();
-    assert(lower_dim->oop_is_array(), "just checking");
+    assert(lower_dim->is_array_klass(), "just checking");
     result2 = lower_dim->java_mirror();
   }
   assert(result == result2, "results must be consistent");
@@ -495,7 +495,7 @@ bool Reflection::verify_field_access(Klass* current_class,
   }
 
   Klass* host_class = current_class;
-  while (host_class->oop_is_instance() &&
+  while (host_class->is_instance_klass() &&
          InstanceKlass::cast(host_class)->is_anonymous()) {
     Klass* next_host_class = InstanceKlass::cast(host_class)->host_klass();
     if (next_host_class == NULL)  break;

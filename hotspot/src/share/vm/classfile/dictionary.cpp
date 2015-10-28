@@ -60,7 +60,7 @@ DictionaryEntry* Dictionary::new_entry(unsigned int hash, Klass* klass,
   DictionaryEntry* entry = (DictionaryEntry*)Hashtable<Klass*, mtClass>::new_entry(hash, klass);
   entry->set_loader_data(loader_data);
   entry->set_pd_set(NULL);
-  assert(klass->oop_is_instance(), "Must be");
+  assert(klass->is_instance_klass(), "Must be");
   return entry;
 }
 
@@ -756,7 +756,7 @@ void Dictionary::verify() {
                           probe = probe->next()) {
       Klass* e = probe->klass();
       ClassLoaderData* loader_data = probe->loader_data();
-      guarantee(e->oop_is_instance(),
+      guarantee(e->is_instance_klass(),
                               "Verify of system dictionary failed");
       // class loader must be present;  a null class loader is the
       // boostrap loader

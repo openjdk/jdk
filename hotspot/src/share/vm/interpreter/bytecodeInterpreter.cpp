@@ -2606,7 +2606,7 @@ run:
                   - klass: {other class}
 
                   but using InstanceKlass::cast(STACK_OBJECT(-parms)->klass()) causes in assertion failure
-                  because rcvr->klass()->oop_is_instance() == 0
+                  because rcvr->klass()->is_instance_klass() == 0
                   However it seems to have a vtable in the right location. Huh?
                   Because vtables have the same offset for ArrayKlass and InstanceKlass.
               */

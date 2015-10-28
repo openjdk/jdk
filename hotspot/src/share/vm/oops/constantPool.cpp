@@ -269,7 +269,7 @@ Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
   ClassLoaderData* this_key = this_cp->pool_holder()->class_loader_data();
   this_key->record_dependency(k(), CHECK_NULL); // Can throw OOM
 
-  if (TraceClassResolution && !k->oop_is_array()) {
+  if (TraceClassResolution && !k->is_array_klass()) {
     // skip resolving the constant pool so that this code gets
     // called the next time some bytecodes refer to this class.
     trace_class_resolution(this_cp, k);
@@ -435,14 +435,14 @@ int ConstantPool::remap_instruction_operand_from_cache(int operand) {
 
 
 void ConstantPool::verify_constant_pool_resolve(const constantPoolHandle& this_cp, KlassHandle k, TRAPS) {
- if (k->oop_is_instance() || k->oop_is_objArray()) {
+ if (k->is_instance_klass() || k->is_objArray_klass()) {
     instanceKlassHandle holder (THREAD, this_cp->pool_holder());
-    Klass* elem = k->oop_is_instance() ? k() : ObjArrayKlass::cast(k())->bottom_klass();
+    Klass* elem = k->is_instance_klass() ? k() : ObjArrayKlass::cast(k())->bottom_klass();
     KlassHandle element (THREAD, elem);
 
     // The element type could be a typeArray - we only need the access check if it is
     // an reference to another class
-    if (element->oop_is_instance()) {
+    if (element->is_instance_klass()) {
       LinkResolver::check_klass_accessability(holder, element, CHECK);
     }
   }
@@ -1843,7 +1843,7 @@ void ConstantPool::preload_and_initialize_all_classes(ConstantPool* obj, TRAPS) 
     if (cp->tag_at(i).is_unresolved_klass()) {
       // This will force loading of the class
       Klass* klass = cp->klass_at(i, CHECK);
-      if (klass->oop_is_instance()) {
+      if (klass->is_instance_klass()) {
         // Force initialization of class
         InstanceKlass::cast(klass)->initialize(CHECK);
       }
