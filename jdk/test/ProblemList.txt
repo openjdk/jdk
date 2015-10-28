@@ -360,6 +360,18 @@ com/sun/jdi/GetLocalVariables4Test.sh				windows-all
 # 8062512
 java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java generic-all
 
+# 8076458
+java/util/stream/test/org/openjdk/tests/java/util/stream/FlatMapOpTest.java generic-all
+
+# 8130337
+java/util/stream/test/org/openjdk/tests/java/util/stream/IntPrimitiveOpsTests.java generic-all
+
+# 8080165, 8085982
+java/util/Arrays/ParallelPrefix.java generic-all
+
+# 8079538
+java/util/BitSet/BitSetStreamTest.java generic-all
+
 ############################################################################
 
 # jdk_instrument
