@@ -27,7 +27,6 @@
  * @summary make sure getObjectSize(null) throws NullPointerException.
  * @author Robert Field as modified from the code of Gabriel Adauto, Wily Technology
  *
- * @modules java.instrument
  * @run build NullGetObjectSizeTest
  * @run shell MakeJAR.sh basicAgent
  * @run main/othervm -javaagent:basicAgent.jar NullGetObjectSizeTest NullGetObjectSizeTest

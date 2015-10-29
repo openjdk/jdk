@@ -27,7 +27,6 @@
  * @summary simple test for the Class-Path manifest attribute
  * @author Gabriel Adauto, Wily Technology; Robert Field, Sun Microsystems
  *
- * @modules java.instrument
  * @run build AppendToClassPathTest
  * @run shell AppendToClassPathSetUp.sh
  * @run shell MakeJAR.sh classpathAgent
