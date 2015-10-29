@@ -223,6 +223,8 @@ public class MethodGenerator {
         elements.add(input -> "_" + input);
         elements.add(input -> "$" + input);
         elements.add(input -> "0" + input);
+
+        /* TODO: uncomment this together with the fix for 8140631
         // Unicode characters
         elements.add(input -> embed(input, "\u0001"));
         elements.add(input -> embed(input, "\u007F"));
@@ -231,6 +233,7 @@ public class MethodGenerator {
         elements.add(input -> embed(input, "\u0306"));
         // Supplementary character
         elements.add(input -> new String(Character.toChars(0x1F64C)));
+        */
         return elements;
     }
 
