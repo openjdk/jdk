@@ -27,7 +27,6 @@
  * @summary confirms that added transformers all really run
  * @author Gabriel Adauto, Wily Technology
  *
- * @modules java.instrument
  * @run build AddTransformerTest ATransformerManagementTestCase
  * @run shell MakeJAR.sh redefineAgent
  * @run main/othervm -javaagent:redefineAgent.jar AddTransformerTest AddTransformerTest
