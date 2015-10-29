@@ -834,7 +834,7 @@ line_number_from_bci(jvm_agent_t* J, Vframe_t *vf)
       if (stream_bci == vf->bci) {
           /* perfect match */
           if (debug > 2)
-              fprintf(stderr, "\t line_number_from_bci: END: exact line: %ld \n\n", vf->line);
+              fprintf(stderr, "\t line_number_from_bci: END: exact line: %d \n\n", vf->line);
           vf->line = stream_line;
           return PS_OK;
       } else {
@@ -843,14 +843,14 @@ line_number_from_bci(jvm_agent_t* J, Vframe_t *vf)
               best_bci = stream_bci;
               vf->line = stream_line;
               if (debug > 2) {
-                  fprintf(stderr, "\t line_number_from_bci: best_bci: %ld, best_line: %ld\n",
+                  fprintf(stderr, "\t line_number_from_bci: best_bci: %d, best_line: %d\n",
                                    best_bci, vf->line);
               }
           }
       }
   }
   if (debug > 2)
-      fprintf(stderr, "\t line_number_from_bci: END: line: %ld \n\n", vf->line);
+      fprintf(stderr, "\t line_number_from_bci: END: line: %d \n\n", vf->line);
   return PS_OK;
 
  fail:
@@ -1002,7 +1002,7 @@ static int scopeDesc_chain(Nmethod_t *N) {
       err = line_number_from_bci(N->J, vf);
       CHECK_FAIL(err);
       if (debug > 2) {
-        fprintf(stderr, "\t scopeDesc_chain: method: %#8llx, line: %ld\n",
+        fprintf(stderr, "\t scopeDesc_chain: method: %#8llx, line: %d\n",
                 vf->method, vf->line);
       }
     }
@@ -1338,7 +1338,7 @@ int Jget_vframe(jvm_agent_t* J, int vframe_no,
   jframe->bci = vf->bci;
   jframe->line = vf->line;
   if (debug) {
-      fprintf(stderr, "\t Jget_vframe: method name: %s, line: %ld\n",
+      fprintf(stderr, "\t Jget_vframe: method name: %s, line: %d\n",
                        name, vf->line);
   }
   return PS_OK;
