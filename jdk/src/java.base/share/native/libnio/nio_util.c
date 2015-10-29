@@ -28,7 +28,7 @@
 #include "jni_util.h"
 
 JNIEXPORT jint JNICALL
-JNI_OnLoad(JavaVM *vm, void *reserved)
+DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
 {
     JNIEnv *env;
 

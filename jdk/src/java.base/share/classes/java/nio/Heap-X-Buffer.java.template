@@ -27,7 +27,7 @@
 
 package java.nio;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
 #if[rw]
