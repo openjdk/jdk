@@ -99,25 +99,31 @@ class WorkerDataArray  : public CHeapObj<mtGC> {
 
   WorkerDataArray<size_t>* _thread_work_items;
 
-  NOT_PRODUCT(T uninitialized();)
+  NOT_PRODUCT(inline T uninitialized() const;)
 
-  // We are caching the sum and average to only have to calculate them once.
-  // This is not done in an MT-safe way. It is intended to allow single
-  // threaded code to call sum() and average() multiple times in any order
-  // without having to worry about the cost.
-  bool   _has_new_data;
-  T      _sum;
-  T      _min;
-  T      _max;
-  double _average;
+  void set_all(T value) {
+    for (uint i = 0; i < _length; i++) {
+      _data[i] = value;
+    }
+  }
 
  public:
-  WorkerDataArray(uint length, const char* title, bool print_sum, int log_level, uint indent_level) :
-    _title(title), _length(0), _print_sum(print_sum), _log_level(log_level), _indent_level(indent_level),
-    _has_new_data(true), _thread_work_items(NULL), _enabled(true) {
+  WorkerDataArray(uint length,
+                  const char* title,
+                  bool print_sum,
+                  int log_level,
+                  uint indent_level) :
+   _title(title),
+   _length(0),
+   _print_sum(print_sum),
+   _log_level(log_level),
+   _indent_level(indent_level),
+   _thread_work_items(NULL),
+   _enabled(true) {
     assert(length > 0, "Must have some workers to store data for");
     _length = length;
     _data = NEW_C_HEAP_ARRAY(T, _length, mtGC);
+    reset();
   }
 
   ~WorkerDataArray() {
@@ -128,13 +134,14 @@ class WorkerDataArray  : public CHeapObj<mtGC> {
     _thread_work_items = thread_work_items;
   }
 
-  WorkerDataArray<size_t>* thread_work_items() { return _thread_work_items; }
+  WorkerDataArray<size_t>* thread_work_items() const {
+    return _thread_work_items;
+  }
 
   void set(uint worker_i, T value) {
     assert(worker_i < _length, "Worker %d is greater than max: %d", worker_i, _length);
-    assert(_data[worker_i] == WorkerDataArray<T>::uninitialized(), "Overwriting data for worker %d in %s", worker_i, _title);
+    assert(_data[worker_i] == uninitialized(), "Overwriting data for worker %d in %s", worker_i, _title);
     _data[worker_i] = value;
-    _has_new_data = true;
   }
 
   void set_thread_work_item(uint worker_i, size_t value) {
@@ -142,65 +149,63 @@ class WorkerDataArray  : public CHeapObj<mtGC> {
     _thread_work_items->set(worker_i, value);
   }
 
-  T get(uint worker_i) {
+  T get(uint worker_i) const {
     assert(worker_i < _length, "Worker %d is greater than max: %d", worker_i, _length);
-    assert(_data[worker_i] != WorkerDataArray<T>::uninitialized(), "No data added for worker %d", worker_i);
+    assert(_data[worker_i] != uninitialized(), "No data added for worker %d", worker_i);
     return _data[worker_i];
   }
 
   void add(uint worker_i, T value) {
     assert(worker_i < _length, "Worker %d is greater than max: %d", worker_i, _length);
-    assert(_data[worker_i] != WorkerDataArray<T>::uninitialized(), "No data to add to for worker %d", worker_i);
+    assert(_data[worker_i] != uninitialized(), "No data to add to for worker %d", worker_i);
     _data[worker_i] += value;
-    _has_new_data = true;
   }
 
-  double average(uint active_threads){
-    calculate_totals(active_threads);
-    return _average;
+  double average(uint active_threads) const {
+    return sum(active_threads) / (double) active_threads;
   }
 
-  T sum(uint active_threads) {
-    calculate_totals(active_threads);
-    return _sum;
+  T sum(uint active_threads) const {
+    T s = get(0);
+    for (uint i = 1; i < active_threads; ++i) {
+      s += get(i);
+    }
+    return s;
   }
 
-  T minimum(uint active_threads) {
-    calculate_totals(active_threads);
-    return _min;
+  T minimum(uint active_threads) const {
+    T min = get(0);
+    for (uint i = 1; i < active_threads; ++i) {
+      min = MIN2(min, get(i));
+    }
+    return min;
   }
 
-  T maximum(uint active_threads) {
-    calculate_totals(active_threads);
-    return _max;
+  T maximum(uint active_threads) const {
+    T max = get(0);
+    for (uint i = 1; i < active_threads; ++i) {
+      max = MAX2(max, get(i));
+    }
+    return max;
+  }
+
+  T diff(uint active_threads) const {
+    return maximum(active_threads) - minimum(active_threads);
   }
 
   void reset() PRODUCT_RETURN;
   void verify(uint active_threads) PRODUCT_RETURN;
 
-  void set_enabled(bool enabled) { _enabled = enabled; }
+  void set_enabled(bool enabled) {
+    _enabled = enabled;
+  }
 
-  int log_level() { return _log_level;  }
+  int log_level() const {
+    return _log_level;
+  }
 
- private:
-
-  void calculate_totals(uint active_threads){
-    if (!_has_new_data) {
-      return;
-    }
-
-    _sum = (T)0;
-    _min = _data[0];
-    _max = _min;
-    assert(active_threads <= _length, "Wrong number of active threads");
-    for (uint i = 0; i < active_threads; ++i) {
-      T val = _data[i];
-      _sum += val;
-      _min = MIN2(_min, val);
-      _max = MAX2(_max, val);
-    }
-    _average = (double)_sum / (double)active_threads;
-    _has_new_data = false;
+  void clear() {
+    set_all(0);
   }
 };
 
@@ -208,20 +213,18 @@ class WorkerDataArray  : public CHeapObj<mtGC> {
 #ifndef PRODUCT
 
 template <>
-size_t WorkerDataArray<size_t>::uninitialized() {
+inline size_t WorkerDataArray<size_t>::uninitialized() const {
   return (size_t)-1;
 }
 
 template <>
-double WorkerDataArray<double>::uninitialized() {
+inline double WorkerDataArray<double>::uninitialized() const {
   return -1.0;
 }
 
 template <class T>
 void WorkerDataArray<T>::reset() {
-  for (uint i = 0; i < _length; i++) {
-    _data[i] = WorkerDataArray<T>::uninitialized();
-  }
+  set_all(uninitialized());
   if (_thread_work_items != NULL) {
     _thread_work_items->reset();
   }
@@ -235,7 +238,7 @@ void WorkerDataArray<T>::verify(uint active_threads) {
 
   assert(active_threads <= _length, "Wrong number of active threads");
   for (uint i = 0; i < active_threads; i++) {
-    assert(_data[i] != WorkerDataArray<T>::uninitialized(),
+    assert(_data[i] != uninitialized(),
            "Invalid data for worker %u in '%s'", i, _title);
   }
   if (_thread_work_items != NULL) {
