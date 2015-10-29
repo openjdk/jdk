@@ -307,6 +307,8 @@ JNF_COCOA_ENTER(env);
 
         JNFCallVoidMethod(env, jthis,
                           jm_registerFont, jFontName, jFontFamilyName);
+        (*env)->DeleteLocalRef(env, jFontName);
+        (*env)->DeleteLocalRef(env, jFontFamilyName);
     }
 
 JNF_COCOA_EXIT(env);
