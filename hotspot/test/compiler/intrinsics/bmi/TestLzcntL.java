@@ -27,7 +27,7 @@
  * @bug 8031321
  * @summary Verify that results of computations are the same w/
  *          and w/o usage of intrinsic
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build TestLzcntL BMITestRunner Expr

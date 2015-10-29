@@ -26,7 +26,7 @@
  * @key gc
  * @bug 8010722
  * @summary Tests ergonomics for UseCompressedOops.
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management/sun.management
  * @build TestUseCompressedOopsErgo TestUseCompressedOopsErgoTools

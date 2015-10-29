@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify that RTMLockingCalculationDelay affect when
  *          abort ratio calculation is started.
- * @library /testlibrary /../../test/lib /compiler/testlibrary
+ * @library /testlibrary /test/lib /compiler/testlibrary
  * @modules java.base/sun.misc
  *          java.management
  * @build TestRTMLockingCalculationDelay

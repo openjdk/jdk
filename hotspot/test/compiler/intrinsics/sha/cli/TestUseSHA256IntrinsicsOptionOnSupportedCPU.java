@@ -25,7 +25,7 @@
  * @test
  * @bug 8035968
  * @summary Verify UseSHA256Intrinsics option processing on supported CPU,
- * @library /testlibrary /../../test/lib /compiler/testlibrary testcases
+ * @library /testlibrary /test/lib /compiler/testlibrary testcases
  * @modules java.base/sun.misc
  *          java.management
  * @build TestUseSHA256IntrinsicsOptionOnSupportedCPU

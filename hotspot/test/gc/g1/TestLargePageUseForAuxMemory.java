@@ -26,7 +26,7 @@
  * @summary Test that auxiliary data structures are allocated using large pages if available.
  * @bug 8058354 8079208
  * @key gc
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @requires (vm.gc=="G1" | vm.gc=="null")
  * @build jdk.test.lib.* sun.hotspot.WhiteBox
  * @build TestLargePageUseForAuxMemory

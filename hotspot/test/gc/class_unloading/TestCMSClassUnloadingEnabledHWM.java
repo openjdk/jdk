@@ -25,7 +25,7 @@
  * @test
  * @key gc
  * @bug 8049831
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build TestCMSClassUnloadingEnabledHWM

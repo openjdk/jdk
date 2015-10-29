@@ -26,7 +26,7 @@
  * @key gc
  * @bug 8025166
  * @summary Verify that heap devided among generations according to NewRatio
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build TestNewRatioFlag

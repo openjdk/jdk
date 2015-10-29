@@ -27,7 +27,7 @@ import sha.predicate.IntrinsicPredicates;
  * @test
  * @bug 8035968
  * @summary Verify that SHA-1 multi block intrinsic is actually used.
- * @library /testlibrary /../../test/lib /compiler/testlibrary ../
+ * @library /testlibrary /test/lib /compiler/testlibrary ../
  * @modules java.base/sun.misc
  *          java.management
  * @build TestSHA intrinsics.Verifier TestSHA1MultiBlockIntrinsics

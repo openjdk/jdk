@@ -48,7 +48,7 @@ import java.util.stream.Collectors;
  * @test SegmentedCodeCacheDtraceTest
  * @bug 8015774
  * @requires os.family=="solaris"
- * @library /testlibrary / /../../test/lib
+ * @library /testlibrary / /test/lib
  * @build SegmentedCodeCacheDtraceTestWorker
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *     sun.hotspot.WhiteBox$WhiteBoxPermission

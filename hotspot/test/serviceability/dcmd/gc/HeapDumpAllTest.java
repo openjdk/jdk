@@ -25,7 +25,7 @@
  * @test
  * @summary Test of diagnostic command GC.heap_dump -all=true
  * @library /testlibrary
- * @library /../../test/lib/share/classes
+ * @library /test/lib/share/classes
  * @modules java.base/sun.misc
  *          java.compiler
  *          java.management
