@@ -688,13 +688,11 @@ DISABLE_WARNING_PREFIX
 WARNINGS_AS_ERRORS
 COMPILER_SUPPORTS_TARGET_BITS_FLAG
 ZERO_ARCHFLAG
-LDFLAGS_TESTEXE_SUFFIX
-LDFLAGS_TESTLIB_SUFFIX
 LDFLAGS_TESTEXE
 LDFLAGS_TESTLIB
 LDFLAGS_CXX_JDK
-LDFLAGS_JDKEXE_SUFFIX
-LDFLAGS_JDKLIB_SUFFIX
+JDKEXE_LIBS
+JDKLIB_LIBS
 LDFLAGS_JDKEXE
 LDFLAGS_JDKLIB
 CXXFLAGS_TESTEXE
@@ -4595,7 +4593,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1446128654
+DATE_WHEN_GENERATED=1446132586
 
 ###############################################################################
 #
@@ -43568,7 +43566,7 @@ $as_echo "$supports" >&6; }
     LDFLAGS_JDK="$LDFLAGS_JDK -z defs -xildoff -ztext"
     LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    LDFLAGS_JDK="${LDFLAGS_JDK} -brtl -bnolibpath -liconv -bexpall -bernotok"
+    LDFLAGS_JDK="${LDFLAGS_JDK} -brtl -bnolibpath -bexpall -bernotok"
   fi
 
   # Customize LDFLAGS for executables
@@ -43591,7 +43589,7 @@ $as_echo "$supports" >&6; }
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -dll -libpath:${OUTPUT_ROOT}/support/modules_libs/java.base"
-    LDFLAGS_JDKLIB_SUFFIX=""
+    JDKLIB_LIBS=""
   else
     LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB}  ${SHARED_LIBRARY_FLAGS} \
         -L${OUTPUT_ROOT}/support/modules_libs/java.base${OPENJDK_TARGET_CPU_LIBDIR}"
@@ -43610,9 +43608,11 @@ $as_echo "$supports" >&6; }
       LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${OUTPUT_ROOT}/support/modules_libs/java.base${OPENJDK_TARGET_CPU_LIBDIR}/server"
     fi
 
-    LDFLAGS_JDKLIB_SUFFIX="-ljava -ljvm"
+    JDKLIB_LIBS="-ljava -ljvm"
     if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-      LDFLAGS_JDKLIB_SUFFIX="$LDFLAGS_JDKLIB_SUFFIX -lc"
+      JDKLIB_LIBS="$JDKLIB_LIBS -lc"
+    elif test "x$TOOLCHAIN_TYPE" = xxlc; then
+      JDKLIB_LIBS="$JDKLIB_LIBS -liconv"
     fi
   fi
 
@@ -43624,10 +43624,6 @@ $as_echo "$supports" >&6; }
 
   LDFLAGS_TESTLIB="$LDFLAGS_JDKLIB"
   LDFLAGS_TESTEXE="$LDFLAGS_JDKEXE"
-  LDFLAGS_TESTLIB_SUFFIX="$LDFLAGS_JDKLIB_SUFFIX"
-  LDFLAGS_TESTEXE_SUFFIX="$LDFLAGS_JDKEXE_SUFFIX"
-
-
 
 
 
