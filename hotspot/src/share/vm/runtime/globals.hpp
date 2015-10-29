@@ -1333,9 +1333,6 @@ public:
   product(bool, AllowJNIEnvProxy, false,                                    \
           "Allow JNIEnv proxies for jdbx")                                  \
                                                                             \
-  product(bool, JNIDetachReleasesMonitors, true,                            \
-          "JNI DetachCurrentThread releases monitors owned by thread")      \
-                                                                            \
   product(bool, RestoreMXCSROnJNICalls, false,                              \
           "Restore MXCSR when returning from JNI calls")                    \
                                                                             \

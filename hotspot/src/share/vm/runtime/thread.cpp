@@ -1868,13 +1868,10 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
   // Optionally release any monitors for regular JavaThread exits. This
   // is provided as a work around for any bugs in monitor enter-exit
   // matching. This can be expensive so it is not enabled by default.
-  // ObjectMonitor::Knob_ExitRelease is a superset of the
-  // JNIDetachReleasesMonitors option.
   //
   // ensure_join() ignores IllegalThreadStateExceptions, and so does
   // ObjectSynchronizer::release_monitors_owned_by_thread().
-  if ((exit_type == jni_detach && JNIDetachReleasesMonitors) ||
-      ObjectMonitor::Knob_ExitRelease) {
+  if (exit_type == jni_detach || ObjectMonitor::Knob_ExitRelease) {
     // Sanity check even though JNI DetachCurrentThread() would have
     // returned JNI_ERR if there was a Java frame. JavaThread exit
     // should be done executing Java code by the time we get here.
