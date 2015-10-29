@@ -35,6 +35,31 @@ ifeq (,$(_MAKEBASE_GMK))
 endif
 
 ################################################################################
+# Create exported symbols file for static libraries
+################################################################################
+
+# get the exported symbols from mapfiles and if there
+# is no mapfile, get them from the archive
+define GetSymbols
+  $(RM) $$(@D)/$$(basename $$(@F)).symbols; \
+  if [ ! -z $$($1_MAPFILE) -a -e $$($1_MAPFILE) ]; then \
+    $(ECHO) "Getting symbols from mapfile $$($1_MAPFILE)"; \
+    $(AWK) '/global:/','/local:/' $$($1_MAPFILE) | \
+        $(SED) -e 's/#.*//;s/global://;s/local://;s/\;//;s/^[ 	]*/_/;/^_$$$$/d' | \
+        $(EGREP) -v "JNI_OnLoad|JNI_OnUnload|Agent_OnLoad|Agent_OnUnload|Agent_OnAttach" > \
+        $$(@D)/$$(basename $$(@F)).symbols || true; \
+    $(NM) $$($1_TARGET) | $(GREP)  " T " | \
+        $(EGREP) "JNI_OnLoad|JNI_OnUnload|Agent_OnLoad|Agent_OnUnload|Agent_OnAttach" | \
+        $(CUT) -d ' ' -f 3 >>  $$(@D)/$$(basename $$(@F)).symbols || true;\
+  else \
+    $(ECHO) "Getting symbols from nm"; \
+    $(NM) -m $$($1_TARGET) | $(GREP)  "__TEXT" | \
+        $(EGREP) -v "non-external|private extern|__TEXT,__eh_frame" | \
+        $(SED) -e  's/.* //' > $$(@D)/$$(basename $$(@F)).symbols; \
+  fi
+endef
+
+################################################################################
 # Define a native toolchain configuration that can be used by
 # SetupNativeCompilation calls
 #
@@ -275,6 +300,15 @@ endef
 SetupNativeCompilation = $(NamedParamsMacroTemplate)
 define SetupNativeCompilationBody
 
+  # If we're doing a static build and producing a library
+  # force it to be a static library and remove the -l libraries
+  ifeq ($(STATIC_BUILD), true)
+    ifneq ($$($1_LIBRARY),)
+      $1_STATIC_LIBRARY := $$($1_LIBRARY)
+      $1_LIBRARY :=
+    endif
+  endif
+
   ifneq (,$$($1_BIN))
     $$(error BIN has been replaced with OBJECT_DIR)
   endif
@@ -494,6 +528,12 @@ define SetupNativeCompilationBody
   ifneq (,$$($1_REORDER))
     $1_EXTRA_CFLAGS += $$(C_FLAG_REORDER)
     $1_EXTRA_CXXFLAGS += $$(CXX_FLAG_REORDER)
+  endif
+
+  # Pass the library name for static JNI library naming
+  ifneq ($$($1_STATIC_LIBRARY),)
+    $1_EXTRA_CFLAGS += -DLIBRARY_NAME=$$($1_STATIC_LIBRARY)
+    $1_EXTRA_CXXFLAGS += -DLIBRARY_NAME=$$($1_STATIC_LIBRARY)
   endif
 
   # Pick up disabled warnings, if possible on this platform.
@@ -726,7 +766,10 @@ define SetupNativeCompilationBody
 	$(ECHO) $(LOG_INFO) "Archiving $$($1_STATIC_LIBRARY)"
 	$(call LogFailures, $$($1_OBJECT_DIR)/$$($1_SAFE_NAME)_link.log, $$($1_SAFE_NAME)_link, \
 	    $$($1_AR) $$($1_ARFLAGS) $(AR_OUT_OPTION)$$($1_TARGET) $$($1_EXPECTED_OBJS) \
-	        $$($1_RES) $$($1_LDFLAGS_SUFFIX) $$($1_EXTRA_LDFLAGS_SUFFIX))
+	        $$($1_RES))
+        ifeq ($(STATIC_BUILD), true)
+	  $(GetSymbols)
+        endif
   endif
 
   ifneq (,$$($1_PROGRAM))
