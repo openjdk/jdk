@@ -36,7 +36,7 @@ import jdk.testlibrary.Platform;
  * @test
  * @bug 8042397
  * @summary Unit test for jmap utility test heap configuration reader
- * @library /../../test/lib/share/classes
+ * @library /test/lib/share/classes
  * @library /lib/testlibrary
  * @modules java.management
  * @build jdk.testlibrary.*
