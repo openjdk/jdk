@@ -47,7 +47,7 @@
     cflags(DumpReplay,              bool, false, DumpReplay) \
     cflags(DumpInline,              bool, false, DumpInline) \
     cflags(CompilerDirectivesIgnoreCompileCommands, bool, CompilerDirectivesIgnoreCompileCommands, X) \
-    cflags(DisableIntrinsic,        ccstr, DisableIntrinsic, DisableIntrinsic)
+    cflags(DisableIntrinsic,        ccstrlist, DisableIntrinsic, DisableIntrinsic)
 
 #ifdef COMPILER1
   #define compilerdirectives_c1_flags(cflags)
@@ -100,6 +100,8 @@ private:
   InlineMatcher* _inlinematchers;
   CompilerDirectives* _directive;
 
+  static ccstrlist canonicalize_disableintrinsic(ccstrlist option_value);
+
 public:
   DirectiveSet(CompilerDirectives* directive);
   ~DirectiveSet();
@@ -141,6 +143,7 @@ public:
   void print_bool(outputStream* st, ccstr n, bool v, bool mod) { if (mod) { st->print("%s:%s ", n, v ? "true" : "false"); } }
   void print_double(outputStream* st, ccstr n, double v, bool mod) { if (mod) { st->print("%s:%f ", n, v); } }
   void print_ccstr(outputStream* st, ccstr n, ccstr v, bool mod) { if (mod) { st->print("%s:%s ", n, v); } }
+  void print_ccstrlist(outputStream* st, ccstr n, ccstr v, bool mod) { print_ccstr(st, n, v, mod); }
 
 void print(outputStream* st) {
     print_inline(st);

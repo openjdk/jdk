@@ -175,12 +175,38 @@ DirectiveSet* CompilerDirectives::get_for(AbstractCompiler *comp) {
   return NULL;
 }
 
+// In the list of disabled intrinsics, the ID of the disabled intrinsics can separated:
+// - by ',' (if -XX:DisableIntrinsic is used once when invoking the VM) or
+// - by '\n' (if -XX:DisableIntrinsic is used multiple times when invoking the VM) or
+// - by ' ' (if DisableIntrinsic is used on a per-method level, e.g., with CompileCommand).
+//
+// To simplify the processing of the list, the canonicalize_disableintrinsic() method
+// returns a new copy of the list in which '\n' and ' ' is replaced with ','.
+ccstrlist DirectiveSet::canonicalize_disableintrinsic(ccstrlist option_value) {
+  char* canonicalized_list = NEW_C_HEAP_ARRAY(char, strlen(option_value) + 1, mtCompiler);
+  int i = 0;
+  char current;
+  while ((current = option_value[i]) != '\0') {
+    if (current == '\n' || current == ' ') {
+      canonicalized_list[i] = ',';
+    } else {
+      canonicalized_list[i] = current;
+    }
+    i++;
+  }
+  canonicalized_list[i] = '\0';
+  return canonicalized_list;
+}
+
 DirectiveSet::DirectiveSet(CompilerDirectives* d) :_inlinematchers(NULL), _directive(d) {
 #define init_defaults_definition(name, type, dvalue, compiler) this->name##Option = dvalue;
   compilerdirectives_common_flags(init_defaults_definition)
   compilerdirectives_c2_flags(init_defaults_definition)
   compilerdirectives_c1_flags(init_defaults_definition)
   memset(_modified, 0, sizeof _modified);
+
+  // Canonicalize DisableIntrinsic to contain only ',' as a separator.
+  this->DisableIntrinsicOption = canonicalize_disableintrinsic(DisableIntrinsic);
 }
 
 DirectiveSet::~DirectiveSet() {
@@ -192,12 +218,11 @@ DirectiveSet::~DirectiveSet() {
     tmp = next;
   }
 
-  // Free if modified, otherwise it just points to the global vm flag value
-  // or to the Compile command option
-  if (_modified[DisableIntrinsicIndex]) {
-    assert(this->DisableIntrinsicOption != NULL, "");
-    FREE_C_HEAP_ARRAY(char, (void *)this->DisableIntrinsicOption);
-  }
+  // When constructed, DirectiveSet canonicalizes the DisableIntrinsic flag
+  // into a new string. Therefore, that string is deallocated when
+  // the DirectiveSet is destroyed.
+  assert(this->DisableIntrinsicOption != NULL, "");
+  FREE_C_HEAP_ARRAY(char, (void *)this->DisableIntrinsicOption);
 }
 
 // Backward compatibility for CompileCommands
@@ -252,6 +277,14 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(methodHandle metho
     compilerdirectives_common_flags(init_default_cc)
     compilerdirectives_c2_flags(init_default_cc)
     compilerdirectives_c1_flags(init_default_cc)
+
+    // Canonicalize DisableIntrinsic to contain only ',' as a separator.
+    ccstrlist option_value;
+    if (!_modified[DisableIntrinsicIndex] &&
+        CompilerOracle::has_option_value(method, "DisableIntrinsic", option_value)) {
+      set->DisableIntrinsicOption = canonicalize_disableintrinsic(option_value);
+    }
+
 
     if (!changed) {
       // We didn't actually update anything, discard.
@@ -352,8 +385,26 @@ bool DirectiveSet::is_intrinsic_disabled(methodHandle method) {
   vmIntrinsics::ID id = method->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 
-  ccstr disable_intr =  DisableIntrinsicOption;
-  return ((disable_intr != '\0') && strstr(disable_intr, vmIntrinsics::name_at(id)) != NULL);
+  ResourceMark rm;
+
+  // Create a copy of the string that contains the list of disabled
+  // intrinsics. The copy is created because the string
+  // will be modified by strtok(). Then, the list is tokenized with
+  // ',' as a separator.
+  size_t length = strlen(DisableIntrinsicOption);
+  char* local_list = NEW_RESOURCE_ARRAY(char, length + 1);
+  strncpy(local_list, DisableIntrinsicOption, length + 1);
+
+  char* token = strtok(local_list, ",");
+  while (token != NULL) {
+    if (strcmp(token, vmIntrinsics::name_at(id)) == 0) {
+      return true;
+    } else {
+      token = strtok(NULL, ",");
+    }
+  }
+
+  return false;
 }
 
 DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
@@ -371,15 +422,13 @@ DirectiveSet* DirectiveSet::clone(DirectiveSet const* src) {
     compilerdirectives_c2_flags(copy_members_definition)
     compilerdirectives_c1_flags(copy_members_definition)
 
-  // Must duplicate ccstr option if it was modified, otherwise it is global.
-  if (src->_modified[DisableIntrinsicIndex]) {
-    assert(src->DisableIntrinsicOption != NULL, "");
-    size_t len = strlen(src->DisableIntrinsicOption) + 1;
-    char* s = NEW_C_HEAP_ARRAY(char, len, mtCompiler);
-    strncpy(s, src->DisableIntrinsicOption, len);
-    assert(s[len-1] == '\0', "");
-    set->DisableIntrinsicOption = s;
-  }
+  // Create a local copy of the DisableIntrinsicOption.
+  assert(src->DisableIntrinsicOption != NULL, "");
+  size_t len = strlen(src->DisableIntrinsicOption) + 1;
+  char* s = NEW_C_HEAP_ARRAY(char, len, mtCompiler);
+  strncpy(s, src->DisableIntrinsicOption, len);
+  assert(s[len-1] == '\0', "");
+  set->DisableIntrinsicOption = s;
   return set;
 }
 

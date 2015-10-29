@@ -288,7 +288,7 @@ bool DirectivesParser::set_option_flag(JSON_TYPE t, JSON_VAL* v, const key* opti
       break;
 
     case JSON_STRING:
-      if (option_key->flag_type != ccstrFlag) {
+      if (option_key->flag_type != ccstrFlag && option_key->flag_type != ccstrlistFlag) {
         error(VALUE_ERROR, "Cannot use string value for a %s flag", flag_type_names[option_key->flag_type]);
         return false;
       } else {
