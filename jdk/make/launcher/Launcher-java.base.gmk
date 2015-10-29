@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ BUILD_JSPAWNHELPER_SRC := $(JDK_TOPDIR)/src/java.base/unix/native/jspawnhelper
 JSPAWNHELPER_CFLAGS := -I$(JDK_TOPDIR)/src/java.base/unix/native/libjava
 BUILD_JSPAWNHELPER_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base$(OPENJDK_TARGET_CPU_LIBDIR)
 LINK_JSPAWNHELPER_OBJECTS := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava/childproc.o
-LINK_JSPAWNHELPER_FLAGS :=
+BUILD_JSPAWNHELPER_LDFLAGS :=
 
 ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx solaris aix), )
   BUILD_JSPAWNHELPER := 1
@@ -136,7 +136,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 endif
 
 ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
-  LINK_JSPAWNHELPER_FLAGS += $(COMPILER_TARGET_BITS_FLAG)64
+  BUILD_JSPAWNHELPER_LDFLAGS += $(COMPILER_TARGET_BITS_FLAG)64
 endif
 
 ifeq ($(BUILD_JSPAWNHELPER), 1)
@@ -145,8 +145,8 @@ ifeq ($(BUILD_JSPAWNHELPER), 1)
       INCLUDE_FILES := jspawnhelper.c, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKEXE) $(JSPAWNHELPER_CFLAGS), \
-      LDFLAGS := $(LDFLAGS_JDKEXE) $(LINK_JSPAWNHELPER_FLAGS), \
-      LDFLAGS_SUFFIX := $(LINK_JSPAWNHELPER_OBJECTS), \
+      LDFLAGS := $(LDFLAGS_JDKEXE) $(BUILD_JSPAWNHELPER_LDFLAGS), \
+      LIBS := $(LINK_JSPAWNHELPER_OBJECTS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jspawnhelper, \
       OUTPUT_DIR := $(BUILD_JSPAWNHELPER_DST_DIR), \
       PROGRAM := jspawnhelper))
