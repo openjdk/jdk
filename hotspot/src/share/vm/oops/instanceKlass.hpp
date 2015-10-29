@@ -414,7 +414,7 @@ class InstanceKlass: public Klass {
   };
 
   // method override check
-  bool is_override(methodHandle super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS);
+  bool is_override(const methodHandle& super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS);
 
   // package
   bool is_same_class_package(Klass* class2);
@@ -780,7 +780,7 @@ public:
 
   // jmethodID support
   static jmethodID get_jmethod_id(instanceKlassHandle ik_h,
-                     methodHandle method_h);
+                     const methodHandle& method_h);
   static jmethodID get_jmethod_id_fetch_or_update(instanceKlassHandle ik_h,
                      size_t idnum, jmethodID new_id, jmethodID* new_jmeths,
                      jmethodID* to_dealloc_id_p,
@@ -827,7 +827,7 @@ public:
   // OopMapCache support
   OopMapCache* oop_map_cache()               { return _oop_map_cache; }
   void set_oop_map_cache(OopMapCache *cache) { _oop_map_cache = cache; }
-  void mask_for(methodHandle method, int bci, InterpreterOopMap* entry);
+  void mask_for(const methodHandle& method, int bci, InterpreterOopMap* entry);
 
   // JNI identifier support (for static fields - for jni performance)
   JNIid* jni_ids()                               { return _jni_ids; }
@@ -837,7 +837,7 @@ public:
   // maintenance of deoptimization dependencies
   int mark_dependent_nmethods(DepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
-  void remove_dependent_nmethod(nmethod* nm);
+  void remove_dependent_nmethod(nmethod* nm, bool delete_immediately);
 
   // On-stack replacement support
   nmethod* osr_nmethods_head() const         { return _osr_nmethods_head; };
@@ -862,7 +862,7 @@ public:
 
 #ifdef ASSERT
   // check whether this class or one of its superclasses was redefined
-  bool has_redefined_this_or_super() const;
+  bool has_redefined_this_or_super();
 #endif
 
   // Access to the implementor of an interface.
@@ -908,7 +908,9 @@ public:
   bool compute_is_subtype_of(Klass* k);
   bool can_be_primary_super_slow() const;
   int oop_size(oop obj)  const             { return size_helper(); }
-  bool oop_is_instance_slow() const        { return true; }
+  // slow because it's a virtual call and used for verifying the layout_helper.
+  // Using the layout_helper bits, we can call is_instance_klass without a virtual call.
+  DEBUG_ONLY(bool is_instance_klass_slow() const      { return true; })
 
   // Iterators
   void do_local_static_fields(FieldClosure* cl);
@@ -922,7 +924,8 @@ public:
 
   // Casting from Klass*
   static InstanceKlass* cast(Klass* k) {
-    assert(k == NULL || k->oop_is_instance(), "cast to InstanceKlass");
+    assert(k != NULL, "k should not be null");
+    assert(k->is_instance_klass(), "cast to InstanceKlass");
     return static_cast<InstanceKlass*>(k);
   }
 
@@ -1021,6 +1024,7 @@ public:
   void adjust_default_methods(InstanceKlass* holder, bool* trace_name_printed);
 #endif // INCLUDE_JVMTI
 
+  void clean_weak_instanceklass_links(BoolObjectClosure* is_alive);
   void clean_implementors_list(BoolObjectClosure* is_alive);
   void clean_method_data(BoolObjectClosure* is_alive);
   void clean_dependent_nmethods();
@@ -1349,6 +1353,7 @@ class nmethodBucket: public CHeapObj<mtClass> {
 
   static int mark_dependent_nmethods(nmethodBucket* deps, DepChange& changes);
   static nmethodBucket* add_dependent_nmethod(nmethodBucket* deps, nmethod* nm);
+  static bool remove_dependent_nmethod(nmethodBucket** deps, nmethod* nm, bool delete_immediately);
   static bool remove_dependent_nmethod(nmethodBucket* deps, nmethod* nm);
   static nmethodBucket* clean_dependent_nmethods(nmethodBucket* deps);
 #ifndef PRODUCT

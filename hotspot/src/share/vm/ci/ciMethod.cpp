@@ -745,7 +745,7 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
 #ifndef PRODUCT
   if (TraceDependencies && target() != NULL && target() != root_m->get_Method()) {
     tty->print("found a non-root unique target method");
-    tty->print_cr("  context = %s", InstanceKlass::cast(actual_recv->get_Klass())->external_name());
+    tty->print_cr("  context = %s", actual_recv->get_Klass()->external_name());
     tty->print("  method  = ");
     target->print_short_name(tty);
     tty->cr();
@@ -791,7 +791,7 @@ ciMethod* ciMethod::resolve_invoke(ciKlass* caller, ciKlass* exact_receiver, boo
    methodHandle m;
    // Only do exact lookup if receiver klass has been linked.  Otherwise,
    // the vtable has not been setup, and the LinkResolver will fail.
-   if (h_recv->oop_is_array()
+   if (h_recv->is_array_klass()
         ||
        InstanceKlass::cast(h_recv())->is_linked() && !exact_receiver->is_interface()) {
      if (holder()->is_interface()) {

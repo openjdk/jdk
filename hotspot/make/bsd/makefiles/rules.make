@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,11 @@ AS.S            = $(AS) $(ASFLAGS)
 COMPILE.CC       = $(CC_COMPILE) -c
 GENASM.CC        = $(CC_COMPILE) -S
 LINK.CC          = $(CC) $(LFLAGS) $(AOUT_FLAGS) $(PROF_AOUT_FLAGS)
+ifeq ($(STATIC_BUILD),true)
+LINK_LIB.CC      = $(AR) $(ARFLAGS)
+else
 LINK_LIB.CC      = $(CC) $(LFLAGS) $(SHARED_FLAG)
+endif
 PREPROCESS.CC    = $(CC_COMPILE) -E
 
 COMPILE.CXX      = $(CXX_COMPILE) -c

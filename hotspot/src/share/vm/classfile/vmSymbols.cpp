@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,7 +417,7 @@ int vmIntrinsics::predicates_needed(vmIntrinsics::ID id) {
   }
 }
 
-bool vmIntrinsics::is_disabled_by_flags(methodHandle method, methodHandle compilation_context) {
+bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method, const methodHandle& compilation_context) {
   vmIntrinsics::ID id = method->intrinsic_id();
   assert(id != vmIntrinsics::_none, "must be a VM intrinsic");
 

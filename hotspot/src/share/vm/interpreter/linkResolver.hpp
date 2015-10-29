@@ -136,7 +136,7 @@ class LinkInfo : public StackObj {
   KlassHandle _current_klass;   // class that owns the constant pool
   bool        _check_access;
  public:
-  LinkInfo(constantPoolHandle pool, int index, TRAPS);
+  LinkInfo(const constantPoolHandle& pool, int index, TRAPS);
   // Condensed information from other call sites within the vm.
   LinkInfo(KlassHandle resolved_klass, Symbol* name, Symbol* signature,
            KlassHandle current_klass, bool check_access = true) :
@@ -226,17 +226,17 @@ class LinkResolver: AllStatic {
 
   // runtime resolving from constant pool
   static void resolve_invokestatic   (CallInfo& result,
-                                      constantPoolHandle pool, int index, TRAPS);
+                                      const constantPoolHandle& pool, int index, TRAPS);
   static void resolve_invokespecial  (CallInfo& result,
-                                      constantPoolHandle pool, int index, TRAPS);
+                                      const constantPoolHandle& pool, int index, TRAPS);
   static void resolve_invokevirtual  (CallInfo& result, Handle recv,
-                                      constantPoolHandle pool, int index, TRAPS);
+                                      const constantPoolHandle& pool, int index, TRAPS);
   static void resolve_invokeinterface(CallInfo& result, Handle recv,
-                                      constantPoolHandle pool, int index, TRAPS);
+                                      const constantPoolHandle& pool, int index, TRAPS);
   static void resolve_invokedynamic  (CallInfo& result,
-                                      constantPoolHandle pool, int index, TRAPS);
+                                      const constantPoolHandle& pool, int index, TRAPS);
   static void resolve_invokehandle   (CallInfo& result,
-                                      constantPoolHandle pool, int index, TRAPS);
+                                      const constantPoolHandle& pool, int index, TRAPS);
  public:
   // constant pool resolving
   static void check_klass_accessability(KlassHandle ref_klass, KlassHandle sel_klass, TRAPS);
@@ -244,11 +244,11 @@ class LinkResolver: AllStatic {
   // static resolving calls (will not run any Java code);
   // used only from Bytecode_invoke::static_target
   static methodHandle resolve_method_statically(Bytecodes::Code code,
-                                                constantPoolHandle pool,
+                                                const constantPoolHandle& pool,
                                                 int index, TRAPS);
 
   static void resolve_field_access(fieldDescriptor& result,
-                                   constantPoolHandle pool,
+                                   const constantPoolHandle& pool,
                                    int index, Bytecodes::Code byte, TRAPS);
   static void resolve_field(fieldDescriptor& result, const LinkInfo& link_info,
                             Bytecodes::Code access_kind,
@@ -293,7 +293,7 @@ class LinkResolver: AllStatic {
 
   // runtime resolving from constant pool
   static void resolve_invoke(CallInfo& result, Handle recv,
-                             constantPoolHandle pool, int index,
+                             const constantPoolHandle& pool, int index,
                              Bytecodes::Code byte, TRAPS);
  private:
   static void trace_method_resolution(const char* prefix, KlassHandle klass,

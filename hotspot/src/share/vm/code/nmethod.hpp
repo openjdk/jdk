@@ -307,7 +307,7 @@ class nmethod : public CodeBlob {
 
  public:
   // create nmethod with entry_bci
-  static nmethod* new_nmethod(methodHandle method,
+  static nmethod* new_nmethod(const methodHandle& method,
                               int compile_id,
                               int entry_bci,
                               CodeOffsets* offsets,
@@ -327,7 +327,7 @@ class nmethod : public CodeBlob {
 #endif
                              );
 
-  static nmethod* new_native_nmethod(methodHandle method,
+  static nmethod* new_native_nmethod(const methodHandle& method,
                                      int compile_id,
                                      CodeBuffer *code_buffer,
                                      int vep_offset,

@@ -313,7 +313,7 @@ static void add_predicate(OracleCommand command, BasicMatcher* bm) {
 }
 
 template<typename T>
-bool CompilerOracle::has_option_value(methodHandle method, const char* option, T& value) {
+bool CompilerOracle::has_option_value(const methodHandle& method, const char* option, T& value) {
   if (option_list != NULL) {
     TypedMethodOptionMatcher* m = option_list->match(method, option, get_type_for<T>());
     if (m != NULL) {
@@ -325,19 +325,19 @@ bool CompilerOracle::has_option_value(methodHandle method, const char* option, T
 }
 
 // Explicit instantiation for all OptionTypes supported.
-template bool CompilerOracle::has_option_value<intx>(methodHandle method, const char* option, intx& value);
-template bool CompilerOracle::has_option_value<uintx>(methodHandle method, const char* option, uintx& value);
-template bool CompilerOracle::has_option_value<bool>(methodHandle method, const char* option, bool& value);
-template bool CompilerOracle::has_option_value<ccstr>(methodHandle method, const char* option, ccstr& value);
-template bool CompilerOracle::has_option_value<double>(methodHandle method, const char* option, double& value);
+template bool CompilerOracle::has_option_value<intx>(const methodHandle& method, const char* option, intx& value);
+template bool CompilerOracle::has_option_value<uintx>(const methodHandle& method, const char* option, uintx& value);
+template bool CompilerOracle::has_option_value<bool>(const methodHandle& method, const char* option, bool& value);
+template bool CompilerOracle::has_option_value<ccstr>(const methodHandle& method, const char* option, ccstr& value);
+template bool CompilerOracle::has_option_value<double>(const methodHandle& method, const char* option, double& value);
 
-bool CompilerOracle::has_option_string(methodHandle method, const char* option) {
+bool CompilerOracle::has_option_string(const methodHandle& method, const char* option) {
   bool value = false;
   has_option_value(method, option, value);
   return value;
 }
 
-bool CompilerOracle::should_exclude(methodHandle method, bool& quietly) {
+bool CompilerOracle::should_exclude(const methodHandle& method, bool& quietly) {
   quietly = true;
   if (lists[ExcludeCommand] != NULL) {
     if (lists[ExcludeCommand]->match(method)) {
@@ -352,17 +352,17 @@ bool CompilerOracle::should_exclude(methodHandle method, bool& quietly) {
   return false;
 }
 
-bool CompilerOracle::should_inline(methodHandle method) {
+bool CompilerOracle::should_inline(const methodHandle& method) {
   return (check_predicate(InlineCommand, method));
 }
 
 // Check both DontInlineCommand and ExcludeCommand here
 // - consistent behavior for all compilers
-bool CompilerOracle::should_not_inline(methodHandle method) {
+bool CompilerOracle::should_not_inline(const methodHandle& method) {
   return check_predicate(DontInlineCommand, method) || check_predicate(ExcludeCommand, method);
 }
 
-bool CompilerOracle::should_print(methodHandle method) {
+bool CompilerOracle::should_print(const methodHandle& method) {
   return check_predicate(PrintCommand, method);
 }
 
@@ -370,13 +370,13 @@ bool CompilerOracle::should_print_methods() {
   return lists[PrintCommand] != NULL;
 }
 
-bool CompilerOracle::should_log(methodHandle method) {
+bool CompilerOracle::should_log(const methodHandle& method) {
   if (!LogCompilation)            return false;
   if (lists[LogCommand] == NULL)  return true;  // by default, log all
   return (check_predicate(LogCommand, method));
 }
 
-bool CompilerOracle::should_break_at(methodHandle method) {
+bool CompilerOracle::should_break_at(const methodHandle& method) {
   return check_predicate(BreakCommand, method);
 }
 
@@ -756,7 +756,7 @@ void CompilerOracle::append_comment_to_file(const char* message) {
   stream.cr();
 }
 
-void CompilerOracle::append_exclude_to_file(methodHandle method) {
+void CompilerOracle::append_exclude_to_file(const methodHandle& method) {
   assert(has_command_file(), "command file must be specified");
   fileStream stream(fopen(cc_file(), "at"));
   stream.print("exclude ");

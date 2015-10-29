@@ -1192,7 +1192,7 @@ address SignatureHandlerLibrary::set_handler(CodeBuffer* buffer) {
   return handler;
 }
 
-void SignatureHandlerLibrary::add(methodHandle method) {
+void SignatureHandlerLibrary::add(const methodHandle& method) {
   if (method->signature_handler() == NULL) {
     // use slow signature handler if we can't do better
     int handler_index = -1;

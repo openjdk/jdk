@@ -373,8 +373,8 @@ protected:
 #endif
 
   // vtables
-  virtual klassVtable* vtable() const        { return NULL; }
-  virtual int vtable_length() const          { return 0; }
+  virtual klassVtable* vtable() const = 0;
+  virtual int vtable_length() const = 0;
 
   // subclass check
   bool is_subclass_of(const Klass* k) const;
@@ -474,11 +474,13 @@ protected:
   virtual const char* signature_name() const;
 
   // type testing operations
+#ifdef ASSERT
  protected:
-  virtual bool oop_is_instance_slow()       const { return false; }
-  virtual bool oop_is_array_slow()          const { return false; }
-  virtual bool oop_is_objArray_slow()       const { return false; }
-  virtual bool oop_is_typeArray_slow()      const { return false; }
+  virtual bool is_instance_klass_slow()     const { return false; }
+  virtual bool is_array_klass_slow()        const { return false; }
+  virtual bool is_objArray_klass_slow()     const { return false; }
+  virtual bool is_typeArray_klass_slow()    const { return false; }
+#endif // ASSERT
  public:
 
   // Fast non-virtual versions
@@ -492,18 +494,18 @@ protected:
   }
  public:
   #endif
-  inline  bool oop_is_instance()            const { return assert_same_query(
-                                                    layout_helper_is_instance(layout_helper()),
-                                                    oop_is_instance_slow()); }
-  inline  bool oop_is_array()               const { return assert_same_query(
+  inline  bool is_instance_klass()            const { return assert_same_query(
+                                                      layout_helper_is_instance(layout_helper()),
+                                                      is_instance_klass_slow()); }
+  inline  bool is_array_klass()               const { return assert_same_query(
                                                     layout_helper_is_array(layout_helper()),
-                                                    oop_is_array_slow()); }
-  inline  bool oop_is_objArray()            const { return assert_same_query(
+                                                    is_array_klass_slow()); }
+  inline  bool is_objArray_klass()            const { return assert_same_query(
                                                     layout_helper_is_objArray(layout_helper()),
-                                                    oop_is_objArray_slow()); }
-  inline  bool oop_is_typeArray()           const { return assert_same_query(
+                                                    is_objArray_klass_slow()); }
+  inline  bool is_typeArray_klass()           const { return assert_same_query(
                                                     layout_helper_is_typeArray(layout_helper()),
-                                                    oop_is_typeArray_slow()); }
+                                                    is_typeArray_klass_slow()); }
   #undef assert_same_query
 
   // Access flags

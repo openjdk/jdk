@@ -66,7 +66,7 @@ void MetaspaceObj::print_address_on(outputStream* st) const {
 }
 
 void* ResourceObj::operator new(size_t size, allocation_type type, MEMFLAGS flags) throw() {
-  address res;
+  address res = NULL;
   switch (type) {
    case C_HEAP:
     res = (address)AllocateHeap(size, flags, CALLER_PC);
@@ -88,8 +88,8 @@ void* ResourceObj::operator new [](size_t size, allocation_type type, MEMFLAGS f
 
 void* ResourceObj::operator new(size_t size, const std::nothrow_t&  nothrow_constant,
     allocation_type type, MEMFLAGS flags) throw() {
-  //should only call this with std::nothrow, use other operator new() otherwise
-  address res;
+  // should only call this with std::nothrow, use other operator new() otherwise
+  address res = NULL;
   switch (type) {
    case C_HEAP:
     res = (address)AllocateHeap(size, flags, CALLER_PC, AllocFailStrategy::RETURN_NULL);

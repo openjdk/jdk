@@ -365,11 +365,11 @@ bool ciEnv::check_klass_accessibility(ciKlass* accessing_klass,
     return true;
   }
 
-  if (resolved_klass->oop_is_objArray()) {
+  if (resolved_klass->is_objArray_klass()) {
     // Find the element klass, if this is an array.
     resolved_klass = ObjArrayKlass::cast(resolved_klass)->bottom_klass();
   }
-  if (resolved_klass->oop_is_instance()) {
+  if (resolved_klass->is_instance_klass()) {
     return Reflection::verify_class_access(accessing_klass->get_Klass(),
                                            resolved_klass,
                                            true);
@@ -380,7 +380,7 @@ bool ciEnv::check_klass_accessibility(ciKlass* accessing_klass,
 // ------------------------------------------------------------------
 // ciEnv::get_klass_by_name_impl
 ciKlass* ciEnv::get_klass_by_name_impl(ciKlass* accessing_klass,
-                                       constantPoolHandle cpool,
+                                       const constantPoolHandle& cpool,
                                        ciSymbol* name,
                                        bool require_local) {
   ASSERT_IN_VM;
@@ -502,7 +502,7 @@ ciKlass* ciEnv::get_klass_by_name(ciKlass* accessing_klass,
 // ciEnv::get_klass_by_index_impl
 //
 // Implementation of get_klass_by_index.
-ciKlass* ciEnv::get_klass_by_index_impl(constantPoolHandle cpool,
+ciKlass* ciEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
                                         int index,
                                         bool& is_accessible,
                                         ciInstanceKlass* accessor) {
@@ -559,7 +559,7 @@ ciKlass* ciEnv::get_klass_by_index_impl(constantPoolHandle cpool,
 // ciEnv::get_klass_by_index
 //
 // Get a klass from the constant pool.
-ciKlass* ciEnv::get_klass_by_index(constantPoolHandle cpool,
+ciKlass* ciEnv::get_klass_by_index(const constantPoolHandle& cpool,
                                    int index,
                                    bool& is_accessible,
                                    ciInstanceKlass* accessor) {
@@ -570,7 +570,7 @@ ciKlass* ciEnv::get_klass_by_index(constantPoolHandle cpool,
 // ciEnv::get_constant_by_index_impl
 //
 // Implementation of get_constant_by_index().
-ciConstant ciEnv::get_constant_by_index_impl(constantPoolHandle cpool,
+ciConstant ciEnv::get_constant_by_index_impl(const constantPoolHandle& cpool,
                                              int pool_index, int cache_index,
                                              ciInstanceKlass* accessor) {
   bool ignore_will_link;
@@ -656,7 +656,7 @@ ciConstant ciEnv::get_constant_by_index_impl(constantPoolHandle cpool,
 // Pull a constant out of the constant pool.  How appropriate.
 //
 // Implementation note: this query is currently in no way cached.
-ciConstant ciEnv::get_constant_by_index(constantPoolHandle cpool,
+ciConstant ciEnv::get_constant_by_index(const constantPoolHandle& cpool,
                                         int pool_index, int cache_index,
                                         ciInstanceKlass* accessor) {
   GUARDED_VM_ENTRY(return get_constant_by_index_impl(cpool, pool_index, cache_index, accessor);)
@@ -736,7 +736,7 @@ Method* ciEnv::lookup_method(InstanceKlass*  accessor,
 
 // ------------------------------------------------------------------
 // ciEnv::get_method_by_index_impl
-ciMethod* ciEnv::get_method_by_index_impl(constantPoolHandle cpool,
+ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
                                           int index, Bytecodes::Code bc,
                                           ciInstanceKlass* accessor) {
   if (bc == Bytecodes::_invokedynamic) {
@@ -848,7 +848,7 @@ ciInstanceKlass* ciEnv::get_instance_klass_for_declared_method_holder(ciKlass* m
 
 // ------------------------------------------------------------------
 // ciEnv::get_method_by_index
-ciMethod* ciEnv::get_method_by_index(constantPoolHandle cpool,
+ciMethod* ciEnv::get_method_by_index(const constantPoolHandle& cpool,
                                      int index, Bytecodes::Code bc,
                                      ciInstanceKlass* accessor) {
   GUARDED_VM_ENTRY(return get_method_by_index_impl(cpool, index, bc, accessor);)
