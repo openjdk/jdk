@@ -72,49 +72,50 @@ AC_DEFUN_ONCE([FLAGS_SETUP_USER_SUPPLIED_FLAGS],
 # Setup the sysroot flags and add them to global CFLAGS and LDFLAGS so
 # that configure can use them while detecting compilers.
 # TOOLCHAIN_TYPE is available here.
-AC_DEFUN_ONCE([FLAGS_SETUP_SYSROOT_FLAGS],
+# Param 1 - Optional prefix to all variables. (e.g BUILD_)
+AC_DEFUN([FLAGS_SETUP_SYSROOT_FLAGS],
 [
-  if test "x$SYSROOT" != "x"; then
+  if test "x[$]$1SYSROOT" != "x"; then
     if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
       if test "x$OPENJDK_TARGET_OS" = xsolaris; then
         # Solaris Studio does not have a concept of sysroot. Instead we must
         # make sure the default include and lib dirs are appended to each
         # compile and link command line.
-        SYSROOT_CFLAGS="-I$SYSROOT/usr/include"
-        SYSROOT_LDFLAGS="-L$SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
-            -L$SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
-            -L$SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
+        $1SYSROOT_CFLAGS="-I[$]$1SYSROOT/usr/include"
+        $1SYSROOT_LDFLAGS="-L[$]$1SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
+            -L[$]$1SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
+            -L[$]$1SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
       fi
     elif test "x$TOOLCHAIN_TYPE" = xgcc; then
-      SYSROOT_CFLAGS="--sysroot=$SYSROOT"
-      SYSROOT_LDFLAGS="--sysroot=$SYSROOT"
+      $1SYSROOT_CFLAGS="--sysroot=[$]$1SYSROOT"
+      $1SYSROOT_LDFLAGS="--sysroot=[$]$1SYSROOT"
     elif test "x$TOOLCHAIN_TYPE" = xclang; then
-      SYSROOT_CFLAGS="-isysroot $SYSROOT"
-      SYSROOT_LDFLAGS="-isysroot $SYSROOT"
+      $1SYSROOT_CFLAGS="-isysroot [$]$1SYSROOT"
+      $1SYSROOT_LDFLAGS="-isysroot [$]$1SYSROOT"
     fi
     # Propagate the sysroot args to hotspot
-    LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $SYSROOT_CFLAGS"
-    LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $SYSROOT_CFLAGS"
-    LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $SYSROOT_LDFLAGS"
+    $1LEGACY_EXTRA_CFLAGS="[$]$1LEGACY_EXTRA_CFLAGS [$]$1SYSROOT_CFLAGS"
+    $1LEGACY_EXTRA_CXXFLAGS="[$]$1LEGACY_EXTRA_CXXFLAGS [$]$1SYSROOT_CFLAGS"
+    $1LEGACY_EXTRA_LDFLAGS="[$]$1LEGACY_EXTRA_LDFLAGS [$]$1SYSROOT_LDFLAGS"
     # The global CFLAGS and LDFLAGS variables need these for configure to function
-    CFLAGS="$CFLAGS $SYSROOT_CFLAGS"
-    CPPFLAGS="$CPPFLAGS $SYSROOT_CFLAGS"
-    CXXFLAGS="$CXXFLAGS $SYSROOT_CFLAGS"
-    LDFLAGS="$LDFLAGS $SYSROOT_LDFLAGS"
+    $1CFLAGS="[$]$1CFLAGS [$]$1SYSROOT_CFLAGS"
+    $1CPPFLAGS="[$]$1CPPFLAGS [$]$1SYSROOT_CFLAGS"
+    $1CXXFLAGS="[$]$1CXXFLAGS [$]$1SYSROOT_CFLAGS"
+    $1LDFLAGS="[$]$1LDFLAGS [$]$1SYSROOT_LDFLAGS"
   fi
 
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     # We also need -iframework<path>/System/Library/Frameworks
-    SYSROOT_CFLAGS="$SYSROOT_CFLAGS -iframework $SYSROOT/System/Library/Frameworks"
-    SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -iframework $SYSROOT/System/Library/Frameworks"
+    $1SYSROOT_CFLAGS="[$]$1SYSROOT_CFLAGS -iframework [$]$1SYSROOT/System/Library/Frameworks"
+    $1SYSROOT_LDFLAGS="[$]$1SYSROOT_LDFLAGS -iframework [$]$1SYSROOT/System/Library/Frameworks"
     # These always need to be set, or we can't find the frameworks embedded in JavaVM.framework
     # set this here so it doesn't have to be peppered throughout the forest
-    SYSROOT_CFLAGS="$SYSROOT_CFLAGS -F $SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
-    SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -F $SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
+    $1SYSROOT_CFLAGS="[$]$1SYSROOT_CFLAGS -F [$]$1SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
+    $1SYSROOT_LDFLAGS="[$]$1SYSROOT_LDFLAGS -F [$]$1SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
   fi
 
-  AC_SUBST(SYSROOT_CFLAGS)
-  AC_SUBST(SYSROOT_LDFLAGS)
+  AC_SUBST($1SYSROOT_CFLAGS)
+  AC_SUBST($1SYSROOT_LDFLAGS)
 ])
 
 AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
