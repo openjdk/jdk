@@ -4595,7 +4595,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1445964676
+DATE_WHEN_GENERATED=1446128654
 
 ###############################################################################
 #
@@ -46894,7 +46894,7 @@ $as_echo "no" >&6; }
 
 
   if test "x$NEEDS_LIB_X11" = xfalse; then
-    if test "x${with_x}" != x; then
+    if (test "x${with_x}" != x && test "x${with_x}" != xno); then
       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: X11 is not used, so --with-x is ignored" >&5
 $as_echo "$as_me: WARNING: X11 is not used, so --with-x is ignored" >&2;}
     fi
@@ -47790,9 +47790,10 @@ fi
 
 
   if test "x$NEEDS_LIB_CUPS" = xfalse; then
-    if test "x${with_cups}" != x || test "x${with_cups_include}" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: cups not used, so --with-cups is ignored" >&5
-$as_echo "$as_me: WARNING: cups not used, so --with-cups is ignored" >&2;}
+    if (test "x${with_cups}" != x && test "x${with_cups}" != xno) || \
+        (test "x${with_cups_include}" != x && test "x${with_cups_include}" != xno); then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: cups not used, so --with-cups[-*] is ignored" >&5
+$as_echo "$as_me: WARNING: cups not used, so --with-cups[-*] is ignored" >&2;}
     fi
     CUPS_CFLAGS=
   else
@@ -47922,11 +47923,14 @@ fi
   FREETYPE_BUNDLE_LIB_PATH=
 
   if test "x$NEEDS_LIB_FREETYPE" = xfalse; then
-    if test "x$with_freetype" != x || test "x$with_freetype_include" != x || test "x$with_freetype_lib" != x || test "x$with_freetype_src" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: freetype not used, so --with-freetype is ignored" >&5
-$as_echo "$as_me: WARNING: freetype not used, so --with-freetype is ignored" >&2;}
+    if (test "x$with_freetype" != x  && test "x$with_freetype" != xno) || \
+        (test "x$with_freetype_include" != x && test "x$with_freetype_include" != xno) || \
+        (test "x$with_freetype_lib" != x && test "x$with_freetype_lib" != xno) || \
+        (test "x$with_freetype_src" != x && test "x$with_freetype_src" != xno); then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: freetype not used, so --with-freetype[-*] is ignored" >&5
+$as_echo "$as_me: WARNING: freetype not used, so --with-freetype[-*] is ignored" >&2;}
     fi
-    if test "x$enable_freetype_bundling" != x; then
+    if (test "x$enable_freetype_bundling" != x && test "x$enable_freetype_bundling" != xno); then
       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: freetype not used, so --enable-freetype-bundling is ignored" >&5
 $as_echo "$as_me: WARNING: freetype not used, so --enable-freetype-bundling is ignored" >&2;}
     fi
@@ -51926,9 +51930,11 @@ fi
 
 
   if test "x$NEEDS_LIB_ALSA" = xfalse; then
-    if test "x${with_alsa}" != x || test "x${with_alsa_include}" != x || test "x${with_alsa_lib}" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: alsa not used, so --with-alsa is ignored" >&5
-$as_echo "$as_me: WARNING: alsa not used, so --with-alsa is ignored" >&2;}
+    if (test "x${with_alsa}" != x && test "x${with_alsa}" != xno) || \
+        (test "x${with_alsa_include}" != x && test "x${with_alsa_include}" != xno) || \
+        (test "x${with_alsa_lib}" != x && test "x${with_alsa_lib}" != xno); then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: alsa not used, so --with-alsa[-*] is ignored" >&5
+$as_echo "$as_me: WARNING: alsa not used, so --with-alsa[-*] is ignored" >&2;}
     fi
     ALSA_CFLAGS=
     ALSA_LIBS=
@@ -52105,9 +52111,11 @@ fi
 
 
   if test "x$NEEDS_LIB_FFI" = xfalse; then
-    if test "x${with_libffi}" != x || test "x${with_libffi_include}" != x || test "x${with_libffi_lib}" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libffi not used, so --with-libffi is ignored" >&5
-$as_echo "$as_me: WARNING: libffi not used, so --with-libffi is ignored" >&2;}
+    if (test "x${with_libffi}" != x && test "x${with_libffi}" != xno) || \
+        (test "x${with_libffi_include}" != x && test "x${with_libffi_include}" != xno) || \
+        (test "x${with_libffi_lib}" != x && test "x${with_libffi_lib}" != xno); then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libffi not used, so --with-libffi[-*] is ignored" >&5
+$as_echo "$as_me: WARNING: libffi not used, so --with-libffi[-*] is ignored" >&2;}
     fi
     LIBFFI_CFLAGS=
     LIBFFI_LIBS=
