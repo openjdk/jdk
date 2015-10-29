@@ -306,7 +306,7 @@ void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, Me
   }
 }
 
-bool MethodMatcher::matches(methodHandle method) const {
+bool MethodMatcher::matches(const methodHandle& method) const {
   Symbol* class_name  = method->method_holder()->name();
   Symbol* method_name = method->name();
   Symbol* signature = method->signature();

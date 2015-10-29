@@ -541,7 +541,7 @@ class CodeBuffer: public StackObj {
   bool insts_contains2(address pc) const { return _insts.contains2(pc); }
 
   // Record any extra oops required to keep embedded metadata alive
-  void finalize_oop_references(methodHandle method);
+  void finalize_oop_references(const methodHandle& method);
 
   // Allocated size in all sections, when aligned and concatenated
   // (this is the eventual state of the content in its final

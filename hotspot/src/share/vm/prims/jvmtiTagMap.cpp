@@ -588,7 +588,7 @@ class CallbackWrapper : public StackObj {
     _obj_tag = (_entry == NULL) ? 0 : _entry->tag();
 
     // get the class and the class's tag value
-    assert(InstanceKlass::cast(SystemDictionary::Class_klass())->is_mirror_instance_klass(), "Is not?");
+    assert(SystemDictionary::Class_klass()->is_mirror_instance_klass(), "Is not?");
 
     _klass_tag = tag_for(tag_map, _o->klass()->java_mirror());
   }
@@ -1118,7 +1118,7 @@ static jint invoke_primitive_field_callback_for_static_fields
   Klass* klass = java_lang_Class::as_Klass(obj);
 
   // ignore classes for object and type arrays
-  if (!klass->oop_is_instance()) {
+  if (!klass->is_instance_klass()) {
     return 0;
   }
 
@@ -2569,7 +2569,7 @@ class SimpleRootsClosure : public OopClosure {
       // SystemDictionary::always_strong_oops_do reports the application
       // class loader as a root. We want this root to be reported as
       // a root kind of "OTHER" rather than "SYSTEM_CLASS".
-      if (!o->is_instanceMirror()) {
+      if (!o->is_instance() || !InstanceKlass::cast(o->klass())->is_mirror_instance_klass()) {
         kind = JVMTI_HEAP_REFERENCE_OTHER;
       }
     }
@@ -2821,7 +2821,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
   int i;
   Klass* klass = java_lang_Class::as_Klass(java_class);
 
-  if (klass->oop_is_instance()) {
+  if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
 
     // Ignore the class if it hasn't been initialized yet

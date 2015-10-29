@@ -1694,7 +1694,7 @@ class ComputeMoveOrder: public StackObj {
 };
 
 static void verify_oop_args(MacroAssembler* masm,
-                            methodHandle method,
+                            const methodHandle& method,
                             const BasicType* sig_bt,
                             const VMRegPair* regs) {
   Register temp_reg = rbx;  // not part of any compiled calling seq
@@ -1804,7 +1804,7 @@ static void gen_special_dispatch(MacroAssembler* masm,
 //    return to caller
 //
 nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
-                                                methodHandle method,
+                                                const methodHandle& method,
                                                 int compile_id,
                                                 BasicType* in_sig_bt,
                                                 VMRegPair* in_regs,

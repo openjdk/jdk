@@ -114,17 +114,17 @@ static bool find_field(InstanceKlass* ik,
 // Helpful routine for computing field offsets at run time rather than hardcoding them
 static void
 compute_offset(int &dest_offset,
-               Klass* klass_oop, Symbol* name_symbol, Symbol* signature_symbol,
+               Klass* klass, Symbol* name_symbol, Symbol* signature_symbol,
                bool is_static = false, bool allow_super = false) {
   fieldDescriptor fd;
-  InstanceKlass* ik = InstanceKlass::cast(klass_oop);
+  InstanceKlass* ik = InstanceKlass::cast(klass);
   if (!find_field(ik, name_symbol, signature_symbol, &fd, is_static, allow_super)) {
     ResourceMark rm;
     tty->print_cr("Invalid layout of %s at %s", ik->external_name(), name_symbol->as_C_string());
 #ifndef PRODUCT
-    klass_oop->print();
+    ik->print();
     tty->print_cr("all fields:");
-    for (AllFieldStream fs(InstanceKlass::cast(klass_oop)); !fs.done(); fs.next()) {
+    for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
       tty->print_cr("  name: %s, sig: %s, flags: %08x", fs.name()->as_C_string(), fs.signature()->as_C_string(), fs.access_flags().as_int());
     }
 #endif //PRODUCT
@@ -136,10 +136,10 @@ compute_offset(int &dest_offset,
 // Same as above but for "optional" offsets that might not be present in certain JDK versions
 static void
 compute_optional_offset(int& dest_offset,
-                        Klass* klass_oop, Symbol* name_symbol, Symbol* signature_symbol,
+                        Klass* klass, Symbol* name_symbol, Symbol* signature_symbol,
                         bool allow_super = false) {
   fieldDescriptor fd;
-  InstanceKlass* ik = InstanceKlass::cast(klass_oop);
+  InstanceKlass* ik = InstanceKlass::cast(klass);
   if (find_field(ik, name_symbol, signature_symbol, &fd, allow_super)) {
     dest_offset = fd.offset();
   }
@@ -174,7 +174,7 @@ Handle java_lang_String::basic_create(int length, TRAPS) {
   // Create the String object first, so there's a chance that the String
   // and the char array it points to end up in the same cache line.
   oop obj;
-  obj = InstanceKlass::cast(SystemDictionary::String_klass())->allocate_instance(CHECK_NH);
+  obj = SystemDictionary::String_klass()->allocate_instance(CHECK_NH);
 
   // Create the char array.  The String object must be handlized here
   // because GC can happen as a result of the allocation attempt.
@@ -555,7 +555,7 @@ void java_lang_Class::fixup_mirror(KlassHandle k, TRAPS) {
 
   // If the offset was read from the shared archive, it was fixed up already
   if (!k->is_shared()) {
-    if (k->oop_is_instance()) {
+    if (k->is_instance_klass()) {
       // During bootstrap, java.lang.Class wasn't loaded so static field
       // offsets were computed without the size added it.  Go back and
       // update all the static field offsets to included the size.
@@ -613,13 +613,13 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
     java_lang_Class::set_static_oop_field_count(mirror(), mk->compute_static_oop_field_count(mirror()));
 
     // It might also have a component mirror.  This mirror must already exist.
-    if (k->oop_is_array()) {
+    if (k->is_array_klass()) {
       Handle comp_mirror;
-      if (k->oop_is_typeArray()) {
+      if (k->is_typeArray_klass()) {
         BasicType type = TypeArrayKlass::cast(k())->element_type();
         comp_mirror = Universe::java_mirror(type);
       } else {
-        assert(k->oop_is_objArray(), "Must be");
+        assert(k->is_objArray_klass(), "Must be");
         Klass* element_klass = ObjArrayKlass::cast(k())->element_klass();
         assert(element_klass != NULL, "Must have an element klass");
         comp_mirror = element_klass->java_mirror();
@@ -631,7 +631,7 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
       set_component_mirror(mirror(), comp_mirror());
       set_array_klass(comp_mirror(), k());
     } else {
-      assert(k->oop_is_instance(), "Must be");
+      assert(k->is_instance_klass(), "Must be");
 
       initialize_mirror_fields(k, mirror, protection_domain, THREAD);
       if (HAS_PENDING_EXCEPTION) {
@@ -770,7 +770,7 @@ void java_lang_Class::print_signature(oop java_class, outputStream* st) {
     name = vmSymbols::type_signature(primitive_type(java_class));
   } else {
     Klass* k = as_Klass(java_class);
-    is_instance = k->oop_is_instance();
+    is_instance = k->is_instance_klass();
     name = k->name();
   }
   if (name == NULL) {
@@ -793,7 +793,7 @@ Symbol* java_lang_Class::as_signature(oop java_class, bool intern_if_not_found, 
     name->increment_refcount();
   } else {
     Klass* k = as_Klass(java_class);
-    if (!k->oop_is_instance()) {
+    if (!k->is_instance_klass()) {
       name = k->name();
       name->increment_refcount();
     } else {
@@ -829,13 +829,13 @@ const char* java_lang_Class::as_external_name(oop java_class) {
 
 Klass* java_lang_Class::array_klass(oop java_class) {
   Klass* k = ((Klass*)java_class->metadata_field(_array_klass_offset));
-  assert(k == NULL || k->is_klass() && k->oop_is_array(), "should be array klass");
+  assert(k == NULL || k->is_klass() && k->is_array_klass(), "should be array klass");
   return k;
 }
 
 
 void java_lang_Class::set_array_klass(oop java_class, Klass* klass) {
-  assert(klass->is_klass() && klass->oop_is_array(), "should be array klass");
+  assert(klass->is_klass() && klass->is_array_klass(), "should be array klass");
   java_class->metadata_field_put(_array_klass_offset, klass);
 }
 
@@ -1236,7 +1236,7 @@ void java_lang_ThreadGroup::compute_offsets() {
 }
 
 oop java_lang_Throwable::unassigned_stacktrace() {
-  InstanceKlass* ik = InstanceKlass::cast(SystemDictionary::Throwable_klass());
+  InstanceKlass* ik = SystemDictionary::Throwable_klass();
   address addr = ik->static_field_addr(static_unassigned_stacktrace_offset);
   if (UseCompressedOops) {
     return oopDesc::load_decode_heap_oop((narrowOop *)addr);
@@ -1293,7 +1293,7 @@ void java_lang_Throwable::print(oop throwable, outputStream* st) {
   ResourceMark rm;
   Klass* k = throwable->klass();
   assert(k != NULL, "just checking");
-  st->print("%s", InstanceKlass::cast(k)->external_name());
+  st->print("%s", k->external_name());
   oop msg = message(throwable);
   if (msg != NULL) {
     st->print(": %s", java_lang_String::as_utf8_string(msg));
@@ -1305,7 +1305,7 @@ void java_lang_Throwable::print(Handle throwable, outputStream* st) {
   ResourceMark rm;
   Klass* k = throwable->klass();
   assert(k != NULL, "just checking");
-  st->print("%s", InstanceKlass::cast(k)->external_name());
+  st->print("%s", k->external_name());
   oop msg = message(throwable);
   if (msg != NULL) {
     st->print(": %s", java_lang_String::as_utf8_string(msg));
@@ -1561,7 +1561,7 @@ void java_lang_Throwable::print_stack_element(outputStream *st, Handle mirror,
   st->print_cr("%s", buf);
 }
 
-void java_lang_Throwable::print_stack_element(outputStream *st, methodHandle method, int bci) {
+void java_lang_Throwable::print_stack_element(outputStream *st, const methodHandle& method, int bci) {
   Handle mirror = method->method_holder()->java_mirror();
   int method_id = method->orig_method_idnum();
   int version = method->constants()->version();
@@ -1632,7 +1632,7 @@ void java_lang_Throwable::print_stack_trace(oop throwable, outputStream* st) {
   }
 }
 
-void java_lang_Throwable::fill_in_stack_trace(Handle throwable, methodHandle method, TRAPS) {
+void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHandle& method, TRAPS) {
   if (!StackTraceInThrowable) return;
   ResourceMark rm(THREAD);
 
@@ -1763,7 +1763,7 @@ void java_lang_Throwable::fill_in_stack_trace(Handle throwable, methodHandle met
   set_backtrace(throwable(), bt.backtrace());
 }
 
-void java_lang_Throwable::fill_in_stack_trace(Handle throwable, methodHandle method) {
+void java_lang_Throwable::fill_in_stack_trace(Handle throwable, const methodHandle& method) {
   // No-op if stack trace is disabled
   if (!StackTraceInThrowable) {
     return;
@@ -1945,7 +1945,7 @@ oop java_lang_StackTraceElement::create(Handle mirror, int method_id,
   return element();
 }
 
-oop java_lang_StackTraceElement::create(methodHandle method, int bci, TRAPS) {
+oop java_lang_StackTraceElement::create(const methodHandle& method, int bci, TRAPS) {
   Handle mirror (THREAD, method->method_holder()->java_mirror());
   int method_id = method->orig_method_idnum();
   int cpref = method->name_index();
@@ -2506,7 +2506,7 @@ ConstantPool* sun_reflect_ConstantPool::get_cp(oop reflect) {
 
   oop mirror = reflect->obj_field(_oop_offset);
   Klass* k = java_lang_Class::as_Klass(mirror);
-  assert(k->oop_is_instance(), "Must be");
+  assert(k->is_instance_klass(), "Must be");
 
   // Get the constant pool back from the klass.  Since class redefinition
   // merges the new constant pool into the old, this is essentially the
@@ -2663,13 +2663,13 @@ void java_lang_boxing_object::print(BasicType type, jvalue* value, outputStream*
 
 // Support for java_lang_ref_Reference
 HeapWord *java_lang_ref_Reference::pending_list_lock_addr() {
-  InstanceKlass* ik = InstanceKlass::cast(SystemDictionary::Reference_klass());
+  InstanceKlass* ik = SystemDictionary::Reference_klass();
   address addr = ik->static_field_addr(static_lock_offset);
   return (HeapWord*) addr;
 }
 
 oop java_lang_ref_Reference::pending_list_lock() {
-  InstanceKlass* ik = InstanceKlass::cast(SystemDictionary::Reference_klass());
+  InstanceKlass* ik = SystemDictionary::Reference_klass();
   address addr = ik->static_field_addr(static_lock_offset);
   if (UseCompressedOops) {
     return oopDesc::load_decode_heap_oop((narrowOop *)addr);
@@ -2679,7 +2679,7 @@ oop java_lang_ref_Reference::pending_list_lock() {
 }
 
 HeapWord *java_lang_ref_Reference::pending_list_addr() {
-  InstanceKlass* ik = InstanceKlass::cast(SystemDictionary::Reference_klass());
+  InstanceKlass* ik = SystemDictionary::Reference_klass();
   address addr = ik->static_field_addr(static_pending_offset);
   // XXX This might not be HeapWord aligned, almost rather be char *.
   return (HeapWord*)addr;
@@ -2702,13 +2702,13 @@ jlong java_lang_ref_SoftReference::timestamp(oop ref) {
 }
 
 jlong java_lang_ref_SoftReference::clock() {
-  InstanceKlass* ik = InstanceKlass::cast(SystemDictionary::SoftReference_klass());
+  InstanceKlass* ik = SystemDictionary::SoftReference_klass();
   jlong* offset = (jlong*)ik->static_field_addr(static_clock_offset);
   return *offset;
 }
 
 void java_lang_ref_SoftReference::set_clock(jlong value) {
-  InstanceKlass* ik = InstanceKlass::cast(SystemDictionary::SoftReference_klass());
+  InstanceKlass* ik = SystemDictionary::SoftReference_klass();
   jlong* offset = (jlong*)ik->static_field_addr(static_clock_offset);
   *offset = value;
 }
@@ -3033,7 +3033,7 @@ int java_security_AccessControlContext::_isAuthorized_offset = -1;
 void java_security_AccessControlContext::compute_offsets() {
   assert(_isPrivileged_offset == 0, "offsets should be initialized only once");
   fieldDescriptor fd;
-  InstanceKlass* ik = InstanceKlass::cast(SystemDictionary::AccessControlContext_klass());
+  InstanceKlass* ik = SystemDictionary::AccessControlContext_klass();
 
   if (!ik->find_local_field(vmSymbols::context_name(), vmSymbols::protectiondomain_signature(), &fd)) {
     fatal("Invalid layout of java.security.AccessControlContext");
@@ -3066,9 +3066,9 @@ bool java_security_AccessControlContext::is_authorized(Handle context) {
 oop java_security_AccessControlContext::create(objArrayHandle context, bool isPrivileged, Handle privileged_context, TRAPS) {
   assert(_isPrivileged_offset != 0, "offsets should have been initialized");
   // Ensure klass is initialized
-  InstanceKlass::cast(SystemDictionary::AccessControlContext_klass())->initialize(CHECK_0);
+  SystemDictionary::AccessControlContext_klass()->initialize(CHECK_0);
   // Allocate result
-  oop result = InstanceKlass::cast(SystemDictionary::AccessControlContext_klass())->allocate_instance(CHECK_0);
+  oop result = SystemDictionary::AccessControlContext_klass()->allocate_instance(CHECK_0);
   // Fill in values
   result->obj_field_put(_context_offset, context());
   result->obj_field_put(_privilegedContext_offset, privileged_context());
@@ -3190,7 +3190,7 @@ int java_lang_System::err_offset_in_bytes() {
 
 
 bool java_lang_System::has_security_manager() {
-  InstanceKlass* ik = InstanceKlass::cast(SystemDictionary::System_klass());
+  InstanceKlass* ik = SystemDictionary::System_klass();
   address addr = ik->static_field_addr(static_security_offset);
   if (UseCompressedOops) {
     return oopDesc::load_decode_heap_oop((narrowOop *)addr) != NULL;
@@ -3630,8 +3630,8 @@ void JavaClasses::check_offsets() {
 #endif // PRODUCT
 
 int InjectedField::compute_offset() {
-  Klass* klass_oop = klass();
-  for (AllFieldStream fs(InstanceKlass::cast(klass_oop)); !fs.done(); fs.next()) {
+  InstanceKlass* ik = InstanceKlass::cast(klass());
+  for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
     if (!may_be_java && !fs.access_flags().is_internal()) {
       // Only look at injected fields
       continue;
@@ -3641,11 +3641,11 @@ int InjectedField::compute_offset() {
     }
   }
   ResourceMark rm;
-  tty->print_cr("Invalid layout of %s at %s/%s%s", InstanceKlass::cast(klass_oop)->external_name(), name()->as_C_string(), signature()->as_C_string(), may_be_java ? " (may_be_java)" : "");
+  tty->print_cr("Invalid layout of %s at %s/%s%s", ik->external_name(), name()->as_C_string(), signature()->as_C_string(), may_be_java ? " (may_be_java)" : "");
 #ifndef PRODUCT
-  klass_oop->print();
+  ik->print();
   tty->print_cr("all fields:");
-  for (AllFieldStream fs(InstanceKlass::cast(klass_oop)); !fs.done(); fs.next()) {
+  for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
     tty->print_cr("  name: %s, sig: %s, flags: %08x", fs.name()->as_C_string(), fs.signature()->as_C_string(), fs.access_flags().as_int());
   }
 #endif //PRODUCT

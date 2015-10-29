@@ -742,7 +742,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
   // A class could already be verified, since it has been reflected upon.
   this_k->link_class(CHECK);
 
-  DTRACE_CLASSINIT_PROBE(required, InstanceKlass::cast(this_k()), -1);
+  DTRACE_CLASSINIT_PROBE(required, this_k(), -1);
 
   bool wait = false;
 
@@ -765,19 +765,19 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
 
     // Step 3
     if (this_k->is_being_initialized() && this_k->is_reentrant_initialization(self)) {
-      DTRACE_CLASSINIT_PROBE_WAIT(recursive, InstanceKlass::cast(this_k()), -1,wait);
+      DTRACE_CLASSINIT_PROBE_WAIT(recursive, this_k(), -1,wait);
       return;
     }
 
     // Step 4
     if (this_k->is_initialized()) {
-      DTRACE_CLASSINIT_PROBE_WAIT(concurrent, InstanceKlass::cast(this_k()), -1,wait);
+      DTRACE_CLASSINIT_PROBE_WAIT(concurrent, this_k(), -1,wait);
       return;
     }
 
     // Step 5
     if (this_k->is_in_error_state()) {
-      DTRACE_CLASSINIT_PROBE_WAIT(erroneous, InstanceKlass::cast(this_k()), -1,wait);
+      DTRACE_CLASSINIT_PROBE_WAIT(erroneous, this_k(), -1,wait);
       ResourceMark rm(THREAD);
       const char* desc = "Could not initialize class ";
       const char* className = this_k->external_name();
@@ -810,7 +810,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
         this_k->set_initialization_state_and_notify(initialization_error, THREAD); // Locks object, set state, and notify all waiting threads
         CLEAR_PENDING_EXCEPTION;   // ignore any exception thrown, superclass initialization error is thrown below
       }
-      DTRACE_CLASSINIT_PROBE_WAIT(super__failed, InstanceKlass::cast(this_k()), -1,wait);
+      DTRACE_CLASSINIT_PROBE_WAIT(super__failed, this_k(), -1,wait);
       THROW_OOP(e());
     }
   }
@@ -826,7 +826,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
   {
     assert(THREAD->is_Java_thread(), "non-JavaThread in initialize_impl");
     JavaThread* jt = (JavaThread*)THREAD;
-    DTRACE_CLASSINIT_PROBE_WAIT(clinit, InstanceKlass::cast(this_k()), -1,wait);
+    DTRACE_CLASSINIT_PROBE_WAIT(clinit, this_k(), -1,wait);
     // Timer includes any side effects of class initialization (resolution,
     // etc), but not recursive entry into call_class_initializer().
     PerfClassTraceTime timer(ClassLoader::perf_class_init_time(),
@@ -860,7 +860,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
       // JVMTI internal flag reset is needed in order to report ExceptionInInitializerError
       JvmtiExport::clear_detected_exception((JavaThread*)THREAD);
     }
-    DTRACE_CLASSINIT_PROBE_WAIT(error, InstanceKlass::cast(this_k()), -1,wait);
+    DTRACE_CLASSINIT_PROBE_WAIT(error, this_k(), -1,wait);
     if (e->is_a(SystemDictionary::Error_klass())) {
       THROW_OOP(e());
     } else {
@@ -870,7 +870,7 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
                 &args);
     }
   }
-  DTRACE_CLASSINIT_PROBE_WAIT(end, InstanceKlass::cast(this_k()), -1,wait);
+  DTRACE_CLASSINIT_PROBE_WAIT(end, this_k(), -1,wait);
 }
 
 
@@ -907,7 +907,7 @@ void InstanceKlass::add_implementor(Klass* k) {
   // Filter out subclasses whose supers already implement me.
   // (Note: CHA must walk subclasses of direct implementors
   // in order to locate indirect implementors.)
-  Klass* sk = InstanceKlass::cast(k)->super();
+  Klass* sk = k->super();
   if (sk != NULL && InstanceKlass::cast(sk)->implements_interface(this))
     // We only need to check one immediate superclass, since the
     // implements_interface query looks at transitive_interfaces.
@@ -955,8 +955,7 @@ bool InstanceKlass::can_be_primary_super_slow() const {
 
 GrowableArray<Klass*>* InstanceKlass::compute_secondary_supers(int num_extra_slots) {
   // The secondaries are the implemented interfaces.
-  InstanceKlass* ik = InstanceKlass::cast(this);
-  Array<Klass*>* interfaces = ik->transitive_interfaces();
+  Array<Klass*>* interfaces = transitive_interfaces();
   int num_secondaries = num_extra_slots + interfaces->length();
   if (num_secondaries == 0) {
     // Must share this for correct bootstrapping!
@@ -1141,7 +1140,7 @@ void InstanceKlass::call_class_initializer_impl(instanceKlassHandle this_k, TRAP
 }
 
 
-void InstanceKlass::mask_for(methodHandle method, int bci,
+void InstanceKlass::mask_for(const methodHandle& method, int bci,
   InterpreterOopMap* entry_for) {
   // Dirty read, then double-check under a lock.
   if (_oop_map_cache == NULL) {
@@ -1532,7 +1531,7 @@ Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature, O
     if (method != NULL) {
       return method;
     }
-    klass = InstanceKlass::cast(klass)->super();
+    klass = klass->super();
     overpass_local_mode = skip_overpass;   // Always ignore overpass methods in superclasses
   }
   return NULL;
@@ -1541,13 +1540,13 @@ Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature, O
 #ifdef ASSERT
 // search through class hierarchy and return true if this class or
 // one of the superclasses was redefined
-bool InstanceKlass::has_redefined_this_or_super() const {
-  const InstanceKlass* klass = this;
+bool InstanceKlass::has_redefined_this_or_super() {
+  Klass* klass = this;
   while (klass != NULL) {
-    if (klass->has_been_redefined()) {
+    if (InstanceKlass::cast(klass)->has_been_redefined()) {
       return true;
     }
-    klass = InstanceKlass::cast(klass->super());
+    klass = klass->super();
   }
   return false;
 }
@@ -1645,7 +1644,7 @@ void InstanceKlass::set_enclosing_method_indices(u2 class_index,
 // locking has to be done very carefully to avoid deadlocks
 // and/or other cache consistency problems.
 //
-jmethodID InstanceKlass::get_jmethod_id(instanceKlassHandle ik_h, methodHandle method_h) {
+jmethodID InstanceKlass::get_jmethod_id(instanceKlassHandle ik_h, const methodHandle& method_h) {
   size_t idnum = (size_t)method_h->method_idnum();
   jmethodID* jmeths = ik_h->methods_jmethod_ids_acquire();
   size_t length = 0;
@@ -1907,24 +1906,45 @@ nmethodBucket* nmethodBucket::add_dependent_nmethod(nmethodBucket* deps, nmethod
 // Decrement count of the nmethod in the dependency list and remove
 // the bucket completely when the count goes to 0.  This method must
 // find a corresponding bucket otherwise there's a bug in the
-// recording of dependencies. Returns true if the bucket is ready for reclamation.
-//
-bool nmethodBucket::remove_dependent_nmethod(nmethodBucket* deps, nmethod* nm) {
+// recording of dependencies. Returns true if the bucket was deleted,
+// or marked ready for reclaimation.
+bool nmethodBucket::remove_dependent_nmethod(nmethodBucket** deps, nmethod* nm, bool delete_immediately) {
   assert_locked_or_safepoint(CodeCache_lock);
 
-  for (nmethodBucket* b = deps; b != NULL; b = b->next()) {
+  nmethodBucket* first = *deps;
+  nmethodBucket* last = NULL;
+
+  for (nmethodBucket* b = first; b != NULL; b = b->next()) {
     if (nm == b->get_nmethod()) {
       int val = b->decrement();
       guarantee(val >= 0, "Underflow: %d", val);
-      return (val == 0);
+      if (val == 0) {
+        if (delete_immediately) {
+          if (last == NULL) {
+            *deps = b->next();
+          } else {
+            last->set_next(b->next());
+          }
+          delete b;
+        }
+      }
+      return true;
     }
+    last = b;
   }
+
 #ifdef ASSERT
   tty->print_raw_cr("### can't find dependent nmethod");
   nm->print();
 #endif // ASSERT
   ShouldNotReachHere();
   return false;
+}
+
+// Convenience overload, for callers that don't want to delete the nmethodBucket entry.
+bool nmethodBucket::remove_dependent_nmethod(nmethodBucket* deps, nmethod* nm) {
+  nmethodBucket** deps_addr = &deps;
+  return remove_dependent_nmethod(deps_addr, nm, false /* Don't delete */);
 }
 
 //
@@ -2013,10 +2033,10 @@ void InstanceKlass::add_dependent_nmethod(nmethod* nm) {
   _dependencies = nmethodBucket::add_dependent_nmethod(_dependencies, nm);
 }
 
-void InstanceKlass::remove_dependent_nmethod(nmethod* nm) {
+void InstanceKlass::remove_dependent_nmethod(nmethod* nm, bool delete_immediately) {
   assert_locked_or_safepoint(CodeCache_lock);
 
-  if (nmethodBucket::remove_dependent_nmethod(_dependencies, nm)) {
+  if (nmethodBucket::remove_dependent_nmethod(&_dependencies, nm, delete_immediately)) {
     set_has_unloaded_dependent(true);
   }
 }
@@ -2030,6 +2050,13 @@ bool InstanceKlass::is_dependent_nmethod(nmethod* nm) {
   return nmethodBucket::is_dependent_nmethod(_dependencies, nm);
 }
 #endif //PRODUCT
+
+void InstanceKlass::clean_weak_instanceklass_links(BoolObjectClosure* is_alive) {
+  clean_implementors_list(is_alive);
+  clean_method_data(is_alive);
+
+  clean_dependent_nmethods();
+}
 
 void InstanceKlass::clean_implementors_list(BoolObjectClosure* is_alive) {
   assert(class_loader_data()->is_alive(is_alive), "this klass should be live");
@@ -2297,32 +2324,18 @@ const char* InstanceKlass::signature_name() const {
 
 // different verisons of is_same_class_package
 bool InstanceKlass::is_same_class_package(Klass* class2) {
-  Klass* class1 = this;
-  oop classloader1 = InstanceKlass::cast(class1)->class_loader();
-  Symbol* classname1 = class1->name();
-
-  if (class2->oop_is_objArray()) {
+  if (class2->is_objArray_klass()) {
     class2 = ObjArrayKlass::cast(class2)->bottom_klass();
   }
-  oop classloader2;
-  if (class2->oop_is_instance()) {
-    classloader2 = InstanceKlass::cast(class2)->class_loader();
-  } else {
-    assert(class2->oop_is_typeArray(), "should be type array");
-    classloader2 = NULL;
-  }
+  oop classloader2 = class2->class_loader();
   Symbol* classname2 = class2->name();
 
-  return InstanceKlass::is_same_class_package(classloader1, classname1,
+  return InstanceKlass::is_same_class_package(class_loader(), name(),
                                               classloader2, classname2);
 }
 
 bool InstanceKlass::is_same_class_package(oop classloader2, Symbol* classname2) {
-  Klass* class1 = this;
-  oop classloader1 = InstanceKlass::cast(class1)->class_loader();
-  Symbol* classname1 = class1->name();
-
-  return InstanceKlass::is_same_class_package(classloader1, classname1,
+  return InstanceKlass::is_same_class_package(class_loader(), name(),
                                               classloader2, classname2);
 }
 
@@ -2385,7 +2398,7 @@ bool InstanceKlass::is_same_class_package(oop class_loader1, Symbol* class_name1
 // Assumes name-signature match
 // "this" is InstanceKlass of super_method which must exist
 // note that the InstanceKlass of the method in the targetclassname has not always been created yet
-bool InstanceKlass::is_override(methodHandle super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS) {
+bool InstanceKlass::is_override(const methodHandle& super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS) {
    // Private methods can not be overridden
    if (super_method->is_private()) {
      return false;
@@ -2411,7 +2424,7 @@ Klass* InstanceKlass::compute_enclosing_class_impl(instanceKlassHandle self,
 bool InstanceKlass::is_same_package_member_impl(instanceKlassHandle class1,
                                                 Klass* class2_oop, TRAPS) {
   if (class2_oop == class1())                       return true;
-  if (!class2_oop->oop_is_instance())  return false;
+  if (!class2_oop->is_instance_klass())  return false;
   instanceKlassHandle class2(THREAD, class2_oop);
 
   // must be in same package before we try anything else
@@ -2882,7 +2895,8 @@ void InstanceKlass::print_on(outputStream* st) const {
   ((InstanceKlass*)this)->do_local_static_fields(&print_static_field);
   st->print_cr(BULLET"---- non-static fields (%d words):", nonstatic_field_size());
   FieldPrinter print_nonstatic_field(st);
-  ((InstanceKlass*)this)->do_nonstatic_fields(&print_nonstatic_field);
+  InstanceKlass* ik = const_cast<InstanceKlass*>(this);
+  ik->do_nonstatic_fields(&print_nonstatic_field);
 
   st->print(BULLET"non-static oop maps: ");
   OopMapBlock* map     = start_of_nonstatic_oop_maps();
@@ -2953,7 +2967,7 @@ void InstanceKlass::oop_print_on(oop obj, outputStream* st) {
     st->print_cr(BULLET"fake entry for oop_size: %d", java_lang_Class::oop_size(obj));
     st->print_cr(BULLET"fake entry for static_oop_field_count: %d", java_lang_Class::static_oop_field_count(obj));
     Klass* real_klass = java_lang_Class::as_Klass(obj);
-    if (real_klass != NULL && real_klass->oop_is_instance()) {
+    if (real_klass != NULL && real_klass->is_instance_klass()) {
       InstanceKlass::cast(real_klass)->do_local_static_fields(&print_field);
     }
   } else if (this == SystemDictionary::MethodType_klass()) {
@@ -3546,3 +3560,199 @@ jint InstanceKlass::get_cached_class_file_len() {
 unsigned char * InstanceKlass::get_cached_class_file_bytes() {
   return VM_RedefineClasses::get_cached_class_file_bytes(_cached_class_file);
 }
+
+
+/////////////// Unit tests ///////////////
+
+#ifndef PRODUCT
+
+class TestNmethodBucketContext {
+ public:
+  nmethod* _nmethodLast;
+  nmethod* _nmethodMiddle;
+  nmethod* _nmethodFirst;
+
+  nmethodBucket* _bucketLast;
+  nmethodBucket* _bucketMiddle;
+  nmethodBucket* _bucketFirst;
+
+  nmethodBucket* _bucketList;
+
+  TestNmethodBucketContext() {
+    CodeCache_lock->lock_without_safepoint_check();
+
+    _nmethodLast   = reinterpret_cast<nmethod*>(0x8 * 0);
+    _nmethodMiddle = reinterpret_cast<nmethod*>(0x8 * 1);
+    _nmethodFirst  = reinterpret_cast<nmethod*>(0x8 * 2);
+
+    _bucketLast   = new nmethodBucket(_nmethodLast,   NULL);
+    _bucketMiddle = new nmethodBucket(_nmethodMiddle, _bucketLast);
+    _bucketFirst  = new nmethodBucket(_nmethodFirst,   _bucketMiddle);
+
+    _bucketList = _bucketFirst;
+  }
+
+  ~TestNmethodBucketContext() {
+    delete _bucketLast;
+    delete _bucketMiddle;
+    delete _bucketFirst;
+
+    CodeCache_lock->unlock();
+  }
+};
+
+class TestNmethodBucket {
+ public:
+  static void testRemoveDependentNmethodFirstDeleteImmediately() {
+    TestNmethodBucketContext c;
+
+    nmethodBucket::remove_dependent_nmethod(&c._bucketList, c._nmethodFirst, true /* delete */);
+
+    assert(c._bucketList == c._bucketMiddle, "check");
+    assert(c._bucketList->next() == c._bucketLast, "check");
+    assert(c._bucketList->next()->next() == NULL, "check");
+
+    // Cleanup before context is deleted.
+    c._bucketFirst = NULL;
+  }
+
+  static void testRemoveDependentNmethodMiddleDeleteImmediately() {
+    TestNmethodBucketContext c;
+
+    nmethodBucket::remove_dependent_nmethod(&c._bucketList, c._nmethodMiddle, true /* delete */);
+
+    assert(c._bucketList == c._bucketFirst, "check");
+    assert(c._bucketList->next() == c._bucketLast, "check");
+    assert(c._bucketList->next()->next() == NULL, "check");
+
+    // Cleanup before context is deleted.
+    c._bucketMiddle = NULL;
+  }
+
+  static void testRemoveDependentNmethodLastDeleteImmediately() {
+    TestNmethodBucketContext c;
+
+    nmethodBucket::remove_dependent_nmethod(&c._bucketList, c._nmethodLast, true /* delete */);
+
+    assert(c._bucketList == c._bucketFirst, "check");
+    assert(c._bucketList->next() == c._bucketMiddle, "check");
+    assert(c._bucketList->next()->next() == NULL, "check");
+
+    // Cleanup before context is deleted.
+    c._bucketLast = NULL;
+  }
+
+  static void testRemoveDependentNmethodFirstDeleteDeferred() {
+    TestNmethodBucketContext c;
+
+    nmethodBucket::remove_dependent_nmethod(&c._bucketList, c._nmethodFirst, false /* delete */);
+
+    assert(c._bucketList                         == c._bucketFirst,  "check");
+    assert(c._bucketList->next()                 == c._bucketMiddle, "check");
+    assert(c._bucketList->next()->next()         == c._bucketLast,   "check");
+    assert(c._bucketList->next()->next()->next() == NULL,            "check");
+
+    assert(c._bucketFirst->count()  == 0, "check");
+    assert(c._bucketMiddle->count() == 1, "check");
+    assert(c._bucketLast->count()   == 1, "check");
+  }
+
+  static void testRemoveDependentNmethodMiddleDeleteDeferred() {
+    TestNmethodBucketContext c;
+
+    nmethodBucket::remove_dependent_nmethod(&c._bucketList, c._nmethodMiddle, false /* delete */);
+
+    assert(c._bucketList                         == c._bucketFirst,  "check");
+    assert(c._bucketList->next()                 == c._bucketMiddle, "check");
+    assert(c._bucketList->next()->next()         == c._bucketLast,   "check");
+    assert(c._bucketList->next()->next()->next() == NULL,            "check");
+
+    assert(c._bucketFirst->count()  == 1, "check");
+    assert(c._bucketMiddle->count() == 0, "check");
+    assert(c._bucketLast->count()   == 1, "check");
+  }
+
+  static void testRemoveDependentNmethodLastDeleteDeferred() {
+    TestNmethodBucketContext c;
+
+    nmethodBucket::remove_dependent_nmethod(&c._bucketList, c._nmethodLast, false /* delete */);
+
+    assert(c._bucketList                         == c._bucketFirst,  "check");
+    assert(c._bucketList->next()                 == c._bucketMiddle, "check");
+    assert(c._bucketList->next()->next()         == c._bucketLast,   "check");
+    assert(c._bucketList->next()->next()->next() == NULL,            "check");
+
+    assert(c._bucketFirst->count()  == 1, "check");
+    assert(c._bucketMiddle->count() == 1, "check");
+    assert(c._bucketLast->count()   == 0, "check");
+  }
+
+  static void testRemoveDependentNmethodConvenienceFirst() {
+    TestNmethodBucketContext c;
+
+    nmethodBucket::remove_dependent_nmethod(c._bucketList, c._nmethodFirst);
+
+    assert(c._bucketList                         == c._bucketFirst,  "check");
+    assert(c._bucketList->next()                 == c._bucketMiddle, "check");
+    assert(c._bucketList->next()->next()         == c._bucketLast,   "check");
+    assert(c._bucketList->next()->next()->next() == NULL,            "check");
+
+    assert(c._bucketFirst->count()  == 0, "check");
+    assert(c._bucketMiddle->count() == 1, "check");
+    assert(c._bucketLast->count()   == 1, "check");
+  }
+
+  static void testRemoveDependentNmethodConvenienceMiddle() {
+    TestNmethodBucketContext c;
+
+    nmethodBucket::remove_dependent_nmethod(c._bucketList, c._nmethodMiddle);
+
+    assert(c._bucketList                         == c._bucketFirst,  "check");
+    assert(c._bucketList->next()                 == c._bucketMiddle, "check");
+    assert(c._bucketList->next()->next()         == c._bucketLast,   "check");
+    assert(c._bucketList->next()->next()->next() == NULL,            "check");
+
+    assert(c._bucketFirst->count()  == 1, "check");
+    assert(c._bucketMiddle->count() == 0, "check");
+    assert(c._bucketLast->count()   == 1, "check");
+  }
+
+  static void testRemoveDependentNmethodConvenienceLast() {
+    TestNmethodBucketContext c;
+
+    nmethodBucket::remove_dependent_nmethod(c._bucketList, c._nmethodLast);
+
+    assert(c._bucketList                         == c._bucketFirst,  "check");
+    assert(c._bucketList->next()                 == c._bucketMiddle, "check");
+    assert(c._bucketList->next()->next()         == c._bucketLast,   "check");
+    assert(c._bucketList->next()->next()->next() == NULL,            "check");
+
+    assert(c._bucketFirst->count()  == 1, "check");
+    assert(c._bucketMiddle->count() == 1, "check");
+    assert(c._bucketLast->count()   == 0, "check");
+  }
+
+  static void testRemoveDependentNmethod() {
+    testRemoveDependentNmethodFirstDeleteImmediately();
+    testRemoveDependentNmethodMiddleDeleteImmediately();
+    testRemoveDependentNmethodLastDeleteImmediately();
+
+    testRemoveDependentNmethodFirstDeleteDeferred();
+    testRemoveDependentNmethodMiddleDeleteDeferred();
+    testRemoveDependentNmethodLastDeleteDeferred();
+
+    testRemoveDependentNmethodConvenienceFirst();
+    testRemoveDependentNmethodConvenienceMiddle();
+    testRemoveDependentNmethodConvenienceLast();
+  }
+
+  static void test() {
+    testRemoveDependentNmethod();
+  }
+};
+
+void TestNmethodBucket_test() {
+  TestNmethodBucket::test();
+}
+
+#endif

@@ -104,7 +104,7 @@ bool VM_RedefineClasses::doit_prologue() {
         ClassLoaderData* cld = _scratch_classes[i]->class_loader_data();
         // Free the memory for this class at class unloading time.  Not before
         // because CMS might think this is still live.
-        cld->add_to_deallocate_list((InstanceKlass*)_scratch_classes[i]);
+        cld->add_to_deallocate_list(InstanceKlass::cast(_scratch_classes[i]));
       }
     }
     // Free os::malloc allocated memory in load_new_class_version.
@@ -199,7 +199,7 @@ bool VM_RedefineClasses::is_modifiable_class(oop klass_mirror) {
   }
   Klass* the_class_oop = java_lang_Class::as_Klass(klass_mirror);
   // classes for arrays cannot be redefined
-  if (the_class_oop == NULL || !the_class_oop->oop_is_instance()) {
+  if (the_class_oop == NULL || !the_class_oop->is_instance_klass()) {
     return false;
   }
   return true;
@@ -216,7 +216,7 @@ bool VM_RedefineClasses::is_modifiable_class(oop klass_mirror) {
 // referenced CP entries may already exist in *merge_cp_p in which case
 // there is nothing extra to append and only the current entry is
 // appended.
-void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
+void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
        int scratch_i, constantPoolHandle *merge_cp_p, int *merge_cp_length_p,
        TRAPS) {
 
@@ -336,7 +336,7 @@ void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
       int new_name_and_type_ref_i = find_or_append_indirect_entry(scratch_cp, name_and_type_ref_i,
                                                           merge_cp_p, merge_cp_length_p, THREAD);
 
-      const char *entry_name;
+      const char *entry_name = NULL;
       switch (scratch_cp->tag_at(scratch_i).value()) {
       case JVM_CONSTANT_Fieldref:
         entry_name = "Fieldref";
@@ -475,7 +475,7 @@ void VM_RedefineClasses::append_entry(constantPoolHandle scratch_cp,
 } // end append_entry()
 
 
-int VM_RedefineClasses::find_or_append_indirect_entry(constantPoolHandle scratch_cp,
+int VM_RedefineClasses::find_or_append_indirect_entry(const constantPoolHandle& scratch_cp,
       int ref_i, constantPoolHandle *merge_cp_p, int *merge_cp_length_p, TRAPS) {
 
   int new_ref_i = ref_i;
@@ -507,7 +507,7 @@ int VM_RedefineClasses::find_or_append_indirect_entry(constantPoolHandle scratch
 // Append a bootstrap specifier into the merge_cp operands that is semantically equal
 // to the scratch_cp operands bootstrap specifier passed by the old_bs_i index.
 // Recursively append new merge_cp entries referenced by the new bootstrap specifier.
-void VM_RedefineClasses::append_operand(constantPoolHandle scratch_cp, int old_bs_i,
+void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, int old_bs_i,
        constantPoolHandle *merge_cp_p, int *merge_cp_length_p, TRAPS) {
 
   int old_ref_i = scratch_cp->operand_bootstrap_method_ref_index_at(old_bs_i);
@@ -551,7 +551,7 @@ void VM_RedefineClasses::append_operand(constantPoolHandle scratch_cp, int old_b
 } // end append_operand()
 
 
-int VM_RedefineClasses::find_or_append_operand(constantPoolHandle scratch_cp,
+int VM_RedefineClasses::find_or_append_operand(const constantPoolHandle& scratch_cp,
       int old_bs_i, constantPoolHandle *merge_cp_p, int *merge_cp_length_p, TRAPS) {
 
   int new_bs_i = old_bs_i; // bootstrap specifier index
@@ -577,7 +577,7 @@ int VM_RedefineClasses::find_or_append_operand(constantPoolHandle scratch_cp,
 } // end find_or_append_operand()
 
 
-void VM_RedefineClasses::finalize_operands_merge(constantPoolHandle merge_cp, TRAPS) {
+void VM_RedefineClasses::finalize_operands_merge(const constantPoolHandle& merge_cp, TRAPS) {
   if (merge_cp->operands() == NULL) {
     return;
   }
@@ -910,8 +910,8 @@ int VM_RedefineClasses::find_new_operand_index(int old_index) {
 
 // Returns true if the current mismatch is due to a resolved/unresolved
 // class pair. Otherwise, returns false.
-bool VM_RedefineClasses::is_unresolved_class_mismatch(constantPoolHandle cp1,
-       int index1, constantPoolHandle cp2, int index2) {
+bool VM_RedefineClasses::is_unresolved_class_mismatch(const constantPoolHandle& cp1,
+       int index1, const constantPoolHandle& cp2, int index2) {
 
   jbyte t1 = cp1->tag_at(index1).value();
   if (t1 != JVM_CONSTANT_Class && t1 != JVM_CONSTANT_UnresolvedClass) {
@@ -1149,7 +1149,7 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
 
 // Map old_index to new_index as needed. scratch_cp is only needed
 // for RC_TRACE() calls.
-void VM_RedefineClasses::map_index(constantPoolHandle scratch_cp,
+void VM_RedefineClasses::map_index(const constantPoolHandle& scratch_cp,
        int old_index, int new_index) {
   if (find_new_index(old_index) != 0) {
     // old_index is already mapped
@@ -1195,8 +1195,8 @@ void VM_RedefineClasses::map_operand_index(int old_index, int new_index) {
 // scratch_cp to the corresponding entry in *merge_cp_p. Index map
 // entries are only created for entries in scratch_cp that occupy a
 // different location in *merged_cp_p.
-bool VM_RedefineClasses::merge_constant_pools(constantPoolHandle old_cp,
-       constantPoolHandle scratch_cp, constantPoolHandle *merge_cp_p,
+bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
+       const constantPoolHandle& scratch_cp, constantPoolHandle *merge_cp_p,
        int *merge_cp_length_p, TRAPS) {
 
   if (merge_cp_p == NULL) {
@@ -1892,7 +1892,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_annotation_struct(
   }
 
   u2 type_index = rewrite_cp_ref_in_annotation_data(annotations_typeArray,
-                    byte_i_ref, "mapped old type_index=%d", THREAD);
+                    byte_i_ref, "type_index", THREAD);
 
   u2 num_element_value_pairs = Bytes::get_Java_u2((address)
                                  annotations_typeArray->adr_at(byte_i_ref));
@@ -1915,7 +1915,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_annotation_struct(
 
     u2 element_name_index = rewrite_cp_ref_in_annotation_data(
                               annotations_typeArray, byte_i_ref,
-                              "mapped old element_name_index=%d", THREAD);
+                              "element_name_index", THREAD);
 
     RC_TRACE_WITH_THREAD(0x02000000, THREAD,
       ("element_name_index=%d", element_name_index));
@@ -1939,8 +1939,6 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_annotation_struct(
 // annotations_typeArray if needed. Returns the original constant
 // pool reference if a rewrite was not needed or the new constant
 // pool reference if a rewrite was needed.
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED
 u2 VM_RedefineClasses::rewrite_cp_ref_in_annotation_data(
      AnnotationArray* annotations_typeArray, int &byte_i_ref,
      const char * trace_mesg, TRAPS) {
@@ -1950,14 +1948,13 @@ u2 VM_RedefineClasses::rewrite_cp_ref_in_annotation_data(
   u2 old_cp_index = Bytes::get_Java_u2(cp_index_addr);
   u2 new_cp_index = find_new_index(old_cp_index);
   if (new_cp_index != 0) {
-    RC_TRACE_WITH_THREAD(0x02000000, THREAD, (trace_mesg, old_cp_index));
+    RC_TRACE_WITH_THREAD(0x02000000, THREAD, ("mapped old %s=%d", trace_mesg, old_cp_index));
     Bytes::put_Java_u2(cp_index_addr, new_cp_index);
     old_cp_index = new_cp_index;
   }
   byte_i_ref += 2;
   return old_cp_index;
 }
-PRAGMA_DIAG_POP
 
 
 // Rewrite constant pool references in the element_value portion of an
@@ -2022,7 +2019,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_element_value(
 
       u2 const_value_index = rewrite_cp_ref_in_annotation_data(
                                annotations_typeArray, byte_i_ref,
-                               "mapped old const_value_index=%d", THREAD);
+                               "const_value_index", THREAD);
 
       RC_TRACE_WITH_THREAD(0x02000000, THREAD,
         ("const_value_index=%d", const_value_index));
@@ -2041,11 +2038,11 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_element_value(
 
       u2 type_name_index = rewrite_cp_ref_in_annotation_data(
                              annotations_typeArray, byte_i_ref,
-                             "mapped old type_name_index=%d", THREAD);
+                             "type_name_index", THREAD);
 
       u2 const_name_index = rewrite_cp_ref_in_annotation_data(
                               annotations_typeArray, byte_i_ref,
-                              "mapped old const_name_index=%d", THREAD);
+                              "const_name_index", THREAD);
 
       RC_TRACE_WITH_THREAD(0x02000000, THREAD,
         ("type_name_index=%d  const_name_index=%d", type_name_index,
@@ -2065,7 +2062,7 @@ bool VM_RedefineClasses::rewrite_cp_refs_in_element_value(
 
       u2 class_info_index = rewrite_cp_ref_in_annotation_data(
                               annotations_typeArray, byte_i_ref,
-                              "mapped old class_info_index=%d", THREAD);
+                              "class_info_index", THREAD);
 
       RC_TRACE_WITH_THREAD(0x02000000, THREAD,
         ("class_info_index=%d", class_info_index));
@@ -2867,7 +2864,7 @@ bool VM_RedefineClasses::skip_type_annotation_type_path(
 // }
 //
 void VM_RedefineClasses::rewrite_cp_refs_in_stack_map_table(
-       methodHandle method, TRAPS) {
+       const methodHandle& method, TRAPS) {
 
   if (!method->has_stackmap_table()) {
     return;
@@ -3339,10 +3336,10 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
 
   // If the class being redefined is java.lang.Object, we need to fix all
   // array class vtables also
-  if (k->oop_is_array() && _the_class_oop == SystemDictionary::Object_klass()) {
+  if (k->is_array_klass() && _the_class_oop == SystemDictionary::Object_klass()) {
     k->vtable()->adjust_method_entries(the_class, &trace_name_printed);
 
-  } else if (k->oop_is_instance()) {
+  } else if (k->is_instance_klass()) {
     HandleMark hm(_thread);
     InstanceKlass *ik = InstanceKlass::cast(k);
 
@@ -3379,7 +3376,7 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
     // default_vtable_indices for methods already in the vtable.
     // If redefining Unsafe, walk all the vtables looking for entries.
     if (ik->vtable_length() > 0 && (_the_class_oop->is_interface()
-        || _the_class_oop == SystemDictionary::misc_Unsafe_klass()
+        || _the_class_oop == SystemDictionary::internal_Unsafe_klass()
         || ik->is_subtype_of(_the_class_oop))) {
       // ik->vtable() creates a wrapper object; rm cleans it up
       ResourceMark rm(_thread);
@@ -3396,7 +3393,7 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
     // subclass relationship between an interface and an InstanceKlass.
     // If redefining Unsafe, walk all the itables looking for entries.
     if (ik->itable_length() > 0 && (_the_class_oop->is_interface()
-        || _the_class_oop == SystemDictionary::misc_Unsafe_klass()
+        || _the_class_oop == SystemDictionary::internal_Unsafe_klass()
         || ik->is_subclass_of(_the_class_oop))) {
       // ik->itable() creates a wrapper object; rm cleans it up
       ResourceMark rm(_thread);
@@ -3443,7 +3440,7 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
 
 // Clean method data for this class
 void VM_RedefineClasses::MethodDataCleaner::do_klass(Klass* k) {
-  if (k->oop_is_instance()) {
+  if (k->is_instance_klass()) {
     InstanceKlass *ik = InstanceKlass::cast(k);
     // Clean MethodData of this class's methods so they don't refer to
     // old methods that are no longer running.
@@ -4131,9 +4128,9 @@ void VM_RedefineClasses::increment_class_counter(InstanceKlass *ik, TRAPS) {
 
   for (Klass *subk = ik->subklass(); subk != NULL;
        subk = subk->next_sibling()) {
-    if (subk->oop_is_instance()) {
+    if (subk->is_instance_klass()) {
       // Only update instanceKlasses
-      InstanceKlass *subik = (InstanceKlass*)subk;
+      InstanceKlass *subik = InstanceKlass::cast(subk);
       // recursively do subclasses of the current subclass
       increment_class_counter(subik, THREAD);
     }
@@ -4158,7 +4155,7 @@ void VM_RedefineClasses::CheckClass::do_klass(Klass* k) {
     no_old_methods = false;
   }
 
-  if (k->oop_is_instance()) {
+  if (k->is_instance_klass()) {
     HandleMark hm(_thread);
     InstanceKlass *ik = InstanceKlass::cast(k);
 

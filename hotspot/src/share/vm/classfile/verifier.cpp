@@ -184,7 +184,7 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
     if (HAS_PENDING_EXCEPTION) {
       tty->print("Verification for %s has", klassName);
       tty->print_cr(" exception pending %s ",
-        InstanceKlass::cast(PENDING_EXCEPTION->klass())->external_name());
+        PENDING_EXCEPTION->klass()->external_name());
     } else if (exception_name != NULL) {
       tty->print_cr("Verification for %s failed", klassName);
     }
@@ -605,7 +605,7 @@ void ClassVerifier::verify_class(TRAPS) {
   }
 }
 
-void ClassVerifier::verify_method(methodHandle m, TRAPS) {
+void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
   HandleMark hm(THREAD);
   _method = m;   // initialize _method
   if (VerboseVerification) {
@@ -1901,7 +1901,7 @@ void ClassVerifier::verify_exception_handler_targets(u2 bci, bool this_uninit, S
 }
 
 void ClassVerifier::verify_cp_index(
-    u2 bci, constantPoolHandle cp, int index, TRAPS) {
+    u2 bci, const constantPoolHandle& cp, int index, TRAPS) {
   int nconstants = cp->length();
   if ((index <= 0) || (index >= nconstants)) {
     verify_error(ErrorContext::bad_cp_index(bci, index),
@@ -1912,7 +1912,7 @@ void ClassVerifier::verify_cp_index(
 }
 
 void ClassVerifier::verify_cp_type(
-    u2 bci, int index, constantPoolHandle cp, unsigned int types, TRAPS) {
+    u2 bci, int index, const constantPoolHandle& cp, unsigned int types, TRAPS) {
 
   // In some situations, bytecode rewriting may occur while we're verifying.
   // In this case, a constant pool cache exists and some indices refer to that
@@ -1931,7 +1931,7 @@ void ClassVerifier::verify_cp_type(
 }
 
 void ClassVerifier::verify_cp_class_type(
-    u2 bci, int index, constantPoolHandle cp, TRAPS) {
+    u2 bci, int index, const constantPoolHandle& cp, TRAPS) {
   verify_cp_index(bci, cp, index, CHECK_VERIFY(this));
   constantTag tag = cp->tag_at(index);
   if (!tag.is_klass() && !tag.is_unresolved_klass()) {
@@ -2023,7 +2023,7 @@ bool ClassVerifier::is_protected_access(instanceKlassHandle this_class,
 
 void ClassVerifier::verify_ldc(
     int opcode, u2 index, StackMapFrame* current_frame,
-    constantPoolHandle cp, u2 bci, TRAPS) {
+    const constantPoolHandle& cp, u2 bci, TRAPS) {
   verify_cp_index(bci, cp, index, CHECK_VERIFY(this));
   constantTag tag = cp->tag_at(index);
   unsigned int types;
@@ -2165,7 +2165,7 @@ bool ClassVerifier::name_in_supers(
 
 void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
                                               StackMapFrame* current_frame,
-                                              constantPoolHandle cp,
+                                              const constantPoolHandle& cp,
                                               bool allow_arrays,
                                               TRAPS) {
   u2 index = bcs->get_index_u2();
@@ -2477,7 +2477,7 @@ bool ClassVerifier::ends_in_athrow(u4 start_bc_offset) {
 void ClassVerifier::verify_invoke_init(
     RawBytecodeStream* bcs, u2 ref_class_index, VerificationType ref_class_type,
     StackMapFrame* current_frame, u4 code_length, bool in_try_block,
-    bool *this_uninit, constantPoolHandle cp, StackMapTable* stackmap_table,
+    bool *this_uninit, const constantPoolHandle& cp, StackMapTable* stackmap_table,
     TRAPS) {
   u2 bci = bcs->bci();
   VerificationType type = current_frame->pop_stack(
@@ -2613,7 +2613,7 @@ bool ClassVerifier::is_same_or_direct_interface(
 void ClassVerifier::verify_invoke_instructions(
     RawBytecodeStream* bcs, u4 code_length, StackMapFrame* current_frame,
     bool in_try_block, bool *this_uninit, VerificationType return_type,
-    constantPoolHandle cp, StackMapTable* stackmap_table, TRAPS) {
+    const constantPoolHandle& cp, StackMapTable* stackmap_table, TRAPS) {
   // Make sure the constant pool item is the right type
   u2 index = bcs->get_index_u2();
   Bytecodes::Code opcode = bcs->raw_code();
@@ -2878,7 +2878,7 @@ VerificationType ClassVerifier::get_newarray_type(
 }
 
 void ClassVerifier::verify_anewarray(
-    u2 bci, u2 index, constantPoolHandle cp,
+    u2 bci, u2 index, const constantPoolHandle& cp,
     StackMapFrame* current_frame, TRAPS) {
   verify_cp_class_type(bci, index, cp, CHECK_VERIFY(this));
   current_frame->pop_stack(

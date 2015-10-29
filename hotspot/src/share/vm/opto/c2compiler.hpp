@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,13 +56,13 @@ public:
   // possible for only a limited set of available intrinsics whereas
   // a non-virtual dispatch is possible for all available intrinsics.)
   // Return false otherwise.
-  virtual bool is_intrinsic_supported(methodHandle method) {
+  virtual bool is_intrinsic_supported(const methodHandle& method) {
     return is_intrinsic_supported(method, false);
   }
 
   // Check if the compiler supports an intrinsic for 'method' given the
   // the dispatch mode specified by the 'is_virtual' parameter.
-  virtual bool is_intrinsic_supported(methodHandle method, bool is_virtual);
+  virtual bool is_intrinsic_supported(const methodHandle& method, bool is_virtual);
 
   // Initial size of the code buffer (may be increased at runtime)
   static int initial_code_buffer_size();

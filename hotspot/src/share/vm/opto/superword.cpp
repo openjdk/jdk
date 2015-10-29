@@ -3665,7 +3665,7 @@ Node* SuperWord::last_node(Node* nd) {
 }
 
 int SuperWord::mark_generations() {
-  Node *ii_err = 0, *tail_err;
+  Node *ii_err = NULL, *tail_err = NULL;
   for (int i = 0; i < _mem_slice_head.length(); i++) {
     Node* phi  = _mem_slice_head.at(i);
     assert(phi->is_Phi(), "must be phi");

@@ -79,6 +79,7 @@ public class TestGCLogMessages {
         // Misc Top-level
         new LogMessageWithLevel("Code Root Purge", Level.FINER),
         new LogMessageWithLevel("String Dedup Fixup", Level.FINER),
+        new LogMessageWithLevel("Expand Heap After Collection", Level.FINER),
         // Free CSet
         new LogMessageWithLevel("Young Free CSet", Level.FINEST),
         new LogMessageWithLevel("Non-Young Free CSet", Level.FINEST),

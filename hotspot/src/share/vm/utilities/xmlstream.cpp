@@ -340,6 +340,7 @@ void xmlStream::done_raw(const char* kind) {
   print_raw_cr(">");
 }
 
+// If you remove the PRAGMA, this fails to compile with clang-503.0.40.
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
 // ------------------------------------------------------------------

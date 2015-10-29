@@ -777,10 +777,10 @@ void CompileBroker::mark_on_stack() {
 // CompileBroker::compile_method
 //
 // Request compilation of a method.
-void CompileBroker::compile_method_base(methodHandle method,
+void CompileBroker::compile_method_base(const methodHandle& method,
                                         int osr_bci,
                                         int comp_level,
-                                        methodHandle hot_method,
+                                        const methodHandle& hot_method,
                                         int hot_count,
                                         const char* comment,
                                         Thread* thread) {
@@ -790,7 +790,7 @@ void CompileBroker::compile_method_base(methodHandle method,
   }
 
   guarantee(!method->is_abstract(), "cannot compile abstract methods");
-  assert(method->method_holder()->oop_is_instance(),
+  assert(method->method_holder()->is_instance_klass(),
          "sanity check");
   assert(!method->method_holder()->is_not_initialized(),
          "method holder must be initialized");
@@ -980,12 +980,12 @@ void CompileBroker::compile_method_base(methodHandle method,
 }
 
 
-nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
+nmethod* CompileBroker::compile_method(const methodHandle& method, int osr_bci,
                                        int comp_level,
-                                       methodHandle hot_method, int hot_count,
+                                       const methodHandle& hot_method, int hot_count,
                                        const char* comment, Thread* THREAD) {
   // make sure arguments make sense
-  assert(method->method_holder()->oop_is_instance(), "not an instance method");
+  assert(method->method_holder()->is_instance_klass(), "not an instance method");
   assert(osr_bci == InvocationEntryBci || (0 <= osr_bci && osr_bci < method->code_size()), "bci out of range");
   assert(!method->is_abstract() && (osr_bci == InvocationEntryBci || !method->is_native()), "cannot compile abstract/native methods");
   assert(!method->method_holder()->is_not_initialized(), "method holder must be initialized");
@@ -1121,7 +1121,7 @@ nmethod* CompileBroker::compile_method(methodHandle method, int osr_bci,
 // CompileBroker::compilation_is_complete
 //
 // See if compilation of this method is already complete.
-bool CompileBroker::compilation_is_complete(methodHandle method,
+bool CompileBroker::compilation_is_complete(const methodHandle& method,
                                             int          osr_bci,
                                             int          comp_level) {
   bool is_osr = (osr_bci != standard_entry_bci);
@@ -1154,7 +1154,7 @@ bool CompileBroker::compilation_is_complete(methodHandle method,
  * versa).  This can be remedied by a full queue search to disambiguate
  * cases.  If it is deemed profitable, this may be done.
  */
-bool CompileBroker::compilation_is_in_queue(methodHandle method) {
+bool CompileBroker::compilation_is_in_queue(const methodHandle& method) {
   return method->queued_for_compilation();
 }
 
@@ -1162,7 +1162,7 @@ bool CompileBroker::compilation_is_in_queue(methodHandle method) {
 // CompileBroker::compilation_is_prohibited
 //
 // See if this compilation is not allowed.
-bool CompileBroker::compilation_is_prohibited(methodHandle method, int osr_bci, int comp_level) {
+bool CompileBroker::compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level) {
   bool is_native = method->is_native();
   // Some compilers may not support the compilation of natives.
   AbstractCompiler *comp = compiler(comp_level);
@@ -1205,7 +1205,7 @@ bool CompileBroker::compilation_is_prohibited(methodHandle method, int osr_bci, 
  * and the ID is not within the specified range, the method is not compiled and 0 is returned.
  * The function also allows to generate separate compilation IDs for OSR compilations.
  */
-int CompileBroker::assign_compile_id(methodHandle method, int osr_bci) {
+int CompileBroker::assign_compile_id(const methodHandle& method, int osr_bci) {
 #ifdef ASSERT
   bool is_osr = (osr_bci != standard_entry_bci);
   int id;
@@ -1240,7 +1240,7 @@ int CompileBroker::assign_compile_id(methodHandle method, int osr_bci) {
 // CompileBroker::assign_compile_id_unlocked
 //
 // Public wrapper for assign_compile_id that acquires the needed locks
-uint CompileBroker::assign_compile_id_unlocked(Thread* thread, methodHandle method, int osr_bci) {
+uint CompileBroker::assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci) {
   MutexLocker locker(MethodCompileQueue_lock, thread);
   return assign_compile_id(method, osr_bci);
 }
@@ -1257,7 +1257,7 @@ bool CompileBroker::is_compile_blocking() {
 
 // ------------------------------------------------------------------
 // CompileBroker::preload_classes
-void CompileBroker::preload_classes(methodHandle method, TRAPS) {
+void CompileBroker::preload_classes(const methodHandle& method, TRAPS) {
   // Move this code over from c1_Compiler.cpp
   ShouldNotReachHere();
 }
@@ -1270,10 +1270,10 @@ void CompileBroker::preload_classes(methodHandle method, TRAPS) {
 // compilation.  Add this task to the queue.
 CompileTask* CompileBroker::create_compile_task(CompileQueue* queue,
                                               int           compile_id,
-                                              methodHandle  method,
+                                              const methodHandle&  method,
                                               int           osr_bci,
                                               int           comp_level,
-                                              methodHandle  hot_method,
+                                              const methodHandle&  hot_method,
                                               int           hot_count,
                                               const char*   comment,
                                               bool          blocking) {
@@ -1866,7 +1866,7 @@ void CompileBroker::handle_full_code_cache(int code_blob_type) {
 // CompileBroker::set_last_compile
 //
 // Record this compilation for debugging purposes.
-void CompileBroker::set_last_compile(CompilerThread* thread, methodHandle method, bool is_osr, int comp_level) {
+void CompileBroker::set_last_compile(CompilerThread* thread, const methodHandle& method, bool is_osr, int comp_level) {
   ResourceMark rm;
   char* method_name = method->name()->as_C_string();
   strncpy(_last_method_compiled, method_name, CompileBroker::name_buffer_length);
@@ -1952,7 +1952,7 @@ void CompileBroker::pop_jni_handle_block() {
 // CompileBroker::check_break_at
 //
 // Should the compilation break at the current compilation.
-bool CompileBroker::check_break_at(methodHandle method, int compile_id, bool is_osr) {
+bool CompileBroker::check_break_at(const methodHandle& method, int compile_id, bool is_osr) {
   if (CICountOSR && is_osr && (compile_id == CIBreakAtOSR)) {
     return true;
   } else if( CompilerOracle::should_break_at(method) ) { // break when compiling

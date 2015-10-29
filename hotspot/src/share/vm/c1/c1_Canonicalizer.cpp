@@ -639,7 +639,7 @@ void Canonicalizer::do_If(If* x) {
 
   if (l == r && !lt->is_float_kind()) {
     // pattern: If (a cond a) => simplify to Goto
-    BlockBegin* sux;
+    BlockBegin* sux = NULL;
     switch (x->cond()) {
     case If::eql: sux = x->sux_for(true);  break;
     case If::neq: sux = x->sux_for(false); break;
@@ -647,6 +647,7 @@ void Canonicalizer::do_If(If* x) {
     case If::leq: sux = x->sux_for(true);  break;
     case If::gtr: sux = x->sux_for(false); break;
     case If::geq: sux = x->sux_for(true);  break;
+    default: ShouldNotReachHere();
     }
     // If is a safepoint then the debug information should come from the state_before of the If.
     set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));
@@ -684,7 +685,7 @@ void Canonicalizer::do_If(If* x) {
       } else {
         // two successors differ and two successors are the same => simplify to: If (x cmp y)
         // determine new condition & successors
-        If::Condition cond;
+        If::Condition cond = If::eql;
         BlockBegin* tsux = NULL;
         BlockBegin* fsux = NULL;
              if (lss_sux == eql_sux) { cond = If::leq; tsux = lss_sux; fsux = gtr_sux; }
