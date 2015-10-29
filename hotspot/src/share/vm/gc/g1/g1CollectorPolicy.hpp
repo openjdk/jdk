@@ -27,6 +27,7 @@
 
 #include "gc/g1/collectionSetChooser.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1InCSetState.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/g1Predictions.hpp"
@@ -39,7 +40,6 @@
 
 class HeapRegion;
 class CollectionSetChooser;
-class G1GCPhaseTimes;
 
 // TraceYoungGenTime collects data on _both_ young and mixed evacuation pauses
 // (the latter may contain non-young regions - i.e. regions that are
@@ -377,6 +377,9 @@ public:
   double predict_yg_surv_rate(int age) const;
 
   double accum_yg_surv_rate_pred(int age) const;
+
+protected:
+  virtual double average_time_ms(G1GCPhaseTimes::GCParPhases phase) const;
 
 private:
   // Statistics kept per GC stoppage, pause or full.
