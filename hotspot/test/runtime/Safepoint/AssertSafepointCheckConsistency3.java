@@ -25,7 +25,7 @@
  * @test
  * @bug 8047290
  * @summary Ensure that Monitor::lock_without_safepoint_check does not assert when it correctly acquires a lock which must never have safepoint checks.
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build AssertSafepointCheckConsistency3

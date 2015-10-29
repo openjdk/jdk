@@ -25,7 +25,7 @@
  * @test TestTargetSurvivorRatioFlag
  * @key gc
  * @summary Verify that option TargetSurvivorRatio affects survivor space occupancy after minor GC.
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build TestTargetSurvivorRatioFlag

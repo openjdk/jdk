@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Using WhiteBox to get VM page size
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @build ReadVMPageSize
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm  -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI  ReadVMPageSize

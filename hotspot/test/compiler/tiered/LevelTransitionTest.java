@@ -28,7 +28,7 @@ import java.util.concurrent.Callable;
 
 /**
  * @test LevelTransitionTest
- * @library /testlibrary /../../test/lib /compiler/whitebox
+ * @library /testlibrary /test/lib /compiler/whitebox
  * @modules java.base/sun.misc
  *          java.management
  * @ignore 8067651

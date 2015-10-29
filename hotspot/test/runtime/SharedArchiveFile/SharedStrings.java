@@ -29,7 +29,7 @@
  * @requires (sun.arch.data.model != "32") & (os.family != "windows")
  * @requires (vm.opt.UseCompressedOops == null) | (vm.opt.UseCompressedOops == true)
  * @requires (vm.gc=="G1" | vm.gc=="null")
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build SharedStringsWb SharedStrings BasicJarBuilder sun.hotspot.WhiteBox

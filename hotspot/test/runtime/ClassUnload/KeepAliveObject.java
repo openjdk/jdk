@@ -24,7 +24,7 @@
 /*
  * @test KeepAliveObject
  * @summary This test case uses a class instance to keep the class alive.
- * @library /testlibrary /../../test/lib /runtime/testlibrary
+ * @library /testlibrary /test/lib /runtime/testlibrary
  * @library classes
  * @build KeepAliveObject test.Empty
  * @build ClassUnloadCommon

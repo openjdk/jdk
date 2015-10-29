@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary tests on constant folding of unsafe get operations
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions
  *                   -Xbatch -XX:-TieredCompilation
  *                   -XX:+FoldStableValues
