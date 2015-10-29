@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,9 +71,19 @@ public class Token {
     public static long withDelimiter(final long token) {
         final TokenType tokenType = Token.descType(token);
         switch(tokenType) {
-            case STRING: case ESCSTRING: case EXECSTRING: {
+            case STRING:
+            case ESCSTRING:
+            case EXECSTRING:
+            case TEMPLATE:
+            case TEMPLATE_TAIL: {
                 final int start = Token.descPosition(token) - 1;
                 final int len = Token.descLength(token) + 2;
+                return toDesc(tokenType, start, len);
+            }
+            case TEMPLATE_HEAD:
+            case TEMPLATE_MIDDLE: {
+                final int start = Token.descPosition(token) - 1;
+                final int len = Token.descLength(token) + 3;
                 return toDesc(tokenType, start, len);
             }
             default: {
