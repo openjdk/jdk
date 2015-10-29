@@ -899,6 +899,10 @@ void G1CollectorPolicy::record_concurrent_pause() {
   }
 }
 
+double G1CollectorPolicy::average_time_ms(G1GCPhaseTimes::GCParPhases phase) const {
+  return phase_times()->average_time_ms(phase);
+}
+
 bool G1CollectorPolicy::need_to_start_conc_mark(const char* source, size_t alloc_word_size) {
   if (_g1->concurrent_mark()->cmThread()->during_cycle()) {
     return false;
@@ -1069,16 +1073,16 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
 
   if (update_stats) {
     double cost_per_card_ms = 0.0;
-    double cost_scan_hcc = phase_times()->average_time_ms(G1GCPhaseTimes::ScanHCC);
+    double cost_scan_hcc = average_time_ms(G1GCPhaseTimes::ScanHCC);
     if (_pending_cards > 0) {
-      cost_per_card_ms = (phase_times()->average_time_ms(G1GCPhaseTimes::UpdateRS) - cost_scan_hcc) / (double) _pending_cards;
+      cost_per_card_ms = (average_time_ms(G1GCPhaseTimes::UpdateRS) - cost_scan_hcc) / (double) _pending_cards;
       _cost_per_card_ms_seq->add(cost_per_card_ms);
     }
     _cost_scan_hcc_seq->add(cost_scan_hcc);
 
     double cost_per_entry_ms = 0.0;
     if (cards_scanned > 10) {
-      cost_per_entry_ms = phase_times()->average_time_ms(G1GCPhaseTimes::ScanRS) / (double) cards_scanned;
+      cost_per_entry_ms = average_time_ms(G1GCPhaseTimes::ScanRS) / (double) cards_scanned;
       if (collector_state()->last_gc_was_young()) {
         _cost_per_entry_ms_seq->add(cost_per_entry_ms);
       } else {
@@ -1120,7 +1124,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
     double cost_per_byte_ms = 0.0;
 
     if (copied_bytes > 0) {
-      cost_per_byte_ms = phase_times()->average_time_ms(G1GCPhaseTimes::ObjCopy) / (double) copied_bytes;
+      cost_per_byte_ms = average_time_ms(G1GCPhaseTimes::ObjCopy) / (double) copied_bytes;
       if (collector_state()->in_marking_window()) {
         _cost_per_byte_ms_during_cm_seq->add(cost_per_byte_ms);
       } else {
@@ -1129,8 +1133,8 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
     }
 
     double all_other_time_ms = pause_time_ms -
-      (phase_times()->average_time_ms(G1GCPhaseTimes::UpdateRS) + phase_times()->average_time_ms(G1GCPhaseTimes::ScanRS) +
-          phase_times()->average_time_ms(G1GCPhaseTimes::ObjCopy) + phase_times()->average_time_ms(G1GCPhaseTimes::Termination));
+      (average_time_ms(G1GCPhaseTimes::UpdateRS) + average_time_ms(G1GCPhaseTimes::ScanRS) +
+       average_time_ms(G1GCPhaseTimes::ObjCopy)  + average_time_ms(G1GCPhaseTimes::Termination));
 
     double young_other_time_ms = 0.0;
     if (young_cset_region_length() > 0) {
@@ -1173,7 +1177,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
 
-  double scan_hcc_time_ms = phase_times()->average_time_ms(G1GCPhaseTimes::ScanHCC);
+  double scan_hcc_time_ms = average_time_ms(G1GCPhaseTimes::ScanHCC);
 
   if (update_rs_time_goal_ms < scan_hcc_time_ms) {
     ergo_verbose2(ErgoTiming,
@@ -1188,7 +1192,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
   } else {
     update_rs_time_goal_ms -= scan_hcc_time_ms;
   }
-  adjust_concurrent_refinement(phase_times()->average_time_ms(G1GCPhaseTimes::UpdateRS) - scan_hcc_time_ms,
+  adjust_concurrent_refinement(average_time_ms(G1GCPhaseTimes::UpdateRS) - scan_hcc_time_ms,
                                phase_times()->sum_thread_work_items(G1GCPhaseTimes::UpdateRS),
                                update_rs_time_goal_ms);
 
