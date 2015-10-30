@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1041,12 +1041,11 @@ class VirtualMachineImpl extends MirrorImpl
     }
 
     Type findBootType(String signature) throws ClassNotLoadedException {
-        List<ReferenceType> types = allClasses();
+        List<ReferenceType> types = retrieveClassesBySignature(signature);
         Iterator<ReferenceType> iter = types.iterator();
         while (iter.hasNext()) {
             ReferenceType type = iter.next();
-            if ((type.classLoader() == null) &&
-                (type.signature().equals(signature))) {
+            if (type.classLoader() == null) {
                 return type;
             }
         }
