@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,9 @@ import com.sun.xml.internal.bind.v2.runtime.output.XmlOutput;
 import com.sun.xml.internal.bind.v2.util.FatalAdapter;
 
 import java.net.URISyntaxException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -95,6 +98,8 @@ import org.xml.sax.helpers.XMLFilterImpl;
  */
 public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractMarshallerImpl implements ValidationEventHandler
 {
+    private static final Logger LOGGER = Logger.getLogger(MarshallerImpl.class.getName());
+
     /** Indentation string. Default is four whitespaces. */
     private String indent = "    ";
 
@@ -327,12 +332,14 @@ public /*to make unit tests happy*/ final class MarshallerImpl extends AbstractM
                 toBeFlushed.flush();
             } catch (IOException e) {
                 // ignore
+                LOGGER.log(Level.SEVERE, e.getMessage(), e);
             }
         if(toBeClosed!=null)
             try {
                 toBeClosed.close();
             } catch (IOException e) {
                 // ignore
+                LOGGER.log(Level.SEVERE, e.getMessage(), e);
             }
         toBeFlushed = null;
         toBeClosed = null;

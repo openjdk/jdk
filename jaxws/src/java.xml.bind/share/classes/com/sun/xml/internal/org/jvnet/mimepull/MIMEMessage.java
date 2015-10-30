@@ -62,7 +62,10 @@ public class MIMEMessage implements Closeable {
     private final Map<String, MIMEPart> partsMap = new HashMap<String, MIMEPart>();
 
     /**
-     * @see MIMEMessage(InputStream, String, MIMEConfig)
+     * @see #MIMEMessage(InputStream, String, MIMEConfig)
+     *
+     * @param in       MIME message stream
+     * @param boundary the separator for parts(pass it without --)
      */
     public MIMEMessage(InputStream in, String boundary) {
         this(in, boundary, new MIMEConfig());
@@ -131,7 +134,7 @@ public class MIMEMessage implements Closeable {
      * do the validation, the message needs to be parsed. The parsing of the
      * message is done lazily and is done while reading the bytes of the part.
      *
-     * @param contentId Content-ID of the part, expects Content-ID without <, >
+     * @param contentId Content-ID of the part, expects Content-ID without {@code <, >}
      * @return attachemnt part
      */
     public MIMEPart getPart(String contentId) {
@@ -177,8 +180,8 @@ public class MIMEMessage implements Closeable {
     /**
      * Closes all parsed {@link com.sun.xml.internal.org.jvnet.mimepull.MIMEPart parts}.
      * This method is safe to call even if parsing of message failed.
-     * <p/>
-     * Does not throw {@link com.sun.xml.internal.org.jvnet.mimepull.MIMEParsingException} if an
+     *
+     * <p> Does not throw {@link com.sun.xml.internal.org.jvnet.mimepull.MIMEParsingException} if an
      * error occurred during closing a MIME part. The exception (if any) is
      * still logged.
      */

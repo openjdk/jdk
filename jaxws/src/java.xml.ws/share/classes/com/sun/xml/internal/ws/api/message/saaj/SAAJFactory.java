@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -157,6 +157,11 @@ public class SAAJFactory {
      * @throws SOAPException if SAAJ processing fails
      */
     public static SOAPMessage read(SOAPVersion soapVersion, Message message, Packet packet) throws SOAPException {
+        SAAJFactory saajfac = packet.getSAAJFactory();
+        if (saajfac != null) {
+            SOAPMessage msg = saajfac.readAsSOAPMessage(soapVersion, message, packet);
+            if (msg != null) return msg;
+        }
         for (SAAJFactory s : ServiceFinder.find(SAAJFactory.class)) {
             SOAPMessage msg = s.readAsSOAPMessage(soapVersion, message, packet);
             if (msg != null)
@@ -173,6 +178,11 @@ public class SAAJFactory {
      * @throws SOAPException if SAAJ processing fails
      */
     public static SAAJMessage read(Packet packet) throws SOAPException {
+        SAAJFactory saajfac = packet.getSAAJFactory();
+        if (saajfac != null) {
+            SAAJMessage msg = saajfac.readAsSAAJ(packet);
+            if (msg != null) return msg;
+        }
         // Use the Component from the Packet if it exists.  Note the logic
         // in the ServiceFinder is such that find(Class) is not equivalent
         // to find (Class, null), so the ternary operator is needed.

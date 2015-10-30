@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import com.sun.istack.internal.XMLStreamReaderToContentHandler;
 import com.sun.tools.internal.xjc.ErrorReceiver;
 import com.sun.tools.internal.xjc.Options;
 import com.sun.tools.internal.xjc.reader.Const;
+import com.sun.tools.internal.xjc.reader.xmlschema.parser.SchemaConstraintChecker;
 import com.sun.tools.internal.xjc.util.ErrorReceiverFilter;
 import com.sun.xml.internal.bind.marshaller.DataWriter;
 import com.sun.xml.internal.bind.v2.util.XmlFactory;
@@ -83,7 +84,7 @@ import static javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI;
  *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
  */
 public final class DOMForest {
-    /** actual data storage map&lt;SystemId,Document>. */
+    /** actual data storage {@code map<SystemId,Document>}. */
     private final Map<String,Document> core = new HashMap<String,Document>();
 
     /**
@@ -100,7 +101,7 @@ public final class DOMForest {
     /** Stores location information for all the trees in this forest. */
     public final LocatorTable locatorTable = new LocatorTable();
 
-    /** Stores all the outer-most &lt;jaxb:bindings> customizations. */
+    /** Stores all the outer-most {@code <jaxb:bindings>} customizations. */
     public final Set<Element> outerMostBindings = new HashSet<Element>();
 
     /** Used to resolve references to other schema documents. */

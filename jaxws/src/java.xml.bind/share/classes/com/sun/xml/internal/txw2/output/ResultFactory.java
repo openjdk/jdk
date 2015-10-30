@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,7 @@ public abstract class ResultFactory {
     private ResultFactory() {}
 
     /**
-     * Factory method for producing {@link XmlSerializer) from {@link javax.xml.transform.Result}.
+     * Factory method for producing {@link XmlSerializer} from {@link javax.xml.transform.Result}.
      *
      * This method supports {@link javax.xml.transform.sax.SAXResult},
      * {@link javax.xml.transform.stream.StreamResult}, and {@link javax.xml.transform.dom.DOMResult}.
