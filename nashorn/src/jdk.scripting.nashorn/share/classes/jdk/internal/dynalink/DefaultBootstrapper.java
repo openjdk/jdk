@@ -97,8 +97,6 @@ import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
  * and one that just uses the passed caller as the lookup scope. Using the public lookup one is advised if your language
  * runtime has no concept of interacting with Java visibility scopes, as it results in a more lightweight runtime
  * information.
- *
- * @author Attila Szegedi
  */
 public class DefaultBootstrapper {
     private static final DynamicLinker dynamicLinker = new DynamicLinkerFactory().createLinker();

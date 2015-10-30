@@ -96,8 +96,6 @@ import java.util.Set;
 
 /**
  * Various static utility methods for testing type relationships.
- *
- * @author Attila Szegedi
  */
 public class TypeUtilities {
     static final Class<Object> OBJECT_CLASS = Object.class;

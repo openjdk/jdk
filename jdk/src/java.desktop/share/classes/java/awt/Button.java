@@ -26,6 +26,7 @@
 package java.awt;
 
 import java.awt.peer.ButtonPeer;
+import java.beans.BeanProperty;
 import java.util.EventListener;
 import java.awt.event.*;
 import java.io.ObjectOutputStream;
@@ -511,11 +512,10 @@ public class Button extends Component implements Accessible {
      *
      * @return an <code>AccessibleAWTButton</code> that serves as the
      *         <code>AccessibleContext</code> of this <code>Button</code>
-     * @beaninfo
-     *       expert: true
-     *  description: The AccessibleContext associated with this Button.
      * @since 1.3
      */
+    @BeanProperty(expert = true, description
+            = "The AccessibleContext associated with this Button.")
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleAWTButton();
