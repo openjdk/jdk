@@ -4194,9 +4194,6 @@ public:
   diagnostic(bool, StringDeduplicationRehashALot, false,                    \
           "Force table rehash every time the table is scanned")             \
                                                                             \
-  develop(bool, TraceDefaultMethods, false,                                 \
-          "Trace the default method processing steps")                      \
-                                                                            \
   diagnostic(bool, WhiteBoxAPI, false,                                      \
           "Enable internal testing APIs")                                   \
                                                                             \
