@@ -593,6 +593,8 @@ public:
   void print_heap_transition() const;
   void print_detailed_heap_transition(bool full = false) const;
 
+  virtual void print_phases(double pause_time_sec);
+
   void record_stop_world_start();
   void record_concurrent_pause();
 

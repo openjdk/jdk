@@ -1271,6 +1271,10 @@ void G1CollectorPolicy::print_detailed_heap_transition(bool full) const {
   gclog_or_tty->cr();
 }
 
+void G1CollectorPolicy::print_phases(double pause_time_sec) {
+  phase_times()->print(pause_time_sec);
+}
+
 void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
                                                      double update_rs_processed_buffers,
                                                      double goal_ms) {
