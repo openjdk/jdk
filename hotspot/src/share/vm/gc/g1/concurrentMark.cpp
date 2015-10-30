@@ -3066,8 +3066,6 @@ public:
     HeapWord* addr = _nextMarkBitMap->offsetToHeapWord(offset);
     assert(_nextMarkBitMap->isMarked(addr), "invariant");
     assert( addr < _cm->finger(), "invariant");
-
-    statsOnly( _task->increase_objs_found_on_bitmap() );
     assert(addr >= _task->finger(), "invariant");
 
     // We move that task's local finger along.
@@ -3193,30 +3191,6 @@ void CMTask::reset(CMBitMap* nextMarkBitMap) {
   _elapsed_time_ms               = 0.0;
   _termination_time_ms           = 0.0;
   _termination_start_time_ms     = 0.0;
-
-#if _MARKING_STATS_
-  _aborted                       = 0;
-  _aborted_overflow              = 0;
-  _aborted_cm_aborted            = 0;
-  _aborted_yield                 = 0;
-  _aborted_timed_out             = 0;
-  _aborted_satb                  = 0;
-  _aborted_termination           = 0;
-  _steal_attempts                = 0;
-  _steals                        = 0;
-  _local_pushes                  = 0;
-  _local_pops                    = 0;
-  _local_max_size                = 0;
-  _objs_scanned                  = 0;
-  _global_pushes                 = 0;
-  _global_pops                   = 0;
-  _global_max_size               = 0;
-  _global_transfers_to           = 0;
-  _global_transfers_from         = 0;
-  _regions_claimed               = 0;
-  _objs_found_on_bitmap          = 0;
-  _satb_buffers_processed        = 0;
-#endif // _MARKING_STATS_
 }
 
 bool CMTask::should_exit_termination() {
@@ -3257,42 +3231,16 @@ void CMTask::regular_clock_call() {
   // (2) If marking has been aborted for Full GC, then we also abort.
   if (_cm->has_aborted()) {
     set_has_aborted();
-    statsOnly( ++_aborted_cm_aborted );
     return;
   }
 
   double curr_time_ms = os::elapsedVTime() * 1000.0;
-
-  // (3) If marking stats are enabled, then we update the step history.
-#if _MARKING_STATS_
-  if (_words_scanned >= _words_scanned_limit) {
-    ++_clock_due_to_scanning;
-  }
-  if (_refs_reached >= _refs_reached_limit) {
-    ++_clock_due_to_marking;
-  }
-
-  double last_interval_ms = curr_time_ms - _interval_start_time_ms;
-  _interval_start_time_ms = curr_time_ms;
-  _all_clock_intervals_ms.add(last_interval_ms);
-
-  if (_cm->verbose_medium()) {
-      gclog_or_tty->print_cr("[%u] regular clock, interval = %1.2lfms, "
-                        "scanned = " SIZE_FORMAT "%s, refs reached = " SIZE_FORMAT "%s",
-                        _worker_id, last_interval_ms,
-                        _words_scanned,
-                        (_words_scanned >= _words_scanned_limit) ? " (*)" : "",
-                        _refs_reached,
-                        (_refs_reached >= _refs_reached_limit) ? " (*)" : "");
-  }
-#endif // _MARKING_STATS_
 
   // (4) We check whether we should yield. If we have to, then we abort.
   if (SuspendibleThreadSet::should_yield()) {
     // We should yield. To do this we abort the task. The caller is
     // responsible for yielding.
     set_has_aborted();
-    statsOnly( ++_aborted_yield );
     return;
   }
 
@@ -3302,7 +3250,6 @@ void CMTask::regular_clock_call() {
   if (elapsed_time_ms > _time_target_ms) {
     set_has_aborted();
     _has_timed_out = true;
-    statsOnly( ++_aborted_timed_out );
     return;
   }
 
@@ -3317,7 +3264,6 @@ void CMTask::regular_clock_call() {
     // we do need to process SATB buffers, we'll abort and restart
     // the marking task to do so
     set_has_aborted();
-    statsOnly( ++_aborted_satb );
     return;
   }
 }
@@ -3361,8 +3307,6 @@ void CMTask::move_entries_to_global_stack() {
   if (n > 0) {
     // we popped at least one entry from the local queue
 
-    statsOnly( ++_global_transfers_to; _local_pops += n );
-
     if (!_cm->mark_stack_push(buffer, n)) {
       if (_cm->verbose_low()) {
         gclog_or_tty->print_cr("[%u] aborting due to global stack overflow",
@@ -3376,11 +3320,6 @@ void CMTask::move_entries_to_global_stack() {
         gclog_or_tty->print_cr("[%u] pushed %d entries to the global stack",
                                _worker_id, n);
       }
-      statsOnly( size_t tmp_size = _cm->mark_stack_size();
-                 if (tmp_size > _global_max_size) {
-                   _global_max_size = tmp_size;
-                 }
-                 _global_pushes += n );
     }
   }
 
@@ -3398,8 +3337,6 @@ void CMTask::get_entries_from_global_stack() {
          "we should not pop more than the given limit");
   if (n > 0) {
     // yes, we did actually pop at least one entry
-
-    statsOnly( ++_global_transfers_from; _global_pops += n );
     if (_cm->verbose_medium()) {
       gclog_or_tty->print_cr("[%u] popped %d entries from the global stack",
                              _worker_id, n);
@@ -3410,12 +3347,6 @@ void CMTask::get_entries_from_global_stack() {
       // given target limit. So, we do not expect this push to fail.
       assert(success, "invariant");
     }
-
-    statsOnly( size_t tmp_size = (size_t)_task_queue->size();
-               if (tmp_size > _local_max_size) {
-                 _local_max_size = tmp_size;
-               }
-               _local_pushes += n );
   }
 
   // this operation was quite expensive, so decrease the limits
@@ -3444,8 +3375,6 @@ void CMTask::drain_local_queue(bool partially) {
     oop obj;
     bool ret = _task_queue->pop_local(obj);
     while (ret) {
-      statsOnly( ++_local_pops );
-
       if (_cm->verbose_high()) {
         gclog_or_tty->print_cr("[%u] popped " PTR_FORMAT, _worker_id,
                                p2i((void*) obj));
@@ -3532,7 +3461,6 @@ void CMTask::drain_satb_buffers() {
     if (_cm->verbose_medium()) {
       gclog_or_tty->print_cr("[%u] processed an SATB buffer", _worker_id);
     }
-    statsOnly( ++_satb_buffers_processed );
     regular_clock_call();
   }
 
@@ -3557,34 +3485,6 @@ void CMTask::print_stats() {
                          _step_times_ms.sd());
   gclog_or_tty->print_cr("                    max = %1.2lfms, total = %1.2lfms",
                          _step_times_ms.maximum(), _step_times_ms.sum());
-
-#if _MARKING_STATS_
-  gclog_or_tty->print_cr("  Clock Intervals (cum): num = %d, avg = %1.2lfms, sd = %1.2lfms",
-                         _all_clock_intervals_ms.num(), _all_clock_intervals_ms.avg(),
-                         _all_clock_intervals_ms.sd());
-  gclog_or_tty->print_cr("                         max = %1.2lfms, total = %1.2lfms",
-                         _all_clock_intervals_ms.maximum(),
-                         _all_clock_intervals_ms.sum());
-  gclog_or_tty->print_cr("  Clock Causes (cum): scanning = " SIZE_FORMAT ", marking = " SIZE_FORMAT,
-                         _clock_due_to_scanning, _clock_due_to_marking);
-  gclog_or_tty->print_cr("  Objects: scanned = " SIZE_FORMAT ", found on the bitmap = " SIZE_FORMAT,
-                         _objs_scanned, _objs_found_on_bitmap);
-  gclog_or_tty->print_cr("  Local Queue:  pushes = " SIZE_FORMAT ", pops = " SIZE_FORMAT ", max size = " SIZE_FORMAT,
-                         _local_pushes, _local_pops, _local_max_size);
-  gclog_or_tty->print_cr("  Global Stack: pushes = " SIZE_FORMAT ", pops = " SIZE_FORMAT ", max size = " SIZE_FORMAT,
-                         _global_pushes, _global_pops, _global_max_size);
-  gclog_or_tty->print_cr("                transfers to = " SIZE_FORMAT ", transfers from = " SIZE_FORMAT,
-                         _global_transfers_to,_global_transfers_from);
-  gclog_or_tty->print_cr("  Regions: claimed = " SIZE_FORMAT, _regions_claimed);
-  gclog_or_tty->print_cr("  SATB buffers: processed = " SIZE_FORMAT, _satb_buffers_processed);
-  gclog_or_tty->print_cr("  Steals: attempts = " SIZE_FORMAT ", successes = " SIZE_FORMAT,
-                         _steal_attempts, _steals);
-  gclog_or_tty->print_cr("  Aborted: " SIZE_FORMAT ", due to", _aborted);
-  gclog_or_tty->print_cr("    overflow: " SIZE_FORMAT ", global abort: " SIZE_FORMAT ", yield: " SIZE_FORMAT,
-                         _aborted_overflow, _aborted_cm_aborted, _aborted_yield);
-  gclog_or_tty->print_cr("    time out: " SIZE_FORMAT ", SATB: " SIZE_FORMAT ", termination: " SIZE_FORMAT,
-                         _aborted_timed_out, _aborted_satb, _aborted_termination);
-#endif // _MARKING_STATS_
 }
 
 bool ConcurrentMark::try_stealing(uint worker_id, int* hash_seed, oop& obj) {
@@ -3727,7 +3627,6 @@ void CMTask::do_marking_step(double time_target_ms,
   _claimed = true;
 
   _start_time_ms = os::elapsedVTime() * 1000.0;
-  statsOnly( _interval_start_time_ms = _start_time_ms );
 
   // If do_stealing is true then do_marking_step will attempt to
   // steal work from the other CMTasks. It only makes sense to
@@ -3887,8 +3786,6 @@ void CMTask::do_marking_step(double time_target_ms,
       HeapRegion* claimed_region = _cm->claim_region(_worker_id);
       if (claimed_region != NULL) {
         // Yes, we managed to claim one
-        statsOnly( ++_regions_claimed );
-
         if (_cm->verbose_low()) {
           gclog_or_tty->print_cr("[%u] we successfully claimed "
                                  "region " PTR_FORMAT,
@@ -3948,15 +3845,11 @@ void CMTask::do_marking_step(double time_target_ms,
 
     while (!has_aborted()) {
       oop obj;
-      statsOnly( ++_steal_attempts );
-
       if (_cm->try_stealing(_worker_id, &_hash_seed, obj)) {
         if (_cm->verbose_medium()) {
           gclog_or_tty->print_cr("[%u] stolen " PTR_FORMAT " successfully",
                                  _worker_id, p2i((void*) obj));
         }
-
-        statsOnly( ++_steals );
 
         assert(_nextMarkBitMap->isMarked((HeapWord*) obj),
                "any stolen object should be marked");
@@ -4042,7 +3935,6 @@ void CMTask::do_marking_step(double time_target_ms,
       }
 
       set_has_aborted();
-      statsOnly( ++_aborted_termination );
     }
   }
 
@@ -4057,9 +3949,6 @@ void CMTask::do_marking_step(double time_target_ms,
 
   if (has_aborted()) {
     // The task was aborted for some reason.
-
-    statsOnly( ++_aborted );
-
     if (_has_timed_out) {
       double diff_ms = elapsed_time_ms - _time_target_ms;
       // Keep statistics of how well we did with respect to hitting
@@ -4090,8 +3979,6 @@ void CMTask::do_marking_step(double time_target_ms,
         // re-initialize our data structures. At the end of this method,
         // task 0 will clear the global data structures.
       }
-
-      statsOnly( ++_aborted_overflow );
 
       // We clear the local state of this task...
       clear_region_fields();
@@ -4142,9 +4029,6 @@ CMTask::CMTask(uint worker_id,
     _card_bm(card_bm) {
   guarantee(task_queue != NULL, "invariant");
   guarantee(task_queues != NULL, "invariant");
-
-  statsOnly( _clock_due_to_scanning = 0;
-             _clock_due_to_marking  = 0 );
 
   _marking_step_diffs_ms.add(0.5);
 }

@@ -244,21 +244,8 @@ public:
   bool should_force() PRODUCT_RETURN_( return false; );
 };
 
-// this will enable a variety of different statistics per GC task
-#define _MARKING_STATS_       0
 // this will enable the higher verbose levels
 #define _MARKING_VERBOSE_     0
-
-#if _MARKING_STATS_
-#define statsOnly(statement)  \
-do {                          \
-  statement ;                 \
-} while (0)
-#else // _MARKING_STATS_
-#define statsOnly(statement)  \
-do {                          \
-} while (0)
-#endif // _MARKING_STATS_
 
 typedef enum {
   no_verbose  = 0,   // verbose turned off
@@ -969,43 +956,6 @@ private:
   size_t*                     _marked_bytes_array;
   BitMap*                     _card_bm;
 
-  // LOTS of statistics related with this task
-#if _MARKING_STATS_
-  NumberSeq                   _all_clock_intervals_ms;
-  double                      _interval_start_time_ms;
-
-  size_t                      _aborted;
-  size_t                      _aborted_overflow;
-  size_t                      _aborted_cm_aborted;
-  size_t                      _aborted_yield;
-  size_t                      _aborted_timed_out;
-  size_t                      _aborted_satb;
-  size_t                      _aborted_termination;
-
-  size_t                      _steal_attempts;
-  size_t                      _steals;
-
-  size_t                      _clock_due_to_marking;
-  size_t                      _clock_due_to_scanning;
-
-  size_t                      _local_pushes;
-  size_t                      _local_pops;
-  size_t                      _local_max_size;
-  size_t                      _objs_scanned;
-
-  size_t                      _global_pushes;
-  size_t                      _global_pops;
-  size_t                      _global_max_size;
-
-  size_t                      _global_transfers_to;
-  size_t                      _global_transfers_from;
-
-  size_t                      _regions_claimed;
-  size_t                      _objs_found_on_bitmap;
-
-  size_t                      _satb_buffers_processed;
-#endif // _MARKING_STATS_
-
   // it updates the local fields after this task has claimed
   // a new region to scan
   void setup_for_region(HeapRegion* hr);
@@ -1139,10 +1089,6 @@ public:
 
   // it prints statistics associated with this task
   void print_stats();
-
-#if _MARKING_STATS_
-  void increase_objs_found_on_bitmap() { ++_objs_found_on_bitmap; }
-#endif // _MARKING_STATS_
 };
 
 // Class that's used to to print out per-region liveness
