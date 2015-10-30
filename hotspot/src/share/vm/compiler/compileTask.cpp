@@ -26,6 +26,7 @@
 #include "compiler/compileTask.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compileBroker.hpp"
+#include "compiler/compilerDirectives.hpp"
 
 CompileTask*  CompileTask::_task_free_list = NULL;
 #ifdef ASSERT
@@ -369,6 +370,19 @@ void CompileTask::log_task_done(CompileLog* log) {
     log->flush();
   }
   log->mark_file_end();
+}
+
+// ------------------------------------------------------------------
+// CompileTask::check_break_at_flags
+bool CompileTask::check_break_at_flags() {
+  int compile_id = this->_compile_id;
+  bool is_osr = (_osr_bci != CompileBroker::standard_entry_bci);
+
+  if (CICountOSR && is_osr && (compile_id == CIBreakAtOSR)) {
+    return true;
+  } else {
+    return (compile_id == CIBreakAt);
+  }
 }
 
 // ------------------------------------------------------------------

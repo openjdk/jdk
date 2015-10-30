@@ -9950,41 +9950,6 @@ instruct log10D_reg(regD dst, regD src, eFlagsReg cr) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct logDPR_reg(regDPR1 dst, regDPR1 src) %{
-  predicate (UseSSE<=1);
-  // The source Double operand on FPU stack
-  match(Set dst (LogD src));
-  // fldln2       ; push log_e(2) on the FPU stack; full 80-bit number
-  // fxch         ; swap ST(0) with ST(1)
-  // fyl2x        ; compute log_e(2) * log_2(x)
-  format %{ "FLDLN2 \t\t\t#Log_e\n\t"
-            "FXCH   \n\t"
-            "FYL2X  \t\t\t# Q=Log_e*Log_2(x)"
-         %}
-  ins_encode( Opcode(0xD9), Opcode(0xED),   // fldln2
-              Opcode(0xD9), Opcode(0xC9),   // fxch
-              Opcode(0xD9), Opcode(0xF1));  // fyl2x
-
-  ins_pipe( pipe_slow );
-%}
-
-instruct logD_reg(regD dst, regD src, eFlagsReg cr) %{
-  predicate (UseSSE>=2);
-  effect(KILL cr);
-  // The source and result Double operands in XMM registers
-  match(Set dst (LogD src));
-  // fldln2       ; push log_e(2) on the FPU stack; full 80-bit number
-  // fyl2x        ; compute log_e(2) * log_2(x)
-  format %{ "FLDLN2 \t\t\t#Log_e\n\t"
-            "FYL2X  \t\t\t# Q=Log_e*Log_2(x)"
-         %}
-  ins_encode( Opcode(0xD9), Opcode(0xED),   // fldln2
-              Push_SrcD(src),
-              Opcode(0xD9), Opcode(0xF1),   // fyl2x
-              Push_ResultD(dst));
-  ins_pipe( pipe_slow );
-%}
-
 //-------------Float Instructions-------------------------------
 // Float Math
 

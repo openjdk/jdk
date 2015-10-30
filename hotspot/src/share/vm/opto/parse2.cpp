@@ -2378,13 +2378,13 @@ void Parse::do_one_bytecode() {
   }
 
 #ifndef PRODUCT
-  IdealGraphPrinter *printer = IdealGraphPrinter::printer();
-  if (printer && printer->should_print(_method)) {
+  IdealGraphPrinter *printer = C->printer();
+  if (printer && printer->should_print(1)) {
     char buffer[256];
     sprintf(buffer, "Bytecode %d: %s", bci(), Bytecodes::name(bc()));
     bool old = printer->traverse_outs();
     printer->set_traverse_outs(true);
-    printer->print_method(C, buffer, 4);
+    printer->print_method(buffer, 4);
     printer->set_traverse_outs(old);
   }
 #endif

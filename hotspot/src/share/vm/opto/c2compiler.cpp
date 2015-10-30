@@ -94,15 +94,16 @@ void C2Compiler::initialize() {
   }
 }
 
-void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci) {
+void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, DirectiveSet* directive) {
   assert(is_initialized(), "Compiler thread must be initialized");
 
   bool subsume_loads = SubsumeLoads;
   bool do_escape_analysis = DoEscapeAnalysis && !env->should_retain_local_variables();
   bool eliminate_boxing = EliminateAutoBox;
+
   while (!env->failing()) {
     // Attempt to compile while subsuming loads into machine instructions.
-    Compile C(env, this, target, entry_bci, subsume_loads, do_escape_analysis, eliminate_boxing);
+    Compile C(env, this, target, entry_bci, subsume_loads, do_escape_analysis, eliminate_boxing, directive);
 
     // Check result and retry if appropriate.
     if (C.failure_reason() != NULL) {
