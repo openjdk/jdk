@@ -41,12 +41,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import symbolgenerator.CreateSymbols;
-import symbolgenerator.CreateSymbols.ClassDescription;
-import symbolgenerator.CreateSymbols.ClassList;
-import symbolgenerator.CreateSymbols.CtSymKind;
-import symbolgenerator.CreateSymbols.ExcludeIncludeList;
-import symbolgenerator.CreateSymbols.VersionDescription;
+import build.tools.symbolgenerator.CreateSymbols;
+import build.tools.symbolgenerator.CreateSymbols.ClassDescription;
+import build.tools.symbolgenerator.CreateSymbols.ClassList;
+import build.tools.symbolgenerator.CreateSymbols.CtSymKind;
+import build.tools.symbolgenerator.CreateSymbols.ExcludeIncludeList;
+import build.tools.symbolgenerator.CreateSymbols.VersionDescription;
 
 public class CreateSymbolsTestImpl {
 
