@@ -263,12 +263,6 @@ inline void CMTask::push(oop obj) {
     bool success = _task_queue->push(obj);
     assert(success, "invariant");
   }
-
-  statsOnly( size_t tmp_size = (size_t)_task_queue->size();
-             if (tmp_size > _local_max_size) {
-               _local_max_size = tmp_size;
-             }
-             ++_local_pushes );
 }
 
 inline bool CMTask::is_below_finger(oop obj, HeapWord* global_finger) const {
@@ -317,7 +311,6 @@ inline void CMTask::process_grey_object(oop obj) {
   if (scan) {
     obj->oop_iterate(_cm_oop_closure);
   }
-  statsOnly( ++_objs_scanned );
   check_limits();
 }
 
