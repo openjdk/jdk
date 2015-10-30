@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2000-2002,2004,2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -20,13 +20,14 @@
 
 package com.sun.org.apache.xerces.internal.impl.xpath;
 
-import java.util.Vector;
-
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
-import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
+import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xni.QName;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Vector;
 
 /**
  * Bare minimum XPath parser.
@@ -858,10 +859,10 @@ public class XPath {
         private SymbolTable fSymbolTable;
 
         // REVISIT: Code something better here. -Ac
-        private java.util.Hashtable fSymbolMapping = new java.util.Hashtable();
+        private Map<String, Integer> fSymbolMapping = new HashMap<>();
 
         // REVISIT: Code something better here. -Ac
-        private java.util.Hashtable fTokenNames = new java.util.Hashtable();
+        private Map<Integer, String> fTokenNames = new HashMap<>();
 
         /**
          * Current position in the token list.
@@ -882,57 +883,57 @@ public class XPath {
                 "self",
             };
             for (int i = 0; i < symbols.length; i++) {
-                fSymbolMapping.put(fSymbolTable.addSymbol(symbols[i]), new Integer(i));
+                fSymbolMapping.put(fSymbolTable.addSymbol(symbols[i]), i);
             }
-            fTokenNames.put(new Integer(EXPRTOKEN_OPEN_PAREN), "EXPRTOKEN_OPEN_PAREN");
-            fTokenNames.put(new Integer(EXPRTOKEN_CLOSE_PAREN), "EXPRTOKEN_CLOSE_PAREN");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPEN_BRACKET), "EXPRTOKEN_OPEN_BRACKET");
-            fTokenNames.put(new Integer(EXPRTOKEN_CLOSE_BRACKET), "EXPRTOKEN_CLOSE_BRACKET");
-            fTokenNames.put(new Integer(EXPRTOKEN_PERIOD), "EXPRTOKEN_PERIOD");
-            fTokenNames.put(new Integer(EXPRTOKEN_DOUBLE_PERIOD), "EXPRTOKEN_DOUBLE_PERIOD");
-            fTokenNames.put(new Integer(EXPRTOKEN_ATSIGN), "EXPRTOKEN_ATSIGN");
-            fTokenNames.put(new Integer(EXPRTOKEN_COMMA), "EXPRTOKEN_COMMA");
-            fTokenNames.put(new Integer(EXPRTOKEN_DOUBLE_COLON), "EXPRTOKEN_DOUBLE_COLON");
-            fTokenNames.put(new Integer(EXPRTOKEN_NAMETEST_ANY), "EXPRTOKEN_NAMETEST_ANY");
-            fTokenNames.put(new Integer(EXPRTOKEN_NAMETEST_NAMESPACE), "EXPRTOKEN_NAMETEST_NAMESPACE");
-            fTokenNames.put(new Integer(EXPRTOKEN_NAMETEST_QNAME), "EXPRTOKEN_NAMETEST_QNAME");
-            fTokenNames.put(new Integer(EXPRTOKEN_NODETYPE_COMMENT), "EXPRTOKEN_NODETYPE_COMMENT");
-            fTokenNames.put(new Integer(EXPRTOKEN_NODETYPE_TEXT), "EXPRTOKEN_NODETYPE_TEXT");
-            fTokenNames.put(new Integer(EXPRTOKEN_NODETYPE_PI), "EXPRTOKEN_NODETYPE_PI");
-            fTokenNames.put(new Integer(EXPRTOKEN_NODETYPE_NODE), "EXPRTOKEN_NODETYPE_NODE");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPERATOR_AND), "EXPRTOKEN_OPERATOR_AND");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPERATOR_OR), "EXPRTOKEN_OPERATOR_OR");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPERATOR_MOD), "EXPRTOKEN_OPERATOR_MOD");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPERATOR_DIV), "EXPRTOKEN_OPERATOR_DIV");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPERATOR_MULT), "EXPRTOKEN_OPERATOR_MULT");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPERATOR_SLASH), "EXPRTOKEN_OPERATOR_SLASH");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPERATOR_DOUBLE_SLASH), "EXPRTOKEN_OPERATOR_DOUBLE_SLASH");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPERATOR_UNION), "EXPRTOKEN_OPERATOR_UNION");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPERATOR_PLUS), "EXPRTOKEN_OPERATOR_PLUS");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPERATOR_MINUS), "EXPRTOKEN_OPERATOR_MINUS");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPERATOR_EQUAL), "EXPRTOKEN_OPERATOR_EQUAL");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPERATOR_NOT_EQUAL), "EXPRTOKEN_OPERATOR_NOT_EQUAL");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPERATOR_LESS), "EXPRTOKEN_OPERATOR_LESS");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPERATOR_LESS_EQUAL), "EXPRTOKEN_OPERATOR_LESS_EQUAL");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPERATOR_GREATER), "EXPRTOKEN_OPERATOR_GREATER");
-            fTokenNames.put(new Integer(EXPRTOKEN_OPERATOR_GREATER_EQUAL), "EXPRTOKEN_OPERATOR_GREATER_EQUAL");
-            fTokenNames.put(new Integer(EXPRTOKEN_FUNCTION_NAME), "EXPRTOKEN_FUNCTION_NAME");
-            fTokenNames.put(new Integer(EXPRTOKEN_AXISNAME_ANCESTOR), "EXPRTOKEN_AXISNAME_ANCESTOR");
-            fTokenNames.put(new Integer(EXPRTOKEN_AXISNAME_ANCESTOR_OR_SELF), "EXPRTOKEN_AXISNAME_ANCESTOR_OR_SELF");
-            fTokenNames.put(new Integer(EXPRTOKEN_AXISNAME_ATTRIBUTE), "EXPRTOKEN_AXISNAME_ATTRIBUTE");
-            fTokenNames.put(new Integer(EXPRTOKEN_AXISNAME_CHILD), "EXPRTOKEN_AXISNAME_CHILD");
-            fTokenNames.put(new Integer(EXPRTOKEN_AXISNAME_DESCENDANT), "EXPRTOKEN_AXISNAME_DESCENDANT");
-            fTokenNames.put(new Integer(EXPRTOKEN_AXISNAME_DESCENDANT_OR_SELF), "EXPRTOKEN_AXISNAME_DESCENDANT_OR_SELF");
-            fTokenNames.put(new Integer(EXPRTOKEN_AXISNAME_FOLLOWING), "EXPRTOKEN_AXISNAME_FOLLOWING");
-            fTokenNames.put(new Integer(EXPRTOKEN_AXISNAME_FOLLOWING_SIBLING), "EXPRTOKEN_AXISNAME_FOLLOWING_SIBLING");
-            fTokenNames.put(new Integer(EXPRTOKEN_AXISNAME_NAMESPACE), "EXPRTOKEN_AXISNAME_NAMESPACE");
-            fTokenNames.put(new Integer(EXPRTOKEN_AXISNAME_PARENT), "EXPRTOKEN_AXISNAME_PARENT");
-            fTokenNames.put(new Integer(EXPRTOKEN_AXISNAME_PRECEDING), "EXPRTOKEN_AXISNAME_PRECEDING");
-            fTokenNames.put(new Integer(EXPRTOKEN_AXISNAME_PRECEDING_SIBLING), "EXPRTOKEN_AXISNAME_PRECEDING_SIBLING");
-            fTokenNames.put(new Integer(EXPRTOKEN_AXISNAME_SELF), "EXPRTOKEN_AXISNAME_SELF");
-            fTokenNames.put(new Integer(EXPRTOKEN_LITERAL), "EXPRTOKEN_LITERAL");
-            fTokenNames.put(new Integer(EXPRTOKEN_NUMBER), "EXPRTOKEN_NUMBER");
-            fTokenNames.put(new Integer(EXPRTOKEN_VARIABLE_REFERENCE), "EXPRTOKEN_VARIABLE_REFERENCE");
+            fTokenNames.put(EXPRTOKEN_OPEN_PAREN, "EXPRTOKEN_OPEN_PAREN");
+            fTokenNames.put(EXPRTOKEN_CLOSE_PAREN, "EXPRTOKEN_CLOSE_PAREN");
+            fTokenNames.put(EXPRTOKEN_OPEN_BRACKET, "EXPRTOKEN_OPEN_BRACKET");
+            fTokenNames.put(EXPRTOKEN_CLOSE_BRACKET, "EXPRTOKEN_CLOSE_BRACKET");
+            fTokenNames.put(EXPRTOKEN_PERIOD, "EXPRTOKEN_PERIOD");
+            fTokenNames.put(EXPRTOKEN_DOUBLE_PERIOD, "EXPRTOKEN_DOUBLE_PERIOD");
+            fTokenNames.put(EXPRTOKEN_ATSIGN, "EXPRTOKEN_ATSIGN");
+            fTokenNames.put(EXPRTOKEN_COMMA, "EXPRTOKEN_COMMA");
+            fTokenNames.put(EXPRTOKEN_DOUBLE_COLON, "EXPRTOKEN_DOUBLE_COLON");
+            fTokenNames.put(EXPRTOKEN_NAMETEST_ANY, "EXPRTOKEN_NAMETEST_ANY");
+            fTokenNames.put(EXPRTOKEN_NAMETEST_NAMESPACE, "EXPRTOKEN_NAMETEST_NAMESPACE");
+            fTokenNames.put(EXPRTOKEN_NAMETEST_QNAME, "EXPRTOKEN_NAMETEST_QNAME");
+            fTokenNames.put(EXPRTOKEN_NODETYPE_COMMENT, "EXPRTOKEN_NODETYPE_COMMENT");
+            fTokenNames.put(EXPRTOKEN_NODETYPE_TEXT, "EXPRTOKEN_NODETYPE_TEXT");
+            fTokenNames.put(EXPRTOKEN_NODETYPE_PI, "EXPRTOKEN_NODETYPE_PI");
+            fTokenNames.put(EXPRTOKEN_NODETYPE_NODE, "EXPRTOKEN_NODETYPE_NODE");
+            fTokenNames.put(EXPRTOKEN_OPERATOR_AND, "EXPRTOKEN_OPERATOR_AND");
+            fTokenNames.put(EXPRTOKEN_OPERATOR_OR, "EXPRTOKEN_OPERATOR_OR");
+            fTokenNames.put(EXPRTOKEN_OPERATOR_MOD, "EXPRTOKEN_OPERATOR_MOD");
+            fTokenNames.put(EXPRTOKEN_OPERATOR_DIV, "EXPRTOKEN_OPERATOR_DIV");
+            fTokenNames.put(EXPRTOKEN_OPERATOR_MULT, "EXPRTOKEN_OPERATOR_MULT");
+            fTokenNames.put(EXPRTOKEN_OPERATOR_SLASH, "EXPRTOKEN_OPERATOR_SLASH");
+            fTokenNames.put(EXPRTOKEN_OPERATOR_DOUBLE_SLASH, "EXPRTOKEN_OPERATOR_DOUBLE_SLASH");
+            fTokenNames.put(EXPRTOKEN_OPERATOR_UNION, "EXPRTOKEN_OPERATOR_UNION");
+            fTokenNames.put(EXPRTOKEN_OPERATOR_PLUS, "EXPRTOKEN_OPERATOR_PLUS");
+            fTokenNames.put(EXPRTOKEN_OPERATOR_MINUS, "EXPRTOKEN_OPERATOR_MINUS");
+            fTokenNames.put(EXPRTOKEN_OPERATOR_EQUAL, "EXPRTOKEN_OPERATOR_EQUAL");
+            fTokenNames.put(EXPRTOKEN_OPERATOR_NOT_EQUAL, "EXPRTOKEN_OPERATOR_NOT_EQUAL");
+            fTokenNames.put(EXPRTOKEN_OPERATOR_LESS, "EXPRTOKEN_OPERATOR_LESS");
+            fTokenNames.put(EXPRTOKEN_OPERATOR_LESS_EQUAL, "EXPRTOKEN_OPERATOR_LESS_EQUAL");
+            fTokenNames.put(EXPRTOKEN_OPERATOR_GREATER, "EXPRTOKEN_OPERATOR_GREATER");
+            fTokenNames.put(EXPRTOKEN_OPERATOR_GREATER_EQUAL, "EXPRTOKEN_OPERATOR_GREATER_EQUAL");
+            fTokenNames.put(EXPRTOKEN_FUNCTION_NAME, "EXPRTOKEN_FUNCTION_NAME");
+            fTokenNames.put(EXPRTOKEN_AXISNAME_ANCESTOR, "EXPRTOKEN_AXISNAME_ANCESTOR");
+            fTokenNames.put(EXPRTOKEN_AXISNAME_ANCESTOR_OR_SELF, "EXPRTOKEN_AXISNAME_ANCESTOR_OR_SELF");
+            fTokenNames.put(EXPRTOKEN_AXISNAME_ATTRIBUTE, "EXPRTOKEN_AXISNAME_ATTRIBUTE");
+            fTokenNames.put(EXPRTOKEN_AXISNAME_CHILD, "EXPRTOKEN_AXISNAME_CHILD");
+            fTokenNames.put(EXPRTOKEN_AXISNAME_DESCENDANT, "EXPRTOKEN_AXISNAME_DESCENDANT");
+            fTokenNames.put(EXPRTOKEN_AXISNAME_DESCENDANT_OR_SELF, "EXPRTOKEN_AXISNAME_DESCENDANT_OR_SELF");
+            fTokenNames.put(EXPRTOKEN_AXISNAME_FOLLOWING, "EXPRTOKEN_AXISNAME_FOLLOWING");
+            fTokenNames.put(EXPRTOKEN_AXISNAME_FOLLOWING_SIBLING, "EXPRTOKEN_AXISNAME_FOLLOWING_SIBLING");
+            fTokenNames.put(EXPRTOKEN_AXISNAME_NAMESPACE, "EXPRTOKEN_AXISNAME_NAMESPACE");
+            fTokenNames.put(EXPRTOKEN_AXISNAME_PARENT, "EXPRTOKEN_AXISNAME_PARENT");
+            fTokenNames.put(EXPRTOKEN_AXISNAME_PRECEDING, "EXPRTOKEN_AXISNAME_PRECEDING");
+            fTokenNames.put(EXPRTOKEN_AXISNAME_PRECEDING_SIBLING, "EXPRTOKEN_AXISNAME_PRECEDING_SIBLING");
+            fTokenNames.put(EXPRTOKEN_AXISNAME_SELF, "EXPRTOKEN_AXISNAME_SELF");
+            fTokenNames.put(EXPRTOKEN_LITERAL, "EXPRTOKEN_LITERAL");
+            fTokenNames.put(EXPRTOKEN_NUMBER, "EXPRTOKEN_NUMBER");
+            fTokenNames.put(EXPRTOKEN_VARIABLE_REFERENCE, "EXPRTOKEN_VARIABLE_REFERENCE");
         }
 
         //
@@ -946,16 +947,21 @@ public class XPath {
 //        }
 //
         public String getTokenString(int token) {
-            return (String)fTokenNames.get(new Integer(token));
+            return fTokenNames.get(token);
         }
 
         public void addToken(String tokenStr) {
-            Integer tokenInt = (Integer)fTokenNames.get(tokenStr);
+            Integer tokenInt = null;
+            for (Map.Entry<Integer, String> entry : fTokenNames.entrySet()) {
+                if (entry.getValue().equals(tokenStr)) {
+                    tokenInt = entry.getKey();
+                }
+            }
             if (tokenInt == null) {
-                tokenInt = new Integer(fTokenNames.size());
+                tokenInt = fTokenNames.size();
                 fTokenNames.put(tokenInt, tokenStr);
             }
-            addToken(tokenInt.intValue());
+            addToken(tokenInt);
         }
 
         public void addToken(int token) {

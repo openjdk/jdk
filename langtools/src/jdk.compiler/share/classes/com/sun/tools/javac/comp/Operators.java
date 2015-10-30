@@ -404,13 +404,20 @@ public class Operators {
      */
     class UnaryNumericOperator extends UnaryOperatorHelper {
 
+        Predicate<Type> numericTest;
+
         UnaryNumericOperator(Tag tag) {
+            this(tag, Type::isNumeric);
+        }
+
+        UnaryNumericOperator(Tag tag, Predicate<Type> numericTest) {
             super(tag);
+            this.numericTest = numericTest;
         }
 
         @Override
         public boolean test(Type type) {
-            return unaryPromotion(type).isNumeric();
+            return numericTest.test(unaryPromotion(type));
         }
 
         @Override
@@ -462,8 +469,15 @@ public class Operators {
      */
     class BinaryNumericOperator extends BinaryOperatorHelper {
 
+        Predicate<Type> numericTest;
+
         BinaryNumericOperator(Tag tag) {
+            this(tag, Type::isNumeric);
+        }
+
+        BinaryNumericOperator(Tag tag, Predicate<Type> numericTest) {
             super(tag);
+            this.numericTest = numericTest;
         }
 
         @Override
@@ -474,7 +488,8 @@ public class Operators {
 
         @Override
         public boolean test(Type arg1, Type arg2) {
-            return unaryPromotion(arg1).isNumeric() && unaryPromotion(arg2).isNumeric();
+            return numericTest.test(unaryPromotion(arg1)) &&
+                    numericTest.test(unaryPromotion(arg2));
         }
     }
 
@@ -518,20 +533,22 @@ public class Operators {
 
         @Override
         public boolean test(Type arg1, Type arg2) {
-            return types.isSameType(arg1, syms.stringType) ||
+            boolean hasStringOp = types.isSameType(arg1, syms.stringType) ||
                     types.isSameType(arg2, syms.stringType);
+            boolean hasVoidOp = arg1.hasTag(TypeTag.VOID) || arg2.hasTag(TypeTag.VOID);
+            return hasStringOp && !hasVoidOp;
         }
 
         /**
          * This routine applies following mappings:
          * - if input type is primitive, apply numeric promotion
-         * - if input type is either 'null' or 'String' leave it untouched
+         * - if input type is either 'void', 'null' or 'String' leave it untouched
          * - otherwise return 'Object'
          */
         private Type stringPromotion(Type t) {
             if (t.isPrimitive()) {
                 return unaryPromotion(t);
-            } else if (t.hasTag(TypeTag.BOT) ||
+            } else if (t.hasTag(TypeTag.VOID) || t.hasTag(TypeTag.BOT) ||
                     types.isSameType(t, syms.stringType)) {
                 return t;
             } else if (t.hasTag(TypeTag.TYPEVAR)) {
@@ -640,7 +657,7 @@ public class Operators {
                         .addUnaryOperator(FLOAT, FLOAT, fneg)
                         .addUnaryOperator(LONG, LONG, lneg)
                         .addUnaryOperator(INT, INT, ineg),
-                new UnaryNumericOperator(Tag.COMPL)
+                new UnaryNumericOperator(Tag.COMPL, Type::isIntegral)
                         .addUnaryOperator(LONG, LONG, lxor)
                         .addUnaryOperator(INT, INT, ixor),
                 new UnaryPrefixPostfixOperator(Tag.POSTINC)
@@ -713,17 +730,17 @@ public class Operators {
                     .addBinaryOperator(INT, INT, INT, imod),
             new BinaryBooleanOperator(Tag.BITAND)
                     .addBinaryOperator(BOOLEAN, BOOLEAN, BOOLEAN, iand),
-            new BinaryNumericOperator(Tag.BITAND)
+            new BinaryNumericOperator(Tag.BITAND, Type::isIntegral)
                     .addBinaryOperator(LONG, LONG, LONG, land)
                     .addBinaryOperator(INT, INT, INT, iand),
             new BinaryBooleanOperator(Tag.BITOR)
                     .addBinaryOperator(BOOLEAN, BOOLEAN, BOOLEAN, ior),
-            new BinaryNumericOperator(Tag.BITOR)
+            new BinaryNumericOperator(Tag.BITOR, Type::isIntegral)
                     .addBinaryOperator(LONG, LONG, LONG, lor)
                     .addBinaryOperator(INT, INT, INT, ior),
             new BinaryBooleanOperator(Tag.BITXOR)
                     .addBinaryOperator(BOOLEAN, BOOLEAN, BOOLEAN, ixor),
-            new BinaryNumericOperator(Tag.BITXOR)
+            new BinaryNumericOperator(Tag.BITXOR, Type::isIntegral)
                     .addBinaryOperator(LONG, LONG, LONG, lxor)
                     .addBinaryOperator(INT, INT, INT, ixor),
             new BinaryShiftOperator(Tag.SL)

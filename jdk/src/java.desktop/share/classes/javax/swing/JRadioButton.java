@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,17 +24,14 @@
  */
 package javax.swing;
 
-import java.awt.*;
-import java.awt.event.*;
-import java.beans.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 
 import javax.swing.plaf.*;
 import javax.accessibility.*;
 
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-
 
 /**
  * An implementation of a radio button -- an item that can be selected or
@@ -78,15 +75,13 @@ import java.io.IOException;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- *   attribute: isContainer false
- * description: A component which can display it's state as selected or deselected.
- *
  * @see ButtonGroup
  * @see JCheckBox
  * @author Jeff Dinkins
  * @since 1.2
  */
+@JavaBean(description = "A component which can display it's state as selected or deselected.")
+@SwingContainer(false)
 @SuppressWarnings("serial") // Same-version serialization only
 public class JRadioButton extends JToggleButton implements Accessible {
 
@@ -204,10 +199,9 @@ public class JRadioButton extends JToggleButton implements Accessible {
      * @return String "RadioButtonUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
-     * @beaninfo
-     *        expert: true
-     *   description: A string that specifies the name of the L&amp;F class.
      */
+    @BeanProperty(bound = false, expert = true, description
+            = "A string that specifies the name of the L&amp;F class.")
     public String getUIClassID() {
         return uiClassID;
     }
@@ -263,10 +257,9 @@ public class JRadioButton extends JToggleButton implements Accessible {
      *
      * @return an AccessibleJRadioButton that serves as the
      *         AccessibleContext of this JRadioButton
-     * @beaninfo
-     *       expert: true
-     *  description: The AccessibleContext associated with this Button
      */
+    @BeanProperty(bound = false, expert = true, description
+            = "The AccessibleContext associated with this Button")
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJRadioButton();

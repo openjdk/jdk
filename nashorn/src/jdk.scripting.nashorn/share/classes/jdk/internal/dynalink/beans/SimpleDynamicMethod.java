@@ -84,17 +84,15 @@
 package jdk.internal.dynalink.beans;
 
 import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import jdk.internal.dynalink.CallSiteDescriptor;
 
 /**
  * A dynamic method bound to exactly one Java method or constructor that is not caller sensitive. Since its target is
  * not caller sensitive, this class pre-caches its method handle and always returns it from the call to
- * {@link #getTarget(Lookup)}. Can be used in general to represents dynamic methods bound to a single method handle,
+ * {@link #getTarget(CallSiteDescriptor)}. Can be used in general to represents dynamic methods bound to a single method handle,
  * even if that handle is not mapped to a Java method, i.e. as a wrapper around field getters/setters, array element
  * getters/setters, etc.
- *
- * @author Attila Szegedi
  */
 class SimpleDynamicMethod extends SingleDynamicMethod {
     private final MethodHandle target;
@@ -142,7 +140,7 @@ class SimpleDynamicMethod extends SingleDynamicMethod {
     }
 
     @Override
-    MethodHandle getTarget(final Lookup lookup) {
+    MethodHandle getTarget(final CallSiteDescriptor desc) {
         return target;
     }
 

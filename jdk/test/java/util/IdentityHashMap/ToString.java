@@ -28,7 +28,6 @@
  * @author  Josh Bloch
  */
 
-
 import java.util.*;
 
 public class ToString {

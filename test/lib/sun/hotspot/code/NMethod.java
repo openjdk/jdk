@@ -35,14 +35,16 @@ public class NMethod extends CodeBlob {
   }
   private NMethod(Object[] obj) {
     super((Object[])obj[0]);
-    assert obj.length == 4;
+    assert obj.length == 5;
     comp_level = (Integer) obj[1];
     insts = (byte[]) obj[2];
     compile_id = (Integer) obj[3];
+    address = (Long) obj[4];
   }
   public final byte[] insts;
   public final int comp_level;
   public final int compile_id;
+  public final long address;
 
   @Override
   public String toString() {
@@ -51,6 +53,7 @@ public class NMethod extends CodeBlob {
         + ", insts=" + insts
         + ", comp_level=" + comp_level
         + ", compile_id=" + compile_id
+        + ", address=" + address
         + '}';
   }
 }

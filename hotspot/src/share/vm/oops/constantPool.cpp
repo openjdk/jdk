@@ -111,7 +111,7 @@ objArrayOop ConstantPool::resolved_references() const {
 // to map it back for resolving and some unlikely miscellaneous uses.
 // The objects created by invokedynamic are appended to this list.
 void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
-                                                  intStack reference_map,
+                                                  const intStack& reference_map,
                                                   int constant_pool_map_length,
                                                   TRAPS) {
   // Initialized the resolved object cache.

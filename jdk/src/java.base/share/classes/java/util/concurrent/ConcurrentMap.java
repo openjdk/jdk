@@ -89,7 +89,7 @@ public interface ConcurrentMap<K,V> extends Map<K,V> {
         return ((v = get(key)) != null) ? v : defaultValue;
     }
 
-   /**
+    /**
      * {@inheritDoc}
      *
      * @implSpec The default implementation is equivalent to, for this
@@ -181,10 +181,10 @@ public interface ConcurrentMap<K,V> extends Map<K,V> {
      *         is not supported by this map
      * @throws ClassCastException if the key or value is of an inappropriate
      *         type for this map
-     *         (<a href="../Collection.html#optional-restrictions">optional</a>)
+     * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      * @throws NullPointerException if the specified key or value is null,
      *         and this map does not permit null keys or values
-     *         (<a href="../Collection.html#optional-restrictions">optional</a>)
+     * (<a href="{@docRoot}/java/util/Collection.html#optional-restrictions">optional</a>)
      */
     boolean remove(Object key, Object value);
 

@@ -27,8 +27,11 @@ package sun.security.jca;
 
 import java.util.*;
 
-import java.security.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.Provider;
 import java.security.Provider.Service;
+import java.security.Security;
 
 /**
  * List of Providers. Used to represent the provider preferences.
@@ -64,6 +67,9 @@ public final class ProviderList {
 
     // constant for an ProviderList with no elements
     static final ProviderList EMPTY = new ProviderList(PC0, true);
+
+    // list of all jdk.security.provider.preferred entries
+    static private PreferredList preferredPropList = null;
 
     // dummy provider object to use during initialization
     // used to avoid explicit null checks in various places
@@ -162,11 +168,10 @@ public final class ProviderList {
      */
     private ProviderList() {
         List<ProviderConfig> configList = new ArrayList<>();
-        for (int i = 1; true; i++) {
-            String entry = Security.getProperty("security.provider." + i);
-            if (entry == null) {
-                break;
-            }
+        String entry;
+        int i = 1;
+
+        while ((entry = Security.getProperty("security.provider." + i)) != null) {
             entry = entry.trim();
             if (entry.length() == 0) {
                 System.err.println("invalid entry for " +
@@ -187,10 +192,36 @@ public final class ProviderList {
             if (configList.contains(config) == false) {
                 configList.add(config);
             }
+            i++;
         }
         configs = configList.toArray(PC0);
+
+        // Load config entries for use when getInstance is called
+        entry = Security.getProperty("jdk.security.provider.preferred");
+        if (entry != null && (entry = entry.trim()).length() > 0) {
+            String[] entries = entry.split(",");
+            if (ProviderList.preferredPropList == null) {
+                ProviderList.preferredPropList = new PreferredList();
+            }
+
+            for (String e : entries) {
+                i = e.indexOf(':');
+                if (i < 0) {
+                    if (debug != null) {
+                        debug.println("invalid preferred entry skipped.  " +
+                                "Missing colon delimiter \"" + e + "\"");
+                    }
+                    continue;
+                }
+                ProviderList.preferredPropList.add(new PreferredEntry(
+                        e.substring(0, i).trim(), e.substring(i + 1).trim()));
+            }
+        }
+
         if (debug != null) {
             debug.println("provider configuration: " + configList);
+            debug.println("config configuration: " +
+                    ProviderList.preferredPropList);
         }
     }
 
@@ -327,7 +358,22 @@ public final class ProviderList {
      * algorithm.
      */
     public Service getService(String type, String name) {
-        for (int i = 0; i < configs.length; i++) {
+        ArrayList<PreferredEntry> pList = null;
+        int i;
+
+        // Preferred provider list
+        if (preferredPropList != null &&
+                (pList = preferredPropList.getAll(type, name)) != null) {
+            for (i = 0; i < pList.size(); i++) {
+                Provider p = getProvider(pList.get(i).provider);
+                Service s = p.getService(type, name);
+                if (s != null) {
+                    return s;
+                }
+            }
+        }
+
+        for (i = 0; i < configs.length; i++) {
             Provider p = getProvider(i);
             Service s = p.getService(type, name);
             if (s != null) {
@@ -394,7 +440,11 @@ public final class ProviderList {
         private List<Service> services;
 
         // index into config[] of the next provider we need to query
-        private int providerIndex;
+        private int providerIndex = 0;
+
+        // Matching preferred provider list for this ServiceList
+        ArrayList<PreferredEntry> preferredList = null;
+        private int preferredIndex = 0;
 
         ServiceList(String type, String algorithm) {
             this.type = type;
@@ -421,6 +471,14 @@ public final class ProviderList {
         }
 
         private Service tryGet(int index) {
+            Provider p;
+
+            // If preferred providers are configured, check for matches with
+            // the requested service.
+            if (preferredPropList != null && preferredList == null) {
+                preferredList = preferredPropList.getAll(this);
+            }
+
             while (true) {
                 if ((index == 0) && (firstService != null)) {
                     return firstService;
@@ -430,8 +488,27 @@ public final class ProviderList {
                 if (providerIndex >= configs.length) {
                     return null;
                 }
-                // check all algorithms in this provider before moving on
-                Provider p = getProvider(providerIndex++);
+
+                // If there were matches with a preferred provider, iterate
+                // through the list first before going through the
+                // ordered list (java.security.provider.#)
+                if (preferredList != null &&
+                        preferredIndex < preferredList.size()) {
+                    PreferredEntry entry = preferredList.get(preferredIndex++);
+                    // Look for the provider name in the PreferredEntry
+                    p = getProvider(entry.provider);
+                    if (p == null) {
+                        if (debug != null) {
+                            debug.println("No provider found with name: " +
+                                    entry.provider);
+                        }
+                        continue;
+                    }
+                } else {
+                    // check all algorithms in this provider before moving on
+                    p = getProvider(providerIndex++);
+                }
+
                 if (type != null) {
                     // simple lookup
                     Service s = p.getService(type, algorithm);
@@ -499,6 +576,121 @@ public final class ProviderList {
                     throw new UnsupportedOperationException();
                 }
             };
+        }
+    }
+
+    // Provider list defined by jdk.security.provider.preferred entry
+    static final class PreferredList {
+        ArrayList<PreferredEntry> list = new ArrayList<PreferredEntry>();
+
+        /*
+         * Return a list of all preferred entries that match the passed
+         * ServiceList.
+         */
+        ArrayList<PreferredEntry> getAll(ServiceList s) {
+            if (s.ids == null) {
+                return getAll(s.type, s.algorithm);
+
+            }
+
+            ArrayList<PreferredEntry> l = new ArrayList<PreferredEntry>();
+            for (ServiceId id : s.ids) {
+                implGetAll(l, id.type, id.algorithm);
+            }
+
+            return l;
+        }
+
+        /*
+         * Return a list of all preferred entries that match the passed
+         * type and algorithm.
+         */
+        ArrayList<PreferredEntry> getAll(String type, String algorithm) {
+            ArrayList<PreferredEntry> l = new ArrayList<PreferredEntry>();
+            implGetAll(l, type, algorithm);
+            return l;
+        }
+
+        /*
+         * Compare each preferred entry against the passed type and
+         * algorithm, putting any matches in the passed ArrayList.
+         */
+        private void implGetAll(ArrayList<PreferredEntry> l, String type,
+                String algorithm) {
+            PreferredEntry e;
+
+            for (int i = 0; i < size(); i++) {
+                e = list.get(i);
+                if (e.match(type, algorithm)) {
+                    l.add(e);
+                }
+            }
+        }
+
+        public PreferredEntry get(int i) {
+            return list.get(i);
+        }
+
+        public int size() {
+            return list.size();
+        }
+
+        public boolean add(PreferredEntry e) {
+            return list.add(e);
+        }
+
+        public String toString() {
+            String s = "";
+            for (PreferredEntry e: list) {
+                s += e.toString();
+            }
+            return s;
+        }
+    }
+
+    // Individual preferred property entry from jdk.security.provider.preferred
+    private class PreferredEntry {
+        String type = null;
+        String algorithm;
+        String provider;
+
+        PreferredEntry(String t, String p) {
+            int i = t.indexOf('.');
+            if (i > 0) {
+                type = t.substring(0, i);
+                algorithm = t.substring(i + 1);
+            } else {
+                algorithm = t;
+            }
+
+            provider = p;
+        }
+
+        boolean match(String t, String a) {
+            if (debug != null) {
+                debug.println("Config match:  " + toString() + " == [" + t +
+                        ", " + a + "]");
+            }
+
+            // Compare service type if configured
+            if (type != null && type.compareToIgnoreCase(t) != 0) {
+                return false;
+            }
+
+            // Compare the algorithm string.
+            if (a.compareToIgnoreCase(algorithm) == 0) {
+                if (debug != null) {
+                    debug.println("Config entry found:  " + toString());
+                }
+                return true;
+            }
+
+            // No match
+            return false;
+        }
+
+        public String toString() {
+            return "[" + type + ", " + algorithm + " : " + provider + "] ";
         }
     }
 

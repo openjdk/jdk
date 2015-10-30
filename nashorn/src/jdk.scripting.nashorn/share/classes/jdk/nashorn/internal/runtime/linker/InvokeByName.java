@@ -83,7 +83,7 @@ public final class InvokeByName {
      */
     public InvokeByName(final String name, final Class<?> targetClass, final Class<?> rtype, final Class<?>... ptypes) {
         this.name = name;
-        getter  = Bootstrap.createDynamicInvoker("dyn:getMethod|getProp|getElem:" + name, Object.class, targetClass);
+        getter  = Bootstrap.createDynamicInvoker(name, NashornCallSiteDescriptor.GET_METHOD_PROPERTY, Object.class, targetClass);
 
         final Class<?>[] finalPtypes;
         final int plength = ptypes.length;
@@ -95,7 +95,7 @@ public final class InvokeByName {
             finalPtypes[1] = targetClass;
             System.arraycopy(ptypes, 0, finalPtypes, 2, plength);
         }
-        invoker = Bootstrap.createDynamicInvoker("dyn:call", rtype, finalPtypes);
+        invoker = Bootstrap.createDynamicCallInvoker(rtype, finalPtypes);
     }
 
     /**

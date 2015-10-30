@@ -25,7 +25,7 @@
  * @test
  * @bug 4593209 8001667
  * @summary Reverse comparator was subtly broken
- * @author Josh bloch
+ * @author Josh Bloch
  */
 
 import java.util.*;

@@ -29,3 +29,4 @@ jdk.sctp
 jdk.security.auth
 jdk.security.jgss
 jdk.snmp
+jdk.vm.ci

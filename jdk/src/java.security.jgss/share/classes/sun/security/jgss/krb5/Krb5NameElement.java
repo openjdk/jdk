@@ -28,7 +28,10 @@ package sun.security.jgss.krb5;
 import org.ietf.jgss.*;
 import sun.security.jgss.spi.*;
 import sun.security.krb5.PrincipalName;
+import sun.security.krb5.Realm;
 import sun.security.krb5.KrbException;
+
+import javax.security.auth.kerberos.ServicePermission;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -126,6 +129,18 @@ public class Krb5NameElement
             throw new GSSException(GSSException.BAD_NAME, -1, e.getMessage());
         }
 
+        if (principalName.isRealmDeduced() && !Realm.AUTODEDUCEREALM) {
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                try {
+                    sm.checkPermission(new ServicePermission(
+                            "@" + principalName.getRealmAsString(), "-"));
+                } catch (SecurityException se) {
+                    // Do not chain the actual exception to hide info
+                    throw new GSSException(GSSException.FAILURE);
+                }
+            }
+        }
         return new Krb5NameElement(principalName, gssNameStr, gssNameType);
     }
 

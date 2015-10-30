@@ -46,7 +46,7 @@ public enum Sorter {
 
         for (int i=0; i < 10000; i++) {
             for (Sorter s : values()) {
-                Integer[] test= gold.clone();
+                Integer[] test = gold.clone();
                 s.sort(test);
             }
         }

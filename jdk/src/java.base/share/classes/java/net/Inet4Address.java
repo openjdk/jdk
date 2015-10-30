@@ -117,11 +117,13 @@ class Inet4Address extends InetAddress {
                 holder().address = address;
             }
         }
+        holder().originalHostName = hostName;
     }
     Inet4Address(String hostName, int address) {
         holder().hostName = hostName;
         holder().family = IPv4;
         holder().address = address;
+        holder().originalHostName = hostName;
     }
 
     /**

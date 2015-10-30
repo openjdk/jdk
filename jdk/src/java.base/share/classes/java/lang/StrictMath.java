@@ -307,7 +307,9 @@ public final class StrictMath {
      * @return  the cube root of {@code a}.
      * @since 1.5
      */
-    public static native double cbrt(double a);
+    public static double cbrt(double a) {
+        return FdLibm.Cbrt.compute(a);
+    }
 
     /**
      * Computes the remainder operation on two arguments as prescribed

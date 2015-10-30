@@ -911,19 +911,6 @@ public abstract class ArrayData {
     }
 
     /**
-     * Find a fast property getter if one exists
-     *
-     * @param clazz    array data class
-     * @param desc     callsite descriptor
-     * @param request  link request
-     * @param operator operator
-     * @return fast property getter if one is found
-     */
-    public GuardedInvocation findFastGetMethod(final Class<? extends ArrayData> clazz, final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
-        return null;
-    }
-
-    /**
      * Find a fast element getter if one exists
      *
      * @param clazz   array data class

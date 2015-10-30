@@ -5,8 +5,8 @@
       <properties>
         <property name="boot.java.home" value="$JDKPath$" />
         <property name="jtreg.tests" value="$FilePath$" />
-        <property name="target.java.home" value="$JDKPath$" />
-        <property name="jtreg.home" value="@@@" />
+        <property name="target.java.home" value="@IDEA_TARGET_JDK@" />
+        <property name="jtreg.home" value="@IDEA_JTREG_HOME@" />
         <property name="javac.debuglevel" value="source,lines,vars" />
         <property name="jtreg.jpda.jvmargs" value="-agentlib:jdwp=transport=dt_socket,server=n,address=localhost:5900,suspend=y" />
       </properties>

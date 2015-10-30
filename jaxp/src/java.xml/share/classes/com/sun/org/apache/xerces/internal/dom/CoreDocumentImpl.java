@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2002,2004,2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -17,25 +17,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.sun.org.apache.xerces.internal.dom;
 
-import java.lang.reflect.Constructor;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import com.sun.org.apache.xerces.internal.util.URI;
 import com.sun.org.apache.xerces.internal.impl.Constants;
-
-import org.w3c.dom.DOMConfiguration;
-import org.w3c.dom.UserDataHandler;
-import com.sun.org.apache.xerces.internal.util.XMLChar;
+import com.sun.org.apache.xerces.internal.util.URI;
 import com.sun.org.apache.xerces.internal.util.XML11Char;
-import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
+import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
 import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
+import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamField;
+import java.lang.reflect.Constructor;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.Map;
 import org.w3c.dom.Attr;
 import org.w3c.dom.CDATASection;
 import org.w3c.dom.Comment;
+import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
@@ -50,6 +52,7 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.Notation;
 import org.w3c.dom.ProcessingInstruction;
 import org.w3c.dom.Text;
+import org.w3c.dom.UserDataHandler;
 import org.w3c.dom.events.Event;
 import org.w3c.dom.events.EventListener;
 import org.w3c.dom.ls.DOMImplementationLS;
@@ -81,17 +84,15 @@ import org.w3c.dom.ls.LSSerializer;
  * @author Ralf Pfeiffer, IBM
  * @since  PR-DOM-Level-1-19980818.
  */
-
-
 public class CoreDocumentImpl
-extends ParentNode implements Document  {
+        extends ParentNode implements Document {
 
-        /**TODO::
-         * 1. Change XML11Char method names similar to XMLChar. That will prevent lot
-         * of dirty version checking code.
-         *
-         * 2. IMO during cloneNode qname/isXMLName check should not be made.
-         */
+    /**
+     * TODO:: 1. Change XML11Char method names similar to XMLChar. That will
+     * prevent lot of dirty version checking code.
+     *
+     * 2. IMO during cloneNode qname/isXMLName check should not be made.
+     */
     //
     // Constants
     //
@@ -129,13 +130,12 @@ extends ParentNode implements Document  {
     /**Experimental DOM Level 3 feature: documentURI */
     protected String fDocumentURI;
 
-        //Revisit :: change to a better data structure.
+    //Revisit :: change to a better data structure.
     /** Table for user data attached to this document nodes. */
-    protected Hashtable userData;
-
+    private Map<Node, Map<String, UserDataRecord>> nodeUserData;
 
     /** Identifiers. */
-    protected Hashtable identifiers;
+    protected Map<String, Node> identifiers;
 
     // DOM Level 3: normalizeDocument
     transient DOMNormalizer domNormalizer = null;
@@ -206,7 +206,7 @@ extends ParentNode implements Document  {
     // document.  Node number values are negative integers.  Nodes are
     // assigned numbers on demand.
     private int nodeCounter = 0;
-    private Hashtable nodeTable;
+    private Map<Node, Integer> nodeTable;
     private boolean xml11Version = false; //by default 1.0
     //
     // Static initialization
@@ -241,6 +241,52 @@ extends ParentNode implements Document  {
         0;
 
     } // static
+
+    /**
+     * @serialField docType DocumentTypeImpl document type
+     * @serialField docElement ElementImpl document element
+     * @serialField fFreeNLCache NodeListCache NodeListCache free list
+     * @serialField encoding String Document encoding
+     * @serialField actualEncoding String Document actualEncoding
+     * @serialField version String Document version
+     * @serialField standalone boolean Document standalone
+     * @serialField fDocumentURI String Document URI
+     * @serialField userData Hashtable user data attached to the nodes. Note that
+     * it was original called "userData". It has been changed to nodeUserData to
+     * avoid confusion with those that are actually values of the map.
+     * @serialField identifiers Hashtable identifiers
+     * @serialField changes int flag indicates whether the node has changed
+     * @serialField allowGrammarAccess boolean Allow grammar access
+     * @serialField errorChecking boolean Bypass error checking
+     * @serialField ancestorChecking boolean Ancestor checking
+     * @serialField xmlVersionChanged boolean Indicate whether the version has changed
+     * @serialField documentNumber int Document number
+     * @serialField nodeCounter int Node counter
+     * @serialField nodeTable Hashtable Node table
+     * @serialField xml11Version boolean XML version
+     */
+    private static final ObjectStreamField[] serialPersistentFields =
+        new ObjectStreamField[] {
+            new ObjectStreamField("docType", DocumentTypeImpl.class),
+            new ObjectStreamField("docElement", ElementImpl.class),
+            new ObjectStreamField("fFreeNLCache", NodeListCache.class),
+            new ObjectStreamField("encoding", String.class),
+            new ObjectStreamField("actualEncoding", String.class),
+            new ObjectStreamField("version", String.class),
+            new ObjectStreamField("standalone", boolean.class),
+            new ObjectStreamField("fDocumentURI", String.class),
+            new ObjectStreamField("userData", Hashtable.class),
+            new ObjectStreamField("identifiers", Hashtable.class),
+            new ObjectStreamField("changes", int.class),
+            new ObjectStreamField("allowGrammarAccess", boolean.class),
+            new ObjectStreamField("errorChecking", boolean.class),
+            new ObjectStreamField("ancestorChecking", boolean.class),
+            new ObjectStreamField("xmlVersionChanged", boolean.class),
+            new ObjectStreamField("documentNumber", int.class),
+            new ObjectStreamField("nodeCounter", int.class),
+            new ObjectStreamField("nodeTable", Hashtable.class),
+            new ObjectStreamField("xml11Version", boolean.class),
+        };
 
     //
     // Constructors
@@ -342,24 +388,21 @@ extends ParentNode implements Document  {
         }
 
         if (deep) {
-            Hashtable reversedIdentifiers = null;
+            Map<Node, String> reversedIdentifiers = null;
 
             if (identifiers != null) {
                 // Build a reverse mapping from element to identifier.
-                reversedIdentifiers = new Hashtable();
-                Enumeration elementIds = identifiers.keys();
-                while (elementIds.hasMoreElements()) {
-                    Object elementId = elementIds.nextElement();
-                    reversedIdentifiers.put(identifiers.get(elementId),
-                    elementId);
+                reversedIdentifiers = new HashMap<>(identifiers.size());
+                for (String elementId : identifiers.keySet()) {
+                    reversedIdentifiers.put(identifiers.get(elementId), elementId);
                 }
             }
 
             // Copy children into new document.
             for (ChildNode kid = firstChild; kid != null;
-            kid = kid.nextSibling) {
+                    kid = kid.nextSibling) {
                 newdoc.appendChild(newdoc.importNode(kid, true, true,
-                reversedIdentifiers));
+                        reversedIdentifiers));
             }
         }
 
@@ -384,7 +427,7 @@ extends ParentNode implements Document  {
      * document element nor the document type in any way
      */
     public Node insertBefore(Node newChild, Node refChild)
-    throws DOMException {
+            throws DOMException {
 
         // Only one such child permitted
         int type = newChild.getNodeType();
@@ -446,7 +489,7 @@ extends ParentNode implements Document  {
      * document element nor the document type in any way
      */
     public Node replaceChild(Node newChild, Node oldChild)
-    throws DOMException {
+            throws DOMException {
 
         // Adopt orphan doctypes
         if (newChild.getOwnerDocument() == null &&
@@ -462,8 +505,8 @@ extends ParentNode implements Document  {
             newChild.getNodeType() == Node.ELEMENT_NODE))) {
 
             throw new DOMException(
-                DOMException.HIERARCHY_REQUEST_ERR,
-                DOMMessageFormatter.formatMessage(DOMMessageFormatter.DOM_DOMAIN, "HIERARCHY_REQUEST_ERR", null));
+                    DOMException.HIERARCHY_REQUEST_ERR,
+                    DOMMessageFormatter.formatMessage(DOMMessageFormatter.DOM_DOMAIN, "HIERARCHY_REQUEST_ERR", null));
         }
         super.replaceChild(newChild, oldChild);
 
@@ -490,7 +533,7 @@ extends ParentNode implements Document  {
      * @since DOM Level 3
      */
     public void setTextContent(String textContent)
-    throws DOMException {
+            throws DOMException {
         // no-op
     }
 
@@ -518,14 +561,14 @@ extends ParentNode implements Document  {
      * if the attribute name is not acceptable.
      */
     public Attr createAttribute(String name)
-        throws DOMException {
+            throws DOMException {
 
         if (errorChecking && !isXMLName(name,xml11Version)) {
             String msg =
                 DOMMessageFormatter.formatMessage(
-                    DOMMessageFormatter.DOM_DOMAIN,
-                    "INVALID_CHARACTER_ERR",
-                    null);
+                            DOMMessageFormatter.DOM_DOMAIN,
+                            "INVALID_CHARACTER_ERR",
+                            null);
             throw new DOMException(DOMException.INVALID_CHARACTER_ERR, msg);
         }
         return new AttrImpl(this, name);
@@ -542,7 +585,7 @@ extends ParentNode implements Document  {
      * not yet implemented.)
      */
     public CDATASection createCDATASection(String data)
-    throws DOMException {
+            throws DOMException {
         return new CDATASectionImpl(this, data);
     }
 
@@ -576,7 +619,7 @@ extends ParentNode implements Document  {
      * acceptable.
      */
     public Element createElement(String tagName)
-    throws DOMException {
+            throws DOMException {
 
         if (errorChecking && !isXMLName(tagName,xml11Version)) {
             String msg = DOMMessageFormatter.formatMessage(DOMMessageFormatter.DOM_DOMAIN, "INVALID_CHARACTER_ERR", null);
@@ -597,7 +640,7 @@ extends ParentNode implements Document  {
      * implemented.)
      */
     public EntityReference createEntityReference(String name)
-    throws DOMException {
+            throws DOMException {
 
         if (errorChecking && !isXMLName(name,xml11Version)) {
             String msg = DOMMessageFormatter.formatMessage(DOMMessageFormatter.DOM_DOMAIN, "INVALID_CHARACTER_ERR", null);
@@ -621,8 +664,8 @@ extends ParentNode implements Document  {
      * not yet implemented.)
      */
     public ProcessingInstruction createProcessingInstruction(String target,
-    String data)
-    throws DOMException {
+            String data)
+            throws DOMException {
 
         if (errorChecking && !isXMLName(target,xml11Version)) {
             String msg = DOMMessageFormatter.formatMessage(DOMMessageFormatter.DOM_DOMAIN, "INVALID_CHARACTER_ERR", null);
@@ -655,7 +698,6 @@ extends ParentNode implements Document  {
         }
         return docType;
     }
-
 
     /**
      * Convenience method, allowing direct access to the child node
@@ -747,7 +789,6 @@ extends ParentNode implements Document  {
     public boolean getStrictErrorChecking() {
         return errorChecking;
     }
-
 
     /**
      * DOM Level 3 CR - Experimental. (Was getActualEncoding)
@@ -882,8 +923,8 @@ extends ParentNode implements Document  {
      * @since DOM Level 3
      */
     public void setXmlStandalone(boolean value)
-                                  throws DOMException {
-            standalone = value;
+            throws DOMException {
+        standalone = value;
     }
 
     /**
@@ -954,9 +995,9 @@ extends ParentNode implements Document  {
                             if(colon1 != -1){
                                 String msg =
                                     DOMMessageFormatter.formatMessage(
-                                            DOMMessageFormatter.DOM_DOMAIN,
-                                            "NAMESPACE_ERR",
-                                            null);
+                                                DOMMessageFormatter.DOM_DOMAIN,
+                                                "NAMESPACE_ERR",
+                                                null);
                                 throw new DOMException(DOMException.NAMESPACE_ERR, msg);
                             }
                             if (!isXMLName(name,xml11Version)) {
@@ -982,7 +1023,7 @@ extends ParentNode implements Document  {
                         copyEventListeners(el, nel);
 
                         // remove user data from old node
-                        Hashtable data = removeUserDataTable(el);
+                        Map<String, UserDataRecord> data = removeUserDataTable(el);
 
                         // remove old node from parent if any
                         Node parent = el.getParentNode();
@@ -1055,7 +1096,7 @@ extends ParentNode implements Document  {
                         copyEventListeners(at, nat);
 
                         // remove user data from old node
-                        Hashtable data = removeUserDataTable(at);
+                        Map<String, UserDataRecord> data = removeUserDataTable(at);
 
                         // move children to new node
                         Node child = at.getFirstChild();
@@ -1290,13 +1331,13 @@ extends ParentNode implements Document  {
      *   parameter is from an other document.
      */
     public String saveXML(Node node)
-    throws DOMException {
-        if ( errorChecking && node != null &&
-            this != node.getOwnerDocument() ) {
+            throws DOMException {
+        if (errorChecking && node != null
+                && this != node.getOwnerDocument()) {
             String msg = DOMMessageFormatter.formatMessage(DOMMessageFormatter.DOM_DOMAIN, "WRONG_DOCUMENT_ERR", null);
             throw new DOMException(DOMException.WRONG_DOCUMENT_ERR, msg);
         }
-        DOMImplementationLS domImplLS = (DOMImplementationLS)DOMImplementationImpl.getDOMImplementation();
+        DOMImplementationLS domImplLS = (DOMImplementationLS) DOMImplementationImpl.getDOMImplementation();
         LSSerializer xmlWriter = domImplLS.createLSSerializer();
         if (node == null) {
             node = this;
@@ -1305,8 +1346,8 @@ extends ParentNode implements Document  {
     }
 
     /**
-     * Sets whether the DOM implementation generates mutation events
-     * upon operations.
+     * Sets whether the DOM implementation generates mutation events upon
+     * operations.
      */
     void setMutationEvents(boolean set) {
         // does nothing by default - overidden in subclass
@@ -1320,47 +1361,40 @@ extends ParentNode implements Document  {
         return false;
     }
 
-
-
     // non-DOM factory methods
-
     /**
-     * NON-DOM
-     * Factory method; creates a DocumentType having this Document
-     * as its OwnerDoc. (REC-DOM-Level-1-19981001 left the process of building
-     * DTD information unspecified.)
+     * NON-DOM Factory method; creates a DocumentType having this Document as
+     * its OwnerDoc. (REC-DOM-Level-1-19981001 left the process of building DTD
+     * information unspecified.)
      *
      * @param name The name of the Entity we wish to provide a value for.
      *
-     * @throws DOMException(NOT_SUPPORTED_ERR) for HTML documents, where
-     * DTDs are not permitted. (HTML not yet implemented.)
+     * @throws DOMException(NOT_SUPPORTED_ERR) for HTML documents, where DTDs
+     * are not permitted. (HTML not yet implemented.)
      */
     public DocumentType createDocumentType(String qualifiedName,
-    String publicID,
-    String systemID)
-    throws DOMException {
+            String publicID,
+            String systemID)
+            throws DOMException {
 
         return new DocumentTypeImpl(this, qualifiedName, publicID, systemID);
 
     } // createDocumentType(String):DocumentType
 
     /**
-     * NON-DOM
-     * Factory method; creates an Entity having this Document
-     * as its OwnerDoc. (REC-DOM-Level-1-19981001 left the process of building
-     * DTD information unspecified.)
+     * NON-DOM Factory method; creates an Entity having this Document as its
+     * OwnerDoc. (REC-DOM-Level-1-19981001 left the process of building DTD
+     * information unspecified.)
      *
      * @param name The name of the Entity we wish to provide a value for.
      *
      * @throws DOMException(NOT_SUPPORTED_ERR) for HTML documents, where
-     * nonstandard entities are not permitted. (HTML not yet
-     * implemented.)
+     * nonstandard entities are not permitted. (HTML not yet implemented.)
      */
     public Entity createEntity(String name)
-    throws DOMException {
+            throws DOMException {
 
-
-        if (errorChecking && !isXMLName(name,xml11Version)) {
+        if (errorChecking && !isXMLName(name, xml11Version)) {
             String msg = DOMMessageFormatter.formatMessage(DOMMessageFormatter.DOM_DOMAIN, "INVALID_CHARACTER_ERR", null);
             throw new DOMException(DOMException.INVALID_CHARACTER_ERR, msg);
         }
@@ -1369,21 +1403,19 @@ extends ParentNode implements Document  {
     } // createEntity(String):Entity
 
     /**
-     * NON-DOM
-     * Factory method; creates a Notation having this Document
-     * as its OwnerDoc. (REC-DOM-Level-1-19981001 left the process of building
-     * DTD information unspecified.)
+     * NON-DOM Factory method; creates a Notation having this Document as its
+     * OwnerDoc. (REC-DOM-Level-1-19981001 left the process of building DTD
+     * information unspecified.)
      *
      * @param name The name of the Notation we wish to describe
      *
      * @throws DOMException(NOT_SUPPORTED_ERR) for HTML documents, where
-     * notations are not permitted. (HTML not yet
-     * implemented.)
+     * notations are not permitted. (HTML not yet implemented.)
      */
     public Notation createNotation(String name)
-    throws DOMException {
+            throws DOMException {
 
-        if (errorChecking && !isXMLName(name,xml11Version)) {
+        if (errorChecking && !isXMLName(name, xml11Version)) {
             String msg = DOMMessageFormatter.formatMessage(DOMMessageFormatter.DOM_DOMAIN, "INVALID_CHARACTER_ERR", null);
             throw new DOMException(DOMException.INVALID_CHARACTER_ERR, msg);
         }
@@ -1396,9 +1428,9 @@ extends ParentNode implements Document  {
      * definitions hold default attribute values.
      */
     public ElementDefinitionImpl createElementDefinition(String name)
-    throws DOMException {
+            throws DOMException {
 
-        if (errorChecking && !isXMLName(name,xml11Version)) {
+        if (errorChecking && !isXMLName(name, xml11Version)) {
             String msg = DOMMessageFormatter.formatMessage(DOMMessageFormatter.DOM_DOMAIN, "INVALID_CHARACTER_ERR", null);
             throw new DOMException(DOMException.INVALID_CHARACTER_ERR, msg);
         }
@@ -1407,23 +1439,23 @@ extends ParentNode implements Document  {
     } // createElementDefinition(String):ElementDefinitionImpl
 
     // other non-DOM methods
-
-    /** NON-DOM:  Get the number associated with this document.   Used to
-     * order documents in the implementation.
+    /**
+     * NON-DOM: Get the number associated with this document. Used to order
+     * documents in the implementation.
      */
     protected int getNodeNumber() {
-        if (documentNumber==0) {
+        if (documentNumber == 0) {
 
-            CoreDOMImplementationImpl cd = (CoreDOMImplementationImpl)CoreDOMImplementationImpl.getDOMImplementation();
+            CoreDOMImplementationImpl cd = (CoreDOMImplementationImpl) CoreDOMImplementationImpl.getDOMImplementation();
             documentNumber = cd.assignDocumentNumber();
         }
         return documentNumber;
     }
 
-
-    /** NON-DOM:  Get a number associated with a node created with respect
-     * to this document.   Needed for compareDocumentPosition when nodes
-     * are disconnected.  This is only used on demand.
+    /**
+     * NON-DOM: Get a number associated with a node created with respect to this
+     * document. Needed for compareDocumentPosition when nodes are disconnected.
+     * This is only used on demand.
      */
     protected int getNodeNumber(Node node) {
 
@@ -1433,18 +1465,17 @@ extends ParentNode implements Document  {
         // Node numbers are negative, from -1 to -n
         int num;
         if (nodeTable == null) {
-            nodeTable = new Hashtable();
+            nodeTable = new HashMap<>();
             num = --nodeCounter;
             nodeTable.put(node, new Integer(num));
-        }
-        else {
-            Integer n = (Integer)nodeTable.get(node);
-            if (n== null) {
+        } else {
+            Integer n = (Integer) nodeTable.get(node);
+            if (n == null) {
                 num = --nodeCounter;
                 nodeTable.put(node, new Integer(num));
-            }
-            else
+            } else {
                 num = n.intValue();
+            }
         }
         return num;
     }
@@ -1459,7 +1490,7 @@ extends ParentNode implements Document  {
      * and a NOT_SUPPORTED_ERR exception is thrown if attempted.
      */
     public Node importNode(Node source, boolean deep)
-    throws DOMException {
+            throws DOMException {
         return importNode(source, deep, false, null);
     } // importNode(Node,boolean):Node
 
@@ -1468,18 +1499,18 @@ extends ParentNode implements Document  {
      * provides the core functionality for the public importNode and cloneNode
      * methods.
      *
-     * The reversedIdentifiers parameter is provided for cloneNode to
-     * preserve the document's identifiers. The Hashtable has Elements as the
-     * keys and their identifiers as the values. When an element is being
-     * imported, a check is done for an associated identifier. If one exists,
-     * the identifier is registered with the new, imported element. If
-     * reversedIdentifiers is null, the parameter is not applied.
+     * The reversedIdentifiers parameter is provided for cloneNode to preserve
+     * the document's identifiers. The Map has Elements as the keys and
+     * their identifiers as the values. When an element is being imported, a
+     * check is done for an associated identifier. If one exists, the identifier
+     * is registered with the new, imported element. If reversedIdentifiers is
+     * null, the parameter is not applied.
      */
     private Node importNode(Node source, boolean deep, boolean cloningDoc,
-    Hashtable reversedIdentifiers)
-    throws DOMException {
-        Node newnode=null;
-                Hashtable userData = null;
+            Map<Node, String> reversedIdentifiers)
+            throws DOMException {
+        Node newnode = null;
+        Map<String, UserDataRecord> userData = null;
 
         // Sigh. This doesn't work; too many nodes have private data that
         // would have to be manually tweaked. May be able to add local
@@ -1492,8 +1523,9 @@ extends ParentNode implements Document  {
         //  newnode.ownerDocument=this;
         // }
         // else
-                if(source instanceof NodeImpl)
-                        userData = ((NodeImpl)source).getUserDataRecord();
+        if (source instanceof NodeImpl) {
+            userData = ((NodeImpl) source).getUserDataRecord();
+        }
         int type = source.getNodeType();
         switch (type) {
             case ELEMENT_NODE: {
@@ -1504,7 +1536,7 @@ extends ParentNode implements Document  {
                     newElement = createElement(source.getNodeName());
                 else
                     newElement = createElementNS(source.getNamespaceURI(),
-                    source.getNodeName());
+                            source.getNodeName());
 
                 // Copy element's attributes, if any.
                 NamedNodeMap sourceAttrs = source.getAttributes();
@@ -1519,7 +1551,7 @@ extends ParentNode implements Document  {
                         // But for importNode defaults should be ignored.
                         if (attr.getSpecified() || cloningDoc) {
                             Attr newAttr = (Attr)importNode(attr, true, cloningDoc,
-                            reversedIdentifiers);
+                                    reversedIdentifiers);
 
                             // Attach attribute according to namespace
                             // support/qualification.
@@ -1528,17 +1560,18 @@ extends ParentNode implements Document  {
                                 newElement.setAttributeNode(newAttr);
                             else
                                 newElement.setAttributeNodeNS(newAttr);
+                            }
                         }
                     }
-                }
 
                 // Register element identifier.
                 if (reversedIdentifiers != null) {
                     // Does element have an associated identifier?
-                    Object elementId = reversedIdentifiers.get(source);
+                    String elementId = reversedIdentifiers.get(source);
                     if (elementId != null) {
-                        if (identifiers == null)
-                            identifiers = new Hashtable();
+                        if (identifiers == null) {
+                            identifiers = new HashMap<>();
+                        }
 
                         identifiers.put(elementId, newElement);
                     }
@@ -1555,7 +1588,7 @@ extends ParentNode implements Document  {
                         newnode = createAttribute(source.getNodeName());
                     } else {
                         newnode = createAttributeNS(source.getNamespaceURI(),
-                        source.getNodeName());
+                                source.getNodeName());
                     }
                 }
                 else {
@@ -1624,7 +1657,7 @@ extends ParentNode implements Document  {
 
             case PROCESSING_INSTRUCTION_NODE: {
                 newnode = createProcessingInstruction(source.getNodeName(),
-                source.getNodeValue());
+                        source.getNodeValue());
                 break;
             }
 
@@ -1643,15 +1676,15 @@ extends ParentNode implements Document  {
                 DocumentType srcdoctype = (DocumentType)source;
                 DocumentTypeImpl newdoctype = (DocumentTypeImpl)
                 createDocumentType(srcdoctype.getNodeName(),
-                srcdoctype.getPublicId(),
-                srcdoctype.getSystemId());
+                        srcdoctype.getPublicId(),
+                        srcdoctype.getSystemId());
                 // Values are on NamedNodeMaps
                 NamedNodeMap smap = srcdoctype.getEntities();
                 NamedNodeMap tmap = newdoctype.getEntities();
                 if(smap != null) {
                     for(int i = 0; i < smap.getLength(); i++) {
                         tmap.setNamedItem(importNode(smap.item(i), true, true,
-                        reversedIdentifiers));
+                                reversedIdentifiers));
                     }
                 }
                 smap = srcdoctype.getNotations();
@@ -1659,7 +1692,7 @@ extends ParentNode implements Document  {
                 if (smap != null) {
                     for(int i = 0; i < smap.getLength(); i++) {
                         tmap.setNamedItem(importNode(smap.item(i), true, true,
-                        reversedIdentifiers));
+                                reversedIdentifiers));
                     }
                 }
 
@@ -1702,10 +1735,10 @@ extends ParentNode implements Document  {
         // If deep, replicate and attach the kids.
         if (deep) {
             for (Node srckid = source.getFirstChild();
-            srckid != null;
-            srckid = srckid.getNextSibling()) {
+                    srckid != null;
+                    srckid = srckid.getNextSibling()) {
                 newnode.appendChild(importNode(srckid, true, cloningDoc,
-                reversedIdentifiers));
+                        reversedIdentifiers));
             }
         }
         if (newnode.getNodeType() == Node.ENTITY_NODE) {
@@ -1713,7 +1746,7 @@ extends ParentNode implements Document  {
         }
         return newnode;
 
-    } // importNode(Node,boolean,boolean,Hashtable):Node
+    } // importNode(Node,boolean,boolean,Map):Node
 
     /**
      * DOM Level 3 WD - Experimental
@@ -1724,7 +1757,7 @@ extends ParentNode implements Document  {
      **/
     public Node adoptNode(Node source) {
         NodeImpl node;
-                Hashtable userData = null;
+        Map<String, UserDataRecord> userData;
         try {
             node = (NodeImpl) source;
         } catch (ClassCastException e) {
@@ -1735,8 +1768,8 @@ extends ParentNode implements Document  {
         // Return null if the source is null
 
         if (source == null ) {
-                return null;
-        } else if (source != null && source.getOwnerDocument() != null) {
+            return null;
+        } else if (source.getOwnerDocument() != null) {
 
             DOMImplementation thisImpl = this.getImplementation();
             DOMImplementation otherImpl = source.getOwnerDocument().getImplementation();
@@ -1756,7 +1789,7 @@ extends ParentNode implements Document  {
                     // Adopting between two dissimilar DOM's is not allowed
                     return null;
                 }
-                }
+            }
         }
 
         switch (node.getNodeType()) {
@@ -1769,12 +1802,13 @@ extends ParentNode implements Document  {
                 }
                 //2. specified flag is set to true
                 attr.isSpecified(true);
-                                userData = node.getUserDataRecord();
+                userData = node.getUserDataRecord();
 
                 //3. change ownership
                 attr.setOwnerDocument(this);
-                                if(userData != null )
-                                        setUserDataTable(node,userData);
+                if (userData != null) {
+                    setUserDataTable(node, userData);
+                }
                 break;
             }
             //entity, notation nodes are read only nodes.. so they can't be adopted.
@@ -1793,7 +1827,7 @@ extends ParentNode implements Document  {
                 throw new DOMException(DOMException.NOT_SUPPORTED_ERR, msg);
             }
             case ENTITY_REFERENCE_NODE: {
-                                userData = node.getUserDataRecord();
+                userData = node.getUserDataRecord();
                 // remove node from wherever it is
                 Node parent = node.getParentNode();
                 if (parent != null) {
@@ -1806,8 +1840,9 @@ extends ParentNode implements Document  {
                 }
                 // change ownership
                 node.setOwnerDocument(this);
-                                if(userData != null)
-                                        setUserDataTable(node,userData);
+                if (userData != null) {
+                    setUserDataTable(node, userData);
+                }
                 // set its new replacement value if any
                 if (docType == null) {
                     break;
@@ -1818,14 +1853,14 @@ extends ParentNode implements Document  {
                     break;
                 }
                 for (child = entityNode.getFirstChild();
-                child != null; child = child.getNextSibling()) {
+                        child != null; child = child.getNextSibling()) {
                     Node childClone = child.cloneNode(true);
                     node.appendChild(childClone);
                 }
                 break;
             }
             case ELEMENT_NODE: {
-                                userData = node.getUserDataRecord();
+                userData = node.getUserDataRecord();
                 // remove node from wherever it is
                 Node parent = node.getParentNode();
                 if (parent != null) {
@@ -1833,14 +1868,15 @@ extends ParentNode implements Document  {
                 }
                 // change ownership
                 node.setOwnerDocument(this);
-                                if(userData != null)
-                                        setUserDataTable(node,userData);
+                if (userData != null) {
+                    setUserDataTable(node, userData);
+                }
                 // reconcile default attributes
                 ((ElementImpl)node).reconcileDefaultAttributes();
                 break;
             }
             default: {
-                                userData = node.getUserDataRecord();
+                userData = node.getUserDataRecord();
                 // remove node from wherever it is
                 Node parent = node.getParentNode();
                 if (parent != null) {
@@ -1848,15 +1884,17 @@ extends ParentNode implements Document  {
                 }
                 // change ownership
                 node.setOwnerDocument(this);
-                                if(userData != null)
-                                        setUserDataTable(node,userData);
+                if (userData != null) {
+                    setUserDataTable(node, userData);
+                }
             }
         }
 
                 //DOM L3 Core CR
-                //http://www.w3.org/TR/2003/CR-DOM-Level-3-Core-20031107/core.html#UserDataHandler-ADOPTED
-                if(userData != null)
-                        callUserDataHandlers(source, null, UserDataHandler.NODE_ADOPTED,userData);
+        //http://www.w3.org/TR/2003/CR-DOM-Level-3-Core-20031107/core.html#UserDataHandler-ADOPTED
+        if (userData != null) {
+            callUserDataHandlers(source, null, UserDataHandler.NODE_ADOPTED, userData);
+        }
 
         return node;
     }
@@ -1955,7 +1993,7 @@ extends ParentNode implements Document  {
         }
 
         if (identifiers == null) {
-            identifiers = new Hashtable();
+            identifiers = new HashMap<>();
         }
 
         identifiers.put(idName, element);
@@ -2013,25 +2051,9 @@ extends ParentNode implements Document  {
 
     } // removeIdentifier(String)
 
-    /** Returns an enumeration registered of identifier names. */
-    public Enumeration getIdentifiers() {
-
-        if (needsSyncData()) {
-            synchronizeData();
-        }
-
-        if (identifiers == null) {
-            identifiers = new Hashtable();
-        }
-
-        return identifiers.keys();
-
-    } // getIdentifiers():Enumeration
-
     //
     // DOM2: Namespace methods
     //
-
     /**
      * Introduced in DOM Level 2. <p>
      * Creates an element of the given qualified name and namespace URI.
@@ -2056,7 +2078,7 @@ extends ParentNode implements Document  {
      * @since WD-DOM-Level-2-19990923
      */
     public Element createElementNS(String namespaceURI, String qualifiedName)
-    throws DOMException {
+            throws DOMException {
         return new ElementNSImpl(this, namespaceURI, qualifiedName);
     }
 
@@ -2075,8 +2097,8 @@ extends ParentNode implements Document  {
      *                   name contains an invalid character.
      */
     public Element createElementNS(String namespaceURI, String qualifiedName,
-    String localpart)
-    throws DOMException {
+            String localpart)
+            throws DOMException {
         return new ElementNSImpl(this, namespaceURI, qualifiedName, localpart);
     }
 
@@ -2099,7 +2121,7 @@ extends ParentNode implements Document  {
      * @since WD-DOM-Level-2-19990923
      */
     public Attr createAttributeNS(String namespaceURI, String qualifiedName)
-    throws DOMException {
+            throws DOMException {
         return new AttrNSImpl(this, namespaceURI, qualifiedName);
     }
 
@@ -2119,8 +2141,8 @@ extends ParentNode implements Document  {
      * name contains an invalid character.
      */
     public Attr createAttributeNS(String namespaceURI, String qualifiedName,
-    String localpart)
-    throws DOMException {
+            String localpart)
+            throws DOMException {
         return new AttrNSImpl(this, namespaceURI, qualifiedName, localpart);
     }
 
@@ -2141,7 +2163,7 @@ extends ParentNode implements Document  {
      * @since WD-DOM-Level-2-19990923
      */
     public NodeList getElementsByTagNameNS(String namespaceURI,
-    String localName) {
+            String localName) {
         return new DeepNodeListImpl(this, namespaceURI, localName);
     }
 
@@ -2194,11 +2216,11 @@ extends ParentNode implements Document  {
 
         if (!xml11Version) {
             validNCName = (prefix == null || XMLChar.isValidNCName(prefix))
-                && XMLChar.isValidNCName(local);
+                    && XMLChar.isValidNCName(local);
         }
         else {
             validNCName = (prefix == null || XML11Char.isXML11ValidNCName(prefix))
-                && XML11Char.isXML11ValidNCName(local);
+                    && XML11Char.isXML11ValidNCName(local);
         }
 
         return validNCName;
@@ -2284,37 +2306,33 @@ extends ParentNode implements Document  {
      * REVISIT: we could use a free list of UserDataRecord here
      */
     public Object setUserData(Node n, String key,
-    Object data, UserDataHandler handler) {
+            Object data, UserDataHandler handler) {
         if (data == null) {
-            if (userData != null) {
-                Hashtable t = (Hashtable) userData.get(n);
+            if (nodeUserData != null) {
+                Map<String, UserDataRecord> t = nodeUserData.get(n);
                 if (t != null) {
-                    Object o = t.remove(key);
-                    if (o != null) {
-                        UserDataRecord r = (UserDataRecord) o;
+                    UserDataRecord r = t.remove(key);
+                    if (r != null) {
                         return r.fData;
                     }
                 }
             }
             return null;
-        }
-        else {
-            Hashtable t;
-            if (userData == null) {
-                userData = new Hashtable();
-                t = new Hashtable();
-                userData.put(n, t);
-            }
-            else {
-                t = (Hashtable) userData.get(n);
+        } else {
+            Map<String, UserDataRecord> t;
+            if (nodeUserData == null) {
+                nodeUserData = new HashMap<>();
+                t = new HashMap<>();
+                nodeUserData.put(n, t);
+            } else {
+                t = nodeUserData.get(n);
                 if (t == null) {
-                    t = new Hashtable();
-                    userData.put(n, t);
+                    t = new HashMap<>();
+                    nodeUserData.put(n, t);
                 }
             }
-            Object o = t.put(key, new UserDataRecord(data, handler));
-            if (o != null) {
-                UserDataRecord r = (UserDataRecord) o;
+            UserDataRecord r = t.put(key, new UserDataRecord(data, handler));
+            if (r != null) {
                 return r.fData;
             }
             return null;
@@ -2333,42 +2351,41 @@ extends ParentNode implements Document  {
      * @since DOM Level 3
      */
     public Object getUserData(Node n, String key) {
-        if (userData == null) {
+        if (nodeUserData == null) {
             return null;
         }
-        Hashtable t = (Hashtable) userData.get(n);
+        Map<String, UserDataRecord> t = nodeUserData.get(n);
         if (t == null) {
             return null;
         }
-        Object o = t.get(key);
-        if (o != null) {
-            UserDataRecord r = (UserDataRecord) o;
+        UserDataRecord r = t.get(key);
+        if (r != null) {
             return r.fData;
         }
         return null;
     }
 
-        protected Hashtable getUserDataRecord(Node n){
-        if (userData == null) {
+    protected Map<String, UserDataRecord> getUserDataRecord(Node n) {
+        if (nodeUserData == null) {
             return null;
         }
-        Hashtable t = (Hashtable) userData.get(n);
+        Map<String, UserDataRecord> t = nodeUserData.get(n);
         if (t == null) {
             return null;
         }
-                return t;
-        }
+        return t;
+    }
 
-        /**
+    /**
      * Remove user data table for the given node.
      * @param n The node this operation applies to.
      * @return The removed table.
      */
-    Hashtable removeUserDataTable(Node n) {
-        if (userData == null) {
+    Map<String, UserDataRecord> removeUserDataTable(Node n) {
+        if (nodeUserData == null) {
             return null;
         }
-        return (Hashtable) userData.get(n);
+        return nodeUserData.get(n);
     }
 
     /**
@@ -2376,11 +2393,13 @@ extends ParentNode implements Document  {
      * @param n The node this operation applies to.
      * @param data The user data table.
      */
-    void setUserDataTable(Node n, Hashtable data) {
-                if (userData == null)
-                        userData = new Hashtable();
+    void setUserDataTable(Node n, Map<String, UserDataRecord> data) {
+        if (nodeUserData == null) {
+            nodeUserData = new HashMap<>();
+        }
+
         if (data != null) {
-            userData.put(n, data);
+            nodeUserData.put(n, data);
         }
     }
 
@@ -2391,41 +2410,40 @@ extends ParentNode implements Document  {
      * @param operation The operation - import, clone, or delete.
      */
     void callUserDataHandlers(Node n, Node c, short operation) {
-        if (userData == null) {
+        if (nodeUserData == null) {
             return;
         }
-        //Hashtable t = (Hashtable) userData.get(n);
-                if(n instanceof NodeImpl){
-                        Hashtable t = ((NodeImpl)n).getUserDataRecord();
-                        if (t == null || t.isEmpty()) {
-                                return;
-                        }
-                        callUserDataHandlers(n, c, operation,t);
-                }
+
+        if (n instanceof NodeImpl) {
+            Map<String, UserDataRecord> t = ((NodeImpl) n).getUserDataRecord();
+            if (t == null || t.isEmpty()) {
+                return;
+            }
+            callUserDataHandlers(n, c, operation, t);
+        }
     }
 
-        /**
+    /**
      * Call user data handlers when a node is deleted (finalized)
      * @param n The node this operation applies to.
      * @param c The copy node or null.
      * @param operation The operation - import, clone, or delete.
-         * @param handlers Data associated with n.
-        */
-        void callUserDataHandlers(Node n, Node c, short operation,Hashtable userData) {
+     * @param handlers Data associated with n.
+     */
+    void callUserDataHandlers(Node n, Node c, short operation, Map<String, UserDataRecord> userData) {
         if (userData == null || userData.isEmpty()) {
             return;
         }
-        Enumeration keys = userData.keys();
-        while (keys.hasMoreElements()) {
-            String key = (String) keys.nextElement();
-            UserDataRecord r = (UserDataRecord) userData.get(key);
+
+        userData.keySet().stream().forEach((key) -> {
+            UserDataRecord r = userData.get(key);
             if (r.fHandler != null) {
                 r.fHandler.handle(operation, key, r.fData, n, c);
             }
-        }
+        });
     }
 
-        /**
+    /**
      * Call user data handlers to let them know the nodes they are related to
      * are being deleted. The alternative would be to do that on Node but
      * because the nodes are used as the keys we have a reference to them that
@@ -2440,29 +2458,29 @@ extends ParentNode implements Document  {
     // 2. It affects the performance greatly in multi-thread environment.
     // -SG
     /*public void finalize() {
-        if (userData == null) {
-            return;
-        }
-        Enumeration nodes = userData.keys();
-        while (nodes.hasMoreElements()) {
-            Object node = nodes.nextElement();
-            Hashtable t = (Hashtable) userData.get(node);
-            if (t != null && !t.isEmpty()) {
-                Enumeration keys = t.keys();
-                while (keys.hasMoreElements()) {
-                    String key = (String) keys.nextElement();
-                    UserDataRecord r = (UserDataRecord) t.get(key);
-                    if (r.fHandler != null) {
-                        r.fHandler.handle(UserDataHandler.NODE_DELETED,
-                                          key, r.fData, null, null);
-                    }
-                }
-            }
-        }
-    }*/
+     if (userData == null) {
+     return;
+     }
+     Enumeration nodes = userData.keys();
+     while (nodes.hasMoreElements()) {
+     Object node = nodes.nextElement();
+     Hashtable t = (Hashtable) userData.get(node);
+     if (t != null && !t.isEmpty()) {
+     Enumeration keys = t.keys();
+     while (keys.hasMoreElements()) {
+     String key = (String) keys.nextElement();
+     UserDataRecord r = (UserDataRecord) t.get(key);
+     if (r.fHandler != null) {
+     r.fHandler.handle(UserDataHandler.NODE_DELETED,
+     key, r.fData, null, null);
+     }
+     }
+     }
+     }
+     }*/
 
     protected final void checkNamespaceWF( String qname, int colon1,
-    int colon2) {
+            int colon2) {
 
         if (!errorChecking) {
             return;
@@ -2473,42 +2491,42 @@ extends ParentNode implements Document  {
         if (colon1 == 0 || colon1 == qname.length() - 1 || colon2 != colon1) {
             String msg =
             DOMMessageFormatter.formatMessage(
-            DOMMessageFormatter.DOM_DOMAIN,
-            "NAMESPACE_ERR",
-            null);
+                            DOMMessageFormatter.DOM_DOMAIN,
+                            "NAMESPACE_ERR",
+                            null);
             throw new DOMException(DOMException.NAMESPACE_ERR, msg);
         }
     }
     protected final void checkDOMNSErr(String prefix,
-    String namespace) {
+            String namespace) {
         if (errorChecking) {
             if (namespace == null) {
                 String msg =
                 DOMMessageFormatter.formatMessage(
-                DOMMessageFormatter.DOM_DOMAIN,
-                "NAMESPACE_ERR",
-                null);
+                                DOMMessageFormatter.DOM_DOMAIN,
+                                "NAMESPACE_ERR",
+                                null);
                 throw new DOMException(DOMException.NAMESPACE_ERR, msg);
             }
             else if (prefix.equals("xml")
-            && !namespace.equals(NamespaceContext.XML_URI)) {
+                    && !namespace.equals(NamespaceContext.XML_URI)) {
                 String msg =
                 DOMMessageFormatter.formatMessage(
-                DOMMessageFormatter.DOM_DOMAIN,
-                "NAMESPACE_ERR",
-                null);
+                                DOMMessageFormatter.DOM_DOMAIN,
+                                "NAMESPACE_ERR",
+                                null);
                 throw new DOMException(DOMException.NAMESPACE_ERR, msg);
             }
             else if (
             prefix.equals("xmlns")
-            && !namespace.equals(NamespaceContext.XMLNS_URI)
-            || (!prefix.equals("xmlns")
-            && namespace.equals(NamespaceContext.XMLNS_URI))) {
+                    && !namespace.equals(NamespaceContext.XMLNS_URI)
+                    || (!prefix.equals("xmlns")
+                    && namespace.equals(NamespaceContext.XMLNS_URI))) {
                 String msg =
                 DOMMessageFormatter.formatMessage(
-                DOMMessageFormatter.DOM_DOMAIN,
-                "NAMESPACE_ERR",
-                null);
+                                DOMMessageFormatter.DOM_DOMAIN,
+                                "NAMESPACE_ERR",
+                                null);
                 throw new DOMException(DOMException.NAMESPACE_ERR, msg);
             }
         }
@@ -2526,24 +2544,24 @@ extends ParentNode implements Document  {
             return;
         }
 
-                // check that both prefix and local part match NCName
+        // check that both prefix and local part match NCName
         boolean validNCName = false;
         if (!xml11Version) {
             validNCName = (prefix == null || XMLChar.isValidNCName(prefix))
-                && XMLChar.isValidNCName(local);
+                    && XMLChar.isValidNCName(local);
         }
         else {
             validNCName = (prefix == null || XML11Char.isXML11ValidNCName(prefix))
-                && XML11Char.isXML11ValidNCName(local);
+                    && XML11Char.isXML11ValidNCName(local);
         }
 
         if (!validNCName) {
             // REVISIT: add qname parameter to the message
             String msg =
             DOMMessageFormatter.formatMessage(
-            DOMMessageFormatter.DOM_DOMAIN,
-            "INVALID_CHARACTER_ERR",
-            null);
+                            DOMMessageFormatter.DOM_DOMAIN,
+                            "INVALID_CHARACTER_ERR",
+                            null);
             throw new DOMException(DOMException.INVALID_CHARACTER_ERR, msg);
         }
     }
@@ -2590,14 +2608,14 @@ extends ParentNode implements Document  {
     // Event related methods overidden in subclass
 
     protected void addEventListener(NodeImpl node, String type,
-    EventListener listener,
-    boolean useCapture) {
+            EventListener listener,
+            boolean useCapture) {
         // does nothing by default - overidden in subclass
     }
 
     protected void removeEventListener(NodeImpl node, String type,
-    EventListener listener,
-    boolean useCapture) {
+            EventListener listener,
+            boolean useCapture) {
         // does nothing by default - overidden in subclass
     }
 
@@ -2724,4 +2742,91 @@ extends ParentNode implements Document  {
     void renamedElement(Element oldEl, Element newEl) {
     }
 
+    /**
+     * @serialData Serialized fields. Convert Maps to Hashtables for backward
+     * compatibility.
+     */
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        // Convert Maps to Hashtables
+        Hashtable<Node, Hashtable<String, UserDataRecord>> nud = null;
+        if (nodeUserData != null) {
+            nud = new Hashtable<>();
+            for (Map.Entry<Node, Map<String, UserDataRecord>> e : nodeUserData.entrySet()) {
+                //e.getValue() will not be null since an entry is always put with a non-null value
+                nud.put(e.getKey(), new Hashtable<>(e.getValue()));
+            }
+        }
+
+        Hashtable<String, Node> ids = (identifiers == null)? null : new Hashtable<>(identifiers);
+        Hashtable<Node, Integer> nt = (nodeTable == null)? null : new Hashtable<>(nodeTable);
+
+        // Write serialized fields
+        ObjectOutputStream.PutField pf = out.putFields();
+        pf.put("docType", docType);
+        pf.put("docElement", docElement);
+        pf.put("fFreeNLCache", fFreeNLCache);
+        pf.put("encoding", encoding);
+        pf.put("actualEncoding", actualEncoding);
+        pf.put("version", version);
+        pf.put("standalone", standalone);
+        pf.put("fDocumentURI", fDocumentURI);
+
+        //userData is the original name. It has been changed to nodeUserData, refer to the corrsponding @serialField
+        pf.put("userData", nud);
+        pf.put("identifiers", ids);
+        pf.put("changes", changes);
+        pf.put("allowGrammarAccess", allowGrammarAccess);
+        pf.put("errorChecking", errorChecking);
+        pf.put("ancestorChecking", ancestorChecking);
+        pf.put("xmlVersionChanged", xmlVersionChanged);
+        pf.put("documentNumber", documentNumber);
+        pf.put("nodeCounter", nodeCounter);
+        pf.put("nodeTable", nt);
+        pf.put("xml11Version", xml11Version);
+        out.writeFields();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void readObject(ObjectInputStream in)
+                        throws IOException, ClassNotFoundException {
+        // We have to read serialized fields first.
+        ObjectInputStream.GetField gf = in.readFields();
+        docType = (DocumentTypeImpl)gf.get("docType", null);
+        docElement = (ElementImpl)gf.get("docElement", null);
+        fFreeNLCache = (NodeListCache)gf.get("fFreeNLCache", null);
+        encoding = (String)gf.get("encoding", null);
+        actualEncoding = (String)gf.get("actualEncoding", null);
+        version = (String)gf.get("version", null);
+        standalone = gf.get("standalone", false);
+        fDocumentURI = (String)gf.get("fDocumentURI", null);
+
+        //userData is the original name. It has been changed to nodeUserData, refer to the corrsponding @serialField
+        Hashtable<Node, Hashtable<String, UserDataRecord>> nud =
+                (Hashtable<Node, Hashtable<String, UserDataRecord>>)gf.get("userData", null);
+
+        Hashtable<String, Node> ids = (Hashtable<String, Node>)gf.get("identifiers", null);
+
+        changes = gf.get("changes", 0);
+        allowGrammarAccess = gf.get("allowGrammarAccess", false);
+        errorChecking = gf.get("errorChecking", true);
+        ancestorChecking = gf.get("ancestorChecking", true);
+        xmlVersionChanged = gf.get("xmlVersionChanged", false);
+        documentNumber = gf.get("documentNumber", 0);
+        nodeCounter = gf.get("nodeCounter", 0);
+
+        Hashtable<Node, Integer> nt = (Hashtable<Node, Integer>)gf.get("nodeTable", null);
+
+        xml11Version = gf.get("xml11Version", false);
+
+        //convert Hashtables back to HashMaps
+        if (nud != null) {
+            nodeUserData = new HashMap<>();
+            for (Map.Entry<Node, Hashtable<String, UserDataRecord>> e : nud.entrySet()) {
+                nodeUserData.put(e.getKey(), new HashMap<>(e.getValue()));
+            }
+        }
+
+        if (ids != null) identifiers = new HashMap<>(ids);
+        if (nt != null) nodeTable = new HashMap<>(nt);
+    }
 } // class CoreDocumentImpl

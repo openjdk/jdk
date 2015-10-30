@@ -1,15 +1,15 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,14 +23,6 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
 
-import java.util.Vector;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.StringTokenizer;
-
-import com.sun.org.apache.xml.internal.utils.SystemIDResolver;
 import com.sun.org.apache.bcel.internal.generic.ANEWARRAY;
 import com.sun.org.apache.bcel.internal.generic.BasicType;
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
@@ -59,6 +51,14 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import com.sun.org.apache.xalan.internal.xsltc.runtime.AbstractTranslet;
 import com.sun.org.apache.xml.internal.dtm.DTM;
+import com.sun.org.apache.xml.internal.utils.SystemIDResolver;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.StringTokenizer;
+import java.util.Vector;
 
 /**
  * @author Jacek Ambroziak
@@ -121,7 +121,7 @@ public final class Stylesheet extends SyntaxTreeNode {
     /**
      * Mapping between mode names and Mode instances.
      */
-    private final Hashtable _modes = new Hashtable();
+    private final Map<String, Mode> _modes = new HashMap<>();
 
     /**
      * A reference to the default Mode object.
@@ -131,7 +131,7 @@ public final class Stylesheet extends SyntaxTreeNode {
     /**
      * Mapping between extension URIs and their prefixes.
      */
-    private final Hashtable _extensions = new Hashtable();
+    private final Map<String, String> _extensions = new HashMap<>();
 
     /**
      * Reference to the stylesheet from which this stylesheet was
@@ -164,7 +164,7 @@ public final class Stylesheet extends SyntaxTreeNode {
     /**
      * Mapping between key names and Key objects (needed by Key/IdPattern).
      */
-    private Hashtable _keys = new Hashtable();
+    private Map<String, Key> _keys = new HashMap<>();
 
     /**
      * A reference to the SourceLoader set by the user (a URIResolver
@@ -323,9 +323,9 @@ public final class Stylesheet extends SyntaxTreeNode {
         _importPrecedence = precedence;
 
         // Set import precedence for all included stylesheets
-        final Enumeration elements = elements();
-        while (elements.hasMoreElements()) {
-            SyntaxTreeNode child = (SyntaxTreeNode)elements.nextElement();
+        final Iterator<SyntaxTreeNode> elements = elements();
+        while (elements.hasNext()) {
+            SyntaxTreeNode child = elements.next();
             if (child instanceof Include) {
                 Stylesheet included = ((Include)child).getIncludedStylesheet();
                 if (included != null && included._includedFrom == this) {
@@ -573,13 +573,13 @@ public final class Stylesheet extends SyntaxTreeNode {
         stable.excludeNamespaces(excludePrefixes);
         stable.excludeNamespaces(extensionPrefixes);
 
-        final Vector contents = getContents();
+        final List<SyntaxTreeNode> contents = getContents();
         final int count = contents.size();
 
         // We have to scan the stylesheet element's top-level elements for
         // variables and/or parameters before we parse the other elements
         for (int i = 0; i < count; i++) {
-            SyntaxTreeNode child = (SyntaxTreeNode)contents.elementAt(i);
+            SyntaxTreeNode child = contents.get(i);
             if ((child instanceof VariableBase) ||
                 (child instanceof NamespaceAlias)) {
                 parser.getSymbolTable().setCurrentNode(child);
@@ -589,7 +589,7 @@ public final class Stylesheet extends SyntaxTreeNode {
 
         // Now go through all the other top-level elements...
         for (int i = 0; i < count; i++) {
-            SyntaxTreeNode child = (SyntaxTreeNode)contents.elementAt(i);
+            SyntaxTreeNode child = contents.get(i);
             if (!(child instanceof VariableBase) &&
                 !(child instanceof NamespaceAlias)) {
                 parser.getSymbolTable().setCurrentNode(child);
@@ -612,20 +612,16 @@ public final class Stylesheet extends SyntaxTreeNode {
         if (_defaultMode == null)
             _defaultMode = new Mode(null, this, Constants.EMPTYSTRING);
         _defaultMode.processPatterns(_keys);
-        final Enumeration modes = _modes.elements();
-        while (modes.hasMoreElements()) {
-            final Mode mode = (Mode)modes.nextElement();
+        _modes.values().stream().forEach((mode) -> {
             mode.processPatterns(_keys);
-        }
+        });
     }
 
     private void compileModes(ClassGenerator classGen) {
         _defaultMode.compileApplyTemplates(classGen);
-        final Enumeration modes = _modes.elements();
-        while (modes.hasMoreElements()) {
-            final Mode mode = (Mode)modes.nextElement();
+        _modes.values().stream().forEach((mode) -> {
             mode.compileApplyTemplates(classGen);
-        }
+        });
     }
 
     public Mode getMode(QName modeName) {
@@ -636,10 +632,10 @@ public final class Stylesheet extends SyntaxTreeNode {
             return _defaultMode;
         }
         else {
-            Mode mode = (Mode)_modes.get(modeName);
+            Mode mode = _modes.get(modeName.getStringRep());
             if (mode == null) {
                 final String suffix = Integer.toString(_nextModeSerial++);
-                _modes.put(modeName, mode = new Mode(modeName, this, suffix));
+                _modes.put(modeName.getStringRep(), mode = new Mode(modeName, this, suffix));
             }
             return mode;
         }
@@ -707,9 +703,9 @@ public final class Stylesheet extends SyntaxTreeNode {
         compileTransform(classGen);
 
         // Translate all non-template elements and filter out all templates
-        final Enumeration elements = elements();
-        while (elements.hasMoreElements()) {
-            Object element = elements.nextElement();
+        final Iterator<SyntaxTreeNode> elements = elements();
+        while (elements.hasNext()) {
+            SyntaxTreeNode element = elements.next();
             // xsl:template
             if (element instanceof Template) {
                 // Separate templates by modes
@@ -1054,9 +1050,9 @@ public final class Stylesheet extends SyntaxTreeNode {
 
         // Create a new list containing variables/params + keys
         Vector varDepElements = new Vector(_globals);
-        Enumeration elements = elements();
-        while (elements.hasMoreElements()) {
-            final Object element = elements.nextElement();
+        Iterator<SyntaxTreeNode> elements = elements();
+        while (elements.hasNext()) {
+            SyntaxTreeNode element = elements.next();
             if (element instanceof Key) {
                 varDepElements.add(element);
             }
@@ -1079,8 +1075,8 @@ public final class Stylesheet extends SyntaxTreeNode {
         // Compile code for other top-level elements
         Vector whitespaceRules = new Vector();
         elements = elements();
-        while (elements.hasMoreElements()) {
-            final Object element = elements.nextElement();
+        while (elements.hasNext()) {
+            SyntaxTreeNode element = elements.next();
             // xsl:decimal-format
             if (element instanceof DecimalFormatting) {
                 ((DecimalFormatting)element).translate(classGen,toplevel);
@@ -1198,10 +1194,10 @@ public final class Stylesheet extends SyntaxTreeNode {
 
         buildKeys.addException("com.sun.org.apache.xalan.internal.xsltc.TransletException");
 
-        final Enumeration elements = elements();
-        while (elements.hasMoreElements()) {
+        final Iterator<SyntaxTreeNode> elements = elements();
+        while (elements.hasNext()) {
             // xsl:key
-            final Object element = elements.nextElement();
+            final SyntaxTreeNode element = elements.next();
             if (element instanceof Key) {
                 final Key key = (Key)element;
                 key.translate(classGen, buildKeys);
@@ -1325,8 +1321,8 @@ public final class Stylesheet extends SyntaxTreeNode {
                                                "buildKeys", keySig);
 
         // Look for top-level elements that need handling
-        final Enumeration toplevel = elements();
-        if (_globals.size() > 0 || toplevel.hasMoreElements()) {
+        final Iterator<SyntaxTreeNode> toplevel = elements();
+        if (_globals.size() > 0 || toplevel.hasNext()) {
             // Compile method for handling top-level elements
             final String topLevelSig = compileTopLevel(classGen);
             // Get a reference to that method

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -20,20 +20,21 @@
 
 package com.sun.xml.internal.stream.dtd.nonvalidating;
 
-import java.util.Hashtable;
-import java.util.ArrayList;
-import java.util.List;
-
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.xni.Augmentations;
 import com.sun.org.apache.xerces.internal.xni.QName;
-import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.xni.XMLLocator;
 import com.sun.org.apache.xerces.internal.xni.XMLResourceIdentifier;
 import com.sun.org.apache.xerces.internal.xni.XMLString;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDContentModelSource;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDTDSource;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 /**
  * A DTD grammar. This class implements the XNI handler interfaces
@@ -140,10 +141,10 @@ public class DTDGrammar {
     private int fAttributeDeclNextAttributeDeclIndex[][] = new int[INITIAL_CHUNK_COUNT][];
 
     /** Element index mapping table. */
-    private QNameHashtable fElementIndexMap = new QNameHashtable();
+    private final Map<String, Integer> fElementIndexMap = new HashMap<>();
 
     /** Temporary qualified name. */
-    private QName fQName = new QName();
+    private final QName fQName = new QName();
 
     /** Temporary Attribute decl. */
     protected XMLAttributeDecl fAttributeDecl = new XMLAttributeDecl();
@@ -156,7 +157,7 @@ public class DTDGrammar {
 
 
     /** table of XMLElementDecl   */
-    Hashtable   fElementDeclTab     = new Hashtable();
+    Map<String, XMLElementDecl> fElementDeclTab = new HashMap<>();
 
     /** Default constructor. */
     public DTDGrammar(SymbolTable symbolTable) {
@@ -213,7 +214,7 @@ public class DTDGrammar {
     public void elementDecl(String name, String contentModel, Augmentations augs)
     throws XNIException {
 
-        XMLElementDecl tmpElementDecl = (XMLElementDecl) fElementDeclTab.get(name) ;
+        XMLElementDecl tmpElementDecl = fElementDeclTab.get(name) ;
         if ( tmpElementDecl != null ) {
             if (tmpElementDecl.type == -1) {
                 fCurrentElementIndex = getElementDeclIndex(name);
@@ -299,7 +300,7 @@ public class DTDGrammar {
             normalizeDefaultAttrValue(defaultValue);
         }
 
-        if ( this.fElementDeclTab.containsKey( (String) elementName) ) {
+        if ( this.fElementDeclTab.containsKey(elementName)) {
             //if ElementDecl has already being created in the Grammar then remove from table,
             //this.fElementDeclTab.remove( (String) elementName );
         }
@@ -431,7 +432,10 @@ public class DTDGrammar {
      * @return index of the elementDeclName in scope
      */
     public int getElementDeclIndex(String elementDeclName) {
-        int mapping = fElementIndexMap.get(elementDeclName);
+        Integer mapping = fElementIndexMap.get(elementDeclName);
+        if (mapping == null) {
+            mapping = -1;
+        }
         //System.out.println("getElementDeclIndex("+elementDeclName+") -> "+mapping);
         return mapping;
     } // getElementDeclIndex(String):int
@@ -824,127 +828,6 @@ public class DTDGrammar {
         return newarray;
     }
 
-    //
-    // Classes
-    //
-
-
-    /**
-     * A simple Hashtable implementation that takes a tuple (String, String)
-     * as the key and a int as value.
-     *
-     * @author Eric Ye, IBM
-     * @author Andy Clark, IBM
-     */
-    protected static final class QNameHashtable {
-
-        //
-        // Constants
-        //
-        public static final boolean UNIQUE_STRINGS = true;
-
-        /** Initial bucket size (4). */
-        private static final int INITIAL_BUCKET_SIZE = 4;
-
-        // NOTE: Changed previous hashtable size from 512 to 101 so
-        //       that we get a better distribution for hashing. -Ac
-        /** Hashtable size (101). */
-        private static final int HASHTABLE_SIZE = 101;
-
-        //
-        // Data
-        //
-        private Object[][] fHashTable = new Object[HASHTABLE_SIZE][];
-
-        //
-        // Public methods
-        //
-        /** Associates the given value with the specified key tuple. */
-        public void put(String key, int value) {
-
-            // REVISIT: Why +2? -Ac
-            int hash = (hash(key)+2) % HASHTABLE_SIZE;
-            Object[] bucket = fHashTable[hash];
-
-            if (bucket == null) {
-                bucket = new Object[1 + 2*INITIAL_BUCKET_SIZE];
-                bucket[0] = new int[]{1};
-                bucket[1] = key;
-                bucket[2] = new int[]{value};
-                fHashTable[hash] = bucket;
-            } else {
-                int count = ((int[])bucket[0])[0];
-                int offset = 1 + 2*count;
-                if (offset == bucket.length) {
-                    int newSize = count + INITIAL_BUCKET_SIZE;
-                    Object[] newBucket = new Object[1 + 2*newSize];
-                    System.arraycopy(bucket, 0, newBucket, 0, offset);
-                    bucket = newBucket;
-                    fHashTable[hash] = bucket;
-                }
-                boolean found = false;
-                int j=1;
-                for (int i=0; i<count; i++){
-                    if ((String)bucket[j] == key) {
-                        ((int[])bucket[j+1])[0] = value;
-                        found = true;
-                        break;
-                    }
-                    j += 2;
-                }
-                if (! found) {
-                    bucket[offset++] = key;
-                    bucket[offset]= new int[]{value};
-                    ((int[])bucket[0])[0] = ++count;
-                }
-
-            }
-            //System.out.println("put("+key+" -> "+value+')');
-            //System.out.println("get("+key+") -> "+get(key));
-
-        } // put(int,String,String,int)
-
-        /** Returns the value associated with the specified key tuple. */
-        public int get(String key) {
-            int hash = (hash(key)+2) % HASHTABLE_SIZE;
-            Object[] bucket = fHashTable[hash];
-
-            if (bucket == null) {
-                return -1;
-            }
-            int count = ((int[])bucket[0])[0];
-
-            int j=1;
-            for (int i=0; i<count; i++){
-                if ((String)bucket[j] == key) {
-                    return ((int[])bucket[j+1])[0];
-                }
-                j += 2;
-            }
-            return -1;
-
-        } // get(int,String,String)
-
-        //
-        // Protected methods
-        //
-
-        /** Returns a hash value for the specified symbol. */
-        protected int hash(String symbol) {
-
-            if (symbol == null) {
-                return 0;
-            }
-            int code = 0;
-            int length = symbol.length();
-            for (int i = 0; i < length; i++) {
-                code = code * 37 + symbol.charAt(i);
-            }
-            return code & 0x7FFFFFF;
-
-        } // hash(String):int
-
-    }  // class QNameHashtable
     /**
      * Normalize the attribute value of a non CDATA default attribute
      * collapsing sequences of space characters (x20)

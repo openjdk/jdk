@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
 package javax.swing;
 
 import java.awt.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 
 import javax.swing.plaf.*;
 import javax.accessibility.*;
 
-import java.io.Serializable;
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
 
 
@@ -56,13 +56,11 @@ import java.io.IOException;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- * description: A generic lightweight container.
- *
  * @author Arnaud Weber
  * @author Steve Wilson
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UI", description = "A generic lightweight container.")
 @SuppressWarnings("serial") // Same-version serialization only
 public class JPanel extends JComponent implements Accessible
 {
@@ -145,12 +143,9 @@ public class JPanel extends JComponent implements Accessible
      * @param ui  the PanelUI L&amp;F object
      * @see UIDefaults#getUI
      * @since 1.4
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *    attribute: visualUpdate true
-     *  description: The UI object that implements the Component's LookAndFeel.
      */
+    @BeanProperty(hidden = true, visualUpdate = true, description
+            = "The UI object that implements the Component's LookAndFeel.")
     public void setUI(PanelUI ui) {
         super.setUI(ui);
     }
@@ -162,10 +157,9 @@ public class JPanel extends JComponent implements Accessible
      * @return "PanelUI"
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
-     * @beaninfo
-     *        expert: true
-     *   description: A string that specifies the name of the L&amp;F class.
      */
+    @BeanProperty(bound = false, expert = true, description
+            = "A string that specifies the name of the L&amp;F class.")
     public String getUIClassID() {
         return uiClassID;
     }
@@ -213,6 +207,7 @@ public class JPanel extends JComponent implements Accessible
      * @return an AccessibleJPanel that serves as the
      *         AccessibleContext of this JPanel
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJPanel();

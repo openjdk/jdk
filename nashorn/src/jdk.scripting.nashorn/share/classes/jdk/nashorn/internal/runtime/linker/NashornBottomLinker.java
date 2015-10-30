@@ -32,17 +32,20 @@ import static jdk.nashorn.internal.runtime.JSType.TYPE_OBJECT_INDEX;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.NamedOperation;
+import jdk.internal.dynalink.Operation;
 import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.linker.GuardedTypeConversion;
 import jdk.internal.dynalink.linker.GuardingDynamicLinker;
 import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.support.Guards;
+import jdk.internal.dynalink.linker.support.Guards;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -85,9 +88,8 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
     private static GuardedInvocation linkBean(final LinkRequest linkRequest, final LinkerServices linkerServices) throws Exception {
         final NashornCallSiteDescriptor desc = (NashornCallSiteDescriptor)linkRequest.getCallSiteDescriptor();
         final Object self = linkRequest.getReceiver();
-        final String operator = desc.getFirstOperator();
-        switch (operator) {
-        case "new":
+        switch (desc.getFirstOperation()) {
+        case NEW:
             if(BeansLinker.isDynamicConstructor(self)) {
                 throw typeError("no.constructor.matches.args", ScriptRuntime.safeToString(self));
             }
@@ -95,7 +97,7 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
                 throw typeError("method.not.constructor", ScriptRuntime.safeToString(self));
             }
             throw typeError("not.a.function", desc.getFunctionErrorMessage(self));
-        case "call":
+        case CALL:
             if(BeansLinker.isDynamicConstructor(self)) {
                 throw typeError("constructor.requires.new", ScriptRuntime.safeToString(self));
             }
@@ -103,13 +105,13 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
                 throw typeError("no.method.matches.args", ScriptRuntime.safeToString(self));
             }
             throw typeError("not.a.function", desc.getFunctionErrorMessage(self));
-        case "callMethod":
+        case CALL_METHOD:
             throw typeError("no.such.function", getArgument(linkRequest), ScriptRuntime.safeToString(self));
-        case "getMethod":
+        case GET_METHOD:
             // evaluate to undefined, later on Undefined will take care of throwing TypeError
             return getInvocation(MH.dropArguments(GET_UNDEFINED.get(TYPE_OBJECT_INDEX), 0, Object.class), self, linkerServices, desc);
-        case "getProp":
-        case "getElem":
+        case GET_PROPERTY:
+        case GET_ELEMENT:
             if(NashornCallSiteDescriptor.isOptimistic(desc)) {
                 throw new UnwarrantedOptimismException(UNDEFINED, NashornCallSiteDescriptor.getProgramPoint(desc), Type.OBJECT);
             }
@@ -117,8 +119,8 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
                 return getInvocation(EMPTY_PROP_GETTER, self, linkerServices, desc);
             }
             return getInvocation(EMPTY_ELEM_GETTER, self, linkerServices, desc);
-        case "setProp":
-        case "setElem": {
+        case SET_PROPERTY:
+        case SET_ELEMENT:
             final boolean strict = NashornCallSiteDescriptor.isStrict(desc);
             if (strict) {
                 throw typeError("cant.set.property", getArgument(linkRequest), ScriptRuntime.safeToString(self));
@@ -127,17 +129,15 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
                 return getInvocation(EMPTY_PROP_SETTER, self, linkerServices, desc);
             }
             return getInvocation(EMPTY_ELEM_SETTER, self, linkerServices, desc);
-        }
         default:
-            break;
+            throw new AssertionError("unknown call type " + desc);
         }
-        throw new AssertionError("unknown call type " + desc);
     }
 
     @Override
-    public GuardedTypeConversion convertToType(final Class<?> sourceType, final Class<?> targetType) throws Exception {
+    public GuardedInvocation convertToType(final Class<?> sourceType, final Class<?> targetType, final Supplier<MethodHandles.Lookup> lookupSupplier) throws Exception {
         final GuardedInvocation gi = convertToTypeNoCast(sourceType, targetType);
-        return gi == null ? null : new GuardedTypeConversion(gi.asType(MH.type(targetType, sourceType)), true);
+        return gi == null ? null : gi.asType(MH.type(targetType, sourceType));
     }
 
     /**
@@ -169,24 +169,22 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
 
     private static GuardedInvocation linkNull(final LinkRequest linkRequest) {
         final NashornCallSiteDescriptor desc = (NashornCallSiteDescriptor)linkRequest.getCallSiteDescriptor();
-        final String operator = desc.getFirstOperator();
-        switch (operator) {
-        case "new":
-        case "call":
+        switch (desc.getFirstOperation()) {
+        case NEW:
+        case CALL:
             throw typeError("not.a.function", "null");
-        case "callMethod":
-        case "getMethod":
+        case CALL_METHOD:
+        case GET_METHOD:
             throw typeError("no.such.function", getArgument(linkRequest), "null");
-        case "getProp":
-        case "getElem":
+        case GET_PROPERTY:
+        case GET_ELEMENT:
             throw typeError("cant.get.property", getArgument(linkRequest), "null");
-        case "setProp":
-        case "setElem":
+        case SET_PROPERTY:
+        case SET_ELEMENT:
             throw typeError("cant.set.property", getArgument(linkRequest), "null");
         default:
-            break;
+            throw new AssertionError("unknown call type " + desc);
         }
-        throw new AssertionError("unknown call type " + desc);
     }
 
     private static final Map<Class<?>, MethodHandle> CONVERTERS = new HashMap<>();
@@ -199,9 +197,9 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
     }
 
     private static String getArgument(final LinkRequest linkRequest) {
-        final CallSiteDescriptor desc = linkRequest.getCallSiteDescriptor();
-        if (desc.getNameTokenCount() > 2) {
-            return desc.getNameToken(2);
+        final Operation op = linkRequest.getCallSiteDescriptor().getOperation();
+        if (op instanceof NamedOperation) {
+            return ((NamedOperation)op).getName().toString();
         }
         return ScriptRuntime.safeToString(linkRequest.getArguments()[1]);
     }

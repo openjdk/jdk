@@ -37,14 +37,15 @@ import java.lang.invoke.MethodType;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.dynalink.DynamicLinkerFactory;
-import jdk.internal.dynalink.GuardedInvocationFilter;
 import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
+import jdk.internal.dynalink.linker.GuardedInvocationTransformer;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.MethodTypeConversionStrategy;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
+import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
@@ -102,7 +103,7 @@ public final class Bootstrap {
             new ReflectionCheckLinker());
         factory.setFallbackLinkers(nashornBeansLinker, new NashornBottomLinker());
         factory.setSyncOnRelink(true);
-        factory.setPrelinkFilter(new GuardedInvocationFilter() {
+        factory.setPrelinkTransformer(new GuardedInvocationTransformer() {
             @Override
             public GuardedInvocation filter(final GuardedInvocation inv, final LinkRequest request, final LinkerServices linkerServices) {
                 final CallSiteDescriptor desc = request.getCallSiteDescriptor();
@@ -260,130 +261,156 @@ public final class Bootstrap {
     }
 
     /**
-     * Returns a dynamic invoker for a specified dynamic operation using the public lookup. You can use this method to
-     * create a method handle that when invoked acts completely as if it were a Nashorn-linked call site. An overview of
-     * available dynamic operations can be found in the
-     * <a href="https://github.com/szegedi/dynalink/wiki/User-Guide-0.6">Dynalink User Guide</a>, but we'll show few
-     * examples here:
+     * Returns a dynamic invoker for a specified dynamic operation using the
+     * public lookup. You can use this method to create a method handle that
+     * when invoked acts completely as if it were a Nashorn-linked call site.
+     * Note that the available operations are encoded in the flags, see
+     * {@link NashornCallSiteDescriptor} operation constants. If the operation
+     * takes a name, it should be set otherwise empty name (not null) should be
+     * used. All names (including the empty one) should be encoded using
+     * {@link NameCodec#encode(String)}. Few examples:
      * <ul>
      *   <li>Get a named property with fixed name:
      *     <pre>
-     * MethodHandle getColor = Boostrap.createDynamicInvoker("dyn:getProp:color", Object.class, Object.class);
+     * MethodHandle getColor = Boostrap.createDynamicInvoker(
+     *     "color",
+     *     NashornCallSiteDescriptor.GET_PROPERTY,
+     *     Object.class, Object.class);
      * Object obj = ...; // somehow obtain the object
      * Object color = getColor.invokeExact(obj);
      *     </pre>
      *   </li>
      *   <li>Get a named property with variable name:
      *     <pre>
-     * MethodHandle getProperty = Boostrap.createDynamicInvoker("dyn:getElem", Object.class, Object.class, String.class);
+     * MethodHandle getProperty = Boostrap.createDynamicInvoker(
+     *     NameCodec.encode(""),
+     *     NashornCallSiteDescriptor.GET_PROPERTY,
+     *     Object.class, Object.class, String.class);
      * Object obj = ...; // somehow obtain the object
      * Object color = getProperty.invokeExact(obj, "color");
      * Object shape = getProperty.invokeExact(obj, "shape");
-     * MethodHandle getNumProperty = Boostrap.createDynamicInvoker("dyn:getElem", Object.class, Object.class, int.class);
+     *
+     * MethodHandle getNumProperty = Boostrap.createDynamicInvoker(
+     *     NameCodec.encode(""),
+     *     NashornCallSiteDescriptor.GET_ELEMENT,
+     *     Object.class, Object.class, int.class);
      * Object elem42 = getNumProperty.invokeExact(obj, 42);
      *     </pre>
      *   </li>
      *   <li>Set a named property with fixed name:
      *     <pre>
-     * MethodHandle setColor = Boostrap.createDynamicInvoker("dyn:setProp:color", void.class, Object.class, Object.class);
+     * MethodHandle setColor = Boostrap.createDynamicInvoker(
+     *     "color",
+     *     NashornCallSiteDescriptor.SET_PROPERTY,
+     *     void.class, Object.class, Object.class);
      * Object obj = ...; // somehow obtain the object
      * setColor.invokeExact(obj, Color.BLUE);
      *     </pre>
      *   </li>
      *   <li>Set a property with variable name:
      *     <pre>
-     * MethodHandle setProperty = Boostrap.createDynamicInvoker("dyn:setElem", void.class, Object.class, String.class, Object.class);
+     * MethodHandle setProperty = Boostrap.createDynamicInvoker(
+     *     NameCodec.encode(""),
+     *     NashornCallSiteDescriptor.SET_PROPERTY,
+     *     void.class, Object.class, String.class, Object.class);
      * Object obj = ...; // somehow obtain the object
      * setProperty.invokeExact(obj, "color", Color.BLUE);
      * setProperty.invokeExact(obj, "shape", Shape.CIRCLE);
      *     </pre>
      *   </li>
-     *   <li>Call a function on an object; two-step variant. This is the actual variant used by Nashorn-generated code:
+     *   <li>Call a function on an object; note it's a two-step process: get the
+     *   method, then invoke the method. This is the actual:
      *     <pre>
-     * MethodHandle findFooFunction = Boostrap.createDynamicInvoker("dyn:getMethod:foo", Object.class, Object.class);
+     * MethodHandle findFooFunction = Boostrap.createDynamicInvoker(
+     *     "foo",
+     *     NashornCallSiteDescriptor.GET_METHOD,
+     *     Object.class, Object.class);
      * Object obj = ...; // somehow obtain the object
      * Object foo_fn = findFooFunction.invokeExact(obj);
-     * MethodHandle callFunctionWithTwoArgs = Boostrap.createDynamicInvoker("dyn:call", Object.class, Object.class, Object.class, Object.class, Object.class);
+     * MethodHandle callFunctionWithTwoArgs = Boostrap.createDynamicCallInvoker(
+     *     Object.class, Object.class, Object.class, Object.class, Object.class);
      * // Note: "call" operation takes a function, then a "this" value, then the arguments:
      * Object foo_retval = callFunctionWithTwoArgs.invokeExact(foo_fn, obj, arg1, arg2);
-     *     </pre>
-     *   </li>
-     *   <li>Call a function on an object; single-step variant. Although Nashorn doesn't use this variant and never
-     *   emits any INVOKEDYNAMIC instructions with {@code dyn:getMethod}, it still supports this standard Dynalink
-     *   operation:
-     *     <pre>
-     * MethodHandle callFunctionFooWithTwoArgs = Boostrap.createDynamicInvoker("dyn:callMethod:foo", Object.class, Object.class, Object.class, Object.class);
-     * Object obj = ...; // somehow obtain the object
-     * Object foo_retval = callFunctionFooWithTwoArgs.invokeExact(obj, arg1, arg2);
      *     </pre>
      *   </li>
      * </ul>
      * Few additional remarks:
      * <ul>
-     * <li>Just as Nashorn works with any Java object, the invokers returned from this method can also be applied to
-     * arbitrary Java objects in addition to Nashorn JavaScript objects.</li>
-     * <li>For invoking a named function on an object, you can also use the {@link InvokeByName} convenience class.</li>
-     * <li>For Nashorn objects {@code getElem}, {@code getProp}, and {@code getMethod} are handled almost identically,
-     * since JavaScript doesn't distinguish between different kinds of properties on an object. Either can be used with
-     * fixed property name or a variable property name. The only significant difference is handling of missing
-     * properties: {@code getMethod} for a missing member will link to a potential invocation of
-     * {@code __noSuchMethod__} on the object, {@code getProp} for a missing member will link to a potential invocation
-     * of {@code __noSuchProperty__}, while {@code getElem} for a missing member will link to an empty getter.</li>
-     * <li>In similar vein, {@code setElem} and {@code setProp} are handled identically on Nashorn objects.</li>
-     * <li>There's no rule that the variable property identifier has to be a {@code String} for {@code getProp/setProp}
-     * and {@code int} for {@code getElem/setElem}. You can declare their type to be {@code int}, {@code double},
-     * {@code Object}, and so on regardless of the kind of the operation.</li>
-     * <li>You can be as specific in parameter types as you want. E.g. if you know that the receiver of the operation
-     * will always be {@code ScriptObject}, you can pass {@code ScriptObject.class} as its parameter type. If you happen
-     * to link to a method that expects different types, (you can use these invokers on POJOs too, after all, and end up
-     * linking with their methods that have strongly-typed signatures), all necessary conversions allowed by either Java
-     * or JavaScript will be applied: if invoked methods specify either primitive or wrapped Java numeric types, or
-     * {@code String} or {@code boolean/Boolean}, then the parameters might be subjected to standard ECMAScript
-     * {@code ToNumber}, {@code ToString}, and {@code ToBoolean} conversion, respectively. Less obviously, if the
-     * expected parameter type is a SAM type, and you pass a JavaScript function, a proxy object implementing the SAM
-     * type and delegating to the function will be passed. Linkage can often be optimized when linkers have more
-     * specific type information than "everything can be an object".</li>
-     * <li>You can also be as specific in return types as you want. For return types any necessary type conversion
-     * available in either Java or JavaScript will be automatically applied, similar to the process described for
-     * parameters, only in reverse direction:  if you specify any either primitive or wrapped Java numeric type, or
-     * {@code String} or {@code boolean/Boolean}, then the return values will be subjected to standard ECMAScript
-     * {@code ToNumber}, {@code ToString}, and {@code ToBoolean} conversion, respectively. Less obviously, if the return
-     * type is a SAM type, and the return value is a JavaScript function, a proxy object implementing the SAM type and
-     * delegating to the function will be returned.</li>
+     * <li>Just as Nashorn works with any Java object, the invokers returned
+     * from this method can also be applied to arbitrary Java objects in
+     * addition to Nashorn JavaScript objects.</li>
+     * <li>For invoking a named function on an object, you can also use the
+     * {@link InvokeByName} convenience class.</li>
+     * <li>There's no rule that the variable property identifier has to be a
+     * {@code String} for {@code GET_PROPERTY/SET_PROPERTY} and {@code int} for
+     * {@code GET_ELEMENT/SET_ELEMENT}. You can declare their type to be
+     * {@code int}, {@code double}, {@code Object}, and so on regardless of the
+     * kind of the operation.</li>
+     * <li>You can be as specific in parameter types as you want. E.g. if you
+     * know that the receiver of the operation will always be
+     * {@code ScriptObject}, you can pass {@code ScriptObject.class} as its
+     * parameter type. If you happen to link to a method that expects different
+     * types, (you can use these invokers on POJOs too, after all, and end up
+     * linking with their methods that have strongly-typed signatures), all
+     * necessary conversions allowed by either Java or JavaScript will be
+     * applied: if invoked methods specify either primitive or wrapped Java
+     * numeric types, or {@code String} or {@code boolean/Boolean}, then the
+     * parameters might be subjected to standard ECMAScript {@code ToNumber},
+     * {@code ToString}, and {@code ToBoolean} conversion, respectively. Less
+     * obviously, if the expected parameter type is a SAM type, and you pass a
+     * JavaScript function, a proxy object implementing the SAM type and
+     * delegating to the function will be passed. Linkage can often be optimized
+     * when linkers have more specific type information than "everything can be
+     * an object".</li>
+     * <li>You can also be as specific in return types as you want. For return
+     * types any necessary type conversion available in either Java or
+     * JavaScript will be automatically applied, similar to the process
+     * described for parameters, only in reverse direction: if you specify any
+     * either primitive or wrapped Java numeric type, or {@code String} or
+     * {@code boolean/Boolean}, then the return values will be subjected to
+     * standard ECMAScript {@code ToNumber}, {@code ToString}, and
+     * {@code ToBoolean} conversion, respectively. Less obviously, if the return
+     * type is a SAM type, and the return value is a JavaScript function, a
+     * proxy object implementing the SAM type and delegating to the function
+     * will be returned.</li>
      * </ul>
-     * @param opDesc Dynalink dynamic operation descriptor.
+     * @param name name at the call site. Must not be null. Must be encoded
+     * using {@link NameCodec#encode(String)}. If the operation does not take a
+     * name, use empty string (also has to be encoded).
+     * @param flags the call site flags for the operation; see
+     * {@link NashornCallSiteDescriptor} for available flags. The most important
+     * part of the flags are the ones encoding the actual operation.
      * @param rtype the return type for the operation
      * @param ptypes the parameter types for the operation
      * @return MethodHandle for invoking the operation.
      */
-    public static MethodHandle createDynamicInvoker(final String opDesc, final Class<?> rtype, final Class<?>... ptypes) {
-        return createDynamicInvoker(opDesc, MethodType.methodType(rtype, ptypes));
+    public static MethodHandle createDynamicInvoker(final String name, final int flags, final Class<?> rtype, final Class<?>... ptypes) {
+        return bootstrap(MethodHandles.publicLookup(), name, MethodType.methodType(rtype, ptypes), flags).dynamicInvoker();
     }
 
     /**
-     * Returns a dynamic invoker for a specified dynamic operation using the public lookup. Similar to
-     * {@link #createDynamicInvoker(String, Class, Class...)} but with an additional parameter to
-     * set the call site flags of the dynamic invoker.
-     * @param opDesc Dynalink dynamic operation descriptor.
-     * @param flags the call site flags for the operation
+     * Returns a dynamic invoker for the {@link NashornCallSiteDescriptor#CALL}
+     * operation using the public lookup.
      * @param rtype the return type for the operation
      * @param ptypes the parameter types for the operation
-     * @return MethodHandle for invoking the operation.
+     * @return a dynamic invoker for the {@code CALL} operation.
      */
-    public static MethodHandle createDynamicInvoker(final String opDesc, final int flags, final Class<?> rtype, final Class<?>... ptypes) {
-        return bootstrap(MethodHandles.publicLookup(), opDesc, MethodType.methodType(rtype, ptypes), flags).dynamicInvoker();
+    public static MethodHandle createDynamicCallInvoker(final Class<?> rtype, final Class<?>... ptypes) {
+        return createDynamicInvoker("", NashornCallSiteDescriptor.CALL, rtype, ptypes);
     }
 
     /**
-     * Returns a dynamic invoker for a specified dynamic operation using the public lookup. Similar to
-     * {@link #createDynamicInvoker(String, Class, Class...)} but with return and parameter types composed into a
-     * method type in the signature. See the discussion of that method for details.
-     * @param opDesc Dynalink dynamic operation descriptor.
+     * Returns a dynamic invoker for a specified dynamic operation using the
+     * public lookup. Similar to
+     * {@link #createDynamicInvoker(String, int, Class, Class...)} but with
+     * already precomposed method type.
+     * @param name name at the call site.
+     * @param flags flags at the call site
      * @param type the method type for the operation
      * @return MethodHandle for invoking the operation.
      */
-    public static MethodHandle createDynamicInvoker(final String opDesc, final MethodType type) {
-        return bootstrap(MethodHandles.publicLookup(), opDesc, type, 0).dynamicInvoker();
+    public static MethodHandle createDynamicInvoker(final String name, final int flags, final MethodType type) {
+        return bootstrap(MethodHandles.publicLookup(), name, type, flags).dynamicInvoker();
     }
 
     /**

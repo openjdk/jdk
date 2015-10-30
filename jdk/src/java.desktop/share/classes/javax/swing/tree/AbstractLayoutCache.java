@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package javax.swing.tree;
 
 import javax.swing.event.TreeModelEvent;
-import java.awt.Dimension;
 import java.awt.Rectangle;
+import java.beans.BeanProperty;
 import java.util.Enumeration;
 
 /**
@@ -112,11 +111,9 @@ public abstract class AbstractLayoutCache implements RowMapper {
      *
      * @param rootVisible true if the root node of the tree is to be displayed
      * @see #rootVisible
-     * @beaninfo
-     *        bound: true
-     *  description: Whether or not the root node
-     *               from the TreeModel is visible.
      */
+    @BeanProperty(description
+            = "Whether or not the root node from the TreeModel is visible.")
     public void setRootVisible(boolean rootVisible) {
         this.rootVisible = rootVisible;
     }
@@ -137,10 +134,9 @@ public abstract class AbstractLayoutCache implements RowMapper {
      * queried for each row's height.
      *
      * @param rowHeight the height of each cell, in pixels
-     * @beaninfo
-     *        bound: true
-     *  description: The height of each cell.
      */
+    @BeanProperty(description
+            = "The height of each cell.")
     public void setRowHeight(int rowHeight) {
         this.rowHeight = rowHeight;
     }

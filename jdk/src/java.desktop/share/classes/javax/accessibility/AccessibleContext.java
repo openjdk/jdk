@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,10 +29,14 @@ import sun.awt.AWTAccessor;
 import sun.awt.AppContext;
 
 import java.util.Locale;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeEvent;
 import java.awt.IllegalComponentStateException;
+
+import javax.swing.SwingContainer;
 
 /**
  * AccessibleContext represents the minimum information all accessible objects
@@ -69,17 +73,13 @@ import java.awt.IllegalComponentStateException;
  * minimum and maximum values.  Any object that supports a numerical value
  * should support this interface.</ul>
  *
- *
- * @beaninfo
- *   attribute: isContainer false
- * description: Minimal information that all accessible objects return
- *
-
  * @author      Peter Korn
  * @author      Hans Muller
  * @author      Willie Walker
  * @author      Lynn Monsanto
  */
+@JavaBean(description = "Minimal information that all accessible objects return")
+@SwingContainer(false)
 public abstract class AccessibleContext {
 
     /**
@@ -447,11 +447,9 @@ public abstract class AccessibleContext {
      *
      * @see #getAccessibleName
      * @see #addPropertyChangeListener
-     *
-     * @beaninfo
-     *    preferred:   true
-     *    description: Sets the accessible name for the component.
      */
+    @BeanProperty(preferred = true, description
+            = "Sets the accessible name for the component.")
     public void setAccessibleName(String s) {
         String oldName = accessibleName;
         accessibleName = s;
@@ -483,11 +481,9 @@ public abstract class AccessibleContext {
      *
      * @see #setAccessibleName
      * @see #addPropertyChangeListener
-     *
-     * @beaninfo
-     *    preferred:   true
-     *    description: Sets the accessible description for the component.
      */
+    @BeanProperty(preferred = true, description
+            = "Sets the accessible description for the component.")
     public void setAccessibleDescription(String s) {
         String oldDescription = accessibleDescription;
         accessibleDescription = s;

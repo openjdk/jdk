@@ -26,11 +26,13 @@
 package com.sun.tools.sjavac.comp.dependencies;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
@@ -38,7 +40,11 @@ import javax.tools.StandardLocation;
 
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
+import com.sun.tools.javac.code.Kinds.Kind;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symbol.TypeSymbol;
+import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -85,7 +91,6 @@ public class NewDependencyCollector implements TaskListener {
 
         return deps.getNodes()
                    .stream()
-                   .filter(n -> n instanceof CompletionNode)
                    .map(n -> (CompletionNode) n)
                    .filter(n -> n.getClassSymbol().fullname != null)
                    .filter(n -> explicits == explicitJFOs.contains(n.getClassSymbol().classfile))
@@ -128,31 +133,66 @@ public class NewDependencyCollector implements TaskListener {
             String depPkg = Util.pkgNameOfClassName(fqDep);
 
             Map<String, Set<String>> depsForThisClass = result.get(depPkg);
-            if (depsForThisClass == null)
+            if (depsForThisClass == null) {
                 result.put(depPkg, depsForThisClass = new HashMap<>());
+            }
 
-            for (Node<?,?> depNode : cnode.getDependenciesByKind(GraphDependencies.Node.DependencyKind.REQUIRES)) {
-                boolean isCompletionNode = depNode instanceof CompletionNode;
-                if (isCompletionNode) {
-                    CompletionNode cDepNode = (CompletionNode) depNode;
-                    if (cDepNode == cnode)
-                        continue;
-                    if (cDepNode.getClassSymbol().fullname == null) // Anonymous class
-                        continue;
-                    Location depLoc = getLocationOf(cDepNode.getClassSymbol());
-                    boolean relevant = (cp  && depLoc == StandardLocation.CLASS_PATH)
-                                    || (!cp && depLoc == StandardLocation.SOURCE_PATH);
-                    if (!relevant)
-                        continue;
+            Set<String> fqDeps = depsForThisClass.get(fqDep);
+            if (fqDeps == null) {
+                depsForThisClass.put(fqDep, fqDeps = new HashSet<>());
+            }
 
-                    Set<String> fqDeps = depsForThisClass.get(fqDep);
-                    if (fqDeps == null)
-                        depsForThisClass.put(fqDep, fqDeps = new HashSet<>());
+            for (Node<?,?> depNode : getAllDependencies(cnode)) {
+                CompletionNode cDepNode = (CompletionNode) depNode;
+                // Symbol is not regarded to depend on itself.
+                if (cDepNode == cnode) {
+                    continue;
+                }
+                // Skip anonymous classes
+                if (cDepNode.getClassSymbol().fullname == null) {
+                    continue;
+                }
+                if (isSymbolRelevant(cp, cDepNode.getClassSymbol())) {
                     fqDeps.add(cDepNode.getClassSymbol().outermostClass().flatname.toString());
                 }
             }
+
+            // The completion dependency graph is not transitively closed for inheritance relations.
+            // For sjavac's purposes however, a class depends on it's super super type, so below we
+            // make sure that we include super types.
+            for (ClassSymbol cs : allSupertypes(cnode.getClassSymbol())) {
+                if (isSymbolRelevant(cp, cs)) {
+                    fqDeps.add(cs.outermostClass().flatname.toString());
+                }
+            }
+
         }
         return result;
     }
 
+    public boolean isSymbolRelevant(boolean cp, ClassSymbol cs) {
+        Location csLoc = getLocationOf(cs);
+        Location relevantLocation = cp ? StandardLocation.CLASS_PATH : StandardLocation.SOURCE_PATH;
+        return csLoc == relevantLocation;
+    }
+
+    private Set<ClassSymbol> allSupertypes(TypeSymbol t) {
+        if (t == null || !(t instanceof ClassSymbol)) {
+            return Collections.emptySet();
+        }
+        Set<ClassSymbol> result = new HashSet<>();
+        ClassSymbol cs = (ClassSymbol) t;
+        result.add(cs);
+        result.addAll(allSupertypes(cs.getSuperclass().tsym));
+        for (Type it : cs.getInterfaces()) {
+            result.addAll(allSupertypes(it.tsym));
+        }
+        return result;
+    }
+
+    private Collection<? extends Node<?, ?>> getAllDependencies(CompletionNode cnode) {
+        return Stream.of(cnode.getSupportedDependencyKinds())
+                     .flatMap(dk -> cnode.getDependenciesByKind(dk).stream())
+                     .collect(Collectors.toSet());
+    }
 }

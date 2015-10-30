@@ -5,3 +5,5 @@ nbproject/private/
 ^.hgtip
 ^.bridge2
 .DS_Store
+.metadata/
+.recommenders/

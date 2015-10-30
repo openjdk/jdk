@@ -40,7 +40,7 @@ UNPACKEXE_CFLAGS := -I$(JDK_TOPDIR)/src/jdk.pack200/share/native/common-unpack \
 
 ifeq ($(USE_EXTERNAL_LIBZ), true)
   UNPACKEXE_CFLAGS += -DSYSTEM_ZLIB
-  UNPACKEXE_ZIPOBJS := -lz
+  UNPACKEXE_LIBS := -lz
 else
   UNPACKEXE_CFLAGS += -I$(JDK_TOPDIR)/src/java.base/share/native/libzip/zlib-1.2.8
   UNPACKEXE_ZIPOBJS := $(SUPPORT_OUTPUTDIR)/native/java.base/libzip/zcrc32$(OBJ_SUFFIX) \
@@ -90,9 +90,9 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
         $(LDFLAGS_JDKEXE) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)unpack$(SHARED_LIBRARY_SUFFIX)) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_linux := -lc, \
+    LDFLAGS_linux := , \
     LDFLAGS_solaris := $(UNPACKEXE_LDFLAGS_solaris) -lc, \
-    LDFLAGS_SUFFIX := $(LIBCXX), \
+    LDFLAGS_SUFFIX := $(UNPACKEXE_LIBS) $(LIBCXX), \
     OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/unpackexe$(OUTPUT_SUBDIR), \
     OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_cmds/$(MODULE), \
     PROGRAM := unpack200, \

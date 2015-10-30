@@ -76,7 +76,10 @@ public class SSL extends SecurityManager {
             return;
         }
         ServicePermission p = (ServicePermission)perm;
-        permChecks = permChecks + p.getActions().toUpperCase().charAt(0);
+        // ServicePermissions required to create GSSName are ignored
+        if (!p.getActions().isEmpty()) {
+            permChecks = permChecks + p.getActions().toUpperCase().charAt(0);
+        }
     }
 
     public static void main(String[] args) throws Exception {

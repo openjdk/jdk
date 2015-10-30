@@ -39,6 +39,7 @@ TEST_LIB_SUPPORT := $(SUPPORT_OUTPUTDIR)/test/lib
 $(eval $(call SetupJavaCompiler, BOOT_JAVAC_NOWARNINGS, \
     JAVAC := $(JAVAC), \
     FLAGS := -XDignore.symbol.file=true -g, \
+    DISABLE_SJAVAC := true, \
 ))
 
 $(eval $(call SetupJavaCompilation, BUILD_WB_JAR, \

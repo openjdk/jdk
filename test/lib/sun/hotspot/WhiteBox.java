@@ -112,6 +112,12 @@ public class WhiteBox {
 
   public native void forceSafepoint();
 
+  private native long getConstantPool0(Class<?> aClass);
+  public         long getConstantPool(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getConstantPool0(aClass);
+  }
+
   // JVMTI
   private native void addToBootstrapClassLoaderSearch0(String segment);
   public         void addToBootstrapClassLoaderSearch(String segment){
@@ -159,6 +165,7 @@ public class WhiteBox {
   public native int NMTGetHashSize();
 
   // Compiler
+  public native int     matchesMethod(Executable method, String pattern);
   public native int     deoptimizeFrames(boolean makeNotEntrant);
   public native void    deoptimizeAll();
   public        boolean isMethodCompiled(Executable method) {
@@ -288,6 +295,11 @@ public class WhiteBox {
   public native void    forceNMethodSweep();
   public native Object[] getCodeHeapEntries(int type);
   public native int     getCompilationActivityMode();
+  private native long getMethodData0(Executable method);
+  public         long getMethodData(Executable method) {
+    Objects.requireNonNull(method);
+    return getMethodData0(method);
+  }
   public native Object[] getCodeBlob(long addr);
 
   // Intered strings

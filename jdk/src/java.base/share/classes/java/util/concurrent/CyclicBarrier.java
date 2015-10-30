@@ -34,6 +34,7 @@
  */
 
 package java.util.concurrent;
+
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -54,7 +55,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p><b>Sample usage:</b> Here is an example of using a barrier in a
  * parallel decomposition design:
  *
- *  <pre> {@code
+ * <pre> {@code
  * class Solver {
  *   final int N;
  *   final float[][] data;
@@ -85,7 +86,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *       new Runnable() { public void run() { mergeRows(...); }};
  *     barrier = new CyclicBarrier(N, barrierAction);
  *
- *     List<Thread> threads = new ArrayList<Thread>(N);
+ *     List<Thread> threads = new ArrayList<>(N);
  *     for (int i = 0; i < N; i++) {
  *       Thread thread = new Thread(new Worker(i));
  *       threads.add(thread);
@@ -111,7 +112,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * {@link #await} returns the arrival index of that thread at the barrier.
  * You can then choose which thread should execute the barrier action, for
  * example:
- *  <pre> {@code
+ * <pre> {@code
  * if (barrier.await() == 0) {
  *   // log the completion of this iteration
  * }}</pre>
@@ -149,7 +150,7 @@ public class CyclicBarrier {
      * but no subsequent reset.
      */
     private static class Generation {
-        boolean broken = false;
+        boolean broken;         // initially false
     }
 
     /** The lock for guarding barrier entry */
@@ -158,7 +159,7 @@ public class CyclicBarrier {
     private final Condition trip = lock.newCondition();
     /** The number of parties */
     private final int parties;
-    /* The command to run when tripped */
+    /** The command to run when tripped */
     private final Runnable barrierCommand;
     /** The current generation */
     private Generation generation = new Generation();

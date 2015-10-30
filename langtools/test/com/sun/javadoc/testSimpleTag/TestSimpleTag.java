@@ -51,7 +51,8 @@ public class TestSimpleTag extends JavadocTester {
                 "-tag", "regular:a:Regular Tag:",
                 "-tag", "back-slash\\:tag\\\\:a:Back-Slash-Tag:",
                 testSrc("C.java"));
-        checkExit(Exit.FAILED); // TODO: investigate why failed
+        // doclint fails because '\' is not allowed in tag name
+        checkExit(Exit.FAILED);
 
         checkOutput("C.html", true,
                 "<span class=\"simpleTagLabel\">Todo:</span>",

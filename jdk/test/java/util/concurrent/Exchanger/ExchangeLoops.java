@@ -49,7 +49,6 @@ public class ExchangeLoops {
         Int(int i) { value = i; }
     }
 
-
     public static void main(String[] args) throws Exception {
         int maxStages = 5;
         int iters = 10000;

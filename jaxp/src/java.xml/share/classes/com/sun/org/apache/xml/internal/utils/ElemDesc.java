@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -22,7 +22,9 @@
  */
 package com.sun.org.apache.xml.internal.utils;
 
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
+
 
 /**
  * This class is in support of SerializerToHTML, and acts as a sort
@@ -33,7 +35,7 @@ class ElemDesc
 {
 
   /** Table of attributes for the element */
-  Hashtable m_attrs = null;
+  Map<String, Integer> m_attrs = null;
 
   /** Element's flags, describing the role this element plays during
    * formatting of the document. This is used as a bitvector; more than one flag
@@ -157,9 +159,9 @@ class ElemDesc
   {
 
     if (null == m_attrs)
-      m_attrs = new Hashtable();
+      m_attrs = new HashMap<>();
 
-    m_attrs.put(name, new Integer(flags));
+    m_attrs.put(name, flags);
   }
 
   /**
@@ -178,11 +180,11 @@ class ElemDesc
 
     if (null != m_attrs)
     {
-      Integer _flags = (Integer) m_attrs.get(name);
+      Integer _flags = m_attrs.get(name);
 
       if (null != _flags)
       {
-        return (_flags.intValue() & flags) != 0;
+        return (_flags & flags) != 0;
       }
     }
 

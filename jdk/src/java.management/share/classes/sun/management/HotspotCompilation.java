@@ -90,6 +90,7 @@ class HotspotCompilation
             this.time = (LongCounter) lookup(basename + "time");
         }
 
+        @SuppressWarnings("deprecation")
         CompilerThreadStat getCompilerThreadStat() {
             MethodInfo minfo = new MethodInfo(method.stringValue(),
                                               (int) type.longValue(),
@@ -182,6 +183,7 @@ class HotspotCompilation
         return nmethodSize.longValue();
     }
 
+    @Deprecated
     public List<CompilerThreadStat> getCompilerThreadStats() {
         List<CompilerThreadStat> list = new ArrayList<>(threads.size());
         for (CompilerThreadInfo info : threads) {

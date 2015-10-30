@@ -381,7 +381,7 @@ public class ListDefaults {
                 minBitCount = bitCount;
             }
 
-            // Resuse the supplier to store AtomicInteger instead of Integer
+            // Reuse the supplier to store AtomicInteger instead of Integer
             // Hence the use of raw type and cast
             List<AtomicInteger> incomparablesData = new ArrayList<>();
             for (int i = 0; i < test.expected.size(); i++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,6 +228,13 @@ public final class TerminalFactory {
      * <p>The <code>TerminalFactory</code> is initialized with the
      * specified parameters Object. The type of parameters
      * needed may vary between different types of <code>TerminalFactory</code>s.
+     *
+     * @implNote
+     * The JDK Reference Implementation additionally uses the
+     * {@code jdk.security.provider.preferred} property to determine
+     * the preferred provider order for the specified algorithm. This
+     * may be different than the order of providers returned by
+     * {@link Security#getProviders() Security.getProviders()}.
      *
      * @param type the type of the requested TerminalFactory
      * @param params the parameters to pass to the TerminalFactorySpi

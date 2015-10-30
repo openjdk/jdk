@@ -50,6 +50,8 @@ define CleanTest
 	@$(PRINTF) "Cleaning test $(strip $1) ..."
 	@$(PRINTF) "\n" $(LOG_DEBUG)
 	$(RM) -r $(SUPPORT_OUTPUTDIR)/test/$(strip $(subst -,/,$1))
+        # Remove as much of the test directory structure as is empty
+	$(RMDIR) -p $(dir $(SUPPORT_OUTPUTDIR)/test/$(strip $(subst -,/,$1))) 2> /dev/null || true
 	@$(PRINTF) " done\n"
 endef
 
@@ -108,7 +110,8 @@ endef
 
 ################################################################################
 
-MAKE_TOPDIR_LIST := $(JDK_TOPDIR) $(CORBA_TOPDIR) $(LANGTOOLS_TOPDIR)
+MAKE_TOPDIR_LIST := $(JDK_TOPDIR) $(CORBA_TOPDIR) $(LANGTOOLS_TOPDIR) \
+    $(HOTSPOT_TOPDIR)
 MAKE_MAKEDIR_LIST := make
 
 # Helper macro for DeclareRecipesForPhase
@@ -179,7 +182,7 @@ endef
 # FILE_PREFIX : File prefix for this build phase
 # USE_WRAPPER : Set to true to use ModuleWrapper.gmk
 # CHECK_MODULES : List of modules to try
-# MULTIPLE_MAKEFILES : Set to true to handle makefils for the same module in
+# MULTIPLE_MAKEFILES : Set to true to handle makefiles for the same module and
 #                      phase in multiple repos
 # Exported variables:
 # $1_MODULES : All modules that had rules generated

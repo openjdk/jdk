@@ -282,7 +282,7 @@ public class EmptyNavigableMap {
 
         // slightly smaller
         NavigableMap ns = subMap.subMap(first, false, last, false);
-        // slight exapansion
+        // slight expansion
         assertThrows(() -> {
             ns.subMap(first, true, last, true);
         },
@@ -303,7 +303,7 @@ public class EmptyNavigableMap {
         // slightly smaller
         NavigableMap ns = subMap.headMap(BigInteger.ONE, false);
 
-        // slight exapansion
+        // slight expansion
         assertThrows(() -> {
             ns.headMap(BigInteger.ONE, true);
         },
@@ -324,7 +324,7 @@ public class EmptyNavigableMap {
         // slightly smaller
         NavigableMap ns = subMap.tailMap(BigInteger.ONE, false);
 
-        // slight exapansion
+        // slight expansion
         assertThrows(() -> {
             ns.tailMap(BigInteger.ONE, true);
         },

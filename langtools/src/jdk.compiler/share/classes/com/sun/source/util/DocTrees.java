@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,15 @@
 
 package com.sun.source.util;
 
+import java.util.List;
+
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.Element;
+import javax.tools.Diagnostic;
 import javax.tools.JavaCompiler.CompilationTask;
 
 import com.sun.source.doctree.DocCommentTree;
-import javax.tools.Diagnostic;
+import com.sun.source.doctree.DocTree;
 
 /**
  * Provides access to syntax trees for doc comments.
@@ -76,6 +79,17 @@ public abstract class DocTrees extends Trees {
      * @return the element
      */
     public abstract Element getElement(DocTreePath path);
+
+    /**
+     * Returns the list of {@link DocTree} representing the first sentence of
+     * a comment.
+     *
+     * @param list the DocTree list to interrogate
+     * @return the first sentence
+     *
+     * @since 1.9
+     */
+    public abstract List<DocTree> getFirstSentence(List<? extends DocTree> list);
 
     /**
      * Returns a utility object for accessing the source positions

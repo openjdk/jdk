@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -17,16 +20,15 @@
 
 package com.sun.org.apache.xml.internal.resolver.helpers;
 
-import java.util.Hashtable;
-import java.net.URL;
-import java.net.MalformedURLException;
 import java.io.InputStream;
-
-import javax.xml.transform.URIResolver;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import javax.xml.transform.Source;
-import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.TransformerException;
-
+import javax.xml.transform.URIResolver;
+import javax.xml.transform.sax.SAXSource;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 
@@ -63,13 +65,13 @@ public class BootstrapResolver implements EntityResolver, URIResolver {
   public static final String xCatalogPubId = "-//DTD XCatalog//EN";
 
   /** Private hash used for public identifiers. */
-  private final Hashtable publicMap = new Hashtable();
+  private final Map<String, String> publicMap = new HashMap<>();
 
   /** Private hash used for system identifiers. */
-  private final Hashtable systemMap = new Hashtable();
+  private final Map<String, String> systemMap = new HashMap<>();
 
   /** Private hash used for URIs. */
-  private final Hashtable uriMap = new Hashtable();
+  private final Map<String, String> uriMap = new HashMap<>();
 
   /** Constructor. */
   public BootstrapResolver() {
@@ -100,9 +102,9 @@ public class BootstrapResolver implements EntityResolver, URIResolver {
     String resolved = null;
 
     if (systemId != null && systemMap.containsKey(systemId)) {
-      resolved = (String) systemMap.get(systemId);
+      resolved = systemMap.get(systemId);
     } else if (publicId != null && publicMap.containsKey(publicId)) {
-      resolved = (String) publicMap.get(publicId);
+      resolved = publicMap.get(publicId);
     }
 
     if (resolved != null) {
@@ -149,7 +151,7 @@ public class BootstrapResolver implements EntityResolver, URIResolver {
 
     String result = null;
     if (href != null && uriMap.containsKey(href)) {
-      result = (String) uriMap.get(href);
+      result = uriMap.get(href);
     }
 
     if (result == null) {

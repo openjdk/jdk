@@ -109,19 +109,19 @@ public class CheckedListBash {
 
         List even = clone(s);
         Iterator it = even.iterator();
-        while(it.hasNext())
-            if(((Integer)it.next()).intValue() % 2 == 1)
+        while (it.hasNext())
+            if (((Integer)it.next()).intValue() % 2 == 1)
                 it.remove();
         it = even.iterator();
-        while(it.hasNext())
-            if(((Integer)it.next()).intValue() % 2 == 1)
+        while (it.hasNext())
+            if (((Integer)it.next()).intValue() % 2 == 1)
                 fail("Failed to remove all odd nubmers.");
 
         List odd = clone(s);
         for (int i=0; i<(listSize/2); i++)
             odd.remove(i);
         for (int i=0; i<(listSize/2); i++)
-            if(((Integer)odd.get(i)).intValue() % 2 != 1)
+            if (((Integer)odd.get(i)).intValue() % 2 != 1)
                 fail("Failed to remove all even nubmers.");
 
         List all = clone(odd);
@@ -145,8 +145,8 @@ public class CheckedListBash {
         }
         itAll = all.listIterator();
         it = s.iterator();
-        while(it.hasNext())
-            if(it.next()==itAll.next())
+        while (it.hasNext())
+            if (it.next()==itAll.next())
                 fail("Iterator.set failed to change value.");
         if (!all.equals(s))
             fail("Failed to reconstruct ints with ListIterator.");
@@ -215,10 +215,10 @@ public class CheckedListBash {
 
             int preSize = s.size();
             if (!s.add(e))
-                fail ("Add failed.");
+                fail("Add failed.");
             int postSize = s.size();
             if (postSize-preSize != 1)
-                fail ("Add didn't increase size by 1.");
+                fail("Add didn't increase size by 1.");
         }
     }
 

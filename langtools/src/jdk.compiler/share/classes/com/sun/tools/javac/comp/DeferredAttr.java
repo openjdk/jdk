@@ -472,6 +472,7 @@ public class DeferredAttr extends JCTree.Visitor {
                 if (csym == null) return;
                 typeEnvs.remove(csym);
                 chk.compiled.remove(csym.flatname);
+                chk.clearLocalClassNameIndexes(csym);
                 syms.classes.remove(csym.flatname);
                 super.visitClassDef(tree);
             }

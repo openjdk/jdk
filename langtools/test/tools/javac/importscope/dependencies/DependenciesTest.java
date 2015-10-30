@@ -194,11 +194,6 @@ public class DependenciesTest {
         }
 
         @Override
-        public void push(AttributionKind ak, JCTree t) {
-            inProcess.push(null);
-        }
-
-        @Override
         public void pop() {
             inProcess.pop();
         }

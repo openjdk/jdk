@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -25,9 +24,11 @@ package com.sun.org.apache.xml.internal.serialize;
 import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
 import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
 import java.io.OutputStream;
-import java.io.Writer;
 import java.io.UnsupportedEncodingException;
-import java.util.Hashtable;
+import java.io.Writer;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.StringTokenizer;
 
 /**
@@ -48,7 +49,7 @@ public abstract class SerializerFactory
     public static final String FactoriesProperty = "com.sun.org.apache.xml.internal.serialize.factories";
 
 
-    private static Hashtable  _factories = new Hashtable();
+    private static final Map<String, SerializerFactory>  _factories = Collections.synchronizedMap(new HashMap());
 
 
     static
@@ -94,9 +95,9 @@ public abstract class SerializerFactory
         String method;
 
         synchronized ( _factories ) {
-            method = factory.getSupportedMethod();
-            _factories.put( method, factory );
-        }
+        method = factory.getSupportedMethod();
+        _factories.put( method, factory );
+    }
     }
 
 
@@ -106,7 +107,7 @@ public abstract class SerializerFactory
      */
     public static SerializerFactory getSerializerFactory( String method )
     {
-        return (SerializerFactory) _factories.get( method );
+        return _factories.get( method );
     }
 
 
