@@ -2302,7 +2302,6 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
   print_signal_handler(st, SIGPIPE, buf, buflen);
   print_signal_handler(st, SIGXFSZ, buf, buflen);
   print_signal_handler(st, SIGILL , buf, buflen);
-  print_signal_handler(st, INTERRUPT_SIGNAL, buf, buflen);
   print_signal_handler(st, SR_signum, buf, buflen);
   print_signal_handler(st, SHUTDOWN1_SIGNAL, buf, buflen);
   print_signal_handler(st, SHUTDOWN2_SIGNAL , buf, buflen);
@@ -4496,7 +4495,6 @@ void os::run_periodic_checks() {
   }
 
   DO_SIGNAL_CHECK(SR_signum);
-  DO_SIGNAL_CHECK(INTERRUPT_SIGNAL);
 }
 
 typedef int (*os_sigaction_t)(int, const struct sigaction *, struct sigaction *);
@@ -4540,10 +4538,6 @@ void os::Linux::check_signal_handler(int sig) {
   case SHUTDOWN3_SIGNAL:
   case BREAK_SIGNAL:
     jvmHandler = (address)user_handler();
-    break;
-
-  case INTERRUPT_SIGNAL:
-    jvmHandler = CAST_FROM_FN_PTR(address, SIG_DFL);
     break;
 
   default:
@@ -5130,9 +5124,6 @@ int os::available(int fd, jlong *bytes) {
   if (::fstat64(fd, &buf64) >= 0) {
     mode = buf64.st_mode;
     if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-      // XXX: is the following call interruptible? If so, this might
-      // need to go through the INTERRUPT_IO() wrapper as for other
-      // blocking, interruptible calls in this file.
       int n;
       if (::ioctl(fd, FIONREAD, &n) >= 0) {
         *bytes = n;
