@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,6 @@ import com.sun.xml.internal.bind.marshaller.CharacterEscapeHandler;
 /**
  * {@link XmlOutput} that generates canonical XML.
  *
- * @see com.sun.xml.internal.bind.api.C14nSupport_ArchitectureDocument
  * @author Kohsuke Kawaguchi
  */
 public class C14nXmlOutput extends UTF8XmlOutput {
@@ -68,7 +67,6 @@ public class C14nXmlOutput extends UTF8XmlOutput {
      * (AKA attribute wildcard.)
      *
      * As long as this map is empty, there's no need for sorting.
-     * see {@link com.sun.xml.internal.bind.api.C14nSupport_ArchitectureDocument} for more details.
      */
     private final FinalArrayList<DynamicAttribute> otherAttributes = new FinalArrayList<DynamicAttribute>();
 

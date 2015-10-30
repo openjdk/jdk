@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,7 +273,7 @@ public abstract class JExpr {
      * <p>
      * This method can be used as a short-cut to create a JExpression.
      * For example, instead of <code>_a.gt(_b)</code>, you can write
-     * it as: <code>JExpr.direct("a>b")</code>.
+     * it as: {@code JExpr.direct("a>b")}.
      *
      * <p>
      * Be warned that there is a danger in using this method,

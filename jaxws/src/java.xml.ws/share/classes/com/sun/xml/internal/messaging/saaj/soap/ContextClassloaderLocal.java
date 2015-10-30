@@ -70,9 +70,8 @@ abstract class ContextClassloaderLocal<V> {
     }
 
     private static ClassLoader getContextClassLoader() {
-        return (ClassLoader)
-                AccessController.doPrivileged(new PrivilegedAction() {
-                    public Object run() {
+        return AccessController.doPrivileged(new PrivilegedAction<ClassLoader>() {
+                    public ClassLoader run() {
                         ClassLoader cl = null;
                         try {
                             cl = Thread.currentThread().getContextClassLoader();

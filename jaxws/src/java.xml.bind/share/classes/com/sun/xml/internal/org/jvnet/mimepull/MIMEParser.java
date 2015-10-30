@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,6 +123,11 @@ class MIMEParser implements Iterable<MIMEEvent> {
 
         @Override
         public MIMEEvent next() {
+
+            if (parsed) {
+                throw new NoSuchElementException();
+            }
+
             switch(state) {
                 case START_MESSAGE :
                     if (LOGGER.isLoggable(Level.FINER)) {LOGGER.log(Level.FINER, "MIMEParser state={0}", STATE.START_MESSAGE);}

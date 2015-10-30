@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 */
 package com.sun.xml.internal.messaging.saaj.soap.ver1_1;
 
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.xml.soap.SOAPConstants;

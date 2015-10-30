@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,7 +83,7 @@ public abstract class MessageImpl
     protected MimeHeaders headers;
     protected ContentType contentType;
     protected SOAPPartImpl soapPartImpl;
-    protected FinalArrayList attachments;
+    protected FinalArrayList<AttachmentPart> attachments;
     protected boolean saved = false;
     protected byte[] messageBytes;
     protected int messageByteCount;
@@ -855,7 +855,7 @@ public abstract class MessageImpl
             throw new RuntimeException(e);
         }
         if (attachments == null)
-            attachments = new FinalArrayList();
+            attachments = new FinalArrayList<AttachmentPart>();
 
         attachments.add(attachment);
 
@@ -887,15 +887,15 @@ public abstract class MessageImpl
         headers.setHeader("Content-Type", ct.toString());
     }
 
-    private class MimeMatchingIterator implements Iterator {
+    private class MimeMatchingIterator implements Iterator<AttachmentPart> {
         public MimeMatchingIterator(MimeHeaders headers) {
             this.headers = headers;
             this.iter = attachments.iterator();
         }
 
-        private Iterator iter;
+        private Iterator<AttachmentPart> iter;
         private MimeHeaders headers;
-        private Object nextAttachment;
+        private AttachmentPart nextAttachment;
 
         public boolean hasNext() {
             if (nextAttachment == null)
@@ -903,9 +903,9 @@ public abstract class MessageImpl
             return nextAttachment != null;
         }
 
-        public Object next() {
+        public AttachmentPart next() {
             if (nextAttachment != null) {
-                Object ret = nextAttachment;
+                AttachmentPart ret = nextAttachment;
                 nextAttachment = null;
                 return ret;
             }
@@ -916,7 +916,7 @@ public abstract class MessageImpl
             return null;
         }
 
-        Object nextMatch() {
+        AttachmentPart nextMatch() {
             while (iter.hasNext()) {
                 AttachmentPartImpl ap = (AttachmentPartImpl) iter.next();
                 if (ap.hasAllHeaders(headers))
@@ -951,12 +951,12 @@ public abstract class MessageImpl
         if (attachments == null)
             return ;
 
-        Iterator it =  new MimeMatchingIterator(headers);
+        Iterator<AttachmentPart> it =  new MimeMatchingIterator(headers);
         while (it.hasNext()) {
             int index = attachments.indexOf(it.next());
             attachments.set(index, null);
         }
-        FinalArrayList f = new FinalArrayList();
+        FinalArrayList<AttachmentPart> f = new FinalArrayList<AttachmentPart>();
         for (int i = 0; i < attachments.size(); i++) {
             if (attachments.get(i) != null) {
                 f.add(attachments.get(i));
@@ -1066,7 +1066,7 @@ public abstract class MessageImpl
     }
 
     private String convertToSingleLine(String contentType) {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         for (int i = 0; i < contentType.length(); i ++) {
             char c = contentType.charAt(i);
             if (c != '\r' && c != '\n' && c != '\t')
@@ -1098,7 +1098,7 @@ public abstract class MessageImpl
                 headerAndBody = new BMMimeMultipart();
                 headerAndBody.addBodyPart(mimeSoapPart);
                 if (attachments != null) {
-                    for (Iterator eachAttachment = attachments.iterator();
+                    for (Iterator<AttachmentPart> eachAttachment = attachments.iterator();
                          eachAttachment.hasNext();) {
                         headerAndBody.addBodyPart(
                             ((AttachmentPartImpl) eachAttachment.next())
@@ -1424,7 +1424,7 @@ public abstract class MessageImpl
         }
 
         if (attachments == null)
-            attachments = new FinalArrayList();
+            attachments = new FinalArrayList<AttachmentPart>();
 
         int count = multiPart.getCount();
         for (int i=0; i < count; i++ ) {

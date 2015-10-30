@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2015, Thai Open Source Software Center Ltd
+ * Copyright (c) 2005, 2010, Thai Open Source Software Center Ltd
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

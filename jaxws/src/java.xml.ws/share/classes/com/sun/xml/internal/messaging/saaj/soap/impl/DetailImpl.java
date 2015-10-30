@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,8 +77,8 @@ public abstract class DetailImpl extends FaultElementImpl implements Detail {
     }
 
     public Iterator getDetailEntries() {
-        return new Iterator() {
-            Iterator eachNode = getChildElementNodes();
+        return new Iterator<SOAPElement>() {
+            Iterator<org.w3c.dom.Node> eachNode = getChildElementNodes();
             SOAPElement next = null;
             SOAPElement last = null;
 
@@ -95,7 +95,7 @@ public abstract class DetailImpl extends FaultElementImpl implements Detail {
                 return next != null;
             }
 
-            public Object next() {
+            public SOAPElement next() {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }

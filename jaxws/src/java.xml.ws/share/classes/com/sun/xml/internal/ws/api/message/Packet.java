@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1513,5 +1513,13 @@ public final class Packet
 
     public void setFastInfosetDisabled(boolean b) {
         isFastInfosetDisabled = b;
+    }
+
+    private com.sun.xml.internal.ws.api.message.saaj.SAAJFactory saajFactory;
+    public  com.sun.xml.internal.ws.api.message.saaj.SAAJFactory getSAAJFactory() {
+        return saajFactory;
+    }
+    public void setSAAJFactory(com.sun.xml.internal.ws.api.message.saaj.SAAJFactory saajFactory) {
+        this.saajFactory = saajFactory;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,11 +33,11 @@ import com.sun.tools.internal.xjc.generator.bean.field.FieldRendererFactory;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Element;
 
-/** &lt;attribute> declaration in the binding file. */
+/** {@code <attribute>} declaration in the binding file. */
 public class BIAttribute
 {
     /**
-     * Wraps a given &lt;attribute> element.
+     * Wraps a given {@code <attribute>} element.
      * <p>
      * Should be created only from {@link BIElement}.
      */

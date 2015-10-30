@@ -289,7 +289,7 @@ public class BindInfo
     /**
      * Lazily parsed schema for the binding file.
      */
-    private static SchemaCache bindingFileSchema = new SchemaCache("bindingfile.xsd", BindInfo.class);
+    private static final SchemaCache bindingFileSchema = new SchemaCache("bindingfile.xsd", BindInfo.class, true);
 
     /**
      * Parses an InputSource into dom4j Document.
