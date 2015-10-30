@@ -23,11 +23,13 @@
  */
 
 #include "asm/assembler.hpp"
+#include "loadlib_aix.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
-#include "runtime/os.hpp"
-#include "loadlib_aix.hpp"
+// For CritSect
+#include "misc_aix.hpp"
 #include "porting_aix.hpp"
+#include "runtime/os.hpp"
 #include "utilities/debug.hpp"
 
 #include <demangle.h>
@@ -44,23 +46,6 @@
 #define MINIMUM_VALUE_FOR_PC ((unsigned int*)0x1024)
 
 #define PTRDIFF_BYTES(p1,p2) (((ptrdiff_t)p1) - ((ptrdiff_t)p2))
-
-// Align a pointer without having to cast.
-inline char* align_ptr_up(char* ptr, intptr_t alignment) {
-  return (char*) align_size_up((intptr_t)ptr, alignment);
-}
-
-// Trace if verbose to tty.
-// I use these now instead of the Xtrace system because the latter is
-// not available at init time, hence worthless. Until we fix this, all
-// tracing here is done with -XX:+Verbose.
-#define trcVerbose(fmt, ...) { \
-  if (Verbose) { \
-    fprintf(stderr, fmt, ##__VA_ARGS__); \
-    fputc('\n', stderr); fflush(stderr); \
-  } \
-}
-#define ERRBYE(s) { trcVerbose(s); return -1; }
 
 // Unfortunately, the interface of dladdr makes the implementator
 // responsible for maintaining memory for function name/library
@@ -139,18 +124,37 @@ extern "C" int getFuncName(
     ERRBYE("invalid program counter");
   }
 
+  // We see random but frequent crashes in this function since some months mainly on shutdown
+  // (-XX:+DumpInfoAtExit). It appears the page we are reading is randomly disappearing while
+  // we read it (?).
+  // As the pc cannot be trusted to be anything sensible lets make all reads via SafeFetch. Also
+  // bail if this is not a text address right now.
+  if (!LoadedLibraries::find_for_text_address(pc, NULL)) {
+    ERRBYE("not a text address");
+  }
+
+  // .. (Note that is_readable_pointer returns true if safefetch stubs are not there yet;
+  // in that case I try reading the traceback table unsafe - I rather risk secondary crashes in
+  // error files than not having a callstack.)
+#define CHECK_POINTER_READABLE(p) \
+  if (!MiscUtils::is_readable_pointer(p)) { \
+    ERRBYE("pc not readable"); \
+  }
+
   codeptr_t pc2 = pc;
 
-  // make sure the pointer is word aligned.
+  // Make sure the pointer is word aligned.
   pc2 = (codeptr_t) align_ptr_up((char*)pc2, 4);
+  CHECK_POINTER_READABLE(pc2)
 
   // Find start of traceback table.
   // (starts after code, is marked by word-aligned (32bit) zeros)
   while ((*pc2 != NULL) && (searchcount++ < MAX_FUNC_SEARCH_LEN)) {
+    CHECK_POINTER_READABLE(pc2)
     pc2++;
   }
   if (*pc2 != 0) {
-    ERRBYE("could not find traceback table within 5000 bytes of program counter");
+    ERRBYE("no traceback table found");
   }
   //
   // Set up addressability to the traceback table
@@ -162,7 +166,7 @@ extern "C" int getFuncName(
   if (tb->tb.lang >= 0xf && tb->tb.lang <= 0xfb) {
     // Language specifiers, go from 0 (C) to 14 (Objective C).
     // According to spec, 0xf-0xfa reserved, 0xfb-0xff reserved for ibm.
-    ERRBYE("not a traceback table");
+    ERRBYE("no traceback table found");
   }
 
   // Existence of fields in the tbtable extension are contingent upon
@@ -173,6 +177,8 @@ extern "C" int getFuncName(
   if (tb->tb.fixedparms != 0 || tb->tb.floatparms != 0)
     pc2++;
 
+  CHECK_POINTER_READABLE(pc2)
+
   if (tb->tb.has_tboff == TRUE) {
 
     // I want to know the displacement
@@ -182,7 +188,7 @@ extern "C" int getFuncName(
 
     // Weed out the cases where we did find the wrong traceback table.
     if (pc < start_of_procedure) {
-      ERRBYE("could not find (the real) traceback table within 5000 bytes of program counter");
+      ERRBYE("no traceback table found");
     }
 
     // return the displacement
@@ -204,15 +210,24 @@ extern "C" int getFuncName(
   if (tb->tb.has_ctl == TRUE)
     pc2 += (*pc2) + 1; // don't care
 
+  CHECK_POINTER_READABLE(pc2)
+
   //
   // return function name if it exists.
   //
   if (p_name && namelen > 0) {
     if (tb->tb.name_present) {
+      // Copy name from text because it may not be zero terminated.
+      // 256 is good enough for most cases; do not use large buffers here.
       char buf[256];
       const short l = MIN2<short>(*((short*)pc2), sizeof(buf) - 1);
-      memcpy(buf, (char*)pc2 + sizeof(short), l);
-      buf[l] = '\0';
+      // Be very careful.
+      int i = 0; char* const p = (char*)pc2 + sizeof(short);
+      while (i < l && MiscUtils::is_readable_pointer(p + i)) {
+        buf[i] = p[i];
+        i++;
+      }
+      buf[i] = '\0';
 
       p_name[0] = '\0';
 
@@ -275,7 +290,8 @@ int dladdr(void* addr, Dl_info* info) {
   info->dli_saddr = NULL;
 
   address p = (address) addr;
-  const LoadedLibraryModule* lib = NULL;
+  loaded_module_t lm;
+  bool found = false;
 
   enum { noclue, code, data } type = noclue;
 
@@ -284,28 +300,28 @@ int dladdr(void* addr, Dl_info* info) {
   // Note: input address may be a function. I accept both a pointer to
   // the entry of a function and a pointer to the function decriptor.
   // (see ppc64 ABI)
-  lib = LoadedLibraries::find_for_text_address(p);
-  if (lib) {
+  found = LoadedLibraries::find_for_text_address(p, &lm);
+  if (found) {
     type = code;
   }
 
-  if (!lib) {
+  if (!found) {
     // Not a pointer into any text segment. Is it a function descriptor?
     const FunctionDescriptor* const pfd = (const FunctionDescriptor*) p;
     p = pfd->entry();
     if (p) {
-      lib = LoadedLibraries::find_for_text_address(p);
-      if (lib) {
+      found = LoadedLibraries::find_for_text_address(p, &lm);
+      if (found) {
         type = code;
       }
     }
   }
 
-  if (!lib) {
+  if (!found) {
     // Neither direct code pointer nor function descriptor. A data ptr?
     p = (address)addr;
-    lib = LoadedLibraries::find_for_data_address(p);
-    if (lib) {
+    found = LoadedLibraries::find_for_data_address(p, &lm);
+    if (found) {
       type = data;
     }
   }
@@ -313,12 +329,10 @@ int dladdr(void* addr, Dl_info* info) {
   // If we did find the shared library this address belongs to (either
   // code or data segment) resolve library path and, if possible, the
   // symbol name.
-  if (lib) {
-    const char* const interned_libpath =
-      dladdr_fixed_strings.intern(lib->get_fullpath());
-    if (interned_libpath) {
-      info->dli_fname = interned_libpath;
-    }
+  if (found) {
+
+    // No need to intern the libpath, that one is already interned one layer below.
+    info->dli_fname = lm.path;
 
     if (type == code) {
 
@@ -328,7 +342,7 @@ int dladdr(void* addr, Dl_info* info) {
       int displacement = 0;
 
       if (getFuncName((codeptr_t) p, funcname, sizeof(funcname), &displacement,
-                      NULL, NULL, 0, true /* demangle */) == 0) {
+                      NULL, NULL, 0, false) == 0) {
         if (funcname[0] != '\0') {
           const char* const interned = dladdr_fixed_strings.intern(funcname);
           info->dli_sname = interned;
