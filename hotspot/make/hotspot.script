@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -156,7 +156,7 @@ else
     export LD_LIBRARY_PATH
 fi
 
-JPARMS="-XXaltjvm=$MYDIR -Dsun.java.launcher.is_altjvm=true $@ $JAVA_ARGS";
+JPARMS="-XXaltjvm=$MYDIR -Dsun.java.launcher.is_altjvm=true";
 
 # Locate the java launcher
 LAUNCHER=$JDK/bin/java
@@ -181,8 +181,6 @@ init_gdb() {
 cd `pwd`
 handle SIGUSR1 nostop noprint
 handle SIGUSR2 nostop noprint
-set args $JPARMS
-file $LAUNCHER
 directory $GDBSRCDIR
 # Get us to a point where we can set breakpoints in libjvm.so
 set breakpoint pending on
@@ -194,11 +192,10 @@ delete 1
 EOF
 }
 
-
 case "$MODE" in
     gdb)
 	init_gdb
-        $GDB -x $GDBSCR
+        $GDB -x $GDBSCR --args $LAUNCHER $JPARMS "$@" $JAVA_ARGS
 	rm -f $GDBSCR
         ;;
     gud)
@@ -219,15 +216,15 @@ case "$MODE" in
 	rm -f $GDBSCR
         ;;
     dbx)
-        $DBX -s $HOME/.dbxrc -c "loadobject -load libjvm.so; stop in JNI_CreateJavaVM; run $JPARMS; delete all" $LAUNCHER
+        $DBX -s $HOME/.dbxrc -c "loadobject -load libjvm.so; stop in JNI_CreateJavaVM; run $JPARMS $@ $JAVA_ARGS; delete all" $LAUNCHER
         ;;
     valgrind)
         echo Warning: Defaulting to 16Mb heap to make Valgrind run faster, use -Xmx for larger heap
         echo
-        $VALGRIND --tool=memcheck --leak-check=yes --num-callers=50 $LAUNCHER -Xmx16m $JPARMS
+        $VALGRIND --tool=memcheck --leak-check=yes --num-callers=50 $LAUNCHER -Xmx16m $JPARMS "$@" $JAVA_ARGS
         ;;
     run)
-        LD_PRELOAD=$PRELOADING exec $LAUNCHER $JPARMS
+        LD_PRELOAD=$PRELOADING exec $LAUNCHER $JPARMS "$@" $JAVA_ARGS
         ;;
     *)
         echo Error: Internal error, unknown launch mode \"$MODE\"
