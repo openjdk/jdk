@@ -32,10 +32,11 @@ VS_VERSION="2013"
 VS_VERSION_NUM="12.0"
 VS_VERSION_NUM_NODOT="120"
 SDK_VERSION="8.1"
+VS_VERSION_SP="SP4"
 
 SCRIPT_DIR="$(cd "$(dirname $0)" > /dev/null && pwd)"
 BUILD_DIR="${SCRIPT_DIR}/../../build/devkit"
-DEVKIT_ROOT="${BUILD_DIR}/VS${VS_VERSION}-devkit"
+DEVKIT_ROOT="${BUILD_DIR}/VS${VS_VERSION}${VS_VERSION_SP}-devkit"
 DEVKIT_BUNDLE="${DEVKIT_ROOT}.tar.gz"
 
 echo "Creating devkit in $DEVKIT_ROOT"
@@ -103,7 +104,7 @@ echo-info() {
 echo "Generating devkit.info..."
 rm -f $DEVKIT_ROOT/devkit.info
 echo-info "# This file describes to configure how to interpret the contents of this devkit"
-echo-info "DEVKIT_NAME=\"Microsoft Visual Studio $VS_VERSION (devkit)\""
+echo-info "DEVKIT_NAME=\"Microsoft Visual Studio $VS_VERSION $VS_VERSION_SP (devkit)\""
 echo-info "DEVKIT_VS_VERSION=\"$VS_VERSION\""
 echo-info ""
 echo-info "DEVKIT_TOOLCHAIN_PATH_x86=\"\$DEVKIT_ROOT/VC/bin:\$DEVKIT_ROOT/$SDK_VERSION/bin/x86\""

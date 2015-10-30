@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package javax.swing.tree;
 
 import javax.swing.*;
@@ -31,6 +30,7 @@ import javax.swing.event.*;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.awt.event.*;
+import java.beans.BeanProperty;
 import java.util.EventObject;
 
 /**
@@ -592,12 +592,9 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
          * @param border the border to be rendered for this component
          * @see Border
          * @see CompoundBorder
-         * @beaninfo
-         *        bound: true
-         *    preferred: true
-         *    attribute: visualUpdate true
-         *  description: The component's border.
          */
+        @BeanProperty(preferred = true, visualUpdate = true, description
+                = "The component's border.")
         public void setBorder(Border border) {
             super.setBorder(border);
             this.border = border;

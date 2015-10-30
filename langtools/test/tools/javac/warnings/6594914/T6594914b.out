@@ -1,7 +1,9 @@
-T6594914b.java:12:13: compiler.warn.sun.proprietary: sun.misc.Lock
-T6594914b.java:17:24: compiler.warn.sun.proprietary: sun.misc.Lock
-T6594914b.java:17:39: compiler.warn.sun.proprietary: sun.misc.Lock
-T6594914b.java:18:28: compiler.warn.sun.proprietary: sun.misc.CEFormatException
-T6594914b.java:17:56: compiler.warn.sun.proprietary: sun.misc.Lock
-T6594914b.java:25:17: compiler.warn.sun.proprietary: sun.misc.Lock
+T6594914b.java:12:22: compiler.warn.sun.proprietary: sun.security.x509.X509CertInfo
+T6594914b.java:17:33: compiler.warn.sun.proprietary: sun.security.x509.X509CertInfo
+T6594914b.java:18:22: compiler.warn.sun.proprietary: sun.security.x509.X509CertInfo
+T6594914b.java:19:37: compiler.warn.sun.proprietary: sun.security.x509.CertException
+T6594914b.java:18:56: compiler.warn.sun.proprietary: sun.security.x509.X509CertInfo
+T6594914b.java:27:26: compiler.warn.sun.proprietary: sun.security.x509.X509CertInfo
+- compiler.note.deprecated.filename: T6594914b.java
+- compiler.note.deprecated.recompile
 6 warnings

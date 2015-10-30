@@ -318,7 +318,9 @@ class Deflater {
      * should be called in order to provide more input
      */
     public boolean needsInput() {
-        return len <= 0;
+        synchronized (zsRef) {
+            return len <= 0;
+        }
     }
 
     /**

@@ -134,7 +134,7 @@ public class MapLoops {
         int position;
         int total;
 
-        Runner(Map<Integer,Integer> map, Integer[] key,  CyclicBarrier barrier) {
+        Runner(Map<Integer,Integer> map, Integer[] key, CyclicBarrier barrier) {
             this.map = map;
             this.key = key;
             this.barrier = barrier;
@@ -142,7 +142,7 @@ public class MapLoops {
         }
 
         int step() {
-            // random-walk around key positions,  bunching accesses
+            // random-walk around key positions, bunching accesses
             int r = rng.next();
             position += (r & 7) - 3;
             while (position >= key.length) position -= key.length;
@@ -156,7 +156,7 @@ public class MapLoops {
                     throw new Error("bad mapping: " + x + " to " + k);
 
                 if (r < removesPerMaxRandom) {
-                    // get awy from this position
+                    // get away from this position
                     position = r % key.length;
                     map.remove(k);
                     return 2;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,11 @@
 
 
 package javax.swing;
+
 import javax.swing.plaf.*;
 import javax.accessibility.*;
 
+import java.beans.BeanProperty;
 import java.io.ObjectOutputStream;
 import java.io.ObjectInputStream;
 import java.io.IOException;
@@ -121,11 +123,9 @@ public class JToolTip extends JComponent implements Accessible {
      * The string <code>tipText</code> may be <code>null</code>.
      *
      * @param tipText the <code>String</code> to display
-     * @beaninfo
-     *    preferred: true
-     *        bound: true
-     *  description: Sets the text of the tooltip
      */
+    @BeanProperty(preferred = true, description
+            = "Sets the text of the tooltip")
     public void setTipText(String tipText) {
         String oldValue = this.tipText;
         this.tipText = tipText;
@@ -156,10 +156,9 @@ public class JToolTip extends JComponent implements Accessible {
      *
      * @param c the <code>JComponent</code> being described
      * @see JComponent#createToolTip
-     * @beaninfo
-     *       bound: true
-     * description: Sets the component that the tooltip describes.
      */
+    @BeanProperty(description
+            = "Sets the component that the tooltip describes.")
     public void setComponent(JComponent c) {
         JComponent oldValue = this.component;
 

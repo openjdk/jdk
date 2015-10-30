@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,13 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
 
     private static final Set<CryptoPrimitive> SIGNATURE_PRIMITIVE_SET =
         Collections.unmodifiableSet(EnumSet.of(CryptoPrimitive.SIGNATURE));
+
+    private static final Set<CryptoPrimitive> KU_PRIMITIVE_SET =
+        Collections.unmodifiableSet(EnumSet.of(
+            CryptoPrimitive.SIGNATURE,
+            CryptoPrimitive.KEY_ENCAPSULATION,
+            CryptoPrimitive.PUBLIC_KEY_ENCRYPTION,
+            CryptoPrimitive.KEY_AGREEMENT));
 
     private static final DisabledAlgorithmConstraints
         certPathDefaultConstraints = new DisabledAlgorithmConstraints(
@@ -210,9 +217,11 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
                 null, null, -1, PKIXReason.INVALID_KEY_USAGE);
         }
 
+        // Assume all key usage bits are set if key usage is not present
+        Set<CryptoPrimitive> primitives = KU_PRIMITIVE_SET;
+
         if (keyUsage != null) {
-            Set<CryptoPrimitive> primitives =
-                        EnumSet.noneOf(CryptoPrimitive.class);
+                primitives = EnumSet.noneOf(CryptoPrimitive.class);
 
             if (keyUsage[0] || keyUsage[1] || keyUsage[5] || keyUsage[6]) {
                 // keyUsage[0]: KeyUsage.digitalSignature
@@ -237,13 +246,17 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
             // KeyUsage.encipherOnly and KeyUsage.decipherOnly are
             // undefined in the absence of the keyAgreement bit.
 
-            if (!primitives.isEmpty()) {
-                if (!constraints.permits(primitives, currPubKey)) {
-                    throw new CertPathValidatorException(
-                        "algorithm constraints check failed",
-                        null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
-                }
+            if (primitives.isEmpty()) {
+                throw new CertPathValidatorException(
+                    "incorrect KeyUsage extension",
+                    null, null, -1, PKIXReason.INVALID_KEY_USAGE);
             }
+        }
+
+        if (!constraints.permits(primitives, currPubKey)) {
+            throw new CertPathValidatorException(
+                "algorithm constraints check failed",
+                null, null, -1, BasicReason.ALGORITHM_CONSTRAINED);
         }
 
         // Check with previous cert for signature algorithm and public key

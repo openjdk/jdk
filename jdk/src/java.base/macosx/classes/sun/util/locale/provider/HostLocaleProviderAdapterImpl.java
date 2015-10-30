@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,13 +57,13 @@ import sun.util.spi.CalendarProvider;
 public class HostLocaleProviderAdapterImpl {
 
     // per supported locale instances
-    private static ConcurrentMap<Locale, SoftReference<AtomicReferenceArray<String>>> dateFormatPatternsMap =
+    private static final ConcurrentMap<Locale, SoftReference<AtomicReferenceArray<String>>> dateFormatPatternsMap =
         new ConcurrentHashMap<>(2);
-    private static ConcurrentMap<Locale, SoftReference<AtomicReferenceArray<String>>> numberFormatPatternsMap =
+    private static final ConcurrentMap<Locale, SoftReference<AtomicReferenceArray<String>>> numberFormatPatternsMap =
         new ConcurrentHashMap<>(2);
-    private static ConcurrentMap<Locale, SoftReference<DateFormatSymbols>> dateFormatSymbolsMap =
+    private static final ConcurrentMap<Locale, SoftReference<DateFormatSymbols>> dateFormatSymbolsMap =
         new ConcurrentHashMap<>(2);
-    private static ConcurrentMap<Locale, SoftReference<DecimalFormatSymbols>> decimalFormatSymbolsMap =
+    private static final ConcurrentMap<Locale, SoftReference<DecimalFormatSymbols>> decimalFormatSymbolsMap =
         new ConcurrentHashMap<>(2);
 
     // locale categories

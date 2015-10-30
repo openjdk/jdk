@@ -207,6 +207,12 @@ test-vardep:
 	test ! -e $(VARDEP_FLAG_FILE)
 	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR=" value3  foo" $(VARDEP_TARGET_FILE)
 	test ! -e $(VARDEP_FLAG_FILE)
+        #
+        # Test including some problematic characters
+	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR='value4 \$$$$ORIGIN' $(VARDEP_TARGET_FILE)
+	$(RM) $(VARDEP_FLAG_FILE)
+	$(MAKE) -f $(THIS_FILE) VARDEP_TEST_VAR='value4 \$$$$ORIGIN' $(VARDEP_TARGET_FILE)
+	test ! -e $(VARDEP_FLAG_FILE)
 
 # Test specifying a specific value file to store variable in
 VARDEP_VALUE_FILE := $(VARDEP_DIR)/value-file
@@ -215,17 +221,15 @@ VARDEP_TEST_VAR2 := value3
 VARDEP_RETURN_VALUE := $(call DependOnVariable, VARDEP_TEST_VAR2, $(VARDEP_VALUE_FILE))
 $(eval $(call assert-equals, $(VARDEP_RETURN_VALUE), $(VARDEP_VALUE_FILE), \
     Wrong filename returned))
-VARDEP_FILE_CONTENTS := $(shell $(CAT) $(VARDEP_VALUE_FILE))
-$(eval $(call assert-equals, $(VARDEP_FILE_CONTENTS), \
-    VARDEP_TEST_VAR2_old:=$(VARDEP_TEST_VAR2), \
+-include $(VARDEP_VALUE_FILE)
+$(eval $(call assert-equals, $(VARDEP_TEST_VAR2_old), $(VARDEP_TEST_VAR2), \
     Wrong contents in vardeps file))
 
 # Test with a variable value containing some problematic characters
-VARDEP_TEST_VAR3 := foo '""' "''" bar
+VARDEP_TEST_VAR3 := foo '""' "''" bar \$$ORIGIN
 VARDEP_VALUE_FILE := $(call DependOnVariable, VARDEP_TEST_VAR3)
-VARDEP_FILE_CONTENTS := $(shell $(CAT) $(VARDEP_VALUE_FILE))
-$(eval $(call assert-equals, $(VARDEP_FILE_CONTENTS), \
-    VARDEP_TEST_VAR3_old:=$(VARDEP_TEST_VAR3), \
+-include $(VARDEP_VALUE_FILE)
+$(eval $(call assert-equals, $(VARDEP_TEST_VAR3_old), $(VARDEP_TEST_VAR3), \
     Wrong contents in vardep file))
 
 TEST_TARGETS += test-vardep

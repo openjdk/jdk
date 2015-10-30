@@ -28,6 +28,7 @@ package javax.swing;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.peer.ComponentPeer;
+import java.beans.BeanProperty;
 import java.beans.Transient;
 import javax.swing.plaf.ViewportUI;
 
@@ -300,13 +301,10 @@ public class JViewport extends JComponent implements Accessible
      *
      * @param ui  the <code>ViewportUI</code> L&amp;F object
      * @see UIDefaults#getUI
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *    attribute: visualUpdate true
-     *  description: The UI object that implements the Component's LookAndFeel.
      * @since 1.3
      */
+    @BeanProperty(hidden = true, visualUpdate = true, description
+            = "The UI object that implements the Component's LookAndFeel.")
     public void setUI(ViewportUI ui) {
         super.setUI(ui);
     }
@@ -588,9 +586,8 @@ public class JViewport extends JComponent implements Accessible
      * @param insets the <code>Insets</code> object which can be reused
      * @return this viewports inset values
      * @see #getInsets
-     * @beaninfo
-     *   expert: true
      */
+    @BeanProperty(expert = true)
     public final Insets getInsets(Insets insets) {
         insets.left = insets.top = insets.right = insets.bottom = 0;
         return insets;
@@ -861,15 +858,13 @@ public class JViewport extends JComponent implements Accessible
       * @see #BACKINGSTORE_SCROLL_MODE
       * @see #SIMPLE_SCROLL_MODE
       *
-      * @beaninfo
-      *        bound: false
-      *  description: Method of moving contents for incremental scrolls.
-      *         enum: BLIT_SCROLL_MODE JViewport.BLIT_SCROLL_MODE
-      *               BACKINGSTORE_SCROLL_MODE JViewport.BACKINGSTORE_SCROLL_MODE
-      *               SIMPLE_SCROLL_MODE JViewport.SIMPLE_SCROLL_MODE
-      *
       * @since 1.3
       */
+    @BeanProperty(bound = false, enumerationValues = {
+            "JViewport.BLIT_SCROLL_MODE",
+            "JViewport.BACKINGSTORE_SCROLL_MODE",
+            "JViewport.SIMPLE_SCROLL_MODE"}, description
+            = "Method of moving contents for incremental scrolls.")
     public void setScrollMode(int mode) {
         scrollMode = mode;
         backingStore = mode == BACKINGSTORE_SCROLL_MODE;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package com.sun.source.doctree;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -42,6 +43,20 @@ public interface DocCommentTree extends DocTree {
      * @return the first sentence of a documentation comment
      */
     List<? extends DocTree> getFirstSentence();
+
+    /**
+     * Returns the entire body of a documentation comment, appearing
+     * before any block tags, including the first sentence.
+     * @return body of a documentation comment first sentence inclusive
+     *
+     * @since 1.9
+     */
+    default List<? extends DocTree> getFullBody() {
+        ArrayList<DocTree> bodyList = new ArrayList<>();
+        bodyList.addAll(getFirstSentence());
+        bodyList.addAll(getBody());
+        return bodyList;
+    }
 
     /**
      * Returns the body of a documentation comment,

@@ -30,15 +30,15 @@ import java.util.function.Supplier;
 import java.util.stream.DoubleStream;
 
 /**
- * A container object which may or may not contain a {@code double} value.
- * If a value is present, {@code isPresent()} will return {@code true} and
- * {@code getAsDouble()} will return the value.
+ * A container object which may or may not contain a {@code double} value.  If a
+ * value is present, {@code isPresent()} returns {@code true} and
+ * {@code getAsDouble()} returns the value.
  *
  * <p>Additional methods that depend on the presence or absence of a contained
  * value are provided, such as {@link #orElse(double) orElse()}
- * (return a default value if value not present) and
- * {@link #ifPresent(java.util.function.DoubleConsumer) ifPresent()} (perform an
- * action if the value is present).
+ * (returns a default value if no value is present) and
+ * {@link #ifPresent(java.util.function.DoubleConsumer) ifPresent()} (performs
+ * an action if a value is present).
  *
  * <p>This is a <a href="../lang/doc-files/ValueBased.html">value-based</a>
  * class; use of identity-sensitive operations (including reference equality
@@ -71,12 +71,13 @@ public final class OptionalDouble {
     }
 
     /**
-     * Returns an empty {@code OptionalDouble} instance.  No value is present for this
-     * OptionalDouble.
+     * Returns an empty {@code OptionalDouble} instance.  No value is present
+     * for this {@code OptionalDouble}.
      *
-     * @apiNote Though it may be tempting to do so, avoid testing if an object
-     * is empty by comparing with {@code ==} against instances returned by
-     * {@code Option.empty()}. There is no guarantee that it is a singleton.
+     * @apiNote
+     * Though it may be tempting to do so, avoid testing if an object is empty
+     * by comparing with {@code ==} against instances returned by
+     * {@code OptionalDouble.empty()}.  There is no guarantee that it is a singleton.
      * Instead, use {@link #isPresent()}.
      *
      *  @return an empty {@code OptionalDouble}.
@@ -86,9 +87,9 @@ public final class OptionalDouble {
     }
 
     /**
-     * Construct an instance with the value present.
+     * Construct an instance with the described value.
      *
-     * @param value the double value to be present.
+     * @param value the double value to describe.
      */
     private OptionalDouble(double value) {
         this.isPresent = true;
@@ -96,9 +97,9 @@ public final class OptionalDouble {
     }
 
     /**
-     * Return an {@code OptionalDouble} with the specified value present.
+     * Returns an {@code OptionalDouble} describing the given value.
      *
-     * @param value the value to be present
+     * @param value the value to describe
      * @return an {@code OptionalDouble} with the value present
      */
     public static OptionalDouble of(double value) {
@@ -106,12 +107,11 @@ public final class OptionalDouble {
     }
 
     /**
-     * If a value is present in this {@code OptionalDouble}, returns the value,
-     * otherwise throws {@code NoSuchElementException}.
+     * If a value is present, returns the value, otherwise throws
+     * {@code NoSuchElementException}.
      *
-     * @return the value held by this {@code OptionalDouble}
-     * @throws NoSuchElementException if there is no value present
-     *
+     * @return the value described by this {@code OptionalDouble}
+     * @throws NoSuchElementException if no value is present
      * @see OptionalDouble#isPresent()
      */
     public double getAsDouble() {
@@ -122,21 +122,21 @@ public final class OptionalDouble {
     }
 
     /**
-     * Return {@code true} if there is a value present, otherwise {@code false}.
+     * If a value is present, returns {@code true}, otherwise {@code false}.
      *
-     * @return {@code true} if there is a value present, otherwise {@code false}
+     * @return {@code true} if a value is present, otherwise {@code false}
      */
     public boolean isPresent() {
         return isPresent;
     }
 
     /**
-     * If a value is present, perform the given action with the value,
-     * otherwise do nothing.
+     * If a value is present, performs the given action with the value,
+     * otherwise does nothing.
      *
-     * @param action the action to be performed if a value is present
-     * @throws NullPointerException if a value is present and {@code action} is
-     * null
+     * @param action the action to be performed, if a value is present
+     * @throws NullPointerException if value is present and the given action is
+     *         {@code null}
      */
     public void ifPresent(DoubleConsumer action) {
         if (isPresent) {
@@ -145,15 +145,16 @@ public final class OptionalDouble {
     }
 
     /**
-     * If a value is present, perform the given action with the value,
-     * otherwise perform the given empty-based action.
+     * If a value is present, performs the given action with the value,
+     * otherwise performs the given empty-based action.
      *
-     * @param action the action to be performed if a value is present
-     * @param emptyAction the empty-based action to be performed if a value is
-     * not present
-     * @throws NullPointerException if a value is present and {@code action} is
-     * null, or a value is not present and {@code emptyAction} is null.
-     * @since 1.9
+     * @param action the action to be performed, if a value is present
+     * @param emptyAction the empty-based action to be performed, if no value is
+     * present
+     * @throws NullPointerException if a value is present and the given action
+     *         is {@code null}, or no value is present and the given empty-based
+     *         action is {@code null}.
+     * @since 9
      */
     public void ifPresentOrElse(DoubleConsumer action, Runnable emptyAction) {
         if (isPresent) {
@@ -164,19 +165,20 @@ public final class OptionalDouble {
     }
 
     /**
-     * If a value is present return a sequential {@link DoubleStream} containing
-     * only that value, otherwise return an empty {@code DoubleStream}.
+     * If a value is present, returns a sequential {@link DoubleStream}
+     * containing only that value, otherwise returns an empty
+     * {@code DoubleStream}.
      *
-     * @apiNote This method can be used to transform a {@code Stream} of
-     * optional doubles to a {@code DoubleStream} of present doubles:
-     *
+     * @apiNote
+     * This method can be used to transform a {@code Stream} of optional doubles
+     * to a {@code DoubleStream} of present doubles:
      * <pre>{@code
      *     Stream<OptionalDouble> os = ..
      *     DoubleStream s = os.flatMapToDouble(OptionalDouble::stream)
      * }</pre>
      *
      * @return the optional value as a {@code DoubleStream}
-     * @since 1.9
+     * @since 9
      */
     public DoubleStream stream() {
         if (isPresent) {
@@ -187,9 +189,10 @@ public final class OptionalDouble {
     }
 
     /**
-     * Return the value if present, otherwise return {@code other}.
+     * If a value is present, returns the value, otherwise returns
+     * {@code other}.
      *
-     * @param other the value to be returned if there is no value present
+     * @param other the value to be returned, if no value is present
      * @return the value, if present, otherwise {@code other}
      */
     public double orElse(double other) {
@@ -197,34 +200,35 @@ public final class OptionalDouble {
     }
 
     /**
-     * Return the value if present, otherwise invoke {@code other} and return
-     * the result of that invocation.
+     * If a value is present, returns the value, otherwise returns the result
+     * produced by the supplying function.
      *
-     * @param other a {@code DoubleSupplier} whose result is returned if no value
-     * is present
-     * @return the value if present otherwise the result of {@code other.getAsDouble()}
-     * @throws NullPointerException if value is not present and {@code other} is
-     * null
+     * @param supplier the supplying function that produces a value to be returned
+     * @return the value, if present, otherwise the result produced by the
+     *         supplying function
+     * @throws NullPointerException if no value is present and the supplying
+     *         function is {@code null}
      */
-    public double orElseGet(DoubleSupplier other) {
-        return isPresent ? value : other.getAsDouble();
+    public double orElseGet(DoubleSupplier supplier) {
+        return isPresent ? value : supplier.getAsDouble();
     }
 
     /**
-     * Return the contained value, if present, otherwise throw an exception
-     * to be created by the provided supplier.
+     * If a value is present, returns the value, otherwise throws an exception
+     * produced by the exception supplying function.
      *
-     * @apiNote A method reference to the exception constructor with an empty
-     * argument list can be used as the supplier. For example,
+     * @apiNote
+     * A method reference to the exception constructor with an empty argument
+     * list can be used as the supplier. For example,
      * {@code IllegalStateException::new}
      *
      * @param <X> Type of the exception to be thrown
-     * @param exceptionSupplier The supplier which will return the exception to
-     * be thrown
-     * @return the present value
-     * @throws X if there is no value present
-     * @throws NullPointerException if no value is present and
-     * {@code exceptionSupplier} is null
+     * @param exceptionSupplier the supplying function that produces an
+     *        exception to be thrown
+     * @return the value, if present
+     * @throws X if no value is present
+     * @throws NullPointerException if no value is present and the exception
+     *         supplying function is {@code null}
      */
     public<X extends Throwable> double orElseThrow(Supplier<? extends X> exceptionSupplier) throws X {
         if (isPresent) {
@@ -235,17 +239,18 @@ public final class OptionalDouble {
     }
 
     /**
-     * Indicates whether some other object is "equal to" this OptionalDouble. The
-     * other object is considered equal if:
+     * Indicates whether some other object is "equal to" this
+     * {@code OptionalDouble}. The other object is considered equal if:
      * <ul>
      * <li>it is also an {@code OptionalDouble} and;
      * <li>both instances have no value present or;
-     * <li>the present values are "equal to" each other via {@code Double.compare() == 0}.
+     * <li>the present values are "equal to" each other via
+     * {@code Double.compare() == 0}.
      * </ul>
      *
      * @param obj an object to be tested for equality
      * @return {@code true} if the other object is "equal to" this object
-     * otherwise {@code false}
+     *         otherwise {@code false}
      */
     @Override
     public boolean equals(Object obj) {
@@ -264,10 +269,11 @@ public final class OptionalDouble {
     }
 
     /**
-     * Returns the hash code value of the present value, if any, or 0 (zero) if
-     * no value is present.
+     * Returns the hash code of the value, if present, otherwise {@code 0}
+     * (zero) if no value is present.
      *
-     * @return hash code value of the present value or 0 if no value is present
+     * @return hash code value of the present value or {@code 0} if no value is
+     *         present
      */
     @Override
     public int hashCode() {
@@ -275,14 +281,13 @@ public final class OptionalDouble {
     }
 
     /**
-     * {@inheritDoc}
+     * Returns a non-empty string representation of this {@code OptionalDouble}
+     * suitable for debugging.  The exact presentation format is unspecified and
+     * may vary between implementations and versions.
      *
-     * Returns a non-empty string representation of this object suitable for
-     * debugging. The exact presentation format is unspecified and may vary
-     * between implementations and versions.
-     *
-     * @implSpec If a value is present the result must include its string
-     * representation in the result. Empty and present instances must be
+     * @implSpec
+     * If a value is present the result must include its string representation
+     * in the result.  Empty and present {@code OptionalDouble}s must be
      * unambiguously differentiable.
      *
      * @return the string representation of this instance

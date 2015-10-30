@@ -91,19 +91,19 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.Operation;
+import jdk.internal.dynalink.StandardOperation;
 import jdk.internal.dynalink.beans.GuardedInvocationComponent.ValidationType;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
-import jdk.internal.dynalink.support.Guards;
-import jdk.internal.dynalink.support.Lookup;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.Guards;
+import jdk.internal.dynalink.linker.support.Lookup;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
  * A class that provides linking capabilities for a single POJO class. Normally not used directly, but managed by
  * {@link BeansLinker}.
- *
- * @author Attila Szegedi
  */
 class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicLinker {
     BeanLinker(final Class<?> clazz) {
@@ -111,7 +111,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         if(clazz.isArray()) {
             // Some languages won't have a notion of manipulating collections. Exposing "length" on arrays as an
             // explicit property is beneficial for them.
-            // REVISIT: is it maybe a code smell that "dyn:getLength" is not needed?
+            // REVISIT: is it maybe a code smell that StandardOperation.GET_LENGTH is not needed?
             setPropertyGetter("length", GET_ARRAY_LENGTH, ValidationType.IS_ARRAY);
         } else if(List.class.isAssignableFrom(clazz)) {
             setPropertyGetter("length", GET_COLLECTION_LENGTH, ValidationType.INSTANCE_OF);
@@ -130,27 +130,23 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
 
     @Override
     protected GuardedInvocationComponent getGuardedInvocationComponent(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<String> operations) throws Exception {
+            final LinkerServices linkerServices, final List<Operation> operations, final Object name) throws Exception {
         final GuardedInvocationComponent superGic = super.getGuardedInvocationComponent(callSiteDescriptor,
-                linkerServices, operations);
+                linkerServices, operations, name);
         if(superGic != null) {
             return superGic;
         }
         if(operations.isEmpty()) {
             return null;
         }
-        final String op = operations.get(0);
-        // dyn:getElem(this, id)
-        // id is typically either an int (for arrays and lists) or an object (for maps). linkerServices can provide
-        // conversion from call site argument type though.
-        if("getElem".equals(op)) {
-            return getElementGetter(callSiteDescriptor, linkerServices, pop(operations));
+        final Operation op = operations.get(0);
+        if(op == StandardOperation.GET_ELEMENT) {
+            return getElementGetter(callSiteDescriptor, linkerServices, pop(operations), name);
         }
-        if("setElem".equals(op)) {
-            return getElementSetter(callSiteDescriptor, linkerServices, pop(operations));
+        if(op == StandardOperation.SET_ELEMENT) {
+            return getElementSetter(callSiteDescriptor, linkerServices, pop(operations), name);
         }
-        // dyn:getLength(this) (works on Java arrays, collections, and maps)
-        if("getLength".equals(op)) {
+        if(op == StandardOperation.GET_LENGTH) {
             return getLengthGetter(callSiteDescriptor);
         }
         return null;
@@ -170,11 +166,11 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
     };
 
     private GuardedInvocationComponent getElementGetter(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<String> operations) throws Exception {
+            final LinkerServices linkerServices, final List<Operation> operations, final Object name) throws Exception {
         final MethodType callSiteType = callSiteDescriptor.getMethodType();
         final Class<?> declaredType = callSiteType.parameterType(0);
         final GuardedInvocationComponent nextComponent = getGuardedInvocationComponent(callSiteDescriptor,
-                linkerServices, operations);
+                linkerServices, operations, name);
 
         // If declared type of receiver at the call site is already an array, a list or map, bind without guard. Thing
         // is, it'd be quite stupid of a call site creator to go though invokedynamic when it knows in advance they're
@@ -208,22 +204,20 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
             return nextComponent;
         }
 
-        // We can have "dyn:getElem:foo", especially in composites, i.e. "dyn:getElem|getProp|getMethod:foo"
-        final String fixedKey = getFixedKey(callSiteDescriptor);
         // Convert the key to a number if we're working with a list or array
-        final Object typedFixedKey;
-        if(collectionType != CollectionType.MAP && fixedKey != null) {
-            typedFixedKey = convertKeyToInteger(fixedKey, linkerServices);
-            if(typedFixedKey == null) {
+        final Object typedName;
+        if(collectionType != CollectionType.MAP && name != null) {
+            typedName = convertKeyToInteger(name, linkerServices);
+            if(typedName == null) {
                 // key is not numeric, it can never succeed
                 return nextComponent;
             }
         } else {
-            typedFixedKey = fixedKey;
+            typedName = name;
         }
 
         final GuardedInvocation gi = gic.getGuardedInvocation();
-        final Binder binder = new Binder(linkerServices, callSiteType, typedFixedKey);
+        final Binder binder = new Binder(linkerServices, callSiteType, typedName);
         final MethodHandle invocation = gi.getInvocation();
 
         if(nextComponent == null) {
@@ -265,40 +259,50 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
                 validatorClass, validationType);
     }
 
-    private static String getFixedKey(final CallSiteDescriptor callSiteDescriptor) {
-        return callSiteDescriptor.getNameTokenCount() == 2 ? null : callSiteDescriptor.getNameToken(
-                CallSiteDescriptor.NAME_OPERAND);
-    }
+    private static Integer convertKeyToInteger(final Object fixedKey, final LinkerServices linkerServices) throws Exception {
+        if (fixedKey instanceof Integer) {
+            return (Integer)fixedKey;
+        }
 
-    private static Object convertKeyToInteger(final String fixedKey, final LinkerServices linkerServices) throws Exception {
-        try {
-            if(linkerServices.canConvert(String.class, Number.class)) {
+        final Number n;
+        if (fixedKey instanceof Number) {
+            n = (Number)fixedKey;
+        } else {
+            final Class<?> keyClass = fixedKey.getClass();
+            if(linkerServices.canConvert(keyClass, Number.class)) {
+                final Object val;
                 try {
-                    final Object val = linkerServices.getTypeConverter(String.class, Number.class).invoke(fixedKey);
-                    if(!(val instanceof Number)) {
-                        return null; // not a number
-                    }
-                    final Number n = (Number)val;
-                    if(n instanceof Integer) {
-                        return n;
-                    }
-                    final int intIndex = n.intValue();
-                    final double doubleValue = n.doubleValue();
-                    if(intIndex != doubleValue && !Double.isInfinite(doubleValue)) { // let infinites trigger IOOBE
-                        return null; // not an exact integer
-                    }
-                    return intIndex;
+                    val = linkerServices.getTypeConverter(keyClass, Number.class).invoke(fixedKey);
                 } catch(Exception|Error e) {
                     throw e;
                 } catch(final Throwable t) {
                     throw new RuntimeException(t);
                 }
+                if(!(val instanceof Number)) {
+                    return null; // not a number
+                }
+                n = (Number)val;
+            } else if (fixedKey instanceof String){
+                try {
+                    return Integer.valueOf((String)fixedKey);
+                } catch(final NumberFormatException e) {
+                    // key is not a number
+                    return null;
+                }
+            } else {
+                return null;
             }
-            return Integer.valueOf(fixedKey);
-        } catch(final NumberFormatException e) {
-            // key is not a number
-            return null;
         }
+
+        if(n instanceof Integer) {
+            return (Integer)n;
+        }
+        final int intIndex = n.intValue();
+        final double doubleValue = n.doubleValue();
+        if(intIndex != doubleValue && !Double.isInfinite(doubleValue)) { // let infinites trigger IOOBE
+            return null; // not an exact integer
+        }
+        return intIndex;
     }
 
     private static MethodHandle convertArgToInt(final MethodHandle mh, final LinkerServices ls, final CallSiteDescriptor desc) {
@@ -316,8 +320,6 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
     /**
      * Contains methods to adapt an item getter/setter method handle to the requested type, optionally binding it to a
      * fixed key first.
-     * @author Attila Szegedi
-     * @version $Id: $
      */
     private static class Binder {
         private final LinkerServices linkerServices;
@@ -393,7 +395,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
             MethodType.methodType(Object.class, Object.class, Object.class));
 
     private GuardedInvocationComponent getElementSetter(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, final List<String> operations) throws Exception {
+            final LinkerServices linkerServices, final List<Operation> operations, final Object name) throws Exception {
         final MethodType callSiteType = callSiteDescriptor.getMethodType();
         final Class<?> declaredType = callSiteType.parameterType(0);
 
@@ -435,27 +437,25 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         // as maps will always succeed in setting the element and will never need to fall back to the next component
         // operation.
         final GuardedInvocationComponent nextComponent = collectionType == CollectionType.MAP ? null : getGuardedInvocationComponent(
-                callSiteDescriptor, linkerServices, operations);
+                callSiteDescriptor, linkerServices, operations, name);
         if(gic == null) {
             return nextComponent;
         }
 
-        // We can have "dyn:setElem:foo", especially in composites, i.e. "dyn:setElem|setProp:foo"
-        final String fixedKey = getFixedKey(callSiteDescriptor);
         // Convert the key to a number if we're working with a list or array
-        final Object typedFixedKey;
-        if(collectionType != CollectionType.MAP && fixedKey != null) {
-            typedFixedKey = convertKeyToInteger(fixedKey, linkerServices);
-            if(typedFixedKey == null) {
+        final Object typedName;
+        if(collectionType != CollectionType.MAP && name != null) {
+            typedName = convertKeyToInteger(name, linkerServices);
+            if(typedName == null) {
                 // key is not numeric, it can never succeed
                 return nextComponent;
             }
         } else {
-            typedFixedKey = fixedKey;
+            typedName = name;
         }
 
         final GuardedInvocation gi = gic.getGuardedInvocation();
-        final Binder binder = new Binder(linkerServices, callSiteType, typedFixedKey);
+        final Binder binder = new Binder(linkerServices, callSiteType, typedName);
         final MethodHandle invocation = gi.getInvocation();
 
         if(nextComponent == null) {
@@ -514,7 +514,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
 
     private static void assertParameterCount(final CallSiteDescriptor descriptor, final int paramCount) {
         if(descriptor.getMethodType().parameterCount() != paramCount) {
-            throw new BootstrapMethodError(descriptor.getName() + " must have exactly " + paramCount + " parameters.");
+            throw new BootstrapMethodError(descriptor.getOperation() + " must have exactly " + paramCount + " parameters.");
         }
     }
 }

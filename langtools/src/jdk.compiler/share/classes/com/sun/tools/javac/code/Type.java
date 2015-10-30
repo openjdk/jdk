@@ -142,6 +142,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         return false;
     }
 
+    public boolean isIntegral() {
+        return false;
+    }
+
     public boolean isPrimitive() {
         return false;
     }
@@ -694,6 +698,20 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         @Override
         public boolean isNumeric() {
             return tag != BOOLEAN;
+        }
+
+        @Override
+        public boolean isIntegral() {
+            switch (tag) {
+                case CHAR:
+                case BYTE:
+                case SHORT:
+                case INT:
+                case LONG:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         @Override

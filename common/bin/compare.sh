@@ -51,8 +51,6 @@ else
     STAT_PRINT_SIZE="-c %s"
 fi
 
-UNARCHIVE="$UNZIP -q"
-
 COMPARE_EXCEPTIONS_INCLUDE="$SRC_ROOT/common/bin/compare_exceptions.sh.incl"
 if [ ! -e "$COMPARE_EXCEPTIONS_INCLUDE" ]; then
     echo "Error: Cannot locate the exceptions file, it should have been here: $COMPARE_EXCEPTIONS_INCLUDE"

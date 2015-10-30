@@ -44,4 +44,3 @@ public class NegativeTimeout {
         } catch (TimeoutException success) {}
     }
 }
-

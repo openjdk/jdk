@@ -301,7 +301,7 @@ public class EmptyNavigableSet {
 
         // slightly smaller
         NavigableSet ns = subSet.subSet(first, false, last, false);
-        // slight exapansion
+        // slight expansion
         assertThrows(() -> {
             ns.subSet(first, true, last, true);
         },
@@ -322,7 +322,7 @@ public class EmptyNavigableSet {
         // slightly smaller
         NavigableSet ns = subSet.headSet(BigInteger.ONE, false);
 
-        // slight exapansion
+        // slight expansion
         assertThrows(() -> {
             ns.headSet(BigInteger.ONE, true);
         },
@@ -343,7 +343,7 @@ public class EmptyNavigableSet {
         // slightly smaller
         NavigableSet ns = subSet.tailSet(BigInteger.ONE, false);
 
-        // slight exapansion
+        // slight expansion
         assertThrows(() -> {
             ns.tailSet(BigInteger.ONE, true);
         },

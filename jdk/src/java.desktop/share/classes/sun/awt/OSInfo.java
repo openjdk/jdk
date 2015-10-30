@@ -56,6 +56,7 @@ public class OSInfo {
     public static final WindowsVersion WINDOWS_XP = new WindowsVersion(5, 1);
     public static final WindowsVersion WINDOWS_2003 = new WindowsVersion(5, 2);
     public static final WindowsVersion WINDOWS_VISTA = new WindowsVersion(6, 0);
+    public static final WindowsVersion WINDOWS_7 = new WindowsVersion(6, 1);
 
     private static final String OS_NAME = "os.name";
     private static final String OS_VERSION = "os.version";
@@ -70,6 +71,7 @@ public class OSInfo {
         windowsVersionMap.put(WINDOWS_XP.toString(), WINDOWS_XP);
         windowsVersionMap.put(WINDOWS_2003.toString(), WINDOWS_2003);
         windowsVersionMap.put(WINDOWS_VISTA.toString(), WINDOWS_VISTA);
+        windowsVersionMap.put(WINDOWS_VISTA.toString(), WINDOWS_7);
     }
 
     private static final PrivilegedAction<OSType> osTypeAction = new PrivilegedAction<OSType>() {

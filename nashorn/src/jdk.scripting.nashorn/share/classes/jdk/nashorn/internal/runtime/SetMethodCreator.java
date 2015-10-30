@@ -28,6 +28,7 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.SwitchPoint;
 import jdk.internal.dynalink.CallSiteDescriptor;
@@ -69,7 +70,7 @@ final class SetMethodCreator {
     }
 
     private String getName() {
-        return desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        return NashornCallSiteDescriptor.getOperand(desc);
     }
 
     private PropertyMap getMap() {
@@ -196,7 +197,7 @@ final class SetMethodCreator {
         final PropertyMap oldMap   = getMap();
         final PropertyMap newMap   = getNewMap(property);
         final boolean     isStrict = NashornCallSiteDescriptor.isStrict(desc);
-        final String      name     = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        final String      name     = NashornCallSiteDescriptor.getOperand(desc);
 
         //fast type specific setter
         final MethodHandle fastSetter = property.getSetter(type, newMap); //0 sobj, 1 value, slot folded for spill property already

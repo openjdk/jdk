@@ -85,10 +85,16 @@ package jdk.internal.dynalink.linker;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodType;
+import jdk.internal.dynalink.DynamicLinkerFactory;
 
 /**
- * Interface for objects representing a strategy for converting a method handle to a new type.
+ * Interface for objects representing a strategy for converting a method handle
+ * to a new type. Typical usage is for customizing a language runtime's handling
+ * of
+ * {@link DynamicLinkerFactory#setAutoConversionStrategy(MethodTypeConversionStrategy)
+ * method invocation conversions}.
  */
+@FunctionalInterface
 public interface MethodTypeConversionStrategy {
     /**
      * Converts a method handle to a new type.

@@ -36,7 +36,7 @@ public class SyncLastIndexOf {
     static class RemovingThread extends Thread {
 
         public void run() {
-           synchronized(v) {
+           synchronized (v) {
                 try {
                 sleep(200);
                 } catch (InterruptedException e) {

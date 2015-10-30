@@ -26,23 +26,19 @@ package javax.swing;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.image.*;
 import java.text.*;
 import java.awt.geom.*;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.Transient;
 import java.util.Enumeration;
-import java.util.Vector;
 import java.io.Serializable;
 import javax.swing.event.*;
-import javax.swing.border.*;
 import javax.swing.plaf.*;
 import javax.accessibility.*;
 import javax.swing.text.*;
-import javax.swing.text.html.*;
-import javax.swing.plaf.basic.*;
-import java.util.*;
 
 /**
  * Defines common behaviors for buttons and menu items.
@@ -73,6 +69,7 @@ import java.util.*;
  * @author Jeff Dinkins
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UI")
 @SuppressWarnings("serial") // Same-version serialization only
 public abstract class AbstractButton extends JComponent implements ItemSelectable, SwingConstants {
 
@@ -251,12 +248,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @see <a href="Action.html#buttonActions">Swing Components Supporting
      *      <code>Action</code></a>
      * @since 1.6
-     * @beaninfo
-     *        bound: true
-     *    expert: true
-     *  description: Whether the text of the button should come from
-     *               the <code>Action</code>.
      */
+    @BeanProperty(expert = true, description
+            = "Whether the text of the button should come from the <code>Action</code>.")
     public void setHideActionText(boolean hideActionText) {
         if (hideActionText != this.hideActionText) {
             this.hideActionText = hideActionText;
@@ -296,12 +290,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * Sets the button's text.
      * @param text the string used to set the text
      * @see #getText
-     * @beaninfo
-     *        bound: true
-     *    preferred: true
-     *    attribute: visualUpdate true
-     *  description: The button's text.
      */
+    @BeanProperty(preferred = true, visualUpdate = true, description
+            = "The button's text.")
     public void setText(String text) {
         String oldValue = this.text;
         this.text = text;
@@ -390,12 +381,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * effectively be ignored).
      *
      * @param m the space between the border and the label
-     *
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: The space between the button's border and the label.
      */
+    @BeanProperty(visualUpdate = true, description
+            = "The space between the button's border and the label.")
     public void setMargin(Insets m) {
         // Cache the old margin if it comes from the UI
         if(m instanceof UIResource) {
@@ -448,11 +436,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @param defaultIcon the icon used as the default image
      * @see #getIcon
      * @see #setPressedIcon
-     * @beaninfo
-     *           bound: true
-     *       attribute: visualUpdate true
-     *     description: The button's default icon
      */
+    @BeanProperty(visualUpdate = true, description
+            = "The button's default icon")
     public void setIcon(Icon defaultIcon) {
         Icon oldValue = this.defaultIcon;
         this.defaultIcon = defaultIcon;
@@ -495,11 +481,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * Sets the pressed icon for the button.
      * @param pressedIcon the icon used as the "pressed" image
      * @see #getPressedIcon
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: The pressed icon for the button.
      */
+    @BeanProperty(visualUpdate = true, description
+            = "The pressed icon for the button.")
     public void setPressedIcon(Icon pressedIcon) {
         Icon oldValue = this.pressedIcon;
         this.pressedIcon = pressedIcon;
@@ -529,11 +513,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * Sets the selected icon for the button.
      * @param selectedIcon the icon used as the "selected" image
      * @see #getSelectedIcon
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: The selected icon for the button.
      */
+    @BeanProperty(visualUpdate = true, description
+            = "The selected icon for the button.")
     public void setSelectedIcon(Icon selectedIcon) {
         Icon oldValue = this.selectedIcon;
         this.selectedIcon = selectedIcon;
@@ -575,11 +557,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * Sets the rollover icon for the button.
      * @param rolloverIcon the icon used as the "rollover" image
      * @see #getRolloverIcon
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: The rollover icon for the button.
      */
+    @BeanProperty(visualUpdate = true, description
+            = "The rollover icon for the button.")
     public void setRolloverIcon(Icon rolloverIcon) {
         Icon oldValue = this.rolloverIcon;
         this.rolloverIcon = rolloverIcon;
@@ -612,11 +592,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @param rolloverSelectedIcon the icon used as the
      *          "selected rollover" image
      * @see #getRolloverSelectedIcon
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: The rollover selected icon for the button.
      */
+    @BeanProperty(visualUpdate = true, description
+            = "The rollover selected icon for the button.")
     public void setRolloverSelectedIcon(Icon rolloverSelectedIcon) {
         Icon oldValue = this.rolloverSelectedIcon;
         this.rolloverSelectedIcon = rolloverSelectedIcon;
@@ -664,11 +642,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * Sets the disabled icon for the button.
      * @param disabledIcon the icon used as the disabled image
      * @see #getDisabledIcon
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: The disabled icon for the button.
      */
+    @BeanProperty(visualUpdate = true, description
+            = "The disabled icon for the button.")
     public void setDisabledIcon(Icon disabledIcon) {
         Icon oldValue = this.disabledIcon;
         this.disabledIcon = disabledIcon;
@@ -717,11 +693,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @param disabledSelectedIcon the icon used as the disabled
      *          selection image
      * @see #getDisabledSelectedIcon
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: The disabled selection icon for the button.
      */
+    @BeanProperty(visualUpdate = true, description
+            = "The disabled selection icon for the button.")
     public void setDisabledSelectedIcon(Icon disabledSelectedIcon) {
         Icon oldValue = this.disabledSelectedIcon;
         this.disabledSelectedIcon = disabledSelectedIcon;
@@ -768,14 +742,12 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * </ul>
      * @throws IllegalArgumentException if the alignment is not one of the legal
      *         values listed above
-     * @beaninfo
-     *        bound: true
-     *         enum: TOP    SwingConstants.TOP
-     *               CENTER SwingConstants.CENTER
-     *               BOTTOM  SwingConstants.BOTTOM
-     *    attribute: visualUpdate true
-     *  description: The vertical alignment of the icon and text.
      */
+    @BeanProperty(visualUpdate = true, enumerationValues = {
+            "SwingConstants.TOP",
+            "SwingConstants.CENTER",
+            "SwingConstants.BOTTOM"}, description
+            = "The vertical alignment of the icon and text.")
     public void setVerticalAlignment(int alignment) {
         if (alignment == verticalAlignment) return;
         int oldValue = verticalAlignment;
@@ -817,16 +789,14 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * </ul>
      * @throws IllegalArgumentException if the alignment is not one of the
      *         valid values
-     * @beaninfo
-     *        bound: true
-     *         enum: LEFT     SwingConstants.LEFT
-     *               CENTER   SwingConstants.CENTER
-     *               RIGHT    SwingConstants.RIGHT
-     *               LEADING  SwingConstants.LEADING
-     *               TRAILING SwingConstants.TRAILING
-     *    attribute: visualUpdate true
-     *  description: The horizontal alignment of the icon and text.
      */
+    @BeanProperty(visualUpdate = true, enumerationValues = {
+            "SwingConstants.LEFT",
+            "SwingConstants.CENTER",
+            "SwingConstants.RIGHT",
+            "SwingConstants.LEADING",
+            "SwingConstants.TRAILING"}, description
+            = "The horizontal alignment of the icon and text.")
     public void setHorizontalAlignment(int alignment) {
         if (alignment == horizontalAlignment) return;
         int oldValue = horizontalAlignment;
@@ -860,14 +830,12 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * <li>{@code SwingConstants.TOP}
      * <li>{@code SwingConstants.BOTTOM}
      * </ul>
-     * @beaninfo
-     *        bound: true
-     *         enum: TOP    SwingConstants.TOP
-     *               CENTER SwingConstants.CENTER
-     *               BOTTOM SwingConstants.BOTTOM
-     *    attribute: visualUpdate true
-     *  description: The vertical position of the text relative to the icon.
      */
+    @BeanProperty(visualUpdate = true, enumerationValues = {
+            "SwingConstants.TOP",
+            "SwingConstants.CENTER",
+            "SwingConstants.BOTTOM"}, description
+            = "The vertical position of the text relative to the icon.")
     public void setVerticalTextPosition(int textPosition) {
         if (textPosition == verticalTextPosition) return;
         int oldValue = verticalTextPosition;
@@ -905,16 +873,14 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * </ul>
      * @exception IllegalArgumentException if <code>textPosition</code>
      *          is not one of the legal values listed above
-     * @beaninfo
-     *        bound: true
-     *         enum: LEFT     SwingConstants.LEFT
-     *               CENTER   SwingConstants.CENTER
-     *               RIGHT    SwingConstants.RIGHT
-     *               LEADING  SwingConstants.LEADING
-     *               TRAILING SwingConstants.TRAILING
-     *    attribute: visualUpdate true
-     *  description: The horizontal position of the text relative to the icon.
      */
+    @BeanProperty(visualUpdate = true, enumerationValues = {
+            "SwingConstants.LEFT",
+            "SwingConstants.CENTER",
+            "SwingConstants.RIGHT",
+            "SwingConstants.LEADING",
+            "SwingConstants.TRAILING"}, description
+            = "The horizontal position of the text relative to the icon.")
     public void setHorizontalTextPosition(int textPosition) {
         if (textPosition == horizontalTextPosition) return;
         int oldValue = horizontalTextPosition;
@@ -951,12 +917,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @param iconTextGap the space between icon and text if these properties are set.
      * @since 1.4
      * @see #getIconTextGap
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: If both the icon and text properties are set, this
-     *               property defines the space between them.
      */
+    @BeanProperty(visualUpdate = true, description
+            = "If both the icon and text properties are set, this property defines the space between them.")
     public void setIconTextGap(int iconTextGap) {
         int oldValue = this.iconTextGap;
         this.iconTextGap = iconTextGap;
@@ -1095,11 +1058,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @see #configurePropertiesFromAction
      * @see #createActionPropertyChangeListener
      * @see #actionPropertyChanged
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: the Action instance connected with this ActionEvent source
      */
+    @BeanProperty(visualUpdate = true, description
+            = "the Action instance connected with this ActionEvent source")
     public void setAction(Action a) {
         Action oldValue = getAction();
         if (action==null || !action.equals(a)) {
@@ -1393,11 +1354,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @param b if true and border property is not <code>null</code>,
      *          the border is painted
      * @see #isBorderPainted
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: Whether the border should be painted.
      */
+    @BeanProperty(visualUpdate = true, description
+            = "Whether the border should be painted.")
     public void setBorderPainted(boolean b) {
         boolean oldValue = paintBorder;
         paintBorder = b;
@@ -1443,11 +1402,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      *
      * @param b if <code>true</code>, the focus state should be painted
      * @see #isFocusPainted
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: Whether focus should be painted
      */
+    @BeanProperty(visualUpdate = true, description
+            = "Whether focus should be painted")
     public void setFocusPainted(boolean b) {
         boolean oldValue = paintFocus;
         paintFocus = b;
@@ -1486,12 +1443,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      *          the content area is not filled
      * @see #isContentAreaFilled
      * @see #setOpaque
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: Whether the button should paint the content area
-     *               or leave it transparent.
      */
+    @BeanProperty(visualUpdate = true, description
+            = "Whether the button should paint the content area or leave it transparent.")
     public void setContentAreaFilled(boolean b) {
         boolean oldValue = contentAreaFilled;
         contentAreaFilled = b;
@@ -1522,11 +1476,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      *
      * @param b if <code>true</code>, rollover effects should be painted
      * @see #isRolloverEnabled
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: Whether rollover effects should be enabled.
      */
+    @BeanProperty(visualUpdate = true, description
+            = "Whether rollover effects should be enabled.")
     public void setRolloverEnabled(boolean b) {
         boolean oldValue = rolloverEnabled;
         rolloverEnabled = b;
@@ -1569,12 +1521,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @param mnemonic the key code which represents the mnemonic
      * @see     java.awt.event.KeyEvent
      * @see     #setDisplayedMnemonicIndex
-     *
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: the keyboard character mnemonic
      */
+    @BeanProperty(visualUpdate = true, description
+            = "the keyboard character mnemonic")
     public void setMnemonic(int mnemonic) {
         int oldValue = getMnemonic();
         model.setMnemonic(mnemonic);
@@ -1589,11 +1538,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      *
      * @param mnemonic  a char specifying the mnemonic value
      * @see #setMnemonic(int)
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: the keyboard character mnemonic
      */
+    @BeanProperty(visualUpdate = true, description
+            = "the keyboard character mnemonic")
     public void setMnemonic(char mnemonic) {
         int vk = (int) mnemonic;
         if(vk >= 'a' && vk <='z')
@@ -1622,13 +1569,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @exception IllegalArgumentException will be thrown if <code>index</code>
      *            is &gt;= length of the text, or &lt; -1
      * @see #getDisplayedMnemonicIndex
-     *
-     * @beaninfo
-     *        bound: true
-     *    attribute: visualUpdate true
-     *  description: the index into the String to draw the keyboard character
-     *               mnemonic at
      */
+    @BeanProperty(visualUpdate = true, description
+            = "the index into the String to draw the keyboard character mnemonic at")
     public void setDisplayedMnemonicIndex(int index)
                                           throws IllegalArgumentException {
         int oldValue = mnemonicIndex;
@@ -1743,10 +1686,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * Sets the model that this button represents.
      * @param newModel the new <code>ButtonModel</code>
      * @see #getModel
-     * @beaninfo
-     *        bound: true
-     *  description: Model that the Button uses.
      */
+    @BeanProperty(description
+            = "Model that the Button uses.")
     public void setModel(ButtonModel newModel) {
 
         ButtonModel oldModel = getModel();
@@ -1804,12 +1746,9 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * Sets the L&amp;F object that renders this component.
      * @param ui the <code>ButtonUI</code> L&amp;F object
      * @see #getUI
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *    attribute: visualUpdate true
-     *  description: The UI object that implements the LookAndFeel.
      */
+    @BeanProperty(hidden = true, visualUpdate = true, description
+            = "The UI object that implements the LookAndFeel.")
     public void setUI(ButtonUI ui) {
         super.setUI(ui);
         // disabled icons are generated by the LF so they should be unset here
@@ -1897,6 +1836,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      *         array if no listeners have been added
      * @since 1.4
      */
+    @BeanProperty(bound = false)
     public ChangeListener[] getChangeListeners() {
         return listenerList.getListeners(ChangeListener.class);
     }
@@ -1954,6 +1894,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      *         array if no listeners have been added
      * @since 1.4
      */
+    @BeanProperty(bound = false)
     public ActionListener[] getActionListeners() {
         return listenerList.getListeners(ActionListener.class);
     }
@@ -2122,11 +2063,10 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      *
      * @param label  a <code>String</code> containing the text
      * @deprecated - Replaced by <code>setText(text)</code>
-     * @beaninfo
-     *        bound: true
-     *  description: Replace by setText(text)
      */
     @Deprecated
+    @BeanProperty(description
+            = "Replace by setText(text)")
     public void setLabel(String label) {
         setText(label);
     }
@@ -2155,6 +2095,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      *         array if no listeners have been added
      * @since 1.4
      */
+    @BeanProperty(bound = false)
     public ItemListener[] getItemListeners() {
         return listenerList.getListeners(ItemListener.class);
     }
@@ -2166,7 +2107,8 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * @return an array containing 1 Object: the text of the button,
      *         if the item is selected; otherwise <code>null</code>
      */
-    public Object[] getSelectedObjects() {
+   @BeanProperty(bound = false)
+   public Object[] getSelectedObjects() {
         if (isSelected() == false) {
             return null;
         }

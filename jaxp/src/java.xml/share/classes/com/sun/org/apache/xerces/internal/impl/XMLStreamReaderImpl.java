@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,20 +48,15 @@ import java.io.InputStream;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
-import com.sun.org.apache.xerces.internal.impl.msg.XMLMessageFormatter;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
 import com.sun.org.apache.xerces.internal.util.NamespaceSupport;
 import com.sun.org.apache.xerces.internal.util.XMLAttributesImpl;
-import com.sun.org.apache.xerces.internal.impl.Constants;
-import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
-import com.sun.xml.internal.stream.dtd.DTDGrammarUtil;
 
 /** This class implements javax.xml.stream.XMLStreamReader. It makes use of XML*Scanner classes to
  * derive most of its functionality. If desired, Application can reuse this instance by calling
@@ -1173,7 +1168,7 @@ public class XMLStreamReaderImpl implements javax.xml.stream.XMLStreamReader {
     public boolean hasText() {
         if(DEBUG) pr("XMLReaderImpl#EVENT TYPE = " + fEventType ) ;
         if( fEventType == XMLEvent.CHARACTERS || fEventType == XMLEvent.COMMENT || fEventType == XMLEvent.CDATA) {
-            return fScanner.getCharacterData().length > 0 ? true : false;
+            return fScanner.getCharacterData().length > 0;
         } else if(fEventType == XMLEvent.ENTITY_REFERENCE) {
             String name = fScanner.getEntityName();
             if(name != null){
@@ -1185,9 +1180,9 @@ public class XMLStreamReaderImpl implements javax.xml.stream.XMLStreamReader {
                 if(en == null)
                     return false;
                 if(en.isExternal()){
-                    return ((Entity.ExternalEntity)en).entityLocation.getExpandedSystemId() != null ? true : false;
+                    return ((Entity.ExternalEntity)en).entityLocation.getExpandedSystemId() != null;
                 } else{
-                    return ((Entity.InternalEntity)en).text != null ? true : false ;
+                    return ((Entity.InternalEntity)en).text != null ;
                 }
             }else
                 return false;

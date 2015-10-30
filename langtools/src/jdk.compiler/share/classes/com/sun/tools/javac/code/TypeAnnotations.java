@@ -356,7 +356,7 @@ public class TypeAnnotations {
 
             if (sym.getKind() == ElementKind.METHOD) {
                 sym.type.asMethodType().restype = type;
-            } else if (sym.getKind() == ElementKind.PARAMETER) {
+            } else if (sym.getKind() == ElementKind.PARAMETER && currentLambda == null) {
                 sym.type = type;
                 if (sym.getQualifiedName().equals(names._this)) {
                     sym.owner.type.asMethodType().recvtype = type;

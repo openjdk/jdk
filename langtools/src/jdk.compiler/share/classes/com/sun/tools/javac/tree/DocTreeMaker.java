@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,61 @@
 
 package com.sun.tools.javac.tree;
 
+import java.text.BreakIterator;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.ListIterator;
+import java.util.Locale;
+
 import com.sun.source.doctree.AttributeTree.ValueKind;
+import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.DocTree.Kind;
+import com.sun.source.doctree.EndElementTree;
+import com.sun.source.doctree.StartElementTree;
+import com.sun.tools.doclint.HtmlTag;
 
 import com.sun.tools.javac.parser.Tokens.Comment;
-import com.sun.tools.javac.tree.DCTree.*;
+import com.sun.tools.javac.tree.DCTree.DCAttribute;
+import com.sun.tools.javac.tree.DCTree.DCAuthor;
+import com.sun.tools.javac.tree.DCTree.DCComment;
+import com.sun.tools.javac.tree.DCTree.DCDeprecated;
+import com.sun.tools.javac.tree.DCTree.DCDocComment;
+import com.sun.tools.javac.tree.DCTree.DCDocRoot;
+import com.sun.tools.javac.tree.DCTree.DCEndElement;
+import com.sun.tools.javac.tree.DCTree.DCEntity;
+import com.sun.tools.javac.tree.DCTree.DCErroneous;
+import com.sun.tools.javac.tree.DCTree.DCIdentifier;
+import com.sun.tools.javac.tree.DCTree.DCInheritDoc;
+import com.sun.tools.javac.tree.DCTree.DCLink;
+import com.sun.tools.javac.tree.DCTree.DCLiteral;
+import com.sun.tools.javac.tree.DCTree.DCParam;
+import com.sun.tools.javac.tree.DCTree.DCReference;
+import com.sun.tools.javac.tree.DCTree.DCReturn;
+import com.sun.tools.javac.tree.DCTree.DCSee;
+import com.sun.tools.javac.tree.DCTree.DCSerial;
+import com.sun.tools.javac.tree.DCTree.DCSerialData;
+import com.sun.tools.javac.tree.DCTree.DCSerialField;
+import com.sun.tools.javac.tree.DCTree.DCSince;
+import com.sun.tools.javac.tree.DCTree.DCStartElement;
+import com.sun.tools.javac.tree.DCTree.DCText;
+import com.sun.tools.javac.tree.DCTree.DCThrows;
+import com.sun.tools.javac.tree.DCTree.DCUnknownBlockTag;
+import com.sun.tools.javac.tree.DCTree.DCUnknownInlineTag;
+import com.sun.tools.javac.tree.DCTree.DCValue;
+import com.sun.tools.javac.tree.DCTree.DCVersion;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.DiagnosticSource;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
+import com.sun.tools.javac.util.Options;
+import com.sun.tools.javac.util.Pair;
 import com.sun.tools.javac.util.Position;
+
+import static com.sun.tools.doclint.HtmlTag.*;
 
 /**
  *
@@ -49,6 +92,12 @@ public class DocTreeMaker {
 
     /** The context key for the tree factory. */
     protected static final Context.Key<DocTreeMaker> treeMakerKey = new Context.Key<>();
+
+    // A subset of block tags, which acts as sentence breakers, appearing
+    // anywhere but the zero'th position in the first sentence.
+    final EnumSet<HtmlTag> sentenceBreakTags;
+
+    private final BreakIterator sentenceBreaker;
 
     /** Get the TreeMaker instance. */
     public static DocTreeMaker instance(Context context) {
@@ -71,6 +120,15 @@ public class DocTreeMaker {
         context.put(treeMakerKey, this);
         diags = JCDiagnostic.Factory.instance(context);
         this.pos = Position.NOPOS;
+        sentenceBreakTags = EnumSet.of(H1, H2, H3, H4, H5, H6, PRE, P);
+        Locale locale = (context.get(Locale.class) != null)
+                ? context.get(Locale.class)
+                : Locale.getDefault();
+        Options options = Options.instance(context);
+        boolean useBreakIterator = options.isSet("breakiterator");
+        sentenceBreaker = (useBreakIterator || !locale.getLanguage().equals(Locale.ENGLISH.getLanguage()))
+                ? BreakIterator.getSentenceInstance(locale)
+                : null;
     }
 
     /** Reassign current position.
@@ -117,9 +175,11 @@ public class DocTreeMaker {
         return tree;
     }
 
-    public DCDocComment DocComment(Comment comment, List<DCTree> firstSentence, List<DCTree> body, List<DCTree> tags) {
-        DCDocComment tree = new DCDocComment(comment, firstSentence, body, tags);
-        tree.pos = pos;
+    public DCDocComment DocComment(Comment comment, List<DCTree> fullBody, List<DCTree> tags) {
+        final int savepos = pos;
+        Pair<List<DCTree>, List<DCTree>> pair = splitBody(fullBody);
+        DCDocComment tree = new DCDocComment(comment, fullBody, pair.fst, pair.snd, tags);
+        this.pos = tree.pos = savepos;
         return tree;
     }
 
@@ -272,5 +332,156 @@ public class DocTreeMaker {
         DCVersion tree = new DCVersion(text);
         tree.pos = pos;
         return tree;
+    }
+
+    public java.util.List<DocTree> getFirstSentence(java.util.List<? extends DocTree> list) {
+        Pair<List<DCTree>, List<DCTree>> pair = splitBody(list);
+        return new ArrayList<>(pair.fst);
+    }
+
+    /*
+     * Breaks up the body tags into the first sentence and its successors.
+     * The first sentence is determined with the presence of a period, block tag,
+     * or a sentence break, as returned by the BreakIterator. Trailing
+     * whitespaces are trimmed.
+     */
+    Pair<List<DCTree>, List<DCTree>> splitBody(Collection<? extends DocTree> list) {
+        ListBuffer<DCTree> body = new ListBuffer<>();
+        // split body into first sentence and body
+        ListBuffer<DCTree> fs = new ListBuffer<>();
+        if (list.isEmpty()) {
+            return new Pair<>(fs.toList(), body.toList());
+        }
+        boolean foundFirstSentence = false;
+        ArrayList<DocTree> alist = new ArrayList<>(list);
+        ListIterator<DocTree> itr = alist.listIterator();
+        while (itr.hasNext()) {
+            boolean isFirst = itr.previousIndex() == -1;
+            DocTree dt = itr.next();
+            int spos = ((DCTree)dt).pos;
+            if (foundFirstSentence) {
+                body.add((DCTree) dt);
+                continue;
+            }
+            switch (dt.getKind()) {
+                case TEXT:
+                    DCText tt = (DCText)dt;
+                    String s = tt.getBody();
+                    int sbreak = getSentenceBreak(s);
+                    if (sbreak > 0) {
+                        s = removeTrailingWhitespace(s.substring(0, sbreak));
+                        DCText text = this.at(spos).Text(s);
+                        fs.add(text);
+                        foundFirstSentence = true;
+                        int nwPos = skipWhiteSpace(tt.getBody(), sbreak);
+                        if (nwPos > 0) {
+                            DCText text2 = this.at(spos + nwPos).Text(tt.getBody().substring(nwPos));
+                            body.add(text2);
+                        }
+                        continue;
+                    } else if (itr.hasNext()) {
+                        // if the next doctree is a break, remove trailing spaces
+                        DocTree next = itr.next();
+                        boolean sbrk = isSentenceBreak(next, false);
+                        if (sbrk) {
+                            s = removeTrailingWhitespace(s);
+                            DCText text = this.at(spos).Text(s);
+                            fs.add(text);
+                            body.add((DCTree)next);
+                            foundFirstSentence = true;
+                            continue;
+                        }
+                        // reset to previous for further processing
+                        itr.previous();
+                    }
+                    break;
+                default:
+                    if (isSentenceBreak(dt, isFirst)) {
+                        body.add((DCTree)dt);
+                        foundFirstSentence = true;
+                        continue;
+                    }
+            }
+            fs.add((DCTree)dt);
+        }
+        return new Pair<>(fs.toList(), body.toList());
+    }
+
+    /*
+     * Computes the first sentence break.
+     */
+    int defaultSentenceBreak(String s) {
+        // scan for period followed by whitespace
+        int period = -1;
+        for (int i = 0; i < s.length(); i++) {
+            switch (s.charAt(i)) {
+                case '.':
+                    period = i;
+                    break;
+
+                case ' ':
+                case '\f':
+                case '\n':
+                case '\r':
+                case '\t':
+                    if (period >= 0) {
+                        return i;
+                    }
+                    break;
+
+                default:
+                    period = -1;
+                    break;
+            }
+        }
+        return -1;
+    }
+
+    int getSentenceBreak(String s) {
+        if (sentenceBreaker == null) {
+            return defaultSentenceBreak(s);
+        }
+        sentenceBreaker.setText(s);
+        return sentenceBreaker.first();
+    }
+
+    boolean isSentenceBreak(javax.lang.model.element.Name tagName) {
+        return sentenceBreakTags.contains(get(tagName));
+    }
+
+    boolean isSentenceBreak(DocTree dt, boolean isFirstDocTree) {
+        switch (dt.getKind()) {
+            case START_ELEMENT:
+                    StartElementTree set = (StartElementTree)dt;
+                    return !isFirstDocTree && ((DCTree) dt).pos > 1 && isSentenceBreak(set.getName());
+            case END_ELEMENT:
+                    EndElementTree eet = (EndElementTree)dt;
+                    return !isFirstDocTree && ((DCTree) dt).pos > 1 && isSentenceBreak(eet.getName());
+            default:
+                return false;
+        }
+    }
+
+    /*
+     * Returns the position of the the first non-white space
+     */
+    int skipWhiteSpace(String s, int start) {
+        for (int i = start; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (!Character.isWhitespace(c)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    String removeTrailingWhitespace(String s) {
+        for (int i = s.length() - 1 ; i > 0 ; i--) {
+            char ch = s.charAt(i);
+            if (!Character.isWhitespace(ch)) {
+                return s.substring(0, i + 1);
+            }
+        }
+        return s;
     }
 }

@@ -1,5 +1,5 @@
-# SpecialCasing-7.0.0.txt
-# Date: 2014-03-18, 07:18:02 GMT [MD]
+# SpecialCasing-8.0.0.txt
+# Date: 2014-12-16, 23:08:04 GMT [MD]
 #
 # Unicode Character Database
 # Copyright (c) 1991-2014 Unicode, Inc.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,7 @@ public class BasicObjectsTest {
         errors += testRequireNonNull();
         errors += testIsNull();
         errors += testNonNull();
+        errors += testNonNullOf();
         if (errors > 0 )
             throw new RuntimeException();
     }
@@ -230,6 +231,48 @@ public class BasicObjectsTest {
         errors += Objects.nonNull(null) ? 1 : 0;
         errors += Objects.nonNull(Objects.class) ? 0 : 1;
 
+        return errors;
+    }
+
+    private static int testNonNullOf() {
+        int errors = 0;
+        String defString = new String("default");
+        String nullString = null;
+        String nonNullString = "non-null";
+
+        // Confirm the compile time return type matches
+        String result = Objects.nonNullElse(nullString, defString);
+        errors += (result == defString) ? 0 : 1;
+        errors += (Objects.nonNullElse(nonNullString, defString) == nonNullString) ? 0 : 1;
+        errors += (Objects.nonNullElse(nonNullString, null) == nonNullString) ? 0 : 1;
+        try {
+            Objects.nonNullElse(null, null);
+            errors += 1;
+        } catch (NullPointerException npe) {
+            // expected
+            errors += npe.getMessage().equals("defaultObj") ? 0 : 1;
+        }
+
+
+        // Test nonNullElseGet with a supplier
+        errors += (Objects.nonNullElseGet(nullString, () -> defString) == defString) ? 0 : 1;
+        errors += (Objects.nonNullElseGet(nonNullString, () -> defString) == nonNullString) ? 0 : 1;
+        errors += (Objects.nonNullElseGet(nonNullString, () -> null) == nonNullString) ? 0 : 1;
+
+        try {
+            Objects.nonNullElseGet(null, () -> null);
+            errors += 1;
+        } catch (NullPointerException npe) {
+            // expected
+            errors += npe.getMessage().equals("supplier.get()") ? 0 : 1;
+        }
+        try {       // supplier is null
+            Objects.nonNullElseGet(null, null);
+            errors += 1;
+        } catch (NullPointerException npe) {
+            // expected
+            errors += npe.getMessage().equals("supplier") ? 0 : 1;
+        }
         return errors;
     }
 }

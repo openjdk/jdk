@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001, 2002,2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -20,15 +20,11 @@
 
 package com.sun.org.apache.xerces.internal.parsers;
 
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Locale;
-
 import com.sun.org.apache.xerces.internal.impl.Constants;
 import com.sun.org.apache.xerces.internal.impl.XMLEntityManager;
 import com.sun.org.apache.xerces.internal.impl.XMLErrorReporter;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.Grammar;
 import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarDescription;
@@ -37,7 +33,12 @@ import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLEntityResolver;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLErrorHandler;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
-import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * <p> This class provides an easy way for a user to preparse grammars
@@ -81,13 +82,15 @@ public class XMLGrammarPreparser {
         Constants.XERCES_PROPERTY_PREFIX + Constants.XMLGRAMMAR_POOL_PROPERTY;
 
     // the "built-in" grammar loaders
-    private static final Hashtable KNOWN_LOADERS = new Hashtable();
+    private static final Map<String, String> KNOWN_LOADERS;
 
     static {
-        KNOWN_LOADERS.put(XMLGrammarDescription.XML_SCHEMA,
+        Map<String, String> loaders = new HashMap<>();
+        loaders.put(XMLGrammarDescription.XML_SCHEMA,
             "com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaLoader");
-        KNOWN_LOADERS.put(XMLGrammarDescription.XML_DTD,
+        loaders.put(XMLGrammarDescription.XML_DTD,
             "com.sun.org.apache.xerces.internal.impl.dtd.XMLDTDLoader");
+        KNOWN_LOADERS = Collections.unmodifiableMap(loaders);
     }
 
     /** Recognized properties. */
@@ -107,8 +110,8 @@ public class XMLGrammarPreparser {
 
     protected Locale fLocale;
 
-    // Hashtable holding our loaders
-    private Hashtable fLoaders;
+    // Map holding our loaders
+    private Map<String, XMLGrammarLoader> fLoaders;
 
     //
     // Constructors
@@ -127,7 +130,7 @@ public class XMLGrammarPreparser {
     public XMLGrammarPreparser (SymbolTable symbolTable) {
         fSymbolTable = symbolTable;
 
-        fLoaders = new Hashtable();
+        fLoaders = new HashMap<>();
         fErrorReporter = new XMLErrorReporter();
         setLocale(Locale.getDefault());
         fEntityResolver = new XMLEntityManager();
@@ -188,7 +191,7 @@ public class XMLGrammarPreparser {
     public Grammar preparseGrammar(String type, XMLInputSource
                 is) throws XNIException, IOException {
         if(fLoaders.containsKey(type)) {
-            XMLGrammarLoader gl = (XMLGrammarLoader)fLoaders.get(type);
+            XMLGrammarLoader gl = fLoaders.get(type);
             // make sure gl's been set up with all the "basic" properties:
             gl.setProperty(SYMBOL_TABLE, fSymbolTable);
             gl.setProperty(ENTITY_RESOLVER, fEntityResolver);
@@ -270,7 +273,7 @@ public class XMLGrammarPreparser {
     // it's possible the application may want access to a certain loader to do
     // some custom work.
     public XMLGrammarLoader getLoader(String type) {
-        return (XMLGrammarLoader)fLoaders.get(type);
+        return fLoaders.get(type);
     } // getLoader(String):  XMLGrammarLoader
 
     // set a feature.  This method tries to set it on all
@@ -279,10 +282,9 @@ public class XMLGrammarPreparser {
     // by a grammar loader of a particular type, it will have
     // to retrieve that loader and use the loader's setFeature method.
     public void setFeature(String featureId, boolean value) {
-        Enumeration loaders = fLoaders.elements();
-        while(loaders.hasMoreElements()){
-            XMLGrammarLoader gl = (XMLGrammarLoader)loaders.nextElement();
+        for (Map.Entry<String, XMLGrammarLoader> entry : fLoaders.entrySet()) {
             try {
+                XMLGrammarLoader gl = entry.getValue();
                 gl.setFeature(featureId, value);
             } catch(Exception e) {
                 // eat it up...
@@ -303,10 +305,9 @@ public class XMLGrammarPreparser {
     // <p> <strong>An application should use the explicit method
     // in this class to set "standard" properties like error handler etc.</strong>
     public void setProperty(String propId, Object value) {
-        Enumeration loaders = fLoaders.elements();
-        while(loaders.hasMoreElements()){
-            XMLGrammarLoader gl = (XMLGrammarLoader)loaders.nextElement();
+        for (Map.Entry<String, XMLGrammarLoader> entry : fLoaders.entrySet()) {
             try {
+                XMLGrammarLoader gl = entry.getValue();
                 gl.setProperty(propId, value);
             } catch(Exception e) {
                 // eat it up...
@@ -321,7 +322,7 @@ public class XMLGrammarPreparser {
     // @param featureId the feature string to query.
     // @return the value of the feature.
     public boolean getFeature(String type, String featureId) {
-        XMLGrammarLoader gl = (XMLGrammarLoader)fLoaders.get(type);
+        XMLGrammarLoader gl = fLoaders.get(type);
         return gl.getFeature(featureId);
     } // getFeature (String, String):  boolean
 
@@ -334,7 +335,7 @@ public class XMLGrammarPreparser {
     // @param propertyId the property string to query.
     // @return the value of the property.
     public Object getProperty(String type, String propertyId) {
-        XMLGrammarLoader gl = (XMLGrammarLoader)fLoaders.get(type);
+        XMLGrammarLoader gl = fLoaders.get(type);
         return gl.getProperty(propertyId);
     } // getProperty(String, String):  Object
 } // class XMLGrammarPreparser

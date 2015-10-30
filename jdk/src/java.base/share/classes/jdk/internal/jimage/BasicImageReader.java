@@ -58,7 +58,7 @@ public class BasicImageReader implements AutoCloseable {
 
         try {
             substrate = ImageNativeSubstrate.openImage(imagePath, byteOrder);
-        } catch (UnsatisfiedLinkError ex) {
+        } catch (UnsatisfiedLinkError | NoClassDefFoundError ex) {
             substrate = ImageJavaSubstrate.openImage(imagePath, byteOrder);
         }
 

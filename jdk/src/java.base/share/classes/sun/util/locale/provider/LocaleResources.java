@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,8 +71,8 @@ public class LocaleResources {
     private final LocaleProviderAdapter.Type type;
 
     // Resource cache
-    private ConcurrentMap<String, ResourceReference> cache = new ConcurrentHashMap<>();
-    private ReferenceQueue<Object> referenceQueue = new ReferenceQueue<>();
+    private final ConcurrentMap<String, ResourceReference> cache = new ConcurrentHashMap<>();
+    private final ReferenceQueue<Object> referenceQueue = new ReferenceQueue<>();
 
     // cache key prefixes
     private static final String BREAK_ITERATOR_INFO = "BII.";

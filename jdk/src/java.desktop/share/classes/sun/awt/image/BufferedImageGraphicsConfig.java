@@ -67,7 +67,6 @@ public class BufferedImageGraphicsConfig
     GraphicsDevice gd;
     ColorModel model;
     Raster raster;
-    int width, height;
 
     public BufferedImageGraphicsConfig(BufferedImage bufImg, Component comp) {
         if (comp == null) {
@@ -78,8 +77,6 @@ public class BufferedImageGraphicsConfig
         }
         this.model = bufImg.getColorModel();
         this.raster = bufImg.getRaster().createCompatibleWritableRaster(1, 1);
-        this.width = bufImg.getWidth();
-        this.height = bufImg.getHeight();
     }
 
     /**
@@ -168,6 +165,6 @@ public class BufferedImageGraphicsConfig
     }
 
     public Rectangle getBounds() {
-        return new Rectangle(0, 0, width, height);
+        return new Rectangle(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE);
     }
 }

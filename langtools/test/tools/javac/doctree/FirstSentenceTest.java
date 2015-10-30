@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614
+ * @bug 7021614 8078320
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -117,6 +117,26 @@ DocComment[DOC_COMMENT, pos:1
 */
 
     /**
+     *
+     * <p>abc def ghi.
+     * jdl mno pqf
+     */
+    void newline_p() { }
+/*
+DocComment[DOC_COMMENT, pos:2
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:2
+      name:p
+      attributes: empty
+    ]
+    Text[TEXT, pos:5, abc_def_ghi.]
+  body: 1
+    Text[TEXT, pos:19, jdl_mno_pqf]
+  block tags: empty
+]
+*/
+
+    /**
      * abc def ghi
      * </p>jkl mno pqr
      */
@@ -197,6 +217,40 @@ DocComment[DOC_COMMENT, pos:1
     ]
 ]
 */
-
+    /**
+     * <p> abc def.
+     * ghi jkl
+     */
+    void p_at_zero() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 2
+    StartElement[START_ELEMENT, pos:1
+      name:p
+      attributes: empty
+    ]
+    Text[TEXT, pos:4, _abc_def.]
+  body: 1
+    Text[TEXT, pos:15, ghi_jkl]
+  block tags: empty
+]
+*/
+    /**
+     * abc <p> def. ghi jkl
+     */
+    void p_at_nonzero() { }
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: 1
+    Text[TEXT, pos:1, abc]
+  body: 2
+    StartElement[START_ELEMENT, pos:5
+      name:p
+      attributes: empty
+    ]
+    Text[TEXT, pos:8, _def._ghi_jkl]
+  block tags: empty
+]
+*/
 }
 

@@ -91,6 +91,10 @@ const LookupSingle *BinarySearchLookupTable::lookupSingle(const LETableReference
     LEReferenceTo<LookupSingle> entry(base, success, entries);
     LEReferenceTo<LookupSingle> trial(entry, success, extra);
 
+    if (!LE_SUCCESS(success)) {
+        return NULL;
+    }
+
     if (SWAPW(trial->glyph) <= ttGlyph) {
         entry = trial;
     }

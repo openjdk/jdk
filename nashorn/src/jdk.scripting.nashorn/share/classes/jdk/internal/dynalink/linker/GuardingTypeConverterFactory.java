@@ -83,32 +83,65 @@
 
 package jdk.internal.dynalink.linker;
 
-import jdk.internal.dynalink.support.TypeUtilities;
+import java.lang.invoke.MethodHandles;
+import java.util.function.Supplier;
+import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.beans.BeansLinker;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
- * Optional interface that can be implemented by {@link GuardingDynamicLinker} implementations to provide
- * language-runtime specific implicit type conversion capabilities. Note that if you implement this interface, you will
- * very likely want to implement {@link ConversionComparator} interface too, as your additional language-specific
- * conversions, in absence of a strategy for prioritizing these conversions, will cause more ambiguity in selecting the
- * correct overload when trying to link to an overloaded POJO method.
- *
- * @author Attila Szegedi
+ * Optional interface that can be implemented by {@link GuardingDynamicLinker}
+ * implementations to provide language-specific type conversion capabilities.
+ * Note that if you implement this interface, you will very likely want to
+ * implement {@link ConversionComparator} interface too, as your additional
+ * language-specific conversions, in absence of a strategy for prioritizing
+ * these conversions, will cause more ambiguity for {@link BeansLinker} in
+ * selecting the correct overload when trying to link to an overloaded Java
+ * method.
  */
 public interface GuardingTypeConverterFactory {
     /**
-     * Returns a guarded type conversion that receives an Object of the specified source type and returns an Object
-     * converted to the specified target type. The type of the invocation is targetType(sourceType), while the type of
-     * the guard is boolean(sourceType). Note that this will never be invoked for type conversions allowed by the JLS
-     * 5.3 "Method Invocation Conversion", see {@link TypeUtilities#isMethodInvocationConvertible(Class, Class)} for
-     * details. An implementation can assume it is never requested to produce a converter for these conversions.
+     * Returns a guarded type conversion that receives a value of the specified
+     * source type and returns a value converted to the specified target type.
+     * Value types can be either primitives or reference types, including
+     * interfaces, so you can even provide converters for converting your
+     * language's objects to Java interfaces and classes by generating adapters
+     * for them.
+     * <p>
+     * The type of the invocation is {@code targetType(sourceType)}, while the
+     * type of the guard is {@code boolean(sourceType)}. You are allowed to
+     * return unconditional invocations (with no guard) if the source type is
+     * specific to your runtime and your runtime only.
+     * <p>Note that this method will never be invoked for type conversions
+     * allowed by the JLS 5.3 "Method Invocation Conversion", see
+     * {@link TypeUtilities#isMethodInvocationConvertible(Class, Class)} for
+     * details. An implementation can assume it is never requested to produce a
+     * converter for these conversions.
+     * <p>Dynalink is at liberty to either cache some of the returned converters
+     * or to repeatedly request the converter factory to create the same
+     * conversion.
      *
      * @param sourceType source type
      * @param targetType the target type.
-     * @return a guarded type conversion that contains a guarded invocation that can take an object (if it passes guard)
-     * and return another object that is its representation coerced into the target type. In case the factory is certain
-     * it is unable to handle a conversion, it can return null. In case the factory is certain that it can always handle
-     * the conversion, it can return an unconditional invocation (one whose guard is null).
+     * @param lookupSupplier a supplier for retrieving the lookup of the class
+     * on whose behalf a type converter is requested. When a converter is
+     * requested as part of linking an {@code invokedynamic} instruction the
+     * supplier will return the lookup passed to the bootstrap method, otherwise
+     * it will return the public lookup. A typical case where the lookup might
+     * be needed is when the converter creates a Java adapter class on the fly
+     * (e.g. to convert some object from the dynamic language into a Java
+     * interface for interoperability). Invoking the {@link Supplier#get()}
+     * method on the passed supplier will be subject to the same security checks
+     * as {@link CallSiteDescriptor#getLookup()}. An implementation should avoid
+     * retrieving the lookup if it is not needed so as to avoid the expense of
+     * {@code AccessController.doPrivileged} call.
+     * @return a guarded invocation that can take an object (if it passes guard)
+     * and return another object that is its representation coerced into the
+     * target type. In case the factory is certain it is unable to handle a
+     * conversion, it can return null. In case the factory is certain that it
+     * can always handle the conversion, it can return an unconditional
+     * invocation (one whose guard is null).
      * @throws Exception if there was an error during creation of the converter
      */
-    public GuardedTypeConversion convertToType(Class<?> sourceType, Class<?> targetType) throws Exception;
+    public GuardedInvocation convertToType(Class<?> sourceType, Class<?> targetType, Supplier<MethodHandles.Lookup> lookupSupplier) throws Exception;
 }

@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2000-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -21,7 +21,6 @@
 package com.sun.org.apache.xerces.internal.jaxp;
 
 import java.io.IOException;
-import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -126,12 +125,14 @@ public class DocumentBuilderImpl extends DocumentBuilder
     private XMLSecurityManager fSecurityManager;
     private XMLSecurityPropertyManager fSecurityPropertyMgr;
 
-    DocumentBuilderImpl(DocumentBuilderFactoryImpl dbf, Hashtable dbfAttrs, Hashtable features)
+    DocumentBuilderImpl(DocumentBuilderFactoryImpl dbf, Map<String, Object> dbfAttrs,
+            Map<String, Boolean> features)
         throws SAXNotRecognizedException, SAXNotSupportedException {
         this(dbf, dbfAttrs, features, false);
     }
 
-    DocumentBuilderImpl(DocumentBuilderFactoryImpl dbf, Hashtable dbfAttrs, Hashtable features, boolean secureProcessing)
+    DocumentBuilderImpl(DocumentBuilderFactoryImpl dbf, Map<String, Object> dbfAttrs,
+            Map<String, Boolean> features, boolean secureProcessing)
         throws SAXNotRecognizedException, SAXNotSupportedException
     {
         domParser = new DOMParser();
@@ -182,10 +183,9 @@ public class DocumentBuilderImpl extends DocumentBuilder
              * System Properties or jaxp.properties are set
              */
             if (features != null) {
-                Object temp = features.get(XMLConstants.FEATURE_SECURE_PROCESSING);
+                Boolean temp = features.get(XMLConstants.FEATURE_SECURE_PROCESSING);
                 if (temp != null) {
-                    boolean value = ((Boolean) temp).booleanValue();
-                    if (value && Constants.IS_JDK8_OR_ABOVE) {
+                    if (temp && Constants.IS_JDK8_OR_ABOVE) {
                         fSecurityPropertyMgr.setValue(Property.ACCESS_EXTERNAL_DTD,
                                 State.FSP, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
                         fSecurityPropertyMgr.setValue(Property.ACCESS_EXTERNAL_SCHEMA,
@@ -240,15 +240,11 @@ public class DocumentBuilderImpl extends DocumentBuilder
         fInitEntityResolver = domParser.getEntityResolver();
     }
 
-    private void setFeatures(Hashtable features)
+    private void setFeatures( Map<String, Boolean> features)
         throws SAXNotSupportedException, SAXNotRecognizedException {
         if (features != null) {
-            Iterator entries = features.entrySet().iterator();
-            while (entries.hasNext()) {
-                Map.Entry entry = (Map.Entry) entries.next();
-                String feature = (String) entry.getKey();
-                boolean value = ((Boolean) entry.getValue()).booleanValue();
-                domParser.setFeature(feature, value);
+            for (Map.Entry<String, Boolean> entry : features.entrySet()) {
+                domParser.setFeature(entry.getKey(), entry.getValue());
         }
     }
     }
@@ -260,7 +256,7 @@ public class DocumentBuilderImpl extends DocumentBuilder
      * attribute names and JAXP specific attribute names,
      * eg. DocumentBuilderFactory.setValidating()
      */
-    private void setDocumentBuilderFactoryAttributes(Hashtable dbfAttrs)
+    private void setDocumentBuilderFactoryAttributes( Map<String, Object> dbfAttrs)
         throws SAXNotSupportedException, SAXNotRecognizedException
     {
         if (dbfAttrs == null) {
@@ -268,14 +264,12 @@ public class DocumentBuilderImpl extends DocumentBuilder
             return;
         }
 
-        Iterator entries = dbfAttrs.entrySet().iterator();
-        while (entries.hasNext()) {
-            Map.Entry entry = (Map.Entry) entries.next();
-            String name = (String) entry.getKey();
+        for (Map.Entry<String, Object> entry : dbfAttrs.entrySet()) {
+            String name = entry.getKey();
             Object val = entry.getValue();
             if (val instanceof Boolean) {
                 // Assume feature
-                domParser.setFeature(name, ((Boolean)val).booleanValue());
+                domParser.setFeature(name, (Boolean)val);
             } else {
                 // Assume property
                 if (JAXP_SCHEMA_LANGUAGE.equals(name)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package javax.swing;
 import java.awt.*;
 import java.awt.image.*;
 import java.beans.ConstructorProperties;
+import java.beans.BeanProperty;
 import java.beans.Transient;
 import java.net.URL;
 
@@ -567,11 +568,10 @@ public class ImageIcon implements Icon, Serializable, Accessible {
      *
      * @return an AccessibleImageIcon that serves as the
      *         AccessibleContext of this ImageIcon
-     * @beaninfo
-     *       expert: true
-     *  description: The AccessibleContext associated with this ImageIcon.
      * @since 1.3
      */
+    @BeanProperty(expert = true, description
+            = "The AccessibleContext associated with this ImageIcon.")
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleImageIcon();

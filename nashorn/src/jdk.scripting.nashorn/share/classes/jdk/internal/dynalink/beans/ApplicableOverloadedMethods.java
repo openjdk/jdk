@@ -86,12 +86,10 @@ package jdk.internal.dynalink.beans;
 import java.lang.invoke.MethodType;
 import java.util.LinkedList;
 import java.util.List;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
  * Represents overloaded methods applicable to a specific call site signature.
- *
- * @author Attila Szegedi
  */
 class ApplicableOverloadedMethods {
     private final List<SingleDynamicMethod> methods;

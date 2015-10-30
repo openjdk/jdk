@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package sun.util.locale.provider;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
@@ -70,5 +69,5 @@ public class FallbackLocaleProviderAdapter extends JRELocaleProviderAdapter {
     @Override
     public boolean isSupportedProviderLocale(Locale locale, Set<String>langtags) {
         return Locale.ROOT.equals(locale);
-}
+    }
 }

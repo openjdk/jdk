@@ -294,6 +294,46 @@ public class Basic {
     }
 
     @Test(groups = "unit")
+    public void testOr() {
+        Optional<String> empty = Optional.empty();
+        Optional<String> duke = Optional.of("Duke");
+
+        // Null supplier
+        try {
+            Optional<String> b = empty.or(null);
+            fail("Should throw NPE on null supplier");
+        } catch (NullPointerException npe) {
+            // expected
+        }
+
+        // Supply null
+        try {
+            Optional<String> b = empty.or(() -> null);
+            fail("Should throw NPE when supplier returns null");
+        } catch (NullPointerException npe) {
+            // expected
+        }
+
+        // Non-empty won't invoke supplier
+        try {
+            Optional<String> b = duke.or(() -> null);
+            assertTrue(b.isPresent());
+        } catch (NullPointerException npe) {
+            fail("Supplier should not be invoked");
+        }
+
+        // Supply for empty
+        Optional<String> suppliedDuke = empty.or(() -> duke);
+        assertTrue(suppliedDuke.isPresent());
+        assertSame(suppliedDuke, duke);
+
+        // Supply for non-empty
+        Optional<String> actualDuke = duke.or(() -> Optional.of("Other Duke"));
+        assertTrue(actualDuke.isPresent());
+        assertSame(actualDuke, duke);
+    }
+
+    @Test(groups = "unit")
     public void testStream() {
         {
             Stream<String> s = Optional.<String>empty().stream();

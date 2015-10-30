@@ -54,7 +54,8 @@ public class CDataTransferer extends DataTransferer {
         "PDF",
         "URL",
         "PNG",
-        "JFIF"
+        "JFIF",
+        "XPICT"
     };
 
     static {
@@ -78,6 +79,7 @@ public class CDataTransferer extends DataTransferer {
     public static final int CF_URL         = 7;
     public static final int CF_PNG         = 8;
     public static final int CF_JPEG        = 9;
+    public static final int CF_XPICT       = 10;
 
     private CDataTransferer() {}
 

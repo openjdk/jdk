@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,16 +22,15 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package javax.swing;
 
 import javax.swing.plaf.*;
 import javax.accessibility.*;
 
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
-
 
 /**
  * <code>JSeparator</code> provides a general purpose component for
@@ -64,14 +63,12 @@ import java.io.IOException;
  * has been added to the <code>java.beans</code> package.
  * Please see {@link java.beans.XMLEncoder}.
  *
- * @beaninfo
- *      attribute: isContainer false
- *    description: A divider between menu items.
- *
  * @author Georges Saab
  * @author Jeff Shapiro
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UI", description = "A divider between menu items.")
+@SwingContainer(false)
 @SuppressWarnings("serial")
 public class JSeparator extends JComponent implements SwingConstants, Accessible
 {
@@ -122,12 +119,9 @@ public class JSeparator extends JComponent implements SwingConstants, Accessible
      *
      * @param ui  the SeparatorUI L&amp;F object
      * @see UIDefaults#getUI
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *    attribute: visualUpdate true
-     *  description: The UI object that implements the Component's LookAndFeel.
      */
+    @BeanProperty(hidden = true, visualUpdate = true, description
+            = "The UI object that implements the Component's LookAndFeel.")
     public void setUI(SeparatorUI ui) {
         super.setUI(ui);
     }
@@ -149,6 +143,7 @@ public class JSeparator extends JComponent implements SwingConstants, Accessible
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -196,14 +191,11 @@ public class JSeparator extends JComponent implements SwingConstants, Accessible
      *
      * @see SwingConstants
      * @see #getOrientation
-     * @beaninfo
-     *        bound: true
-     *    preferred: true
-     *         enum: HORIZONTAL SwingConstants.HORIZONTAL
-     *               VERTICAL   SwingConstants.VERTICAL
-     *    attribute: visualUpdate true
-     *  description: The orientation of the separator.
      */
+    @BeanProperty(preferred = true, visualUpdate = true, enumerationValues = {
+            "SwingConstants.HORIZONTAL",
+            "SwingConstants.VERTICAL"}, description
+            = "The orientation of the separator.")
     public void setOrientation( int orientation ) {
         if (this.orientation == orientation) {
             return;
@@ -260,6 +252,7 @@ public class JSeparator extends JComponent implements SwingConstants, Accessible
      * @return an AccessibleJSeparator that serves as the
      *         AccessibleContext of this JSeparator
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJSeparator();

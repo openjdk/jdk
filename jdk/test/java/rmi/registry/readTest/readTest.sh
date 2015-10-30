@@ -27,6 +27,7 @@
 # @build TestLibrary
 # @summary remove java.rmi.server.codebase property parsing from registyimpl
 # @run shell readTest.sh
+# @key intermittent
 
 OS=`uname -s`
 VER=`uname -r`

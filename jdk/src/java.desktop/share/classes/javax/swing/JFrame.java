@@ -36,11 +36,13 @@ import java.awt.Image;
 import java.awt.LayoutManager;
 import java.awt.event.WindowEvent;
 
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
+
 import javax.accessibility.Accessible;
 import javax.accessibility.AccessibleContext;
 import javax.accessibility.AccessibleState;
 import javax.accessibility.AccessibleStateSet;
-
 
 /**
  * An extended version of <code>java.awt.Frame</code> that adds support for
@@ -111,16 +113,13 @@ import javax.accessibility.AccessibleStateSet;
  * @see java.awt.event.WindowListener#windowClosing
  * @see javax.swing.RootPaneContainer
  *
- * @beaninfo
- *      attribute: isContainer true
- *      attribute: containerDelegate getContentPane
- *    description: A toplevel window which can be minimized to an icon.
- *
  * @author Jeff Dinkins
  * @author Georges Saab
  * @author David Kloba
  * @since 1.2
  */
+@JavaBean(defaultProperty = "JMenuBar", description = "A toplevel window which can be minimized to an icon.")
+@SwingContainer(delegate = "getContentPane")
 @SuppressWarnings("serial") // Same-version serialization only
 public class JFrame  extends Frame implements WindowConstants,
                                               Accessible,
@@ -368,16 +367,13 @@ public class JFrame  extends Frame implements WindowConstants,
      *        <code>SecurityManager</code> will
      *        not allow the caller to invoke <code>System.exit</code>
      * @see        java.lang.Runtime#exit(int)
-     *
-     * @beaninfo
-     *   preferred: true
-     *       bound: true
-     *        enum: DO_NOTHING_ON_CLOSE WindowConstants.DO_NOTHING_ON_CLOSE
-     *              HIDE_ON_CLOSE       WindowConstants.HIDE_ON_CLOSE
-     *              DISPOSE_ON_CLOSE    WindowConstants.DISPOSE_ON_CLOSE
-     *              EXIT_ON_CLOSE       WindowConstants.EXIT_ON_CLOSE
-     * description: The frame's default close operation.
      */
+    @BeanProperty(preferred = true, enumerationValues = {
+            "WindowConstants.DO_NOTHING_ON_CLOSE",
+            "WindowConstants.HIDE_ON_CLOSE",
+            "WindowConstants.DISPOSE_ON_CLOSE",
+            "WindowConstants.EXIT_ON_CLOSE"}, description
+            = "The frame's default close operation.")
     public void setDefaultCloseOperation(int operation) {
         if (operation != DO_NOTHING_ON_CLOSE &&
             operation != HIDE_ON_CLOSE &&
@@ -440,12 +436,9 @@ public class JFrame  extends Frame implements WindowConstants,
      * @see #getTransferHandler
      * @see java.awt.Component#setDropTarget
      * @since 1.6
-     *
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *  description: Mechanism for transfer of data into the component
      */
+    @BeanProperty(hidden = true, description
+            = "Mechanism for transfer of data into the component")
     public void setTransferHandler(TransferHandler newHandler) {
         TransferHandler oldHandler = transferHandler;
         transferHandler = newHandler;
@@ -481,11 +474,9 @@ public class JFrame  extends Frame implements WindowConstants,
     * @param menubar the menubar being placed in the frame
     *
     * @see #getJMenuBar
-    *
-    * @beaninfo
-    *      hidden: true
-    * description: The menubar for accessing pulldown menus from this frame.
     */
+    @BeanProperty(bound = false, hidden = true, description
+            = "The menubar for accessing pulldown menus from this frame.")
     public void setJMenuBar(final JMenuBar menubar) {
         getRootPane().setJMenuBar(menubar);
     }
@@ -529,10 +520,9 @@ public class JFrame  extends Frame implements WindowConstants,
      * @see #setLayout
      * @see #isRootPaneCheckingEnabled
      * @see javax.swing.RootPaneContainer
-     * @beaninfo
-     *      hidden: true
-     * description: Whether the add and setLayout methods are forwarded
      */
+    @BeanProperty(hidden = true, description
+            = "Whether the add and setLayout methods are forwarded")
     protected void setRootPaneCheckingEnabled(boolean enabled) {
         rootPaneCheckingEnabled = enabled;
     }
@@ -616,6 +606,8 @@ public class JFrame  extends Frame implements WindowConstants,
      * @see #setRootPane
      * @see RootPaneContainer#getRootPane
      */
+    @BeanProperty(bound = false, hidden = true, description
+            = "the RootPane object for this frame.")
     public JRootPane getRootPane() {
         return rootPane;
     }
@@ -627,10 +619,6 @@ public class JFrame  extends Frame implements WindowConstants,
      * @param root the <code>rootPane</code> object for this frame
      *
      * @see #getRootPane
-     *
-     * @beaninfo
-     *   hidden: true
-     * description: the RootPane object for this frame.
      */
     protected void setRootPane(JRootPane root)
     {
@@ -684,12 +672,9 @@ public class JFrame  extends Frame implements WindowConstants,
      * @see #getContentPane
      * @see RootPaneContainer#setContentPane
      * @see JRootPane
-     *
-     * @beaninfo
-     *     hidden: true
-     *     description: The client area of the frame where child
-     *                  components are normally inserted.
      */
+    @BeanProperty(bound = false, hidden = true, description
+            = "The client area of the frame where child components are normally inserted.")
     public void setContentPane(Container contentPane) {
         getRootPane().setContentPane(contentPane);
     }
@@ -714,11 +699,9 @@ public class JFrame  extends Frame implements WindowConstants,
      *            exception) if the layered pane parameter is <code>null</code>
      * @see #getLayeredPane
      * @see RootPaneContainer#setLayeredPane
-     *
-     * @beaninfo
-     *     hidden: true
-     *     description: The pane that holds the various frame layers.
      */
+    @BeanProperty(bound = false, hidden = true, description
+            = "The pane that holds the various frame layers.")
     public void setLayeredPane(JLayeredPane layeredPane) {
         getRootPane().setLayeredPane(layeredPane);
     }
@@ -741,11 +724,9 @@ public class JFrame  extends Frame implements WindowConstants,
      *
      * @see #getGlassPane
      * @see RootPaneContainer#setGlassPane
-     *
-     * @beaninfo
-     *     hidden: true
-     *     description: A transparent pane used for menu rendering.
      */
+    @BeanProperty(bound = false, hidden = true, description
+            = "A transparent pane used for menu rendering.")
     public void setGlassPane(Component glassPane) {
         getRootPane().setGlassPane(glassPane);
     }
@@ -755,6 +736,7 @@ public class JFrame  extends Frame implements WindowConstants,
      *
      * @since 1.6
      */
+    @BeanProperty(bound = false)
     public Graphics getGraphics() {
         JComponent.getGraphicsInvoked(this);
         return super.getGraphics();

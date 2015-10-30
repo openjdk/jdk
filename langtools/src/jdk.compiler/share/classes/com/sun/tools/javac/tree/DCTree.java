@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 
 package com.sun.tools.javac.tree;
 
-
 import javax.tools.Diagnostic;
 
 import com.sun.source.doctree.*;
@@ -39,8 +38,10 @@ import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Position;
+
 import java.io.IOException;
 import java.io.StringWriter;
+
 import javax.tools.JavaFileObject;
 
 /**
@@ -104,14 +105,19 @@ public abstract class DCTree implements DocTree {
     public static class DCDocComment extends DCTree implements DocCommentTree {
         public final Comment comment; // required for the implicit source pos table
 
+        public final List<DCTree> fullBody;
         public final List<DCTree> firstSentence;
         public final List<DCTree> body;
         public final List<DCTree> tags;
 
         public DCDocComment(Comment comment,
-                List<DCTree> firstSentence, List<DCTree> body, List<DCTree> tags) {
+                            List<DCTree> fullBody,
+                            List<DCTree> firstSentence,
+                            List<DCTree> body,
+                            List<DCTree> tags) {
             this.comment = comment;
             this.firstSentence = firstSentence;
+            this.fullBody = fullBody;
             this.body = body;
             this.tags = tags;
         }
@@ -129,6 +135,11 @@ public abstract class DCTree implements DocTree {
         @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getFirstSentence() {
             return firstSentence;
+        }
+
+        @DefinedBy(Api.COMPILER_TREE)
+        public List<? extends DocTree> getFullBody() {
+            return fullBody;
         }
 
         @DefinedBy(Api.COMPILER_TREE)

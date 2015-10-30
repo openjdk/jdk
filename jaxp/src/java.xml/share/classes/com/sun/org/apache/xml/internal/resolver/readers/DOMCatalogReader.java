@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -25,7 +28,8 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -70,7 +74,7 @@ public class DOMCatalogReader implements CatalogReader {
    * or "{namespaceuri}elementname". The former is used if the
    * namespace URI is null.</p>
    */
-  protected Hashtable namespaceMap = new Hashtable();
+  protected Map<String, String> namespaceMap = new HashMap<>();
 
   /**
    * Add a new parser to the reader.
@@ -106,9 +110,9 @@ public class DOMCatalogReader implements CatalogReader {
   public String getCatalogParser(String namespaceURI,
                                  String rootElement) {
     if (namespaceURI == null) {
-      return (String) namespaceMap.get(rootElement);
+      return namespaceMap.get(rootElement);
     } else {
-      return (String) namespaceMap.get("{"+namespaceURI+"}"+rootElement);
+      return namespaceMap.get("{"+namespaceURI+"}"+rootElement);
     }
   }
 

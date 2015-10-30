@@ -77,6 +77,7 @@ $(GENSRC_DIR)/_gensrc_proc_done: $(PROC_SRCS) \
 	$(MKDIR) -p $(@D)
 	$(eval $(call ListPathsSafely,PROC_SRCS,$(@D)/_gensrc_proc_files))
 	$(JAVA_SMALL) $(NEW_JAVAC) \
+	    -XDignore.symbol.file \
 	    -sourcepath $(SOURCEPATH) \
 	    -implicit:none \
 	    -proc:only \

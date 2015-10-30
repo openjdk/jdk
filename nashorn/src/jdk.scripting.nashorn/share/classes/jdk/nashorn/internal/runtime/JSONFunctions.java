@@ -45,7 +45,7 @@ public final class JSONFunctions {
                 new Callable<MethodHandle>() {
                     @Override
                     public MethodHandle call() {
-                        return Bootstrap.createDynamicInvoker("dyn:call", Object.class,
+                        return Bootstrap.createDynamicCallInvoker(Object.class,
                             ScriptFunction.class, ScriptObject.class, String.class, Object.class);
                     }
                 });

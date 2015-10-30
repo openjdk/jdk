@@ -559,6 +559,10 @@ public class IIOPOutputStream
              * Push all the clases of the current object onto a stack.
              * Remember the stack pointer where this set of classes is being pushed.
              */
+            if (currentClassDesc.forClass().getName().equals("java.lang.String")) {
+                    this.writeUTF((String)obj);
+                    return;
+            }
             int stackMark = classDescStack.size();
             try {
                 ObjectStreamClass next;

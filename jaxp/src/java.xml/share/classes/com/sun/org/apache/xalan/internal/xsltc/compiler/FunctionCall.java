@@ -1,15 +1,15 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,13 +22,6 @@
  */
 
 package com.sun.org.apache.xalan.internal.xsltc.compiler;
-
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Vector;
 
 import com.sun.org.apache.bcel.internal.generic.ConstantPoolGen;
 import com.sun.org.apache.bcel.internal.generic.IFEQ;
@@ -43,6 +36,7 @@ import com.sun.org.apache.bcel.internal.generic.LocalVariableGen;
 import com.sun.org.apache.bcel.internal.generic.NEW;
 import com.sun.org.apache.bcel.internal.generic.PUSH;
 import com.sun.org.apache.xalan.internal.utils.FeatureManager;
+import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.BooleanType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ClassGenerator;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ErrorMsg;
@@ -54,8 +48,15 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ObjectType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.ReferenceType;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
-import com.sun.org.apache.xalan.internal.utils.ObjectFactory;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Vector;
 
 /**
  * @author Jacek Ambroziak
@@ -138,23 +139,23 @@ class FunctionCall extends Expression {
     private boolean       _isStatic = false;
 
     // Legal conversions between internal and Java types.
-    private static final MultiHashtable _internal2Java = new MultiHashtable();
+    private static final MultiHashtable<Type, JavaType> _internal2Java = new MultiHashtable<>();
 
     // Legal conversions between Java and internal types.
-    private static final Hashtable _java2Internal = new Hashtable();
+    private static final Map<Class<?>, Type> JAVA2INTERNAL;
 
     // The mappings between EXSLT extension namespaces and implementation classes
-    private static final Hashtable _extensionNamespaceTable = new Hashtable();
+    private static final Map<String, String> EXTENSIONNAMESPACE;
 
     // Extension functions that are implemented in BasisLibrary
-    private static final Hashtable _extensionFunctionTable = new Hashtable();
+    private static final Map<String, String> EXTENSIONFUNCTION;
     /**
      * inner class to used in internal2Java mappings, contains
      * the Java type and the distance between the internal type and
      * the Java type.
      */
     static class JavaType {
-        public Class  type;
+        public Class<?>  type;
         public int distance;
 
         public JavaType(Class type, int distance){
@@ -168,8 +169,15 @@ class FunctionCall extends Expression {
         }
 
         @Override
-        public boolean equals(Object query){
-            return query != null && query.equals(type);
+        public boolean equals(Object query) {
+            if (query == null) {
+                return false;
+            }
+            if (query.getClass().isAssignableFrom(JavaType.class)) {
+                return ((JavaType)query).type.equals(type);
+            } else {
+                return query.equals(type);
+            }
         }
     }
 
@@ -180,99 +188,112 @@ class FunctionCall extends Expression {
      * These two tables are used when calling external (Java) functions.
      */
     static {
+        final Class<?> nodeClass, nodeListClass;
         try {
-            final Class nodeClass     = Class.forName("org.w3c.dom.Node");
-            final Class nodeListClass = Class.forName("org.w3c.dom.NodeList");
-
-            // -- Internal to Java --------------------------------------------
-
-            // Type.Boolean -> { boolean(0), Boolean(1), Object(2) }
-            _internal2Java.put(Type.Boolean, new JavaType(Boolean.TYPE, 0));
-            _internal2Java.put(Type.Boolean, new JavaType(Boolean.class, 1));
-            _internal2Java.put(Type.Boolean, new JavaType(Object.class, 2));
-
-            // Type.Real -> { double(0), Double(1), float(2), long(3), int(4),
-            //                short(5), byte(6), char(7), Object(8) }
-            _internal2Java.put(Type.Real, new JavaType(Double.TYPE, 0));
-            _internal2Java.put(Type.Real, new JavaType(Double.class, 1));
-            _internal2Java.put(Type.Real, new JavaType(Float.TYPE, 2));
-            _internal2Java.put(Type.Real, new JavaType(Long.TYPE, 3));
-            _internal2Java.put(Type.Real, new JavaType(Integer.TYPE, 4));
-            _internal2Java.put(Type.Real, new JavaType(Short.TYPE, 5));
-            _internal2Java.put(Type.Real, new JavaType(Byte.TYPE, 6));
-            _internal2Java.put(Type.Real, new JavaType(Character.TYPE, 7));
-            _internal2Java.put(Type.Real, new JavaType(Object.class, 8));
-
-            // Type.Int must be the same as Type.Real
-            _internal2Java.put(Type.Int, new JavaType(Double.TYPE, 0));
-            _internal2Java.put(Type.Int, new JavaType(Double.class, 1));
-            _internal2Java.put(Type.Int, new JavaType(Float.TYPE, 2));
-            _internal2Java.put(Type.Int, new JavaType(Long.TYPE, 3));
-            _internal2Java.put(Type.Int, new JavaType(Integer.TYPE, 4));
-            _internal2Java.put(Type.Int, new JavaType(Short.TYPE, 5));
-            _internal2Java.put(Type.Int, new JavaType(Byte.TYPE, 6));
-            _internal2Java.put(Type.Int, new JavaType(Character.TYPE, 7));
-            _internal2Java.put(Type.Int, new JavaType(Object.class, 8));
-
-            // Type.String -> { String(0), Object(1) }
-            _internal2Java.put(Type.String, new JavaType(String.class, 0));
-            _internal2Java.put(Type.String, new JavaType(Object.class, 1));
-
-            // Type.NodeSet -> { NodeList(0), Node(1), Object(2), String(3) }
-            _internal2Java.put(Type.NodeSet, new JavaType(nodeListClass, 0));
-            _internal2Java.put(Type.NodeSet, new JavaType(nodeClass, 1));
-            _internal2Java.put(Type.NodeSet, new JavaType(Object.class, 2));
-            _internal2Java.put(Type.NodeSet, new JavaType(String.class, 3));
-
-            // Type.Node -> { Node(0), NodeList(1), Object(2), String(3) }
-            _internal2Java.put(Type.Node, new JavaType(nodeListClass, 0));
-            _internal2Java.put(Type.Node, new JavaType(nodeClass, 1));
-            _internal2Java.put(Type.Node, new JavaType(Object.class, 2));
-            _internal2Java.put(Type.Node, new JavaType(String.class, 3));
-
-            // Type.ResultTree -> { NodeList(0), Node(1), Object(2), String(3) }
-            _internal2Java.put(Type.ResultTree, new JavaType(nodeListClass, 0));
-            _internal2Java.put(Type.ResultTree, new JavaType(nodeClass, 1));
-            _internal2Java.put(Type.ResultTree, new JavaType(Object.class, 2));
-            _internal2Java.put(Type.ResultTree, new JavaType(String.class, 3));
-
-            _internal2Java.put(Type.Reference, new JavaType(Object.class, 0));
-
-            // Possible conversions between Java and internal types
-            _java2Internal.put(Boolean.TYPE, Type.Boolean);
-            _java2Internal.put(Void.TYPE, Type.Void);
-            _java2Internal.put(Character.TYPE, Type.Real);
-            _java2Internal.put(Byte.TYPE, Type.Real);
-            _java2Internal.put(Short.TYPE, Type.Real);
-            _java2Internal.put(Integer.TYPE, Type.Real);
-            _java2Internal.put(Long.TYPE, Type.Real);
-            _java2Internal.put(Float.TYPE, Type.Real);
-            _java2Internal.put(Double.TYPE, Type.Real);
-
-            _java2Internal.put(String.class, Type.String);
-
-            _java2Internal.put(Object.class, Type.Reference);
-
-            // Conversions from org.w3c.dom.Node/NodeList to internal NodeSet
-            _java2Internal.put(nodeListClass, Type.NodeSet);
-            _java2Internal.put(nodeClass, Type.NodeSet);
-
-            // Initialize the extension namespace table
-            _extensionNamespaceTable.put(EXT_XALAN, "com.sun.org.apache.xalan.internal.lib.Extensions");
-            _extensionNamespaceTable.put(EXSLT_COMMON, "com.sun.org.apache.xalan.internal.lib.ExsltCommon");
-            _extensionNamespaceTable.put(EXSLT_MATH, "com.sun.org.apache.xalan.internal.lib.ExsltMath");
-            _extensionNamespaceTable.put(EXSLT_SETS, "com.sun.org.apache.xalan.internal.lib.ExsltSets");
-            _extensionNamespaceTable.put(EXSLT_DATETIME, "com.sun.org.apache.xalan.internal.lib.ExsltDatetime");
-            _extensionNamespaceTable.put(EXSLT_STRINGS, "com.sun.org.apache.xalan.internal.lib.ExsltStrings");
-
-            // Initialize the extension function table
-            _extensionFunctionTable.put(EXSLT_COMMON + ":nodeSet", "nodeset");
-            _extensionFunctionTable.put(EXSLT_COMMON + ":objectType", "objectType");
-            _extensionFunctionTable.put(EXT_XALAN + ":nodeset", "nodeset");
+            nodeClass     = Class.forName("org.w3c.dom.Node");
+            nodeListClass = Class.forName("org.w3c.dom.NodeList");
         }
         catch (ClassNotFoundException e) {
-            System.err.println(e);
+            ErrorMsg err = new ErrorMsg(ErrorMsg.CLASS_NOT_FOUND_ERR,"org.w3c.dom.Node or NodeList");
+            throw new Error(err.toString());
         }
+
+        // -- Internal to Java --------------------------------------------
+
+        // Type.Boolean -> { boolean(0), Boolean(1), Object(2) }
+        _internal2Java.put(Type.Boolean, new JavaType(Boolean.TYPE, 0));
+        _internal2Java.put(Type.Boolean, new JavaType(Boolean.class, 1));
+        _internal2Java.put(Type.Boolean, new JavaType(Object.class, 2));
+
+        // Type.Real -> { double(0), Double(1), float(2), long(3), int(4),
+        //                short(5), byte(6), char(7), Object(8) }
+        _internal2Java.put(Type.Real, new JavaType(Double.TYPE, 0));
+        _internal2Java.put(Type.Real, new JavaType(Double.class, 1));
+        _internal2Java.put(Type.Real, new JavaType(Float.TYPE, 2));
+        _internal2Java.put(Type.Real, new JavaType(Long.TYPE, 3));
+        _internal2Java.put(Type.Real, new JavaType(Integer.TYPE, 4));
+        _internal2Java.put(Type.Real, new JavaType(Short.TYPE, 5));
+        _internal2Java.put(Type.Real, new JavaType(Byte.TYPE, 6));
+        _internal2Java.put(Type.Real, new JavaType(Character.TYPE, 7));
+        _internal2Java.put(Type.Real, new JavaType(Object.class, 8));
+
+        // Type.Int must be the same as Type.Real
+        _internal2Java.put(Type.Int, new JavaType(Double.TYPE, 0));
+        _internal2Java.put(Type.Int, new JavaType(Double.class, 1));
+        _internal2Java.put(Type.Int, new JavaType(Float.TYPE, 2));
+        _internal2Java.put(Type.Int, new JavaType(Long.TYPE, 3));
+        _internal2Java.put(Type.Int, new JavaType(Integer.TYPE, 4));
+        _internal2Java.put(Type.Int, new JavaType(Short.TYPE, 5));
+        _internal2Java.put(Type.Int, new JavaType(Byte.TYPE, 6));
+        _internal2Java.put(Type.Int, new JavaType(Character.TYPE, 7));
+        _internal2Java.put(Type.Int, new JavaType(Object.class, 8));
+
+        // Type.String -> { String(0), Object(1) }
+        _internal2Java.put(Type.String, new JavaType(String.class, 0));
+        _internal2Java.put(Type.String, new JavaType(Object.class, 1));
+
+        // Type.NodeSet -> { NodeList(0), Node(1), Object(2), String(3) }
+        _internal2Java.put(Type.NodeSet, new JavaType(nodeListClass, 0));
+        _internal2Java.put(Type.NodeSet, new JavaType(nodeClass, 1));
+        _internal2Java.put(Type.NodeSet, new JavaType(Object.class, 2));
+        _internal2Java.put(Type.NodeSet, new JavaType(String.class, 3));
+
+        // Type.Node -> { Node(0), NodeList(1), Object(2), String(3) }
+        _internal2Java.put(Type.Node, new JavaType(nodeListClass, 0));
+        _internal2Java.put(Type.Node, new JavaType(nodeClass, 1));
+        _internal2Java.put(Type.Node, new JavaType(Object.class, 2));
+        _internal2Java.put(Type.Node, new JavaType(String.class, 3));
+
+        // Type.ResultTree -> { NodeList(0), Node(1), Object(2), String(3) }
+        _internal2Java.put(Type.ResultTree, new JavaType(nodeListClass, 0));
+        _internal2Java.put(Type.ResultTree, new JavaType(nodeClass, 1));
+        _internal2Java.put(Type.ResultTree, new JavaType(Object.class, 2));
+        _internal2Java.put(Type.ResultTree, new JavaType(String.class, 3));
+
+        _internal2Java.put(Type.Reference, new JavaType(Object.class, 0));
+
+        _internal2Java.makeUnmodifiable();
+
+        Map<Class<?>, Type> java2Internal = new HashMap<>();
+        Map<String, String> extensionNamespaceTable = new HashMap<>();
+        Map<String, String> extensionFunctionTable = new HashMap<>();
+
+        // Possible conversions between Java and internal types
+        java2Internal.put(Boolean.TYPE, Type.Boolean);
+        java2Internal.put(Void.TYPE, Type.Void);
+        java2Internal.put(Character.TYPE, Type.Real);
+        java2Internal.put(Byte.TYPE, Type.Real);
+        java2Internal.put(Short.TYPE, Type.Real);
+        java2Internal.put(Integer.TYPE, Type.Real);
+        java2Internal.put(Long.TYPE, Type.Real);
+        java2Internal.put(Float.TYPE, Type.Real);
+        java2Internal.put(Double.TYPE, Type.Real);
+
+        java2Internal.put(String.class, Type.String);
+
+        java2Internal.put(Object.class, Type.Reference);
+
+        // Conversions from org.w3c.dom.Node/NodeList to internal NodeSet
+        java2Internal.put(nodeListClass, Type.NodeSet);
+        java2Internal.put(nodeClass, Type.NodeSet);
+
+        // Initialize the extension namespace table
+        extensionNamespaceTable.put(EXT_XALAN, "com.sun.org.apache.xalan.internal.lib.Extensions");
+        extensionNamespaceTable.put(EXSLT_COMMON, "com.sun.org.apache.xalan.internal.lib.ExsltCommon");
+        extensionNamespaceTable.put(EXSLT_MATH, "com.sun.org.apache.xalan.internal.lib.ExsltMath");
+        extensionNamespaceTable.put(EXSLT_SETS, "com.sun.org.apache.xalan.internal.lib.ExsltSets");
+        extensionNamespaceTable.put(EXSLT_DATETIME, "com.sun.org.apache.xalan.internal.lib.ExsltDatetime");
+        extensionNamespaceTable.put(EXSLT_STRINGS, "com.sun.org.apache.xalan.internal.lib.ExsltStrings");
+
+        // Initialize the extension function table
+        extensionFunctionTable.put(EXSLT_COMMON + ":nodeSet", "nodeset");
+        extensionFunctionTable.put(EXSLT_COMMON + ":objectType", "objectType");
+        extensionFunctionTable.put(EXT_XALAN + ":nodeset", "nodeset");
+
+        JAVA2INTERNAL = Collections.unmodifiableMap(java2Internal);
+        EXTENSIONNAMESPACE = Collections.unmodifiableMap(extensionNamespaceTable);
+        EXTENSIONFUNCTION = Collections.unmodifiableMap(extensionFunctionTable);
+
     }
 
     public FunctionCall(QName fname, Vector arguments) {
@@ -304,7 +325,7 @@ class FunctionCall extends Expression {
 
     public String getClassNameFromUri(String uri)
     {
-        String className = (String)_extensionNamespaceTable.get(uri);
+        String className = EXTENSIONNAMESPACE.get(uri);
 
         if (className != null)
             return className;
@@ -384,7 +405,7 @@ class FunctionCall extends Expression {
                         local = replaceDash(local);
                     }
 
-                    String extFunction = (String)_extensionFunctionTable.get(namespace + ":" + local);
+                    String extFunction = EXTENSIONFUNCTION.get(namespace + ":" + local);
                     if (extFunction != null) {
                         _fname = new QName(null, null, extFunction);
                         return typeCheckStandard(stable);
@@ -464,15 +485,15 @@ class FunctionCall extends Expression {
                 (Constructor)constructors.elementAt(i);
             final Class[] paramTypes = constructor.getParameterTypes();
 
-            Class extType = null;
+            Class<?> extType;
             int currConstrDistance = 0;
             for (j = 0; j < nArgs; j++) {
                 // Convert from internal (translet) type to external (Java) type
                 extType = paramTypes[j];
                 final Type intType = (Type)argsType.elementAt(j);
-                Object match = _internal2Java.maps(intType, extType);
+                JavaType match = _internal2Java.maps(intType, new JavaType(extType, 0));
                 if (match != null) {
-                    currConstrDistance += ((JavaType)match).distance;
+                    currConstrDistance += match.distance;
                 }
                 else if (intType instanceof ObjectType) {
                     ObjectType objectType = (ObjectType)intType;
@@ -597,9 +618,9 @@ class FunctionCall extends Expression {
                 // Convert from internal (translet) type to external (Java) type
                 extType = paramTypes[j];
                 final Type intType = (Type)argsType.elementAt(j);
-                Object match = _internal2Java.maps(intType, extType);
+                JavaType match = _internal2Java.maps(intType, new JavaType(extType, 0));
                 if (match != null) {
-                    currMethodDistance += ((JavaType)match).distance;
+                    currMethodDistance += match.distance;
                 }
                 else {
                     // no mapping available
@@ -631,7 +652,7 @@ class FunctionCall extends Expression {
                   // Check if the return type can be converted
                   extType = method.getReturnType();
 
-                  _type = (Type) _java2Internal.get(extType);
+                  _type = JAVA2INTERNAL.get(extType);
                   if (_type == null) {
                       _type = Type.newObjectType(extType);
                   }

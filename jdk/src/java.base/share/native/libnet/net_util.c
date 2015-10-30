@@ -174,6 +174,7 @@ void setInetAddress_family(JNIEnv *env, jobject iaObj, int family) {
 void setInetAddress_hostName(JNIEnv *env, jobject iaObj, jobject host) {
     jobject holder = (*env)->GetObjectField(env, iaObj, ia_holderID);
     (*env)->SetObjectField(env, holder, iac_hostNameID, host);
+    (*env)->SetObjectField(env, holder, iac_origHostNameID, host);
 }
 
 int getInetAddress_addr(JNIEnv *env, jobject iaObj) {

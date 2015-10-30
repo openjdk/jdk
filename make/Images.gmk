@@ -39,7 +39,8 @@ $(eval $(call IncludeCustomExtension, , Images-pre.gmk))
 
 MAIN_MODULES += java.se java.smartcardio jdk.httpserver jdk.sctp \
                jdk.security.auth jdk.security.jgss jdk.pack200 jdk.xml.dom \
-               jdk.accessibility jdk.internal.le jdk.scripting.nashorn.shell
+               jdk.accessibility jdk.internal.le jdk.scripting.nashorn.shell \
+               jdk.vm.ci
 
 # providers
 PROVIDER_MODULES += jdk.charsets jdk.crypto.ec jdk.crypto.pkcs11 jdk.jvmstat jdk.localedata \
@@ -48,7 +49,8 @@ PROVIDER_MODULES += jdk.charsets jdk.crypto.ec jdk.crypto.pkcs11 jdk.jvmstat jdk
 # tools
 TOOLS_MODULES += jdk.attach jdk.compiler jdk.dev \
                jdk.javadoc jdk.jcmd jdk.jconsole jdk.hotspot.agent jdk.jartool \
-               jdk.jdeps jdk.jdi jdk.jdwp.agent jdk.policytool jdk.rmic jdk.xml.bind jdk.xml.ws
+               jdk.jdeps jdk.jdi jdk.jdwp.agent jdk.jshell jdk.policytool jdk.rmic \
+               jdk.xml.bind jdk.xml.ws
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   PROVIDER_MODULES += jdk.crypto.mscapi

@@ -29,10 +29,10 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
-import jdk.internal.dynalink.support.TypeUtilities;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
+import jdk.internal.dynalink.linker.support.TypeUtilities;
 
 /**
  * Implementation of {@link ArrayData} as soon as a double has been

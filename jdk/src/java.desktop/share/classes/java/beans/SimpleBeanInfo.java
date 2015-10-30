@@ -28,6 +28,8 @@ package java.beans;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.io.InputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * This is a support class to make it easier for people to provide
@@ -41,13 +43,13 @@ import java.io.InputStream;
  *
  * @since 1.1
  */
-
 public class SimpleBeanInfo implements BeanInfo {
 
     /**
      * Deny knowledge about the class and customizer of the bean.
      * You can override this if you wish to provide explicit info.
      */
+    @Override
     public BeanDescriptor getBeanDescriptor() {
         return null;
     }
@@ -56,6 +58,7 @@ public class SimpleBeanInfo implements BeanInfo {
      * Deny knowledge of properties. You can override this
      * if you wish to provide explicit property info.
      */
+    @Override
     public PropertyDescriptor[] getPropertyDescriptors() {
         return null;
     }
@@ -64,6 +67,7 @@ public class SimpleBeanInfo implements BeanInfo {
      * Deny knowledge of a default property. You can override this
      * if you wish to define a default property for the bean.
      */
+    @Override
     public int getDefaultPropertyIndex() {
         return -1;
     }
@@ -72,6 +76,7 @@ public class SimpleBeanInfo implements BeanInfo {
      * Deny knowledge of event sets. You can override this
      * if you wish to provide explicit event set info.
      */
+    @Override
     public EventSetDescriptor[] getEventSetDescriptors() {
         return null;
     }
@@ -80,6 +85,7 @@ public class SimpleBeanInfo implements BeanInfo {
      * Deny knowledge of a default event. You can override this
      * if you wish to define a default event for the bean.
      */
+    @Override
     public int getDefaultEventIndex() {
         return -1;
     }
@@ -88,6 +94,7 @@ public class SimpleBeanInfo implements BeanInfo {
      * Deny knowledge of methods. You can override this
      * if you wish to provide explicit method info.
      */
+    @Override
     public MethodDescriptor[] getMethodDescriptors() {
         return null;
     }
@@ -97,6 +104,7 @@ public class SimpleBeanInfo implements BeanInfo {
      * may override this if you want to (for example) return a
      * BeanInfo for a base class.
      */
+    @Override
     public BeanInfo[] getAdditionalBeanInfo() {
         return null;
     }
@@ -105,8 +113,61 @@ public class SimpleBeanInfo implements BeanInfo {
      * Claim there are no icons available.  You can override
      * this if you want to provide icons for your bean.
      */
-    public Image getIcon(int iconKind) {
+    @Override
+    public Image getIcon(final int iconKind) {
+        final BeanDescriptor descriptor = getBeanDescriptor();
+        if (descriptor != null) {
+            final Class<?> type = descriptor.getBeanClass();
+            if (type != null && type.getClassLoader() == null
+                    && type.getAnnotation(JavaBean.class) != null) {
+                final String name = type.getName();
+                final int index = name.lastIndexOf('.');
+                if (name.substring(0, index).equals("javax.swing")) {
+                    final String className = type.getSimpleName();
+                    switch (iconKind) {
+                        case ICON_COLOR_32x32:
+                            return loadImage(className, "Color32.gif");
+                        case ICON_COLOR_16x16:
+                            return loadImage(className, "Color16.gif");
+                        case ICON_MONO_32x32:
+                            return loadImage(className, "Mono32.gif");
+                        case ICON_MONO_16x16:
+                            return loadImage(className, "Mono16.gif");
+                    }
+                }
+            }
+        }
         return null;
+    }
+
+    /**
+     * This is a utility method to help in loading standard icon images.
+     *
+     * @param  resourceName A pathname relative to the directory holding the
+     *         class file of the current class
+     * @return an image object. May be null if the load failed.
+     * @see java.beans.SimpleBeanInfo#loadImage(String)
+     */
+    private Image loadStandardImage(final String resourceName) {
+        return AccessController.doPrivileged(
+                (PrivilegedAction<Image>) () -> loadImage(resourceName));
+    }
+
+    /**
+     * This is a utility method to help in loading standard icon images.
+     *
+     * @param  resourceName A pathname relative to the directory holding the
+     *         class file of the current class
+     * @param  suffix A {@code String} containing a file suffix (<i>e.g.</i>,
+     *         "Color32.gif" or "Mono32.gif")
+     * @return an image object. May be null if the load failed.
+     * @see java.beans.SimpleBeanInfo#loadImage(String)
+     */
+    private Image loadImage(final String resourceName, final String suffix) {
+        final String prefix = "/javax/swing/beaninfo/images/";
+        final Image image = loadStandardImage(prefix + resourceName + suffix);
+        return image == null ? loadStandardImage(prefix + "JComponent" + suffix)
+                             : image;
     }
 
     /**

@@ -1,0 +1,283 @@
+/*
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package jdk.jshell;
+
+
+import com.sun.source.tree.ClassTree;
+import com.sun.source.tree.CompilationUnitTree;
+import com.sun.source.tree.ExpressionTree;
+import com.sun.source.tree.MethodTree;
+import com.sun.source.tree.ReturnTree;
+import com.sun.source.tree.StatementTree;
+import com.sun.source.tree.Tree;
+import com.sun.source.tree.VariableTree;
+import com.sun.source.util.SourcePositions;
+import com.sun.source.util.TreePath;
+import com.sun.source.util.Trees;
+import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.code.Type.MethodType;
+import com.sun.tools.javac.code.Types;
+import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
+import com.sun.tools.javac.util.JavacMessages;
+import com.sun.tools.javac.util.Name;
+import static jdk.jshell.Util.isDoIt;
+import jdk.jshell.Wrap.Range;
+import java.util.List;
+import java.util.Locale;
+import java.util.function.BinaryOperator;
+import javax.lang.model.type.TypeMirror;
+
+/**
+ * Utilities for analyzing compiler API parse trees.
+ * @author Robert Field
+ */
+
+class TreeDissector {
+
+    private static final String OBJECT_TYPE = "Object";
+
+    static class ExpressionInfo {
+
+        boolean isNonVoid;
+        String typeName;
+        ExpressionTree tree;
+        String signature;
+    }
+
+    private final TaskFactory.BaseTask bt;
+    private ClassTree firstClass;
+    private SourcePositions theSourcePositions = null;
+
+    TreeDissector(TaskFactory.BaseTask bt) {
+        this.bt = bt;
+    }
+
+
+    ClassTree firstClass() {
+        if (firstClass == null) {
+            firstClass = computeFirstClass();
+        }
+        return firstClass;
+    }
+
+    CompilationUnitTree cuTree() {
+        return bt.cuTree();
+    }
+
+    Types types() {
+        return bt.types();
+    }
+
+    Trees trees() {
+        return bt.trees();
+    }
+
+    SourcePositions getSourcePositions() {
+        if (theSourcePositions == null) {
+            theSourcePositions = trees().getSourcePositions();
+        }
+        return theSourcePositions;
+    }
+
+    int getStartPosition(Tree tree) {
+        return (int) getSourcePositions().getStartPosition(cuTree(), tree);
+    }
+
+    int getEndPosition(Tree tree) {
+        return (int) getSourcePositions().getEndPosition(cuTree(), tree);
+    }
+
+    Range treeToRange(Tree tree) {
+        return new Range(getStartPosition(tree), getEndPosition(tree));
+    }
+
+    Range treeListToRange(List<? extends Tree> treeList) {
+        int start = Integer.MAX_VALUE;
+        int end = -1;
+        for (Tree t : treeList) {
+            int tstart = getStartPosition(t);
+            int tend = getEndPosition(t);
+            if (tstart < start) {
+                start = tstart;
+            }
+            if (tend > end) {
+                end = tend;
+            }
+        }
+        if (start == Integer.MAX_VALUE) {
+            return null;
+        }
+        return new Range(start, end);
+    }
+
+    Tree firstClassMember() {
+        if (firstClass() != null) {
+            //TODO: missing classes
+            for (Tree mem : firstClass().getMembers()) {
+                if (mem.getKind() == Tree.Kind.VARIABLE) {
+                    return mem;
+                }
+                if (mem.getKind() == Tree.Kind.METHOD) {
+                    MethodTree mt = (MethodTree) mem;
+                    if (!isDoIt(mt.getName()) && !mt.getName().toString().equals("<init>")) {
+                        return mt;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    StatementTree firstStatement() {
+        if (firstClass() != null) {
+            for (Tree mem : firstClass().getMembers()) {
+                if (mem.getKind() == Tree.Kind.METHOD) {
+                    MethodTree mt = (MethodTree) mem;
+                    if (isDoIt(mt.getName())) {
+                        List<? extends StatementTree> stmts = mt.getBody().getStatements();
+                        if (!stmts.isEmpty()) {
+                            return stmts.get(0);
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    VariableTree firstVariable() {
+        if (firstClass() != null) {
+            for (Tree mem : firstClass().getMembers()) {
+                if (mem.getKind() == Tree.Kind.VARIABLE) {
+                    VariableTree vt = (VariableTree) mem;
+                    return vt;
+                }
+            }
+        }
+        return null;
+    }
+
+    private ClassTree computeFirstClass() {
+        if (cuTree() == null) {
+            return null;
+        }
+        for (Tree decl : cuTree().getTypeDecls()) {
+            if (decl.getKind() == Tree.Kind.CLASS || decl.getKind() == Tree.Kind.INTERFACE) {
+                return (ClassTree) decl;
+            }
+        }
+        return null;
+    }
+
+    ExpressionInfo typeOfReturnStatement(JavacMessages messages, BinaryOperator<String> fullClassNameAndPackageToClass) {
+        ExpressionInfo ei = new ExpressionInfo();
+        Tree unitTree = firstStatement();
+        if (unitTree instanceof ReturnTree) {
+            ei.tree = ((ReturnTree) unitTree).getExpression();
+            if (ei.tree != null) {
+                TreePath viPath = trees().getPath(cuTree(), ei.tree);
+                if (viPath != null) {
+                    TypeMirror tm = trees().getTypeMirror(viPath);
+                    if (tm != null) {
+                        Type type = (Type)tm;
+                        TypePrinter tp = new TypePrinter(messages, fullClassNameAndPackageToClass, type);
+                        ei.typeName = tp.visit(type, Locale.getDefault());
+                        switch (tm.getKind()) {
+                            case VOID:
+                            case NONE:
+                            case ERROR:
+                            case OTHER:
+                                break;
+                            case NULL:
+                                ei.isNonVoid = true;
+                                ei.typeName = OBJECT_TYPE;
+                                break;
+                            default: {
+                                ei.isNonVoid = true;
+                                break;
+
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return ei;
+    }
+
+    String typeOfMethod() {
+        Tree unitTree = firstClassMember();
+        if (unitTree instanceof JCMethodDecl) {
+            JCMethodDecl mtree = (JCMethodDecl) unitTree;
+            Type mt = types().erasure(mtree.type);
+            if (mt instanceof MethodType) {
+                return signature(types(), (MethodType) mt);
+            }
+        }
+        return null;
+    }
+
+    static String signature(Types types, MethodType mt) {
+        TDSignatureGenerator sg = new TDSignatureGenerator(types);
+        sg.assembleSig(mt);
+        return sg.toString();
+    }
+
+    /**
+     * Signature Generation
+     */
+    private static class TDSignatureGenerator extends Types.SignatureGenerator {
+
+        /**
+         * An output buffer for type signatures.
+         */
+        StringBuilder sb = new StringBuilder();
+
+        TDSignatureGenerator(Types types) {
+            super(types);
+        }
+
+        @Override
+        protected void append(char ch) {
+            sb.append(ch);
+        }
+
+        @Override
+        protected void append(byte[] ba) {
+            sb.append(new String(ba));
+        }
+
+        @Override
+        protected void append(Name name) {
+            sb.append(name);
+        }
+
+        @Override
+        public String toString() {
+            return sb.toString();
+        }
+    }
+}

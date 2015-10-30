@@ -1,13 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements. See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership. The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the  "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
+ */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,25 +17,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/*
- * $Id:  $
- */
 
 package com.sun.org.apache.xml.internal.serializer.dom3;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.Writer;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Properties;
-
+import com.sun.org.apache.xerces.internal.util.XML11Char;
+import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xml.internal.serializer.OutputPropertiesFactory;
 import com.sun.org.apache.xml.internal.serializer.SerializationHandler;
 import com.sun.org.apache.xml.internal.serializer.utils.MsgKey;
 import com.sun.org.apache.xml.internal.serializer.utils.Utils;
-import com.sun.org.apache.xerces.internal.util.XML11Char;
-import com.sun.org.apache.xerces.internal.util.XMLChar;
+import java.io.IOException;
+import java.io.Writer;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 import org.w3c.dom.Attr;
 import org.w3c.dom.CDATASection;
 import org.w3c.dom.Comment;
@@ -218,14 +217,6 @@ final class DOM3TreeWalker {
         fDOMConfigProperties = fSerializer.getOutputFormat();
         fSerializer.setDocumentLocator(fLocator);
         initProperties(fDOMConfigProperties);
-
-        try {
-            // Bug see Bugzilla  26741
-            fLocator.setSystemId(
-                System.getProperty("user.dir") + File.separator + "dummy.xsl");
-        } catch (SecurityException se) { // user.dir not accessible from applet
-
-        }
     }
 
     /**
@@ -1952,91 +1943,63 @@ final class DOM3TreeWalker {
      * values 1,2,4,8,16...
      *
      */
-    private static final Hashtable s_propKeys = new Hashtable();
+    private static final Map<String, Integer> fFeatureMap;
     static {
 
         // Initialize the mappings of property keys to bit values (Integer objects)
         // or mappings to a String object "", which indicates we are interested
         // in the property, but it does not have a simple bit value to flip
 
+        Map<String, Integer> featureMap = new HashMap<>();
         // cdata-sections
-        int i = CDATA;
-        Integer val = new Integer(i);
-        s_propKeys.put(
+        featureMap.put(
             DOMConstants.S_DOM3_PROPERTIES_NS + DOMConstants.DOM_CDATA_SECTIONS,
-            val);
+            CDATA);
 
         // comments
-        int i1 = COMMENTS;
-        val = new Integer(i1);
-        s_propKeys.put(
+        featureMap.put(
             DOMConstants.S_DOM3_PROPERTIES_NS + DOMConstants.DOM_COMMENTS,
-            val);
+            COMMENTS);
 
         // element-content-whitespace
-        int i2 = ELEM_CONTENT_WHITESPACE;
-        val = new Integer(i2);
-        s_propKeys.put(
+        featureMap.put(
             DOMConstants.S_DOM3_PROPERTIES_NS
                 + DOMConstants.DOM_ELEMENT_CONTENT_WHITESPACE,
-            val);
-        int i3 = ENTITIES;
+            ELEM_CONTENT_WHITESPACE);
 
         // entities
-        val = new Integer(i3);
-        s_propKeys.put(
+        featureMap.put(
             DOMConstants.S_DOM3_PROPERTIES_NS + DOMConstants.DOM_ENTITIES,
-            val);
+            ENTITIES);
 
         // namespaces
-        int i4 = NAMESPACES;
-        val = new Integer(i4);
-        s_propKeys.put(
+        featureMap.put(
             DOMConstants.S_DOM3_PROPERTIES_NS + DOMConstants.DOM_NAMESPACES,
-            val);
+            NAMESPACES);
 
         // namespace-declarations
-        int i5 = NAMESPACEDECLS;
-        val = new Integer(i5);
-        s_propKeys.put(
+        featureMap.put(
             DOMConstants.S_DOM3_PROPERTIES_NS
                 + DOMConstants.DOM_NAMESPACE_DECLARATIONS,
-            val);
+            NAMESPACEDECLS);
 
         // split-cdata-sections
-        int i6 = SPLITCDATA;
-        val = new Integer(i6);
-        s_propKeys.put(
+        featureMap.put(
             DOMConstants.S_DOM3_PROPERTIES_NS + DOMConstants.DOM_SPLIT_CDATA,
-            val);
+            SPLITCDATA);
 
         // discard-default-content
-        int i7 = WELLFORMED;
-        val = new Integer(i7);
-        s_propKeys.put(
+        featureMap.put(
             DOMConstants.S_DOM3_PROPERTIES_NS + DOMConstants.DOM_WELLFORMED,
-            val);
+            WELLFORMED);
 
         // discard-default-content
-        int i8 = DISCARDDEFAULT;
-        val = new Integer(i8);
-        s_propKeys.put(
+        featureMap.put(
             DOMConstants.S_DOM3_PROPERTIES_NS
                 + DOMConstants.DOM_DISCARD_DEFAULT_CONTENT,
-            val);
+            DISCARDDEFAULT);
 
-        // We are interested in these properties, but they don't have a simple
-        // bit value to deal with.
-        s_propKeys.put(
-            DOMConstants.S_DOM3_PROPERTIES_NS
-                + DOMConstants.DOM_FORMAT_PRETTY_PRINT,
-            "");
-        s_propKeys.put(DOMConstants.S_XSL_OUTPUT_OMIT_XML_DECL, "");
-        s_propKeys.put(
-            DOMConstants.S_XERCES_PROPERTIES_NS + DOMConstants.S_XML_VERSION,
-            "");
-        s_propKeys.put(DOMConstants.S_XSL_OUTPUT_ENCODING, "");
-        s_propKeys.put(OutputPropertiesFactory.S_KEY_ENTITIES, "");
+        fFeatureMap = Collections.unmodifiableMap(featureMap);
     }
 
     /**
@@ -2060,78 +2023,68 @@ final class DOM3TreeWalker {
             // Other features will be enabled or disabled when this is set to true
 
             // A quick lookup for the given set of properties (cdata-sections ...)
-            final Object iobj = s_propKeys.get(key);
-            if (iobj != null) {
-                if (iobj instanceof Integer) {
-                    // Dealing with a property that has a simple bit value that
-                    // we need to set
+            final Integer bitFlag = fFeatureMap.get(key);
+            if (bitFlag != null) {
+                // Dealing with a property that has a simple bit value that
+                // we need to set
 
-                    // cdata-sections
-                    // comments
-                    // element-content-whitespace
-                    // entities
-                    // namespaces
-                    // namespace-declarations
-                    // split-cdata-sections
-                    // well-formed
-                    // discard-default-content
-                    final int BITFLAG = ((Integer) iobj).intValue();
-                    if ((properties.getProperty(key).endsWith("yes"))) {
-                        fFeatures = fFeatures | BITFLAG;
-                    } else {
-                        fFeatures = fFeatures & ~BITFLAG;
-                    }
+                // cdata-sections
+                // comments
+                // element-content-whitespace
+                // entities
+                // namespaces
+                // namespace-declarations
+                // split-cdata-sections
+                // well-formed
+                // discard-default-content
+                if ((properties.getProperty(key).endsWith("yes"))) {
+                    fFeatures = fFeatures | bitFlag;
                 } else {
-                    // We are interested in the property, but it is not
-                    // a simple bit that we need to set.
-
-                    if ((DOMConstants.S_DOM3_PROPERTIES_NS
-                        + DOMConstants.DOM_FORMAT_PRETTY_PRINT)
-                        .equals(key)) {
-                        // format-pretty-print; set internally on the serializers via xsl:output properties in LSSerializer
-                        if ((properties.getProperty(key).endsWith("yes"))) {
-                            fSerializer.setIndent(true);
-                            fSerializer.setIndentAmount(4);
-                        } else {
-                            fSerializer.setIndent(false);
-                        }
-                    } else if (
-                        (DOMConstants.S_XSL_OUTPUT_OMIT_XML_DECL).equals(
-                            key)) {
-                        // omit-xml-declaration; set internally on the serializers via xsl:output properties in LSSerializer
-                        if ((properties.getProperty(key).endsWith("yes"))) {
-                            fSerializer.setOmitXMLDeclaration(true);
-                        } else {
-                            fSerializer.setOmitXMLDeclaration(false);
-                        }
-                    } else if (
-                        (
-                            DOMConstants.S_XERCES_PROPERTIES_NS
-                                + DOMConstants.S_XML_VERSION).equals(
-                            key)) {
-                        // Retreive the value of the XML Version attribute via the xml-version
-                        String version = properties.getProperty(key);
-                        if ("1.1".equals(version)) {
-                            fIsXMLVersion11 = true;
-                            fSerializer.setVersion(version);
-                        } else {
-                            fSerializer.setVersion("1.0");
-                        }
-                    } else if (
-                        (DOMConstants.S_XSL_OUTPUT_ENCODING).equals(key)) {
-                        // Retreive the value of the XML Encoding attribute
-                        String encoding = properties.getProperty(key);
-                        if (encoding != null) {
-                            fSerializer.setEncoding(encoding);
-                        }
-                    } else if ((OutputPropertiesFactory.S_KEY_ENTITIES).equals(key)) {
-                        // Retreive the value of the XML Encoding attribute
-                        String entities = properties.getProperty(key);
-                        if (DOMConstants.S_XSL_VALUE_ENTITIES.equals(entities)) {
-                            fSerializer.setDTDEntityExpansion(false);
-                        }
+                    fFeatures = fFeatures & ~bitFlag;
+                }
+            } else {
+                /**
+                 * Other properties that have a bit more complex value
+                 * than the features in the above map.
+                 */
+                if ((DOMConstants.S_DOM3_PROPERTIES_NS
+                    + DOMConstants.DOM_FORMAT_PRETTY_PRINT)
+                    .equals(key)) {
+                    // format-pretty-print; set internally on the serializers via xsl:output properties in LSSerializer
+                    if ((properties.getProperty(key).endsWith("yes"))) {
+                        fSerializer.setIndent(true);
+                        fSerializer.setIndentAmount(4);
                     } else {
-                        // We shouldn't get here, ever, now what?
+                        fSerializer.setIndent(false);
+                    }
+                } else if ((DOMConstants.S_XSL_OUTPUT_OMIT_XML_DECL).equals(key)) {
+                    // omit-xml-declaration; set internally on the serializers via xsl:output properties in LSSerializer
+                    if ((properties.getProperty(key).endsWith("yes"))) {
+                        fSerializer.setOmitXMLDeclaration(true);
+                    } else {
+                        fSerializer.setOmitXMLDeclaration(false);
+                    }
+                } else if ((DOMConstants.S_XERCES_PROPERTIES_NS
+                            + DOMConstants.S_XML_VERSION).equals(key)) {
+                    // Retreive the value of the XML Version attribute via the xml-version
+                    String version = properties.getProperty(key);
+                    if ("1.1".equals(version)) {
+                        fIsXMLVersion11 = true;
+                        fSerializer.setVersion(version);
+                    } else {
+                        fSerializer.setVersion("1.0");
+                    }
+                } else if ((DOMConstants.S_XSL_OUTPUT_ENCODING).equals(key)) {
+                    // Retreive the value of the XML Encoding attribute
+                    String encoding = properties.getProperty(key);
+                    if (encoding != null) {
+                        fSerializer.setEncoding(encoding);
+                    }
+                } else if ((OutputPropertiesFactory.S_KEY_ENTITIES).equals(key)) {
+                    // Retreive the value of the XML Encoding attribute
+                    String entities = properties.getProperty(key);
+                    if (DOMConstants.S_XSL_VALUE_ENTITIES.equals(entities)) {
+                        fSerializer.setDTDEntityExpansion(false);
                     }
                 }
             }

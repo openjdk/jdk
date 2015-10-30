@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -24,14 +24,15 @@
 
 package com.sun.org.apache.xalan.internal.xsltc.trax;
 
+import com.sun.org.apache.xalan.internal.xsltc.dom.SAXImpl;
+import com.sun.org.apache.xalan.internal.xsltc.runtime.BasisLibrary;
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 import java.util.Vector;
-
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-
 import org.xml.sax.ContentHandler;
 import org.xml.sax.DTDHandler;
 import org.xml.sax.EntityResolver;
@@ -44,8 +45,6 @@ import org.xml.sax.SAXNotSupportedException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.LexicalHandler;
 import org.xml.sax.helpers.AttributesImpl;
-import com.sun.org.apache.xalan.internal.xsltc.dom.SAXImpl;
-import com.sun.org.apache.xalan.internal.xsltc.runtime.BasisLibrary;
 
 /**
  * @author G. Todd Miller
@@ -59,7 +58,7 @@ public class DOM2SAX implements XMLReader, Locator {
     private ContentHandler _sax = null;
     private LexicalHandler _lex = null;
     private SAXImpl _saxImpl = null;
-    private Hashtable _nsPrefixes = new Hashtable();
+    private Map<String, Stack> _nsPrefixes = new HashMap<>();
 
     public DOM2SAX(Node root) {
         _dom = root;
@@ -91,7 +90,7 @@ public class DOM2SAX implements XMLReader, Locator {
         throws SAXException
     {
         boolean pushed = true;
-        Stack uriStack = (Stack) _nsPrefixes.get(prefix);
+        Stack uriStack = _nsPrefixes.get(prefix);
 
         if (uriStack != null) {
             if (uriStack.isEmpty()) {
@@ -124,7 +123,7 @@ public class DOM2SAX implements XMLReader, Locator {
     private void endPrefixMapping(String prefix)
         throws SAXException
     {
-        final Stack uriStack = (Stack) _nsPrefixes.get(prefix);
+        final Stack uriStack = _nsPrefixes.get(prefix);
 
         if (uriStack != null) {
             _sax.endPrefixMapping(prefix);
