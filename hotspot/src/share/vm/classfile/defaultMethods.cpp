@@ -26,6 +26,7 @@
 #include "classfile/bytecodeAssembler.hpp"
 #include "classfile/defaultMethods.hpp"
 #include "classfile/symbolTable.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
@@ -74,7 +75,6 @@ class PseudoScope : public ResourceObj {
   }
 };
 
-#ifndef PRODUCT
 static void print_slot(outputStream* str, Symbol* name, Symbol* signature) {
   ResourceMark rm;
   str->print("%s%s", name->as_C_string(), signature->as_C_string());
@@ -87,7 +87,6 @@ static void print_method(outputStream* str, Method* mo, bool with_class=true) {
   }
   print_slot(str, mo->name(), mo->signature());
 }
-#endif // ndef PRODUCT
 
 /**
  * Perform a depth-first iteration over the class hierarchy, applying
@@ -246,21 +245,22 @@ class HierarchyVisitor : StackObj {
   }
 };
 
-#ifndef PRODUCT
 class PrintHierarchy : public HierarchyVisitor<PrintHierarchy> {
+ private:
+   outputStream* _st;
  public:
-
   bool visit() {
     InstanceKlass* cls = current_class();
-    streamIndentor si(tty, current_depth() * 2);
-    tty->indent().print_cr("%s", cls->name()->as_C_string());
+    streamIndentor si(_st, current_depth() * 2);
+    _st->indent().print_cr("%s", cls->name()->as_C_string());
     return true;
   }
 
   void* new_node_data(InstanceKlass* cls) { return NULL; }
   void free_node_data(void* data) { return; }
+
+  PrintHierarchy(outputStream* st = tty) : _st(st) {}
 };
-#endif // ndef PRODUCT
 
 // Used to register InstanceKlass objects and all related metadata structures
 // (Methods, ConstantPools) as "in-use" by the current thread so that they can't
@@ -434,9 +434,11 @@ class MethodFamily : public ResourceObj {
     } else if (num_defaults > 1) {
       _exception_message = generate_conflicts_message(&qualified_methods,CHECK);
       _exception_name = vmSymbols::java_lang_IncompatibleClassChangeError();
-      if (TraceDefaultMethods) {
-        _exception_message->print_value_on(tty);
-        tty->cr();
+      if (log_is_enabled(Debug, defaultmethods)) {
+        ResourceMark rm;
+        outputStream* logstream = LogHandle(defaultmethods)::debug_stream();
+        _exception_message->print_value_on(logstream);
+        logstream->cr();
       }
     }
   }
@@ -450,27 +452,6 @@ class MethodFamily : public ResourceObj {
     return false;
   }
 
-#ifndef PRODUCT
-  void print_sig_on(outputStream* str, Symbol* signature, int indent) const {
-    streamIndentor si(str, indent * 2);
-
-    str->indent().print_cr("Logical Method %s:", signature->as_C_string());
-
-    streamIndentor si2(str);
-    for (int i = 0; i < _members.length(); ++i) {
-      str->indent();
-      print_method(str, _members.at(i).first);
-      if (_members.at(i).second == DISQUALIFIED) {
-        str->print(" (disqualified)");
-      }
-      str->cr();
-    }
-
-    if (_selected_target != NULL) {
-      print_selected(str, 1);
-    }
-  }
-
   void print_selected(outputStream* str, int indent) const {
     assert(has_target(), "Should be called otherwise");
     streamIndentor si(str, indent * 2);
@@ -478,7 +459,7 @@ class MethodFamily : public ResourceObj {
     print_method(str, _selected_target);
     Klass* method_holder = _selected_target->method_holder();
     if (!method_holder->is_interface()) {
-      tty->print(" : in superclass");
+      str->print(" : in superclass");
     }
     str->cr();
   }
@@ -489,7 +470,6 @@ class MethodFamily : public ResourceObj {
     streamIndentor si(str, indent * 2);
     str->indent().print_cr("%s: %s", _exception_name->as_C_string(), _exception_message->as_C_string());
   }
-#endif // ndef PRODUCT
 };
 
 Symbol* MethodFamily::generate_no_defaults_message(TRAPS) const {
@@ -608,11 +588,9 @@ class EmptyVtableSlot : public ResourceObj {
   bool is_bound() { return _binding != NULL; }
   MethodFamily* get_binding() { return _binding; }
 
-#ifndef PRODUCT
   void print_on(outputStream* str) const {
     print_slot(str, name(), signature());
   }
-#endif // ndef PRODUCT
 };
 
 static bool already_in_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots, Method* m) {
@@ -681,17 +659,18 @@ static GrowableArray<EmptyVtableSlot*>* find_empty_vtable_slots(
     super = super->java_super();
   }
 
-#ifndef PRODUCT
-  if (TraceDefaultMethods) {
-    tty->print_cr("Slots that need filling:");
-    streamIndentor si(tty);
+  if (log_is_enabled(Debug, defaultmethods)) {
+    log_debug(defaultmethods)("Slots that need filling:");
+    ResourceMark rm;
+    outputStream* logstream = LogHandle(defaultmethods)::debug_stream();
+    streamIndentor si(logstream);
     for (int i = 0; i < slots->length(); ++i) {
-      tty->indent();
-      slots->at(i)->print_on(tty);
-      tty->cr();
+      logstream->indent();
+      slots->at(i)->print_on(logstream);
+      logstream->cr();
     }
   }
-#endif // ndef PRODUCT
+
   return slots;
 }
 
@@ -812,46 +791,32 @@ void DefaultMethods::generate_default_methods(
   KeepAliveVisitor loadKeepAlive(&keepAlive);
   loadKeepAlive.run(klass);
 
-#ifndef PRODUCT
-  if (TraceDefaultMethods) {
-    ResourceMark rm;  // be careful with these!
-    tty->print_cr("%s %s requires default method processing",
-        klass->is_interface() ? "Interface" : "Class",
-        klass->name()->as_klass_external_name());
-    PrintHierarchy printer;
+  if (log_is_enabled(Debug, defaultmethods)) {
+    ResourceMark rm;
+    log_debug(defaultmethods)("%s %s requires default method processing",
+                              klass->is_interface() ? "Interface" : "Class",
+                              klass->name()->as_klass_external_name());
+    PrintHierarchy printer(LogHandle(defaultmethods)::debug_stream());
     printer.run(klass);
   }
-#endif // ndef PRODUCT
 
   GrowableArray<EmptyVtableSlot*>* empty_slots =
       find_empty_vtable_slots(klass, mirandas, CHECK);
 
   for (int i = 0; i < empty_slots->length(); ++i) {
     EmptyVtableSlot* slot = empty_slots->at(i);
-#ifndef PRODUCT
-    if (TraceDefaultMethods) {
-      streamIndentor si(tty, 2);
-      tty->indent().print("Looking for default methods for slot ");
-      slot->print_on(tty);
-      tty->cr();
+    if (log_is_enabled(Debug, defaultmethods)) {
+      outputStream* logstream = LogHandle(defaultmethods)::debug_stream();
+      streamIndentor si(logstream, 2);
+      logstream->indent().print("Looking for default methods for slot ");
+      slot->print_on(logstream);
+      logstream->cr();
     }
-#endif // ndef PRODUCT
-
     generate_erased_defaults(klass, empty_slots, slot, CHECK);
- }
-#ifndef PRODUCT
-  if (TraceDefaultMethods) {
-    tty->print_cr("Creating defaults and overpasses...");
   }
-#endif // ndef PRODUCT
-
+  log_debug(defaultmethods)("Creating defaults and overpasses...");
   create_defaults_and_exceptions(empty_slots, klass, CHECK);
-
-#ifndef PRODUCT
-  if (TraceDefaultMethods) {
-    tty->print_cr("Default method processing complete");
-  }
-#endif // ndef PRODUCT
+  log_debug(defaultmethods)("Default method processing complete");
 }
 
 static int assemble_method_error(
@@ -947,18 +912,18 @@ static void create_defaults_and_exceptions(
       MethodFamily* method = slot->get_binding();
       BytecodeBuffer buffer;
 
-#ifndef PRODUCT
-      if (TraceDefaultMethods) {
-        tty->print("for slot: ");
-        slot->print_on(tty);
-        tty->cr();
+      if (log_is_enabled(Debug, defaultmethods)) {
+        ResourceMark rm;
+        outputStream* logstream = LogHandle(defaultmethods)::debug_stream();
+        logstream->print("for slot: ");
+        slot->print_on(logstream);
+        logstream->cr();
         if (method->has_target()) {
-          method->print_selected(tty, 1);
+          method->print_selected(logstream, 1);
         } else if (method->throws_exception()) {
-          method->print_exception(tty, 1);
+          method->print_exception(logstream, 1);
         }
       }
-#endif // ndef PRODUCT
 
       if (method->has_target()) {
         Method* selected = method->get_selected_target();
@@ -982,12 +947,9 @@ static void create_defaults_and_exceptions(
     }
   }
 
-#ifndef PRODUCT
-  if (TraceDefaultMethods) {
-    tty->print_cr("Created %d overpass methods", overpasses.length());
-    tty->print_cr("Created %d default  methods", defaults.length());
-  }
-#endif // ndef PRODUCT
+
+  log_debug(defaultmethods)("Created %d overpass methods", overpasses.length());
+  log_debug(defaultmethods)("Created %d default  methods", defaults.length());
 
   if (overpasses.length() > 0) {
     switchover_constant_pool(&bpool, klass, &overpasses, CHECK);
