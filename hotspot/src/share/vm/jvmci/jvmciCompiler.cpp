@@ -145,7 +145,7 @@ void JVMCICompiler::compile_method(methodHandle method, int entry_bci, JVMCIEnv*
 
 
 // Compilation entry point for methods
-void JVMCICompiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci) {
+void JVMCICompiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, DirectiveSet* directive) {
   ShouldNotReachHere();
 }
 

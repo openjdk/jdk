@@ -45,8 +45,14 @@ private:
   define_stack(IntegerStack, intArray)
   define_array(IntegerMap, IntegerStack*)
 
-  class Verification : public _ValueObj /*VALUE_OBJ_CLASS_SPEC*/, public BlockClosure {
+  class Verification : public BlockClosure {
+  // RangeCheckEliminator::Verification should never get instatiated on the heap.
   private:
+    void* operator new(size_t size) throw();
+    void* operator new[](size_t size) throw();
+    void operator delete(void* p);
+    void operator delete[](void* p);
+
     IR *_ir;
     boolArray _used;
     BlockBeginList _current;
