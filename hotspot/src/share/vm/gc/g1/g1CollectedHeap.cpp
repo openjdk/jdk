@@ -3735,8 +3735,7 @@ void G1CollectedHeap::log_gc_footer(double pause_time_sec) {
       gclog_or_tty->print(" (to-space exhausted)");
     }
     gclog_or_tty->print_cr(", %3.7f secs]", pause_time_sec);
-    g1_policy()->phase_times()->note_gc_end();
-    g1_policy()->phase_times()->print(pause_time_sec);
+    g1_policy()->print_phases(pause_time_sec);
     g1_policy()->print_detailed_heap_transition();
   } else {
     if (evacuation_failed()) {

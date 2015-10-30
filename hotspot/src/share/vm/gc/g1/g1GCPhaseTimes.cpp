@@ -362,6 +362,8 @@ class G1GCParPhasePrinter : public StackObj {
 };
 
 void G1GCPhaseTimes::print(double pause_time_sec) {
+  note_gc_end();
+
   G1GCParPhasePrinter par_phase_printer(this);
 
   if (_root_region_scan_wait_time_ms > 0.0) {
