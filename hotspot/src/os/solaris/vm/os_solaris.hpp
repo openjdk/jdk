@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,16 +114,13 @@ class Solaris {
   static void save_preinstalled_handler(int, struct sigaction&);
   static void check_signal_handler(int sig);
   // For overridable signals
-  static int _SIGinterrupt;                  // user-overridable INTERRUPT_SIGNAL
   static int _SIGasync;                      // user-overridable ASYNC_SIGNAL
-  static void set_SIGinterrupt(int newsig) { _SIGinterrupt = newsig; }
   static void set_SIGasync(int newsig) { _SIGasync = newsig; }
 
  public:
   // Large Page Support--ISM.
   static bool largepage_range(char* addr, size_t size);
 
-  static int SIGinterrupt() { return _SIGinterrupt; }
   static int SIGasync() { return _SIGasync; }
   static address handler_start, handler_end; // start and end pc of thr_sighndlrinfo
 
