@@ -98,8 +98,6 @@ import jdk.internal.dynalink.support.Lookup;
  * caller sensitive, it doesn't cache a method handle but rather uses the passed lookup object in
  * {@link #getTarget(java.lang.invoke.MethodHandles.Lookup)} to unreflect a method handle from the reflective member on
  * every request.
- *
- * @author Attila Szegedi
  */
 class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
     // Typed as "AccessibleObject" as it can be either a method or a constructor.

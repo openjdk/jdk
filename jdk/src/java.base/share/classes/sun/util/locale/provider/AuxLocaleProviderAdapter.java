@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,10 +33,10 @@ import java.text.spi.DateFormatProvider;
 import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.spi.CalendarDataProvider;
@@ -161,7 +161,7 @@ public abstract class AuxLocaleProviderAdapter extends LocaleProviderAdapter {
     @Override
     public Locale[] getAvailableLocales() {
         if (availableLocales == null) {
-            Set<Locale> avail = new HashSet<>();
+            List<Locale> avail = new ArrayList<>();
             for (Class<? extends LocaleServiceProvider> c :
                     LocaleServiceProviderPool.spiClasses) {
                 LocaleServiceProvider lsp = getLocaleServiceProvider(c);
@@ -169,6 +169,7 @@ public abstract class AuxLocaleProviderAdapter extends LocaleProviderAdapter {
                     avail.addAll(Arrays.asList(lsp.getAvailableLocales()));
                 }
             }
+            availableLocales = avail.toArray(new Locale[0]);
         }
 
         // assuming caller won't mutate the array.

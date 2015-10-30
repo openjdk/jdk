@@ -54,13 +54,12 @@ public abstract class AbstractAlgorithmConstraints
         String[] algorithmsInProperty = null;
         if (property != null && !property.isEmpty()) {
             // remove double quote marks from beginning/end of the property
-            if (property.charAt(0) == '"'
-                    && property.charAt(property.length() - 1) == '"') {
+            if (property.length() >= 2 && property.charAt(0) == '"' &&
+                    property.charAt(property.length() - 1) == '"') {
                 property = property.substring(1, property.length() - 1);
             }
             algorithmsInProperty = property.split(",");
-            for (int i = 0; i < algorithmsInProperty.length;
-                    i++) {
+            for (int i = 0; i < algorithmsInProperty.length; i++) {
                 algorithmsInProperty[i] = algorithmsInProperty[i].trim();
             }
         }

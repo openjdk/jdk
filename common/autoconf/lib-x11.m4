@@ -35,10 +35,24 @@ AC_DEFUN_ONCE([LIB_SETUP_X11],
     X_CFLAGS=
     X_LIBS=
   else
-    # Check if the user has specified sysroot, but not --x-includes or --x-libraries.
-    # Make a simple check for the libraries at the sysroot, and setup --x-includes and
-    # --x-libraries for the sysroot, if that seems to be correct.
-    if test "x$OPENJDK_TARGET_OS" = "xlinux"; then
+
+    if test "x${with_x}" = xno; then
+      AC_MSG_ERROR([It is not possible to disable the use of X11. Remove the --without-x option.])
+    fi
+
+    if test "x${with_x}" != x &&  test "x${with_x}" != xyes; then
+      # The user has specified a X11 base directory. Use it for includes and
+      # libraries, unless explicitely overridden.
+      if test "x$x_includes" = xNONE; then
+        x_includes="${with_x}/include"
+      fi
+      if test "x$x_libraries" = xNONE; then
+        x_libraries="${with_x}/lib"
+      fi
+    else
+      # Check if the user has specified sysroot, but not --with-x, --x-includes or --x-libraries.
+      # Make a simple check for the libraries at the sysroot, and setup --x-includes and
+      # --x-libraries for the sysroot, if that seems to be correct.
       if test "x$SYSROOT" != "x"; then
         if test "x$x_includes" = xNONE; then
           if test -f "$SYSROOT/usr/X11R6/include/X11/Xlib.h"; then

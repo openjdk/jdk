@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package javax.swing;
 
 import java.util.List;
@@ -34,16 +33,15 @@ import javax.accessibility.*;
 
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.DefaultFocusTraversalPolicy;
-import java.awt.FocusTraversalPolicy;
-import java.awt.Window;
+import java.beans.JavaBean;
+import java.beans.BeanProperty;
 import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
 import java.beans.PropertyVetoException;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.LinkedHashSet;
+
 /**
  * A container used to create a multiple-document interface or a virtual desktop.
  * You create <code>JInternalFrame</code> objects and add them to the
@@ -88,6 +86,7 @@ import java.util.LinkedHashSet;
  * @author David Kloba
  * @since 1.2
  */
+@JavaBean(defaultProperty = "UI")
 @SuppressWarnings("serial") // Same-version serialization only
 public class JDesktopPane extends JLayeredPane implements Accessible
 {
@@ -163,12 +162,9 @@ public class JDesktopPane extends JLayeredPane implements Accessible
      *
      * @param ui  the DesktopPaneUI L&amp;F object
      * @see UIDefaults#getUI
-     * @beaninfo
-     *        bound: true
-     *       hidden: true
-     *    attribute: visualUpdate true
-     *  description: The UI object that implements the Component's LookAndFeel.
      */
+    @BeanProperty(hidden = true, visualUpdate = true, description
+            = "The UI object that implements the Component's LookAndFeel.")
     public void setUI(DesktopPaneUI ui) {
         super.setUI(ui);
     }
@@ -183,13 +179,12 @@ public class JDesktopPane extends JLayeredPane implements Accessible
      * @see #LIVE_DRAG_MODE
      * @see #OUTLINE_DRAG_MODE
      *
-     * @beaninfo
-     *        bound: true
-     *  description: Dragging style for internal frame children.
-     *         enum: LIVE_DRAG_MODE JDesktopPane.LIVE_DRAG_MODE
-     *               OUTLINE_DRAG_MODE JDesktopPane.OUTLINE_DRAG_MODE
      * @since 1.3
      */
+    @BeanProperty(enumerationValues = {
+            "JDesktopPane.LIVE_DRAG_MODE",
+            "JDesktopPane.OUTLINE_DRAG_MODE"}, description
+            = "Dragging style for internal frame children.")
     public void setDragMode(int dragMode) {
         int oldDragMode = this.dragMode;
         this.dragMode = dragMode;
@@ -225,12 +220,9 @@ public class JDesktopPane extends JLayeredPane implements Accessible
      * {@code LookAndFeel}.
      *
      * @param d the <code>DesktopManager</code> to use
-     *
-     * @beaninfo
-     *        bound: true
-     *  description: Desktop manager to handle the internal frames in the
-     *               desktop pane.
      */
+    @BeanProperty(description
+            = "Desktop manager to handle the internal frames in the desktop pane.")
     public void setDesktopManager(DesktopManager d) {
         DesktopManager oldValue = desktopManager;
         desktopManager = d;
@@ -256,6 +248,7 @@ public class JDesktopPane extends JLayeredPane implements Accessible
      * @see JComponent#getUIClassID
      * @see UIDefaults#getUI
      */
+    @BeanProperty(bound = false)
     public String getUIClassID() {
         return uiClassID;
     }
@@ -266,6 +259,7 @@ public class JDesktopPane extends JLayeredPane implements Accessible
      *
      * @return an array of <code>JInternalFrame</code> objects
      */
+    @BeanProperty(bound = false)
     public JInternalFrame[] getAllFrames() {
         return getAllFrames(this).toArray(new JInternalFrame[0]);
     }
@@ -600,6 +594,7 @@ public class JDesktopPane extends JLayeredPane implements Accessible
      * @return an <code>AccessibleJDesktopPane</code> that serves as the
      *         <code>AccessibleContext</code> of this <code>JDesktopPane</code>
      */
+    @BeanProperty(bound = false)
     public AccessibleContext getAccessibleContext() {
         if (accessibleContext == null) {
             accessibleContext = new AccessibleJDesktopPane();

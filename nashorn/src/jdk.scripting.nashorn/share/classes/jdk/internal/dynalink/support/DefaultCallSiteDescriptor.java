@@ -91,7 +91,6 @@ import jdk.internal.dynalink.CallSiteDescriptor;
  * A default, fairly light implementation of a call site descriptor used for describing non-standard operations. It does
  * not store {@link Lookup} objects but always returns the public lookup from its {@link #getLookup()} method. If you
  * need to support non-public lookup, you can use {@link LookupCallSiteDescriptor}.
- * @author Attila Szegedi
  */
 class DefaultCallSiteDescriptor extends AbstractCallSiteDescriptor {
 
