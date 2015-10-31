@@ -136,7 +136,7 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _gc_par_phases[RedirtyCards]->link_thread_work_items(_redirtied_cards);
 }
 
-void G1GCPhaseTimes::note_gc_start(uint active_gc_threads, bool mark_in_progress) {
+void G1GCPhaseTimes::note_gc_start(uint active_gc_threads) {
   assert(active_gc_threads > 0, "The number of threads must be > 0");
   assert(active_gc_threads <= _max_gc_threads, "The number of active threads must be <= the max number of threads");
   _active_gc_threads = active_gc_threads;

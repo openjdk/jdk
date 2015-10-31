@@ -437,6 +437,10 @@ void G1CollectorPolicy::init() {
   start_incremental_cset_building();
 }
 
+void G1CollectorPolicy::note_gc_start(uint num_active_workers) {
+  phase_times()->note_gc_start(num_active_workers);
+}
+
 // Create the jstat counters for the policy.
 void G1CollectorPolicy::initialize_gc_policy_counters() {
   _gc_policy_counters = new GCPolicyCounters("GarbageFirst", 1, 3);
