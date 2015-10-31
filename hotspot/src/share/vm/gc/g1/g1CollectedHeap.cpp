@@ -3826,7 +3826,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     workers()->set_active_workers(active_workers);
 
     double pause_start_sec = os::elapsedTime();
-    g1_policy()->phase_times()->note_gc_start(active_workers, collector_state()->mark_in_progress());
+    g1_policy()->note_gc_start(active_workers);
     log_gc_header();
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());

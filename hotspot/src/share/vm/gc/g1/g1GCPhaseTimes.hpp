@@ -125,7 +125,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
  public:
   G1GCPhaseTimes(uint max_gc_threads);
-  void note_gc_start(uint active_gc_threads, bool mark_in_progress);
+  void note_gc_start(uint active_gc_threads);
   void print(double pause_time_sec);
 
   // record the time a phase took in seconds
