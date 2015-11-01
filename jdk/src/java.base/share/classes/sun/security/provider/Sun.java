@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public final class Sun extends Provider {
 
     public Sun() {
         /* We are the SUN provider */
-        super("SUN", 1.9d, INFO);
+        super("SUN", 9.0d, INFO);
 
         // if there is no security manager installed, put directly into
         // the provider. Otherwise, create a temporary map and use a

@@ -142,7 +142,7 @@ public final class SunEC extends Provider {
     }
 
     public SunEC() {
-        super("SunEC", 1.9d, "Sun Elliptic Curve provider (EC, ECDSA, ECDH)");
+        super("SunEC", 9.0d, "Sun Elliptic Curve provider (EC, ECDSA, ECDH)");
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             public Void run() {
                 putEntries(useFullImplementation);
