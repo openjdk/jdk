@@ -224,7 +224,7 @@ public final class UcryptoProvider extends Provider {
     }
 
     public UcryptoProvider() {
-        super("OracleUcrypto", 1.9d, "Provider using Oracle Ucrypto API");
+        super("OracleUcrypto", 9.0d, "Provider using Oracle Ucrypto API");
 
         AccessController.doPrivileged(new PrivilegedAction<>() {
             public Void run() {
