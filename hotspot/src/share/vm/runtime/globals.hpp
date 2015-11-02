@@ -3085,6 +3085,7 @@ public:
                                                                             \
   product(intx,  AllocatePrefetchStepSize, 16,                              \
           "Step size in bytes of sequential prefetch instructions")         \
+          range(1, max_jint)                                                \
           constraint(AllocatePrefetchStepSizeConstraintFunc,AfterMemoryInit)\
                                                                             \
   product(intx,  AllocatePrefetchInstr, 0,                                  \
@@ -3568,6 +3569,7 @@ public:
                                                                             \
   product_pd(intx, OptoLoopAlignment,                                       \
           "Align inner loops to zero relative to this modulus")             \
+          range(1, 16)                                                      \
           constraint(OptoLoopAlignmentConstraintFunc, AfterErgo)            \
                                                                             \
   product_pd(uintx, InitialCodeCacheSize,                                   \
@@ -3729,6 +3731,7 @@ public:
   product(intx, CompilerThreadPriority, -1,                                 \
           "The native priority at which compiler threads should run "       \
           "(-1 means no change)")                                           \
+          range(min_jint, max_jint)                                         \
           constraint(CompilerThreadPriorityConstraintFunc, AfterErgo)       \
                                                                             \
   product(intx, VMThreadPriority, -1,                                       \
