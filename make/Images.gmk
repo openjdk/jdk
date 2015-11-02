@@ -40,7 +40,7 @@ $(eval $(call IncludeCustomExtension, , Images-pre.gmk))
 MAIN_MODULES += java.se java.smartcardio jdk.httpserver jdk.sctp \
                jdk.security.auth jdk.security.jgss jdk.pack200 jdk.xml.dom \
                jdk.accessibility jdk.internal.le jdk.scripting.nashorn.shell \
-               jdk.vm.ci
+               jdk.vm.ci jdk.management
 
 # providers
 PROVIDER_MODULES += jdk.charsets jdk.crypto.ec jdk.crypto.pkcs11 jdk.jvmstat jdk.localedata \
