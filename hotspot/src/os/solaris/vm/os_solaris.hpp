@@ -27,6 +27,14 @@
 
 // Solaris_OS defines the interface to Solaris operating systems
 
+// see thr_setprio(3T) for the basis of these numbers
+#define MinimumPriority 0
+#define NormalPriority  64
+#define MaximumPriority 127
+
+// FX/60 is critical thread class/priority on T4
+#define FXCriticalPriority 60
+
 // Information about the protection of the page at address '0' on this os.
 static bool zero_page_read_protected() { return true; }
 
