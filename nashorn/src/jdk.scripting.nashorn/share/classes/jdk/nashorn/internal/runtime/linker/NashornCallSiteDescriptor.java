@@ -38,7 +38,6 @@ import jdk.internal.dynalink.CompositeOperation;
 import jdk.internal.dynalink.NamedOperation;
 import jdk.internal.dynalink.Operation;
 import jdk.internal.dynalink.StandardOperation;
-import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.ir.debug.NashornTextifier;
 import jdk.nashorn.internal.runtime.AccessControlContextFactory;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
