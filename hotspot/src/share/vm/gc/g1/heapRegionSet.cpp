@@ -230,7 +230,7 @@ void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {
       assert(_tail != curr, "%s", hrs_ext_msg(this, "invariant").buffer());
       next->set_prev(prev);
     }
-    if (_last = curr) {
+    if (_last == curr) {
       _last = NULL;
     }
 
