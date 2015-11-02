@@ -40,78 +40,50 @@ unsigned int Abstract_VM_Version::_logical_processors_per_package = 1U;
 unsigned int Abstract_VM_Version::_L1_data_cache_line_size = 0;
 int Abstract_VM_Version::_reserve_for_allocation_prefetch = 0;
 
-#ifndef HOTSPOT_RELEASE_VERSION
-  #error HOTSPOT_RELEASE_VERSION must be defined
+#ifndef HOTSPOT_VERSION_STRING
+  #error HOTSPOT_VERSION_STRING must be defined
 #endif
 
-#ifndef JDK_MAJOR_VERSION
-  #error JDK_MAJOR_VERSION must be defined
+#ifndef VERSION_MAJOR
+  #error VERSION_MAJOR must be defined
 #endif
-#ifndef JDK_MINOR_VERSION
-  #error JDK_MINOR_VERSION must be defined
+#ifndef VERSION_MINOR
+  #error VERSION_MINOR must be defined
 #endif
-#ifndef JDK_MICRO_VERSION
-  #error JDK_MICRO_VERSION must be defined
+#ifndef VERSION_SECURITY
+  #error VERSION_SECURITY must be defined
 #endif
-#ifndef JDK_BUILD_NUMBER
-  #error JDK_BUILD_NUMBER must be defined
+#ifndef VERSION_PATCH
+  #error VERSION_PATCH must be defined
+#endif
+#ifndef VERSION_BUILD
+  #error VERSION_BUILD must be defined
 #endif
 
-#ifndef JRE_RELEASE_VERSION
-  #error JRE_RELEASE_VERSION must be defined
+#ifndef VERSION_STRING
+  #error VERSION_STRING must be defined
 #endif
 
 // NOTE: Builds within Visual Studio do not define the build target in
-//       HOTSPOT_RELEASE_VERSION, so it must be done here
+//       HOTSPOT_VERSION_STRING, so it must be done here
 #if defined(VISUAL_STUDIO_BUILD) && !defined(PRODUCT)
   #ifndef HOTSPOT_BUILD_TARGET
     #error HOTSPOT_BUILD_TARGET must be defined
   #endif
-  #define VM_RELEASE HOTSPOT_RELEASE_VERSION "-" HOTSPOT_BUILD_TARGET
+  #define VM_RELEASE HOTSPOT_VERSION_STRING "-" HOTSPOT_BUILD_TARGET
 #else
-  #define VM_RELEASE HOTSPOT_RELEASE_VERSION
+  #define VM_RELEASE HOTSPOT_VERSION_STRING
 #endif
 
-// HOTSPOT_RELEASE_VERSION follows the JDK release version naming convention
-// <major_ver>.<minor_ver>.<micro_ver>[-<identifier>][-<debug_target>][-b<nn>]
-int Abstract_VM_Version::_vm_major_version = 0;
-int Abstract_VM_Version::_vm_minor_version = 0;
-int Abstract_VM_Version::_vm_micro_version = 0;
-int Abstract_VM_Version::_vm_build_number = 0;
-bool Abstract_VM_Version::_initialized = false;
+// HOTSPOT_VERSION_STRING equals the JDK VERSION_STRING (unless overridden
+// in a standalone build).
+int Abstract_VM_Version::_vm_major_version = VERSION_MAJOR;
+int Abstract_VM_Version::_vm_minor_version = VERSION_MINOR;
+int Abstract_VM_Version::_vm_security_version = VERSION_SECURITY;
+int Abstract_VM_Version::_vm_patch_version = VERSION_PATCH;
+int Abstract_VM_Version::_vm_build_number = VERSION_BUILD;
 unsigned int Abstract_VM_Version::_parallel_worker_threads = 0;
 bool Abstract_VM_Version::_parallel_worker_threads_initialized = false;
-
-#ifdef ASSERT
-static void assert_digits(const char * s, const char * message) {
-  for (int i = 0; s[i] != '\0'; i++) {
-    assert(isdigit(s[i]), "%s", message);
-  }
-}
-#endif
-
-static void set_version_field(int * version_field, const char * version_str,
-                              const char * const assert_msg) {
-  if (version_str != NULL && *version_str != '\0') {
-    DEBUG_ONLY(assert_digits(version_str, assert_msg));
-    *version_field = atoi(version_str);
-  }
-}
-
-void Abstract_VM_Version::initialize() {
-  if (_initialized) {
-    return;
-  }
-
-  set_version_field(&_vm_major_version, JDK_MAJOR_VERSION, "bad major version");
-  set_version_field(&_vm_minor_version, JDK_MINOR_VERSION, "bad minor version");
-  set_version_field(&_vm_micro_version, JDK_MICRO_VERSION, "bad micro version");
-  int offset = (JDK_BUILD_NUMBER != NULL && JDK_BUILD_NUMBER[0] == 'b') ? 1 : 0;
-  set_version_field(&_vm_build_number, &JDK_BUILD_NUMBER[offset],
-                    "bad build number");
-
-  _initialized = true;
-}
 
 #if defined(_LP64)
   #define VMLP "64-Bit "
@@ -154,6 +126,7 @@ const char* Abstract_VM_Version::vm_vendor() {
 #endif
 }
 
+
 const char* Abstract_VM_Version::vm_info_string() {
   if (CodeCacheExtensions::use_pregenerated_interpreter()) {
     return "interpreted mode, pregenerated";
@@ -181,7 +154,7 @@ const char* Abstract_VM_Version::vm_release() {
 //       fatal error handlers. if the crash is in native thread,
 //       stringStream cannot get resource allocated and will SEGV.
 const char* Abstract_VM_Version::jre_release_version() {
-  return JRE_RELEASE_VERSION;
+  return VERSION_STRING;
 }
 
 #define OS       LINUX_ONLY("linux")             \
@@ -262,7 +235,7 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
   #endif
 
   return VMNAME " (" VM_RELEASE ") for " OS "-" CPU FLOAT_ARCH_STR
-         " JRE (" JRE_RELEASE_VERSION "), built on " __DATE__ " " __TIME__
+         " JRE (" VERSION_STRING "), built on " __DATE__ " " __TIME__
          " by " XSTR(HOTSPOT_BUILD_USER) " with " HOTSPOT_BUILD_COMPILER;
 }
 
@@ -273,7 +246,7 @@ const char *Abstract_VM_Version::vm_build_user() {
 unsigned int Abstract_VM_Version::jvm_version() {
   return ((Abstract_VM_Version::vm_major_version() & 0xFF) << 24) |
          ((Abstract_VM_Version::vm_minor_version() & 0xFF) << 16) |
-         ((Abstract_VM_Version::vm_micro_version() & 0xFF) << 8) |
+         ((Abstract_VM_Version::vm_security_version() & 0xFF) << 8) |
          (Abstract_VM_Version::vm_build_number() & 0xFF);
 }
 

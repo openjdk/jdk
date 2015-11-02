@@ -228,7 +228,7 @@ void Arguments::init_version_specific_system_properties() {
   const char* spec_vendor = "Oracle Corporation";
   uint32_t spec_version = JDK_Version::current().major_version();
 
-  jio_snprintf(buffer, bufsz, "1." UINT32_FORMAT, spec_version);
+  jio_snprintf(buffer, bufsz, UINT32_FORMAT, spec_version);
 
   PropertyList_add(&_system_properties,
       new SystemProperty("java.vm.specification.vendor",  spec_vendor, false));
