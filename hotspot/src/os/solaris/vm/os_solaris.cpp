@@ -138,11 +138,6 @@
   #define LGRP_RSRC_MEM      1       /* memory resources */
 #endif
 
-// see thr_setprio(3T) for the basis of these numbers
-#define MinimumPriority 0
-#define NormalPriority  64
-#define MaximumPriority 127
-
 // Values for ThreadPriorityPolicy == 1
 int prio_policy1[CriticalPriority+1] = {
   -99999,  0, 16,  32,  48,  64,
@@ -3138,7 +3133,7 @@ static int  myMax       = 0;
 static int  myCur       = 0;
 static bool priocntl_enable = false;
 
-static const int criticalPrio = 60; // FX/60 is critical thread class/priority on T4
+static const int criticalPrio = FXCriticalPriority;
 static int java_MaxPriority_to_os_priority = 0; // Saved mapping
 
 
