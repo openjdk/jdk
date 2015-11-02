@@ -242,19 +242,9 @@ inline void CMTask::push(oop obj) {
   assert(!_g1h->is_obj_ill(obj), "invariant");
   assert(_nextMarkBitMap->isMarked(objAddr), "invariant");
 
-  if (_cm->verbose_high()) {
-    gclog_or_tty->print_cr("[%u] pushing " PTR_FORMAT, _worker_id, p2i((void*) obj));
-  }
-
   if (!_task_queue->push(obj)) {
     // The local task queue looks full. We need to push some entries
     // to the global stack.
-
-    if (_cm->verbose_medium()) {
-      gclog_or_tty->print_cr("[%u] task queue overflow, "
-                             "moving entries to the global stack",
-                             _worker_id);
-    }
     move_entries_to_global_stack();
 
     // this should succeed since, even if we overflow the global
@@ -300,11 +290,6 @@ inline void CMTask::process_grey_object(oop obj) {
   assert(scan || obj->is_typeArray(), "Skipping scan of grey non-typeArray");
   assert(_nextMarkBitMap->isMarked((HeapWord*) obj), "invariant");
 
-  if (_cm->verbose_high()) {
-    gclog_or_tty->print_cr("[%u] processing grey object " PTR_FORMAT,
-                           _worker_id, p2i((void*) obj));
-  }
-
   size_t obj_size = obj->size();
   _words_scanned += obj_size;
 
@@ -318,12 +303,6 @@ inline void CMTask::process_grey_object(oop obj) {
 
 inline void CMTask::make_reference_grey(oop obj, HeapRegion* hr) {
   if (_cm->par_mark_and_count(obj, hr, _marked_bytes_array, _card_bm)) {
-
-    if (_cm->verbose_high()) {
-      gclog_or_tty->print_cr("[%u] marked object " PTR_FORMAT,
-                             _worker_id, p2i(obj));
-    }
-
     // No OrderAccess:store_load() is needed. It is implicit in the
     // CAS done in CMBitMap::parMark() call in the routine above.
     HeapWord* global_finger = _cm->finger();
@@ -355,13 +334,6 @@ inline void CMTask::make_reference_grey(oop obj, HeapRegion* hr) {
         // references, and the metadata is built-in.
         process_grey_object<false>(obj);
       } else {
-        if (_cm->verbose_high()) {
-          gclog_or_tty->print_cr("[%u] below a finger (local: " PTR_FORMAT
-                                 ", global: " PTR_FORMAT ") pushing "
-                                 PTR_FORMAT " on mark stack",
-                                 _worker_id, p2i(_finger),
-                                 p2i(global_finger), p2i(obj));
-        }
         push(obj);
       }
     }
@@ -369,11 +341,6 @@ inline void CMTask::make_reference_grey(oop obj, HeapRegion* hr) {
 }
 
 inline void CMTask::deal_with_reference(oop obj) {
-  if (_cm->verbose_high()) {
-    gclog_or_tty->print_cr("[%u] we're dealing with reference = " PTR_FORMAT,
-                           _worker_id, p2i((void*) obj));
-  }
-
   increment_refs_reached();
 
   HeapWord* objAddr = (HeapWord*) obj;
