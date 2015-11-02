@@ -244,17 +244,6 @@ public:
   bool should_force() PRODUCT_RETURN_( return false; );
 };
 
-// this will enable the higher verbose levels
-#define _MARKING_VERBOSE_     0
-
-typedef enum {
-  no_verbose  = 0,   // verbose turned off
-  stats_verbose,     // only prints stats at the end of marking
-  low_verbose,       // low verbose, mostly per region and per major event
-  medium_verbose,    // a bit more detailed than low
-  high_verbose       // per object verbose
-} CMVerboseLevel;
-
 class YoungList;
 
 // Root Regions are regions that are not empty at the beginning of a
@@ -401,9 +390,6 @@ protected:
   // to determine the points between the end of concurrent marking and
   // time of remark.
   volatile bool           _concurrent_marking_in_progress;
-
-  // Verbose level
-  CMVerboseLevel          _verbose_level;
 
   // All of these times are in ms
   NumberSeq _init_times;
@@ -733,30 +719,11 @@ public:
 
   bool has_aborted()      { return _has_aborted; }
 
-  // This prints the global/local fingers. It is used for debugging.
-  NOT_PRODUCT(void print_finger();)
-
   void print_summary_info();
 
   void print_worker_threads_on(outputStream* st) const;
 
   void print_on_error(outputStream* st) const;
-
-  // The following indicate whether a given verbose level has been
-  // set. Notice that anything above stats is conditional to
-  // _MARKING_VERBOSE_ having been set to 1
-  bool verbose_stats() {
-    return _verbose_level >= stats_verbose;
-  }
-  bool verbose_low() {
-    return _MARKING_VERBOSE_ && _verbose_level >= low_verbose;
-  }
-  bool verbose_medium() {
-    return _MARKING_VERBOSE_ && _verbose_level >= medium_verbose;
-  }
-  bool verbose_high() {
-    return _MARKING_VERBOSE_ && _verbose_level >= high_verbose;
-  }
 
   // Liveness counting
 
