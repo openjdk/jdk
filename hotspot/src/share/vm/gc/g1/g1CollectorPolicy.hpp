@@ -380,6 +380,11 @@ public:
 
 protected:
   virtual double average_time_ms(G1GCPhaseTimes::GCParPhases phase) const;
+  virtual double other_time_ms(double pause_time_ms) const;
+
+  double young_other_time_ms() const;
+  double non_young_other_time_ms() const;
+  double constant_other_time_ms(double pause_time_ms) const;
 
 private:
   // Statistics kept per GC stoppage, pause or full.
