@@ -907,6 +907,29 @@ double G1CollectorPolicy::average_time_ms(G1GCPhaseTimes::GCParPhases phase) con
   return phase_times()->average_time_ms(phase);
 }
 
+double G1CollectorPolicy::young_other_time_ms() const {
+  return phase_times()->young_cset_choice_time_ms() +
+         phase_times()->young_free_cset_time_ms();
+}
+
+double G1CollectorPolicy::non_young_other_time_ms() const {
+  return phase_times()->non_young_cset_choice_time_ms() +
+         phase_times()->non_young_free_cset_time_ms();
+
+}
+
+double G1CollectorPolicy::other_time_ms(double pause_time_ms) const {
+  return pause_time_ms -
+         average_time_ms(G1GCPhaseTimes::UpdateRS) -
+         average_time_ms(G1GCPhaseTimes::ScanRS) -
+         average_time_ms(G1GCPhaseTimes::ObjCopy) -
+         average_time_ms(G1GCPhaseTimes::Termination);
+}
+
+double G1CollectorPolicy::constant_other_time_ms(double pause_time_ms) const {
+  return other_time_ms(pause_time_ms) - young_other_time_ms() - non_young_other_time_ms();
+}
+
 bool G1CollectorPolicy::need_to_start_conc_mark(const char* source, size_t alloc_word_size) {
   if (_g1->concurrent_mark()->cmThread()->during_cycle()) {
     return false;
@@ -1136,37 +1159,17 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
       }
     }
 
-    double all_other_time_ms = pause_time_ms -
-      (average_time_ms(G1GCPhaseTimes::UpdateRS) + average_time_ms(G1GCPhaseTimes::ScanRS) +
-       average_time_ms(G1GCPhaseTimes::ObjCopy)  + average_time_ms(G1GCPhaseTimes::Termination));
-
-    double young_other_time_ms = 0.0;
     if (young_cset_region_length() > 0) {
-      young_other_time_ms =
-        phase_times()->young_cset_choice_time_ms() +
-        phase_times()->young_free_cset_time_ms();
-      _young_other_cost_per_region_ms_seq->add(young_other_time_ms /
-                                          (double) young_cset_region_length());
+      _young_other_cost_per_region_ms_seq->add(young_other_time_ms() /
+                                               young_cset_region_length());
     }
-    double non_young_other_time_ms = 0.0;
+
     if (old_cset_region_length() > 0) {
-      non_young_other_time_ms =
-        phase_times()->non_young_cset_choice_time_ms() +
-        phase_times()->non_young_free_cset_time_ms();
-
-      _non_young_other_cost_per_region_ms_seq->add(non_young_other_time_ms /
-                                            (double) old_cset_region_length());
+      _non_young_other_cost_per_region_ms_seq->add(non_young_other_time_ms() /
+                                                   old_cset_region_length());
     }
 
-    double constant_other_time_ms = all_other_time_ms -
-      (young_other_time_ms + non_young_other_time_ms);
-    _constant_other_time_ms_seq->add(constant_other_time_ms);
-
-    double survival_ratio = 0.0;
-    if (_collection_set_bytes_used_before > 0) {
-      survival_ratio = (double) _bytes_copied_during_gc /
-                                   (double) _collection_set_bytes_used_before;
-    }
+    _constant_other_time_ms_seq->add(constant_other_time_ms(pause_time_ms));
 
     _pending_cards_seq->add((double) _pending_cards);
     _rs_lengths_seq->add((double) _max_rs_lengths);
