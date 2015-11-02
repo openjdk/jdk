@@ -40,36 +40,6 @@
 #include "utilities/intHisto.hpp"
 #include "utilities/stack.inline.hpp"
 
-#define CARD_REPEAT_HISTO 0
-
-#if CARD_REPEAT_HISTO
-static size_t ct_freq_sz;
-static jbyte* ct_freq = NULL;
-
-void init_ct_freq_table(size_t heap_sz_bytes) {
-  if (ct_freq == NULL) {
-    ct_freq_sz = heap_sz_bytes/CardTableModRefBS::card_size;
-    ct_freq = new jbyte[ct_freq_sz];
-    for (size_t j = 0; j < ct_freq_sz; j++) ct_freq[j] = 0;
-  }
-}
-
-void ct_freq_note_card(size_t index) {
-  assert(0 <= index && index < ct_freq_sz, "Bounds error.");
-  if (ct_freq[index] < 100) { ct_freq[index]++; }
-}
-
-static IntHistogram card_repeat_count(10, 10);
-
-void ct_freq_update_histo_and_reset() {
-  for (size_t j = 0; j < ct_freq_sz; j++) {
-    card_repeat_count.add_entry(ct_freq[j]);
-    ct_freq[j] = 0;
-  }
-
-}
-#endif
-
 G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
   : _g1(g1), _conc_refine_cards(0),
     _ct_bs(ct_bs), _g1p(_g1->g1_policy()),
@@ -302,10 +272,6 @@ void G1RemSet::cleanupHRRS() {
 size_t G1RemSet::oops_into_collection_set_do(G1ParPushHeapRSClosure* oc,
                                              CodeBlobClosure* heap_region_codeblobs,
                                              uint worker_i) {
-#if CARD_REPEAT_HISTO
-  ct_freq_update_histo_and_reset();
-#endif
-
   // We cache the value of 'oc' closure into the appropriate slot in the
   // _cset_rs_update_cl for this worker
   assert(worker_i < n_workers(), "sanity");
@@ -498,11 +464,6 @@ bool G1RemSet::refine_card(jbyte* card_ptr, uint worker_i,
   HeapWord* end   = start + CardTableModRefBS::card_size_in_words;
   MemRegion dirtyRegion(start, end);
 
-#if CARD_REPEAT_HISTO
-  init_ct_freq_table(_g1->max_capacity());
-  ct_freq_note_card(_ct_bs->index_for(start));
-#endif
-
   G1ParPushHeapRSClosure* oops_in_heap_closure = NULL;
   if (check_for_refs_into_cset) {
     // ConcurrentG1RefineThreads have worker numbers larger than what
@@ -606,12 +567,6 @@ void G1RemSet::print_summary_info(G1RemSetSummary * summary, const char * header
   if (header != NULL) {
     gclog_or_tty->print_cr("%s", header);
   }
-
-#if CARD_REPEAT_HISTO
-  gclog_or_tty->print_cr("\nG1 card_repeat count histogram: ");
-  gclog_or_tty->print_cr("  # of repeats --> # of cards with that number.");
-  card_repeat_count.print_on(gclog_or_tty);
-#endif
 
   summary->print_on(gclog_or_tty);
 }
