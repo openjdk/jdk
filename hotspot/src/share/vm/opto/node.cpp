@@ -47,6 +47,10 @@ const uint Node::NotAMachineReg = 0xffff0000;
 #ifndef PRODUCT
 extern int nodes_created;
 #endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma GCC diagnostic ignored "-Wuninitialized"
+#endif
 
 #ifdef ASSERT
 
@@ -455,6 +459,10 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   _in[5] = n5; if (n5 != NULL) n5->add_out((Node *)this);
   _in[6] = n6; if (n6 != NULL) n6->add_out((Node *)this);
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 
 //------------------------------clone------------------------------------------

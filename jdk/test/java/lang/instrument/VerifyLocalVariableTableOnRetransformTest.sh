@@ -29,7 +29,6 @@
 # transform() on a retransform operation.
 # @author Daniel D. Daugherty
 #
-# @modules java.instrument
 # @run build VerifyLocalVariableTableOnRetransformTest
 # @run compile -g DummyClassWithLVT.java
 # @run shell MakeJAR.sh retransformAgent

@@ -108,7 +108,7 @@ class outputStream : public ResourceObj {
    void date_stamp(bool guard) {
      date_stamp(guard, "", ": ");
    }
-   void gclog_stamp(const GCId& gc_id);
+   void gclog_stamp();
 
    // portable printing of 64 bit integers
    void print_jlong(jlong value);
@@ -233,6 +233,18 @@ class fdStream : public outputStream {
   int fd() const { return _fd; }
   virtual void write(const char* c, size_t len);
   void flush() {};
+};
+
+class logStream : public outputStream {
+private:
+  stringStream _current_line;
+  void (*_log_func)(const char* fmt, ...);
+public:
+  void write(const char* s, size_t len);
+  logStream(void (*log_func)(const char* fmt, ...)) : _log_func(log_func) {}
+  ~logStream() {
+    guarantee(_current_line.size() == 0, "Buffer not flushed. Missing call to print_cr()?");
+  }
 };
 
 class gcLogFileStream : public fileStream {

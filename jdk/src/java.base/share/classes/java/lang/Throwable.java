@@ -211,8 +211,7 @@ public class Throwable implements Serializable {
 
     // Setting this static field introduces an acceptable
     // initialization dependency on a few java.util classes.
-    private static final List<Throwable> SUPPRESSED_SENTINEL =
-        Collections.unmodifiableList(new ArrayList<Throwable>(0));
+    private static final List<Throwable> SUPPRESSED_SENTINEL = Collections.emptyList();
 
     /**
      * The list of suppressed exceptions, as returned by {@link

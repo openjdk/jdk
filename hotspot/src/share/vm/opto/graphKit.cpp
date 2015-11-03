@@ -1251,7 +1251,7 @@ Node* GraphKit::null_check_common(Node* value, BasicType type,
     }
 
     default:
-      fatal(err_msg_res("unexpected type: %s", type2name(type)));
+      fatal("unexpected type: %s", type2name(type));
   }
   assert(chk != NULL, "sanity check");
   chk = _gvn.transform(chk);
@@ -1950,8 +1950,8 @@ void GraphKit::uncommon_trap(int trap_request,
     // the current bytecode.
     int inputs, ignored_depth;
     if (compute_stack_effects(inputs, ignored_depth)) {
-      assert(sp() >= inputs, err_msg_res("must have enough JVMS stack to execute %s: sp=%d, inputs=%d",
-             Bytecodes::name(java_bc()), sp(), inputs));
+      assert(sp() >= inputs, "must have enough JVMS stack to execute %s: sp=%d, inputs=%d",
+             Bytecodes::name(java_bc()), sp(), inputs);
     }
   }
 #endif
@@ -1987,7 +1987,7 @@ void GraphKit::uncommon_trap(int trap_request,
   case Deoptimization::Action_make_not_compilable:
     break;
   default:
-    fatal(err_msg_res("unknown action %d: %s", action, Deoptimization::trap_action_name(action)));
+    fatal("unknown action %d: %s", action, Deoptimization::trap_action_name(action));
     break;
 #endif
   }
@@ -2509,7 +2509,7 @@ static IfNode* gen_subtype_check_compare(Node* ctrl, Node* in1, Node* in2, BoolT
   switch(bt) {
   case T_INT: cmp = new CmpINode(in1, in2); break;
   case T_ADDRESS: cmp = new CmpPNode(in1, in2); break;
-  default: fatal(err_msg("unexpected comparison type %s", type2name(bt)));
+  default: fatal("unexpected comparison type %s", type2name(bt));
   }
   gvn->transform(cmp);
   Node* bol = gvn->transform(new BoolNode(cmp, test));

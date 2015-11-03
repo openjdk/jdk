@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -37,6 +37,7 @@ import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Type;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.TypeCheckError;
 import com.sun.org.apache.xalan.internal.xsltc.compiler.util.Util;
 import com.sun.org.apache.xml.internal.utils.XML11Char;
+import java.util.List;
 
 
 /**
@@ -274,8 +275,8 @@ public final class Template extends TopLevelElement {
         _priority = Double.NaN;
         _pattern = parser.parsePattern(this, "/");
 
-        final Vector contents = _stylesheet.getContents();
-        final SyntaxTreeNode root = (SyntaxTreeNode)contents.elementAt(0);
+        final List<SyntaxTreeNode> contents = _stylesheet.getContents();
+        final SyntaxTreeNode root = contents.get(0);
 
         if (root instanceof LiteralElement) {
             addElement(root);

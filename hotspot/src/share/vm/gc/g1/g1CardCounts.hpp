@@ -79,19 +79,19 @@ class G1CardCounts: public CHeapObj<mtGC> {
 
   size_t ptr_2_card_num(const jbyte* card_ptr) {
     assert(card_ptr >= _ct_bot,
-           err_msg("Invalid card pointer: "
-                   "card_ptr: " PTR_FORMAT ", "
-                   "_ct_bot: " PTR_FORMAT,
-                   p2i(card_ptr), p2i(_ct_bot)));
+           "Invalid card pointer: "
+           "card_ptr: " PTR_FORMAT ", "
+           "_ct_bot: " PTR_FORMAT,
+           p2i(card_ptr), p2i(_ct_bot));
     size_t card_num = pointer_delta(card_ptr, _ct_bot, sizeof(jbyte));
     assert(card_num < _reserved_max_card_num,
-           err_msg("card pointer out of range: " PTR_FORMAT, p2i(card_ptr)));
+           "card pointer out of range: " PTR_FORMAT, p2i(card_ptr));
     return card_num;
   }
 
   jbyte* card_num_2_ptr(size_t card_num) {
     assert(card_num < _reserved_max_card_num,
-           err_msg("card num out of range: " SIZE_FORMAT, card_num));
+           "card num out of range: " SIZE_FORMAT, card_num);
     return (jbyte*) (_ct_bot + card_num);
   }
 

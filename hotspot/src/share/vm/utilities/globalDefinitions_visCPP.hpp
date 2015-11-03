@@ -171,6 +171,12 @@ const jlong max_jlong =         CONST64(0x7fffffffffffffff);
 #define strdup _strdup
 #endif
 
+// Visual Studio 2013 introduced strtoull(); before, one has to use _strtoui64() instead.
+#if _MSC_VER < 1800
+#define strtoull _strtoui64
+#endif
+
+
 #pragma warning( disable : 4100 ) // unreferenced formal parameter
 #pragma warning( disable : 4127 ) // conditional expression is constant
 #pragma warning( disable : 4514 ) // unreferenced inline function has been removed

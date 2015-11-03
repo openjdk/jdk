@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -592,9 +592,8 @@ XSLoader, DOMConfiguration {
      * @throws IOException
      * @throws XNIException
      */
-    SchemaGrammar loadSchema(XSDDescription desc,
-            XMLInputSource source,
-            Map locationPairs) throws IOException, XNIException {
+    SchemaGrammar loadSchema(XSDDescription desc, XMLInputSource source,
+            Map<String, LocationArray> locationPairs) throws IOException, XNIException {
 
         // this should only be done once per invocation of this object;
         // unless application alters JAXPSource in the mean time.
@@ -617,9 +616,9 @@ XSLoader, DOMConfiguration {
 
     /**
      * This method tries to resolve location of the given schema.
-     * The loader stores the namespace/location pairs in a hashtable (use "" as the
+     * The loader stores the namespace/location pairs in a map (use "" as the
      * namespace of absent namespace). When resolving an entity, loader first tries
-     * to find in the hashtable whether there is a value for that namespace,
+     * to find in the map whether there is a value for that namespace,
      * if so, pass that location value to the user-defined entity resolver.
      *
      * @param desc
@@ -628,7 +627,8 @@ XSLoader, DOMConfiguration {
      * @return the XMLInputSource
      * @throws IOException
      */
-    public static XMLInputSource resolveDocument(XSDDescription desc, Map locationPairs,
+    public static XMLInputSource resolveDocument(XSDDescription desc,
+            Map<String, LocationArray> locationPairs,
             XMLEntityResolver entityResolver) throws IOException {
         String loc = null;
         // we consider the schema location properties for import
@@ -638,7 +638,7 @@ XSLoader, DOMConfiguration {
             String namespace = desc.getTargetNamespace();
             String ns = namespace == null ? XMLSymbols.EMPTY_STRING : namespace;
             // get the location hint for that namespace
-            LocationArray tempLA = (LocationArray)locationPairs.get(ns);
+            LocationArray tempLA = locationPairs.get(ns);
             if(tempLA != null)
                 loc = tempLA.getFirstLocation();
         }
@@ -659,7 +659,7 @@ XSLoader, DOMConfiguration {
 
     // add external schema locations to the location pairs
     public static void processExternalHints(String sl, String nsl,
-            Map locations,
+            Map<String, XMLSchemaLoader.LocationArray> locations,
             XMLErrorReporter er) {
         if (sl != null) {
             try {
@@ -712,7 +712,8 @@ XSLoader, DOMConfiguration {
     // @param schemaStr     The schemaLocation string to tokenize
     // @param locations     HashMap mapping namespaces to LocationArray objects holding lists of locaitons
     // @return true if no problems; false if string could not be tokenized
-    public static boolean tokenizeSchemaLocationStr(String schemaStr, Map locations, String base) {
+    public static boolean tokenizeSchemaLocationStr(String schemaStr,
+            Map<String, XMLSchemaLoader.LocationArray> locations, String base) {
         if (schemaStr!= null) {
             StringTokenizer t = new StringTokenizer(schemaStr, " \n\t\r");
             String namespace, location;
@@ -722,7 +723,7 @@ XSLoader, DOMConfiguration {
                     return false; // error!
                 }
                 location = t.nextToken();
-                LocationArray la = ((LocationArray)locations.get(namespace));
+                LocationArray la = locations.get(namespace);
                 if(la == null) {
                     la = new LocationArray();
                     locations.put(namespace, la);
@@ -749,7 +750,8 @@ XSLoader, DOMConfiguration {
      * Note: all JAXP schema files will be checked for full-schema validity if the feature was set up
      *
      */
-    private void processJAXPSchemaSource(Map locationPairs) throws IOException {
+    private void processJAXPSchemaSource(
+            Map<String, LocationArray> locationPairs) throws IOException {
         fJAXPProcessed = true;
         if (fJAXPSource == null) {
             return;
@@ -932,7 +934,7 @@ XSLoader, DOMConfiguration {
         return new XMLInputSource(publicId, systemId, null);
     }
 
-    static class LocationArray{
+    public static class LocationArray{
 
         int length ;
         String [] locations = new String[2];

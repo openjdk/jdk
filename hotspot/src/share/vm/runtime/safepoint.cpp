@@ -63,8 +63,6 @@
 #include "c1/c1_globals.hpp"
 #endif
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // --------------------------------------------------------------------------------------------------
 // Implementation of Safepoint begin/end
 
@@ -340,7 +338,7 @@ void SafepointSynchronize::begin() {
       tty->print_cr("# SafepointSynchronize: Finished after "
                     INT64_FORMAT_W(6) " ms",
                     ((current_time - safepoint_limit_time) / MICROUNITS +
-                     SafepointTimeoutDelay));
+                     (jlong)SafepointTimeoutDelay));
     }
   }
 #endif
@@ -689,7 +687,7 @@ void SafepointSynchronize::block(JavaThread *thread) {
       break;
 
     default:
-     fatal(err_msg("Illegal threadstate encountered: %d", state));
+     fatal("Illegal threadstate encountered: %d", state);
   }
 
   // Check for pending. async. exceptions or suspends - except if the
@@ -773,12 +771,10 @@ void SafepointSynchronize::print_safepoint_timeout(SafepointTimeoutReason reason
   // To debug the long safepoint, specify both DieOnSafepointTimeout &
   // ShowMessageBoxOnError.
   if (DieOnSafepointTimeout) {
-    char msg[1024];
     VM_Operation *op = VMThread::vm_operation();
-    sprintf(msg, "Safepoint sync time longer than " INTX_FORMAT "ms detected when executing %s.",
-            SafepointTimeoutDelay,
-            op != NULL ? op->name() : "no vm operation");
-    fatal(msg);
+    fatal("Safepoint sync time longer than " INTX_FORMAT "ms detected when executing %s.",
+          SafepointTimeoutDelay,
+          op != NULL ? op->name() : "no vm operation");
   }
 }
 
@@ -895,7 +891,7 @@ void ThreadSafepointState::restart() {
     case _running:
     default:
        tty->print_cr("restart thread " INTPTR_FORMAT " with state %d",
-                      _thread, _type);
+                     p2i(_thread), _type);
        _thread->print();
       ShouldNotReachHere();
   }
@@ -917,7 +913,7 @@ void ThreadSafepointState::print_on(outputStream *st) const {
 
   st->print_cr("Thread: " INTPTR_FORMAT
               "  [0x%2x] State: %s _has_called_back %d _at_poll_safepoint %d",
-               _thread, _thread->osthread()->thread_id(), s, _has_called_back,
+               p2i(_thread), _thread->osthread()->thread_id(), s, _has_called_back,
                _at_poll_safepoint);
 
   _thread->print_thread_state_on(st);
@@ -936,7 +932,7 @@ void ThreadSafepointState::handle_polling_page_exception() {
 
   // Step 1: Find the nmethod from the return address
   if (ShowSafepointMsgs && Verbose) {
-    tty->print_cr("Polling page exception at " INTPTR_FORMAT, thread()->saved_exception_pc());
+    tty->print_cr("Polling page exception at " INTPTR_FORMAT, p2i(thread()->saved_exception_pc()));
   }
   address real_return_addr = thread()->saved_exception_pc();
 
@@ -1054,10 +1050,6 @@ static void print_header() {
 void SafepointSynchronize::deferred_initialize_stat() {
   if (init_done) return;
 
-  if (PrintSafepointStatisticsCount <= 0) {
-    fatal("Wrong PrintSafepointStatisticsCount");
-  }
-
   // If PrintSafepointStatisticsTimeout is specified, the statistics data will
   // be printed right away, in which case, _safepoint_stats will regress to
   // a single element array. Otherwise, it is a circular ring buffer with default
@@ -1168,7 +1160,7 @@ void SafepointSynchronize::end_statistics(jlong vmop_end_time) {
   // PrintSafepointStatisticsTimeout will be printed out right away.
   // By default, it is -1 meaning all samples will be put into the list.
   if ( PrintSafepointStatisticsTimeout > 0) {
-    if (spstat->_time_to_sync > PrintSafepointStatisticsTimeout * MICROUNITS) {
+    if (spstat->_time_to_sync > (jlong)PrintSafepointStatisticsTimeout * MICROUNITS) {
       print_statistics();
     }
   } else {
@@ -1234,7 +1226,7 @@ void SafepointSynchronize::print_stat_on_exit() {
     os::javaTimeNanos() - cleanup_end_time;
 
   if ( PrintSafepointStatisticsTimeout < 0 ||
-       spstat->_time_to_sync > PrintSafepointStatisticsTimeout * MICROUNITS) {
+       spstat->_time_to_sync > (jlong)PrintSafepointStatisticsTimeout * MICROUNITS) {
     print_statistics();
   }
   tty->cr();
@@ -1243,8 +1235,8 @@ void SafepointSynchronize::print_stat_on_exit() {
   if (!need_to_track_page_armed_status) {
     tty->print_cr("Polling page always armed");
   } else {
-    tty->print_cr("Defer polling page loop count = %d\n",
-                 DeferPollingPageLoopCount);
+    tty->print_cr("Defer polling page loop count = " INTX_FORMAT "\n",
+                  DeferPollingPageLoopCount);
   }
 
   for (int index = 0; index < VM_Operation::VMOp_Terminating; index++) {

@@ -93,8 +93,10 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
 
   mark_sweep_phase2();
 
+#if defined(COMPILER2) || INCLUDE_JVMCI
   // Don't add any more derived pointers during phase3
-  COMPILER2_PRESENT(DerivedPointerTable::set_active(false));
+  DerivedPointerTable::set_active(false);
+#endif
 
   mark_sweep_phase3();
 
@@ -121,7 +123,7 @@ void G1MarkSweep::allocate_stacks() {
 void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
                                     bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
-  GCTraceTime tm("phase 1", G1Log::fine() && Verbose, true, gc_timer(), gc_tracer()->gc_id());
+  GCTraceTime tm("phase 1", G1Log::fine() && Verbose, true, gc_timer());
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
@@ -146,8 +148,7 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
                                       &GenMarkSweep::keep_alive,
                                       &GenMarkSweep::follow_stack_closure,
                                       NULL,
-                                      gc_timer(),
-                                      gc_tracer()->gc_id());
+                                      gc_timer());
   gc_tracer()->report_gc_reference_stats(stats);
 
 
@@ -168,7 +169,9 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
 
   if (VerifyDuringGC) {
     HandleMark hm;  // handle scope
-    COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact);
+#if defined(COMPILER2) || INCLUDE_JVMCI
+    DerivedPointerTableDeactivate dpt_deact;
+#endif
     g1h->prepare_for_verify();
     // Note: we can verify only the heap here. When an object is
     // marked, the previous value of the mark word (including
@@ -200,7 +203,7 @@ void G1MarkSweep::mark_sweep_phase2() {
   // phase2, phase3 and phase4, but the ValidateMarkSweep live oops
   // tracking expects us to do so. See comment under phase4.
 
-  GCTraceTime tm("phase 2", G1Log::fine() && Verbose, true, gc_timer(), gc_tracer()->gc_id());
+  GCTraceTime tm("phase 2", G1Log::fine() && Verbose, true, gc_timer());
 
   prepare_compaction();
 }
@@ -233,7 +236,7 @@ void G1MarkSweep::mark_sweep_phase3() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   // Adjust the pointers to reflect the new locations
-  GCTraceTime tm("phase 3", G1Log::fine() && Verbose, true, gc_timer(), gc_tracer()->gc_id());
+  GCTraceTime tm("phase 3", G1Log::fine() && Verbose, true, gc_timer());
 
   // Need cleared claim bits for the roots processing
   ClassLoaderDataGraph::clear_claimed_marks();
@@ -294,7 +297,7 @@ void G1MarkSweep::mark_sweep_phase4() {
   // to use a higher index (saved from phase2) when verifying perm_gen.
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  GCTraceTime tm("phase 4", G1Log::fine() && Verbose, true, gc_timer(), gc_tracer()->gc_id());
+  GCTraceTime tm("phase 4", G1Log::fine() && Verbose, true, gc_timer());
 
   G1SpaceCompactClosure blk;
   g1h->heap_region_iterate(&blk);

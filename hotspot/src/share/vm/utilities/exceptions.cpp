@@ -35,8 +35,6 @@
 #include "utilities/events.hpp"
 #include "utilities/exceptions.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Implementation of ThreadShadow
 void check_ThreadShadow() {
   const ByteSize offset1 = byte_offset_of(ThreadShadow, _pending_exception);
@@ -85,7 +83,7 @@ bool Exceptions::special_exception(Thread* thread, const char* file, int line, H
 #endif // ASSERT
 
   if (thread->is_VM_thread()
-      || thread->is_Compiler_thread()
+      || !thread->can_call_java()
       || DumpSharedSpaces ) {
     // We do not care what kind of exception we get for the vm-thread or a thread which
     // is compiling.  We just install a dummy exception object
@@ -112,7 +110,7 @@ bool Exceptions::special_exception(Thread* thread, const char* file, int line, S
   }
 
   if (thread->is_VM_thread()
-      || thread->is_Compiler_thread()
+      || !thread->can_call_java()
       || DumpSharedSpaces ) {
     // We do not care what kind of exception we get for the vm-thread or a thread which
     // is compiling.  We just install a dummy exception object
@@ -144,10 +142,10 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
                   "thrown [%s, line %d]\nfor thread " INTPTR_FORMAT,
                   h_exception->print_value_string(),
                   message ? ": " : "", message ? message : "",
-                  (address)h_exception(), file, line, thread);
+                  p2i(h_exception()), file, line, p2i(thread));
   }
   // for AbortVMOnException flag
-  NOT_PRODUCT(Exceptions::debug_check_abort(h_exception, message));
+  Exceptions::debug_check_abort(h_exception, message);
 
   // Check for special boot-strapping/vm-thread handling
   if (special_exception(thread, file, line, h_exception)) {
@@ -167,7 +165,7 @@ void Exceptions::_throw(Thread* thread, const char* file, int line, Handle h_exc
   if (LogEvents){
     Events::log_exception(thread, "Exception <%s%s%s> (" INTPTR_FORMAT ") thrown at [%s, line %d]",
                           h_exception->print_value_string(), message ? ": " : "", message ? message : "",
-                          (address)h_exception(), file, line);
+                          p2i(h_exception()), file, line);
   }
 }
 
@@ -479,28 +477,30 @@ ExceptionMark::~ExceptionMark() {
 
 // ----------------------------------------------------------------------------------------
 
-#ifndef PRODUCT
 // caller frees value_string if necessary
 void Exceptions::debug_check_abort(const char *value_string, const char* message) {
   if (AbortVMOnException != NULL && value_string != NULL &&
       strstr(value_string, AbortVMOnException)) {
-    if (AbortVMOnExceptionMessage == NULL || message == NULL ||
-        strcmp(message, AbortVMOnExceptionMessage) == 0) {
-      fatal(err_msg("Saw %s, aborting", value_string));
+    if (AbortVMOnExceptionMessage == NULL || (message != NULL &&
+        strstr(message, AbortVMOnExceptionMessage))) {
+      fatal("Saw %s, aborting", value_string);
     }
   }
 }
 
 void Exceptions::debug_check_abort(Handle exception, const char* message) {
   if (AbortVMOnException != NULL) {
-    ResourceMark rm;
-    if (message == NULL && exception->is_a(SystemDictionary::Throwable_klass())) {
-      oop msg = java_lang_Throwable::message(exception);
-      if (msg != NULL) {
-        message = java_lang_String::as_utf8_string(msg);
-      }
-    }
-    debug_check_abort(InstanceKlass::cast(exception()->klass())->external_name(), message);
+    debug_check_abort_helper(exception, message);
   }
 }
-#endif
+
+void Exceptions::debug_check_abort_helper(Handle exception, const char* message) {
+  ResourceMark rm;
+  if (message == NULL && exception->is_a(SystemDictionary::Throwable_klass())) {
+    oop msg = java_lang_Throwable::message(exception);
+    if (msg != NULL) {
+      message = java_lang_String::as_utf8_string(msg);
+    }
+  }
+  debug_check_abort(InstanceKlass::cast(exception()->klass())->external_name(), message);
+}

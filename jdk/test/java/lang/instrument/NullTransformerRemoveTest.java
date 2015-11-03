@@ -27,7 +27,6 @@
  * @summary make sure removeTransformer(null) throws NullPointerException
  * @author Robert Field as modified from the code of Gabriel Adauto, Wily Technology
  *
- * @modules java.instrument
  * @run build NullTransformerRemoveTest
  * @run shell MakeJAR.sh redefineAgent
  * @run main/othervm -javaagent:redefineAgent.jar NullTransformerRemoveTest NullTransformerRemoveTest

@@ -36,8 +36,6 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "utilities/macros.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 // Implementation of ConstantPoolCacheEntry
 
 void ConstantPoolCacheEntry::initialize_entry(int index) {
@@ -126,7 +124,7 @@ void ConstantPoolCacheEntry::set_parameter_size(int value) {
   // This routine is called only in corner cases where the CPCE is not yet initialized.
   // See AbstractInterpreter::deopt_continue_after_entry.
   assert(_flags == 0 || parameter_size() == 0 || parameter_size() == value,
-         err_msg("size must not change: parameter_size=%d, value=%d", parameter_size(), value));
+         "size must not change: parameter_size=%d, value=%d", parameter_size(), value);
   // Setting the parameter size by itself is only safe if the
   // current value of _flags is 0, otherwise another thread may have
   // updated it and we don't want to overwrite that value.  Don't
@@ -136,7 +134,7 @@ void ConstantPoolCacheEntry::set_parameter_size(int value) {
     Atomic::cmpxchg_ptr((value & parameter_size_mask), &_flags, 0);
   }
   guarantee(parameter_size() == value,
-            err_msg("size must not change: parameter_size=%d, value=%d", parameter_size(), value));
+            "size must not change: parameter_size=%d, value=%d", parameter_size(), value);
 }
 
 void ConstantPoolCacheEntry::set_direct_or_vtable_call(Bytecodes::Code invoke_code,
@@ -310,9 +308,9 @@ void ConstantPoolCacheEntry::set_method_handle_common(constantPoolHandle cpool,
   if (TraceInvokeDynamic) {
     tty->print_cr("set_method_handle bc=%d appendix=" PTR_FORMAT "%s method_type=" PTR_FORMAT "%s method=" PTR_FORMAT " ",
                   invoke_code,
-                  (void *)appendix(),    (has_appendix    ? "" : " (unused)"),
-                  (void *)method_type(), (has_method_type ? "" : " (unused)"),
-                  (intptr_t)adapter());
+                  p2i(appendix()),    (has_appendix    ? "" : " (unused)"),
+                  p2i(method_type()), (has_method_type ? "" : " (unused)"),
+                  p2i(adapter()));
     adapter->print();
     if (has_appendix)  appendix()->print();
   }
@@ -593,7 +591,7 @@ void ConstantPoolCache::initialize(const intArray& inverse_index_map,
       // all point to the same constant pool cache entry.
       for (int entry = 1; entry < ConstantPoolCacheEntry::_indy_resolved_references_entries; entry++) {
         const int cpci_next = invokedynamic_references_map[ref + entry];
-        assert(cpci == cpci_next, err_msg_res("%d == %d", cpci, cpci_next));
+        assert(cpci == cpci_next, "%d == %d", cpci, cpci_next);
       }
 #endif
       entry_at(cpci)->initialize_resolved_reference_index(ref);

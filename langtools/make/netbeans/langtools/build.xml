@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
 
  Redistribution and use in source and binary forms, with or without
  modification, are permitted provided that the following conditions
@@ -81,11 +81,21 @@
         the user.
     -->
 
-    <target name="run" depends="-check-target.java.home,-build-classes,-def-run,-get-tool-and-args,-setup-bootclasspath"
+    <target name="run" depends="-check-target.java.home,-build-classes,-def-run,-get-tool-and-args,-setup-bootclasspath,-def-resolve-main-class"
             description="run tool">
         <echo level="info" message="${with_bootclasspath}"/>
         <echo level="info" message="Run ${use_bootstrap}${langtools.tool.name} with args ${langtools.tool.args}"/>
-        <run bcp="${with_bootclasspath}" mainclass="com.sun.tools.${langtools.tool.name}.Main" args="${langtools.tool.args}"/>
+        <resolve-main-class tool.name="${langtools.tool.name}" />
+        <run bcp="${with_bootclasspath}" mainclass="${langtools.main.class}" args="${langtools.tool.args}"/>
+    </target>
+
+    <target name="-def-resolve-main-class">
+        <macrodef name="resolve-main-class">
+          <attribute name="tool.name"/>
+          <sequential>
+            <property name="langtools.main.class" value="${tool.@{tool.name}.main.class}"/>
+          </sequential>
+        </macrodef>
     </target>
 
     <target name="-build-classes" depends="-get-tool-if-set,-build-classes-bootstrap-javac,-build-classes-all" />
@@ -159,10 +169,11 @@
 
     <!-- Debug tool in NetBeans. -->
 
-    <target name="debug" depends="-check-target.java.home,-def-run,-def-start-debugger,-get-tool-and-args,-setup-bootclasspath,-build-classes" if="netbeans.home">
+    <target name="debug" depends="-check-target.java.home,-def-run,-def-start-debugger,-get-tool-and-args,-setup-bootclasspath,-build-classes,-def-resolve-main-class" if="netbeans.home">
         <echo level="info" message="Debug ${use_bootstrap}${langtools.tool.name} with args ${langtools.tool.args}"/>
         <start-debugger/>
-        <run bcp="${with_bootclasspath}" mainclass="com.sun.tools.${langtools.tool.name}.Main" args="${langtools.tool.args}" jpda.jvmargs="${jpda.jvmargs}"/>
+        <resolve-main-class tool.name="${langtools.tool.name}" />
+        <run bcp="${with_bootclasspath}" mainclass="${langtools.main.class}" args="${langtools.tool.args}" jpda.jvmargs="${jpda.jvmargs}"/>
     </target>
 
     <!-- Debug a selected class . -->

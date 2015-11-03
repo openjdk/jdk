@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,8 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
       DISABLED_WARNINGS_solstudio := E_MACRO_REDEFINED, \
       MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libj2ucrypto/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB), \
-      LDFLAGS_SUFFIX := $(LIBDL), \
-      LDFLAGS_SUFFIX_solaris := -lc, \
+      LIBS := $(LIBDL), \
+      LIBS_solaris := -lc, \
       OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libj2ucrypto, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 

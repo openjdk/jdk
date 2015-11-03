@@ -439,8 +439,10 @@ void PhaseChaitin::lower_pressure(Block* b, uint location, LRG& lrg, IndexSet* l
       }
     }
   }
-  assert(int_pressure.current_pressure() == count_int_pressure(liveout), "the int pressure is incorrect");
-  assert(float_pressure.current_pressure() == count_float_pressure(liveout), "the float pressure is incorrect");
+  if (_scheduling_info_generated == false) {
+    assert(int_pressure.current_pressure() == count_int_pressure(liveout), "the int pressure is incorrect");
+    assert(float_pressure.current_pressure() == count_float_pressure(liveout), "the float pressure is incorrect");
+  }
 }
 
 /* Go to the first non-phi index in a block */
@@ -515,6 +517,58 @@ void PhaseChaitin::compute_initial_block_pressure(Block* b, IndexSet* liveout, P
   }
   assert(int_pressure.current_pressure() == count_int_pressure(liveout), "the int pressure is incorrect");
   assert(float_pressure.current_pressure() == count_float_pressure(liveout), "the float pressure is incorrect");
+}
+
+/*
+* Computes the entry register pressure of a block, looking at all live
+* ranges in the livein. The register pressure is computed for both float
+* and int/pointer registers.
+*/
+void PhaseChaitin::compute_entry_block_pressure(Block* b) {
+  IndexSet* livein = _live->livein(b);
+  IndexSetIterator elements(livein);
+  uint lid = elements.next();
+  while (lid != 0) {
+    LRG& lrg = lrgs(lid);
+    raise_pressure(b, lrg, _sched_int_pressure, _sched_float_pressure);
+    lid = elements.next();
+  }
+  // Now check phis for locally defined inputs
+  for (uint j = 0; j < b->number_of_nodes(); j++) {
+    Node* n = b->get_node(j);
+    if (n->is_Phi()) {
+      for (uint k = 1; k < n->req(); k++) {
+        Node* phi_in = n->in(k);
+        // Because we are talking about phis, raise register pressure once for each
+        // instance of a phi to account for a single value
+        if (_cfg.get_block_for_node(phi_in) == b) {
+          LRG& lrg = lrgs(phi_in->_idx);
+          raise_pressure(b, lrg, _sched_int_pressure, _sched_float_pressure);
+          break;
+        }
+      }
+    }
+  }
+  _sched_int_pressure.set_start_pressure(_sched_int_pressure.current_pressure());
+  _sched_float_pressure.set_start_pressure(_sched_float_pressure.current_pressure());
+}
+
+/*
+* Computes the exit register pressure of a block, looking at all live
+* ranges in the liveout. The register pressure is computed for both float
+* and int/pointer registers.
+*/
+void PhaseChaitin::compute_exit_block_pressure(Block* b) {
+  IndexSet* livein = _live->live(b);
+  IndexSetIterator elements(livein);
+  _sched_int_pressure.set_current_pressure(0);
+  _sched_float_pressure.set_current_pressure(0);
+  uint lid = elements.next();
+  while (lid != 0) {
+    LRG& lrg = lrgs(lid);
+    raise_pressure(b, lrg, _sched_int_pressure, _sched_float_pressure);
+    lid = elements.next();
+  }
 }
 
 /*
@@ -735,6 +789,16 @@ void PhaseChaitin::adjust_high_pressure_index(Block* b, uint& block_hrp_index, P
     }
   }
   block_hrp_index = i;
+}
+
+void PhaseChaitin::print_pressure_info(Pressure& pressure, const char *str) {
+  if (str != NULL) {
+    tty->print_cr("#  *** %s ***", str);
+  }
+  tty->print_cr("#     start pressure is = %d", pressure.start_pressure());
+  tty->print_cr("#     max pressure is = %d", pressure.final_pressure());
+  tty->print_cr("#     end pressure is = %d", pressure.current_pressure());
+  tty->print_cr("#");
 }
 
 /* Build an interference graph:

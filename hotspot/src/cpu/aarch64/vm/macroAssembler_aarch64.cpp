@@ -1709,6 +1709,20 @@ int MacroAssembler::corrected_idivq(Register result, Register ra, Register rb,
   return idivq_offset;
 }
 
+void MacroAssembler::membar(Membar_mask_bits order_constraint) {
+  address prev = pc() - NativeMembar::instruction_size;
+  if (prev == code()->last_membar()) {
+    NativeMembar *bar = NativeMembar_at(prev);
+    // We are merging two memory barrier instructions.  On AArch64 we
+    // can do this simply by ORing them together.
+    bar->set_kind(bar->get_kind() | order_constraint);
+    BLOCK_COMMENT("merged membar");
+  } else {
+    code()->set_last_membar(pc());
+    dmb(Assembler::barrier(order_constraint));
+  }
+}
+
 // MacroAssembler routines found actually to be needed
 
 void MacroAssembler::push(Register src)
@@ -2238,7 +2252,7 @@ void MacroAssembler::debug64(char* msg, int64_t pc, int64_t regs[])
     ttyLocker ttyl;
     ::tty->print_cr("=============== DEBUG MESSAGE: %s ================\n",
                     msg);
-    assert(false, err_msg("DEBUG MESSAGE: %s", msg));
+    assert(false, "DEBUG MESSAGE: %s", msg);
   }
 }
 
@@ -2286,18 +2300,30 @@ void MacroAssembler::c_stub_prolog(int gp_arg_count, int fp_arg_count, int ret_t
 }
 #endif
 
-void MacroAssembler::push_CPU_state() {
-    push(0x3fffffff, sp);         // integer registers except lr & sp
+void MacroAssembler::push_CPU_state(bool save_vectors) {
+  push(0x3fffffff, sp);         // integer registers except lr & sp
 
+  if (!save_vectors) {
     for (int i = 30; i >= 0; i -= 2)
       stpd(as_FloatRegister(i), as_FloatRegister(i+1),
            Address(pre(sp, -2 * wordSize)));
+  } else {
+    for (int i = 30; i >= 0; i -= 2)
+      stpq(as_FloatRegister(i), as_FloatRegister(i+1),
+           Address(pre(sp, -4 * wordSize)));
+  }
 }
 
-void MacroAssembler::pop_CPU_state() {
-  for (int i = 0; i < 32; i += 2)
-    ldpd(as_FloatRegister(i), as_FloatRegister(i+1),
-         Address(post(sp, 2 * wordSize)));
+void MacroAssembler::pop_CPU_state(bool restore_vectors) {
+  if (!restore_vectors) {
+    for (int i = 0; i < 32; i += 2)
+      ldpd(as_FloatRegister(i), as_FloatRegister(i+1),
+           Address(post(sp, 2 * wordSize)));
+  } else {
+    for (int i = 0; i < 32; i += 2)
+      ldpq(as_FloatRegister(i), as_FloatRegister(i+1),
+           Address(post(sp, 4 * wordSize)));
+  }
 
   pop(0x3fffffff, sp);         // integer registers except lr & sp
 }
@@ -3027,6 +3053,24 @@ SkipIfEqual::~SkipIfEqual() {
   _masm->bind(_label);
 }
 
+void MacroAssembler::addptr(const Address &dst, int32_t src) {
+  Address adr;
+  switch(dst.getMode()) {
+  case Address::base_plus_offset:
+    // This is the expected mode, although we allow all the other
+    // forms below.
+    adr = form_address(rscratch2, dst.base(), dst.offset(), LogBytesPerWord);
+    break;
+  default:
+    lea(rscratch2, dst);
+    adr = Address(rscratch2);
+    break;
+  }
+  ldr(rscratch1, adr);
+  add(rscratch1, rscratch1, src);
+  str(rscratch1, adr);
+}
+
 void MacroAssembler::cmpptr(Register src1, Address src2) {
   unsigned long offset;
   adrp(rscratch1, src2, offset);
@@ -3063,11 +3107,15 @@ void MacroAssembler::store_check(Register obj) {
 
   if (UseCondCardMark) {
     Label L_already_dirty;
+    membar(StoreLoad);
     ldrb(rscratch2,  Address(obj, rscratch1));
     cbz(rscratch2, L_already_dirty);
     strb(zr, Address(obj, rscratch1));
     bind(L_already_dirty);
   } else {
+    if (UseConcMarkSweepGC && CMSPrecleaningEnabled) {
+      membar(StoreStore);
+    }
     strb(zr, Address(obj, rscratch1));
   }
 }
