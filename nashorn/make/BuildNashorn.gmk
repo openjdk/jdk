@@ -28,6 +28,7 @@ default: all
 
 -include $(SPEC)
 include MakeBase.gmk
+include JarArchive.gmk
 include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
 
@@ -108,7 +109,7 @@ $(VERSION_FILE): $(VERSION_SRC)
 MANIFEST_ATTRIBUTES := Name: jdk/nashorn/\nImplementation-Title: Oracle Nashorn\nImplementation-Version: $(NASHORN_FULL_VERSION)
 
 # Create nashorn.jar from the final classes dir
-$(eval $(call SetupArchive,BUILD_NASHORN_JAR, \
+$(eval $(call SetupJarArchive, BUILD_NASHORN_JAR, \
     DEPENDENCIES := $(NASGEN_RUN_FILE) \
         $(VERSION_FILE), \
     SRCS := $(NASHORN_CLASSES_DIR), \
@@ -116,7 +117,8 @@ $(eval $(call SetupArchive,BUILD_NASHORN_JAR, \
     MANIFEST := $(NASHORN_TOPDIR)/src/jdk.scripting.nashorn/share/classes/META-INF/MANIFEST.MF, \
     EXTRA_MANIFEST_ATTR := $(MANIFEST_ATTRIBUTES), \
     SKIP_METAINF := true, \
-    JAR := $(NASHORN_JAR)))
+    JAR := $(NASHORN_JAR), \
+))
 
 compile: $(NASHORN_RUN_FILE) $(VERSION_FILE)
 all: $(NASHORN_JAR)
