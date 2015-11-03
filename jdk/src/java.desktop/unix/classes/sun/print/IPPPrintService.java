@@ -321,7 +321,11 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         if ((name == null) || (url == null)){
             throw new IllegalArgumentException("null uri or printer name");
         }
-        printer = name;
+        try {
+            printer = java.net.URLDecoder.decode(name, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException e) {
+            printer = name;
+        }
         supportedDocFlavors = null;
         supportedCats = null;
         mediaSizeNames = null;
@@ -351,7 +355,11 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         if ((name == null) || (uriStr == null)){
             throw new IllegalArgumentException("null uri or printer name");
         }
-        printer = name;
+        try {
+            printer = java.net.URLDecoder.decode(name, "UTF-8");
+        } catch (java.io.UnsupportedEncodingException e) {
+            printer = name;
+        }
         supportedDocFlavors = null;
         supportedCats = null;
         mediaSizeNames = null;
