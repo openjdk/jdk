@@ -312,7 +312,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see GraphicsConfiguration
      * @see #getGraphicsConfiguration
      */
-    private transient GraphicsConfiguration graphicsConfig = null;
+    private transient volatile GraphicsConfiguration graphicsConfig;
 
     /**
      * A reference to a <code>BufferStrategy</code> object
@@ -1143,9 +1143,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @since 1.3
      */
     public GraphicsConfiguration getGraphicsConfiguration() {
-        synchronized(getTreeLock()) {
-            return getGraphicsConfiguration_NoClientCode();
-        }
+        return getGraphicsConfiguration_NoClientCode();
     }
 
     final GraphicsConfiguration getGraphicsConfiguration_NoClientCode() {
@@ -3622,18 +3620,17 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * Creates an off-screen drawable image
-     *     to be used for double buffering.
-     * @param     width the specified width
-     * @param     height the specified height
-     * @return    an off-screen drawable image, which can be used for double
-     *    buffering.  The return value may be <code>null</code> if the
-     *    component is not displayable.  This will always happen if
-     *    <code>GraphicsEnvironment.isHeadless()</code> returns
-     *    <code>true</code>.
+     * Creates an off-screen drawable image to be used for double buffering.
+     *
+     * @param  width the specified width
+     * @param  height the specified height
+     * @return an off-screen drawable image, which can be used for double
+     *         buffering. The {@code null} value if the component is not
+     *         displayable or {@code GraphicsEnvironment.isHeadless()} returns
+     *         {@code true}.
      * @see #isDisplayable
      * @see GraphicsEnvironment#isHeadless
-     * @since     1.0
+     * @since 1.0
      */
     public Image createImage(int width, int height) {
         ComponentPeer peer = this.peer;
@@ -3646,19 +3643,19 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * Creates a volatile off-screen drawable image
-     *     to be used for double buffering.
-     * @param     width the specified width.
-     * @param     height the specified height.
-     * @return    an off-screen drawable image, which can be used for double
-     *    buffering.  The return value may be <code>null</code> if the
-     *    component is not displayable.  This will always happen if
-     *    <code>GraphicsEnvironment.isHeadless()</code> returns
-     *    <code>true</code>.
+     * Creates a volatile off-screen drawable image to be used for double
+     * buffering.
+     *
+     * @param  width the specified width
+     * @param  height the specified height
+     * @return an off-screen drawable image, which can be used for double
+     *         buffering. The {@code null} value if the component is not
+     *         displayable or {@code GraphicsEnvironment.isHeadless()} returns
+     *         {@code true}.
      * @see java.awt.image.VolatileImage
      * @see #isDisplayable
      * @see GraphicsEnvironment#isHeadless
-     * @since     1.4
+     * @since 1.4
      */
     public VolatileImage createVolatileImage(int width, int height) {
         ComponentPeer peer = this.peer;
@@ -3674,22 +3671,26 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
-     * Creates a volatile off-screen drawable image, with the given capabilities.
-     * The contents of this image may be lost at any time due
-     * to operating system issues, so the image must be managed
-     * via the <code>VolatileImage</code> interface.
-     * @param width the specified width.
-     * @param height the specified height.
-     * @param caps the image capabilities
-     * @exception AWTException if an image with the specified capabilities cannot
-     * be created
-     * @return a VolatileImage object, which can be used
-     * to manage surface contents loss and capabilities.
+     * Creates a volatile off-screen drawable image, with the given
+     * capabilities. The contents of this image may be lost at any time due to
+     * operating system issues, so the image must be managed via the
+     * {@code VolatileImage} interface.
+     *
+     * @param  width the specified width
+     * @param  height the specified height
+     * @param  caps the image capabilities
+     * @return a VolatileImage object, which can be used to manage surface
+     *         contents loss and capabilities. The {@code null} value if the
+     *         component is not displayable or
+     *         {@code GraphicsEnvironment.isHeadless()} returns {@code true}.
+     * @throws AWTException if an image with the specified capabilities cannot
+     *         be created
      * @see java.awt.image.VolatileImage
      * @since 1.4
      */
     public VolatileImage createVolatileImage(int width, int height,
-                                             ImageCapabilities caps) throws AWTException {
+                                             ImageCapabilities caps)
+            throws AWTException {
         // REMIND : check caps
         return createVolatileImage(width, height);
     }
