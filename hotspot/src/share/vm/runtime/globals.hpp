@@ -2889,6 +2889,9 @@ public:
   product(bool, AggressiveOpts, false,                                      \
           "Enable aggressive optimizations - see arguments.cpp")            \
                                                                             \
+  product_pd(bool, CompactStrings,                                          \
+          "Enable Strings to use single byte chars in backing store")       \
+                                                                            \
   product_pd(uintx, TypeProfileLevel,                                       \
           "=XYZ, with Z: Type profiling of arguments at call; "             \
                      "Y: Type profiling of return value at call; "          \
@@ -4258,6 +4261,9 @@ public:
   product_pd(bool, PreserveFramePointer,                                    \
              "Use the FP register for holding the frame pointer "           \
              "and not as a general purpose register.")                      \
+                                                                            \
+  diagnostic(bool, StringCharIntrinsics, true,                              \
+             "Inline String*.getChar/putChar intrinsics.")                  \
                                                                             \
   diagnostic(bool, CheckIntrinsics, true,                                   \
              "When a class C is loaded, check that "                        \

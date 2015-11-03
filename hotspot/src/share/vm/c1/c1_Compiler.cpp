@@ -225,6 +225,8 @@ bool Compiler::is_intrinsic_supported(methodHandle method) {
   case vmIntrinsics::_updateByteBufferCRC32:
   case vmIntrinsics::_compareAndSwapInt:
   case vmIntrinsics::_compareAndSwapObject:
+  case vmIntrinsics::_getCharStringU:
+  case vmIntrinsics::_putCharStringU:
 #ifdef TRACE_HAVE_INTRINSICS
   case vmIntrinsics::_classID:
   case vmIntrinsics::_threadID:
