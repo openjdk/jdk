@@ -22,7 +22,7 @@
  */
 
 /* @test
-   @bug 7040220
+   @bug 7040220 8054307
    @summary Test if StringCoding and NIO result have the same de/encoding result for UTF-8
  * @run main/othervm/timeout=2000 TestStringCodingUTF8
  * @key randomness
@@ -49,6 +49,18 @@ public class TestStringCodingUTF8 {
             bmp[i] = (char)i;
         }
         test(cs, bmp, 0, bmp.length);
+
+        char[] ascii = new char[0x80];
+        for (int i = 0; i < 0x80; i++) {
+            ascii[i] = (char)i;
+        }
+        test(cs, ascii, 0, ascii.length);
+
+        char[] latin1 = new char[0x100];
+        for (int i = 0; i < 0x100; i++) {
+            latin1[i] = (char)i;
+        }
+        test(cs, latin1, 0, latin1.length);
 
         ArrayList<Integer> list = new ArrayList<>(0x20000);
         for (int i = 0; i < 0x20000; i++) {
