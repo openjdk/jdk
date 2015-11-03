@@ -1275,9 +1275,9 @@ WB_ENTRY(void, WB_ForceSafepoint(JNIEnv* env, jobject wb))
   VMThread::execute(&force_safepoint_op);
 WB_END
 
-WB_ENTRY(long, WB_GetConstantPool(JNIEnv* env, jobject wb, jclass klass))
+WB_ENTRY(jlong, WB_GetConstantPool(JNIEnv* env, jobject wb, jclass klass))
   instanceKlassHandle ikh(java_lang_Class::as_Klass(JNIHandles::resolve(klass)));
-  return (long) ikh->constants();
+  return (jlong) ikh->constants();
 WB_END
 
 template <typename T>
