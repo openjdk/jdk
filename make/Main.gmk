@@ -452,6 +452,8 @@ else
 
   test-make: clean-test-make
 
+  build-test-lib: java
+
   build-test-hotspot-jtreg-native: buildtools-jdk
 
   build-test-jdk-jtreg-native: buildtools-jdk
