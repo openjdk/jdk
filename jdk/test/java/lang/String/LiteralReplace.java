@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8058779
+ * @bug 8058779 8054307
  * @library /lib/testlibrary/
  * @build jdk.testlibrary.RandomFactory
  * @run testng LiteralReplace
@@ -104,6 +104,109 @@ public class LiteralReplace {
             {"abcdefgh", "[a-h]", "X", "abcdefgh"},
             {"aa+", "a+", "", "a"},
             {"^abc$", "abc", "x", "^x$"},
+
+            // more with non-latin1 characters
+            {"\u4e00\u4e00\u4e00",
+             "\u4e00\u4e00",
+             "\u4e01",
+             "\u4e01\u4e00"},
+
+            {"\u4e00\u4e01\u4e02\u4e03\u4e04\u4e05\u4e06\u4e07\u4e08",
+             "\u4e03\u4e04\u4e05",
+             "\u4e10\u4e11\u4e12",
+             "\u4e00\u4e01\u4e02\u4e10\u4e11\u4e12\u4e06\u4e07\u4e08"},
+
+            {"\u4e00\u4e01\u4e02\u4e03\u4e04\u4e05\u4e06\u4e07\u4e08",
+             "ABC",
+             "\u4e10\u4e11\u4e12",
+             "\u4e00\u4e01\u4e02\u4e03\u4e04\u4e05\u4e06\u4e07\u4e08"},
+
+            {"\u4e00\u4e01\u4e02\u4e03\u4e04\u4e02\u4e03\u4e07\u4e08",
+             "\u4e02\u4e03",
+             "\u4e12\u4e13",
+             "\u4e00\u4e01\u4e12\u4e13\u4e04\u4e12\u4e13\u4e07\u4e08"},
+
+            {"\u4e00\u4e01\u4e02\u4e03\u4e04\u4e02\u4e03\u4e07\u4e08",
+             "\u4e02\u4e03",
+             "ab",
+             "\u4e00\u4e01ab\u4e04ab\u4e07\u4e08"},
+
+            {"\u4e00\u4e01\u4e02\u4e03\u4e04\u4e05\u4e06\u4e07",
+             "",
+             "_",
+             "_\u4e00_\u4e01_\u4e02_\u4e03_\u4e04_\u4e05_\u4e06_\u4e07_"},
+            {"^\u4e00\u4e01\u4e02$",
+             "\u4e00\u4e01\u4e02",
+             "\u4e03",
+             "^\u4e03$"},
+
+            {"", "\u4e00", "\u4e01", ""},
+            {"", "", "\u4e00\u4e01\u4e02", "\u4e00\u4e01\u4e02"},
+
+            {"^\u4e00\u4e01\u4e02$",
+             "\u4e00\u4e01\u4e02",
+             "X",
+             "^X$"},
+
+            {"abcdefgh",
+             "def",
+             "\u4e01",
+             "abc\u4e01gh"},
+
+            {"abcdefgh",
+             "def",
+             "\u4e01\u4e02",
+             "abc\u4e01\u4e02gh"},
+
+            {"abcdefabcgh",
+             "abc",
+             "\u4e01\u4e02",
+             "\u4e01\u4e02def\u4e01\u4e02gh"},
+
+            {"abcdefabcghabc",
+             "abc",
+             "\u4e01\u4e02",
+             "\u4e01\u4e02def\u4e01\u4e02gh\u4e01\u4e02"},
+
+            {"\u4e00\u4e01\u4e02\u4e03\u4e04\u4e05",
+             "\u4e00\u4e01\u4e02\u4e03\u4e04\u4e05",
+             "abcd",
+             "abcd"},
+
+            {"\u4e00\u4e01",
+             "\u4e00\u4e01",
+             "abcdefg",
+             "abcdefg"},
+
+            {"\u4e00\u4e01xyz",
+             "\u4e00\u4e01",
+             "abcdefg",
+             "abcdefgxyz"},
+
+            {"\u4e00\u4e00\u4e00\u4e00\u4e00\u4e00",
+             "\u4e00\u4e00",
+             "\u4e00\u4e00\u4e00",
+             "\u4e00\u4e00\u4e00\u4e00\u4e00\u4e00\u4e00\u4e00\u4e00"},
+
+            {"\u4e00\u4e00\u4e00\u4e00\u4e00\u4e00",
+             "\u4e00\u4e00\u4e00",
+             "\u4e00\u4e00",
+             "\u4e00\u4e00\u4e00\u4e00"},
+
+            {"\u4e00.\u4e01.\u4e02.\u4e03.\u4e04.",
+             ".",
+             "-",
+             "\u4e00-\u4e01-\u4e02-\u4e03-\u4e04-"},
+
+            {"\u4e00\u4e00\u4e00\u4e00\u4e00\u4e00",
+             "\u4e00",
+             "",
+             ""},
+
+            {"\u4e00\u4e01\u4e02\u4e03\u4e04\u4e05",
+             "\u4e00\u4e01\u4e02\u4e03\u4e04\u4e05",
+             "",
+             ""},
         };
     }
 

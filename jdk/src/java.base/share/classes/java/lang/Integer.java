@@ -29,6 +29,10 @@ import java.lang.annotation.Native;
 import java.util.Objects;
 import jdk.internal.HotSpotIntrinsicCandidate;
 
+import static java.lang.String.COMPACT_STRINGS;
+import static java.lang.String.LATIN1;
+import static java.lang.String.UTF16;
+
 /**
  * The {@code Integer} class wraps a value of the primitive type
  * {@code int} in an object. An object of type {@code Integer}
@@ -138,25 +142,47 @@ public final class Integer extends Number implements Comparable<Integer> {
             return toString(i);
         }
 
-        char buf[] = new char[33];
+        if (COMPACT_STRINGS) {
+            byte[] buf = new byte[33];
+            boolean negative = (i < 0);
+            int charPos = 32;
+
+            if (!negative) {
+                i = -i;
+            }
+
+            while (i <= -radix) {
+                buf[charPos--] = (byte)digits[-(i % radix)];
+                i = i / radix;
+            }
+            buf[charPos] = (byte)digits[-i];
+
+            if (negative) {
+                buf[--charPos] = '-';
+            }
+
+            return StringLatin1.newString(buf, charPos, (33 - charPos));
+        }
+        return toStringUTF16(i, radix);
+    }
+
+    private static String toStringUTF16(int i, int radix) {
+        byte[] buf = new byte[33 * 2];
         boolean negative = (i < 0);
         int charPos = 32;
-
         if (!negative) {
             i = -i;
         }
-
         while (i <= -radix) {
-            buf[charPos--] = digits[-(i % radix)];
+            StringUTF16.putChar(buf, charPos--, digits[-(i % radix)]);
             i = i / radix;
         }
-        buf[charPos] = digits[-i];
+        StringUTF16.putChar(buf, charPos, digits[-i]);
 
         if (negative) {
-            buf[--charPos] = '-';
+            StringUTF16.putChar(buf, --charPos, '-');
         }
-
-        return new String(buf, charPos, (33 - charPos));
+        return StringUTF16.newString(buf, charPos, (33 - charPos));
     }
 
     /**
@@ -312,12 +338,16 @@ public final class Integer extends Number implements Comparable<Integer> {
         // assert shift > 0 && shift <=5 : "Illegal shift value";
         int mag = Integer.SIZE - Integer.numberOfLeadingZeros(val);
         int chars = Math.max(((mag + (shift - 1)) / shift), 1);
-        char[] buf = new char[chars];
 
-        formatUnsignedInt(val, shift, buf, 0, chars);
-
-        // Use special constructor which takes over "buf".
-        return new String(buf, true);
+        if (COMPACT_STRINGS) {
+            byte[] buf = new byte[chars];
+            formatUnsignedInt(val, shift, buf, 0, chars);
+            return new String(buf, LATIN1);
+        } else {
+            byte[] buf = new byte[chars * 2];
+            formatUnsignedIntUTF16(val, shift, buf, 0, chars);
+            return new String(buf, UTF16);
+        }
     }
 
     /**
@@ -331,7 +361,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * @param offset the offset in the destination buffer to start at
      * @param len the number of characters to write
      */
-     static void formatUnsignedInt(int val, int shift, char[] buf, int offset, int len) {
+    static void formatUnsignedInt(int val, int shift, char[] buf, int offset, int len) {
         // assert shift > 0 && shift <=5 : "Illegal shift value";
         // assert offset >= 0 && offset < buf.length : "illegal offset";
         // assert len > 0 && (offset + len) <= buf.length : "illegal length";
@@ -340,6 +370,28 @@ public final class Integer extends Number implements Comparable<Integer> {
         int mask = radix - 1;
         do {
             buf[--charPos] = Integer.digits[val & mask];
+            val >>>= shift;
+        } while (charPos > offset);
+    }
+
+    /** byte[]/LATIN1 version    */
+    static void formatUnsignedInt(int val, int shift, byte[] buf, int offset, int len) {
+        int charPos = offset + len;
+        int radix = 1 << shift;
+        int mask = radix - 1;
+        do {
+            buf[--charPos] = (byte)Integer.digits[val & mask];
+            val >>>= shift;
+        } while (charPos > offset);
+    }
+
+    /** byte[]/UTF16 version    */
+    static void formatUnsignedIntUTF16(int val, int shift, byte[] buf, int offset, int len) {
+        int charPos = offset + len;
+        int radix = 1 << shift;
+        int mask = radix - 1;
+        do {
+            StringUTF16.putChar(buf, --charPos, Integer.digits[val & mask]);
             val >>>= shift;
         } while (charPos > offset);
     }
@@ -401,9 +453,15 @@ public final class Integer extends Number implements Comparable<Integer> {
         if (i == Integer.MIN_VALUE)
             return "-2147483648";
         int size = (i < 0) ? stringSize(-i) + 1 : stringSize(i);
-        char[] buf = new char[size];
-        getChars(i, size, buf);
-        return new String(buf, true);
+        if (COMPACT_STRINGS) {
+            byte[] buf = new byte[size];
+            getChars(i, size, buf);
+            return new String(buf, LATIN1);
+        } else {
+            byte[] buf = new byte[size * 2];
+            getCharsUTF16(i, size, buf);
+            return new String(buf, UTF16);
+        }
     }
 
     /**
@@ -433,7 +491,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      *
      * Will fail if i == Integer.MIN_VALUE
      */
-    static void getChars(int i, int index, char[] buf) {
+    static void getChars(int i, int index, byte[] buf) {
         int q, r;
         int charPos = index;
         char sign = 0;
@@ -449,8 +507,8 @@ public final class Integer extends Number implements Comparable<Integer> {
         // really: r = i - (q * 100);
             r = i - ((q << 6) + (q << 5) + (q << 2));
             i = q;
-            buf [--charPos] = DigitOnes[r];
-            buf [--charPos] = DigitTens[r];
+            buf [--charPos] = (byte)DigitOnes[r];
+            buf [--charPos] = (byte)DigitTens[r];
         }
 
         // Fall thru to fast mode for smaller numbers
@@ -458,12 +516,46 @@ public final class Integer extends Number implements Comparable<Integer> {
         for (;;) {
             q = (i * 52429) >>> (16+3);
             r = i - ((q << 3) + (q << 1));  // r = i-(q*10) ...
-            buf [--charPos] = digits [r];
+            buf [--charPos] = (byte)digits [r];
             i = q;
             if (i == 0) break;
         }
         if (sign != 0) {
-            buf [--charPos] = sign;
+            buf [--charPos] = (byte)sign;
+        }
+    }
+
+    static void getCharsUTF16(int i, int index, byte[] buf) {
+        int q, r;
+        int charPos = index;
+        char sign = 0;
+
+        if (i < 0) {
+            sign = '-';
+            i = -i;
+        }
+
+        // Generate two digits per iteration
+        while (i >= 65536) {
+            q = i / 100;
+        // really: r = i - (q * 100);
+            r = i - ((q << 6) + (q << 5) + (q << 2));
+            i = q;
+            StringUTF16.putChar(buf, --charPos, DigitOnes[r]);
+            StringUTF16.putChar(buf, --charPos, DigitTens[r]);
+        }
+
+        // Fall thru to fast mode for smaller numbers
+        // assert(i <= 65536, i);
+        for (;;) {
+            q = (i * 52429) >>> (16+3);
+            r = i - ((q << 3) + (q << 1));  // r = i-(q*10) ...
+            StringUTF16.putChar(buf, --charPos, Integer.digits[r]);
+            i = q;
+            if (i == 0) break;
+        }
+        if (sign != 0) {
+            StringUTF16.putChar(buf, --charPos, sign);
         }
     }
 
