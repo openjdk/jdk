@@ -867,7 +867,11 @@ void MachPrologNode::format(PhaseRegAlloc* ra_, outputStream* st) const {
     st->print("movq    [rsp + #%d], rbp\t# Save rbp",framesize);
     if (PreserveFramePointer) {
       st->print("\n\t");
-      st->print("movq    rbp, [rsp + #%d]\t# Save the caller's SP into rbp", (framesize + wordSize));
+      st->print("movq    rbp, rsp\t# Save the caller's SP into rbp");
+      if (framesize > 0) {
+        st->print("\n\t");
+        st->print("addq    rbp, #%d", framesize);
+      }      
     }
   }
 
@@ -2136,12 +2140,13 @@ encode %{
                      RELOC_DISP32);
     }
     if (_method) {
-      // Emit stub for static call.
-      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
+      // Emit stubs for static call.
+      address mark = cbuf.insts_mark();
+      address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
       if (stub == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
-      } 
+      }
     }
   %}
 
@@ -3767,6 +3772,22 @@ operand indIndexScale(any_RegP reg, rRegL lreg, immI2 scale)
   %}
 %}
 
+operand indPosIndexScale(any_RegP reg, rRegI idx, immI2 scale)
+%{
+  constraint(ALLOC_IN_RC(ptr_reg));
+  predicate(n->in(3)->in(1)->as_Type()->type()->is_long()->_lo >= 0);
+  match(AddP reg (LShiftL (ConvI2L idx) scale));
+
+  op_cost(10);
+  format %{"[$reg + pos $idx << $scale]" %}
+  interface(MEMORY_INTER) %{
+    base($reg);
+    index($idx);
+    scale($scale);
+    disp(0x0);
+  %}
+%}
+
 // Indirect Memory Times Scale Plus Index Register Plus Offset Operand
 operand indIndexScaleOffset(any_RegP reg, immL32 off, rRegL lreg, immI2 scale)
 %{
@@ -4159,7 +4180,7 @@ operand cmpOpUCF2() %{
 // case of this is memory operands.
 
 opclass memory(indirect, indOffset8, indOffset32, indIndexOffset, indIndex,
-               indIndexScale, indIndexScaleOffset, indPosIndexOffset, indPosIndexScaleOffset,
+               indIndexScale, indPosIndexScale, indIndexScaleOffset, indPosIndexOffset, indPosIndexScaleOffset,
                indCompressedOopOffset,
                indirectNarrow, indOffset8Narrow, indOffset32Narrow,
                indIndexOffsetNarrow, indIndexNarrow, indIndexScaleNarrow,
@@ -5176,6 +5197,17 @@ instruct leaPIdxOff(rRegP dst, indIndexOffset mem)
 %}
 
 instruct leaPIdxScale(rRegP dst, indIndexScale mem)
+%{
+  match(Set dst mem);
+
+  ins_cost(110);
+  format %{ "leaq    $dst, $mem\t# ptr idxscale" %}
+  opcode(0x8D);
+  ins_encode(REX_reg_mem_wide(dst, mem), OpcP, reg_mem(dst, mem));
+  ins_pipe(ialu_reg_reg_fat);
+%}
+
+instruct leaPPosIdxScale(rRegP dst, indPosIndexScale mem)
 %{
   match(Set dst mem);
 
@@ -9864,22 +9896,6 @@ instruct powD_reg(regD dst, regD src0, regD src1, rax_RegI rax, rdx_RegI rdx, rc
     __ movdbl(Address(rsp, 0), $src0$$XMMRegister);
     __ fld_d(Address(rsp, 0));
     __ fast_pow();
-    __ fstp_d(Address(rsp, 0));
-    __ movdbl($dst$$XMMRegister, Address(rsp, 0));
-    __ addptr(rsp, 8);
-  %}
-  ins_pipe( pipe_slow );
-%}
-
-instruct expD_reg(regD dst, regD src, rax_RegI rax, rdx_RegI rdx, rcx_RegI rcx, rFlagsReg cr) %{
-  match(Set dst (ExpD src));
-  effect(KILL rax, KILL rcx, KILL rdx, KILL cr);
-  format %{ "fast_exp $dst -> $src  // KILL $rax, $rcx, $rdx" %}
-  ins_encode %{
-    __ subptr(rsp, 8);
-    __ movdbl(Address(rsp, 0), $src$$XMMRegister);
-    __ fld_d(Address(rsp, 0));
-    __ fast_exp();
     __ fstp_d(Address(rsp, 0));
     __ movdbl($dst$$XMMRegister, Address(rsp, 0));
     __ addptr(rsp, 8);

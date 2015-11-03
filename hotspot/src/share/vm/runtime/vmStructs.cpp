@@ -55,7 +55,6 @@
 #include "gc/shared/generation.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/space.hpp"
-#include "gc/shared/watermark.hpp"
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
@@ -107,6 +106,22 @@
 #include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
 
+#ifdef TARGET_OS_FAMILY_linux
+# include "vmStructs_linux.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "vmStructs_solaris.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "vmStructs_windows.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_aix
+# include "vmStructs_aix.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "vmStructs_bsd.hpp"
+#endif
+
 #ifdef TARGET_ARCH_x86
 # include "vmStructs_x86.hpp"
 #endif
@@ -125,6 +140,7 @@
 #ifdef TARGET_ARCH_aarch64
 # include "vmStructs_aarch64.hpp"
 #endif
+
 #ifdef TARGET_OS_ARCH_linux_x86
 # include "vmStructs_linux_x86.hpp"
 #endif
@@ -161,6 +177,7 @@
 #ifdef TARGET_OS_ARCH_bsd_zero
 # include "vmStructs_bsd_zero.hpp"
 #endif
+
 #if INCLUDE_ALL_GCS
 #include "gc/cms/compactibleFreeListSpace.hpp"
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
@@ -177,6 +194,10 @@
 #include "gc/parallel/psYoungGen.hpp"
 #include "gc/parallel/vmStructs_parallelgc.hpp"
 #endif // INCLUDE_ALL_GCS
+
+#if INCLUDE_JVMCI
+# include "jvmci/vmStructs_jvmci.hpp"
+#endif
 
 #if INCLUDE_TRACE
 #include "runtime/vmStructs_trace.hpp"
@@ -311,6 +332,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(InstanceKlass,               _static_oop_field_count,                       u2)                                    \
   nonstatic_field(InstanceKlass,               _nonstatic_oop_map_size,                       int)                                   \
   nonstatic_field(InstanceKlass,               _is_marked_dependent,                          bool)                                  \
+  nonstatic_field(InstanceKlass,               _misc_flags,                                   u2)                                    \
   nonstatic_field(InstanceKlass,               _minor_version,                                u2)                                    \
   nonstatic_field(InstanceKlass,               _major_version,                                u2)                                    \
   nonstatic_field(InstanceKlass,               _init_state,                                   u1)                                    \
@@ -382,8 +404,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(Method,                      _method_counters,                              MethodCounters*)                       \
   nonstatic_field(Method,                      _access_flags,                                 AccessFlags)                           \
   nonstatic_field(Method,                      _vtable_index,                                 int)                                   \
-  nonstatic_field(Method,                      _method_size,                                  u2)                                    \
   nonstatic_field(Method,                      _intrinsic_id,                                 u2)                                    \
+  nonstatic_field(Method,                      _flags,                                        u1)                                    \
   nonproduct_nonstatic_field(Method,           _compiled_invocation_count,                    int)                                   \
   volatile_nonstatic_field(Method,             _code,                                         nmethod*)                              \
   nonstatic_field(Method,                      _i2i_entry,                                    address)                               \
@@ -408,6 +430,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(Symbol,                      _identity_hash,                                short)                                 \
   nonstatic_field(Symbol,                      _length,                                       unsigned short)                        \
   unchecked_nonstatic_field(Symbol,            _body,                                         sizeof(jbyte)) /* NOTE: no type */     \
+  nonstatic_field(Symbol,                      _body[0],                                      jbyte)                                 \
   nonstatic_field(TypeArrayKlass,              _max_length,                                   int)                                   \
                                                                                                                                      \
   /***********************/                                                                                                          \
@@ -470,6 +493,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(Universe,                    _bootstrapping,                                bool)                                  \
      static_field(Universe,                    _fully_initialized,                            bool)                                  \
      static_field(Universe,                    _verify_count,                                 int)                                   \
+     static_field(Universe,                    _verify_oop_mask,                              uintptr_t)                             \
+     static_field(Universe,                    _verify_oop_bits,                              uintptr_t)                             \
      static_field(Universe,                    _non_oop_bits,                                 intptr_t)                              \
      static_field(Universe,                    _narrow_oop._base,                             address)                               \
      static_field(Universe,                    _narrow_oop._shift,                            int)                                   \
@@ -489,6 +514,10 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
   unchecked_nonstatic_field(ageTable,          sizes,                                         sizeof(ageTable::sizes))               \
                                                                                                                                      \
+  nonstatic_field(BarrierSet,                  _fake_rtti,                                    BarrierSet::FakeRtti)                  \
+                                                                                                                                     \
+  nonstatic_field(BarrierSet::FakeRtti,        _concrete_tag,                                 BarrierSet::Name)                      \
+                                                                                                                                     \
   nonstatic_field(BlockOffsetTable,            _bottom,                                       HeapWord*)                             \
   nonstatic_field(BlockOffsetTable,            _end,                                          HeapWord*)                             \
                                                                                                                                      \
@@ -504,7 +533,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                                                                                      \
   nonstatic_field(BlockOffsetArrayNonContigSpace, _unallocated_block,                         HeapWord*)                             \
                                                                                                                                      \
-  nonstatic_field(CardGeneration,              _rs,                                           GenRemSet*)                            \
+  nonstatic_field(CardGeneration,              _rs,                                           CardTableRS*)                          \
   nonstatic_field(CardGeneration,              _bts,                                          BlockOffsetSharedArray*)               \
   nonstatic_field(CardGeneration,              _shrink_factor,                                size_t)                                \
   nonstatic_field(CardGeneration,              _capacity_at_prologue,                         size_t)                                \
@@ -578,6 +607,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(ThreadLocalAllocBuffer,      _start,                                        HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _top,                                          HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _end,                                          HeapWord*)                             \
+  nonstatic_field(ThreadLocalAllocBuffer,      _pf_top,                                       HeapWord*)                             \
   nonstatic_field(ThreadLocalAllocBuffer,      _desired_size,                                 size_t)                                \
   nonstatic_field(ThreadLocalAllocBuffer,      _refill_waste_limit,                           size_t)                                \
      static_field(ThreadLocalAllocBuffer,      _target_refills,                               unsigned)                              \
@@ -593,8 +623,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(VirtualSpace,                _lower_high,                                   char*)                                 \
   nonstatic_field(VirtualSpace,                _middle_high,                                  char*)                                 \
   nonstatic_field(VirtualSpace,                _upper_high,                                   char*)                                 \
-  nonstatic_field(WaterMark,                   _point,                                        HeapWord*)                             \
-  nonstatic_field(WaterMark,                   _space,                                        Space*)                                \
                                                                                                                                      \
   /************************/                                                                                                         \
   /* PerfMemory - jvmstat */                                                                                                         \
@@ -787,6 +815,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /********************************/                                                                                                 \
                                                                                                                                      \
      static_field(CodeCache,                   _heaps,                                        GrowableArray<CodeHeap*>*)             \
+     static_field(CodeCache,                   _low_bound,                                    address)                               \
+     static_field(CodeCache,                   _high_bound,                                   address)                               \
      static_field(CodeCache,                   _scavenge_root_nmethods,                       nmethod*)                              \
                                                                                                                                      \
   /*******************************/                                                                                                  \
@@ -832,16 +862,48 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(StubRoutines,                _ghash_processBlocks,                          address)                               \
      static_field(StubRoutines,                _updateBytesCRC32,                             address)                               \
      static_field(StubRoutines,                _crc_table_adr,                                address)                               \
+     static_field(StubRoutines,                _crc32c_table_addr,                            address)                               \
      static_field(StubRoutines,                _updateBytesCRC32C,                            address)                               \
      static_field(StubRoutines,                _multiplyToLen,                                address)                               \
      static_field(StubRoutines,                _squareToLen,                                  address)                               \
      static_field(StubRoutines,                _mulAdd,                                       address)                               \
+     static_field(StubRoutines,                _dexp,                                         address)                               \
+     static_field(StubRoutines,                _jbyte_arraycopy,                              address)                               \
+     static_field(StubRoutines,                _jshort_arraycopy,                             address)                               \
+     static_field(StubRoutines,                _jint_arraycopy,                               address)                               \
+     static_field(StubRoutines,                _jlong_arraycopy,                              address)                               \
+     static_field(StubRoutines,                _oop_arraycopy,                                address)                               \
+     static_field(StubRoutines,                _oop_arraycopy_uninit,                         address)                               \
+     static_field(StubRoutines,                _jbyte_disjoint_arraycopy,                     address)                               \
+     static_field(StubRoutines,                _jshort_disjoint_arraycopy,                    address)                               \
+     static_field(StubRoutines,                _jint_disjoint_arraycopy,                      address)                               \
+     static_field(StubRoutines,                _jlong_disjoint_arraycopy,                     address)                               \
+     static_field(StubRoutines,                _oop_disjoint_arraycopy,                       address)                               \
+     static_field(StubRoutines,                _oop_disjoint_arraycopy_uninit,                address)                               \
+     static_field(StubRoutines,                _arrayof_jbyte_arraycopy,                      address)                               \
+     static_field(StubRoutines,                _arrayof_jshort_arraycopy,                     address)                               \
+     static_field(StubRoutines,                _arrayof_jint_arraycopy,                       address)                               \
+     static_field(StubRoutines,                _arrayof_jlong_arraycopy,                      address)                               \
+     static_field(StubRoutines,                _arrayof_oop_arraycopy,                        address)                               \
+     static_field(StubRoutines,                _arrayof_oop_arraycopy_uninit,                 address)                               \
+     static_field(StubRoutines,                _arrayof_jbyte_disjoint_arraycopy,             address)                               \
+     static_field(StubRoutines,                _arrayof_jshort_disjoint_arraycopy,            address)                               \
+     static_field(StubRoutines,                _arrayof_jint_disjoint_arraycopy,              address)                               \
+     static_field(StubRoutines,                _arrayof_jlong_disjoint_arraycopy,             address)                               \
+     static_field(StubRoutines,                _arrayof_oop_disjoint_arraycopy,               address)                               \
+     static_field(StubRoutines,                _arrayof_oop_disjoint_arraycopy_uninit,        address)                               \
+     static_field(StubRoutines,                _checkcast_arraycopy,                          address)                               \
+     static_field(StubRoutines,                _checkcast_arraycopy_uninit,                   address)                               \
+     static_field(StubRoutines,                _unsafe_arraycopy,                             address)                               \
+     static_field(StubRoutines,                _generic_arraycopy,                            address)                               \
                                                                                                                                      \
   /*****************/                                                                                                                \
   /* SharedRuntime */                                                                                                                \
   /*****************/                                                                                                                \
                                                                                                                                      \
+     static_field(SharedRuntime,               _wrong_method_blob,                            RuntimeStub*)                          \
      static_field(SharedRuntime,               _ic_miss_blob,                                 RuntimeStub*)                          \
+     static_field(SharedRuntime,               _deopt_blob,                                   DeoptimizationBlob*)                   \
                                                                                                                                      \
   /***************************************/                                                                                          \
   /* PcDesc and other compiled code info */                                                                                          \
@@ -856,16 +918,18 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* CodeBlobs (NOTE: incomplete, but only a little) */                                                                              \
   /***************************************************/                                                                              \
                                                                                                                                      \
-  nonstatic_field(CodeBlob,                    _name,                                         const char*)                           \
-  nonstatic_field(CodeBlob,                    _size,                                         int)                                   \
-  nonstatic_field(CodeBlob,                    _header_size,                                  int)                                   \
-  nonstatic_field(CodeBlob,                    _relocation_size,                              int)                                   \
-  nonstatic_field(CodeBlob,                    _content_offset,                               int)                                   \
-  nonstatic_field(CodeBlob,                    _code_offset,                                  int)                                   \
-  nonstatic_field(CodeBlob,                    _frame_complete_offset,                        int)                                   \
-  nonstatic_field(CodeBlob,                    _data_offset,                                  int)                                   \
-  nonstatic_field(CodeBlob,                    _frame_size,                                   int)                                   \
-  nonstatic_field(CodeBlob,                    _oop_maps,                                     ImmutableOopMapSet*)                   \
+  nonstatic_field(CodeBlob,                    _name,                                   const char*)                                 \
+  nonstatic_field(CodeBlob,                    _size,                                   int)                                         \
+  nonstatic_field(CodeBlob,                    _header_size,                            int)                                         \
+  nonstatic_field(CodeBlob,                    _relocation_size,                        int)                                         \
+  nonstatic_field(CodeBlob,                    _content_offset,                         int)                                         \
+  nonstatic_field(CodeBlob,                    _code_offset,                            int)                                         \
+  nonstatic_field(CodeBlob,                    _frame_complete_offset,                  int)                                         \
+  nonstatic_field(CodeBlob,                    _data_offset,                            int)                                         \
+  nonstatic_field(CodeBlob,                    _frame_size,                             int)                                         \
+  nonstatic_field(CodeBlob,                    _oop_maps,                               ImmutableOopMapSet*)                         \
+                                                                                                                                     \
+  nonstatic_field(DeoptimizationBlob,          _unpack_offset,                                int)                                   \
                                                                                                                                      \
   nonstatic_field(RuntimeStub,                 _caller_must_gc_arguments,                     bool)                                  \
                                                                                                                                      \
@@ -904,6 +968,17 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(nmethod,                     _marked_for_deoptimization,                    bool)                                  \
                                                                                                                                      \
   unchecked_c2_static_field(Deoptimization,    _trap_reason_name,                             void*)                                 \
+                                                                                                                                     \
+  nonstatic_field(Deoptimization::UnrollBlock, _size_of_deoptimized_frame,                    int)                                   \
+  nonstatic_field(Deoptimization::UnrollBlock, _caller_adjustment,                            int)                                   \
+  nonstatic_field(Deoptimization::UnrollBlock, _number_of_frames,                             int)                                   \
+  nonstatic_field(Deoptimization::UnrollBlock, _total_frame_sizes,                            int)                                   \
+  nonstatic_field(Deoptimization::UnrollBlock, _frame_sizes,                                  intptr_t*)                             \
+  nonstatic_field(Deoptimization::UnrollBlock, _frame_pcs,                                    address*)                              \
+  nonstatic_field(Deoptimization::UnrollBlock, _register_block,                               intptr_t*)                             \
+  nonstatic_field(Deoptimization::UnrollBlock, _return_type,                                  BasicType)                             \
+  nonstatic_field(Deoptimization::UnrollBlock, _initial_info,                                 intptr_t)                              \
+  nonstatic_field(Deoptimization::UnrollBlock, _caller_actual_parameters,                     int)                                   \
                                                                                                                                      \
   /********************************/                                                                                                 \
   /* JavaCalls (NOTE: incomplete) */                                                                                                 \
@@ -1294,6 +1369,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(CompileTask,                 _osr_bci,                                      int)                                   \
   nonstatic_field(CompileTask,                 _comp_level,                                   int)                                   \
   nonstatic_field(CompileTask,                 _compile_id,                                   uint)                                  \
+  nonstatic_field(CompileTask,                 _num_inlined_bytecodes,                        int)                                   \
   nonstatic_field(CompileTask,                 _next,                                         CompileTask*)                          \
   nonstatic_field(CompileTask,                 _prev,                                         CompileTask*)                          \
                                                                                                                                      \
@@ -1473,6 +1549,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
     declare_type(MethodCounters, MetaspaceObj)                            \
     declare_type(ConstMethod, MetaspaceObj)                               \
                                                                           \
+  declare_toplevel_type(narrowKlass)                                      \
+                                                                          \
   declare_toplevel_type(vtableEntry)                                      \
                                                                           \
            declare_toplevel_type(Symbol)                                  \
@@ -1527,8 +1605,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
            declare_type(CardTableModRefBS,            ModRefBarrierSet)   \
            declare_type(CardTableModRefBSForCTRS,     CardTableModRefBS)  \
   declare_toplevel_type(BarrierSet::Name)                                 \
-  declare_toplevel_type(GenRemSet)                                        \
-           declare_type(CardTableRS,                  GenRemSet)          \
+  declare_toplevel_type(CardTableRS)                                      \
   declare_toplevel_type(BlockOffsetSharedArray)                           \
   declare_toplevel_type(BlockOffsetTable)                                 \
            declare_type(BlockOffsetArray,             BlockOffsetTable)   \
@@ -1544,7 +1621,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_toplevel_type(MemRegion)                                        \
   declare_toplevel_type(ThreadLocalAllocBuffer)                           \
   declare_toplevel_type(VirtualSpace)                                     \
-  declare_toplevel_type(WaterMark)                                        \
   declare_toplevel_type(ObjPtrQueue)                                      \
   declare_toplevel_type(DirtyCardQueue)                                   \
                                                                           \
@@ -1552,7 +1628,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                           \
   declare_toplevel_type(BarrierSet*)                                      \
   declare_toplevel_type(BlockOffsetSharedArray*)                          \
-  declare_toplevel_type(GenRemSet*)                                       \
   declare_toplevel_type(CardTableRS*)                                     \
   declare_toplevel_type(CardTableModRefBS*)                               \
   declare_toplevel_type(CardTableModRefBS**)                              \
@@ -1571,6 +1646,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_toplevel_type(Space*)                                           \
   declare_toplevel_type(TenuredGeneration*)                               \
   declare_toplevel_type(ThreadLocalAllocBuffer*)                          \
+                                                                          \
+  declare_toplevel_type(BarrierSet::FakeRtti)                             \
                                                                           \
   /************************/                                              \
   /* PerfMemory - jvmstat */                                              \
@@ -1694,6 +1771,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_toplevel_type(Dependencies)                                     \
   declare_toplevel_type(CompileTask)                                      \
   declare_toplevel_type(Deoptimization)                                   \
+  declare_toplevel_type(Deoptimization::UnrollBlock)                      \
                                                                           \
   /************************/                                              \
   /* OopMap and OopMapSet */                                              \
@@ -1991,7 +2069,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_c2_type(TanDNode, Node)                                         \
   declare_c2_type(AtanDNode, Node)                                        \
   declare_c2_type(SqrtDNode, Node)                                        \
-  declare_c2_type(ExpDNode, Node)                                         \
   declare_c2_type(LogDNode, Node)                                         \
   declare_c2_type(Log10DNode, Node)                                       \
   declare_c2_type(PowDNode, Node)                                         \
@@ -2276,6 +2353,8 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                           \
   declare_constant(CardTableRS::youngergen_card)                          \
                                                                           \
+  declare_constant(G1SATBCardTableModRefBS::g1_young_gen)                 \
+                                                                          \
   declare_constant(CollectedHeap::GenCollectedHeap)                       \
   declare_constant(CollectedHeap::ParallelScavengeHeap)                   \
   declare_constant(CollectedHeap::G1CollectedHeap)                        \
@@ -2334,6 +2413,36 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_constant(JVM_ACC_PROMOTED_FLAGS)                                \
   declare_constant(JVM_ACC_FIELD_ACCESS_WATCHED)                          \
   declare_constant(JVM_ACC_FIELD_MODIFICATION_WATCHED)                    \
+  declare_constant(JVM_ACC_FIELD_INTERNAL)                                \
+  declare_constant(JVM_ACC_FIELD_STABLE)                                  \
+  declare_constant(JVM_ACC_FIELD_HAS_GENERIC_SIGNATURE)                   \
+                                                                          \
+  declare_constant(JVM_CONSTANT_Utf8)                                     \
+  declare_constant(JVM_CONSTANT_Unicode)                                  \
+  declare_constant(JVM_CONSTANT_Integer)                                  \
+  declare_constant(JVM_CONSTANT_Float)                                    \
+  declare_constant(JVM_CONSTANT_Long)                                     \
+  declare_constant(JVM_CONSTANT_Double)                                   \
+  declare_constant(JVM_CONSTANT_Class)                                    \
+  declare_constant(JVM_CONSTANT_String)                                   \
+  declare_constant(JVM_CONSTANT_Fieldref)                                 \
+  declare_constant(JVM_CONSTANT_Methodref)                                \
+  declare_constant(JVM_CONSTANT_InterfaceMethodref)                       \
+  declare_constant(JVM_CONSTANT_NameAndType)                              \
+  declare_constant(JVM_CONSTANT_MethodHandle)                             \
+  declare_constant(JVM_CONSTANT_MethodType)                               \
+  declare_constant(JVM_CONSTANT_InvokeDynamic)                            \
+  declare_constant(JVM_CONSTANT_ExternalMax)                              \
+                                                                          \
+  declare_constant(JVM_CONSTANT_Invalid)                                  \
+  declare_constant(JVM_CONSTANT_InternalMin)                              \
+  declare_constant(JVM_CONSTANT_UnresolvedClass)                          \
+  declare_constant(JVM_CONSTANT_ClassIndex)                               \
+  declare_constant(JVM_CONSTANT_StringIndex)                              \
+  declare_constant(JVM_CONSTANT_UnresolvedClassInError)                   \
+  declare_constant(JVM_CONSTANT_MethodHandleInError)                      \
+  declare_constant(JVM_CONSTANT_MethodTypeInError)                        \
+  declare_constant(JVM_CONSTANT_InternalMax)                              \
                                                                           \
   /*****************************/                                         \
   /* Thread::SuspendFlags enum */                                         \
@@ -2364,6 +2473,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /******************************/                                        \
                                                                           \
   declare_constant(Klass::_primary_super_limit)                           \
+  declare_constant(Klass::_lh_neutral_value)                              \
   declare_constant(Klass::_lh_instance_slow_path_bit)                     \
   declare_constant(Klass::_lh_log2_element_size_shift)                    \
   declare_constant(Klass::_lh_log2_element_size_mask)                     \
@@ -2385,6 +2495,10 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_constant(Method::_dont_inline)                                  \
   declare_constant(Method::_hidden)                                       \
                                                                           \
+  declare_constant(Method::nonvirtual_vtable_index)                       \
+                                                                          \
+  declare_constant(Method::extra_stack_entries_for_jsr292)                \
+                                                                          \
   declare_constant(ConstMethod::_has_linenumber_table)                    \
   declare_constant(ConstMethod::_has_checked_exceptions)                  \
   declare_constant(ConstMethod::_has_localvariable_table)                 \
@@ -2401,6 +2515,20 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /**************/                                                        \
                                                                           \
   declare_constant(DataLayout::cell_size)                                 \
+  declare_constant(DataLayout::no_tag)                                    \
+  declare_constant(DataLayout::bit_data_tag)                              \
+  declare_constant(DataLayout::counter_data_tag)                          \
+  declare_constant(DataLayout::jump_data_tag)                             \
+  declare_constant(DataLayout::receiver_type_data_tag)                    \
+  declare_constant(DataLayout::virtual_call_data_tag)                     \
+  declare_constant(DataLayout::ret_data_tag)                              \
+  declare_constant(DataLayout::branch_data_tag)                           \
+  declare_constant(DataLayout::multi_branch_data_tag)                     \
+  declare_constant(DataLayout::arg_info_data_tag)                         \
+  declare_constant(DataLayout::call_type_data_tag)                        \
+  declare_constant(DataLayout::virtual_call_type_data_tag)                \
+  declare_constant(DataLayout::parameters_type_data_tag)                  \
+  declare_constant(DataLayout::speculative_trap_data_tag)                 \
                                                                           \
   /*************************************/                                 \
   /* InstanceKlass enum                */                                 \
@@ -2454,13 +2582,14 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                           \
   declare_constant(Symbol::max_symbol_length)                             \
                                                                           \
-  /*************************************************/                     \
-  /* ConstantPool* layout enum for InvokeDynamic */                     \
-  /*************************************************/                     \
+  /***********************************************/                       \
+  /* ConstantPool* layout enum for InvokeDynamic */                       \
+  /***********************************************/                       \
                                                                           \
-  declare_constant(ConstantPool::_indy_bsm_offset)                 \
-  declare_constant(ConstantPool::_indy_argc_offset)                \
-  declare_constant(ConstantPool::_indy_argv_offset)                \
+  declare_constant(ConstantPool::_indy_bsm_offset)                        \
+  declare_constant(ConstantPool::_indy_argc_offset)                       \
+  declare_constant(ConstantPool::_indy_argv_offset)                       \
+  declare_constant(ConstantPool::CPCACHE_INDEX_TAG)                       \
                                                                           \
   /********************************/                                      \
   /* ConstantPoolCacheEntry enums */                                      \
@@ -2555,6 +2684,18 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
                                                                           \
   declare_constant(DEFAULT_CACHE_LINE_SIZE)                               \
                                                                           \
+  declare_constant(Deoptimization::Unpack_deopt)                          \
+  declare_constant(Deoptimization::Unpack_exception)                      \
+  declare_constant(Deoptimization::Unpack_uncommon_trap)                  \
+  declare_constant(Deoptimization::Unpack_reexecute)                      \
+                                                                          \
+  declare_constant(Deoptimization::_action_bits)                          \
+  declare_constant(Deoptimization::_reason_bits)                          \
+  declare_constant(Deoptimization::_debug_id_bits)                        \
+  declare_constant(Deoptimization::_action_shift)                         \
+  declare_constant(Deoptimization::_reason_shift)                         \
+  declare_constant(Deoptimization::_debug_id_shift)                       \
+                                                                          \
   /*********************/                                                 \
   /* Matcher (C2 only) */                                                 \
   /*********************/                                                 \
@@ -2566,6 +2707,18 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /*********************************************/                         \
                                                                           \
   declare_constant(InvocationEntryBci)                                    \
+                                                                          \
+  /*************/                                                         \
+  /* CompLevel */                                                         \
+  /*************/                                                         \
+                                                                          \
+  declare_constant(CompLevel_any)                                         \
+  declare_constant(CompLevel_all)                                         \
+  declare_constant(CompLevel_none)                                        \
+  declare_constant(CompLevel_simple)                                      \
+  declare_constant(CompLevel_limited_profile)                             \
+  declare_constant(CompLevel_full_profile)                                \
+  declare_constant(CompLevel_full_optimization)                           \
                                                                           \
   /***************/                                                       \
   /* OopMapValue */                                                       \
@@ -2581,7 +2734,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_constant(OopMapValue::register_mask_in_place)                   \
   declare_constant(OopMapValue::unused_value)                             \
   declare_constant(OopMapValue::oop_value)                                \
-  declare_constant(OopMapValue::value_value)                              \
   declare_constant(OopMapValue::narrowoop_value)                          \
   declare_constant(OopMapValue::callee_saved_value)                       \
   declare_constant(OopMapValue::derived_oop_value)                        \
@@ -2698,8 +2850,38 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* Constants in markOop used by CMS. */                                 \
   declare_constant(markOopDesc::cms_shift)                                \
   declare_constant(markOopDesc::cms_mask)                                 \
-  declare_constant(markOopDesc::size_shift)
+  declare_constant(markOopDesc::size_shift)                               \
+                                                                          \
+  /* InvocationCounter constants */                                       \
+  declare_constant(InvocationCounter::count_increment)                    \
+  declare_constant(InvocationCounter::count_shift)
 
+
+//--------------------------------------------------------------------------------
+// VM_ADDRESSES
+//
+
+#define VM_ADDRESSES(declare_address, declare_preprocessor_address, declare_function) \
+                                                                          \
+  declare_function(SharedRuntime::register_finalizer)                     \
+  declare_function(SharedRuntime::exception_handler_for_return_address)   \
+  declare_function(SharedRuntime::OSR_migration_end)                      \
+  declare_function(SharedRuntime::dsin)                                   \
+  declare_function(SharedRuntime::dcos)                                   \
+  declare_function(SharedRuntime::dtan)                                   \
+  declare_function(SharedRuntime::dexp)                                   \
+  declare_function(SharedRuntime::dlog)                                   \
+  declare_function(SharedRuntime::dlog10)                                 \
+  declare_function(SharedRuntime::dpow)                                   \
+                                                                          \
+  declare_function(os::dll_load)                                          \
+  declare_function(os::dll_lookup)                                        \
+  declare_function(os::javaTimeMillis)                                    \
+  declare_function(os::javaTimeNanos)                                     \
+                                                                          \
+  declare_function(Deoptimization::fetch_unroll_info)                     \
+  COMPILER2_PRESENT(declare_function(Deoptimization::uncommon_trap))      \
+  declare_function(Deoptimization::unpack_frames)
 
 //--------------------------------------------------------------------------------
 // Macros operating on the above lists
@@ -2932,6 +3114,23 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 # define GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY(name, value)
 #endif /* COMPILER1 */
 
+//--------------------------------------------------------------------------------
+// VMAddressEntry macros
+//
+
+#define GENERATE_VM_ADDRESS_ENTRY(name) \
+  { QUOTE(name), (void*) (name) },
+
+#define GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY(name, value) \
+  { name, (void*) (value) },
+
+#define GENERATE_VM_FUNCTION_ENTRY(name) \
+  { QUOTE(name), CAST_FROM_FN_PTR(void*, &(name)) },
+
+// This macro generates the sentinel value indicating the end of the list
+#define GENERATE_VM_ADDRESS_LAST_ENTRY() \
+ { NULL, NULL }
+
 //
 // Instantiation of VMStructEntries, VMTypeEntries and VMIntConstantEntries
 //
@@ -2949,6 +3148,11 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
              GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY,
              GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY,
              GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY)
+
+#if INCLUDE_JVMCI
+  VM_STRUCTS_JVMCI(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
+                   GENERATE_STATIC_VM_STRUCT_ENTRY)
+#endif
 
 #if INCLUDE_ALL_GCS
   VM_STRUCTS_PARALLELGC(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
@@ -2969,6 +3173,15 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
 
   VM_STRUCTS_EXT(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                  GENERATE_STATIC_VM_STRUCT_ENTRY)
+
+  VM_STRUCTS_OS(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
+                GENERATE_STATIC_VM_STRUCT_ENTRY,
+                GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
+                GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
+                GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
+                GENERATE_C2_NONSTATIC_VM_STRUCT_ENTRY,
+                GENERATE_C1_UNCHECKED_STATIC_VM_STRUCT_ENTRY,
+                GENERATE_C2_UNCHECKED_STATIC_VM_STRUCT_ENTRY)
 
   VM_STRUCTS_CPU(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
                  GENERATE_STATIC_VM_STRUCT_ENTRY,
@@ -3002,6 +3215,11 @@ VMTypeEntry VMStructs::localHotSpotVMTypes[] = {
            GENERATE_C2_VM_TYPE_ENTRY,
            GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
 
+#if INCLUDE_JVMCI
+  VM_TYPES_JVMCI(GENERATE_VM_TYPE_ENTRY,
+                 GENERATE_TOPLEVEL_VM_TYPE_ENTRY)
+#endif
+
 #if INCLUDE_ALL_GCS
   VM_TYPES_PARALLELGC(GENERATE_VM_TYPE_ENTRY,
                       GENERATE_TOPLEVEL_VM_TYPE_ENTRY)
@@ -3022,6 +3240,15 @@ VMTypeEntry VMStructs::localHotSpotVMTypes[] = {
 
   VM_TYPES_EXT(GENERATE_VM_TYPE_ENTRY,
                GENERATE_TOPLEVEL_VM_TYPE_ENTRY)
+
+  VM_TYPES_OS(GENERATE_VM_TYPE_ENTRY,
+              GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
+              GENERATE_OOP_VM_TYPE_ENTRY,
+              GENERATE_INTEGER_VM_TYPE_ENTRY,
+              GENERATE_UNSIGNED_INTEGER_VM_TYPE_ENTRY,
+              GENERATE_C1_TOPLEVEL_VM_TYPE_ENTRY,
+              GENERATE_C2_VM_TYPE_ENTRY,
+              GENERATE_C2_TOPLEVEL_VM_TYPE_ENTRY)
 
   VM_TYPES_CPU(GENERATE_VM_TYPE_ENTRY,
                GENERATE_TOPLEVEL_VM_TYPE_ENTRY,
@@ -3052,6 +3279,12 @@ VMIntConstantEntry VMStructs::localHotSpotVMIntConstants[] = {
                    GENERATE_C2_VM_INT_CONSTANT_ENTRY,
                    GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 
+#if INCLUDE_JVMCI
+  VM_INT_CONSTANTS_JVMCI(GENERATE_VM_INT_CONSTANT_ENTRY,
+                         GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
+
+#endif
+
 #if INCLUDE_ALL_GCS
   VM_INT_CONSTANTS_CMS(GENERATE_VM_INT_CONSTANT_ENTRY)
 
@@ -3061,6 +3294,12 @@ VMIntConstantEntry VMStructs::localHotSpotVMIntConstants[] = {
 #if INCLUDE_TRACE
   VM_INT_CONSTANTS_TRACE(GENERATE_VM_INT_CONSTANT_ENTRY)
 #endif
+
+  VM_INT_CONSTANTS_OS(GENERATE_VM_INT_CONSTANT_ENTRY,
+                      GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY,
+                      GENERATE_C1_VM_INT_CONSTANT_ENTRY,
+                      GENERATE_C2_VM_INT_CONSTANT_ENTRY,
+                      GENERATE_C2_PREPROCESSOR_VM_INT_CONSTANT_ENTRY)
 
   VM_INT_CONSTANTS_CPU(GENERATE_VM_INT_CONSTANT_ENTRY,
                        GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY,
@@ -3085,6 +3324,12 @@ VMLongConstantEntry VMStructs::localHotSpotVMLongConstants[] = {
                     GENERATE_C2_VM_LONG_CONSTANT_ENTRY,
                     GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
 
+  VM_LONG_CONSTANTS_OS(GENERATE_VM_LONG_CONSTANT_ENTRY,
+                       GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY,
+                       GENERATE_C1_VM_LONG_CONSTANT_ENTRY,
+                       GENERATE_C2_VM_LONG_CONSTANT_ENTRY,
+                       GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
+
   VM_LONG_CONSTANTS_CPU(GENERATE_VM_LONG_CONSTANT_ENTRY,
                         GENERATE_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY,
                         GENERATE_C1_VM_LONG_CONSTANT_ENTRY,
@@ -3098,6 +3343,25 @@ VMLongConstantEntry VMStructs::localHotSpotVMLongConstants[] = {
                            GENERATE_C2_PREPROCESSOR_VM_LONG_CONSTANT_ENTRY)
 
   GENERATE_VM_LONG_CONSTANT_LAST_ENTRY()
+};
+
+VMAddressEntry VMStructs::localHotSpotVMAddresses[] = {
+
+  VM_ADDRESSES(GENERATE_VM_ADDRESS_ENTRY,
+               GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
+               GENERATE_VM_FUNCTION_ENTRY)
+
+  VM_ADDRESSES_OS(GENERATE_VM_ADDRESS_ENTRY,
+                  GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
+                  GENERATE_VM_FUNCTION_ENTRY)
+
+#if INCLUDE_JVMCI
+  VM_ADDRESSES_JVMCI(GENERATE_VM_ADDRESS_ENTRY,
+                     GENERATE_PREPROCESSOR_VM_ADDRESS_ENTRY,
+                     GENERATE_VM_FUNCTION_ENTRY)
+#endif
+
+  GENERATE_VM_ADDRESS_LAST_ENTRY()
 };
 
 // This is used both to check the types of referenced fields and, in
@@ -3308,6 +3572,11 @@ JNIEXPORT VMLongConstantEntry* gHotSpotVMLongConstants     = VMStructs::localHot
 ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMLongConstantEntryNameOffset, VMLongConstantEntry, name);
 ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMLongConstantEntryValueOffset, VMLongConstantEntry, value);
 ASSIGN_STRIDE_TO_64BIT_VAR(gHotSpotVMLongConstantEntryArrayStride, gHotSpotVMLongConstants);
+
+JNIEXPORT VMAddressEntry* gHotSpotVMAddresses = VMStructs::localHotSpotVMAddresses;
+ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMAddressEntryNameOffset, VMAddressEntry, name);
+ASSIGN_OFFSET_TO_64BIT_VAR(gHotSpotVMAddressEntryValueOffset, VMAddressEntry, value);
+ASSIGN_STRIDE_TO_64BIT_VAR(gHotSpotVMAddressEntryArrayStride, gHotSpotVMAddresses);
 }
 
 #ifdef ASSERT
@@ -3414,6 +3683,11 @@ void VMStructs::test() {
   assert(memcmp(&localHotSpotVMLongConstants[sizeof(localHotSpotVMLongConstants) / sizeof(VMLongConstantEntry) - 1],
                 &long_last_entry,
                 sizeof(VMLongConstantEntry)) == 0, "Incorrect last entry in localHotSpotVMLongConstants");
+
+  static VMAddressEntry address_last_entry = GENERATE_VM_ADDRESS_LAST_ENTRY();
+  assert(memcmp(&localHotSpotVMAddresses[sizeof(localHotSpotVMAddresses) / sizeof(VMAddressEntry) - 1],
+                &address_last_entry,
+                sizeof(VMAddressEntry)) == 0, "Incorrect last entry in localHotSpotVMAddresses");
 
 
   // Check for duplicate entries in type array

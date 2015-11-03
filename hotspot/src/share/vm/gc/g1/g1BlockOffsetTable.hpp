@@ -80,8 +80,8 @@ public:
 
   virtual void set_bottom(HeapWord* new_bottom) {
     assert(new_bottom <= _end,
-           err_msg("new_bottom (" PTR_FORMAT ") > _end (" PTR_FORMAT ")",
-                   p2i(new_bottom), p2i(_end)));
+           "new_bottom (" PTR_FORMAT ") > _end (" PTR_FORMAT ")",
+           p2i(new_bottom), p2i(_end));
     _bottom = new_bottom;
     resize(pointer_delta(_end, _bottom));
   }
@@ -149,9 +149,8 @@ private:
 
   void check_offset(size_t offset, const char* msg) const {
     assert(offset <= N_words,
-           err_msg("%s - "
-                   "offset: " SIZE_FORMAT ", N_words: %u",
-                   msg, offset, (uint)N_words));
+           "%s - offset: " SIZE_FORMAT ", N_words: %u",
+           msg, offset, (uint)N_words);
   }
 
   // Bounds checking accessors:

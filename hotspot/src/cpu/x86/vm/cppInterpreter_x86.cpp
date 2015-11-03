@@ -741,7 +741,7 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
 // Find preallocated  monitor and lock method (C++ interpreter)
 // rbx - Method*
 //
-void InterpreterGenerator::lock_method(void) {
+void CppInterpreterGenerator::lock_method() {
   // assumes state == rsi/r13 == pointer to current interpreterState
   // minimally destroys rax, rdx|c_rarg1, rdi
   //
@@ -807,7 +807,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
   // If G1 is not enabled then attempt to go through the accessor entry point
   // Reference.get is an accessor
-  return generate_jump_to_normal_entry();
+  return NULL;
 }
 
 //

@@ -24,270 +24,374 @@
  */
 package com.sun.org.apache.xpath.internal.compiler;
 
-import java.util.Hashtable;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Table of strings to operation code lookups.
+ *
  * @xsl.usage internal
  */
-public class Keywords
-{
+public class Keywords {
 
-  /** Table of keywords to opcode associations. */
-  private static Hashtable m_keywords = new Hashtable();
+    /**
+     * Table of keywords to opcode associations.
+     */
+    private static final Map<String, Integer> m_keywords;
 
-  /** Table of axes names to opcode associations. */
-  private static Hashtable m_axisnames = new Hashtable();
+    /**
+     * Table of axes names to opcode associations.
+     */
+    private static final Map<String, Integer> m_axisnames;
 
-  /** Table of function name to function ID associations. */
-  private static Hashtable m_nodetests = new Hashtable();
+    /**
+     * Table of function name to function ID associations.
+     */
+    private static final Map<String, Integer> m_nodetests;
 
-  /** Table of node type strings to opcode associations. */
-  private static Hashtable m_nodetypes = new Hashtable();
+    /**
+     * Table of node type strings to opcode associations.
+     */
+    private static final Map<String, Integer> m_nodetypes;
 
-  /** ancestor axes string. */
-  private static final String FROM_ANCESTORS_STRING = "ancestor";
+    /**
+     * ancestor axes string.
+     */
+    private static final String FROM_ANCESTORS_STRING = "ancestor";
 
-  /** ancestor-or-self axes string. */
-  private static final String FROM_ANCESTORS_OR_SELF_STRING =
-    "ancestor-or-self";
+    /**
+     * ancestor-or-self axes string.
+     */
+    private static final String FROM_ANCESTORS_OR_SELF_STRING
+            = "ancestor-or-self";
 
-  /** attribute axes string. */
-  private static final String FROM_ATTRIBUTES_STRING = "attribute";
+    /**
+     * attribute axes string.
+     */
+    private static final String FROM_ATTRIBUTES_STRING = "attribute";
 
-  /** child axes string. */
-  private static final String FROM_CHILDREN_STRING = "child";
+    /**
+     * child axes string.
+     */
+    private static final String FROM_CHILDREN_STRING = "child";
 
-  /** descendant-or-self axes string. */
-  private static final String FROM_DESCENDANTS_STRING = "descendant";
+    /**
+     * descendant-or-self axes string.
+     */
+    private static final String FROM_DESCENDANTS_STRING = "descendant";
 
-  /** ancestor axes string. */
-  private static final String FROM_DESCENDANTS_OR_SELF_STRING =
-    "descendant-or-self";
+    /**
+     * ancestor axes string.
+     */
+    private static final String FROM_DESCENDANTS_OR_SELF_STRING
+            = "descendant-or-self";
 
-  /** following axes string. */
-  private static final String FROM_FOLLOWING_STRING = "following";
+    /**
+     * following axes string.
+     */
+    private static final String FROM_FOLLOWING_STRING = "following";
 
-  /** following-sibling axes string. */
-  private static final String FROM_FOLLOWING_SIBLINGS_STRING =
-    "following-sibling";
+    /**
+     * following-sibling axes string.
+     */
+    private static final String FROM_FOLLOWING_SIBLINGS_STRING
+            = "following-sibling";
 
-  /** parent axes string. */
-  private static final String FROM_PARENT_STRING = "parent";
+    /**
+     * parent axes string.
+     */
+    private static final String FROM_PARENT_STRING = "parent";
 
-  /** preceding axes string. */
-  private static final String FROM_PRECEDING_STRING = "preceding";
+    /**
+     * preceding axes string.
+     */
+    private static final String FROM_PRECEDING_STRING = "preceding";
 
-  /** preceding-sibling axes string. */
-  private static final String FROM_PRECEDING_SIBLINGS_STRING =
-    "preceding-sibling";
+    /**
+     * preceding-sibling axes string.
+     */
+    private static final String FROM_PRECEDING_SIBLINGS_STRING
+            = "preceding-sibling";
 
-  /** self axes string. */
-  private static final String FROM_SELF_STRING = "self";
+    /**
+     * self axes string.
+     */
+    private static final String FROM_SELF_STRING = "self";
 
-  /** namespace axes string. */
-  private static final String FROM_NAMESPACE_STRING = "namespace";
+    /**
+     * namespace axes string.
+     */
+    private static final String FROM_NAMESPACE_STRING = "namespace";
 
-  /** self axes abreviated string. */
-  private static final String FROM_SELF_ABBREVIATED_STRING = ".";
+    /**
+     * self axes abreviated string.
+     */
+    private static final String FROM_SELF_ABBREVIATED_STRING = ".";
 
-  /** comment node test string. */
-  private static final String NODETYPE_COMMENT_STRING = "comment";
+    /**
+     * comment node test string.
+     */
+    private static final String NODETYPE_COMMENT_STRING = "comment";
 
-  /** text node test string. */
-  private static final String NODETYPE_TEXT_STRING = "text";
+    /**
+     * text node test string.
+     */
+    private static final String NODETYPE_TEXT_STRING = "text";
 
-  /** processing-instruction node test string. */
-  private static final String NODETYPE_PI_STRING = "processing-instruction";
+    /**
+     * processing-instruction node test string.
+     */
+    private static final String NODETYPE_PI_STRING = "processing-instruction";
 
-  /** Any node test string. */
-  private static final String NODETYPE_NODE_STRING = "node";
+    /**
+     * Any node test string.
+     */
+    private static final String NODETYPE_NODE_STRING = "node";
 
-  /** Wildcard element string. */
-  private static final String NODETYPE_ANYELEMENT_STRING = "*";
+    /**
+     * Wildcard element string.
+     */
+    private static final String NODETYPE_ANYELEMENT_STRING = "*";
 
-  /** current function string. */
-  public static final String FUNC_CURRENT_STRING = "current";
+    /**
+     * current function string.
+     */
+    public static final String FUNC_CURRENT_STRING = "current";
 
-  /** last function string. */
-  public static final String FUNC_LAST_STRING = "last";
+    /**
+     * last function string.
+     */
+    public static final String FUNC_LAST_STRING = "last";
 
-  /** position function string. */
-  public static final String FUNC_POSITION_STRING = "position";
+    /**
+     * position function string.
+     */
+    public static final String FUNC_POSITION_STRING = "position";
 
-  /** count function string. */
-  public static final String FUNC_COUNT_STRING = "count";
+    /**
+     * count function string.
+     */
+    public static final String FUNC_COUNT_STRING = "count";
 
-  /** id function string. */
-  static final String FUNC_ID_STRING = "id";
+    /**
+     * id function string.
+     */
+    static final String FUNC_ID_STRING = "id";
 
-  /** key function string (XSLT). */
-  public static final String FUNC_KEY_STRING = "key";
+    /**
+     * key function string (XSLT).
+     */
+    public static final String FUNC_KEY_STRING = "key";
 
-  /** local-name function string. */
-  public static final String FUNC_LOCAL_PART_STRING = "local-name";
+    /**
+     * local-name function string.
+     */
+    public static final String FUNC_LOCAL_PART_STRING = "local-name";
 
-  /** namespace-uri function string. */
-  public static final String FUNC_NAMESPACE_STRING = "namespace-uri";
+    /**
+     * namespace-uri function string.
+     */
+    public static final String FUNC_NAMESPACE_STRING = "namespace-uri";
 
-  /** name function string. */
-  public static final String FUNC_NAME_STRING = "name";
+    /**
+     * name function string.
+     */
+    public static final String FUNC_NAME_STRING = "name";
 
-  /** generate-id function string (XSLT). */
-  public static final String FUNC_GENERATE_ID_STRING = "generate-id";
+    /**
+     * generate-id function string (XSLT).
+     */
+    public static final String FUNC_GENERATE_ID_STRING = "generate-id";
 
-  /** not function string. */
-  public static final String FUNC_NOT_STRING = "not";
+    /**
+     * not function string.
+     */
+    public static final String FUNC_NOT_STRING = "not";
 
-  /** true function string. */
-  public static final String FUNC_TRUE_STRING = "true";
+    /**
+     * true function string.
+     */
+    public static final String FUNC_TRUE_STRING = "true";
 
-  /** false function string. */
-  public static final String FUNC_FALSE_STRING = "false";
+    /**
+     * false function string.
+     */
+    public static final String FUNC_FALSE_STRING = "false";
 
-  /** boolean function string. */
-  public static final String FUNC_BOOLEAN_STRING = "boolean";
+    /**
+     * boolean function string.
+     */
+    public static final String FUNC_BOOLEAN_STRING = "boolean";
 
-  /** lang function string. */
-  public static final String FUNC_LANG_STRING = "lang";
+    /**
+     * lang function string.
+     */
+    public static final String FUNC_LANG_STRING = "lang";
 
-  /** number function string. */
-  public static final String FUNC_NUMBER_STRING = "number";
+    /**
+     * number function string.
+     */
+    public static final String FUNC_NUMBER_STRING = "number";
 
-  /** floor function string. */
-  public static final String FUNC_FLOOR_STRING = "floor";
+    /**
+     * floor function string.
+     */
+    public static final String FUNC_FLOOR_STRING = "floor";
 
-  /** ceiling function string. */
-  public static final String FUNC_CEILING_STRING = "ceiling";
+    /**
+     * ceiling function string.
+     */
+    public static final String FUNC_CEILING_STRING = "ceiling";
 
-  /** round function string. */
-  public static final String FUNC_ROUND_STRING = "round";
+    /**
+     * round function string.
+     */
+    public static final String FUNC_ROUND_STRING = "round";
 
-  /** sum function string. */
-  public static final String FUNC_SUM_STRING = "sum";
+    /**
+     * sum function string.
+     */
+    public static final String FUNC_SUM_STRING = "sum";
 
-  /** string function string. */
-  public static final String FUNC_STRING_STRING = "string";
+    /**
+     * string function string.
+     */
+    public static final String FUNC_STRING_STRING = "string";
 
-  /** starts-with function string. */
-  public static final String FUNC_STARTS_WITH_STRING = "starts-with";
+    /**
+     * starts-with function string.
+     */
+    public static final String FUNC_STARTS_WITH_STRING = "starts-with";
 
-  /** contains function string. */
-  public static final String FUNC_CONTAINS_STRING = "contains";
+    /**
+     * contains function string.
+     */
+    public static final String FUNC_CONTAINS_STRING = "contains";
 
-  /** substring-before function string. */
-  public static final String FUNC_SUBSTRING_BEFORE_STRING =
-    "substring-before";
+    /**
+     * substring-before function string.
+     */
+    public static final String FUNC_SUBSTRING_BEFORE_STRING
+            = "substring-before";
 
-  /** substring-after function string. */
-  public static final String FUNC_SUBSTRING_AFTER_STRING = "substring-after";
+    /**
+     * substring-after function string.
+     */
+    public static final String FUNC_SUBSTRING_AFTER_STRING = "substring-after";
 
-  /** normalize-space function string. */
-  public static final String FUNC_NORMALIZE_SPACE_STRING = "normalize-space";
+    /**
+     * normalize-space function string.
+     */
+    public static final String FUNC_NORMALIZE_SPACE_STRING = "normalize-space";
 
-  /** translate function string. */
-  public static final String FUNC_TRANSLATE_STRING = "translate";
+    /**
+     * translate function string.
+     */
+    public static final String FUNC_TRANSLATE_STRING = "translate";
 
-  /** concat function string. */
-  public static final String FUNC_CONCAT_STRING = "concat";
+    /**
+     * concat function string.
+     */
+    public static final String FUNC_CONCAT_STRING = "concat";
 
-  /** system-property function string. */
-  public static final String FUNC_SYSTEM_PROPERTY_STRING = "system-property";
+    /**
+     * system-property function string.
+     */
+    public static final String FUNC_SYSTEM_PROPERTY_STRING = "system-property";
 
-  /** function-available function string (XSLT). */
-  public static final String FUNC_EXT_FUNCTION_AVAILABLE_STRING =
-    "function-available";
+    /**
+     * function-available function string (XSLT).
+     */
+    public static final String FUNC_EXT_FUNCTION_AVAILABLE_STRING
+            = "function-available";
 
-  /** element-available function string (XSLT). */
-  public static final String FUNC_EXT_ELEM_AVAILABLE_STRING =
-    "element-available";
+    /**
+     * element-available function string (XSLT).
+     */
+    public static final String FUNC_EXT_ELEM_AVAILABLE_STRING
+            = "element-available";
 
-  /** substring function string. */
-  public static final String FUNC_SUBSTRING_STRING = "substring";
+    /**
+     * substring function string.
+     */
+    public static final String FUNC_SUBSTRING_STRING = "substring";
 
-  /** string-length function string. */
-  public static final String FUNC_STRING_LENGTH_STRING = "string-length";
+    /**
+     * string-length function string.
+     */
+    public static final String FUNC_STRING_LENGTH_STRING = "string-length";
 
-  /** unparsed-entity-uri function string (XSLT). */
-  public static final String FUNC_UNPARSED_ENTITY_URI_STRING =
-    "unparsed-entity-uri";
+    /**
+     * unparsed-entity-uri function string (XSLT).
+     */
+    public static final String FUNC_UNPARSED_ENTITY_URI_STRING
+            = "unparsed-entity-uri";
 
-  /** here function string (XML Signature). */
-  public static final String FUNC_HERE_STRING = "here";
+    /**
+     * here function string (XML Signature).
+     */
+    public static final String FUNC_HERE_STRING = "here";
 
   // Proprietary, built in functions
+    /**
+     * current function string (Proprietary).
+     */
+    public static final String FUNC_DOCLOCATION_STRING = "document-location";
 
-  /** current function string (Proprietary). */
-  public static final String FUNC_DOCLOCATION_STRING = "document-location";
+    static {
+        Map<String, Integer> keywords = new HashMap<>();
+        Map<String, Integer> axisnames = new HashMap<>();
+        Map<String, Integer> nodetests = new HashMap<>();
+        Map<String, Integer> nodetypes = new HashMap<>();
 
-  static
-  {
-    m_axisnames.put(FROM_ANCESTORS_STRING,
-                    new Integer(OpCodes.FROM_ANCESTORS));
-    m_axisnames.put(FROM_ANCESTORS_OR_SELF_STRING,
-                    new Integer(OpCodes.FROM_ANCESTORS_OR_SELF));
-    m_axisnames.put(FROM_ATTRIBUTES_STRING,
-                    new Integer(OpCodes.FROM_ATTRIBUTES));
-    m_axisnames.put(FROM_CHILDREN_STRING,
-                    new Integer(OpCodes.FROM_CHILDREN));
-    m_axisnames.put(FROM_DESCENDANTS_STRING,
-                    new Integer(OpCodes.FROM_DESCENDANTS));
-    m_axisnames.put(FROM_DESCENDANTS_OR_SELF_STRING,
-                    new Integer(OpCodes.FROM_DESCENDANTS_OR_SELF));
-    m_axisnames.put(FROM_FOLLOWING_STRING,
-                    new Integer(OpCodes.FROM_FOLLOWING));
-    m_axisnames.put(FROM_FOLLOWING_SIBLINGS_STRING,
-                    new Integer(OpCodes.FROM_FOLLOWING_SIBLINGS));
-    m_axisnames.put(FROM_PARENT_STRING,
-                    new Integer(OpCodes.FROM_PARENT));
-    m_axisnames.put(FROM_PRECEDING_STRING,
-                    new Integer(OpCodes.FROM_PRECEDING));
-    m_axisnames.put(FROM_PRECEDING_SIBLINGS_STRING,
-                    new Integer(OpCodes.FROM_PRECEDING_SIBLINGS));
-    m_axisnames.put(FROM_SELF_STRING,
-                    new Integer(OpCodes.FROM_SELF));
-    m_axisnames.put(FROM_NAMESPACE_STRING,
-                    new Integer(OpCodes.FROM_NAMESPACE));
-    m_nodetypes.put(NODETYPE_COMMENT_STRING,
-                    new Integer(OpCodes.NODETYPE_COMMENT));
-    m_nodetypes.put(NODETYPE_TEXT_STRING,
-                    new Integer(OpCodes.NODETYPE_TEXT));
-    m_nodetypes.put(NODETYPE_PI_STRING,
-                    new Integer(OpCodes.NODETYPE_PI));
-    m_nodetypes.put(NODETYPE_NODE_STRING,
-                    new Integer(OpCodes.NODETYPE_NODE));
-    m_nodetypes.put(NODETYPE_ANYELEMENT_STRING,
-                    new Integer(OpCodes.NODETYPE_ANYELEMENT));
-    m_keywords.put(FROM_SELF_ABBREVIATED_STRING,
-                   new Integer(OpCodes.FROM_SELF));
-    m_keywords.put(FUNC_ID_STRING,
-                   new Integer(FunctionTable.FUNC_ID));
-    m_keywords.put(FUNC_KEY_STRING,
-                   new Integer(FunctionTable.FUNC_KEY));
+        axisnames.put(FROM_ANCESTORS_STRING, OpCodes.FROM_ANCESTORS);
+        axisnames.put(FROM_ANCESTORS_OR_SELF_STRING, OpCodes.FROM_ANCESTORS_OR_SELF);
+        axisnames.put(FROM_ATTRIBUTES_STRING, OpCodes.FROM_ATTRIBUTES);
+        axisnames.put(FROM_CHILDREN_STRING, OpCodes.FROM_CHILDREN);
+        axisnames.put(FROM_DESCENDANTS_STRING, OpCodes.FROM_DESCENDANTS);
+        axisnames.put(FROM_DESCENDANTS_OR_SELF_STRING, OpCodes.FROM_DESCENDANTS_OR_SELF);
+        axisnames.put(FROM_FOLLOWING_STRING, OpCodes.FROM_FOLLOWING);
+        axisnames.put(FROM_FOLLOWING_SIBLINGS_STRING, OpCodes.FROM_FOLLOWING_SIBLINGS);
+        axisnames.put(FROM_PARENT_STRING, OpCodes.FROM_PARENT);
+        axisnames.put(FROM_PRECEDING_STRING, OpCodes.FROM_PRECEDING);
+        axisnames.put(FROM_PRECEDING_SIBLINGS_STRING, OpCodes.FROM_PRECEDING_SIBLINGS);
+        axisnames.put(FROM_SELF_STRING, OpCodes.FROM_SELF);
+        axisnames.put(FROM_NAMESPACE_STRING, OpCodes.FROM_NAMESPACE);
+        m_axisnames = Collections.unmodifiableMap(axisnames);
 
-    m_nodetests.put(NODETYPE_COMMENT_STRING,
-                    new Integer(OpCodes.NODETYPE_COMMENT));
-    m_nodetests.put(NODETYPE_TEXT_STRING,
-                    new Integer(OpCodes.NODETYPE_TEXT));
-    m_nodetests.put(NODETYPE_PI_STRING,
-                    new Integer(OpCodes.NODETYPE_PI));
-    m_nodetests.put(NODETYPE_NODE_STRING,
-                    new Integer(OpCodes.NODETYPE_NODE));
-  }
+        nodetypes.put(NODETYPE_COMMENT_STRING, OpCodes.NODETYPE_COMMENT);
+        nodetypes.put(NODETYPE_TEXT_STRING, OpCodes.NODETYPE_TEXT);
+        nodetypes.put(NODETYPE_PI_STRING, OpCodes.NODETYPE_PI);
+        nodetypes.put(NODETYPE_NODE_STRING, OpCodes.NODETYPE_NODE);
+        nodetypes.put(NODETYPE_ANYELEMENT_STRING, OpCodes.NODETYPE_ANYELEMENT);
+        m_nodetypes = Collections.unmodifiableMap(nodetypes);
 
-  static Object getAxisName(String key){
-          return m_axisnames.get(key);
-  }
+        keywords.put(FROM_SELF_ABBREVIATED_STRING, OpCodes.FROM_SELF);
+        keywords.put(FUNC_ID_STRING, FunctionTable.FUNC_ID);
+        keywords.put(FUNC_KEY_STRING, FunctionTable.FUNC_KEY);
+        m_keywords = Collections.unmodifiableMap(keywords);
 
-  static Object lookupNodeTest(String key){
-          return m_nodetests.get(key);
-  }
+        nodetests.put(NODETYPE_COMMENT_STRING, OpCodes.NODETYPE_COMMENT);
+        nodetests.put(NODETYPE_TEXT_STRING, OpCodes.NODETYPE_TEXT);
+        nodetests.put(NODETYPE_PI_STRING, OpCodes.NODETYPE_PI);
+        nodetests.put(NODETYPE_NODE_STRING, OpCodes.NODETYPE_NODE);
+        m_nodetests = Collections.unmodifiableMap(nodetests);
+    }
 
-  static Object getKeyWord(String key){
-          return m_keywords.get(key);
-  }
+    static Integer getAxisName(String key) {
+        return m_axisnames.get(key);
+    }
 
-  static Object getNodeType(String key){
-          return m_nodetypes.get(key);
-  }
+    static Integer lookupNodeTest(String key) {
+        return m_nodetests.get(key);
+    }
+
+    static Integer getKeyWord(String key) {
+        return m_keywords.get(key);
+    }
+
+    static Integer getNodeType(String key) {
+        return m_nodetypes.get(key);
+    }
 }

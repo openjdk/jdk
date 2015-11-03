@@ -81,6 +81,10 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   if (_phase->C->method() != NULL) {
     _phase->C->method()->has_option_value("VectorizeDebug", _vector_loop_debug);
   }
+  _CountedLoopReserveKit_debug = 0;
+  if (_phase->C->method() != NULL) {
+    _phase->C->method()->has_option_value("DoReserveCopyInSuperWordDebug", _CountedLoopReserveKit_debug);
+  }
 #endif
 }
 
@@ -769,7 +773,7 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
     // if offset is 0.
     int iv_adjustment_in_bytes = (stride_sign * vw - (offset % vw));
     assert(((ABS(iv_adjustment_in_bytes) % elt_size) == 0),
-           err_msg_res("(%d) should be divisible by (%d)", iv_adjustment_in_bytes, elt_size));
+           "(%d) should be divisible by (%d)", iv_adjustment_in_bytes, elt_size);
     iv_adjustment = iv_adjustment_in_bytes/elt_size;
   } else {
     // This memory op is not dependent on iv (scale == 0)
@@ -914,7 +918,7 @@ void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &p
     preds.push(n);
     NOT_PRODUCT(if (TraceSuperWord && Verbose) tty->print_cr("SuperWord::mem_slice_preds: added pred(%d)", n->_idx);)
     prev = n;
-    assert(n->is_Mem(), err_msg_res("unexpected node %s", n->Name()));
+    assert(n->is_Mem(), "unexpected node %s", n->Name());
     n = n->in(MemNode::Memory);
   }
 }
@@ -1763,6 +1767,22 @@ void SuperWord::co_locate_pack(Node_List* pk) {
   }
 }
 
+#ifndef PRODUCT
+void SuperWord::print_loop(bool whole) {
+  Node_Stack stack(_arena, _phase->C->unique() >> 2);
+  Node_List rpo_list;
+  VectorSet visited(_arena);
+  visited.set(lpt()->_head->_idx);
+  _phase->rpo(lpt()->_head, stack, visited, rpo_list);
+  _phase->dump(lpt(), rpo_list.size(), rpo_list );
+  if(whole) {
+    tty->print_cr("\n Whole loop tree");
+    _phase->dump();
+    tty->print_cr(" End of whole loop tree\n");
+  }
+}
+#endif
+
 //------------------------------output---------------------------
 // Convert packs into vector node operations
 void SuperWord::output() {
@@ -1770,7 +1790,7 @@ void SuperWord::output() {
 
 #ifndef PRODUCT
   if (TraceLoopOpts) {
-    tty->print("SuperWord    ");
+    tty->print("SuperWord::output    ");
     lpt()->dump_head();
   }
 #endif
@@ -1789,6 +1809,18 @@ void SuperWord::output() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   uint max_vlen_in_bytes = 0;
   uint max_vlen = 0;
+
+  NOT_PRODUCT(if(_CountedLoopReserveKit_debug > 0) {tty->print_cr("SWPointer::output: print loop before create_reserve_version_of_loop"); print_loop(true);})
+
+  CountedLoopReserveKit make_reversable(_phase, _lpt, DoReserveCopyInSuperWord);
+
+  NOT_PRODUCT(if(_CountedLoopReserveKit_debug > 0) {tty->print_cr("SWPointer::output: print loop after create_reserve_version_of_loop"); print_loop(true);})
+
+  if (DoReserveCopyInSuperWord && !make_reversable.has_reserved()) {
+    NOT_PRODUCT({tty->print_cr("SWPointer::output: loop was not reserved correctly, exiting SuperWord");})
+    return;
+  }
+
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
     Node_List* p = my_pack(n);
@@ -1858,8 +1890,8 @@ void SuperWord::output() {
           vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
           vlen_in_bytes = vn->as_Vector()->length_in_bytes();
         }
-      } else if (opc == Op_SqrtD) {
-        // Promote operand to vector (Sqrt is a 2 address instruction)
+      } else if (opc == Op_SqrtD || opc == Op_AbsF || opc == Op_AbsD || opc == Op_NegF || opc == Op_NegD) {
+        // Promote operand to vector (Sqrt/Abs/Neg are 2 address instructions)
         Node* in = vector_opd(p, 1);
         vn = VectorNode::make(opc, in, NULL, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
@@ -1888,6 +1920,7 @@ void SuperWord::output() {
     }
   }
   C->set_max_vector_size(max_vlen_in_bytes);
+
   if (SuperWordLoopUnrollAnalysis) {
     if (cl->has_passed_slp()) {
       uint slp_max_unroll_factor = cl->slp_max_unroll();
@@ -1900,6 +1933,12 @@ void SuperWord::output() {
       }
     }
   }
+
+  if (DoReserveCopyInSuperWord) {
+    make_reversable.use_new();
+  }
+  NOT_PRODUCT(if(_CountedLoopReserveKit_debug > 0) {tty->print_cr("\n Final loop after SuperWord"); print_loop(true);})
+  return;
 }
 
 //------------------------------vector_opd---------------------------
@@ -2110,7 +2149,7 @@ bool SuperWord::construct_bb() {
       Node* n_tail  = n->in(LoopNode::LoopBackControl);
       if (n_tail != n->in(LoopNode::EntryControl)) {
         if (!n_tail->is_Mem()) {
-          assert(n_tail->is_Mem(), err_msg_res("unexpected node for memory slice: %s", n_tail->Name()));
+          assert(n_tail->is_Mem(), "unexpected node for memory slice: %s", n_tail->Name());
           return false; // Bailout
         }
         _mem_slice_head.push(n);
@@ -2690,15 +2729,25 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
 
 //----------------------------get_pre_loop_end---------------------------
 // Find pre loop end from main loop.  Returns null if none.
-CountedLoopEndNode* SuperWord::get_pre_loop_end(CountedLoopNode *cl) {
-  Node *ctrl = cl->in(LoopNode::EntryControl);
+CountedLoopEndNode* SuperWord::get_pre_loop_end(CountedLoopNode* cl) {
+  Node* ctrl = cl->in(LoopNode::EntryControl);
   if (!ctrl->is_IfTrue() && !ctrl->is_IfFalse()) return NULL;
-  Node *iffm = ctrl->in(0);
+  Node* iffm = ctrl->in(0);
   if (!iffm->is_If()) return NULL;
-  Node *p_f = iffm->in(0);
+  Node* bolzm = iffm->in(1);
+  if (!bolzm->is_Bool()) return NULL;
+  Node* cmpzm = bolzm->in(1);
+  if (!cmpzm->is_Cmp()) return NULL;
+  Node* opqzm = cmpzm->in(2);
+  // Can not optimize a loop if zero-trip Opaque1 node is optimized
+  // away and then another round of loop opts attempted.
+  if (opqzm->Opcode() != Op_Opaque1) {
+    return NULL;
+  }
+  Node* p_f = iffm->in(0);
   if (!p_f->is_IfFalse()) return NULL;
   if (!p_f->in(0)->is_CountedLoopEnd()) return NULL;
-  CountedLoopEndNode *pre_end = p_f->in(0)->as_CountedLoopEnd();
+  CountedLoopEndNode* pre_end = p_f->in(0)->as_CountedLoopEnd();
   CountedLoopNode* loop_node = pre_end->loopnode();
   if (loop_node == NULL || !loop_node->is_pre_loop()) return NULL;
   return pre_end;
@@ -3045,6 +3094,9 @@ bool SWPointer::offset_plus_k(Node* n, bool negate) {
     }
   }
   if (invariant(n)) {
+    if (opc == Op_ConvI2L) {
+      n = n->in(1);
+    }
     _negate_invar = negate;
     _invar = n;
     NOT_PRODUCT(_tracer.offset_plus_k_10(n, _invar, _negate_invar, _offset);)

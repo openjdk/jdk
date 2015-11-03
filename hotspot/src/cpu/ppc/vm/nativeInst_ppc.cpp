@@ -149,7 +149,7 @@ void NativeCall::verify() {
   if (!NativeCall::is_call_at(addr)) {
     tty->print_cr("not a NativeCall at " PTR_FORMAT, p2i(addr));
     // TODO: PPC port: Disassembler::decode(addr - 20, addr + 20, tty);
-    fatal(err_msg("not a NativeCall at " PTR_FORMAT, p2i(addr)));
+    fatal("not a NativeCall at " PTR_FORMAT, p2i(addr));
   }
 }
 #endif // ASSERT
@@ -162,7 +162,7 @@ void NativeFarCall::verify() {
   if (!NativeFarCall::is_far_call_at(addr)) {
     tty->print_cr("not a NativeFarCall at " PTR_FORMAT, p2i(addr));
     // TODO: PPC port: Disassembler::decode(addr, 20, 20, tty);
-    fatal(err_msg("not a NativeFarCall at " PTR_FORMAT, p2i(addr)));
+    fatal("not a NativeFarCall at " PTR_FORMAT, p2i(addr));
   }
 }
 #endif // ASSERT
@@ -308,7 +308,7 @@ void NativeMovConstReg::verify() {
         ! MacroAssembler::is_bl(*((int*) addr))) {
       tty->print_cr("not a NativeMovConstReg at " PTR_FORMAT, p2i(addr));
       // TODO: PPC port: Disassembler::decode(addr, 20, 20, tty);
-      fatal(err_msg("not a NativeMovConstReg at " PTR_FORMAT, p2i(addr)));
+      fatal("not a NativeMovConstReg at " PTR_FORMAT, p2i(addr));
     }
   }
 }
@@ -346,7 +346,7 @@ void NativeJump::verify() {
   if (!NativeJump::is_jump_at(addr)) {
     tty->print_cr("not a NativeJump at " PTR_FORMAT, p2i(addr));
     // TODO: PPC port: Disassembler::decode(addr, 20, 20, tty);
-    fatal(err_msg("not a NativeJump at " PTR_FORMAT, p2i(addr)));
+    fatal("not a NativeJump at " PTR_FORMAT, p2i(addr));
   }
 }
 #endif // ASSERT

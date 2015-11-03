@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/serial/defNewGeneration.inline.hpp"
+#include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/collectorCounters.hpp"
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
@@ -33,7 +34,6 @@
 #include "gc/shared/gcTraceTime.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
-#include "gc/shared/genRemSet.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/referencePolicy.hpp"
 #include "gc/shared/space.inline.hpp"
@@ -69,8 +69,7 @@ bool DefNewGeneration::IsAliveClosure::do_object_b(oop p) {
 
 DefNewGeneration::KeepAliveClosure::
 KeepAliveClosure(ScanWeakRefClosure* cl) : _cl(cl) {
-  GenRemSet* rs = GenCollectedHeap::heap()->rem_set();
-  _rs = (CardTableRS*)rs;
+  _rs = GenCollectedHeap::heap()->rem_set();
 }
 
 void DefNewGeneration::KeepAliveClosure::do_oop(oop* p)       { DefNewGeneration::KeepAliveClosure::do_oop_work(p); }
@@ -583,7 +582,7 @@ void DefNewGeneration::collect(bool   full,
 
   init_assuming_no_promotion_failure();
 
-  GCTraceTime t1(GCCauseString("GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, NULL, gc_tracer.gc_id());
+  GCTraceTime t1(GCCauseString("GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, NULL);
   // Capture heap used before collection (for printing).
   size_t gch_prev_used = gch->used();
 
@@ -646,8 +645,9 @@ void DefNewGeneration::collect(bool   full,
   rp->setup_policy(clear_all_soft_refs);
   const ReferenceProcessorStats& stats =
   rp->process_discovered_references(&is_alive, &keep_alive, &evacuate_followers,
-                                    NULL, _gc_timer, gc_tracer.gc_id());
+                                    NULL, _gc_timer);
   gc_tracer.report_gc_reference_stats(stats);
+  gc_tracer.report_tenuring_threshold(tenuring_threshold());
 
   if (!_promotion_failed) {
     // Swap the survivor spaces.
@@ -712,7 +712,6 @@ void DefNewGeneration::collect(bool   full,
   update_time_of_last_gc(now);
 
   gch->trace_heap_after_gc(&gc_tracer);
-  gc_tracer.report_tenuring_threshold(tenuring_threshold());
 
   _gc_timer->register_gc_end();
 

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/g1/concurrentG1Refine.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1Log.hpp"
@@ -130,8 +131,8 @@ class WorkerDataArray  : public CHeapObj<mtGC> {
   WorkerDataArray<size_t>* thread_work_items() { return _thread_work_items; }
 
   void set(uint worker_i, T value) {
-    assert(worker_i < _length, err_msg("Worker %d is greater than max: %d", worker_i, _length));
-    assert(_data[worker_i] == WorkerDataArray<T>::uninitialized(), err_msg("Overwriting data for worker %d in %s", worker_i, _title));
+    assert(worker_i < _length, "Worker %d is greater than max: %d", worker_i, _length);
+    assert(_data[worker_i] == WorkerDataArray<T>::uninitialized(), "Overwriting data for worker %d in %s", worker_i, _title);
     _data[worker_i] = value;
     _has_new_data = true;
   }
@@ -142,14 +143,14 @@ class WorkerDataArray  : public CHeapObj<mtGC> {
   }
 
   T get(uint worker_i) {
-    assert(worker_i < _length, err_msg("Worker %d is greater than max: %d", worker_i, _length));
-    assert(_data[worker_i] != WorkerDataArray<T>::uninitialized(), err_msg("No data added for worker %d", worker_i));
+    assert(worker_i < _length, "Worker %d is greater than max: %d", worker_i, _length);
+    assert(_data[worker_i] != WorkerDataArray<T>::uninitialized(), "No data added for worker %d", worker_i);
     return _data[worker_i];
   }
 
   void add(uint worker_i, T value) {
-    assert(worker_i < _length, err_msg("Worker %d is greater than max: %d", worker_i, _length));
-    assert(_data[worker_i] != WorkerDataArray<T>::uninitialized(), err_msg("No data to add to for worker %d", worker_i));
+    assert(worker_i < _length, "Worker %d is greater than max: %d", worker_i, _length);
+    assert(_data[worker_i] != WorkerDataArray<T>::uninitialized(), "No data to add to for worker %d", worker_i);
     _data[worker_i] += value;
     _has_new_data = true;
   }
@@ -235,7 +236,7 @@ void WorkerDataArray<T>::verify(uint active_threads) {
   assert(active_threads <= _length, "Wrong number of active threads");
   for (uint i = 0; i < active_threads; i++) {
     assert(_data[i] != WorkerDataArray<T>::uninitialized(),
-        err_msg("Invalid data for worker %u in '%s'", i, _title));
+           "Invalid data for worker %u in '%s'", i, _title);
   }
   if (_thread_work_items != NULL) {
     _thread_work_items->verify(active_threads);
@@ -269,6 +270,8 @@ G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _gc_par_phases[SATBFiltering] = new WorkerDataArray<double>(max_gc_threads, "SATB Filtering (ms)", true, G1Log::LevelFinest, 3);
 
   _gc_par_phases[UpdateRS] = new WorkerDataArray<double>(max_gc_threads, "Update RS (ms)", true, G1Log::LevelFiner, 2);
+  _gc_par_phases[ScanHCC] = new WorkerDataArray<double>(max_gc_threads, "Scan HCC (ms)", true, G1Log::LevelFiner, 3);
+  _gc_par_phases[ScanHCC]->set_enabled(ConcurrentG1Refine::hot_card_cache_enabled());
   _gc_par_phases[ScanRS] = new WorkerDataArray<double>(max_gc_threads, "Scan RS (ms)", true, G1Log::LevelFiner, 2);
   _gc_par_phases[CodeRoots] = new WorkerDataArray<double>(max_gc_threads, "Code Root Scanning (ms)", true, G1Log::LevelFiner, 2);
   _gc_par_phases[ObjCopy] = new WorkerDataArray<double>(max_gc_threads, "Object Copy (ms)", true, G1Log::LevelFiner, 2);
@@ -479,7 +482,7 @@ class G1GCParPhasePrinter : public StackObj {
       print_count_values(buf, phase_id, thread_work_items);
     }
 
-    assert(thread_work_items->_print_sum, err_msg("%s does not have print sum true even though it is a count", thread_work_items->_title));
+    assert(thread_work_items->_print_sum, "%s does not have print sum true even though it is a count", thread_work_items->_title);
 
     buf.append_and_print_cr(" Min: " SIZE_FORMAT ", Avg: %.1lf, Max: " SIZE_FORMAT ", Diff: " SIZE_FORMAT ", Sum: " SIZE_FORMAT "]",
         _phase_times->min_thread_work_items(phase_id), _phase_times->average_thread_work_items(phase_id), _phase_times->max_thread_work_items(phase_id),

@@ -111,7 +111,8 @@ if [ $? != 0 ]; then
   exit 1
 fi
 
-${TESTJAVA}${FS}bin${FS}java ${TESTOPTS} -Xinternalversion > vm_version.out 2>&1
+${TESTJAVA}${FS}bin${FS}java ${TESTOPTS} -Xinternalversion | sed -e 's/[(][^)]*[)]//g' -e 's/ by "[^"]*"//g' > vm_version.out 2>&1
+echo "INT_VERSION=`cat vm_version.out 2>&1`"
 
 VM_TYPE="unknown"
 grep "Server" vm_version.out > ${NULL}

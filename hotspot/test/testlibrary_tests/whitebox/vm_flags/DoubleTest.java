@@ -36,9 +36,7 @@
 
 public class DoubleTest {
     private static final String FLAG_NAME = "CompileThresholdScaling";
-    private static final Double[] TESTS = {0d, -0d, -1d, 1d,
-            Double.MAX_VALUE, Double.MIN_VALUE, Double.NaN,
-            Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY};
+    private static final Double[] TESTS = {0d, -0d, 1d, Double.MAX_VALUE};
 
     public static void main(String[] args) throws Exception {
         VmFlagTest.runTest(FLAG_NAME, TESTS,

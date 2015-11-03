@@ -197,7 +197,9 @@ CodeRootSetTable* G1CodeRootSet::load_acquire_table() {
 }
 
 void G1CodeRootSet::allocate_small_table() {
-  _table = new CodeRootSetTable(SmallSize);
+  CodeRootSetTable* temp = new CodeRootSetTable(SmallSize);
+
+  OrderAccess::release_store_ptr(&_table, temp);
 }
 
 void CodeRootSetTable::purge_list_append(CodeRootSetTable* table) {
@@ -350,11 +352,11 @@ class G1CodeRootSetTest {
       assert(set1.is_empty(), "Code root set must be initially empty but is not.");
 
       assert(G1CodeRootSet::static_mem_size() == sizeof(void*),
-          err_msg("The code root set's static memory usage is incorrect, " SIZE_FORMAT " bytes", G1CodeRootSet::static_mem_size()));
+             "The code root set's static memory usage is incorrect, " SIZE_FORMAT " bytes", G1CodeRootSet::static_mem_size());
 
       set1.add((nmethod*)1);
-      assert(set1.length() == 1, err_msg("Added exactly one element, but set contains "
-          SIZE_FORMAT " elements", set1.length()));
+      assert(set1.length() == 1, "Added exactly one element, but set contains "
+             SIZE_FORMAT " elements", set1.length());
 
       const size_t num_to_add = (size_t)G1CodeRootSet::Threshold + 1;
 
@@ -362,16 +364,16 @@ class G1CodeRootSetTest {
         set1.add((nmethod*)1);
       }
       assert(set1.length() == 1,
-          err_msg("Duplicate detection should not have increased the set size but "
-              "is " SIZE_FORMAT, set1.length()));
+             "Duplicate detection should not have increased the set size but "
+             "is " SIZE_FORMAT, set1.length());
 
       for (size_t i = 2; i <= num_to_add; i++) {
         set1.add((nmethod*)(uintptr_t)(i));
       }
       assert(set1.length() == num_to_add,
-          err_msg("After adding in total " SIZE_FORMAT " distinct code roots, they "
-              "need to be in the set, but there are only " SIZE_FORMAT,
-              num_to_add, set1.length()));
+             "After adding in total " SIZE_FORMAT " distinct code roots, they "
+             "need to be in the set, but there are only " SIZE_FORMAT,
+             num_to_add, set1.length());
 
       assert(CodeRootSetTable::_purge_list != NULL, "should have grown to large hashtable");
 
@@ -385,8 +387,8 @@ class G1CodeRootSetTest {
         }
       }
       assert(num_popped == num_to_add,
-          err_msg("Managed to pop " SIZE_FORMAT " code roots, but only " SIZE_FORMAT " "
-              "were added", num_popped, num_to_add));
+             "Managed to pop " SIZE_FORMAT " code roots, but only " SIZE_FORMAT " "
+             "were added", num_popped, num_to_add);
       assert(CodeRootSetTable::_purge_list != NULL, "should have grown to large hashtable");
 
       G1CodeRootSet::purge();

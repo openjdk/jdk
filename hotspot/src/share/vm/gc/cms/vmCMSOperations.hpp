@@ -27,6 +27,7 @@
 
 #include "gc/cms/concurrentMarkSweepGeneration.hpp"
 #include "gc/shared/gcCause.hpp"
+#include "gc/shared/gcId.hpp"
 #include "gc/shared/vmGCOperations.hpp"
 #include "runtime/vm_operations.hpp"
 
@@ -53,6 +54,7 @@ class VM_CMS_Operation: public VM_Operation {
  protected:
   CMSCollector*  _collector;                 // associated collector
   bool           _prologue_succeeded;     // whether doit_prologue succeeded
+  uint           _gc_id;
 
   bool lost_race() const;
 
@@ -63,7 +65,8 @@ class VM_CMS_Operation: public VM_Operation {
  public:
   VM_CMS_Operation(CMSCollector* collector):
     _collector(collector),
-    _prologue_succeeded(false) {}
+    _prologue_succeeded(false),
+    _gc_id(GCId::current()) {}
   ~VM_CMS_Operation() {}
 
   // The legal collector state for executing this CMS op.

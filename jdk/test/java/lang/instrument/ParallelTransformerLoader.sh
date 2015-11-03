@@ -26,7 +26,6 @@
 # @summary Test parallel class loading by parallel transformers.
 # @author Daniel D. Daugherty as modified from the code of Daryl Puryear @ Wily
 #
-# @modules java.instrument
 # @run shell MakeJAR3.sh ParallelTransformerLoaderAgent
 # @run build ParallelTransformerLoaderApp
 # @run shell/timeout=240 ParallelTransformerLoader.sh

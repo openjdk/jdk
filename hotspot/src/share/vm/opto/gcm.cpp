@@ -34,6 +34,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/runtime.hpp"
+#include "opto/chaitin.hpp"
 #include "runtime/deoptimization.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -1363,6 +1364,44 @@ void PhaseCFG::global_code_motion() {
     }
   }
 
+  bool block_size_threshold_ok = false;
+  intptr_t *recalc_pressure_nodes = NULL;
+  if (OptoRegScheduling) {
+    for (uint i = 0; i < number_of_blocks(); i++) {
+      Block* block = get_block(i);
+      if (block->number_of_nodes() > 10) {
+        block_size_threshold_ok = true;
+        break;
+      }
+    }
+  }
+
+  // Enabling the scheduler for register pressure plus finding blocks of size to schedule for it
+  // is key to enabling this feature.
+  PhaseChaitin regalloc(C->unique(), *this, _matcher, true);
+  ResourceArea live_arena;      // Arena for liveness
+  ResourceMark rm_live(&live_arena);
+  PhaseLive live(*this, regalloc._lrg_map.names(), &live_arena, true);
+  PhaseIFG ifg(&live_arena);
+  if (OptoRegScheduling && block_size_threshold_ok) {
+    regalloc.mark_ssa();
+    Compile::TracePhase tp("computeLive", &timers[_t_computeLive]);
+    rm_live.reset_to_mark();           // Reclaim working storage
+    IndexSet::reset_memory(C, &live_arena);
+    uint node_size = regalloc._lrg_map.max_lrg_id();
+    ifg.init(node_size); // Empty IFG
+    regalloc.set_ifg(ifg);
+    regalloc.set_live(live);
+    regalloc.gather_lrg_masks(false);    // Collect LRG masks
+    live.compute(node_size); // Compute liveness
+
+    recalc_pressure_nodes = NEW_RESOURCE_ARRAY(intptr_t, node_size);
+    for (uint i = 0; i < node_size; i++) {
+      recalc_pressure_nodes[i] = 0;
+    }
+  }
+  _regalloc = &regalloc;
+
 #ifndef PRODUCT
   if (trace_opto_pipelining()) {
     tty->print("\n---- Start Local Scheduling ----\n");
@@ -1375,13 +1414,15 @@ void PhaseCFG::global_code_motion() {
   visited.Clear();
   for (uint i = 0; i < number_of_blocks(); i++) {
     Block* block = get_block(i);
-    if (!schedule_local(block, ready_cnt, visited)) {
+    if (!schedule_local(block, ready_cnt, visited, recalc_pressure_nodes)) {
       if (!C->failure_reason_is(C2Compiler::retry_no_subsuming_loads())) {
         C->record_method_not_compilable("local schedule failed");
       }
+      _regalloc = NULL;
       return;
     }
   }
+  _regalloc = NULL;
 
   // If we inserted any instructions between a Call and his CatchNode,
   // clone the instructions on all paths below the Catch.

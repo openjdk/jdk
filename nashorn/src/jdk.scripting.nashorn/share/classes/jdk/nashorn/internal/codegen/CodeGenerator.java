@@ -683,9 +683,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             // (in)equality operators need the specialized JSType.toNumberFor[Strict]Equals. E.g. in the code snippet
             // "i < obj.size" (where i is primitive and obj.size is statically an object), ".size" will thus be allowed
             // to compile as:
-            //   invokedynamic dyn:getProp|getElem|getMethod:size(Object;)D
+            //   invokedynamic GET_PROPERTY:size(Object;)D
             // instead of the more costly:
-            //   invokedynamic dyn:getProp|getElem|getMethod:size(Object;)Object
+            //   invokedynamic GET_PROPERTY:size(Object;)Object
             //   invokestatic JSType.toNumber(Object)D
             // Note also that even if this is allowed, we're only using it on operands that are non-optimistic, as
             // otherwise the logic for determining effective optimistic-ness would turn an optimistic double return
@@ -1494,11 +1494,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     void loadStack() {
                         /*
                          * We want to load 'eval' to check if it is indeed global builtin eval.
-                         * If this eval call is inside a 'with' statement, dyn:getMethod|getProp|getElem
+                         * If this eval call is inside a 'with' statement, GET_METHOD_PROPERTY
                          * would be generated if ident is a "isFunction". But, that would result in a
                          * bound function from WithObject. We don't want that as bound function as that
                          * won't be detected as builtin eval. So, we make ident as "not a function" which
-                         * results in "dyn:getProp|getElem|getMethod" being generated and so WithObject
+                         * results in GET_PROPERTY being generated and so WithObject
                          * would return unbounded eval function.
                          *
                          * Example:
@@ -1525,7 +1525,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         method._goto(invoke_direct_eval);
 
                         method.label(is_not_eval);
-                        // load this time but with dyn:getMethod|getProp|getElem
+                        // load this time but with GET_METHOD_PROPERTY
                         loadExpressionAsObject(ident); // Type.OBJECT as foo() makes no sense if foo == 3
                         // This is some scope 'eval' or global eval replaced by user
                         // but not the built-in ECMAScript 'eval' function call

@@ -124,6 +124,10 @@ public abstract class LocaleProviderAdapter {
         if (order != null && order.length() != 0) {
             String[] types = order.split(",");
             for (String type : types) {
+                type = type.trim().toUpperCase(Locale.ROOT);
+                if (type.equals("COMPAT")) {
+                    type = "JRE";
+                }
                 try {
                     Type aType = Type.valueOf(type.trim().toUpperCase(Locale.ROOT));
                     if (!typeList.contains(aType)) {

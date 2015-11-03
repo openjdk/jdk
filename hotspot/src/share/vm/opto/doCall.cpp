@@ -599,9 +599,9 @@ void Parse::do_call() {
           pop_node(rt);  // whatever it was, pop it
         } else if (rt == T_INT || is_subword_type(rt)) {
           // Nothing.  These cases are handled in lambda form bytecode.
-          assert(ct == T_INT || is_subword_type(ct), err_msg_res("must match: rt=%s, ct=%s", type2name(rt), type2name(ct)));
+          assert(ct == T_INT || is_subword_type(ct), "must match: rt=%s, ct=%s", type2name(rt), type2name(ct));
         } else if (rt == T_OBJECT || rt == T_ARRAY) {
-          assert(ct == T_OBJECT || ct == T_ARRAY, err_msg_res("rt=%s, ct=%s", type2name(rt), type2name(ct)));
+          assert(ct == T_OBJECT || ct == T_ARRAY, "rt=%s, ct=%s", type2name(rt), type2name(ct));
           if (ctype->is_loaded()) {
             const TypeOopPtr* arg_type = TypeOopPtr::make_from_klass(rtype->as_klass());
             const Type*       sig_type = TypeOopPtr::make_from_klass(ctype->as_klass());
@@ -612,7 +612,7 @@ void Parse::do_call() {
             }
           }
         } else {
-          assert(rt == ct, err_msg_res("unexpected mismatch: rt=%s, ct=%s", type2name(rt), type2name(ct)));
+          assert(rt == ct, "unexpected mismatch: rt=%s, ct=%s", type2name(rt), type2name(ct));
           // push a zero; it's better than getting an oop/int mismatch
           pop_node(rt);
           Node* retnode = zerocon(ct);
@@ -628,7 +628,7 @@ void Parse::do_call() {
       // can appear to be "loaded" by different loaders (depending on
       // the accessing class).
       assert(!rtype->is_loaded() || !ctype->is_loaded() || rtype == ctype,
-             err_msg_res("mismatched return types: rtype=%s, ctype=%s", rtype->name(), ctype->name()));
+             "mismatched return types: rtype=%s, ctype=%s", rtype->name(), ctype->name());
     }
 
     // If the return type of the method is not loaded, assert that the

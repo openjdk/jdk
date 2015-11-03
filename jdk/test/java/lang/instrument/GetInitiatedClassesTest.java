@@ -27,7 +27,6 @@
  * @summary simple tests for getInitiatedClasses (does a newly loaded class show up?)
  * @author Gabriel Adauto, Wily Technology
  *
- * @modules java.instrument
  * @run build GetInitiatedClassesTest DummyClass
  * @run shell MakeJAR.sh basicAgent
  * @run main/othervm -javaagent:basicAgent.jar GetInitiatedClassesTest GetInitiatedClassesTest

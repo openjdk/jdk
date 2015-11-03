@@ -31,6 +31,5 @@ import sun.jvm.hotspot.debugger.*;
 public interface OopMapVisitor {
   public void visitOopLocation(Address oopAddr);
   public void visitDerivedOopLocation(Address baseOopAddr, Address derivedOopAddr);
-  public void visitValueLocation(Address valueAddr);
   public void visitNarrowOopLocation(Address narrowOopAddr);
 }

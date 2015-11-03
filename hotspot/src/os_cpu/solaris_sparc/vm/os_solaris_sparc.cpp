@@ -24,6 +24,7 @@
 
 // no precompiled headers
 #include "asm/macroAssembler.hpp"
+#include "macroAssembler_sparc.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -549,8 +550,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
     vm_exit_out_of_memory(0, OOM_MMAP_ERROR, "Out of swap space to map in thread stack.");
   }
 
-  VMError err(t, sig, pc, info, ucVoid);
-  err.report_and_die();
+  VMError::report_and_die(t, sig, pc, info, ucVoid);
 
   ShouldNotReachHere();
 }

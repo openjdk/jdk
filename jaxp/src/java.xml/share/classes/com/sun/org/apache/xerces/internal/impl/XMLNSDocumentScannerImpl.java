@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -37,6 +37,7 @@ import com.sun.org.apache.xerces.internal.xni.XMLDocumentHandler;
 import com.sun.org.apache.xerces.internal.xni.XMLAttributes;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
 import com.sun.org.apache.xerces.internal.util.XMLAttributesImpl;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
@@ -452,7 +453,15 @@ public class XMLNSDocumentScannerImpl
             // it's a namespace declaration. but prefix:xmlns="..." isn't.
             if (prefix == XMLSymbols.PREFIX_XMLNS ||
                     prefix == XMLSymbols.EMPTY_STRING && localpart == XMLSymbols.PREFIX_XMLNS) {
-
+                //check the length of URI
+                if (tmpStr.length > fXMLNameLimit) {
+                    fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN,
+                            "MaxXMLNameLimit",
+                            new Object[]{new String(tmpStr.ch,tmpStr.offset,tmpStr.length),
+                            tmpStr.length, fXMLNameLimit,
+                            fSecurityManager.getStateLiteral(XMLSecurityManager.Limit.MAX_NAME_LIMIT)},
+                            XMLErrorReporter.SEVERITY_FATAL_ERROR);
+                }
                 // get the internalized value of this attribute
                 String uri = fSymbolTable.addSymbol(tmpStr.ch,tmpStr.offset,tmpStr.length);
                 value = uri;

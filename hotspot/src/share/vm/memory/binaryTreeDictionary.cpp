@@ -708,8 +708,8 @@ void BinaryTreeDictionary<Chunk_t, FreeList_t>::insert_chunk_in_tree(Chunk_t* fc
   size_t size = fc->size();
 
   assert((size >= min_size()),
-    err_msg(SIZE_FORMAT " is too small to be a TreeChunk<Chunk_t, FreeList_t> " SIZE_FORMAT,
-      size, min_size()));
+         SIZE_FORMAT " is too small to be a TreeChunk<Chunk_t, FreeList_t> " SIZE_FORMAT,
+         size, min_size());
   if (FLSVerifyDictionary) {
     verify_tree();
   }
