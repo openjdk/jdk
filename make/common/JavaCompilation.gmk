@@ -686,7 +686,7 @@ define SetupJavaCompilationBody
 
   # Check if a srczip was specified, then setup the rules for the srczip.
   ifneq (,$$($1_SRCZIP))
-    $$(eval $$(call SetupZipArchive,ARCHIVE_$1, \
+    $$(eval $$(call SetupZipArchive, ZIP_ARCHIVE_$1, \
         SRC:=$$($1_SRC), \
         ZIP:=$$($1_SRCZIP), \
         INCLUDES:=$$($1_INCLUDES), \
