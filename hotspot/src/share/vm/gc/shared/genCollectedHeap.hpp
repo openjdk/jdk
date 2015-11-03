@@ -499,6 +499,9 @@ private:
 protected:
   void gc_prologue(bool full);
   void gc_epilogue(bool full);
+
+public:
+  void stop();
 };
 
 #endif // SHARE_VM_GC_SHARED_GENCOLLECTEDHEAP_HPP

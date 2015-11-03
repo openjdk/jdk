@@ -1319,3 +1319,11 @@ jlong GenCollectedHeap::millis_since_last_gc() {
   }
   return retVal;
 }
+
+void GenCollectedHeap::stop() {
+#if INCLUDE_ALL_GCS
+  if (UseConcMarkSweepGC) {
+    ConcurrentMarkSweepThread::stop();
+  }
+#endif
+}
