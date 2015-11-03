@@ -234,9 +234,9 @@ static int GET_ARRAYS(JNIEnv *env, sun_jpeg_source_ptr src)
     }
     if (src->hOutputBuffer) {
         assert(src->outbuf.ip == 0);
+        src->outbufSize = (*env)->GetArrayLength(env, src->hOutputBuffer);
         src->outbuf.ip = (int *)(*env)->GetPrimitiveArrayCritical
             (env, src->hOutputBuffer, 0);
-        src->outbufSize = (*env)->GetArrayLength(env, src->hOutputBuffer);
         if (src->outbuf.ip == 0) {
             RELEASE_ARRAYS(env, src);
             return 0;
