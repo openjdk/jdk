@@ -43,8 +43,8 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libj2gss/mapfile-vers, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_SUFFIX := $(LIBDL), \
-      LDFLAGS_SUFFIX_solaris := -lc, \
+      LIBS := $(LIBDL), \
+      LIBS_solaris := -lc, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libj2gss, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
@@ -85,7 +85,7 @@ ifneq ($(BUILD_CRYPTO), no)
         DISABLED_WARNINGS_clang := deprecated-declarations, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN), \
-        LDFLAGS_SUFFIX := $(BUILD_LIBKRB5_LIBS), \
+        LIBS := $(BUILD_LIBKRB5_LIBS), \
         VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
         RC_FLAGS := $(RC_FLAGS) \
             -D "JDK_FNAME=$(BUILD_LIBKRB5_NAME).dll" \
