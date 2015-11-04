@@ -46,6 +46,10 @@ import static jdk.nashorn.internal.parser.TokenType.RBRACE;
 import static jdk.nashorn.internal.parser.TokenType.REGEX;
 import static jdk.nashorn.internal.parser.TokenType.RPAREN;
 import static jdk.nashorn.internal.parser.TokenType.STRING;
+import static jdk.nashorn.internal.parser.TokenType.TEMPLATE;
+import static jdk.nashorn.internal.parser.TokenType.TEMPLATE_HEAD;
+import static jdk.nashorn.internal.parser.TokenType.TEMPLATE_MIDDLE;
+import static jdk.nashorn.internal.parser.TokenType.TEMPLATE_TAIL;
 import static jdk.nashorn.internal.parser.TokenType.XML;
 
 import java.io.Serializable;
@@ -95,6 +99,8 @@ public class Lexer extends Scanner {
 
     private final boolean pauseOnFunctionBody;
     private boolean pauseOnNextLeftBrace;
+
+    private int templateExpressionOpenBraces;
 
     private static final String SPACETAB = " \t";  // ASCII space and tab
     private static final String LFCR     = "\n\r"; // line feed and carriage return (ctrl-m)
@@ -392,13 +398,19 @@ public class Lexer extends Scanner {
     }
 
     /**
-     * Test if char is a string delimiter, e.g. '\' or '"'.  Also scans exec
-     * strings ('`') in scripting mode.
+     * Test if char is a string delimiter, e.g. '\' or '"'.
      * @param ch a char
      * @return true if string delimiter
      */
     protected boolean isStringDelimiter(final char ch) {
-        return ch == '\'' || ch == '"' || (scripting && ch == '`');
+        return ch == '\'' || ch == '"';
+    }
+
+    /**
+     * Test if char is a template literal delimiter ('`').
+     */
+    private static boolean isTemplateDelimiter(char ch) {
+        return ch == '`';
     }
 
     /**
@@ -943,6 +955,10 @@ public class Lexer extends Scanner {
                     sb.append(next);
                     break;
                 }
+            } else if (ch0 == '\r') {
+                // Convert CR-LF or CR to LF line terminator.
+                sb.append('\n');
+                skip(ch1 == '\n' ? 2 : 1);
             } else {
                 // Add regular character.
                 sb.append(ch0);
@@ -958,7 +974,7 @@ public class Lexer extends Scanner {
 
     /**
      * Scan over a string literal.
-     * @param add true if we nare not just scanning but should actually modify the token stream
+     * @param add true if we are not just scanning but should actually modify the token stream
      */
     protected void scanString(final boolean add) {
         // Type of string.
@@ -1031,6 +1047,70 @@ public class Lexer extends Scanner {
                 add(type, stringState.position, stringState.limit);
             }
         }
+    }
+
+    /**
+     * Scan over a template string literal.
+     */
+    private void scanTemplate() {
+        assert ch0 == '`';
+        TokenType type = TEMPLATE;
+
+        // Skip over quote and record beginning of string content.
+        skip(1);
+        State stringState = saveState();
+
+        // Scan until close quote
+        while (!atEOF()) {
+            // Skip over escaped character.
+            if (ch0 == '`') {
+                skip(1);
+                // Record end of string.
+                stringState.setLimit(position - 1);
+                add(type == TEMPLATE ? type : TEMPLATE_TAIL, stringState.position, stringState.limit);
+                return;
+            } else if (ch0 == '$' && ch1 == '{') {
+                skip(2);
+                stringState.setLimit(position - 2);
+                add(type == TEMPLATE ? TEMPLATE_HEAD : type, stringState.position, stringState.limit);
+
+                // scan to RBRACE
+                Lexer expressionLexer = new Lexer(this, saveState());
+                expressionLexer.templateExpressionOpenBraces = 1;
+                expressionLexer.lexify();
+                restoreState(expressionLexer.saveState());
+
+                // scan next middle or tail of the template literal
+                assert ch0 == '}';
+                type = TEMPLATE_MIDDLE;
+
+                // Skip over rbrace and record beginning of string content.
+                skip(1);
+                stringState = saveState();
+
+                continue;
+            } else if (ch0 == '\\') {
+                skip(1);
+                // EscapeSequence
+                if (!isEscapeCharacter(ch0)) {
+                    error(Lexer.message("invalid.escape.char"), TEMPLATE, position, limit);
+                }
+                if (isEOL(ch0)) {
+                    // LineContinuation
+                    skipEOL(false);
+                    continue;
+                }
+            }  else if (isEOL(ch0)) {
+                // LineTerminatorSequence
+                skipEOL(false);
+                continue;
+            }
+
+            // Skip literal character.
+            skip(1);
+        }
+
+        error(Lexer.message("missing.close.quote"), TEMPLATE, position, limit);
     }
 
     /**
@@ -1621,6 +1701,16 @@ public class Lexer extends Scanner {
                 // Scan and add a number.
                 scanNumber();
             } else if ((type = TokenLookup.lookupOperator(ch0, ch1, ch2, ch3)) != null) {
+                if (templateExpressionOpenBraces > 0) {
+                    if (type == LBRACE) {
+                        templateExpressionOpenBraces++;
+                    } else if (type == RBRACE) {
+                        if (--templateExpressionOpenBraces == 0) {
+                            break;
+                        }
+                    }
+                }
+
                 // Get the number of characters in the token.
                 final int typeLength = type.getLength();
                 // Skip that many characters.
@@ -1644,6 +1734,12 @@ public class Lexer extends Scanner {
             } else if (Character.isDigit(ch0)) {
                 // Scan and add a number.
                 scanNumber();
+            } else if (isTemplateDelimiter(ch0) && es6) {
+                // Scan and add template in ES6 mode.
+                scanTemplate();
+            } else if (isTemplateDelimiter(ch0) && scripting) {
+                // Scan and add an exec string ('`') in scripting mode.
+                scanString(true);
             } else {
                 // Don't recognize this character.
                 skip(1);
@@ -1699,6 +1795,11 @@ public class Lexer extends Scanner {
             return valueOfIdent(start, len); // String
         case REGEX:
             return valueOfPattern(start, len); // RegexToken::LexerToken
+        case TEMPLATE:
+        case TEMPLATE_HEAD:
+        case TEMPLATE_MIDDLE:
+        case TEMPLATE_TAIL:
+            return valueOfString(start, len, true); // String
         case XML:
             return valueOfXML(start, len); // XMLToken::LexerToken
         case DIRECTIVE_COMMENT:
@@ -1708,6 +1809,45 @@ public class Lexer extends Scanner {
         }
 
         return null;
+    }
+
+    /**
+     * Get the raw string value of a template literal string part.
+     *
+     * @param token template string token
+     * @return raw string
+     */
+    public String valueOfRawString(final long token) {
+        final int start  = Token.descPosition(token);
+        final int length = Token.descLength(token);
+
+        // Save the current position.
+        final int savePosition = position;
+        // Calculate the end position.
+        final int end = start + length;
+        // Reset to beginning of string.
+        reset(start);
+
+        // Buffer for recording characters.
+        final StringBuilder sb = new StringBuilder(length);
+
+        // Scan until end of string.
+        while (position < end) {
+            if (ch0 == '\r') {
+                // Convert CR-LF or CR to LF line terminator.
+                sb.append('\n');
+                skip(ch1 == '\n' ? 2 : 1);
+            } else {
+                // Add regular character.
+                sb.append(ch0);
+                skip(1);
+            }
+        }
+
+        // Restore position.
+        reset(savePosition);
+
+        return sb.toString();
     }
 
     /**
