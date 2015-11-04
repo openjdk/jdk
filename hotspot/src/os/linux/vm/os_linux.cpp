@@ -2819,7 +2819,6 @@ int os::Linux::sched_getcpu_syscall(void) {
 // Something to do with the numa-aware allocator needs these symbols
 extern "C" JNIEXPORT void numa_warn(int number, char *where, ...) { }
 extern "C" JNIEXPORT void numa_error(char *where) { }
-extern "C" JNIEXPORT int fork1() { return fork(); }
 
 
 // If we are running with libnuma version > 2, then we should

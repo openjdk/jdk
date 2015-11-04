@@ -454,10 +454,6 @@ bool CMRootRegions::wait_until_scan_finished() {
   return true;
 }
 
-#ifdef _MSC_VER // the use of 'this' below gets a warning, make it go away
-#pragma warning( disable:4355 ) // 'this' : used in base member initializer list
-#endif // _MSC_VER
-
 uint ConcurrentMark::scale_parallel_threads(uint n_par_threads) {
   return MAX2((n_par_threads + 2) / 4, 1U);
 }
