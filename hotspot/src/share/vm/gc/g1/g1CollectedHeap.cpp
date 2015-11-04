@@ -3613,7 +3613,7 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
           // The remembered set might contain references to already freed
           // regions. Filter out such entries to avoid failing card table
           // verification.
-          if (!g1h->heap_region_containing(bs->addr_for(card_ptr))->is_free()) {
+          if (g1h->is_in_closed_subset(bs->addr_for(card_ptr))) {
             if (*card_ptr != CardTableModRefBS::dirty_card_val()) {
               *card_ptr = CardTableModRefBS::dirty_card_val();
               _dcq.enqueue(card_ptr);
