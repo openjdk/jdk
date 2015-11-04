@@ -4597,7 +4597,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1446135203
+DATE_WHEN_GENERATED=1446637466
 
 ###############################################################################
 #
@@ -45118,8 +45118,6 @@ $as_echo "$supports" >&6; }
     JDKLIB_LIBS="-ljava -ljvm"
     if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
       JDKLIB_LIBS="$JDKLIB_LIBS -lc"
-    elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-      JDKLIB_LIBS="$JDKLIB_LIBS -liconv"
     fi
   fi
 
