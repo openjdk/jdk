@@ -269,11 +269,11 @@ define SetupJVMTIDemo
       DISABLED_WARNINGS_microsoft := $(11), \
       LDFLAGS := $(filter-out -incremental:no -opt:ref, $(LDFLAGS_JDKLIB)), \
       LDFLAGS_macosx := $(call SET_EXECUTABLE_ORIGIN), \
-      LDFLAGS_SUFFIX := $$($1_EXTRA_CXX), \
-      LDFLAGS_SUFFIX_unix := $5, \
-      LDFLAGS_SUFFIX_windows := $6, \
-      LDFLAGS_SUFFIX_solaris := $7 -lc, \
-      LDFLAGS_SUFFIX_linux := $8, \
+      LIBS := $$($1_EXTRA_CXX), \
+      LIBS_unix := $5, \
+      LIBS_linux := $8, \
+      LIBS_solaris := $7 -lc, \
+      LIBS_windows := $6, \
       VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
       RC_FLAGS := $$(RC_FLAGS) \
           -D "JDK_FNAME=$1.dll" \
@@ -409,7 +409,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
       CFLAGS := $(CFLAGS_JDKLIB) \
           -I$(SUPPORT_OUTPUTDIR)/demo/classes/jni/Poller, \
       LDFLAGS := $(LDFLAGS_JDKLIB), \
-      LDFLAGS_SUFFIX_solaris := -lc, \
+      LIBS_solaris := -lc, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/demo/native/jni/Poller, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/demo/native, \
       LIBRARY := Poller))

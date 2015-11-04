@@ -27,7 +27,6 @@
  * @summary test transformer add/remove pairs in sequence
  * @author Gabriel Adauto, Wily Technology
  *
- * @modules java.instrument
  * @run build TransformMethodTest
  * @run shell MakeJAR.sh redefineAgent
  * @run main/othervm -javaagent:redefineAgent.jar TransformMethodTest TransformMethodTest
