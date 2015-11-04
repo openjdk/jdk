@@ -1542,9 +1542,7 @@ void CMSCollector::acquire_control_and_collect(bool full,
   do_compaction_work(clear_all_soft_refs);
 
   // Has the GC time limit been exceeded?
-  size_t max_eden_size = _young_gen->max_capacity() -
-                         _young_gen->to()->capacity() -
-                         _young_gen->from()->capacity();
+  size_t max_eden_size = _young_gen->max_eden_size();
   GCCause::Cause gc_cause = gch->gc_cause();
   size_policy()->check_gc_overhead_limit(_young_gen->used(),
                                          _young_gen->eden()->used(),
