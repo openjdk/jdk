@@ -47,9 +47,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import compiler.testlibrary.CompilerUtils;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import sun.hotspot.code.NMethod;
 
 public class HasCompiledCodeForOSRTest {
@@ -63,7 +64,8 @@ public class HasCompiledCodeForOSRTest {
 
         try {
             Class<?> aClass = DummyClass.class;
-            testCases.add(new CompileCodeTestCase(
+            Object receiver = new DummyClass();
+            testCases.add(new CompileCodeTestCase(receiver,
                     aClass.getMethod("withLoop"), 17));
         } catch (NoSuchMethodException e) {
             throw new Error("TEST BUG : " + e.getMessage(), e);
@@ -74,8 +76,9 @@ public class HasCompiledCodeForOSRTest {
     private static void runSanityTest(CompileCodeTestCase testCase) {
         System.out.println(testCase);
         Executable aMethod = testCase.executable;
-        HotSpotResolvedJavaMethodImpl method = CTVMUtilities
+        HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
+        testCase.invoke(Utils.getNullValues(aMethod.getParameterTypes()));
         testCase.deoptimize();
         int[] levels = CompilerUtils.getAvailableCompilationLevels();
         // not compiled

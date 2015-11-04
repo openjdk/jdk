@@ -22,8 +22,8 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.code.*;
-import jdk.vm.ci.inittimer.*;
+import jdk.vm.ci.code.CompilationResult;
+import jdk.vm.ci.inittimer.SuppressFBWarnings;
 
 /**
  * {@link HotSpotCompiledCode} destined for installation as an nmethod.
@@ -32,8 +32,17 @@ public final class HotSpotCompiledNmethod extends HotSpotCompiledCode {
 
     public final HotSpotResolvedJavaMethod method;
     public final int entryBCI;
+
+    /**
+     * Compilation identifier.
+     */
     public final int id;
+
+    /**
+     * Address of a native {@code JVMCIEnv} object or 0L if no such object exists.
+     */
     public final long jvmciEnv;
+
     public final boolean hasUnsafeAccess;
 
     /**
@@ -42,15 +51,11 @@ public final class HotSpotCompiledNmethod extends HotSpotCompiledCode {
      */
     @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD", justification = "set by the VM") private String installationFailureMessage;
 
-    public HotSpotCompiledNmethod(HotSpotResolvedJavaMethod method, CompilationResult compResult) {
-        this(method, compResult, 0L);
-    }
-
-    public HotSpotCompiledNmethod(HotSpotResolvedJavaMethod method, CompilationResult compResult, long jvmciEnv) {
+    public HotSpotCompiledNmethod(HotSpotResolvedJavaMethod method, CompilationResult compResult, int id, long jvmciEnv) {
         super(compResult);
         this.method = method;
         this.entryBCI = compResult.getEntryBCI();
-        this.id = compResult.getId();
+        this.id = id;
         this.jvmciEnv = jvmciEnv;
         this.hasUnsafeAccess = compResult.hasUnsafeAccess();
     }

@@ -22,9 +22,14 @@
  */
 package jdk.vm.ci.code;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaValue;
+import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.Value;
 
 /**
  * Utility class for working with the {@link Value} class and its subclasses.
@@ -60,6 +65,11 @@ public final class ValueUtil {
         return value instanceof JavaConstant;
     }
 
+    public static JavaConstant asConstantJavaValue(JavaValue value) {
+        assert value != null;
+        return (JavaConstant) value;
+    }
+
     public static boolean isAllocatableValue(Value value) {
         assert value != null;
         return value instanceof AllocatableValue;
@@ -78,26 +88,6 @@ public final class ValueUtil {
     public static StackSlot asStackSlot(Value value) {
         assert value != null;
         return (StackSlot) value;
-    }
-
-    public static boolean isStackSlotValue(Value value) {
-        assert value != null;
-        return value instanceof StackSlotValue;
-    }
-
-    public static StackSlotValue asStackSlotValue(Value value) {
-        assert value != null;
-        return (StackSlotValue) value;
-    }
-
-    public static boolean isVirtualStackSlot(Value value) {
-        assert value != null;
-        return value instanceof VirtualStackSlot;
-    }
-
-    public static VirtualStackSlot asVirtualStackSlot(Value value) {
-        assert value != null;
-        return (VirtualStackSlot) value;
     }
 
     public static boolean isRegister(Value value) {

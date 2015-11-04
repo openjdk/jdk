@@ -29,11 +29,14 @@
 
 package jdk.vm.ci.runtime.test;
 
-import static org.junit.Assert.*;
-import jdk.vm.ci.meta.*;
-import jdk.vm.ci.runtime.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.runtime.JVMCI;
 
-import org.junit.*;
+import org.junit.Test;
 
 public class ResolvedJavaTypeResolveConcreteMethodTest {
     public final MetaAccessProvider metaAccess;

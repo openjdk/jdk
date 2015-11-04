@@ -535,6 +535,7 @@ public:
 //
 // A BitData holds a flag or two in its header.
 class BitData : public ProfileData {
+  friend class VMStructs;
 protected:
   enum {
     // null_seen:
@@ -603,6 +604,7 @@ public:
 //
 // A CounterData corresponds to a simple counter.
 class CounterData : public BitData {
+  friend class VMStructs;
 protected:
   enum {
     count_off,
@@ -667,6 +669,7 @@ public:
 // plus a data displacement, used for realigning the data pointer to
 // the corresponding target bci.
 class JumpData : public ProfileData {
+  friend class VMStructs;
 protected:
   enum {
     taken_off_set,
@@ -1173,6 +1176,7 @@ public:
 // that the check is reached, and a series of (Klass*, count) pairs
 // which are used to store a type profile for the receiver of the check.
 class ReceiverTypeData : public CounterData {
+  friend class VMStructs;
 protected:
   enum {
 #if INCLUDE_JVMCI
@@ -1678,6 +1682,7 @@ public:
 // It consists of taken and not_taken counts as well as a data displacement
 // for the taken case.
 class BranchData : public JumpData {
+  friend class VMStructs;
 protected:
   enum {
     not_taken_off_set = jump_cell_count,
@@ -1754,6 +1759,7 @@ public:
 // not have a statically known size.  It consists of an array length
 // and an array start.
 class ArrayData : public ProfileData {
+  friend class VMStructs;
 protected:
   friend class DataLayout;
 
@@ -1831,6 +1837,7 @@ public:
 // of (count, displacement) pairs, which count the number of times each
 // case was taken and specify the data displacment for each branch target.
 class MultiBranchData : public ArrayData {
+  friend class VMStructs;
 protected:
   enum {
     default_count_off_set,
