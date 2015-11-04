@@ -831,8 +831,6 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     JDKLIB_LIBS="-ljava -ljvm"
     if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
       JDKLIB_LIBS="$JDKLIB_LIBS -lc"
-    elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-      JDKLIB_LIBS="$JDKLIB_LIBS -liconv"
     fi
   fi
 
