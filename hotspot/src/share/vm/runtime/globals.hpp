@@ -1498,9 +1498,6 @@ public:
   develop(bool, TraceOopMapRewrites, false,                                 \
           "Trace rewriting of method oops during oop map generation")       \
                                                                             \
-  develop(bool, TraceSafepoint, false,                                      \
-          "Trace safepoint operations")                                     \
-                                                                            \
   develop(bool, TraceICBuffer, false,                                       \
           "Trace usage of IC buffer")                                       \
                                                                             \
