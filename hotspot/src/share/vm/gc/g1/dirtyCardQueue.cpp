@@ -64,10 +64,6 @@ bool DirtyCardQueue::apply_closure_to_buffer(CardTableEntryClosure* cl,
   return true;
 }
 
-#ifdef _MSC_VER // the use of 'this' below gets a warning, make it go away
-#pragma warning( disable:4355 ) // 'this' : used in base member initializer list
-#endif // _MSC_VER
-
 DirtyCardQueueSet::DirtyCardQueueSet(bool notify_when_complete) :
   PtrQueueSet(notify_when_complete),
   _mut_process_closure(NULL),
