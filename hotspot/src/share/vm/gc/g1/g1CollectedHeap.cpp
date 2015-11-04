@@ -1807,11 +1807,6 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
 
 // Public methods.
 
-#ifdef _MSC_VER // the use of 'this' below gets a warning, make it go away
-#pragma warning( disable:4355 ) // 'this' : used in base member initializer list
-#endif // _MSC_VER
-
-
 G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   CollectedHeap(),
   _g1_policy(policy_),
@@ -3613,7 +3608,7 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
           // The remembered set might contain references to already freed
           // regions. Filter out such entries to avoid failing card table
           // verification.
-          if (!g1h->heap_region_containing(bs->addr_for(card_ptr))->is_free()) {
+          if (g1h->is_in_closed_subset(bs->addr_for(card_ptr))) {
             if (*card_ptr != CardTableModRefBS::dirty_card_val()) {
               *card_ptr = CardTableModRefBS::dirty_card_val();
               _dcq.enqueue(card_ptr);
