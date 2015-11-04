@@ -32,6 +32,18 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/thread.inline.hpp"
 
+DirtyCardQueue::DirtyCardQueue(DirtyCardQueueSet* qset, bool permanent) :
+  // Dirty card queues are always active, so we create them with their
+  // active field set to true.
+  PtrQueue(qset, permanent, true /* active */)
+{ }
+
+DirtyCardQueue::~DirtyCardQueue() {
+  if (!is_permanent()) {
+    flush();
+  }
+}
+
 bool DirtyCardQueue::apply_closure(CardTableEntryClosure* cl,
                                    bool consume,
                                    uint worker_i) {
@@ -40,7 +52,9 @@ bool DirtyCardQueue::apply_closure(CardTableEntryClosure* cl,
     res = apply_closure_to_buffer(cl, _buf, _index, _sz,
                                   consume,
                                   worker_i);
-    if (res && consume) _index = _sz;
+    if (res && consume) {
+      _index = _sz;
+    }
   }
   return res;
 }
@@ -51,14 +65,18 @@ bool DirtyCardQueue::apply_closure_to_buffer(CardTableEntryClosure* cl,
                                              bool consume,
                                              uint worker_i) {
   if (cl == NULL) return true;
-  for (size_t i = index; i < sz; i += oopSize) {
-    int ind = byte_index_to_index((int)i);
-    jbyte* card_ptr = (jbyte*)buf[ind];
+  size_t limit = byte_index_to_index(sz);
+  for (size_t i = byte_index_to_index(index); i < limit; ++i) {
+    jbyte* card_ptr = static_cast<jbyte*>(buf[i]);
     if (card_ptr != NULL) {
       // Set the entry to null, so we don't do it again (via the test
       // above) if we reconsider this buffer.
-      if (consume) buf[ind] = NULL;
-      if (!cl->do_card_ptr(card_ptr, worker_i)) return false;
+      if (consume) {
+        buf[i] = NULL;
+      }
+      if (!cl->do_card_ptr(card_ptr, worker_i)) {
+        return false;
+      }
     }
   }
   return true;
@@ -71,7 +89,7 @@ bool DirtyCardQueue::apply_closure_to_buffer(CardTableEntryClosure* cl,
 DirtyCardQueueSet::DirtyCardQueueSet(bool notify_when_complete) :
   PtrQueueSet(notify_when_complete),
   _mut_process_closure(NULL),
-  _shared_dirty_card_queue(this, true /*perm*/),
+  _shared_dirty_card_queue(this, true /* permanent */),
   _free_ids(NULL),
   _processed_buffers_mut(0), _processed_buffers_rs_thread(0)
 {
@@ -83,13 +101,19 @@ uint DirtyCardQueueSet::num_par_ids() {
   return (uint)os::processor_count();
 }
 
-void DirtyCardQueueSet::initialize(CardTableEntryClosure* cl, Monitor* cbl_mon, Mutex* fl_lock,
+void DirtyCardQueueSet::initialize(CardTableEntryClosure* cl,
+                                   Monitor* cbl_mon,
+                                   Mutex* fl_lock,
                                    int process_completed_threshold,
                                    int max_completed_queue,
-                                   Mutex* lock, PtrQueueSet* fl_owner) {
+                                   Mutex* lock,
+                                   DirtyCardQueueSet* fl_owner) {
   _mut_process_closure = cl;
-  PtrQueueSet::initialize(cbl_mon, fl_lock, process_completed_threshold,
-                          max_completed_queue, fl_owner);
+  PtrQueueSet::initialize(cbl_mon,
+                          fl_lock,
+                          process_completed_threshold,
+                          max_completed_queue,
+                          fl_owner);
   set_buffer_size(G1UpdateBufferSize);
   _shared_dirty_card_queue.set_lock(lock);
   _free_ids = new FreeIdSet((int) num_par_ids(), _cbl_mon);
@@ -103,7 +127,7 @@ void DirtyCardQueueSet::iterate_closure_all_threads(CardTableEntryClosure* cl,
                                                     bool consume,
                                                     uint worker_i) {
   assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
-  for(JavaThread* t = Threads::first(); t; t = t->next()) {
+  for (JavaThread* t = Threads::first(); t; t = t->next()) {
     bool b = t->dirty_card_queue().apply_closure(cl, consume);
     guarantee(b, "Should not be interrupted.");
   }
@@ -160,8 +184,7 @@ bool DirtyCardQueueSet::mut_process_buffer(void** buf) {
 }
 
 
-BufferNode*
-DirtyCardQueueSet::get_completed_buffer(int stop_at) {
+BufferNode* DirtyCardQueueSet::get_completed_buffer(int stop_at) {
   BufferNode* nd = NULL;
   MutexLockerEx x(_cbl_mon, Mutex::_no_safepoint_check_flag);
 
@@ -178,14 +201,13 @@ DirtyCardQueueSet::get_completed_buffer(int stop_at) {
     _n_completed_buffers--;
     assert(_n_completed_buffers >= 0, "Invariant");
   }
-  debug_only(assert_completed_buffer_list_len_correct_locked());
+  DEBUG_ONLY(assert_completed_buffer_list_len_correct_locked());
   return nd;
 }
 
-bool DirtyCardQueueSet::
-apply_closure_to_completed_buffer_helper(CardTableEntryClosure* cl,
-                                         uint worker_i,
-                                         BufferNode* nd) {
+bool DirtyCardQueueSet::apply_closure_to_completed_buffer_helper(CardTableEntryClosure* cl,
+                                                                 uint worker_i,
+                                                                 BufferNode* nd) {
   if (nd != NULL) {
     void **buf = BufferNode::make_buffer_from_node(nd);
     size_t index = nd->index();
@@ -259,7 +281,7 @@ void DirtyCardQueueSet::clear() {
     }
     _n_completed_buffers = 0;
     _completed_buffers_tail = NULL;
-    debug_only(assert_completed_buffer_list_len_correct_locked());
+    DEBUG_ONLY(assert_completed_buffer_list_len_correct_locked());
   }
   while (buffers_to_delete != NULL) {
     BufferNode* nd = buffers_to_delete;
@@ -291,10 +313,11 @@ void DirtyCardQueueSet::concatenate_logs() {
   for (JavaThread* t = Threads::first(); t; t = t->next()) {
     DirtyCardQueue& dcq = t->dirty_card_queue();
     if (dcq.size() != 0) {
-      void **buf = t->dirty_card_queue().get_buf();
+      void** buf = dcq.get_buf();
       // We must NULL out the unused entries, then enqueue.
-      for (size_t i = 0; i < t->dirty_card_queue().get_index(); i += oopSize) {
-        buf[PtrQueue::byte_index_to_index((int)i)] = NULL;
+      size_t limit = dcq.byte_index_to_index(dcq.get_index());
+      for (size_t i = 0; i < limit; ++i) {
+        buf[i] = NULL;
       }
       enqueue_complete_buffer(dcq.get_buf(), dcq.get_index());
       dcq.reinitialize();

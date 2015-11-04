@@ -50,13 +50,7 @@ private:
   void filter();
 
 public:
-  ObjPtrQueue(PtrQueueSet* qset, bool perm = false) :
-    // SATB queues are only active during marking cycles. We create
-    // them with their active field set to false. If a thread is
-    // created during a cycle and its SATB queue needs to be activated
-    // before the thread starts running, we'll need to set its active
-    // field to true. This is done in JavaThread::initialize_queues().
-    PtrQueue(qset, perm, false /* active */) { }
+  ObjPtrQueue(SATBMarkQueueSet* qset, bool permanent = false);
 
   // Process queue entries and free resources.
   void flush();
