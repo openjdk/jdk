@@ -206,10 +206,6 @@ void ObjPtrQueue::print(const char* name,
 }
 #endif // PRODUCT
 
-#ifdef _MSC_VER // the use of 'this' below gets a warning, make it go away
-#pragma warning( disable:4355 ) // 'this' : used in base member initializer list
-#endif // _MSC_VER
-
 SATBMarkQueueSet::SATBMarkQueueSet() :
   PtrQueueSet(),
   _shared_satb_queue(this, true /*perm*/) { }
