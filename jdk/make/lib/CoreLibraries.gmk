@@ -139,6 +139,12 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   endif
 endif
 
+ifeq ($(OPENJDK_TARGET_OS), linux)
+  ifeq ($(OPENJDK_TARGET_CPU), x86_64)
+    BUILD_LIBJAVA_Bits.c_CFLAGS := $(C_O_FLAG_NORM)
+  endif
+endif
+
 $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     LIBRARY := java, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
