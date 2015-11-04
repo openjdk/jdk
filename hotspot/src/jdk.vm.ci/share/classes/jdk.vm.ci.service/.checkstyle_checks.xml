@@ -32,6 +32,10 @@
     <module name="NoWhitespaceAfter">
       <property name="tokens" value="ARRAY_INIT,BNOT,DEC,DOT,INC,LNOT,UNARY_MINUS,UNARY_PLUS"/>
     </module>
+    <module name="AvoidStarImport">
+       <property name="allowClassImports" value="false"/>
+       <property name="allowStaticMemberImports" value="false"/>
+    </module>
     <module name="NoWhitespaceBefore">
       <property name="tokens" value="SEMI,DOT,POST_DEC,POST_INC"/>
     </module>

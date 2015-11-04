@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.meta;
 
-import java.nio.*;
+import java.nio.ByteBuffer;
 
 /**
  * Represents a primitive constant value, such as an integer or floating point number, within the

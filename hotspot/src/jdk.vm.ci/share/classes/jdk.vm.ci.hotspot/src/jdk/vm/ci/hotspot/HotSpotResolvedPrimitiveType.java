@@ -22,15 +22,21 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static java.util.Objects.*;
+import static java.util.Objects.requireNonNull;
 
-import java.lang.annotation.*;
-import java.lang.reflect.*;
-import java.net.*;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Array;
+import java.lang.reflect.Modifier;
+import java.net.URL;
 
-import jdk.vm.ci.common.*;
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.meta.Assumptions.AssumptionResult;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
  * Implementation of {@link JavaType} for primitive HotSpot types.

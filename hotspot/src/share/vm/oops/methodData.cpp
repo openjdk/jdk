@@ -1102,7 +1102,9 @@ ProfileData* DataLayout::data_in() {
     return new VirtualCallTypeData(this);
   case DataLayout::parameters_type_data_tag:
     return new ParametersTypeData(this);
-  };
+  case DataLayout::speculative_trap_data_tag:
+    return new SpeculativeTrapData(this);
+  }
 }
 
 // Iteration over data.

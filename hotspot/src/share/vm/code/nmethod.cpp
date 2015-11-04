@@ -1350,19 +1350,16 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
   // Unregister must be done before the state change
   Universe::heap()->unregister_nmethod(this);
 
+  _state = unloaded;
+
 #if INCLUDE_JVMCI
   // The method can only be unloaded after the pointer to the installed code
   // Java wrapper is no longer alive. Here we need to clear out this weak
   // reference to the dead object. Nulling out the reference has to happen
   // after the method is unregistered since the original value may be still
   // tracked by the rset.
-  if (_jvmci_installed_code != NULL) {
-    InstalledCode::set_address(_jvmci_installed_code, 0);
-    _jvmci_installed_code = NULL;
-  }
+  maybe_invalidate_installed_code();
 #endif
-
-  _state = unloaded;
 
   // Log the unloading.
   log_state_change();
@@ -1525,12 +1522,8 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   } else {
     assert(state == not_entrant, "other cases may need to be handled differently");
   }
-#if INCLUDE_JVMCI
-  if (_jvmci_installed_code != NULL) {
-    // Break the link between nmethod and InstalledCode such that the nmethod can subsequently be flushed safely.
-    InstalledCode::set_address(_jvmci_installed_code, 0);
-  }
-#endif
+
+  JVMCI_ONLY(maybe_invalidate_installed_code());
 
   if (TraceCreateZombies) {
     ResourceMark m;
@@ -3384,6 +3377,22 @@ void nmethod::print_statistics() {
 #endif // !PRODUCT
 
 #if INCLUDE_JVMCI
+void nmethod::maybe_invalidate_installed_code() {
+  if (_jvmci_installed_code != NULL) {
+     if (!is_alive()) {
+       // Break the link between nmethod and InstalledCode such that the nmethod
+       // can subsequently be flushed safely.  The link must be maintained while
+       // the method could have live activations since invalidateInstalledCode
+       // might want to invalidate all existing activations.
+       InstalledCode::set_address(_jvmci_installed_code, 0);
+       InstalledCode::set_entryPoint(_jvmci_installed_code, 0);
+       _jvmci_installed_code = NULL;
+     } else if (is_not_entrant()) {
+       InstalledCode::set_entryPoint(_jvmci_installed_code, 0);
+     }
+  }
+}
+
 char* nmethod::jvmci_installed_code_name(char* buf, size_t buflen) {
   if (!this->is_compiled_by_jvmci()) {
     return NULL;

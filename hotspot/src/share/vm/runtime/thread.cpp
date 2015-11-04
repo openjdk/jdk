@@ -3625,6 +3625,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     if (jvmciCompiler != NULL) {
       JVMCIRuntime::save_compiler(jvmciCompiler);
     }
+    JVMCIRuntime::maybe_print_flags(CHECK_JNI_ERR);
   }
 #endif // INCLUDE_JVMCI
 

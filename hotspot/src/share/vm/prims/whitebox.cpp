@@ -1028,17 +1028,19 @@ struct CodeBlobStub {
   CodeBlobStub(const CodeBlob* blob) :
       name(os::strdup(blob->name())),
       size(blob->size()),
-      blob_type(WhiteBox::get_blob_type(blob)) { }
+      blob_type(WhiteBox::get_blob_type(blob)),
+      address((jlong) blob) { }
   ~CodeBlobStub() { os::free((void*) name); }
   const char* const name;
-  const int         size;
-  const int         blob_type;
+  const jint        size;
+  const jint        blob_type;
+  const jlong       address;
 };
 
 static jobjectArray codeBlob2objectArray(JavaThread* thread, JNIEnv* env, CodeBlobStub* cb) {
   jclass clazz = env->FindClass(vmSymbols::java_lang_Object()->as_C_string());
   CHECK_JNI_EXCEPTION_(env, NULL);
-  jobjectArray result = env->NewObjectArray(3, clazz, NULL);
+  jobjectArray result = env->NewObjectArray(4, clazz, NULL);
 
   jstring name = env->NewStringUTF(cb->name);
   CHECK_JNI_EXCEPTION_(env, NULL);
@@ -1051,6 +1053,10 @@ static jobjectArray codeBlob2objectArray(JavaThread* thread, JNIEnv* env, CodeBl
   obj = integerBox(thread, env, cb->blob_type);
   CHECK_JNI_EXCEPTION_(env, NULL);
   env->SetObjectArrayElement(result, 2, obj);
+
+  obj = longBox(thread, env, cb->address);
+  CHECK_JNI_EXCEPTION_(env, NULL);
+  env->SetObjectArrayElement(result, 3, obj);
 
   return result;
 }
@@ -1092,9 +1098,9 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   CHECK_JNI_EXCEPTION_(env, NULL);
   env->SetObjectArrayElement(result, 3, id);
 
-  jobject address = longBox(thread, env, (jlong) code);
+  jobject entry_point = longBox(thread, env, (jlong) code->entry_point());
   CHECK_JNI_EXCEPTION_(env, NULL);
-  env->SetObjectArrayElement(result, 4, address);
+  env->SetObjectArrayElement(result, 4, entry_point);
 
   return result;
 WB_END
