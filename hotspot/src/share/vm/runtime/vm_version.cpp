@@ -64,6 +64,10 @@ int Abstract_VM_Version::_reserve_for_allocation_prefetch = 0;
   #error VERSION_STRING must be defined
 #endif
 
+#ifndef DEBUG_LEVEL
+  #error DEBUG_LEVEL must be defined
+#endif
+
 // NOTE: Builds within Visual Studio do not define the build target in
 //       HOTSPOT_VERSION_STRING, so it must be done here
 #if defined(VISUAL_STUDIO_BUILD) && !defined(PRODUCT)
@@ -241,6 +245,10 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
 
 const char *Abstract_VM_Version::vm_build_user() {
   return HOTSPOT_BUILD_USER;
+}
+
+const char *Abstract_VM_Version::jdk_debug_level() {
+  return DEBUG_LEVEL;
 }
 
 unsigned int Abstract_VM_Version::jvm_version() {
