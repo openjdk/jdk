@@ -1807,11 +1807,6 @@ void G1CollectedHeap::shrink(size_t shrink_bytes) {
 
 // Public methods.
 
-#ifdef _MSC_VER // the use of 'this' below gets a warning, make it go away
-#pragma warning( disable:4355 ) // 'this' : used in base member initializer list
-#endif // _MSC_VER
-
-
 G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   CollectedHeap(),
   _g1_policy(policy_),
