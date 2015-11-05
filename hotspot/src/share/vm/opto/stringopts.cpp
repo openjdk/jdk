@@ -1520,7 +1520,7 @@ void PhaseStringOpts::copy_constant_string(GraphKit& kit, IdealKit& ideal, ciTyp
       Node* adr = kit.array_element_address(dst_array, index, T_BYTE);
       jchar val;
       if (src_is_byte) {
-        val = src_array->byte_at(i);
+        val = src_array->byte_at(i) & 0xff;
       } else {
         val = readChar(src_array, i++);
       }
