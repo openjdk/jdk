@@ -56,21 +56,21 @@ public class CreateSymbolsTest {
         Path compileDir = testClasses.resolve("data");
         deleteRecursively(compileDir);
         Files.createDirectories(compileDir);
-        Path createSymbols = findFile("../../make/src/build/tools/symbolgenerator/CreateSymbols.java");
+        Path createSymbols = findFile("../../make/src/classes/build/tools/symbolgenerator/CreateSymbols.java");
 
         if (createSymbols == null) {
             System.err.println("Warning: cannot find CreateSymbols, skipping.");
             return ;
         }
 
-        Path createTestImpl = findFile("../../make/test/tools/sym/CreateSymbolsTestImpl.java");
+        Path createTestImpl = findFile("../../make/test/sym/CreateSymbolsTestImpl.java");
 
         if (createTestImpl == null) {
-            System.err.println("Warning: cannot find CreateSymbols, skipping.");
+            System.err.println("Warning: cannot find CreateSymbolsTestImpl, skipping.");
             return ;
         }
 
-        Path toolBox = findFile("../../langtools/test/tools/lib/ToolBox.java");
+        Path toolBox = findFile("../../test/tools/lib/ToolBox.java");
 
         if (toolBox == null) {
             System.err.println("Warning: cannot find ToolBox, skipping.");
