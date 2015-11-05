@@ -201,6 +201,7 @@ static pid_t filename_to_pid(const char* filename) {
 // the backing store files. Returns true if the directory is considered
 // a secure location. Returns false if the statbuf is a symbolic link or
 // if an error occurred.
+//
 static bool is_statbuf_secure(struct stat *statp) {
   if (S_ISLNK(statp->st_mode) || !S_ISDIR(statp->st_mode)) {
     // The path represents a link or some non-directory file type,
@@ -209,15 +210,18 @@ static bool is_statbuf_secure(struct stat *statp) {
     return false;
   }
   // We have an existing directory, check if the permissions are safe.
+  //
   if ((statp->st_mode & (S_IWGRP|S_IWOTH)) != 0) {
     // The directory is open for writing and could be subjected
     // to a symlink or a hard link attack. Declare it insecure.
+    //
     return false;
   }
-  // See if the uid of the directory matches the effective uid of the process.
-  //
-  if (statp->st_uid != geteuid()) {
+  // If user is not root then see if the uid of the directory matches the effective uid of the process.
+  uid_t euid = geteuid();
+  if ((euid != 0) && (statp->st_uid != euid)) {
     // The directory was not created by this user, declare it insecure.
+    //
     return false;
   }
   return true;
@@ -228,6 +232,7 @@ static bool is_statbuf_secure(struct stat *statp) {
 // the backing store files. Returns true if the directory exists
 // and is considered a secure location. Returns false if the path
 // is a symbolic link or if an error occurred.
+//
 static bool is_directory_secure(const char* path) {
   struct stat statbuf;
   int result = 0;
