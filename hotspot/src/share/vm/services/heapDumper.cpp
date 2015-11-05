@@ -897,8 +897,10 @@ void DumperSupport::dump_instance(DumpWriter* writer, oop o) {
 void DumperSupport::dump_class_and_array_classes(DumpWriter* writer, Klass* k) {
   InstanceKlass* ik = InstanceKlass::cast(k);
 
-  // Ignore the class if it hasn't been initialized yet
-  if (!ik->is_linked()) {
+  // We can safepoint and do a heap dump at a point where we have a Klass,
+  // but no java mirror class has been setup for it. So we need to check
+  // that the class is at least loaded, to avoid crash from a null mirror.
+  if (!ik->is_loaded()) {
     return;
   }
 
