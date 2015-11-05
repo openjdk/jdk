@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,6 +178,7 @@ jboolean isDisplayLocal(JNIEnv *env) {
                                                        "()Z");
         JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
         isLocal = (*env)->CallBooleanMethod(env, ge, isDisplayLocal);
+        JNU_CHECK_EXCEPTION_RETURN(env, JNI_FALSE);
       } else {
         isLocal = True;
       }
