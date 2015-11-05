@@ -36,8 +36,9 @@
 
 import com.sun.tools.javac.util.Assert;
 
-import java.util.*;
+import java.io.IOException;
 import java.nio.file.*;
+import java.util.stream.Stream;
 
 public class NoState extends SJavacTester {
     public static void main(String... args) throws Exception {
@@ -57,7 +58,13 @@ public class NoState extends SJavacTester {
         Assert.check(Files.exists(BIN.resolve("pkg/A.class")));
 
         // Make sure we have no other files (such as a javac_state file) in the bin directory
-        Assert.check(Files.list(BIN).count() == 1);
-        Assert.check(Files.list(BIN.resolve("pkg")).count() == 1);
+        Assert.check(countPathsInDir(BIN) == 1);
+        Assert.check(countPathsInDir(BIN.resolve("pkg")) == 1);
+    }
+
+    private long countPathsInDir(Path dir) throws IOException {
+        try (Stream<Path> files = Files.list(dir)) {
+            return files.count();
+        }
     }
 }
