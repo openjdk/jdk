@@ -32,7 +32,7 @@
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
-#include "compiler/compilerOracle.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecode.hpp"
 #include "oops/methodData.hpp"
@@ -582,9 +582,6 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
                                             basic_lock_owner_sp_offset,
                                             basic_lock_sp_offset, oop_maps);
     NOT_PRODUCT(if (nm != NULL)  native_nmethod_stats.note_native_nmethod(nm));
-    if ((PrintAssembly || CompilerOracle::should_print(method)) && nm != NULL) {
-      Disassembler::decode(nm);
-    }
   }
   // verify nmethod
   debug_only(if (nm) nm->verify();) // might block
@@ -666,9 +663,6 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
         }
       }
       NOT_PRODUCT(if (nm != NULL)  note_java_nmethod(nm));
-      if (PrintAssembly || CompilerOracle::has_option_string(method, "PrintAssembly")) {
-        Disassembler::decode(nm);
-      }
     }
   }
   // Do verification and logging outside CodeCache_lock.
@@ -907,13 +901,6 @@ nmethod::nmethod(
     assert(compiler->is_c2() || compiler->is_jvmci() ||
            _method->is_static() == (entry_point() == _verified_entry_point),
            " entry points must be same for static methods and vice versa");
-  }
-
-  bool printnmethods = PrintNMethods || PrintNMethodsAtLevel == _comp_level
-    || CompilerOracle::should_print(_method)
-    || CompilerOracle::has_option_string(_method, "PrintNMethods");
-  if (printnmethods || PrintDebugInfo || PrintRelocations || PrintDependencies || PrintExceptionHandlers) {
-    print_nmethod(printnmethods);
   }
 }
 

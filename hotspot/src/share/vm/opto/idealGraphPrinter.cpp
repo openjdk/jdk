@@ -292,11 +292,11 @@ void IdealGraphPrinter::print_inline_tree(InlineTree *tree) {
 
 }
 
-void IdealGraphPrinter::print_inlining(Compile* compile) {
+void IdealGraphPrinter::print_inlining() {
 
   // Print inline tree
   if (_should_send_method) {
-    InlineTree *inlineTree = compile->ilt();
+    InlineTree *inlineTree = C->ilt();
     if (inlineTree != NULL) {
       print_inline_tree(inlineTree);
     } else {
@@ -306,9 +306,9 @@ void IdealGraphPrinter::print_inlining(Compile* compile) {
 }
 
 // Has to be called whenever a method is compiled
-void IdealGraphPrinter::begin_method(Compile* compile) {
+void IdealGraphPrinter::begin_method() {
 
-  ciMethod *method = compile->method();
+  ciMethod *method = C->method();
   assert(_output, "output stream must exist!");
   assert(method, "null methods are not allowed!");
   assert(!_current_method, "current method must be null!");
@@ -662,16 +662,14 @@ void IdealGraphPrinter::walk_nodes(Node *start, bool edges, VectorSet* temp_set)
   }
 }
 
-void IdealGraphPrinter::print_method(Compile* compile, const char *name, int level, bool clear_nodes) {
-  print(compile, name, (Node *)compile->root(), level, clear_nodes);
+void IdealGraphPrinter::print_method(const char *name, int level, bool clear_nodes) {
+  print(name, (Node *)C->root(), level, clear_nodes);
 }
 
 // Print current ideal graph
-void IdealGraphPrinter::print(Compile* compile, const char *name, Node *node, int level, bool clear_nodes) {
+void IdealGraphPrinter::print(const char *name, Node *node, int level, bool clear_nodes) {
 
-  if (!_current_method || !_should_send_method || !should_print(_current_method, level)) return;
-
-  this->C = compile;
+  if (!_current_method || !_should_send_method || !should_print(level)) return;
 
   // Warning, unsafe cast?
   _chaitin = (PhaseChaitin *)C->regalloc();
@@ -722,10 +720,8 @@ void IdealGraphPrinter::print(Compile* compile, const char *name, Node *node, in
 }
 
 // Should method be printed?
-bool IdealGraphPrinter::should_print(ciMethod* method, int level) {
-  intx ideal_graph_level = PrintIdealGraphLevel;
-  method->has_option_value("PrintIdealGraphLevel", ideal_graph_level); // update value with per-method value (if available)
-  return ideal_graph_level >= level;
+bool IdealGraphPrinter::should_print(int level) {
+  return C->directive()->IGVPrintLevelOption >= level;
 }
 
 extern const char *NodeClassNames[];

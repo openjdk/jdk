@@ -159,9 +159,13 @@ address OptoRuntime::generate_stub( ciEnv* env,
                                     const char *name, int is_fancy_jump,
                                     bool pass_tls,
                                     bool save_argument_registers,
-                                    bool return_pc ) {
+                                    bool return_pc) {
+
+  // Matching the default directive, we currently have no method to match.
+  DirectiveSet* directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler(CompLevel_full_optimization));
   ResourceMark rm;
-  Compile C( env, gen, C_function, name, is_fancy_jump, pass_tls, save_argument_registers, return_pc );
+  Compile C( env, gen, C_function, name, is_fancy_jump, pass_tls, save_argument_registers, return_pc, directive);
+  DirectivesStack::release(directive);
   return  C.stub_entry_point();
 }
 

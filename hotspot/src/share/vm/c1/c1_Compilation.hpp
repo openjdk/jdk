@@ -67,6 +67,7 @@ class Compilation: public StackObj {
   int _next_id;
   int _next_block_id;
   AbstractCompiler*  _compiler;
+  DirectiveSet*      _directive;
   ciEnv*             _env;
   CompileLog*        _log;
   ciMethod*          _method;
@@ -118,7 +119,7 @@ class Compilation: public StackObj {
  public:
   // creation
   Compilation(AbstractCompiler* compiler, ciEnv* env, ciMethod* method,
-              int osr_bci, BufferBlob* buffer_blob);
+              int osr_bci, BufferBlob* buffer_blob, DirectiveSet* directive);
   ~Compilation();
 
 
@@ -128,6 +129,7 @@ class Compilation: public StackObj {
 
   // accessors
   ciEnv* env() const                             { return _env; }
+  DirectiveSet* directive() const                { return _directive; }
   CompileLog* log() const                        { return _log; }
   AbstractCompiler* compiler() const             { return _compiler; }
   bool has_exception_handlers() const            { return _has_exception_handlers; }

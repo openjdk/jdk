@@ -202,7 +202,11 @@
   template(java_lang_StackTraceElement,               "java/lang/StackTraceElement")              \
                                                                                                   \
   /* Concurrency support */                                                                       \
-  template(java_util_concurrent_locks_AbstractOwnableSynchronizer,   "java/util/concurrent/locks/AbstractOwnableSynchronizer") \
+  template(java_util_concurrent_locks_AbstractOwnableSynchronizer,           "java/util/concurrent/locks/AbstractOwnableSynchronizer") \
+  template(java_util_concurrent_atomic_AtomicIntegerFieldUpdater_Impl,       "java/util/concurrent/atomic/AtomicIntegerFieldUpdater$AtomicIntegerFieldUpdaterImpl") \
+  template(java_util_concurrent_atomic_AtomicLongFieldUpdater_CASUpdater,    "java/util/concurrent/atomic/AtomicLongFieldUpdater$CASUpdater") \
+  template(java_util_concurrent_atomic_AtomicLongFieldUpdater_LockedUpdater, "java/util/concurrent/atomic/AtomicLongFieldUpdater$LockedUpdater") \
+  template(java_util_concurrent_atomic_AtomicReferenceFieldUpdater_Impl,     "java/util/concurrent/atomic/AtomicReferenceFieldUpdater$AtomicReferenceFieldUpdaterImpl") \
   template(sun_misc_Contended_signature,              "Lsun/misc/Contended;")                     \
                                                                                                   \
   /* class symbols needed by intrinsics */                                                        \
@@ -1404,7 +1408,7 @@ public:
 
   // Returns true if a compiler intrinsic is disabled by command-line flags
   // and false otherwise.
-  static bool is_disabled_by_flags(const methodHandle& method, const methodHandle& compilation_context);
+  static bool is_disabled_by_flags(const methodHandle& method);
 };
 
 #endif // SHARE_VM_CLASSFILE_VMSYMBOLS_HPP
