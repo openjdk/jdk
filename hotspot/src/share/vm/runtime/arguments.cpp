@@ -818,9 +818,15 @@ static bool set_numeric_flag(const char* name, char* value, Flag::Flags origin) 
   int int_v;
   intx intx_v;
   bool is_neg = false;
+  Flag* result = Flag::find_flag(name, strlen(name));
+
+  if (result == NULL) {
+    return false;
+  }
+
   // Check the sign first since atomull() parses only unsigned values.
   if (*value == '-') {
-    if ((CommandLineFlags::intxAt(name, &intx_v) != Flag::SUCCESS) && (CommandLineFlags::intAt(name, &int_v) != Flag::SUCCESS)) {
+    if (!result->is_intx() && !result->is_int()) {
       return false;
     }
     value++;
@@ -829,37 +835,33 @@ static bool set_numeric_flag(const char* name, char* value, Flag::Flags origin) 
   if (!atomull(value, &v)) {
     return false;
   }
-  int_v = (int) v;
-  if (is_neg) {
-    int_v = -int_v;
+  if (result->is_int()) {
+    int_v = (int) v;
+    if (is_neg) {
+      int_v = -int_v;
+    }
+    return CommandLineFlags::intAtPut(result, &int_v, origin) == Flag::SUCCESS;
+  } else if (result->is_uint()) {
+    uint uint_v = (uint) v;
+    return CommandLineFlags::uintAtPut(result, &uint_v, origin) == Flag::SUCCESS;
+  } else if (result->is_intx()) {
+    intx_v = (intx) v;
+    if (is_neg) {
+      intx_v = -intx_v;
+    }
+    return CommandLineFlags::intxAtPut(result, &intx_v, origin) == Flag::SUCCESS;
+  } else if (result->is_uintx()) {
+    uintx uintx_v = (uintx) v;
+    return CommandLineFlags::uintxAtPut(result, &uintx_v, origin) == Flag::SUCCESS;
+  } else if (result->is_uint64_t()) {
+    uint64_t uint64_t_v = (uint64_t) v;
+    return CommandLineFlags::uint64_tAtPut(result, &uint64_t_v, origin) == Flag::SUCCESS;
+  } else if (result->is_size_t()) {
+    size_t size_t_v = (size_t) v;
+    return CommandLineFlags::size_tAtPut(result, &size_t_v, origin) == Flag::SUCCESS;
+  } else {
+    return false;
   }
-  if (CommandLineFlags::intAtPut(name, &int_v, origin) == Flag::SUCCESS) {
-    return true;
-  }
-  uint uint_v = (uint) v;
-  if (!is_neg && CommandLineFlags::uintAtPut(name, &uint_v, origin) == Flag::SUCCESS) {
-    return true;
-  }
-  intx_v = (intx) v;
-  if (is_neg) {
-    intx_v = -intx_v;
-  }
-  if (CommandLineFlags::intxAtPut(name, &intx_v, origin) == Flag::SUCCESS) {
-    return true;
-  }
-  uintx uintx_v = (uintx) v;
-  if (!is_neg && (CommandLineFlags::uintxAtPut(name, &uintx_v, origin) == Flag::SUCCESS)) {
-    return true;
-  }
-  uint64_t uint64_t_v = (uint64_t) v;
-  if (!is_neg && (CommandLineFlags::uint64_tAtPut(name, &uint64_t_v, origin) == Flag::SUCCESS)) {
-    return true;
-  }
-  size_t size_t_v = (size_t) v;
-  if (!is_neg && (CommandLineFlags::size_tAtPut(name, &size_t_v, origin) == Flag::SUCCESS)) {
-    return true;
-  }
-  return false;
 }
 
 static bool set_string_flag(const char* name, const char* value, Flag::Flags origin) {
