@@ -53,7 +53,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.lang.invoke.CallSite;
-import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Collections;
@@ -246,7 +245,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps, Serializabl
      * @return Nashorn type
      */
     @SuppressWarnings("fallthrough")
-    static Type typeFor(final jdk.internal.org.objectweb.asm.Type itype) {
+    private static Type typeFor(final jdk.internal.org.objectweb.asm.Type itype) {
         switch (itype.getSort()) {
         case jdk.internal.org.objectweb.asm.Type.BOOLEAN:
             return BOOLEAN;
@@ -260,11 +259,13 @@ public abstract class Type implements Comparable<Type>, BytecodeOps, Serializabl
             if (Context.isStructureClass(itype.getClassName())) {
                 return SCRIPT_OBJECT;
             }
-            try {
-                return Type.typeFor(Class.forName(itype.getClassName()));
-            } catch(final ClassNotFoundException e) {
-                throw new AssertionError(e);
-            }
+            return cacheByName.computeIfAbsent(itype.getClassName(), (name) -> {
+                try {
+                    return Type.typeFor(Class.forName(name));
+                } catch(final ClassNotFoundException e) {
+                    throw new AssertionError(e);
+                }
+            });
         case jdk.internal.org.objectweb.asm.Type.VOID:
             return null;
         case jdk.internal.org.objectweb.asm.Type.ARRAY:
@@ -785,19 +786,10 @@ public abstract class Type implements Comparable<Type>, BytecodeOps, Serializabl
      * @return the Type representing this class
      */
     public static Type typeFor(final Class<?> clazz) {
-        final Type type = cache.get(clazz);
-        if(type != null) {
-            return type;
-        }
-        assert !clazz.isPrimitive() || clazz == void.class;
-        final Type newType;
-        if (clazz.isArray()) {
-            newType = new ArrayType(clazz);
-        } else {
-            newType = new ObjectType(clazz);
-        }
-        final Type existingType = cache.putIfAbsent(clazz, newType);
-        return existingType == null ? newType : existingType;
+        return cache.computeIfAbsent(clazz, (keyClass) -> {
+            assert !keyClass.isPrimitive() || keyClass == void.class;
+            return keyClass.isArray() ? new ArrayType(keyClass) : new ObjectType(keyClass);
+        });
     }
 
     @Override
@@ -902,6 +894,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps, Serializabl
 
     /** Mappings between java classes and their Type singletons */
     private static final ConcurrentMap<Class<?>, Type> cache = new ConcurrentHashMap<>();
+    private static final ConcurrentMap<String, Type> cacheByName = new ConcurrentHashMap<>();
 
     /**
      * This is the boolean singleton, used for all boolean types
