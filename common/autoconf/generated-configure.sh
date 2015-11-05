@@ -4598,7 +4598,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1446741156
+DATE_WHEN_GENERATED=1446762265
 
 ###############################################################################
 #
@@ -45140,9 +45140,9 @@ $as_echo "yes (default)" >&6; }
 
   if test "x$WARNINGS_AS_ERRORS" = "xfalse"; then
     # Set legacy hotspot variable
-    HOTSPOT_SET_WARNINGS_AS_ERRORS=WARNINGS_ARE_ERRORS=
+    HOTSPOT_SET_WARNINGS_AS_ERRORS="WARNINGS_ARE_ERRORS="
   else
-    HOTSPOT_SET_WARNINGS_AS_ERRORS=
+    HOTSPOT_SET_WARNINGS_AS_ERRORS=""
   fi
 
 
