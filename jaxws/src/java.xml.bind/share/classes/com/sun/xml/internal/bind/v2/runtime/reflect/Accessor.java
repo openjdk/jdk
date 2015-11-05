@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,13 +56,13 @@ import org.xml.sax.SAXException;
 
 /**
  * Accesses a particular property of a bean.
- * <p/>
- * <p/>
+ * <p>
+ * <p>
  * This interface encapsulates the access to the actual data store.
  * The intention is to generate implementations for a particular bean
  * and a property to improve the performance.
- * <p/>
- * <p/>
+ * <p>
+ * <p>
  * Accessor can be used as a receiver. Upon receiving an object
  * it sets that to the field.
  *
@@ -119,7 +119,7 @@ public abstract class Accessor<BeanT, ValueT> implements Receiver {
 
     /**
      * Sets the value without adapting the value.
-     * <p/>
+     * <p>
      * This ugly entry point is only used by JAX-WS.
      * See {@link JAXBRIContext#getElementPropertyAccessor}
      */
@@ -129,7 +129,7 @@ public abstract class Accessor<BeanT, ValueT> implements Receiver {
 
     /**
      * Returns true if this accessor wraps an adapter.
-     * <p/>
+     * <p>
      * This method needs to be used with care, but it helps some optimization.
      */
     public boolean isAdapted() {
@@ -138,7 +138,7 @@ public abstract class Accessor<BeanT, ValueT> implements Receiver {
 
     /**
      * Sets the value without adapting the value.
-     * <p/>
+     * <p>
      * This ugly entry point is only used by JAX-WS.
      * See {@link JAXBRIContext#getElementPropertyAccessor}
      */
@@ -394,8 +394,8 @@ public abstract class Accessor<BeanT, ValueT> implements Receiver {
 
     /**
      * A version of {@link GetterSetterReflection} that doesn't have any setter.
-     * <p/>
-     * <p/>
+     * <p>
+     * <p>
      * This provides a user-friendly error message.
      */
     public static class GetterOnlyReflection<BeanT, ValueT> extends GetterSetterReflection<BeanT, ValueT> {
@@ -411,8 +411,8 @@ public abstract class Accessor<BeanT, ValueT> implements Receiver {
 
     /**
      * A version of {@link GetterSetterReflection} thaat doesn't have any getter.
-     * <p/>
-     * <p/>
+     * <p>
+     * <p>
      * This provides a user-friendly error message.
      */
     public static class SetterOnlyReflection<BeanT, ValueT> extends GetterSetterReflection<BeanT, ValueT> {

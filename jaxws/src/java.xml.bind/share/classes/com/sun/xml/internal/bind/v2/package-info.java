@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *
  * <h1>Overview</h1>
  * <p>
- * This module provides code that implements {@link JAXBContext}.
+ * This module provides code that implements {@link javax.xml.bind.JAXBContext}.
  * Roughly speaking the runtime works like this:
  *
  * <ol>
@@ -37,7 +37,7 @@
  *  <li>There's a set of classes that constitute the unmarshaller and marshaller.
  *      Each class represents a small portion, and they are composed to perform
  *      the operations.
- *  <li>{@link JAXBContextImpl} builds itself by reading the model and
+ *  <li>{@link com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl} builds itself by reading the model and
  *      composing unmarshallers and marshallers.
  * </ol>
  *
@@ -68,7 +68,7 @@
  * packages of the binding model.
  *
  * <div>
- *   <img src="doc-files/packages.png"/>
+ *   <img src="doc-files/packages.png" alt="">
  * </div>
  *
  * <p>
@@ -109,13 +109,13 @@
  * For more details, see the javadoc of each component.
  *
  * <div>
- *  <img src="doc-files/j2s_architecture.gif"/>
+ *  <img src="doc-files/j2s_architecture.gif" alt="">
  * </div>
  *
  * <b><i>TODO: link to classes from above pictures</i></b>
  *
  *
- * <h3>Evolution Rules</h3>
+ * <h2>Evolution Rules</h2>
  * None of the class in this package or below should be directly
  * referenced by the generated code. Hence they can be changed freely
  * from versions to versions.
@@ -125,7 +125,7 @@
  *
  * <h1>Performance Characteristics</h1>
  * <p>
- * Model construction happens inside {@link JAXBContext#newInstance(Class[])}.
+ * Model construction happens inside {@link javax.xml.bind.JAXBContext#newInstance(Class[])}.
  * It's desirable for this step to be fast and consume less memory,
  * but it's not too performance sensitive.
  *
@@ -139,44 +139,8 @@
  *
  * <h1>Bootstrap Sequence</h1>
  * <p>
- * The following picture illustrates how the {@link JAXBContext#newInstance(Class[])} method
+ * The following picture illustrates how the {@link javax.xml.bind.JAXBContext#newInstance(Class[])} method
  * triggers activities.
  *
- * {@SequenceDiagram
-     boxwid=1.2;
-
-     pobject(U,"user");
-     object(A,"JAXB API");
-     object(CF,"ContextFactory");
-     pobject(JC);
-     step();
-
-     message(U,A,"JAXBContext.newInstance()");
-     active(A);
-     message(A,A,"locate JAXB RI 2.0");
-     active(A);
-     step();
-     inactive(A);
-
-     message(A,CF,"createContext");
-     active(CF);
-
-     create_message(CF,JC,"c:JAXBContextImpl");
-     active(JC);
-
-     message(JC,JC,"build runtime model");
-     message(JC,JC,"build JaxBeanInfos");
-     inactive(JC);
-
-     rmessage(A,U,"return c");
-     inactive(CF);
-     inactive(A);
-
-     complete(JC);
-     complete(CF);
-     complete(A);
- * }
- *
- * @ArchitectureDocument
  */
 package com.sun.xml.internal.bind.v2;

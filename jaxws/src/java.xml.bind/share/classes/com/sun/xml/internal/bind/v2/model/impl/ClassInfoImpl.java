@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -419,7 +419,7 @@ public class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
     }
 
     /**
-     * This hook is used by {@link RuntimeClassInfoImpl} to look for {@link XmlLocation}.
+     * This hook is used by {@link RuntimeClassInfoImpl} to look for {@link com.sun.xml.internal.bind.annotation.XmlLocation}.
      */
     protected void checkFieldXmlLocation(F f) {
     }
@@ -1245,7 +1245,7 @@ public class ClassInfoImpl<T,C,F,M> extends TypeInfoImpl<T,C,F,M>
     }
 
     /**
-     * Called after all the {@link TypeInfo}s are collected into the {@link #owner}.
+     * Called after all the {@link com.sun.xml.internal.bind.v2.model.core.TypeInfo}s are collected into the {@link #owner}.
      */
     @Override
     /*package*/ void link() {
