@@ -805,8 +805,6 @@ TOOLCHAIN_TYPE
 BUILD_HOTSPOT
 HOTSPOT_DIST
 BUILD_OUTPUT
-OVERRIDE_SRC_ROOT
-ADD_SRC_ROOT
 JDK_TOPDIR
 NASHORN_TOPDIR
 HOTSPOT_TOPDIR
@@ -1912,26 +1910,29 @@ Optional Packages:
   --with-build-number     Set build number value for build [b00]
   --with-copyright-year   Set copyright year value for build [current year]
   --with-boot-jdk         path to Boot JDK (used to bootstrap build) [probed]
-  --with-add-source-root  for each and every source directory, look in this
-                          additional source root for the same directory; if it
-                          exists and have files in it, include it in the build
+  --with-add-source-root  Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --with-override-source-root
-                          for each and every source directory, look in this
-                          override source root for the same directory; if it
-                          exists, use that directory instead and ignore the
-                          directory in the original source root
+                          Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --with-adds-and-overrides
-                          use the subdirs 'adds' and 'overrides' in the
-                          specified directory as add-source-root and
-                          override-source-root
+                          Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --with-override-langtools
-                          use this langtools dir for the build
-  --with-override-corba   use this corba dir for the build
-  --with-override-jaxp    use this jaxp dir for the build
-  --with-override-jaxws   use this jaxws dir for the build
-  --with-override-hotspot use this hotspot dir for the build
-  --with-override-nashorn use this nashorn dir for the build
-  --with-override-jdk     use this jdk dir for the build
+                          Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-override-corba   Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-override-jaxp    Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-override-jaxws   Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-override-hotspot Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-override-nashorn Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-override-jdk     Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --with-import-hotspot   import hotspot binaries from this jdk image or
                           hotspot build dist dir instead of building from
                           source
@@ -4354,7 +4355,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4377,7 +4378,6 @@ pkgadd_help() {
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-
 
 
 
@@ -4597,7 +4597,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1446637466
+DATE_WHEN_GENERATED=1446732848
 
 ###############################################################################
 #
@@ -28868,8 +28868,7 @@ $as_echo "$BOOT_JDK_BITS" >&6; }
 ###############################################################################
 
 
-  # Where are the sources. Any of these can be overridden
-  # using --with-override-corba and the likes.
+  # Where are the sources.
   LANGTOOLS_TOPDIR="$SRC_ROOT/langtools"
   CORBA_TOPDIR="$SRC_ROOT/corba"
   JAXP_TOPDIR="$SRC_ROOT/jaxp"
@@ -28886,263 +28885,98 @@ $as_echo "$BOOT_JDK_BITS" >&6; }
 
 
 
+  # This feature is no longer supported.
 
-  ###############################################################################
-  #
-  # Pickup additional source for a component from outside of the source root
-  # or override source for a component.
-  #
+
 
 # Check whether --with-add-source-root was given.
 if test "${with_add_source_root+set}" = set; then :
-  withval=$with_add_source_root;
+  withval=$with_add_source_root; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-add-source-root is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-add-source-root is deprecated and will be ignored." >&2;}
 fi
+
 
 
 
 # Check whether --with-override-source-root was given.
 if test "${with_override_source_root+set}" = set; then :
-  withval=$with_override_source_root;
+  withval=$with_override_source_root; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-source-root is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-override-source-root is deprecated and will be ignored." >&2;}
 fi
+
 
 
 
 # Check whether --with-adds-and-overrides was given.
 if test "${with_adds_and_overrides+set}" = set; then :
-  withval=$with_adds_and_overrides;
+  withval=$with_adds_and_overrides; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-adds-and-overrides is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-adds-and-overrides is deprecated and will be ignored." >&2;}
 fi
 
 
-  if test "x$with_adds_and_overrides" != x; then
-    with_add_source_root="$with_adds_and_overrides/adds"
-    with_override_source_root="$with_adds_and_overrides/overrides"
-  fi
-
-  if test "x$with_add_source_root" != x; then
-    if ! test -d $with_add_source_root; then
-      as_fn_error $? "Trying to use a non-existant add-source-root $with_add_source_root" "$LINENO" 5
-    fi
-    CURDIR="$PWD"
-    cd "$with_add_source_root"
-    ADD_SRC_ROOT="`pwd`"
-    cd "$CURDIR"
-    # Verify that the addon source root does not have any root makefiles.
-    # If it does, then it is usually an error, prevent this.
-    if test -f $with_add_source_root/langtools/make/Makefile; then
-      as_fn_error $? "Your add source root seems to contain a full langtools repo! An add source root should only contain additional sources." "$LINENO" 5
-    fi
-    if test -f $with_add_source_root/corba/make/Makefile; then
-      as_fn_error $? "Your add source root seems to contain a full corba repo! An add source root should only contain additional sources." "$LINENO" 5
-    fi
-    if test -f $with_add_source_root/jaxp/make/Makefile; then
-      as_fn_error $? "Your add source root seems to contain a full jaxp repo! An add source root should only contain additional sources." "$LINENO" 5
-    fi
-    if test -f $with_add_source_root/jaxws/make/Makefile; then
-      as_fn_error $? "Your add source root seems to contain a full jaxws repo! An add source root should only contain additional sources." "$LINENO" 5
-    fi
-    if test -f $with_add_source_root/hotspot/make/Makefile; then
-      as_fn_error $? "Your add source root seems to contain a full hotspot repo! An add source root should only contain additional sources." "$LINENO" 5
-    fi
-    if test -f $with_add_source_root/nashorn/make/Makefile; then
-      as_fn_error $? "Your add source root seems to contain a full nashorn repo! An add source root should only contain additional sources." "$LINENO" 5
-    fi
-    if test -f $with_add_source_root/jdk/make/Makefile; then
-      as_fn_error $? "Your add source root seems to contain a full JDK repo! An add source root should only contain additional sources." "$LINENO" 5
-    fi
-  fi
-
-
-  if test "x$with_override_source_root" != x; then
-    if ! test -d $with_override_source_root; then
-      as_fn_error $? "Trying to use a non-existant override-source-root $with_override_source_root" "$LINENO" 5
-    fi
-    CURDIR="$PWD"
-    cd "$with_override_source_root"
-    OVERRIDE_SRC_ROOT="`pwd`"
-    cd "$CURDIR"
-    if test -f $with_override_source_root/langtools/make/Makefile; then
-      as_fn_error $? "Your override source root seems to contain a full langtools repo! An override source root should only contain sources that override." "$LINENO" 5
-    fi
-    if test -f $with_override_source_root/corba/make/Makefile; then
-      as_fn_error $? "Your override source root seems to contain a full corba repo! An override source root should only contain sources that override." "$LINENO" 5
-    fi
-    if test -f $with_override_source_root/jaxp/make/Makefile; then
-      as_fn_error $? "Your override source root seems to contain a full jaxp repo! An override source root should only contain sources that override." "$LINENO" 5
-    fi
-    if test -f $with_override_source_root/jaxws/make/Makefile; then
-      as_fn_error $? "Your override source root seems to contain a full jaxws repo! An override source root should only contain sources that override." "$LINENO" 5
-    fi
-    if test -f $with_override_source_root/hotspot/make/Makefile; then
-      as_fn_error $? "Your override source root seems to contain a full hotspot repo! An override source root should only contain sources that override." "$LINENO" 5
-    fi
-    if test -f $with_override_source_root/nashorn/make/Makefile; then
-      as_fn_error $? "Your override source root seems to contain a full nashorn repo! An override source root should only contain sources that override." "$LINENO" 5
-    fi
-    if test -f $with_override_source_root/jdk/make/Makefile; then
-      as_fn_error $? "Your override source root seems to contain a full JDK repo! An override source root should only contain sources that override." "$LINENO" 5
-    fi
-  fi
-
-
-  ###############################################################################
-  #
-  # Override a repo completely, this is used for example when you have 3 small
-  # development sandboxes of the langtools sources and want to avoid having 3 full
-  # OpenJDK sources checked out on disk.
-  #
-  # Assuming that the 3 langtools sandboxes are located here:
-  # /home/fredrik/sandbox1/langtools
-  # /home/fredrik/sandbox2/langtools
-  # /home/fredrik/sandbox3/langtools
-  #
-  # From the source root you create build subdirs manually:
-  #     mkdir -p build1 build2 build3
-  # in each build directory run:
-  #     (cd build1 && ../configure --with-override-langtools=/home/fredrik/sandbox1 && make)
-  #     (cd build2 && ../configure --with-override-langtools=/home/fredrik/sandbox2 && make)
-  #     (cd build3 && ../configure --with-override-langtools=/home/fredrik/sandbox3 && make)
-  #
 
 
 # Check whether --with-override-langtools was given.
 if test "${with_override_langtools+set}" = set; then :
-  withval=$with_override_langtools;
+  withval=$with_override_langtools; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-langtools is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-override-langtools is deprecated and will be ignored." >&2;}
 fi
+
 
 
 
 # Check whether --with-override-corba was given.
 if test "${with_override_corba+set}" = set; then :
-  withval=$with_override_corba;
+  withval=$with_override_corba; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-corba is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-override-corba is deprecated and will be ignored." >&2;}
 fi
+
 
 
 
 # Check whether --with-override-jaxp was given.
 if test "${with_override_jaxp+set}" = set; then :
-  withval=$with_override_jaxp;
+  withval=$with_override_jaxp; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-jaxp is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-override-jaxp is deprecated and will be ignored." >&2;}
 fi
+
 
 
 
 # Check whether --with-override-jaxws was given.
 if test "${with_override_jaxws+set}" = set; then :
-  withval=$with_override_jaxws;
+  withval=$with_override_jaxws; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-jaxws is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-override-jaxws is deprecated and will be ignored." >&2;}
 fi
+
 
 
 
 # Check whether --with-override-hotspot was given.
 if test "${with_override_hotspot+set}" = set; then :
-  withval=$with_override_hotspot;
+  withval=$with_override_hotspot; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-hotspot is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-override-hotspot is deprecated and will be ignored." >&2;}
 fi
+
 
 
 
 # Check whether --with-override-nashorn was given.
 if test "${with_override_nashorn+set}" = set; then :
-  withval=$with_override_nashorn;
+  withval=$with_override_nashorn; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-nashorn is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-override-nashorn is deprecated and will be ignored." >&2;}
 fi
+
 
 
 
 # Check whether --with-override-jdk was given.
 if test "${with_override_jdk+set}" = set; then :
-  withval=$with_override_jdk;
+  withval=$with_override_jdk; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-jdk is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-override-jdk is deprecated and will be ignored." >&2;}
 fi
 
 
-  if test "x$with_override_langtools" != x; then
-    CURDIR="$PWD"
-    cd "$with_override_langtools"
-    LANGTOOLS_TOPDIR="`pwd`"
-    cd "$CURDIR"
-    if ! test -f $LANGTOOLS_TOPDIR/make/Makefile; then
-      as_fn_error $? "You have to override langtools with a full langtools repo!" "$LINENO" 5
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if langtools should be overridden" >&5
-$as_echo_n "checking if langtools should be overridden... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $LANGTOOLS_TOPDIR" >&5
-$as_echo "yes with $LANGTOOLS_TOPDIR" >&6; }
-  fi
-  if test "x$with_override_corba" != x; then
-    CURDIR="$PWD"
-    cd "$with_override_corba"
-    CORBA_TOPDIR="`pwd`"
-    cd "$CURDIR"
-    if ! test -f $CORBA_TOPDIR/make/Makefile; then
-      as_fn_error $? "You have to override corba with a full corba repo!" "$LINENO" 5
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if corba should be overridden" >&5
-$as_echo_n "checking if corba should be overridden... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $CORBA_TOPDIR" >&5
-$as_echo "yes with $CORBA_TOPDIR" >&6; }
-  fi
-  if test "x$with_override_jaxp" != x; then
-    CURDIR="$PWD"
-    cd "$with_override_jaxp"
-    JAXP_TOPDIR="`pwd`"
-    cd "$CURDIR"
-    if ! test -f $JAXP_TOPDIR/make/Makefile; then
-      as_fn_error $? "You have to override jaxp with a full jaxp repo!" "$LINENO" 5
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jaxp should be overridden" >&5
-$as_echo_n "checking if jaxp should be overridden... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $JAXP_TOPDIR" >&5
-$as_echo "yes with $JAXP_TOPDIR" >&6; }
-  fi
-  if test "x$with_override_jaxws" != x; then
-    CURDIR="$PWD"
-    cd "$with_override_jaxws"
-    JAXWS_TOPDIR="`pwd`"
-    cd "$CURDIR"
-    if ! test -f $JAXWS_TOPDIR/make/Makefile; then
-      as_fn_error $? "You have to override jaxws with a full jaxws repo!" "$LINENO" 5
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jaxws should be overridden" >&5
-$as_echo_n "checking if jaxws should be overridden... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $JAXWS_TOPDIR" >&5
-$as_echo "yes with $JAXWS_TOPDIR" >&6; }
-  fi
-  if test "x$with_override_hotspot" != x; then
-    CURDIR="$PWD"
-    cd "$with_override_hotspot"
-    HOTSPOT_TOPDIR="`pwd`"
-    cd "$CURDIR"
-    if ! test -f $HOTSPOT_TOPDIR/make/Makefile; then
-      as_fn_error $? "You have to override hotspot with a full hotspot repo!" "$LINENO" 5
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if hotspot should be overridden" >&5
-$as_echo_n "checking if hotspot should be overridden... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $HOTSPOT_TOPDIR" >&5
-$as_echo "yes with $HOTSPOT_TOPDIR" >&6; }
-  fi
-  if test "x$with_override_nashorn" != x; then
-    CURDIR="$PWD"
-    cd "$with_override_nashorn"
-    NASHORN_TOPDIR="`pwd`"
-    cd "$CURDIR"
-    if ! test -f $NASHORN_TOPDIR/make/Makefile; then
-      as_fn_error $? "You have to override nashorn with a full nashorn repo!" "$LINENO" 5
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if nashorn should be overridden" >&5
-$as_echo_n "checking if nashorn should be overridden... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $NASHORN_TOPDIR" >&5
-$as_echo "yes with $NASHORN_TOPDIR" >&6; }
-  fi
-  if test "x$with_override_jdk" != x; then
-    CURDIR="$PWD"
-    cd "$with_override_jdk"
-    JDK_TOPDIR="`pwd`"
-    cd "$CURDIR"
-    if ! test -f $JDK_TOPDIR/make/Makefile; then
-      as_fn_error $? "You have to override JDK with a full JDK repo!" "$LINENO" 5
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if JDK should be overridden" >&5
-$as_echo_n "checking if JDK should be overridden... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $JDK_TOPDIR" >&5
-$as_echo "yes with $JDK_TOPDIR" >&6; }
-  fi
 
 
   BUILD_OUTPUT="$OUTPUT_ROOT"

@@ -191,17 +191,16 @@ define SetupJavaCompilationBody
   $1_SERVER_JVM := $$($$($1_SETUP)_SERVER_JVM)
   $1_DISABLE_SJAVAC := $$($$($1_SETUP)_DISABLE_SJAVAC)
 
-  # Handle addons and overrides.
-  $1_SRC:=$$(call ADD_SRCS,$$($1_SRC))
   # Make sure the dirs exist.
   $$(foreach d,$$($1_SRC), $$(if $$(wildcard $$d),,$$(error SRC specified to SetupJavaCompilation $1 contains missing directory >$$d<)))
   $$(call MakeDir,$$($1_BIN))
   # Add all source roots to the find cache since we are likely going to run find
   # on these more than once. The cache will only be updated if necessary.
   $$(eval $$(call FillCacheFind,$$($1_SRC)))
-  # Find all files in the source trees. Preserve order of source roots for overrides to
-  # work correctly. CacheFind does not preserve order so need to call it for each root.
-  $1_ALL_SRCS += $$(filter-out $(OVR_SRCS),$$(foreach s,$$($1_SRC),$$(call CacheFind,$$(s))))
+  # Find all files in the source trees. Preserve order of source roots so that
+  # the first version in case of multiple instances of the same file is selected.
+  # CacheFind does not preserve order so need to call it for each root.
+  $1_ALL_SRCS += $$(foreach s, $$($1_SRC), $$(call CacheFind, $$(s)))
   # Extract the java files.
   ifneq ($$($1_EXCLUDE_FILES),)
     $1_EXCLUDE_FILES_PATTERN:=$$(addprefix %,$$($1_EXCLUDE_FILES))
