@@ -28,11 +28,17 @@ package jdk.nashorn.internal.runtime.linker;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.lang.ref.Reference;
+import java.lang.ref.WeakReference;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Stream;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.CompositeOperation;
 import jdk.internal.dynalink.NamedOperation;
@@ -157,6 +163,11 @@ public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
     private static final AccessControlContext GET_LOOKUP_PERMISSION_CONTEXT =
             AccessControlContextFactory.createAccessControlContext(CallSiteDescriptor.GET_LOOKUP_PERMISSION_NAME);
 
+    @SuppressWarnings("unchecked")
+    private static final Map<String, Reference<NamedOperation>>[] NAMED_OPERATIONS =
+            Stream.generate(() -> Collections.synchronizedMap(new WeakHashMap<>()))
+            .limit(OPERATIONS.length).toArray(Map[]::new);
+
     private final int flags;
 
     /**
@@ -217,19 +228,36 @@ public final class NashornCallSiteDescriptor extends CallSiteDescriptor {
      */
     public static NashornCallSiteDescriptor get(final MethodHandles.Lookup lookup, final String name,
             final MethodType methodType, final int flags) {
-        final Operation baseOp = OPERATIONS[flags & OPERATION_MASK];
+        final int opIndex = flags & OPERATION_MASK;
+        final Operation baseOp = OPERATIONS[opIndex];
         final String decodedName = NameCodec.decode(name);
-        // TODO: introduce caching of NamedOperation
-        final Operation op = decodedName.isEmpty() ? baseOp : new NamedOperation(baseOp, decodedName);
+        final Operation op = decodedName.isEmpty() ? baseOp : getNamedOperation(decodedName, opIndex, baseOp);
         return get(lookup, op, methodType, flags);
+    }
+
+    private static NamedOperation getNamedOperation(final String name, final int opIndex, final Operation baseOp) {
+        final Map<String, Reference<NamedOperation>> namedOps = NAMED_OPERATIONS[opIndex];
+        final Reference<NamedOperation> ref = namedOps.get(name);
+        if (ref != null) {
+            final NamedOperation existing = ref.get();
+            if (existing != null) {
+                return existing;
+            }
+        }
+        final NamedOperation newOp = new NamedOperation(baseOp, name);
+        namedOps.put(name, new WeakReference<>(newOp));
+        return newOp;
     }
 
     private static NashornCallSiteDescriptor get(final MethodHandles.Lookup lookup, final Operation operation, final MethodType methodType, final int flags) {
         final NashornCallSiteDescriptor csd = new NashornCallSiteDescriptor(lookup, operation, methodType, flags);
         // Many of these call site descriptors are identical (e.g. every getter for a property color will be
-        // "GET_PROPERTY:color(Object)Object", so it makes sense canonicalizing them.
-        final ConcurrentMap<NashornCallSiteDescriptor, NashornCallSiteDescriptor> classCanonicals = canonicals.get(lookup.lookupClass());
-        final NashornCallSiteDescriptor canonical = classCanonicals.putIfAbsent(csd, csd);
+        // "GET_PROPERTY:color(Object)Object", so it makes sense canonicalizing them. Make an exception for
+        // optimistic call site descriptors, as they also carry a program point making them unique.
+        if (csd.isOptimistic()) {
+            return csd;
+        }
+        final NashornCallSiteDescriptor canonical = canonicals.get(lookup.lookupClass()).putIfAbsent(csd, csd);
         return canonical != null ? canonical : csd;
     }
 
