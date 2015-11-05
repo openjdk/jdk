@@ -244,6 +244,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_getClass(Intrinsic* x);
   void do_currentThread(Intrinsic* x);
   void do_MathIntrinsic(Intrinsic* x);
+  void do_ExpIntrinsic(Intrinsic* x);
   void do_ArrayCopy(Intrinsic* x);
   void do_CompareAndSwap(Intrinsic* x, ValueType* type);
   void do_NIOCheckIndex(Intrinsic* x);

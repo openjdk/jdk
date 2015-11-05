@@ -91,9 +91,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import jdk.internal.dynalink.internal.InternalTypeUtilities;
 import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.support.Lookup;
-import jdk.internal.dynalink.support.TypeUtilities;
+import jdk.internal.dynalink.linker.support.Lookup;
 
 /**
  * Represents a subset of overloaded methods for a certain method name on a certain class. It can be either a fixarg or
@@ -104,15 +104,20 @@ import jdk.internal.dynalink.support.TypeUtilities;
 class OverloadedMethod {
     private final Map<ClassString, MethodHandle> argTypesToMethods = new ConcurrentHashMap<>();
     private final OverloadedDynamicMethod parent;
+    private final ClassLoader callSiteClassLoader;
     private final MethodType callSiteType;
     private final MethodHandle invoker;
     private final LinkerServices linkerServices;
     private final ArrayList<MethodHandle> fixArgMethods;
     private final ArrayList<MethodHandle> varArgMethods;
 
-    OverloadedMethod(final List<MethodHandle> methodHandles, final OverloadedDynamicMethod parent, final MethodType callSiteType,
+    OverloadedMethod(final List<MethodHandle> methodHandles,
+            final OverloadedDynamicMethod parent,
+            final ClassLoader callSiteClassLoader,
+            final MethodType callSiteType,
             final LinkerServices linkerServices) {
         this.parent = parent;
+        this.callSiteClassLoader = callSiteClassLoader;
         final Class<?> commonRetType = getCommonReturnType(methodHandles);
         this.callSiteType = callSiteType.changeReturnType(commonRetType);
         this.linkerServices = linkerServices;
@@ -177,9 +182,9 @@ class OverloadedMethod {
                     break;
                 }
             }
-            // Avoid keeping references to unrelated classes; this ruins the performance a bit, but avoids class loader
-            // memory leaks.
-            if(classString.isVisibleFrom(parent.getClassLoader())) {
+            // Avoid keeping references to unrelated classes; this ruins the
+            // performance a bit, but avoids class loader memory leaks.
+            if(classString.isVisibleFrom(callSiteClassLoader)) {
                 argTypesToMethods.put(classString, method);
             }
         }
@@ -268,7 +273,7 @@ class OverloadedMethod {
         final Iterator<MethodHandle> it = methodHandles.iterator();
         Class<?> retType = it.next().type().returnType();
         while(it.hasNext()) {
-            retType = TypeUtilities.getCommonLosslessConversionType(retType, it.next().type().returnType());
+            retType = InternalTypeUtilities.getCommonLosslessConversionType(retType, it.next().type().returnType());
         }
         return retType;
     }

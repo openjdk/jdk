@@ -1117,11 +1117,11 @@ public class Annotate {
 
         @Override
         public void visitNewClass(JCNewClass tree) {
-            if (tree.def == null) {
-                // For an anonymous class instantiation the class
-                // will be visited separately.
-                super.visitNewClass(tree);
-            }
+            scan(tree.encl);
+            scan(tree.typeargs);
+            scan(tree.clazz);
+            scan(tree.args);
+            // the anonymous class instantiation if any will be visited separately.
         }
     }
 

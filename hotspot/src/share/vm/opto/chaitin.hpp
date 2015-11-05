@@ -399,7 +399,6 @@ class PhaseChaitin : public PhaseRegAlloc {
   int _trip_cnt;
   int _alternate;
 
-  LRG &lrgs(uint idx) const { return _ifg->lrgs(idx); }
   PhaseLive *_live;             // Liveness, used in the interference graph
   PhaseIFG *_ifg;               // Interference graph (for original chunk)
   Node_List **_lrg_nodes;       // Array of node; lists for lrgs which spill
@@ -464,15 +463,27 @@ class PhaseChaitin : public PhaseRegAlloc {
 #endif
 
 public:
-  PhaseChaitin( uint unique, PhaseCFG &cfg, Matcher &matcher );
+  PhaseChaitin(uint unique, PhaseCFG &cfg, Matcher &matcher, bool track_liveout_pressure);
   ~PhaseChaitin() {}
 
   LiveRangeMap _lrg_map;
+
+  LRG &lrgs(uint idx) const { return _ifg->lrgs(idx); }
 
   // Do all the real work of allocate
   void Register_Allocate();
 
   float high_frequency_lrg() const { return _high_frequency_lrg; }
+
+  // Used when scheduling info generated, not in general register allocation
+  bool _scheduling_info_generated;
+
+  void set_ifg(PhaseIFG &ifg) { _ifg = &ifg;  }
+  void set_live(PhaseLive &live) { _live = &live; }
+  PhaseLive* get_live() { return _live; }
+
+  // Populate the live range maps with ssa info for scheduling
+  void mark_ssa();
 
 #ifndef PRODUCT
   bool trace_spilling() const { return _trace_spilling; }
@@ -516,7 +527,11 @@ private:
       uint _final_pressure;
 
       // number of live ranges that constitute high register pressure
-      const uint _high_pressure_limit;
+      uint _high_pressure_limit;
+
+      // initial pressure observed
+      uint _start_pressure;
+
     public:
 
       // lower the register pressure and look for a low to high pressure
@@ -537,12 +552,24 @@ private:
         }
       }
 
+      void init(int limit) {
+        _current_pressure = 0;
+        _high_pressure_index = 0;
+        _final_pressure = 0;
+        _high_pressure_limit = limit;
+        _start_pressure = 0;
+      }
+
       uint high_pressure_index() const {
         return _high_pressure_index;
       }
 
       uint final_pressure() const {
         return _final_pressure;
+      }
+
+      uint start_pressure() const {
+        return _start_pressure;
       }
 
       uint current_pressure() const {
@@ -561,6 +588,15 @@ private:
         _high_pressure_index = 0;
       }
 
+      void set_start_pressure(int value) {
+        _start_pressure = value;
+        _final_pressure = value;
+      }
+
+      void set_current_pressure(int value) {
+        _current_pressure = value;
+      }
+
       void check_pressure_at_fatproj(uint fatproj_location, RegMask& fatproj_mask) {
         // this pressure is only valid at this instruction, i.e. we don't need to lower
         // the register pressure since the fat proj was never live before (going backwards)
@@ -577,14 +613,13 @@ private:
       }
 
       Pressure(uint high_pressure_index, uint high_pressure_limit)
-      : _current_pressure(0)
-      , _high_pressure_index(high_pressure_index)
-      , _high_pressure_limit(high_pressure_limit)
-      , _final_pressure(0) {}
+        : _current_pressure(0)
+        , _high_pressure_index(high_pressure_index)
+        , _final_pressure(0)
+        , _high_pressure_limit(high_pressure_limit)
+        , _start_pressure(0) {}
   };
 
-  void lower_pressure(Block* b, uint location, LRG& lrg, IndexSet* liveout, Pressure& int_pressure, Pressure& float_pressure);
-  void raise_pressure(Block* b, LRG& lrg, Pressure& int_pressure, Pressure& float_pressure);
   void check_for_high_pressure_transition_at_fatproj(uint& block_reg_pressure, uint location, LRG& lrg, Pressure& pressure, const int op_regtype);
   void add_input_to_liveout(Block* b, Node* n, IndexSet* liveout, double cost, Pressure& int_pressure, Pressure& float_pressure);
   void compute_initial_block_pressure(Block* b, IndexSet* liveout, Pressure& int_pressure, Pressure& float_pressure, double cost);
@@ -600,10 +635,25 @@ private:
   // acceptable register sets do not overlap, then they do not interfere.
   uint build_ifg_physical( ResourceArea *a );
 
+public:
   // Gather LiveRanGe information, including register masks and base pointer/
   // derived pointer relationships.
   void gather_lrg_masks( bool mod_cisc_masks );
 
+  // user visible pressure variables for scheduling
+  Pressure _sched_int_pressure;
+  Pressure _sched_float_pressure;
+  Pressure _scratch_int_pressure;
+  Pressure _scratch_float_pressure;
+
+  // Pressure functions for user context
+  void lower_pressure(Block* b, uint location, LRG& lrg, IndexSet* liveout, Pressure& int_pressure, Pressure& float_pressure);
+  void raise_pressure(Block* b, LRG& lrg, Pressure& int_pressure, Pressure& float_pressure);
+  void compute_entry_block_pressure(Block* b);
+  void compute_exit_block_pressure(Block* b);
+  void print_pressure_info(Pressure& pressure, const char *str);
+
+private:
   // Force the bases of derived pointers to be alive at GC points.
   bool stretch_base_pointer_live_ranges( ResourceArea *a );
   // Helper to stretch above; recursively discover the base Node for

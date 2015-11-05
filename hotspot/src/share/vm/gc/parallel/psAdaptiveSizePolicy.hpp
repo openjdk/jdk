@@ -134,10 +134,6 @@ class PSAdaptiveSizePolicy : public AdaptiveSizePolicy {
   AdaptivePaddedAverage* avg_major_pause() const { return _avg_major_pause; }
   double gc_minor_pause_goal_sec() const { return _gc_minor_pause_goal_sec; }
 
-  // Change the young generation size to achieve a minor GC pause time goal
-  void adjust_promo_for_minor_pause_time(bool is_full_gc,
-                                   size_t* desired_promo_size_ptr,
-                                   size_t* desired_eden_size_ptr);
   void adjust_eden_for_minor_pause_time(bool is_full_gc,
                                    size_t* desired_eden_size_ptr);
   // Change the generation sizes to achieve a GC pause time goal

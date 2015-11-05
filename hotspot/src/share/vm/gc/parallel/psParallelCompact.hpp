@@ -1059,24 +1059,6 @@ class PSParallelCompact : AllStatic {
   // Clear the summary data source_region field for the specified addresses.
   static void clear_source_region(HeapWord* beg_addr, HeapWord* end_addr);
 
-#ifndef PRODUCT
-  // Routines to provoke splitting a young gen space (ParallelOldGCSplitALot).
-
-  // Fill the region [start, start + words) with live object(s).  Only usable
-  // for the old and permanent generations.
-  static void fill_with_live_objects(SpaceId id, HeapWord* const start,
-                                     size_t words);
-  // Include the new objects in the summary data.
-  static void summarize_new_objects(SpaceId id, HeapWord* start);
-
-  // Add live objects to a survivor space since it's rare that both survivors
-  // are non-empty.
-  static void provoke_split_fill_survivor(SpaceId id);
-
-  // Add live objects and/or choose the dense prefix to provoke splitting.
-  static void provoke_split(bool & maximum_compaction);
-#endif
-
   static void summarize_spaces_quick();
   static void summarize_space(SpaceId id, bool maximum_compaction);
   static void summary_phase(ParCompactionManager* cm, bool maximum_compaction);

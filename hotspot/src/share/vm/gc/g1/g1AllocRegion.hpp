@@ -34,8 +34,6 @@ class G1CollectedHeap;
 // 0 -> no tracing, 1 -> basic tracing, 2 -> basic + allocation tracing
 #define G1_ALLOC_REGION_TRACING 0
 
-class ar_ext_msg;
-
 // A class that holds a region that is active in satisfying allocation
 // requests, potentially issued in parallel. When the active region is
 // full it will be retired and replaced with a new one. The
@@ -44,7 +42,6 @@ class ar_ext_msg;
 // replaced.
 
 class G1AllocRegion VALUE_OBJ_CLASS_SPEC {
-  friend class ar_ext_msg;
 
 private:
   // The active allocating region we are currently allocating out
@@ -130,8 +127,6 @@ private:
   // G1CollectedHeap::allocate_new_alloc_region() and tells it to try
   // to allocate a new region even if the max has been reached.
   HeapWord* new_alloc_region_and_allocate(size_t word_size, bool force);
-
-  void fill_in_ext_msg(ar_ext_msg* msg, const char* message);
 
 protected:
   // Retire the active allocating region. If fill_up is true then make
@@ -276,13 +271,6 @@ public:
   // last card in the retained old gc alloc region, and allocation threads
   // allocating into that card at the same time.
   virtual HeapRegion* release();
-};
-
-class ar_ext_msg : public err_msg {
-public:
-  ar_ext_msg(G1AllocRegion* alloc_region, const char *message) : err_msg("%s", "") {
-    alloc_region->fill_in_ext_msg(this, message);
-  }
 };
 
 #endif // SHARE_VM_GC_G1_G1ALLOCREGION_HPP

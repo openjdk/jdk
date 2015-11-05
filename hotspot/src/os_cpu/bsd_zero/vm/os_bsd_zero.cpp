@@ -320,8 +320,7 @@ static void current_stack_region(address *bottom, size_t *size) {
   int rslt = pthread_stackseg_np(pthread_self(), &ss);
 
   if (rslt != 0)
-    fatal(err_msg("pthread_stackseg_np failed with err = " INT32_FORMAT,
-          rslt));
+    fatal("pthread_stackseg_np failed with err = " INT32_FORMAT, rslt);
 
   stack_top = (address) ss.ss_sp;
   stack_bytes  = ss.ss_size;
@@ -333,13 +332,12 @@ static void current_stack_region(address *bottom, size_t *size) {
 
   // JVM needs to know exact stack location, abort if it fails
   if (rslt != 0)
-    fatal(err_msg("pthread_attr_init failed with err = " INT32_FORMAT, rslt));
+    fatal("pthread_attr_init failed with err = " INT32_FORMAT, rslt);
 
   rslt = pthread_attr_get_np(pthread_self(), &attr);
 
   if (rslt != 0)
-    fatal(err_msg("pthread_attr_get_np failed with err = " INT32_FORMAT,
-          rslt));
+    fatal("pthread_attr_get_np failed with err = " INT32_FORMAT, rslt);
 
   if (pthread_attr_getstackaddr(&attr, (void **) &stack_bottom) != 0 ||
       pthread_attr_getstacksize(&attr, &stack_bytes) != 0) {

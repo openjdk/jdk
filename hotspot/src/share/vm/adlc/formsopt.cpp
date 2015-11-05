@@ -234,7 +234,6 @@ RegClass::RegClass(const char* classid) : _stack_or_reg(false), _classid(classid
 }
 
 RegClass::~RegClass() {
-  delete _classid;
 }
 
 // record a register in this class

@@ -293,7 +293,7 @@ void Generation::oop_iterate(ExtendedOopClosure* cl) {
 void Generation::younger_refs_in_space_iterate(Space* sp,
                                                OopsInGenClosure* cl,
                                                uint n_threads) {
-  GenRemSet* rs = GenCollectedHeap::heap()->rem_set();
+  CardTableRS* rs = GenCollectedHeap::heap()->rem_set();
   rs->younger_refs_in_space_iterate(sp, cl, n_threads);
 }
 

@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7021614
+ * @bug 7021614 8078320
  * @summary extend com.sun.source API to support parsing javadoc comments
  * @modules jdk.compiler/com.sun.tools.javac.api
  *          jdk.compiler/com.sun.tools.javac.file
@@ -34,6 +34,40 @@
  */
 
 class TagTest {
+    /**
+     * @tag:colon abc
+     */
+    void custom_tag_with_a_colon() {}
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: empty
+  body: empty
+  block tags: 1
+    UnknownBlockTag[UNKNOWN_BLOCK_TAG, pos:1
+      tag:tag:colon
+      content: 1
+        Text[TEXT, pos:12, abc]
+    ]
+]
+*/
+
+    /**
+     * @tag-hyphen abc
+     */
+    void custom_tag_with_a_hyphen() {}
+/*
+DocComment[DOC_COMMENT, pos:1
+  firstSentence: empty
+  body: empty
+  block tags: 1
+    UnknownBlockTag[UNKNOWN_BLOCK_TAG, pos:1
+      tag:tag-hyphen
+      content: 1
+        Text[TEXT, pos:13, abc]
+    ]
+]
+*/
+
     /**
      * @author jjg
      */

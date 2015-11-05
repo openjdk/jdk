@@ -91,15 +91,24 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import jdk.internal.dynalink.support.Lookup;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.internal.AccessControlContextFactory;
+import jdk.internal.dynalink.linker.support.Lookup;
 
 /**
  * A dynamic method bound to exactly one Java method or constructor that is caller sensitive. Since the target method is
  * caller sensitive, it doesn't cache a method handle but rather uses the passed lookup object in
- * {@link #getTarget(java.lang.invoke.MethodHandles.Lookup)} to unreflect a method handle from the reflective member on
+ * {@link #getTarget(CallSiteDescriptor)} to unreflect a method handle from the reflective member on
  * every request.
  */
 class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
+    private static final AccessControlContext GET_LOOKUP_CONTEXT =
+            AccessControlContextFactory.createAccessControlContext(
+                    CallSiteDescriptor.GET_LOOKUP_PERMISSION_NAME);
+
     // Typed as "AccessibleObject" as it can be either a method or a constructor.
     // If we were Java8-only, we could use java.lang.reflect.Executable
     private final AccessibleObject target;
@@ -143,7 +152,11 @@ class CallerSensitiveDynamicMethod extends SingleDynamicMethod {
     }
 
     @Override
-    MethodHandle getTarget(final MethodHandles.Lookup lookup) {
+    MethodHandle getTarget(final CallSiteDescriptor desc) {
+        final MethodHandles.Lookup lookup = AccessController.doPrivileged(
+                (PrivilegedAction<MethodHandles.Lookup>)()->desc.getLookup(),
+                GET_LOOKUP_CONTEXT);
+
         if(target instanceof Method) {
             final MethodHandle mh = Lookup.unreflect(lookup, (Method)target);
             if(Modifier.isStatic(((Member)target).getModifiers())) {

@@ -28,6 +28,7 @@
 #include "oops/symbol.hpp"
 #include "memory/iterator.hpp"
 #include "trace/traceMacros.hpp"
+#include "jvmci/vmSymbols_jvmci.hpp"
 
 // The class vmSymbols is a name space for fast lookup of
 // symbols commonly used in the VM.
@@ -43,7 +44,6 @@
 #define VM_INTRINSIC_IGNORE(id, class, name, sig, flags) /*ignored*/
 #define VM_SYMBOL_IGNORE(id, name)                       /*ignored*/
 #define VM_ALIAS_IGNORE(id, id2)                         /*ignored*/
-
 
 // Mapping function names to values. New entries should be added below.
 
@@ -300,6 +300,9 @@
   template(DEFAULT_CONTEXT_name,                      "DEFAULT_CONTEXT")                          \
   NOT_LP64(  do_alias(intptr_signature,               int_signature)  )                           \
   LP64_ONLY( do_alias(intptr_signature,               long_signature) )                           \
+                                                                                                                                      \
+  /* Support for JVMCI */                                                                                                             \
+  JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                         \
                                                                                                   \
   /* common method and field names */                                                             \
   template(object_initializer_name,                   "<init>")                                   \
@@ -382,6 +385,7 @@
   template(bitCount_name,                             "bitCount")                                 \
   template(profile_name,                              "profile")                                  \
   template(equals_name,                               "equals")                                   \
+  template(length_name,                               "length")                                   \
   template(target_name,                               "target")                                   \
   template(toString_name,                             "toString")                                 \
   template(values_name,                               "values")                                   \
@@ -432,6 +436,7 @@
   template(void_long_signature,                       "()J")                                      \
   template(void_float_signature,                      "()F")                                      \
   template(void_double_signature,                     "()D")                                      \
+  template(bool_void_signature,                       "(Z)V")                                     \
   template(int_void_signature,                        "(I)V")                                     \
   template(int_int_signature,                         "(I)I")                                     \
   template(char_char_signature,                       "(C)C")                                     \

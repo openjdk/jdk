@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -209,6 +209,11 @@ class NativeMovConstReg;
 //   to a virtual call (because the callee is interpreted).
 //   See [About Offsets] below.
 //   //%note reloc_2
+//
+// relocInfo::poll_[return_]type -- a safepoint poll
+//   Value:  none
+//   Instruction types: memory load or test
+//   Data:  none
 //
 // For example:
 //
@@ -443,6 +448,11 @@ class relocInfo VALUE_OBJ_CLASS_SPEC {
   };
  public:
   enum {
+#ifdef _LP64
+    // for use in format
+    // format_width must be at least 1 on _LP64
+    narrow_oop_in_const = 1,
+#endif
     // Conservatively large estimate of maximum length (in shorts)
     // of any relocation record.
     // Extended format is length prefix, data words, and tag/offset suffix.
@@ -525,19 +535,19 @@ class RelocIterator : public StackObj {
   typedef relocInfo::relocType relocType;
 
  private:
-  address    _limit;   // stop producing relocations after this _addr
-  relocInfo* _current; // the current relocation information
-  relocInfo* _end;     // end marker; we're done iterating when _current == _end
-  nmethod*   _code;    // compiled method containing _addr
-  address    _addr;    // instruction to which the relocation applies
-  short      _databuf; // spare buffer for compressed data
-  short*     _data;    // pointer to the relocation's data
-  short      _datalen; // number of halfwords in _data
-  char       _format;  // position within the instruction
+  address         _limit;   // stop producing relocations after this _addr
+  relocInfo*      _current; // the current relocation information
+  relocInfo*      _end;     // end marker; we're done iterating when _current == _end
+  nmethod*        _code;    // compiled method containing _addr
+  address         _addr;    // instruction to which the relocation applies
+  short           _databuf; // spare buffer for compressed data
+  short*          _data;    // pointer to the relocation's data
+  short           _datalen; // number of halfwords in _data
+  char            _format;  // position within the instruction
 
   // Base addresses needed to compute targets of section_word_type relocs.
-  address    _section_start[SECT_LIMIT];
-  address    _section_end  [SECT_LIMIT];
+  address _section_start[SECT_LIMIT];
+  address _section_end  [SECT_LIMIT];
 
   void set_has_current(bool b) {
     _datalen = !b ? -1 : 0;
@@ -565,7 +575,7 @@ class RelocIterator : public StackObj {
 
  public:
   // constructor
-  RelocIterator(nmethod* nm,     address begin = NULL, address limit = NULL);
+  RelocIterator(nmethod* nm, address begin = NULL, address limit = NULL);
   RelocIterator(CodeSection* cb, address begin = NULL, address limit = NULL);
 
   // get next reloc info, return !eos
@@ -762,6 +772,9 @@ class Relocation VALUE_OBJ_CLASS_SPEC {
   }
 
  protected:
+  // platform-independent utility for patching constant section
+  void       const_set_data_value    (address x);
+  void       const_verify_data_value (address x);
   // platform-dependent utilities for decoding and patching instructions
   void       pd_set_data_value       (address x, intptr_t off, bool verify_only = false); // a set or mem-ref
   void       pd_verify_data_value    (address x, intptr_t off) { pd_set_data_value(x, off, true); }
@@ -872,13 +885,13 @@ class DataRelocation : public Relocation {
   void        set_value(address x)             { set_value(x, offset()); }
   void        set_value(address x, intptr_t o) {
     if (addr_in_const())
-      *(address*)addr() = x;
+      const_set_data_value(x);
     else
       pd_set_data_value(x, o);
   }
   void        verify_value(address x) {
     if (addr_in_const())
-      assert(*(address*)addr() == x, "must agree");
+      const_verify_data_value(x);
     else
       pd_verify_data_value(x, offset());
   }
@@ -1117,7 +1130,7 @@ class static_stub_Relocation : public Relocation {
   }
 
  private:
-  address _static_call;             // location of corresponding static_call
+  address _static_call;  // location of corresponding static_call
 
   static_stub_Relocation(address static_call) {
     _static_call = static_call;
@@ -1318,10 +1331,8 @@ class poll_Relocation : public Relocation {
   void     fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest);
 };
 
-class poll_return_Relocation : public Relocation {
-  bool          is_data()                      { return true; }
+class poll_return_Relocation : public poll_Relocation {
   relocInfo::relocType type() { return relocInfo::poll_return_type; }
-  void     fix_relocation_after_move(const CodeBuffer* src, CodeBuffer* dest);
 };
 
 // We know all the xxx_Relocation classes, so now we can define these:

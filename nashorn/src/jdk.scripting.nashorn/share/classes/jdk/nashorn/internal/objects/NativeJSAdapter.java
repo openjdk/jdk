@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.StandardOperation;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.lookup.Lookup;
@@ -49,6 +50,7 @@ import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
+import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.scripts.JO;
 
 /**
@@ -588,7 +590,7 @@ public final class NativeJSAdapter extends ScriptObject {
 
     @Override
     protected GuardedInvocation findCallMethodMethod(final CallSiteDescriptor desc, final LinkRequest request) {
-        if (overrides && super.hasOwnProperty(desc.getNameToken(2))) {
+        if (overrides && super.hasOwnProperty(NashornCallSiteDescriptor.getOperand(desc))) {
             try {
                 final GuardedInvocation inv = super.findCallMethodMethod(desc, request);
                 if (inv != null) {
@@ -603,8 +605,8 @@ public final class NativeJSAdapter extends ScriptObject {
     }
 
     @Override
-    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operation) {
-        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+    protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final StandardOperation operation) {
+        final String name = NashornCallSiteDescriptor.getOperand(desc);
         if (overrides && super.hasOwnProperty(name)) {
             try {
                 final GuardedInvocation inv = super.findGetMethod(desc, request, operation);
@@ -617,10 +619,10 @@ public final class NativeJSAdapter extends ScriptObject {
         }
 
         switch(operation) {
-        case "getProp":
-        case "getElem":
+        case GET_PROPERTY:
+        case GET_ELEMENT:
             return findHook(desc, __get__);
-        case "getMethod":
+        case GET_METHOD:
             final FindProperty find = adaptee.findProperty(__call__, true);
             if (find != null) {
                 final Object value = find.getObjectValue();
@@ -634,7 +636,7 @@ public final class NativeJSAdapter extends ScriptObject {
                             adaptee.getProtoSwitchPoints(__call__, find.getOwner()), null);
                 }
             }
-            throw typeError("no.such.function", desc.getNameToken(2), ScriptRuntime.safeToString(this));
+            throw typeError("no.such.function", name, ScriptRuntime.safeToString(this));
         default:
             break;
         }
@@ -644,7 +646,7 @@ public final class NativeJSAdapter extends ScriptObject {
 
     @Override
     protected GuardedInvocation findSetMethod(final CallSiteDescriptor desc, final LinkRequest request) {
-        if (overrides && super.hasOwnProperty(desc.getNameToken(CallSiteDescriptor.NAME_OPERAND))) {
+        if (overrides && super.hasOwnProperty(NashornCallSiteDescriptor.getOperand(desc))) {
             try {
                 final GuardedInvocation inv = super.findSetMethod(desc, request);
                 if (inv != null) {
@@ -691,7 +693,7 @@ public final class NativeJSAdapter extends ScriptObject {
         final FindProperty findData = adaptee.findProperty(hook, true);
         final MethodType type = desc.getMethodType();
         if (findData != null) {
-            final String name = desc.getNameTokenCount() > 2 ? desc.getNameToken(2) : null;
+            final String name = NashornCallSiteDescriptor.getOperand(desc);
             final Object value = findData.getObjectValue();
             if (value instanceof ScriptFunction) {
                 final ScriptFunction func = (ScriptFunction)value;
@@ -709,7 +711,7 @@ public final class NativeJSAdapter extends ScriptObject {
 
         switch (hook) {
         case __call__:
-            throw typeError("no.such.function", desc.getNameToken(2), ScriptRuntime.safeToString(this));
+            throw typeError("no.such.function", NashornCallSiteDescriptor.getOperand(desc), ScriptRuntime.safeToString(this));
         default:
             final MethodHandle methodHandle = hook.equals(__put__) ?
             MH.asType(Lookup.EMPTY_SETTER, type) :

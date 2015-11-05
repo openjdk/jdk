@@ -220,11 +220,7 @@ public class Flags {
      */
     public static final long UNION = 1L<<39;
 
-    /**
-     * Flag that marks a special kind of bridge method (the ones that
-     * come from restricted supertype bounds).
-     */
-    public static final long OVERRIDE_BRIDGE = 1L<<40;
+    // Flag bit (1L << 40) is available.
 
     /**
      * Flag that marks an 'effectively final' local variable.
@@ -383,7 +379,6 @@ public class Flags {
         HYPOTHETICAL(Flags.HYPOTHETICAL),
         PROPRIETARY(Flags.PROPRIETARY),
         UNION(Flags.UNION),
-        OVERRIDE_BRIDGE(Flags.OVERRIDE_BRIDGE),
         EFFECTIVELY_FINAL(Flags.EFFECTIVELY_FINAL),
         CLASH(Flags.CLASH),
         AUXILIARY(Flags.AUXILIARY),

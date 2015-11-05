@@ -106,6 +106,25 @@ ifeq ($(INCLUDE_NMT), false)
 	 memTracker.cpp nmtDCmd.cpp mallocSiteTable.cpp
 endif
 
+ifneq (,$(findstring $(Platform_arch_model), x86_64, sparc))
+      # JVMCI is supported only on x86_64 and SPARC.
+else
+      INCLUDE_JVMCI := false
+endif
+
+ifeq ($(INCLUDE_JVMCI), false)
+      CXXFLAGS += -DINCLUDE_JVMCI=0
+      CFLAGS += -DINCLUDE_JVMCI=0
+
+      jvmci_dir := $(HS_COMMON_SRC)/share/vm/jvmci
+      jvmci_dir_alt := $(HS_ALT_SRC)/share/vm/jvmci
+      jvmci_exclude := $(notdir $(wildcard $(jvmci_dir)/*.cpp))	\
+			$(notdir $(wildcard $(jvmci_dir_alt)/*.cpp))
+      Src_Files_EXCLUDE += $(jvmci_exclude) \
+	jvmciCodeInstaller_aarch64.cpp jvmciCodeInstaller_ppc.cpp jvmciCodeInstaller_sparc.cpp \
+	jvmciCodeInstaller_x86.cpp
+endif
+
 -include $(HS_ALT_MAKE)/excludeSrc.make
 
 .PHONY: $(HS_ALT_MAKE)/excludeSrc.make

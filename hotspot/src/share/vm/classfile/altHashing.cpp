@@ -262,10 +262,9 @@ void AltHashing::testMurmur3_32_ByteArray() {
   juint final_hash = murmur3_32(hashes, 4*256);
 
   assert (MURMUR3_32_X86_CHECK_VALUE == final_hash,
-    err_msg(
-        "Calculated hash result not as expected. Expected %08X got %08X\n",
-        MURMUR3_32_X86_CHECK_VALUE,
-        final_hash));
+          "Calculated hash result not as expected. Expected %08X got %08X\n",
+          MURMUR3_32_X86_CHECK_VALUE,
+          final_hash);
 }
 
 void AltHashing::testEquivalentHashes() {
@@ -276,24 +275,24 @@ void AltHashing::testEquivalentHashes() {
   jbytes = murmur3_32(TWO_BYTE, 2);
   jchars = murmur3_32(ONE_CHAR, 1);
   assert (jbytes == jchars,
-    err_msg("Hashes did not match. b:%08x != c:%08x\n", jbytes, jchars));
+          "Hashes did not match. b:%08x != c:%08x\n", jbytes, jchars);
 
   jbytes = murmur3_32(FOUR_BYTE, 4);
   jchars = murmur3_32(TWO_CHAR, 2);
   ints = murmur3_32(ONE_INT, 1);
   assert ((jbytes == jchars) && (jbytes == ints),
-    err_msg("Hashes did not match. b:%08x != c:%08x != i:%08x\n", jbytes, jchars, ints));
+          "Hashes did not match. b:%08x != c:%08x != i:%08x\n", jbytes, jchars, ints);
 
   jbytes = murmur3_32(SIX_BYTE, 6);
   jchars = murmur3_32(THREE_CHAR, 3);
   assert (jbytes == jchars,
-    err_msg("Hashes did not match. b:%08x != c:%08x\n", jbytes, jchars));
+         "Hashes did not match. b:%08x != c:%08x\n", jbytes, jchars);
 
   jbytes = murmur3_32(EIGHT_BYTE, 8);
   jchars = murmur3_32(FOUR_CHAR, 4);
   ints = murmur3_32(TWO_INT, 2);
   assert ((jbytes == jchars) && (jbytes == ints),
-    err_msg("Hashes did not match. b:%08x != c:%08x != i:%08x\n", jbytes, jchars, ints));
+          "Hashes did not match. b:%08x != c:%08x != i:%08x\n", jbytes, jchars, ints);
 }
 
 // Returns true if the alternate hashcode is correct

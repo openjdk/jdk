@@ -66,6 +66,9 @@
 #include "classfile/sharedClassUtil.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #endif
+#if INCLUDE_JVMCI
+#include "jvmci/jvmciRuntime.hpp"
+#endif
 #if INCLUDE_TRACE
 #include "trace/tracing.hpp"
 #endif
@@ -228,10 +231,10 @@ Klass* SystemDictionary::resolve_or_fail(Symbol* class_name,
 // Forwards to resolve_instance_class_or_null
 
 Klass* SystemDictionary::resolve_or_null(Symbol* class_name, Handle class_loader, Handle protection_domain, TRAPS) {
-  assert(!THREAD->is_Compiler_thread(),
-         err_msg("can not load classes with compiler thread: class=%s, classloader=%s",
-                 class_name->as_C_string(),
-                 class_loader.is_null() ? "null" : class_loader->klass()->name()->as_C_string()));
+  assert(THREAD->can_call_java(),
+         "can not load classes with compiler thread: class=%s, classloader=%s",
+         class_name->as_C_string(),
+         class_loader.is_null() ? "null" : class_loader->klass()->name()->as_C_string());
   if (FieldType::is_array(class_name)) {
     return resolve_array_class_or_null(class_name, class_loader, protection_domain, THREAD);
   } else if (FieldType::is_obj(class_name)) {
@@ -1917,7 +1920,7 @@ void SystemDictionary::initialize_preloaded_classes(TRAPS) {
   WKID jsr292_group_end   = WK_KLASS_ENUM_NAME(VolatileCallSite_klass);
   initialize_wk_klasses_until(jsr292_group_start, scan, CHECK);
   initialize_wk_klasses_through(jsr292_group_end, scan, CHECK);
-  initialize_wk_klasses_until(WKID_LIMIT, scan, CHECK);
+  initialize_wk_klasses_until(NOT_JVMCI(WKID_LIMIT) JVMCI_ONLY(FIRST_JVMCI_WKID), scan, CHECK);
 
   _box_klasses[T_BOOLEAN] = WK_KLASS(Boolean_klass);
   _box_klasses[T_CHAR]    = WK_KLASS(Character_klass);
@@ -2264,7 +2267,7 @@ methodHandle SystemDictionary::find_method_handle_intrinsic(vmIntrinsics::ID iid
   assert(MethodHandles::is_signature_polymorphic(iid) &&
          MethodHandles::is_signature_polymorphic_intrinsic(iid) &&
          iid != vmIntrinsics::_invokeGeneric,
-         err_msg("must be a known MH intrinsic iid=%d: %s", iid, vmIntrinsics::name_at(iid)));
+         "must be a known MH intrinsic iid=%d: %s", iid, vmIntrinsics::name_at(iid));
 
   unsigned int hash  = invoke_method_table()->compute_hash(signature, iid);
   int          index = invoke_method_table()->hash_to_index(hash);
@@ -2343,7 +2346,7 @@ methodHandle SystemDictionary::find_method_handle_invoker(Symbol* name,
                                                           Handle *method_type_result,
                                                           TRAPS) {
   methodHandle empty;
-  assert(!THREAD->is_Compiler_thread(), "");
+  assert(THREAD->can_call_java() ,"");
   Handle method_type =
     SystemDictionary::find_method_handle_type(signature, accessing_klass, CHECK_(empty));
 
@@ -2390,7 +2393,7 @@ static bool is_always_visible_class(oop mirror) {
   if (klass->oop_is_typeArray()) {
     return true; // primitive array
   }
-  assert(klass->oop_is_instance(), klass->external_name());
+  assert(klass->oop_is_instance(), "%s", klass->external_name());
   return klass->is_public() &&
          (InstanceKlass::cast(klass)->is_same_class_package(SystemDictionary::Object_klass()) ||       // java.lang
           InstanceKlass::cast(klass)->is_same_class_package(SystemDictionary::MethodHandle_klass()));  // java.lang.invoke
@@ -2411,7 +2414,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
   if (spe != NULL && spe->method_type() != NULL) {
     assert(java_lang_invoke_MethodType::is_instance(spe->method_type()), "");
     return Handle(THREAD, spe->method_type());
-  } else if (THREAD->is_Compiler_thread()) {
+  } else if (!THREAD->can_call_java()) {
     warning("SystemDictionary::find_method_handle_type called from compiler thread");  // FIXME
     return Handle();  // do not attempt from within compiler, unless it was cached
   }
@@ -2443,7 +2446,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
       mirror = ss.as_java_mirror(class_loader, protection_domain,
                                  SignatureStream::NCDFError, CHECK_(empty));
     }
-    assert(!oopDesc::is_null(mirror), ss.as_symbol(THREAD)->as_C_string());
+    assert(!oopDesc::is_null(mirror), "%s", ss.as_symbol(THREAD)->as_C_string());
     if (ss.at_return_type())
       rt = Handle(THREAD, mirror);
     else

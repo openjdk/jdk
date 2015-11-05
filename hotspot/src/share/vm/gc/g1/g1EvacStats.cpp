@@ -45,13 +45,13 @@ void G1EvacStats::adjust_desired_plab_sz() {
 
     if (_allocated == 0) {
       assert((_unused == 0),
-             err_msg("Inconsistency in PLAB stats: "
-                     "_allocated: " SIZE_FORMAT ", "
-                     "_wasted: " SIZE_FORMAT ", "
-                     "_region_end_waste: " SIZE_FORMAT ", "
-                     "_unused: " SIZE_FORMAT ", "
-                     "_used  : " SIZE_FORMAT,
-                     _allocated, _wasted, _region_end_waste, _unused, used()));
+             "Inconsistency in PLAB stats: "
+             "_allocated: " SIZE_FORMAT ", "
+             "_wasted: " SIZE_FORMAT ", "
+             "_region_end_waste: " SIZE_FORMAT ", "
+             "_unused: " SIZE_FORMAT ", "
+             "_used  : " SIZE_FORMAT,
+             _allocated, _wasted, _region_end_waste, _unused, used());
       _allocated = 1;
     }
     // The size of the PLAB caps the amount of space that can be wasted at the

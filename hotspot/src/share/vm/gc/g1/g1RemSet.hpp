@@ -95,7 +95,7 @@ public:
   // Returns the number of cards scanned while looking for pointers
   // into the collection set.
   size_t oops_into_collection_set_do(G1ParPushHeapRSClosure* blk,
-                                     OopClosure* non_heap_roots,
+                                     CodeBlobClosure* heap_region_codeblobs,
                                      uint worker_i);
 
   // Prepare for and cleanup after an oops_into_collection_set_do
@@ -107,7 +107,7 @@ public:
   void cleanup_after_oops_into_collection_set_do();
 
   size_t scanRS(G1ParPushHeapRSClosure* oc,
-                OopClosure* non_heap_roots,
+                CodeBlobClosure* heap_region_codeblobs,
                 uint worker_i);
 
   void updateRS(DirtyCardQueue* into_cset_dcq, uint worker_i);

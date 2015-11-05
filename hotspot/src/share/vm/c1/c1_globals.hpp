@@ -152,6 +152,7 @@
                                                                             \
   product(intx, ValueMapMaxLoopSize, 8,                                     \
           "maximum size of a loop optimized by global value numbering")     \
+          range(0, 128)                                                     \
                                                                             \
   develop(bool, EliminateBlocks, true,                                      \
           "Eliminate unneccessary basic blocks")                            \
@@ -220,6 +221,7 @@
                                                                             \
   develop(intx, TraceLinearScanLevel, 0,                                    \
           "Debug levels for the linear scan allocator")                     \
+          range(0, 4)                                                       \
                                                                             \
   develop(bool, StressLinearScan, false,                                    \
           "scramble block order used by LinearScan (stress test)")          \
@@ -294,6 +296,7 @@
                                                                             \
   develop(intx, NMethodSizeLimit, (64*K)*wordSize,                          \
           "Maximum size of a compiled method.")                             \
+          range(0, max_jint)                                                \
                                                                             \
   develop(bool, TraceFPUStack, false,                                       \
           "Trace emulation of the FPU stack (intel only)")                  \
@@ -309,6 +312,7 @@
                                                                             \
   develop(intx, InstructionCountCutoff, 37000,                              \
           "If GraphBuilder adds this many instructions, bails out")         \
+          range(0, max_jint)                                                \
                                                                             \
   develop(bool, ComputeExactFPURegisterUsage, true,                         \
           "Compute additional live set for fpu registers to simplify fpu stack merge (Intel only)") \

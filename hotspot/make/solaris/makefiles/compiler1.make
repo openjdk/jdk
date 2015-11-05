@@ -28,4 +28,7 @@ TYPE=COMPILER1
 
 VM_SUBDIR = client
 
+# We don't support the JVMCI in a client VM.
+INCLUDE_JVMCI := false
+
 CFLAGS += -DCOMPILER1
