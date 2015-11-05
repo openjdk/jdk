@@ -802,6 +802,7 @@ STATIC_LIBRARY_SUFFIX
 SHARED_LIBRARY_SUFFIX
 LIBRARY_PREFIX
 TOOLCHAIN_TYPE
+STATIC_BUILD
 BUILD_HOTSPOT
 HOTSPOT_DIST
 BUILD_OUTPUT
@@ -1075,6 +1076,7 @@ with_override_hotspot
 with_override_nashorn
 with_override_jdk
 with_import_hotspot
+enable_static_build
 with_toolchain_type
 with_extra_cflags
 with_extra_cxxflags
@@ -1853,6 +1855,7 @@ Optional Features:
                           run the Queens test after Hotspot build [disabled]
   --enable-unlimited-crypto
                           Enable unlimited crypto policy [disabled]
+  --enable-static-build   enable static library build [disabled]
   --disable-warnings-as-errors
                           do not consider native warnings to be an error
                           [enabled]
@@ -3985,6 +3988,15 @@ pkgadd_help() {
 #
 # Gcov coverage data for hotspot
 #
+
+
+################################################################################
+#
+# Static build support.  When enabled will generate static
+# libraries instead of shared libraries for all JDK libs.
+#
+
+
 
 
 #
@@ -29183,6 +29195,40 @@ $as_echo "yes from $HOTSPOT_DIST" >&6; }
 #
 ###############################################################################
 
+# See if we are doing a complete static build or not
+
+  # Check whether --enable-static-build was given.
+if test "${enable_static_build+set}" = set; then :
+  enableval=$enable_static_build;
+fi
+
+  STATIC_BUILD=false
+  if test "x$enable_static_build" = "xyes"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if static build is enabled" >&5
+$as_echo_n "checking if static build is enabled... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    if test "x$OPENJDK_TARGET_OS" != "xmacosx"; then
+      as_fn_error $? "--enable-static-build is only supported for macosx builds" "$LINENO" 5
+    fi
+    STATIC_BUILD_CFLAGS="-DSTATIC_BUILD=1"
+    LEGACY_EXTRA_CFLAGS="$LEGACY_EXTRA_CFLAGS $STATIC_BUILD_CFLAGS"
+    LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $STATIC_BUILD_CFLAGS"
+    CFLAGS_JDKLIB_EXTRA="$CFLAGS_JDKLIB_EXTRA $STATIC_BUILD_CFLAGS"
+    CXXFLAGS_JDKLIB_EXTRA="$CXXFLAGS_JDKLIB_EXTRA $STATIC_BUILD_CFLAGS"
+    STATIC_BUILD=true
+  elif test "x$enable_static_build" = "xno"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if static build is enabled" >&5
+$as_echo_n "checking if static build is enabled... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  elif test "x$enable_static_build" != "x"; then
+    as_fn_error $? "--enable-static-build can only be assigned \"yes\" or \"no\"" "$LINENO" 5
+  fi
+
+
+
+
 # First determine the toolchain type (compiler family)
 
 
@@ -29291,8 +29337,19 @@ $as_echo "$as_me: Valid toolchains: $VALID_TOOLCHAINS." >&6;}
     OBJ_SUFFIX='.o'
     EXE_SUFFIX=''
     if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      SHARED_LIBRARY='lib$1.dylib'
-      SHARED_LIBRARY_SUFFIX='.dylib'
+      # For full static builds, we're overloading the SHARED_LIBRARY
+      # variables in order to limit the amount of changes required.
+      # It would be better to remove SHARED and just use LIBRARY and
+      # LIBRARY_SUFFIX for libraries that can be built either
+      # shared or static and use STATIC_* for libraries that are
+      # always built statically.
+      if test "x$STATIC_BUILD" = xtrue; then
+        SHARED_LIBRARY='lib$1.a'
+        SHARED_LIBRARY_SUFFIX='.a'
+      else
+        SHARED_LIBRARY='lib$1.dylib'
+        SHARED_LIBRARY_SUFFIX='.dylib'
+      fi
     fi
   fi
 
@@ -44479,7 +44536,11 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
 
     if test "x$OPENJDK_TARGET_OS" = xmacosx; then
       # Linking is different on MacOSX
-      SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
+      if test "x$STATIC_BUILD" = xtrue; then
+        SHARED_LIBRARY_FLAGS ='-undefined dynamic_lookup'
+      else
+        SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
+      fi
       SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker @loader_path/.'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/$1'
@@ -44983,7 +45044,9 @@ $as_echo "$supports" >&6; }
   COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
       -I${JDK_TOPDIR}/src/java.base/share/native/include \
       -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS/native/include \
-      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/include"
+      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/include \
+      -I${JDK_TOPDIR}/src/java.base/share/native/libjava \
+      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/libjava"
 
   # The shared libraries are compiled using the picflag.
   CFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK $CFLAGS_JDK $PICFLAG $CFLAGS_JDKLIB_EXTRA"
