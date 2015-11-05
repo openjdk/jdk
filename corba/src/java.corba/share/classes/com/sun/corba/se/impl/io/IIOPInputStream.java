@@ -567,6 +567,11 @@ public class IIOPInputStream
                 // XXX I18N, logging needed.
                 throw new NotActiveException("defaultReadObjectDelegate");
 
+            if (!currentClassDesc.forClass().isAssignableFrom(
+                    currentObject.getClass())) {
+                throw new IOException("Object Type mismatch");
+            }
+
             // The array will be null unless fields were retrieved
             // remotely because of a serializable version difference.
             // Bug fix for 4365188.  See the definition of
@@ -1063,6 +1068,9 @@ public class IIOPInputStream
 
             int spBase = spClass;       // current top of stack
 
+            if (currentClass.getName().equals("java.lang.String")) {
+                return this.readUTF();
+            }
             /* The object's classes should be processed from supertype to subtype
              * Push all the clases of the current object onto a stack.
              * Note that only the serializable classes are represented
@@ -2257,6 +2265,27 @@ public class IIOPInputStream
 
                 try {
                     Class fieldCl = fields[i].getClazz();
+                    if ((objectValue != null)
+                            && (!fieldCl.isAssignableFrom(
+                                    objectValue.getClass()))) {
+                        throw new IllegalArgumentException("Field mismatch");
+                    }
+                   Field classField = null;
+                    try {
+                        classField = cl.getDeclaredField(fields[i].getName());
+                    } catch (NoSuchFieldException nsfEx) {
+                        throw new IllegalArgumentException(nsfEx);
+                    } catch (SecurityException secEx) {
+                        throw new IllegalArgumentException(secEx.getCause());
+                    }
+                    Class<?> declaredFieldClass = classField.getType();
+
+                    // check input field type is a declared field type
+                    // input field is a subclass of the declared field
+                    if (!declaredFieldClass.isAssignableFrom(fieldCl)) {
+                        throw new IllegalArgumentException(
+                                "Field Type mismatch");
+                    }
                     if (objectValue != null && !fieldCl.isInstance(objectValue)) {
                         throw new IllegalArgumentException();
                     }

@@ -29,6 +29,7 @@
 #include "runtime/vm_version.hpp"
 
 class VM_Version : public Abstract_VM_Version {
+  friend class VMStructs;
 public:
   // cpuid result register layouts.  These are all unions of a uint32_t
   // (in case anyone wants access to the register as a whole) and a bitfield.

@@ -27,7 +27,6 @@
 
 #include "gc/shared/blockOffsetTable.hpp"
 #include "gc/shared/cardTableModRefBS.hpp"
-#include "gc/shared/watermark.hpp"
 #include "gc/shared/workgroup.hpp"
 #include "memory/allocation.hpp"
 #include "memory/iterator.hpp"
@@ -48,7 +47,6 @@ class BlockOffsetArrayContigSpace;
 class Generation;
 class CompactibleSpace;
 class BlockOffsetTable;
-class GenRemSet;
 class CardTableRS;
 class DirtyCardToOopClosure;
 
@@ -541,9 +539,6 @@ class ContiguousSpace: public CompactibleSpace {
   void set_saved_mark()            { _saved_mark_word = top();    }
   void reset_saved_mark()          { _saved_mark_word = bottom(); }
 
-  WaterMark bottom_mark()     { return WaterMark(this, bottom()); }
-  WaterMark top_mark()        { return WaterMark(this, top()); }
-  WaterMark saved_mark()      { return WaterMark(this, saved_mark_word()); }
   bool saved_mark_at_top() const { return saved_mark_word() == top(); }
 
   // In debug mode mangle (write it with a particular bit
@@ -649,7 +644,7 @@ class ContiguousSpace: public CompactibleSpace {
   // Same as object_iterate, but starting from "mark", which is required
   // to denote the start of an object.  Objects allocated by
   // applications of the closure *are* included in the iteration.
-  virtual void object_iterate_from(WaterMark mark, ObjectClosure* blk);
+  virtual void object_iterate_from(HeapWord* mark, ObjectClosure* blk);
 
   // Very inefficient implementation.
   virtual HeapWord* block_start_const(const void* p) const;

@@ -26,9 +26,9 @@
 
 #include "gc/shared/blockOffsetTable.inline.hpp"
 #include "gc/shared/cardGeneration.inline.hpp"
+#include "gc/shared/cardTableRS.hpp"
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
-#include "gc/shared/genRemSet.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "memory/iterator.hpp"
@@ -37,7 +37,7 @@
 
 CardGeneration::CardGeneration(ReservedSpace rs,
                                size_t initial_byte_size,
-                               GenRemSet* remset) :
+                               CardTableRS* remset) :
   Generation(rs, initial_byte_size), _rs(remset),
   _shrink_factor(0), _min_heap_delta_bytes(), _capacity_at_prologue(),
   _used_at_prologue()

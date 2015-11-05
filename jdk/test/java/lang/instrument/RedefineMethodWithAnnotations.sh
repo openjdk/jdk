@@ -26,7 +26,6 @@
 # @summary Method annotations are incorrectly set when redefining classes.
 # @author Stefan Karlsson
 #
-# @modules java.instrument
 # @run shell MakeJAR3.sh RedefineMethodWithAnnotationsAgent 'Can-Redefine-Classes: true'
 # @run build RedefineMethodWithAnnotationsTarget RedefineMethodWithAnnotationsApp RedefineMethodWithAnnotationsAnnotations
 # @run shell RedefineMethodWithAnnotations.sh

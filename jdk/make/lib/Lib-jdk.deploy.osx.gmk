@@ -42,10 +42,10 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       DISABLED_WARNINGS_clang := implicit-function-declaration format, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_SUFFIX := -framework Cocoa \
+      LIBS := -framework Cocoa \
           -framework Carbon \
           -framework JavaNativeFoundation \
-          $(LDFLAGS_JDKLIB_SUFFIX), \
+          $(JDKLIB_LIBS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libAppleScriptEngine, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
@@ -74,14 +74,14 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.desktop \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_SUFFIX_macosx := \
+      LIBS := \
           -losxapp \
           -framework Cocoa \
           -framework ApplicationServices \
           -framework JavaNativeFoundation \
           -framework JavaRuntimeSupport \
           -framework SystemConfiguration \
-          $(LDFLAGS_JDKLIB_SUFFIX), \
+          $(JDKLIB_LIBS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libosx, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 

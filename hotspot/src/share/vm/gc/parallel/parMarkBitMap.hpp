@@ -390,9 +390,9 @@ inline void ParMarkBitMap::verify_bit(idx_t bit) const {
 inline void ParMarkBitMap::verify_addr(HeapWord* addr) const {
   // Allow one past the last valid address; useful for loop bounds.
   assert(addr >= region_start(),
-      err_msg("addr too small, addr: " PTR_FORMAT " region start: " PTR_FORMAT, p2i(addr), p2i(region_start())));
+         "addr too small, addr: " PTR_FORMAT " region start: " PTR_FORMAT, p2i(addr), p2i(region_start()));
   assert(addr <= region_end(),
-      err_msg("addr too big, addr: " PTR_FORMAT " region end: " PTR_FORMAT, p2i(addr), p2i(region_end())));
+         "addr too big, addr: " PTR_FORMAT " region end: " PTR_FORMAT, p2i(addr), p2i(region_end()));
 }
 #endif  // #ifdef ASSERT
 

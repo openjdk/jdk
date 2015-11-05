@@ -43,8 +43,6 @@
 #include "utilities/ticks.inline.hpp"
 #include "utilities/xmlstream.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
-
 #ifdef ASSERT
 
 #define SWEEP(nm) record_sweep(nm, __LINE__)
@@ -62,12 +60,12 @@ class SweeperRecord {
 
   void print() {
       tty->print_cr("traversal = %d compile_id = %d %s uep = " PTR_FORMAT " vep = "
-                    PTR_FORMAT " state = %d traversal_mark %d line = %d",
+                    PTR_FORMAT " state = %d traversal_mark %ld line = %d",
                     traversal,
                     compile_id,
                     kind == NULL ? "" : kind,
-                    uep,
-                    vep,
+                    p2i(uep),
+                    p2i(vep),
                     state,
                     traversal_mark,
                     line);
@@ -223,7 +221,7 @@ void NMethodSweeper::mark_active_nmethods() {
     _total_time_this_sweep = Tickspan();
 
     if (PrintMethodFlushing) {
-      tty->print_cr("### Sweep: stack traversal %d", _traversals);
+      tty->print_cr("### Sweep: stack traversal %ld", _traversals);
     }
     Threads::nmethods_do(&mark_activation_closure);
 
@@ -482,7 +480,7 @@ void NMethodSweeper::sweep_code_cache() {
 
 #ifdef ASSERT
   if(PrintMethodFlushing) {
-    tty->print_cr("### sweeper:      sweep time(%d): ", (jlong)sweep_time.value());
+    tty->print_cr("### sweeper:      sweep time(" JLONG_FORMAT "): ", sweep_time.value());
   }
 #endif
 
@@ -592,14 +590,14 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_nmethod(nmethod* nm) {
     if (nm->is_marked_for_reclamation()) {
       assert(!nm->is_locked_by_vm(), "must not flush locked nmethods");
       if (PrintMethodFlushing && Verbose) {
-        tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (marked for reclamation) being flushed", nm->compile_id(), nm);
+        tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (marked for reclamation) being flushed", nm->compile_id(), p2i(nm));
       }
       release_nmethod(nm);
       assert(result == None, "sanity");
       result = Flushed;
     } else {
       if (PrintMethodFlushing && Verbose) {
-        tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (zombie) being marked for reclamation", nm->compile_id(), nm);
+        tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (zombie) being marked for reclamation", nm->compile_id(), p2i(nm));
       }
       nm->mark_for_reclamation();
       // Keep track of code cache state change
@@ -619,7 +617,7 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_nmethod(nmethod* nm) {
         nm->clear_ic_stubs();
       }
       if (PrintMethodFlushing && Verbose) {
-        tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (not entrant) being made zombie", nm->compile_id(), nm);
+        tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (not entrant) being made zombie", nm->compile_id(), p2i(nm));
       }
       // Code cache state change is tracked in make_zombie()
       nm->make_zombie();
@@ -636,7 +634,7 @@ NMethodSweeper::MethodStateChange NMethodSweeper::process_nmethod(nmethod* nm) {
   } else if (nm->is_unloaded()) {
     // Unloaded code, just make it a zombie
     if (PrintMethodFlushing && Verbose) {
-      tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (unloaded) being made zombie", nm->compile_id(), nm);
+      tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (unloaded) being made zombie", nm->compile_id(), p2i(nm));
     }
     if (nm->is_osr_method()) {
       SWEEP(nm);
@@ -743,7 +741,7 @@ void NMethodSweeper::possibly_flush(nmethod* nm) {
         // Code cache state change is tracked in make_not_entrant()
         if (PrintMethodFlushing && Verbose) {
           tty->print_cr("### Nmethod %d/" PTR_FORMAT "made not-entrant: hotness counter %d/%d threshold %f",
-              nm->compile_id(), nm, nm->hotness_counter(), reset_val, threshold);
+              nm->compile_id(), p2i(nm), nm->hotness_counter(), reset_val, threshold);
         }
       }
     }

@@ -149,6 +149,7 @@ ifeq ($(USE_CLANG), true)
     PCH_FLAG/sharedRuntimeTrig.o = $(PCH_FLAG/NO_PCH)
     PCH_FLAG/sharedRuntimeTrans.o = $(PCH_FLAG/NO_PCH)
     PCH_FLAG/unsafe.o = $(PCH_FLAG/NO_PCH)
+    PCH_FLAG/jvmciCompilerToVM.o = $(PCH_FLAG/NO_PCH)
 
   endif
 else # ($(USE_CLANG), true)
@@ -313,10 +314,11 @@ endif
 
 # Work around some compiler bugs.
 ifeq ($(USE_CLANG), true)
-  # Clang <= 6.1
+  # Clang < 6 | <= 6.1 | <= 7.0
   ifeq ($(shell expr \
       $(CC_VER_MAJOR) \< 6 \| \
-      \( $(CC_VER_MAJOR) = 6 \& $(CC_VER_MINOR) \<= 1 \) \
+      \( $(CC_VER_MAJOR) = 6 \& $(CC_VER_MINOR) \<= 1 \) \| \
+      \( $(CC_VER_MAJOR) = 7 \& $(CC_VER_MINOR) \<= 0 \) \
     ), 1)
     OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT)
     OPT_CFLAGS/unsafe.o += -O1

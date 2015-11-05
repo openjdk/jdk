@@ -40,7 +40,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       DISABLED_WARNINGS_clang := objc-method-access objc-root-class, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_SUFFIX_macosx := \
+      LIBS := \
           -framework Accelerate \
           -framework ApplicationServices \
           -framework AudioToolbox \

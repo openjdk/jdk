@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -172,6 +172,7 @@
         <build-tool name="javap"/>
         <build-tool name="javah"/>
         <build-tool name="sjavac"/>
+        <build-tool name="jshell"/>
     </target>
 
     <target name="build-all-classes" depends="-def-build-all-module-classes,build-bootstrap-javac-classes">
@@ -417,10 +418,14 @@
         <copy todir=".idea" >
             <fileset dir="make/intellij" excludes="**/src/**"/>
         </copy>
-        <condition property="jtreg.idea.home" value="${jtreg.home}" else = "[jtreg.home]">
+        <condition property="idea.jtreg.home" value="${jtreg.home}" else = "[jtreg.home]">
             <isset property="jtreg.home"/>
         </condition>
-        <replace file=".idea/ant.xml" token="@@@" value="${jtreg.idea.home}"/>
+        <condition property="idea.target.jdk" value="${target.java.home}" else = "$JDKPath$">
+            <isset property="target.java.home"/>
+        </condition>
+        <replace file=".idea/ant.xml" token="@IDEA_JTREG_HOME@" value="${idea.jtreg.home}"/>
+        <replace file=".idea/ant.xml" token="@IDEA_TARGET_JDK@" value="${idea.target.jdk}"/>
         <replace file=".idea/workspace.xml" token="@FILE_SEP@" value="${file.separator}"/>
         <replace file=".idea/workspace.xml" token="@PATH_SEP@" value="${path.separator}"/>
         <mkdir dir=".idea/classes"/>
@@ -464,6 +469,9 @@
                 <build-module-jar module.name="jdk.compiler" compilation.kind="@{compilation.kind}" />
                 <build-module-jar module.name="jdk.javadoc" compilation.kind="@{compilation.kind}" />
                 <build-module-jar module.name="jdk.jdeps" compilation.kind="@{compilation.kind}" />
+                <build-module-jar module.name="jdk.internal.le" compilation.kind="@{compilation.kind}" />
+                <build-module-jar module.name="jdk.jdi" compilation.kind="@{compilation.kind}" />
+                <build-module-jar module.name="jdk.jshell" compilation.kind="@{compilation.kind}" />
             </sequential>
         </macrodef>
     </target>
@@ -502,11 +510,12 @@
             <attribute name="compilation.kind" default=""/>
             <attribute name="bin.dir" default="${@{compilation.kind}dist.bin.dir}"/>
             <attribute name="java" default="${launcher.java}"/>
+            <attribute name="main.class" default="${tool.@{name}.main.class}"/>
             <sequential>
                 <mkdir dir="@{bin.dir}"/>
                 <copy file="${make.dir}/launcher.sh-template" tofile="@{bin.dir}/@{name}">
                     <filterset begintoken="#" endtoken="#">
-                        <filter token="PROGRAM" value="@{name}"/>
+                        <filter token="PROGRAM" value="@{main.class}"/>
                         <filter token="TARGET_JAVA" value="@{java}"/>
                         <filter token="PS" value="${path.separator}"/>
                     </filterset>
@@ -529,11 +538,17 @@
                                       compilation.kind="@{compilation.kind}" />
                 <build-module-classes module.name="jdk.jdeps"
                                       compilation.kind="@{compilation.kind}" />
+                <copy-module-classes  module.name="jdk.internal.le"
+                                      compilation.kind="@{compilation.kind}" />
+                <copy-module-classes  module.name="jdk.jdi"
+                                      compilation.kind="@{compilation.kind}" />
+                <build-module-classes module.name="jdk.jshell"
+                                      compilation.kind="@{compilation.kind}" />
             </sequential>
         </macrodef>
     </target>
 
-    <target name="-def-build-module-classes" depends="-def-pcompile,-def-pparse">
+    <target name="-def-build-module-classes" depends="-def-pcompile,-def-pparse,-def-cdumper">
         <macrodef name="build-module-classes">
             <attribute name="module.name"/>
             <attribute name="compilation.kind" default=""/>
@@ -646,6 +661,18 @@
                 </copy>
             </sequential>
         </macrodef>
+        <macrodef name="copy-module-classes">
+            <attribute name="module.name"/>
+            <attribute name="compilation.kind" default=""/>
+            <attribute name="build.dir" default="${@{compilation.kind}build.dir}"/>
+            <attribute name="classes.dir" default="@{build.dir}/@{module.name}/classes"/>
+            <attribute name="java.home" default="${boot.java.home}"/>
+            <sequential>
+                <property name="classes.origin.dir" location="${target.java.home}/../../jdk/modules/@{module.name}"/>
+                <mkdir dir="@{classes.dir}"/>
+                <dumpclasses moduleName="@{module.name}" destDir="@{classes.dir}" />
+            </sequential>
+        </macrodef>
     </target>
 
     <target name="-def-pparse">
@@ -668,6 +695,25 @@
         <taskdef name="pparse"
                  classname="anttasks.PropertiesParserTask"
                  classpath="${build.toolclasses.dir}/"/>
+    </target>
+
+    <target name="-def-cdumper">
+        <mkdir dir="${build.toolclasses.dir}"/>
+        <javac fork="true"
+               source="${boot.javac.source}"
+               target="${boot.javac.target}"
+               executable="${boot.java.home}/bin/javac"
+               srcdir="${make.tools.dir}"
+               includes="anttasks/DumpClass*"
+               destdir="${build.toolclasses.dir}/"
+               classpath="${ant.core.lib}"
+               bootclasspath="${boot.java.home}/jre/lib/rt.jar"
+               includeantruntime="false">
+            <compilerarg line="${javac.lint.opts}"/>
+        </javac>
+        <taskdef name="dumpclasses"
+                 classname="anttasks.DumpClassesTask"
+                 classpath="${build.toolclasses.dir}/:${target.java.home}/jrt-fs.jar"/>
     </target>
 
     <target name="-do-depend" if="do.depend">

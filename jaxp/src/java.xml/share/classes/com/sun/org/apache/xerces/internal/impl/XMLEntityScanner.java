@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 
 /*
@@ -30,10 +30,14 @@ import com.sun.org.apache.xerces.internal.util.EncodingMap;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.util.XMLStringBuffer;
+import com.sun.org.apache.xerces.internal.utils.XMLLimitAnalyzer;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager.Limit;
 import com.sun.org.apache.xerces.internal.xni.*;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLComponentManager;
 import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
 import com.sun.xml.internal.stream.Entity;
+import com.sun.xml.internal.stream.Entity.ScannedEntity;
 import com.sun.xml.internal.stream.XMLBufferListener;
 import java.io.EOFException;
 import java.io.IOException;
@@ -59,6 +63,12 @@ public class XMLEntityScanner implements XMLLocator  {
     protected int fBufferSize = XMLEntityManager.DEFAULT_BUFFER_SIZE;
 
     protected XMLEntityManager fEntityManager ;
+
+    /** Security manager. */
+    protected XMLSecurityManager fSecurityManager = null;
+
+    /** Limit analyzer. */
+    protected XMLLimitAnalyzer fLimitAnalyzer = null;
 
     /** Debug switching readers for encodings. */
     private static final boolean DEBUG_ENCODINGS = false;
@@ -174,10 +184,7 @@ public class XMLEntityScanner implements XMLLocator  {
     public void reset(PropertyManager propertyManager){
         fSymbolTable = (SymbolTable)propertyManager.getProperty(SYMBOL_TABLE) ;
         fErrorReporter = (XMLErrorReporter)propertyManager.getProperty(ERROR_REPORTER) ;
-        fCurrentEntity = null;
-        whiteSpaceLen = 0;
-        whiteSpaceInfoNeeded = true;
-        listeners.clear();
+        resetCommon();
     }
 
     /**
@@ -196,18 +203,13 @@ public class XMLEntityScanner implements XMLLocator  {
      */
     public void reset(XMLComponentManager componentManager)
     throws XMLConfigurationException {
-
-        //System.out.println(" this is being called");
         // xerces features
         fAllowJavaEncodings = componentManager.getFeature(ALLOW_JAVA_ENCODINGS, false);
 
         //xerces properties
         fSymbolTable = (SymbolTable)componentManager.getProperty(SYMBOL_TABLE);
         fErrorReporter = (XMLErrorReporter)componentManager.getProperty(ERROR_REPORTER);
-        fCurrentEntity = null;
-        whiteSpaceLen = 0;
-        whiteSpaceInfoNeeded = true;
-        listeners.clear();
+        resetCommon();
     } // reset(XMLComponentManager)
 
 
@@ -217,6 +219,17 @@ public class XMLEntityScanner implements XMLLocator  {
         fSymbolTable = symbolTable;
         fEntityManager = entityManager;
         fErrorReporter = reporter;
+        fLimitAnalyzer = fEntityManager.fLimitAnalyzer;
+        fSecurityManager = fEntityManager.fSecurityManager;
+    }
+
+    private void resetCommon() {
+        fCurrentEntity = null;
+        whiteSpaceLen = 0;
+        whiteSpaceInfoNeeded = true;
+        listeners.clear();
+        fLimitAnalyzer = fEntityManager.fLimitAnalyzer;
+        fSecurityManager = fEntityManager.fSecurityManager;
     }
 
     /**
@@ -813,9 +826,13 @@ public class XMLEntityScanner implements XMLLocator  {
                         break;
                     }
                     index = fCurrentEntity.position;
+                    //check prefix before further read
+                    checkLimit(Limit.MAX_NAME_LIMIT, fCurrentEntity, offset, index - offset);
                 }
                 if (++fCurrentEntity.position == fCurrentEntity.count) {
                     int length = fCurrentEntity.position - offset;
+                    //check localpart before loading more data
+                    checkLimit(Limit.MAX_NAME_LIMIT, fCurrentEntity, offset, length - index - 1);
                     invokeListeners(length);
                     if (length == fCurrentEntity.fBufferSize) {
                         // bad luck we have to resize our buffer
@@ -847,14 +864,20 @@ public class XMLEntityScanner implements XMLLocator  {
 
                 if (index != -1) {
                     int prefixLength = index - offset;
+                    //check the result: prefix
+                    checkLimit(Limit.MAX_NAME_LIMIT, fCurrentEntity, offset, prefixLength);
                     prefix = fSymbolTable.addSymbol(fCurrentEntity.ch,
                             offset, prefixLength);
                     int len = length - prefixLength - 1;
+                    //check the result: localpart
+                    checkLimit(Limit.MAX_NAME_LIMIT, fCurrentEntity, index + 1, len);
                     localpart = fSymbolTable.addSymbol(fCurrentEntity.ch,
                             index + 1, len);
 
                 } else {
                     localpart = rawname;
+                    //check the result: localpart
+                    checkLimit(Limit.MAX_NAME_LIMIT, fCurrentEntity, offset, length);
                 }
                 qname.setValues(prefix, localpart, rawname, null);
                 if (DEBUG_BUFFER) {
@@ -875,6 +898,27 @@ public class XMLEntityScanner implements XMLLocator  {
         return false;
 
     } // scanQName(QName):boolean
+
+    /**
+     * Checks whether the value of the specified Limit exceeds its limit
+     *
+     * @param limit The Limit to be checked.
+     * @param entity The current entity.
+     * @param offset The index of the first byte
+     * @param length The length of the entity scanned.
+     */
+    protected void checkLimit(Limit limit, ScannedEntity entity, int offset, int length) {
+        fLimitAnalyzer.addValue(limit, null, length);
+        if (fSecurityManager.isOverLimit(limit, fLimitAnalyzer)) {
+            fSecurityManager.debugPrint(fLimitAnalyzer);
+            fErrorReporter.reportError(XMLMessageFormatter.XML_DOMAIN, limit.key(),
+                    new Object[]{new String(entity.ch, offset, length),
+                fLimitAnalyzer.getTotalValue(limit),
+                fSecurityManager.getLimit(limit),
+                fSecurityManager.getStateLiteral(limit)},
+                    XMLErrorReporter.SEVERITY_FATAL_ERROR);
+        }
+    }
 
     /**
      * CHANGED:
@@ -994,6 +1038,9 @@ public class XMLEntityScanner implements XMLLocator  {
         }
         int length = fCurrentEntity.position - offset;
         fCurrentEntity.columnNumber += length - newlines;
+        if (fCurrentEntity.reference) {
+            checkLimit(Limit.TOTAL_ENTITY_SIZE_LIMIT, fCurrentEntity, offset, length);
+        }
 
         //CHANGED: dont replace the value.. append to the buffer. This gives control to the callee
         //on buffering the data..

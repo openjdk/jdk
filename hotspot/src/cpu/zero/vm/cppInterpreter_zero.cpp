@@ -816,7 +816,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
   // If G1 is not enabled then attempt to go through the normal entry point
   // Reference.get could be instrumented by jvmti
-  return generate_normal_entry(false);
+  return NULL;
 }
 
 address InterpreterGenerator::generate_native_entry(bool synchronized) {

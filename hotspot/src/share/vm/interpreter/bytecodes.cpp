@@ -542,8 +542,7 @@ void Bytecodes::initialize() {
           Code code = cast(i);
           Code java = java_code(code);
           if (can_trap(code) && !can_trap(java))
-            fatal(err_msg("%s can trap => %s can trap, too", name(code),
-                          name(java)));
+            fatal("%s can trap => %s can trap, too", name(code), name(java));
         }
       }
     }

@@ -26,7 +26,6 @@
 # @summary stress getObjectSize() API
 # @author Daniel D. Daugherty as modified from the code of fischman@google.com
 #
-# @modules java.instrument
 # @run build StressGetObjectSizeApp
 # @run shell MakeJAR.sh basicAgent
 # @run shell StressGetObjectSizeTest.sh

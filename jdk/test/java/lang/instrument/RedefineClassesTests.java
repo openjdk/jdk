@@ -27,7 +27,6 @@
  * @summary insure redefine is supported. exercise a class, then redefine it and do it again
  * @author Gabriel Adauto, Wily Technology
  *
- * @modules java.instrument
  * @run build RedefineClassesTests
  * @run shell RedefineSetUp.sh
  * @run shell MakeJAR.sh redefineAgent

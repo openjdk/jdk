@@ -29,7 +29,6 @@
 # @summary Unit tests for appendToBootstrapClassLoaderSearch and
 #   appendToSystemClasLoaderSearch methods.
 #
-# @modules java.instrument
 # @build Agent AgentSupport BootSupport BasicTest PrematureLoadTest DynamicTest
 # @run shell/timeout=240 run_tests.sh
 

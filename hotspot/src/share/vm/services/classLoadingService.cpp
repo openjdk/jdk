@@ -182,7 +182,7 @@ bool ClassLoadingService::set_verbose(bool verbose) {
 
   // verbose will be set to the previous value
   Flag::Error error = CommandLineFlags::boolAtPut("TraceClassLoading", &verbose, Flag::MANAGEMENT);
-  assert(error==Flag::SUCCESS, err_msg("Setting TraceClassLoading flag failed with error %s", Flag::flag_error_str(error)));
+  assert(error==Flag::SUCCESS, "Setting TraceClassLoading flag failed with error %s", Flag::flag_error_str(error));
   reset_trace_class_unloading();
 
   return verbose;
@@ -193,7 +193,7 @@ void ClassLoadingService::reset_trace_class_unloading() {
   assert(Management_lock->owned_by_self(), "Must own the Management_lock");
   bool value = MemoryService::get_verbose() || ClassLoadingService::get_verbose();
   Flag::Error error = CommandLineFlags::boolAtPut("TraceClassUnloading", &value, Flag::MANAGEMENT);
-  assert(error==Flag::SUCCESS, err_msg("Setting TraceClassUnLoading flag failed with error %s", Flag::flag_error_str(error)));
+  assert(error==Flag::SUCCESS, "Setting TraceClassUnLoading flag failed with error %s", Flag::flag_error_str(error));
 }
 
 GrowableArray<KlassHandle>* LoadedClassesEnumerator::_loaded_classes = NULL;

@@ -52,7 +52,6 @@ class BoolObjectClosure;
 
 class SharedGCInfo VALUE_OBJ_CLASS_SPEC {
  private:
-  GCId _gc_id;
   GCName _name;
   GCCause::Cause _cause;
   Ticks     _start_timestamp;
@@ -62,7 +61,6 @@ class SharedGCInfo VALUE_OBJ_CLASS_SPEC {
 
  public:
   SharedGCInfo(GCName name) :
-    _gc_id(GCId::undefined()),
     _name(name),
     _cause(GCCause::_last_gc_cause),
     _start_timestamp(),
@@ -70,9 +68,6 @@ class SharedGCInfo VALUE_OBJ_CLASS_SPEC {
     _sum_of_pauses(),
     _longest_pause() {
   }
-
-  void set_gc_id(GCId gc_id) { _gc_id = gc_id; }
-  const GCId& gc_id() const { return _gc_id; }
 
   void set_start_timestamp(const Ticks& timestamp) { _start_timestamp = timestamp; }
   const Ticks start_timestamp() const { return _start_timestamp; }
@@ -128,8 +123,6 @@ class GCTracer : public ResourceObj {
   void report_metaspace_summary(GCWhen::Type when, const MetaspaceSummary& metaspace_summary) const;
   void report_gc_reference_stats(const ReferenceProcessorStats& rp) const;
   void report_object_count_after_gc(BoolObjectClosure* object_filter) NOT_SERVICES_RETURN;
-  bool has_reported_gc_start() const;
-  const GCId& gc_id() { return _shared_gc_info.gc_id(); }
 
  protected:
   GCTracer(GCName name) : _shared_gc_info(name) {}
@@ -242,10 +235,10 @@ class ParNewTracer : public YoungGCTracer {
 
 #if INCLUDE_ALL_GCS
 class G1MMUTracer : public AllStatic {
-  static void send_g1_mmu_event(const GCId& gcId, double timeSlice, double gcTime, double maxTime);
+  static void send_g1_mmu_event(double timeSlice, double gcTime, double maxTime);
 
  public:
-  static void report_mmu(const GCId& gcId, double timeSlice, double gcTime, double maxTime);
+  static void report_mmu(double timeSlice, double gcTime, double maxTime);
 };
 
 class G1NewTracer : public YoungGCTracer {

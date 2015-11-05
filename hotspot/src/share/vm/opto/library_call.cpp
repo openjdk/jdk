@@ -133,7 +133,7 @@ class LibraryCallKit : public GraphKit {
 
  private:
   void fatal_unexpected_iid(vmIntrinsics::ID iid) {
-    fatal(err_msg_res("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid)));
+    fatal("unexpected intrinsic %d: %s", iid, vmIntrinsics::name_at(iid));
   }
 
   void  set_result(Node* n) { assert(_result == NULL, "only set once"); _result = n; }
@@ -222,7 +222,6 @@ class LibraryCallKit : public GraphKit {
   bool inline_math_negateExactL();
   bool inline_math_subtractExactI(bool is_decrement);
   bool inline_math_subtractExactL(bool is_decrement);
-  bool inline_exp();
   bool inline_pow();
   Node* finish_pow_exp(Node* result, Node* x, Node* y, const TypeFunc* call_type, address funcAddr, const char* funcName);
   bool inline_min_max(vmIntrinsics::ID id);
@@ -1535,20 +1534,6 @@ Node* LibraryCallKit::finish_pow_exp(Node* result, Node* x, Node* y, const TypeF
   }
 }
 
-//------------------------------inline_exp-------------------------------------
-// Inline exp instructions, if possible.  The Intel hardware only misses
-// really odd corner cases (+/- Infinity).  Just uncommon-trap them.
-bool LibraryCallKit::inline_exp() {
-  Node* arg = round_double_node(argument(0));
-  Node* n   = _gvn.transform(new ExpDNode(C, control(), arg));
-
-  n = finish_pow_exp(n, arg, NULL, OptoRuntime::Math_D_D_Type(), CAST_FROM_FN_PTR(address, SharedRuntime::dexp), "EXP");
-  set_result(n);
-
-  C->set_has_split_ifs(true); // Has chance for split-if optimization
-  return true;
-}
-
 //------------------------------inline_pow-------------------------------------
 // Inline power instructions, if possible.
 bool LibraryCallKit::inline_pow() {
@@ -1776,8 +1761,10 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   case vmIntrinsics::_dsqrt:  return Matcher::match_rule_supported(Op_SqrtD) ? inline_math(id) : false;
   case vmIntrinsics::_dabs:   return Matcher::has_match_rule(Op_AbsD)   ? inline_math(id) : false;
 
-  case vmIntrinsics::_dexp:   return Matcher::has_match_rule(Op_ExpD)   ? inline_exp()    :
-    runtime_math(OptoRuntime::Math_D_D_Type(),  FN_PTR(SharedRuntime::dexp),  "EXP");
+  case vmIntrinsics::_dexp:
+    return StubRoutines::dexp() != NULL ?
+      runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dexp(),  "dexp") :
+      runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dexp),  "EXP");
   case vmIntrinsics::_dpow:   return Matcher::has_match_rule(Op_PowD)   ? inline_pow()    :
     runtime_math(OptoRuntime::Math_DD_D_Type(), FN_PTR(SharedRuntime::dpow),  "POW");
 #undef FN_PTR
@@ -2466,7 +2453,7 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
         p = ConvX2UL(p);
         break;
       default:
-        fatal(err_msg_res("unexpected type %d: %s", type, type2name(type)));
+        fatal("unexpected type %d: %s", type, type2name(type));
         break;
       }
     }
@@ -2755,7 +2742,7 @@ bool LibraryCallKit::inline_unsafe_load_store(BasicType type, LoadStoreKind kind
     }
     break;
   default:
-    fatal(err_msg_res("unexpected type %d: %s", type, type2name(type)));
+    fatal("unexpected type %d: %s", type, type2name(type));
     break;
   }
 
@@ -3807,7 +3794,7 @@ Node* LibraryCallKit::generate_virtual_guard(Node* obj_klass,
   ciMethod* method = callee();
   int vtable_index = method->vtable_index();
   assert(vtable_index >= 0 || vtable_index == Method::nonvirtual_vtable_index,
-         err_msg_res("bad index %d", vtable_index));
+         "bad index %d", vtable_index);
   // Get the Method* out of the appropriate vtable entry.
   int entry_offset  = (InstanceKlass::vtable_start_offset() +
                      vtable_index*vtableEntry::size()) * wordSize +
@@ -3859,7 +3846,7 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
       // No need to use the linkResolver to get it.
        vtable_index = method->vtable_index();
        assert(vtable_index >= 0 || vtable_index == Method::nonvirtual_vtable_index,
-              err_msg_res("bad index %d", vtable_index));
+              "bad index %d", vtable_index);
     }
     slow_call = new CallDynamicJavaNode(tf,
                           SharedRuntime::get_resolve_virtual_call_stub(),
@@ -6131,7 +6118,7 @@ bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
     }
     break;
   default:
-    fatal(err_msg_res("unknown SHA intrinsic predicate: %d", predicate));
+    fatal("unknown SHA intrinsic predicate: %d", predicate);
   }
   if (klass_SHA_name != NULL) {
     // get DigestBase klass to lookup for SHA klass
@@ -6236,7 +6223,7 @@ Node* LibraryCallKit::inline_digestBase_implCompressMB_predicate(int predicate) 
     }
     break;
   default:
-    fatal(err_msg_res("unknown SHA intrinsic predicate: %d", predicate));
+    fatal("unknown SHA intrinsic predicate: %d", predicate);
   }
 
   ciKlass* klass_SHA = NULL;
