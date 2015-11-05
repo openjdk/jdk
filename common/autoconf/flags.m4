@@ -831,8 +831,6 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     JDKLIB_LIBS="-ljava -ljvm"
     if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
       JDKLIB_LIBS="$JDKLIB_LIBS -lc"
-    elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-      JDKLIB_LIBS="$JDKLIB_LIBS -liconv"
     fi
   fi
 
@@ -944,7 +942,16 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
   else
     AC_MSG_ERROR([--enable-warnings-as-errors accepts no argument])
   fi
+
+  if test "x$WARNINGS_AS_ERRORS" = "xfalse"; then
+    # Set legacy hotspot variable
+    HOTSPOT_SET_WARNINGS_AS_ERRORS=WARNINGS_ARE_ERRORS=
+  else
+    HOTSPOT_SET_WARNINGS_AS_ERRORS=
+  fi
+
   AC_SUBST(WARNINGS_AS_ERRORS)
+  AC_SUBST(HOTSPOT_SET_WARNINGS_AS_ERRORS)
 
   case "${TOOLCHAIN_TYPE}" in
     microsoft)
