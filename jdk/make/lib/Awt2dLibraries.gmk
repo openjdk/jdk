@@ -890,9 +890,9 @@ ifndef BUILD_HEADLESS_ONLY
       MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libsplashscreen/mapfile-vers, \
       LDFLAGS := $(LIBSPLASHSCREEN_LDFLAGS) $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LIBS := $(LIBSPLASHSCREEN_LIBS) $(LIBZ) \
+      LIBS := $(JDKLIB_LIBS) $(LIBSPLASHSCREEN_LIBS) $(LIBZ) \
                         $(GIFLIB_LIBS) $(LIBJPEG_LIBS) $(PNG_LIBS), \
-      LIBS_solaris := -lc, \
+      LIBS_aix := -liconv, \
       VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
       RC_FLAGS := $(RC_FLAGS) \
           -D "JDK_FNAME=splashscreen.dll" \

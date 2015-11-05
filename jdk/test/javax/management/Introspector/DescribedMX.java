@@ -25,7 +25,7 @@
  *
  * Used by AnnotationSecurityTest.java
  **/
-import java.beans.ConstructorProperties;
+import javax.management.ConstructorParameters;
 
 /**
  * An MXBean used by AnnotationSecurityTest.java
@@ -37,7 +37,7 @@ public class DescribedMX implements DescribedMXBean {
     public DescribedMX() {}
 
     @SqeDescriptorKey("ONE PARAMETER CONSTRUCTOR DescribedMX")
-    @ConstructorProperties({"name", "unused"})
+    @ConstructorParameters({"name", "unused"})
     public DescribedMX(@SqeDescriptorKey("CONSTRUCTOR PARAMETER name")String name,
             @SqeDescriptorKey("CONSTRUCTOR PARAMETER unused")String unused) {
         this.name = name ;

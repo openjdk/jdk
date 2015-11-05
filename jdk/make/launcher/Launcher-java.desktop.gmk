@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,8 @@ include LauncherCommon.gmk
 $(eval $(call IncludeCustomExtension, jdk, launcher/Launcher-java.desktop.gmk))
 
 ifndef BUILD_HEADLESS_ONLY
-  $(eval $(call SetupLauncher,appletviewer, \
-      -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.applet.Main"$(COMMA) }',, \
-      $(XLIBS)))
+  $(eval $(call SetupBuildLauncher, appletviewer, \
+      MAIN_CLASS := sun.applet.Main, \
+      LIBS_unix := $(X_LIBS), \
+  ))
 endif
-

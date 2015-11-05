@@ -27,7 +27,7 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
-include JavaCompilation.gmk
+include JarArchive.gmk
 
 
 ################################################################################
@@ -57,7 +57,7 @@ ifndef OPENJDK
 endif
 
 #
-# TODO fix so that SetupArchive does not write files into SRCS
+# TODO fix so that SetupJarArchive does not write files into SRCS
 # then we don't need this extra copying
 #
 # NOTE: We currently do not place restrictions on our limited export
@@ -76,13 +76,14 @@ $(US_EXPORT_POLICY_JAR_TMP)/%: $(US_EXPORT_POLICY_JAR_SRC_DIR)/%
 US_EXPORT_POLICY_JAR_DEPS := \
     $(US_EXPORT_POLICY_JAR_TMP)/default_US_export.policy
 
-$(eval $(call SetupArchive,BUILD_US_EXPORT_POLICY_JAR, \
+$(eval $(call SetupJarArchive, BUILD_US_EXPORT_POLICY_JAR, \
     DEPENDENCIES := $(US_EXPORT_POLICY_JAR_DEPS), \
     SRCS := $(US_EXPORT_POLICY_JAR_TMP), \
     SUFFIXES := .policy, \
     JAR := $(US_EXPORT_POLICY_JAR_UNLIMITED), \
     EXTRA_MANIFEST_ATTR := Crypto-Strength: unlimited, \
-    SKIP_METAINF := true))
+    SKIP_METAINF := true, \
+))
 
 $(US_EXPORT_POLICY_JAR_LIMITED): \
     $(US_EXPORT_POLICY_JAR_UNLIMITED)
@@ -122,7 +123,7 @@ LOCAL_POLICY_JAR_UNLIMITED := \
     $(SUPPORT_OUTPUTDIR)/jce/policy/unlimited/local_policy.jar
 
 #
-# TODO fix so that SetupArchive does not write files into SRCS
+# TODO fix so that SetupJarArchive does not write files into SRCS
 # then we don't need this extra copying
 #
 LOCAL_POLICY_JAR_LIMITED_TMP := \
@@ -138,22 +139,24 @@ $(LOCAL_POLICY_JAR_UNLIMITED_TMP)/%: \
     $(JDK_TOPDIR)/make/data/cryptopolicy/unlimited/%
 	$(install-file)
 
-$(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR_LIMITED, \
+$(eval $(call SetupJarArchive, BUILD_LOCAL_POLICY_JAR_LIMITED, \
     DEPENDENCIES := $(LOCAL_POLICY_JAR_LIMITED_TMP)/exempt_local.policy \
         $(LOCAL_POLICY_JAR_LIMITED_TMP)/default_local.policy, \
     SRCS := $(LOCAL_POLICY_JAR_LIMITED_TMP), \
     SUFFIXES := .policy, \
     JAR := $(LOCAL_POLICY_JAR_LIMITED), \
     EXTRA_MANIFEST_ATTR := Crypto-Strength: limited, \
-    SKIP_METAINF := true))
+    SKIP_METAINF := true, \
+))
 
-$(eval $(call SetupArchive,BUILD_LOCAL_POLICY_JAR_UNLIMITED, \
+$(eval $(call SetupJarArchive, BUILD_LOCAL_POLICY_JAR_UNLIMITED, \
     DEPENDENCIES := $(LOCAL_POLICY_JAR_UNLIMITED_TMP)/default_local.policy, \
     SRCS := $(LOCAL_POLICY_JAR_UNLIMITED_TMP), \
     SUFFIXES := .policy, \
     JAR := $(LOCAL_POLICY_JAR_UNLIMITED), \
     EXTRA_MANIFEST_ATTR := Crypto-Strength: unlimited, \
-    SKIP_METAINF := true))
+    SKIP_METAINF := true, \
+))
 
 TARGETS += $(LOCAL_POLICY_JAR_LIMITED) $(LOCAL_POLICY_JAR_UNLIMITED)
 
