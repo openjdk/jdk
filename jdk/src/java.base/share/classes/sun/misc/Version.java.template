@@ -98,7 +98,15 @@ public class Version {
 
         /* Second line: runtime version (ie, libraries). */
 
-        ps.print(java_runtime_name + " (build " + java_runtime_version);
+        String jdk_debug_level = System.getProperty("jdk.debug", "release");
+        /* Debug level is not printed for "release" builds */
+        if ("release".equals(jdk_debug_level)) {
+            jdk_debug_level = "";
+        } else {
+            jdk_debug_level = jdk_debug_level + " ";
+        }
+
+        ps.print(java_runtime_name + " (" + jdk_debug_level + "build " + java_runtime_version);
 
         if (java_runtime_name.indexOf("Embedded") != -1 && isHeadless) {
             // embedded builds report headless state
@@ -110,7 +118,7 @@ public class Version {
         String java_vm_name    = System.getProperty("java.vm.name");
         String java_vm_version = System.getProperty("java.vm.version");
         String java_vm_info    = System.getProperty("java.vm.info");
-        ps.println(java_vm_name + " (build " + java_vm_version + ", " +
+        ps.println(java_vm_name + " (" + jdk_debug_level + "build " + java_vm_version + ", " +
                    java_vm_info + ")");
     }
 
