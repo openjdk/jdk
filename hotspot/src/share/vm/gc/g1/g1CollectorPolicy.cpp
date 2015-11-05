@@ -1037,19 +1037,6 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
     _recent_avg_pause_time_ratio = _recent_gc_times_ms->sum()/interval_ms;
     if (recent_avg_pause_time_ratio() < 0.0 ||
         (recent_avg_pause_time_ratio() - 1.0 > 0.0)) {
-#ifndef PRODUCT
-      // Dump info to allow post-facto debugging
-      gclog_or_tty->print_cr("recent_avg_pause_time_ratio() out of bounds");
-      gclog_or_tty->print_cr("-------------------------------------------");
-      gclog_or_tty->print_cr("Recent GC Times (ms):");
-      _recent_gc_times_ms->dump();
-      gclog_or_tty->print_cr("(End Time=%3.3f) Recent GC End Times (s):", end_time_sec);
-      _recent_prev_end_times_for_all_gcs_sec->dump();
-      gclog_or_tty->print_cr("GC = %3.3f, Interval = %3.3f, Ratio = %3.3f",
-                             _recent_gc_times_ms->sum(), interval_ms, recent_avg_pause_time_ratio());
-      // In debug mode, terminate the JVM if the user wants to debug at this point.
-      assert(!G1FailOnFPError, "Debugging data for CR 6898948 has been dumped above");
-#endif  // !PRODUCT
       // Clip ratio between 0.0 and 1.0, and continue. This will be fixed in
       // CR 6902692 by redoing the manner in which the ratio is incrementally computed.
       if (_recent_avg_pause_time_ratio < 0.0) {
