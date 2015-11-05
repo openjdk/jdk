@@ -4262,9 +4262,6 @@ public:
              "Use the FP register for holding the frame pointer "           \
              "and not as a general purpose register.")                      \
                                                                             \
-  diagnostic(bool, StringCharIntrinsics, true,                              \
-             "Inline String*.getChar/putChar intrinsics.")                  \
-                                                                            \
   diagnostic(bool, CheckIntrinsics, true,                                   \
              "When a class C is loaded, check that "                        \
              "(1) all intrinsics defined by the VM for class C are present "\
