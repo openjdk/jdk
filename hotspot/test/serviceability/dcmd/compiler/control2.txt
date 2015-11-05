@@ -11,7 +11,7 @@
     },
     inline : [ "+javax/util.*", "-comx/sun.*"],
     PrintAssembly: false,
-    IGVPrintLevel: 2
+    MaxNodeLimit: 80001
   },
   {
     match: ["baz.*","frob.*"],     
