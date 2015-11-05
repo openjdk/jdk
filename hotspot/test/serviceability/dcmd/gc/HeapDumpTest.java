@@ -66,6 +66,7 @@ public class HeapDumpTest {
         String cmd = "GC.heap_dump " + heapDumpArgs + " " + dump.getAbsolutePath();
         executor.execute(cmd);
 
+        verifyHeapDump(dump);
         dump.delete();
     }
 
