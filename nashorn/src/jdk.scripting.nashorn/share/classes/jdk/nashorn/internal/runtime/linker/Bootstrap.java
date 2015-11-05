@@ -45,7 +45,6 @@ import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.linker.MethodTypeConversionStrategy;
 import jdk.internal.dynalink.linker.support.TypeUtilities;
-import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
