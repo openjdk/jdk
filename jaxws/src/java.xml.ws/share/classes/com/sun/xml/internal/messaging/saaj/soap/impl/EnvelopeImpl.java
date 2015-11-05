@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -248,10 +248,6 @@ public abstract class EnvelopeImpl extends ElementImpl implements LazyEnvelope {
         this.xmlDecl = value;
     }
 
-    private String getOmitXmlDecl() {
-        return this.omitXmlDecl;
-    }
-
     public void setCharsetEncoding(String value) {
         charset = value;
     }
@@ -309,7 +305,6 @@ public abstract class EnvelopeImpl extends ElementImpl implements LazyEnvelope {
         else {
             try {
                 // Run transform and generate FI output from content
-                Source source = getContent();
                 Transformer transformer = EfficientStreamingTransformer.newTransformer();
                     transformer.transform(getContent(),
                         FastInfosetReflection.FastInfosetResult_new(out));

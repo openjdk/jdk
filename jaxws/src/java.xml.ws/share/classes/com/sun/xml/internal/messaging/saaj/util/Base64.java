@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,6 @@ public final class Base64 {
     static private final int  TWENTYFOURBITGROUP = 24;
     static private final int  EIGHTBIT           = 8;
     static private final int  SIXTEENBIT         = 16;
-    static private final int  SIXBIT             = 6;
     static private final int  FOURBYTE           = 4;
 
 
@@ -244,7 +243,7 @@ public final class Base64 {
 
     public static String base64Decode( String orig ) {
         char chars[]=orig.toCharArray();
-        StringBuffer sb=new StringBuffer();
+        StringBuilder sb=new StringBuilder();
         int i=0;
 
         int shift = 0;   // # of excess bits stored in accum
