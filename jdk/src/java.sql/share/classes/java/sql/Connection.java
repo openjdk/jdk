@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1482,4 +1482,109 @@ throws SQLException;
      * @since 1.7
      */
     int getNetworkTimeout() throws SQLException;
+
+    // JDBC 4.3
+
+     /**
+     * Hints to the driver that a request, an independent unit of work, is beginning
+     * on this connection. Each request is independent of all other requests
+     * with regard to state local to the connection either on the client or the
+     * server. Work done between {@code beginRequest}, {@code endRequest}
+     * pairs does not depend on any other work done on the connection either as
+     * part of another request or outside of any request. A request may include multiple
+     * transactions. There may be dependencies on committed database state as
+     * that is not local to the connection.
+     * <p>
+     * Local state is defined as any state associated with a Connection that is
+     * local to the current Connection either in the client or the database that
+     * is not transparently reproducible.
+     * <p>
+     * Calls to {@code beginRequest} and {@code endRequest}  are not nested.
+     * Multiple calls to {@code beginRequest} without an intervening call
+     * to {@code endRequest} is not an error. The first {@code beginRequest} call
+     * marks the start of the request and subsequent calls are treated as
+     * a no-op
+     * <p>
+     * Use of {@code beginRequest} and {@code endRequest} is optional, vendor
+     * specific and should largely be transparent. In particular
+     * implementations may detect conditions that indicate dependence on
+     * other work such as an open transaction. It is recommended though not
+     * required that implementations throw a {@code SQLException} if there is an active
+     * transaction and {@code beginRequest} is called.
+     * Using these methods may improve performance or provide other benefits.
+     * Consult your vendors documentation for additional information.
+     * <p>
+     * It is recommended to
+     * enclose each unit of work in {@code beginRequest}, {@code endRequest}
+     * pairs such that there is no open transaction at the beginning or end of
+     * the request and no dependency on local state that crosses request
+     * boundaries. Committed database state is not local.
+     *
+     * @implSpec
+     * The default implementation is a no-op.
+     * <p>
+     * @apiNote
+     * This method is to be used by Connection pooling managers.
+     * <p>
+     * The pooling manager should call {@code beginRequest} on the underlying connection
+     * prior to returning a connection to the caller.
+     * <p>
+     * The pooling manager does not need to call {@code beginRequest} if:
+     * <ul>
+     * <li>The connection pool caches {@code PooledConnection} objects</li>
+     * <li>Returns a logical connection handle when {@code getConnection} is
+     * called by the application</li>
+     * <li>The pool manager calls {@code Connection.close} on the logical connection handle
+     * prior to returning the {@code PooledConnection} back to the cache</li>
+     * </ul>
+     * @throws SQLException if an error occurs
+     * @since 1.9
+     * @see endRequest
+     * @see PooledConnection
+     */
+    default void beginRequest() throws SQLException {
+       // Default method takes no action
+    }
+
+    /**
+     * Hints to the driver that a request, an independent unit of work,
+     * has completed. Calls to {@code beginRequest}
+     * and {@code endRequest} are not nested. Multiple
+     * calls to {@code endRequest} without an intervening call to {@code beginRequest}
+     * is not an error. The first {@code endRequest} call
+     * marks the request completed and subsequent calls are treated as
+     * a no-op. If {@code endRequest} is called without an initial call to
+     * {@code beginRequest} is a no-op.
+     *<p>
+     * The exact behavior of this method is vendor specific. In particular
+     * implementations may detect conditions that indicate dependence on
+     * other work such as an open transaction. It is recommended though not
+     * required that implementations throw a {@code SQLException} if there is an active
+     * transaction and {@code endRequest} is called.
+     *
+     * @implSpec
+     * The default implementation is a no-op.
+     * @apiNote
+     *
+     * This method is to be used by Connection pooling managers.
+     * <p>
+     * The pooling manager should call {@code endRequest} on the underlying connection
+     * when the applications returns the connection back to the connection pool.
+     * <p<
+     * The pooling manager does not need to call {@code endRequest} if:
+     * <ul>
+     * <li>The connection pool caches {@code PooledConnection} objects</li>
+     * <li>Returns a logical connection handle when {@code getConnection} is
+     * called by the application</li>
+     * <li>The pool manager calls {@code Connection.close} on the logical connection handle
+     * prior to returning the {@code PooledConnection} back to the cache</li>
+     * </ul>
+     * @throws SQLException if an error occurs
+     * @since 1.9
+     * @see beginRequest
+     * @see PooledConnection
+     */
+    default void endRequest() throws SQLException {
+            // Default method takes no action
+    }
 }
