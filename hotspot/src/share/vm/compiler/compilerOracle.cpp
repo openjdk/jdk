@@ -106,6 +106,7 @@ class TypedMethodOptionMatcher;
 
 static BasicMatcher* lists[OracleCommandCount] = { 0, };
 static TypedMethodOptionMatcher* option_list = NULL;
+static bool any_set = false;
 
 class TypedMethodOptionMatcher : public MethodMatcher {
  private:
@@ -292,6 +293,7 @@ static void add_option_string(TypedMethodOptionMatcher* matcher,
   matcher->init(option, get_type_for<T>(), option_list);
   matcher->set_value<T>(value);
   option_list = matcher;
+  any_set = true;
   return;
 }
 
@@ -308,7 +310,9 @@ static void add_predicate(OracleCommand command, BasicMatcher* bm) {
   }
   bm->set_next(lists[command]);
   lists[command] = bm;
-
+  if ((command != DontInlineCommand) && (command != InlineCommand)) {
+    any_set = true;
+  }
   return;
 }
 
@@ -324,6 +328,10 @@ bool CompilerOracle::has_option_value(methodHandle method, const char* option, T
   return false;
 }
 
+bool CompilerOracle::has_any_option() {
+  return any_set;
+}
+
 // Explicit instantiation for all OptionTypes supported.
 template bool CompilerOracle::has_option_value<intx>(methodHandle method, const char* option, intx& value);
 template bool CompilerOracle::has_option_value<uintx>(methodHandle method, const char* option, uintx& value);
@@ -337,15 +345,10 @@ bool CompilerOracle::has_option_string(methodHandle method, const char* option) 
   return value;
 }
 
-bool CompilerOracle::should_exclude(methodHandle method, bool& quietly) {
-  quietly = true;
-  if (lists[ExcludeCommand] != NULL) {
-    if (lists[ExcludeCommand]->match(method)) {
-      quietly = _quiet;
-      return true;
-    }
+bool CompilerOracle::should_exclude(methodHandle method) {
+  if (check_predicate(ExcludeCommand, method)) {
+    return true;
   }
-
   if (lists[CompileOnlyCommand] != NULL) {
     return !lists[CompileOnlyCommand]->match(method);
   }
@@ -356,8 +359,6 @@ bool CompilerOracle::should_inline(methodHandle method) {
   return (check_predicate(InlineCommand, method));
 }
 
-// Check both DontInlineCommand and ExcludeCommand here
-// - consistent behavior for all compilers
 bool CompilerOracle::should_not_inline(methodHandle method) {
   return check_predicate(DontInlineCommand, method) || check_predicate(ExcludeCommand, method);
 }

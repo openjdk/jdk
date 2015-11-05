@@ -9870,21 +9870,6 @@ instruct log10D_reg(regD dst) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct logD_reg(regD dst) %{
-  // The source and result Double operands in XMM registers
-  match(Set dst (LogD dst));
-  // fldln2       ; push log_e(2) on the FPU stack; full 80-bit number
-  // fyl2x        ; compute log_e(2) * log_2(x)
-  format %{ "fldln2\t\t\t#Log_e\n\t"
-            "fyl2x\t\t\t# Q=Log_e*Log_2(x)\n\t"
-         %}
-  ins_encode( Opcode(0xD9), Opcode(0xED),   // fldln2
-              Push_SrcXD(dst),
-              Opcode(0xD9), Opcode(0xF1),   // fyl2x
-              Push_ResultXD(dst));
-  ins_pipe( pipe_slow );
-%}
-
 instruct powD_reg(regD dst, regD src0, regD src1, rax_RegI rax, rdx_RegI rdx, rcx_RegI rcx, rFlagsReg cr) %{
   match(Set dst (PowD src0 src1));  // Raise src0 to the src1'th power
   effect(KILL rax, KILL rdx, KILL rcx, KILL cr);

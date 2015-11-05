@@ -3667,6 +3667,9 @@ public:
   product(ccstr, CompileCommandFile, NULL,                                  \
           "Read compiler commands from this file [.hotspot_compiler]")      \
                                                                             \
+  diagnostic(ccstr, CompilerDirectivesFile, NULL,                           \
+          "Read compiler directives from this file")                        \
+                                                                            \
   product(ccstrlist, CompileCommand, "",                                    \
           "Prepend to .hotspot_compiler; e.g. log,java/lang/String.<init>") \
                                                                             \
@@ -4267,7 +4270,13 @@ public:
              "(3) no orphan methods exist for class C (i.e., methods for "  \
              "which the VM declares an intrinsic but that are not declared "\
              "in the loaded class C. "                                      \
-             "Check (3) is available only in debug builds.")
+             "Check (3) is available only in debug builds.")                \
+                                                                            \
+  diagnostic(bool, CompilerDirectivesIgnoreCompileCommands, false,          \
+             "Disable backwards compatibility for compile commands.")       \
+                                                                            \
+  diagnostic(bool, PrintCompilerDirectives, false,                          \
+             "Print compiler directives on installation.")
 
 /*
  *  Macros for factoring of globals

@@ -29,6 +29,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 /**
  * This class represents a signature of the method
@@ -66,7 +67,8 @@ public class SignatureType extends MethodElementType {
         if (element.isEmpty()) {
             setPattern(MethodDescriptor.PatternType.ANY);
         } else {
-            super.setElement(element);
+            this.element = element;
+            this.regexp = element;
         }
     }
 
@@ -147,5 +149,13 @@ public class SignatureType extends MethodElementType {
                 throw new IllegalArgumentException("ERROR: wrong pattern type "
                         + patternType);
         }
+    }
+
+    @Override
+    public String getRegexp() {
+        if ("\\(.*\\).*".equals(regexp)) {
+            return regexp;
+        }
+        return Pattern.quote(regexp);
     }
 }

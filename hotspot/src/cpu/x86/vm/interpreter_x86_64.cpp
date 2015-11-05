@@ -253,6 +253,9 @@ address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKin
   } else if (kind == Interpreter::java_lang_math_exp) {
     __ movdbl(xmm0, Address(rsp, wordSize));
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dexp())));
+  } else if (kind == Interpreter::java_lang_math_log) {
+    __ movdbl(xmm0, Address(rsp, wordSize));
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, StubRoutines::dlog())));
   } else {
     __ fld_d(Address(rsp, wordSize));
     switch (kind) {
@@ -267,9 +270,6 @@ address InterpreterGenerator::generate_math_entry(AbstractInterpreter::MethodKin
           break;
       case Interpreter::java_lang_math_abs:
           __ fabs();
-          break;
-      case Interpreter::java_lang_math_log:
-          __ flog();
           break;
       case Interpreter::java_lang_math_log10:
           __ flog10();
