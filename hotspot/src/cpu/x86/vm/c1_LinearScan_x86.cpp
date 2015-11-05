@@ -786,7 +786,6 @@ void FpuStackAllocator::handle_op2(LIR_Op2* op2) {
       break;
     }
 
-    case lir_log:
     case lir_log10: {
       // log and log10 need one temporary fpu stack slot, so
       // there is one temporary registers stored in temp of the

@@ -551,14 +551,20 @@ WB_ENTRY(jboolean, WB_IsIntrinsicAvailable(JNIEnv* env, jobject o, jobject metho
   method_id = reflected_method_to_jmid(thread, env, method);
   CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
   methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(method_id));
+
+  DirectiveSet* directive;
   if (compilation_context != NULL) {
     compilation_context_id = reflected_method_to_jmid(thread, env, compilation_context);
     CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
     methodHandle cch(THREAD, Method::checked_resolve_jmethod_id(compilation_context_id));
-    return CompileBroker::compiler(compLevel)->is_intrinsic_available(mh, cch);
+    directive = DirectivesStack::getMatchingDirective(cch, CompileBroker::compiler((int)compLevel));
   } else {
-    return CompileBroker::compiler(compLevel)->is_intrinsic_available(mh, NULL);
+    // Calling with NULL matches default directive
+    directive = DirectivesStack::getDefaultDirective(CompileBroker::compiler((int)compLevel));
   }
+  bool result = CompileBroker::compiler(compLevel)->is_intrinsic_available(mh, directive);
+  DirectivesStack::release(directive);
+  return result;
 WB_END
 
 WB_ENTRY(jint, WB_GetMethodCompilationLevel(JNIEnv* env, jobject o, jobject method, jboolean is_osr))
@@ -624,6 +630,47 @@ WB_ENTRY(jboolean, WB_EnqueueMethodForCompilation(JNIEnv* env, jobject o, jobjec
   return (mh->queued_for_compilation() || nm != NULL);
 WB_END
 
+WB_ENTRY(jboolean, WB_ShouldPrintAssembly(JNIEnv* env, jobject o, jobject method))
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
+
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+  DirectiveSet* directive = DirectivesStack::getMatchingDirective(mh, CompileBroker::compiler(CompLevel_simple));
+  bool result = directive->PrintAssemblyOption;
+  DirectivesStack::release(directive);
+
+  return result;
+WB_END
+
+WB_ENTRY(jint, WB_MatchesInline(JNIEnv* env, jobject o, jobject method, jstring pattern))
+  jmethodID jmid = reflected_method_to_jmid(thread, env, method);
+  CHECK_JNI_EXCEPTION_(env, JNI_FALSE);
+
+  methodHandle mh(THREAD, Method::checked_resolve_jmethod_id(jmid));
+
+  ResourceMark rm;
+  const char* error_msg = NULL;
+  char* method_str = java_lang_String::as_utf8_string(JNIHandles::resolve_non_null(pattern));
+  InlineMatcher* m = InlineMatcher::parse_inline_pattern(method_str, error_msg);
+
+  if (m == NULL) {
+    assert(error_msg != NULL, "Always have an error message");
+    tty->print_cr("Got error: %s", error_msg);
+    return -1; // Pattern failed
+  }
+
+  // Pattern works - now check if it matches
+  int result;
+  if (m->match(mh, InlineMatcher::force_inline)) {
+    result = 2; // Force inline match
+  } else if (m->match(mh, InlineMatcher::dont_inline)) {
+    result = 1; // Dont inline match
+  } else {
+    result = 0; // No match
+  }
+  delete m;
+  return result;
+WB_END
 
 WB_ENTRY(jint, WB_MatchesMethod(JNIEnv* env, jobject o, jobject method, jstring pattern))
   jmethodID jmid = reflected_method_to_jmid(thread, env, method);
@@ -1475,6 +1522,13 @@ static JNINativeMethod methods[] = {
   {CC"matchesMethod",
       CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)I",
                                                       (void*)&WB_MatchesMethod},
+  {CC"matchesInline",
+      CC"(Ljava/lang/reflect/Executable;Ljava/lang/String;)I",
+                                                      (void*)&WB_MatchesInline},
+  {CC"shouldPrintAssembly",
+        CC"(Ljava/lang/reflect/Executable;)Z",
+                                                        (void*)&WB_ShouldPrintAssembly},
+
   {CC"isConstantVMFlag",   CC"(Ljava/lang/String;)Z", (void*)&WB_IsConstantVMFlag},
   {CC"isLockedVMFlag",     CC"(Ljava/lang/String;)Z", (void*)&WB_IsLockedVMFlag},
   {CC"setBooleanVMFlag",   CC"(Ljava/lang/String;Z)V",(void*)&WB_SetBooleanVMFlag},
