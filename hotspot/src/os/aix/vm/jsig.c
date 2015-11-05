@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,26 +36,23 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #define bool int
 #define true 1
 #define false 0
 
-// Highest so far on AIX 5.2 is SIGSAK (63)
-#define MAXSIGNUM 63
-#define MASK(sig) ((unsigned int)1 << sig)
+static struct sigaction sact[NSIG]; /* saved signal handlers */
+static sigset_t jvmsigs; /* Signals used by jvm. */
 
-static struct sigaction sact[MAXSIGNUM]; /* saved signal handlers */
-static unsigned int jvmsigs = 0; /* signals used by jvm */
-
-/* used to synchronize the installation of signal handlers */
+/* Used to synchronize the installation of signal handlers. */
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 static pthread_t tid = 0;
 
 typedef void (*sa_handler_t)(int);
 typedef void (*sa_sigaction_t)(int, siginfo_t *, void *);
-// signal_t is already defined on AIX
+// signal_t is already defined on AIX.
 typedef sa_handler_t (*signal_like_function_t)(int, sa_handler_t);
 typedef int (*sigaction_t)(int, const struct sigaction *, struct sigaction *);
 
@@ -68,7 +65,7 @@ static bool jvm_signal_installed = false;
 static void signal_lock() {
   pthread_mutex_lock(&mutex);
   /* When the jvm is installing its set of signal handlers, threads
-   * other than the jvm thread should wait */
+   * other than the jvm thread should wait. */
   if (jvm_signal_installing) {
     if (tid != pthread_self()) {
       pthread_cond_wait(&cond, &mutex);
@@ -84,10 +81,10 @@ static sa_handler_t call_os_signal(int sig, sa_handler_t disp,
                                    bool is_sigset) {
   if (os_signal == NULL) {
     if (!is_sigset) {
-      // Aix: call functions directly instead of dlsym'ing them
+      // Aix: call functions directly instead of dlsym'ing them.
       os_signal = signal;
     } else {
-      // Aix: call functions directly instead of dlsym'ing them
+      // Aix: call functions directly instead of dlsym'ing them.
       os_signal = sigset;
     }
     if (os_signal == NULL) {
@@ -112,7 +109,7 @@ static sa_handler_t set_signal(int sig, sa_handler_t disp, bool is_sigset) {
 
   signal_lock();
 
-  sigused = (MASK(sig) & jvmsigs) != 0;
+  sigused = sigismember(&jvmsigs, sig);
   if (jvm_signal_installed && sigused) {
     /* jvm has installed its signal handler for this signal. */
     /* Save the handler. Don't really install it. */
@@ -129,7 +126,7 @@ static sa_handler_t set_signal(int sig, sa_handler_t disp, bool is_sigset) {
     save_signal_handler(sig, oldhandler);
 
     /* Record the signals used by jvm */
-    jvmsigs |= MASK(sig);
+    sigaddset(&jvmsigs, sig);
 
     signal_unlock();
     return oldhandler;
@@ -149,12 +146,12 @@ sa_handler_t signal(int sig, sa_handler_t disp) {
 
 sa_handler_t sigset(int sig, sa_handler_t disp) {
   return set_signal(sig, disp, true);
- }
+}
 
 static int call_os_sigaction(int sig, const struct sigaction  *act,
                              struct sigaction *oact) {
   if (os_sigaction == NULL) {
-    // Aix: call functions directly instead of dlsym'ing them
+    // Aix: call functions directly instead of dlsym'ing them.
     os_sigaction = sigaction;
     if (os_sigaction == NULL) {
       printf("%s\n", dlerror());
@@ -171,7 +168,7 @@ int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
 
   signal_lock();
 
-  sigused = (MASK(sig) & jvmsigs) != 0;
+  sigused = sigismember(&jvmsigs, sig);
   if (jvm_signal_installed && sigused) {
     /* jvm has installed its signal handler for this signal. */
     /* Save the handler. Don't really install it. */
@@ -193,8 +190,8 @@ int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
       *oact = oldAct;
     }
 
-    /* Record the signals used by jvm */
-    jvmsigs |= MASK(sig);
+    /* Record the signals used by jvm. */
+    sigaddset(&jvmsigs, sig);
 
     signal_unlock();
     return res;
@@ -208,9 +205,10 @@ int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
   }
 }
 
-/* The three functions for the jvm to call into */
+/* The three functions for the jvm to call into. */
 void JVM_begin_signal_setting() {
   signal_lock();
+  sigemptyset(&jvmsigs);
   jvm_signal_installing = true;
   tid = pthread_self();
   signal_unlock();
@@ -226,7 +224,7 @@ void JVM_end_signal_setting() {
 
 struct sigaction *JVM_get_signal_action(int sig) {
   /* Does race condition make sense here? */
-  if ((MASK(sig) & jvmsigs) != 0) {
+  if (sigismember(&jvmsigs, sig)) {
     return &sact[sig];
   }
   return NULL;
