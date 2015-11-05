@@ -238,7 +238,7 @@ bool Compiler::is_intrinsic_supported(const methodHandle& method) {
   return true;
 }
 
-void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci) {
+void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci, DirectiveSet* directive) {
   BufferBlob* buffer_blob = CompilerThread::current()->get_buffer_blob();
   assert(buffer_blob != NULL, "Must exist");
   // invoke compilation
@@ -247,7 +247,7 @@ void Compiler::compile_method(ciEnv* env, ciMethod* method, int entry_bci) {
     // of Compilation to occur before we release the any
     // competing compiler thread
     ResourceMark rm;
-    Compilation c(this, env, method, entry_bci, buffer_blob);
+    Compilation c(this, env, method, entry_bci, buffer_blob, directive);
   }
 }
 

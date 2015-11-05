@@ -153,8 +153,13 @@ class PhiResolver: public CompilationResourceObj {
 
 // only the classes below belong in the same file
 class LIRGenerator: public InstructionVisitor, public BlockClosure {
-
+ // LIRGenerator should never get instatiated on the heap.
  private:
+  void* operator new(size_t size) throw();
+  void* operator new[](size_t size) throw();
+  void operator delete(void* p);
+  void operator delete[](void* p);
+
   Compilation*  _compilation;
   ciMethod*     _method;    // method that we are compiling
   PhiResolverState  _resolver_state;
@@ -244,7 +249,7 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void do_getClass(Intrinsic* x);
   void do_currentThread(Intrinsic* x);
   void do_MathIntrinsic(Intrinsic* x);
-  void do_ExpIntrinsic(Intrinsic* x);
+  void do_LibmIntrinsic(Intrinsic* x);
   void do_ArrayCopy(Intrinsic* x);
   void do_CompareAndSwap(Intrinsic* x, ValueType* type);
   void do_NIOCheckIndex(Intrinsic* x);

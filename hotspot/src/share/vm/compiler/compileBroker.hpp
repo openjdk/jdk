@@ -28,8 +28,10 @@
 #include "ci/compilerInterface.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileTask.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "runtime/perfData.hpp"
 #include "trace/tracing.hpp"
+#include "utilities/stack.hpp"
 
 class nmethod;
 class nmethodLocker;
@@ -129,13 +131,12 @@ public:
   ~CompileTaskWrapper();
 };
 
-
 // Compilation
 //
 // The broker for all compilation requests.
 class CompileBroker: AllStatic {
  friend class Threads;
-  friend class CompileTaskWrapper;
+ friend class CompileTaskWrapper;
 
  public:
   enum {
@@ -222,15 +223,15 @@ class CompileBroker: AllStatic {
   static bool is_compile_blocking();
   static void preload_classes          (const methodHandle& method, TRAPS);
 
-  static CompileTask* create_compile_task(CompileQueue* queue,
-                                          int           compile_id,
-                                          const methodHandle&  method,
-                                          int           osr_bci,
-                                          int           comp_level,
-                                          const methodHandle&  hot_method,
-                                          int           hot_count,
-                                          const char*   comment,
-                                          bool          blocking);
+  static CompileTask* create_compile_task(CompileQueue*       queue,
+                                          int                 compile_id,
+                                          const methodHandle& method,
+                                          int                 osr_bci,
+                                          int                 comp_level,
+                                          const methodHandle& hot_method,
+                                          int                 hot_count,
+                                          const char*         comment,
+                                          bool                blocking);
   static void wait_for_completion(CompileTask* task);
 
   static void invoke_compiler_on_method(CompileTask* task);
@@ -238,7 +239,6 @@ class CompileBroker: AllStatic {
   static void set_last_compile(CompilerThread *thread, const methodHandle& method, bool is_osr, int comp_level);
   static void push_jni_handle_block();
   static void pop_jni_handle_block();
-  static bool check_break_at(const methodHandle& method, int compile_id, bool is_osr);
   static void collect_statistics(CompilerThread* thread, elapsedTimer time, CompileTask* task);
 
   static void compile_method_base(const methodHandle& method,
@@ -253,7 +253,11 @@ class CompileBroker: AllStatic {
   static bool init_compiler_runtime();
   static void shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread);
 
- public:
+public:
+
+  static DirectivesStack* dirstack();
+  static void set_dirstack(DirectivesStack* stack);
+
   enum {
     // The entry bci used for non-OSR compilations.
     standard_entry_bci = InvocationEntryBci
@@ -267,6 +271,7 @@ class CompileBroker: AllStatic {
 
   static bool compilation_is_in_queue(const methodHandle& method);
   static void print_compile_queues(outputStream* st);
+  static void print_directives(outputStream* st);
   static int queue_size(int comp_level) {
     CompileQueue *q = compile_queue(comp_level);
     return q != NULL ? q->size() : 0;
