@@ -1540,7 +1540,7 @@ throws SQLException;
      * @throws SQLException if an error occurs
      * @since 1.9
      * @see endRequest
-     * @see PooledConnection
+     * @see javax.sql.PooledConnection
      */
     default void beginRequest() throws SQLException {
        // Default method takes no action
@@ -1570,7 +1570,7 @@ throws SQLException;
      * <p>
      * The pooling manager should call {@code endRequest} on the underlying connection
      * when the applications returns the connection back to the connection pool.
-     * <p<
+     * <p>
      * The pooling manager does not need to call {@code endRequest} if:
      * <ul>
      * <li>The connection pool caches {@code PooledConnection} objects</li>
@@ -1582,7 +1582,7 @@ throws SQLException;
      * @throws SQLException if an error occurs
      * @since 1.9
      * @see beginRequest
-     * @see PooledConnection
+     * @see javax.sql.PooledConnection
      */
     default void endRequest() throws SQLException {
             // Default method takes no action
