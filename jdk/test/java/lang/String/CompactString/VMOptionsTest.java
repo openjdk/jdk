@@ -39,7 +39,6 @@ import static org.testng.Assert.*;
  *          COMPACT_STRINGS field in String class.
  * @run testng/othervm -XX:+CompactStrings -DCompactStringEnabled=true VMOptionsTest
  * @run testng/othervm -XX:-CompactStrings -DCompactStringEnabled=false VMOptionsTest
- * @run testng/othervm -DCompactStringEnabled=true VMOptionsTest
  */
 
 public class VMOptionsTest {
