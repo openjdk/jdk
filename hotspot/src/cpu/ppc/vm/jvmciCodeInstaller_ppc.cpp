@@ -29,16 +29,16 @@
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_ppc.inline.hpp"
 
-jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, oop method) {
+jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, Handle method, TRAPS) {
   Unimplemented();
   return 0;
 }
 
-void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle& constant) {
+void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle constant, TRAPS) {
   Unimplemented();
 }
 
-void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle& constant) {
+void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle constant, TRAPS) {
   Unimplemented();
 }
 
@@ -46,20 +46,20 @@ void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset
   Unimplemented();
 }
 
-void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination) {
+void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination, TRAPS) {
   Unimplemented();
 }
 
-void CodeInstaller::pd_relocate_JavaMethod(oop hotspot_method, jint pc_offset) {
+void CodeInstaller::pd_relocate_JavaMethod(Handle hotspot_method, jint pc_offset, TRAPS) {
   Unimplemented();
 }
 
-void CodeInstaller::pd_relocate_poll(address pc, jint mark) {
+void CodeInstaller::pd_relocate_poll(address pc, jint mark, TRAPS) {
   Unimplemented();
 }
 
 // convert JVMCI register indices (as used in oop maps) to HotSpot registers
-VMReg CodeInstaller::get_hotspot_reg(jint jvmci_reg) {
+VMReg CodeInstaller::get_hotspot_reg(jint jvmci_reg, TRAPS) {
   return NULL;
 }
 

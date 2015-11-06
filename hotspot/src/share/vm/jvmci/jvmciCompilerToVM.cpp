@@ -670,7 +670,7 @@ C2V_VMENTRY(jint, installCode, (JNIEnv *jniEnv, jobject, jobject target, jobject
 
   TraceTime install_time("installCode", JVMCICompiler::codeInstallTimer());
   CodeInstaller installer;
-  JVMCIEnv::CodeInstallResult result = installer.install(compiler, target_handle, compiled_code_handle, cb, installed_code_handle, speculation_log_handle);
+  JVMCIEnv::CodeInstallResult result = installer.install(compiler, target_handle, compiled_code_handle, cb, installed_code_handle, speculation_log_handle, CHECK_0);
 
   if (PrintCodeCacheOnCompilation) {
     stringStream s;
@@ -726,7 +726,7 @@ C2V_VMENTRY(jint, getMetadata, (JNIEnv *jniEnv, jobject, jobject target, jobject
   CodeBlob *cb = NULL;
   CodeInstaller installer;
 
-  JVMCIEnv::CodeInstallResult result = installer.gather_metadata(target_handle, compiled_code_handle, code_metadata); //cb, pc_descs, nr_pc_descs, scopes_descs, scopes_size, reloc_buffer);
+  JVMCIEnv::CodeInstallResult result = installer.gather_metadata(target_handle, compiled_code_handle, code_metadata, CHECK_0); //cb, pc_descs, nr_pc_descs, scopes_descs, scopes_size, reloc_buffer);
   if (result != JVMCIEnv::ok) {
     return result;
   }
