@@ -104,7 +104,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
      * A cache of the last value returned by toString. Cleared
      * whenever the StringBuffer is modified.
      */
-    private transient char[] toStringCache;
+    private transient String toStringCache;
 
     /** use serialVersionUID from JDK 1.0.2 for interoperability */
     static final long serialVersionUID = 3388685877147921107L;
@@ -169,15 +169,13 @@ import jdk.internal.HotSpotIntrinsicCandidate;
 
     @Override
     public synchronized int capacity() {
-        return value.length;
+        return super.capacity();
     }
 
 
     @Override
     public synchronized void ensureCapacity(int minimumCapacity) {
-        if (minimumCapacity > value.length) {
-            expandCapacity(minimumCapacity);
-        }
+        super.ensureCapacity(minimumCapacity);
     }
 
     /**
@@ -204,9 +202,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
      */
     @Override
     public synchronized char charAt(int index) {
-        if ((index < 0) || (index >= count))
-            throw new StringIndexOutOfBoundsException(index);
-        return value[index];
+        return super.charAt(index);
     }
 
     /**
@@ -261,10 +257,8 @@ import jdk.internal.HotSpotIntrinsicCandidate;
      */
     @Override
     public synchronized void setCharAt(int index, char ch) {
-        if ((index < 0) || (index >= count))
-            throw new StringIndexOutOfBoundsException(index);
         toStringCache = null;
-        value[index] = ch;
+        super.setCharAt(index, ch);
     }
 
     @Override
@@ -680,9 +674,11 @@ import jdk.internal.HotSpotIntrinsicCandidate;
     @HotSpotIntrinsicCandidate
     public synchronized String toString() {
         if (toStringCache == null) {
-            toStringCache = Arrays.copyOfRange(value, 0, count);
+            return toStringCache =
+                    isLatin1() ? StringLatin1.newString(value, 0, count)
+                               : StringUTF16.newString(value, 0, count);
         }
-        return new String(toStringCache, true);
+        return new String(toStringCache);
     }
 
     /**
@@ -710,7 +706,13 @@ import jdk.internal.HotSpotIntrinsicCandidate;
     private synchronized void writeObject(java.io.ObjectOutputStream s)
         throws java.io.IOException {
         java.io.ObjectOutputStream.PutField fields = s.putFields();
-        fields.put("value", value);
+        char[] val = new char[capacity()];
+        if (isLatin1()) {
+            StringLatin1.getChars(value, 0, count, val, 0);
+        } else {
+            StringUTF16.getChars(value, 0, count, val, 0);
+        }
+        fields.put("value", val);
         fields.put("count", count);
         fields.put("shared", false);
         s.writeFields();
@@ -723,7 +725,12 @@ import jdk.internal.HotSpotIntrinsicCandidate;
     private void readObject(java.io.ObjectInputStream s)
         throws java.io.IOException, ClassNotFoundException {
         java.io.ObjectInputStream.GetField fields = s.readFields();
-        value = (char[])fields.get("value", null);
+        char[] val = (char[])fields.get("value", null);
+        initBytes(val, 0, val.length);
         count = fields.get("count", 0);
+    }
+
+    protected synchronized void getBytes(byte dst[], int dstBegin, byte coder) {
+        super.getBytes(dst, dstBegin, coder);
     }
 }

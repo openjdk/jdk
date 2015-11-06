@@ -48,11 +48,11 @@ public class $NAME_CLZ$ extends Charset implements HistoricallyNamedCharset
     }
 
     public CharsetDecoder newDecoder() {
-        return new SingleByte.Decoder(this, b2c);
+        return new SingleByte.Decoder(this, b2c, $ASCIICOMPATIBLE$);
     }
 
     public CharsetEncoder newEncoder() {
-        return new SingleByte.Encoder(this, c2b, c2bIndex);
+        return new SingleByte.Encoder(this, c2b, c2bIndex, $ASCIICOMPATIBLE$);
     }
 
     private final static String b2cTable = $B2CTABLE$
