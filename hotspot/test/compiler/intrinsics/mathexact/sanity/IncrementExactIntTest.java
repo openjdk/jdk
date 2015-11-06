@@ -23,8 +23,7 @@
 
 /*
  * @test
- * @library /testlibrary /../../test/lib /compiler/whitebox
- *          /compiler/testlibrary
+ * @library /testlibrary /../../test/lib / /compiler/testlibrary
  * @modules java.base/sun.misc
  *          java.management
  * @build IncrementExactIntTest
