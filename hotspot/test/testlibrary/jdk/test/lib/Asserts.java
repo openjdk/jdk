@@ -41,7 +41,10 @@ package jdk.test.lib;
  * multiple times, then the line number won't provide enough context to
  * understand the failure.
  * </pre>
+ * @deprecated This class is deprecated. Use the one from
+ *             {@code <root>/test/lib/share/classes/jdk/test/lib}
  */
+@Deprecated
 public class Asserts {
 
     /**

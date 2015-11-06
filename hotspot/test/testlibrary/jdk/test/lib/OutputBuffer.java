@@ -23,6 +23,11 @@
 
 package jdk.test.lib;
 
+/**
+ * @deprecated This class is deprecated. Use the one from
+ *             {@code <root>/test/lib/share/classes/jdk/test/lib/process}
+ */
+@Deprecated
 public class OutputBuffer {
   private final String stdout;
   private final String stderr;

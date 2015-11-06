@@ -31,6 +31,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * @deprecated This class is deprecated. Use the one from
+ *             {@code <root>/test/lib/share/classes/jdk/test/lib/process}
+ */
+@Deprecated
 public final class ProcessTools {
 
   private ProcessTools() {

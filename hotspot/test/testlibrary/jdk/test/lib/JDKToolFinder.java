@@ -27,6 +27,11 @@ import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+/**
+ * @deprecated This class is deprecated. Use the one from
+ *             {@code <root>/test/lib/share/classes/jdk/test/lib}
+ */
+@Deprecated
 public final class JDKToolFinder {
 
     private JDKToolFinder() {
