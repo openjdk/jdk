@@ -33,6 +33,7 @@ enum FlagType {
   intxFlag,
   doubleFlag,
   ccstrFlag,
+  ccstrlistFlag,
   UnknownFlagType
 };
 
@@ -41,6 +42,7 @@ static const char* flag_type_names[] = {
     "int",
     "double",
     "string",
+    "string list",
     "unknown"
 };
 

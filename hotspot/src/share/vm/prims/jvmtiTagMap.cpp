@@ -1057,21 +1057,36 @@ static jint invoke_string_value_callback(jvmtiStringPrimitiveValueCallback cb,
   // get the string value and length
   // (string value may be offset from the base)
   int s_len = java_lang_String::length(str);
-  int s_offset = java_lang_String::offset(str);
+  bool is_latin1 = java_lang_String::is_latin1(str);
   jchar* value;
   if (s_len > 0) {
-    value = s_value->char_at_addr(s_offset);
+    if (!is_latin1) {
+      value = s_value->char_at_addr(0);
+    } else {
+      // Inflate latin1 encoded string to UTF16
+      jchar* buf = NEW_C_HEAP_ARRAY(jchar, s_len, mtInternal);
+      for (int i = 0; i < s_len; i++) {
+        buf[i] = ((jchar) s_value->byte_at(i)) & 0xff;
+      }
+      value = &buf[0];
+    }
   } else {
+    // Don't use char_at_addr(0) if length is 0
     value = (jchar*) s_value->base(T_CHAR);
   }
 
   // invoke the callback
-  return (*cb)(wrapper->klass_tag(),
-               wrapper->obj_size(),
-               wrapper->obj_tag_p(),
-               value,
-               (jint)s_len,
-               user_data);
+  jint res = (*cb)(wrapper->klass_tag(),
+                   wrapper->obj_size(),
+                   wrapper->obj_tag_p(),
+                   value,
+                   (jint)s_len,
+                   user_data);
+
+  if (is_latin1 && s_len > 0) {
+    FREE_C_HEAP_ARRAY(jchar, value);
+  }
+  return res;
 }
 
 // helper function to invoke string primitive value callback

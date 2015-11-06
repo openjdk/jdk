@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,30 +20,41 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package jdk.vm.ci.compiler;
+package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.code.*;
-import jdk.vm.ci.runtime.*;
+import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.code.InvalidInstalledCodeException;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
- * Factory for a JVMCI compiler.
+ * Implementation of {@link InstalledCode} for code installed as a RuntimeStub.
  */
-public interface CompilerFactory {
+public class HotSpotRuntimeStub extends HotSpotInstalledCode {
 
-    /**
-     * Get the name of this compiler. The compiler will be selected when the jvmci.compiler system
-     * property is equal to this name.
-     */
-    String getCompilerName();
+    public HotSpotRuntimeStub(String name) {
+        super(name);
+    }
 
-    /**
-     * Initialize an {@link Architecture}. The compiler has the opportunity to extend the
-     * {@link Architecture} description with a custom subclass.
-     */
-    Architecture initializeArchitecture(Architecture arch);
+    public ResolvedJavaMethod getMethod() {
+        return null;
+    }
 
-    /**
-     * Create a new instance of the {@link Compiler}.
-     */
-    Compiler createCompiler(JVMCIRuntime runtime);
+    @Override
+    public boolean isValid() {
+        return true;
+    }
+
+    @Override
+    public void invalidate() {
+    }
+
+    @Override
+    public String toString() {
+        return String.format("InstalledRuntimeStub[stub=%s, codeBlob=0x%x]", name, getAddress());
+    }
+
+    @Override
+    public Object executeVarargs(Object... args) throws InvalidInstalledCodeException {
+        throw new InternalError("Cannot call stub " + name);
+    }
 }

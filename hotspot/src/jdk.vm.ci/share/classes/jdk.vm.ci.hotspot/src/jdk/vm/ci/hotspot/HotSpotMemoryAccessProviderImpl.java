@@ -23,8 +23,6 @@
 package jdk.vm.ci.hotspot;
 
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
-
-import jdk.vm.ci.code.TargetDescription;
 import jdk.vm.ci.common.JVMCIError;
 import jdk.vm.ci.hotspot.HotSpotVMConfig.CompressEncoding;
 import jdk.vm.ci.meta.Constant;
@@ -36,7 +34,7 @@ import jdk.vm.ci.meta.PrimitiveConstant;
 /**
  * HotSpot implementation of {@link MemoryAccessProvider}.
  */
-public class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider, HotSpotProxified {
+class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvider, HotSpotProxified {
 
     protected final HotSpotJVMCIRuntimeProvider runtime;
 
@@ -54,7 +52,7 @@ public class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvi
 
     private boolean isValidObjectFieldDisplacement(Constant base, long displacement) {
         if (base instanceof HotSpotMetaspaceConstant) {
-            Object metaspaceObject = HotSpotMetaspaceConstantImpl.getMetaspaceObject(base);
+            MetaspaceWrapperObject metaspaceObject = HotSpotMetaspaceConstantImpl.getMetaspaceObject(base);
             if (metaspaceObject instanceof HotSpotResolvedObjectTypeImpl) {
                 if (displacement == runtime.getConfig().classMirrorOffset) {
                     // Klass::_java_mirror is valid for all Klass* values
@@ -68,8 +66,9 @@ public class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvi
     }
 
     private static long asRawPointer(Constant base) {
-        if (base instanceof HotSpotMetaspaceConstant) {
-            return ((HotSpotMetaspaceConstant) base).rawValue();
+        if (base instanceof HotSpotMetaspaceConstantImpl) {
+            MetaspaceWrapperObject meta = HotSpotMetaspaceConstantImpl.getMetaspaceObject(base);
+            return meta.getMetaspacePointer();
         } else if (base instanceof PrimitiveConstant) {
             PrimitiveConstant prim = (PrimitiveConstant) base;
             if (prim.getJavaKind().isNumericInteger()) {
@@ -119,7 +118,7 @@ public class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvi
             }
         }
         if (base instanceof HotSpotMetaspaceConstant) {
-            Object metaspaceObject = HotSpotMetaspaceConstantImpl.getMetaspaceObject(base);
+            MetaspaceWrapperObject metaspaceObject = HotSpotMetaspaceConstantImpl.getMetaspaceObject(base);
             if (metaspaceObject instanceof HotSpotResolvedObjectTypeImpl) {
                 if (displacement == runtime.getConfig().classMirrorOffset) {
                     assert expected == ((HotSpotResolvedObjectTypeImpl) metaspaceObject).mirror();
@@ -211,8 +210,7 @@ public class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvi
         if (klass == null) {
             return JavaConstant.NULL_POINTER;
         }
-        TargetDescription target = runtime.getHostJVMCIBackend().getCodeCache().getTarget();
-        return HotSpotMetaspaceConstantImpl.forMetaspaceObject(target.wordKind, klass.getMetaspaceKlass(), klass, false);
+        return HotSpotMetaspaceConstantImpl.forMetaspaceObject(klass, false);
     }
 
     @Override
@@ -221,15 +219,14 @@ public class HotSpotMemoryAccessProviderImpl implements HotSpotMemoryAccessProvi
         if (klass == null) {
             return HotSpotCompressedNullConstant.COMPRESSED_NULL;
         }
-        return HotSpotMetaspaceConstantImpl.forMetaspaceObject(JavaKind.Int, encoding.compress(klass.getMetaspaceKlass()), klass, true);
+        return HotSpotMetaspaceConstantImpl.forMetaspaceObject(klass, true);
     }
 
     @Override
     public Constant readMethodPointerConstant(Constant base, long displacement) {
-        TargetDescription target = runtime.getHostJVMCIBackend().getCodeCache().getTarget();
         assert (base instanceof HotSpotObjectConstantImpl);
         Object baseObject = ((HotSpotObjectConstantImpl) base).object();
         HotSpotResolvedJavaMethodImpl method = runtime.getCompilerToVM().getResolvedJavaMethod(baseObject, displacement);
-        return HotSpotMetaspaceConstantImpl.forMetaspaceObject(target.wordKind, method.getMetaspaceMethod(), method, false);
+        return HotSpotMetaspaceConstantImpl.forMetaspaceObject(method, false);
     }
 }

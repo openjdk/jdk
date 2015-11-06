@@ -22,10 +22,12 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.*;
-
-import jdk.vm.ci.code.*;
-import jdk.vm.ci.meta.*;
+import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
+import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.code.InvalidInstalledCodeException;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
  * Implementation of {@link InstalledCode} for code installed as an nmethod. The nmethod stores a
@@ -45,25 +47,15 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
     private final HotSpotResolvedJavaMethod method;
 
     private final boolean isDefault;
-    private final boolean isExternal;
 
     public HotSpotNmethod(HotSpotResolvedJavaMethod method, String name, boolean isDefault) {
-        this(method, name, isDefault, false);
-    }
-
-    public HotSpotNmethod(HotSpotResolvedJavaMethod method, String name, boolean isDefault, boolean isExternal) {
         super(name);
         this.method = method;
         this.isDefault = isDefault;
-        this.isExternal = isExternal;
     }
 
     public boolean isDefault() {
         return isDefault;
-    }
-
-    public boolean isExternal() {
-        return isExternal;
     }
 
     public ResolvedJavaMethod getMethod() {
@@ -72,7 +64,7 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
 
     @Override
     public void invalidate() {
-        runtime().getCompilerToVM().invalidateInstalledCode(this);
+        compilerToVM().invalidateInstalledCode(this);
     }
 
     @Override
@@ -105,8 +97,7 @@ public class HotSpotNmethod extends HotSpotInstalledCode {
     @Override
     public Object executeVarargs(Object... args) throws InvalidInstalledCodeException {
         assert checkArgs(args);
-        assert !isExternal();
-        return runtime().getCompilerToVM().executeInstalledCode(args, this);
+        return compilerToVM().executeInstalledCode(args, this);
     }
 
     @Override

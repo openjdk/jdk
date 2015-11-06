@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,4 +45,14 @@ jchar ciTypeArray::char_at(int index) {
   assert(c == d, "");
 #endif //ASSERT
   return c;
+}
+
+// ------------------------------------------------------------------
+// ciTypeArray::byte_at
+//
+// Implementation of the byte_at method.
+jbyte ciTypeArray::byte_at(int index) {
+  VM_ENTRY_MARK;
+  assert(index >= 0 && index < length(), "out of range");
+  return get_typeArrayOop()->byte_at(index);
 }
