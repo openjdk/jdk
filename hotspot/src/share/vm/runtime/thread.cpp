@@ -1938,7 +1938,7 @@ void JavaThread::initialize_queues() {
   assert(!SafepointSynchronize::is_at_safepoint(),
          "we should not be at a safepoint");
 
-  ObjPtrQueue& satb_queue = satb_mark_queue();
+  SATBMarkQueue& satb_queue = satb_mark_queue();
   SATBMarkQueueSet& satb_queue_set = satb_mark_queue_set();
   // The SATB queue should have been constructed with its active
   // field set to false.

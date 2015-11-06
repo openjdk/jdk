@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARE_VM_GC_G1_SATBQUEUE_HPP
-#define SHARE_VM_GC_G1_SATBQUEUE_HPP
+#ifndef SHARE_VM_GC_G1_SATBMARKQUEUE_HPP
+#define SHARE_VM_GC_G1_SATBMARKQUEUE_HPP
 
 #include "gc/g1/ptrQueue.hpp"
 #include "memory/allocation.hpp"
@@ -41,8 +41,8 @@ public:
   virtual void do_buffer(void** buffer, size_t size) = 0;
 };
 
-// A ptrQueue whose elements are "oops", pointers to object heads.
-class ObjPtrQueue: public PtrQueue {
+// A PtrQueue whose elements are (possibly stale) pointers to object heads.
+class SATBMarkQueue: public PtrQueue {
   friend class SATBMarkQueueSet;
 
 private:
@@ -50,7 +50,7 @@ private:
   void filter();
 
 public:
-  ObjPtrQueue(SATBMarkQueueSet* qset, bool permanent = false);
+  SATBMarkQueue(SATBMarkQueueSet* qset, bool permanent = false);
 
   // Process queue entries and free resources.
   void flush();
@@ -71,7 +71,7 @@ public:
 };
 
 class SATBMarkQueueSet: public PtrQueueSet {
-  ObjPtrQueue _shared_satb_queue;
+  SATBMarkQueue _shared_satb_queue;
 
 #ifdef ASSERT
   void dump_active_states(bool expected_active);
@@ -108,10 +108,10 @@ public:
   void print_all(const char* msg);
 #endif // PRODUCT
 
-  ObjPtrQueue* shared_satb_queue() { return &_shared_satb_queue; }
+  SATBMarkQueue* shared_satb_queue() { return &_shared_satb_queue; }
 
   // If a marking is being abandoned, reset any unprocessed log buffers.
   void abandon_partial_marking();
 };
 
-#endif // SHARE_VM_GC_G1_SATBQUEUE_HPP
+#endif // SHARE_VM_GC_G1_SATBMARKQUEUE_HPP
