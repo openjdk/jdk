@@ -262,14 +262,14 @@ class ClassVerifier : public StackObj {
 
   ErrorContext _error_context;  // contains information about an error
 
-  void verify_method(methodHandle method, TRAPS);
+  void verify_method(const methodHandle& method, TRAPS);
   char* generate_code_data(methodHandle m, u4 code_length, TRAPS);
   void verify_exception_handler_table(u4 code_length, char* code_data,
                                       int& min, int& max, TRAPS);
   void verify_local_variable_table(u4 code_length, char* code_data, TRAPS);
 
   VerificationType cp_ref_index_to_type(
-      int index, constantPoolHandle cp, TRAPS) {
+      int index, const constantPoolHandle& cp, TRAPS) {
     return cp_index_to_type(cp->klass_ref_index_at(index), cp, THREAD);
   }
 
@@ -277,10 +277,10 @@ class ClassVerifier : public StackObj {
     instanceKlassHandle this_class, Klass* target_class,
     Symbol* field_name, Symbol* field_sig, bool is_method);
 
-  void verify_cp_index(u2 bci, constantPoolHandle cp, int index, TRAPS);
-  void verify_cp_type(u2 bci, int index, constantPoolHandle cp,
+  void verify_cp_index(u2 bci, const constantPoolHandle& cp, int index, TRAPS);
+  void verify_cp_type(u2 bci, int index, const constantPoolHandle& cp,
       unsigned int types, TRAPS);
-  void verify_cp_class_type(u2 bci, int index, constantPoolHandle cp, TRAPS);
+  void verify_cp_class_type(u2 bci, int index, const constantPoolHandle& cp, TRAPS);
 
   u2 verify_stackmap_table(
     u2 stackmap_index, u2 bci, StackMapFrame* current_frame,
@@ -292,7 +292,7 @@ class ClassVerifier : public StackObj {
 
   void verify_ldc(
     int opcode, u2 index, StackMapFrame *current_frame,
-    constantPoolHandle cp, u2 bci, TRAPS);
+    const constantPoolHandle& cp, u2 bci, TRAPS);
 
   void verify_switch(
     RawBytecodeStream* bcs, u4 code_length, char* code_data,
@@ -300,12 +300,12 @@ class ClassVerifier : public StackObj {
 
   void verify_field_instructions(
     RawBytecodeStream* bcs, StackMapFrame* current_frame,
-    constantPoolHandle cp, bool allow_arrays, TRAPS);
+    const constantPoolHandle& cp, bool allow_arrays, TRAPS);
 
   void verify_invoke_init(
     RawBytecodeStream* bcs, u2 ref_index, VerificationType ref_class_type,
     StackMapFrame* current_frame, u4 code_length, bool in_try_block,
-    bool* this_uninit, constantPoolHandle cp, StackMapTable* stackmap_table,
+    bool* this_uninit, const constantPoolHandle& cp, StackMapTable* stackmap_table,
     TRAPS);
 
   // Used by ends_in_athrow() to push all handlers that contain bci onto the
@@ -322,10 +322,10 @@ class ClassVerifier : public StackObj {
   void verify_invoke_instructions(
     RawBytecodeStream* bcs, u4 code_length, StackMapFrame* current_frame,
     bool in_try_block, bool* this_uninit, VerificationType return_type,
-    constantPoolHandle cp, StackMapTable* stackmap_table, TRAPS);
+    const constantPoolHandle& cp, StackMapTable* stackmap_table, TRAPS);
 
   VerificationType get_newarray_type(u2 index, u2 bci, TRAPS);
-  void verify_anewarray(u2 bci, u2 index, constantPoolHandle cp,
+  void verify_anewarray(u2 bci, u2 index, const constantPoolHandle& cp,
       StackMapFrame* current_frame, TRAPS);
   void verify_return_value(
       VerificationType return_type, VerificationType type, u2 offset,
@@ -406,7 +406,7 @@ class ClassVerifier : public StackObj {
   int change_sig_to_verificationType(
     SignatureStream* sig_type, VerificationType* inference_type, TRAPS);
 
-  VerificationType cp_index_to_type(int index, constantPoolHandle cp, TRAPS) {
+  VerificationType cp_index_to_type(int index, const constantPoolHandle& cp, TRAPS) {
     return VerificationType::reference_type(cp->klass_name_at(index));
   }
 

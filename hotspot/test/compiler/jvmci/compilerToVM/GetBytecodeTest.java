@@ -40,7 +40,7 @@ import compiler.jvmci.common.CTVMUtilities;
 import compiler.jvmci.common.testcases.TestCase;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.test.lib.Asserts;
@@ -53,7 +53,7 @@ public class GetBytecodeTest {
     }
 
     private static void runSanityTest(Executable aMethod) {
-        HotSpotResolvedJavaMethodImpl method = CTVMUtilities
+        HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
         byte[] bytecode = CompilerToVMHelper.getBytecode(method);
 

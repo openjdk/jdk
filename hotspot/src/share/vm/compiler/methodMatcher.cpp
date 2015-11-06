@@ -306,7 +306,7 @@ void MethodMatcher::parse_method_pattern(char*& line, const char*& error_msg, Me
   }
 }
 
-bool MethodMatcher::matches(methodHandle method) const {
+bool MethodMatcher::matches(const methodHandle& method) const {
   Symbol* class_name  = method->method_holder()->name();
   Symbol* method_name = method->name();
   Symbol* signature = method->signature();
@@ -362,7 +362,7 @@ BasicMatcher* BasicMatcher::parse_method_pattern(char* line, const char*& error_
   return bm;
 }
 
-bool BasicMatcher::match(methodHandle method) {
+bool BasicMatcher::match(const methodHandle& method) {
   for (BasicMatcher* current = this; current != NULL; current = current->next()) {
     if (current->matches(method)) {
       return true;
@@ -391,7 +391,7 @@ InlineMatcher* InlineMatcher::parse_method_pattern(char* line, const char*& erro
   return im;
 }
 
-bool InlineMatcher::match(methodHandle method, int inline_action) {
+bool InlineMatcher::match(const methodHandle& method, int inline_action) {
   for (InlineMatcher* current = this; current != NULL; current = current->next()) {
     if (current->matches(method)) {
       return (current->_inline_action == inline_action);

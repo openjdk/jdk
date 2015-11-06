@@ -1120,7 +1120,7 @@ bool Arguments::process_argument(const char* arg,
                                  Flag::Flags origin) {
   JDK_Version since = JDK_Version();
 
-  if (parse_argument(arg, origin) || ignore_unrecognized) {
+  if (parse_argument(arg, origin)) {
     return true;
   }
 
@@ -1156,7 +1156,7 @@ bool Arguments::process_argument(const char* arg,
   Flag* found_flag = Flag::find_flag((const char*)argname, arg_len, true, true);
   if (found_flag != NULL) {
     char locked_message_buf[BUFLEN];
-    found_flag->get_locked_message(locked_message_buf, BUFLEN);
+    Flag::MsgType msg_type = found_flag->get_locked_message(locked_message_buf, BUFLEN);
     if (strlen(locked_message_buf) == 0) {
       if (found_flag->is_bool() && !has_plus_minus) {
         jio_fprintf(defaultStream::error_stream(),
@@ -1169,9 +1169,19 @@ bool Arguments::process_argument(const char* arg,
           "Improperly specified VM option '%s'\n", argname);
       }
     } else {
+#ifdef PRODUCT
+      bool mismatched = ((msg_type == Flag::NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD) ||
+                         (msg_type == Flag::DEVELOPER_FLAG_BUT_PRODUCT_BUILD));
+      if (ignore_unrecognized && mismatched) {
+        return true;
+      }
+#endif
       jio_fprintf(defaultStream::error_stream(), "%s", locked_message_buf);
     }
   } else {
+    if (ignore_unrecognized) {
+      return true;
+    }
     jio_fprintf(defaultStream::error_stream(),
                 "Unrecognized VM option '%s'\n", argname);
     Flag* fuzzy_matched = Flag::fuzzy_match((const char*)argname, arg_len, true);
@@ -2469,16 +2479,6 @@ bool Arguments::check_vm_args_consistency() {
     }
   }
 
-  // Note: only executed in non-PRODUCT mode
-  if (!UseAsyncConcMarkSweepGC &&
-      (ExplicitGCInvokesConcurrent ||
-       ExplicitGCInvokesConcurrentAndUnloadsClasses)) {
-    jio_fprintf(defaultStream::error_stream(),
-                "error: +ExplicitGCInvokesConcurrent[AndUnloadsClasses] conflicts"
-                " with -UseAsyncConcMarkSweepGC");
-    status = false;
-  }
-
   if (PrintNMTStatistics) {
 #if INCLUDE_NMT
     if (MemTracker::tracking_level() == NMT_off) {
@@ -3481,33 +3481,8 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
   sprintf(path, "%s%slib%sendorsed", Arguments::get_java_home(), fileSep, fileSep);
 
 #if INCLUDE_JVMCI
-  jint res = JVMCIRuntime::save_options(_system_properties);
-  if (res != JNI_OK) {
-    return res;
-  }
-
   if (EnableJVMCI) {
-    // Append lib/jvmci/*.jar to boot class path
-    char jvmciDir[JVM_MAXPATHLEN];
-    const char* fileSep = os::file_separator();
-    jio_snprintf(jvmciDir, sizeof(jvmciDir), "%s%slib%sjvmci", Arguments::get_java_home(), fileSep, fileSep);
-    DIR* dir = os::opendir(jvmciDir);
-    if (dir != NULL) {
-      struct dirent *entry;
-      char *dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(jvmciDir), mtInternal);
-      while ((entry = os::readdir(dir, (dirent *) dbuf)) != NULL) {
-        const char* name = entry->d_name;
-        const char* ext = name + strlen(name) - 4;
-        if (ext > name && strcmp(ext, ".jar") == 0) {
-          char fileName[JVM_MAXPATHLEN];
-          jio_snprintf(fileName, sizeof(fileName), "%s%s%s", jvmciDir, fileSep, name);
-          scp_p->add_suffix(fileName);
-          scp_assembly_required = true;
-        }
-      }
-      FREE_C_HEAP_ARRAY(char, dbuf);
-      os::closedir(dir);
-    }
+    JVMCIRuntime::save_options(_system_properties);
   }
 #endif // INCLUDE_JVMCI
 
@@ -3858,6 +3833,7 @@ jint Arguments::parse_options_buffer(const char* name, char* buffer, const size_
 
     JavaVMOption option;
     option.optionString = opt_hd;
+    option.extraInfo = NULL;
 
     options->append(option);                // Fill in option
 

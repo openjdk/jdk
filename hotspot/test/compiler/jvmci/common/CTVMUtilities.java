@@ -27,15 +27,16 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 
 public class CTVMUtilities {
     /*
      * A method to return HotSpotResolvedJavaMethod object using class object
      * and method as input
      */
-    public static HotSpotResolvedJavaMethodImpl getResolvedMethod(Class<?> cls,
+    public static HotSpotResolvedJavaMethod getResolvedMethod(Class<?> cls,
             Executable method) {
         if (!(method instanceof Method || method instanceof Constructor)) {
             throw new Error("wrong executable type " + method.getClass());
@@ -54,8 +55,20 @@ public class CTVMUtilities {
         return CompilerToVMHelper.getResolvedJavaMethodAtSlot(cls, slot);
     }
 
-    public static HotSpotResolvedJavaMethodImpl getResolvedMethod(
+    public static HotSpotResolvedJavaMethod getResolvedMethod(
             Executable method) {
         return getResolvedMethod(method.getDeclaringClass(), method);
+    }
+
+    public static InstalledCode getInstalledCode(String name, long address,
+            long entryPoint) {
+        return new InstalledCodeStub(name, address, entryPoint);
+    }
+    private static class InstalledCodeStub extends InstalledCode {
+        private InstalledCodeStub(String name, long address, long entryPoint) {
+            super(name);
+            this.address = address;
+            this.entryPoint = entryPoint;
+        }
     }
 }
