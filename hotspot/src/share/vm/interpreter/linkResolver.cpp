@@ -237,7 +237,7 @@ void CallInfo::print() {
 //------------------------------------------------------------------------------------------------------------------------
 // Implementation of LinkInfo
 
-LinkInfo::LinkInfo(constantPoolHandle pool, int index, TRAPS) {
+LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, TRAPS) {
    // resolve klass
   Klass* result = pool->klass_ref_at(index, CHECK);
   _resolved_klass = KlassHandle(THREAD, result);
@@ -302,17 +302,19 @@ methodHandle LinkResolver::lookup_method_in_klasses(const LinkInfo& link_info,
   // Ignore overpasses so statics can be found during resolution
   Method* result = klass->uncached_lookup_method(name, signature, Klass::skip_overpass);
 
-  if (klass->oop_is_array()) {
+  if (klass->is_array_klass()) {
     // Only consider klass and super klass for arrays
     return methodHandle(THREAD, result);
   }
+
+  InstanceKlass* ik = InstanceKlass::cast(klass());
 
   // JDK 8, JVMS 5.4.3.4: Interface method resolution should
   // ignore static and non-public methods of java.lang.Object,
   // like clone, finalize, registerNatives.
   if (in_imethod_resolve &&
       result != NULL &&
-      klass->is_interface() &&
+      ik->is_interface() &&
       (result->is_static() || !result->is_public()) &&
       result->method_holder() == SystemDictionary::Object_klass()) {
     result = NULL;
@@ -321,11 +323,11 @@ methodHandle LinkResolver::lookup_method_in_klasses(const LinkInfo& link_info,
   // Before considering default methods, check for an overpass in the
   // current class if a method has not been found.
   if (result == NULL) {
-    result = InstanceKlass::cast(klass())->find_method(name, signature);
+    result = ik->find_method(name, signature);
   }
 
   if (result == NULL) {
-    Array<Method*>* default_methods = InstanceKlass::cast(klass())->default_methods();
+    Array<Method*>* default_methods = ik->default_methods();
     if (default_methods != NULL) {
       result = InstanceKlass::find_method(default_methods, name, signature);
     }
@@ -353,7 +355,7 @@ methodHandle LinkResolver::lookup_instance_method_in_klasses(KlassHandle klass,
     result = super_klass->uncached_lookup_method(name, signature, Klass::find_overpass);
   }
 
-  if (klass->oop_is_array()) {
+  if (klass->is_array_klass()) {
     // Only consider klass and super klass for arrays
     return methodHandle(THREAD, result);
   }
@@ -374,21 +376,21 @@ int LinkResolver::vtable_index_of_interface_method(KlassHandle klass,
   int vtable_index = Method::invalid_vtable_index;
   Symbol* name = resolved_method->name();
   Symbol* signature = resolved_method->signature();
+  InstanceKlass* ik = InstanceKlass::cast(klass());
 
   // First check in default method array
-  if (!resolved_method->is_abstract() &&
-    (InstanceKlass::cast(klass())->default_methods() != NULL)) {
-    int index = InstanceKlass::find_method_index(InstanceKlass::cast(klass())->default_methods(),
+  if (!resolved_method->is_abstract() && ik->default_methods() != NULL) {
+    int index = InstanceKlass::find_method_index(ik->default_methods(),
                                                  name, signature, Klass::find_overpass,
                                                  Klass::find_static, Klass::find_private);
     if (index >= 0 ) {
-      vtable_index = InstanceKlass::cast(klass())->default_vtable_indices()->at(index);
+      vtable_index = ik->default_vtable_indices()->at(index);
     }
   }
   if (vtable_index == Method::invalid_vtable_index) {
     // get vtable_index for miranda methods
     ResourceMark rm;
-    klassVtable *vt = InstanceKlass::cast(klass())->vtable();
+    klassVtable *vt = ik->vtable();
     vtable_index = vt->index_of_miranda(name, signature);
   }
   return vtable_index;
@@ -529,7 +531,7 @@ void LinkResolver::check_method_accessability(KlassHandle ref_klass,
   // to be false (so we'll short-circuit out of these tests).
   if (sel_method->name() == vmSymbols::clone_name() &&
       sel_klass() == SystemDictionary::Object_klass() &&
-      resolved_klass->oop_is_array()) {
+      resolved_klass->is_array_klass()) {
     // We need to change "protected" to "public".
     assert(flags.is_protected(), "clone not protected?");
     jint new_flags = flags.as_int();
@@ -559,7 +561,7 @@ void LinkResolver::check_method_accessability(KlassHandle ref_klass,
 }
 
 methodHandle LinkResolver::resolve_method_statically(Bytecodes::Code code,
-                                                     constantPoolHandle pool, int index, TRAPS) {
+                                                     const constantPoolHandle& pool, int index, TRAPS) {
   // This method is used only
   // (1) in C2 from InlineTree::ok_to_inline (via ciMethod::check_call),
   // and
@@ -682,7 +684,7 @@ methodHandle LinkResolver::resolve_method(const LinkInfo& link_info,
   // 2. lookup method in resolved klass and its super klasses
   methodHandle resolved_method = lookup_method_in_klasses(link_info, true, false, CHECK_NULL);
 
-  if (resolved_method.is_null() && !resolved_klass->oop_is_array()) { // not found in the class hierarchy
+  if (resolved_method.is_null() && !resolved_klass->is_array_klass()) { // not found in the class hierarchy
     // 3. lookup method in all the interfaces implemented by the resolved klass
     resolved_method = lookup_method_in_interfaces(link_info, CHECK_NULL);
 
@@ -742,7 +744,7 @@ methodHandle LinkResolver::resolve_interface_method(const LinkInfo& link_info,
   // JDK8: also look for static methods
   methodHandle resolved_method = lookup_method_in_klasses(link_info, false, true, CHECK_NULL);
 
-  if (resolved_method.is_null() && !resolved_klass->oop_is_array()) {
+  if (resolved_method.is_null() && !resolved_klass->is_array_klass()) {
     // lookup method in all the super-interfaces
     resolved_method = lookup_method_in_interfaces(link_info, CHECK_NULL);
   }
@@ -816,7 +818,7 @@ void LinkResolver::check_field_accessability(KlassHandle ref_klass,
   }
 }
 
-void LinkResolver::resolve_field_access(fieldDescriptor& fd, constantPoolHandle pool, int index, Bytecodes::Code byte, TRAPS) {
+void LinkResolver::resolve_field_access(fieldDescriptor& fd, const constantPoolHandle& pool, int index, Bytecodes::Code byte, TRAPS) {
   LinkInfo link_info(pool, index, CHECK);
   resolve_field(fd, link_info, byte, true, CHECK);
 }
@@ -1442,7 +1444,7 @@ methodHandle LinkResolver::resolve_special_call_or_null(const LinkInfo& link_inf
 //------------------------------------------------------------------------------------------------------------------------
 // ConstantPool entries
 
-void LinkResolver::resolve_invoke(CallInfo& result, Handle recv, constantPoolHandle pool, int index, Bytecodes::Code byte, TRAPS) {
+void LinkResolver::resolve_invoke(CallInfo& result, Handle recv, const constantPoolHandle& pool, int index, Bytecodes::Code byte, TRAPS) {
   switch (byte) {
     case Bytecodes::_invokestatic   : resolve_invokestatic   (result,       pool, index, CHECK); break;
     case Bytecodes::_invokespecial  : resolve_invokespecial  (result,       pool, index, CHECK); break;
@@ -1454,20 +1456,20 @@ void LinkResolver::resolve_invoke(CallInfo& result, Handle recv, constantPoolHan
   return;
 }
 
-void LinkResolver::resolve_invokestatic(CallInfo& result, constantPoolHandle pool, int index, TRAPS) {
+void LinkResolver::resolve_invokestatic(CallInfo& result, const constantPoolHandle& pool, int index, TRAPS) {
   LinkInfo link_info(pool, index, CHECK);
   resolve_static_call(result, link_info, /*initialize_class*/true, CHECK);
 }
 
 
-void LinkResolver::resolve_invokespecial(CallInfo& result, constantPoolHandle pool, int index, TRAPS) {
+void LinkResolver::resolve_invokespecial(CallInfo& result, const constantPoolHandle& pool, int index, TRAPS) {
   LinkInfo link_info(pool, index, CHECK);
   resolve_special_call(result, link_info, CHECK);
 }
 
 
 void LinkResolver::resolve_invokevirtual(CallInfo& result, Handle recv,
-                                          constantPoolHandle pool, int index,
+                                          const constantPoolHandle& pool, int index,
                                           TRAPS) {
 
   LinkInfo link_info(pool, index, CHECK);
@@ -1476,14 +1478,14 @@ void LinkResolver::resolve_invokevirtual(CallInfo& result, Handle recv,
 }
 
 
-void LinkResolver::resolve_invokeinterface(CallInfo& result, Handle recv, constantPoolHandle pool, int index, TRAPS) {
+void LinkResolver::resolve_invokeinterface(CallInfo& result, Handle recv, const constantPoolHandle& pool, int index, TRAPS) {
   LinkInfo link_info(pool, index, CHECK);
   KlassHandle recvrKlass (THREAD, recv.is_null() ? (Klass*)NULL : recv->klass());
   resolve_interface_call(result, recv, recvrKlass, link_info, true, CHECK);
 }
 
 
-void LinkResolver::resolve_invokehandle(CallInfo& result, constantPoolHandle pool, int index, TRAPS) {
+void LinkResolver::resolve_invokehandle(CallInfo& result, const constantPoolHandle& pool, int index, TRAPS) {
   // This guy is reached from InterpreterRuntime::resolve_invokehandle.
   LinkInfo link_info(pool, index, CHECK);
   if (TraceMethodHandles) {
@@ -1528,7 +1530,7 @@ static void wrap_invokedynamic_exception(TRAPS) {
   }
 }
 
-void LinkResolver::resolve_invokedynamic(CallInfo& result, constantPoolHandle pool, int index, TRAPS) {
+void LinkResolver::resolve_invokedynamic(CallInfo& result, const constantPoolHandle& pool, int index, TRAPS) {
   Symbol* method_name       = pool->name_ref_at(index);
   Symbol* method_signature  = pool->signature_ref_at(index);
   KlassHandle current_klass = KlassHandle(THREAD, pool->pool_holder());

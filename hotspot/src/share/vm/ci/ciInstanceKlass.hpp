@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ protected:
   ciInstanceKlass(ciSymbol* name, jobject loader, jobject protection_domain);
 
   InstanceKlass* get_instanceKlass() const {
-    return (InstanceKlass*)get_Klass();
+    return InstanceKlass::cast(get_Klass());
   }
 
   oop loader();

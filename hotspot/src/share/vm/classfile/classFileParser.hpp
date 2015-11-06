@@ -241,7 +241,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
 
   void print_field_layout(Symbol* name,
                           Array<u2>* fields,
-                          constantPoolHandle cp,
+                          const constantPoolHandle& cp,
                           int instance_size,
                           int instance_fields_start,
                           int instance_fields_end,
@@ -319,8 +319,8 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     if (!b) { classfile_parse_error(msg, CHECK); }
   }
 
-  void report_assert_property_failure(const char* msg, TRAPS);
-  void report_assert_property_failure(const char* msg, int index, TRAPS);
+  void report_assert_property_failure(const char* msg, TRAPS) PRODUCT_RETURN;
+  void report_assert_property_failure(const char* msg, int index, TRAPS) PRODUCT_RETURN;
 
   inline void assert_property(bool b, const char* msg, TRAPS) {
 #ifdef ASSERT
@@ -403,7 +403,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     assert(!has_cp_patch_at(index), "");
     return patch;
   }
-  void patch_constant_pool(constantPoolHandle cp, int index, Handle patch, TRAPS);
+  void patch_constant_pool(const constantPoolHandle& cp, int index, Handle patch, TRAPS);
 
   // Wrapper for constantTag.is_klass_[or_]reference.
   // In older versions of the VM, Klass*s cannot sneak into early phases of

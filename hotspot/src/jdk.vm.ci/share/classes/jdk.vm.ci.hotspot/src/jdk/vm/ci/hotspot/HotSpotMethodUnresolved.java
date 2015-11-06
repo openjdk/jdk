@@ -22,12 +22,14 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.JavaMethod;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.Signature;
 
 /**
  * Implementation of {@link JavaMethod} for unresolved HotSpot methods.
  */
-public final class HotSpotMethodUnresolved extends HotSpotMethod {
+final class HotSpotMethodUnresolved extends HotSpotMethod {
 
     private final Signature signature;
     protected JavaType holder;

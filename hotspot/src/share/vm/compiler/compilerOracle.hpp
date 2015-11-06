@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,31 +46,31 @@ class CompilerOracle : AllStatic {
   static void parse_from_file();
 
   // Tells whether we to exclude compilation of method
-  static bool should_exclude(methodHandle method);
+  static bool should_exclude(const methodHandle& method);
   static bool should_exclude_quietly() { return _quiet; }
 
   // Tells whether we want to inline this method
-  static bool should_inline(methodHandle method);
+  static bool should_inline(const methodHandle& method);
 
   // Tells whether we want to disallow inlining of this method
-  static bool should_not_inline(methodHandle method);
+  static bool should_not_inline(const methodHandle& method);
 
   // Tells whether we should print the assembly for this method
-  static bool should_print(methodHandle method);
+  static bool should_print(const methodHandle& method);
 
   // Tells whether we should log the compilation data for this method
-  static bool should_log(methodHandle method);
+  static bool should_log(const methodHandle& method);
 
   // Tells whether to break when compiling method
-  static bool should_break_at(methodHandle method);
+  static bool should_break_at(const methodHandle& method);
 
   // Check to see if this method has option set for it
-  static bool has_option_string(methodHandle method, const char * option);
+  static bool has_option_string(const methodHandle& method, const char * option);
 
   // Check if method has option and value set. If yes, overwrite value and return true,
   // otherwise leave value unchanged and return false.
   template<typename T>
-  static bool has_option_value(methodHandle method, const char* option, T& value);
+  static bool has_option_value(const methodHandle& method, const char* option, T& value);
 
   // Fast check if there is any option available that compile control needs to know about
   static bool has_any_option();
@@ -83,7 +83,7 @@ class CompilerOracle : AllStatic {
 
   // For updating the oracle file
   static void append_comment_to_file(const char* message);
-  static void append_exclude_to_file(methodHandle method);
+  static void append_exclude_to_file(const methodHandle& method);
 
   // Tells whether there are any methods to print for print_method_statistics()
   static bool should_print_methods();

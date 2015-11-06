@@ -140,7 +140,7 @@ class ObjectSynchronizer : AllStatic {
   // global list of blocks of monitors
   // gBlockList is really PaddedEnd<ObjectMonitor> *, but we don't
   // want to expose the PaddedEnd template more than necessary.
-  static ObjectMonitor * gBlockList;
+  static ObjectMonitor * volatile gBlockList;
   // global monitor free list
   static ObjectMonitor * volatile gFreeList;
   // global monitor in-use list, for moribund threads,

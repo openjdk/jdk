@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,17 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static java.util.FormattableFlags.*;
-import java.util.*;
+import static java.util.FormattableFlags.ALTERNATE;
+import static java.util.FormattableFlags.LEFT_JUSTIFY;
+import static java.util.FormattableFlags.UPPERCASE;
 
-import jdk.vm.ci.meta.*;
+import java.util.Formattable;
+import java.util.Formatter;
 
-public abstract class HotSpotMethod implements JavaMethod, Formattable /* , JavaMethodContex */{
+import jdk.vm.ci.meta.JavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+
+abstract class HotSpotMethod implements JavaMethod, Formattable /* , JavaMethodContex */{
 
     public static String applyFormattingFlagsAndWidth(String s, int flags, int width) {
         if (flags == 0 && width < 0) {

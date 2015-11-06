@@ -40,8 +40,7 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
   // FIXME: access should be synchronized and cleared when VM is
   // resumed
   // String fields
-  private static IntField offsetField;
-  private static IntField countField;
+  private static ByteField coderField;
   private static OopField valueField;
   // ThreadGroup fields
   private static OopField threadGroupParentField;
@@ -96,20 +95,30 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
     if (charArray == null) {
       return null;
     }
-    return charArrayToString(charArray, 0, (int) charArray.getLength());
+    int length = (int)charArray.getLength();
+    StringBuffer buf = new StringBuffer(length);
+    for (int i = 0; i < length; i++) {
+      buf.append(charArray.getCharAt(i));
+    }
+    return buf.toString();
   }
 
-  public static String charArrayToString(TypeArray charArray, int offset, int length) {
-    if (charArray == null) {
+  public static String byteArrayToString(TypeArray byteArray, byte coder) {
+    if (byteArray == null) {
       return null;
     }
-    final int limit = offset + length;
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(offset >= 0 && limit <= charArray.getLength(), "out of bounds");
-    }
+    int length = (int)byteArray.getLength() >> coder;
     StringBuffer buf = new StringBuffer(length);
-    for (int i = offset; i < limit; i++) {
-      buf.append(charArray.getCharAt(i));
+    if (coder == 0) {
+      // Latin1 encoded
+      for (int i = 0; i < length; i++) {
+        buf.append((char)(byteArray.getByteAt(i) & 0xff));
+      }
+    } else {
+      // UTF16 encoded
+      for (int i = 0; i < length; i++) {
+        buf.append(byteArray.getCharAt(i));
+      }
     }
     return buf.toString();
   }
@@ -141,21 +150,14 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
   }
 
   public static String stringOopToString(Oop stringOop) {
-    if (offsetField == null) {
-      InstanceKlass k = (InstanceKlass) stringOop.getKlass();
-      offsetField = (IntField) k.findField("offset", "I");   // optional
-      countField  = (IntField) k.findField("count",  "I");   // optional
-      valueField  = (OopField) k.findField("value",  "[C");
-      if (Assert.ASSERTS_ENABLED) {
-         Assert.that(valueField != null, "Field \'value\' of java.lang.String not found");
-      }
+    InstanceKlass k = (InstanceKlass) stringOop.getKlass();
+    coderField  = (ByteField) k.findField("coder", "B");
+    valueField  = (OopField) k.findField("value",  "[B");
+    if (Assert.ASSERTS_ENABLED) {
+       Assert.that(coderField != null, "Field \'coder\' of java.lang.String not found");
+       Assert.that(valueField != null, "Field \'value\' of java.lang.String not found");
     }
-    if (offsetField != null && countField != null) {
-      return charArrayToString((TypeArray) valueField.getValue(stringOop),
-                               offsetField.getValue(stringOop),
-                               countField.getValue(stringOop));
-    }
-    return  charArrayToString((TypeArray) valueField.getValue(stringOop));
+    return byteArrayToString((TypeArray) valueField.getValue(stringOop), coderField.getValue(stringOop));
   }
 
   public static String stringOopToEscapedString(Oop stringOop) {

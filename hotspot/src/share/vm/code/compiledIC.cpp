@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -462,7 +462,7 @@ void CompiledIC::set_to_monomorphic(CompiledICInfo& info) {
 // is_optimized: Compiler has generated an optimized call (i.e., no inline
 // cache) static_bound: The call can be static bound (i.e, no need to use
 // inline cache)
-void CompiledIC::compute_monomorphic_entry(methodHandle method,
+void CompiledIC::compute_monomorphic_entry(const methodHandle& method,
                                            KlassHandle receiver_klass,
                                            bool is_optimized,
                                            bool static_bound,
@@ -594,7 +594,7 @@ void CompiledStaticCall::set(const StaticCallInfo& info) {
 
 // Compute settings for a CompiledStaticCall. Since we might have to set
 // the stub when calling to the interpreter, we need to return arguments.
-void CompiledStaticCall::compute_entry(methodHandle m, StaticCallInfo& info) {
+void CompiledStaticCall::compute_entry(const methodHandle& m, StaticCallInfo& info) {
   nmethod* m_code = m->code();
   info._callee = m;
   if (m_code != NULL && m_code->is_in_use()) {

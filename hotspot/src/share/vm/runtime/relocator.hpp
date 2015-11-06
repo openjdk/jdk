@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ class RelocatorListener : public StackObj {
 
 class Relocator : public ResourceObj {
  public:
-  Relocator(methodHandle method, RelocatorListener* listener);
+  Relocator(const methodHandle& method, RelocatorListener* listener);
   methodHandle insert_space_at(int bci, int space, u_char inst_buffer[], TRAPS);
 
   // Callbacks from ChangeItem's
@@ -81,7 +81,7 @@ class Relocator : public ResourceObj {
   void set_compressed_line_number_table_size(int size)        { _compressed_line_number_table_size = size; }
 
   methodHandle method() const               { return _method; }
-  void set_method(methodHandle method)      { _method = method; }
+  void set_method(const methodHandle& method)      { _method = method; }
 
   // This will return a raw bytecode, which is possibly rewritten.
   Bytecodes::Code code_at(int bci) const          { return (Bytecodes::Code) code_array()[bci]; }

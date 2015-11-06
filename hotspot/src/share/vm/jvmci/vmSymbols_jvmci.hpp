@@ -48,6 +48,8 @@
   template(jdk_vm_ci_hotspot_HotSpotOopMap,                       "jdk/vm/ci/hotspot/HotSpotOopMap")                       \
   template(jdk_vm_ci_hotspot_HotSpotConstantPool,                 "jdk/vm/ci/hotspot/HotSpotConstantPool")                 \
   template(jdk_vm_ci_hotspot_HotSpotJVMCIMetaAccessContext,       "jdk/vm/ci/hotspot/HotSpotJVMCIMetaAccessContext")       \
+  template(jdk_vm_ci_hotspot_HotSpotJVMCIRuntime,                 "jdk/vm/ci/hotspot/HotSpotJVMCIRuntime")                 \
+  template(jdk_vm_ci_hotspot_HotSpotSpeculationLog,               "jdk/vm/ci/hotspot/HotSpotSpeculationLog")               \
   template(jdk_vm_ci_meta_JavaConstant,                           "jdk/vm/ci/meta/JavaConstant")                           \
   template(jdk_vm_ci_meta_PrimitiveConstant,                      "jdk/vm/ci/meta/PrimitiveConstant")                      \
   template(jdk_vm_ci_meta_RawConstant,                            "jdk/vm/ci/meta/RawConstant")                            \
@@ -61,7 +63,6 @@
   template(jdk_vm_ci_meta_Assumptions_NoFinalizableSubclass,      "jdk/vm/ci/meta/Assumptions$NoFinalizableSubclass")      \
   template(jdk_vm_ci_meta_Assumptions_ConcreteMethod,             "jdk/vm/ci/meta/Assumptions$ConcreteMethod")             \
   template(jdk_vm_ci_meta_Assumptions_CallSiteTargetValue,        "jdk/vm/ci/meta/Assumptions$CallSiteTargetValue")        \
-  template(jdk_vm_ci_meta_SpeculationLog,                         "jdk/vm/ci/meta/SpeculationLog")                         \
   template(jdk_vm_ci_code_Architecture,                           "jdk/vm/ci/code/Architecture")                           \
   template(jdk_vm_ci_code_TargetDescription,                      "jdk/vm/ci/code/TargetDescription")                      \
   template(jdk_vm_ci_code_CompilationResult_Call,                 "jdk/vm/ci/code/CompilationResult$Call")                 \

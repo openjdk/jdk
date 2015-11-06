@@ -58,9 +58,7 @@ Generation* GenerationSpec::init(ReservedSpace rs, CardTableRS* remset) {
       // else registers with an existing CMSCollector
 
       ConcurrentMarkSweepGeneration* g = NULL;
-      g = new ConcurrentMarkSweepGeneration(rs,
-                 init_size(), remset, UseCMSAdaptiveFreeLists,
-                 (FreeBlockDictionary<FreeChunk>::DictionaryChoice)CMSDictionaryChoice);
+      g = new ConcurrentMarkSweepGeneration(rs, init_size(), remset);
 
       g->initialize_performance_counters();
 
