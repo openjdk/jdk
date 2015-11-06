@@ -26,7 +26,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/heapRegion.hpp"
-#include "gc/g1/satbQueue.hpp"
+#include "gc/g1/satbMarkQueue.hpp"
 #include "gc/shared/memset_with_concurrent_readers.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"

@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/satbQueue.hpp"
+#include "gc/g1/satbMarkQueue.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -33,7 +33,7 @@
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 
-ObjPtrQueue::ObjPtrQueue(SATBMarkQueueSet* qset, bool permanent) :
+SATBMarkQueue::SATBMarkQueue(SATBMarkQueueSet* qset, bool permanent) :
   // SATB queues are only active during marking cycles. We create
   // them with their active field set to false. If a thread is
   // created during a cycle and its SATB queue needs to be activated
@@ -42,7 +42,7 @@ ObjPtrQueue::ObjPtrQueue(SATBMarkQueueSet* qset, bool permanent) :
   PtrQueue(qset, permanent, false /* active */)
 { }
 
-void ObjPtrQueue::flush() {
+void SATBMarkQueue::flush() {
   // Filter now to possibly save work later.  If filtering empties the
   // buffer then flush_impl can deallocate the buffer.
   filter();
@@ -105,7 +105,7 @@ inline bool requires_marking(const void* entry, G1CollectedHeap* heap) {
 // they require marking and are not already marked. Retained entries
 // are compacted toward the top of the buffer.
 
-void ObjPtrQueue::filter() {
+void SATBMarkQueue::filter() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   void** buf = _buf;
 
@@ -159,7 +159,7 @@ void ObjPtrQueue::filter() {
 // allow the mutator to carry on executing using the same buffer
 // instead of replacing it.
 
-bool ObjPtrQueue::should_enqueue_buffer() {
+bool SATBMarkQueue::should_enqueue_buffer() {
   assert(_lock == NULL || _lock->owned_by_self(),
          "we should have taken the lock before calling this");
 
@@ -177,7 +177,7 @@ bool ObjPtrQueue::should_enqueue_buffer() {
   return should_enqueue;
 }
 
-void ObjPtrQueue::apply_closure_and_empty(SATBBufferClosure* cl) {
+void SATBMarkQueue::apply_closure_and_empty(SATBBufferClosure* cl) {
   assert(SafepointSynchronize::is_at_safepoint(),
          "SATB queues must only be processed at safepoints");
   if (_buf != NULL) {
@@ -193,12 +193,12 @@ void ObjPtrQueue::apply_closure_and_empty(SATBBufferClosure* cl) {
 #ifndef PRODUCT
 // Helpful for debugging
 
-void ObjPtrQueue::print(const char* name) {
+void SATBMarkQueue::print(const char* name) {
   print(name, _buf, _index, _sz);
 }
 
-void ObjPtrQueue::print(const char* name,
-                        void** buf, size_t index, size_t sz) {
+void SATBMarkQueue::print(const char* name,
+                          void** buf, size_t index, size_t sz) {
   gclog_or_tty->print_cr("  SATB BUFFER [%s] buf: " PTR_FORMAT " "
                          "index: " SIZE_FORMAT " sz: " SIZE_FORMAT,
                          name, p2i(buf), index, sz);
@@ -294,7 +294,7 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer(SATBBufferClosure* cl) 
     // Filtering can result in non-full completed buffers; see
     // should_enqueue_buffer.
     assert(_sz % sizeof(void*) == 0, "invariant");
-    size_t limit = ObjPtrQueue::byte_index_to_index(_sz);
+    size_t limit = SATBMarkQueue::byte_index_to_index(_sz);
     for (size_t i = 0; i < limit; ++i) {
       if (buf[i] != NULL) {
         // Found the end of the block of NULLs; process the remainder.
@@ -326,7 +326,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
   while (nd != NULL) {
     void** buf = BufferNode::make_buffer_from_node(nd);
     jio_snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Enqueued: %d", i);
-    ObjPtrQueue::print(buffer, buf, 0, _sz);
+    SATBMarkQueue::print(buffer, buf, 0, _sz);
     nd = nd->next();
     i += 1;
   }
