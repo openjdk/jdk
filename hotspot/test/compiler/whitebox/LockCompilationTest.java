@@ -24,12 +24,12 @@
 /*
  * @test LockCompilationTest
  * @bug 8059624
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /../../test/lib /
  * @modules java.management
  * @build LockCompilationTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,SimpleTestCase$Helper::* LockCompilationTest
+ * @run main/othervm/timeout=600 -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCase$Helper::* LockCompilationTest
  * @summary testing of WB::lock/unlockCompilation()
  */
 
@@ -37,7 +37,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
-
+import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.Asserts;
 
 public class LockCompilationTest extends CompilerWhiteBoxTest {
