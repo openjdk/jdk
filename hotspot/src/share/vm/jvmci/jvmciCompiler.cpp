@@ -57,6 +57,10 @@ void JVMCICompiler::initialize() {
 }
 
 void JVMCICompiler::bootstrap() {
+  if (Arguments::mode() == Arguments::_int) {
+    // Nothing to do in -Xint mode
+    return;
+  }
 #ifndef PRODUCT
   // We turn off CompileTheWorld so that compilation requests are not
   // ignored during bootstrap or that JVMCI can be compiled by C1/C2.
@@ -125,28 +129,53 @@ void JVMCICompiler::compile_method(methodHandle method, int entry_bci, JVMCIEnv*
   Handle receiver = JVMCIRuntime::get_HotSpotJVMCIRuntime(CHECK_ABORT);
 
   JavaValue method_result(T_OBJECT);
-  {
+  JavaCallArguments args;
+  args.push_long((jlong) (address) method());
+  JavaCalls::call_static(&method_result, SystemDictionary::HotSpotResolvedJavaMethodImpl_klass(),
+                         vmSymbols::fromMetaspace_name(), vmSymbols::method_fromMetaspace_signature(), &args, THREAD);
+
+  if (!HAS_PENDING_EXCEPTION) {
+    JavaValue result(T_VOID);
     JavaCallArguments args;
-    args.push_long((jlong) (address) method());
-    JavaCalls::call_static(&method_result, SystemDictionary::HotSpotResolvedJavaMethodImpl_klass(), vmSymbols::fromMetaspace_name(), vmSymbols::method_fromMetaspace_signature(), &args, CHECK_ABORT);
+    args.push_oop(receiver);
+    args.push_oop((oop)method_result.get_jobject());
+    args.push_int(entry_bci);
+    args.push_long((jlong) (address) env);
+    args.push_int(env->task()->compile_id());
+    JavaCalls::call_special(&result, receiver->klass(),
+                            vmSymbols::compileMethod_name(), vmSymbols::compileMethod_signature(), &args, THREAD);
   }
 
-  JavaValue result(T_VOID);
-  JavaCallArguments args;
-  args.push_oop(receiver);
-  args.push_oop((oop)method_result.get_jobject());
-  args.push_int(entry_bci);
-  args.push_long((jlong) (address) env);
-  args.push_int(env->task()->compile_id());
-  JavaCalls::call_special(&result, receiver->klass(), vmSymbols::compileMethod_name(), vmSymbols::compileMethod_signature(), &args, CHECK_ABORT);
+  // An uncaught exception was thrown during compilation.  Generally these
+  // should be handled by the Java code in some useful way but if they leak
+  // through to here report them instead of dying or silently ignoring them.
+  if (HAS_PENDING_EXCEPTION) {
+    Handle throwable = PENDING_EXCEPTION;
+    CLEAR_PENDING_EXCEPTION;
 
-  _methodsCompiled++;
+    JVMCIRuntime::call_printStackTrace(throwable, THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      CLEAR_PENDING_EXCEPTION;
+    }
+
+    // Something went wrong so disable compilation at this level
+    method->set_not_compilable(CompLevel_full_optimization);
+  } else {
+    _methodsCompiled++;
+  }
 }
 
 
 // Compilation entry point for methods
 void JVMCICompiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, DirectiveSet* directive) {
   ShouldNotReachHere();
+}
+
+bool JVMCICompiler::is_trivial(Method* method) {
+  if (_bootstrapping) {
+    return false;
+  }
+  return JVMCIRuntime::treat_as_trivial(method);
 }
 
 // Print compilation timers and statistics

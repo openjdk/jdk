@@ -22,15 +22,18 @@
  */
 package jdk.vm.ci.code;
 
-import static jdk.vm.ci.meta.MetaUtil.*;
+import static jdk.vm.ci.meta.MetaUtil.identityHashCodeString;
 
-import java.nio.*;
-import java.util.*;
-import java.util.function.*;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Objects;
+import java.util.function.Consumer;
 
-import jdk.vm.ci.code.CompilationResult.*;
-import jdk.vm.ci.code.DataSection.*;
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.code.CompilationResult.DataPatch;
+import jdk.vm.ci.code.CompilationResult.DataSectionReference;
+import jdk.vm.ci.code.DataSection.Data;
+import jdk.vm.ci.meta.SerializableConstant;
 
 public final class DataSection implements Iterable<Data> {
 
@@ -176,11 +179,27 @@ public final class DataSection implements Iterable<Data> {
      */
     public DataSectionReference insertData(Data data) {
         assert !finalLayout;
-        if (data.ref == null) {
-            data.ref = new DataSectionReference();
+        synchronized (data) {
+            if (data.ref == null) {
+                data.ref = new DataSectionReference();
+                dataItems.add(data);
+            }
+            return data.ref;
+        }
+    }
+
+    /**
+     * Transfers all {@link Data} from the provided other {@link DataSection} to this
+     * {@link DataSection}, and empties the other section.
+     */
+    public void addAll(DataSection other) {
+        assert !finalLayout && !other.finalLayout;
+
+        for (Data data : other.dataItems) {
+            assert data.ref != null;
             dataItems.add(data);
         }
-        return data.ref;
+        other.dataItems.clear();
     }
 
     /**
@@ -195,14 +214,16 @@ public final class DataSection implements Iterable<Data> {
         dataItems.sort((a, b) -> a.alignment - b.alignment);
 
         int position = 0;
+        int alignment = 1;
         for (Data d : dataItems) {
-            sectionAlignment = lcm(sectionAlignment, d.alignment);
+            alignment = lcm(alignment, d.alignment);
             position = align(position, d.alignment);
 
             d.ref.setOffset(position);
             position += d.size;
         }
 
+        sectionAlignment = alignment;
         sectionSize = position;
     }
 

@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.meta;
 
-import java.lang.invoke.*;
+import java.lang.invoke.MethodHandle;
 
 /**
  * Interface to access the internals of the {@link MethodHandle} implementation of the VM. An

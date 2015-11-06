@@ -147,9 +147,8 @@ compute_optional_offset(int& dest_offset,
 
 
 int java_lang_String::value_offset  = 0;
-int java_lang_String::offset_offset = 0;
-int java_lang_String::count_offset  = 0;
 int java_lang_String::hash_offset   = 0;
+int java_lang_String::coder_offset  = 0;
 
 bool java_lang_String::initialized  = false;
 
@@ -161,16 +160,39 @@ void java_lang_String::compute_offsets() {
   assert(!initialized, "offsets should be initialized only once");
 
   Klass* k = SystemDictionary::String_klass();
-  compute_offset(value_offset,           k, vmSymbols::value_name(),  vmSymbols::char_array_signature());
-  compute_optional_offset(offset_offset, k, vmSymbols::offset_name(), vmSymbols::int_signature());
-  compute_optional_offset(count_offset,  k, vmSymbols::count_name(),  vmSymbols::int_signature());
+  compute_offset(value_offset,           k, vmSymbols::value_name(),  vmSymbols::byte_array_signature());
   compute_optional_offset(hash_offset,   k, vmSymbols::hash_name(),   vmSymbols::int_signature());
+  compute_optional_offset(coder_offset,  k, vmSymbols::coder_name(),  vmSymbols::byte_signature());
 
   initialized = true;
 }
 
-Handle java_lang_String::basic_create(int length, TRAPS) {
+class CompactStringsFixup : public FieldClosure {
+private:
+  bool _value;
+
+public:
+  CompactStringsFixup(bool value) : _value(value) {}
+
+  void do_field(fieldDescriptor* fd) {
+    if (fd->name() == vmSymbols::compact_strings_name()) {
+      oop mirror = fd->field_holder()->java_mirror();
+      assert(fd->field_holder() == SystemDictionary::String_klass(), "Should be String");
+      assert(mirror != NULL, "String must have mirror already");
+      mirror->bool_field_put(fd->offset(), _value);
+    }
+  }
+};
+
+void java_lang_String::set_compact_strings(bool value) {
+  CompactStringsFixup fix(value);
+  InstanceKlass::cast(SystemDictionary::String_klass())->do_local_static_fields(&fix);
+}
+
+Handle java_lang_String::basic_create(int length, bool is_latin1, TRAPS) {
   assert(initialized, "Must be initialized");
+  assert(CompactStrings || !is_latin1, "Must be UTF16 without CompactStrings");
+
   // Create the String object first, so there's a chance that the String
   // and the char array it points to end up in the same cache line.
   oop obj;
@@ -179,26 +201,44 @@ Handle java_lang_String::basic_create(int length, TRAPS) {
   // Create the char array.  The String object must be handlized here
   // because GC can happen as a result of the allocation attempt.
   Handle h_obj(THREAD, obj);
-  typeArrayOop buffer;
-    buffer = oopFactory::new_charArray(length, CHECK_NH);
+  int arr_length = is_latin1 ? length : length << 1; // 2 bytes per UTF16.
+  typeArrayOop buffer = oopFactory::new_byteArray(arr_length, CHECK_NH);;
 
   // Point the String at the char array
   obj = h_obj();
   set_value(obj, buffer);
   // No need to zero the offset, allocation zero'ed the entire String object
-  assert(offset(obj) == 0, "initial String offset should be zero");
-//set_offset(obj, 0);
-  set_count(obj, length);
-
+  set_coder(obj, is_latin1 ? CODER_LATIN1 : CODER_UTF16);
   return h_obj;
 }
 
 Handle java_lang_String::create_from_unicode(jchar* unicode, int length, TRAPS) {
-  Handle h_obj = basic_create(length, CHECK_NH);
+  bool is_latin1 = CompactStrings && UNICODE::is_latin1(unicode, length);
+  Handle h_obj = basic_create(length, is_latin1, CHECK_NH);
   typeArrayOop buffer = value(h_obj());
-  for (int index = 0; index < length; index++) {
-    buffer->char_at_put(index, unicode[index]);
+  assert(TypeArrayKlass::cast(buffer->klass())->element_type() == T_BYTE, "only byte[]");
+  if (is_latin1) {
+    for (int index = 0; index < length; index++) {
+      buffer->byte_at_put(index, (jbyte)unicode[index]);
+    }
+  } else {
+    for (int index = 0; index < length; index++) {
+      buffer->char_at_put(index, unicode[index]);
+    }
   }
+
+#ifdef ASSERT
+  {
+    ResourceMark rm;
+    char* expected = UNICODE::as_utf8(unicode, length);
+    char* actual = as_utf8_string(h_obj());
+    if (strcmp(expected, actual) != 0) {
+      tty->print_cr("Unicode conversion failure: %s --> %s", expected, actual);
+      ShouldNotReachHere();
+    }
+  }
+#endif
+
   return h_obj;
 }
 
@@ -211,11 +251,40 @@ Handle java_lang_String::create_from_str(const char* utf8_str, TRAPS) {
   if (utf8_str == NULL) {
     return Handle();
   }
-  int length = UTF8::unicode_length(utf8_str);
-  Handle h_obj = basic_create(length, CHECK_NH);
-  if (length > 0) {
-    UTF8::convert_to_unicode(utf8_str, value(h_obj())->char_at_addr(0), length);
+  bool has_multibyte, is_latin1;
+  int length = UTF8::unicode_length(utf8_str, is_latin1, has_multibyte);
+  if (!CompactStrings) {
+    has_multibyte = true;
+    is_latin1 = false;
   }
+
+  Handle h_obj = basic_create(length, is_latin1, CHECK_NH);
+  if (length > 0) {
+    if (!has_multibyte) {
+      strncpy((char*)value(h_obj())->byte_at_addr(0), utf8_str, length);
+    } else if (is_latin1) {
+      UTF8::convert_to_unicode(utf8_str, value(h_obj())->byte_at_addr(0), length);
+    } else {
+      UTF8::convert_to_unicode(utf8_str, value(h_obj())->char_at_addr(0), length);
+    }
+  }
+
+#ifdef ASSERT
+  // This check is too strict because the input string is not necessarily valid UTF8.
+  // For example, it may be created with arbitrary content via jni_NewStringUTF.
+  /*
+  {
+    ResourceMark rm;
+    const char* expected = utf8_str;
+    char* actual = as_utf8_string(h_obj());
+    if (strcmp(expected, actual) != 0) {
+      tty->print_cr("String conversion failure: %s --> %s", expected, actual);
+      ShouldNotReachHere();
+    }
+  }
+  */
+#endif
+
   return h_obj;
 }
 
@@ -225,11 +294,39 @@ oop java_lang_String::create_oop_from_str(const char* utf8_str, TRAPS) {
 }
 
 Handle java_lang_String::create_from_symbol(Symbol* symbol, TRAPS) {
-  int length = UTF8::unicode_length((char*)symbol->bytes(), symbol->utf8_length());
-  Handle h_obj = basic_create(length, CHECK_NH);
-  if (length > 0) {
-    UTF8::convert_to_unicode((char*)symbol->bytes(), value(h_obj())->char_at_addr(0), length);
+  const char* utf8_str = (char*)symbol->bytes();
+  int utf8_len = symbol->utf8_length();
+
+  bool has_multibyte, is_latin1;
+  int length = UTF8::unicode_length(utf8_str, utf8_len, is_latin1, has_multibyte);
+  if (!CompactStrings) {
+    has_multibyte = true;
+    is_latin1 = false;
   }
+
+  Handle h_obj = basic_create(length, is_latin1, CHECK_NH);
+  if (length > 0) {
+    if (!has_multibyte) {
+      strncpy((char*)value(h_obj())->byte_at_addr(0), utf8_str, length);
+    } else if (is_latin1) {
+      UTF8::convert_to_unicode(utf8_str, value(h_obj())->byte_at_addr(0), length);
+    } else {
+      UTF8::convert_to_unicode(utf8_str, value(h_obj())->char_at_addr(0), length);
+    }
+  }
+
+#ifdef ASSERT
+  {
+    ResourceMark rm;
+    const char* expected = symbol->as_utf8();
+    char* actual = as_utf8_string(h_obj());
+    if (strncmp(expected, actual, utf8_len) != 0) {
+      tty->print_cr("Symbol conversion failure: %s --> %s", expected, actual);
+      ShouldNotReachHere();
+    }
+  }
+#endif
+
   return h_obj;
 }
 
@@ -261,7 +358,6 @@ Handle java_lang_String::create_from_platform_dependent_str(const char* str, TRA
 // Converts a Java String to a native C string that can be used for
 // native OS calls.
 char* java_lang_String::as_platform_dependent_str(Handle java_string, TRAPS) {
-
   typedef char* (*to_platform_string_fn_t)(JNIEnv*, jstring, bool*);
   static to_platform_string_fn_t _to_platform_string_fn = NULL;
 
@@ -292,13 +388,15 @@ Handle java_lang_String::char_converter(Handle java_string, jchar from_char, jch
   oop          obj    = java_string();
   // Typical usage is to convert all '/' to '.' in string.
   typeArrayOop value  = java_lang_String::value(obj);
-  int          offset = java_lang_String::offset(obj);
   int          length = java_lang_String::length(obj);
+  bool      is_latin1 = java_lang_String::is_latin1(obj);
 
   // First check if any from_char exist
   int index; // Declared outside, used later
   for (index = 0; index < length; index++) {
-    if (value->char_at(index + offset) == from_char) {
+    jchar c = !is_latin1 ? value->char_at(index) :
+                  ((jchar) value->byte_at(index)) & 0xff;
+    if (c == from_char) {
       break;
     }
   }
@@ -307,34 +405,66 @@ Handle java_lang_String::char_converter(Handle java_string, jchar from_char, jch
     return java_string;
   }
 
-  // Create new UNICODE buffer. Must handlize value because GC
+  // Check if result string will be latin1
+  bool to_is_latin1 = false;
+
+  // Replacement char must be latin1
+  if (CompactStrings && UNICODE::is_latin1(to_char)) {
+    if (is_latin1) {
+      // Source string is latin1 as well
+      to_is_latin1 = true;
+    } else if (!UNICODE::is_latin1(from_char)) {
+      // We are replacing an UTF16 char. Scan string to
+      // check if result can be latin1 encoded.
+      to_is_latin1 = true;
+      for (index = 0; index < length; index++) {
+        jchar c = value->char_at(index);
+        if (c != from_char && !UNICODE::is_latin1(c)) {
+          to_is_latin1 = false;
+          break;
+        }
+      }
+    }
+  }
+
+  // Create new UNICODE (or byte) buffer. Must handlize value because GC
   // may happen during String and char array creation.
   typeArrayHandle h_value(THREAD, value);
-  Handle string = basic_create(length, CHECK_NH);
-
+  Handle string = basic_create(length, to_is_latin1, CHECK_NH);
   typeArrayOop from_buffer = h_value();
-  typeArrayOop to_buffer   = java_lang_String::value(string());
+  typeArrayOop to_buffer = java_lang_String::value(string());
 
   // Copy contents
   for (index = 0; index < length; index++) {
-    jchar c = from_buffer->char_at(index + offset);
+    jchar c = (!is_latin1) ? from_buffer->char_at(index) :
+                    ((jchar) from_buffer->byte_at(index)) & 0xff;
     if (c == from_char) {
       c = to_char;
     }
-    to_buffer->char_at_put(index, c);
+    if (!to_is_latin1) {
+      to_buffer->char_at_put(index, c);
+    } else {
+      to_buffer->byte_at_put(index, (jbyte) c);
+    }
   }
   return string;
 }
 
 jchar* java_lang_String::as_unicode_string(oop java_string, int& length, TRAPS) {
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          offset = java_lang_String::offset(java_string);
                length = java_lang_String::length(java_string);
+  bool      is_latin1 = java_lang_String::is_latin1(java_string);
 
   jchar* result = NEW_RESOURCE_ARRAY_RETURN_NULL(jchar, length);
   if (result != NULL) {
-    for (int index = 0; index < length; index++) {
-      result[index] = value->char_at(index + offset);
+    if (!is_latin1) {
+      for (int index = 0; index < length; index++) {
+        result[index] = value->char_at(index);
+      }
+    } else {
+      for (int index = 0; index < length; index++) {
+        result[index] = ((jchar) value->byte_at(index)) & 0xff;
+      }
     }
   } else {
     THROW_MSG_0(vmSymbols::java_lang_OutOfMemoryError(), "could not allocate Unicode string");
@@ -348,21 +478,35 @@ unsigned int java_lang_String::hash_code(oop java_string) {
   if (length == 0) return 0;
 
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          offset = java_lang_String::offset(java_string);
-  return java_lang_String::hash_code(value->char_at_addr(offset), length);
+  bool      is_latin1 = java_lang_String::is_latin1(java_string);
+
+  if (is_latin1) {
+    return java_lang_String::hash_code(value->byte_at_addr(0), length);
+  } else {
+    return java_lang_String::hash_code(value->char_at_addr(0), length);
+  }
 }
 
 char* java_lang_String::as_quoted_ascii(oop java_string) {
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          offset = java_lang_String::offset(java_string);
   int          length = java_lang_String::length(java_string);
+  bool      is_latin1 = java_lang_String::is_latin1(java_string);
 
-  jchar* base = (length == 0) ? NULL : value->char_at_addr(offset);
-  if (base == NULL) return NULL;
+  if (length == 0) return NULL;
 
-  int result_length = UNICODE::quoted_ascii_length(base, length) + 1;
-  char* result = NEW_RESOURCE_ARRAY(char, result_length);
-  UNICODE::as_quoted_ascii(base, length, result, result_length);
+  char* result;
+  int result_length;
+  if (!is_latin1) {
+    jchar* base = value->char_at_addr(0);
+    result_length = UNICODE::quoted_ascii_length(base, length) + 1;
+    result = NEW_RESOURCE_ARRAY(char, result_length);
+    UNICODE::as_quoted_ascii(base, length, result, result_length);
+  } else {
+    jbyte* base = value->byte_at_addr(0);
+    result_length = UNICODE::quoted_ascii_length(base, length) + 1;
+    result = NEW_RESOURCE_ARRAY(char, result_length);
+    UNICODE::as_quoted_ascii(base, length, result, result_length);
+  }
   assert(result_length >= length + 1, "must not be shorter");
   assert(result_length == (int)strlen(result) + 1, "must match");
   return result;
@@ -370,89 +514,141 @@ char* java_lang_String::as_quoted_ascii(oop java_string) {
 
 unsigned int java_lang_String::hash_string(oop java_string) {
   int          length = java_lang_String::length(java_string);
-  // Zero length string doesn't hash necessarily hash to zero.
+  // Zero length string doesn't necessarily hash to zero.
   if (length == 0) {
-    return StringTable::hash_string(NULL, 0);
+    return StringTable::hash_string((jchar*) NULL, 0);
   }
 
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          offset = java_lang_String::offset(java_string);
-  return StringTable::hash_string(value->char_at_addr(offset), length);
+  bool      is_latin1 = java_lang_String::is_latin1(java_string);
+  if (is_latin1) {
+    return StringTable::hash_string(value->byte_at_addr(0), length);
+  } else {
+    return StringTable::hash_string(value->char_at_addr(0), length);
+  }
 }
 
 Symbol* java_lang_String::as_symbol(Handle java_string, TRAPS) {
   oop          obj    = java_string();
   typeArrayOop value  = java_lang_String::value(obj);
-  int          offset = java_lang_String::offset(obj);
   int          length = java_lang_String::length(obj);
-  jchar* base = (length == 0) ? NULL : value->char_at_addr(offset);
-  Symbol* sym = SymbolTable::lookup_unicode(base, length, THREAD);
-  return sym;
+  bool      is_latin1 = java_lang_String::is_latin1(obj);
+  if (!is_latin1) {
+    jchar* base = (length == 0) ? NULL : value->char_at_addr(0);
+    Symbol* sym = SymbolTable::lookup_unicode(base, length, THREAD);
+    return sym;
+  } else {
+    ResourceMark rm;
+    jbyte* position = (length == 0) ? NULL : value->byte_at_addr(0);
+    const char* base = UNICODE::as_utf8(position, length);
+    Symbol* sym = SymbolTable::lookup(base, length, THREAD);
+    return sym;
+  }
 }
 
 Symbol* java_lang_String::as_symbol_or_null(oop java_string) {
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          offset = java_lang_String::offset(java_string);
   int          length = java_lang_String::length(java_string);
-  jchar* base = (length == 0) ? NULL : value->char_at_addr(offset);
-  return SymbolTable::probe_unicode(base, length);
+  bool      is_latin1 = java_lang_String::is_latin1(java_string);
+  if (!is_latin1) {
+    jchar* base = (length == 0) ? NULL : value->char_at_addr(0);
+    return SymbolTable::probe_unicode(base, length);
+  } else {
+    ResourceMark rm;
+    jbyte* position = (length == 0) ? NULL : value->byte_at_addr(0);
+    const char* base = UNICODE::as_utf8(position, length);
+    return SymbolTable::probe(base, length);
+  }
 }
-
 
 int java_lang_String::utf8_length(oop java_string) {
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          offset = java_lang_String::offset(java_string);
   int          length = java_lang_String::length(java_string);
-  jchar* position = (length == 0) ? NULL : value->char_at_addr(offset);
-  return UNICODE::utf8_length(position, length);
+  bool      is_latin1 = java_lang_String::is_latin1(java_string);
+  if (length == 0) {
+    return 0;
+  }
+  if (!is_latin1) {
+    return UNICODE::utf8_length(value->char_at_addr(0), length);
+  } else {
+    return UNICODE::utf8_length(value->byte_at_addr(0), length);
+  }
 }
 
 char* java_lang_String::as_utf8_string(oop java_string) {
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          offset = java_lang_String::offset(java_string);
   int          length = java_lang_String::length(java_string);
-  jchar* position = (length == 0) ? NULL : value->char_at_addr(offset);
-  return UNICODE::as_utf8(position, length);
+  bool      is_latin1 = java_lang_String::is_latin1(java_string);
+  if (!is_latin1) {
+    jchar* position = (length == 0) ? NULL : value->char_at_addr(0);
+    return UNICODE::as_utf8(position, length);
+  } else {
+    jbyte* position = (length == 0) ? NULL : value->byte_at_addr(0);
+    return UNICODE::as_utf8(position, length);
+  }
 }
 
 char* java_lang_String::as_utf8_string(oop java_string, char* buf, int buflen) {
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          offset = java_lang_String::offset(java_string);
   int          length = java_lang_String::length(java_string);
-  jchar* position = (length == 0) ? NULL : value->char_at_addr(offset);
-  return UNICODE::as_utf8(position, length, buf, buflen);
+  bool      is_latin1 = java_lang_String::is_latin1(java_string);
+  if (!is_latin1) {
+    jchar* position = (length == 0) ? NULL : value->char_at_addr(0);
+    return UNICODE::as_utf8(position, length, buf, buflen);
+  } else {
+    jbyte* position = (length == 0) ? NULL : value->byte_at_addr(0);
+    return UNICODE::as_utf8(position, length, buf, buflen);
+  }
 }
 
 char* java_lang_String::as_utf8_string(oop java_string, int start, int len) {
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          offset = java_lang_String::offset(java_string);
   int          length = java_lang_String::length(java_string);
   assert(start + len <= length, "just checking");
-  jchar* position = value->char_at_addr(offset + start);
-  return UNICODE::as_utf8(position, len);
+  bool      is_latin1 = java_lang_String::is_latin1(java_string);
+  if (!is_latin1) {
+    jchar* position = value->char_at_addr(start);
+    return UNICODE::as_utf8(position, len);
+  } else {
+    jbyte* position = value->byte_at_addr(start);
+    return UNICODE::as_utf8(position, len);
+  }
 }
 
 char* java_lang_String::as_utf8_string(oop java_string, int start, int len, char* buf, int buflen) {
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          offset = java_lang_String::offset(java_string);
   int          length = java_lang_String::length(java_string);
   assert(start + len <= length, "just checking");
-  jchar* position = value->char_at_addr(offset + start);
-  return UNICODE::as_utf8(position, len, buf, buflen);
+  bool      is_latin1 = java_lang_String::is_latin1(java_string);
+  if (!is_latin1) {
+    jchar* position = value->char_at_addr(start);
+    return UNICODE::as_utf8(position, len, buf, buflen);
+  } else {
+    jbyte* position = value->byte_at_addr(start);
+    return UNICODE::as_utf8(position, len, buf, buflen);
+  }
 }
 
 bool java_lang_String::equals(oop java_string, jchar* chars, int len) {
   assert(java_string->klass() == SystemDictionary::String_klass(),
          "must be java_string");
   typeArrayOop value  = java_lang_String::value(java_string);
-  int          offset = java_lang_String::offset(java_string);
   int          length = java_lang_String::length(java_string);
   if (length != len) {
     return false;
   }
-  for (int i = 0; i < len; i++) {
-    if (value->char_at(i + offset) != chars[i]) {
-      return false;
+  bool      is_latin1 = java_lang_String::is_latin1(java_string);
+  if (!is_latin1) {
+    for (int i = 0; i < len; i++) {
+      if (value->char_at(i) != chars[i]) {
+        return false;
+      }
+    }
+  } else {
+    for (int i = 0; i < len; i++) {
+      if ((((jchar) value->byte_at(i)) & 0xff) != chars[i]) {
+        return false;
+      }
     }
   }
   return true;
@@ -464,17 +660,20 @@ bool java_lang_String::equals(oop str1, oop str2) {
   assert(str2->klass() == SystemDictionary::String_klass(),
          "must be java String");
   typeArrayOop value1  = java_lang_String::value(str1);
-  int          offset1 = java_lang_String::offset(str1);
   int          length1 = java_lang_String::length(str1);
+  bool       is_latin1 = java_lang_String::is_latin1(str1);
   typeArrayOop value2  = java_lang_String::value(str2);
-  int          offset2 = java_lang_String::offset(str2);
   int          length2 = java_lang_String::length(str2);
+  bool       is_latin2 = java_lang_String::is_latin1(str2);
 
-  if (length1 != length2) {
+  if ((length1 != length2) || (is_latin1 != is_latin2)) {
+    // Strings of different size or with different
+    // coders are never equal.
     return false;
   }
-  for (int i = 0; i < length1; i++) {
-    if (value1->char_at(i + offset1) != value2->char_at(i + offset2)) {
+  int blength1 = value1->length();
+  for (int i = 0; i < value1->length(); i++) {
+    if (value1->byte_at(i) != value2->byte_at(i)) {
       return false;
     }
   }
@@ -492,12 +691,13 @@ void java_lang_String::print(oop java_string, outputStream* st) {
     return;
   }
 
-  int offset = java_lang_String::offset(java_string);
   int length = java_lang_String::length(java_string);
+  bool is_latin1 = java_lang_String::is_latin1(java_string);
 
   st->print("\"");
   for (int index = 0; index < length; index++) {
-    st->print("%c", value->char_at(index + offset));
+    st->print("%c", (!is_latin1) ?  value->char_at(index) :
+                           ((jchar) value->byte_at(index)) & 0xff );
   }
   st->print("\"");
 }
@@ -1169,10 +1369,13 @@ oop  java_lang_ThreadGroup::parent(oop java_thread_group) {
 
 // ("name as oop" accessor is not necessary)
 
-typeArrayOop java_lang_ThreadGroup::name(oop java_thread_group) {
+const char* java_lang_ThreadGroup::name(oop java_thread_group) {
   oop name = java_thread_group->obj_field(_name_offset);
   // ThreadGroup.name can be null
-  return name == NULL ? (typeArrayOop)NULL : java_lang_String::value(name);
+  if (name != NULL) {
+    return java_lang_String::as_utf8_string(name);
+  }
+  return NULL;
 }
 
 int java_lang_ThreadGroup::nthreads(oop java_thread_group) {
@@ -3541,13 +3744,12 @@ void JavaClasses::check_offsets() {
 
   // java.lang.String
 
-  CHECK_OFFSET("java/lang/String", java_lang_String, value, "[C");
-  if (java_lang_String::has_offset_field()) {
-    CHECK_OFFSET("java/lang/String", java_lang_String, offset, "I");
-    CHECK_OFFSET("java/lang/String", java_lang_String, count, "I");
-  }
+  CHECK_OFFSET("java/lang/String", java_lang_String, value, "[B");
   if (java_lang_String::has_hash_field()) {
     CHECK_OFFSET("java/lang/String", java_lang_String, hash, "I");
+  }
+  if (java_lang_String::has_coder_field()) {
+    CHECK_OFFSET("java/lang/String", java_lang_String, coder, "B");
   }
 
   // java.lang.Class
