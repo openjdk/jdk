@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "ci/ciTypeFlow.hpp"
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/castnode.hpp"
@@ -771,6 +772,11 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
   CallStaticJavaNode* dom_unc = otherproj->is_uncommon_trap_proj(Deoptimization::Reason_none);
 
   if (otherproj->outcnt() == 1 && dom_unc != NULL) {
+    // We need to re-execute the folded Ifs after deoptimization from the merged traps
+    if (!dom_unc->jvms()->should_reexecute()) {
+      return false;
+    }
+
     CallStaticJavaNode* unc = NULL;
     ProjNode* unc_proj = uncommon_trap_proj(unc);
     if (unc_proj != NULL && unc_proj->outcnt() == 1) {
@@ -784,12 +790,37 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
       } else if (dom_unc->in(0) != otherproj || unc->in(0) != unc_proj) {
         return false;
       }
+
+      // Different methods and methods containing jsrs are not supported.
+      ciMethod* method = unc->jvms()->method();
+      ciMethod* dom_method = dom_unc->jvms()->method();
+      if (method != dom_method || method->has_jsrs()) {
+        return false;
+      }
+      // Check that both traps are in the same activation of the method (instead
+      // of two activations being inlined through different call sites) by verifying
+      // that the call stacks are equal for both JVMStates.
+      JVMState* dom_caller = dom_unc->jvms()->caller();
+      JVMState* caller = unc->jvms()->caller();
+      if (!dom_caller->same_calls_as(caller)) {
+        return false;
+      }
+      // Check that the bci of the dominating uncommon trap dominates the bci
+      // of the dominated uncommon trap. Otherwise we may not re-execute
+      // the dominated check after deoptimization from the merged uncommon trap.
+      ciTypeFlow* flow = dom_method->get_flow_analysis();
+      int bci = unc->jvms()->bci();
+      int dom_bci = dom_unc->jvms()->bci();
+      if (!flow->is_dominated_by(bci, dom_bci)) {
+        return false;
+      }
+
       // See merge_uncommon_traps: the reason of the uncommon trap
       // will be changed and the state of the dominating If will be
       // used. Checked that we didn't apply this transformation in a
       // previous compilation and it didn't cause too many traps
-      if (!igvn->C->too_many_traps(dom_unc->jvms()->method(), dom_unc->jvms()->bci(), Deoptimization::Reason_unstable_fused_if) &&
-          !igvn->C->too_many_traps(dom_unc->jvms()->method(), dom_unc->jvms()->bci(), Deoptimization::Reason_range_check)) {
+      if (!igvn->C->too_many_traps(dom_method, dom_bci, Deoptimization::Reason_unstable_fused_if) &&
+          !igvn->C->too_many_traps(dom_method, dom_bci, Deoptimization::Reason_range_check)) {
         success = unc_proj;
         fail = unc_proj->other_if_proj();
         return true;

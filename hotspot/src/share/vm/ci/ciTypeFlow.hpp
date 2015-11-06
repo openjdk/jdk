@@ -529,6 +529,7 @@ public:
     GrowableArray<Block*>*           _exceptions;
     GrowableArray<ciInstanceKlass*>* _exc_klasses;
     GrowableArray<Block*>*           _successors;
+    GrowableArray<Block*>*           _predecessors;
     StateVector*                     _state;
     JsrSet*                          _jsrs;
 
@@ -615,6 +616,12 @@ public:
     GrowableArray<Block*>* successors() {
       assert(_successors != NULL, "must be filled in");
       return _successors;
+    }
+
+    // Predecessors of this block (including exception edges)
+    GrowableArray<Block*>* predecessors() {
+      assert(_predecessors != NULL, "must be filled in");
+      return _predecessors;
     }
 
     // Get the exceptional successors for this Block.
@@ -940,6 +947,9 @@ private:
 public:
   // Perform type inference flow analysis.
   void do_flow();
+
+  // Determine if bci is dominated by dom_bci
+  bool is_dominated_by(int bci, int dom_bci);
 
   void print_on(outputStream* st) const PRODUCT_RETURN;
 
