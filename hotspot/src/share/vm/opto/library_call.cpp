@@ -1239,7 +1239,7 @@ bool LibraryCallKit::inline_string_copy(bool compress) {
   Node* dst_start = array_element_address(dst, dst_offset, dst_elem);
   // 'src_start' points to src array + scaled offset
   // 'dst_start' points to dst array + scaled offset
-  Node* count;
+  Node* count = NULL;
   if (compress) {
     count = compress_string(src_start, dst_start, length);
   } else {
