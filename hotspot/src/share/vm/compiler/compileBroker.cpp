@@ -1202,7 +1202,7 @@ bool CompileBroker::compilation_is_prohibited(methodHandle method, int osr_bci, 
   double scale;
   if (excluded || (CompilerOracle::has_option_value(method, "CompileThresholdScaling", scale) && scale == 0)) {
     bool quietly = CompilerOracle::should_exclude_quietly();
-    if (!quietly) {
+    if (PrintCompilation && !quietly) {
       // This does not happen quietly...
       ResourceMark rm;
       tty->print("### Excluding %s:%s",

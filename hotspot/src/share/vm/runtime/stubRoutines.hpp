@@ -216,7 +216,6 @@ class StubRoutines: AllStatic {
   // intrinsic version returns the same result as the strict version
   // then they can be set to the appropriate function from
   // SharedRuntime.
-  static double (*_intrinsic_log)(double);
   static double (*_intrinsic_log10)(double);
   static double (*_intrinsic_pow)(double, double);
   static double (*_intrinsic_sin)(double);
@@ -384,12 +383,8 @@ class StubRoutines: AllStatic {
 
   static address zero_aligned_words()   { return _zero_aligned_words; }
 
-  static double  intrinsic_log(double d) {
-    assert(_intrinsic_log != NULL, "must be defined");
-    return _intrinsic_log(d);
-  }
   static double  intrinsic_log10(double d) {
-    assert(_intrinsic_log != NULL, "must be defined");
+    assert(_intrinsic_log10 != NULL, "must be defined");
     return _intrinsic_log10(d);
   }
   static double  intrinsic_pow(double d, double d2) {

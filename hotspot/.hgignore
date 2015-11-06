@@ -11,3 +11,12 @@
 ^.hgtip
 .DS_Store
 \.class$
+^\.?mx.jvmci/
+^src/jdk.vm.ci/share/classes/\w[\w\.]*/.*\.xml
+^src/jdk.vm.ci/share/classes/\w[\w\.]*/.*\.iml
+^src/jdk.vm.ci/share/classes/\w[\w\.]*/nbproject
+^src/jdk.vm.ci/share/classes/\w[\w\.]*/\..*
+^test/compiler/jvmci/\w[\w\.]*/.*\.xml
+^test/compiler/jvmci/\w[\w\.]*/.*\.iml
+^test/compiler/jvmci/\w[\w\.]*/nbproject
+^test/compiler/jvmci/\w[\w\.]*/\..*

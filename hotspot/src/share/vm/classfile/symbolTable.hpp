@@ -165,7 +165,7 @@ public:
   // Look up the address of the literal in the SymbolTable for this Symbol*
   static Symbol** lookup_symbol_addr(Symbol* sym);
 
-  // jchar (utf16) version of lookups
+  // jchar (UTF16) version of lookups
   static Symbol* lookup_unicode(const jchar* name, int len, TRAPS);
   static Symbol* lookup_only_unicode(const jchar* name, int len, unsigned int& hash);
 

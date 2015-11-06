@@ -22,21 +22,33 @@
  */
 package jdk.vm.ci.options;
 
-import static jdk.vm.ci.inittimer.InitTimer.*;
+import static jdk.vm.ci.inittimer.InitTimer.timer;
 
-import java.io.*;
-import java.util.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Formatter;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.Set;
+import java.util.SortedMap;
 
-import jdk.vm.ci.inittimer.*;
+import jdk.vm.ci.inittimer.InitTimer;
 
 /**
  * This class contains methods for parsing JVMCI options and matching them against a set of
- * {@link OptionDescriptors}. The {@link OptionDescriptors} are loaded from JVMCI jars, either
- * {@linkplain JVMCIJarsOptionDescriptorsProvider directly} or via a {@link ServiceLoader}.
+ * {@link OptionDescriptors}. The {@link OptionDescriptors} are loaded via a {@link ServiceLoader}.
  */
 public class OptionsParser {
 
     private static final OptionValue<Boolean> PrintFlags = new OptionValue<>(false);
+    private static final OptionValue<Boolean> ShowFlags = new OptionValue<>(false);
 
     /**
      * A service for looking up {@link OptionDescriptor}s.
@@ -54,7 +66,7 @@ public class OptionsParser {
     }
 
     /**
-     * Parses the options in {@code <jre>/lib/jvmci/options} if {@code parseOptionsFile == true} and
+     * Parses the options in {@code <jdk>/lib/jvmci.options} if {@code parseOptionsFile == true} and
      * the file exists followed by the JVMCI options in {@code options} if {@code options != null}.
      *
      * Called from VM. This method has an object return type to allow it to be called with a VM
@@ -62,31 +74,36 @@ public class OptionsParser {
      *
      * @param options JVMCI options as serialized (name, value) pairs
      * @param parseOptionsFile specifies whether to look for and parse
-     *            {@code <jre>/lib/jvmci/options}
+     *            {@code <jdk>/lib/jvmci.options}
      */
     @SuppressWarnings("try")
     public static Boolean parseOptionsFromVM(String[] options, boolean parseOptionsFile) {
+
         try (InitTimer t = timer("ParseOptions")) {
-            JVMCIJarsOptionDescriptorsProvider odp = new JVMCIJarsOptionDescriptorsProvider();
 
             if (parseOptionsFile) {
                 File javaHome = new File(System.getProperty("java.home"));
                 File lib = new File(javaHome, "lib");
-                File jvmci = new File(lib, "jvmci");
-                File jvmciOptions = new File(jvmci, "options");
+                File jvmciOptions = new File(lib, "jvmci.options");
                 if (jvmciOptions.exists()) {
                     try (BufferedReader br = new BufferedReader(new FileReader(jvmciOptions))) {
                         String optionSetting = null;
                         int lineNo = 1;
+                        List<String> optionSettings = new ArrayList<>();
                         while ((optionSetting = br.readLine()) != null) {
                             if (!optionSetting.isEmpty() && optionSetting.charAt(0) != '#') {
                                 try {
-                                    parseOptionSetting(optionSetting, null, odp);
+                                    parseOptionSettingTo(optionSetting, optionSettings);
                                 } catch (Throwable e) {
                                     throw new InternalError("Error parsing " + jvmciOptions + ", line " + lineNo, e);
                                 }
                             }
                             lineNo++;
+                        }
+                        try {
+                            parseOptions(optionSettings.toArray(new String[optionSettings.size()]), null, null, null);
+                        } catch (Throwable e) {
+                            throw new InternalError("Error parsing an option from " + jvmciOptions, e);
                         }
                     } catch (IOException e) {
                         throw new InternalError("Error reading " + jvmciOptions, e);
@@ -94,55 +111,121 @@ public class OptionsParser {
                 }
             }
 
-            if (options != null) {
-                assert options.length % 2 == 0;
-                for (int i = 0; i < options.length / 2; i++) {
-                    String name = options[i * 2];
-                    String value = options[i * 2 + 1];
-                    parseOption(OptionsLoader.options, name, value, null, odp);
-                }
-            }
+            parseOptions(options, null, null, null);
         }
         return Boolean.TRUE;
     }
 
     /**
-     * Parses a given option setting.
+     * Parses an ordered list of (name, value) pairs assigning values to JVMCI options.
+     *
+     * @param optionSettings JVMCI options as serialized (name, value) pairs
+     * @param setter the object to notify of the parsed option and value
+     * @param odp if non-null, the service to use for looking up {@link OptionDescriptor}s
+     * @param options the options database to use if {@code odp == null}. If
+     *            {@code options == null && odp == null}, {@link OptionsLoader#options} is used.
+     * @throws IllegalArgumentException if there's a problem parsing {@code option}
+     */
+    public static void parseOptions(String[] optionSettings, OptionConsumer setter, OptionDescriptorsProvider odp, SortedMap<String, OptionDescriptor> options) {
+        if (optionSettings != null && optionSettings.length != 0) {
+            assert optionSettings.length % 2 == 0;
+
+            moveHelpFlagsToTail(optionSettings);
+
+            for (int i = 0; i < optionSettings.length / 2; i++) {
+                String name = optionSettings[i * 2];
+                String value = optionSettings[i * 2 + 1];
+                parseOption(name, value, setter, odp, options);
+            }
+            if (PrintFlags.getValue() || ShowFlags.getValue()) {
+                Set<String> explicitlyAssigned = new HashSet<>(optionSettings.length / 2);
+                for (int i = 0; i < optionSettings.length / 2; i++) {
+                    String name = optionSettings[i * 2];
+                    explicitlyAssigned.add(name);
+                }
+                printFlags(resolveOptions(options), "JVMCI", System.out, explicitlyAssigned);
+                if (PrintFlags.getValue()) {
+                    System.exit(0);
+                }
+            }
+        }
+    }
+
+    /**
+     * Moves all {@code PrintFlags} and {@code ShowFlags} option settings to the back of
+     * {@code optionSettings}. This allows the help message to show which options had their value
+     * explicitly set (even if to their default value).
+     */
+    private static void moveHelpFlagsToTail(String[] optionSettings) {
+        List<String> tail = null;
+        int insert = 0;
+        for (int i = 0; i < optionSettings.length / 2; i++) {
+            String name = optionSettings[i * 2];
+            String value = optionSettings[i * 2 + 1];
+            if (name.equals("ShowFlags") || name.equals("PrintFlags")) {
+                if (tail == null) {
+                    tail = new ArrayList<>(4);
+                    insert = i * 2;
+                }
+                tail.add(name);
+                tail.add(value);
+            } else if (tail != null) {
+                optionSettings[insert++] = name;
+                optionSettings[insert++] = value;
+            }
+        }
+        if (tail != null) {
+            assert tail.size() + insert == optionSettings.length;
+            String[] tailArr = tail.toArray(new String[tail.size()]);
+            System.arraycopy(tailArr, 0, optionSettings, insert, tailArr.length);
+        }
+    }
+
+    /**
+     * Parses a given option setting string to a list of (name, value) pairs.
      *
      * @param optionSetting a string matching the pattern {@code <name>=<value>}
-     * @param setter the object to notify of the parsed option and value
      */
-    public static void parseOptionSetting(String optionSetting, OptionConsumer setter, OptionDescriptorsProvider odp) {
+    public static void parseOptionSettingTo(String optionSetting, List<String> dst) {
         int eqIndex = optionSetting.indexOf('=');
         if (eqIndex == -1) {
             throw new InternalError("Option setting has does not match the pattern <name>=<value>: " + optionSetting);
         }
-        String name = optionSetting.substring(0, eqIndex);
-        String value = optionSetting.substring(eqIndex + 1);
-        parseOption(OptionsLoader.options, name, value, setter, odp);
+        dst.add(optionSetting.substring(0, eqIndex));
+        dst.add(optionSetting.substring(eqIndex + 1));
+    }
+
+    /**
+     * Resolves {@code options} to a non-null value. This ensures {@link OptionsLoader#options} is
+     * only loaded if necessary.
+     */
+    private static SortedMap<String, OptionDescriptor> resolveOptions(SortedMap<String, OptionDescriptor> options) {
+        return options != null ? options : OptionsLoader.options;
     }
 
     /**
      * Parses a given option name and value.
      *
-     * @param options
      * @param name the option name
      * @param valueString the option value as a string
      * @param setter the object to notify of the parsed option and value
-     * @param odp
-     *
+     * @param odp if non-null, the service to use for looking up {@link OptionDescriptor}s
+     * @param options the options database to use if {@code odp == null}. If
+     *            {@code options == null && odp == null}, {@link OptionsLoader#options} is used.
      * @throws IllegalArgumentException if there's a problem parsing {@code option}
      */
-    public static void parseOption(SortedMap<String, OptionDescriptor> options, String name, String valueString, OptionConsumer setter, OptionDescriptorsProvider odp) {
-        OptionDescriptor desc = options.get(name);
-        if (desc == null && odp != null) {
-            desc = odp.get(name);
-        }
-        if (desc == null && name.equals("PrintFlags")) {
-            desc = OptionDescriptor.create("PrintFlags", Boolean.class, "Prints all JVMCI flags and exits", OptionsParser.class, "PrintFlags", PrintFlags);
+    private static void parseOption(String name, String valueString, OptionConsumer setter, OptionDescriptorsProvider odp, SortedMap<String, OptionDescriptor> options) {
+
+        OptionDescriptor desc = odp != null ? odp.get(name) : resolveOptions(options).get(name);
+        if (desc == null) {
+            if (name.equals("PrintFlags")) {
+                desc = OptionDescriptor.create("PrintFlags", Boolean.class, "Prints all JVMCI flags and exits", OptionsParser.class, "PrintFlags", PrintFlags);
+            } else if (name.equals("ShowFlags")) {
+                desc = OptionDescriptor.create("ShowFlags", Boolean.class, "Prints all JVMCI flags and continues", OptionsParser.class, "ShowFlags", ShowFlags);
+            }
         }
         if (desc == null) {
-            List<OptionDescriptor> matches = fuzzyMatch(options, name);
+            List<OptionDescriptor> matches = fuzzyMatch(resolveOptions(options), name);
             Formatter msg = new Formatter();
             msg.format("Could not find option %s", name);
             if (!matches.isEmpty()) {
@@ -181,11 +264,6 @@ public class OptionsParser {
             desc.getOptionValue().setValue(value);
         } else {
             setter.set(desc, value);
-        }
-
-        if (PrintFlags.getValue()) {
-            printFlags(options, "JVMCI", System.out);
-            System.exit(0);
         }
     }
 
@@ -252,16 +330,18 @@ public class OptionsParser {
         return lines;
     }
 
-    public static void printFlags(SortedMap<String, OptionDescriptor> sortedOptions, String prefix, PrintStream out) {
+    private static void printFlags(SortedMap<String, OptionDescriptor> sortedOptions, String prefix, PrintStream out, Set<String> explicitlyAssigned) {
         out.println("[List of " + prefix + " options]");
         for (Map.Entry<String, OptionDescriptor> e : sortedOptions.entrySet()) {
             e.getKey();
             OptionDescriptor desc = e.getValue();
             Object value = desc.getOptionValue().getValue();
             List<String> helpLines = wrap(desc.getHelp(), 70);
-            out.println(String.format("%9s %-40s = %-14s %s", desc.getType().getSimpleName(), e.getKey(), value, helpLines.get(0)));
+            String name = e.getKey();
+            String assign = explicitlyAssigned.contains(name) ? ":=" : " =";
+            out.printf("%9s %-40s %s %-14s %s%n", desc.getType().getSimpleName(), name, assign, value, helpLines.get(0));
             for (int i = 1; i < helpLines.size(); i++) {
-                out.println(String.format("%67s %s", " ", helpLines.get(i)));
+                out.printf("%67s %s%n", " ", helpLines.get(i));
             }
         }
     }

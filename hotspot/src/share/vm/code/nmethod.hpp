@@ -603,6 +603,7 @@ public:
   oop jvmci_installed_code() { return _jvmci_installed_code ; }
   char* jvmci_installed_code_name(char* buf, size_t buflen);
   void set_jvmci_installed_code(oop installed_code) { _jvmci_installed_code = installed_code;  }
+  void maybe_invalidate_installed_code();
   oop speculation_log() { return _speculation_log ; }
   void set_speculation_log(oop speculation_log) { _speculation_log = speculation_log;  }
 #endif

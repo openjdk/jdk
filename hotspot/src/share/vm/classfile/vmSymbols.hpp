@@ -53,6 +53,8 @@
   template(java_lang_Object,                          "java/lang/Object")                         \
   template(java_lang_Class,                           "java/lang/Class")                          \
   template(java_lang_String,                          "java/lang/String")                         \
+  template(java_lang_StringLatin1,                    "java/lang/StringLatin1")                   \
+  template(java_lang_StringUTF16,                     "java/lang/StringUTF16")                    \
   template(java_lang_Thread,                          "java/lang/Thread")                         \
   template(java_lang_ThreadGroup,                     "java/lang/ThreadGroup")                    \
   template(java_lang_Cloneable,                       "java/lang/Cloneable")                      \
@@ -202,7 +204,11 @@
   template(java_lang_StackTraceElement,               "java/lang/StackTraceElement")              \
                                                                                                   \
   /* Concurrency support */                                                                       \
-  template(java_util_concurrent_locks_AbstractOwnableSynchronizer,   "java/util/concurrent/locks/AbstractOwnableSynchronizer") \
+  template(java_util_concurrent_locks_AbstractOwnableSynchronizer,           "java/util/concurrent/locks/AbstractOwnableSynchronizer") \
+  template(java_util_concurrent_atomic_AtomicIntegerFieldUpdater_Impl,       "java/util/concurrent/atomic/AtomicIntegerFieldUpdater$AtomicIntegerFieldUpdaterImpl") \
+  template(java_util_concurrent_atomic_AtomicLongFieldUpdater_CASUpdater,    "java/util/concurrent/atomic/AtomicLongFieldUpdater$CASUpdater") \
+  template(java_util_concurrent_atomic_AtomicLongFieldUpdater_LockedUpdater, "java/util/concurrent/atomic/AtomicLongFieldUpdater$LockedUpdater") \
+  template(java_util_concurrent_atomic_AtomicReferenceFieldUpdater_Impl,     "java/util/concurrent/atomic/AtomicReferenceFieldUpdater$AtomicReferenceFieldUpdaterImpl") \
   template(sun_misc_Contended_signature,              "Lsun/misc/Contended;")                     \
                                                                                                   \
   /* class symbols needed by intrinsics */                                                        \
@@ -377,9 +383,9 @@
   template(park_event_name,                           "nativeParkEventPointer")                   \
   template(cache_field_name,                          "cache")                                    \
   template(value_name,                                "value")                                    \
-  template(offset_name,                               "offset")                                   \
-  template(count_name,                                "count")                                    \
   template(hash_name,                                 "hash")                                     \
+  template(coder_name,                                "coder")                                    \
+  template(compact_strings_name,                      "COMPACT_STRINGS")                          \
   template(numberOfLeadingZeros_name,                 "numberOfLeadingZeros")                     \
   template(numberOfTrailingZeros_name,                "numberOfTrailingZeros")                    \
   template(bitCount_name,                             "bitCount")                                 \
@@ -833,21 +839,65 @@
                                                                                                                         \
   do_intrinsic(_equalsC,                  java_util_Arrays,       equals_name,    equalsC_signature,             F_S)   \
    do_signature(equalsC_signature,                               "([C[C)Z")                                             \
+  do_intrinsic(_equalsB,                  java_util_Arrays,       equals_name,    equalsB_signature,             F_S)   \
+   do_signature(equalsB_signature,                               "([B[B)Z")                                             \
                                                                                                                         \
-  do_intrinsic(_compareTo,                java_lang_String,       compareTo_name, string_int_signature,          F_R)   \
+  do_intrinsic(_compressStringC,          java_lang_StringUTF16,  compress_name, encodeISOArray_signature,       F_S)   \
+   do_name(     compress_name,                                   "compress")                                            \
+  do_intrinsic(_compressStringB,          java_lang_StringUTF16,  compress_name, indexOfI_signature,             F_S)   \
+  do_intrinsic(_inflateStringC,           java_lang_StringLatin1, inflate_name, inflateC_signature,              F_S)   \
+   do_name(     inflate_name,                                    "inflate")                                             \
+   do_signature(inflateC_signature,                              "([BI[CII)V")                                          \
+  do_intrinsic(_inflateStringB,           java_lang_StringLatin1, inflate_name, inflateB_signature,              F_S)   \
+   do_signature(inflateB_signature,                              "([BI[BII)V")                                          \
+  do_intrinsic(_toBytesStringU,           java_lang_StringUTF16, toBytes_name, toBytesU_signature,               F_S)   \
+   do_name(     toBytes_name,                                    "toBytes")                                             \
+   do_signature(toBytesU_signature,                              "([CII)[B")                                            \
+  do_intrinsic(_getCharsStringU,          java_lang_StringUTF16, getCharsU_name, getCharsU_signature,            F_S)   \
+   do_name(     getCharsU_name,                                  "getChars")                                            \
+   do_signature(getCharsU_signature,                             "([BII[CI)V")                                          \
+  do_intrinsic(_getCharStringU,           java_lang_StringUTF16, getChar_name, getCharStringU_signature,         F_S)   \
+   do_signature(getCharStringU_signature,                        "([BI)C")                                              \
+  do_intrinsic(_putCharStringU,           java_lang_StringUTF16, putChar_name, putCharStringU_signature,         F_S)   \
+   do_signature(putCharStringU_signature,                        "([BII)V")                                             \
+  do_intrinsic(_compareToL,               java_lang_StringLatin1,compareTo_name, compareTo_indexOf_signature,    F_S)   \
+  do_intrinsic(_compareToU,               java_lang_StringUTF16, compareTo_name, compareTo_indexOf_signature,    F_S)   \
+  do_intrinsic(_compareToLU,              java_lang_StringLatin1,compareToLU_name, compareTo_indexOf_signature,  F_S)   \
+  do_intrinsic(_compareToUL,              java_lang_StringUTF16, compareToUL_name, compareTo_indexOf_signature,  F_S)   \
+   do_signature(compareTo_indexOf_signature,                     "([B[B)I")                                             \
    do_name(     compareTo_name,                                  "compareTo")                                           \
-  do_intrinsic(_indexOf,                  java_lang_String,       indexOf_name, string_int_signature,            F_R)   \
+   do_name(     compareToLU_name,                                "compareToUTF16")                                      \
+   do_name(     compareToUL_name,                                "compareToLatin1")                                     \
+  do_intrinsic(_indexOfL,                 java_lang_StringLatin1,indexOf_name, compareTo_indexOf_signature,      F_S)   \
+  do_intrinsic(_indexOfU,                 java_lang_StringUTF16, indexOf_name, compareTo_indexOf_signature,      F_S)   \
+  do_intrinsic(_indexOfUL,                java_lang_StringUTF16, indexOfUL_name, compareTo_indexOf_signature,    F_S)   \
+  do_intrinsic(_indexOfIL,                java_lang_StringLatin1,indexOf_name, indexOfI_signature,               F_S)   \
+  do_intrinsic(_indexOfIU,                java_lang_StringUTF16, indexOf_name, indexOfI_signature,               F_S)   \
+  do_intrinsic(_indexOfIUL,               java_lang_StringUTF16, indexOfUL_name, indexOfI_signature,             F_S)   \
+  do_intrinsic(_indexOfU_char,            java_lang_StringUTF16, indexOfChar_name, indexOfChar_signature,        F_S)   \
    do_name(     indexOf_name,                                    "indexOf")                                             \
-  do_intrinsic(_equals,                   java_lang_String,       equals_name, object_boolean_signature,         F_R)   \
+   do_name(     indexOfChar_name,                                "indexOfChar")                                         \
+   do_name(     indexOfUL_name,                                  "indexOfLatin1")                                       \
+   do_signature(indexOfI_signature,                              "([BI[BII)I")                                          \
+   do_signature(indexOfChar_signature,                           "([BIII)I")                                            \
+  do_intrinsic(_equalsL,                  java_lang_StringLatin1,equals_name, equalsB_signature,                 F_S)   \
+  do_intrinsic(_equalsU,                  java_lang_StringUTF16, equals_name, equalsB_signature,                 F_S)   \
                                                                                                                         \
   do_class(java_nio_Buffer,               "java/nio/Buffer")                                                            \
   do_intrinsic(_checkIndex,               java_nio_Buffer,        checkIndex_name, int_int_signature,            F_R)   \
    do_name(     checkIndex_name,                                 "checkIndex")                                          \
                                                                                                                         \
+  do_class(java_lang_StringCoding,        "java/lang/StringCoding")                                                     \
+  do_intrinsic(_hasNegatives,             java_lang_StringCoding, hasNegatives_name, hasNegatives_signature,     F_S)   \
+   do_name(     hasNegatives_name,                               "hasNegatives")                                        \
+   do_signature(hasNegatives_signature,                          "([BII)Z")                                             \
+                                                                                                                        \
   do_class(sun_nio_cs_iso8859_1_Encoder,  "sun/nio/cs/ISO_8859_1$Encoder")                                              \
   do_intrinsic(_encodeISOArray,     sun_nio_cs_iso8859_1_Encoder, encodeISOArray_name, encodeISOArray_signature, F_S)   \
    do_name(     encodeISOArray_name,                             "implEncodeISOArray")                                  \
    do_signature(encodeISOArray_signature,                        "([CI[BII)I")                                          \
+                                                                                                                        \
+  do_intrinsic(_encodeByteISOArray,     java_lang_StringCoding, encodeISOArray_name, indexOfI_signature,         F_S)   \
                                                                                                                         \
   do_class(java_math_BigInteger,                      "java/math/BigInteger")                                           \
   do_intrinsic(_multiplyToLen,      java_math_BigInteger, multiplyToLen_name, multiplyToLen_signature, F_S)             \
