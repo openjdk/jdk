@@ -187,12 +187,6 @@
           range(0, max_jint/wordSize)                                       \
           constraint(G1RSetSparseRegionEntriesConstraintFunc,AfterErgo)     \
                                                                             \
-  develop(bool, G1RecordHRRSOops, false,                                    \
-          "When true, record recent calls to rem set operations.")          \
-                                                                            \
-  develop(bool, G1RecordHRRSEvents, false,                                  \
-          "When true, record recent calls to rem set operations.")          \
-                                                                            \
   develop(intx, G1MaxVerifyFailures, -1,                                    \
           "The maximum number of verification failures to print.  "         \
           "-1 means print all.")                                            \
