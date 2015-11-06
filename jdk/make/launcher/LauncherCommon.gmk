@@ -122,8 +122,23 @@ define SetupBuildLauncherBody
     endif
 
     $1_CFLAGS += -DPACKAGE_PATH='"$(PACKAGE_PATH)"'
-    $1_LDFLAGS += -Wl,-all_load $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a \
+    $1_LDFLAGS += -Wl,-all_load \
         -sectcreate __TEXT __info_plist $(MACOSX_PLIST_DIR)/$$($1_PLIST_FILE)
+    ifeq ($(STATIC_BUILD), true)
+      $1_LDFLAGS += -exported_symbols_list \
+              $(SUPPORT_OUTPUTDIR)/build-static/exported.symbols
+      $1_LIBS += \
+          $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs/java.base -name "*.a") \
+          $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libdt_socket.a \
+          $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libjdwp.a \
+          $(SUPPORT_OUTPUTDIR)/native/java.base/$(LIBRARY_PREFIX)fdlibm$(STATIC_LIBRARY_SUFFIX) \
+          -framework CoreFoundation \
+          -framework Foundation \
+          -framework SystemConfiguration \
+          -lstdc++ -liconv
+    else
+      $1_LIBS += $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a
+    endif
     $1_LIBS += -framework Cocoa -framework Security \
         -framework ApplicationServices
   endif

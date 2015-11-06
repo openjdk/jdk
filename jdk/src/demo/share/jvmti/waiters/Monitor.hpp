@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -36,6 +36,10 @@
  * input validation and proper error handling, might not be present in
  * this sample code.
  */
+
+#ifdef STATIC_BUILD
+#define Monitor WaiterMonitor
+#endif
 
 
 /* C++ Monitor class */

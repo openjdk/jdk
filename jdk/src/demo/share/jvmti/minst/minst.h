@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -63,10 +63,5 @@
 /* Utility functions */
 
 #include "agent_util.h"
-
-/* Agent library externals to export. */
-
-JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *reserved);
-JNIEXPORT void JNICALL Agent_OnUnload(JavaVM *vm);
 
 #endif

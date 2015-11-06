@@ -57,6 +57,7 @@ text: .text%Java_java_io_UnixFileSystem_list;
 text: .text%JNU_ClassString;
 text: .text%JNU_CopyObjectArray;
 text: .text%Java_java_lang_String_intern;
+text: .text%Java_java_lang_StringUTF16_isBigEndian;
 text: .text%Java_java_lang_ClassLoader_findLoadedClass0;
 text: .text%Java_java_lang_ClassLoader_findBootstrapClass;
 text: .text%Java_java_lang_Throwable_fillInStackTrace;
