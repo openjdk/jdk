@@ -6978,6 +6978,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
       stride = 8;
     }
   } else {
+    scale = Address::no_scale;  // not used
     scale1 = Address::times_1;
     scale2 = Address::times_2;
     stride = 8;
