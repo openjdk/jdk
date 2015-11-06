@@ -46,7 +46,10 @@ import java.util.List;
  * Process p = pb.start();
  * }
  * </pre>
+ * @deprecated This class is deprecated. Use the one from
+ *             {@code <root>/test/lib/share/classes/jdk/test/lib}
  */
+@Deprecated
 public class JDKToolLauncher {
     private final String executable;
     private final List<String> vmArgs = new ArrayList<String>();

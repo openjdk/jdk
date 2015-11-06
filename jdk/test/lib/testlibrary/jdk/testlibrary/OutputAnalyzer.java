@@ -33,7 +33,12 @@ import java.util.regex.Pattern;
 
 /**
  * Utility class for verifying output and exit value from a {@code Process}.
+ *
+ * @deprecated  This class is deprecated. Use the one from
+ *              {@code <root>/test/lib/share/classes/jdk/test/lib/process}
+ *
  */
+@Deprecated
 public final class OutputAnalyzer {
     private final OutputBuffer output;
     private final String stdout;
