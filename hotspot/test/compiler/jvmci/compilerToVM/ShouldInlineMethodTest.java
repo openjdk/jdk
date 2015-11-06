@@ -45,7 +45,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.test.lib.Asserts;
 import sun.hotspot.WhiteBox;
 
@@ -59,7 +59,7 @@ public class ShouldInlineMethodTest {
     }
 
     private static void runSanityTest(Executable aMethod) {
-        HotSpotResolvedJavaMethodImpl method = CTVMUtilities
+        HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
         boolean shouldInline = CompilerToVMHelper.shouldInlineMethod(method);
         boolean expectedShouldInline = WB.testSetForceInlineMethod(aMethod,

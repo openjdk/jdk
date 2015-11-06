@@ -425,10 +425,26 @@ bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
   // the following switch statement.
   if (!InlineNatives) {
     switch (id) {
-    case vmIntrinsics::_indexOf:
-    case vmIntrinsics::_compareTo:
-    case vmIntrinsics::_equals:
+    case vmIntrinsics::_indexOfL:
+    case vmIntrinsics::_indexOfU:
+    case vmIntrinsics::_indexOfUL:
+    case vmIntrinsics::_indexOfIL:
+    case vmIntrinsics::_indexOfIU:
+    case vmIntrinsics::_indexOfIUL:
+    case vmIntrinsics::_indexOfU_char:
+    case vmIntrinsics::_compareToL:
+    case vmIntrinsics::_compareToU:
+    case vmIntrinsics::_compareToLU:
+    case vmIntrinsics::_compareToUL:
+    case vmIntrinsics::_equalsL:
+    case vmIntrinsics::_equalsU:
     case vmIntrinsics::_equalsC:
+    case vmIntrinsics::_getCharStringU:
+    case vmIntrinsics::_putCharStringU:
+    case vmIntrinsics::_compressStringC:
+    case vmIntrinsics::_compressStringB:
+    case vmIntrinsics::_inflateStringC:
+    case vmIntrinsics::_inflateStringB:
     case vmIntrinsics::_getAndAddInt:
     case vmIntrinsics::_getAndAddLong:
     case vmIntrinsics::_getAndSetInt:
@@ -437,6 +453,7 @@ bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
     case vmIntrinsics::_loadFence:
     case vmIntrinsics::_storeFence:
     case vmIntrinsics::_fullFence:
+    case vmIntrinsics::_hasNegatives:
     case vmIntrinsics::_Reference_get:
       break;
     default:
@@ -619,19 +636,31 @@ bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
     // intrinsic mechanism.
     if (!InlineObjectCopy || !InlineArrayCopy) return true;
     break;
-  case vmIntrinsics::_compareTo:
+  case vmIntrinsics::_compareToL:
+  case vmIntrinsics::_compareToU:
+  case vmIntrinsics::_compareToLU:
+  case vmIntrinsics::_compareToUL:
     if (!SpecialStringCompareTo) return true;
     break;
-  case vmIntrinsics::_indexOf:
+  case vmIntrinsics::_indexOfL:
+  case vmIntrinsics::_indexOfU:
+  case vmIntrinsics::_indexOfUL:
+  case vmIntrinsics::_indexOfIL:
+  case vmIntrinsics::_indexOfIU:
+  case vmIntrinsics::_indexOfIUL:
+  case vmIntrinsics::_indexOfU_char:
     if (!SpecialStringIndexOf) return true;
     break;
-  case vmIntrinsics::_equals:
+  case vmIntrinsics::_equalsL:
+  case vmIntrinsics::_equalsU:
     if (!SpecialStringEquals) return true;
     break;
+  case vmIntrinsics::_equalsB:
   case vmIntrinsics::_equalsC:
     if (!SpecialArraysEquals) return true;
     break;
   case vmIntrinsics::_encodeISOArray:
+  case vmIntrinsics::_encodeByteISOArray:
     if (!SpecialEncodeISOArray) return true;
     break;
   case vmIntrinsics::_getCallerClass:

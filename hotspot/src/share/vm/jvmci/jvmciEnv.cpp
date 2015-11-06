@@ -494,12 +494,12 @@ JVMCIEnv::CodeInstallResult JVMCIEnv::register_method(
       MethodData* mdp = method()->method_data();
       if (mdp != NULL) {
         mdp->inc_decompile_count();
+#ifdef ASSERT
         if (mdp->decompile_count() > (uint)PerMethodRecompilationCutoff) {
-          // TODO (chaeubl) enable this in the fastdebug build only once we are more stable
           ResourceMark m;
           tty->print_cr("WARN: endless recompilation of %s. Method was set to not compilable.", method()->name_and_sig_as_C_string());
-          //ShouldNotReachHere();
         }
+#endif
       }
 
       // All buffers in the CodeBuffer are allocated in the CodeCache.

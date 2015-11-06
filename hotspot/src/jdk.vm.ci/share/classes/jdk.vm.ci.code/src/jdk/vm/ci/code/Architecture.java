@@ -22,24 +22,18 @@
  */
 package jdk.vm.ci.code;
 
-import java.nio.*;
-import java.util.*;
+import java.nio.ByteOrder;
+import java.util.Arrays;
 
 import jdk.vm.ci.code.Register.RegisterCategory;
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.PlatformKind;
 
 /**
  * Represents a CPU architecture, including information such as its endianness, CPU registers, word
  * width, etc.
  */
 public abstract class Architecture {
-
-    /**
-     * The number of entries required in a {@link ReferenceMap} covering all the registers that may
-     * store references. The index of a register in the reference map is given by
-     * {@link Register#getReferenceMapIndex()}.
-     */
-    private final int registerReferenceMapSize;
 
     /**
      * The architecture specific type of a native word.
@@ -85,7 +79,7 @@ public abstract class Architecture {
     private final int returnAddressSize;
 
     protected Architecture(String name, PlatformKind wordKind, ByteOrder byteOrder, boolean unalignedMemoryAccess, Register[] registers, int implicitMemoryBarriers, int nativeCallDisplacementOffset,
-                    int registerReferenceMapSize, int returnAddressSize) {
+                    int returnAddressSize) {
         this.name = name;
         this.registers = registers;
         this.wordKind = wordKind;
@@ -93,7 +87,6 @@ public abstract class Architecture {
         this.unalignedMemoryAccess = unalignedMemoryAccess;
         this.implicitMemoryBarriers = implicitMemoryBarriers;
         this.machineCodeCallDisplacementOffset = nativeCallDisplacementOffset;
-        this.registerReferenceMapSize = registerReferenceMapSize;
         this.returnAddressSize = returnAddressSize;
     }
 
@@ -105,10 +98,6 @@ public abstract class Architecture {
     @Override
     public final String toString() {
         return getName().toLowerCase();
-    }
-
-    public int getRegisterReferenceMapSize() {
-        return registerReferenceMapSize;
     }
 
     /**
@@ -131,11 +120,21 @@ public abstract class Architecture {
     }
 
     /**
-     * Gets an array of all available registers on this architecture. The index of each register in
-     * this array is equal to its {@linkplain Register#number number}.
+     * Gets an array of all registers that exist on this architecture. This contains all registers
+     * that exist in the specification of this architecture. Not all of them may be available on
+     * this particular architecture instance. The index of each register in this array is equal to
+     * its {@linkplain Register#number number}.
      */
     public Register[] getRegisters() {
         return registers.clone();
+    }
+
+    /**
+     * Gets an array of all registers available for storing values on this architecture. This may be
+     * a subset of {@link #getRegisters()}, depending on the capabilities of this particular CPU.
+     */
+    public Register[] getAvailableValueRegisters() {
+        return getRegisters();
     }
 
     public ByteOrder getByteOrder() {
@@ -207,7 +206,6 @@ public abstract class Architecture {
                 assert this.byteOrder.equals(that.byteOrder);
                 assert this.implicitMemoryBarriers == that.implicitMemoryBarriers;
                 assert this.machineCodeCallDisplacementOffset == that.machineCodeCallDisplacementOffset;
-                assert this.registerReferenceMapSize == that.registerReferenceMapSize;
                 assert Arrays.equals(this.registers, that.registers);
                 assert this.returnAddressSize == that.returnAddressSize;
                 assert this.unalignedMemoryAccess == that.unalignedMemoryAccess;

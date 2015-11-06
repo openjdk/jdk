@@ -22,13 +22,29 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.meta.*;
-import jdk.vm.ci.meta.Assumptions.*;
+import jdk.vm.ci.meta.Assumptions.AssumptionResult;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.ConstantPool;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
  * Implementation of {@link JavaType} for resolved non-primitive HotSpot classes.
  */
 public interface HotSpotResolvedObjectType extends ResolvedJavaType {
+
+    /**
+     * Gets the JVMCI mirror for a {@link Class} object.
+     *
+     * @return the {@link HotSpotResolvedJavaType} corresponding to {@code javaClass}
+     */
+    static HotSpotResolvedObjectType fromObjectClass(Class<?> javaClass) {
+        return HotSpotResolvedObjectTypeImpl.fromObjectClass(javaClass);
+    }
 
     HotSpotResolvedObjectType getArrayClass();
 
