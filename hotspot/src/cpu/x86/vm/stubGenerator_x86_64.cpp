@@ -273,7 +273,7 @@ class StubGenerator: public StubCodeGenerator {
     if (UseAVX > 2) {
       last_reg = 31;
     }
-    if (VM_Version::supports_avx512novl()) {
+    if (VM_Version::supports_evex()) {
       for (int i = xmm_save_first; i <= last_reg; i++) {
         __ vextractf32x4h(xmm_save(i), as_XMMRegister(i), 0);
       }
@@ -391,7 +391,7 @@ class StubGenerator: public StubCodeGenerator {
     // restore regs belonging to calling function
 #ifdef _WIN64
     // emit the restores for xmm regs
-    if (VM_Version::supports_avx512novl()) {
+    if (VM_Version::supports_evex()) {
       for (int i = xmm_save_first; i <= last_reg; i++) {
         __ vinsertf32x4h(as_XMMRegister(i), xmm_save(i), 0);
       }

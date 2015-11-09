@@ -186,9 +186,9 @@
           "Maximum number of unrolls for main loop")                        \
           range(0, max_jint)                                                \
                                                                             \
-  product(bool,  SuperWordLoopUnrollAnalysis, false,                        \
-          "Map number of unrolls for main loop via "                        \
-          "Superword Level Parallelism analysis")                           \
+  product_pd(bool,  SuperWordLoopUnrollAnalysis,                            \
+           "Map number of unrolls for main loop via "                       \
+           "Superword Level Parallelism analysis")                          \
                                                                             \
   notproduct(bool, TraceSuperWordLoopUnrollAnalysis, false,                 \
           "Trace what Superword Level Parallelism analysis applies")        \
