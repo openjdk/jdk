@@ -25,10 +25,12 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.concurrent.Callable;
+import compiler.whitebox.CompilerWhiteBoxTest;
+import compiler.whitebox.SimpleTestCase;
 
 /**
  * @test LevelTransitionTest
- * @library /testlibrary /../../test/lib /compiler/whitebox
+ * @library /testlibrary /../../test/lib /
  * @modules java.base/sun.misc
  *          java.management
  * @ignore 8067651
@@ -36,7 +38,7 @@ import java.util.concurrent.Callable;
  * @run main ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/timeout=240 -Xmixed -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+TieredCompilation
- *                   -XX:CompileCommand=compileonly,SimpleTestCase$Helper::*
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCase$Helper::*
  *                   -XX:CompileCommand=compileonly,ExtendedTestCase$CompileMethodHolder::*
  *                   TransitionsTestExecutor LevelTransitionTest
  * @summary Test the correctness of compilation level transitions for different methods
