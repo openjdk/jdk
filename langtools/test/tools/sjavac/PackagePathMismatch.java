@@ -47,8 +47,10 @@ public class PackagePathMismatch extends SjavacBase {
                           "package a.b.c; class Test { }");
 
         // Compile should fail since package a.b.c does not match path a/x/c.
-        String server = "--server:portfile=testserver,background=false";
-        int rc1 = compile(server, "-d", classes, src);
+        int rc1 = compile("--server:portfile=testserver,background=false",
+                          "-d", classes,
+                          "--state-dir=" + classes,
+                          src);
         if (rc1 == 0)
             throw new AssertionError("Compilation succeeded unexpectedly");
     }

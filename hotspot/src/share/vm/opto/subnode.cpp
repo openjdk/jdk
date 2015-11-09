@@ -1510,17 +1510,6 @@ const Type *TanDNode::Value( PhaseTransform *phase ) const {
 
 //=============================================================================
 //------------------------------Value------------------------------------------
-// Compute log
-const Type *LogDNode::Value( PhaseTransform *phase ) const {
-  const Type *t1 = phase->type( in(1) );
-  if( t1 == Type::TOP ) return Type::TOP;
-  if( t1->base() != Type::DoubleCon ) return Type::DOUBLE;
-  double d = t1->getd();
-  return TypeD::make( StubRoutines::intrinsic_log( d ) );
-}
-
-//=============================================================================
-//------------------------------Value------------------------------------------
 // Compute log10
 const Type *Log10DNode::Value( PhaseTransform *phase ) const {
   const Type *t1 = phase->type( in(1) );

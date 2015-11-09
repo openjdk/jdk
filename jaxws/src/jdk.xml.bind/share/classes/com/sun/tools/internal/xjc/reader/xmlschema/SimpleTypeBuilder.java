@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ public final class SimpleTypeBuilder extends BindingComponent {
     private XSSimpleType initiatingType;
 
     /** {@link TypeUse}s for the built-in types. Read-only. */
-    public static final Map<String,TypeUse> builtinConversions = new HashMap<String,TypeUse>();
+    public static final Map<String,TypeUse> builtinConversions;
 
 
     /**
@@ -418,7 +418,7 @@ public final class SimpleTypeBuilder extends BindingComponent {
 
     /**
      * Returns true if a type-safe enum should be created from
-     * the given simple type by default without an explicit &lt;jaxb:enum> customization.
+     * the given simple type by default without an explicit {@code <jaxb:enum>} customization.
      */
     private boolean shouldBeMappedToTypeSafeEnumByDefault( XSRestrictionSimpleType type ) {
 
@@ -876,7 +876,7 @@ public final class SimpleTypeBuilder extends BindingComponent {
         // note that although xs:token and xs:normalizedString are not
         // specified in the spec, they need to be here because they
         // have different whitespace normalization semantics.
-        Map<String,TypeUse> m = builtinConversions;
+        Map<String,TypeUse> m = new HashMap<String,TypeUse>();
 
         // TODO: this is so dumb
         m.put("string",         CBuiltinLeafInfo.STRING);
@@ -911,6 +911,8 @@ public final class SimpleTypeBuilder extends BindingComponent {
         m.put("normalizedString",CBuiltinLeafInfo.NORMALIZED_STRING);
         m.put("ID",             CBuiltinLeafInfo.ID);
         m.put("IDREF",          CBuiltinLeafInfo.IDREF);
+
+        builtinConversions = Collections.unmodifiableMap(m);
         // TODO: handling dateTime, time, and date type
 //        String[] names = {
 //            "date", "dateTime", "time", "hexBinary" };

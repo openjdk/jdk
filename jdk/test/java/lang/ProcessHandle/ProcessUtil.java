@@ -63,8 +63,8 @@ public abstract class ProcessUtil {
      * @param ph the Process to get children of
      * @return a list of child ProcessHandles
      */
-    public static List<ProcessHandle> getAllChildren(ProcessHandle ph) {
-        return ph.allChildren()
+    public static List<ProcessHandle> getDescendants(ProcessHandle ph) {
+        return ph.descendants()
                 .filter(ProcessUtil::isNotWindowsConsole)
                 .collect(Collectors.toList());
     }
@@ -117,7 +117,7 @@ public abstract class ProcessUtil {
                     // ignore
                 }
             }
-            subprocesses = getAllChildren(ph);
+            subprocesses = getDescendants(ph);
             count = subprocesses.size();
             System.out.printf(" waiting for subprocesses of %s to start," +
                     " expected: %d, current: %d%n", ph, nchildren, count);
@@ -133,7 +133,7 @@ public abstract class ProcessUtil {
      * @return the ProcessHandle
      */
     public static ProcessHandle destroyProcessTree(ProcessHandle p) {
-        Stream<ProcessHandle> children = p.allChildren().filter(ProcessUtil::isNotWindowsConsole);
+        Stream<ProcessHandle> children = p.descendants().filter(ProcessUtil::isNotWindowsConsole);
         children.forEach(ph -> {
             System.out.printf("destroyProcessTree destroyForcibly%n");
             printProcess(ph);

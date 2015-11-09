@@ -1143,7 +1143,7 @@ public:
 // dominated in the outer loop by this node chain:
 //   intcon(1)->If->IfFalse->reserved_copy.
 // The original loop is dominated by the the same node chain but IfTrue projection:
-//   intcon(1)->If->IfTrue->original_loop.
+//   intcon(0)->If->IfTrue->original_loop.
 //
 // In this implementation of CountedLoopReserveKit the ctor includes create_reserve()
 // and the dtor, checks _use_new value.

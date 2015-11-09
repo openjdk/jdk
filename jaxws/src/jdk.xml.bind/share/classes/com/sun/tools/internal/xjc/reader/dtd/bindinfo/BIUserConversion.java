@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,13 +57,13 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
 
 /**
- * &lt;conversion> declaration in the binding file.
+ * {@code <conversion>} declaration in the binding file.
  * This declaration declares a conversion by user-specified methods.
  */
 public class BIUserConversion implements BIConversion
 {
     /**
-     * Wraps a given &lt;conversion> element in the binding file.
+     * Wraps a given {@code <conversion>} element in the binding file.
      */
     BIUserConversion( BindInfo bi, Element _e ) {
         this.owner = bi;
@@ -104,7 +104,7 @@ public class BIUserConversion implements BIConversion
     /** The owner {@link BindInfo} object to which this object belongs. */
     private final BindInfo owner;
 
-    /** &lt;conversion> element which this object is wrapping. */
+    /** {@code <conversion>} element which this object is wrapping. */
     private final Element e;
 
 

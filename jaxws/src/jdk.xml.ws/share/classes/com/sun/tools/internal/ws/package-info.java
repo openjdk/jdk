@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,43 +26,6 @@
 /**
  * <h1>JAX-WS 2.1 Tools</h1>
  * This document describes the tools included with JAX-WS 2.0.1.
- *
- * {@DotDiagram digraph G {
-// external tools
-AP;
-
-// ANT tasks
-node [style=filled,color=lightyellow];
-"WsGen ANT Task"; "WsImport ANT Task";
-
-// commandline
-node [style=filled,color=lightpink];
-wsgen; wsimport;
-
-// libraries
-node [style=filled,color=lightblue];
-WsimportTool; WsgenTool;"WSAP"; WebServiceAp; WSDLModeler;WSDLParser;SeiGenerator;ServiceGenerator;ExceptionGenerator;"JAXB XJC APIs";CodeModel;
-
-// aps
-#       node [style=filled,color=lightpink];
-#       "JAX-WS"; tools; runtime; SPI; "Annotation Processor";
-
-"WsGen ANT Task" -> wsgen -> WsgenTool;
-"WsImport ANT Task" -> wsimport -> WsimportTool;
-
-WsgenTool -> Annotation Processing -> WSAP -> WebServiceAp;
-WsimportTool -> WSDLModeler;
-WSDLModeler->WSDLParser;
-WSDLModeler->"JAXB XJC APIs"
-WsimportTool->SeiGenerator->CodeModel;
-WsimportTool->ServiceGenerator->CodeModel;
-WsimportTool->ExceptionGenerator->CodeModel;
-WebServiceAp->CodeModel
-}
- * }
- * <div align=right>
- * <b>Legend:</b> blue: implementation classes, pink: command-line toosl, white: external tool, yellow: ANT tasks
- * </div>
  *
  * <h2>ANT Tasks</h2>
    <d1>
@@ -116,6 +79,5 @@ WebServiceAp->CodeModel
  *    idirectly via the {@link com.sun.istack.internal.ws.WSAP WSAP} when invoked by Annotation Processing.
  *   </d1>
  *
- * @ArchitectureDocument
  **/
 package com.sun.tools.internal.ws;

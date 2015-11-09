@@ -389,7 +389,7 @@ final class ProcessHandleImpl implements ProcessHandle {
     }
 
     @Override
-    public Stream<ProcessHandle> allChildren() {
+    public Stream<ProcessHandle> descendants() {
         SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission("manageProcess"));

@@ -78,7 +78,7 @@ public final class Utils {
     /**
      * Returns the value of 'test.src' system property.
      */
-    public static final String TEST_SRC = System.getProperty("test.src", "").trim();
+    public static final String TEST_SRC = System.getProperty("test.src", ".").trim();
 
     private static Unsafe unsafe = null;
 
@@ -409,6 +409,23 @@ public final class Utils {
             iterator.next();
         }
         return iterator.next();
+    }
+
+    /**
+     * Returns random element of non empty array
+     *
+     * @param <T> a type of array element
+     * @param array array of elements
+     * @return random element of array
+     * @throws IllegalArgumentException if array is empty
+     */
+    public static <T> T getRandomElement(T[] array)
+            throws IllegalArgumentException {
+        if (array == null || array.length == 0) {
+            throw new IllegalArgumentException("Empty or null array");
+        }
+        Random random = getRandomInstance();
+        return array[random.nextInt(array.length)];
     }
 
     /**

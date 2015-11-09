@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,7 +66,16 @@ import java.sql.SQLException;
  * <code>PooledConnection</code> object to the pool of connections so that
  * it can be used again.  Thus, when an application closes its connection,
  * the underlying physical connection is recycled rather than being closed.
- * <P>
+ * <p>
+ * If the connection pool manager wraps or provides a proxy to the logical
+ * handle returned from a call to {@code PoolConnection.getConnection}, the pool
+ * manager must do
+ * one of the following when the application calls {@code Connection.close}:
+ * <ul>
+ * <li>call {@code endRequest} on the logical {@code Connection} handle
+ * <li>call {@code close} on the logical {@code Connection} handle
+ * </ul>
+ * <p>
  * The physical connection is not closed until the connection pool manager
  * calls the <code>PooledConnection</code> method <code>close</code>.
  * This method is generally called to have an orderly shutdown of the server or

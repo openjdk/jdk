@@ -29,6 +29,7 @@
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/compilerOracle.hpp"
+#include "compiler/directivesParser.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/methodData.hpp"
@@ -202,10 +203,22 @@ class CompilationLog : public StringEventLog {
 
 static CompilationLog* _compilation_log = NULL;
 
-void compileBroker_init() {
+bool compileBroker_init() {
   if (LogEvents) {
     _compilation_log = new CompilationLog();
   }
+
+  // init directives stack, adding default directive
+  DirectivesStack::init();
+
+  if (DirectivesParser::has_file()) {
+    return DirectivesParser::parse_from_flag();
+  } else if (PrintCompilerDirectives) {
+    // Print default directive even when no other was added
+    DirectivesStack::print(tty);
+  }
+
+  return true;
 }
 
 CompileTaskWrapper::CompileTaskWrapper(CompileTask* task) {
@@ -1180,12 +1193,16 @@ bool CompileBroker::compilation_is_prohibited(methodHandle method, int osr_bci, 
     return true;
   }
 
+  // Breaking the abstraction - directives are only used inside a compilation otherwise.
+  DirectiveSet* directive = DirectivesStack::getMatchingDirective(method, comp);
+  bool excluded = directive->ExcludeOption;
+  DirectivesStack::release(directive);
+
   // The method may be explicitly excluded by the user.
-  bool quietly;
   double scale;
-  if (CompilerOracle::should_exclude(method, quietly)
-      || (CompilerOracle::has_option_value(method, "CompileThresholdScaling", scale) && scale == 0)) {
-    if (!quietly) {
+  if (excluded || (CompilerOracle::has_option_value(method, "CompileThresholdScaling", scale) && scale == 0)) {
+    bool quietly = CompilerOracle::should_exclude_quietly();
+    if (PrintCompilation && !quietly) {
       // This does not happen quietly...
       ResourceMark rm;
       tty->print("### Excluding %s:%s",
@@ -1194,7 +1211,7 @@ bool CompileBroker::compilation_is_prohibited(methodHandle method, int osr_bci, 
       method->print_short_name(tty);
       tty->cr();
     }
-    method->set_not_compilable(CompLevel_all, !quietly, "excluded by CompileCommand");
+    method->set_not_compilable(comp_level, !quietly, "excluded by CompileCommand");
   }
 
   return false;
@@ -1356,7 +1373,6 @@ bool CompileBroker::init_compiler_runtime() {
     // Switch back to VM state to do compiler initialization
     ThreadInVMfromNative tv(thread);
     ResetNoHandleMark rnhm;
-
 
     if (!comp->is_shark()) {
       // Perform per-thread and global initializations
@@ -1629,6 +1645,10 @@ void CompileBroker::post_compile(CompilerThread* thread, CompileTask* task, Even
   }
 }
 
+int DirectivesStack::_depth = 0;
+CompilerDirectives* DirectivesStack::_top = NULL;
+CompilerDirectives* DirectivesStack::_bottom = NULL;
+
 // ------------------------------------------------------------------
 // CompileBroker::invoke_compiler_on_method
 //
@@ -1655,16 +1675,20 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   bool should_log = (thread->log() != NULL);
   bool should_break = false;
   int task_level = task->comp_level();
+
+  // Look up matching directives
+  DirectiveSet* directive = DirectivesStack::getMatchingDirective(task->method(), compiler(task_level));
+
+  should_break = directive->BreakAtExecuteOption || task->check_break_at_flags();
+  if (should_log && !directive->LogOption) {
+    should_log = false;
+  }
   {
     // create the handle inside it's own block so it can't
     // accidentally be referenced once the thread transitions to
     // native.  The NoHandleMark before the transition should catch
     // any cases where this occurs in the future.
     methodHandle method(thread, task->method());
-    should_break = check_break_at(method, compile_id, is_osr);
-    if (should_log && !CompilerOracle::should_log(method)) {
-      should_log = false;
-    }
     assert(!method->is_native(), "no longer compile natives");
 
     // Save information about this method in case of failure.
@@ -1732,7 +1756,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
           locker.wait(Mutex::_no_safepoint_check_flag);
         }
       }
-      comp->compile_method(&ci_env, target, osr_bci);
+      comp->compile_method(&ci_env, target, osr_bci, directive);
     }
 
     if (!ci_env.failing() && task->code() == NULL) {
@@ -1762,6 +1786,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
 
     post_compile(thread, task, event, !ci_env.failing(), &ci_env);
   }
+  DirectivesStack::release(directive);
   pop_jni_handle_block();
 
   methodHandle method(thread, task->method());
@@ -1945,21 +1970,6 @@ void CompileBroker::pop_jni_handle_block() {
   thread->set_active_handles(java_handles);
   compile_handles->set_pop_frame_link(NULL);
   JNIHandleBlock::release_block(compile_handles, thread); // may block
-}
-
-
-// ------------------------------------------------------------------
-// CompileBroker::check_break_at
-//
-// Should the compilation break at the current compilation.
-bool CompileBroker::check_break_at(methodHandle method, int compile_id, bool is_osr) {
-  if (CICountOSR && is_osr && (compile_id == CIBreakAtOSR)) {
-    return true;
-  } else if( CompilerOracle::should_break_at(method) ) { // break when compiling
-    return true;
-  } else {
-    return (compile_id == CIBreakAt);
-  }
 }
 
 // ------------------------------------------------------------------
@@ -2232,3 +2242,4 @@ void CompileBroker::print_compiler_threads_on(outputStream* st) {
   st->cr();
 #endif
 }
+

@@ -56,6 +56,8 @@ class MacroAssembler: public Assembler {
   #define VIRTUAL virtual
 #endif
 
+#define COMMA ,
+
   VIRTUAL void call_VM_leaf_base(
     address entry_point,               // the entry point
     int     number_of_arguments        // the number of arguments to pop after the call
@@ -910,6 +912,11 @@ class MacroAssembler: public Assembler {
   void fast_exp(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
                 XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
                 Register rax, Register rcx, Register rdx, Register tmp);
+
+  void fast_log(XMMRegister xmm0, XMMRegister xmm1, XMMRegister xmm2, XMMRegister xmm3,
+                XMMRegister xmm4, XMMRegister xmm5, XMMRegister xmm6, XMMRegister xmm7,
+                Register rax, Register rcx, Register rdx, Register tmp1 LP64_ONLY(COMMA Register tmp2));
+
   void increase_precision();
   void restore_precision();
 

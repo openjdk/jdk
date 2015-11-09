@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,7 @@ public class XmlChars {
      * documents containing only Unicode.  (The <code>char</code> datatype
      * in the Java Programming Language represents Unicode characters,
      * including unpaired surrogates.)
-     * <p/>
+     * <p>
      * <P> In XML, UCS-4 characters can also be encoded by the use of
      * <em>character references</em> such as <b>&amp;#x12345678;</b>, which
      * happens to refer to a character that is disallowed in XML documents.
@@ -362,17 +362,6 @@ public class XmlChars {
             // added a character ...
             return c == 0x0387;
         }
-    }
-
-    private static boolean isDigit(char c) {
-        // [88] Digit ::= ...
-
-        //
-        // java.lang.Character.isDigit is correct from the XML point
-        // of view except that it allows "fullwidth" digits.
-        //
-        return Character.isDigit(c)
-                && !((c >= 0xff10) && (c <= 0xff19));
     }
 
     private static boolean isExtender(char c) {

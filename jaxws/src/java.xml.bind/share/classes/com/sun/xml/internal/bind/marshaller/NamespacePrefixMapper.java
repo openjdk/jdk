@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import org.w3c.dom.Node;
 // - don't remove any existing method.
 
 /**
- * Implemented by the user application to determine URI -> prefix
+ * Implemented by the user application to determine URI {@code ->} prefix
  * mapping.
  *
  * This is considered as an interface, though it's implemented
