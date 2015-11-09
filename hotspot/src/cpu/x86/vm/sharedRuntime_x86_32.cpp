@@ -192,31 +192,22 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     }
   } else if(UseSSE >= 2) {
     // Save whole 128bit (16 bytes) XMM regiters
-    if (VM_Version::supports_avx512novl()) {
-      for (int n = 0; n < num_xmm_regs; n++) {
-        __ vextractf32x4h(Address(rsp, off*wordSize), as_XMMRegister(n), 0);
-        off += delta;
-      }
-    } else {
-      for (int n = 0; n < num_xmm_regs; n++) {
-        __ movdqu(Address(rsp, off*wordSize), as_XMMRegister(n));
-        off += delta;
-      }
+    for (int n = 0; n < num_xmm_regs; n++) {
+      __ movdqu(Address(rsp, off*wordSize), as_XMMRegister(n));
+      off += delta;
     }
   }
 
   if (vect_words > 0) {
     assert(vect_words*wordSize == 128, "");
     __ subptr(rsp, 128); // Save upper half of YMM registes
-    off = 0;
     for (int n = 0; n < num_xmm_regs; n++) {
-      __ vextractf128h(Address(rsp, off++*16), as_XMMRegister(n));
+      __ vextractf128h(Address(rsp, n*16), as_XMMRegister(n));
     }
     if (UseAVX > 2) {
       __ subptr(rsp, 256); // Save upper half of ZMM registes
-      off = 0;
       for (int n = 0; n < num_xmm_regs; n++) {
-        __ vextractf64x4h(Address(rsp, off++*32), as_XMMRegister(n));
+        __ vextractf64x4h(Address(rsp, n*32), as_XMMRegister(n), 1);
       }
     }
   }
@@ -285,31 +276,23 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
       off += delta;
     }
   } else if (UseSSE >= 2) {
-    if (VM_Version::supports_avx512novl()) {
-      for (int n = 0; n < num_xmm_regs; n++) {
-        __ vinsertf32x4h(as_XMMRegister(n), Address(rsp, off*wordSize+additional_frame_bytes), 0);
-        off += delta;
-      }
-    } else {
-      for (int n = 0; n < num_xmm_regs; n++) {
-        __ movdqu(as_XMMRegister(n), Address(rsp, off*wordSize+additional_frame_bytes));
-        off += delta;
-      }
+    for (int n = 0; n < num_xmm_regs; n++) {
+      __ movdqu(as_XMMRegister(n), Address(rsp, off*wordSize+additional_frame_bytes));
+      off += delta;
     }
   }
   if (restore_vectors) {
+    assert(additional_frame_bytes == 128, "");
     if (UseAVX > 2) {
-      off = 0;
+      // Restore upper half of ZMM registers.
       for (int n = 0; n < num_xmm_regs; n++) {
-        __ vinsertf64x4h(as_XMMRegister(n), Address(rsp, off++*32));
+        __ vinsertf64x4h(as_XMMRegister(n), Address(rsp, n*32), 1);
       }
       __ addptr(rsp, additional_frame_bytes*2); // Save upper half of ZMM registes
     }
     // Restore upper half of YMM registes.
-    assert(additional_frame_bytes == 128, "");
-    off = 0;
     for (int n = 0; n < num_xmm_regs; n++) {
-      __ vinsertf128h(as_XMMRegister(n), Address(rsp, off++*16));
+      __ vinsertf128h(as_XMMRegister(n), Address(rsp, n*16));
     }
     __ addptr(rsp, additional_frame_bytes); // Save upper half of YMM registes
   }
