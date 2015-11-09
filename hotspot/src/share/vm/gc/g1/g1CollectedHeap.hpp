@@ -757,12 +757,6 @@ protected:
   // The closure used to refine a single card.
   RefineCardTableEntryClosure* _refine_cte_cl;
 
-  // A DirtyCardQueueSet that is used to hold cards that contain
-  // references into the current collection set. This is used to
-  // update the remembered sets of the regions in the collection
-  // set in the event of an evacuation failure.
-  DirtyCardQueueSet _into_cset_dirty_card_queue_set;
-
   // After a collection pause, make the regions in the CS into free
   // regions.
   void free_collection_set(HeapRegion* cs_head, EvacuationInfo& evacuation_info, const size_t* surviving_young_words);
@@ -951,13 +945,6 @@ public:
 
   // A set of cards where updates happened during the GC
   DirtyCardQueueSet& dirty_card_queue_set() { return _dirty_card_queue_set; }
-
-  // A DirtyCardQueueSet that is used to hold cards that contain
-  // references into the current collection set. This is used to
-  // update the remembered sets of the regions in the collection
-  // set in the event of an evacuation failure.
-  DirtyCardQueueSet& into_cset_dirty_card_queue_set()
-        { return _into_cset_dirty_card_queue_set; }
 
   // Create a G1CollectedHeap with the specified policy.
   // Must call the initialize method afterwards.
