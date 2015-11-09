@@ -91,7 +91,8 @@ void PhaseIdealLoop::register_control(Node* n, IdealLoopTree *loop, Node* pred) 
 // The true projecttion (if_cont) of the new_iff is returned.
 // This code is also used to clone predicates to cloned loops.
 ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry,
-                                                      Deoptimization::DeoptReason reason) {
+                                                      Deoptimization::DeoptReason reason,
+                                                      int opcode) {
   assert(cont_proj->is_uncommon_trap_if_pattern(reason), "must be a uct if pattern!");
   IfNode* iff = cont_proj->in(0)->as_If();
 
@@ -133,8 +134,13 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
   }
   // Create new_iff
   IdealLoopTree* lp = get_loop(entry);
-  IfNode *new_iff = iff->clone()->as_If();
-  new_iff->set_req(0, entry);
+  IfNode* new_iff = NULL;
+  if (opcode == Op_If) {
+    new_iff = new IfNode(entry, iff->in(1), iff->_prob, iff->_fcnt);
+  } else {
+    assert(opcode == Op_RangeCheck, "no other if variant here");
+    new_iff = new RangeCheckNode(entry, iff->in(1), iff->_prob, iff->_fcnt);
+  }
   register_control(new_iff, lp, entry);
   Node *if_cont = new IfTrueNode(new_iff);
   Node *if_uct  = new IfFalseNode(new_iff);
@@ -183,7 +189,8 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
 //------------------------------create_new_if_for_predicate------------------------
 // Create a new if below new_entry for the predicate to be cloned (IGVN optimization)
 ProjNode* PhaseIterGVN::create_new_if_for_predicate(ProjNode* cont_proj, Node* new_entry,
-                                                    Deoptimization::DeoptReason reason) {
+                                                    Deoptimization::DeoptReason reason,
+                                                    int opcode) {
   assert(new_entry != 0, "only used for clone predicate");
   assert(cont_proj->is_uncommon_trap_if_pattern(reason), "must be a uct if pattern!");
   IfNode* iff = cont_proj->in(0)->as_If();
@@ -208,8 +215,13 @@ ProjNode* PhaseIterGVN::create_new_if_for_predicate(ProjNode* cont_proj, Node* n
   }
 
   // Create new_iff in new location.
-  IfNode *new_iff = iff->clone()->as_If();
-  new_iff->set_req(0, new_entry);
+  IfNode* new_iff = NULL;
+  if (opcode == Op_If) {
+    new_iff = new IfNode(new_entry, iff->in(1), iff->_prob, iff->_fcnt);
+  } else {
+    assert(opcode == Op_RangeCheck, "no other if variant here");
+    new_iff = new RangeCheckNode(new_entry, iff->in(1), iff->_prob, iff->_fcnt);
+  }
 
   register_new_node_with_optimizer(new_iff);
   Node *if_cont = new IfTrueNode(new_iff);
@@ -249,9 +261,9 @@ ProjNode* PhaseIdealLoop::clone_predicate(ProjNode* predicate_proj, Node* new_en
                                           PhaseIterGVN* igvn) {
   ProjNode* new_predicate_proj;
   if (loop_phase != NULL) {
-    new_predicate_proj = loop_phase->create_new_if_for_predicate(predicate_proj, new_entry, reason);
+    new_predicate_proj = loop_phase->create_new_if_for_predicate(predicate_proj, new_entry, reason, Op_If);
   } else {
-    new_predicate_proj =       igvn->create_new_if_for_predicate(predicate_proj, new_entry, reason);
+    new_predicate_proj =       igvn->create_new_if_for_predicate(predicate_proj, new_entry, reason, Op_If);
   }
   IfNode* iff = new_predicate_proj->in(0)->as_If();
   Node* ctrl  = iff->in(0);
@@ -714,7 +726,8 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
   while (current_proj != head) {
     if (loop == get_loop(current_proj) && // still in the loop ?
         current_proj->is_Proj()        && // is a projection  ?
-        current_proj->in(0)->Opcode() == Op_If) { // is a if projection ?
+        (current_proj->in(0)->Opcode() == Op_If ||
+         current_proj->in(0)->Opcode() == Op_RangeCheck)) { // is a if projection ?
       if_proj_list.push(current_proj);
     }
     current_proj = idom(current_proj);
@@ -753,7 +766,8 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
     if (invar.is_invariant(bol)) {
       // Invariant test
       new_predicate_proj = create_new_if_for_predicate(predicate_proj, NULL,
-                                                       Deoptimization::Reason_predicate);
+                                                       Deoptimization::Reason_predicate,
+                                                       iff->Opcode());
       Node* ctrl = new_predicate_proj->in(0)->as_If()->in(0);
       BoolNode* new_predicate_bol = invar.clone(bol, ctrl)->as_Bool();
 
@@ -797,8 +811,8 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
       // lower_bound test will dominate the upper bound test and all
       // cloned or created nodes will use the lower bound test as
       // their declared control.
-      ProjNode* lower_bound_proj = create_new_if_for_predicate(predicate_proj, NULL, Deoptimization::Reason_predicate);
-      ProjNode* upper_bound_proj = create_new_if_for_predicate(predicate_proj, NULL, Deoptimization::Reason_predicate);
+      ProjNode* lower_bound_proj = create_new_if_for_predicate(predicate_proj, NULL, Deoptimization::Reason_predicate, iff->Opcode());
+      ProjNode* upper_bound_proj = create_new_if_for_predicate(predicate_proj, NULL, Deoptimization::Reason_predicate, iff->Opcode());
       assert(upper_bound_proj->in(0)->as_If()->in(0) == lower_bound_proj, "should dominate");
       Node *ctrl = lower_bound_proj->in(0)->as_If()->in(0);
 

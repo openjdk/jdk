@@ -206,7 +206,7 @@ void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exc
 
   // prevdom is the dominating projection of the dominating test.
   assert( iff->is_If(), "" );
-  assert( iff->Opcode() == Op_If || iff->Opcode() == Op_CountedLoopEnd, "Check this code when new subtype is added");
+  assert(iff->Opcode() == Op_If || iff->Opcode() == Op_CountedLoopEnd || iff->Opcode() == Op_RangeCheck, "Check this code when new subtype is added");
   int pop = prevdom->Opcode();
   assert( pop == Op_IfFalse || pop == Op_IfTrue, "" );
   if (flip) {
@@ -1123,7 +1123,8 @@ void PhaseIdealLoop::split_if_with_blocks_post( Node *n ) {
   int n_op = n->Opcode();
 
   // Check for an IF being dominated by another IF same test
-  if (n_op == Op_If) {
+  if (n_op == Op_If ||
+      n_op == Op_RangeCheck) {
     Node *bol = n->in(1);
     uint max = bol->outcnt();
     // Check for same test used more than once?
@@ -1945,7 +1946,10 @@ ProjNode* PhaseIdealLoop::insert_if_before_proj(Node* left, bool Signed, BoolTes
   BoolNode* bol = new BoolNode(cmp, relop);
   register_node(bol, loop, proj2, ddepth);
 
-  IfNode* new_if = new IfNode(proj2, bol, iff->_prob, iff->_fcnt);
+  int opcode = iff->Opcode();
+  assert(opcode == Op_If || opcode == Op_RangeCheck, "unexpected opcode");
+  IfNode* new_if = (opcode == Op_If) ? new IfNode(proj2, bol, iff->_prob, iff->_fcnt):
+    new RangeCheckNode(proj2, bol, iff->_prob, iff->_fcnt);
   register_node(new_if, loop, proj2, ddepth);
 
   proj->set_req(0, new_if); // reattach

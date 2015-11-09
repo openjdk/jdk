@@ -136,8 +136,16 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type* *result2) {
       BoolTest::mask btest = BoolTest::lt;
       tst = _gvn.transform( new BoolNode(chk, btest) );
     }
+    RangeCheckNode* rc = new RangeCheckNode(control(), tst, PROB_MAX, COUNT_UNKNOWN);
+    _gvn.set_type(rc, rc->Value(&_gvn));
+    if (!tst->is_Con()) {
+      record_for_igvn(rc);
+    }
+    set_control(_gvn.transform(new IfTrueNode(rc)));
     // Branch to failure if out of bounds
-    { BuildCutout unless(this, tst, PROB_MAX);
+    {
+      PreserveJVMState pjvms(this);
+      set_control(_gvn.transform(new IfFalseNode(rc)));
       if (C->allow_range_check_smearing()) {
         // Do not use builtin_throw, since range checks are sometimes
         // made more stringent by an optimistic transformation.
