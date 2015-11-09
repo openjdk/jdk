@@ -102,7 +102,7 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
         -D "JDK_FTYPE=0x1L", \
     DEBUG_SYMBOLS := true, \
     MANIFEST := $(JDK_TOPDIR)/src/jdk.pack200/windows/native/unpack200/unpack200_proto.exe.manifest, \
-    MANIFEST_VERSION := $(JDK_VERSION_FOR_MANIFEST), \
+    MANIFEST_VERSION := $(VERSION_NUMBER_FOUR_POSITIONS), \
 ))
 
 ifneq ($(USE_EXTERNAL_LIBZ), true)
