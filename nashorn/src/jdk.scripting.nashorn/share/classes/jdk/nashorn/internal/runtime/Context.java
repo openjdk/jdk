@@ -73,6 +73,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import javax.script.ScriptEngine;
+import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
@@ -89,6 +90,7 @@ import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.events.RuntimeEvent;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
@@ -512,6 +514,9 @@ public final class Context {
     /** Class loader to load classes compiled from scripts. */
     private final ScriptLoader scriptLoader;
 
+    /** Dynamic linker for linking call sites in script code loaded by this context */
+    private final DynamicLinker dynamicLinker;
+
     /** Current error manager. */
     private final ErrorManager errors;
 
@@ -644,6 +649,7 @@ public final class Context {
         } else {
             this.appLoader = appLoader;
         }
+        this.dynamicLinker = Bootstrap.createDynamicLinker(this.appLoader);
 
         final int cacheSize = env._class_cache_size;
         if (cacheSize > 0) {
@@ -1295,6 +1301,26 @@ public final class Context {
         return getContext(getGlobal());
     }
 
+    /**
+     * Gets the Nashorn dynamic linker for the specified class. If the class is
+     * a script class, the dynamic linker associated with its context is
+     * returned. Otherwise the dynamic linker associated with the current
+     * context is returned.
+     * @param clazz the class for which we want to retrieve a dynamic linker.
+     * @return the Nashorn dynamic linker for the specified class.
+     */
+    public static DynamicLinker getDynamicLinker(final Class<?> clazz) {
+        return fromClass(clazz).dynamicLinker;
+    }
+
+    /**
+     * Gets the Nashorn dynamic linker associated with the current context.
+     * @return the Nashorn dynamic linker for the current context.
+     */
+    public static DynamicLinker getDynamicLinker() {
+        return getContextTrusted().dynamicLinker;
+    }
+
     static Context getContextTrustedOrNull() {
         final Global global = Context.getGlobal();
         return global == null ? null : getContext(global);
@@ -1665,5 +1691,4 @@ public final class Context {
     public SwitchPoint getBuiltinSwitchPoint(final String name) {
         return builtinSwitchPoints.get(name);
     }
-
 }

@@ -94,8 +94,8 @@ public final class Global extends Scope {
     // (__FILE__, __DIR__, __LINE__)
     private static final Object LAZY_SENTINEL = new Object();
 
-    private final InvokeByName TO_STRING = new InvokeByName("toString", ScriptObject.class);
-    private final InvokeByName VALUE_OF  = new InvokeByName("valueOf",  ScriptObject.class);
+    private InvokeByName TO_STRING;
+    private InvokeByName VALUE_OF;
 
     /**
      * Optimistic builtin names that require switchpoint invalidation
@@ -1073,6 +1073,9 @@ public final class Global extends Scope {
             return;
         }
 
+        TO_STRING = new InvokeByName("toString", ScriptObject.class);
+        VALUE_OF  = new InvokeByName("valueOf",  ScriptObject.class);
+
         this.engine = eng;
         if (this.engine != null) {
             this.scontext = new ThreadLocal<>();
@@ -1357,18 +1360,27 @@ public final class Global extends Scope {
         return desc;
     }
 
-    private static <T> T getLazilyCreatedValue(final Object key, final Callable<T> creator, final Map<Object, T> map) {
+    private <T> T getLazilyCreatedValue(final Object key, final Callable<T> creator, final Map<Object, T> map) {
         final T obj = map.get(key);
         if (obj != null) {
             return obj;
         }
 
+        final Global oldGlobal = Context.getGlobal();
+        final boolean differentGlobal = oldGlobal != this;
         try {
+            if (differentGlobal) {
+                Context.setGlobal(this);
+            }
             final T newObj = creator.call();
             final T existingObj = map.putIfAbsent(key, newObj);
             return existingObj != null ? existingObj : newObj;
         } catch (final Exception exp) {
             throw new RuntimeException(exp);
+        } finally {
+            if (differentGlobal) {
+                Context.setGlobal(oldGlobal);
+            }
         }
     }
 

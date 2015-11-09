@@ -26,6 +26,7 @@
  *
  * @test
  * @option -Dnashorn.unstable.relink.threshold=1
+ * @fork
  * @run
  */
 

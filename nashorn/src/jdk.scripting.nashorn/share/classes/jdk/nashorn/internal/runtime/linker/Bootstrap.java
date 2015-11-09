@@ -49,6 +49,7 @@ import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.lookup.MethodHandleFunctionality;
+import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ECMAException;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.OptimisticReturnFilters;
@@ -81,14 +82,22 @@ public final class Bootstrap {
      * See for example octane.gbemu, run with --log=fields:warning to study
      * megamorphic behavior
      */
-    private static final int NASHORN_DEFAULT_UNSTABLE_RELINK_THRESHOLD = 16;
+    private static final int UNSTABLE_RELINK_THRESHOLD_DEFAULT = 16;
+    private static final int UNSTABLE_RELINK_THRESHOLD =
+            Options.getIntProperty("nashorn.unstable.relink.threshold",
+                    UNSTABLE_RELINK_THRESHOLD_DEFAULT);
 
     // do not create me!!
     private Bootstrap() {
     }
 
-    private static final DynamicLinker dynamicLinker;
-    static {
+    /**
+     * Creates a Nashorn dynamic linker with the given app class loader.
+     * @param appLoader the app class loader. It will be used to discover
+     * additional language runtime linkers (if any).
+     * @return a newly created dynamic linker.
+     */
+    public static DynamicLinker createDynamicLinker(final ClassLoader appLoader) {
         final DynamicLinkerFactory factory = new DynamicLinkerFactory();
         final NashornBeansLinker nashornBeansLinker = new NashornBeansLinker();
         factory.setPrioritizedLinkers(
@@ -116,15 +125,13 @@ public final class Bootstrap {
             }
         });
         factory.setInternalObjectsFilter(NashornBeansLinker.createHiddenObjectFilter());
-        final int relinkThreshold = Options.getIntProperty("nashorn.unstable.relink.threshold", NASHORN_DEFAULT_UNSTABLE_RELINK_THRESHOLD);
-        if (relinkThreshold > -1) {
-            factory.setUnstableRelinkThreshold(relinkThreshold);
+        if (UNSTABLE_RELINK_THRESHOLD > -1) {
+            factory.setUnstableRelinkThreshold(UNSTABLE_RELINK_THRESHOLD);
         }
 
         // Linkers for any additional language runtimes deployed alongside Nashorn will be picked up by the factory.
-        factory.setClassLoader(Bootstrap.class.getClassLoader());
-
-        dynamicLinker = factory.createLinker();
+        factory.setClassLoader(appLoader);
+        return factory.createLinker();
     }
 
     /**
@@ -202,7 +209,7 @@ public final class Bootstrap {
      * @return CallSite with MethodHandle to appropriate method or null if not found.
      */
     public static CallSite bootstrap(final Lookup lookup, final String opDesc, final MethodType type, final int flags) {
-        return dynamicLinker.link(LinkerCallSite.newLinkerCallSite(lookup, opDesc, type, flags));
+        return Context.getDynamicLinker(lookup.lookupClass()).link(LinkerCallSite.newLinkerCallSite(lookup, opDesc, type, flags));
     }
 
     /**
@@ -461,7 +468,7 @@ public final class Bootstrap {
      * @return Nashorn's internal dynamic linker's services object.
      */
     public static LinkerServices getLinkerServices() {
-        return dynamicLinker.getLinkerServices();
+        return Context.getDynamicLinker().getLinkerServices();
     }
 
     /**
