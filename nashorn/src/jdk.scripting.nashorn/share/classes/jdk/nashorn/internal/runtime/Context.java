@@ -649,7 +649,7 @@ public final class Context {
         } else {
             this.appLoader = appLoader;
         }
-        this.dynamicLinker = Bootstrap.createDynamicLinker(this.appLoader);
+        this.dynamicLinker = Bootstrap.createDynamicLinker(this.appLoader, env._unstable_relink_threshold);
 
         final int cacheSize = env._class_cache_size;
         if (cacheSize > 0) {
