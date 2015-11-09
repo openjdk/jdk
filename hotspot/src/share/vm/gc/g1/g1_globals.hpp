@@ -48,9 +48,6 @@
   develop(bool, G1TraceMarkStackOverflow, false,                            \
           "If true, extra debugging code for CM restart for ovflw.")        \
                                                                             \
-  develop(bool, G1TraceHeapRegionRememberedSet, false,                      \
-          "Enables heap region remembered set debug logs")                  \
-                                                                            \
   diagnostic(bool, G1SummarizeConcMark, false,                              \
           "Summarize concurrent mark info")                                 \
                                                                             \
