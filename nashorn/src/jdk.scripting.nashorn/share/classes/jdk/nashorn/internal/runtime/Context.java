@@ -507,10 +507,7 @@ public final class Context {
     final boolean _strict;
 
     /** class loader to resolve classes from script. */
-    private final ClassLoader  appLoader;
-
-    /** Class loader to load classes from -classpath option, if set. */
-    private final ClassLoader  classPathLoader;
+    private final ClassLoader appLoader;
 
     /** Class loader to load classes compiled from scripts. */
     private final ScriptLoader scriptLoader;
@@ -626,7 +623,6 @@ public final class Context {
         this.classFilter = classFilter;
         this.env       = new ScriptEnvironment(options, out, err);
         this._strict   = env._strict;
-        this.appLoader = appLoader;
         if (env._loader_per_compile) {
             this.scriptLoader = null;
             this.uniqueScriptId = null;
@@ -636,17 +632,17 @@ public final class Context {
         }
         this.errors    = errors;
 
-        // if user passed -classpath option, make a class loader with that and set it as
-        // thread context class loader so that script can access classes from that path.
+        // if user passed -classpath option, make a URLClassLoader with that and
+        // the app loader as the parent.
         final String classPath = options.getString("classpath");
         if (!env._compile_only && classPath != null && !classPath.isEmpty()) {
             // make sure that caller can create a class loader.
             if (sm != null) {
-                sm.checkPermission(new RuntimePermission("createClassLoader"));
+                sm.checkCreateClassLoader();
             }
-            this.classPathLoader = NashornLoader.createClassLoader(classPath);
+            this.appLoader = NashornLoader.createClassLoader(classPath, appLoader);
         } else {
-            this.classPathLoader = null;
+            this.appLoader = appLoader;
         }
 
         final int cacheSize = env._class_cache_size;
@@ -1181,15 +1177,6 @@ public final class Context {
             checkPackageAccess(sm, fullName);
         }
 
-        // try the script -classpath loader, if that is set
-        if (classPathLoader != null) {
-            try {
-                return Class.forName(fullName, true, classPathLoader);
-            } catch (final ClassNotFoundException ignored) {
-                // ignore, continue search
-            }
-        }
-
         // Try finding using the "app" loader.
         return Class.forName(fullName, true, appLoader);
     }
@@ -1338,15 +1325,10 @@ public final class Context {
     }
 
     private URL getResourceURL(final String resName) {
-        // try the classPathLoader if we have and then
-        // try the appLoader if non-null.
-        if (classPathLoader != null) {
-            return classPathLoader.getResource(resName);
-        } else if (appLoader != null) {
+        if (appLoader != null) {
             return appLoader.getResource(resName);
         }
-
-        return null;
+        return ClassLoader.getSystemResource(resName);
     }
 
     private Object evaluateSource(final Source source, final ScriptObject scope, final ScriptObject thiz) {
