@@ -1780,7 +1780,6 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   CollectedHeap(),
   _g1_policy(policy_),
   _dirty_card_queue_set(false),
-  _into_cset_dirty_card_queue_set(false),
   _is_alive_closure_cm(this),
   _is_alive_closure_stw(this),
   _ref_processor_cm(NULL),
@@ -2044,16 +2043,6 @@ jint G1CollectedHeap::initialize() {
                                     -1, // no limit on length
                                     Shared_DirtyCardQ_lock,
                                     &JavaThread::dirty_card_queue_set());
-
-  // Initialize the card queue set used to hold cards containing
-  // references into the collection set.
-  _into_cset_dirty_card_queue_set.initialize(NULL, // Should never be called by the Java code
-                                             DirtyCardQ_CBL_mon,
-                                             DirtyCardQ_FL_lock,
-                                             -1, // never trigger processing
-                                             -1, // no limit on length
-                                             Shared_DirtyCardQ_lock,
-                                             &JavaThread::dirty_card_queue_set());
 
   // Here we allocate the dummy HeapRegion that is required by the
   // G1AllocRegion class.
