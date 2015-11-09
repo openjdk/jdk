@@ -72,45 +72,28 @@ class SimpleRuntimeFrame {
 class RegisterSaver {
   // Capture info about frame layout.  Layout offsets are in jint
   // units because compiler frame slots are jints.
-#define HALF_ZMM_BANK_WORDS 128
+#define XSAVE_AREA_BEGIN 160
+#define XSAVE_AREA_YMM_BEGIN 576
+#define XSAVE_AREA_ZMM_BEGIN 1152
+#define XSAVE_AREA_UPPERBANK 1664
 #define DEF_XMM_OFFS(regnum) xmm ## regnum ## _off = xmm_off + (regnum)*16/BytesPerInt, xmm ## regnum ## H_off
+#define DEF_YMM_OFFS(regnum) ymm ## regnum ## _off = ymm_off + (regnum)*16/BytesPerInt, ymm ## regnum ## H_off
 #define DEF_ZMM_OFFS(regnum) zmm ## regnum ## _off = zmm_off + (regnum-16)*64/BytesPerInt, zmm ## regnum ## H_off
   enum layout {
     fpu_state_off = frame::arg_reg_save_area_bytes/BytesPerInt, // fxsave save area
-    xmm_off       = fpu_state_off + 160/BytesPerInt,            // offset in fxsave save area
+    xmm_off       = fpu_state_off + XSAVE_AREA_BEGIN/BytesPerInt,            // offset in fxsave save area
     DEF_XMM_OFFS(0),
     DEF_XMM_OFFS(1),
-    DEF_XMM_OFFS(2),
-    DEF_XMM_OFFS(3),
-    DEF_XMM_OFFS(4),
-    DEF_XMM_OFFS(5),
-    DEF_XMM_OFFS(6),
-    DEF_XMM_OFFS(7),
-    DEF_XMM_OFFS(8),
-    DEF_XMM_OFFS(9),
-    DEF_XMM_OFFS(10),
-    DEF_XMM_OFFS(11),
-    DEF_XMM_OFFS(12),
-    DEF_XMM_OFFS(13),
-    DEF_XMM_OFFS(14),
-    DEF_XMM_OFFS(15),
-    zmm_off = fpu_state_off + ((FPUStateSizeInWords - (HALF_ZMM_BANK_WORDS + 1))*wordSize / BytesPerInt),
+    // 2..15 are implied in range usage
+    ymm_off = xmm_off + (XSAVE_AREA_YMM_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
+    DEF_YMM_OFFS(0),
+    DEF_YMM_OFFS(1),
+    // 2..15 are implied in range usage
+    zmm_high = xmm_off + (XSAVE_AREA_ZMM_BEGIN - XSAVE_AREA_BEGIN)/BytesPerInt,
+    zmm_off = xmm_off + (XSAVE_AREA_UPPERBANK - XSAVE_AREA_BEGIN)/BytesPerInt,
     DEF_ZMM_OFFS(16),
     DEF_ZMM_OFFS(17),
-    DEF_ZMM_OFFS(18),
-    DEF_ZMM_OFFS(19),
-    DEF_ZMM_OFFS(20),
-    DEF_ZMM_OFFS(21),
-    DEF_ZMM_OFFS(22),
-    DEF_ZMM_OFFS(23),
-    DEF_ZMM_OFFS(24),
-    DEF_ZMM_OFFS(25),
-    DEF_ZMM_OFFS(26),
-    DEF_ZMM_OFFS(27),
-    DEF_ZMM_OFFS(28),
-    DEF_ZMM_OFFS(29),
-    DEF_ZMM_OFFS(30),
-    DEF_ZMM_OFFS(31),
+    // 18..31 are implied in range usage
     fpu_state_end = fpu_state_off + ((FPUStateSizeInWords-1)*wordSize / BytesPerInt),
     fpu_stateH_end,
     r15_off, r15H_off,
@@ -160,8 +143,6 @@ class RegisterSaver {
 };
 
 OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_frame_words, int* total_frame_words, bool save_vectors) {
-  int vect_words = 0;
-  int ymmhi_offset = -1;
   int off = 0;
   int num_xmm_regs = XMMRegisterImpl::number_of_registers;
   if (UseAVX < 3) {
@@ -171,24 +152,15 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   if (save_vectors) {
     assert(UseAVX > 0, "512bit vectors are supported only with EVEX");
     assert(MaxVectorSize == 64, "only 512bit vectors are supported now");
-    // Save upper half of YMM registers
-    vect_words = 16 * num_xmm_regs / wordSize;
-    if (UseAVX < 3) {
-      ymmhi_offset = additional_frame_words;
-      additional_frame_words += vect_words;
-    }
   }
 #else
   assert(!save_vectors, "vectors are generated only by C2 and JVMCI");
 #endif
 
-  // Always make the frame size 16-byte aligned
-  int frame_size_in_bytes = round_to(additional_frame_words*wordSize +
-                                     reg_save_size*BytesPerInt, num_xmm_regs);
+  // Always make the frame size 16-byte aligned, both vector and non vector stacks are always allocated
+  int frame_size_in_bytes = round_to(reg_save_size*BytesPerInt, num_xmm_regs);
   // OopMap frame size is in compiler stack slots (jint's) not bytes or words
   int frame_size_in_slots = frame_size_in_bytes / BytesPerInt;
-  // The caller will allocate additional_frame_words
-  int additional_frame_slots = additional_frame_words*wordSize / BytesPerInt;
   // CodeBlob frame size is in words.
   int frame_size_in_words = frame_size_in_bytes / wordSize;
   *total_frame_words = frame_size_in_words;
@@ -203,12 +175,34 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   __ push_CPU_state(); // Push a multiple of 16 bytes
 
   // push cpu state handles this on EVEX enabled targets
-  if ((vect_words > 0) && (UseAVX < 3)) {
-    assert(vect_words*wordSize >= 256, "");
-    // Save upper half of YMM registes(0..num_xmm_regs)
-    __ subptr(rsp, num_xmm_regs*16);
-    for (int n = 0; n < num_xmm_regs; n++) {
-      __ vextractf128h(Address(rsp, off++*16), as_XMMRegister(n));
+  if (save_vectors) {
+    // Save upper half of YMM registes(0..15)
+    int base_addr = XSAVE_AREA_YMM_BEGIN;
+    for (int n = 0; n < 16; n++) {
+      __ vextractf128h(Address(rsp, base_addr+n*16), as_XMMRegister(n));
+    }
+    if (VM_Version::supports_evex()) {
+      // Save upper half of ZMM registes(0..15)
+      base_addr = XSAVE_AREA_ZMM_BEGIN;
+      for (int n = 0; n < 16; n++) {
+        __ vextractf64x4h(Address(rsp, base_addr+n*32), as_XMMRegister(n), 1);
+      }
+      // Save full ZMM registes(16..num_xmm_regs)
+      base_addr = XSAVE_AREA_UPPERBANK;
+      int off = 0;
+      int vector_len = Assembler::AVX_512bit;
+      for (int n = 16; n < num_xmm_regs; n++) {
+        __ evmovdqul(Address(rsp, base_addr+(off++*64)), as_XMMRegister(n), vector_len);
+      }
+    }
+  } else {
+    if (VM_Version::supports_evex()) {
+      // Save upper bank of ZMM registers(16..31) for double/float usage
+      int base_addr = XSAVE_AREA_UPPERBANK;
+      int off = 0;
+      for (int n = 16; n < num_xmm_regs; n++) {
+        __ movsd(Address(rsp, base_addr+(off++*64)), as_XMMRegister(n));
+      }
     }
   }
   if (frame::arg_reg_save_area_bytes != 0) {
@@ -224,8 +218,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
   OopMapSet *oop_maps = new OopMapSet();
   OopMap* map = new OopMap(frame_size_in_slots, 0);
 
-#define STACK_OFFSET(x) VMRegImpl::stack2reg((x) + additional_frame_slots)
-#define YMMHI_STACK_OFFSET(x) VMRegImpl::stack2reg((x / VMRegImpl::stack_slot_size) + ymmhi_offset)
+#define STACK_OFFSET(x) VMRegImpl::stack2reg((x))
 
   map->set_callee_saved(STACK_OFFSET( rax_off ), rax->as_VMReg());
   map->set_callee_saved(STACK_OFFSET( rcx_off ), rcx->as_VMReg());
@@ -257,31 +250,21 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     off = zmm16_off;
     delta = zmm17_off - off;
     for (int n = 16; n < num_xmm_regs; n++) {
-      XMMRegister xmm_name = as_XMMRegister(n);
-      map->set_callee_saved(STACK_OFFSET(off), xmm_name->as_VMReg());
+      XMMRegister zmm_name = as_XMMRegister(n);
+      map->set_callee_saved(STACK_OFFSET(off), zmm_name->as_VMReg());
       off += delta;
     }
   }
 
 #if defined(COMPILER2) || INCLUDE_JVMCI
   if (save_vectors) {
-    assert(ymmhi_offset != -1, "save area must exist");
-    map->set_callee_saved(YMMHI_STACK_OFFSET(  0), xmm0->as_VMReg()->next(4));
-    map->set_callee_saved(YMMHI_STACK_OFFSET( 16), xmm1->as_VMReg()->next(4));
-    map->set_callee_saved(YMMHI_STACK_OFFSET( 32), xmm2->as_VMReg()->next(4));
-    map->set_callee_saved(YMMHI_STACK_OFFSET( 48), xmm3->as_VMReg()->next(4));
-    map->set_callee_saved(YMMHI_STACK_OFFSET( 64), xmm4->as_VMReg()->next(4));
-    map->set_callee_saved(YMMHI_STACK_OFFSET( 80), xmm5->as_VMReg()->next(4));
-    map->set_callee_saved(YMMHI_STACK_OFFSET( 96), xmm6->as_VMReg()->next(4));
-    map->set_callee_saved(YMMHI_STACK_OFFSET(112), xmm7->as_VMReg()->next(4));
-    map->set_callee_saved(YMMHI_STACK_OFFSET(128), xmm8->as_VMReg()->next(4));
-    map->set_callee_saved(YMMHI_STACK_OFFSET(144), xmm9->as_VMReg()->next(4));
-    map->set_callee_saved(YMMHI_STACK_OFFSET(160), xmm10->as_VMReg()->next(4));
-    map->set_callee_saved(YMMHI_STACK_OFFSET(176), xmm11->as_VMReg()->next(4));
-    map->set_callee_saved(YMMHI_STACK_OFFSET(192), xmm12->as_VMReg()->next(4));
-    map->set_callee_saved(YMMHI_STACK_OFFSET(208), xmm13->as_VMReg()->next(4));
-    map->set_callee_saved(YMMHI_STACK_OFFSET(224), xmm14->as_VMReg()->next(4));
-    map->set_callee_saved(YMMHI_STACK_OFFSET(240), xmm15->as_VMReg()->next(4));
+    off = ymm0_off;
+    int delta = ymm1_off - off;
+    for (int n = 0; n < 16; n++) {
+      XMMRegister ymm_name = as_XMMRegister(n);
+      map->set_callee_saved(STACK_OFFSET(off), ymm_name->as_VMReg()->next(4));
+      off += delta;
+    }
   }
 #endif // COMPILER2 || INCLUDE_JVMCI
 
@@ -316,8 +299,8 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
       off = zmm16H_off;
       delta = zmm17H_off - off;
       for (int n = 16; n < num_xmm_regs; n++) {
-        XMMRegister xmm_name = as_XMMRegister(n);
-        map->set_callee_saved(STACK_OFFSET(off), xmm_name->as_VMReg()->next());
+        XMMRegister zmm_name = as_XMMRegister(n);
+        map->set_callee_saved(STACK_OFFSET(off), zmm_name->as_VMReg()->next());
         off += delta;
       }
     }
@@ -335,21 +318,48 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     // Pop arg register save area
     __ addptr(rsp, frame::arg_reg_save_area_bytes);
   }
+
 #if defined(COMPILER2) || INCLUDE_JVMCI
-  // On EVEX enabled targets everything is handled in pop fpu state
-  if ((restore_vectors) && (UseAVX < 3)) {
-    assert(UseAVX > 0, "256/512-bit vectors are supported only with AVX");
-    assert(MaxVectorSize == 64, "up to 512bit vectors are supported now");
-    int off = 0;
-    // Restore upper half of YMM registes (0..num_xmm_regs)
-    for (int n = 0; n < num_xmm_regs; n++) {
-      __ vinsertf128h(as_XMMRegister(n), Address(rsp,  off++*16));
-    }
-    __ addptr(rsp, num_xmm_regs*16);
+  if (restore_vectors) {
+    assert(UseAVX > 0, "512bit vectors are supported only with EVEX");
+    assert(MaxVectorSize == 64, "only 512bit vectors are supported now");
   }
 #else
-  assert(!restore_vectors, "vectors are generated only by C2 and JVMCI");
+  assert(!save_vectors, "vectors are generated only by C2");
 #endif
+
+  // On EVEX enabled targets everything is handled in pop fpu state
+  if (restore_vectors) {
+    // Restore upper half of YMM registes (0..15)
+    int base_addr = XSAVE_AREA_YMM_BEGIN;
+    for (int n = 0; n < 16; n++) {
+      __ vinsertf128h(as_XMMRegister(n), Address(rsp,  base_addr+n*16));
+    }
+    if (VM_Version::supports_evex()) {
+      // Restore upper half of ZMM registes (0..15)
+      base_addr = XSAVE_AREA_ZMM_BEGIN;
+      for (int n = 0; n < 16; n++) {
+        __ vinsertf64x4h(as_XMMRegister(n), Address(rsp, base_addr+n*32), 1);
+      }
+      // Restore full ZMM registes(16..num_xmm_regs)
+      base_addr = XSAVE_AREA_UPPERBANK;
+      int vector_len = Assembler::AVX_512bit;
+      int off = 0;
+      for (int n = 16; n < num_xmm_regs; n++) {
+        __ evmovdqul(as_XMMRegister(n), Address(rsp, base_addr+(off++*64)), vector_len);
+      }
+    }
+  } else {
+    if (VM_Version::supports_evex()) {
+      // Restore upper bank of ZMM registes(16..31) for double/float usage
+      int base_addr = XSAVE_AREA_UPPERBANK;
+      int off = 0;
+      for (int n = 16; n < num_xmm_regs; n++) {
+        __ movsd(as_XMMRegister(n), Address(rsp, base_addr+(off++*64)));
+      }
+    }
+  }
+
   // Recover CPU state
   __ pop_CPU_state();
   // Get the rbp described implicitly by the calling convention (no oopMap)

@@ -2247,7 +2247,10 @@ void SuperWord::output() {
         NOT_PRODUCT(if (TraceSuperWordLoopUnrollAnalysis) tty->print_cr("vector loop(unroll=%d, len=%d)\n", max_vlen, max_vlen_in_bytes*BitsPerByte));
         // For atomic unrolled loops which are vector mapped, instigate more unrolling.
         cl->set_notpassed_slp();
-        C->set_major_progress();
+        // if vector resources are limited, do not allow additional unrolling
+        if (FLOATPRESSURE > 8) {
+          C->set_major_progress();
+        }
         cl->mark_do_unroll_only();
       }
     }

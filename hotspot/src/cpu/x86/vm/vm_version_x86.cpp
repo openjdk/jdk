@@ -891,7 +891,7 @@ void VM_Version::get_processor_features() {
       UseNewLongLShift = true;
     }
     if( FLAG_IS_DEFAULT(UseXmmLoadAndClearUpper) ) {
-      if( supports_sse4a() ) {
+      if (supports_sse4a()) {
         UseXmmLoadAndClearUpper = true; // use movsd only on '10h' Opteron
       } else {
         UseXmmLoadAndClearUpper = false;
