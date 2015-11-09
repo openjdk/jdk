@@ -41,6 +41,13 @@ class G1ParPushHeapRSClosure;
 class G1RemSet: public CHeapObj<mtGC> {
 private:
   G1RemSetSummary _prev_period_summary;
+
+  // A DirtyCardQueueSet that is used to hold cards that contain
+  // references into the current collection set. This is used to
+  // update the remembered sets of the regions in the collection
+  // set in the event of an evacuation failure.
+  DirtyCardQueueSet _into_cset_dirty_card_queue_set;
+
 protected:
   G1CollectedHeap* _g1;
   size_t _conc_refine_cards;
