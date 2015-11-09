@@ -1547,7 +1547,7 @@ void nmethod::flush() {
   if (PrintMethodFlushing) {
     tty->print_cr("*flushing nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT
                   "/Free CodeCache:" SIZE_FORMAT "Kb",
-                  _compile_id, p2i(this), CodeCache::nof_blobs(),
+                  _compile_id, p2i(this), CodeCache::blob_count(),
                   CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024);
   }
 
