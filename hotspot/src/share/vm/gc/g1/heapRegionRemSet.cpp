@@ -89,14 +89,6 @@ protected:
     // Must make this robust in case "from" is not in "_hr", because of
     // concurrency.
 
-    if (G1TraceHeapRegionRememberedSet) {
-      gclog_or_tty->print_cr("    PRT::Add_reference_work(" PTR_FORMAT "->" PTR_FORMAT ").",
-                             p2i(from),
-                             UseCompressedOops
-                             ? p2i(oopDesc::load_decode_heap_oop((narrowOop*)from))
-                             : p2i(oopDesc::load_decode_heap_oop((oop*)from)));
-    }
-
     HeapRegion* loc_hr = hr();
     // If the test below fails, then this table was reused concurrently
     // with this operation.  This is OK, since the old table was coarsened,
@@ -408,26 +400,9 @@ void FromCardCache::clear(uint region_idx) {
 void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   uint cur_hrm_ind = _hr->hrm_index();
 
-  if (G1TraceHeapRegionRememberedSet) {
-    gclog_or_tty->print_cr("ORT::add_reference_work(" PTR_FORMAT "->" PTR_FORMAT ").",
-                                                    p2i(from),
-                                                    UseCompressedOops
-                                                    ? p2i(oopDesc::load_decode_heap_oop((narrowOop*)from))
-                                                    : p2i(oopDesc::load_decode_heap_oop((oop*)from)));
-  }
-
   int from_card = (int)(uintptr_t(from) >> CardTableModRefBS::card_shift);
 
-  if (G1TraceHeapRegionRememberedSet) {
-    gclog_or_tty->print_cr("Table for [" PTR_FORMAT "...): card %d (cache = %d)",
-                  p2i(_hr->bottom()), from_card,
-                  FromCardCache::at(tid, cur_hrm_ind));
-  }
-
   if (FromCardCache::contains_or_replace(tid, cur_hrm_ind, from_card)) {
-    if (G1TraceHeapRegionRememberedSet) {
-      gclog_or_tty->print_cr("  from-card cache hit.");
-    }
     assert(contains_reference(from), "We just added it!");
     return;
   }
@@ -438,9 +413,6 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
 
   // If the region is already coarsened, return.
   if (_coarse_map.at(from_hrm_ind)) {
-    if (G1TraceHeapRegionRememberedSet) {
-      gclog_or_tty->print_cr("  coarse map hit.");
-    }
     assert(contains_reference(from), "We just added it!");
     return;
   }
@@ -462,17 +434,8 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
              "Must be in range.");
       if (G1HRRSUseSparseTable &&
           _sparse_table.add_card(from_hrm_ind, card_index)) {
-        if (G1TraceHeapRegionRememberedSet) {
-          gclog_or_tty->print_cr("   added card to sparse table.");
-        }
         assert(contains_reference_locked(from), "We just added it!");
         return;
-      } else {
-        if (G1TraceHeapRegionRememberedSet) {
-          gclog_or_tty->print_cr("   [tid %u] sparse table entry "
-                        "overflow(f: %d, t: %u)",
-                        tid, from_hrm_ind, cur_hrm_ind);
-        }
       }
 
       if (_n_fine_entries == _max_fine_entries) {
@@ -585,13 +548,6 @@ PerRegionTable* OtherRegionsTable::delete_region_table() {
   if (!_coarse_map.at(max_hrm_index)) {
     _coarse_map.at_put(max_hrm_index, true);
     _n_coarse_entries++;
-    if (G1TraceHeapRegionRememberedSet) {
-      gclog_or_tty->print("Coarsened entry in region [" PTR_FORMAT "...] "
-                 "for region [" PTR_FORMAT "...] (" SIZE_FORMAT " coarse entries).\n",
-                 p2i(_hr->bottom()),
-                 p2i(max->hr()->bottom()),
-                 _n_coarse_entries);
-    }
   }
 
   // Unsplice.
