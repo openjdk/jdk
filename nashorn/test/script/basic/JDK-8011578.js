@@ -25,8 +25,7 @@
  * JDK-8011578 : -Dnashorn.unstable.relink.threshold=1 causes tests to fail.
  *
  * @test
- * @option -Dnashorn.unstable.relink.threshold=1
- * @fork
+ * @option --unstable-relink-threshold=1
  * @run
  */
 
