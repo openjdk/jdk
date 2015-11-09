@@ -297,7 +297,7 @@ void NMethodSweeper::force_sweep() {
 void NMethodSweeper::handle_safepoint_request() {
   if (SafepointSynchronize::is_synchronizing()) {
     if (PrintMethodFlushing && Verbose) {
-      tty->print_cr("### Sweep at %d out of %d, yielding to safepoint", _seen, CodeCache::nof_nmethods());
+      tty->print_cr("### Sweep at %d out of %d, yielding to safepoint", _seen, CodeCache::nmethod_count());
     }
     MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
@@ -401,7 +401,7 @@ void NMethodSweeper::sweep_code_cache() {
   int flushed_c2_count     = 0;
 
   if (PrintMethodFlushing && Verbose) {
-    tty->print_cr("### Sweep at %d out of %d", _seen, CodeCache::nof_nmethods());
+    tty->print_cr("### Sweep at %d out of %d", _seen, CodeCache::nmethod_count());
   }
 
   int swept_count = 0;

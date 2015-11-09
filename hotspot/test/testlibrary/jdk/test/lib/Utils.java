@@ -44,6 +44,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 import java.util.function.BooleanSupplier;
 import java.util.concurrent.TimeUnit;
@@ -81,6 +82,16 @@ public final class Utils {
      * Returns the value of 'test.src' system property.
      */
     public static final String TEST_SRC = System.getProperty("test.src", ".").trim();
+
+    /*
+     * Returns the value of 'test.jdk' system property
+     */
+    public static final String TEST_JDK = System.getProperty("test.jdk");
+
+    /**
+     * Returns the value of 'test.classes' system property
+     */
+    public static final String TEST_CLASSES = System.getProperty("test.classes", ".");
 
     private static Unsafe unsafe = null;
 
@@ -615,6 +626,19 @@ public final class Utils {
         NULL_VALUES.put(long.class, 0L);
         NULL_VALUES.put(float.class, 0.0f);
         NULL_VALUES.put(double.class, 0.0d);
+    }
+
+    /**
+     * Returns mandatory property value
+     * @param propName is a name of property to request
+     * @return a String with requested property value
+     */
+    public static String getMandatoryProperty(String propName) {
+        Objects.requireNonNull(propName, "Requested null property");
+        String prop = System.getProperty(propName);
+        Objects.requireNonNull(prop,
+                String.format("A mandatory property '%s' isn't set", propName));
+        return prop;
     }
 }
 

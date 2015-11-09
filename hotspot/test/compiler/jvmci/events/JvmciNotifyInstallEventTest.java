@@ -111,6 +111,8 @@ public class JvmciNotifyInstallEventTest implements HotSpotVMEventListener {
         Asserts.assertEQ(gotInstallNotification, 1,
                 "Got unexpected event count after 1st install attempt");
         // since "empty" compilation result is ok, a second attempt should be ok
+        compResult = new CompilationResult(METHOD_NAME); // create another instance with fresh state
+        compResult.setTotalFrameSize(0);
         codeCache.installCode(compRequest, compResult, /* installedCode = */ null, /* speculationLog = */ null,
                 /* isDefault = */ false);
         Asserts.assertEQ(gotInstallNotification, 2,

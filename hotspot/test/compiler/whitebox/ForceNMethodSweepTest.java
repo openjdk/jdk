@@ -30,18 +30,19 @@ import sun.hotspot.code.BlobType;
 
 import jdk.test.lib.Asserts;
 import jdk.test.lib.InfiniteLoop;
+import compiler.whitebox.CompilerWhiteBoxTest;
 
 /*
  * @test
  * @bug 8059624 8064669
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /../../test/lib /
  * @modules java.management
  * @build ForceNMethodSweepTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:-TieredCompilation -XX:+WhiteBoxAPI
- *                   -XX:CompileCommand=compileonly,SimpleTestCase$Helper::*
+ *                   -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCase$Helper::*
  *                   -XX:-BackgroundCompilation ForceNMethodSweepTest
  * @summary testing of WB::forceNMethodSweep
  */

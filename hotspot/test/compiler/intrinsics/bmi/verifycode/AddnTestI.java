@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8031321
- * @library /testlibrary /../../test/lib /compiler/whitebox ..
+ * @library /testlibrary /../../test/lib / ..
  * @modules java.base/sun.misc
  *          java.management
  * @build AddnTestI
