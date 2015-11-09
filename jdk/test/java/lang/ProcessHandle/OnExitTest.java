@@ -129,7 +129,7 @@ public class OnExitTest extends ProcessUtil {
                 printf("         You can try to increase the timeout or%n");
                 printf("         you can try to use a faster VM (i.e. not a debug version).%n");
             }
-            children = getAllChildren(procHandle);
+            children = getDescendants(procHandle);
 
             ConcurrentHashMap<ProcessHandle, CompletableFuture<ProcessHandle>> completions =
                     new ConcurrentHashMap<>();
