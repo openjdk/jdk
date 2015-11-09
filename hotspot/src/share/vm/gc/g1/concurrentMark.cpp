@@ -802,12 +802,8 @@ class CheckBitmapClearHRClosure : public HeapRegionClosure {
     // This closure can be called concurrently to the mutator, so we must make sure
     // that the result of the getNextMarkedWordAddress() call is compared to the
     // value passed to it as limit to detect any found bits.
-    // We can use the region's orig_end() for the limit and the comparison value
-    // as it always contains the "real" end of the region that never changes and
-    // has no side effects.
-    // Due to the latter, there can also be no problem with the compiler generating
-    // reloads of the orig_end() call.
-    HeapWord* end = r->orig_end();
+    // end never changes in G1.
+    HeapWord* end = r->end();
     return _bitmap->getNextMarkedWordAddress(r->bottom(), end) != end;
   }
 };
@@ -821,9 +817,7 @@ bool ConcurrentMark::nextMarkBitmapIsClear() {
 class NoteStartOfMarkHRClosure: public HeapRegionClosure {
 public:
   bool doHeapRegion(HeapRegion* r) {
-    if (!r->is_continues_humongous()) {
-      r->note_start_of_marking();
-    }
+    r->note_start_of_marking();
     return false;
   }
 };
@@ -1282,22 +1276,10 @@ protected:
 
   // Takes a region that's not empty (i.e., it has at least one
   // live object in it and sets its corresponding bit on the region
-  // bitmap to 1. If the region is "starts humongous" it will also set
-  // to 1 the bits on the region bitmap that correspond to its
-  // associated "continues humongous" regions.
+  // bitmap to 1.
   void set_bit_for_region(HeapRegion* hr) {
-    assert(!hr->is_continues_humongous(), "should have filtered those out");
-
     BitMap::idx_t index = (BitMap::idx_t) hr->hrm_index();
-    if (!hr->is_starts_humongous()) {
-      // Normal (non-humongous) case: just set the bit.
-      _region_bm->par_at_put(index, true);
-    } else {
-      // Starts humongous case: calculate how many regions are part of
-      // this humongous region and then set the bit range.
-      BitMap::idx_t end_index = (BitMap::idx_t) hr->last_hc_index();
-      _region_bm->par_at_put_range(index, end_index, true);
-    }
+    _region_bm->par_at_put(index, true);
   }
 
 public:
@@ -1321,18 +1303,6 @@ public:
     _bm(bm), _region_marked_bytes(0) { }
 
   bool doHeapRegion(HeapRegion* hr) {
-
-    if (hr->is_continues_humongous()) {
-      // We will ignore these here and process them when their
-      // associated "starts humongous" region is processed (see
-      // set_bit_for_heap_region()). Note that we cannot rely on their
-      // associated "starts humongous" region to have their bit set to
-      // 1 since, due to the region chunking in the parallel region
-      // iteration, a "continues humongous" region might be visited
-      // before its associated "starts humongous".
-      return false;
-    }
-
     HeapWord* ntams = hr->next_top_at_mark_start();
     HeapWord* start = hr->bottom();
 
@@ -1370,6 +1340,11 @@ public:
       // Add the size of this object to the number of marked bytes.
       marked_bytes += (size_t)obj_sz * HeapWordSize;
 
+      // This will happen if we are handling a humongous object that spans
+      // several heap regions.
+      if (obj_end > hr->end()) {
+        break;
+      }
       // Find the next marked object after this one.
       start = _bm->getNextMarkedWordAddress(obj_end, ntams);
     }
@@ -1442,17 +1417,6 @@ public:
   int failures() const { return _failures; }
 
   bool doHeapRegion(HeapRegion* hr) {
-    if (hr->is_continues_humongous()) {
-      // We will ignore these here and process them when their
-      // associated "starts humongous" region is processed (see
-      // set_bit_for_heap_region()). Note that we cannot rely on their
-      // associated "starts humongous" region to have their bit set to
-      // 1 since, due to the region chunking in the parallel region
-      // iteration, a "continues humongous" region might be visited
-      // before its associated "starts humongous".
-      return false;
-    }
-
     int failures = 0;
 
     // Call the CalcLiveObjectsClosure to walk the marking bitmap for
@@ -1465,10 +1429,25 @@ public:
     size_t exp_marked_bytes = _calc_cl.region_marked_bytes();
     size_t act_marked_bytes = hr->next_marked_bytes();
 
-    // We're not OK if expected marked bytes > actual marked bytes. It means
-    // we have missed accounting some objects during the actual marking.
     if (exp_marked_bytes > act_marked_bytes) {
-      failures += 1;
+      if (hr->is_starts_humongous()) {
+        // For start_humongous regions, the size of the whole object will be
+        // in exp_marked_bytes.
+        HeapRegion* region = hr;
+        int num_regions;
+        for (num_regions = 0; region != NULL; num_regions++) {
+          region = _g1h->next_region_in_humongous(region);
+        }
+        if ((num_regions-1) * HeapRegion::GrainBytes >= exp_marked_bytes) {
+          failures += 1;
+        } else if (num_regions * HeapRegion::GrainBytes < exp_marked_bytes) {
+          failures += 1;
+        }
+      } else {
+        // We're not OK if expected marked bytes > actual marked bytes. It means
+        // we have missed accounting some objects during the actual marking.
+        failures += 1;
+      }
     }
 
     // Verify the bit, for this region, in the actual and expected
@@ -1569,18 +1548,6 @@ class FinalCountDataUpdateClosure: public CMCountDataClosureBase {
     CMCountDataClosureBase(g1h, region_bm, card_bm) { }
 
   bool doHeapRegion(HeapRegion* hr) {
-
-    if (hr->is_continues_humongous()) {
-      // We will ignore these here and process them when their
-      // associated "starts humongous" region is processed (see
-      // set_bit_for_heap_region()). Note that we cannot rely on their
-      // associated "starts humongous" region to have their bit set to
-      // 1 since, due to the region chunking in the parallel region
-      // iteration, a "continues humongous" region might be visited
-      // before its associated "starts humongous".
-      return false;
-    }
-
     HeapWord* ntams = hr->next_top_at_mark_start();
     HeapWord* top   = hr->top();
 
@@ -1677,7 +1644,7 @@ public:
   const HeapRegionSetCount& humongous_regions_removed() { return _humongous_regions_removed; }
 
   bool doHeapRegion(HeapRegion *hr) {
-    if (hr->is_continues_humongous() || hr->is_archive()) {
+    if (hr->is_archive()) {
       return false;
     }
     // We use a claim value of zero here because all regions
@@ -1689,7 +1656,6 @@ public:
       _freed_bytes += hr->used();
       hr->set_containing_set(NULL);
       if (hr->is_humongous()) {
-        assert(hr->is_starts_humongous(), "we should only see starts humongous");
         _humongous_regions_removed.increment(1u, hr->capacity());
         _g1->free_humongous_region(hr, _local_cleanup_list, true);
       } else {
@@ -2338,7 +2304,7 @@ private:
   // circumspect about treating the argument as an object.
   void do_entry(void* entry) const {
     _task->increment_refs_reached();
-    HeapRegion* hr = _g1h->heap_region_containing_raw(entry);
+    HeapRegion* hr = _g1h->heap_region_containing(entry);
     if (entry < hr->next_top_at_mark_start()) {
       // Until we get here, we don't know whether entry refers to a valid
       // object; it could instead have been a stale reference.
@@ -2488,32 +2454,9 @@ ConcurrentMark::claim_region(uint worker_id) {
   while (finger < _heap_end) {
     assert(_g1h->is_in_g1_reserved(finger), "invariant");
 
-    // Note on how this code handles humongous regions. In the
-    // normal case the finger will reach the start of a "starts
-    // humongous" (SH) region. Its end will either be the end of the
-    // last "continues humongous" (CH) region in the sequence, or the
-    // standard end of the SH region (if the SH is the only region in
-    // the sequence). That way claim_region() will skip over the CH
-    // regions. However, there is a subtle race between a CM thread
-    // executing this method and a mutator thread doing a humongous
-    // object allocation. The two are not mutually exclusive as the CM
-    // thread does not need to hold the Heap_lock when it gets
-    // here. So there is a chance that claim_region() will come across
-    // a free region that's in the progress of becoming a SH or a CH
-    // region. In the former case, it will either
-    //   a) Miss the update to the region's end, in which case it will
-    //      visit every subsequent CH region, will find their bitmaps
-    //      empty, and do nothing, or
-    //   b) Will observe the update of the region's end (in which case
-    //      it will skip the subsequent CH regions).
-    // If it comes across a region that suddenly becomes CH, the
-    // scenario will be similar to b). So, the race between
-    // claim_region() and a humongous object allocation might force us
-    // to do a bit of unnecessary work (due to some unnecessary bitmap
-    // iterations) but it should not introduce and correctness issues.
-    HeapRegion* curr_region = _g1h->heap_region_containing_raw(finger);
+    HeapRegion* curr_region = _g1h->heap_region_containing(finger);
 
-    // Above heap_region_containing_raw may return NULL as we always scan claim
+    // Above heap_region_containing may return NULL as we always scan claim
     // until the end of the heap. In this case, just jump to the next region.
     HeapWord* end = curr_region != NULL ? curr_region->end() : finger + HeapRegion::GrainWords;
 
@@ -2589,16 +2532,9 @@ void ConcurrentMark::verify_no_cset_oops() {
   // Verify the global finger
   HeapWord* global_finger = finger();
   if (global_finger != NULL && global_finger < _heap_end) {
-    // The global finger always points to a heap region boundary. We
-    // use heap_region_containing_raw() to get the containing region
-    // given that the global finger could be pointing to a free region
-    // which subsequently becomes continues humongous. If that
-    // happens, heap_region_containing() will return the bottom of the
-    // corresponding starts humongous region and the check below will
-    // not hold any more.
     // Since we always iterate over all regions, we might get a NULL HeapRegion
     // here.
-    HeapRegion* global_hr = _g1h->heap_region_containing_raw(global_finger);
+    HeapRegion* global_hr = _g1h->heap_region_containing(global_finger);
     guarantee(global_hr == NULL || global_finger == global_hr->bottom(),
               "global finger: " PTR_FORMAT " region: " HR_FORMAT,
               p2i(global_finger), HR_FORMAT_PARAMS(global_hr));
@@ -2611,7 +2547,7 @@ void ConcurrentMark::verify_no_cset_oops() {
     HeapWord* task_finger = task->finger();
     if (task_finger != NULL && task_finger < _heap_end) {
       // See above note on the global finger verification.
-      HeapRegion* task_hr = _g1h->heap_region_containing_raw(task_finger);
+      HeapRegion* task_hr = _g1h->heap_region_containing(task_finger);
       guarantee(task_hr == NULL || task_finger == task_hr->bottom() ||
                 !task_hr->in_collection_set(),
                 "task finger: " PTR_FORMAT " region: " HR_FORMAT,
@@ -2639,17 +2575,6 @@ class AggregateCountDataHRClosure: public HeapRegionClosure {
     _cm_card_bm(cm_card_bm), _max_worker_id(max_worker_id) { }
 
   bool doHeapRegion(HeapRegion* hr) {
-    if (hr->is_continues_humongous()) {
-      // We will ignore these here and process them when their
-      // associated "starts humongous" region is processed.
-      // Note that we cannot rely on their associated
-      // "starts humongous" region to have their bit set to 1
-      // since, due to the region chunking in the parallel region
-      // iteration, a "continues humongous" region might be visited
-      // before its associated "starts humongous".
-      return false;
-    }
-
     HeapWord* start = hr->bottom();
     HeapWord* limit = hr->next_top_at_mark_start();
     HeapWord* end = hr->end();
@@ -2957,8 +2882,6 @@ G1CMOopClosure::G1CMOopClosure(G1CollectedHeap* g1h,
 void CMTask::setup_for_region(HeapRegion* hr) {
   assert(hr != NULL,
         "claim_region() should have filtered out NULL regions");
-  assert(!hr->is_continues_humongous(),
-        "claim_region() should have filtered out continues humongous regions");
   _curr_region  = hr;
   _finger       = hr->bottom();
   update_region_limit();

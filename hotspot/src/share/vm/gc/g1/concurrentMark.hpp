@@ -772,16 +772,13 @@ public:
                            size_t* marked_bytes_array,
                            BitMap* task_card_bm);
 
-  // Counts the given memory region in the task/worker counting
-  // data structures for the given worker id.
-  inline void count_region(MemRegion mr, HeapRegion* hr, uint worker_id);
-
   // Counts the given object in the given task/worker counting
   // data structures.
   inline void count_object(oop obj,
                            HeapRegion* hr,
                            size_t* marked_bytes_array,
-                           BitMap* task_card_bm);
+                           BitMap* task_card_bm,
+                           size_t word_size);
 
   // Attempts to mark the given object and, if successful, counts
   // the object in the given task/worker counting structures.
