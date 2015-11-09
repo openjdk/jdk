@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 6545058 6611182 8016209
+ * @bug 6545058 6611182 8016209 8139986
  * @summary validate and test -version, -fullversion, and internal, as well as
  *          sanity checks if a tool can be launched.
  * @compile VersionCheck.java
@@ -115,12 +115,20 @@ public class VersionCheck extends TestHelper {
     static String refVersion;
     static String refFullVersion;
 
+    static String getAllVersionLines(String... argv) {
+        return getVersion0(true, argv);
+    }
+
     static String getVersion(String... argv) {
+        return getVersion0(false, argv);
+    }
+
+    static String getVersion0(boolean allLines, String... argv) {
         TestHelper.TestResult tr = doExec(argv);
         StringBuilder out = new StringBuilder();
         // remove the HotSpot line
         for (String x : tr.testOutput) {
-            if (!x.matches(".*Client.*VM.*|.*Server.*VM.*")) {
+            if (allLines || !x.matches(".*Client.*VM.*|.*Server.*VM.*")) {
                 out = out.append(x + "\n");
             }
         }
@@ -183,13 +191,6 @@ public class VersionCheck extends TestHelper {
                                            "build".length() + 1,
                                            refVersion.lastIndexOf(")"));
 
-        String[] vStr = bStr.split("\\.|-|_");
-        String jdkMajor = vStr[0];
-        String jdkMinor = vStr[1];
-        String jdkMicro = vStr[2];
-        String jdkBuild = vStr[vStr.length - 1];
-
-        String expectedDotVersion = "dotversion:" + jdkMajor + "." + jdkMinor;
         String expectedFullVersion = "fullversion:" + bStr;
 
         Map<String, String> envMap = new HashMap<>();
@@ -200,10 +201,6 @@ public class VersionCheck extends TestHelper {
         for (String x : tr.testOutput) {
             alist.add(x.trim());
         }
-        if (!alist.contains(expectedDotVersion)) {
-            System.out.println("Error: could not find " + expectedDotVersion);
-            failcount++;
-        }
 
         if (!alist.contains(expectedFullVersion)) {
             System.out.println("Error: could not find " + expectedFullVersion);
@@ -211,6 +208,28 @@ public class VersionCheck extends TestHelper {
         }
         System.out.println("Internal Strings Test: " + failcount);
         return failcount == 0;
+    }
+
+    static boolean testDebugVersion() {
+        String jdkType = System.getProperty("jdk.debug", "release");
+        String versionLines = getAllVersionLines(javaCmd, "-version");
+        if ("release".equals(jdkType)) {
+            jdkType = "";
+        } else {
+            jdkType = jdkType + " ";
+        }
+        String tofind = "(" + jdkType + "build";
+        int idx = versionLines.indexOf(tofind);
+        if (idx < 0) {
+            System.out.println("Did not find first instance of " + tofind);
+            return false;
+        }
+        idx =  versionLines.indexOf(tofind, idx + 1);
+        if (idx < 0) {
+            System.out.println("Did not find first instance of " + tofind);
+            return false;
+        }
+        return true;
     }
 
     // Initialize
@@ -223,7 +242,8 @@ public class VersionCheck extends TestHelper {
         init();
         if (compareJVersionStrings() &&
                 compareInternalStrings() &&
-                testToolVersion()) {
+                testToolVersion() &&
+                testDebugVersion()) {
             System.out.println("All Version string comparisons: PASS");
         } else {
             throw new AssertionError("Some tests failed");
@@ -231,7 +251,7 @@ public class VersionCheck extends TestHelper {
     }
 
     static class ToolFilter implements FileFilter {
-        final Iterable<String> exclude ;
+        final Iterable<String> exclude;
         protected ToolFilter(String... exclude) {
             List<String> tlist = new ArrayList<>();
             this.exclude = tlist;
