@@ -3181,6 +3181,13 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       n->set_req(MemBarNode::Precedent, top());
     }
     break;
+  case Op_RangeCheck: {
+    RangeCheckNode* rc = n->as_RangeCheck();
+    Node* iff = new IfNode(rc->in(0), rc->in(1), rc->_prob, rc->_fcnt);
+    n->subsume_by(iff, this);
+    frc._tests.push(iff);
+    break;
+  }
   default:
     assert( !n->is_Call(), "" );
     assert( !n->is_Mem(), "" );
@@ -3189,8 +3196,9 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
   }
 
   // Collect CFG split points
-  if (n->is_MultiBranch())
+  if (n->is_MultiBranch() && !n->is_RangeCheck()) {
     frc._tests.push(n);
+  }
 }
 
 //------------------------------final_graph_reshaping_walk---------------------

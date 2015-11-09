@@ -270,7 +270,6 @@ class IfNode : public MultiBranchNode {
   virtual uint size_of() const { return sizeof(*this); }
 
 private:
-  ProjNode* range_check_trap_proj(int& flip, Node*& l, Node*& r);
   ProjNode* range_check_trap_proj() {
     int flip_test = 0;
     Node* l = NULL;
@@ -283,7 +282,7 @@ private:
   bool is_ctrl_folds(Node* ctrl, PhaseIterGVN* igvn);
   bool has_shared_region(ProjNode* proj, ProjNode*& success, ProjNode*& fail);
   bool has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNode*& fail, PhaseIterGVN* igvn);
-  static void merge_uncommon_traps(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
+  Node* merge_uncommon_traps(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
   static void improve_address_types(Node* l, Node* r, ProjNode* fail, PhaseIterGVN* igvn);
   bool is_cmp_with_loadrange(ProjNode* proj);
   bool is_null_check(ProjNode* proj, PhaseIterGVN* igvn);
@@ -291,6 +290,12 @@ private:
   void reroute_side_effect_free_unc(ProjNode* proj, ProjNode* dom_proj, PhaseIterGVN* igvn);
   ProjNode* uncommon_trap_proj(CallStaticJavaNode*& call) const;
   bool fold_compares_helper(ProjNode* proj, ProjNode* success, ProjNode* fail, PhaseIterGVN* igvn);
+
+protected:
+  ProjNode* range_check_trap_proj(int& flip, Node*& l, Node*& r);
+  Node* Ideal_common(PhaseGVN *phase, bool can_reshape);
+  Node* dominated_by(Node* prev_dom, PhaseIterGVN* igvn);
+  Node* search_identical(int dist);
 
 public:
 
@@ -375,8 +380,6 @@ public:
   virtual const Type *Value( PhaseTransform *phase ) const;
   virtual int required_outcnt() const { return 2; }
   virtual const RegMask &out_RegMask() const;
-  void dominated_by(Node* prev_dom, PhaseIterGVN* igvn);
-  int is_range_check(Node* &range, Node* &index, jint &offset);
   Node* fold_compares(PhaseIterGVN* phase);
   static Node* up_one_dom(Node* curr, bool linear_only = false);
 
@@ -389,6 +392,20 @@ public:
   virtual void dump_spec(outputStream *st) const;
   virtual void related(GrowableArray <Node *> *in_rel, GrowableArray <Node *> *out_rel, bool compact) const;
 #endif
+};
+
+class RangeCheckNode : public IfNode {
+private:
+  int is_range_check(Node* &range, Node* &index, jint &offset);
+
+public:
+  RangeCheckNode(Node* control, Node *b, float p, float fcnt)
+    : IfNode(control, b, p, fcnt) {
+    init_class_id(Class_RangeCheck);
+  }
+
+  virtual int Opcode() const;
+  virtual Node* Ideal(PhaseGVN *phase, bool can_reshape);
 };
 
 class IfProjNode : public CProjNode {
