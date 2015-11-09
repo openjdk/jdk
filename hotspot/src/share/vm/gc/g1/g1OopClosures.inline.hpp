@@ -222,7 +222,7 @@ inline void G1UpdateRSOrPushRefOopClosure::do_oop_nv(T* p) {
 
 template <class T>
 void G1ParCopyHelper::do_klass_barrier(T* p, oop new_obj) {
-  if (_g1->heap_region_containing_raw(new_obj)->is_young()) {
+  if (_g1->heap_region_containing(new_obj)->is_young()) {
     _scanned_klass->record_modified_oops();
   }
 }

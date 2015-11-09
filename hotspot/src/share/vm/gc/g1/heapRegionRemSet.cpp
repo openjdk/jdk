@@ -105,7 +105,7 @@ protected:
     // now reused for the corresponding start humongous region, we need to
     // make sure that we detect this. Thus, we call is_in_reserved_raw()
     // instead of just is_in_reserved() here.
-    if (loc_hr->is_in_reserved_raw(from)) {
+    if (loc_hr->is_in_reserved(from)) {
       size_t hw_offset = pointer_delta((HeapWord*)from, loc_hr->bottom());
       CardIdx_t from_card = (CardIdx_t)
           hw_offset >> (CardTableModRefBS::card_shift - LogHeapWordSize);
@@ -433,7 +433,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   }
 
   // Note that this may be a continued H region.
-  HeapRegion* from_hr = _g1h->heap_region_containing_raw(from);
+  HeapRegion* from_hr = _g1h->heap_region_containing(from);
   RegionIdx_t from_hrm_ind = (RegionIdx_t) from_hr->hrm_index();
 
   // If the region is already coarsened, return.
@@ -765,7 +765,7 @@ bool OtherRegionsTable::contains_reference(OopOrNarrowOopStar from) const {
 }
 
 bool OtherRegionsTable::contains_reference_locked(OopOrNarrowOopStar from) const {
-  HeapRegion* hr = _g1h->heap_region_containing_raw(from);
+  HeapRegion* hr = _g1h->heap_region_containing(from);
   RegionIdx_t hr_ind = (RegionIdx_t) hr->hrm_index();
   // Is this region in the coarse map?
   if (_coarse_map.at(hr_ind)) return true;

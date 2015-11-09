@@ -279,8 +279,8 @@ public:
         } else {
           assert(hr->is_empty(), "Should have been cleared in phase 2.");
         }
-        hr->reset_during_compaction();
       }
+      hr->reset_during_compaction();
     } else if (!hr->is_pinned()) {
       hr->compact();
     }
@@ -334,9 +334,6 @@ void G1PrepareCompactClosure::free_humongous_region(HeapRegion* hr) {
   HeapWord* end = hr->end();
   FreeRegionList dummy_free_list("Dummy Free List for G1MarkSweep");
 
-  assert(hr->is_starts_humongous(),
-         "Only the start of a humongous region should be freed.");
-
   hr->set_containing_set(NULL);
   _humongous_regions_removed.increment(1u, hr->capacity());
 
@@ -373,15 +370,12 @@ void G1PrepareCompactClosure::update_sets() {
 
 bool G1PrepareCompactClosure::doHeapRegion(HeapRegion* hr) {
   if (hr->is_humongous()) {
-    if (hr->is_starts_humongous()) {
-      oop obj = oop(hr->bottom());
-      if (obj->is_gc_marked()) {
-        obj->forward_to(obj);
-      } else  {
-        free_humongous_region(hr);
-      }
-    } else {
-      assert(hr->is_continues_humongous(), "Invalid humongous.");
+    oop obj = oop(hr->humongous_start_region()->bottom());
+    if (hr->is_starts_humongous() && obj->is_gc_marked()) {
+      obj->forward_to(obj);
+    }
+    if (!obj->is_gc_marked()) {
+      free_humongous_region(hr);
     }
   } else if (!hr->is_pinned()) {
     prepare_for_compaction(hr, hr->end());

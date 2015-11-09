@@ -89,9 +89,7 @@ inline void ConcurrentMark::count_region(MemRegion mr, HeapRegion* hr,
   size_t region_size_bytes = mr.byte_size();
   uint index = hr->hrm_index();
 
-  assert(!hr->is_continues_humongous(), "should not be HC region");
   assert(hr == g1h->heap_region_containing(start), "sanity");
-  assert(hr == g1h->heap_region_containing(mr.last()), "sanity");
   assert(marked_bytes_array != NULL, "pre-condition");
   assert(task_card_bm != NULL, "pre-condition");
 
@@ -116,23 +114,23 @@ inline void ConcurrentMark::count_region(MemRegion mr, HeapRegion* hr,
   set_card_bitmap_range(task_card_bm, start_idx, end_idx, false /* is_par */);
 }
 
-// Counts the given memory region in the task/worker counting
-// data structures for the given worker id.
-inline void ConcurrentMark::count_region(MemRegion mr,
-                                         HeapRegion* hr,
-                                         uint worker_id) {
-  size_t* marked_bytes_array = count_marked_bytes_array_for(worker_id);
-  BitMap* task_card_bm = count_card_bitmap_for(worker_id);
-  count_region(mr, hr, marked_bytes_array, task_card_bm);
-}
-
 // Counts the given object in the given task/worker counting data structures.
 inline void ConcurrentMark::count_object(oop obj,
                                          HeapRegion* hr,
                                          size_t* marked_bytes_array,
-                                         BitMap* task_card_bm) {
-  MemRegion mr((HeapWord*)obj, obj->size());
-  count_region(mr, hr, marked_bytes_array, task_card_bm);
+                                         BitMap* task_card_bm,
+                                         size_t word_size) {
+  assert(!hr->is_continues_humongous(), "Cannot enter count_object with continues humongous");
+  if (!hr->is_starts_humongous()) {
+    MemRegion mr((HeapWord*)obj, word_size);
+    count_region(mr, hr, marked_bytes_array, task_card_bm);
+  } else {
+    do {
+      MemRegion mr(hr->bottom(), hr->top());
+      count_region(mr, hr, marked_bytes_array, task_card_bm);
+      hr = _g1h->next_region_in_humongous(hr);
+    } while (hr != NULL);
+  }
 }
 
 // Attempts to mark the given object and, if successful, counts
@@ -141,10 +139,9 @@ inline bool ConcurrentMark::par_mark_and_count(oop obj,
                                                HeapRegion* hr,
                                                size_t* marked_bytes_array,
                                                BitMap* task_card_bm) {
-  HeapWord* addr = (HeapWord*)obj;
-  if (_nextMarkBitMap->parMark(addr)) {
+  if (_nextMarkBitMap->parMark((HeapWord*)obj)) {
     // Update the task specific count data for the object.
-    count_object(obj, hr, marked_bytes_array, task_card_bm);
+    count_object(obj, hr, marked_bytes_array, task_card_bm, obj->size());
     return true;
   }
   return false;
@@ -157,10 +154,10 @@ inline bool ConcurrentMark::par_mark_and_count(oop obj,
                                                size_t word_size,
                                                HeapRegion* hr,
                                                uint worker_id) {
-  HeapWord* addr = (HeapWord*)obj;
-  if (_nextMarkBitMap->parMark(addr)) {
-    MemRegion mr(addr, word_size);
-    count_region(mr, hr, worker_id);
+  if (_nextMarkBitMap->parMark((HeapWord*)obj)) {
+    size_t* marked_bytes_array = count_marked_bytes_array_for(worker_id);
+    BitMap* task_card_bm = count_card_bitmap_for(worker_id);
+    count_object(obj, hr, marked_bytes_array, task_card_bm, word_size);
     return true;
   }
   return false;
@@ -351,7 +348,7 @@ inline void CMTask::deal_with_reference(oop obj) {
       // Only get the containing region if the object is not marked on the
       // bitmap (otherwise, it's a waste of time since we won't do
       // anything with it).
-      HeapRegion* hr = _g1h->heap_region_containing_raw(obj);
+      HeapRegion* hr = _g1h->heap_region_containing(obj);
       if (!hr->obj_allocated_since_next_marking(obj)) {
         make_reference_grey(obj, hr);
       }
@@ -371,7 +368,7 @@ inline void ConcurrentMark::grayRoot(oop obj, size_t word_size,
   assert(obj != NULL, "pre-condition");
   HeapWord* addr = (HeapWord*) obj;
   if (hr == NULL) {
-    hr = _g1h->heap_region_containing_raw(addr);
+    hr = _g1h->heap_region_containing(addr);
   } else {
     assert(hr->is_in(addr), "pre-condition");
   }
@@ -379,16 +376,6 @@ inline void ConcurrentMark::grayRoot(oop obj, size_t word_size,
   // Given that we're looking for a region that contains an object
   // header it's impossible to get back a HC region.
   assert(!hr->is_continues_humongous(), "sanity");
-
-  // We cannot assert that word_size == obj->size() given that obj
-  // might not be in a consistent state (another thread might be in
-  // the process of copying it). So the best thing we can do is to
-  // assert that word_size is under an upper bound which is its
-  // containing region's capacity.
-  assert(word_size * HeapWordSize <= hr->capacity(),
-         "size: " SIZE_FORMAT " capacity: " SIZE_FORMAT " " HR_FORMAT,
-         word_size * HeapWordSize, hr->capacity(),
-         HR_FORMAT_PARAMS(hr));
 
   if (addr < hr->next_top_at_mark_start()) {
     if (!_nextMarkBitMap->isMarked(addr)) {

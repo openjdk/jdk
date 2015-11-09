@@ -65,6 +65,10 @@ inline AllocationContextStats& G1CollectedHeap::allocation_context_stats() {
 // Return the region with the given index. It assumes the index is valid.
 inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm.at(index); }
 
+inline HeapRegion* G1CollectedHeap::next_region_in_humongous(HeapRegion* hr) const {
+  return _hrm.next_region_in_humongous(hr);
+}
+
 inline uint G1CollectedHeap::addr_to_region(HeapWord* addr) const {
   assert(is_in_reserved(addr),
          "Cannot calculate region index for address " PTR_FORMAT " that is outside of the heap [" PTR_FORMAT ", " PTR_FORMAT ")",
@@ -77,21 +81,12 @@ inline HeapWord* G1CollectedHeap::bottom_addr_for_region(uint index) const {
 }
 
 template <class T>
-inline HeapRegion* G1CollectedHeap::heap_region_containing_raw(const T addr) const {
+inline HeapRegion* G1CollectedHeap::heap_region_containing(const T addr) const {
   assert(addr != NULL, "invariant");
   assert(is_in_g1_reserved((const void*) addr),
          "Address " PTR_FORMAT " is outside of the heap ranging from [" PTR_FORMAT " to " PTR_FORMAT ")",
          p2i((void*)addr), p2i(g1_reserved().start()), p2i(g1_reserved().end()));
   return _hrm.addr_to_region((HeapWord*) addr);
-}
-
-template <class T>
-inline HeapRegion* G1CollectedHeap::heap_region_containing(const T addr) const {
-  HeapRegion* hr = heap_region_containing_raw(addr);
-  if (hr->is_continues_humongous()) {
-    return hr->humongous_start_region();
-  }
-  return hr;
 }
 
 inline void G1CollectedHeap::reset_gc_time_stamp() {
@@ -124,9 +119,9 @@ G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
   assert_heap_not_locked();
 
   // Assign the containing region to containing_hr so that we don't
-  // have to keep calling heap_region_containing_raw() in the
+  // have to keep calling heap_region_containing() in the
   // asserts below.
-  DEBUG_ONLY(HeapRegion* containing_hr = heap_region_containing_raw(start);)
+  DEBUG_ONLY(HeapRegion* containing_hr = heap_region_containing(start);)
   assert(word_size > 0, "pre-condition");
   assert(containing_hr->is_in(start), "it should contain start");
   assert(containing_hr->is_young(), "it should be young");

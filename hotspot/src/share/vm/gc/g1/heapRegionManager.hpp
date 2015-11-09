@@ -150,6 +150,10 @@ public:
   // is valid.
   inline HeapRegion* at(uint index) const;
 
+  // Return the next region (by index) that is part of the same
+  // humongous object that hr is part of.
+  inline HeapRegion* next_region_in_humongous(HeapRegion* hr) const;
+
   // If addr is within the committed space return its corresponding
   // HeapRegion, otherwise return NULL.
   inline HeapRegion* addr_to_region(HeapWord* addr) const;
