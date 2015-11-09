@@ -647,17 +647,68 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     # path, otherwise we might pick up cross-compilers which don't use standard
     # naming.
 
+    OLDPATH="$PATH"
+
+    AC_ARG_WITH(build-devkit, [AS_HELP_STRING([--with-build-devkit],
+        [Devkit to use for the build platform toolchain])])
+    if test "x$with_build_devkit" = "xyes"; then
+      AC_MSG_ERROR([--with-build-devkit must have a value])
+    elif test -n "$with_build_devkit"; then
+      if test ! -d "$with_build_devkit"; then
+        AC_MSG_ERROR([--with-build-devkit points to non existing dir: $with_build_devkit])
+      else
+        BASIC_FIXUP_PATH([with_build_devkit])
+        BUILD_DEVKIT_ROOT="$with_build_devkit"
+        # Check for a meta data info file in the root of the devkit
+        if test -f "$BUILD_DEVKIT_ROOT/devkit.info"; then
+          # Process devkit.info so that existing devkit variables are not
+          # modified by this
+          $SED -e "s/^DEVKIT_/BUILD_DEVKIT_/g" \
+              -e "s/\$DEVKIT_ROOT/\$BUILD_DEVKIT_ROOT/g" \
+              -e "s/\$host/\$build/g" \
+              $BUILD_DEVKIT_ROOT/devkit.info \
+              > $CONFIGURESUPPORT_OUTPUTDIR/build-devkit.info
+          . $CONFIGURESUPPORT_OUTPUTDIR/build-devkit.info
+          # This potentially sets the following:
+          # A descriptive name of the devkit
+          BASIC_EVAL_DEVKIT_VARIABLE([BUILD_DEVKIT_NAME])
+          # Corresponds to --with-extra-path
+          BASIC_EVAL_DEVKIT_VARIABLE([BUILD_DEVKIT_EXTRA_PATH])
+          # Corresponds to --with-toolchain-path
+          BASIC_EVAL_DEVKIT_VARIABLE([BUILD_DEVKIT_TOOLCHAIN_PATH])
+          # Corresponds to --with-sysroot
+          BASIC_EVAL_DEVKIT_VARIABLE([BUILD_DEVKIT_SYSROOT])
+          # Skip the Window specific parts
+        fi
+
+        AC_MSG_CHECKING([for build platform devkit])
+        if test "x$BUILD_DEVKIT_NAME" != x; then
+          AC_MSG_RESULT([$BUILD_DEVKIT_NAME in $BUILD_DEVKIT_ROOT])
+        else
+          AC_MSG_RESULT([$BUILD_DEVKIT_ROOT])
+        fi
+
+        BUILD_SYSROOT="$BUILD_DEVKIT_SYSROOT"
+        FLAGS_SETUP_SYSROOT_FLAGS([BUILD_])
+
+         # Fallback default of just /bin if DEVKIT_PATH is not defined
+        if test "x$BUILD_DEVKIT_TOOLCHAIN_PATH" = x; then
+          BUILD_DEVKIT_TOOLCHAIN_PATH="$BUILD_DEVKIT_ROOT/bin"
+        fi
+        PATH="$BUILD_DEVKIT_TOOLCHAIN_PATH:$BUILD_DEVKIT_EXTRA_PATH"
+      fi
+    fi
+
     # FIXME: we should list the discovered compilers as an exclude pattern!
     # If we do that, we can do this detection before POST_DETECTION, and still
     # find the build compilers in the tools dir, if needed.
-    BASIC_PATH_PROGS(BUILD_CC, [cl cc gcc])
+    BASIC_REQUIRE_PROGS(BUILD_CC, [cl cc gcc])
     BASIC_FIXUP_EXECUTABLE(BUILD_CC)
-    BASIC_PATH_PROGS(BUILD_CXX, [cl CC g++])
+    BASIC_REQUIRE_PROGS(BUILD_CXX, [cl CC g++])
     BASIC_FIXUP_EXECUTABLE(BUILD_CXX)
-    BASIC_PATH_PROGS(BUILD_LD, ld)
-    BASIC_FIXUP_EXECUTABLE(BUILD_LD)
-    BUILD_SYSROOT_CFLAGS=""
-    BUILD_SYSROOT_LDFLAGS=""
+    BUILD_LD="$BUILD_CC"
+
+    PATH="$OLDPATH"
   else
     # If we are not cross compiling, use the normal target compilers for
     # building the build platform executables.

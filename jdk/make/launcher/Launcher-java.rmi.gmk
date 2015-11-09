@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,10 @@
 
 include LauncherCommon.gmk
 
-$(eval $(call SetupLauncher,rmid, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.rmi.server.Activation"$(COMMA) }'))
+$(eval $(call SetupBuildLauncher, rmid, \
+    MAIN_CLASS := sun.rmi.server.Activation, \
+))
 
-$(eval $(call SetupLauncher,rmiregistry, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.rmi.registry.RegistryImpl"$(COMMA) }'))
+$(eval $(call SetupBuildLauncher, rmiregistry, \
+    MAIN_CLASS := sun.rmi.registry.RegistryImpl, \
+))

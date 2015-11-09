@@ -115,12 +115,12 @@ public class SaajStaxWriterEx extends SaajStaxWriter implements XMLStreamWriterE
                 return currentElement.lookupPrefix(namespaceURI);
             }
             public Iterator getPrefixes(final String namespaceURI) {
-                return new Iterator() {
+                return new Iterator<String>() {
                     String prefix = getPrefix(namespaceURI);
                     public boolean hasNext() {
                         return (prefix != null);
                     }
-                    public Object next() {
+                    public String next() {
                         if (prefix == null) throw new java.util.NoSuchElementException();
                         String next = prefix;
                         prefix = null;

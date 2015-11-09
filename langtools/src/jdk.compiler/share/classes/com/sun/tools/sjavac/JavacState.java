@@ -527,7 +527,7 @@ public class JavacState {
      * Compare the javac_state recorded public apis of packages on the classpath
      * with the actual public apis on the classpath.
      */
-    public void taintPackagesDependingOnChangedClasspathPackages() {
+    public void taintPackagesDependingOnChangedClasspathPackages() throws IOException {
 
         // 1. Collect fully qualified names of all interesting classpath dependencies
         Set<String> fqDependencies = new HashSet<>();
@@ -549,6 +549,7 @@ public class JavacState {
         for (String cpDep : fqDependencies) {
             onDiskPubApi.put(cpDep, pubApiExtractor.getPubApi(cpDep));
         }
+        pubApiExtractor.close();
 
         // 3. Compare them with the public APIs as of last compilation (loaded from javac_state)
         nextPkg:

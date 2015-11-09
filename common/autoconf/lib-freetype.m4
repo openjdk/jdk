@@ -202,10 +202,13 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
   FREETYPE_BUNDLE_LIB_PATH=
 
   if test "x$NEEDS_LIB_FREETYPE" = xfalse; then
-    if test "x$with_freetype" != x || test "x$with_freetype_include" != x || test "x$with_freetype_lib" != x || test "x$with_freetype_src" != x; then
-      AC_MSG_WARN([freetype not used, so --with-freetype is ignored])
+    if (test "x$with_freetype" != x  && test "x$with_freetype" != xno) || \
+        (test "x$with_freetype_include" != x && test "x$with_freetype_include" != xno) || \
+        (test "x$with_freetype_lib" != x && test "x$with_freetype_lib" != xno) || \
+        (test "x$with_freetype_src" != x && test "x$with_freetype_src" != xno); then
+      AC_MSG_WARN([[freetype not used, so --with-freetype[-*] is ignored]])
     fi
-    if test "x$enable_freetype_bundling" != x; then
+    if (test "x$enable_freetype_bundling" != x && test "x$enable_freetype_bundling" != xno); then
       AC_MSG_WARN([freetype not used, so --enable-freetype-bundling is ignored])
     fi
   else

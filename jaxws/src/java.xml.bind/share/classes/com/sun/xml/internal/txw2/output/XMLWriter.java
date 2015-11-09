@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ import java.util.Map;
  * <p>The resulting document will look like this:</p>
  *
  * <pre>{@code
- * <?xml version="1.0" standalone="yes"?>
+ *  <?xml version="1.0" standalone="yes"?>
  *
  * <greeting>Hello, world!</greeting>
  * }</pre>
@@ -168,7 +168,7 @@ import java.util.Map;
  *
  * <ol>
  * <li>the qualified name</li>
- * <li>the {@link #setPrefix setPrefix} method.</li>
+ * <li>the {@link #startPrefixMapping(String, String)} method.</li>
  * </ol>
  *
  * <p>Whenever the XML writer finds a new Namespace URI, it checks

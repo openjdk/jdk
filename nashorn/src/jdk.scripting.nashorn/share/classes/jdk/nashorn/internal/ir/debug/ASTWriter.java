@@ -55,6 +55,16 @@ import jdk.nashorn.internal.runtime.Debug;
  * see the flags --print-ast and --print-ast-lower
  */
 public final class ASTWriter {
+    private static final ClassValue<Field[]> accessibleFields = new ClassValue<Field[]>() {
+        @Override
+        protected Field[] computeValue(final Class<?> type) {
+            final Field[] fields = type.getDeclaredFields();
+            for(final Field f: fields) {
+                f.setAccessible(true);
+            }
+            return fields;
+        }
+    };
     /** Root node from which to start the traversal */
     private final Node root;
 
@@ -258,9 +268,8 @@ public final class ASTWriter {
 
         while (iter.hasNext()) {
             final Class<?> c = iter.next();
-            for (final Field f : c.getDeclaredFields()) {
+            for (final Field f : accessibleFields.get(c)) {
                 try {
-                    f.setAccessible(true);
                     final Object child = f.get(node);
                     if (child == null) {
                         continue;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,16 +44,16 @@ import java.util.Map;
 
 public final class ParameterList {
 
-    private final HashMap list;
+    private final HashMap<String, String> list;
 
     /**
      * No-arg Constructor.
      */
     public ParameterList() {
-        this.list = new HashMap();
+        this.list = new HashMap<String, String>();
     }
 
-    private ParameterList(HashMap m) {
+    private ParameterList(HashMap<String, String> m) {
         this.list = m;
     }
 
@@ -73,7 +73,7 @@ public final class ParameterList {
         int type;
         String name;
 
-        list = new HashMap();
+        list = new HashMap<String, String>();
         while (true) {
             tk = h.next();
             type = tk.getType();
@@ -130,7 +130,7 @@ public final class ParameterList {
      *                  present.
      */
     public String get(String name) {
-        return (String)list.get(name.trim().toLowerCase());
+        return list.get(name.trim().toLowerCase());
     }
 
     /**
@@ -160,7 +160,7 @@ public final class ParameterList {
      *
      * @return Enumeration of all parameter names in this list.
      */
-    public Iterator getNames() {
+    public Iterator<String> getNames() {
         return list.keySet().iterator();
     }
 
@@ -190,13 +190,13 @@ public final class ParameterList {
      * @return          String
      */
     public String toString(int used) {
-        StringBuffer sb = new StringBuffer();
-        Iterator itr = list.entrySet().iterator();
+        StringBuilder sb = new StringBuilder();
+        Iterator<Map.Entry<String, String>> itr = list.entrySet().iterator();
 
         while (itr.hasNext()) {
-            Map.Entry e = (Map.Entry)itr.next();
-            String name = (String)e.getKey();
-            String value = quote((String)e.getValue());
+            Map.Entry<String, String> e = itr.next();
+            String name = e.getKey();
+            String value = quote(e.getValue());
             sb.append("; ");
             used += 2;
             int len = name.length() + value.length() + 1;

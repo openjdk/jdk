@@ -64,13 +64,14 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
-import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
@@ -525,6 +526,7 @@ public final class Context {
 
     private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
+    private static final ConcurrentMap<String, Class<?>> structureClasses = new ConcurrentHashMap<>();
 
     /*package-private*/ @SuppressWarnings("static-method")
     ClassLoader getSharedLoader() {
@@ -1056,7 +1058,13 @@ public final class Context {
         if (System.getSecurityManager() != null && !StructureLoader.isStructureClass(fullName)) {
             throw new ClassNotFoundException(fullName);
         }
-        return (Class<? extends ScriptObject>)Class.forName(fullName, true, sharedLoader);
+        return (Class<? extends ScriptObject>)structureClasses.computeIfAbsent(fullName, (name) -> {
+            try {
+                return Class.forName(name, true, sharedLoader);
+            } catch (final ClassNotFoundException e) {
+                throw new AssertionError(e);
+            }
+        });
     }
 
     /**

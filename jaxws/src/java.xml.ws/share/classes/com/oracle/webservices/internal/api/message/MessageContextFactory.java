@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,8 @@ import javax.xml.ws.WebServiceFeature;
 public abstract class MessageContextFactory
 {
     private static final MessageContextFactory DEFAULT = new com.sun.xml.internal.ws.api.message.MessageContextFactory(new WebServiceFeature[0]);
+
+    protected com.sun.xml.internal.ws.api.message.saaj.SAAJFactory saajFactory = null;
 
     protected abstract MessageContextFactory newFactory(WebServiceFeature ... f);
 
@@ -126,5 +128,9 @@ public abstract class MessageContextFactory
     @Deprecated
     private static interface Creator {
         public MessageContext create(MessageContextFactory f);
+    }
+
+    public void setSAAJFactory(com.sun.xml.internal.ws.api.message.saaj.SAAJFactory saajFactory) {
+        this.saajFactory = saajFactory;
     }
 }

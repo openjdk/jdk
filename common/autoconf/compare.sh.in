@@ -86,4 +86,6 @@ fi
 $RM $OUTPUT_ROOT/compare.log.old 2> /dev/null
 $MV $OUTPUT_ROOT/compare.log $OUTPUT_ROOT/compare.log.old 2> /dev/null
 
+export SCRIPT_DIR="$( cd "$( dirname "$0" )" > /dev/null && pwd )"
+
 $BASH $SRC_ROOT/common/bin/logger.sh $OUTPUT_ROOT/compare.log $BASH "$REAL_COMPARE_SCRIPT" "$@"

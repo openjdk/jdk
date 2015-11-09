@@ -181,7 +181,7 @@ public final class ConfigReader  {
     /**
      * Lazily parsed schema for the binding file.
      */
-    private static SchemaCache configSchema = new SchemaCache("config.xsd", Config.class);
+    private static SchemaCache configSchema = new SchemaCache("config.xsd", Config.class, true);
 
 
     /**
