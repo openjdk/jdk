@@ -1860,6 +1860,17 @@ const bool Matcher::match_rule_supported(int opcode) {
   return true;  // Per default match rules are supported.
 }
 
+const bool Matcher::match_rule_supported_vector(int opcode, int vlen) {
+
+  // TODO
+  // identify extra cases that we might want to provide match rules for
+  // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
+  bool ret_value = match_rule_supported(opcode);
+  // Add rules here.
+
+  return ret_value;  // Per default match rules are supported.
+}
+
 const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
 }
@@ -1905,7 +1916,7 @@ const bool Matcher::misaligned_vectors_ok() {
 }
 
 // Current (2013) SPARC platforms need to read original key
-// to construct decryption expanded key 
+// to construct decryption expanded key
 const bool Matcher::pass_original_key_for_aes() {
   return true;
 }
@@ -2612,7 +2623,7 @@ encode %{
       if (stub == NULL && !(TraceJumps && Compile::current()->in_scratch_emit_size())) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
-      } 
+      }
     }
   %}
 
@@ -3132,10 +3143,10 @@ ins_attrib ins_size(32);           // Required size attribute (in bits)
 // AVOID_NONE   - instruction can be placed anywhere
 // AVOID_BEFORE - instruction cannot be placed after an
 //                instruction with MachNode::AVOID_AFTER
-// AVOID_AFTER  - the next instruction cannot be the one 
+// AVOID_AFTER  - the next instruction cannot be the one
 //                with MachNode::AVOID_BEFORE
-// AVOID_BEFORE_AND_AFTER - BEFORE and AFTER attributes at 
-//                          the same time                                
+// AVOID_BEFORE_AND_AFTER - BEFORE and AFTER attributes at
+//                          the same time
 ins_attrib ins_avoid_back_to_back(MachNode::AVOID_NONE);
 
 ins_attrib ins_short_branch(0);    // Required flag: is this instruction a

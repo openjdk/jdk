@@ -1079,10 +1079,10 @@ source %{
   // and for a volatile write we need
   //
   //   stlr<x>
-  // 
+  //
   // Alternatively, we can implement them by pairing a normal
   // load/store with a memory barrier. For a volatile read we need
-  // 
+  //
   //   ldr<x>
   //   dmb ishld
   //
@@ -1240,7 +1240,7 @@ source %{
   // Alternatively, we can elide generation of the dmb instructions
   // and plant the alternative CompareAndSwap macro-instruction
   // sequence (which uses ldaxr<x>).
-  // 
+  //
   // Of course, the above only applies when we see these signature
   // configurations. We still want to plant dmb instructions in any
   // other cases where we may see a MemBarAcquire, MemBarRelease or
@@ -1367,7 +1367,7 @@ source %{
     opcode = parent->Opcode();
     return opcode == Op_MemBarRelease;
   }
- 
+
   // 2) card mark detection helper
 
   // helper predicate which can be used to detect a volatile membar
@@ -1383,7 +1383,7 @@ source %{
   // true
   //
   // iii) the node's Mem projection feeds a StoreCM node.
-  
+
   bool is_card_mark_membar(const MemBarNode *barrier)
   {
     if (!UseG1GC && !(UseConcMarkSweepGC && UseCondCardMark)) {
@@ -1402,7 +1402,7 @@ source %{
 	return true;
       }
     }
-  
+
     return false;
   }
 
@@ -1430,7 +1430,7 @@ source %{
   // where
   //  || and \\ represent Ctl and Mem feeds via Proj nodes
   //  | \ and / indicate further routing of the Ctl and Mem feeds
-  // 
+  //
   // this is the graph we see for non-object stores. however, for a
   // volatile Object store (StoreN/P) we may see other nodes below the
   // leading membar because of the need for a GC pre- or post-write
@@ -1592,7 +1592,7 @@ source %{
   // ordering but neither will a releasing store (stlr). The latter
   // guarantees that the object put is visible but does not guarantee
   // that writes by other threads have also been observed.
-  // 
+  //
   // So, returning to the task of translating the object put and the
   // leading/trailing membar nodes: what do the non-normal node graph
   // look like for these 2 special cases? and how can we determine the
@@ -1731,7 +1731,7 @@ source %{
   //       |         |         |            |
   //     C |       M |       M |          M |
   //        \        |         |           /
-  //                  . . . 
+  //                  . . .
   //          (post write subtree elided)
   //                    . . .
   //             C \         M /
@@ -1812,12 +1812,12 @@ source %{
   //   |    |                 |  /        /
   //   |  Region  . . .     Phi[M]  _____/
   //   |    /                 |    /
-  //   |                      |   /   
+  //   |                      |   /
   //   | . . .   . . .        |  /
   //   | /                    | /
   // Region           |  |  Phi[M]
   //   |              |  |  / Bot
-  //    \            MergeMem 
+  //    \            MergeMem
   //     \            /
   //     MemBarVolatile
   //
@@ -1858,7 +1858,7 @@ source %{
   // to a trailing barrier via a MergeMem. That feed is either direct
   // (for CMS) or via 2 or 3 Phi nodes merging the leading barrier
   // memory flow (for G1).
-  // 
+  //
   // The predicates controlling generation of instructions for store
   // and barrier nodes employ a few simple helper functions (described
   // below) which identify the presence or absence of all these
@@ -2112,8 +2112,8 @@ source %{
       x = x->in(MemNode::Memory);
     } else {
       // the merge should get its Bottom mem feed from the leading membar
-      x = mm->in(Compile::AliasIdxBot);      
-    } 
+      x = mm->in(Compile::AliasIdxBot);
+    }
 
     // ensure this is a non control projection
     if (!x->is_Proj() || x->is_CFG()) {
@@ -2190,12 +2190,12 @@ source %{
   //     . . .
   //       |
   //   MemBarVolatile (card mark)
-  //      |          |     
+  //      |          |
   //      |        StoreCM
   //      |          |
   //      |        . . .
-  //  Bot |  / 
-  //   MergeMem 
+  //  Bot |  /
+  //   MergeMem
   //      |
   //      |
   //    MemBarVolatile {trailing}
@@ -2203,10 +2203,10 @@ source %{
   // 2)
   //   MemBarRelease/CPUOrder (leading)
   //    |
-  //    | 
+  //    |
   //    |\       . . .
-  //    | \        | 
-  //    |  \  MemBarVolatile (card mark) 
+  //    | \        |
+  //    |  \  MemBarVolatile (card mark)
   //    |   \   |     |
   //     \   \  |   StoreCM    . . .
   //      \   \ |
@@ -2231,7 +2231,7 @@ source %{
   //    |  \   \  |   StoreCM    . . .
   //    |   \   \ |
   //     \   \  Phi
-  //      \   \ /  
+  //      \   \ /
   //       \  Phi
   //        \ /
   //        Phi  . . .
@@ -2506,7 +2506,7 @@ bool unnecessary_acquire(const Node *barrier)
 
     return (x->is_Load() && x->as_Load()->is_acquire());
   }
-  
+
   // now check for an unsafe volatile get
 
   // need to check for
@@ -2644,7 +2644,7 @@ bool needs_acquiring_load(const Node *n)
   }
 
   membar = child_membar(membar);
-  
+
   if (!membar || !membar->Opcode() == Op_MemBarCPUOrder) {
     return false;
   }
@@ -2703,7 +2703,7 @@ bool unnecessary_volatile(const Node *n)
 
   // first we check if this is part of a card mark. if so then we have
   // to generate a StoreLoad barrier
-  
+
   if (is_card_mark_membar(mbvol)) {
       return false;
   }
@@ -2769,7 +2769,7 @@ bool needs_releasing_store(const Node *n)
   if (!is_card_mark_membar(mbvol)) {
     return true;
   }
-  
+
   // we found a card mark -- just make sure we have a trailing barrier
 
   return (card_mark_to_trailing(mbvol) != NULL);
@@ -2808,7 +2808,7 @@ bool needs_acquiring_load_exclusive(const Node *n)
 
   assert(barrier->Opcode() == Op_MemBarCPUOrder,
 	 "CAS not fed by cpuorder membar!");
-      
+
   MemBarNode *b = parent_membar(barrier);
   assert ((b != NULL && b->Opcode() == Op_MemBarRelease),
 	  "CAS not fed by cpuorder+release membar pair!");
@@ -3461,6 +3461,17 @@ const bool Matcher::match_rule_supported(int opcode) {
   }
 
   return true;  // Per default match rules are supported.
+}
+
+const bool Matcher::match_rule_supported_vector(int opcode, int vlen) {
+
+  // TODO
+  // identify extra cases that we might want to provide match rules for
+  // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
+  bool ret_value = match_rule_supported(opcode);
+  // Add rules here.
+
+  return ret_value;  // Per default match rules are supported.
 }
 
 const int Matcher::float_pressure(int default_pressure_threshold) {
@@ -4663,7 +4674,7 @@ encode %{
       call = __ trampoline_call(Address(addr, relocInfo::static_call_type), &cbuf);
     }
     if (call == NULL) {
-      ciEnv::current()->record_failure("CodeCache is full"); 
+      ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
 
@@ -4671,7 +4682,7 @@ encode %{
       // Emit stub for static call
       address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
       if (stub == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full"); 
+        ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
     }
@@ -4681,7 +4692,7 @@ encode %{
     MacroAssembler _masm(&cbuf);
     address call = __ ic_call((address)$meth$$method);
     if (call == NULL) {
-      ciEnv::current()->record_failure("CodeCache is full"); 
+      ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
   %}
@@ -4706,7 +4717,7 @@ encode %{
     if (cb) {
       address call = __ trampoline_call(Address(entry, relocInfo::runtime_call_type));
       if (call == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full"); 
+        ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
     } else {
