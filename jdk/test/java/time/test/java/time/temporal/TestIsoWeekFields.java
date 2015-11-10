@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014,2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,6 +119,14 @@ public class TestIsoWeekFields {
     @Test
     public void test_WBY_isSupportedBy_ISO() {
         assertEquals(IsoFields.WEEK_BASED_YEAR.isSupportedBy(ThaiBuddhistDate.now()), false);
+    }
+
+    @Test
+    public void test_Unit_isSupportedBy_ISO() {
+        assertEquals(IsoFields.WEEK_BASED_YEARS.isSupportedBy(LocalDate.now()),true);
+        assertEquals(IsoFields.WEEK_BASED_YEARS.isSupportedBy(ThaiBuddhistDate.now()),false);
+        assertEquals(IsoFields.QUARTER_YEARS.isSupportedBy(LocalDate.now()),true);
+        assertEquals(IsoFields.QUARTER_YEARS.isSupportedBy(ThaiBuddhistDate.now()),false);
     }
 
     @Test(dataProvider = "fields")
