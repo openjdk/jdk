@@ -892,7 +892,9 @@ void G1CollectorPolicy::record_concurrent_mark_cleanup_start() {
 }
 
 void G1CollectorPolicy::record_concurrent_mark_cleanup_completed() {
-  collector_state()->set_last_young_gc(true);
+  bool should_continue_with_reclaim = next_gc_should_be_mixed("request last young-only gc",
+                                                              "skip last young-only gc");
+  collector_state()->set_last_young_gc(should_continue_with_reclaim);
   collector_state()->set_in_marking_window(false);
 }
 
