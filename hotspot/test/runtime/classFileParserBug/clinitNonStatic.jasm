@@ -22,18 +22,18 @@
  *
  */
 
-// This class contains a <clinit> method with signature: ()I.  The JVM should
-// not complain about this because methods named <clinit> that have arguments
-// and/or are not void should be ignored by the JVM.
+// This class contains a non-static <clinit> method.  The JVM should
+// throw ClassFormatError because methods named <clinit> must be static
+// in class file versions >= 51.
 
-public class ignoredClinit version 51:0
+public class clinitNonStatic version 51:0
 {
 
-    public static Method "<clinit>":"()I"
+    public Method "<clinit>":"()V"
     stack 1 locals 1
     {
         iconst_0;
-        ireturn;
+        return;
     }
 
-} // end Class ignoredClinit
+} // end Class clinitNonStatic
