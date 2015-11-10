@@ -28,6 +28,7 @@
 tier1 = \
     :jdk_lang \
     -java/lang/ProcessHandle/TreeTest.java \
+    -java/util/zip/TestLocalTime.java \
     :jdk_util \
     sun/nio/cs/ISO8859x.java \
     java/nio/Buffer \
@@ -36,6 +37,7 @@ tier1 = \
 
 tier2 = \
     java/lang/ProcessHandle/TreeTest.java \
+    java/util/zip/TestLocalTime.java \
     :jdk_io \
     :jdk_nio \
     -sun/nio/cs/ISO8859x.java \
