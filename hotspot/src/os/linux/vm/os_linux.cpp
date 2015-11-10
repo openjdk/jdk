@@ -4252,7 +4252,9 @@ int os::Linux::get_our_sigflags(int sig) {
 
 void os::Linux::set_our_sigflags(int sig, int flags) {
   assert(sig > 0 && sig < MAXSIGNUM, "vm signal out of expected range");
-  sigflags[sig] = flags;
+  if (sig > 0 && sig < MAXSIGNUM) {
+    sigflags[sig] = flags;
+  }
 }
 
 void os::Linux::set_signal_handler(int sig, bool set_installed) {
@@ -5927,21 +5929,19 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
   char core_pattern[core_pattern_len] = {0};
 
   int core_pattern_file = ::open("/proc/sys/kernel/core_pattern", O_RDONLY);
-  if (core_pattern_file != -1) {
-    ssize_t ret = ::read(core_pattern_file, core_pattern, core_pattern_len);
-    ::close(core_pattern_file);
-
-    if (ret > 0) {
-      char *last_char = core_pattern + strlen(core_pattern) - 1;
-
-      if (*last_char == '\n') {
-        *last_char = '\0';
-      }
-    }
+  if (core_pattern_file == -1) {
+    return -1;
   }
 
-  if (strlen(core_pattern) == 0) {
+  ssize_t ret = ::read(core_pattern_file, core_pattern, core_pattern_len);
+  ::close(core_pattern_file);
+  if (ret <= 0 || ret >= core_pattern_len || core_pattern[0] == '\n') {
     return -1;
+  }
+  if (core_pattern[ret-1] == '\n') {
+    core_pattern[ret-1] = '\0';
+  } else {
+    core_pattern[ret] = '\0';
   }
 
   char *pid_pos = strstr(core_pattern, "%p");

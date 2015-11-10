@@ -1973,7 +1973,7 @@ void HeapDumper::dump_heap(bool oome) {
     if (HeapDumpPath == NULL || HeapDumpPath[0] == '\0') {
       // HeapDumpPath=<file> not specified
     } else {
-      strncpy(base_path, HeapDumpPath, sizeof(base_path));
+      strcpy(base_path, HeapDumpPath);
       // check if the path is a directory (must exist)
       DIR* dir = os::opendir(base_path);
       if (dir == NULL) {
