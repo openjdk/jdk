@@ -26,38 +26,41 @@
 include LibCommon.gmk
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
+  # JavaNativeFoundation framework not supported in static builds 
+  ifneq ($(STATIC_BUILD), true)
 
   ################################################################################
 
-  LIBOSXSECURITY_DIRS := $(JDK_TOPDIR)/src/java.base/macosx/native/libosxsecurity
-  LIBOSXSECURITY_CFLAGS := -I$(LIBOSXSECURITY_DIRS) \
-      $(LIBJAVA_HEADER_FLAGS) \
-      -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
+    LIBOSXSECURITY_DIRS := $(JDK_TOPDIR)/src/java.base/macosx/native/libosxsecurity
+    LIBOSXSECURITY_CFLAGS := -I$(LIBOSXSECURITY_DIRS) \
+        $(LIBJAVA_HEADER_FLAGS) \
+        -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
 
-  $(eval $(call SetupNativeCompilation,BUILD_LIBOSXSECURITY, \
-      LIBRARY := osxsecurity, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-      SRC := $(LIBOSXSECURITY_DIRS), \
-      OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) \
-          $(LIBOSXSECURITY_CFLAGS), \
-      DISABLED_WARNINGS_clang := deprecated-declarations, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base \
-          $(call SET_SHARED_LIBRARY_ORIGIN) \
-          -fobjc-link-runtime, \
-      LIBS := \
-          -framework JavaNativeFoundation \
-          -framework CoreServices \
-          -framework Security \
-          $(JDKLIB_LIBS), \
-      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libosxsecurity, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+    $(eval $(call SetupNativeCompilation,BUILD_LIBOSXSECURITY, \
+        LIBRARY := osxsecurity, \
+        OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+        SRC := $(LIBOSXSECURITY_DIRS), \
+        OPTIMIZATION := LOW, \
+        CFLAGS := $(CFLAGS_JDKLIB) \
+            $(LIBOSXSECURITY_CFLAGS), \
+        DISABLED_WARNINGS_clang := deprecated-declarations, \
+        LDFLAGS := $(LDFLAGS_JDKLIB) \
+            -L$(SUPPORT_OUTPUTDIR)/modules_libs/java.base \
+            $(call SET_SHARED_LIBRARY_ORIGIN) \
+            -fobjc-link-runtime, \
+        LIBS := \
+            -framework JavaNativeFoundation \
+            -framework CoreServices \
+            -framework Security \
+            $(JDKLIB_LIBS), \
+        OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libosxsecurity, \
+        DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-  $(BUILD_LIBOSXSECURITY): $(BUILD_LIBJAVA)
+    $(BUILD_LIBOSXSECURITY): $(BUILD_LIBJAVA)
 
-  TARGETS += $(BUILD_LIBOSXSECURITY)
+    TARGETS += $(BUILD_LIBOSXSECURITY)
 
   ################################################################################
 
+  endif
 endif

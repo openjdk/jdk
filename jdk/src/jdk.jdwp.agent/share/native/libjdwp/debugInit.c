@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ compatible_versions(jint major_runtime,     jint minor_runtime,
  *   Returning JNI_ERR will cause the java_g VM to core dump, be careful.
  */
 JNIEXPORT jint JNICALL
-Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
+DEF_Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
 {
     jvmtiError error;
     jvmtiCapabilities needed_capabilities;
@@ -380,7 +380,7 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
 }
 
 JNIEXPORT void JNICALL
-Agent_OnUnload(JavaVM *vm)
+DEF_Agent_OnUnload(JavaVM *vm)
 {
 
     gdata->isLoaded = JNI_FALSE;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,13 +35,15 @@
 
 #include "java_props_macosx.h"
 
-
 // need dlopen/dlsym trick to avoid pulling in JavaRuntimeSupport before libjava.dylib is loaded
 static void *getJRSFramework() {
     static void *jrsFwk = NULL;
+#ifndef STATIC_BUILD
+// JavaRuntimeSupport doesn't support static Java runtimes
     if (jrsFwk == NULL) {
        jrsFwk = dlopen("/System/Library/Frameworks/JavaVM.framework/Frameworks/JavaRuntimeSupport.framework/JavaRuntimeSupport", RTLD_LAZY | RTLD_LOCAL);
     }
+#endif
     return jrsFwk;
 }
 

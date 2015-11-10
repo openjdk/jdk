@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 #include "NativeFunc.h"
 #include "jlong.h"
 #include <jni.h>
+#include "jni_util.h"
 
 const int JAVA_DUPLICATE_TOKEN_CODE = 19; /* DUPLICATE_TOKEN */
 const int JAVA_OLD_TOKEN_CODE = 20; /* OLD_TOKEN */
@@ -94,7 +95,7 @@ jfieldID FID_NativeGSSContext_actualMech;
 int JGSS_DEBUG;
 
 JNIEXPORT jint JNICALL
-JNI_OnLoad(JavaVM *jvm, void *reserved) {
+DEF_JNI_OnLoad(JavaVM *jvm, void *reserved) {
   JNIEnv *env;
   jclass cls;
 
@@ -363,7 +364,7 @@ JNI_OnLoad(JavaVM *jvm, void *reserved) {
 }
 
 JNIEXPORT void JNICALL
-JNI_OnUnload(JavaVM *jvm, void *reserved) {
+DEF_JNI_OnUnload(JavaVM *jvm, void *reserved) {
   JNIEnv *env;
 
   if ((*jvm)->GetEnv(jvm, (void **)&env, JNI_VERSION_1_2)) {

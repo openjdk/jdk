@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,7 +141,7 @@ convertCapabilityAtrributes(const jarAttribute* attributes, JPLISAgent* agent) {
  *  to create boot class path segments to append to the boot class path.
  */
 JNIEXPORT jint JNICALL
-Agent_OnLoad(JavaVM *vm, char *tail, void * reserved) {
+DEF_Agent_OnLoad(JavaVM *vm, char *tail, void * reserved) {
     JPLISInitializationError initerror  = JPLIS_INIT_ERROR_NONE;
     jint                     result     = JNI_OK;
     JPLISAgent *             agent      = NULL;
@@ -290,7 +290,7 @@ Agent_OnLoad(JavaVM *vm, char *tail, void * reserved) {
  *  the JPLIS library.
  */
 JNIEXPORT jint JNICALL
-Agent_OnAttach(JavaVM* vm, char *args, void * reserved) {
+DEF_Agent_OnAttach(JavaVM* vm, char *args, void * reserved) {
     JPLISInitializationError initerror  = JPLIS_INIT_ERROR_NONE;
     jint                     result     = JNI_OK;
     JPLISAgent *             agent      = NULL;
@@ -435,7 +435,7 @@ Agent_OnAttach(JavaVM* vm, char *args, void * reserved) {
 
 
 JNIEXPORT void JNICALL
-Agent_OnUnload(JavaVM *vm) {
+DEF_Agent_OnUnload(JavaVM *vm) {
 }
 
 
