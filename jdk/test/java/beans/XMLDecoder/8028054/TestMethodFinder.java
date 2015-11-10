@@ -73,8 +73,7 @@ public class TestMethodFinder {
             }
             Task.print(working + " out of " + alive + " threads are working");
             if ((working == 0) && (++alarm == 10)) {
-                Task.print("DEADLOCK DETECTED");
-                System.exit(100);
+                throw new RuntimeException("FAIL - DEADLOCK DETECTED");
             }
             Thread.sleep(1000);
         }
