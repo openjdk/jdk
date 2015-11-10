@@ -475,7 +475,7 @@ void RelocBuffer::ensure_size(size_t bytes) {
   _size = bytes;
 }
 
-JVMCIEnv::CodeInstallResult CodeInstaller::gather_metadata(Handle target, Handle& compiled_code, CodeMetadata& metadata, TRAPS) {
+JVMCIEnv::CodeInstallResult CodeInstaller::gather_metadata(Handle target, Handle compiled_code, CodeMetadata& metadata, TRAPS) {
   CodeBuffer buffer("JVMCI Compiler CodeBuffer for Metadata");
   jobject compiled_code_obj = JNIHandles::make_local(compiled_code());
   initialize_dependencies(JNIHandles::resolve(compiled_code_obj), NULL, CHECK_OK);
@@ -508,7 +508,7 @@ JVMCIEnv::CodeInstallResult CodeInstaller::gather_metadata(Handle target, Handle
 }
 
 // constructor used to create a method
-JVMCIEnv::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler, Handle target, Handle& compiled_code, CodeBlob*& cb, Handle installed_code, Handle speculation_log, TRAPS) {
+JVMCIEnv::CodeInstallResult CodeInstaller::install(JVMCICompiler* compiler, Handle target, Handle compiled_code, CodeBlob*& cb, Handle installed_code, Handle speculation_log, TRAPS) {
   CodeBuffer buffer("JVMCI Compiler CodeBuffer");
   jobject compiled_code_obj = JNIHandles::make_local(compiled_code());
   OopRecorder* recorder = new OopRecorder(&_arena, true);

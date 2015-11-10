@@ -177,8 +177,8 @@ public:
 
   CodeInstaller() : _arena(mtCompiler) {}
 
-  JVMCIEnv::CodeInstallResult gather_metadata(Handle target, Handle& compiled_code, CodeMetadata& metadata, TRAPS);
-  JVMCIEnv::CodeInstallResult install(JVMCICompiler* compiler, Handle target, Handle& compiled_code, CodeBlob*& cb, Handle installed_code, Handle speculation_log, TRAPS);
+  JVMCIEnv::CodeInstallResult gather_metadata(Handle target, Handle compiled_code, CodeMetadata& metadata, TRAPS);
+  JVMCIEnv::CodeInstallResult install(JVMCICompiler* compiler, Handle target, Handle compiled_code, CodeBlob*& cb, Handle installed_code, Handle speculation_log, TRAPS);
 
   static address runtime_call_target_address(oop runtime_call);
   static VMReg get_hotspot_reg(jint jvmciRegisterNumber, TRAPS);
