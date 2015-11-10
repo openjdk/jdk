@@ -1823,9 +1823,7 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred)
   if (_jvmci_installed_code != NULL) {
     if (_jvmci_installed_code->is_a(HotSpotNmethod::klass()) && HotSpotNmethod::isDefault(_jvmci_installed_code)) {
       if (!is_alive->do_object_b(_jvmci_installed_code)) {
-        bs->write_ref_nmethod_pre(&_jvmci_installed_code, this);
-        _jvmci_installed_code = NULL;
-        bs->write_ref_nmethod_post(&_jvmci_installed_code, this);
+        clear_jvmci_installed_code();
       }
     } else {
       if (can_unload(is_alive, (oop*)&_jvmci_installed_code, unloading_occurred)) {
@@ -1926,27 +1924,6 @@ bool nmethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_
     unloading_occurred = true;
   }
 
-#if INCLUDE_JVMCI
-  // Follow JVMCI method
-  if (_jvmci_installed_code != NULL) {
-    if (_jvmci_installed_code->is_a(HotSpotNmethod::klass()) && HotSpotNmethod::isDefault(_jvmci_installed_code)) {
-      if (!is_alive->do_object_b(_jvmci_installed_code)) {
-        _jvmci_installed_code = NULL;
-      }
-    } else {
-      if (can_unload(is_alive, (oop*)&_jvmci_installed_code, unloading_occurred)) {
-        return false;
-      }
-    }
-  }
-
-  if (_speculation_log != NULL) {
-    if (!is_alive->do_object_b(_speculation_log)) {
-      _speculation_log = NULL;
-    }
-  }
-#endif
-
   // Exception cache
   clean_exception_cache(is_alive);
 
@@ -2010,9 +1987,7 @@ bool nmethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_
   if (_jvmci_installed_code != NULL) {
     if (_jvmci_installed_code->is_a(HotSpotNmethod::klass()) && HotSpotNmethod::isDefault(_jvmci_installed_code)) {
       if (!is_alive->do_object_b(_jvmci_installed_code)) {
-        bs->write_ref_nmethod_pre(&_jvmci_installed_code, this);
-        _jvmci_installed_code = NULL;
-        bs->write_ref_nmethod_post(&_jvmci_installed_code, this);
+        clear_jvmci_installed_code();
       }
     } else {
       if (can_unload(is_alive, (oop*)&_jvmci_installed_code, unloading_occurred)) {
@@ -3377,6 +3352,14 @@ void nmethod::print_statistics() {
 #endif // !PRODUCT
 
 #if INCLUDE_JVMCI
+void nmethod::clear_jvmci_installed_code() {
+  // This must be done carefully to maintain nmethod remembered sets properly
+  BarrierSet* bs = Universe::heap()->barrier_set();
+  bs->write_ref_nmethod_pre(&_jvmci_installed_code, this);
+  _jvmci_installed_code = NULL;
+  bs->write_ref_nmethod_post(&_jvmci_installed_code, this);
+}
+
 void nmethod::maybe_invalidate_installed_code() {
   if (_jvmci_installed_code != NULL) {
      if (!is_alive()) {
@@ -3386,7 +3369,7 @@ void nmethod::maybe_invalidate_installed_code() {
        // might want to invalidate all existing activations.
        InstalledCode::set_address(_jvmci_installed_code, 0);
        InstalledCode::set_entryPoint(_jvmci_installed_code, 0);
-       _jvmci_installed_code = NULL;
+       clear_jvmci_installed_code();
      } else if (is_not_entrant()) {
        InstalledCode::set_entryPoint(_jvmci_installed_code, 0);
      }
