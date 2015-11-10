@@ -29,11 +29,10 @@ include GensrcCommon.gmk
 
 include GensrcProperties.gmk
 
-$(eval $(call SetupCompileProperties,COMPILE_PROPERTIES, \
-    $(filter %.properties, \
-        $(call CacheFind, \
-            $(JDK_TOPDIR)/src/jdk.jartool/share/classes/sun/tools/jar/resources)), \
-    ListResourceBundle))
+$(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
+    SRC_DIRS := $(JDK_TOPDIR)/src/jdk.jartool/share/classes/sun/tools/jar/resources, \
+    CLASS := ListResourceBundle, \
+))
 
 TARGETS += $(COMPILE_PROPERTIES)
 
