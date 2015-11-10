@@ -24,9 +24,7 @@ package compiler.whitebox;
 
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.NMethod;
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
-import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
@@ -70,7 +68,7 @@ public abstract class CompilerWhiteBoxTest {
     protected static final boolean IS_VERBOSE
             = System.getProperty("verbose") != null;
     /** invocation count to trigger compilation */
-    protected static final int THRESHOLD;
+    public static final int THRESHOLD;
     /** invocation count to trigger OSR compilation */
     protected static final long BACKEDGE_THRESHOLD;
     /** Value of {@code java.vm.info} (interpreted|mixed|comp mode) */
