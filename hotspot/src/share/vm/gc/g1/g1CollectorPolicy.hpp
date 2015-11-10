@@ -570,6 +570,8 @@ public:
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
+  bool about_to_start_mixed_phase() const;
+
   // Record the start and end of an evacuation pause.
   void record_collection_pause_start(double start_time_sec);
   void record_collection_pause_end(double pause_time_ms, size_t cards_scanned);
