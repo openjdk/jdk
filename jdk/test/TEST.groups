@@ -30,6 +30,7 @@ tier1 = \
     -java/lang/ProcessHandle/TreeTest.java \
     -java/util/zip/TestLocalTime.java \
     :jdk_util \
+    -java/util/concurrent/Phaser/Basic.java \
     sun/nio/cs/ISO8859x.java \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
@@ -38,6 +39,7 @@ tier1 = \
 tier2 = \
     java/lang/ProcessHandle/TreeTest.java \
     java/util/zip/TestLocalTime.java \
+    java/util/concurrent/Phaser/Basic.java \
     :jdk_io \
     :jdk_nio \
     -sun/nio/cs/ISO8859x.java \
