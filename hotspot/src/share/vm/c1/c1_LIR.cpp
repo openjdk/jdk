@@ -2004,7 +2004,7 @@ void LIR_OpRoundFP::print_instr(outputStream* out) const {
 
 // LIR_Op2
 void LIR_Op2::print_instr(outputStream* out) const {
-  if (code() == lir_cmove) {
+  if (code() == lir_cmove || code() == lir_cmp) {
     print_condition(out, condition());         out->print(" ");
   }
   in_opr1()->print(out);    out->print(" ");
