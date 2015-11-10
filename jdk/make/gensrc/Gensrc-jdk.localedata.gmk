@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,10 @@ include GensrcCLDR.gmk
 
 include GensrcProperties.gmk
 
-$(eval $(call SetupCompileProperties,COMPILE_PROPERTIES, \
-    $(filter %.properties, \
-        $(call CacheFind, $(JDK_TOPDIR)/src/jdk.localedata/share/classes/sun/util/resources)), \
-    sun.util.resources.LocaleNamesBundle))
+$(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
+    SRC_DIRS := $(JDK_TOPDIR)/src/jdk.localedata/share/classes/sun/util/resources, \
+    CLASS := sun.util.resources.LocaleNamesBundle, \
+))
 
 # Skip generating zh_HK from zh_TW for this module.
 GENSRC_JDK_LOCALEDATA += $(filter-out %_zh_HK.java, $(COMPILE_PROPERTIES))
