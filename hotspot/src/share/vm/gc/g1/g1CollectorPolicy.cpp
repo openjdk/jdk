@@ -1003,11 +1003,8 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
   last_pause_included_initial_mark = collector_state()->during_initial_mark_pause();
   if (last_pause_included_initial_mark) {
     record_concurrent_mark_init_end(0.0);
-  } else if (need_to_start_conc_mark("end of GC")) {
-    // Note: this might have already been set, if during the last
-    // pause we decided to start a cycle but at the beginning of
-    // this pause we decided to postpone it. That's OK.
-    collector_state()->set_initiate_conc_mark_if_possible(true);
+  } else {
+    maybe_start_marking();
   }
 
   _mmu_tracker->add_pause(end_time_sec - pause_time_ms/1000.0, end_time_sec);
@@ -1079,6 +1076,8 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
     if (!next_gc_should_be_mixed("continue mixed GCs",
                                  "do not continue mixed GCs")) {
       collector_state()->set_gcs_are_young(true);
+
+      maybe_start_marking();
     }
   }
 
@@ -1930,6 +1929,15 @@ double G1CollectorPolicy::reclaimable_bytes_perc(size_t reclaimable_bytes) const
   // percentage of the current heap capacity.
   size_t capacity_bytes = _g1->capacity();
   return (double) reclaimable_bytes * 100.0 / (double) capacity_bytes;
+}
+
+void G1CollectorPolicy::maybe_start_marking() {
+  if (need_to_start_conc_mark("end of GC")) {
+    // Note: this might have already been set, if during the last
+    // pause we decided to start a cycle but at the beginning of
+    // this pause we decided to postpone it. That's OK.
+    collector_state()->set_initiate_conc_mark_if_possible(true);
+  }
 }
 
 bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,

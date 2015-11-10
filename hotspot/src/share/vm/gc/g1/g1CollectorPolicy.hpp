@@ -534,6 +534,8 @@ private:
   // as a percentage of the current heap capacity.
   double reclaimable_bytes_perc(size_t reclaimable_bytes) const;
 
+  // Sets up marking if proper conditions are met.
+  void maybe_start_marking();
 public:
 
   G1CollectorPolicy();
