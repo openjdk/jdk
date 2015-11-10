@@ -2077,6 +2077,10 @@ public:
           "unloading of classes when class unloading is enabled")           \
           range(0, 100)                                                     \
                                                                             \
+  develop(bool, CMSTestInFreeList, false,                                   \
+          "Check if the coalesced range is already in the "                 \
+          "free lists as claimed")                                          \
+                                                                            \
   notproduct(bool, CMSVerifyReturnedBytes, false,                           \
           "Check that all the garbage collected was returned to the "       \
           "free lists")                                                     \

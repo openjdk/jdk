@@ -7348,6 +7348,14 @@ void SweepClosure::initialize_free_range(HeapWord* freeFinger,
 
   set_freeFinger(freeFinger);
   set_freeRangeInFreeLists(freeRangeInFreeLists);
+  if (CMSTestInFreeList) {
+    if (freeRangeInFreeLists) {
+      FreeChunk* fc = (FreeChunk*) freeFinger;
+      assert(fc->is_free(), "A chunk on the free list should be free.");
+      assert(fc->size() > 0, "Free range should have a size");
+      assert(_sp->verify_chunk_in_free_list(fc), "Chunk is not in free lists");
+    }
+  }
 }
 
 // Note that the sweeper runs concurrently with mutators. Thus,
@@ -7500,7 +7508,12 @@ size_t SweepClosure::do_blk_careful(HeapWord* addr) {
 
 void SweepClosure::do_already_free_chunk(FreeChunk* fc) {
   const size_t size = fc->size();
-
+  // Chunks that cannot be coalesced are not in the
+  // free lists.
+  if (CMSTestInFreeList && !fc->cantCoalesce()) {
+    assert(_sp->verify_chunk_in_free_list(fc),
+           "free chunk should be in free lists");
+  }
   // a chunk that is already free, should not have been
   // marked in the bit map
   HeapWord* const addr = (HeapWord*) fc;
@@ -7607,6 +7620,9 @@ void SweepClosure::do_post_free_or_garbage_chunk(FreeChunk* fc,
   // of the adaptive free list allocator.
   const bool fcInFreeLists = fc->is_free();
   assert((HeapWord*)fc <= _limit, "sweep invariant");
+  if (CMSTestInFreeList && fcInFreeLists) {
+    assert(_sp->verify_chunk_in_free_list(fc), "free chunk is not in free lists");
+  }
 
   if (CMSTraceSweeper) {
     gclog_or_tty->print_cr("  -- pick up another chunk at " PTR_FORMAT " (" SIZE_FORMAT ")", p2i(fc), chunkSize);
@@ -7658,7 +7674,11 @@ void SweepClosure::do_post_free_or_garbage_chunk(FreeChunk* fc,
     if (freeRangeInFreeLists()) {
       FreeChunk* const ffc = (FreeChunk*)freeFinger();
       assert(ffc->size() == pointer_delta(fc_addr, freeFinger()),
-        "Size of free range is inconsistent with chunk size.");
+             "Size of free range is inconsistent with chunk size.");
+      if (CMSTestInFreeList) {
+        assert(_sp->verify_chunk_in_free_list(ffc),
+               "Chunk is not in free lists");
+      }
       _sp->coalDeath(ffc->size());
       _sp->removeFreeChunkFromFreeLists(ffc);
       set_freeRangeInFreeLists(false);
@@ -7727,6 +7747,12 @@ void SweepClosure::flush_cur_free_chunk(HeapWord* chunk, size_t size) {
   assert(size > 0,
     "A zero sized chunk cannot be added to the free lists.");
   if (!freeRangeInFreeLists()) {
+    if (CMSTestInFreeList) {
+      FreeChunk* fc = (FreeChunk*) chunk;
+      fc->set_size(size);
+      assert(!_sp->verify_chunk_in_free_list(fc),
+             "chunk should not be in free lists yet");
+    }
     if (CMSTraceSweeper) {
       gclog_or_tty->print_cr(" -- add free block " PTR_FORMAT " (" SIZE_FORMAT ") to free lists",
                     p2i(chunk), size);
