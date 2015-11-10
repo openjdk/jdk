@@ -146,6 +146,10 @@ public class US_ASCII
             }
             return dp;
         }
+
+        public boolean isASCIICompatible() {
+            return true;
+        }
     }
 
     private static class Encoder extends CharsetEncoder
@@ -258,6 +262,10 @@ public class US_ASCII
                 dst[dp++] = repl;
             }
             return dp;
+        }
+
+        public boolean isASCIICompatible() {
+            return true;
         }
     }
 

@@ -23,7 +23,7 @@
 
 /*
     @test
-    @bug 4219630 4304573 4533872 4900935 8042589
+    @bug 4219630 4304573 4533872 4900935 8042589 8054307
     @summary toUpperCase should upper-case German sharp s correctly even if
              it's the only character in the string. should also uppercase
              all of the 1:M char mappings correctly.  Also it should handle
@@ -97,14 +97,66 @@ public class ToUpperCase {
         test("A\uD801\uDC44", Locale.ROOT, "A\uD801\uDC1c");
         test("a\uD801\uDC28\uD801\uDC29\uD801\uDC2A", Locale.US, "A\uD801\uDC00\uD801\uDC01\uD801\uDC02");
         test("A\uD801\uDC28a\uD801\uDC29b\uD801\uDC2Ac", Locale.US, "A\uD801\uDC00A\uD801\uDC01B\uD801\uDC02C");
+
+        // test latin1 only case
+        StringBuilder src = new StringBuilder(0x100);
+        StringBuilder exp = new StringBuilder(0x100);
+        for (int cp = 0; cp < 0x100; cp++) {
+            int upperCase = Character.toUpperCase(cp);
+            if (upperCase == -1) {    //Character.ERROR
+                continue;
+            }
+            src.appendCodePoint(cp);
+            if (cp == '\u00df') {
+                exp.append("SS");     // need Character.toUpperCaseEx()
+            } else {
+                exp.appendCodePoint(upperCase);
+            }
+        }
+        test(src.toString(), Locale.US, exp.toString());
+
+        // test non-latin1 -> latin1
+        src = new StringBuilder(0x100).append("ABC");
+        exp = new StringBuilder(0x100).append("ABC");
+        for (int cp = 0x100; cp < 0x10000; cp++) {
+            int upperCase  = Character.toUpperCase(cp);
+            if (upperCase < 0x100) {
+                src.appendCodePoint(cp);
+                exp.appendCodePoint(upperCase);
+            }
+        }
+        test(src.toString(), Locale.US, exp.toString());
+
     }
 
     static void test(String in, Locale locale, String expected) {
+        test0(in, locale,expected);
+        // trigger different code paths
+        for (String[] ss :  new String[][] {
+                                new String[] {"abc",      "ABC"},
+                                new String[] {"AbC",      "ABC"},
+                                new String[] {"ABC",      "ABC"},
+                                new String[] {"AB\u4e00", "AB\u4e00"},
+                                new String[] {"ab\u4e00", "AB\u4e00"},
+                                new String[] {"aB\u4e00", "AB\u4e00"},
+                                new String[] {"AB\uD800\uDC00", "AB\uD800\uDC00"},
+                                new String[] {"Ab\uD800\uDC00", "AB\uD800\uDC00"},
+                                new String[] {"ab\uD800\uDC00", "AB\uD800\uDC00"},
+                                new String[] {"AB\uD801\uDC44", "AB\uD801\uDC1C"},
+                                new String[] {"Ab\uD801\uDC44", "AB\uD801\uDC1C"},
+                                new String[] {"ab\uD801\uDC44", "AB\uD801\uDC1C"},
+                            }) {
+            test0(ss[0] + " " + in, locale, ss[1] + " " + expected);
+            test0(in + " " + ss[0], locale, expected + " " + ss[1]);
+        }
+    }
+
+    static void test0(String in, Locale locale, String expected) {
         String result = in.toUpperCase(locale);
         if (!result.equals(expected)) {
             System.err.println("input: " + in + ", locale: " + locale +
                     ", expected: " + expected + ", actual: " + result);
             throw new RuntimeException();
         }
-   }
+    }
 }

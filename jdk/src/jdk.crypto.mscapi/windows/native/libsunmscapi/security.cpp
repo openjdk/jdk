@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 //
 
 #include <jni.h>
+#include "jni_util.h"
 #include <stdlib.h>
 #include <string.h>
 #include <windows.h>
@@ -49,6 +50,11 @@
 #define SIGNATURE_EXCEPTION "java/security/SignatureException"
 
 extern "C" {
+
+/*
+ * Declare library specific JNI_Onload entry if static build
+ */
+DEF_STATIC_JNI_OnLoad
 
 /*
  * Throws an arbitrary Java exception.

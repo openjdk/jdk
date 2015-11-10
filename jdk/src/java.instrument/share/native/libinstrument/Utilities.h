@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,13 @@
 
 #include    <jni.h>
 #include    <jvmti.h>
+#include    "jni_util.h"
+
+#ifdef STATIC_BUILD
+#define allocate instAllocate
+#define deallocate instDeallocate
+#endif
+
 
 #ifdef __cplusplus
 extern "C" {
