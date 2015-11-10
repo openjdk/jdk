@@ -3851,6 +3851,10 @@ public final class DateTimeFormatterBuilder {
                     return parseOffsetBased(context, text, position, position + 2, OffsetIdPrinterParser.INSTANCE_ID_ZERO);
                 } else if (context.charEquals(nextChar, 'G') && length >= position + 3 &&
                         context.charEquals(nextNextChar, 'M') && context.charEquals(text.charAt(position + 2), 'T')) {
+                    if (length >= position + 4 && context.charEquals(text.charAt(position + 3), '0')) {
+                        context.setParsed(ZoneId.of("GMT0"));
+                        return position + 4;
+                    }
                     return parseOffsetBased(context, text, position, position + 3, OffsetIdPrinterParser.INSTANCE_ID_ZERO);
                 }
             }
