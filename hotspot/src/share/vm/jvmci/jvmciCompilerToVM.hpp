@@ -94,7 +94,7 @@ public:
     return (MethodData*) (address) metaspaceMethodData;
   }
 
-  static oop get_jvmci_method(methodHandle method, TRAPS);
+  static oop get_jvmci_method(const methodHandle& method, TRAPS);
 
   static oop get_jvmci_type(KlassHandle klass, TRAPS);
 

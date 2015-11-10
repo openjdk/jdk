@@ -82,8 +82,8 @@ bool JVMCIEnv::check_klass_accessibility(KlassHandle accessing_klass, KlassHandl
 }
 
 // ------------------------------------------------------------------
-KlassHandle JVMCIEnv::get_klass_by_name_impl(KlassHandle& accessing_klass,
-                                          constantPoolHandle& cpool,
+KlassHandle JVMCIEnv::get_klass_by_name_impl(KlassHandle accessing_klass,
+                                          const constantPoolHandle& cpool,
                                           Symbol* sym,
                                           bool require_local) {
   JVMCI_EXCEPTION_CONTEXT;
@@ -161,7 +161,7 @@ KlassHandle JVMCIEnv::get_klass_by_name_impl(KlassHandle& accessing_klass,
 }
 
 // ------------------------------------------------------------------
-KlassHandle JVMCIEnv::get_klass_by_name(KlassHandle& accessing_klass,
+KlassHandle JVMCIEnv::get_klass_by_name(KlassHandle accessing_klass,
                                   Symbol* klass_name,
                                   bool require_local) {
   ResourceMark rm;
@@ -174,10 +174,10 @@ KlassHandle JVMCIEnv::get_klass_by_name(KlassHandle& accessing_klass,
 
 // ------------------------------------------------------------------
 // Implementation of get_klass_by_index.
-KlassHandle JVMCIEnv::get_klass_by_index_impl(constantPoolHandle& cpool,
+KlassHandle JVMCIEnv::get_klass_by_index_impl(const constantPoolHandle& cpool,
                                         int index,
                                         bool& is_accessible,
-                                        KlassHandle& accessor) {
+                                        KlassHandle accessor) {
   JVMCI_EXCEPTION_CONTEXT;
   KlassHandle klass (THREAD, ConstantPool::klass_at_if_loaded(cpool, index));
   Symbol* klass_name = NULL;
@@ -215,10 +215,10 @@ KlassHandle JVMCIEnv::get_klass_by_index_impl(constantPoolHandle& cpool,
 
 // ------------------------------------------------------------------
 // Get a klass from the constant pool.
-KlassHandle JVMCIEnv::get_klass_by_index(constantPoolHandle& cpool,
+KlassHandle JVMCIEnv::get_klass_by_index(const constantPoolHandle& cpool,
                                    int index,
                                    bool& is_accessible,
-                                   KlassHandle& accessor) {
+                                   KlassHandle accessor) {
   ResourceMark rm;
   KlassHandle result = get_klass_by_index_impl(cpool, index, is_accessible, accessor);
   return result;
@@ -229,7 +229,7 @@ KlassHandle JVMCIEnv::get_klass_by_index(constantPoolHandle& cpool,
 //
 // Implementation note: the results of field lookups are cached
 // in the accessor klass.
-void JVMCIEnv::get_field_by_index_impl(instanceKlassHandle& klass, fieldDescriptor& field_desc,
+void JVMCIEnv::get_field_by_index_impl(instanceKlassHandle klass, fieldDescriptor& field_desc,
                                         int index) {
   JVMCI_EXCEPTION_CONTEXT;
 
@@ -270,7 +270,7 @@ void JVMCIEnv::get_field_by_index_impl(instanceKlassHandle& klass, fieldDescript
 
 // ------------------------------------------------------------------
 // Get a field by index from a klass's constant pool.
-void JVMCIEnv::get_field_by_index(instanceKlassHandle& accessor, fieldDescriptor& fd, int index) {
+void JVMCIEnv::get_field_by_index(instanceKlassHandle accessor, fieldDescriptor& fd, int index) {
   ResourceMark rm;
   return get_field_by_index_impl(accessor, fd, index);
 }
@@ -278,8 +278,8 @@ void JVMCIEnv::get_field_by_index(instanceKlassHandle& accessor, fieldDescriptor
 // ------------------------------------------------------------------
 // Perform an appropriate method lookup based on accessor, holder,
 // name, signature, and bytecode.
-methodHandle JVMCIEnv::lookup_method(instanceKlassHandle& h_accessor,
-                               instanceKlassHandle& h_holder,
+methodHandle JVMCIEnv::lookup_method(instanceKlassHandle h_accessor,
+                               instanceKlassHandle h_holder,
                                Symbol*       name,
                                Symbol*       sig,
                                Bytecodes::Code bc) {
@@ -312,9 +312,9 @@ methodHandle JVMCIEnv::lookup_method(instanceKlassHandle& h_accessor,
 
 
 // ------------------------------------------------------------------
-methodHandle JVMCIEnv::get_method_by_index_impl(constantPoolHandle& cpool,
+methodHandle JVMCIEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
                                           int index, Bytecodes::Code bc,
-                                          instanceKlassHandle& accessor) {
+                                          instanceKlassHandle accessor) {
   if (bc == Bytecodes::_invokedynamic) {
     ConstantPoolCacheEntry* cpce = cpool->invokedynamic_cp_cache_entry_at(index);
     bool is_resolved = !cpce->is_f1_null();
@@ -379,7 +379,7 @@ methodHandle JVMCIEnv::get_method_by_index_impl(constantPoolHandle& cpool,
 }
 
 // ------------------------------------------------------------------
-instanceKlassHandle JVMCIEnv::get_instance_klass_for_declared_method_holder(KlassHandle& method_holder) {
+instanceKlassHandle JVMCIEnv::get_instance_klass_for_declared_method_holder(KlassHandle method_holder) {
   // For the case of <array>.clone(), the method holder can be an ArrayKlass*
   // instead of an InstanceKlass*.  For that case simply pretend that the
   // declared holder is Object.clone since that's where the call will bottom out.
@@ -395,9 +395,9 @@ instanceKlassHandle JVMCIEnv::get_instance_klass_for_declared_method_holder(Klas
 
 
 // ------------------------------------------------------------------
-methodHandle JVMCIEnv::get_method_by_index(constantPoolHandle& cpool,
+methodHandle JVMCIEnv::get_method_by_index(const constantPoolHandle& cpool,
                                      int index, Bytecodes::Code bc,
-                                     instanceKlassHandle& accessor) {
+                                     instanceKlassHandle accessor) {
   ResourceMark rm;
   return get_method_by_index_impl(cpool, index, bc, accessor);
 }
@@ -452,7 +452,7 @@ JVMCIEnv::CodeInstallResult JVMCIEnv::check_for_system_dictionary_modification(D
 
 // ------------------------------------------------------------------
 JVMCIEnv::CodeInstallResult JVMCIEnv::register_method(
-                                methodHandle& method,
+                                const methodHandle& method,
                                 nmethod*& nm,
                                 int entry_bci,
                                 CodeOffsets* offsets,
