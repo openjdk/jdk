@@ -582,12 +582,45 @@ bool Method::can_be_statically_bound() const {
 }
 
 bool Method::is_accessor() const {
+  return is_getter() || is_setter();
+}
+
+bool Method::is_getter() const {
   if (code_size() != 5) return false;
   if (size_of_parameters() != 1) return false;
-  if (java_code_at(0) != Bytecodes::_aload_0 ) return false;
+  if (java_code_at(0) != Bytecodes::_aload_0)  return false;
   if (java_code_at(1) != Bytecodes::_getfield) return false;
-  if (java_code_at(4) != Bytecodes::_areturn &&
-      java_code_at(4) != Bytecodes::_ireturn ) return false;
+  switch (java_code_at(4)) {
+    case Bytecodes::_ireturn:
+    case Bytecodes::_lreturn:
+    case Bytecodes::_freturn:
+    case Bytecodes::_dreturn:
+    case Bytecodes::_areturn:
+      break;
+    default:
+      return false;
+  }
+  return true;
+}
+
+bool Method::is_setter() const {
+  if (code_size() != 6) return false;
+  if (java_code_at(0) != Bytecodes::_aload_0) return false;
+  switch (java_code_at(1)) {
+    case Bytecodes::_iload_1:
+    case Bytecodes::_aload_1:
+    case Bytecodes::_fload_1:
+      if (size_of_parameters() != 2) return false;
+      break;
+    case Bytecodes::_dload_1:
+    case Bytecodes::_lload_1:
+      if (size_of_parameters() != 3) return false;
+      break;
+    default:
+      return false;
+  }
+  if (java_code_at(2) != Bytecodes::_putfield) return false;
+  if (java_code_at(5) != Bytecodes::_return)   return false;
   return true;
 }
 
