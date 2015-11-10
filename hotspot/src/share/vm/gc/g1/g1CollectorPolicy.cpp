@@ -811,7 +811,7 @@ void G1CollectorPolicy::record_full_collection_end() {
   // transitions and make sure we start with young GCs after the Full GC.
   collector_state()->set_gcs_are_young(true);
   collector_state()->set_last_young_gc(false);
-  collector_state()->set_initiate_conc_mark_if_possible(false);
+  collector_state()->set_initiate_conc_mark_if_possible(need_to_start_conc_mark("end of Full GC", 0));
   collector_state()->set_during_initial_mark_pause(false);
   collector_state()->set_in_marking_window(false);
   collector_state()->set_in_marking_window_im(false);
