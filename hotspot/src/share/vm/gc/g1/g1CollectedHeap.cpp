@@ -5210,6 +5210,9 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
 
   record_obj_copy_mem_stats();
 
+  _survivor_evac_stats.adjust_desired_plab_sz();
+  _old_evac_stats.adjust_desired_plab_sz();
+
   // Reset and re-enable the hot card cache.
   // Note the counts for the cards in the regions in the
   // collection set are reset when the collection set is freed.
