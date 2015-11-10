@@ -305,49 +305,20 @@ else # HAS_SPEC=true
         endif
 
     on-failure:
-        ifneq ($(wildcard $(MAKESUPPORT_OUTPUTDIR)/failure-logs/*), )
-	  $(PRINTF) "=== Output from failing command(s) repeated here ===\n"
-	  $(foreach logfile, $(sort $(wildcard $(MAKESUPPORT_OUTPUTDIR)/failure-logs/*)), \
-	      $(PRINTF) "* For target $(notdir $(basename $(logfile))):\n" $(NEWLINE) \
-	      $(CAT) $(logfile) | $(GREP) -v -e "^Note: including file:" $(NEWLINE) \
-	  )
-	  $(PRINTF) "=== End of repeated output ===\n"
-        endif
-	if $(GREP) -q "recipe for target .* failed" $(BUILD_LOG) 2> /dev/null; then  \
-	  $(PRINTF) "=== Make failure sequence repeated here ===\n" ; \
-	  $(GREP) "recipe for target .* failed" $(BUILD_LOG) ; \
-	  $(PRINTF) "=== End of repeated output ===\n" ; \
-	  $(PRINTF) "Hint: Try searching the build log for the name of the first failed target.\n" ; \
-	else \
-	  $(PRINTF) "No indication of failed target found.\n" ; \
-	  $(PRINTF) "Hint: Try searching the build log for '] Error'.\n" ; \
-	fi
+	$(call PrintFailureReports)
+	$(call PrintBuildLogFailures)
 	$(PRINTF) "Hint: If caused by a warning, try configure --disable-warnings-as-errors.\n\n"
+        ifneq ($(COMPARE_BUILD), )
+	  $(call CleanupCompareBuild)
+        endif
 
     # Support targets for COMPARE_BUILD, used for makefile development
     pre-compare-build:
-	$(ECHO) "Preparing for comparison rebuild"
-        # Apply patch, if any
-        ifneq ($(COMPARE_BUILD_PATCH), )
-	  $(PATCH) -p1 < $(COMPARE_BUILD_PATCH)
-        endif
-        # Move the first build away and re-create the output directory
-	( cd $(TOPDIR) && \
-	    $(MV) $(OUTPUT_ROOT) $(OUTPUT_ROOT).OLD && \
-	    $(MKDIR) -p $(OUTPUT_ROOT) )
-        # Re-run configure with the same arguments (and possibly some additional),
-	# must be done after patching.
-	( cd $(OUTPUT_ROOT) && PATH="$(ORIGINAL_PATH)" \
-	    $(BASH) $(TOPDIR)/configure $(CONFIGURE_COMMAND_LINE) $(COMPARE_BUILD_CONF))
+	$(call PrepareCompareBuild)
 
     post-compare-build:
-        # Compare first and second build. Ignore any error code from compare.sh.
-	$(ECHO) "Comparing between comparison rebuild (this/new) and baseline (other/old)"
-        ifneq ($(COMPARE_BUILD_COMP_DIR), )
-	  +(cd $(OUTPUT_ROOT) && ./compare.sh $(COMPARE_BUILD_COMP_OPTS) -2dirs $(OUTPUT_ROOT)/$(COMPARE_BUILD_COMP_DIR) $(OUTPUT_ROOT).OLD/$(COMPARE_BUILD_COMP_DIR) || true)
-        else
-	  +(cd $(OUTPUT_ROOT) && ./compare.sh $(COMPARE_BUILD_COMP_OPTS) -o $(OUTPUT_ROOT).OLD || true)
-        endif
+	$(call CleanupCompareBuild)
+	$(call CompareBuildDoComparison)
 
   .PHONY: print-targets print-modules reconfigure main on-failure
 endif
