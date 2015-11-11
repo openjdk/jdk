@@ -167,8 +167,8 @@ evalExpectValue(<<CODE
 CODE, "set \":\"(a) {}");
 
 // bug JDK-8047366
-// evalExpectValue("(1000000000000000128).toString()", "1000000000000000100");
-// evalExpectValue("(1000000000000000128).toFixed().toString()", "1000000000000000128");
+evalExpectValue("(1000000000000000128).toString()", "1000000000000000100");
+evalExpectValue("(1000000000000000128).toFixed().toString()", "1000000000000000128");
 
 try {
     Function("-", {
