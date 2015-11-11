@@ -88,6 +88,11 @@ class Log VALUE_OBJ_CLASS_SPEC {
   // is not __NO_TAG, the number of tags given exceeds the maximum allowed.
   STATIC_ASSERT(GuardTag == LogTag::__NO_TAG); // Number of logging tags exceeds maximum supported!
 
+  // Empty constructor to avoid warnings on MSVC about unused variables
+  // when the log instance is only used for static functions.
+  Log() {
+  }
+
   static bool is_level(LogLevelType level) {
     return LogTagSetMapping<T0, T1, T2, T3, T4>::tagset().is_level(level);
   }
