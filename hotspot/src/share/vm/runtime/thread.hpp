@@ -49,7 +49,7 @@
 #include "utilities/top.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/g1/dirtyCardQueue.hpp"
-#include "gc/g1/satbQueue.hpp"
+#include "gc/g1/satbMarkQueue.hpp"
 #endif // INCLUDE_ALL_GCS
 #ifdef TARGET_ARCH_zero
 # include "stack_zero.hpp"
@@ -992,7 +992,7 @@ class JavaThread: public Thread {
 #if INCLUDE_ALL_GCS
   // Support for G1 barriers
 
-  ObjPtrQueue _satb_mark_queue;          // Thread-local log for SATB barrier.
+  SATBMarkQueue _satb_mark_queue;        // Thread-local log for SATB barrier.
   // Set of all such queues.
   static SATBMarkQueueSet _satb_mark_queue_set;
 
@@ -1727,7 +1727,7 @@ class JavaThread: public Thread {
 
 #if INCLUDE_ALL_GCS
   // SATB marking queue support
-  ObjPtrQueue& satb_mark_queue() { return _satb_mark_queue; }
+  SATBMarkQueue& satb_mark_queue() { return _satb_mark_queue; }
   static SATBMarkQueueSet& satb_mark_queue_set() {
     return _satb_mark_queue_set;
   }

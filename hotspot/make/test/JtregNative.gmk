@@ -45,6 +45,7 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC := \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/8025979 \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/8033445 \
     $(HOTSPOT_TOPDIR)/test/runtime/jni/ToStringInInterfaceTest \
+    $(HOTSPOT_TOPDIR)/test/runtime/SameObject \
     #
 
 BUILD_HOTSPOT_JTREG_OUTPUT_DIR := $(BUILD_OUTPUT)/support/test/hotspot/jtreg/native

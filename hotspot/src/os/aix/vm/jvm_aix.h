@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2013 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -113,7 +113,6 @@
 /* Signal definitions */
 
 #define BREAK_SIGNAL     SIGQUIT           /* Thread dumping support.    */
-#define INTERRUPT_SIGNAL SIGUSR1           /* Interruptible I/O support. */
 #define SHUTDOWN1_SIGNAL SIGHUP            /* Shutdown Hooks support.    */
 #define SHUTDOWN2_SIGNAL SIGINT
 #define SHUTDOWN3_SIGNAL SIGTERM

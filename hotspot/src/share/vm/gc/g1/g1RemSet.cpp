@@ -40,42 +40,13 @@
 #include "utilities/intHisto.hpp"
 #include "utilities/stack.inline.hpp"
 
-#define CARD_REPEAT_HISTO 0
-
-#if CARD_REPEAT_HISTO
-static size_t ct_freq_sz;
-static jbyte* ct_freq = NULL;
-
-void init_ct_freq_table(size_t heap_sz_bytes) {
-  if (ct_freq == NULL) {
-    ct_freq_sz = heap_sz_bytes/CardTableModRefBS::card_size;
-    ct_freq = new jbyte[ct_freq_sz];
-    for (size_t j = 0; j < ct_freq_sz; j++) ct_freq[j] = 0;
-  }
-}
-
-void ct_freq_note_card(size_t index) {
-  assert(0 <= index && index < ct_freq_sz, "Bounds error.");
-  if (ct_freq[index] < 100) { ct_freq[index]++; }
-}
-
-static IntHistogram card_repeat_count(10, 10);
-
-void ct_freq_update_histo_and_reset() {
-  for (size_t j = 0; j < ct_freq_sz; j++) {
-    card_repeat_count.add_entry(ct_freq[j]);
-    ct_freq[j] = 0;
-  }
-
-}
-#endif
-
 G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
   : _g1(g1), _conc_refine_cards(0),
     _ct_bs(ct_bs), _g1p(_g1->g1_policy()),
     _cg1r(g1->concurrent_g1_refine()),
     _cset_rs_update_cl(NULL),
-    _prev_period_summary()
+    _prev_period_summary(),
+    _into_cset_dirty_card_queue_set(false)
 {
   _cset_rs_update_cl = NEW_C_HEAP_ARRAY(G1ParPushHeapRSClosure*, n_workers(), mtGC);
   for (uint i = 0; i < n_workers(); i++) {
@@ -84,6 +55,15 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
   if (G1SummarizeRSetStats) {
     _prev_period_summary.initialize(this);
   }
+  // Initialize the card queue set used to hold cards containing
+  // references into the collection set.
+  _into_cset_dirty_card_queue_set.initialize(NULL, // Should never be called by the Java code
+                                             DirtyCardQ_CBL_mon,
+                                             DirtyCardQ_FL_lock,
+                                             -1, // never trigger processing
+                                             -1, // no limit on length
+                                             Shared_DirtyCardQ_lock,
+                                             &JavaThread::dirty_card_queue_set());
 }
 
 G1RemSet::~G1RemSet() {
@@ -272,7 +252,7 @@ public:
     if (_g1rs->refine_card(card_ptr, worker_i, true)) {
       // 'card_ptr' contains references that point into the collection
       // set. We need to record the card in the DCQS
-      // (G1CollectedHeap::into_cset_dirty_card_queue_set())
+      // (_into_cset_dirty_card_queue_set)
       // that's used for that purpose.
       //
       // Enqueue the card
@@ -302,10 +282,6 @@ void G1RemSet::cleanupHRRS() {
 size_t G1RemSet::oops_into_collection_set_do(G1ParPushHeapRSClosure* oc,
                                              CodeBlobClosure* heap_region_codeblobs,
                                              uint worker_i) {
-#if CARD_REPEAT_HISTO
-  ct_freq_update_histo_and_reset();
-#endif
-
   // We cache the value of 'oc' closure into the appropriate slot in the
   // _cset_rs_update_cl for this worker
   assert(worker_i < n_workers(), "sanity");
@@ -320,7 +296,7 @@ size_t G1RemSet::oops_into_collection_set_do(G1ParPushHeapRSClosure* oc,
   // are wholly 'free' of live objects. In the event of an evacuation
   // failure the cards/buffers in this queue set are passed to the
   // DirtyCardQueueSet that is used to manage RSet updates
-  DirtyCardQueue into_cset_dcq(&_g1->into_cset_dirty_card_queue_set());
+  DirtyCardQueue into_cset_dcq(&_into_cset_dirty_card_queue_set);
 
   updateRS(&into_cset_dcq, worker_i);
   size_t cards_scanned = scanRS(oc, heap_region_codeblobs, worker_i);
@@ -343,7 +319,7 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   // Set all cards back to clean.
   _g1->cleanUpCardTable();
 
-  DirtyCardQueueSet& into_cset_dcqs = _g1->into_cset_dirty_card_queue_set();
+  DirtyCardQueueSet& into_cset_dcqs = _into_cset_dirty_card_queue_set;
   int into_cset_n_buffers = into_cset_dcqs.completed_buffers_num();
 
   if (_g1->evacuation_failed()) {
@@ -359,10 +335,10 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
 
   // Free any completed buffers in the DirtyCardQueueSet used to hold cards
   // which contain references that point into the collection.
-  _g1->into_cset_dirty_card_queue_set().clear();
-  assert(_g1->into_cset_dirty_card_queue_set().completed_buffers_num() == 0,
+  _into_cset_dirty_card_queue_set.clear();
+  assert(_into_cset_dirty_card_queue_set.completed_buffers_num() == 0,
          "all buffers should be freed");
-  _g1->into_cset_dirty_card_queue_set().clear_n_completed_buffers();
+  _into_cset_dirty_card_queue_set.clear_n_completed_buffers();
 }
 
 class ScrubRSClosure: public HeapRegionClosure {
@@ -498,11 +474,6 @@ bool G1RemSet::refine_card(jbyte* card_ptr, uint worker_i,
   HeapWord* end   = start + CardTableModRefBS::card_size_in_words;
   MemRegion dirtyRegion(start, end);
 
-#if CARD_REPEAT_HISTO
-  init_ct_freq_table(_g1->max_capacity());
-  ct_freq_note_card(_ct_bs->index_for(start));
-#endif
-
   G1ParPushHeapRSClosure* oops_in_heap_closure = NULL;
   if (check_for_refs_into_cset) {
     // ConcurrentG1RefineThreads have worker numbers larger than what
@@ -607,12 +578,6 @@ void G1RemSet::print_summary_info(G1RemSetSummary * summary, const char * header
     gclog_or_tty->print_cr("%s", header);
   }
 
-#if CARD_REPEAT_HISTO
-  gclog_or_tty->print_cr("\nG1 card_repeat count histogram: ");
-  gclog_or_tty->print_cr("  # of repeats --> # of cards with that number.");
-  card_repeat_count.print_on(gclog_or_tty);
-#endif
-
   summary->print_on(gclog_or_tty);
 }
 
@@ -631,9 +596,9 @@ void G1RemSet::prepare_for_verify() {
     bool use_hot_card_cache = hot_card_cache->use_cache();
     hot_card_cache->set_use_cache(false);
 
-    DirtyCardQueue into_cset_dcq(&_g1->into_cset_dirty_card_queue_set());
+    DirtyCardQueue into_cset_dcq(&_into_cset_dirty_card_queue_set);
     updateRS(&into_cset_dcq, 0);
-    _g1->into_cset_dirty_card_queue_set().clear();
+    _into_cset_dirty_card_queue_set.clear();
 
     hot_card_cache->set_use_cache(use_hot_card_cache);
     assert(JavaThread::dirty_card_queue_set().completed_buffers_num() == 0, "All should be consumed");

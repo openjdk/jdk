@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Generic compiler settings
@@ -54,7 +54,11 @@ CXX=cl.exe
 # improving the quality of crash log stack traces involving jvm.dll.
 
 # These are always used in all compiles
-CXX_FLAGS=$(EXTRA_CFLAGS) /nologo /W3 /WX
+CXX_FLAGS=$(EXTRA_CFLAGS) /nologo /W3
+
+!if "$(WARNINGS_AS_ERRORS)" != "false"
+CXX_FLAGS=$(CXX_FLAGS) /WX
+!endif
 
 # Let's add debug information when Full Debug Symbols is enabled
 !if "$(ENABLE_FULL_DEBUG_SYMBOLS)" == "1"
@@ -167,7 +171,7 @@ LD_FLAGS= $(LD_FLAGS) /map /debug
 !endif
 
 
-!if $(MSC_VER) >= 1600 
+!if $(MSC_VER) >= 1600
 LD_FLAGS= $(LD_FLAGS) psapi.lib
 !endif
 
@@ -191,4 +195,3 @@ RC_FLAGS=/D "HS_VER=$(HS_VER)" \
 !if "$(MFC_DEBUG)" == "true"
 RC_FLAGS = $(RC_FLAGS) /D "_DEBUG"
 !endif
-

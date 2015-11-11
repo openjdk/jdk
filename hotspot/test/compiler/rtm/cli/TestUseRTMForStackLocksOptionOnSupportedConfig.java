@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify UseRTMForStackLocks option processing on CPU with
  *          rtm support when VM supports rtm locking.
- * @library /testlibrary /../../test/lib /compiler/testlibrary
+ * @library /testlibrary /test/lib /compiler/testlibrary
  * @modules java.base/sun.misc
  *          java.management
  * @build TestUseRTMForStackLocksOptionOnSupportedConfig

@@ -2302,7 +2302,6 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
   print_signal_handler(st, SIGPIPE, buf, buflen);
   print_signal_handler(st, SIGXFSZ, buf, buflen);
   print_signal_handler(st, SIGILL , buf, buflen);
-  print_signal_handler(st, INTERRUPT_SIGNAL, buf, buflen);
   print_signal_handler(st, SR_signum, buf, buflen);
   print_signal_handler(st, SHUTDOWN1_SIGNAL, buf, buflen);
   print_signal_handler(st, SHUTDOWN2_SIGNAL , buf, buflen);
@@ -2820,7 +2819,6 @@ int os::Linux::sched_getcpu_syscall(void) {
 // Something to do with the numa-aware allocator needs these symbols
 extern "C" JNIEXPORT void numa_warn(int number, char *where, ...) { }
 extern "C" JNIEXPORT void numa_error(char *where) { }
-extern "C" JNIEXPORT int fork1() { return fork(); }
 
 
 // If we are running with libnuma version > 2, then we should
@@ -4254,7 +4252,9 @@ int os::Linux::get_our_sigflags(int sig) {
 
 void os::Linux::set_our_sigflags(int sig, int flags) {
   assert(sig > 0 && sig < MAXSIGNUM, "vm signal out of expected range");
-  sigflags[sig] = flags;
+  if (sig > 0 && sig < MAXSIGNUM) {
+    sigflags[sig] = flags;
+  }
 }
 
 void os::Linux::set_signal_handler(int sig, bool set_installed) {
@@ -4496,7 +4496,6 @@ void os::run_periodic_checks() {
   }
 
   DO_SIGNAL_CHECK(SR_signum);
-  DO_SIGNAL_CHECK(INTERRUPT_SIGNAL);
 }
 
 typedef int (*os_sigaction_t)(int, const struct sigaction *, struct sigaction *);
@@ -4540,10 +4539,6 @@ void os::Linux::check_signal_handler(int sig) {
   case SHUTDOWN3_SIGNAL:
   case BREAK_SIGNAL:
     jvmHandler = (address)user_handler();
-    break;
-
-  case INTERRUPT_SIGNAL:
-    jvmHandler = CAST_FROM_FN_PTR(address, SIG_DFL);
     break;
 
   default:
@@ -5130,9 +5125,6 @@ int os::available(int fd, jlong *bytes) {
   if (::fstat64(fd, &buf64) >= 0) {
     mode = buf64.st_mode;
     if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-      // XXX: is the following call interruptible? If so, this might
-      // need to go through the INTERRUPT_IO() wrapper as for other
-      // blocking, interruptible calls in this file.
       int n;
       if (::ioctl(fd, FIONREAD, &n) >= 0) {
         *bytes = n;
@@ -5937,21 +5929,19 @@ int os::get_core_path(char* buffer, size_t bufferSize) {
   char core_pattern[core_pattern_len] = {0};
 
   int core_pattern_file = ::open("/proc/sys/kernel/core_pattern", O_RDONLY);
-  if (core_pattern_file != -1) {
-    ssize_t ret = ::read(core_pattern_file, core_pattern, core_pattern_len);
-    ::close(core_pattern_file);
-
-    if (ret > 0) {
-      char *last_char = core_pattern + strlen(core_pattern) - 1;
-
-      if (*last_char == '\n') {
-        *last_char = '\0';
-      }
-    }
+  if (core_pattern_file == -1) {
+    return -1;
   }
 
-  if (strlen(core_pattern) == 0) {
+  ssize_t ret = ::read(core_pattern_file, core_pattern, core_pattern_len);
+  ::close(core_pattern_file);
+  if (ret <= 0 || ret >= core_pattern_len || core_pattern[0] == '\n') {
     return -1;
+  }
+  if (core_pattern[ret-1] == '\n') {
+    core_pattern[ret-1] = '\0';
+  } else {
+    core_pattern[ret] = '\0';
   }
 
   char *pid_pos = strstr(core_pattern, "%p");

@@ -34,10 +34,10 @@
 #include "utilities/defaultStream.hpp"
 
 Flag::Error AliasLevelConstraintFunc(intx value, bool verbose) {
-  if ((value <= 1) && (Arguments::mode() == Arguments::_comp)) {
+  if ((value <= 1) && (Arguments::mode() == Arguments::_comp || Arguments::mode() == Arguments::_mixed)) {
     CommandLineError::print(verbose,
                             "AliasLevel (" INTX_FORMAT ") is not "
-                            "compatible with -Xcomp \n",
+                            "compatible with -Xcomp or -Xmixed\n",
                             value);
     return Flag::VIOLATES_CONSTRAINT;
   } else {
@@ -118,10 +118,10 @@ Flag::Error AllocatePrefetchInstrConstraintFunc(intx value, bool verbose) {
 }
 
 Flag::Error AllocatePrefetchStepSizeConstraintFunc(intx value, bool verbose) {
-  if (value < 0 || value > max_jint) {
+  if (value < 1 || value > max_jint) {
     CommandLineError::print(verbose,
                             "AllocatePrefetchStepSize (" INTX_FORMAT ") "
-                            "must be between 0 and %d\n",
+                            "must be between 1 and %d\n",
                             AllocatePrefetchStepSize,
                             max_jint);
     return Flag::VIOLATES_CONSTRAINT;
@@ -206,7 +206,7 @@ Flag::Error CodeCacheSegmentSizeConstraintFunc(uintx value, bool verbose) {
   if (CodeCacheSegmentSize < (uintx)CodeEntryAlignment) {
     CommandLineError::print(verbose,
                             "CodeCacheSegmentSize  (" UINTX_FORMAT ") must be "
-                            "larger than or equal to CodeEntryAlignment (" INTX_FORMAT ")"
+                            "larger than or equal to CodeEntryAlignment (" INTX_FORMAT ") "
                             "to align entry points\n",
                             CodeCacheSegmentSize, CodeEntryAlignment);
     return Flag::VIOLATES_CONSTRAINT;
@@ -224,7 +224,7 @@ Flag::Error CodeCacheSegmentSizeConstraintFunc(uintx value, bool verbose) {
   if (CodeCacheSegmentSize < (uintx)OptoLoopAlignment) {
     CommandLineError::print(verbose,
                             "CodeCacheSegmentSize  (" UINTX_FORMAT ") must be "
-                            "larger than or equal to OptoLoopAlignment (" INTX_FORMAT ")"
+                            "larger than or equal to OptoLoopAlignment (" INTX_FORMAT ") "
                             "to align inner loops\n",
                             CodeCacheSegmentSize, OptoLoopAlignment);
     return Flag::VIOLATES_CONSTRAINT;
@@ -235,15 +235,17 @@ Flag::Error CodeCacheSegmentSizeConstraintFunc(uintx value, bool verbose) {
 }
 
 Flag::Error CompilerThreadPriorityConstraintFunc(intx value, bool verbose) {
-  if (value < min_jint || value > max_jint) {
+#ifdef SOLARIS
+  if ((value < MinimumPriority || value > MaximumPriority) &&
+      (value != -1) && (value != -FXCriticalPriority)) {
     CommandLineError::print(verbose,
-                            "CompileThreadPriority (" INTX_FORMAT ") "
-                            "must be between %d and %d. "
-                            "Please also make sure to specify values that are "
-                            "meaningful to your operating system\n",
-                            value, min_jint, max_jint);
+                            "CompileThreadPriority (" INTX_FORMAT ") must be "
+                            "between %d and %d inclusively or -1 (means no change) "
+                            "or %d (special value for critical thread class/priority)\n",
+                            value, MinimumPriority, MaximumPriority, -FXCriticalPriority);
     return Flag::VIOLATES_CONSTRAINT;
   }
+#endif
 
   return Flag::SUCCESS;
 }
@@ -277,14 +279,6 @@ Flag::Error CodeEntryAlignmentConstraintFunc(intx value, bool verbose) {
 }
 
 Flag::Error OptoLoopAlignmentConstraintFunc(intx value, bool verbose) {
-  if (value < 0 || value > 16) {
-    CommandLineError::print(verbose,
-                            "OptoLoopAlignment (" INTX_FORMAT ") "
-                            "must be between 0 and 16\n",
-                            value);
-    return Flag::VIOLATES_CONSTRAINT;
-  }
-
   if (!is_power_of_2(value)) {
     CommandLineError::print(verbose,
                             "OptoLoopAlignment (" INTX_FORMAT ") "
@@ -308,7 +302,8 @@ Flag::Error OptoLoopAlignmentConstraintFunc(intx value, bool verbose) {
 Flag::Error ArraycopyDstPrefetchDistanceConstraintFunc(uintx value, bool verbose) {
   if (value != 0) {
     CommandLineError::print(verbose,
-                            "ArraycopyDstPrefetchDistance (" INTX_FORMAT ") must be 0\n");
+                            "ArraycopyDstPrefetchDistance (" UINTX_FORMAT ") must be 0\n",
+                            value);
     return Flag::VIOLATES_CONSTRAINT;
   }
 
@@ -318,7 +313,8 @@ Flag::Error ArraycopyDstPrefetchDistanceConstraintFunc(uintx value, bool verbose
 Flag::Error ArraycopySrcPrefetchDistanceConstraintFunc(uintx value, bool verbose) {
   if (value != 0) {
     CommandLineError::print(verbose,
-                            "ArraycopySrcPrefetchDistance (" INTX_FORMAT ") must be 0\n");
+                            "ArraycopySrcPrefetchDistance (" UINTX_FORMAT ") must be 0\n",
+                            value);
     return Flag::VIOLATES_CONSTRAINT;
   }
 

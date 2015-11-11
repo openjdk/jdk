@@ -26,7 +26,7 @@
  * @key gc
  * @bug 8006088
  * @summary Test ergonomics decisions related to minimum and initial heap size.
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build TestMinInitialErgonomics TestMaxHeapSizeTools

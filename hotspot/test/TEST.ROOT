@@ -1,5 +1,5 @@
 # 
-# Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -32,5 +32,9 @@ keys=cte_test jcmd nmt regression gc stress
 groups=TEST.groups [closed/TEST.groups]
 requires.properties=sun.arch.data.model
 
-# Tests using jtreg 4.1 b11 features
-requiredVersion=4.1 b11
+# Tests using jtreg 4.1 b12 features
+requiredVersion=4.1 b12
+
+# Path to libraries in the topmost test directory. This is needed so @library
+# does not need ../../ notation to reach them
+external.lib.roots = ../../

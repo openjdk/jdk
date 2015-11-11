@@ -26,7 +26,7 @@
  * @key gc
  * @bug 8025166
  * @summary Verify that young gen size conforms values specified by NewSize, MaxNewSize and Xmn options
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build TestNewSizeFlags

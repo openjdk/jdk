@@ -24,7 +24,7 @@
 /*
  * @test WBApi
  * @summary verify that whitebox functions can be linked and executed
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @build WBApi
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

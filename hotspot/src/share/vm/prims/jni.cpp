@@ -3893,7 +3893,9 @@ void TestKlass_test();
 void TestBitMap_test();
 void TestAsUtf8();
 void Test_linked_list();
+void TestResourcehash_test();
 void TestChunkedList_test();
+void Test_log_length();
 #if INCLUDE_ALL_GCS
 void TestOldFreeSpaceCalculation_test();
 void TestG1BiasedArray_test();
@@ -3930,10 +3932,12 @@ void execute_internal_vm_tests() {
     run_unit_test(TestKlass_test());
     run_unit_test(TestBitMap_test());
     run_unit_test(TestAsUtf8());
+    run_unit_test(TestResourcehash_test());
     run_unit_test(ObjectMonitor::sanity_checks());
     run_unit_test(Test_linked_list());
     run_unit_test(TestChunkedList_test());
     run_unit_test(JSONTest::test());
+    run_unit_test(Test_log_length());
     run_unit_test(DirectivesParser::test());
 #if INCLUDE_VM_STRUCTS
     run_unit_test(VMStructs::test());

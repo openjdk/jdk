@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ template<typename K> struct ResourceHashtableFns {
 
 template<typename K> unsigned primitive_hash(const K& k) {
   unsigned hash = (unsigned)((uintptr_t)k);
-  return hash ^ (hash > 3); // just in case we're dealing with aligned ptrs
+  return hash ^ (hash >> 3); // just in case we're dealing with aligned ptrs
 }
 
 template<typename K> bool primitive_equals(const K& k0, const K& k1) {
@@ -50,7 +50,9 @@ template<
     //typename ResourceHashtableFns<K>::equals_fn EQUALS = primitive_equals<K>,
     unsigned (*HASH)  (K const&)           = primitive_hash<K>,
     bool     (*EQUALS)(K const&, K const&) = primitive_equals<K>,
-    unsigned SIZE = 256
+    unsigned SIZE = 256,
+    ResourceObj::allocation_type ALLOC_TYPE = ResourceObj::RESOURCE_AREA,
+    MEMFLAGS MEM_TYPE = mtInternal
     >
 class ResourceHashtable : public ResourceObj {
  private:
@@ -91,6 +93,21 @@ class ResourceHashtable : public ResourceObj {
  public:
   ResourceHashtable() { memset(_table, 0, SIZE * sizeof(Node*)); }
 
+  ~ResourceHashtable() {
+    if (ALLOC_TYPE == C_HEAP) {
+      Node* const* bucket = _table;
+      while (bucket < &_table[SIZE]) {
+        Node* node = *bucket;
+        while (node != NULL) {
+          Node* cur = node;
+          node = node->_next;
+          delete cur;
+        }
+        ++bucket;
+      }
+    }
+  }
+
   bool contains(K const& key) const {
     return get(key) != NULL;
   }
@@ -117,9 +134,24 @@ class ResourceHashtable : public ResourceObj {
       (*ptr)->_value = value;
       return false;
     } else {
-      *ptr = new Node(hv, key, value);
+      *ptr = new (ALLOC_TYPE, MEM_TYPE) Node(hv, key, value);
       return true;
     }
+  }
+
+  bool remove(K const& key) {
+    unsigned hv = HASH(key);
+    Node** ptr = lookup_node(hv, key);
+
+    Node* node = *ptr;
+    if (node != NULL) {
+      *ptr = node->_next;
+      if (ALLOC_TYPE == C_HEAP) {
+        delete node;
+      }
+      return true;
+    }
+    return false;
   }
 
   // ITER contains bool do_entry(K const&, V const&), which will be
@@ -137,6 +169,10 @@ class ResourceHashtable : public ResourceObj {
       }
       ++bucket;
     }
+  }
+
+  static size_t node_size() {
+    return sizeof(Node);
   }
 };
 

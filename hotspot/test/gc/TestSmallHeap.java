@@ -29,7 +29,7 @@
  * @requires vm.compMode != "Xcomp"
  * @requires vm.opt.UseCompressedOops != false
  * @summary Verify that starting the VM with a small heap works
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.management/sun.management
  * @build TestSmallHeap
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify RTMAbortRatio option processing on CPU without rtm
  *          support or on VM that does not support rtm locking.
- * @library /testlibrary /../../test/lib /compiler/testlibrary
+ * @library /testlibrary /test/lib /compiler/testlibrary
  * @modules java.base/sun.misc
  *          java.management
  * @build TestRTMAbortRatioOptionOnUnsupportedConfig

@@ -26,6 +26,7 @@
  * @bug 8022865
  * @summary Tests for different combination of UseCompressedOops options
  * @library /testlibrary
+ * @ignore 8079353
  * @modules java.base/sun.misc
  *          java.management
  * @run main UseCompressedOops

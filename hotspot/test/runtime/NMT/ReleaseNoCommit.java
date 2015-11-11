@@ -25,7 +25,7 @@
  * @test
  * @summary Release uncommitted memory and make sure NMT handles it correctly
  * @key nmt regression
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build ReleaseNoCommit

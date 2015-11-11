@@ -41,7 +41,7 @@ import jdk.test.lib.dcmd.PidJcmdExecutor;
  * @test
  * @summary Test of diagnostic command GC.heap_dump
  * @library /testlibrary
- * @library /../../test/lib/share/classes
+ * @library /test/lib/share/classes
  * @modules java.base/sun.misc
  *          java.compiler
  *          java.management
@@ -66,6 +66,7 @@ public class HeapDumpTest {
         String cmd = "GC.heap_dump " + heapDumpArgs + " " + dump.getAbsolutePath();
         executor.execute(cmd);
 
+        verifyHeapDump(dump);
         dump.delete();
     }
 

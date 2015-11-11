@@ -25,7 +25,7 @@
  * @test
  * @bug 8073480
  * @summary explicit range checks should be recognized by C2
- * @library /testlibrary /../../test/lib /compiler/whitebox
+ * @library /testlibrary /test/lib /compiler/whitebox
  * @build  TestExplicitRangeChecks
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main ClassFileInstaller jdk.test.lib.Platform

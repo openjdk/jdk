@@ -304,7 +304,7 @@
 # include "gc/g1/g1OopClosures.hpp"
 # include "gc/g1/g1_globals.hpp"
 # include "gc/g1/ptrQueue.hpp"
-# include "gc/g1/satbQueue.hpp"
+# include "gc/g1/satbMarkQueue.hpp"
 # include "gc/parallel/gcAdaptivePolicyCounters.hpp"
 # include "gc/parallel/objectStartArray.hpp"
 # include "gc/parallel/parMarkBitMap.hpp"

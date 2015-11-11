@@ -56,19 +56,13 @@ public:
 
   virtual bool has_write_ref_pre_barrier() { return true; }
 
-  // This notes that we don't need to access any BarrierSet data
-  // structures, so this can be called from a static context.
-  template <class T> static void write_ref_field_pre_static(T* field, oop newVal) {
+  // We export this to make it available in cases where the static
+  // type of the barrier set is known.  Note that it is non-virtual.
+  template <class T> inline void inline_write_ref_field_pre(T* field, oop newVal) {
     T heap_oop = oopDesc::load_heap_oop(field);
     if (!oopDesc::is_null(heap_oop)) {
       enqueue(oopDesc::decode_heap_oop(heap_oop));
     }
-  }
-
-  // We export this to make it available in cases where the static
-  // type of the barrier set is known.  Note that it is non-virtual.
-  template <class T> inline void inline_write_ref_field_pre(T* field, oop newVal) {
-    write_ref_field_pre_static(field, newVal);
   }
 
   // These are the more general virtual versions.
@@ -172,9 +166,6 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
   virtual void initialize(G1RegionToSpaceMapper* mapper);
 
   virtual void resize_covered_region(MemRegion new_region) { ShouldNotReachHere(); }
-
-  // Can be called from static contexts.
-  static void write_ref_field_static(void* field, oop new_val);
 
   // NB: if you do a whole-heap invalidation, the "usual invariant" defined
   // above no longer applies.
