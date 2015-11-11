@@ -75,6 +75,7 @@ import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.ScriptingFunctions;
 import jdk.nashorn.internal.runtime.Specialization;
+import jdk.nashorn.internal.runtime.Symbol;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
@@ -220,6 +221,10 @@ public final class Global extends Scope {
     /** ECMA 15.1.4.6 - Number constructor */
     @Property(name = "Number", attributes = Attribute.NOT_ENUMERABLE)
     public volatile Object number;
+
+    /** ECMA 2016 19.4.1 - Symbol constructor */
+    @Property(name = "Symbol", attributes = Attribute.NOT_ENUMERABLE)
+    public volatile Object symbol;
 
     /**
      * Getter for ECMA 15.1.4.7 Date property
@@ -901,6 +906,7 @@ public final class Global extends Scope {
     private ScriptFunction builtinUint32Array;
     private ScriptFunction builtinFloat32Array;
     private ScriptFunction builtinFloat64Array;
+    private ScriptFunction builtinSymbol;
 
     /*
      * ECMA section 13.2.3 The [[ThrowTypeError]] Function Object
@@ -1106,6 +1112,8 @@ public final class Global extends Scope {
             return new NativeArray(ArrayData.allocate((int[]) obj), this);
         } else if (obj instanceof ArrayData) {
             return new NativeArray((ArrayData) obj, this);
+        } else if (obj instanceof Symbol) {
+            return new NativeSymbol((Symbol) obj, this);
         } else {
             // FIXME: more special cases? Map? List?
             return obj;
@@ -1586,7 +1594,7 @@ public final class Global extends Scope {
 
     /**
      * Get the builtin Object prototype.
-     * @return the object prototype.
+     * @return the Object prototype.
      */
     public ScriptObject getObjectPrototype() {
         return ScriptFunction.getPrototype(builtinObject);
@@ -1594,13 +1602,17 @@ public final class Global extends Scope {
 
     /**
      * Get the builtin Function prototype.
-     * @return the Function.prototype.
+     * @return the Function prototype.
      */
     public ScriptObject getFunctionPrototype() {
         return ScriptFunction.getPrototype(builtinFunction);
     }
 
-    ScriptObject getArrayPrototype() {
+    /**
+     * Get the builtin Array prototype.
+     * @return the Array prototype
+     */
+    public ScriptObject getArrayPrototype() {
         return ScriptFunction.getPrototype(builtinArray);
     }
 
@@ -1658,6 +1670,10 @@ public final class Global extends Scope {
 
     ScriptObject getJSAdapterPrototype() {
         return ScriptFunction.getPrototype(getBuiltinJSAdapter());
+    }
+
+    ScriptObject getSymbolPrototype() {
+        return ScriptFunction.getPrototype(builtinSymbol);
     }
 
     private synchronized ScriptFunction getBuiltinArrayBuffer() {
@@ -2127,11 +2143,11 @@ public final class Global extends Scope {
                 // ES6 15.1.8 steps 6. and 7.
                 final jdk.nashorn.internal.runtime.Property globalProperty = ownMap.findProperty(property.getKey());
                 if (globalProperty != null && !globalProperty.isConfigurable() && property.isLexicalBinding()) {
-                    throw ECMAErrors.syntaxError("redeclare.variable", property.getKey());
+                    throw ECMAErrors.syntaxError("redeclare.variable", property.getKey().toString());
                 }
                 final jdk.nashorn.internal.runtime.Property lexicalProperty = lexicalMap.findProperty(property.getKey());
                 if (lexicalProperty != null && !property.isConfigurable()) {
-                    throw ECMAErrors.syntaxError("redeclare.variable", property.getKey());
+                    throw ECMAErrors.syntaxError("redeclare.variable", property.getKey().toString());
                 }
             }
         }
@@ -2186,7 +2202,7 @@ public final class Global extends Scope {
     }
 
     @Override
-    protected FindProperty findProperty(final String key, final boolean deep, final ScriptObject start) {
+    protected FindProperty findProperty(final Object key, final boolean deep, final ScriptObject start) {
         if (lexicalScope != null && start != this && start.isScope()) {
             final FindProperty find = lexicalScope.findProperty(key, false);
             if (find != null) {
@@ -2305,6 +2321,14 @@ public final class Global extends Scope {
         this.builtinNumber    = initConstructorAndSwitchPoint("Number", ScriptFunction.class);
         this.builtinString    = initConstructorAndSwitchPoint("String", ScriptFunction.class);
         this.builtinMath      = initConstructorAndSwitchPoint("Math", ScriptObject.class);
+
+        if (env._es6) {
+            this.builtinSymbol = initConstructorAndSwitchPoint("Symbol", ScriptFunction.class);
+        } else {
+            // We need to manually delete nasgen-generated properties we don't want
+            this.delete("Symbol", false);
+            this.builtinObject.delete("getOwnPropertySymbols", false);
+        }
 
         // initialize String.prototype.length to 0
         // add String.prototype.length
@@ -2514,6 +2538,7 @@ public final class Global extends Scope {
         this.string            = this.builtinString;
         this.syntaxError       = this.builtinSyntaxError;
         this.typeError         = this.builtinTypeError;
+        this.symbol            = this.builtinSymbol;
     }
 
     private void initDebug() {
