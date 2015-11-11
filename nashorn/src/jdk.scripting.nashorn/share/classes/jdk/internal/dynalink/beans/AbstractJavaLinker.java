@@ -93,11 +93,11 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.CompositeOperation;
 import jdk.internal.dynalink.NamedOperation;
@@ -200,20 +200,20 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
 
     abstract FacetIntrospector createFacetIntrospector();
 
-    Collection<String> getReadablePropertyNames() {
+    Set<String> getReadablePropertyNames() {
         return getUnmodifiableKeys(propertyGetters);
     }
 
-    Collection<String> getWritablePropertyNames() {
+    Set<String> getWritablePropertyNames() {
         return getUnmodifiableKeys(propertySetters);
     }
 
-    Collection<String> getMethodNames() {
+    Set<String> getMethodNames() {
         return getUnmodifiableKeys(methods);
     }
 
-    private static Collection<String> getUnmodifiableKeys(final Map<String, ?> m) {
-        return Collections.unmodifiableCollection(m.keySet());
+    private static Set<String> getUnmodifiableKeys(final Map<String, ?> m) {
+        return Collections.unmodifiableSet(m.keySet());
     }
 
     /**
@@ -416,9 +416,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         return new GuardedInvocationComponent(invocation, getClassGuard(type), clazz, ValidationType.EXACT_CLASS);
     }
 
-    SingleDynamicMethod getConstructorMethod(final String signature) {
-        return null;
-    }
+    abstract SingleDynamicMethod getConstructorMethod(final String signature);
 
     private MethodHandle getAssignableGuard(final MethodType type) {
         return Guards.asType(assignableGuard, type);
