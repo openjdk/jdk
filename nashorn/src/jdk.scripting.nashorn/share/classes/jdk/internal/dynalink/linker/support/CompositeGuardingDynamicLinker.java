@@ -83,7 +83,6 @@
 
 package jdk.internal.dynalink.linker.support;
 
-import java.io.Serializable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -97,9 +96,7 @@ import jdk.internal.dynalink.linker.LinkerServices;
  * other guarding dynamic linkers in its
  * {@link #getGuardedInvocation(LinkRequest, LinkerServices)}.
  */
-public class CompositeGuardingDynamicLinker implements GuardingDynamicLinker, Serializable {
-
-    private static final long serialVersionUID = 1L;
+public class CompositeGuardingDynamicLinker implements GuardingDynamicLinker {
 
     private final GuardingDynamicLinker[] linkers;
 

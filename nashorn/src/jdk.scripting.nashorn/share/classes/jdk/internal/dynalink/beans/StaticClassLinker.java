@@ -88,7 +88,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.Collection;
+import java.util.Set;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.NamedOperation;
 import jdk.internal.dynalink.StandardOperation;
@@ -171,15 +171,15 @@ class StaticClassLinker implements TypeBasedGuardingDynamicLinker {
         return linkers.get(clazz).getConstructorMethod(signature);
     }
 
-    static Collection<String> getReadableStaticPropertyNames(final Class<?> clazz) {
+    static Set<String> getReadableStaticPropertyNames(final Class<?> clazz) {
         return linkers.get(clazz).getReadablePropertyNames();
     }
 
-    static Collection<String> getWritableStaticPropertyNames(final Class<?> clazz) {
+    static Set<String> getWritableStaticPropertyNames(final Class<?> clazz) {
         return linkers.get(clazz).getWritablePropertyNames();
     }
 
-    static Collection<String> getStaticMethodNames(final Class<?> clazz) {
+    static Set<String> getStaticMethodNames(final Class<?> clazz) {
         return linkers.get(clazz).getMethodNames();
     }
 

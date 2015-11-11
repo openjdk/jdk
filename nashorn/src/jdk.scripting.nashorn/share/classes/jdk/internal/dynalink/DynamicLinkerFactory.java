@@ -137,7 +137,7 @@ public final class DynamicLinkerFactory {
      * Default value for {@link #setUnstableRelinkThreshold(int) unstable relink
      * threshold}.
      */
-    public static final int DEFAULT_UNSTABLE_RELINK_THRESHOLD = 8;
+    private static final int DEFAULT_UNSTABLE_RELINK_THRESHOLD = 8;
 
     private boolean classLoaderExplicitlySet = false;
     private ClassLoader classLoader;
@@ -272,7 +272,7 @@ public final class DynamicLinkerFactory {
     /**
      * Sets the unstable relink threshold; the number of times a call site is
      * relinked after which it will be considered unstable, and subsequent link
-     * requests for it will indicate this.
+     * requests for it will indicate this. Defaults to 8 when not set explicitly.
      * @param unstableRelinkThreshold the new threshold. Must not be less than
      * zero. The value of zero means that call sites will never be considered
      * unstable.
