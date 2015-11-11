@@ -558,7 +558,7 @@ void SuperWord::find_adjacent_refs() {
           assert(!same_velt_type(s, mem_ref), "sanity");
           memops.push(s);
         }
-        MemNode* best_align_to_mem_ref = find_align_to_ref(memops);
+        best_align_to_mem_ref = find_align_to_ref(memops);
         if (best_align_to_mem_ref == NULL) {
           NOT_PRODUCT(if (TraceSuperWord) tty->print_cr("SuperWord::find_adjacent_refs(): best_align_to_mem_ref == NULL");)
           break;
