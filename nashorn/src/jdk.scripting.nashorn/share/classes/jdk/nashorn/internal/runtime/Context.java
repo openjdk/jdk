@@ -42,10 +42,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
-import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
@@ -80,6 +78,7 @@ import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.api.scripting.ClassFilter;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import jdk.nashorn.internal.WeakValueCache;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
@@ -303,47 +302,7 @@ public final class Context {
         }
     }
 
-    private final Map<CodeSource, HostClassReference> anonymousHostClasses = new HashMap<>();
-    private final ReferenceQueue<Class<?>> anonymousHostClassesRefQueue = new ReferenceQueue<>();
-
-    private static class HostClassReference extends WeakReference<Class<?>> {
-        final CodeSource codeSource;
-
-        HostClassReference(final CodeSource codeSource, final Class<?> clazz, final ReferenceQueue<Class<?>> refQueue) {
-            super(clazz, refQueue);
-            this.codeSource = codeSource;
-        }
-    }
-
-    private synchronized Class<?> getAnonymousHostClass(final CodeSource codeSource) {
-        // Remove cleared entries
-        for(;;) {
-            final HostClassReference clearedRef = (HostClassReference)anonymousHostClassesRefQueue.poll();
-            if (clearedRef == null) {
-                break;
-            }
-            anonymousHostClasses.remove(clearedRef.codeSource, clearedRef);
-        }
-
-        // Try to find an existing host class
-        final Reference<Class<?>> ref = anonymousHostClasses.get(codeSource);
-        if (ref != null) {
-            final Class<?> existingHostClass = ref.get();
-            if (existingHostClass != null) {
-                return existingHostClass;
-            }
-        }
-
-        // Define a new host class if existing is not found
-        final Class<?> newHostClass = createNewLoader().installClass(
-                // NOTE: we're defining these constants in AnonymousContextCodeInstaller so they are not
-                // initialized if we don't use AnonymousContextCodeInstaller. As this method is only ever
-                // invoked from AnonymousContextCodeInstaller, this is okay.
-                AnonymousContextCodeInstaller.ANONYMOUS_HOST_CLASS_NAME,
-                AnonymousContextCodeInstaller.ANONYMOUS_HOST_CLASS_BYTES, codeSource);
-        anonymousHostClasses.put(codeSource, new HostClassReference(codeSource, newHostClass, anonymousHostClassesRefQueue));
-        return newHostClass;
-    }
+    private final WeakValueCache<CodeSource, Class<?>> anonymousHostClasses = new WeakValueCache<>();
 
     private static final class AnonymousContextCodeInstaller extends ContextCodeInstaller {
         private static final Unsafe UNSAFE = getUnsafe();
@@ -1455,7 +1414,14 @@ public final class Context {
             final ScriptLoader loader = env._loader_per_compile ? createNewLoader() : scriptLoader;
             installer = new NamedContextCodeInstaller(this, cs, loader);
         } else {
-            installer = new AnonymousContextCodeInstaller(this, cs, getAnonymousHostClass(cs));
+            installer = new AnonymousContextCodeInstaller(this, cs,
+                    anonymousHostClasses.getOrCreate(cs, (key) ->
+                            createNewLoader().installClass(
+                                    // NOTE: we're defining these constants in AnonymousContextCodeInstaller so they are not
+                                    // initialized if we don't use AnonymousContextCodeInstaller. As this method is only ever
+                                    // invoked from AnonymousContextCodeInstaller, this is okay.
+                                    AnonymousContextCodeInstaller.ANONYMOUS_HOST_CLASS_NAME,
+                                    AnonymousContextCodeInstaller.ANONYMOUS_HOST_CLASS_BYTES, cs)));
         }
 
         if (storedScript == null) {
