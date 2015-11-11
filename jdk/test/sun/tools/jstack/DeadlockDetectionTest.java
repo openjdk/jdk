@@ -37,7 +37,7 @@ import jdk.testlibrary.ProcessTools;
 /*
  * @test
  * @summary Test deadlock detection
- * @library /../../test/lib/share/classes
+ * @library /test/lib/share/classes
  * @library /lib/testlibrary
  * @modules java.management
  * @build jdk.testlibrary.*
