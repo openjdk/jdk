@@ -42,6 +42,7 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
+import jdk.nashorn.internal.runtime.doubleconv.DoubleConversion;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
 /**
@@ -687,7 +688,7 @@ public enum JSType {
             return "NaN";
         }
 
-        return NumberToString.stringFor(num);
+        return DoubleConversion.toShortestString(num);
     }
 
     /**
