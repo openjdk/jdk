@@ -96,7 +96,7 @@ import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
 import jdk.nashorn.internal.runtime.options.LoggingOption.LoggerInfo;
 import jdk.nashorn.internal.runtime.options.Options;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * This class manages the global state of execution. Context is immutable.
