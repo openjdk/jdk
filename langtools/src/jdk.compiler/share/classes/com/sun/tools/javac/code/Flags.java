@@ -126,10 +126,9 @@ public class Flags {
      */
     public static final int BLOCK            = 1<<20;
 
-    /** Flag is set for compiler-generated abstract methods that implement
-     *  an interface method (Miranda methods).
+    /** Flag bit 21 is available. (used earlier to tag compiler-generated abstract methods that implement
+     *  an interface method (Miranda methods)).
      */
-    public static final int IPROXY           = 1<<21;
 
     /** Flag is set for nested classes that do not access instance members
      *  or `this' of an outer class and therefore don't need to be passed
@@ -362,7 +361,6 @@ public class Flags {
         BLOCK(Flags.BLOCK),
         ENUM(Flags.ENUM),
         MANDATED(Flags.MANDATED),
-        IPROXY(Flags.IPROXY),
         NOOUTERTHIS(Flags.NOOUTERTHIS),
         EXISTS(Flags.EXISTS),
         COMPOUND(Flags.COMPOUND),
