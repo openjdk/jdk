@@ -55,7 +55,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.StringJoiner;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.HotSpotIntrinsicCandidate;
 import sun.reflect.CallerSensitive;
 import sun.reflect.ConstantPool;

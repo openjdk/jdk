@@ -1493,11 +1493,11 @@ class InetAddress implements java.io.Serializable {
     }
 
     private static final long FIELDS_OFFSET;
-    private static final sun.misc.Unsafe UNSAFE;
+    private static final jdk.internal.misc.Unsafe UNSAFE;
 
     static {
         try {
-            sun.misc.Unsafe unsafe = sun.misc.Unsafe.getUnsafe();
+            jdk.internal.misc.Unsafe unsafe = jdk.internal.misc.Unsafe.getUnsafe();
             FIELDS_OFFSET = unsafe.objectFieldOffset(
                 InetAddress.class.getDeclaredField("holder")
             );
