@@ -244,6 +244,8 @@ class Arguments : AllStatic {
 
  private:
 
+  // a pointer to the flags file name if it is specified
+  static char*  _jvm_flags_file;
   // an array containing all flags specified in the .hotspotrc file
   static char** _jvm_flags_array;
   static int    _num_jvm_flags;
@@ -378,15 +380,12 @@ class Arguments : AllStatic {
   static jint parse_vm_options_file(const char* file_name, ScopedVMInitArgs* vm_args);
   static jint parse_options_buffer(const char* name, char* buffer, const size_t buf_len, ScopedVMInitArgs* vm_args);
   static jint insert_vm_options_file(const JavaVMInitArgs* args,
-                                     char** flags_file,
                                      char** vm_options_file,
                                      const int vm_options_file_pos,
                                      ScopedVMInitArgs* vm_options_file_args,
                                      ScopedVMInitArgs* args_out);
   static jint match_special_option_and_act(const JavaVMInitArgs* args,
-                                           char** flags_file,
                                            char** vm_options_file,
-                                           ScopedVMInitArgs* vm_options_file_args,
                                            ScopedVMInitArgs* args_out);
 
   static jint parse_vm_init_args(const JavaVMInitArgs *java_tool_options_args,
@@ -514,6 +513,14 @@ class Arguments : AllStatic {
   static void print_on(outputStream* st);
   static void print_summary_on(outputStream* st);
 
+  // convenient methods to get and set jvm_flags_file
+  static const char* get_jvm_flags_file()  { return _jvm_flags_file; }
+  static void set_jvm_flags_file(const char *value) {
+    if (_jvm_flags_file != NULL) {
+      os::free(_jvm_flags_file);
+    }
+    _jvm_flags_file = os::strdup_check_oom(value);
+  }
   // convenient methods to obtain / print jvm_flags and jvm_args
   static const char* jvm_flags()           { return build_resource_string(_jvm_flags_array, _num_jvm_flags); }
   static const char* jvm_args()            { return build_resource_string(_jvm_args_array, _num_jvm_args); }
