@@ -23,7 +23,7 @@
 
 /*
  * @test UsageThresholdExceededSeveralTimesTest
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build UsageThresholdExceededTest

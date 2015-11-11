@@ -254,6 +254,8 @@ LinuxAttachOperation* LinuxAttachListener::read_request(int s) {
   do {
     int n;
     RESTARTABLE(read(s, buf+off, left), n);
+    assert(n <= left, "buffer was too small, impossible!");
+    buf[max_len - 1] = '\0';
     if (n == -1) {
       return NULL;      // reset by peer or other error
     }

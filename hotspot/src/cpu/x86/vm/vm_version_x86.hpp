@@ -652,7 +652,7 @@ public:
       result = _cpuid_info.std_cpuid1_ebx.bits.threads_per_cpu /
                cores_per_cpu();
     }
-    return result;
+    return (result == 0 ? 1 : result);
   }
 
   static intx L1_line_size()  {

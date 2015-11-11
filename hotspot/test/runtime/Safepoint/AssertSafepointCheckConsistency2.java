@@ -25,7 +25,7 @@
  * @test
  * @bug 8047290
  * @summary Ensure that a Monitor::lock fires an assert when it incorrectly acquires a lock which must never have safepoint checks.
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build AssertSafepointCheckConsistency2

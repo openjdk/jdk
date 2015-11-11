@@ -23,7 +23,7 @@
 
 /**
  * @test TieredLevelsTest
- * @library /testlibrary /../../test/lib /compiler/whitebox
+ * @library /testlibrary /test/lib /compiler/whitebox
  * @modules java.management
  * @build TieredLevelsTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

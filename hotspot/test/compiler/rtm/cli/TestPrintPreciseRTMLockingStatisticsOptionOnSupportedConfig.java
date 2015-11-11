@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify PrintPreciseRTMLockingStatistics on CPUs with
  *          rtm support and on VM with rtm locking support,
- * @library /testlibrary /../../test/lib /compiler/testlibrary
+ * @library /testlibrary /test/lib /compiler/testlibrary
  * @modules java.base/sun.misc
  *          java.management
  * @build TestPrintPreciseRTMLockingStatisticsOptionOnSupportedConfig

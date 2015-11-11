@@ -24,7 +24,7 @@
 /*
  * @test KeepAliveClassLoader
  * @summary This test case uses a java.lang.ClassLoader instance to keep a class alive.
- * @library /testlibrary /../../test/lib /runtime/testlibrary
+ * @library /testlibrary /test/lib /runtime/testlibrary
  * @library classes
  * @build KeepAliveClassLoader test.Empty
  * @build ClassUnloadCommon

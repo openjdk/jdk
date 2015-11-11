@@ -24,7 +24,7 @@
 /*
  * @test DeoptimizeAllTest
  * @bug 8006683 8007288 8022832
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.management
  * @build DeoptimizeAllTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

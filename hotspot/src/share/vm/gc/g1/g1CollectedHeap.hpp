@@ -757,12 +757,6 @@ protected:
   // The closure used to refine a single card.
   RefineCardTableEntryClosure* _refine_cte_cl;
 
-  // A DirtyCardQueueSet that is used to hold cards that contain
-  // references into the current collection set. This is used to
-  // update the remembered sets of the regions in the collection
-  // set in the event of an evacuation failure.
-  DirtyCardQueueSet _into_cset_dirty_card_queue_set;
-
   // After a collection pause, make the regions in the CS into free
   // regions.
   void free_collection_set(HeapRegion* cs_head, EvacuationInfo& evacuation_info, const size_t* surviving_young_words);
@@ -951,13 +945,6 @@ public:
 
   // A set of cards where updates happened during the GC
   DirtyCardQueueSet& dirty_card_queue_set() { return _dirty_card_queue_set; }
-
-  // A DirtyCardQueueSet that is used to hold cards that contain
-  // references into the current collection set. This is used to
-  // update the remembered sets of the regions in the collection
-  // set in the event of an evacuation failure.
-  DirtyCardQueueSet& into_cset_dirty_card_queue_set()
-        { return _into_cset_dirty_card_queue_set; }
 
   // Create a G1CollectedHeap with the specified policy.
   // Must call the initialize method afterwards.
@@ -1178,7 +1165,6 @@ public:
   void prepend_to_freelist(FreeRegionList* list);
   void decrement_summary_bytes(size_t bytes);
 
-  // Returns "TRUE" iff "p" points into the committed areas of the heap.
   virtual bool is_in(const void* p) const;
 #ifdef ASSERT
   // Returns whether p is in one of the available areas of the heap. Slow but
@@ -1243,6 +1229,10 @@ public:
   // Return the region with the given index. It assumes the index is valid.
   inline HeapRegion* region_at(uint index) const;
 
+  // Return the next region (by index) that is part of the same
+  // humongous object that hr is part of.
+  inline HeapRegion* next_region_in_humongous(HeapRegion* hr) const;
+
   // Calculate the region index of the given address. Given address must be
   // within the heap.
   inline uint addr_to_region(HeapWord* addr) const;
@@ -1279,11 +1269,6 @@ public:
   HeapRegion* next_compaction_region(const HeapRegion* from) const;
 
   // Returns the HeapRegion that contains addr. addr must not be NULL.
-  template <class T>
-  inline HeapRegion* heap_region_containing_raw(const T addr) const;
-
-  // Returns the HeapRegion that contains addr. addr must not be NULL.
-  // If addr is within a humongous continues region, it returns its humongous start region.
   template <class T>
   inline HeapRegion* heap_region_containing(const T addr) const;
 

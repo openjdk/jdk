@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify processing of UseRTMLocking and UseBiasedLocking
  *          options combination on CPU and VM with rtm support.
- * @library /testlibrary /../../test/lib /compiler/testlibrary
+ * @library /testlibrary /test/lib /compiler/testlibrary
  * @modules java.base/sun.misc
  *          java.management
  * @build TestUseRTMLockingOptionWithBiasedLocking

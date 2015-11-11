@@ -50,7 +50,6 @@ public:
     Eden,
     Survivor,
     Old,
-    SingleHumongous,
     StartsHumongous,
     ContinuesHumongous,
     Archive

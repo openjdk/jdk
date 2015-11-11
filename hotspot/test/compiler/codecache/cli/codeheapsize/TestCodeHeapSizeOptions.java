@@ -31,7 +31,7 @@ import java.util.EnumSet;
  * @test
  * @bug 8015774
  * @summary Verify processing of options related to code heaps sizing.
- * @library /testlibrary .. /../../test/lib
+ * @library /testlibrary .. /test/lib
  * @modules java.base/sun.misc
  *          java.compiler
  *          java.management

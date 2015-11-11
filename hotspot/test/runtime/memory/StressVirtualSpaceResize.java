@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Stress test that expands/shrinks VirtualSpace
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @build StressVirtualSpaceResize
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

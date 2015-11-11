@@ -546,7 +546,7 @@ Handle MemoryService::create_MemoryUsage_obj(MemoryUsage usage, TRAPS) {
                           CHECK_NH);
   return obj;
 }
-//
+
 // GC manager type depends on the type of Generation. Depending on the space
 // availability and vm options the gc uses major gc manager or minor gc
 // manager or both. The type of gc manager depends on the generation kind.
@@ -559,21 +559,23 @@ TraceMemoryManagerStats::TraceMemoryManagerStats(Generation::Name kind, GCCause:
 #if INCLUDE_ALL_GCS
     case Generation::ParNew:
 #endif // INCLUDE_ALL_GCS
-      _fullGC=false;
+      _fullGC = false;
       break;
     case Generation::MarkSweepCompact:
 #if INCLUDE_ALL_GCS
     case Generation::ConcurrentMarkSweep:
 #endif // INCLUDE_ALL_GCS
-      _fullGC=true;
+      _fullGC = true;
       break;
     default:
+      _fullGC = false;
       assert(false, "Unrecognized gc generation kind.");
   }
   // this has to be called in a stop the world pause and represent
   // an entire gc pause, start to finish:
-  initialize(_fullGC, cause,true, true, true, true, true, true, true);
+  initialize(_fullGC, cause, true, true, true, true, true, true, true);
 }
+
 TraceMemoryManagerStats::TraceMemoryManagerStats(bool fullGC,
                                                  GCCause::Cause cause,
                                                  bool recordGCBeginTime,
@@ -583,7 +585,7 @@ TraceMemoryManagerStats::TraceMemoryManagerStats(bool fullGC,
                                                  bool recordAccumulatedGCTime,
                                                  bool recordGCEndTime,
                                                  bool countCollection) {
-    initialize(fullGC, cause, recordGCBeginTime, recordPreGCUsage, recordPeakUsage,
+  initialize(fullGC, cause, recordGCBeginTime, recordPreGCUsage, recordPeakUsage,
              recordPostGCUsage, recordAccumulatedGCTime, recordGCEndTime,
              countCollection);
 }

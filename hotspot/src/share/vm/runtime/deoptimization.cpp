@@ -2062,6 +2062,7 @@ int Deoptimization::trap_state_set_recompiled(int trap_state, bool z) {
 // This is used for debugging and diagnostics, including LogFile output.
 const char* Deoptimization::format_trap_state(char* buf, size_t buflen,
                                               int trap_state) {
+  assert(buflen > 0, "sanity");
   DeoptReason reason      = trap_state_reason(trap_state);
   bool        recomp_flag = trap_state_is_recompiled(trap_state);
   // Re-encode the state from its decoded components.
@@ -2082,8 +2083,6 @@ const char* Deoptimization::format_trap_state(char* buf, size_t buflen,
                        trap_reason_name(reason),
                        recomp_flag ? " recompiled" : "");
   }
-  if (len >= buflen)
-    buf[buflen-1] = '\0';
   return buf;
 }
 
@@ -2178,8 +2177,6 @@ const char* Deoptimization::format_trap_request(char* buf, size_t buflen,
 #endif
                        );
   }
-  if (len >= buflen)
-    buf[buflen-1] = '\0';
   return buf;
 }
 

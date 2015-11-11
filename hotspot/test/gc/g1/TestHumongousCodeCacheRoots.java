@@ -26,7 +26,7 @@
  * @key regression
  * @key gc
  * @bug 8027756
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build TestHumongousCodeCacheRoots

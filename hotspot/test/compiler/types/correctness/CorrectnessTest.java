@@ -24,7 +24,7 @@
 /*
  * @test CorrectnessTest
  * @bug 8038418
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @ignore 8066173

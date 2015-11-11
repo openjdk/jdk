@@ -171,9 +171,11 @@ const jlong max_jlong =         CONST64(0x7fffffffffffffff);
 #define strdup _strdup
 #endif
 
-// Visual Studio 2013 introduced strtoull(); before, one has to use _strtoui64() instead.
 #if _MSC_VER < 1800
+// Visual Studio 2013 introduced strtoull(); before, one has to use _strtoui64() instead.
 #define strtoull _strtoui64
+// Fixes some wrong warnings about 'this' : used in base member initializer list
+#pragma warning( disable : 4355 )
 #endif
 
 

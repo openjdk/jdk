@@ -87,7 +87,6 @@
 /* Signal definitions */
 
 #define BREAK_SIGNAL     SIGQUIT           /* Thread dumping support.    */
-#define INTERRUPT_SIGNAL SIGUSR1           /* Interruptible I/O support. */
 #define ASYNC_SIGNAL     SIGUSR2           /* Watcher & async err support. */
 #define SHUTDOWN1_SIGNAL SIGHUP            /* Shutdown Hooks support.    */
 #define SHUTDOWN2_SIGNAL SIGINT
@@ -95,8 +94,7 @@
 /* alternative signals used with -XX:+UseAltSigs (or for backward
    compatibility with 1.2, -Xusealtsigs) flag. Chosen to be
    unlikely to conflict with applications embedding the vm */
-#define ALT_INTERRUPT_SIGNAL (SIGRTMIN + SIGRTMAX)/2 /* alternate intio signal */
-#define ALT_ASYNC_SIGNAL     ALT_INTERRUPT_SIGNAL+1  /* alternate async signal */
+#define ALT_ASYNC_SIGNAL     (SIGRTMIN + SIGRTMAX)/2  /* alternate async signal */
 
 /* With 1.4.1 libjsig added versioning: used in os_solaris.cpp and jsig.c */
 #define JSIG_VERSION_1_4_1   0x30140100

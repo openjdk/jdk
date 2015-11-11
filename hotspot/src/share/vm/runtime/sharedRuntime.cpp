@@ -37,6 +37,7 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "logging/log.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "prims/forte.hpp"
@@ -556,17 +557,10 @@ address SharedRuntime::get_poll_stub(address pc) {
            "polling page safepoint stub not created yet");
     stub = SharedRuntime::polling_page_safepoint_handler_blob()->entry_point();
   }
-#ifndef PRODUCT
-  if (TraceSafepoint) {
-    char buf[256];
-    jio_snprintf(buf, sizeof(buf),
-                 "... found polling page %s exception at pc = "
-                 INTPTR_FORMAT ", stub =" INTPTR_FORMAT,
-                 at_poll_return ? "return" : "loop",
-                 (intptr_t)pc, (intptr_t)stub);
-    tty->print_raw_cr(buf);
-  }
-#endif // PRODUCT
+  log_debug(safepoint)("... found polling page %s exception at pc = "
+                       INTPTR_FORMAT ", stub =" INTPTR_FORMAT,
+                       at_poll_return ? "return" : "loop",
+                       (intptr_t)pc, (intptr_t)stub);
   return stub;
 }
 

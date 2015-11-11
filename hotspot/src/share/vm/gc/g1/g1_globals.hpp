@@ -48,9 +48,6 @@
   develop(bool, G1TraceMarkStackOverflow, false,                            \
           "If true, extra debugging code for CM restart for ovflw.")        \
                                                                             \
-  develop(bool, G1TraceHeapRegionRememberedSet, false,                      \
-          "Enables heap region remembered set debug logs")                  \
-                                                                            \
   diagnostic(bool, G1SummarizeConcMark, false,                              \
           "Summarize concurrent mark info")                                 \
                                                                             \
@@ -187,12 +184,6 @@
           range(0, max_jint/wordSize)                                       \
           constraint(G1RSetSparseRegionEntriesConstraintFunc,AfterErgo)     \
                                                                             \
-  develop(bool, G1RecordHRRSOops, false,                                    \
-          "When true, record recent calls to rem set operations.")          \
-                                                                            \
-  develop(bool, G1RecordHRRSEvents, false,                                  \
-          "When true, record recent calls to rem set operations.")          \
-                                                                            \
   develop(intx, G1MaxVerifyFailures, -1,                                    \
           "The maximum number of verification failures to print.  "         \
           "-1 means print all.")                                            \
@@ -227,10 +218,6 @@
                                                                             \
   develop(bool, G1HRRSFlushLogBuffersOnVerify, false,                       \
           "Forces flushing of log buffers before verification.")            \
-                                                                            \
-  develop(bool, G1FailOnFPError, false,                                     \
-          "When set, G1 will fail when it encounters an FP 'error', "       \
-          "so as to allow debugging")                                       \
                                                                             \
   product(size_t, G1HeapRegionSize, 0,                                      \
           "Size of the G1 regions.")                                        \

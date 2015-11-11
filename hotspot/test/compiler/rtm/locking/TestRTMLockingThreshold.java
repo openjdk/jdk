@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify that RTMLockingThreshold affects rtm state transition
  *          ProfileRTM => UseRTM.
- * @library /testlibrary /../../test/lib /compiler/testlibrary
+ * @library /testlibrary /test/lib /compiler/testlibrary
  * @modules java.base/sun.misc
  *          java.management
  * @build TestRTMLockingThreshold

@@ -115,6 +115,11 @@ G1OffsetTableContigSpace::block_start_const(const void* p) const {
 inline bool
 HeapRegion::block_is_obj(const HeapWord* p) const {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
+
+  if (!this->is_in(p)) {
+    assert(is_continues_humongous(), "This case can only happen for humongous regions");
+    return (p == humongous_start_region()->bottom());
+  }
   if (ClassUnloadingWithConcurrentMark) {
     return !g1h->is_obj_dead(oop(p), this);
   }
@@ -176,10 +181,6 @@ inline void HeapRegion::note_end_of_marking() {
   _prev_top_at_mark_start = _next_top_at_mark_start;
   _prev_marked_bytes = _next_marked_bytes;
   _next_marked_bytes = 0;
-
-  assert(_prev_marked_bytes <=
-         (size_t) pointer_delta(prev_top_at_mark_start(), bottom()) *
-         HeapWordSize, "invariant");
 }
 
 inline void HeapRegion::note_start_of_copying(bool during_initial_mark) {

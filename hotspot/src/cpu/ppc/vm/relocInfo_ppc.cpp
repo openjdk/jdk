@@ -61,7 +61,7 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
       nativeMovConstReg_at(addr())->set_narrow_oop(no, code());
     }
   } else {
-    assert((address) (nativeMovConstReg_at(addr())->data()) == x, "data must match");
+    guarantee((address) (nativeMovConstReg_at(addr())->data()) == x, "data must match");
   }
 }
 
