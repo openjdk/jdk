@@ -834,10 +834,6 @@ public class TransTypes extends TreeTranslator {
     public void visitSelect(JCFieldAccess tree) {
         Type t = types.skipTypeVars(tree.selected.type, false);
         if (t.isCompound()) {
-            if ((tree.sym.flags() & IPROXY) != 0) {
-                tree.sym = ((MethodSymbol)tree.sym).
-                    implemented((TypeSymbol)tree.sym.owner, types);
-            }
             tree.selected = coerce(
                 translate(tree.selected, erasure(tree.selected.type)),
                 erasure(tree.sym.owner.type));

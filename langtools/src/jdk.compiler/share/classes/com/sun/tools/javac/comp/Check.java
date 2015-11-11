@@ -2371,7 +2371,6 @@ public class Check {
                     types.isSameType(types.erasure(sym.type), types.erasure(sym2.type)) &&
                     sym != sym2 &&
                     (sym.flags() & Flags.SYNTHETIC) != (sym2.flags() & Flags.SYNTHETIC) &&
-                    (sym.flags() & IPROXY) == 0 && (sym2.flags() & IPROXY) == 0 &&
                     (sym.flags() & BRIDGE) == 0 && (sym2.flags() & BRIDGE) == 0) {
                     syntheticError(pos, (sym2.flags() & SYNTHETIC) == 0 ? sym2 : sym);
                     return;
