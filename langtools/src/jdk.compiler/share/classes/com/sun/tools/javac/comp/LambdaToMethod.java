@@ -2228,9 +2228,6 @@ public class LambdaToMethod extends TreeTranslator {
              */
             boolean interfaceParameterIsIntersectionType() {
                 List<Type> tl = tree.getDescriptorType(types).getParameterTypes();
-                if (tree.kind == ReferenceKind.UNBOUND) {
-                    tl = tl.tail;
-                }
                 for (; tl.nonEmpty(); tl = tl.tail) {
                     Type pt = tl.head;
                     if (pt.getKind() == TypeKind.TYPEVAR) {
