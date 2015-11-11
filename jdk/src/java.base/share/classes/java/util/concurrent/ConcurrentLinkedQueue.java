@@ -929,7 +929,7 @@ public class ConcurrentLinkedQueue<E> extends AbstractQueue<E>
 
     // Unsafe mechanics
 
-    private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
     private static final long HEAD;
     private static final long TAIL;
     private static final long ITEM;

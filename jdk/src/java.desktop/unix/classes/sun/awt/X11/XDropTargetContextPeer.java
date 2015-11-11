@@ -41,7 +41,7 @@ import sun.awt.SunToolkit;
 import sun.awt.dnd.SunDropTargetContextPeer;
 import sun.awt.dnd.SunDropTargetEvent;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * The XDropTargetContextPeer is the class responsible for handling

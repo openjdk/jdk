@@ -44,7 +44,7 @@ import sun.reflect.misc.ReflectUtil;
     subversion of both the language and the verifier. For this reason,
     they are all instance methods, and access to the constructor of
     this factory is guarded by a security check, in similar style to
-    {@link sun.misc.Unsafe}. </P>
+    {@link jdk.internal.misc.Unsafe}. </P>
 */
 
 public class ReflectionFactory {
