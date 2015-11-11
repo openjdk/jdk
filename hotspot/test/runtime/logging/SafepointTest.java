@@ -41,11 +41,9 @@ public class SafepointTest {
             "-Xlog:safepoint=trace", "SafepointTestMain");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Safepoint synchronization initiated. (");
-        output.shouldContain(" thread(s) to block");
         output.shouldContain("Entering safepoint region: ");
         output.shouldContain("Leaving safepoint region");
         output.shouldContain("_at_poll_safepoint");
-        output.shouldContain("... found polling page ");
         output.shouldHaveExitValue(0);
     }
 }

@@ -24,21 +24,6 @@
 import java.lang.ref.WeakReference;
 
 public class SafepointTestMain {
-    public static class B {
-        static int count = 0;
-        public static volatile boolean stop = false;
-        static void localSleep(int time) {
-          try{
-            Thread.currentThread().sleep(time);
-          } catch(InterruptedException ie) {
-          }
-        }
-
-        public static void infinite() {
-            while (!stop) { count++; }
-        }
-    }
-
     public static byte[] garbage;
     public static volatile WeakReference<Object> weakref;
 
@@ -48,16 +33,7 @@ public class SafepointTestMain {
     }
 
     public static void main(String[] args) throws Exception {
-        // Run function in separate thread to force compilation and pint safepoint
-        // message for compiled method
-        new Thread() {
-            public void run() {
-                B.infinite();
-            }
-        }.start();
-        B.localSleep(1000);
-        // Cause several safepoints to run GC while the compiled method is running,
-        // to see safepoint messages
+        // Cause several safepoints to run GC to see safepoint messages
         for (int i = 0; i < 2; i++) {
             createweakref();
             while(weakref.get() != null) {
@@ -65,6 +41,5 @@ public class SafepointTestMain {
                 System.gc();
             }
         }
-        B.stop = true;
     }
 }
