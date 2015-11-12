@@ -93,7 +93,10 @@ import-hotspot:
 unpack-sec:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f UnpackSecurity.gmk)
 
-ALL_TARGETS += import-hotspot unpack-sec
+generate-exported-symbols:
+	+($(CD) $(TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f BuildStatic.gmk)
+
+ALL_TARGETS += import-hotspot unpack-sec generate-exported-symbols
 
 ################################################################################
 # Gensrc targets, generating source before java compilation can be done
@@ -298,8 +301,14 @@ ALL_TARGETS += prepare-test-image build-test-hotspot-jtreg-native \
 test:
 	$(call RunTests, $(TEST))
 
+test-hotspot-jtreg:
+	$(call RunTests, "hotspot_all")
+
 test-hotspot-jtreg-native:
 	$(call RunTests, "hotspot_native_sanity")
+
+test-hotspot-internal:
+	$(call RunTests, "hotspot_internal")
 
 test-jdk-jtreg-native:
 	$(call RunTests, "jdk_native_sanity")
@@ -307,7 +316,8 @@ test-jdk-jtreg-native:
 test-make:
 	($(CD) $(SRC_ROOT)/test/make && $(MAKE) $(MAKE_ARGS) -f TestMake.gmk $(TEST_TARGET))
 
-ALL_TARGETS += test test-hotspot-jtreg-native test-jdk-jtreg-native test-make
+ALL_TARGETS += test test-hotspot-jtreg test-hotspot-jtreg-native \
+    test-hotspot-internal test-jdk-jtreg-native test-make
 
 ################################################################################
 # Verification targets
@@ -368,9 +378,15 @@ else
 
   import-hotspot: hotspot
 
+  generate-exported-symbols: java.base-libs jdk.jdwp.agent-libs
+
   $(LIBS_TARGETS): import-hotspot
 
   $(LAUNCHER_TARGETS): java.base-libs
+
+  ifeq ($(STATIC_BUILD), true)
+    $(LAUNCHER_TARGETS): generate-exported-symbols
+  endif
 
   # The demos are currently linking to libjvm and libjava, just like all other
   # jdk libs, even though they don't need to. To avoid warnings, make sure they
@@ -461,6 +477,10 @@ else
   test-image-hotspot-jtreg-native: build-test-hotspot-jtreg-native
 
   test-image-jdk-jtreg-native: build-test-jdk-jtreg-native
+
+  test-hotspot-internal: exploded-image
+
+  test-hotspot-jtreg: jimages test-image
 
 endif
 
