@@ -152,6 +152,11 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         return null;
     }
 
+    @Override
+    SingleDynamicMethod getConstructorMethod(final String signature) {
+        return null;
+    }
+
     private static final MethodHandle GET_LIST_ELEMENT = Lookup.PUBLIC.findVirtual(List.class, "get",
             MethodType.methodType(Object.class, int.class));
 

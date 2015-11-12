@@ -42,10 +42,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
-import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
@@ -73,12 +71,14 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import javax.script.ScriptEngine;
+import jdk.internal.dynalink.DynamicLinker;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.api.scripting.ClassFilter;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
+import jdk.nashorn.internal.WeakValueCache;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
@@ -89,12 +89,13 @@ import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.events.RuntimeEvent;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
 import jdk.nashorn.internal.runtime.options.LoggingOption.LoggerInfo;
 import jdk.nashorn.internal.runtime.options.Options;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * This class manages the global state of execution. Context is immutable.
@@ -301,47 +302,7 @@ public final class Context {
         }
     }
 
-    private final Map<CodeSource, HostClassReference> anonymousHostClasses = new HashMap<>();
-    private final ReferenceQueue<Class<?>> anonymousHostClassesRefQueue = new ReferenceQueue<>();
-
-    private static class HostClassReference extends WeakReference<Class<?>> {
-        final CodeSource codeSource;
-
-        HostClassReference(final CodeSource codeSource, final Class<?> clazz, final ReferenceQueue<Class<?>> refQueue) {
-            super(clazz, refQueue);
-            this.codeSource = codeSource;
-        }
-    }
-
-    private synchronized Class<?> getAnonymousHostClass(final CodeSource codeSource) {
-        // Remove cleared entries
-        for(;;) {
-            final HostClassReference clearedRef = (HostClassReference)anonymousHostClassesRefQueue.poll();
-            if (clearedRef == null) {
-                break;
-            }
-            anonymousHostClasses.remove(clearedRef.codeSource, clearedRef);
-        }
-
-        // Try to find an existing host class
-        final Reference<Class<?>> ref = anonymousHostClasses.get(codeSource);
-        if (ref != null) {
-            final Class<?> existingHostClass = ref.get();
-            if (existingHostClass != null) {
-                return existingHostClass;
-            }
-        }
-
-        // Define a new host class if existing is not found
-        final Class<?> newHostClass = createNewLoader().installClass(
-                // NOTE: we're defining these constants in AnonymousContextCodeInstaller so they are not
-                // initialized if we don't use AnonymousContextCodeInstaller. As this method is only ever
-                // invoked from AnonymousContextCodeInstaller, this is okay.
-                AnonymousContextCodeInstaller.ANONYMOUS_HOST_CLASS_NAME,
-                AnonymousContextCodeInstaller.ANONYMOUS_HOST_CLASS_BYTES, codeSource);
-        anonymousHostClasses.put(codeSource, new HostClassReference(codeSource, newHostClass, anonymousHostClassesRefQueue));
-        return newHostClass;
-    }
+    private final WeakValueCache<CodeSource, Class<?>> anonymousHostClasses = new WeakValueCache<>();
 
     private static final class AnonymousContextCodeInstaller extends ContextCodeInstaller {
         private static final Unsafe UNSAFE = getUnsafe();
@@ -507,13 +468,13 @@ public final class Context {
     final boolean _strict;
 
     /** class loader to resolve classes from script. */
-    private final ClassLoader  appLoader;
-
-    /** Class loader to load classes from -classpath option, if set. */
-    private final ClassLoader  classPathLoader;
+    private final ClassLoader appLoader;
 
     /** Class loader to load classes compiled from scripts. */
     private final ScriptLoader scriptLoader;
+
+    /** Dynamic linker for linking call sites in script code loaded by this context */
+    private final DynamicLinker dynamicLinker;
 
     /** Current error manager. */
     private final ErrorManager errors;
@@ -626,7 +587,6 @@ public final class Context {
         this.classFilter = classFilter;
         this.env       = new ScriptEnvironment(options, out, err);
         this._strict   = env._strict;
-        this.appLoader = appLoader;
         if (env._loader_per_compile) {
             this.scriptLoader = null;
             this.uniqueScriptId = null;
@@ -636,18 +596,19 @@ public final class Context {
         }
         this.errors    = errors;
 
-        // if user passed -classpath option, make a class loader with that and set it as
-        // thread context class loader so that script can access classes from that path.
+        // if user passed -classpath option, make a URLClassLoader with that and
+        // the app loader as the parent.
         final String classPath = options.getString("classpath");
         if (!env._compile_only && classPath != null && !classPath.isEmpty()) {
             // make sure that caller can create a class loader.
             if (sm != null) {
-                sm.checkPermission(new RuntimePermission("createClassLoader"));
+                sm.checkCreateClassLoader();
             }
-            this.classPathLoader = NashornLoader.createClassLoader(classPath);
+            this.appLoader = NashornLoader.createClassLoader(classPath, appLoader);
         } else {
-            this.classPathLoader = null;
+            this.appLoader = appLoader;
         }
+        this.dynamicLinker = Bootstrap.createDynamicLinker(this.appLoader, env._unstable_relink_threshold);
 
         final int cacheSize = env._class_cache_size;
         if (cacheSize > 0) {
@@ -1181,15 +1142,6 @@ public final class Context {
             checkPackageAccess(sm, fullName);
         }
 
-        // try the script -classpath loader, if that is set
-        if (classPathLoader != null) {
-            try {
-                return Class.forName(fullName, true, classPathLoader);
-            } catch (final ClassNotFoundException ignored) {
-                // ignore, continue search
-            }
-        }
-
         // Try finding using the "app" loader.
         return Class.forName(fullName, true, appLoader);
     }
@@ -1308,6 +1260,26 @@ public final class Context {
         return getContext(getGlobal());
     }
 
+    /**
+     * Gets the Nashorn dynamic linker for the specified class. If the class is
+     * a script class, the dynamic linker associated with its context is
+     * returned. Otherwise the dynamic linker associated with the current
+     * context is returned.
+     * @param clazz the class for which we want to retrieve a dynamic linker.
+     * @return the Nashorn dynamic linker for the specified class.
+     */
+    public static DynamicLinker getDynamicLinker(final Class<?> clazz) {
+        return fromClass(clazz).dynamicLinker;
+    }
+
+    /**
+     * Gets the Nashorn dynamic linker associated with the current context.
+     * @return the Nashorn dynamic linker for the current context.
+     */
+    public static DynamicLinker getDynamicLinker() {
+        return getContextTrusted().dynamicLinker;
+    }
+
     static Context getContextTrustedOrNull() {
         final Global global = Context.getGlobal();
         return global == null ? null : getContext(global);
@@ -1338,15 +1310,10 @@ public final class Context {
     }
 
     private URL getResourceURL(final String resName) {
-        // try the classPathLoader if we have and then
-        // try the appLoader if non-null.
-        if (classPathLoader != null) {
-            return classPathLoader.getResource(resName);
-        } else if (appLoader != null) {
+        if (appLoader != null) {
             return appLoader.getResource(resName);
         }
-
-        return null;
+        return ClassLoader.getSystemResource(resName);
     }
 
     private Object evaluateSource(final Source source, final ScriptObject scope, final ScriptObject thiz) {
@@ -1447,7 +1414,14 @@ public final class Context {
             final ScriptLoader loader = env._loader_per_compile ? createNewLoader() : scriptLoader;
             installer = new NamedContextCodeInstaller(this, cs, loader);
         } else {
-            installer = new AnonymousContextCodeInstaller(this, cs, getAnonymousHostClass(cs));
+            installer = new AnonymousContextCodeInstaller(this, cs,
+                    anonymousHostClasses.getOrCreate(cs, (key) ->
+                            createNewLoader().installClass(
+                                    // NOTE: we're defining these constants in AnonymousContextCodeInstaller so they are not
+                                    // initialized if we don't use AnonymousContextCodeInstaller. As this method is only ever
+                                    // invoked from AnonymousContextCodeInstaller, this is okay.
+                                    AnonymousContextCodeInstaller.ANONYMOUS_HOST_CLASS_NAME,
+                                    AnonymousContextCodeInstaller.ANONYMOUS_HOST_CLASS_BYTES, cs)));
         }
 
         if (storedScript == null) {
@@ -1683,5 +1657,4 @@ public final class Context {
     public SwitchPoint getBuiltinSwitchPoint(final String name) {
         return builtinSwitchPoints.get(name);
     }
-
 }

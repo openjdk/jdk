@@ -198,7 +198,7 @@ public final class WithObject extends Scope {
      * @return FindPropertyData or null if not found.
      */
     @Override
-    protected FindProperty findProperty(final String key, final boolean deep, final ScriptObject start) {
+    protected FindProperty findProperty(final Object key, final boolean deep, final ScriptObject start) {
         // We call findProperty on 'expression' with 'expression' itself as start parameter.
         // This way in ScriptObject.setObject we can tell the property is from a 'with' expression
         // (as opposed from another non-scope object in the proto chain such as Object.prototype).
@@ -210,18 +210,18 @@ public final class WithObject extends Scope {
     }
 
     @Override
-    protected Object invokeNoSuchProperty(final String name, final boolean isScope, final int programPoint) {
+    protected Object invokeNoSuchProperty(final Object key, final boolean isScope, final int programPoint) {
         final FindProperty find = expression.findProperty(NO_SUCH_PROPERTY_NAME, true);
         if (find != null) {
             final Object func = find.getObjectValue();
             if (func instanceof ScriptFunction) {
                 final ScriptFunction sfunc = (ScriptFunction)func;
                 final Object self = isScope && sfunc.isStrict()? UNDEFINED : expression;
-                return ScriptRuntime.apply(sfunc, self, name);
+                return ScriptRuntime.apply(sfunc, self, key);
             }
         }
 
-        return getProto().invokeNoSuchProperty(name, isScope, programPoint);
+        return getProto().invokeNoSuchProperty(key, isScope, programPoint);
     }
 
     @Override

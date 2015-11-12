@@ -165,7 +165,7 @@ public final class Main extends Shell {
                 try {
                     final Object res = context.eval(global, source, global, "<shell>");
                     if (res != ScriptRuntime.UNDEFINED) {
-                        err.println(JSType.toString(res));
+                        err.println(toString(res, global));
                     }
                 } catch (final Exception exp) {
                     // Is this a ECMAScript SyntaxError at last column (of the single line)?

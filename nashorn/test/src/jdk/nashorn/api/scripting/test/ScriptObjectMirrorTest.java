@@ -47,6 +47,9 @@ import org.testng.annotations.Test;
 
 /**
  * Tests to check jdk.nashorn.api.scripting.ScriptObjectMirror API.
+ *
+ * @test
+ * @run testng jdk.nashorn.api.scripting.test.ScriptObjectMirrorTest
  */
 @SuppressWarnings("javadoc")
 public class ScriptObjectMirrorTest {
