@@ -572,11 +572,9 @@ void CodeCache::scavenge_root_nmethods_do(CodeBlobClosure* f) {
     assert(cur->on_scavenge_root_list(), "else shouldn't be on this list");
 
     bool is_live = (!cur->is_zombie() && !cur->is_unloaded());
-#ifndef PRODUCT
     if (TraceScavenge) {
       cur->print_on(tty, is_live ? "scavenge root" : "dead scavenge root"); tty->cr();
     }
-#endif //PRODUCT
     if (is_live) {
       // Perform cur->oops_do(f), maybe just once per nmethod.
       f->do_code_blob(cur);

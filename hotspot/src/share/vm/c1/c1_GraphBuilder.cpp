@@ -707,12 +707,10 @@ BlockBegin* GraphBuilder::ScopeData::block_at(int bci) {
     BlockBegin* block = bci2block()->at(bci);
     if (block != NULL && block == parent()->bci2block()->at(bci)) {
       BlockBegin* new_block = new BlockBegin(block->bci());
-#ifndef PRODUCT
       if (PrintInitialBlockList) {
         tty->print_cr("CFG: cloned block %d (bci %d) as block %d for jsr",
                       block->block_id(), block->bci(), new_block->block_id());
       }
-#endif
       // copy data from cloned blocked
       new_block->set_depth_first_number(block->depth_first_number());
       if (block->is_set(BlockBegin::parser_loop_header_flag)) new_block->set(BlockBegin::parser_loop_header_flag);
@@ -3790,12 +3788,10 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
     cont = new BlockBegin(next_bci());
     // low number so that continuation gets parsed as early as possible
     cont->set_depth_first_number(0);
-#ifndef PRODUCT
     if (PrintInitialBlockList) {
       tty->print_cr("CFG: created block %d (bci %d) as continuation for inline at bci %d",
                     cont->block_id(), cont->bci(), bci());
     }
-#endif
     continuation_existed = false;
   }
   // Record number of predecessors of continuation block before

@@ -199,10 +199,7 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
 // IGVN worklist for later cleanup.  Move control-dependent data Nodes on the
 // live path up to the dominating control.
 void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exclude_loop_predicate ) {
-#ifndef PRODUCT
-  if (VerifyLoopOptimizations && PrintOpto) tty->print_cr("dominating test");
-#endif
-
+  if (VerifyLoopOptimizations && PrintOpto) { tty->print_cr("dominating test"); }
 
   // prevdom is the dominating projection of the dominating test.
   assert( iff->is_If(), "" );
@@ -617,9 +614,7 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
       }
     }
     if (phi == NULL)  break;
-#ifndef PRODUCT
-    if (PrintOpto && VerifyLoopOptimizations) tty->print_cr("CMOV");
-#endif
+    if (PrintOpto && VerifyLoopOptimizations) { tty->print_cr("CMOV"); }
     // Move speculative ops
     for (uint j = 1; j < region->req(); j++) {
       Node *proj = region->in(j);
@@ -963,10 +958,9 @@ static bool merge_point_too_heavy(Compile* C, Node* region) {
   }
   int nodes_left = C->max_node_limit() - C->live_nodes();
   if (weight * 8 > nodes_left) {
-#ifndef PRODUCT
-    if (PrintOpto)
+    if (PrintOpto) {
       tty->print_cr("*** Split-if bails out:  %d nodes, region weight %d", C->unique(), weight);
-#endif
+    }
     return true;
   } else {
     return false;
@@ -1490,14 +1484,12 @@ void PhaseIdealLoop::sink_use( Node *use, Node *post_loop ) {
 void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd,
                                  Node* side_by_side_idom) {
 
-#ifndef PRODUCT
   if (C->do_vector_loop() && PrintOpto) {
     const char* mname = C->method()->name()->as_quoted_ascii();
     if (mname != NULL) {
       tty->print("PhaseIdealLoop::clone_loop: for vectorize method %s\n", mname);
     }
   }
-#endif
 
   CloneMap& cm = C->clone_map();
   Dict* dict = cm.dict();

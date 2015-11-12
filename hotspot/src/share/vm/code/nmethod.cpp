@@ -2250,7 +2250,7 @@ bool nmethod::test_set_oops_do_mark() {
           break;
       }
       // Mark was clear when we first saw this guy.
-      NOT_PRODUCT(if (TraceScavenge)  print_on(tty, "oops_do, mark"));
+      if (TraceScavenge) { print_on(tty, "oops_do, mark"); }
       return false;
     }
   }
@@ -2259,7 +2259,7 @@ bool nmethod::test_set_oops_do_mark() {
 }
 
 void nmethod::oops_do_marking_prologue() {
-  NOT_PRODUCT(if (TraceScavenge)  tty->print_cr("[oops_do_marking_prologue"));
+  if (TraceScavenge) { tty->print_cr("[oops_do_marking_prologue"); }
   assert(_oops_do_mark_nmethods == NULL, "must not call oops_do_marking_prologue twice in a row");
   // We use cmpxchg_ptr instead of regular assignment here because the user
   // may fork a bunch of threads, and we need them all to see the same state.
@@ -2275,13 +2275,13 @@ void nmethod::oops_do_marking_epilogue() {
     nmethod* next = cur->_oops_do_mark_link;
     cur->_oops_do_mark_link = NULL;
     cur->verify_oop_relocations();
-    NOT_PRODUCT(if (TraceScavenge)  cur->print_on(tty, "oops_do, unmark"));
+    if (TraceScavenge) { cur->print_on(tty, "oops_do, unmark"); }
     cur = next;
   }
   void* required = _oops_do_mark_nmethods;
   void* observed = Atomic::cmpxchg_ptr(NULL, &_oops_do_mark_nmethods, required);
   guarantee(observed == required, "no races in this sequential code");
-  NOT_PRODUCT(if (TraceScavenge)  tty->print_cr("oops_do_marking_epilogue]"));
+  if (TraceScavenge) { tty->print_cr("oops_do_marking_epilogue]"); }
 }
 
 class DetectScavengeRoot: public OopClosure {

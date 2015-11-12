@@ -948,13 +948,11 @@ bool Parse::seems_stable_comparison() const {
 //-------------------------------repush_if_args--------------------------------
 // Push arguments of an "if" bytecode back onto the stack by adjusting _sp.
 inline int Parse::repush_if_args() {
-#ifndef PRODUCT
   if (PrintOpto && WizardMode) {
     tty->print("defending against excessive implicit null exceptions on %s @%d in ",
                Bytecodes::name(iter().cur_bc()), iter().cur_bci());
     method()->print_name(); tty->cr();
   }
-#endif
   int bc_depth = - Bytecodes::depth(iter().cur_bc());
   assert(bc_depth == 1 || bc_depth == 2, "only two kinds of branches");
   DEBUG_ONLY(sync_jvms());   // argument(n) requires a synced jvms
@@ -975,10 +973,9 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
   float prob = branch_prediction(cnt, btest, target_bci, c);
   if (prob == PROB_UNKNOWN) {
     // (An earlier version of do_ifnull omitted this trap for OSR methods.)
-#ifndef PRODUCT
-    if (PrintOpto && Verbose)
-      tty->print_cr("Never-taken edge stops compilation at bci %d",bci());
-#endif
+    if (PrintOpto && Verbose) {
+      tty->print_cr("Never-taken edge stops compilation at bci %d", bci());
+    }
     repush_if_args(); // to gather stats on loop
     // We need to mark this branch as taken so that if we recompile we will
     // see that it is possible. In the tiered system the interpreter doesn't
@@ -1057,10 +1054,9 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
   float untaken_prob = 1.0 - prob;
 
   if (prob == PROB_UNKNOWN) {
-#ifndef PRODUCT
-    if (PrintOpto && Verbose)
-      tty->print_cr("Never-taken edge stops compilation at bci %d",bci());
-#endif
+    if (PrintOpto && Verbose) {
+      tty->print_cr("Never-taken edge stops compilation at bci %d", bci());
+    }
     repush_if_args(); // to gather stats on loop
     // We need to mark this branch as taken so that if we recompile we will
     // see that it is possible. In the tiered system the interpreter doesn't

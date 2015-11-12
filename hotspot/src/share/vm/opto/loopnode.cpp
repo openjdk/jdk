@@ -2397,11 +2397,9 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
   // After that switch predicates off and do more loop optimizations.
   if (!C->major_progress() && (C->predicate_count() > 0)) {
      C->cleanup_loop_predicates(_igvn);
-#ifndef PRODUCT
      if (TraceLoopOpts) {
        tty->print_cr("PredicatesOff");
      }
-#endif
      C->set_major_progress();
   }
 

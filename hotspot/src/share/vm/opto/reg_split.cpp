@@ -506,10 +506,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       // Initialize the split counts to zero
       splits.append(0);
 #endif
-#ifndef PRODUCT
-      if( PrintOpto && WizardMode && lrgs(bidx)._was_spilled1 )
+      if (PrintOpto && WizardMode && lrgs(bidx)._was_spilled1) {
         tty->print_cr("Warning, 2nd spill of L%d",bidx);
-#endif
+      }
     }
   }
 

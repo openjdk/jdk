@@ -958,12 +958,10 @@ void Parse::do_exits() {
            PPC64_ONLY(wrote_volatile() ||)
            (AlwaysSafeConstructors && wrote_fields()))) {
     _exits.insert_mem_bar(Op_MemBarRelease, alloc_with_final());
-#ifndef PRODUCT
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name();
       tty->print_cr(" writes finals and needs a memory barrier");
     }
-#endif
   }
 
   // Any method can write a @Stable field; insert memory barriers after
@@ -971,12 +969,10 @@ void Parse::do_exits() {
   // barrier there.
   if (wrote_stable()) {
     _exits.insert_mem_bar(Op_MemBarRelease, alloc_with_final());
-#ifndef PRODUCT
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name();
       tty->print_cr(" writes @Stable and needs a memory barrier");
     }
-#endif
   }
 
   for (MergeMemStream mms(_exits.merged_memory()); mms.next_non_empty(); ) {
