@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -171,17 +171,24 @@ public class TestRSA extends UcryptoTest {
         return kpg.generateKeyPair();
     }
 
-    private static KeyPair genPredefinedRSAKeyPair() throws Exception {
-        KeyFactory kf = KeyFactory.getInstance("RSA");
-        BigInteger mod = new BigInteger(MOD);
-        BigInteger pub = new BigInteger(PUB_EXP);
+    private static KeyPair genPredefinedRSAKeyPair(String prov) throws Exception {
+        KeyFactory kf;
+        if (prov == null) {
+            kf = KeyFactory.getInstance("RSA");
+            System.out.println("Using default KeyFactory:  "+kf.getProvider().getName());
+        } else {
+            kf = KeyFactory.getInstance("RSA", prov);
+            System.out.println("Using specified KeyFactory:  "+kf.getProvider().getName());
+        }
+        BigInteger mod = new BigInteger(1, MOD);
+        BigInteger pub = new BigInteger(1, PUB_EXP);
 
         PrivateKey privKey = kf.generatePrivate
             (new RSAPrivateCrtKeySpec
-             (mod, pub, new BigInteger(PRIV_EXP),
-              new BigInteger(PRIME_P), new BigInteger(PRIME_Q),
-              new BigInteger(EXP_P), new BigInteger(EXP_Q),
-              new BigInteger(CRT_COEFF)));
+             (mod, pub, new BigInteger(1, PRIV_EXP),
+              new BigInteger(1, PRIME_P), new BigInteger(1, PRIME_Q),
+              new BigInteger(1, EXP_P), new BigInteger(1, EXP_Q),
+              new BigInteger(1, CRT_COEFF)));
         PublicKey pubKey = kf.generatePublic(new RSAPublicKeySpec(mod, pub));
         return new KeyPair(pubKey, privKey);
     }
@@ -210,11 +217,20 @@ public class TestRSA extends UcryptoTest {
 
     public void doTest(Provider prov) throws Exception {
         // first test w/ predefine KeyPair
-        KeyPair pkp = genPredefinedRSAKeyPair();
         System.out.println("Test against Predefined RSA Key Pair");
+        KeyPair pkp = genPredefinedRSAKeyPair("SunPKCS11-Solaris");
         testCipher(pkp, 128, true, prov);
         testSignature(pkp, true, prov);
 
+        pkp = genPredefinedRSAKeyPair("SunRsaSign");
+        testCipher(pkp, 128, true, prov);
+        testSignature(pkp, true, prov);
+
+        pkp = genPredefinedRSAKeyPair(null);
+        testCipher(pkp, 128, true, prov);
+        testSignature(pkp, true, prov);
+
+        System.out.println("Running key length test loop");
         for (int i = 0; i < 10; i++) {
             // then test w/ various key lengths
             int keyLens[] = { 1024, 2048 };

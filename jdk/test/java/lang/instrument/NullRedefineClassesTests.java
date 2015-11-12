@@ -27,7 +27,6 @@
  * @summary make sure redefineClasses throws NullPointerException in the right places.
  * @author Robert Field as modified from the code of Gabriel Adauto, Wily Technology
  *
- * @modules java.instrument
  * @run build NullRedefineClassesTests
  * @run shell MakeJAR.sh redefineAgent
  * @run main/othervm -javaagent:redefineAgent.jar NullRedefineClassesTests NullRedefineClassesTests

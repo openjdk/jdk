@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,8 +114,9 @@ void SetupThreadGraphicsInfo(JNIEnv *env, GDIWinSDOps *wsdo) {
         // which may've been disposed by this time, and we have
         // no means of checking against it.
         if (oldhDC != NULL) {
-            MoveDCToPassiveList(oldhDC);
+            MoveDCToPassiveList(oldhDC, info->hWnd);
             info->hDC = NULL;
+            info->hWnd = NULL;
         }
 
         if (wsdo->window != NULL){
@@ -150,6 +151,7 @@ void SetupThreadGraphicsInfo(JNIEnv *env, GDIWinSDOps *wsdo) {
 
             // Finally, set these new values in the info for this thread
             info->hDC = hDC;
+            info->hWnd = wsdo->window;
         }
 
         // cached brush and pen are not associated with any DC, and can be
@@ -187,7 +189,7 @@ void DisposeThreadGraphicsInfo(JNIEnv *env, jlong tgi) {
         if (info->hDC != NULL) {
             // move the DC from the active dcs list to
             // the passive dc list to be released later
-            MoveDCToPassiveList(info->hDC);
+            MoveDCToPassiveList(info->hDC, info->hWnd);
         }
 
         if (info->clip != NULL) {

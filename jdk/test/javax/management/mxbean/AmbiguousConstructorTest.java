@@ -26,15 +26,13 @@
  * @bug 6175517 6278707
  * @summary Test that ambiguous ConstructorProperties annotations are detected.
  * @author Eamonn McManus
- * @modules java.desktop
- *          java.management
+ * @modules java.management
  * @run clean AmbiguousConstructorTest
  * @run build AmbiguousConstructorTest
  * @run main AmbiguousConstructorTest
  */
 
-import java.beans.ConstructorProperties;
-import java.io.InvalidObjectException;
+import javax.management.ConstructorParameters;
 import javax.management.*;
 
 public class AmbiguousConstructorTest {
@@ -76,13 +74,13 @@ public class AmbiguousConstructorTest {
         public int getC() {return 0;}
         public long getD() {return 0;}
 
-        @ConstructorProperties({"a", "b"})
+        @ConstructorParameters({"a", "b"})
         public Unambiguous(byte a, short b) {}
 
-        @ConstructorProperties({"b", "c"})
+        @ConstructorParameters({"b", "c"})
         public Unambiguous(short b, int c) {}
 
-        @ConstructorProperties({"a", "b", "c"})
+        @ConstructorParameters({"a", "b", "c"})
         public Unambiguous(byte a, short b, int c) {}
     }
 
@@ -92,13 +90,13 @@ public class AmbiguousConstructorTest {
         public int getC() {return 0;}
         public long getD() {return 0;}
 
-        @ConstructorProperties({"a", "b"})
+        @ConstructorParameters({"a", "b"})
         public Ambiguous(byte a, short b) {}
 
-        @ConstructorProperties({"b", "c"})
+        @ConstructorParameters({"b", "c"})
         public Ambiguous(short b, int c) {}
 
-        @ConstructorProperties({"a", "b", "c", "d"})
+        @ConstructorParameters({"a", "b", "c", "d"})
         public Ambiguous(byte a, short b, int c, long d) {}
     }
 

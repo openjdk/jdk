@@ -244,7 +244,7 @@ Symbol* SymbolTable::lookup(int index, const char* name,
 unsigned int SymbolTable::hash_symbol(const char* s, int len) {
   return use_alternate_hashcode() ?
            AltHashing::murmur3_32(seed(), (const jbyte*)s, len) :
-           java_lang_String::hash_code(s, len);
+           java_lang_String::hash_code((const jbyte*)s, len);
 }
 
 

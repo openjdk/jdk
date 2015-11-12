@@ -30,14 +30,17 @@
 
 package jdk.vm.ci.runtime.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.reflect.Method;
+import java.util.Map;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.JavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
-import org.junit.*;
+import org.junit.Test;
 
 /**
  * Tests for {@link JavaMethod}.

@@ -598,7 +598,7 @@ PhaseStringOpts::PhaseStringOpts(PhaseGVN* gvn, Unique_Node_List*):
   }
 
   // Collect the types needed to talk about the various slices of memory
-  char_adr_idx = C->get_alias_index(TypeAryPtr::CHARS);
+  byte_adr_idx = C->get_alias_index(TypeAryPtr::BYTES);
 
   // For each locally allocated StringBuffer see if the usages can be
   // collapsed into a single String construction.
@@ -1128,6 +1128,25 @@ Node* PhaseStringOpts::fetch_static_field(GraphKit& kit, ciField* field) {
 }
 
 Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
+  if (arg->is_Con()) {
+    // Constant integer. Compute constant length using Integer.sizeTable
+    int arg_val = arg->get_int();
+    int count = 1;
+    if (arg_val < 0) {
+      arg_val = -arg_val;
+      count++;
+    }
+
+    ciArray* size_table = (ciArray*)size_table_field->constant_value().as_object();
+    for (int i = 0; i < size_table->length(); i++) {
+      if (arg_val <= size_table->element_value(i).as_int()) {
+        count += i;
+        break;
+      }
+    }
+    return __ intcon(count);
+  }
+
   RegionNode *final_merge = new RegionNode(3);
   kit.gvn().set_type(final_merge, Type::CONTROL);
   Node* final_size = new PhiNode(final_merge, TypeInt::INT);
@@ -1212,77 +1231,34 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
   return final_size;
 }
 
-void PhaseStringOpts::int_getChars(GraphKit& kit, Node* arg, Node* char_array, Node* start, Node* end) {
-  RegionNode *final_merge = new RegionNode(4);
-  kit.gvn().set_type(final_merge, Type::CONTROL);
-  Node *final_mem = PhiNode::make(final_merge, kit.memory(char_adr_idx), Type::MEMORY, TypeAryPtr::CHARS);
-  kit.gvn().set_type(final_mem, Type::MEMORY);
-
-  // need to handle Integer.MIN_VALUE specially because negating doesn't make it positive
-  {
-    // i == MIN_VALUE
-    IfNode* iff = kit.create_and_map_if(kit.control(),
-                                        __ Bool(__ CmpI(arg, __ intcon(0x80000000)), BoolTest::ne),
-                                        PROB_FAIR, COUNT_UNKNOWN);
-
-    Node* old_mem = kit.memory(char_adr_idx);
-
-    kit.set_control(__ IfFalse(iff));
-    if (kit.stopped()) {
-      // Statically not equal to MIN_VALUE so this path is dead
-      final_merge->init_req(3, kit.control());
-    } else {
-      copy_string(kit, __ makecon(TypeInstPtr::make(C->env()->the_min_jint_string())),
-                  char_array, start);
-      final_merge->init_req(3, kit.control());
-      final_mem->init_req(3, kit.memory(char_adr_idx));
-    }
-
-    kit.set_control(__ IfTrue(iff));
-    kit.set_memory(old_mem, char_adr_idx);
-  }
-
-
-  // Simplified version of Integer.getChars
-
-  // int q, r;
-  // int charPos = index;
-  Node* charPos = end;
-
-  // char sign = 0;
-
-  Node* i = arg;
-  Node* sign = __ intcon(0);
-
+// Simplified version of Integer.getChars
+void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicType bt, Node* end, Node* final_merge, Node* final_mem, int merge_index) {
   // if (i < 0) {
   //     sign = '-';
   //     i = -i;
   // }
-  {
-    IfNode* iff = kit.create_and_map_if(kit.control(),
-                                        __ Bool(__ CmpI(arg, __ intcon(0)), BoolTest::lt),
-                                        PROB_FAIR, COUNT_UNKNOWN);
+  IfNode* iff = kit.create_and_map_if(kit.control(), __ Bool(__ CmpI(arg, __ intcon(0)), BoolTest::lt),
+                                      PROB_FAIR, COUNT_UNKNOWN);
 
-    RegionNode *merge = new RegionNode(3);
-    kit.gvn().set_type(merge, Type::CONTROL);
-    i = new PhiNode(merge, TypeInt::INT);
-    kit.gvn().set_type(i, TypeInt::INT);
-    sign = new PhiNode(merge, TypeInt::INT);
-    kit.gvn().set_type(sign, TypeInt::INT);
+  RegionNode* merge = new RegionNode(3);
+  kit.gvn().set_type(merge, Type::CONTROL);
+  Node* i = new PhiNode(merge, TypeInt::INT);
+  kit.gvn().set_type(i, TypeInt::INT);
+  Node* sign = new PhiNode(merge, TypeInt::INT);
+  kit.gvn().set_type(sign, TypeInt::INT);
 
-    merge->init_req(1, __ IfTrue(iff));
-    i->init_req(1, __ SubI(__ intcon(0), arg));
-    sign->init_req(1, __ intcon('-'));
-    merge->init_req(2, __ IfFalse(iff));
-    i->init_req(2, arg);
-    sign->init_req(2, __ intcon(0));
+  merge->init_req(1, __ IfTrue(iff));
+  i->init_req(1, __ SubI(__ intcon(0), arg));
+  sign->init_req(1, __ intcon('-'));
+  merge->init_req(2, __ IfFalse(iff));
+  i->init_req(2, arg);
+  sign->init_req(2, __ intcon(0));
 
-    kit.set_control(merge);
+  kit.set_control(merge);
 
-    C->record_for_igvn(merge);
-    C->record_for_igvn(i);
-    C->record_for_igvn(sign);
-  }
+  C->record_for_igvn(merge);
+  C->record_for_igvn(i);
+  C->record_for_igvn(sign);
 
   // for (;;) {
   //     q = i / 10;
@@ -1292,126 +1268,409 @@ void PhaseStringOpts::int_getChars(GraphKit& kit, Node* arg, Node* char_array, N
   //     if (i == 0) break;
   // }
 
-  {
-    // Add loop predicate first.
-    kit.add_predicate();
+  // Add loop predicate first.
+  kit.add_predicate();
 
-    RegionNode *head = new RegionNode(3);
-    head->init_req(1, kit.control());
-    kit.gvn().set_type(head, Type::CONTROL);
-    Node *i_phi = new PhiNode(head, TypeInt::INT);
-    i_phi->init_req(1, i);
-    kit.gvn().set_type(i_phi, TypeInt::INT);
-    charPos = PhiNode::make(head, charPos);
-    kit.gvn().set_type(charPos, TypeInt::INT);
-    Node *mem = PhiNode::make(head, kit.memory(char_adr_idx), Type::MEMORY, TypeAryPtr::CHARS);
-    kit.gvn().set_type(mem, Type::MEMORY);
-    kit.set_control(head);
-    kit.set_memory(mem, char_adr_idx);
+  RegionNode* head = new RegionNode(3);
+  head->init_req(1, kit.control());
 
-    Node* q = __ DivI(NULL, i_phi, __ intcon(10));
-    Node* r = __ SubI(i_phi, __ AddI(__ LShiftI(q, __ intcon(3)),
-                                     __ LShiftI(q, __ intcon(1))));
-    Node* m1 = __ SubI(charPos, __ intcon(1));
-    Node* ch = __ AddI(r, __ intcon('0'));
+  kit.gvn().set_type(head, Type::CONTROL);
+  Node* i_phi = new PhiNode(head, TypeInt::INT);
+  i_phi->init_req(1, i);
+  kit.gvn().set_type(i_phi, TypeInt::INT);
+  Node* charPos = new PhiNode(head, TypeInt::INT);
+  charPos->init_req(1, end);
+  kit.gvn().set_type(charPos, TypeInt::INT);
+  Node* mem = PhiNode::make(head, kit.memory(byte_adr_idx), Type::MEMORY, TypeAryPtr::BYTES);
+  kit.gvn().set_type(mem, Type::MEMORY);
 
-    Node* st = __ store_to_memory(kit.control(), kit.array_element_address(char_array, m1, T_CHAR),
-                                  ch, T_CHAR, char_adr_idx, MemNode::unordered);
+  kit.set_control(head);
+  kit.set_memory(mem, byte_adr_idx);
 
+  Node* q = __ DivI(kit.null(), i_phi, __ intcon(10));
+  Node* r = __ SubI(i_phi, __ AddI(__ LShiftI(q, __ intcon(3)),
+                                   __ LShiftI(q, __ intcon(1))));
+  Node* index = __ SubI(charPos, __ intcon((bt == T_BYTE) ? 1 : 2));
+  Node* ch = __ AddI(r, __ intcon('0'));
+  Node* st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
+                                ch, bt, byte_adr_idx, MemNode::unordered);
 
-    IfNode* iff = kit.create_and_map_if(head, __ Bool(__ CmpI(q, __ intcon(0)), BoolTest::ne),
-                                        PROB_FAIR, COUNT_UNKNOWN);
-    Node* ne = __ IfTrue(iff);
-    Node* eq = __ IfFalse(iff);
+  iff = kit.create_and_map_if(head, __ Bool(__ CmpI(q, __ intcon(0)), BoolTest::ne),
+                              PROB_FAIR, COUNT_UNKNOWN);
+  Node* ne = __ IfTrue(iff);
+  Node* eq = __ IfFalse(iff);
 
-    head->init_req(2, ne);
-    mem->init_req(2, st);
-    i_phi->init_req(2, q);
-    charPos->init_req(2, m1);
+  head->init_req(2, ne);
+  mem->init_req(2, st);
 
-    charPos = m1;
+  i_phi->init_req(2, q);
+  charPos->init_req(2, index);
+  charPos = index;
 
-    kit.set_control(eq);
-    kit.set_memory(st, char_adr_idx);
+  kit.set_control(eq);
+  kit.set_memory(st, byte_adr_idx);
 
-    C->record_for_igvn(head);
-    C->record_for_igvn(mem);
-    C->record_for_igvn(i_phi);
-    C->record_for_igvn(charPos);
-  }
+  C->record_for_igvn(head);
+  C->record_for_igvn(mem);
+  C->record_for_igvn(i_phi);
+  C->record_for_igvn(charPos);
 
-  {
-    // if (sign != 0) {
-    //     buf [--charPos] = sign;
-    // }
-    IfNode* iff = kit.create_and_map_if(kit.control(),
-                                        __ Bool(__ CmpI(sign, __ intcon(0)), BoolTest::ne),
-                                        PROB_FAIR, COUNT_UNKNOWN);
+  // if (sign != 0) {
+  //     buf [--charPos] = sign;
+  // }
+  iff = kit.create_and_map_if(kit.control(), __ Bool(__ CmpI(sign, __ intcon(0)), BoolTest::ne),
+                              PROB_FAIR, COUNT_UNKNOWN);
 
-    final_merge->init_req(2, __ IfFalse(iff));
-    final_mem->init_req(2, kit.memory(char_adr_idx));
+  final_merge->init_req(merge_index + 2, __ IfFalse(iff));
+  final_mem->init_req(merge_index + 2, kit.memory(byte_adr_idx));
 
-    kit.set_control(__ IfTrue(iff));
-    if (kit.stopped()) {
-      final_merge->init_req(1, C->top());
-      final_mem->init_req(1, C->top());
-    } else {
-      Node* m1 = __ SubI(charPos, __ intcon(1));
-      Node* st = __ store_to_memory(kit.control(), kit.array_element_address(char_array, m1, T_CHAR),
-                                    sign, T_CHAR, char_adr_idx, MemNode::unordered);
+  kit.set_control(__ IfTrue(iff));
+  if (kit.stopped()) {
+    final_merge->init_req(merge_index + 1, C->top());
+    final_mem->init_req(merge_index + 1, C->top());
+  } else {
+    Node* index = __ SubI(charPos, __ intcon((bt == T_BYTE) ? 1 : 2));
+    st = __ store_to_memory(kit.control(), kit.array_element_address(dst_array, index, T_BYTE),
+                            sign, bt, byte_adr_idx, MemNode::unordered);
 
-      final_merge->init_req(1, kit.control());
-      final_mem->init_req(1, st);
-    }
-
-    kit.set_control(final_merge);
-    kit.set_memory(final_mem, char_adr_idx);
-
-    C->record_for_igvn(final_merge);
-    C->record_for_igvn(final_mem);
+    final_merge->init_req(merge_index + 1, kit.control());
+    final_mem->init_req(merge_index + 1, st);
   }
 }
 
+// Copy the characters representing arg into dst_array starting at start
+Node* PhaseStringOpts::int_getChars(GraphKit& kit, Node* arg, Node* dst_array, Node* dst_coder, Node* start, Node* size) {
+  bool dcon = dst_coder->is_Con();
+  bool dbyte = dcon ? (dst_coder->get_int() == java_lang_String::CODER_LATIN1) : false;
+  Node* end = __ AddI(start, __ LShiftI(size, dst_coder));
 
-Node* PhaseStringOpts::copy_string(GraphKit& kit, Node* str, Node* char_array, Node* start) {
-  Node* string = str;
-  Node* offset = kit.load_String_offset(kit.control(), string);
-  Node* count  = kit.load_String_length(kit.control(), string);
-  Node* value  = kit.load_String_value (kit.control(), string);
+  // The final_merge node has 4 entries in case the encoding is known:
+  // (0) Control, (1) result w/ sign, (2) result w/o sign, (3) result for Integer.min_value
+  // or 6 entries in case the encoding is not known:
+  // (0) Control, (1) Latin1 w/ sign, (2) Latin1 w/o sign, (3) min_value, (4) UTF16 w/ sign, (5) UTF16 w/o sign
+  RegionNode* final_merge = new RegionNode(dcon ? 4 : 6);
+  kit.gvn().set_type(final_merge, Type::CONTROL);
 
-  // copy the contents
-  if (offset->is_Con() && count->is_Con() && value->is_Con() && count->get_int() < unroll_string_copy_length) {
+  Node* final_mem = PhiNode::make(final_merge, kit.memory(byte_adr_idx), Type::MEMORY, TypeAryPtr::BYTES);
+  kit.gvn().set_type(final_mem, Type::MEMORY);
+
+  // need to handle arg == Integer.MIN_VALUE specially because negating doesn't make it positive
+  IfNode* iff = kit.create_and_map_if(kit.control(), __ Bool(__ CmpI(arg, __ intcon(0x80000000)), BoolTest::ne),
+                                      PROB_FAIR, COUNT_UNKNOWN);
+
+  Node* old_mem = kit.memory(byte_adr_idx);
+
+  kit.set_control(__ IfFalse(iff));
+  if (kit.stopped()) {
+    // Statically not equal to MIN_VALUE so this path is dead
+    final_merge->init_req(3, kit.control());
+  } else {
+    copy_string(kit, __ makecon(TypeInstPtr::make(C->env()->the_min_jint_string())),
+                dst_array, dst_coder, start);
+    final_merge->init_req(3, kit.control());
+    final_mem->init_req(3, kit.memory(byte_adr_idx));
+  }
+
+  kit.set_control(__ IfTrue(iff));
+  kit.set_memory(old_mem, byte_adr_idx);
+
+  if (!dcon) {
+    // Check encoding of destination
+    iff = kit.create_and_map_if(kit.control(), __ Bool(__ CmpI(dst_coder, __ intcon(0)), BoolTest::eq),
+                                PROB_FAIR, COUNT_UNKNOWN);
+    old_mem = kit.memory(byte_adr_idx);
+  }
+  if (!dcon || dbyte) {
+    // Destination is Latin1,
+    if (!dcon) {
+      kit.set_control(__ IfTrue(iff));
+    }
+    getChars(kit, arg, dst_array, T_BYTE, end, final_merge, final_mem);
+  }
+  if (!dcon || !dbyte) {
+    // Destination is UTF16
+    int merge_index = 0;
+    if (!dcon) {
+      kit.set_control(__ IfFalse(iff));
+      kit.set_memory(old_mem, byte_adr_idx);
+      merge_index = 3; // Account for Latin1 case
+    }
+    getChars(kit, arg, dst_array, T_CHAR, end, final_merge, final_mem, merge_index);
+  }
+
+  // Final merge point for Latin1 and UTF16 case
+  kit.set_control(final_merge);
+  kit.set_memory(final_mem, byte_adr_idx);
+
+  C->record_for_igvn(final_merge);
+  C->record_for_igvn(final_mem);
+  return end;
+}
+
+// Copy 'count' bytes/chars from src_array to dst_array starting at index start
+void PhaseStringOpts::arraycopy(GraphKit& kit, IdealKit& ideal, Node* src_array, Node* dst_array, BasicType elembt, Node* start, Node* count) {
+  assert(elembt == T_BYTE || elembt == T_CHAR, "Invalid type for arraycopy");
+
+  if (elembt == T_CHAR) {
+    // Get number of chars
+    count = __ RShiftI(count, __ intcon(1));
+  }
+
+  Node* extra = NULL;
+#ifdef _LP64
+  count = __ ConvI2L(count);
+  extra = C->top();
+#endif
+
+  Node* src_ptr = __ array_element_address(src_array, __ intcon(0), T_BYTE);
+  Node* dst_ptr = __ array_element_address(dst_array, start, T_BYTE);
+  // Check if destination address is aligned to HeapWordSize
+  const TypeInt* tdst = __ gvn().type(start)->is_int();
+  bool aligned = tdst->is_con() && ((tdst->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0);
+  // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
+  const char* copyfunc_name = "arraycopy";
+  address     copyfunc_addr = StubRoutines::select_arraycopy_function(elembt, aligned, true, copyfunc_name, true);
+  ideal.make_leaf_call_no_fp(OptoRuntime::fast_arraycopy_Type(), copyfunc_addr, copyfunc_name,
+                             TypeAryPtr::BYTES, src_ptr, dst_ptr, count, extra);
+}
+
+#undef __
+#define __ ideal.
+
+// Copy contents of a Latin1 encoded string from src_array to dst_array
+void PhaseStringOpts::copy_latin1_string(GraphKit& kit, IdealKit& ideal, Node* src_array, IdealVariable& count,
+                                         Node* dst_array, Node* dst_coder, Node* start) {
+  bool dcon = dst_coder->is_Con();
+  bool dbyte = dcon ? (dst_coder->get_int() == java_lang_String::CODER_LATIN1) : false;
+
+  if (!dcon) {
+    __ if_then(dst_coder, BoolTest::eq, __ ConI(java_lang_String::CODER_LATIN1));
+  }
+  if (!dcon || dbyte) {
+    // Destination is Latin1. Simply emit a byte arraycopy.
+    arraycopy(kit, ideal, src_array, dst_array, T_BYTE, start, __ value(count));
+  }
+  if (!dcon) {
+    __ else_();
+  }
+  if (!dcon || !dbyte) {
+    // Destination is UTF16. Inflate src_array into dst_array.
+    kit.sync_kit(ideal);
+    if (Matcher::match_rule_supported(Op_StrInflatedCopy)) {
+      // Use fast intrinsic
+      Node* src = kit.array_element_address(src_array, kit.intcon(0), T_BYTE);
+      Node* dst = kit.array_element_address(dst_array, start, T_BYTE);
+      kit.inflate_string(src, dst, __ value(count));
+    } else {
+      // No intrinsic available, use slow method
+      kit.inflate_string_slow(src_array, dst_array, start, __ value(count));
+    }
+    ideal.sync_kit(&kit);
+    // Multiply count by two since we now need two bytes per char
+    __ set(count, __ LShiftI(__ value(count), __ ConI(1)));
+  }
+  if (!dcon) {
+    __ end_if();
+  }
+}
+
+// Read two bytes from index and index+1 and convert them to a char
+static jchar readChar(ciTypeArray* array, int index) {
+  int shift_high, shift_low;
+#ifdef VM_LITTLE_ENDIAN
+    shift_high = 0;
+    shift_low = 8;
+#else
+    shift_high = 8;
+    shift_low = 0;
+#endif
+
+  jchar b1 = ((jchar) array->byte_at(index)) & 0xff;
+  jchar b2 = ((jchar) array->byte_at(index+1)) & 0xff;
+  return (b1 << shift_high) | (b2 << shift_low);
+}
+
+// Copy contents of constant src_array to dst_array by emitting individual stores
+void PhaseStringOpts::copy_constant_string(GraphKit& kit, IdealKit& ideal, ciTypeArray* src_array, IdealVariable& count,
+                                           bool src_is_byte, Node* dst_array, Node* dst_coder, Node* start) {
+  bool dcon = dst_coder->is_Con();
+  bool dbyte = dcon ? (dst_coder->get_int() == java_lang_String::CODER_LATIN1) : false;
+  int length = src_array->length();
+
+  if (!dcon) {
+    __ if_then(dst_coder, BoolTest::eq, __ ConI(java_lang_String::CODER_LATIN1));
+  }
+  if (!dcon || dbyte) {
+    // Destination is Latin1. Copy each byte of src_array into dst_array.
+    Node* index = start;
+    for (int i = 0; i < length; i++) {
+      Node* adr = kit.array_element_address(dst_array, index, T_BYTE);
+      Node* val = __ ConI(src_array->byte_at(i));
+      __ store(__ ctrl(), adr, val, T_BYTE, byte_adr_idx, MemNode::unordered);
+      index = __ AddI(index, __ ConI(1));
+    }
+  }
+  if (!dcon) {
+    __ else_();
+  }
+  if (!dcon || !dbyte) {
+    // Destination is UTF16. Copy each char of src_array into dst_array.
+    Node* index = start;
+    for (int i = 0; i < length; i++) {
+      Node* adr = kit.array_element_address(dst_array, index, T_BYTE);
+      jchar val;
+      if (src_is_byte) {
+        val = src_array->byte_at(i) & 0xff;
+      } else {
+        val = readChar(src_array, i++);
+      }
+      __ store(__ ctrl(), adr, __ ConI(val), T_CHAR, byte_adr_idx, MemNode::unordered);
+      index = __ AddI(index, __ ConI(2));
+    }
+    if (src_is_byte) {
+      // Multiply count by two since we now need two bytes per char
+      __ set(count, __ ConI(2 * length));
+    }
+  }
+  if (!dcon) {
+    __ end_if();
+  }
+}
+
+// Compress copy contents of the byte/char String str into dst_array starting at index start.
+Node* PhaseStringOpts::copy_string(GraphKit& kit, Node* str, Node* dst_array, Node* dst_coder, Node* start) {
+  Node* src_array = kit.load_String_value(kit.control(), str);
+
+  IdealKit ideal(&kit, true, true);
+  IdealVariable count(ideal); __ declarations_done();
+
+  if (str->is_Con()) {
+    // Constant source string
+    const TypeOopPtr* t = kit.gvn().type(src_array)->isa_oopptr();
+    ciTypeArray* src_array_type = t->const_oop()->as_type_array();
+
+    // Check encoding of constant string
+    bool src_is_byte = (get_constant_coder(kit, str) == java_lang_String::CODER_LATIN1);
+
     // For small constant strings just emit individual stores.
     // A length of 6 seems like a good space/speed tradeof.
-    int c = count->get_int();
-    int o = offset->get_int();
-    const TypeOopPtr* t = kit.gvn().type(value)->isa_oopptr();
-    ciTypeArray* value_array = t->const_oop()->as_type_array();
-    for (int e = 0; e < c; e++) {
-      __ store_to_memory(kit.control(), kit.array_element_address(char_array, start, T_CHAR),
-                         __ intcon(value_array->char_at(o + e)), T_CHAR, char_adr_idx,
-                         MemNode::unordered);
-      start = __ AddI(start, __ intcon(1));
+    __ set(count, __ ConI(src_array_type->length()));
+    int src_len = src_array_type->length() / (src_is_byte ? 1 : 2);
+    if (src_len < unroll_string_copy_length) {
+      // Small constant string
+      copy_constant_string(kit, ideal, src_array_type, count, src_is_byte, dst_array, dst_coder, start);
+    } else if (src_is_byte) {
+      // Source is Latin1
+      copy_latin1_string(kit, ideal, src_array, count, dst_array, dst_coder, start);
+    } else {
+      // Source is UTF16 (destination too). Simply emit a char arraycopy.
+      arraycopy(kit, ideal, src_array, dst_array, T_CHAR, start, __ value(count));
     }
   } else {
-    Node* src_ptr = kit.array_element_address(value, offset, T_CHAR);
-    Node* dst_ptr = kit.array_element_address(char_array, start, T_CHAR);
-    Node* c = count;
-    Node* extra = NULL;
-#ifdef _LP64
-    c = __ ConvI2L(c);
-    extra = C->top();
-#endif
-    Node* call = kit.make_runtime_call(GraphKit::RC_LEAF|GraphKit::RC_NO_FP,
-                                       OptoRuntime::fast_arraycopy_Type(),
-                                       CAST_FROM_FN_PTR(address, StubRoutines::jshort_disjoint_arraycopy()),
-                                       "jshort_disjoint_arraycopy", TypeAryPtr::CHARS,
-                                       src_ptr, dst_ptr, c, extra);
-    start = __ AddI(start, count);
+    Node* size = kit.load_array_length(src_array);
+    __ set(count, size);
+    // Non-constant source string
+    if (CompactStrings) {
+      // Emit runtime check for coder
+      Node* coder = kit.load_String_coder(__ ctrl(), str);
+      __ if_then(coder, BoolTest::eq, __ ConI(java_lang_String::CODER_LATIN1)); {
+        // Source is Latin1
+        copy_latin1_string(kit, ideal, src_array, count, dst_array, dst_coder, start);
+      } __ else_();
+    }
+    // Source is UTF16 (destination too). Simply emit a char arraycopy.
+    arraycopy(kit, ideal, src_array, dst_array, T_CHAR, start, __ value(count));
+
+    if (CompactStrings) {
+      __ end_if();
+    }
   }
-  return start;
+
+  // Finally sync IdealKit and GraphKit.
+  kit.sync_kit(ideal);
+  return __ AddI(start, __ value(count));
 }
 
+// Compress copy the char into dst_array at index start.
+Node* PhaseStringOpts::copy_char(GraphKit& kit, Node* val, Node* dst_array, Node* dst_coder, Node* start) {
+  bool dcon = (dst_coder != NULL) && dst_coder->is_Con();
+  bool dbyte = dcon ? (dst_coder->get_int() == java_lang_String::CODER_LATIN1) : false;
+
+  IdealKit ideal(&kit, true, true);
+  IdealVariable end(ideal); __ declarations_done();
+  Node* adr = kit.array_element_address(dst_array, start, T_BYTE);
+  if (!dcon){
+    __ if_then(dst_coder, BoolTest::eq, __ ConI(java_lang_String::CODER_LATIN1));
+  }
+  if (!dcon || dbyte) {
+    // Destination is Latin1. Store a byte.
+    __ store(__ ctrl(), adr, val, T_BYTE, byte_adr_idx, MemNode::unordered);
+    __ set(end, __ AddI(start, __ ConI(1)));
+  }
+  if (!dcon) {
+    __ else_();
+  }
+  if (!dcon || !dbyte) {
+    // Destination is UTF16. Store a char.
+    __ store(__ ctrl(), adr, val, T_CHAR, byte_adr_idx, MemNode::unordered);
+    __ set(end, __ AddI(start, __ ConI(2)));
+  }
+  if (!dcon) {
+    __ end_if();
+  }
+  // Finally sync IdealKit and GraphKit.
+  kit.sync_kit(ideal);
+  return __ value(end);
+}
+
+#undef __
+#define __ kit.
+
+// Allocate a byte array of specified length.
+Node* PhaseStringOpts::allocate_byte_array(GraphKit& kit, IdealKit* ideal, Node* length) {
+  if (ideal != NULL) {
+    // Sync IdealKit and graphKit.
+    kit.sync_kit(*ideal);
+  }
+  Node* byte_array = NULL;
+  {
+    PreserveReexecuteState preexecs(&kit);
+    // The original jvms is for an allocation of either a String or
+    // StringBuffer so no stack adjustment is necessary for proper
+    // reexecution.  If we deoptimize in the slow path the bytecode
+    // will be reexecuted and the char[] allocation will be thrown away.
+    kit.jvms()->set_should_reexecute(true);
+    byte_array = kit.new_array(__ makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_BYTE))),
+                               length, 1);
+  }
+
+  // Mark the allocation so that zeroing is skipped since the code
+  // below will overwrite the entire array
+  AllocateArrayNode* byte_alloc = AllocateArrayNode::Ideal_array_allocation(byte_array, _gvn);
+  byte_alloc->maybe_set_complete(_gvn);
+
+  if (ideal != NULL) {
+    // Sync IdealKit and graphKit.
+    ideal->sync_kit(&kit);
+  }
+  return byte_array;
+}
+
+jbyte PhaseStringOpts::get_constant_coder(GraphKit& kit, Node* str) {
+  assert(str->is_Con(), "String must be constant");
+  const TypeOopPtr* str_type = kit.gvn().type(str)->isa_oopptr();
+  ciInstance* str_instance = str_type->const_oop()->as_instance();
+  jbyte coder = str_instance->field_value_by_offset(java_lang_String::coder_offset_in_bytes()).as_byte();
+  assert(CompactStrings || (coder == java_lang_String::CODER_UTF16), "Strings must be UTF16 encoded");
+  return coder;
+}
+
+int PhaseStringOpts::get_constant_length(GraphKit& kit, Node* str) {
+  assert(str->is_Con(), "String must be constant");
+  Node* src_array = kit.load_String_value(kit.control(), str);
+  const TypeOopPtr* t = kit.gvn().type(src_array)->isa_oopptr();
+  return t->const_oop()->as_type_array()->length();
+}
 
 void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   // Log a little info about the transformation
@@ -1445,7 +1704,6 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   jvms->set_map(map);
   map->ensure_stack(jvms, jvms->method()->max_stack());
 
-
   // disconnect all the old StringBuilder calls from the graph
   sc->eliminate_unneeded_control();
 
@@ -1473,7 +1731,17 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   // are need for the copying phase.
   Node* string_sizes = new Node(args);
 
+  Node* coder = __ intcon(0);
   Node* length = __ intcon(0);
+  // If at least one argument is UTF16 encoded, we can fix the encoding.
+  bool coder_fixed = false;
+
+  if (!CompactStrings) {
+    // Fix encoding of result string to UTF16
+    coder_fixed = true;
+    coder = __ intcon(java_lang_String::CODER_UTF16);
+  }
+
   for (int argi = 0; argi < sc->num_arguments(); argi++) {
     Node* arg = sc->argument(argi);
     switch (sc->mode(argi)) {
@@ -1491,7 +1759,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
         const Type* type = kit.gvn().type(arg);
         assert(type != TypePtr::NULL_PTR, "missing check");
         if (!type->higher_equal(TypeInstPtr::NOTNULL)) {
-          // Null check with uncommont trap since
+          // Null check with uncommon trap since
           // StringBuilder(null) throws exception.
           // Use special uncommon trap instead of
           // calling normal do_null_check().
@@ -1509,11 +1777,13 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
       case StringConcat::StringMode: {
         const Type* type = kit.gvn().type(arg);
         Node* count = NULL;
+        Node* arg_coder = NULL;
         if (type == TypePtr::NULL_PTR) {
           // replace the argument with the null checked version
           arg = null_string;
           sc->set_argument(argi, arg);
           count = kit.load_String_length(kit.control(), arg);
+          arg_coder = kit.load_String_coder(kit.control(), arg);
         } else if (!type->higher_equal(TypeInstPtr::NOTNULL)) {
           // s = s != null ? s : "null";
           // length = length + (s.count - s.offset);
@@ -1537,11 +1807,32 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
           arg = phi;
           sc->set_argument(argi, arg);
           count = kit.load_String_length(kit.control(), arg);
+          arg_coder = kit.load_String_coder(kit.control(), arg);
         } else {
           // A corresponding nullcheck will be connected during IGVN MemNode::Ideal_common_DU_postCCP
           // kit.control might be a different test, that can be hoisted above the actual nullcheck
           // in case, that the control input is not null, Ideal_common_DU_postCCP will not look for a nullcheck.
           count = kit.load_String_length(NULL, arg);
+          arg_coder = kit.load_String_coder(NULL, arg);
+        }
+        if (arg->is_Con()) {
+          // Constant string. Get constant coder and length.
+          jbyte const_coder = get_constant_coder(kit, arg);
+          int const_length = get_constant_length(kit, arg);
+          if (const_coder == java_lang_String::CODER_LATIN1) {
+            // Can be latin1 encoded
+            arg_coder = __ intcon(const_coder);
+            count = __ intcon(const_length);
+          } else {
+            // Found UTF16 encoded string. Fix result array encoding to UTF16.
+            coder_fixed = true;
+            coder = __ intcon(const_coder);
+            count = __ intcon(const_length / 2);
+          }
+        }
+
+        if (!coder_fixed) {
+          coder = __ OrI(coder, arg_coder);
         }
         length = __ AddI(length, count);
         string_sizes->init_req(argi, NULL);
@@ -1549,6 +1840,34 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
       }
       case StringConcat::CharMode: {
         // one character only
+        const TypeInt* t = kit.gvn().type(arg)->is_int();
+        if (!coder_fixed && t->is_con()) {
+          // Constant char
+          if (t->get_con() <= 255) {
+            // Can be latin1 encoded
+            coder = __ OrI(coder, __ intcon(java_lang_String::CODER_LATIN1));
+          } else {
+            // Must be UTF16 encoded. Fix result array encoding to UTF16.
+            coder_fixed = true;
+            coder = __ intcon(java_lang_String::CODER_UTF16);
+          }
+        } else if (!coder_fixed) {
+          // Not constant
+#undef __
+#define __ ideal.
+          IdealKit ideal(&kit, true, true);
+          IdealVariable char_coder(ideal); __ declarations_done();
+          // Check if character can be latin1 encoded
+          __ if_then(arg, BoolTest::le, __ ConI(0xFF));
+            __ set(char_coder, __ ConI(java_lang_String::CODER_LATIN1));
+          __ else_();
+            __ set(char_coder, __ ConI(java_lang_String::CODER_UTF16));
+          __ end_if();
+          kit.sync_kit(ideal);
+          coder = __ OrI(coder, __ value(char_coder));
+#undef __
+#define __ kit.
+        }
         length = __ AddI(length, __ intcon(1));
         break;
       }
@@ -1576,54 +1895,37 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
 
   Node* result;
   if (!kit.stopped()) {
-    Node* char_array = NULL;
+    assert(CompactStrings || (coder->is_Con() && coder->get_int() == java_lang_String::CODER_UTF16),
+           "Result string must be UTF16 encoded if CompactStrings is disabled");
+
+    Node* dst_array = NULL;
     if (sc->num_arguments() == 1 &&
-          (sc->mode(0) == StringConcat::StringMode ||
-           sc->mode(0) == StringConcat::StringNullCheckMode)) {
+        (sc->mode(0) == StringConcat::StringMode ||
+         sc->mode(0) == StringConcat::StringNullCheckMode)) {
       // Handle the case when there is only a single String argument.
       // In this case, we can just pull the value from the String itself.
-      char_array = kit.load_String_value(kit.control(), sc->argument(0));
+      dst_array = kit.load_String_value(kit.control(), sc->argument(0));
     } else {
-      // length now contains the number of characters needed for the
-      // char[] so create a new AllocateArray for the char[]
-      {
-        PreserveReexecuteState preexecs(&kit);
-        // The original jvms is for an allocation of either a String or
-        // StringBuffer so no stack adjustment is necessary for proper
-        // reexecution.  If we deoptimize in the slow path the bytecode
-        // will be reexecuted and the char[] allocation will be thrown away.
-        kit.jvms()->set_should_reexecute(true);
-        char_array = kit.new_array(__ makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_CHAR))),
-                                   length, 1);
-      }
+      // Allocate destination byte array according to coder
+      dst_array = allocate_byte_array(kit, NULL, __ LShiftI(length, coder));
 
-      // Mark the allocation so that zeroing is skipped since the code
-      // below will overwrite the entire array
-      AllocateArrayNode* char_alloc = AllocateArrayNode::Ideal_array_allocation(char_array, _gvn);
-      char_alloc->maybe_set_complete(_gvn);
-
-      // Now copy the string representations into the final char[]
+      // Now copy the string representations into the final byte[]
       Node* start = __ intcon(0);
       for (int argi = 0; argi < sc->num_arguments(); argi++) {
         Node* arg = sc->argument(argi);
         switch (sc->mode(argi)) {
           case StringConcat::IntMode: {
-            Node* end = __ AddI(start, string_sizes->in(argi));
-            // getChars words backwards so pass the ending point as well as the start
-            int_getChars(kit, arg, char_array, start, end);
-            start = end;
+            start = int_getChars(kit, arg, dst_array, coder, start, string_sizes->in(argi));
             break;
           }
           case StringConcat::StringNullCheckMode:
           case StringConcat::StringMode: {
-            start = copy_string(kit, arg, char_array, start);
+            start = copy_string(kit, arg, dst_array, coder, start);
             break;
           }
           case StringConcat::CharMode: {
-            __ store_to_memory(kit.control(), kit.array_element_address(char_array, start, T_CHAR),
-                               arg, T_CHAR, char_adr_idx, MemNode::unordered);
-            start = __ AddI(start, __ intcon(1));
-            break;
+            start = copy_char(kit, arg, dst_array, coder, start);
+          break;
           }
           default:
             ShouldNotReachHere();
@@ -1642,12 +1944,9 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
       result = kit.new_instance(__ makecon(TypeKlassPtr::make(C->env()->String_klass())));
     }
 
-    // Intialize the string
-    if (java_lang_String::has_offset_field()) {
-      kit.store_String_offset(kit.control(), result, __ intcon(0));
-      kit.store_String_length(kit.control(), result, length);
-    }
-    kit.store_String_value(kit.control(), result, char_array);
+    // Initialize the string
+    kit.store_String_value(kit.control(), result, dst_array);
+    kit.store_String_coder(kit.control(), result, coder);
   } else {
     result = C->top();
   }

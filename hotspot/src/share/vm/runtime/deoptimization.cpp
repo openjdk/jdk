@@ -1461,14 +1461,14 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
         oop speculation_log = nm->speculation_log();
         if (speculation_log != NULL) {
           if (TraceDeoptimization || TraceUncollectedSpeculations) {
-            if (SpeculationLog::lastFailed(speculation_log) != NULL) {
+            if (HotSpotSpeculationLog::lastFailed(speculation_log) != NULL) {
               tty->print_cr("A speculation that was not collected by the compiler is being overwritten");
             }
           }
           if (TraceDeoptimization) {
             tty->print_cr("Saving speculation to speculation log");
           }
-          SpeculationLog::set_lastFailed(speculation_log, speculation);
+          HotSpotSpeculationLog::set_lastFailed(speculation_log, speculation);
         } else {
           if (TraceDeoptimization) {
             tty->print_cr("Speculation present but no speculation log");

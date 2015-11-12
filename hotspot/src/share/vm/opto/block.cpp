@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "libadt/vectset.hpp"
 #include "memory/allocation.inline.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "opto/block.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/chaitin.hpp"
@@ -365,7 +366,7 @@ PhaseCFG::PhaseCFG(Arena* arena, RootNode* root, Matcher& matcher)
 , _node_to_block_mapping(arena)
 , _node_latency(NULL)
 #ifndef PRODUCT
-, _trace_opto_pipelining(TraceOptoPipelining || C->method_has_option("TraceOptoPipelining"))
+, _trace_opto_pipelining(C->directive()->TraceOptoPipeliningOption)
 #endif
 #ifdef ASSERT
 , _raw_oops(arena)

@@ -685,16 +685,15 @@ ZIP_DEBUGINFO_FILES
 ENABLE_DEBUG_SYMBOLS
 CFLAGS_WARNINGS_ARE_ERRORS
 DISABLE_WARNING_PREFIX
+HOTSPOT_SET_WARNINGS_AS_ERRORS
 WARNINGS_AS_ERRORS
 COMPILER_SUPPORTS_TARGET_BITS_FLAG
 ZERO_ARCHFLAG
-LDFLAGS_TESTEXE_SUFFIX
-LDFLAGS_TESTLIB_SUFFIX
 LDFLAGS_TESTEXE
 LDFLAGS_TESTLIB
 LDFLAGS_CXX_JDK
-LDFLAGS_JDKEXE_SUFFIX
-LDFLAGS_JDKLIB_SUFFIX
+JDKEXE_LIBS
+JDKLIB_LIBS
 LDFLAGS_JDKEXE
 LDFLAGS_JDKLIB
 CXXFLAGS_TESTEXE
@@ -743,11 +742,11 @@ HOTSPOT_LD
 HOTSPOT_CXX
 HOTSPOT_RC
 HOTSPOT_MT
-BUILD_SYSROOT_LDFLAGS
-BUILD_SYSROOT_CFLAGS
 BUILD_LD
 BUILD_CXX
 BUILD_CC
+BUILD_SYSROOT_LDFLAGS
+BUILD_SYSROOT_CFLAGS
 ac_ct_OBJDUMP
 OBJDUMP
 ac_ct_OBJCOPY
@@ -807,8 +806,6 @@ TOOLCHAIN_TYPE
 BUILD_HOTSPOT
 HOTSPOT_DIST
 BUILD_OUTPUT
-OVERRIDE_SRC_ROOT
-ADD_SRC_ROOT
 JDK_TOPDIR
 NASHORN_TOPDIR
 HOTSPOT_TOPDIR
@@ -873,11 +870,11 @@ UNZIP
 FIND_DELETE
 OUTPUT_SYNC
 OUTPUT_SYNC_SUPPORTED
-MAKE
 CHECK_TOOLSDIR_MAKE
 CHECK_TOOLSDIR_GMAKE
 CHECK_MAKE
 CHECK_GMAKE
+MAKE
 PKGHANDLER
 CONFIGURESUPPORT_OUTPUTDIR
 OUTPUT_ROOT
@@ -1082,6 +1079,7 @@ with_extra_cflags
 with_extra_cxxflags
 with_extra_ldflags
 with_toolchain_version
+with_build_devkit
 with_jtreg
 enable_warnings_as_errors
 enable_debug_symbols
@@ -1173,6 +1171,7 @@ READLINK
 DF
 CPIO
 NICE
+MAKE
 UNZIP
 ZIP
 LDD
@@ -1212,7 +1211,6 @@ OBJCOPY
 OBJDUMP
 BUILD_CC
 BUILD_CXX
-BUILD_LD
 JTREGEXE
 XMKMF
 FREETYPE_CFLAGS
@@ -1913,26 +1911,29 @@ Optional Packages:
   --with-build-number     Set build number value for build [b00]
   --with-copyright-year   Set copyright year value for build [current year]
   --with-boot-jdk         path to Boot JDK (used to bootstrap build) [probed]
-  --with-add-source-root  for each and every source directory, look in this
-                          additional source root for the same directory; if it
-                          exists and have files in it, include it in the build
+  --with-add-source-root  Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --with-override-source-root
-                          for each and every source directory, look in this
-                          override source root for the same directory; if it
-                          exists, use that directory instead and ignore the
-                          directory in the original source root
+                          Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --with-adds-and-overrides
-                          use the subdirs 'adds' and 'overrides' in the
-                          specified directory as add-source-root and
-                          override-source-root
+                          Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --with-override-langtools
-                          use this langtools dir for the build
-  --with-override-corba   use this corba dir for the build
-  --with-override-jaxp    use this jaxp dir for the build
-  --with-override-jaxws   use this jaxws dir for the build
-  --with-override-hotspot use this hotspot dir for the build
-  --with-override-nashorn use this nashorn dir for the build
-  --with-override-jdk     use this jdk dir for the build
+                          Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-override-corba   Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-override-jaxp    Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-override-jaxws   Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-override-hotspot Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-override-nashorn Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --with-override-jdk     Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --with-import-hotspot   import hotspot binaries from this jdk image or
                           hotspot build dist dir instead of building from
                           source
@@ -1945,6 +1946,7 @@ Optional Packages:
                           the version of the toolchain to look for, use
                           '--help' to show possible values [platform
                           dependent]
+  --with-build-devkit     Devkit to use for the build platform toolchain
   --with-jtreg            Regression Test Harness [probed]
   --with-stdc++lib=<static>,<dynamic>,<default>
                           force linking of the C++ runtime on Linux to either
@@ -2055,6 +2057,7 @@ Some influential environment variables:
   DF          Override default value for DF
   CPIO        Override default value for CPIO
   NICE        Override default value for NICE
+  MAKE        Override default value for MAKE
   UNZIP       Override default value for UNZIP
   ZIP         Override default value for ZIP
   LDD         Override default value for LDD
@@ -2095,7 +2098,6 @@ Some influential environment variables:
   OBJDUMP     Override default value for OBJDUMP
   BUILD_CC    Override default value for BUILD_CC
   BUILD_CXX   Override default value for BUILD_CXX
-  BUILD_LD    Override default value for BUILD_LD
   JTREGEXE    Override default value for JTREGEXE
   XMKMF       Path to xmkmf, Makefile generator for X Window System
   FREETYPE_CFLAGS
@@ -3435,6 +3437,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # use that value, otherwise search for the tool using the supplied code snippet.
 # $1: variable to set
 # $2: code snippet to call to look for the tool
+# $3: code snippet to call if variable was used to find tool
 
 
 # Call BASIC_SETUP_TOOL with AC_PATH_PROGS to locate the tool
@@ -3744,6 +3747,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # Setup the sysroot flags and add them to global CFLAGS and LDFLAGS so
 # that configure can use them while detecting compilers.
 # TOOLCHAIN_TYPE is available here.
+# Param 1 - Optional prefix to all variables. (e.g BUILD_)
 
 
 
@@ -4352,7 +4356,7 @@ pkgadd_help() {
 
 
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -4375,7 +4379,6 @@ pkgadd_help() {
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-
 
 
 
@@ -4595,7 +4598,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1445964676
+DATE_WHEN_GENERATED=1446762265
 
 ###############################################################################
 #
@@ -4838,6 +4841,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -5041,6 +5045,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -5244,6 +5249,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -5447,6 +5453,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -5650,6 +5657,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -5853,6 +5861,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -6056,6 +6065,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -6259,6 +6269,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -6462,6 +6473,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -6665,6 +6677,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -6868,6 +6881,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -7071,6 +7085,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -7274,6 +7289,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -7477,6 +7493,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -7680,6 +7697,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -7883,6 +7901,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -8086,6 +8105,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -8289,6 +8309,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -8492,6 +8513,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -8695,6 +8717,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -8898,6 +8921,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -9101,6 +9125,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -9304,6 +9329,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -9507,6 +9533,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -9710,6 +9737,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -9913,6 +9941,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -10116,6 +10145,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -10319,6 +10349,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -10522,6 +10553,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -10725,6 +10757,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -10928,6 +10961,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -11131,6 +11165,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -11334,6 +11369,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -11537,6 +11573,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -11740,6 +11777,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -11943,6 +11981,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -12146,6 +12185,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -12344,6 +12384,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -12581,6 +12622,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -12826,6 +12868,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -13071,6 +13114,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -13320,6 +13364,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -13530,6 +13575,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -13726,6 +13772,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -13922,6 +13969,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -14118,6 +14166,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -14314,6 +14363,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -16477,353 +16527,13 @@ done
 # Setup tools that requires more complex handling, or that is not needed by the configure script.
 
 
-  # We need to find a recent version of GNU make. Especially on Solaris, this can be tricky.
-  if test "x$MAKE" != x; then
-    # User has supplied a make, test it.
-    if test ! -f "$MAKE"; then
-      as_fn_error $? "The specified make (by MAKE=$MAKE) is not found." "$LINENO" 5
-    fi
 
-  MAKE_CANDIDATE=""$MAKE""
-  DESCRIPTION="user supplied MAKE=$MAKE"
-
-  # On Cygwin, we require a newer version of make than on other platforms
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    MAKE_VERSION_EXPR="-e 4\."
-    MAKE_REQUIRED_VERSION="4.0"
-   else
-    MAKE_VERSION_EXPR="-e 3\.8[12] -e 4\."
-    MAKE_REQUIRED_VERSION="3.81"
-  fi
-
-  if test "x$MAKE_CANDIDATE" != x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&5
-$as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&6;}
-    MAKE_VERSION_STRING=`$MAKE_CANDIDATE --version | $HEAD -n 1`
-    IS_GNU_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP 'GNU Make'`
-    if test "x$IS_GNU_MAKE" = x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
-$as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
-    else
-      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP $MAKE_VERSION_EXPR`
-      if test "x$IS_MODERN_MAKE" = x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
-$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
-      else
-        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
-          if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-            MAKE_EXPECTED_ENV='cygwin'
-          elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-            MAKE_EXPECTED_ENV='msys'
-          else
-            as_fn_error $? "Unknown Windows environment" "$LINENO" 5
-          fi
-          MAKE_BUILT_FOR=`$MAKE_CANDIDATE --version | $GREP -i 'built for'`
-          IS_MAKE_CORRECT_ENV=`$ECHO $MAKE_BUILT_FOR | $GREP $MAKE_EXPECTED_ENV`
-        else
-          # Not relevant for non-Windows
-          IS_MAKE_CORRECT_ENV=true
-        fi
-        if test "x$IS_MAKE_CORRECT_ENV" = x; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE, but it is not for $MAKE_EXPECTED_ENV (it says: $MAKE_BUILT_FOR). Ignoring." >&5
-$as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE, but it is not for $MAKE_EXPECTED_ENV (it says: $MAKE_BUILT_FOR). Ignoring." >&6;}
-        else
-          FOUND_MAKE=$MAKE_CANDIDATE
-
-  # Only process if variable expands to non-empty
-
-  if test "x$FOUND_MAKE" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # First separate the path from the arguments. This will split at the first
-  # space.
-  complete="$FOUND_MAKE"
-  path="${complete%% *}"
-  tmp="$complete EOL"
-  arguments="${tmp#* }"
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  new_path=`$CYGPATH -u "$path"`
-
-  # Now try to locate executable using which
-  new_path=`$WHICH "$new_path" 2> /dev/null`
-  # bat and cmd files are not always considered executable in cygwin causing which
-  # to not find them
-  if test "x$new_path" = x \
-      && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
-      && test "x`$LS \"$path\" 2>/dev/null`" != x; then
-    new_path=`$CYGPATH -u "$path"`
-  fi
-  if test "x$new_path" = x; then
-    # Oops. Which didn't find the executable.
-    # The splitting of arguments from the executable at a space might have been incorrect,
-    # since paths with space are more likely in Windows. Give it another try with the whole
-    # argument.
-    path="$complete"
-    arguments="EOL"
-    new_path=`$CYGPATH -u "$path"`
-    new_path=`$WHICH "$new_path" 2> /dev/null`
-    # bat and cmd files are not always considered executable in cygwin causing which
-    # to not find them
-    if test "x$new_path" = x \
-        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
-        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
-      new_path=`$CYGPATH -u "$path"`
-    fi
-    if test "x$new_path" = x; then
-      # It's still not found. Now this is an unrecoverable error.
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
-$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
-      fi
-      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
-    fi
-  fi
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file presence.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    # Short path failed, file does not exist as specified.
-    # Try adding .exe or .cmd
-    if test -f "${new_path}.exe"; then
-      input_to_shortpath="${new_path}.exe"
-    elif test -f "${new_path}.cmd"; then
-      input_to_shortpath="${new_path}.cmd"
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$new_path\", is invalid." >&5
-$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$new_path\", is invalid." >&6;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&5
-$as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&6;}
-      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
-    fi
-  else
-    input_to_shortpath="$new_path"
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-  new_path="$input_to_shortpath"
-
-  input_path="$input_to_shortpath"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $input_to_shortpath | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-  # remove trailing .exe if any
-  new_path="${new_path/%.exe/}"
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  # First separate the path from the arguments. This will split at the first
-  # space.
-  complete="$FOUND_MAKE"
-  path="${complete%% *}"
-  tmp="$complete EOL"
-  arguments="${tmp#* }"
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  new_path="$path"
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
+  # Publish this variable in the help.
 
 
-  # Now try to locate executable using which
-  new_path=`$WHICH "$new_path" 2> /dev/null`
+  if [ -z "${MAKE+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
 
-  if test "x$new_path" = x; then
-    # Oops. Which didn't find the executable.
-    # The splitting of arguments from the executable at a space might have been incorrect,
-    # since paths with space are more likely in Windows. Give it another try with the whole
-    # argument.
-    path="$complete"
-    arguments="EOL"
-    new_path="$path"
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-
-    new_path=`$WHICH "$new_path" 2> /dev/null`
-    # bat and cmd files are not always considered executable in MSYS causing which
-    # to not find them
-    if test "x$new_path" = x \
-        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
-        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
-      new_path="$path"
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-    fi
-
-    if test "x$new_path" = x; then
-      # It's still not found. Now this is an unrecoverable error.
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
-$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
-      fi
-      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
-    fi
-  fi
-
-  # Now new_path has a complete unix path to the binary
-  if test "x`$ECHO $new_path | $GREP ^/bin/`" != x; then
-    # Keep paths in /bin as-is, but remove trailing .exe if any
-    new_path="${new_path/%.exe/}"
-    # Do not save /bin paths to all_fixpath_prefixes!
-  else
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $new_path`
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-    # Output is in $new_path
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-    # remove trailing .exe if any
-    new_path="${new_path/%.exe/}"
-
-    # Save the first 10 bytes of this path to the storage, so fixpath can work.
-    all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-  fi
-
-    else
-      # We're on a unix platform. Hooray! :)
-      # First separate the path from the arguments. This will split at the first
-      # space.
-      complete="$FOUND_MAKE"
-      path="${complete%% *}"
-      tmp="$complete EOL"
-      arguments="${tmp#* }"
-
-      # Cannot rely on the command "which" here since it doesn't always work.
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test -z "$is_absolute_path"; then
-        # Path to executable is not absolute. Find it.
-        IFS_save="$IFS"
-        IFS=:
-        for p in $PATH; do
-          if test -f "$p/$path" && test -x "$p/$path"; then
-            new_path="$p/$path"
-            break
-          fi
-        done
-        IFS="$IFS_save"
-      else
-        # This is an absolute path, we can use it without further modifications.
-        new_path="$path"
-      fi
-
-      if test "x$new_path" = x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
-        has_space=`$ECHO "$complete" | $GREP " "`
-        if test "x$has_space" != x; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
-        fi
-        as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
-      fi
-    fi
-
-    # Now join together the path and the arguments once again
-    if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-    else
-      new_complete="$new_path"
-    fi
-
-    if test "x$complete" != "x$new_complete"; then
-      FOUND_MAKE="$new_complete"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
-$as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
-    fi
-  fi
-
-        fi
-      fi
-    fi
-  fi
-
-    if test "x$FOUND_MAKE" = x; then
-      as_fn_error $? "The specified make (by MAKE=$MAKE) is not GNU make $MAKE_REQUIRED_VERSION or newer." "$LINENO" 5
-    fi
-  else
     # Try our hardest to locate a correct version of GNU make
     for ac_prog in gmake
 do
@@ -18371,7 +18081,1997 @@ $as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
     if test "x$FOUND_MAKE" = x; then
       as_fn_error $? "Cannot find GNU make $MAKE_REQUIRED_VERSION or newer! Please put it in the path, or add e.g. MAKE=/opt/gmake3.81/make as argument to configure." "$LINENO" 5
     fi
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !MAKE! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!MAKE!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xMAKE" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of MAKE from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of MAKE from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+
+    # Try our hardest to locate a correct version of GNU make
+    for ac_prog in gmake
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CHECK_GMAKE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CHECK_GMAKE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CHECK_GMAKE="$CHECK_GMAKE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CHECK_GMAKE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
   fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CHECK_GMAKE=$ac_cv_path_CHECK_GMAKE
+if test -n "$CHECK_GMAKE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CHECK_GMAKE" >&5
+$as_echo "$CHECK_GMAKE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CHECK_GMAKE" && break
+done
+
+
+  MAKE_CANDIDATE=""$CHECK_GMAKE""
+  DESCRIPTION="gmake in PATH"
+
+  # On Cygwin, we require a newer version of make than on other platforms
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    MAKE_VERSION_EXPR="-e 4\."
+    MAKE_REQUIRED_VERSION="4.0"
+   else
+    MAKE_VERSION_EXPR="-e 3\.8[12] -e 4\."
+    MAKE_REQUIRED_VERSION="3.81"
+  fi
+
+  if test "x$MAKE_CANDIDATE" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&5
+$as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&6;}
+    MAKE_VERSION_STRING=`$MAKE_CANDIDATE --version | $HEAD -n 1`
+    IS_GNU_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP 'GNU Make'`
+    if test "x$IS_GNU_MAKE" = x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
+$as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
+    else
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP $MAKE_VERSION_EXPR`
+      if test "x$IS_MODERN_MAKE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
+$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
+      else
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+          if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+            MAKE_EXPECTED_ENV='cygwin'
+          elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+            MAKE_EXPECTED_ENV='msys'
+          else
+            as_fn_error $? "Unknown Windows environment" "$LINENO" 5
+          fi
+          MAKE_BUILT_FOR=`$MAKE_CANDIDATE --version | $GREP -i 'built for'`
+          IS_MAKE_CORRECT_ENV=`$ECHO $MAKE_BUILT_FOR | $GREP $MAKE_EXPECTED_ENV`
+        else
+          # Not relevant for non-Windows
+          IS_MAKE_CORRECT_ENV=true
+        fi
+        if test "x$IS_MAKE_CORRECT_ENV" = x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE, but it is not for $MAKE_EXPECTED_ENV (it says: $MAKE_BUILT_FOR). Ignoring." >&5
+$as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE, but it is not for $MAKE_EXPECTED_ENV (it says: $MAKE_BUILT_FOR). Ignoring." >&6;}
+        else
+          FOUND_MAKE=$MAKE_CANDIDATE
+
+  # Only process if variable expands to non-empty
+
+  if test "x$FOUND_MAKE" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # First separate the path from the arguments. This will split at the first
+  # space.
+  complete="$FOUND_MAKE"
+  path="${complete%% *}"
+  tmp="$complete EOL"
+  arguments="${tmp#* }"
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  new_path=`$CYGPATH -u "$path"`
+
+  # Now try to locate executable using which
+  new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+      && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+      && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
+  if test "x$new_path" = x; then
+    # Oops. Which didn't find the executable.
+    # The splitting of arguments from the executable at a space might have been incorrect,
+    # since paths with space are more likely in Windows. Give it another try with the whole
+    # argument.
+    path="$complete"
+    arguments="EOL"
+    new_path=`$CYGPATH -u "$path"`
+    new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
+    if test "x$new_path" = x; then
+      # It's still not found. Now this is an unrecoverable error.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+      has_space=`$ECHO "$complete" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
+$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
+      fi
+      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+    fi
+  fi
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    # Short path failed, file does not exist as specified.
+    # Try adding .exe or .cmd
+    if test -f "${new_path}.exe"; then
+      input_to_shortpath="${new_path}.exe"
+    elif test -f "${new_path}.cmd"; then
+      input_to_shortpath="${new_path}.cmd"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$new_path\", is invalid." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$new_path\", is invalid." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&5
+$as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&6;}
+      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+    fi
+  else
+    input_to_shortpath="$new_path"
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+  new_path="$input_to_shortpath"
+
+  input_path="$input_to_shortpath"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $input_to_shortpath | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+  # remove trailing .exe if any
+  new_path="${new_path/%.exe/}"
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  # First separate the path from the arguments. This will split at the first
+  # space.
+  complete="$FOUND_MAKE"
+  path="${complete%% *}"
+  tmp="$complete EOL"
+  arguments="${tmp#* }"
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+
+  # Now try to locate executable using which
+  new_path=`$WHICH "$new_path" 2> /dev/null`
+
+  if test "x$new_path" = x; then
+    # Oops. Which didn't find the executable.
+    # The splitting of arguments from the executable at a space might have been incorrect,
+    # since paths with space are more likely in Windows. Give it another try with the whole
+    # argument.
+    path="$complete"
+    arguments="EOL"
+    new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+
+    new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in MSYS causing which
+    # to not find them
+    if test "x$new_path" = x \
+        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+    fi
+
+    if test "x$new_path" = x; then
+      # It's still not found. Now this is an unrecoverable error.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+      has_space=`$ECHO "$complete" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
+$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
+      fi
+      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+    fi
+  fi
+
+  # Now new_path has a complete unix path to the binary
+  if test "x`$ECHO $new_path | $GREP ^/bin/`" != x; then
+    # Keep paths in /bin as-is, but remove trailing .exe if any
+    new_path="${new_path/%.exe/}"
+    # Do not save /bin paths to all_fixpath_prefixes!
+  else
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $new_path`
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+    # Output is in $new_path
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+    # remove trailing .exe if any
+    new_path="${new_path/%.exe/}"
+
+    # Save the first 10 bytes of this path to the storage, so fixpath can work.
+    all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+  fi
+
+    else
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$FOUND_MAKE"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
+
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
+      fi
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+      fi
+    fi
+
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
+
+    if test "x$complete" != "x$new_complete"; then
+      FOUND_MAKE="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
+$as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
+    fi
+  fi
+
+        fi
+      fi
+    fi
+  fi
+
+
+    if test "x$FOUND_MAKE" = x; then
+      for ac_prog in make
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CHECK_MAKE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CHECK_MAKE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CHECK_MAKE="$CHECK_MAKE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CHECK_MAKE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CHECK_MAKE=$ac_cv_path_CHECK_MAKE
+if test -n "$CHECK_MAKE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CHECK_MAKE" >&5
+$as_echo "$CHECK_MAKE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CHECK_MAKE" && break
+done
+
+
+  MAKE_CANDIDATE=""$CHECK_MAKE""
+  DESCRIPTION="make in PATH"
+
+  # On Cygwin, we require a newer version of make than on other platforms
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    MAKE_VERSION_EXPR="-e 4\."
+    MAKE_REQUIRED_VERSION="4.0"
+   else
+    MAKE_VERSION_EXPR="-e 3\.8[12] -e 4\."
+    MAKE_REQUIRED_VERSION="3.81"
+  fi
+
+  if test "x$MAKE_CANDIDATE" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&5
+$as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&6;}
+    MAKE_VERSION_STRING=`$MAKE_CANDIDATE --version | $HEAD -n 1`
+    IS_GNU_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP 'GNU Make'`
+    if test "x$IS_GNU_MAKE" = x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
+$as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
+    else
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP $MAKE_VERSION_EXPR`
+      if test "x$IS_MODERN_MAKE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
+$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
+      else
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+          if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+            MAKE_EXPECTED_ENV='cygwin'
+          elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+            MAKE_EXPECTED_ENV='msys'
+          else
+            as_fn_error $? "Unknown Windows environment" "$LINENO" 5
+          fi
+          MAKE_BUILT_FOR=`$MAKE_CANDIDATE --version | $GREP -i 'built for'`
+          IS_MAKE_CORRECT_ENV=`$ECHO $MAKE_BUILT_FOR | $GREP $MAKE_EXPECTED_ENV`
+        else
+          # Not relevant for non-Windows
+          IS_MAKE_CORRECT_ENV=true
+        fi
+        if test "x$IS_MAKE_CORRECT_ENV" = x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE, but it is not for $MAKE_EXPECTED_ENV (it says: $MAKE_BUILT_FOR). Ignoring." >&5
+$as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE, but it is not for $MAKE_EXPECTED_ENV (it says: $MAKE_BUILT_FOR). Ignoring." >&6;}
+        else
+          FOUND_MAKE=$MAKE_CANDIDATE
+
+  # Only process if variable expands to non-empty
+
+  if test "x$FOUND_MAKE" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # First separate the path from the arguments. This will split at the first
+  # space.
+  complete="$FOUND_MAKE"
+  path="${complete%% *}"
+  tmp="$complete EOL"
+  arguments="${tmp#* }"
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  new_path=`$CYGPATH -u "$path"`
+
+  # Now try to locate executable using which
+  new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+      && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+      && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
+  if test "x$new_path" = x; then
+    # Oops. Which didn't find the executable.
+    # The splitting of arguments from the executable at a space might have been incorrect,
+    # since paths with space are more likely in Windows. Give it another try with the whole
+    # argument.
+    path="$complete"
+    arguments="EOL"
+    new_path=`$CYGPATH -u "$path"`
+    new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
+    if test "x$new_path" = x; then
+      # It's still not found. Now this is an unrecoverable error.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+      has_space=`$ECHO "$complete" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
+$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
+      fi
+      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+    fi
+  fi
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    # Short path failed, file does not exist as specified.
+    # Try adding .exe or .cmd
+    if test -f "${new_path}.exe"; then
+      input_to_shortpath="${new_path}.exe"
+    elif test -f "${new_path}.cmd"; then
+      input_to_shortpath="${new_path}.cmd"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$new_path\", is invalid." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$new_path\", is invalid." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&5
+$as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&6;}
+      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+    fi
+  else
+    input_to_shortpath="$new_path"
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+  new_path="$input_to_shortpath"
+
+  input_path="$input_to_shortpath"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $input_to_shortpath | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+  # remove trailing .exe if any
+  new_path="${new_path/%.exe/}"
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  # First separate the path from the arguments. This will split at the first
+  # space.
+  complete="$FOUND_MAKE"
+  path="${complete%% *}"
+  tmp="$complete EOL"
+  arguments="${tmp#* }"
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+
+  # Now try to locate executable using which
+  new_path=`$WHICH "$new_path" 2> /dev/null`
+
+  if test "x$new_path" = x; then
+    # Oops. Which didn't find the executable.
+    # The splitting of arguments from the executable at a space might have been incorrect,
+    # since paths with space are more likely in Windows. Give it another try with the whole
+    # argument.
+    path="$complete"
+    arguments="EOL"
+    new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+
+    new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in MSYS causing which
+    # to not find them
+    if test "x$new_path" = x \
+        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+    fi
+
+    if test "x$new_path" = x; then
+      # It's still not found. Now this is an unrecoverable error.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+      has_space=`$ECHO "$complete" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
+$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
+      fi
+      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+    fi
+  fi
+
+  # Now new_path has a complete unix path to the binary
+  if test "x`$ECHO $new_path | $GREP ^/bin/`" != x; then
+    # Keep paths in /bin as-is, but remove trailing .exe if any
+    new_path="${new_path/%.exe/}"
+    # Do not save /bin paths to all_fixpath_prefixes!
+  else
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $new_path`
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+    # Output is in $new_path
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+    # remove trailing .exe if any
+    new_path="${new_path/%.exe/}"
+
+    # Save the first 10 bytes of this path to the storage, so fixpath can work.
+    all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+  fi
+
+    else
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$FOUND_MAKE"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
+
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
+      fi
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+      fi
+    fi
+
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
+
+    if test "x$complete" != "x$new_complete"; then
+      FOUND_MAKE="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
+$as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
+    fi
+  fi
+
+        fi
+      fi
+    fi
+  fi
+
+    fi
+
+    if test "x$FOUND_MAKE" = x; then
+      if test "x$TOOLCHAIN_PATH" != x; then
+        # We have a toolchain path, check that as well before giving up.
+        OLD_PATH=$PATH
+        PATH=$TOOLCHAIN_PATH:$PATH
+        for ac_prog in gmake
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CHECK_TOOLSDIR_GMAKE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CHECK_TOOLSDIR_GMAKE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CHECK_TOOLSDIR_GMAKE="$CHECK_TOOLSDIR_GMAKE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CHECK_TOOLSDIR_GMAKE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CHECK_TOOLSDIR_GMAKE=$ac_cv_path_CHECK_TOOLSDIR_GMAKE
+if test -n "$CHECK_TOOLSDIR_GMAKE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CHECK_TOOLSDIR_GMAKE" >&5
+$as_echo "$CHECK_TOOLSDIR_GMAKE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CHECK_TOOLSDIR_GMAKE" && break
+done
+
+
+  MAKE_CANDIDATE=""$CHECK_TOOLSDIR_GMAKE""
+  DESCRIPTION="gmake in tools-dir"
+
+  # On Cygwin, we require a newer version of make than on other platforms
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    MAKE_VERSION_EXPR="-e 4\."
+    MAKE_REQUIRED_VERSION="4.0"
+   else
+    MAKE_VERSION_EXPR="-e 3\.8[12] -e 4\."
+    MAKE_REQUIRED_VERSION="3.81"
+  fi
+
+  if test "x$MAKE_CANDIDATE" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&5
+$as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&6;}
+    MAKE_VERSION_STRING=`$MAKE_CANDIDATE --version | $HEAD -n 1`
+    IS_GNU_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP 'GNU Make'`
+    if test "x$IS_GNU_MAKE" = x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
+$as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
+    else
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP $MAKE_VERSION_EXPR`
+      if test "x$IS_MODERN_MAKE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
+$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
+      else
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+          if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+            MAKE_EXPECTED_ENV='cygwin'
+          elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+            MAKE_EXPECTED_ENV='msys'
+          else
+            as_fn_error $? "Unknown Windows environment" "$LINENO" 5
+          fi
+          MAKE_BUILT_FOR=`$MAKE_CANDIDATE --version | $GREP -i 'built for'`
+          IS_MAKE_CORRECT_ENV=`$ECHO $MAKE_BUILT_FOR | $GREP $MAKE_EXPECTED_ENV`
+        else
+          # Not relevant for non-Windows
+          IS_MAKE_CORRECT_ENV=true
+        fi
+        if test "x$IS_MAKE_CORRECT_ENV" = x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE, but it is not for $MAKE_EXPECTED_ENV (it says: $MAKE_BUILT_FOR). Ignoring." >&5
+$as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE, but it is not for $MAKE_EXPECTED_ENV (it says: $MAKE_BUILT_FOR). Ignoring." >&6;}
+        else
+          FOUND_MAKE=$MAKE_CANDIDATE
+
+  # Only process if variable expands to non-empty
+
+  if test "x$FOUND_MAKE" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # First separate the path from the arguments. This will split at the first
+  # space.
+  complete="$FOUND_MAKE"
+  path="${complete%% *}"
+  tmp="$complete EOL"
+  arguments="${tmp#* }"
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  new_path=`$CYGPATH -u "$path"`
+
+  # Now try to locate executable using which
+  new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+      && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+      && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
+  if test "x$new_path" = x; then
+    # Oops. Which didn't find the executable.
+    # The splitting of arguments from the executable at a space might have been incorrect,
+    # since paths with space are more likely in Windows. Give it another try with the whole
+    # argument.
+    path="$complete"
+    arguments="EOL"
+    new_path=`$CYGPATH -u "$path"`
+    new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
+    if test "x$new_path" = x; then
+      # It's still not found. Now this is an unrecoverable error.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+      has_space=`$ECHO "$complete" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
+$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
+      fi
+      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+    fi
+  fi
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    # Short path failed, file does not exist as specified.
+    # Try adding .exe or .cmd
+    if test -f "${new_path}.exe"; then
+      input_to_shortpath="${new_path}.exe"
+    elif test -f "${new_path}.cmd"; then
+      input_to_shortpath="${new_path}.cmd"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$new_path\", is invalid." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$new_path\", is invalid." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&5
+$as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&6;}
+      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+    fi
+  else
+    input_to_shortpath="$new_path"
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+  new_path="$input_to_shortpath"
+
+  input_path="$input_to_shortpath"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $input_to_shortpath | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+  # remove trailing .exe if any
+  new_path="${new_path/%.exe/}"
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  # First separate the path from the arguments. This will split at the first
+  # space.
+  complete="$FOUND_MAKE"
+  path="${complete%% *}"
+  tmp="$complete EOL"
+  arguments="${tmp#* }"
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+
+  # Now try to locate executable using which
+  new_path=`$WHICH "$new_path" 2> /dev/null`
+
+  if test "x$new_path" = x; then
+    # Oops. Which didn't find the executable.
+    # The splitting of arguments from the executable at a space might have been incorrect,
+    # since paths with space are more likely in Windows. Give it another try with the whole
+    # argument.
+    path="$complete"
+    arguments="EOL"
+    new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+
+    new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in MSYS causing which
+    # to not find them
+    if test "x$new_path" = x \
+        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+    fi
+
+    if test "x$new_path" = x; then
+      # It's still not found. Now this is an unrecoverable error.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+      has_space=`$ECHO "$complete" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
+$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
+      fi
+      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+    fi
+  fi
+
+  # Now new_path has a complete unix path to the binary
+  if test "x`$ECHO $new_path | $GREP ^/bin/`" != x; then
+    # Keep paths in /bin as-is, but remove trailing .exe if any
+    new_path="${new_path/%.exe/}"
+    # Do not save /bin paths to all_fixpath_prefixes!
+  else
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $new_path`
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+    # Output is in $new_path
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+    # remove trailing .exe if any
+    new_path="${new_path/%.exe/}"
+
+    # Save the first 10 bytes of this path to the storage, so fixpath can work.
+    all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+  fi
+
+    else
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$FOUND_MAKE"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
+
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
+      fi
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+      fi
+    fi
+
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
+
+    if test "x$complete" != "x$new_complete"; then
+      FOUND_MAKE="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
+$as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
+    fi
+  fi
+
+        fi
+      fi
+    fi
+  fi
+
+        if test "x$FOUND_MAKE" = x; then
+          for ac_prog in make
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CHECK_TOOLSDIR_MAKE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CHECK_TOOLSDIR_MAKE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CHECK_TOOLSDIR_MAKE="$CHECK_TOOLSDIR_MAKE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CHECK_TOOLSDIR_MAKE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CHECK_TOOLSDIR_MAKE=$ac_cv_path_CHECK_TOOLSDIR_MAKE
+if test -n "$CHECK_TOOLSDIR_MAKE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CHECK_TOOLSDIR_MAKE" >&5
+$as_echo "$CHECK_TOOLSDIR_MAKE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$CHECK_TOOLSDIR_MAKE" && break
+done
+
+
+  MAKE_CANDIDATE=""$CHECK_TOOLSDIR_MAKE""
+  DESCRIPTION="make in tools-dir"
+
+  # On Cygwin, we require a newer version of make than on other platforms
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    MAKE_VERSION_EXPR="-e 4\."
+    MAKE_REQUIRED_VERSION="4.0"
+   else
+    MAKE_VERSION_EXPR="-e 3\.8[12] -e 4\."
+    MAKE_REQUIRED_VERSION="3.81"
+  fi
+
+  if test "x$MAKE_CANDIDATE" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&5
+$as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&6;}
+    MAKE_VERSION_STRING=`$MAKE_CANDIDATE --version | $HEAD -n 1`
+    IS_GNU_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP 'GNU Make'`
+    if test "x$IS_GNU_MAKE" = x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
+$as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
+    else
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP $MAKE_VERSION_EXPR`
+      if test "x$IS_MODERN_MAKE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
+$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
+      else
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+          if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+            MAKE_EXPECTED_ENV='cygwin'
+          elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+            MAKE_EXPECTED_ENV='msys'
+          else
+            as_fn_error $? "Unknown Windows environment" "$LINENO" 5
+          fi
+          MAKE_BUILT_FOR=`$MAKE_CANDIDATE --version | $GREP -i 'built for'`
+          IS_MAKE_CORRECT_ENV=`$ECHO $MAKE_BUILT_FOR | $GREP $MAKE_EXPECTED_ENV`
+        else
+          # Not relevant for non-Windows
+          IS_MAKE_CORRECT_ENV=true
+        fi
+        if test "x$IS_MAKE_CORRECT_ENV" = x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE, but it is not for $MAKE_EXPECTED_ENV (it says: $MAKE_BUILT_FOR). Ignoring." >&5
+$as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE, but it is not for $MAKE_EXPECTED_ENV (it says: $MAKE_BUILT_FOR). Ignoring." >&6;}
+        else
+          FOUND_MAKE=$MAKE_CANDIDATE
+
+  # Only process if variable expands to non-empty
+
+  if test "x$FOUND_MAKE" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # First separate the path from the arguments. This will split at the first
+  # space.
+  complete="$FOUND_MAKE"
+  path="${complete%% *}"
+  tmp="$complete EOL"
+  arguments="${tmp#* }"
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  new_path=`$CYGPATH -u "$path"`
+
+  # Now try to locate executable using which
+  new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+      && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+      && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
+  if test "x$new_path" = x; then
+    # Oops. Which didn't find the executable.
+    # The splitting of arguments from the executable at a space might have been incorrect,
+    # since paths with space are more likely in Windows. Give it another try with the whole
+    # argument.
+    path="$complete"
+    arguments="EOL"
+    new_path=`$CYGPATH -u "$path"`
+    new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
+    if test "x$new_path" = x; then
+      # It's still not found. Now this is an unrecoverable error.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+      has_space=`$ECHO "$complete" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
+$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
+      fi
+      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+    fi
+  fi
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    # Short path failed, file does not exist as specified.
+    # Try adding .exe or .cmd
+    if test -f "${new_path}.exe"; then
+      input_to_shortpath="${new_path}.exe"
+    elif test -f "${new_path}.cmd"; then
+      input_to_shortpath="${new_path}.cmd"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$new_path\", is invalid." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$new_path\", is invalid." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&5
+$as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&6;}
+      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+    fi
+  else
+    input_to_shortpath="$new_path"
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+  new_path="$input_to_shortpath"
+
+  input_path="$input_to_shortpath"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $input_to_shortpath | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+  # remove trailing .exe if any
+  new_path="${new_path/%.exe/}"
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  # First separate the path from the arguments. This will split at the first
+  # space.
+  complete="$FOUND_MAKE"
+  path="${complete%% *}"
+  tmp="$complete EOL"
+  arguments="${tmp#* }"
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+
+  # Now try to locate executable using which
+  new_path=`$WHICH "$new_path" 2> /dev/null`
+
+  if test "x$new_path" = x; then
+    # Oops. Which didn't find the executable.
+    # The splitting of arguments from the executable at a space might have been incorrect,
+    # since paths with space are more likely in Windows. Give it another try with the whole
+    # argument.
+    path="$complete"
+    arguments="EOL"
+    new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+
+    new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in MSYS causing which
+    # to not find them
+    if test "x$new_path" = x \
+        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+    fi
+
+    if test "x$new_path" = x; then
+      # It's still not found. Now this is an unrecoverable error.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+      has_space=`$ECHO "$complete" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
+$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
+      fi
+      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+    fi
+  fi
+
+  # Now new_path has a complete unix path to the binary
+  if test "x`$ECHO $new_path | $GREP ^/bin/`" != x; then
+    # Keep paths in /bin as-is, but remove trailing .exe if any
+    new_path="${new_path/%.exe/}"
+    # Do not save /bin paths to all_fixpath_prefixes!
+  else
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $new_path`
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+    # Output is in $new_path
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+    # remove trailing .exe if any
+    new_path="${new_path/%.exe/}"
+
+    # Save the first 10 bytes of this path to the storage, so fixpath can work.
+    all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+  fi
+
+    else
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$FOUND_MAKE"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
+
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
+      fi
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+      fi
+    fi
+
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
+
+    if test "x$complete" != "x$new_complete"; then
+      FOUND_MAKE="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
+$as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
+    fi
+  fi
+
+        fi
+      fi
+    fi
+  fi
+
+        fi
+        PATH=$OLD_PATH
+      fi
+    fi
+
+    if test "x$FOUND_MAKE" = x; then
+      as_fn_error $? "Cannot find GNU make $MAKE_REQUIRED_VERSION or newer! Please put it in the path, or add e.g. MAKE=/opt/gmake3.81/make as argument to configure." "$LINENO" 5
+    fi
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$MAKE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool MAKE= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool MAKE= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MAKE" >&5
+$as_echo_n "checking for MAKE... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$MAKE"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool MAKE=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool MAKE=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_MAKE+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $MAKE in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_MAKE="$MAKE" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_MAKE="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+MAKE=$ac_cv_path_MAKE
+if test -n "$MAKE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MAKE" >&5
+$as_echo "$MAKE" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$MAKE" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool MAKE=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool MAKE=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for MAKE" >&5
+$as_echo_n "checking for MAKE... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool MAKE=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+
+    # If MAKE was set by user, verify the version
+
+  MAKE_CANDIDATE=""$MAKE""
+  DESCRIPTION="user supplied MAKE=$MAKE"
+
+  # On Cygwin, we require a newer version of make than on other platforms
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    MAKE_VERSION_EXPR="-e 4\."
+    MAKE_REQUIRED_VERSION="4.0"
+   else
+    MAKE_VERSION_EXPR="-e 3\.8[12] -e 4\."
+    MAKE_REQUIRED_VERSION="3.81"
+  fi
+
+  if test "x$MAKE_CANDIDATE" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&5
+$as_echo "$as_me: Testing potential make at $MAKE_CANDIDATE, found using $DESCRIPTION" >&6;}
+    MAKE_VERSION_STRING=`$MAKE_CANDIDATE --version | $HEAD -n 1`
+    IS_GNU_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP 'GNU Make'`
+    if test "x$IS_GNU_MAKE" = x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&5
+$as_echo "$as_me: Found potential make at $MAKE_CANDIDATE, however, this is not GNU Make. Ignoring." >&6;}
+    else
+      IS_MODERN_MAKE=`$ECHO $MAKE_VERSION_STRING | $GREP $MAKE_VERSION_EXPR`
+      if test "x$IS_MODERN_MAKE" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&5
+$as_echo "$as_me: Found GNU make at $MAKE_CANDIDATE, however this is not version $MAKE_REQUIRED_VERSION or later. (it is: $MAKE_VERSION_STRING). Ignoring." >&6;}
+      else
+        if test "x$OPENJDK_BUILD_OS" = "xwindows"; then
+          if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+            MAKE_EXPECTED_ENV='cygwin'
+          elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+            MAKE_EXPECTED_ENV='msys'
+          else
+            as_fn_error $? "Unknown Windows environment" "$LINENO" 5
+          fi
+          MAKE_BUILT_FOR=`$MAKE_CANDIDATE --version | $GREP -i 'built for'`
+          IS_MAKE_CORRECT_ENV=`$ECHO $MAKE_BUILT_FOR | $GREP $MAKE_EXPECTED_ENV`
+        else
+          # Not relevant for non-Windows
+          IS_MAKE_CORRECT_ENV=true
+        fi
+        if test "x$IS_MAKE_CORRECT_ENV" = x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE, but it is not for $MAKE_EXPECTED_ENV (it says: $MAKE_BUILT_FOR). Ignoring." >&5
+$as_echo "$as_me: Found GNU make version $MAKE_VERSION_STRING at $MAKE_CANDIDATE, but it is not for $MAKE_EXPECTED_ENV (it says: $MAKE_BUILT_FOR). Ignoring." >&6;}
+        else
+          FOUND_MAKE=$MAKE_CANDIDATE
+
+  # Only process if variable expands to non-empty
+
+  if test "x$FOUND_MAKE" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # First separate the path from the arguments. This will split at the first
+  # space.
+  complete="$FOUND_MAKE"
+  path="${complete%% *}"
+  tmp="$complete EOL"
+  arguments="${tmp#* }"
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  new_path=`$CYGPATH -u "$path"`
+
+  # Now try to locate executable using which
+  new_path=`$WHICH "$new_path" 2> /dev/null`
+  # bat and cmd files are not always considered executable in cygwin causing which
+  # to not find them
+  if test "x$new_path" = x \
+      && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+      && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+    new_path=`$CYGPATH -u "$path"`
+  fi
+  if test "x$new_path" = x; then
+    # Oops. Which didn't find the executable.
+    # The splitting of arguments from the executable at a space might have been incorrect,
+    # since paths with space are more likely in Windows. Give it another try with the whole
+    # argument.
+    path="$complete"
+    arguments="EOL"
+    new_path=`$CYGPATH -u "$path"`
+    new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in cygwin causing which
+    # to not find them
+    if test "x$new_path" = x \
+        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path=`$CYGPATH -u "$path"`
+    fi
+    if test "x$new_path" = x; then
+      # It's still not found. Now this is an unrecoverable error.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+      has_space=`$ECHO "$complete" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
+$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
+      fi
+      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+    fi
+  fi
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file presence.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    # Short path failed, file does not exist as specified.
+    # Try adding .exe or .cmd
+    if test -f "${new_path}.exe"; then
+      input_to_shortpath="${new_path}.exe"
+    elif test -f "${new_path}.cmd"; then
+      input_to_shortpath="${new_path}.cmd"
+    else
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$new_path\", is invalid." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$new_path\", is invalid." >&6;}
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&5
+$as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&6;}
+      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+    fi
+  else
+    input_to_shortpath="$new_path"
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+  new_path="$input_to_shortpath"
+
+  input_path="$input_to_shortpath"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $input_to_shortpath | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+  # remove trailing .exe if any
+  new_path="${new_path/%.exe/}"
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  # First separate the path from the arguments. This will split at the first
+  # space.
+  complete="$FOUND_MAKE"
+  path="${complete%% *}"
+  tmp="$complete EOL"
+  arguments="${tmp#* }"
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+
+  # Now try to locate executable using which
+  new_path=`$WHICH "$new_path" 2> /dev/null`
+
+  if test "x$new_path" = x; then
+    # Oops. Which didn't find the executable.
+    # The splitting of arguments from the executable at a space might have been incorrect,
+    # since paths with space are more likely in Windows. Give it another try with the whole
+    # argument.
+    path="$complete"
+    arguments="EOL"
+    new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+
+    new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in MSYS causing which
+    # to not find them
+    if test "x$new_path" = x \
+        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path="$path"
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+    fi
+
+    if test "x$new_path" = x; then
+      # It's still not found. Now this is an unrecoverable error.
+      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+      has_space=`$ECHO "$complete" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
+$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
+      fi
+      as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+    fi
+  fi
+
+  # Now new_path has a complete unix path to the binary
+  if test "x`$ECHO $new_path | $GREP ^/bin/`" != x; then
+    # Keep paths in /bin as-is, but remove trailing .exe if any
+    new_path="${new_path/%.exe/}"
+    # Do not save /bin paths to all_fixpath_prefixes!
+  else
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $new_path`
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+    # Output is in $new_path
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+    # remove trailing .exe if any
+    new_path="${new_path/%.exe/}"
+
+    # Save the first 10 bytes of this path to the storage, so fixpath can work.
+    all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+  fi
+
+    else
+      # We're on a unix platform. Hooray! :)
+      # First separate the path from the arguments. This will split at the first
+      # space.
+      complete="$FOUND_MAKE"
+      path="${complete%% *}"
+      tmp="$complete EOL"
+      arguments="${tmp#* }"
+
+      # Cannot rely on the command "which" here since it doesn't always work.
+      is_absolute_path=`$ECHO "$path" | $GREP ^/`
+      if test -z "$is_absolute_path"; then
+        # Path to executable is not absolute. Find it.
+        IFS_save="$IFS"
+        IFS=:
+        for p in $PATH; do
+          if test -f "$p/$path" && test -x "$p/$path"; then
+            new_path="$p/$path"
+            break
+          fi
+        done
+        IFS="$IFS_save"
+      else
+        # This is an absolute path, we can use it without further modifications.
+        new_path="$path"
+      fi
+
+      if test "x$new_path" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&5
+$as_echo "$as_me: The path of FOUND_MAKE, which resolves as \"$complete\", is not found." >&6;}
+        has_space=`$ECHO "$complete" | $GREP " "`
+        if test "x$has_space" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
+$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
+        fi
+        as_fn_error $? "Cannot locate the the path of FOUND_MAKE" "$LINENO" 5
+      fi
+    fi
+
+    # Now join together the path and the arguments once again
+    if test "x$arguments" != xEOL; then
+      new_complete="$new_path ${arguments% *}"
+    else
+      new_complete="$new_path"
+    fi
+
+    if test "x$complete" != "x$new_complete"; then
+      FOUND_MAKE="$new_complete"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting FOUND_MAKE to \"$new_complete\"" >&5
+$as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
+    fi
+  fi
+
+        fi
+      fi
+    fi
+  fi
+
+    if test "x$FOUND_MAKE" = x; then
+      as_fn_error $? "The specified make (by MAKE=$MAKE) is not GNU make $MAKE_REQUIRED_VERSION or newer." "$LINENO" 5
+    fi
+
+  fi
+
 
   MAKE=$FOUND_MAKE
 
@@ -18638,6 +20338,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -18841,6 +20542,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -19046,6 +20748,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -19248,6 +20951,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -19447,6 +21151,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -19643,6 +21348,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -19839,6 +21545,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -20035,6 +21742,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -20231,6 +21939,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -20438,6 +22147,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -20641,6 +22351,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -20843,6 +22554,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -21056,6 +22768,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -26572,6 +28285,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -26709,6 +28423,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -26846,6 +28561,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -26983,6 +28699,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -27120,6 +28837,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -27151,8 +28869,7 @@ $as_echo "$BOOT_JDK_BITS" >&6; }
 ###############################################################################
 
 
-  # Where are the sources. Any of these can be overridden
-  # using --with-override-corba and the likes.
+  # Where are the sources.
   LANGTOOLS_TOPDIR="$SRC_ROOT/langtools"
   CORBA_TOPDIR="$SRC_ROOT/corba"
   JAXP_TOPDIR="$SRC_ROOT/jaxp"
@@ -27169,263 +28886,98 @@ $as_echo "$BOOT_JDK_BITS" >&6; }
 
 
 
+  # This feature is no longer supported.
 
-  ###############################################################################
-  #
-  # Pickup additional source for a component from outside of the source root
-  # or override source for a component.
-  #
+
 
 # Check whether --with-add-source-root was given.
 if test "${with_add_source_root+set}" = set; then :
-  withval=$with_add_source_root;
+  withval=$with_add_source_root; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-add-source-root is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-add-source-root is deprecated and will be ignored." >&2;}
 fi
+
 
 
 
 # Check whether --with-override-source-root was given.
 if test "${with_override_source_root+set}" = set; then :
-  withval=$with_override_source_root;
+  withval=$with_override_source_root; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-source-root is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-override-source-root is deprecated and will be ignored." >&2;}
 fi
+
 
 
 
 # Check whether --with-adds-and-overrides was given.
 if test "${with_adds_and_overrides+set}" = set; then :
-  withval=$with_adds_and_overrides;
+  withval=$with_adds_and_overrides; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-adds-and-overrides is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-adds-and-overrides is deprecated and will be ignored." >&2;}
 fi
 
 
-  if test "x$with_adds_and_overrides" != x; then
-    with_add_source_root="$with_adds_and_overrides/adds"
-    with_override_source_root="$with_adds_and_overrides/overrides"
-  fi
-
-  if test "x$with_add_source_root" != x; then
-    if ! test -d $with_add_source_root; then
-      as_fn_error $? "Trying to use a non-existant add-source-root $with_add_source_root" "$LINENO" 5
-    fi
-    CURDIR="$PWD"
-    cd "$with_add_source_root"
-    ADD_SRC_ROOT="`pwd`"
-    cd "$CURDIR"
-    # Verify that the addon source root does not have any root makefiles.
-    # If it does, then it is usually an error, prevent this.
-    if test -f $with_add_source_root/langtools/make/Makefile; then
-      as_fn_error $? "Your add source root seems to contain a full langtools repo! An add source root should only contain additional sources." "$LINENO" 5
-    fi
-    if test -f $with_add_source_root/corba/make/Makefile; then
-      as_fn_error $? "Your add source root seems to contain a full corba repo! An add source root should only contain additional sources." "$LINENO" 5
-    fi
-    if test -f $with_add_source_root/jaxp/make/Makefile; then
-      as_fn_error $? "Your add source root seems to contain a full jaxp repo! An add source root should only contain additional sources." "$LINENO" 5
-    fi
-    if test -f $with_add_source_root/jaxws/make/Makefile; then
-      as_fn_error $? "Your add source root seems to contain a full jaxws repo! An add source root should only contain additional sources." "$LINENO" 5
-    fi
-    if test -f $with_add_source_root/hotspot/make/Makefile; then
-      as_fn_error $? "Your add source root seems to contain a full hotspot repo! An add source root should only contain additional sources." "$LINENO" 5
-    fi
-    if test -f $with_add_source_root/nashorn/make/Makefile; then
-      as_fn_error $? "Your add source root seems to contain a full nashorn repo! An add source root should only contain additional sources." "$LINENO" 5
-    fi
-    if test -f $with_add_source_root/jdk/make/Makefile; then
-      as_fn_error $? "Your add source root seems to contain a full JDK repo! An add source root should only contain additional sources." "$LINENO" 5
-    fi
-  fi
-
-
-  if test "x$with_override_source_root" != x; then
-    if ! test -d $with_override_source_root; then
-      as_fn_error $? "Trying to use a non-existant override-source-root $with_override_source_root" "$LINENO" 5
-    fi
-    CURDIR="$PWD"
-    cd "$with_override_source_root"
-    OVERRIDE_SRC_ROOT="`pwd`"
-    cd "$CURDIR"
-    if test -f $with_override_source_root/langtools/make/Makefile; then
-      as_fn_error $? "Your override source root seems to contain a full langtools repo! An override source root should only contain sources that override." "$LINENO" 5
-    fi
-    if test -f $with_override_source_root/corba/make/Makefile; then
-      as_fn_error $? "Your override source root seems to contain a full corba repo! An override source root should only contain sources that override." "$LINENO" 5
-    fi
-    if test -f $with_override_source_root/jaxp/make/Makefile; then
-      as_fn_error $? "Your override source root seems to contain a full jaxp repo! An override source root should only contain sources that override." "$LINENO" 5
-    fi
-    if test -f $with_override_source_root/jaxws/make/Makefile; then
-      as_fn_error $? "Your override source root seems to contain a full jaxws repo! An override source root should only contain sources that override." "$LINENO" 5
-    fi
-    if test -f $with_override_source_root/hotspot/make/Makefile; then
-      as_fn_error $? "Your override source root seems to contain a full hotspot repo! An override source root should only contain sources that override." "$LINENO" 5
-    fi
-    if test -f $with_override_source_root/nashorn/make/Makefile; then
-      as_fn_error $? "Your override source root seems to contain a full nashorn repo! An override source root should only contain sources that override." "$LINENO" 5
-    fi
-    if test -f $with_override_source_root/jdk/make/Makefile; then
-      as_fn_error $? "Your override source root seems to contain a full JDK repo! An override source root should only contain sources that override." "$LINENO" 5
-    fi
-  fi
-
-
-  ###############################################################################
-  #
-  # Override a repo completely, this is used for example when you have 3 small
-  # development sandboxes of the langtools sources and want to avoid having 3 full
-  # OpenJDK sources checked out on disk.
-  #
-  # Assuming that the 3 langtools sandboxes are located here:
-  # /home/fredrik/sandbox1/langtools
-  # /home/fredrik/sandbox2/langtools
-  # /home/fredrik/sandbox3/langtools
-  #
-  # From the source root you create build subdirs manually:
-  #     mkdir -p build1 build2 build3
-  # in each build directory run:
-  #     (cd build1 && ../configure --with-override-langtools=/home/fredrik/sandbox1 && make)
-  #     (cd build2 && ../configure --with-override-langtools=/home/fredrik/sandbox2 && make)
-  #     (cd build3 && ../configure --with-override-langtools=/home/fredrik/sandbox3 && make)
-  #
 
 
 # Check whether --with-override-langtools was given.
 if test "${with_override_langtools+set}" = set; then :
-  withval=$with_override_langtools;
+  withval=$with_override_langtools; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-langtools is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-override-langtools is deprecated and will be ignored." >&2;}
 fi
+
 
 
 
 # Check whether --with-override-corba was given.
 if test "${with_override_corba+set}" = set; then :
-  withval=$with_override_corba;
+  withval=$with_override_corba; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-corba is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-override-corba is deprecated and will be ignored." >&2;}
 fi
+
 
 
 
 # Check whether --with-override-jaxp was given.
 if test "${with_override_jaxp+set}" = set; then :
-  withval=$with_override_jaxp;
+  withval=$with_override_jaxp; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-jaxp is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-override-jaxp is deprecated and will be ignored." >&2;}
 fi
+
 
 
 
 # Check whether --with-override-jaxws was given.
 if test "${with_override_jaxws+set}" = set; then :
-  withval=$with_override_jaxws;
+  withval=$with_override_jaxws; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-jaxws is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-override-jaxws is deprecated and will be ignored." >&2;}
 fi
+
 
 
 
 # Check whether --with-override-hotspot was given.
 if test "${with_override_hotspot+set}" = set; then :
-  withval=$with_override_hotspot;
+  withval=$with_override_hotspot; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-hotspot is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-override-hotspot is deprecated and will be ignored." >&2;}
 fi
+
 
 
 
 # Check whether --with-override-nashorn was given.
 if test "${with_override_nashorn+set}" = set; then :
-  withval=$with_override_nashorn;
+  withval=$with_override_nashorn; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-nashorn is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-override-nashorn is deprecated and will be ignored." >&2;}
 fi
+
 
 
 
 # Check whether --with-override-jdk was given.
 if test "${with_override_jdk+set}" = set; then :
-  withval=$with_override_jdk;
+  withval=$with_override_jdk; { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --with-override-jdk is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --with-override-jdk is deprecated and will be ignored." >&2;}
 fi
 
 
-  if test "x$with_override_langtools" != x; then
-    CURDIR="$PWD"
-    cd "$with_override_langtools"
-    LANGTOOLS_TOPDIR="`pwd`"
-    cd "$CURDIR"
-    if ! test -f $LANGTOOLS_TOPDIR/make/Makefile; then
-      as_fn_error $? "You have to override langtools with a full langtools repo!" "$LINENO" 5
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if langtools should be overridden" >&5
-$as_echo_n "checking if langtools should be overridden... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $LANGTOOLS_TOPDIR" >&5
-$as_echo "yes with $LANGTOOLS_TOPDIR" >&6; }
-  fi
-  if test "x$with_override_corba" != x; then
-    CURDIR="$PWD"
-    cd "$with_override_corba"
-    CORBA_TOPDIR="`pwd`"
-    cd "$CURDIR"
-    if ! test -f $CORBA_TOPDIR/make/Makefile; then
-      as_fn_error $? "You have to override corba with a full corba repo!" "$LINENO" 5
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if corba should be overridden" >&5
-$as_echo_n "checking if corba should be overridden... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $CORBA_TOPDIR" >&5
-$as_echo "yes with $CORBA_TOPDIR" >&6; }
-  fi
-  if test "x$with_override_jaxp" != x; then
-    CURDIR="$PWD"
-    cd "$with_override_jaxp"
-    JAXP_TOPDIR="`pwd`"
-    cd "$CURDIR"
-    if ! test -f $JAXP_TOPDIR/make/Makefile; then
-      as_fn_error $? "You have to override jaxp with a full jaxp repo!" "$LINENO" 5
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jaxp should be overridden" >&5
-$as_echo_n "checking if jaxp should be overridden... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $JAXP_TOPDIR" >&5
-$as_echo "yes with $JAXP_TOPDIR" >&6; }
-  fi
-  if test "x$with_override_jaxws" != x; then
-    CURDIR="$PWD"
-    cd "$with_override_jaxws"
-    JAXWS_TOPDIR="`pwd`"
-    cd "$CURDIR"
-    if ! test -f $JAXWS_TOPDIR/make/Makefile; then
-      as_fn_error $? "You have to override jaxws with a full jaxws repo!" "$LINENO" 5
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if jaxws should be overridden" >&5
-$as_echo_n "checking if jaxws should be overridden... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $JAXWS_TOPDIR" >&5
-$as_echo "yes with $JAXWS_TOPDIR" >&6; }
-  fi
-  if test "x$with_override_hotspot" != x; then
-    CURDIR="$PWD"
-    cd "$with_override_hotspot"
-    HOTSPOT_TOPDIR="`pwd`"
-    cd "$CURDIR"
-    if ! test -f $HOTSPOT_TOPDIR/make/Makefile; then
-      as_fn_error $? "You have to override hotspot with a full hotspot repo!" "$LINENO" 5
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if hotspot should be overridden" >&5
-$as_echo_n "checking if hotspot should be overridden... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $HOTSPOT_TOPDIR" >&5
-$as_echo "yes with $HOTSPOT_TOPDIR" >&6; }
-  fi
-  if test "x$with_override_nashorn" != x; then
-    CURDIR="$PWD"
-    cd "$with_override_nashorn"
-    NASHORN_TOPDIR="`pwd`"
-    cd "$CURDIR"
-    if ! test -f $NASHORN_TOPDIR/make/Makefile; then
-      as_fn_error $? "You have to override nashorn with a full nashorn repo!" "$LINENO" 5
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if nashorn should be overridden" >&5
-$as_echo_n "checking if nashorn should be overridden... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $NASHORN_TOPDIR" >&5
-$as_echo "yes with $NASHORN_TOPDIR" >&6; }
-  fi
-  if test "x$with_override_jdk" != x; then
-    CURDIR="$PWD"
-    cd "$with_override_jdk"
-    JDK_TOPDIR="`pwd`"
-    cd "$CURDIR"
-    if ! test -f $JDK_TOPDIR/make/Makefile; then
-      as_fn_error $? "You have to override JDK with a full JDK repo!" "$LINENO" 5
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking if JDK should be overridden" >&5
-$as_echo_n "checking if JDK should be overridden... " >&6; }
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes with $JDK_TOPDIR" >&5
-$as_echo "yes with $JDK_TOPDIR" >&6; }
-  fi
 
 
   BUILD_OUTPUT="$OUTPUT_ROOT"
@@ -33747,6 +35299,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -34388,6 +35941,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -34874,6 +36428,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -36410,6 +37965,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -36892,6 +38448,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -37374,6 +38931,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -37968,6 +39526,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -38560,6 +40119,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -39159,6 +40719,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -39798,6 +41359,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -40111,9 +41673,252 @@ $as_echo "$as_me: Rewriting OBJDUMP to \"$new_complete\"" >&6;}
     # path, otherwise we might pick up cross-compilers which don't use standard
     # naming.
 
+    OLDPATH="$PATH"
+
+
+# Check whether --with-build-devkit was given.
+if test "${with_build_devkit+set}" = set; then :
+  withval=$with_build_devkit;
+fi
+
+    if test "x$with_build_devkit" = "xyes"; then
+      as_fn_error $? "--with-build-devkit must have a value" "$LINENO" 5
+    elif test -n "$with_build_devkit"; then
+      if test ! -d "$with_build_devkit"; then
+        as_fn_error $? "--with-build-devkit points to non existing dir: $with_build_devkit" "$LINENO" 5
+      else
+
+  # Only process if variable expands to non-empty
+
+  if test "x$with_build_devkit" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$with_build_devkit"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of with_build_devkit, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of with_build_devkit, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of with_build_devkit" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    with_build_devkit="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting with_build_devkit to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting with_build_devkit to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$with_build_devkit"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    with_build_devkit="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting with_build_devkit to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting with_build_devkit to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$with_build_devkit"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of with_build_devkit, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of with_build_devkit, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of with_build_devkit, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      with_build_devkit="`cd "$path"; $THEPWDCMD -L`"
+    fi
+  fi
+
+        BUILD_DEVKIT_ROOT="$with_build_devkit"
+        # Check for a meta data info file in the root of the devkit
+        if test -f "$BUILD_DEVKIT_ROOT/devkit.info"; then
+          # Process devkit.info so that existing devkit variables are not
+          # modified by this
+          $SED -e "s/^DEVKIT_/BUILD_DEVKIT_/g" \
+              -e "s/\$DEVKIT_ROOT/\$BUILD_DEVKIT_ROOT/g" \
+              -e "s/\$host/\$build/g" \
+              $BUILD_DEVKIT_ROOT/devkit.info \
+              > $CONFIGURESUPPORT_OUTPUTDIR/build-devkit.info
+          . $CONFIGURESUPPORT_OUTPUTDIR/build-devkit.info
+          # This potentially sets the following:
+          # A descriptive name of the devkit
+
+  if test "x$BUILD_DEVKIT_NAME" = x; then
+    eval BUILD_DEVKIT_NAME="\${BUILD_DEVKIT_NAME_${OPENJDK_TARGET_CPU}}"
+  fi
+
+          # Corresponds to --with-extra-path
+
+  if test "x$BUILD_DEVKIT_EXTRA_PATH" = x; then
+    eval BUILD_DEVKIT_EXTRA_PATH="\${BUILD_DEVKIT_EXTRA_PATH_${OPENJDK_TARGET_CPU}}"
+  fi
+
+          # Corresponds to --with-toolchain-path
+
+  if test "x$BUILD_DEVKIT_TOOLCHAIN_PATH" = x; then
+    eval BUILD_DEVKIT_TOOLCHAIN_PATH="\${BUILD_DEVKIT_TOOLCHAIN_PATH_${OPENJDK_TARGET_CPU}}"
+  fi
+
+          # Corresponds to --with-sysroot
+
+  if test "x$BUILD_DEVKIT_SYSROOT" = x; then
+    eval BUILD_DEVKIT_SYSROOT="\${BUILD_DEVKIT_SYSROOT_${OPENJDK_TARGET_CPU}}"
+  fi
+
+          # Skip the Window specific parts
+        fi
+
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for build platform devkit" >&5
+$as_echo_n "checking for build platform devkit... " >&6; }
+        if test "x$BUILD_DEVKIT_NAME" != x; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BUILD_DEVKIT_NAME in $BUILD_DEVKIT_ROOT" >&5
+$as_echo "$BUILD_DEVKIT_NAME in $BUILD_DEVKIT_ROOT" >&6; }
+        else
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BUILD_DEVKIT_ROOT" >&5
+$as_echo "$BUILD_DEVKIT_ROOT" >&6; }
+        fi
+
+        BUILD_SYSROOT="$BUILD_DEVKIT_SYSROOT"
+
+  if test "x$BUILD_SYSROOT" != "x"; then
+    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+      if test "x$OPENJDK_TARGET_OS" = xsolaris; then
+        # Solaris Studio does not have a concept of sysroot. Instead we must
+        # make sure the default include and lib dirs are appended to each
+        # compile and link command line.
+        BUILD_SYSROOT_CFLAGS="-I$BUILD_SYSROOT/usr/include"
+        BUILD_SYSROOT_LDFLAGS="-L$BUILD_SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
+            -L$BUILD_SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
+            -L$BUILD_SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
+      fi
+    elif test "x$TOOLCHAIN_TYPE" = xgcc; then
+      BUILD_SYSROOT_CFLAGS="--sysroot=$BUILD_SYSROOT"
+      BUILD_SYSROOT_LDFLAGS="--sysroot=$BUILD_SYSROOT"
+    elif test "x$TOOLCHAIN_TYPE" = xclang; then
+      BUILD_SYSROOT_CFLAGS="-isysroot $BUILD_SYSROOT"
+      BUILD_SYSROOT_LDFLAGS="-isysroot $BUILD_SYSROOT"
+    fi
+    # Propagate the sysroot args to hotspot
+    BUILD_LEGACY_EXTRA_CFLAGS="$BUILD_LEGACY_EXTRA_CFLAGS $BUILD_SYSROOT_CFLAGS"
+    BUILD_LEGACY_EXTRA_CXXFLAGS="$BUILD_LEGACY_EXTRA_CXXFLAGS $BUILD_SYSROOT_CFLAGS"
+    BUILD_LEGACY_EXTRA_LDFLAGS="$BUILD_LEGACY_EXTRA_LDFLAGS $BUILD_SYSROOT_LDFLAGS"
+    # The global CFLAGS and LDFLAGS variables need these for configure to function
+    BUILD_CFLAGS="$BUILD_CFLAGS $BUILD_SYSROOT_CFLAGS"
+    BUILD_CPPFLAGS="$BUILD_CPPFLAGS $BUILD_SYSROOT_CFLAGS"
+    BUILD_CXXFLAGS="$BUILD_CXXFLAGS $BUILD_SYSROOT_CFLAGS"
+    BUILD_LDFLAGS="$BUILD_LDFLAGS $BUILD_SYSROOT_LDFLAGS"
+  fi
+
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    # We also need -iframework<path>/System/Library/Frameworks
+    BUILD_SYSROOT_CFLAGS="$BUILD_SYSROOT_CFLAGS -iframework $BUILD_SYSROOT/System/Library/Frameworks"
+    BUILD_SYSROOT_LDFLAGS="$BUILD_SYSROOT_LDFLAGS -iframework $BUILD_SYSROOT/System/Library/Frameworks"
+    # These always need to be set, or we can't find the frameworks embedded in JavaVM.framework
+    # set this here so it doesn't have to be peppered throughout the forest
+    BUILD_SYSROOT_CFLAGS="$BUILD_SYSROOT_CFLAGS -F $BUILD_SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
+    BUILD_SYSROOT_LDFLAGS="$BUILD_SYSROOT_LDFLAGS -F $BUILD_SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks"
+  fi
+
+
+
+
+
+         # Fallback default of just /bin if DEVKIT_PATH is not defined
+        if test "x$BUILD_DEVKIT_TOOLCHAIN_PATH" = x; then
+          BUILD_DEVKIT_TOOLCHAIN_PATH="$BUILD_DEVKIT_ROOT/bin"
+        fi
+        PATH="$BUILD_DEVKIT_TOOLCHAIN_PATH:$BUILD_DEVKIT_EXTRA_PATH"
+      fi
+    fi
+
     # FIXME: we should list the discovered compilers as an exclude pattern!
     # If we do that, we can do this detection before POST_DETECTION, and still
     # find the build compilers in the tools dir, if needed.
+
 
 
   # Publish this variable in the help.
@@ -40307,6 +42112,13 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
+  fi
+
+
+
+  if test "x$BUILD_CC" = x; then
+    as_fn_error $? "Could not find required tool for BUILD_CC" "$LINENO" 5
   fi
 
 
@@ -40598,6 +42410,7 @@ $as_echo "$as_me: Rewriting BUILD_CC to \"$new_complete\"" >&6;}
 
 
 
+
   # Publish this variable in the help.
 
 
@@ -40789,6 +42602,13 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
+  fi
+
+
+
+  if test "x$BUILD_CXX" = x; then
+    as_fn_error $? "Could not find required tool for BUILD_CXX" "$LINENO" 5
   fi
 
 
@@ -41078,490 +42898,9 @@ $as_echo "$as_me: Rewriting BUILD_CXX to \"$new_complete\"" >&6;}
     fi
   fi
 
+    BUILD_LD="$BUILD_CC"
 
-
-  # Publish this variable in the help.
-
-
-  if [ -z "${BUILD_LD+x}" ]; then
-    # The variable is not set by user, try to locate tool using the code snippet
-    for ac_prog in ld
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_BUILD_LD+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $BUILD_LD in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_BUILD_LD="$BUILD_LD" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_BUILD_LD="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-BUILD_LD=$ac_cv_path_BUILD_LD
-if test -n "$BUILD_LD"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BUILD_LD" >&5
-$as_echo "$BUILD_LD" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$BUILD_LD" && break
-done
-
-  else
-    # The variable is set, but is it from the command line or the environment?
-
-    # Try to remove the string !BUILD_LD! from our list.
-    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!BUILD_LD!/}
-    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
-      # If it failed, the variable was not from the command line. Ignore it,
-      # but warn the user (except for BASH, which is always set by the calling BASH).
-      if test "xBUILD_LD" != xBASH; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of BUILD_LD from the environment. Use command line variables instead." >&5
-$as_echo "$as_me: WARNING: Ignoring value of BUILD_LD from the environment. Use command line variables instead." >&2;}
-      fi
-      # Try to locate tool using the code snippet
-      for ac_prog in ld
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_BUILD_LD+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $BUILD_LD in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_BUILD_LD="$BUILD_LD" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_BUILD_LD="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-BUILD_LD=$ac_cv_path_BUILD_LD
-if test -n "$BUILD_LD"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BUILD_LD" >&5
-$as_echo "$BUILD_LD" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$BUILD_LD" && break
-done
-
-    else
-      # If it succeeded, then it was overridden by the user. We will use it
-      # for the tool.
-
-      # First remove it from the list of overridden variables, so we can test
-      # for unknown variables in the end.
-      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
-
-      # Check if we try to supply an empty value
-      if test "x$BUILD_LD" = x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool BUILD_LD= (no value)" >&5
-$as_echo "$as_me: Setting user supplied tool BUILD_LD= (no value)" >&6;}
-        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_LD" >&5
-$as_echo_n "checking for BUILD_LD... " >&6; }
-        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
-$as_echo "disabled" >&6; }
-      else
-        # Check if the provided tool contains a complete path.
-        tool_specified="$BUILD_LD"
-        tool_basename="${tool_specified##*/}"
-        if test "x$tool_basename" = "x$tool_specified"; then
-          # A command without a complete path is provided, search $PATH.
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool BUILD_LD=$tool_basename" >&5
-$as_echo "$as_me: Will search for user supplied tool BUILD_LD=$tool_basename" >&6;}
-          # Extract the first word of "$tool_basename", so it can be a program name with args.
-set dummy $tool_basename; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_path_BUILD_LD+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-  case $BUILD_LD in
-  [\\/]* | ?:[\\/]*)
-  ac_cv_path_BUILD_LD="$BUILD_LD" # Let the user override the test with a path.
-  ;;
-  *)
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_path_BUILD_LD="$as_dir/$ac_word$ac_exec_ext"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  ;;
-esac
-fi
-BUILD_LD=$ac_cv_path_BUILD_LD
-if test -n "$BUILD_LD"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $BUILD_LD" >&5
-$as_echo "$BUILD_LD" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-          if test "x$BUILD_LD" = x; then
-            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
-          fi
-        else
-          # Otherwise we believe it is a complete path. Use it as it is.
-          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool BUILD_LD=$tool_specified" >&5
-$as_echo "$as_me: Will use user supplied tool BUILD_LD=$tool_specified" >&6;}
-          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for BUILD_LD" >&5
-$as_echo_n "checking for BUILD_LD... " >&6; }
-          if test ! -x "$tool_specified"; then
-            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
-$as_echo "not found" >&6; }
-            as_fn_error $? "User supplied tool BUILD_LD=$tool_specified does not exist or is not executable" "$LINENO" 5
-          fi
-          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
-$as_echo "$tool_specified" >&6; }
-        fi
-      fi
-    fi
-  fi
-
-
-
-  # Only process if variable expands to non-empty
-
-  if test "x$BUILD_LD" != x; then
-    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-
-  # First separate the path from the arguments. This will split at the first
-  # space.
-  complete="$BUILD_LD"
-  path="${complete%% *}"
-  tmp="$complete EOL"
-  arguments="${tmp#* }"
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  new_path=`$CYGPATH -u "$path"`
-
-  # Now try to locate executable using which
-  new_path=`$WHICH "$new_path" 2> /dev/null`
-  # bat and cmd files are not always considered executable in cygwin causing which
-  # to not find them
-  if test "x$new_path" = x \
-      && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
-      && test "x`$LS \"$path\" 2>/dev/null`" != x; then
-    new_path=`$CYGPATH -u "$path"`
-  fi
-  if test "x$new_path" = x; then
-    # Oops. Which didn't find the executable.
-    # The splitting of arguments from the executable at a space might have been incorrect,
-    # since paths with space are more likely in Windows. Give it another try with the whole
-    # argument.
-    path="$complete"
-    arguments="EOL"
-    new_path=`$CYGPATH -u "$path"`
-    new_path=`$WHICH "$new_path" 2> /dev/null`
-    # bat and cmd files are not always considered executable in cygwin causing which
-    # to not find them
-    if test "x$new_path" = x \
-        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
-        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
-      new_path=`$CYGPATH -u "$path"`
-    fi
-    if test "x$new_path" = x; then
-      # It's still not found. Now this is an unrecoverable error.
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BUILD_LD, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of BUILD_LD, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
-$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
-      fi
-      as_fn_error $? "Cannot locate the the path of BUILD_LD" "$LINENO" 5
-    fi
-  fi
-
-  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
-  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
-  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
-  # "foo.exe" is OK but "foo" is an error.
-  #
-  # This test is therefore slightly more accurate than "test -f" to check for file presence.
-  # It is also a way to make sure we got the proper file name for the real test later on.
-  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
-  if test "x$test_shortpath" = x; then
-    # Short path failed, file does not exist as specified.
-    # Try adding .exe or .cmd
-    if test -f "${new_path}.exe"; then
-      input_to_shortpath="${new_path}.exe"
-    elif test -f "${new_path}.cmd"; then
-      input_to_shortpath="${new_path}.cmd"
-    else
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BUILD_LD, which resolves as \"$new_path\", is invalid." >&5
-$as_echo "$as_me: The path of BUILD_LD, which resolves as \"$new_path\", is invalid." >&6;}
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&5
-$as_echo "$as_me: Neither \"$new_path\" nor \"$new_path.exe/cmd\" can be found" >&6;}
-      as_fn_error $? "Cannot locate the the path of BUILD_LD" "$LINENO" 5
-    fi
-  else
-    input_to_shortpath="$new_path"
-  fi
-
-  # Call helper function which possibly converts this using DOS-style short mode.
-  # If so, the updated path is stored in $new_path.
-  new_path="$input_to_shortpath"
-
-  input_path="$input_to_shortpath"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
-    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
-    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
-      # Going to short mode and back again did indeed matter. Since short mode is
-      # case insensitive, let's make it lowercase to improve readability.
-      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-      # Now convert it back to Unix-style (cygpath)
-      input_path=`$CYGPATH -u "$shortmode_path"`
-      new_path="$input_path"
-    fi
-  fi
-
-  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
-  if test "x$test_cygdrive_prefix" = x; then
-    # As a simple fix, exclude /usr/bin since it's not a real path.
-    if test "x`$ECHO $input_to_shortpath | $GREP ^/usr/bin/`" = x; then
-      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
-      # a path prefixed by /cygdrive for fixpath to work.
-      new_path="$CYGWIN_ROOT_PATH$input_path"
-    fi
-  fi
-
-  # remove trailing .exe if any
-  new_path="${new_path/%.exe/}"
-
-    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-
-  # First separate the path from the arguments. This will split at the first
-  # space.
-  complete="$BUILD_LD"
-  path="${complete%% *}"
-  tmp="$complete EOL"
-  arguments="${tmp#* }"
-
-  # Input might be given as Windows format, start by converting to
-  # unix format.
-  new_path="$path"
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-
-  # Now try to locate executable using which
-  new_path=`$WHICH "$new_path" 2> /dev/null`
-
-  if test "x$new_path" = x; then
-    # Oops. Which didn't find the executable.
-    # The splitting of arguments from the executable at a space might have been incorrect,
-    # since paths with space are more likely in Windows. Give it another try with the whole
-    # argument.
-    path="$complete"
-    arguments="EOL"
-    new_path="$path"
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-
-    new_path=`$WHICH "$new_path" 2> /dev/null`
-    # bat and cmd files are not always considered executable in MSYS causing which
-    # to not find them
-    if test "x$new_path" = x \
-        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
-        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
-      new_path="$path"
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-    fi
-
-    if test "x$new_path" = x; then
-      # It's still not found. Now this is an unrecoverable error.
-      { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BUILD_LD, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of BUILD_LD, which resolves as \"$complete\", is not found." >&6;}
-      has_space=`$ECHO "$complete" | $GREP " "`
-      if test "x$has_space" != x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: You might be mixing spaces in the path and extra arguments, which is not allowed." >&5
-$as_echo "$as_me: You might be mixing spaces in the path and extra arguments, which is not allowed." >&6;}
-      fi
-      as_fn_error $? "Cannot locate the the path of BUILD_LD" "$LINENO" 5
-    fi
-  fi
-
-  # Now new_path has a complete unix path to the binary
-  if test "x`$ECHO $new_path | $GREP ^/bin/`" != x; then
-    # Keep paths in /bin as-is, but remove trailing .exe if any
-    new_path="${new_path/%.exe/}"
-    # Do not save /bin paths to all_fixpath_prefixes!
-  else
-    # Not in mixed or Windows style, start by that.
-    new_path=`cmd //c echo $new_path`
-
-  input_path="$new_path"
-  # Check if we need to convert this using DOS-style short mode. If the path
-  # contains just simple characters, use it. Otherwise (spaces, weird characters),
-  # take no chances and rewrite it.
-  # Note: m4 eats our [], so we need to use [ and ] instead.
-  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
-  if test "x$has_forbidden_chars" != x; then
-    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
-    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-  fi
-
-    # Output is in $new_path
-
-  windows_path="$new_path"
-  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
-    unix_path=`$CYGPATH -u "$windows_path"`
-    new_path="$unix_path"
-  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
-    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
-    new_path="$unix_path"
-  fi
-
-    # remove trailing .exe if any
-    new_path="${new_path/%.exe/}"
-
-    # Save the first 10 bytes of this path to the storage, so fixpath can work.
-    all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
-  fi
-
-    else
-      # We're on a unix platform. Hooray! :)
-      # First separate the path from the arguments. This will split at the first
-      # space.
-      complete="$BUILD_LD"
-      path="${complete%% *}"
-      tmp="$complete EOL"
-      arguments="${tmp#* }"
-
-      # Cannot rely on the command "which" here since it doesn't always work.
-      is_absolute_path=`$ECHO "$path" | $GREP ^/`
-      if test -z "$is_absolute_path"; then
-        # Path to executable is not absolute. Find it.
-        IFS_save="$IFS"
-        IFS=:
-        for p in $PATH; do
-          if test -f "$p/$path" && test -x "$p/$path"; then
-            new_path="$p/$path"
-            break
-          fi
-        done
-        IFS="$IFS_save"
-      else
-        # This is an absolute path, we can use it without further modifications.
-        new_path="$path"
-      fi
-
-      if test "x$new_path" = x; then
-        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of BUILD_LD, which resolves as \"$complete\", is not found." >&5
-$as_echo "$as_me: The path of BUILD_LD, which resolves as \"$complete\", is not found." >&6;}
-        has_space=`$ECHO "$complete" | $GREP " "`
-        if test "x$has_space" != x; then
-          { $as_echo "$as_me:${as_lineno-$LINENO}: This might be caused by spaces in the path, which is not allowed." >&5
-$as_echo "$as_me: This might be caused by spaces in the path, which is not allowed." >&6;}
-        fi
-        as_fn_error $? "Cannot locate the the path of BUILD_LD" "$LINENO" 5
-      fi
-    fi
-
-    # Now join together the path and the arguments once again
-    if test "x$arguments" != xEOL; then
-      new_complete="$new_path ${arguments% *}"
-    else
-      new_complete="$new_path"
-    fi
-
-    if test "x$complete" != "x$new_complete"; then
-      BUILD_LD="$new_complete"
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting BUILD_LD to \"$new_complete\"" >&5
-$as_echo "$as_me: Rewriting BUILD_LD to \"$new_complete\"" >&6;}
-    fi
-  fi
-
-    BUILD_SYSROOT_CFLAGS=""
-    BUILD_SYSROOT_LDFLAGS=""
+    PATH="$OLDPATH"
   else
     # If we are not cross compiling, use the normal target compilers for
     # building the build platform executables.
@@ -42220,6 +43559,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 
@@ -43568,7 +44908,7 @@ $as_echo "$supports" >&6; }
     LDFLAGS_JDK="$LDFLAGS_JDK -z defs -xildoff -ztext"
     LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
-    LDFLAGS_JDK="${LDFLAGS_JDK} -brtl -bnolibpath -liconv -bexpall -bernotok"
+    LDFLAGS_JDK="${LDFLAGS_JDK} -brtl -bnolibpath -bexpall -bernotok"
   fi
 
   # Customize LDFLAGS for executables
@@ -43591,7 +44931,7 @@ $as_echo "$supports" >&6; }
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -dll -libpath:${OUTPUT_ROOT}/support/modules_libs/java.base"
-    LDFLAGS_JDKLIB_SUFFIX=""
+    JDKLIB_LIBS=""
   else
     LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB}  ${SHARED_LIBRARY_FLAGS} \
         -L${OUTPUT_ROOT}/support/modules_libs/java.base${OPENJDK_TARGET_CPU_LIBDIR}"
@@ -43610,9 +44950,9 @@ $as_echo "$supports" >&6; }
       LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -L${OUTPUT_ROOT}/support/modules_libs/java.base${OPENJDK_TARGET_CPU_LIBDIR}/server"
     fi
 
-    LDFLAGS_JDKLIB_SUFFIX="-ljava -ljvm"
+    JDKLIB_LIBS="-ljava -ljvm"
     if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-      LDFLAGS_JDKLIB_SUFFIX="$LDFLAGS_JDKLIB_SUFFIX -lc"
+      JDKLIB_LIBS="$JDKLIB_LIBS -lc"
     fi
   fi
 
@@ -43624,10 +44964,6 @@ $as_echo "$supports" >&6; }
 
   LDFLAGS_TESTLIB="$LDFLAGS_JDKLIB"
   LDFLAGS_TESTEXE="$LDFLAGS_JDKEXE"
-  LDFLAGS_TESTLIB_SUFFIX="$LDFLAGS_JDKLIB_SUFFIX"
-  LDFLAGS_TESTEXE_SUFFIX="$LDFLAGS_JDKEXE_SUFFIX"
-
-
 
 
 
@@ -43801,6 +45137,15 @@ $as_echo "yes (default)" >&6; }
   else
     as_fn_error $? "--enable-warnings-as-errors accepts no argument" "$LINENO" 5
   fi
+
+  if test "x$WARNINGS_AS_ERRORS" = "xfalse"; then
+    # Set legacy hotspot variable
+    HOTSPOT_SET_WARNINGS_AS_ERRORS="WARNINGS_ARE_ERRORS="
+  else
+    HOTSPOT_SET_WARNINGS_AS_ERRORS=""
+  fi
+
+
 
 
   case "${TOOLCHAIN_TYPE}" in
@@ -46894,7 +48239,7 @@ $as_echo "no" >&6; }
 
 
   if test "x$NEEDS_LIB_X11" = xfalse; then
-    if test "x${with_x}" != x; then
+    if (test "x${with_x}" != x && test "x${with_x}" != xno); then
       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: X11 is not used, so --with-x is ignored" >&5
 $as_echo "$as_me: WARNING: X11 is not used, so --with-x is ignored" >&2;}
     fi
@@ -47790,9 +49135,10 @@ fi
 
 
   if test "x$NEEDS_LIB_CUPS" = xfalse; then
-    if test "x${with_cups}" != x || test "x${with_cups_include}" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: cups not used, so --with-cups is ignored" >&5
-$as_echo "$as_me: WARNING: cups not used, so --with-cups is ignored" >&2;}
+    if (test "x${with_cups}" != x && test "x${with_cups}" != xno) || \
+        (test "x${with_cups_include}" != x && test "x${with_cups_include}" != xno); then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: cups not used, so --with-cups[-*] is ignored" >&5
+$as_echo "$as_me: WARNING: cups not used, so --with-cups[-*] is ignored" >&2;}
     fi
     CUPS_CFLAGS=
   else
@@ -47922,11 +49268,14 @@ fi
   FREETYPE_BUNDLE_LIB_PATH=
 
   if test "x$NEEDS_LIB_FREETYPE" = xfalse; then
-    if test "x$with_freetype" != x || test "x$with_freetype_include" != x || test "x$with_freetype_lib" != x || test "x$with_freetype_src" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: freetype not used, so --with-freetype is ignored" >&5
-$as_echo "$as_me: WARNING: freetype not used, so --with-freetype is ignored" >&2;}
+    if (test "x$with_freetype" != x  && test "x$with_freetype" != xno) || \
+        (test "x$with_freetype_include" != x && test "x$with_freetype_include" != xno) || \
+        (test "x$with_freetype_lib" != x && test "x$with_freetype_lib" != xno) || \
+        (test "x$with_freetype_src" != x && test "x$with_freetype_src" != xno); then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: freetype not used, so --with-freetype[-*] is ignored" >&5
+$as_echo "$as_me: WARNING: freetype not used, so --with-freetype[-*] is ignored" >&2;}
     fi
-    if test "x$enable_freetype_bundling" != x; then
+    if (test "x$enable_freetype_bundling" != x && test "x$enable_freetype_bundling" != xno); then
       { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: freetype not used, so --enable-freetype-bundling is ignored" >&5
 $as_echo "$as_me: WARNING: freetype not used, so --enable-freetype-bundling is ignored" >&2;}
     fi
@@ -51926,9 +53275,11 @@ fi
 
 
   if test "x$NEEDS_LIB_ALSA" = xfalse; then
-    if test "x${with_alsa}" != x || test "x${with_alsa_include}" != x || test "x${with_alsa_lib}" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: alsa not used, so --with-alsa is ignored" >&5
-$as_echo "$as_me: WARNING: alsa not used, so --with-alsa is ignored" >&2;}
+    if (test "x${with_alsa}" != x && test "x${with_alsa}" != xno) || \
+        (test "x${with_alsa_include}" != x && test "x${with_alsa_include}" != xno) || \
+        (test "x${with_alsa_lib}" != x && test "x${with_alsa_lib}" != xno); then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: alsa not used, so --with-alsa[-*] is ignored" >&5
+$as_echo "$as_me: WARNING: alsa not used, so --with-alsa[-*] is ignored" >&2;}
     fi
     ALSA_CFLAGS=
     ALSA_LIBS=
@@ -52105,9 +53456,11 @@ fi
 
 
   if test "x$NEEDS_LIB_FFI" = xfalse; then
-    if test "x${with_libffi}" != x || test "x${with_libffi_include}" != x || test "x${with_libffi_lib}" != x; then
-      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libffi not used, so --with-libffi is ignored" >&5
-$as_echo "$as_me: WARNING: libffi not used, so --with-libffi is ignored" >&2;}
+    if (test "x${with_libffi}" != x && test "x${with_libffi}" != xno) || \
+        (test "x${with_libffi_include}" != x && test "x${with_libffi_include}" != xno) || \
+        (test "x${with_libffi_lib}" != x && test "x${with_libffi_lib}" != xno); then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: libffi not used, so --with-libffi[-*] is ignored" >&5
+$as_echo "$as_me: WARNING: libffi not used, so --with-libffi[-*] is ignored" >&2;}
     fi
     LIBFFI_CFLAGS=
     LIBFFI_LIBS=
@@ -53808,6 +55161,7 @@ $as_echo "$tool_specified" >&6; }
         fi
       fi
     fi
+
   fi
 
 

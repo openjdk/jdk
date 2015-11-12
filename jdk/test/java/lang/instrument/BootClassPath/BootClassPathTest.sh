@@ -27,7 +27,6 @@
 #          attribute.
 #
 # @key intermittent
-# @modules java.instrument
 # @run shell/timeout=240 BootClassPathTest.sh
 
 if [ "${TESTJAVA}" = "" ]

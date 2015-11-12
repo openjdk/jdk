@@ -936,9 +936,13 @@ static void match_alias_type(Compile* C, Node* n, Node* m) {
     case Op_StrComp:
     case Op_StrEquals:
     case Op_StrIndexOf:
+    case Op_StrIndexOfChar:
     case Op_AryEq:
+    case Op_HasNegatives:
     case Op_MemBarVolatile:
     case Op_MemBarCPUOrder: // %%% these ideals should have narrower adr_type?
+    case Op_StrInflatedCopy:
+    case Op_StrCompressedCopy:
     case Op_EncodeISOArray:
       nidx = Compile::AliasIdxTop;
       nat = NULL;
@@ -2156,7 +2160,11 @@ void Matcher::find_shared( Node *n ) {
       case Op_StrComp:
       case Op_StrEquals:
       case Op_StrIndexOf:
+      case Op_StrIndexOfChar:
       case Op_AryEq:
+      case Op_HasNegatives:
+      case Op_StrInflatedCopy:
+      case Op_StrCompressedCopy:
       case Op_EncodeISOArray:
         set_shared(n); // Force result into register (it will be anyways)
         break;
@@ -2316,7 +2324,8 @@ void Matcher::find_shared( Node *n ) {
       case Op_CMoveI:
       case Op_CMoveL:
       case Op_CMoveN:
-      case Op_CMoveP: {
+      case Op_CMoveP:
+      case Op_CMoveVD:  {
         // Restructure into a binary tree for Matching.  It's possible that
         // we could move this code up next to the graph reshaping for IfNodes
         // or vice-versa, but I do not want to debug this for Ladybird.
@@ -2335,7 +2344,8 @@ void Matcher::find_shared( Node *n ) {
         n->del_req(3);
         break;
       }
-      case Op_StrEquals: {
+      case Op_StrEquals:
+      case Op_StrIndexOfChar: {
         Node *pair1 = new BinaryNode(n->in(2),n->in(3));
         n->set_req(2,pair1);
         n->set_req(3,n->in(4));
@@ -2352,6 +2362,8 @@ void Matcher::find_shared( Node *n ) {
         n->del_req(4);
         break;
       }
+      case Op_StrCompressedCopy:
+      case Op_StrInflatedCopy:
       case Op_EncodeISOArray: {
         // Restructure into a binary tree for Matching.
         Node* pair = new BinaryNode(n->in(3), n->in(4));

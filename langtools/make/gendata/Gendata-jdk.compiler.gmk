@@ -23,6 +23,7 @@
 # questions.
 #
 
+include JarArchive.gmk
 include JavaCompilation.gmk
 include SetupJavaCompilers.gmk
 
@@ -52,9 +53,9 @@ $(SUPPORT_OUTPUTDIR)/symbols/ct.sym-files/_the.symbols: \
 	    $(@D)
 	$(TOUCH) $@
 
-# Can't generate ct.sym directly into modules libs as the SetupArchive macro
+# Can't generate ct.sym directly into modules libs as the SetupJarArchive macro
 # creates meta data files in the output dir.
-$(eval $(call SetupArchive, CREATE_CTSYM, \
+$(eval $(call SetupJarArchive, CREATE_CTSYM, \
     DEPENDENCIES := $(SUPPORT_OUTPUTDIR)/symbols/ct.sym-files/_the.symbols, \
     SRCS := $(SUPPORT_OUTPUTDIR)/symbols/ct.sym-files, \
     SUFFIXES := .sig, \

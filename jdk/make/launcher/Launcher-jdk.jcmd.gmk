@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,36 +25,41 @@
 
 include LauncherCommon.gmk
 
-$(eval $(call SetupLauncher,jinfo, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) \
-        "-J-Dsun.jvm.hotspot.debugger.useProcDebugger"$(COMMA) \
-        "-J-Dsun.jvm.hotspot.debugger.useWindbgDebugger"$(COMMA) \
-        "sun.tools.jinfo.JInfo"$(COMMA) }' \
-    -DAPP_CLASSPATH='{ "/lib/tools.jar"$(COMMA) "/lib/sa-jdi.jar"$(COMMA) "/classes" }' \
-    ,,,,,,,,,Info-privileged.plist))
+$(eval $(call SetupBuildLauncher, jinfo, \
+    MAIN_CLASS := sun.tools.jinfo.JInfo, \
+    JAVA_ARGS := \
+        -Dsun.jvm.hotspot.debugger.useProcDebugger \
+        -Dsun.jvm.hotspot.debugger.useWindbgDebugger, \
+    APP_CLASSPATH := /lib/tools.jar /lib/sa-jdi.jar /classes, \
+    MACOSX_SIGNED := true, \
+))
 
-$(eval $(call SetupLauncher,jmap, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) \
-        "-J-Dsun.jvm.hotspot.debugger.useProcDebugger"$(COMMA) \
-        "-J-Dsun.jvm.hotspot.debugger.useWindbgDebugger"$(COMMA) \
-        "sun.tools.jmap.JMap"$(COMMA) }' \
-    -DAPP_CLASSPATH='{ "/lib/tools.jar"$(COMMA) "/lib/sa-jdi.jar"$(COMMA) "/classes" }' \
-    ,,,,,,,,,Info-privileged.plist))
+$(eval $(call SetupBuildLauncher, jmap, \
+    MAIN_CLASS := sun.tools.jmap.JMap, \
+    JAVA_ARGS := \
+        -Dsun.jvm.hotspot.debugger.useProcDebugger \
+        -Dsun.jvm.hotspot.debugger.useWindbgDebugger, \
+    APP_CLASSPATH := /lib/tools.jar /lib/sa-jdi.jar /classes, \
+    MACOSX_SIGNED := true, \
+))
 
-$(eval $(call SetupLauncher,jps, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.tools.jps.Jps"$(COMMA) }'))
+$(eval $(call SetupBuildLauncher, jps, \
+    MAIN_CLASS := sun.tools.jps.Jps, \
+))
 
-$(eval $(call SetupLauncher,jstack, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) \
-        "-J-Dsun.jvm.hotspot.debugger.useProcDebugger"$(COMMA) \
-        "-J-Dsun.jvm.hotspot.debugger.useWindbgDebugger"$(COMMA) \
-        "sun.tools.jstack.JStack"$(COMMA) }' \
-    -DAPP_CLASSPATH='{ "/lib/tools.jar"$(COMMA) "/lib/sa-jdi.jar"$(COMMA) "/classes" }' \
-    ,,,,,,,,,Info-privileged.plist))
+$(eval $(call SetupBuildLauncher, jstack, \
+    MAIN_CLASS := sun.tools.jstack.JStack, \
+    JAVA_ARGS := \
+        -Dsun.jvm.hotspot.debugger.useProcDebugger \
+        -Dsun.jvm.hotspot.debugger.useWindbgDebugger, \
+    APP_CLASSPATH := /lib/tools.jar /lib/sa-jdi.jar /classes, \
+    MACOSX_SIGNED := true, \
+))
 
-$(eval $(call SetupLauncher,jstat, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.tools.jstat.Jstat"$(COMMA) }'))
+$(eval $(call SetupBuildLauncher, jstat, \
+    MAIN_CLASS := sun.tools.jstat.Jstat, \
+))
 
-$(eval $(call SetupLauncher,jcmd, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.tools.jcmd.JCmd"$(COMMA) }'))
-
+$(eval $(call SetupBuildLauncher, jcmd, \
+    MAIN_CLASS := sun.tools.jcmd.JCmd, \
+))

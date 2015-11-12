@@ -27,7 +27,6 @@
  * @summary simple tests for getAllLoadedClasses (is Object there? does a newly loaded class show up?)
  * @author Gabriel Adauto, Wily Technology
  *
- * @modules java.instrument
  * @run build GetAllLoadedClassesTest DummyClass
  * @run shell MakeJAR.sh basicAgent
  * @run main/othervm -javaagent:basicAgent.jar GetAllLoadedClassesTest GetAllLoadedClassesTest

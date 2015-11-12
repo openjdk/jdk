@@ -27,7 +27,6 @@
 # @author Daniel D. Daugherty
 # @author Serguei Spitsyn
 #
-# @modules java.instrument
 # @run shell MakeJAR3.sh RedefineMethodDelInvokeAgent 'Can-Redefine-Classes: true'
 # @run build RedefineMethodDelInvokeApp
 # @run shell RedefineMethodDelInvoke.sh

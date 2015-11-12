@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -304,7 +304,7 @@ public abstract class JClass extends JType
      * Substitutes the type variables with their actual arguments.
      *
      * <p>
-     * For example, when this class is Map&lt;String,Map&lt;V>>,
+     * For example, when this class is {@code Map<String,Map<V>>},
      * (where V then doing
      * substituteParams( V, Integer ) returns a {@link JClass}
      * for {@code Map<String,Map<Integer>>}.

@@ -40,8 +40,8 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
           -analyze- -Od -Gd -D_WINDOWS \
           -D_UNICODE -DUNICODE -RTC1 -EHsc, \
       DISABLED_WARNINGS_microsoft := 4267 4996, \
-      LDFLAGS := $(LDFLAGS_JDKEXE) \
-          Advapi32.lib Version.lib User32.lib, \
+      LDFLAGS := $(LDFLAGS_JDKEXE), \
+      LIBS := advapi32.lib version.lib user32.lib, \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/jdk.accessibility/jabswitch, \
       OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_cmds/jdk.accessibility, \
       PROGRAM := jabswitch, \

@@ -37,20 +37,19 @@ package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.CTVMUtilities;
 import java.lang.reflect.Method;
-import jdk.vm.ci.hotspot.CompilerToVM;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
 import jdk.vm.ci.hotspot.HotSpotStackFrameReference;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 import jdk.test.lib.Asserts;
 
 public class GetNextStackFrameTest {
     private static final int RECURSION_AMOUNT = 3;
-    private static final HotSpotResolvedJavaMethodImpl REC_FRAME_METHOD;
-    private static final HotSpotResolvedJavaMethodImpl FRAME1_METHOD;
-    private static final HotSpotResolvedJavaMethodImpl FRAME2_METHOD;
-    private static final HotSpotResolvedJavaMethodImpl FRAME3_METHOD;
-    private static final HotSpotResolvedJavaMethodImpl FRAME4_METHOD;
-    private static final HotSpotResolvedJavaMethodImpl RUN_METHOD;
+    private static final ResolvedJavaMethod REC_FRAME_METHOD;
+    private static final ResolvedJavaMethod FRAME1_METHOD;
+    private static final ResolvedJavaMethod FRAME2_METHOD;
+    private static final ResolvedJavaMethod FRAME3_METHOD;
+    private static final ResolvedJavaMethod FRAME4_METHOD;
+    private static final ResolvedJavaMethod RUN_METHOD;
 
     static {
         Method method;
@@ -69,7 +68,7 @@ public class GetNextStackFrameTest {
             method = Thread.class.getDeclaredMethod("run");
             RUN_METHOD = CTVMUtilities.getResolvedMethod(Thread.class, method);
         } catch (NoSuchMethodException e) {
-            throw new Error("TEST BUG: can't find a test method", e);
+            throw new Error("TEST BUG: can't find a test method : " + e, e);
         }
     }
 
@@ -126,7 +125,7 @@ public class GetNextStackFrameTest {
      */
     private void findFirst() {
         checkNextFrameFor(null /* topmost frame */,
-                new HotSpotResolvedJavaMethodImpl[]
+                new ResolvedJavaMethod[]
                         {FRAME2_METHOD, FRAME3_METHOD, FRAME4_METHOD},
                 FRAME4_METHOD, 0);
     }
@@ -139,26 +138,26 @@ public class GetNextStackFrameTest {
         // Check that we would get a frame 4 starting from the topmost frame
         HotSpotStackFrameReference nextStackFrame = checkNextFrameFor(
                 null /* topmost frame */,
-                new HotSpotResolvedJavaMethodImpl[] {FRAME4_METHOD},
+                new ResolvedJavaMethod[] {FRAME4_METHOD},
                 FRAME4_METHOD, 0);
         // Check that we would get a frame 3 starting from frame 4 when we try
         // to search one of the next two frames
         nextStackFrame = checkNextFrameFor(nextStackFrame,
-                new HotSpotResolvedJavaMethodImpl[] {FRAME3_METHOD,
+                new ResolvedJavaMethod[] {FRAME3_METHOD,
                         FRAME2_METHOD},
                 FRAME3_METHOD, 0);
         // Check that we would get a frame 1
         nextStackFrame = checkNextFrameFor(nextStackFrame,
-                new HotSpotResolvedJavaMethodImpl[] {FRAME1_METHOD},
+                new ResolvedJavaMethod[] {FRAME1_METHOD},
                 FRAME1_METHOD, 0);
         // Check that we would skip (RECURSION_AMOUNT - 1) methods and find a
         // recursionFrame starting from frame 1
         nextStackFrame = checkNextFrameFor(nextStackFrame,
-                new HotSpotResolvedJavaMethodImpl[] {REC_FRAME_METHOD},
+                new ResolvedJavaMethod[] {REC_FRAME_METHOD},
                 REC_FRAME_METHOD, RECURSION_AMOUNT - 1);
         // Check that we would get a Thread::run method frame;
         nextStackFrame = checkNextFrameFor(nextStackFrame,
-                new HotSpotResolvedJavaMethodImpl[] {RUN_METHOD},
+                new ResolvedJavaMethod[] {RUN_METHOD},
                 RUN_METHOD, 0);
         // Check that there are no more frames after thread's run method
         nextStackFrame = CompilerToVMHelper.getNextStackFrame(nextStackFrame,
@@ -187,7 +186,7 @@ public class GetNextStackFrameTest {
         // Get frame 4
         HotSpotStackFrameReference nextStackFrame = CompilerToVMHelper
                 .getNextStackFrame(null /* topmost frame */,
-                        new HotSpotResolvedJavaMethodImpl[] {FRAME4_METHOD}, 0);
+                        new ResolvedJavaMethod[] {FRAME4_METHOD}, 0);
         // Get frame 2 by skipping one method starting from frame 4
         checkNextFrameFor(nextStackFrame, null /* any */,
                 FRAME2_METHOD , 1 /* skip one */);
@@ -198,15 +197,18 @@ public class GetNextStackFrameTest {
      */
     private void findYourself() {
         Method method;
+        Class<?> aClass = CompilerToVMHelper.CompilerToVMClass();
         try {
-            method = CompilerToVM.class.getDeclaredMethod("getNextStackFrame",
-                        HotSpotStackFrameReference.class,
-                        HotSpotResolvedJavaMethodImpl[].class, int.class);
+            method = aClass.getDeclaredMethod(
+                    "getNextStackFrame",
+                    HotSpotStackFrameReference.class,
+                    ResolvedJavaMethod[].class,
+                    int.class);
         } catch (NoSuchMethodException e) {
-            throw new Error("TEST BUG: can't find getNextStackFrame method");
+            throw new Error("TEST BUG: can't find getNextStackFrame : " + e, e);
         }
-        HotSpotResolvedJavaMethodImpl self
-                = CTVMUtilities.getResolvedMethod(CompilerToVM.class, method);
+        ResolvedJavaMethod self
+                = CTVMUtilities.getResolvedMethod(aClass, method);
         checkNextFrameFor(null /* topmost frame */, null /* any */, self, 0);
     }
 
@@ -221,8 +223,8 @@ public class GetNextStackFrameTest {
      */
     private HotSpotStackFrameReference checkNextFrameFor(
             HotSpotStackFrameReference currentFrame,
-            HotSpotResolvedJavaMethodImpl[] searchMethods,
-            HotSpotResolvedJavaMethodImpl expected,
+            ResolvedJavaMethod[] searchMethods,
+            ResolvedJavaMethod expected,
             int skip) {
         HotSpotStackFrameReference nextStackFrame = CompilerToVMHelper
                 .getNextStackFrame(currentFrame, searchMethods, skip);

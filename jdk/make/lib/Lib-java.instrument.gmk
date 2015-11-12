@@ -40,20 +40,13 @@ LIBINSTRUMENT_CFLAGS := $(CFLAGS_JDKLIB) \
     -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
     #
 
-LIBINSTRUMENT_LDFLAGS :=
-LIBINSTRUMENT_LDFLAGS_SUFFIX :=
-
 ifeq ($(OPENJDK_TARGET_OS), windows)
-  LIBINSTRUMENT_LDFLAGS += $(SUPPORT_OUTPUTDIR)/native/java.base/jli_static.lib $(WIN_JAVA_LIB) \
-      -export:Agent_OnAttach advapi32.lib
   # Statically link the C runtime so that there are not dependencies on modules
   # not on the search patch when invoked from the Windows system directory
   # (or elsewhere).
   LIBINSTRUMENT_CFLAGS := $(filter-out -MD, $(LIBINSTRUMENT_CFLAGS))
   # equivalent of strcasecmp is stricmp on Windows
   LIBINSTRUMENT_CFLAGS += -Dstrcasecmp=stricmp
-else
-  LIBINSTRUMENT_LDFLAGS_SUFFIX := -ljava
 endif
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
@@ -68,15 +61,22 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN) \
         $(LIBINSTRUMENT_LDFLAGS), \
-    LDFLAGS_linux := $(call SET_SHARED_LIBRARY_ORIGIN,/jli), \
-    LDFLAGS_solaris := $(call SET_SHARED_LIBRARY_ORIGIN,/jli), \
-    LDFLAGS_macosx := -Xlinker -all_load $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a \
-        -framework Cocoa -framework Security -framework ApplicationServices, \
-    LDFLAGS_SUFFIX := $(LIBINSTRUMENT_LDFLAGS_SUFFIX), \
-    LDFLAGS_SUFFIX_macosx := -liconv $(LIBZ), \
-    LDFLAGS_SUFFIX_solaris := $(LIBZ) -L$(call FindLibDirForModule, java.base)/jli -ljli $(LIBDL) -lc, \
-    LDFLAGS_SUFFIX_linux := $(LIBZ) -L$(call FindLibDirForModule, java.base)/jli -ljli $(LIBDL), \
-    LDFLAGS_SUFFIX_aix := $(LIBZ) -L$(SUPPORT_OUTPUTDIR)/native/java.base -ljli_static $(LIBDL),\
+    LDFLAGS_linux := $(call SET_SHARED_LIBRARY_ORIGIN,/jli) \
+        -L$(call FindLibDirForModule, java.base)/jli, \
+    LDFLAGS_solaris := $(call SET_SHARED_LIBRARY_ORIGIN,/jli) \
+        -L$(call FindLibDirForModule, java.base)/jli, \
+    LDFLAGS_macosx := -Xlinker -all_load $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a, \
+    LDFLAGS_aix := -L$(SUPPORT_OUTPUTDIR)/native/java.base, \
+    LDFLAGS_windows := -export:Agent_OnAttach, \
+    LIBS := $(JDKLIB_LIBS), \
+    LIBS_unix := -ljava $(LIBZ), \
+    LIBS_linux := -ljli $(LIBDL), \
+    LIBS_solaris := -ljli $(LIBDL), \
+    LIBS_aix := -liconv -ljli_static $(LIBDL), \
+    LIBS_macosx := -liconv -framework Cocoa -framework Security \
+        -framework ApplicationServices, \
+    LIBS_windows := $(WIN_JAVA_LIB) advapi32.lib \
+        $(SUPPORT_OUTPUTDIR)/native/java.base/jli_static.lib, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=instrument.dll" \

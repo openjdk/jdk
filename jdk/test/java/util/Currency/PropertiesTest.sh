@@ -101,11 +101,7 @@ run PropertiesTest -c dump1 dump2 ${PROPS}
 # without disturbing other users, including concurrently executing tests.
 WRITABLEJDK=.${FS}testjava
 cp -H -R $TESTJAVA $WRITABLEJDK || exit 1
-if [ -d ${TESTJAVA}${FS}jre ]; then
-  PROPLOCATION=${WRITABLEJDK}${FS}jre${FS}lib
-else
-  PROPLOCATION=${WRITABLEJDK}${FS}lib
-fi
+PROPLOCATION=${WRITABLEJDK}${FS}lib
 chmod -R +w $WRITABLEJDK || exit 1
 cp ${PROPS} $PROPLOCATION || exit 1
 echo "Properties location: ${PROPLOCATION}"

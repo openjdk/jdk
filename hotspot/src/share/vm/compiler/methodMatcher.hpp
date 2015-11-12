@@ -81,35 +81,8 @@ public:
     _next(next) {
   }
 
-  static BasicMatcher* parse_method_pattern(char* line, const char*& error_msg) {
-    assert(error_msg == NULL, "Dont call here with error_msg already set");
-    BasicMatcher* bm = new BasicMatcher();
-    MethodMatcher::parse_method_pattern(line, error_msg, bm);
-    if (error_msg != NULL) {
-      delete bm;
-      return NULL;
-    }
-
-    // check for bad trailing characters
-    int bytes_read = 0;
-    sscanf(line, "%*[ \t]%n", &bytes_read);
-    if (line[bytes_read] != '\0') {
-      error_msg = "Unrecognized trailing text after method pattern";
-      delete bm;
-      return NULL;
-    }
-    return bm;
-  }
-
-  bool match(const methodHandle& method) {
-    for (BasicMatcher* current = this; current != NULL; current = current->next()) {
-      if (current->matches(method)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
+  static BasicMatcher* parse_method_pattern(char* line, const char*& error_msg);
+  bool match(const methodHandle& method);
   void set_next(BasicMatcher* next) { _next = next; }
   BasicMatcher* next() { return _next; }
 
@@ -120,6 +93,34 @@ public:
       _next->print_all(st);
     }
   }
+};
+
+class InlineMatcher : public MethodMatcher {
+public:
+  enum InlineType {
+      unknown_inline,
+      dont_inline,
+      force_inline
+    };
+
+private:
+  InlineType _inline_action;
+  InlineMatcher * _next;
+
+  InlineMatcher() : MethodMatcher(),
+    _inline_action(unknown_inline), _next(NULL) {
+  }
+
+public:
+  static InlineMatcher* parse_method_pattern(char* line, const char*& error_msg);
+  bool match(const methodHandle& method, int inline_action);
+  void print(outputStream* st);
+  void set_next(InlineMatcher* next) { _next = next; }
+  InlineMatcher* next() { return _next; }
+  void set_action(InlineType inline_action) { _inline_action = inline_action; }
+  int inline_action() { return _inline_action; }
+  static InlineMatcher* parse_inline_pattern(char* line, const char*& error_msg);
+  InlineMatcher* clone();
 };
 
 #endif // SHARE_VM_COMPILER_METHODMATCHER_HPP

@@ -3485,33 +3485,8 @@ jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_req
   sprintf(path, "%s%slib%sendorsed", Arguments::get_java_home(), fileSep, fileSep);
 
 #if INCLUDE_JVMCI
-  jint res = JVMCIRuntime::save_options(_system_properties);
-  if (res != JNI_OK) {
-    return res;
-  }
-
   if (EnableJVMCI) {
-    // Append lib/jvmci/*.jar to boot class path
-    char jvmciDir[JVM_MAXPATHLEN];
-    const char* fileSep = os::file_separator();
-    jio_snprintf(jvmciDir, sizeof(jvmciDir), "%s%slib%sjvmci", Arguments::get_java_home(), fileSep, fileSep);
-    DIR* dir = os::opendir(jvmciDir);
-    if (dir != NULL) {
-      struct dirent *entry;
-      char *dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(jvmciDir), mtInternal);
-      while ((entry = os::readdir(dir, (dirent *) dbuf)) != NULL) {
-        const char* name = entry->d_name;
-        const char* ext = name + strlen(name) - 4;
-        if (ext > name && strcmp(ext, ".jar") == 0) {
-          char fileName[JVM_MAXPATHLEN];
-          jio_snprintf(fileName, sizeof(fileName), "%s%s%s", jvmciDir, fileSep, name);
-          scp_p->add_suffix(fileName);
-          scp_assembly_required = true;
-        }
-      }
-      FREE_C_HEAP_ARRAY(char, dbuf);
-      os::closedir(dir);
-    }
+    JVMCIRuntime::save_options(_system_properties);
   }
 #endif // INCLUDE_JVMCI
 

@@ -989,7 +989,7 @@ if [ "$OPENJDK_TARGET_OS" = "windows" ]; then
     fi
 fi
 
-THIS="$( cd "$( dirname "$0" )" > /dev/null && pwd )"
+THIS="$SCRIPT_DIR"
 echo "$THIS"
 THIS_SCRIPT="$0"
 

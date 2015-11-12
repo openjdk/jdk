@@ -272,7 +272,8 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
     }
 
     protected String[] getWMClass() {
-        return new String[] {XToolkit.getCorrectXIDString(getClass().getName()), XToolkit.getAWTAppClassName()};
+        return new String[] {XToolkit.getAWTAppClassName(),
+                XToolkit.getAWTAppClassName()};
     }
 
     void setReparented(boolean newValue) {
@@ -992,10 +993,13 @@ class XWindow extends XBaseWindow implements X11ComponentPeer {
 //  if ( Check if it's a resize, a move, or a stacking order change )
 //  {
         Rectangle bounds = getBounds();
+        final ComponentAccessor acc = AWTAccessor.getComponentAccessor();
         if (!bounds.getSize().equals(oldBounds.getSize())) {
+            acc.setSize(target, bounds.width, bounds.height);
             postEventToEventQueue(new ComponentEvent(getEventSource(), ComponentEvent.COMPONENT_RESIZED));
         }
         if (!bounds.getLocation().equals(oldBounds.getLocation())) {
+            acc.setLocation(target, bounds.x, bounds.y);
             postEventToEventQueue(new ComponentEvent(getEventSource(), ComponentEvent.COMPONENT_MOVED));
         }
 //  }

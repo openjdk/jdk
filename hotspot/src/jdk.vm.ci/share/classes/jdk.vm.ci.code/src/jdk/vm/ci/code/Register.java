@@ -22,7 +22,8 @@
  */
 package jdk.vm.ci.code;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.LIRKind;
 
 /**
  * Represents a target machine register.
@@ -80,22 +81,15 @@ public final class Register implements Comparable<Register> {
     public static class RegisterCategory {
 
         private final String name;
-
-        private final int referenceMapOffset;
-        private final int referenceMapShift;
+        private final boolean mayContainReference;
 
         public RegisterCategory(String name) {
-            this(name, 0, 0);
+            this(name, true);
         }
 
-        public RegisterCategory(String name, int referenceMapOffset) {
-            this(name, referenceMapOffset, 0);
-        }
-
-        public RegisterCategory(String name, int referenceMapOffset, int referenceMapShift) {
+        public RegisterCategory(String name, boolean mayContainReference) {
             this.name = name;
-            this.referenceMapOffset = referenceMapOffset;
-            this.referenceMapShift = referenceMapShift;
+            this.mayContainReference = mayContainReference;
         }
 
         @Override
@@ -112,7 +106,7 @@ public final class Register implements Comparable<Register> {
         public boolean equals(Object obj) {
             if (obj instanceof RegisterCategory) {
                 RegisterCategory that = (RegisterCategory) obj;
-                return this.referenceMapOffset == that.referenceMapOffset && this.referenceMapShift == that.referenceMapShift && this.name.equals(that.name);
+                return this.name.equals(that.name);
             }
             return false;
         }
@@ -138,10 +132,10 @@ public final class Register implements Comparable<Register> {
     }
 
     /**
-     * Get the start index of this register in the {@link ReferenceMap}.
+     * Determine whether this register needs to be part of the reference map.
      */
-    public int getReferenceMapIndex() {
-        return (encoding << registerCategory.referenceMapShift) + registerCategory.referenceMapOffset;
+    public boolean mayContainReference() {
+        return registerCategory.mayContainReference;
     }
 
     /**
