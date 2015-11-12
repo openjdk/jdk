@@ -68,15 +68,34 @@ public class ImportSnippet extends PersistentSnippet {
         return key().name();
     }
 
+    /**
+     *
+     * The qualified name of the import. For any imports
+     * ({@link jdk.jshell.Snippet.SubKind#TYPE_IMPORT_ON_DEMAND_SUBKIND},
+     * ({@link jdk.jshell.Snippet.SubKind#STATIC_IMPORT_ON_DEMAND_SUBKIND}),
+     * ({@link jdk.jshell.Snippet.SubKind#SINGLE_TYPE_IMPORT_SUBKIND} or
+     * ({@link jdk.jshell.Snippet.SubKind#SINGLE_STATIC_IMPORT_SUBKIND})
+     * that is the full specifier including any
+     * qualifiers and the asterisks.
+     * @return the fullname of the import
+     */
+    public String fullname() {
+        return fullname;
+    }
+
+    /**
+     * When this snippet represent static import, this method returns true.
+     * @return true when this snippet represent static import, otherwise false
+     */
+    public boolean isStatic() {
+        return isStatic;
+    }
+
     /**** internal access ****/
 
     @Override
     ImportKey key() {
         return (ImportKey) super.key();
-    }
-
-    boolean isStatic() {
-        return isStatic;
     }
 
     @Override
