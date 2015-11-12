@@ -207,7 +207,6 @@ class PromotionInfo VALUE_OBJ_CLASS_SPEC {
   }
 
   void print_on(outputStream* st) const;
-  void print_statistics(uint worker_id) const;
 };
 
 
