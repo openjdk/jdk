@@ -23,10 +23,9 @@
 
 /*
  * @test
- * @bug 8044411 8079060
+ * @bug 8044411 8079060 8138612
  * @summary Tests the RuntimeParameterVisibleAnnotations/RuntimeParameterInvisibleAnnotations attribute.
  * @library /tools/lib /tools/javac/lib ../lib
- * @ignore 8079060 javac does not generate RuntimeParameterAnnotation attributes for lambda expressions
  * @build WorkAnnotations TestBase TestResult InMemoryFileManager ToolBox
  * @build TestCase ClassType TestAnnotationInfo
  * @build RuntimeParameterAnnotationsForLambdaTest AnnotationsTestBase RuntimeParameterAnnotationsTestBase
@@ -36,12 +35,11 @@
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.Method;
+import com.sun.tools.classfile.*;
 
 /**
  * RuntimeParameterAnnotationsForLambdaTest is a test which checks that RuntimeVisibleParameterAnnotationsAttribute
- * and RuntimeInvisibleParameterAnnotationsAttribute are generated properly for lambda expressions.
+ * and RuntimeInvisibleParameterAnnotationsAttribute are not generated at all for lambda expressions.
  * The test checks both single and repeatable annotations.
  * All possible combinations of retention policies are tested.
  *
@@ -74,8 +72,8 @@ public class RuntimeParameterAnnotationsForLambdaTest extends RuntimeParameterAn
                     TestCase.TestParameterInfo p3 = testMethodInfo.addParameter("String", "c");
                     annotations.annotate(p3);
                     String source = SOURCE_TEMPLATE.replace("%SOURCE%", generateLambdaSource(testMethodInfo));
-                    echo("Testing:\n" + source);
                     addTestCase(source);
+                    echo("Testing:\n" + source);
                     ClassFile classFile = readClassFile(compile(source).getClasses().get(CLASS_NAME));
                     boolean isFoundLambda = false;
                     for (Method method : classFile.methods) {
@@ -92,6 +90,17 @@ public class RuntimeParameterAnnotationsForLambdaTest extends RuntimeParameterAn
         } finally {
             checkStatus();
         }
+    }
+
+    protected void testAttributes(
+            TestCase.TestMethodInfo testMethod,
+            ClassFile classFile,
+            Method method) throws ConstantPoolException {
+        Attributes attributes = method.attributes;
+        RuntimeParameterAnnotations_attribute attr = (RuntimeParameterAnnotations_attribute) attributes.get(Attribute.RuntimeInvisibleParameterAnnotations);
+        checkNull(attr, String.format("%s should be null", Attribute.RuntimeInvisibleParameterAnnotations));
+        attr = (RuntimeParameterAnnotations_attribute) attributes.get(Attribute.RuntimeVisibleParameterAnnotations);
+        checkNull(attr, String.format("%s should be null", Attribute.RuntimeVisibleParameterAnnotations));
     }
 
     public String generateLambdaSource(TestCase.TestMethodInfo method) {

@@ -1730,11 +1730,18 @@ public class Check {
         boolean resultTypesOK =
             types.returnTypeSubstitutable(mt, ot, otres, overrideWarner);
         if (!resultTypesOK) {
-            log.error(TreeInfo.diagnosticPositionFor(m, tree),
-                      "override.incompatible.ret",
-                      cannotOverride(m, other),
-                      mtres, otres);
-            m.flags_field |= BAD_OVERRIDE;
+            if ((m.flags() & STATIC) != 0 && (other.flags() & STATIC) != 0) {
+                log.error(TreeInfo.diagnosticPositionFor(m, tree),
+                        Errors.OverrideIncompatibleRet(Fragments.CantHide(m, m.location(), other,
+                                        other.location()), mtres, otres));
+                m.flags_field |= BAD_OVERRIDE;
+            } else {
+                log.error(TreeInfo.diagnosticPositionFor(m, tree),
+                        "override.incompatible.ret",
+                        cannotOverride(m, other),
+                        mtres, otres);
+                m.flags_field |= BAD_OVERRIDE;
+            }
             return;
         } else if (overrideWarner.hasNonSilentLint(LintCategory.UNCHECKED)) {
             warnUnchecked(TreeInfo.diagnosticPositionFor(m, tree),
@@ -2371,7 +2378,6 @@ public class Check {
                     types.isSameType(types.erasure(sym.type), types.erasure(sym2.type)) &&
                     sym != sym2 &&
                     (sym.flags() & Flags.SYNTHETIC) != (sym2.flags() & Flags.SYNTHETIC) &&
-                    (sym.flags() & IPROXY) == 0 && (sym2.flags() & IPROXY) == 0 &&
                     (sym.flags() & BRIDGE) == 0 && (sym2.flags() & BRIDGE) == 0) {
                     syntheticError(pos, (sym2.flags() & SYNTHETIC) == 0 ? sym2 : sym);
                     return;

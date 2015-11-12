@@ -27,11 +27,10 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -62,6 +61,7 @@ public class ReplToolTesting {
     private Map<String, VariableInfo> variables;
     private Map<String, MethodInfo> methods;
     private Map<String, ClassInfo> classes;
+    private Map<String, ImportInfo> imports;
     private boolean isDefaultStartUp = true;
 
     public JShellTool repl = null;
@@ -127,6 +127,10 @@ public class ReplToolTesting {
         return assertMembers("Classes", classes);
     }
 
+    public Consumer<String> assertImports() {
+        return assertMembers("Imports", imports);
+    }
+
     public String getCommandOutput() {
         String s = cmdout.toString();
         cmdout.reset();
@@ -184,9 +188,21 @@ public class ReplToolTesting {
         variables = new HashMap<>();
         methods = new HashMap<>();
         classes = new HashMap<>();
+        imports = new HashMap<>();
         if (isDefaultStartUp) {
             methods.put("printf (String,Object...)void",
                     new MethodInfo("", "(String,Object...)void", "printf"));
+            imports.putAll(
+                Stream.of(
+                    "java.util.*",
+                    "java.io.*",
+                    "java.math.*",
+                    "java.net.*",
+                    "java.util.concurrent.*",
+                    "java.util.prefs.*",
+                    "java.util.regex.*")
+                    .map(s -> new ImportInfo("", "", s))
+                    .collect(Collectors.toMap(Object::toString, Function.identity())));
         }
     }
 
@@ -300,6 +316,19 @@ public class ReplToolTesting {
         addKey(after, clazz);
     }
 
+    public void loadImport(boolean after, String src, String type, String name) {
+        ImportInfo i = new ImportInfo(src, type, name);
+        addKey(after, i, imports);
+        addKey(after, i);
+    }
+
+    public void assertImport(boolean after, String src, String type, String name) {
+        ImportInfo i = new ImportInfo(src, type, name);
+        assertCommandCheckOutput(after, src, i.checkOutput());
+        addKey(after, i, imports);
+        addKey(after, i);
+    }
+
     private <T extends MemberInfo> void addKey(boolean after, T memberInfo, Map<String, T> map) {
         if (after) {
             map.entrySet().removeIf(e -> e.getValue().equals(memberInfo));
@@ -345,6 +374,10 @@ public class ReplToolTesting {
 
     public void dropClass(boolean after, String cmd, String name) {
         dropKey(after, cmd, name, classes);
+    }
+
+    public void dropImport(boolean after, String cmd, String name) {
+        dropKey(after, cmd, name, imports);
     }
 
     public void assertCommand(boolean after, String cmd, String out) {
@@ -577,6 +610,31 @@ public class ReplToolTesting {
         @Override
         public String toString() {
             return String.format("%s %s", type, name);
+        }
+    }
+
+    public static class ImportInfo extends MemberInfo {
+        public ImportInfo(String source, String type, String fullname) {
+            super(source, type, fullname);
+        }
+
+        @Override
+        public Consumer<String> checkOutput() {
+            return s -> assertTrue("".equals(s), "Expected: '', actual: " + s);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof ImportInfo) {
+                ImportInfo i = (ImportInfo) o;
+                return name.equals(i.name) && type.equals(i.type);
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("import %s%s", type.equals("static") ? "static " : "", name);
         }
     }
 
