@@ -2763,7 +2763,7 @@ public class Types {
                 Scope s = c.members();
                 for (Symbol sym : s.getSymbols(NON_RECURSIVE)) {
                     if (sym.kind == MTH &&
-                        (sym.flags() & (ABSTRACT|IPROXY|DEFAULT|PRIVATE)) == ABSTRACT) {
+                        (sym.flags() & (ABSTRACT|DEFAULT|PRIVATE)) == ABSTRACT) {
                         MethodSymbol absmeth = (MethodSymbol)sym;
                         MethodSymbol implmeth = absmeth.implementation(impl, this, true);
                         if (implmeth == null || implmeth == absmeth) {
