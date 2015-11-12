@@ -42,9 +42,6 @@ import static org.testng.Assert.assertTrue;
 
 /**
  * Ieee class tests
- *
- * @test
- * @run testng jdk.nashorn.internal.runtime.doubleconv.test.IeeeTest
  */
 @SuppressWarnings({"unchecked", "javadoc"})
 public class IeeeDoubleTest {

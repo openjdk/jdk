@@ -70,9 +70,6 @@ import static org.testng.Assert.assertTrue;
 
 /**
  * FastDtoa tests
- *
- * @test
- * @run testng jdk.nashorn.internal.runtime.doubleconv.test.FastDtoaTest
  */
 @SuppressWarnings("javadoc")
 public class BignumDtoaTest {
