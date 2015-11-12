@@ -26,7 +26,7 @@
 package sun.security.krb5;
 
 import javax.security.auth.kerberos.KeyTab;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 public class KerberosSecrets {
     private static final Unsafe unsafe = Unsafe.getUnsafe();

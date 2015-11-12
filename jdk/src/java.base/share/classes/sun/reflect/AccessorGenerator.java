@@ -26,7 +26,7 @@
 package sun.reflect;
 
 import java.lang.reflect.*;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /** Shared functionality for all accessor generators */
 
