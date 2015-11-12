@@ -49,6 +49,7 @@ import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.runtime.doubleconv.DoubleConversion;
 import jdk.nashorn.internal.runtime.linker.PrimitiveLookup;
 
 /**
@@ -184,13 +185,7 @@ public final class NativeNumber extends ScriptObject {
             return JSType.toString(x);
         }
 
-        final NumberFormat format = NumberFormat.getNumberInstance(Locale.US);
-        format.setMinimumFractionDigits(fractionDigits);
-        format.setMaximumFractionDigits(fractionDigits);
-        format.setGroupingUsed(false);
-        format.setRoundingMode(RoundingMode.HALF_UP);
-
-        return format.format(x);
+        return DoubleConversion.toFixed(x, fractionDigits);
     }
 
     /**
@@ -267,7 +262,7 @@ public final class NativeNumber extends ScriptObject {
             return "0";
         }
 
-        return fixExponent(String.format(Locale.US, "%." + p + "g", x), false);
+        return DoubleConversion.toPrecision(x, p);
     }
 
     /**

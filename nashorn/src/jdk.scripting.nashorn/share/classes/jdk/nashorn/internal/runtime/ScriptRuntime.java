@@ -836,11 +836,11 @@ public final class ScriptRuntime {
         } else if (yType == JSType.BOOLEAN) {
             // Can reverse order as y is primitive
             return equalBooleanToAny(y, x);
-        } else if (isNumberOrStringAndObject(xType, yType)) {
-            return equalNumberOrStringToObject(x, y);
-        } else if (isNumberOrStringAndObject(yType, xType)) {
+        } else if (isPrimitiveAndObject(xType, yType)) {
+            return equalWrappedPrimitiveToObject(x, y);
+        } else if (isPrimitiveAndObject(yType, xType)) {
             // Can reverse order as y is primitive
-            return equalNumberOrStringToObject(y, x);
+            return equalWrappedPrimitiveToObject(y, x);
         }
 
         return false;
@@ -854,8 +854,8 @@ public final class ScriptRuntime {
         return xType == JSType.NUMBER && yType == JSType.STRING;
     }
 
-    private static boolean isNumberOrStringAndObject(final JSType xType, final JSType yType) {
-        return (xType == JSType.NUMBER || xType == JSType.STRING) && yType == JSType.OBJECT;
+    private static boolean isPrimitiveAndObject(final JSType xType, final JSType yType) {
+        return (xType == JSType.NUMBER || xType == JSType.STRING || xType == JSType.SYMBOL) && yType == JSType.OBJECT;
     }
 
     private static boolean equalNumberToString(final Object num, final Object str) {
@@ -869,7 +869,7 @@ public final class ScriptRuntime {
         return equals(JSType.toNumber((Boolean)bool), any);
     }
 
-    private static boolean equalNumberOrStringToObject(final Object numOrStr, final Object any) {
+    private static boolean equalWrappedPrimitiveToObject(final Object numOrStr, final Object any) {
         return equals(numOrStr, JSType.toPrimitive(any));
     }
 
