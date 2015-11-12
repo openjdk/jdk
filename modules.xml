@@ -2,7 +2,7 @@
 
 <!--
 
-   Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+   Copyright (c) 2014, 2016, Oracle and/or its affiliates. All rights reserved.
    DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
    This code is free software; you can redistribute it and/or modify it
@@ -1643,6 +1643,10 @@
       <to>jdk.javadoc</to>
       <to>jdk.jdeps</to>
     </export>
+    <export>
+      <name>com.sun.tools.javac.model</name>
+      <to>jdk.javadoc</to>
+    </export>
   </module>
   <module>
     <name>jdk.crypto.ec</name>
@@ -1771,6 +1775,12 @@
     </export>
     <export>
       <name>com.sun.tools.javadoc</name>
+    </export>
+    <export>
+      <name>jdk.javadoc.doclet</name>  
+    </export>
+    <export>
+      <name>jdk.javadoc.doclet.taglet</name>  
     </export>
   </module>
   <module>
