@@ -52,8 +52,6 @@ void ThreadRootsMarkingTask::do_it(GCTaskManager* manager, uint which) {
 
   ResourceMark rm;
 
-  NOT_PRODUCT(GCTraceTime tm("ThreadRootsMarkingTask",
-    PrintGCDetails && TraceParallelOldGCTasks, true, NULL));
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
 
@@ -81,8 +79,6 @@ void ThreadRootsMarkingTask::do_it(GCTaskManager* manager, uint which) {
 void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
-  NOT_PRODUCT(GCTraceTime tm("MarkFromRootsTask",
-    PrintGCDetails && TraceParallelOldGCTasks, true, NULL));
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
   ParCompactionManager::MarkAndPushClosure mark_and_push_closure(cm);
@@ -152,8 +148,6 @@ void RefProcTaskProxy::do_it(GCTaskManager* manager, uint which)
 {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
-  NOT_PRODUCT(GCTraceTime tm("RefProcTask",
-    PrintGCDetails && TraceParallelOldGCTasks, true, NULL));
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
   ParCompactionManager::MarkAndPushClosure mark_and_push_closure(cm);
@@ -208,9 +202,6 @@ StealMarkingTask::StealMarkingTask(ParallelTaskTerminator* t) :
 void StealMarkingTask::do_it(GCTaskManager* manager, uint which) {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
 
-  NOT_PRODUCT(GCTraceTime tm("StealMarkingTask",
-    PrintGCDetails && TraceParallelOldGCTasks, true, NULL));
-
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
   ParCompactionManager::MarkAndPushClosure mark_and_push_closure(cm);
@@ -239,9 +230,6 @@ StealRegionCompactionTask::StealRegionCompactionTask(ParallelTaskTerminator* t):
 
 void StealRegionCompactionTask::do_it(GCTaskManager* manager, uint which) {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
-
-  NOT_PRODUCT(GCTraceTime tm("StealRegionCompactionTask",
-    PrintGCDetails && TraceParallelOldGCTasks, true, NULL));
 
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
@@ -307,9 +295,6 @@ UpdateDensePrefixTask::UpdateDensePrefixTask(
 
 void UpdateDensePrefixTask::do_it(GCTaskManager* manager, uint which) {
 
-  NOT_PRODUCT(GCTraceTime tm("UpdateDensePrefixTask",
-    PrintGCDetails && TraceParallelOldGCTasks, true, NULL));
-
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
 
@@ -321,9 +306,6 @@ void UpdateDensePrefixTask::do_it(GCTaskManager* manager, uint which) {
 
 void DrainStacksCompactionTask::do_it(GCTaskManager* manager, uint which) {
   assert(ParallelScavengeHeap::heap()->is_gc_active(), "called outside gc");
-
-  NOT_PRODUCT(GCTraceTime tm("DrainStacksCompactionTask",
-    PrintGCDetails && TraceParallelOldGCTasks, true, NULL));
 
   ParCompactionManager* cm =
     ParCompactionManager::gc_thread_compaction_manager(which);
