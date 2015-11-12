@@ -71,6 +71,12 @@ public class CodeInstallerTest {
         codeCache.addCode(dummyMethod, result, null, null);
     }
 
+    protected CompilationResult createEmptyCompilationResult() {
+        CompilationResult ret = new CompilationResult();
+        ret.setTotalFrameSize(0);
+        return ret;
+    }
+
     protected Register getRegister(PlatformKind kind, int index) {
         Register[] allRegs = arch.getAvailableValueRegisters();
         for (int i = 0; i < allRegs.length; i++) {

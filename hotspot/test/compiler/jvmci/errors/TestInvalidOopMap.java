@@ -25,7 +25,7 @@
  * @test
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
  * @compile CodeInstallerTest.java
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI compiler.jvmci.errors.TestInvalidOopMap
+ * @run junit/othervm -da:jdk.vm.ci... -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI compiler.jvmci.errors.TestInvalidOopMap
  */
 
 package compiler.jvmci.errors;
@@ -61,7 +61,7 @@ public class TestInvalidOopMap extends CodeInstallerTest {
         DebugInfo info = new DebugInfo(pos);
         info.setReferenceMap(refMap);
 
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         result.addInfopoint(new Infopoint(0, info, InfopointReason.SAFEPOINT));
         installCode(result);
     }

@@ -25,7 +25,7 @@
  * @test
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
  * @compile CodeInstallerTest.java
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI compiler.jvmci.errors.TestInvalidCompilationResult
+ * @run junit/othervm -da:jdk.vm.ci... -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI compiler.jvmci.errors.TestInvalidCompilationResult
  */
 
 package compiler.jvmci.errors;
@@ -82,21 +82,21 @@ public class TestInvalidCompilationResult extends CodeInstallerTest {
 
     @Test(expected = JVMCIError.class)
     public void testInvalidAssumption() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         result.setAssumptions(new Assumption[]{new InvalidAssumption()});
         installCode(result);
     }
 
     @Test(expected = JVMCIError.class)
     public void testInvalidAlignment() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         result.getDataSection().insertData(new Data(7, 1, DataBuilder.zero(1)));
         installCode(result);
     }
 
     @Test(expected = NullPointerException.class)
     public void testNullDataPatchInDataSection() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         Data data = new Data(1, 1, (buffer, patch) -> {
             patch.accept(null);
             buffer.put((byte) 0);
@@ -107,7 +107,7 @@ public class TestInvalidCompilationResult extends CodeInstallerTest {
 
     @Test(expected = NullPointerException.class)
     public void testNullReferenceInDataSection() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         Data data = new Data(1, 1, (buffer, patch) -> {
             patch.accept(new DataPatch(buffer.position(), null));
             buffer.put((byte) 0);
@@ -118,7 +118,7 @@ public class TestInvalidCompilationResult extends CodeInstallerTest {
 
     @Test(expected = JVMCIError.class)
     public void testInvalidDataSectionReference() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         DataSectionReference ref = result.getDataSection().insertData(new Data(1, 1, DataBuilder.zero(1)));
         Data data = new Data(1, 1, (buffer, patch) -> {
             patch.accept(new DataPatch(buffer.position(), ref));
@@ -130,7 +130,7 @@ public class TestInvalidCompilationResult extends CodeInstallerTest {
 
     @Test(expected = JVMCIError.class)
     public void testInvalidNarrowMethodInDataSection() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         HotSpotConstant c = (HotSpotConstant) dummyMethod.getEncoding();
         Data data = new Data(4, 4, (buffer, patch) -> {
             patch.accept(new DataPatch(buffer.position(), new ConstantReference((VMConstant) c.compress())));
@@ -142,7 +142,7 @@ public class TestInvalidCompilationResult extends CodeInstallerTest {
 
     @Test(expected = NullPointerException.class)
     public void testNullConstantInDataSection() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         Data data = new Data(1, 1, (buffer, patch) -> {
             patch.accept(new DataPatch(buffer.position(), new ConstantReference(null)));
         });
@@ -152,7 +152,7 @@ public class TestInvalidCompilationResult extends CodeInstallerTest {
 
     @Test(expected = JVMCIError.class)
     public void testInvalidConstantInDataSection() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         Data data = new Data(1, 1, (buffer, patch) -> {
             patch.accept(new DataPatch(buffer.position(), new ConstantReference(new InvalidVMConstant())));
         });
@@ -162,35 +162,35 @@ public class TestInvalidCompilationResult extends CodeInstallerTest {
 
     @Test(expected = NullPointerException.class)
     public void testNullReferenceInCode() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         result.recordDataPatch(0, null);
         installCode(result);
     }
 
     @Test(expected = NullPointerException.class)
     public void testNullConstantInCode() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         result.recordDataPatch(0, new ConstantReference(null));
         installCode(result);
     }
 
     @Test(expected = JVMCIError.class)
     public void testInvalidConstantInCode() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         result.recordDataPatch(0, new ConstantReference(new InvalidVMConstant()));
         installCode(result);
     }
 
     @Test(expected = JVMCIError.class)
     public void testInvalidReference() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         result.recordDataPatch(0, new InvalidReference());
         installCode(result);
     }
 
     @Test(expected = JVMCIError.class)
     public void testOutOfBoundsDataSectionReference() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         DataSectionReference ref = new DataSectionReference();
         ref.setOffset(0x1000);
         result.recordDataPatch(0, ref);
@@ -199,42 +199,42 @@ public class TestInvalidCompilationResult extends CodeInstallerTest {
 
     @Test(expected = JVMCIError.class)
     public void testInvalidMark() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         result.recordMark(0, new Object());
         installCode(result);
     }
 
     @Test(expected = JVMCIError.class)
     public void testInvalidMarkInt() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         result.recordMark(0, -1);
         installCode(result);
     }
 
     @Test(expected = NullPointerException.class)
     public void testNullInfopoint() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         result.addInfopoint(null);
         installCode(result);
     }
 
     @Test(expected = JVMCIError.class)
     public void testUnknownInfopointReason() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         result.addInfopoint(new Infopoint(0, null, InfopointReason.UNKNOWN));
         installCode(result);
     }
 
     @Test(expected = JVMCIError.class)
     public void testInfopointMissingDebugInfo() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         result.addInfopoint(new Infopoint(0, null, InfopointReason.METHOD_START));
         installCode(result);
     }
 
     @Test(expected = JVMCIError.class)
     public void testSafepointMissingDebugInfo() {
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         result.addInfopoint(new Infopoint(0, null, InfopointReason.SAFEPOINT));
         installCode(result);
     }
