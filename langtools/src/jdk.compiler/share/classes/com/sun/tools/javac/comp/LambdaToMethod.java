@@ -55,12 +55,16 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static com.sun.tools.javac.comp.LambdaToMethod.LambdaSymbolKind.*;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
+
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.type.TypeKind;
 
 /**
@@ -268,21 +272,34 @@ public class LambdaToMethod extends TreeTranslator {
         MethodSymbol sym = localContext.translatedSym;
         MethodType lambdaType = (MethodType) sym.type;
 
-        {
-            Symbol owner = localContext.owner;
-            ListBuffer<Attribute.TypeCompound> ownerTypeAnnos = new ListBuffer<>();
-            ListBuffer<Attribute.TypeCompound> lambdaTypeAnnos = new ListBuffer<>();
+        {   /* Type annotation management: Based on where the lambda features, type annotations that
+               are interior to it, may at this point be attached to the enclosing method, or the first
+               constructor in the class, or in the enclosing class symbol or in the field whose
+               initializer is the lambda. In any event, gather up the annotations that belong to the
+               lambda and attach it to the implementation method.
+            */
 
-            for (Attribute.TypeCompound tc : owner.getRawTypeAttributes()) {
-                if (tc.position.onLambda == tree) {
-                    lambdaTypeAnnos.append(tc);
-                } else {
-                    ownerTypeAnnos.append(tc);
-                }
+            Symbol owner = localContext.owner;
+            apportionTypeAnnotations(tree,
+                    owner::getRawTypeAttributes,
+                    owner::setTypeAttributes,
+                    sym::setTypeAttributes);
+
+
+            boolean init;
+            if ((init = (owner.name == names.init)) || owner.name == names.clinit) {
+                owner = owner.owner;
+                apportionTypeAnnotations(tree,
+                        init ? owner::getInitTypeAttributes : owner::getClassInitTypeAttributes,
+                        init ? owner::setInitTypeAttributes : owner::setClassInitTypeAttributes,
+                        sym::appendUniqueTypeAttributes);
             }
-            if (lambdaTypeAnnos.nonEmpty()) {
-                owner.setTypeAttributes(ownerTypeAnnos.toList());
-                sym.setTypeAttributes(lambdaTypeAnnos.toList());
+            if (localContext.self != null && localContext.self.getKind() == ElementKind.FIELD) {
+                owner = localContext.self;
+                apportionTypeAnnotations(tree,
+                        owner::getRawTypeAttributes,
+                        owner::setTypeAttributes,
+                        sym::appendUniqueTypeAttributes);
             }
         }
 
@@ -353,6 +370,29 @@ public class LambdaToMethod extends TreeTranslator {
         //convert to an invokedynamic call
         result = makeMetafactoryIndyCall(context, refKind, sym, indy_args);
     }
+
+    // where
+        // Reassign type annotations from the source that should really belong to the lambda
+        private void apportionTypeAnnotations(JCLambda tree,
+                                              Supplier<List<Attribute.TypeCompound>> source,
+                                              Consumer<List<Attribute.TypeCompound>> owner,
+                                              Consumer<List<Attribute.TypeCompound>> lambda) {
+
+            ListBuffer<Attribute.TypeCompound> ownerTypeAnnos = new ListBuffer<>();
+            ListBuffer<Attribute.TypeCompound> lambdaTypeAnnos = new ListBuffer<>();
+
+            for (Attribute.TypeCompound tc : source.get()) {
+                if (tc.position.onLambda == tree) {
+                    lambdaTypeAnnos.append(tc);
+                } else {
+                    ownerTypeAnnos.append(tc);
+                }
+            }
+            if (lambdaTypeAnnos.nonEmpty()) {
+                owner.accept(ownerTypeAnnos.toList());
+                lambda.accept(lambdaTypeAnnos.toList());
+            }
+        }
 
     private JCIdent makeThis(Type type, Symbol owner) {
         VarSymbol _this = new VarSymbol(PARAMETER | FINAL | SYNTHETIC,
