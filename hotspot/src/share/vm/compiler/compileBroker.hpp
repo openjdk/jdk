@@ -145,7 +145,7 @@ class CompileBroker: AllStatic {
 
   // Compile type Information for print_last_compile() and CompilerCounters
   enum { no_compile, normal_compile, osr_compile, native_compile };
-  static int assign_compile_id (methodHandle method, int osr_bci);
+  static int assign_compile_id (const methodHandle& method, int osr_bci);
 
 
  private:
@@ -218,33 +218,33 @@ class CompileBroker: AllStatic {
 
   static JavaThread* make_thread(const char* name, CompileQueue* queue, CompilerCounters* counters, AbstractCompiler* comp, bool compiler_thread, TRAPS);
   static void init_compiler_sweeper_threads(int c1_compiler_count, int c2_compiler_count);
-  static bool compilation_is_complete  (methodHandle method, int osr_bci, int comp_level);
-  static bool compilation_is_prohibited(methodHandle method, int osr_bci, int comp_level);
+  static bool compilation_is_complete  (const methodHandle& method, int osr_bci, int comp_level);
+  static bool compilation_is_prohibited(const methodHandle& method, int osr_bci, int comp_level);
   static bool is_compile_blocking();
-  static void preload_classes          (methodHandle method, TRAPS);
+  static void preload_classes          (const methodHandle& method, TRAPS);
 
-  static CompileTask* create_compile_task(CompileQueue* queue,
-                                          int           compile_id,
-                                          methodHandle  method,
-                                          int           osr_bci,
-                                          int           comp_level,
-                                          methodHandle  hot_method,
-                                          int           hot_count,
-                                          const char*   comment,
-                                          bool          blocking);
+  static CompileTask* create_compile_task(CompileQueue*       queue,
+                                          int                 compile_id,
+                                          const methodHandle& method,
+                                          int                 osr_bci,
+                                          int                 comp_level,
+                                          const methodHandle& hot_method,
+                                          int                 hot_count,
+                                          const char*         comment,
+                                          bool                blocking);
   static void wait_for_completion(CompileTask* task);
 
   static void invoke_compiler_on_method(CompileTask* task);
   static void post_compile(CompilerThread* thread, CompileTask* task, EventCompilation& event, bool success, ciEnv* ci_env);
-  static void set_last_compile(CompilerThread *thread, methodHandle method, bool is_osr, int comp_level);
+  static void set_last_compile(CompilerThread *thread, const methodHandle& method, bool is_osr, int comp_level);
   static void push_jni_handle_block();
   static void pop_jni_handle_block();
   static void collect_statistics(CompilerThread* thread, elapsedTimer time, CompileTask* task);
 
-  static void compile_method_base(methodHandle method,
+  static void compile_method_base(const methodHandle& method,
                                   int osr_bci,
                                   int comp_level,
-                                  methodHandle hot_method,
+                                  const methodHandle& hot_method,
                                   int hot_count,
                                   const char* comment,
                                   Thread* thread);
@@ -269,7 +269,7 @@ public:
     return NULL;
   }
 
-  static bool compilation_is_in_queue(methodHandle method);
+  static bool compilation_is_in_queue(const methodHandle& method);
   static void print_compile_queues(outputStream* st);
   static void print_directives(outputStream* st);
   static int queue_size(int comp_level) {
@@ -278,15 +278,15 @@ public:
   }
   static void compilation_init();
   static void init_compiler_thread_log();
-  static nmethod* compile_method(methodHandle method,
+  static nmethod* compile_method(const methodHandle& method,
                                  int osr_bci,
                                  int comp_level,
-                                 methodHandle hot_method,
+                                 const methodHandle& hot_method,
                                  int hot_count,
                                  const char* comment, Thread* thread);
 
   // Acquire any needed locks and assign a compile id
-  static uint assign_compile_id_unlocked(Thread* thread, methodHandle method, int osr_bci);
+  static uint assign_compile_id_unlocked(Thread* thread, const methodHandle& method, int osr_bci);
 
   static void compiler_thread_loop();
   static uint get_compilation_id() { return _compilation_id; }

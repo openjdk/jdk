@@ -3494,7 +3494,9 @@ void PhaseIdealLoop::build_loop_late_post( Node *n ) {
     case Op_StrComp:            // Does a bunch of load-like effects
     case Op_StrEquals:
     case Op_StrIndexOf:
+    case Op_StrIndexOfChar:
     case Op_AryEq:
+    case Op_HasNegatives:
       pinned = false;
     }
     if( pinned ) {

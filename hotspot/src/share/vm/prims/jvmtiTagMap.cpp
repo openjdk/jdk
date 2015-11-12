@@ -588,7 +588,7 @@ class CallbackWrapper : public StackObj {
     _obj_tag = (_entry == NULL) ? 0 : _entry->tag();
 
     // get the class and the class's tag value
-    assert(InstanceKlass::cast(SystemDictionary::Class_klass())->is_mirror_instance_klass(), "Is not?");
+    assert(SystemDictionary::Class_klass()->is_mirror_instance_klass(), "Is not?");
 
     _klass_tag = tag_for(tag_map, _o->klass()->java_mirror());
   }
@@ -1057,21 +1057,36 @@ static jint invoke_string_value_callback(jvmtiStringPrimitiveValueCallback cb,
   // get the string value and length
   // (string value may be offset from the base)
   int s_len = java_lang_String::length(str);
-  int s_offset = java_lang_String::offset(str);
+  bool is_latin1 = java_lang_String::is_latin1(str);
   jchar* value;
   if (s_len > 0) {
-    value = s_value->char_at_addr(s_offset);
+    if (!is_latin1) {
+      value = s_value->char_at_addr(0);
+    } else {
+      // Inflate latin1 encoded string to UTF16
+      jchar* buf = NEW_C_HEAP_ARRAY(jchar, s_len, mtInternal);
+      for (int i = 0; i < s_len; i++) {
+        buf[i] = ((jchar) s_value->byte_at(i)) & 0xff;
+      }
+      value = &buf[0];
+    }
   } else {
+    // Don't use char_at_addr(0) if length is 0
     value = (jchar*) s_value->base(T_CHAR);
   }
 
   // invoke the callback
-  return (*cb)(wrapper->klass_tag(),
-               wrapper->obj_size(),
-               wrapper->obj_tag_p(),
-               value,
-               (jint)s_len,
-               user_data);
+  jint res = (*cb)(wrapper->klass_tag(),
+                   wrapper->obj_size(),
+                   wrapper->obj_tag_p(),
+                   value,
+                   (jint)s_len,
+                   user_data);
+
+  if (is_latin1 && s_len > 0) {
+    FREE_C_HEAP_ARRAY(jchar, value);
+  }
+  return res;
 }
 
 // helper function to invoke string primitive value callback
@@ -1118,7 +1133,7 @@ static jint invoke_primitive_field_callback_for_static_fields
   Klass* klass = java_lang_Class::as_Klass(obj);
 
   // ignore classes for object and type arrays
-  if (!klass->oop_is_instance()) {
+  if (!klass->is_instance_klass()) {
     return 0;
   }
 
@@ -2569,7 +2584,7 @@ class SimpleRootsClosure : public OopClosure {
       // SystemDictionary::always_strong_oops_do reports the application
       // class loader as a root. We want this root to be reported as
       // a root kind of "OTHER" rather than "SYSTEM_CLASS".
-      if (!o->is_instanceMirror()) {
+      if (!o->is_instance() || !InstanceKlass::cast(o->klass())->is_mirror_instance_klass()) {
         kind = JVMTI_HEAP_REFERENCE_OTHER;
       }
     }
@@ -2821,7 +2836,7 @@ inline bool VM_HeapWalkOperation::iterate_over_class(oop java_class) {
   int i;
   Klass* klass = java_lang_Class::as_Klass(java_class);
 
-  if (klass->oop_is_instance()) {
+  if (klass->is_instance_klass()) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
 
     // Ignore the class if it hasn't been initialized yet

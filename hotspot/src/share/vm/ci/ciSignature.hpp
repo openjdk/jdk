@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ private:
   friend class ciBytecodeStream;
   friend class ciObjectFactory;
 
-  ciSignature(ciKlass* accessing_klass, constantPoolHandle cpool, ciSymbol* signature);
+  ciSignature(ciKlass* accessing_klass, const constantPoolHandle& cpool, ciSymbol* signature);
   ciSignature(ciKlass* accessing_klass,                           ciSymbol* signature, ciMethodType* method_type);
 
   void get_all_klasses();

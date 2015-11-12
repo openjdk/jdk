@@ -83,7 +83,26 @@
   declare_constant(VM_Version::vis1_instructions_m)                       \
   declare_constant(VM_Version::vis2_instructions_m)                       \
   declare_constant(VM_Version::vis3_instructions_m)                       \
-  declare_constant(VM_Version::cbcond_instructions_m)
+  declare_constant(VM_Version::cbcond_instructions_m)                     \
+  declare_constant(VM_Version::v8_instructions_m)                         \
+  declare_constant(VM_Version::hardware_mul32_m)                          \
+  declare_constant(VM_Version::hardware_div32_m)                          \
+  declare_constant(VM_Version::hardware_fsmuld_m)                         \
+  declare_constant(VM_Version::hardware_popc_m)                           \
+  declare_constant(VM_Version::v9_instructions_m)                         \
+  declare_constant(VM_Version::sun4v_m)                                   \
+  declare_constant(VM_Version::blk_init_instructions_m)                   \
+  declare_constant(VM_Version::fmaf_instructions_m)                       \
+  declare_constant(VM_Version::fmau_instructions_m)                       \
+  declare_constant(VM_Version::sparc64_family_m)                          \
+  declare_constant(VM_Version::M_family_m)                                \
+  declare_constant(VM_Version::T_family_m)                                \
+  declare_constant(VM_Version::T1_model_m)                                \
+  declare_constant(VM_Version::sparc5_instructions_m)                     \
+  declare_constant(VM_Version::aes_instructions_m)                        \
+  declare_constant(VM_Version::sha1_instruction_m)                        \
+  declare_constant(VM_Version::sha256_instruction_m)                      \
+  declare_constant(VM_Version::sha512_instruction_m)
 
 #define VM_LONG_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant)
 

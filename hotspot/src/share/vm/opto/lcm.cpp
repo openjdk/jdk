@@ -196,8 +196,12 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     case Op_StrComp:
     case Op_StrEquals:
     case Op_StrIndexOf:
+    case Op_StrIndexOfChar:
     case Op_AryEq:
+    case Op_StrInflatedCopy:
+    case Op_StrCompressedCopy:
     case Op_EncodeISOArray:
+    case Op_HasNegatives:
       // Not a legit memory op for implicit null check regardless of
       // embedded loads
       continue;
@@ -806,7 +810,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
   block->insert_node(proj, node_cnt++);
 
   // Select the right register save policy.
-  const char * save_policy;
+  const char *save_policy = NULL;
   switch (op) {
     case Op_CallRuntime:
     case Op_CallLeaf:

@@ -28,6 +28,7 @@
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1Log.hpp"
 #include "gc/g1/g1StringDedup.hpp"
+#include "gc/g1/workerDataArray.inline.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/os.hpp"
 
@@ -86,165 +87,6 @@ public:
   }
 };
 
-template <class T>
-class WorkerDataArray  : public CHeapObj<mtGC> {
-  friend class G1GCParPhasePrinter;
-  T*          _data;
-  uint        _length;
-  const char* _title;
-  bool        _print_sum;
-  int         _log_level;
-  uint        _indent_level;
-  bool        _enabled;
-
-  WorkerDataArray<size_t>* _thread_work_items;
-
-  NOT_PRODUCT(T uninitialized();)
-
-  // We are caching the sum and average to only have to calculate them once.
-  // This is not done in an MT-safe way. It is intended to allow single
-  // threaded code to call sum() and average() multiple times in any order
-  // without having to worry about the cost.
-  bool   _has_new_data;
-  T      _sum;
-  T      _min;
-  T      _max;
-  double _average;
-
- public:
-  WorkerDataArray(uint length, const char* title, bool print_sum, int log_level, uint indent_level) :
-    _title(title), _length(0), _print_sum(print_sum), _log_level(log_level), _indent_level(indent_level),
-    _has_new_data(true), _thread_work_items(NULL), _enabled(true) {
-    assert(length > 0, "Must have some workers to store data for");
-    _length = length;
-    _data = NEW_C_HEAP_ARRAY(T, _length, mtGC);
-  }
-
-  ~WorkerDataArray() {
-    FREE_C_HEAP_ARRAY(T, _data);
-  }
-
-  void link_thread_work_items(WorkerDataArray<size_t>* thread_work_items) {
-    _thread_work_items = thread_work_items;
-  }
-
-  WorkerDataArray<size_t>* thread_work_items() { return _thread_work_items; }
-
-  void set(uint worker_i, T value) {
-    assert(worker_i < _length, "Worker %d is greater than max: %d", worker_i, _length);
-    assert(_data[worker_i] == WorkerDataArray<T>::uninitialized(), "Overwriting data for worker %d in %s", worker_i, _title);
-    _data[worker_i] = value;
-    _has_new_data = true;
-  }
-
-  void set_thread_work_item(uint worker_i, size_t value) {
-    assert(_thread_work_items != NULL, "No sub count");
-    _thread_work_items->set(worker_i, value);
-  }
-
-  T get(uint worker_i) {
-    assert(worker_i < _length, "Worker %d is greater than max: %d", worker_i, _length);
-    assert(_data[worker_i] != WorkerDataArray<T>::uninitialized(), "No data added for worker %d", worker_i);
-    return _data[worker_i];
-  }
-
-  void add(uint worker_i, T value) {
-    assert(worker_i < _length, "Worker %d is greater than max: %d", worker_i, _length);
-    assert(_data[worker_i] != WorkerDataArray<T>::uninitialized(), "No data to add to for worker %d", worker_i);
-    _data[worker_i] += value;
-    _has_new_data = true;
-  }
-
-  double average(uint active_threads){
-    calculate_totals(active_threads);
-    return _average;
-  }
-
-  T sum(uint active_threads) {
-    calculate_totals(active_threads);
-    return _sum;
-  }
-
-  T minimum(uint active_threads) {
-    calculate_totals(active_threads);
-    return _min;
-  }
-
-  T maximum(uint active_threads) {
-    calculate_totals(active_threads);
-    return _max;
-  }
-
-  void reset() PRODUCT_RETURN;
-  void verify(uint active_threads) PRODUCT_RETURN;
-
-  void set_enabled(bool enabled) { _enabled = enabled; }
-
-  int log_level() { return _log_level;  }
-
- private:
-
-  void calculate_totals(uint active_threads){
-    if (!_has_new_data) {
-      return;
-    }
-
-    _sum = (T)0;
-    _min = _data[0];
-    _max = _min;
-    assert(active_threads <= _length, "Wrong number of active threads");
-    for (uint i = 0; i < active_threads; ++i) {
-      T val = _data[i];
-      _sum += val;
-      _min = MIN2(_min, val);
-      _max = MAX2(_max, val);
-    }
-    _average = (double)_sum / (double)active_threads;
-    _has_new_data = false;
-  }
-};
-
-
-#ifndef PRODUCT
-
-template <>
-size_t WorkerDataArray<size_t>::uninitialized() {
-  return (size_t)-1;
-}
-
-template <>
-double WorkerDataArray<double>::uninitialized() {
-  return -1.0;
-}
-
-template <class T>
-void WorkerDataArray<T>::reset() {
-  for (uint i = 0; i < _length; i++) {
-    _data[i] = WorkerDataArray<T>::uninitialized();
-  }
-  if (_thread_work_items != NULL) {
-    _thread_work_items->reset();
-  }
-}
-
-template <class T>
-void WorkerDataArray<T>::verify(uint active_threads) {
-  if (!_enabled) {
-    return;
-  }
-
-  assert(active_threads <= _length, "Wrong number of active threads");
-  for (uint i = 0; i < active_threads; i++) {
-    assert(_data[i] != WorkerDataArray<T>::uninitialized(),
-           "Invalid data for worker %u in '%s'", i, _title);
-  }
-  if (_thread_work_items != NULL) {
-    _thread_work_items->verify(active_threads);
-  }
-}
-
-#endif
-
 G1GCPhaseTimes::G1GCPhaseTimes(uint max_gc_threads) :
   _max_gc_threads(max_gc_threads)
 {
@@ -298,6 +140,7 @@ void G1GCPhaseTimes::note_gc_start(uint active_gc_threads, bool mark_in_progress
   assert(active_gc_threads > 0, "The number of threads must be > 0");
   assert(active_gc_threads <= _max_gc_threads, "The number of active threads must be <= the max number of threads");
   _active_gc_threads = active_gc_threads;
+  _cur_expand_heap_time_ms = 0.0;
 
   for (int i = 0; i < GCParPhasesSentinel; i++) {
     _gc_par_phases[i]->reset();
@@ -362,6 +205,9 @@ double G1GCPhaseTimes::accounted_time_ms() {
     // Subtract the time taken to clean the card table from the
     // current value of "other time"
     misc_time_ms += _cur_clear_ct_time_ms;
+
+    // Remove expand heap time from "other time"
+    misc_time_ms += _cur_expand_heap_time_ms;
 
     return misc_time_ms;
 }
@@ -536,6 +382,8 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
     }
   }
   print_stats(1, "Clear CT", _cur_clear_ct_time_ms);
+  print_stats(1, "Expand Heap After Collection", _cur_expand_heap_time_ms);
+
   double misc_time_ms = pause_time_sec * MILLIUNITS - accounted_time_ms();
   print_stats(1, "Other", misc_time_ms);
   if (_cur_verify_before_time_ms > 0.0) {

@@ -22,9 +22,11 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.*;
-
-import jdk.vm.ci.meta.*;
+import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
+import jdk.vm.ci.meta.JavaMethodProfile;
+import jdk.vm.ci.meta.JavaTypeProfile;
+import jdk.vm.ci.meta.ProfilingInfo;
+import jdk.vm.ci.meta.TriState;
 
 /**
  * Interface for accessor objects that encapsulate the logic for accessing the different kinds of
@@ -60,10 +62,6 @@ public interface HotSpotMethodDataAccessor {
 
         public int getValue() {
             return value;
-        }
-
-        private static HotSpotVMConfig config() {
-            return runtime().getConfig();
         }
 
         public static Tag getEnum(int value) {

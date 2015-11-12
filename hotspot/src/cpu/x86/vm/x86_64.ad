@@ -10447,30 +10447,108 @@ instruct rep_fast_stosb(rcx_RegL cnt, rdi_RegP base, rax_RegI zero, Universe dum
   ins_pipe( pipe_slow );
 %}
 
-instruct string_compare(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
-                        rax_RegI result, regD tmp1, rFlagsReg cr)
+instruct string_compareL(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
+                         rax_RegI result, regD tmp1, rFlagsReg cr)
 %{
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
-  format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1" %}
+  format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1" %}
   ins_encode %{
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
-                      $tmp1$$XMMRegister);
+                      $tmp1$$XMMRegister, StrIntrinsicNode::LL);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct string_compareU(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
+                         rax_RegI result, regD tmp1, rFlagsReg cr)
+%{
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UU);
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+
+  format %{ "String Compare char[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1" %}
+  ins_encode %{
+    __ string_compare($str1$$Register, $str2$$Register,
+                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
+                      $tmp1$$XMMRegister, StrIntrinsicNode::UU);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct string_compareLU(rdi_RegP str1, rcx_RegI cnt1, rsi_RegP str2, rdx_RegI cnt2,
+                          rax_RegI result, regD tmp1, rFlagsReg cr)
+%{
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::LU);
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+
+  format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1" %}
+  ins_encode %{
+    __ string_compare($str1$$Register, $str2$$Register,
+                      $cnt1$$Register, $cnt2$$Register, $result$$Register,
+                      $tmp1$$XMMRegister, StrIntrinsicNode::LU);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct string_compareUL(rsi_RegP str1, rdx_RegI cnt1, rdi_RegP str2, rcx_RegI cnt2,
+                          rax_RegI result, regD tmp1, rFlagsReg cr)
+%{
+  predicate(((StrCompNode*)n)->encoding() == StrIntrinsicNode::UL);
+  match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(TEMP tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
+
+  format %{ "String Compare byte[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL $tmp1" %}
+  ins_encode %{
+    __ string_compare($str2$$Register, $str1$$Register,
+                      $cnt2$$Register, $cnt1$$Register, $result$$Register,
+                      $tmp1$$XMMRegister, StrIntrinsicNode::UL);
   %}
   ins_pipe( pipe_slow );
 %}
 
 // fast search of substring with known size.
-instruct string_indexof_con(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, immI int_cnt2,
-                            rbx_RegI result, regD vec, rax_RegI cnt2, rcx_RegI tmp, rFlagsReg cr)
+instruct string_indexof_conL(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, immI int_cnt2,
+                             rbx_RegI result, regD vec, rax_RegI cnt2, rcx_RegI tmp, rFlagsReg cr)
 %{
-  predicate(UseSSE42Intrinsics);
+  predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL));
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
   effect(TEMP vec, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, KILL cnt2, KILL tmp, KILL cr);
 
-  format %{ "String IndexOf $str1,$cnt1,$str2,$int_cnt2 -> $result   // KILL $vec, $cnt1, $cnt2, $tmp" %}
+  format %{ "String IndexOf byte[] $str1,$cnt1,$str2,$int_cnt2 -> $result   // KILL $vec, $cnt1, $cnt2, $tmp" %}
+  ins_encode %{
+    int icnt2 = (int)$int_cnt2$$constant;
+    if (icnt2 >= 16) {
+      // IndexOf for constant substrings with size >= 16 elements
+      // which don't need to be loaded through stack.
+      __ string_indexofC8($str1$$Register, $str2$$Register,
+                          $cnt1$$Register, $cnt2$$Register,
+                          icnt2, $result$$Register,
+                          $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::LL);
+    } else {
+      // Small strings are loaded through stack if they cross page boundary.
+      __ string_indexof($str1$$Register, $str2$$Register,
+                        $cnt1$$Register, $cnt2$$Register,
+                        icnt2, $result$$Register,
+                        $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::LL);
+    }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// fast search of substring with known size.
+instruct string_indexof_conU(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, immI int_cnt2,
+                             rbx_RegI result, regD vec, rax_RegI cnt2, rcx_RegI tmp, rFlagsReg cr)
+%{
+  predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU));
+  match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
+  effect(TEMP vec, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, KILL cnt2, KILL tmp, KILL cr);
+
+  format %{ "String IndexOf char[] $str1,$cnt1,$str2,$int_cnt2 -> $result   // KILL $vec, $cnt1, $cnt2, $tmp" %}
   ins_encode %{
     int icnt2 = (int)$int_cnt2$$constant;
     if (icnt2 >= 8) {
@@ -10479,31 +10557,108 @@ instruct string_indexof_con(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, immI in
       __ string_indexofC8($str1$$Register, $str2$$Register,
                           $cnt1$$Register, $cnt2$$Register,
                           icnt2, $result$$Register,
-                          $vec$$XMMRegister, $tmp$$Register);
+                          $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UU);
     } else {
       // Small strings are loaded through stack if they cross page boundary.
       __ string_indexof($str1$$Register, $str2$$Register,
                         $cnt1$$Register, $cnt2$$Register,
                         icnt2, $result$$Register,
-                        $vec$$XMMRegister, $tmp$$Register);
+                        $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UU);
     }
   %}
   ins_pipe( pipe_slow );
 %}
 
-instruct string_indexof(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, rax_RegI cnt2,
-                        rbx_RegI result, regD vec, rcx_RegI tmp, rFlagsReg cr)
+// fast search of substring with known size.
+instruct string_indexof_conUL(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, immI int_cnt2,
+                             rbx_RegI result, regD vec, rax_RegI cnt2, rcx_RegI tmp, rFlagsReg cr)
 %{
-  predicate(UseSSE42Intrinsics);
+  predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL));
+  match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
+  effect(TEMP vec, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, KILL cnt2, KILL tmp, KILL cr);
+
+  format %{ "String IndexOf char[] $str1,$cnt1,$str2,$int_cnt2 -> $result   // KILL $vec, $cnt1, $cnt2, $tmp" %}
+  ins_encode %{
+    int icnt2 = (int)$int_cnt2$$constant;
+    if (icnt2 >= 8) {
+      // IndexOf for constant substrings with size >= 8 elements
+      // which don't need to be loaded through stack.
+      __ string_indexofC8($str1$$Register, $str2$$Register,
+                          $cnt1$$Register, $cnt2$$Register,
+                          icnt2, $result$$Register,
+                          $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UL);
+    } else {
+      // Small strings are loaded through stack if they cross page boundary.
+      __ string_indexof($str1$$Register, $str2$$Register,
+                        $cnt1$$Register, $cnt2$$Register,
+                        icnt2, $result$$Register,
+                        $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UL);
+    }
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct string_indexofL(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, rax_RegI cnt2,
+                         rbx_RegI result, regD vec, rcx_RegI tmp, rFlagsReg cr)
+%{
+  predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::LL));
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(TEMP vec, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL tmp, KILL cr);
 
-  format %{ "String IndexOf $str1,$cnt1,$str2,$cnt2 -> $result   // KILL all" %}
+  format %{ "String IndexOf byte[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL all" %}
   ins_encode %{
     __ string_indexof($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register,
                       (-1), $result$$Register,
-                      $vec$$XMMRegister, $tmp$$Register);
+                      $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::LL);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct string_indexofU(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, rax_RegI cnt2,
+                         rbx_RegI result, regD vec, rcx_RegI tmp, rFlagsReg cr)
+%{
+  predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UU));
+  match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(TEMP vec, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL tmp, KILL cr);
+
+  format %{ "String IndexOf char[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL all" %}
+  ins_encode %{
+    __ string_indexof($str1$$Register, $str2$$Register,
+                      $cnt1$$Register, $cnt2$$Register,
+                      (-1), $result$$Register,
+                      $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UU);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct string_indexofUL(rdi_RegP str1, rdx_RegI cnt1, rsi_RegP str2, rax_RegI cnt2,
+                         rbx_RegI result, regD vec, rcx_RegI tmp, rFlagsReg cr)
+%{
+  predicate(UseSSE42Intrinsics && (((StrIndexOfNode*)n)->encoding() == StrIntrinsicNode::UL));
+  match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
+  effect(TEMP vec, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL tmp, KILL cr);
+
+  format %{ "String IndexOf char[] $str1,$cnt1,$str2,$cnt2 -> $result   // KILL all" %}
+  ins_encode %{
+    __ string_indexof($str1$$Register, $str2$$Register,
+                      $cnt1$$Register, $cnt2$$Register,
+                      (-1), $result$$Register,
+                      $vec$$XMMRegister, $tmp$$Register, StrIntrinsicNode::UL);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct string_indexofU_char(rdi_RegP str1, rdx_RegI cnt1, rax_RegI ch,
+                              rbx_RegI result, regD vec1, regD vec2, regD vec3, rcx_RegI tmp, rFlagsReg cr)
+%{
+  predicate(UseSSE42Intrinsics);
+  match(Set result (StrIndexOfChar (Binary str1 cnt1) ch));
+  effect(TEMP vec1, TEMP vec2, TEMP vec3, USE_KILL str1, USE_KILL cnt1, USE_KILL ch, TEMP tmp, KILL cr);
+  format %{ "String IndexOf char[] $str1,$cnt1,$ch -> $result   // KILL all" %}
+  ins_encode %{
+    __ string_indexof_char($str1$$Register, $cnt1$$Register, $ch$$Register, $result$$Register,
+                           $vec1$$XMMRegister, $vec2$$XMMRegister, $vec3$$XMMRegister, $tmp$$Register);
   %}
   ins_pipe( pipe_slow );
 %}
@@ -10517,26 +10672,86 @@ instruct string_equals(rdi_RegP str1, rsi_RegP str2, rcx_RegI cnt, rax_RegI resu
 
   format %{ "String Equals $str1,$str2,$cnt -> $result    // KILL $tmp1, $tmp2, $tmp3" %}
   ins_encode %{
-    __ char_arrays_equals(false, $str1$$Register, $str2$$Register,
-                          $cnt$$Register, $result$$Register, $tmp3$$Register,
-                          $tmp1$$XMMRegister, $tmp2$$XMMRegister);
+    __ arrays_equals(false, $str1$$Register, $str2$$Register,
+                     $cnt$$Register, $result$$Register, $tmp3$$Register,
+                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, false /* char */);
   %}
   ins_pipe( pipe_slow );
 %}
 
 // fast array equals
-instruct array_equals(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
-                      regD tmp1, regD tmp2, rcx_RegI tmp3, rbx_RegI tmp4, rFlagsReg cr)
+instruct array_equalsB(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
+                       regD tmp1, regD tmp2, rcx_RegI tmp3, rbx_RegI tmp4, rFlagsReg cr)
 %{
+  predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::LL);
   match(Set result (AryEq ary1 ary2));
   effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL ary2, KILL tmp3, KILL tmp4, KILL cr);
-  //ins_cost(300);
 
-  format %{ "Array Equals $ary1,$ary2 -> $result   // KILL $tmp1, $tmp2, $tmp3, $tmp4" %}
+  format %{ "Array Equals byte[] $ary1,$ary2 -> $result   // KILL $tmp1, $tmp2, $tmp3, $tmp4" %}
   ins_encode %{
-    __ char_arrays_equals(true, $ary1$$Register, $ary2$$Register,
-                          $tmp3$$Register, $result$$Register, $tmp4$$Register,
-                          $tmp1$$XMMRegister, $tmp2$$XMMRegister);
+    __ arrays_equals(true, $ary1$$Register, $ary2$$Register,
+                     $tmp3$$Register, $result$$Register, $tmp4$$Register,
+                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, false /* char */);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct array_equalsC(rdi_RegP ary1, rsi_RegP ary2, rax_RegI result,
+                      regD tmp1, regD tmp2, rcx_RegI tmp3, rbx_RegI tmp4, rFlagsReg cr)
+%{
+  predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
+  match(Set result (AryEq ary1 ary2));
+  effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL ary2, KILL tmp3, KILL tmp4, KILL cr);
+
+  format %{ "Array Equals char[] $ary1,$ary2 -> $result   // KILL $tmp1, $tmp2, $tmp3, $tmp4" %}
+  ins_encode %{
+    __ arrays_equals(true, $ary1$$Register, $ary2$$Register,
+                     $tmp3$$Register, $result$$Register, $tmp4$$Register,
+                     $tmp1$$XMMRegister, $tmp2$$XMMRegister, true /* char */);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct has_negatives(rsi_RegP ary1, rcx_RegI len, rax_RegI result,
+                      regD tmp1, regD tmp2, rbx_RegI tmp3, rFlagsReg cr)
+%{
+  match(Set result (HasNegatives ary1 len));
+  effect(TEMP tmp1, TEMP tmp2, USE_KILL ary1, USE_KILL len, KILL tmp3, KILL cr);
+
+  format %{ "has negatives byte[] $ary1,$len -> $result   // KILL $tmp1, $tmp2, $tmp3" %}
+  ins_encode %{
+    __ has_negatives($ary1$$Register, $len$$Register,
+                     $result$$Register, $tmp3$$Register,
+                     $tmp1$$XMMRegister, $tmp2$$XMMRegister);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// fast char[] to byte[] compression
+instruct string_compress(rsi_RegP src, rdi_RegP dst, rdx_RegI len, regD tmp1, regD tmp2, regD tmp3, regD tmp4,
+                         rcx_RegI tmp5, rax_RegI result, rFlagsReg cr) %{
+  match(Set result (StrCompressedCopy src (Binary dst len)));
+  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, USE_KILL src, USE_KILL dst, USE_KILL len, KILL tmp5, KILL cr);
+
+  format %{ "String Compress $src,$dst -> $result    // KILL RAX, RCX, RDX" %}
+  ins_encode %{
+    __ char_array_compress($src$$Register, $dst$$Register, $len$$Register,
+                           $tmp1$$XMMRegister, $tmp2$$XMMRegister, $tmp3$$XMMRegister,
+                           $tmp4$$XMMRegister, $tmp5$$Register, $result$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+// fast byte[] to char[] inflation
+instruct string_inflate(Universe dummy, rsi_RegP src, rdi_RegP dst, rdx_RegI len,
+                        regD tmp1, rcx_RegI tmp2, rFlagsReg cr) %{
+  match(Set dummy (StrInflatedCopy src (Binary dst len)));
+  effect(TEMP tmp1, TEMP tmp2, USE_KILL src, USE_KILL dst, USE_KILL len, KILL cr);
+
+  format %{ "String Inflate $src,$dst    // KILL $tmp1, $tmp2" %}
+  ins_encode %{
+    __ byte_array_inflate($src$$Register, $dst$$Register, $len$$Register,
+                          $tmp1$$XMMRegister, $tmp2$$Register);
   %}
   ins_pipe( pipe_slow );
 %}

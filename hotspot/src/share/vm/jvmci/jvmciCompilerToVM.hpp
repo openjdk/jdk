@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,9 +94,11 @@ public:
     return (MethodData*) (address) metaspaceMethodData;
   }
 
-  static oop get_jvmci_method(methodHandle method, TRAPS);
+  static oop get_jvmci_method(const methodHandle& method, TRAPS);
 
   static oop get_jvmci_type(KlassHandle klass, TRAPS);
+
+  static void invalidate_installed_code(Handle installedCode, TRAPS);
 };
 
 class JavaArgumentUnboxer : public SignatureIterator {

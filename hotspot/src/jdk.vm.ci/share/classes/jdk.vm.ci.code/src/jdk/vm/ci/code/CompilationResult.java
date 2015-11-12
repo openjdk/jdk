@@ -22,13 +22,24 @@
  */
 package jdk.vm.ci.code;
 
-import static java.util.Collections.*;
-import static jdk.vm.ci.meta.MetaUtil.*;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableList;
+import static jdk.vm.ci.meta.MetaUtil.identityHashCodeString;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
-import jdk.vm.ci.meta.*;
-import jdk.vm.ci.meta.Assumptions.*;
+import jdk.vm.ci.meta.Assumptions.Assumption;
+import jdk.vm.ci.meta.InvokeTarget;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.MetaUtil;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.VMConstant;
 
 /**
  * Represents the output from compiling a method, including the compiled machine code, associated
@@ -115,8 +126,8 @@ public class CompilationResult {
 
     public enum MetaSpaceAccessType {
         Move,
-        Store, // store only works for compressed oops (memory <- 32bit value). Compressed oops is
-               // not supported using AOT. TODO: Look at HotSpotStoreConstantOp
+        Store,  // store only works for compressed oops (memory <- 32bit value). Compressed oops is
+        // not supported using AOT. TODO: Look at HotSpotStoreConstantOp
         Compare; // HotSpotCompareMemoryConstantOp, HotSpotCompareConstantOp
 
         private MetaSpaceAccessType() {
@@ -128,13 +139,11 @@ public class CompilationResult {
      */
     public static final class MetaSpaceAccess extends Infopoint {
 
-        private static final long serialVersionUID = 1701958512608684706L;
-
         /**
          * Metaspace reference.
          */
         public final Object reference; // Object here is a HotSpotResolvedObjectType or a
-                                       // HotSpotMetaSpaceConstant
+        // HotSpotMetaSpaceConstant
 
         public final MetaSpaceAccessType type;
 
@@ -295,6 +304,15 @@ public class CompilationResult {
                 return this.offset == that.offset;
             }
             return false;
+        }
+
+        @Override
+        public String toString() {
+            if (initialized) {
+                return String.format("DataSection[0x%x]", offset);
+            } else {
+                return "DataSection[?]";
+            }
         }
     }
 
@@ -528,8 +546,6 @@ public class CompilationResult {
         }
     }
 
-    private int id = -1;
-
     /**
      * Specifies whether this compilation is a {@code +ImmutableCode} {@code +GeneratePIC}
      * compilation.
@@ -612,7 +628,6 @@ public class CompilationResult {
             CompilationResult that = (CompilationResult) obj;
             // @formatter:off
             if (this.entryBCI == that.entryBCI &&
-                this.id == that.id &&
                 this.customStackAreaOffset == that.customStackAreaOffset &&
                 this.totalFrameSize == that.totalFrameSize &&
                 this.targetCodeSize == that.targetCodeSize &&
@@ -630,20 +645,6 @@ public class CompilationResult {
             // @formatter:on
         }
         return false;
-    }
-
-    /**
-     * @return the compile id
-     */
-    public int getId() {
-        return id;
-    }
-
-    /**
-     * @param id the compile id to set
-     */
-    public void setId(int id) {
-        this.id = id;
     }
 
     /**

@@ -22,7 +22,9 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
 
 /**
  * The compressed representation of the {@link JavaConstant#NULL_POINTER null constant}.
@@ -46,6 +48,14 @@ public final class HotSpotCompressedNullConstant implements JavaConstant, HotSpo
     @Override
     public boolean isCompressed() {
         return true;
+    }
+
+    public Constant compress() {
+        throw new IllegalArgumentException();
+    }
+
+    public Constant uncompress() {
+        return NULL_POINTER;
     }
 
     @Override

@@ -218,7 +218,7 @@ class SignatureHandlerLibrary: public AllStatic {
   static void pd_set_handler(address handler);
 
  public:
-  static void add(methodHandle method);
+  static void add(const methodHandle& method);
   static void add(uint64_t fingerprint, address handler);
 };
 

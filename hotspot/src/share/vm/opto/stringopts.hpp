@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@
 #include "opto/phaseX.hpp"
 
 class StringConcat;
+class IdealVariable;
 
 class PhaseStringOpts : public Phase {
   friend class StringConcat;
@@ -40,7 +41,7 @@ class PhaseStringOpts : public Phase {
   Unique_Node_List dead_worklist;
 
   // Memory slices needed for code gen
-  int char_adr_idx;
+  int byte_adr_idx;
 
   // Integer.sizeTable - used for int to String conversion
   ciField* size_table_field;
@@ -64,11 +65,37 @@ class PhaseStringOpts : public Phase {
   // Compute the number of characters required to represent the int value
   Node* int_stringSize(GraphKit& kit, Node* value);
 
-  // Copy the characters representing value into char_array starting at start
-  void int_getChars(GraphKit& kit, Node* value, Node* char_array, Node* start, Node* end);
+  // Simplified version of Integer.getChars
+  void getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicType bt, Node* end, Node* final_merge, Node* final_mem, int merge_index = 0);
 
-  // Copy of the contents of the String str into char_array starting at index start.
-  Node* copy_string(GraphKit& kit, Node* str, Node* char_array, Node* start);
+  // Copy the characters representing arg into dst_array starting at start
+  Node* int_getChars(GraphKit& kit, Node* arg, Node* dst_array, Node* dst_coder, Node* start, Node* size);
+
+  // Copy contents of the String str into dst_array starting at index start.
+  Node* copy_string(GraphKit& kit, Node* str, Node* dst_array, Node* dst_coder, Node* start);
+
+  // Copy 'count' bytes/chars from src_array to dst_array starting at index start
+  void arraycopy(GraphKit& kit, IdealKit& ideal, Node* src_array, Node* dst_array, BasicType elembt, Node* start, Node* count);
+
+  // Copy contents of constant src_array to dst_array by emitting individual stores
+  void copy_constant_string(GraphKit& kit, IdealKit& ideal, ciTypeArray* src_array, IdealVariable& count,
+                            bool src_is_byte, Node* dst_array, Node* dst_coder, Node* start);
+
+  // Copy contents of a Latin1 encoded string from src_array to dst_array
+  void copy_latin1_string(GraphKit& kit, IdealKit& ideal, Node* src_array, IdealVariable& count,
+                          Node* dst_array, Node* dst_coder, Node* start);
+
+  // Copy the char into dst_array at index start.
+  Node* copy_char(GraphKit& kit, Node* val, Node* dst_array, Node* dst_coder, Node* start);
+
+  // Allocate a byte array of specified length.
+  Node* allocate_byte_array(GraphKit& kit, IdealKit* ideal, Node* length);
+
+  // Returns the coder of a constant string
+  jbyte get_constant_coder(GraphKit& kit, Node* str);
+
+  // Returns the length of a constant string
+  int get_constant_length(GraphKit& kit, Node* str);
 
   // Clean up any leftover nodes
   void record_dead_node(Node* node);

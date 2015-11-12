@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,7 @@ void JvmtiClassFileReconstituter::write_field_infos() {
 // JVMSpec|     u2 attributes_count;
 // JVMSpec|     attribute_info attributes[attributes_count];
 // JVMSpec|   }
-void JvmtiClassFileReconstituter::write_code_attribute(methodHandle method) {
+void JvmtiClassFileReconstituter::write_code_attribute(const methodHandle& method) {
   ConstMethod* const_method = method->constMethod();
   u2 line_num_cnt = 0;
   int stackmap_len = 0;
@@ -415,7 +415,7 @@ void JvmtiClassFileReconstituter::write_synthetic_attribute() {
 }
 
 // Compute size of LineNumberTable
-u2 JvmtiClassFileReconstituter::line_number_table_entries(methodHandle method) {
+u2 JvmtiClassFileReconstituter::line_number_table_entries(const methodHandle& method) {
   // The line number table is compressed so we don't know how big it is until decompressed.
   // Decompression is really fast so we just do it twice.
   u2 num_entries = 0;
@@ -435,7 +435,7 @@ u2 JvmtiClassFileReconstituter::line_number_table_entries(methodHandle method) {
 // JVMSpec|        u2 line_number;
 // JVMSpec|     } line_number_table[line_number_table_length];
 // JVMSpec|   }
-void JvmtiClassFileReconstituter::write_line_number_table_attribute(methodHandle method,
+void JvmtiClassFileReconstituter::write_line_number_table_attribute(const methodHandle& method,
                                                                     u2 num_entries) {
 
   write_attribute_name_index("LineNumberTable");
@@ -461,7 +461,7 @@ void JvmtiClassFileReconstituter::write_line_number_table_attribute(methodHandle
 // JVMSpec|       u2 index;
 // JVMSpec|     } local_variable_table[local_variable_table_length];
 // JVMSpec|   }
-void JvmtiClassFileReconstituter::write_local_variable_table_attribute(methodHandle method, u2 num_entries) {
+void JvmtiClassFileReconstituter::write_local_variable_table_attribute(const methodHandle& method, u2 num_entries) {
     write_attribute_name_index("LocalVariableTable");
     write_u4(2 + num_entries * (2 + 2 + 2 + 2 + 2));
     write_u2(num_entries);
@@ -491,7 +491,7 @@ void JvmtiClassFileReconstituter::write_local_variable_table_attribute(methodHan
 // JVMSpec|       u2 index;
 // JVMSpec|     } local_variable_type_table[local_variable_type_table_length];
 // JVMSpec|   }
-void JvmtiClassFileReconstituter::write_local_variable_type_table_attribute(methodHandle method, u2 num_entries) {
+void JvmtiClassFileReconstituter::write_local_variable_type_table_attribute(const methodHandle& method, u2 num_entries) {
     write_attribute_name_index("LocalVariableTypeTable");
     write_u4(2 + num_entries * (2 + 2 + 2 + 2 + 2));
     write_u2(num_entries);
@@ -519,7 +519,7 @@ void JvmtiClassFileReconstituter::write_local_variable_type_table_attribute(meth
 // JSR-202|     u2 number_of_entries;
 // JSR-202|     stack_map_frame_entries[number_of_entries];
 // JSR-202|   }
-void JvmtiClassFileReconstituter::write_stackmap_table_attribute(methodHandle method,
+void JvmtiClassFileReconstituter::write_stackmap_table_attribute(const methodHandle& method,
                                                                  int stackmap_len) {
 
   write_attribute_name_index("StackMapTable");
@@ -538,7 +538,7 @@ void JvmtiClassFileReconstituter::write_stackmap_table_attribute(methodHandle me
 // JVMSpec|     u2 attributes_count;
 // JVMSpec|     attribute_info attributes[attributes_count];
 // JVMSpec|   }
-void JvmtiClassFileReconstituter::write_method_info(methodHandle method) {
+void JvmtiClassFileReconstituter::write_method_info(const methodHandle& method) {
   AccessFlags access_flags = method->access_flags();
   ConstMethod* const_method = method->constMethod();
   u2 generic_signature_index = const_method->generic_signature_index();
@@ -813,7 +813,7 @@ void JvmtiClassFileReconstituter::write_u8(u8 x) {
   Bytes::put_Java_u8(writeable_address(8), x);
 }
 
-void JvmtiClassFileReconstituter::copy_bytecodes(methodHandle mh,
+void JvmtiClassFileReconstituter::copy_bytecodes(const methodHandle& mh,
                                                  unsigned char* bytecodes) {
   // use a BytecodeStream to iterate over the bytecodes. JVM/fast bytecodes
   // and the breakpoint bytecode are converted to their original bytecodes.
