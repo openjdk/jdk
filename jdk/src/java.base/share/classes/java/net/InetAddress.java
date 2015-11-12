@@ -29,6 +29,7 @@ import java.util.NavigableSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.security.AccessController;
 import java.io.ObjectStreamException;
@@ -733,7 +734,7 @@ class InetAddress implements java.io.Serializable {
      */
     public String toString() {
         String hostName = holder().getHostName();
-        return ((hostName != null) ? hostName : "")
+        return Objects.toString(hostName, "")
             + "/" + getHostAddress();
     }
 
