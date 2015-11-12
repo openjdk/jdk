@@ -39,6 +39,10 @@ import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+/**
+ * @test
+ * @run testng jdk.nashorn.api.scripting.test.JSONCompatibleTest
+ */
 public class JSONCompatibleTest {
 
     /**
