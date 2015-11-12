@@ -469,6 +469,22 @@ public class JShell implements AutoCloseable {
     }
 
     /**
+     * Returns the active import snippets.
+     * This convenience method is equivalent to <code>snippets()</code> filtered for
+     * {@link jdk.jshell.Snippet.Status#isActive status(snippet).isActive}
+     * <code>&amp;&amp; snippet.kind() == Kind.IMPORT</code>
+     * and cast to ImportSnippet.
+     * @return the active declared import declarations.
+     * @throws IllegalStateException if this JShell instance is closed.
+     */
+    public List<ImportSnippet> imports() throws IllegalStateException {
+        return snippets().stream()
+                .filter(sn -> status(sn).isActive && sn.kind() == Snippet.Kind.IMPORT)
+                .map(sn -> (ImportSnippet) sn)
+                .collect(collectingAndThen(toList(), Collections::unmodifiableList));
+    }
+
+    /**
      * Return the status of the snippet.
      * This is updated either because of an explicit <code>eval()</code> call or
      * an automatic update triggered by a dependency.
