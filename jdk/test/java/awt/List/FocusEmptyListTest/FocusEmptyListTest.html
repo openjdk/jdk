@@ -1,0 +1,47 @@
+<!--
+ Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
+ DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ 
+ This code is free software; you can redistribute it and/or modify it
+ under the terms of the GNU General Public License version 2 only, as
+ published by the Free Software Foundation.
+ 
+ This code is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ version 2 for more details (a copy is included in the LICENSE file that
+ accompanied this code).
+ 
+ You should have received a copy of the GNU General Public License version
+ 2 along with this work; if not, write to the Free Software Foundation,
+ Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ 
+ Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ or visit www.oracle.com if you need additional information or have any
+ questions.
+-->
+<html>
+<!--  
+  @test
+  @bug 6387275
+  @summary List: the focus is at the top of the first item, XAWT
+  @author Dmitry.Cherepanov@SUN.COM area=awt.list
+  @requires (os.family == "linux" | os.family == "solaris")
+  @modules java.desktop/sun.awt
+           java.desktop/java.awt.peer
+           java.desktop/sun.awt.X11
+  @run applet FocusEmptyListTest.html
+  -->
+<head>
+<title> FocusEmptyListTest </title>
+</head>
+<body>
+
+<h1>FocusEmptyListTest<br>Bug ID: 6387275 </h1>
+
+<p> This is an AUTOMATIC test, simply wait for completion </p>
+
+<APPLET CODE="FocusEmptyListTest.class" WIDTH=200 HEIGHT=200></APPLET>
+</body>
+</html>
+

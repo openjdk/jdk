@@ -97,8 +97,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBVERIFY, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libverify/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_SUFFIX_unix := -ljvm -lc, \
-    LDFLAGS_SUFFIX_windows := jvm.lib, \
+    LIBS_unix := -ljvm -lc, \
+    LIBS_windows := jvm.lib, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=verify.dll" \
@@ -139,6 +139,12 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   endif
 endif
 
+ifeq ($(OPENJDK_TARGET_OS), linux)
+  ifeq ($(OPENJDK_TARGET_CPU), x86_64)
+    BUILD_LIBJAVA_Bits.c_CFLAGS := $(C_O_FLAG_NORM)
+  endif
+endif
+
 $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     LIBRARY := java, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
@@ -150,19 +156,20 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjava/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_SUFFIX_unix := -ljvm -lverify, \
-    LDFLAGS_SUFFIX_solaris := -lsocket -lnsl -lscf $(LIBDL) $(BUILD_LIBFDLIBM) -lc, \
-    LDFLAGS_SUFFIX_linux := $(LIBDL) $(BUILD_LIBFDLIBM), \
-    LDFLAGS_SUFFIX_aix := $(LIBDL) $(BUILD_LIBFDLIBM) -lm,\
-    LDFLAGS_SUFFIX_macosx := -L$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/ -lfdlibm \
+    LDFLAGS_macosx := -L$(SUPPORT_OUTPUTDIR)/native/$(MODULE)/, \
+    LDFLAGS_windows := -export:winFileHandleOpen -export:handleLseek \
+        -export:getLastErrorString \
+        -export:getErrorString -delayload:shell32.dll, \
+    LIBS_unix := -ljvm -lverify, \
+    LIBS_linux := $(LIBDL) $(BUILD_LIBFDLIBM), \
+    LIBS_solaris := -lsocket -lnsl -lscf $(LIBDL) $(BUILD_LIBFDLIBM) -lc, \
+    LIBS_aix := $(LIBDL) $(BUILD_LIBFDLIBM) -lm,\
+    LIBS_macosx := -lfdlibm \
         -framework CoreFoundation \
         -framework Foundation \
         -framework Security -framework SystemConfiguration, \
-    LDFLAGS_SUFFIX_windows := -export:winFileHandleOpen -export:handleLseek \
-        -export:getLastErrorString \
-        -export:getErrorString \
-        jvm.lib $(BUILD_LIBFDLIBM) $(WIN_VERIFY_LIB) \
-        shell32.lib delayimp.lib -DELAYLOAD:shell32.dll \
+    LIBS_windows := jvm.lib $(BUILD_LIBFDLIBM) $(WIN_VERIFY_LIB) \
+        shell32.lib delayimp.lib \
         advapi32.lib version.lib, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
@@ -215,16 +222,13 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBZIP, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libzip/mapfile-vers, \
     REORDER := $(BUILD_LIBZIP_REORDER), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN) \
-        $(EXPORT_ZIP_FUNCS), \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -export:ZIP_Open -export:ZIP_Close -export:ZIP_FindEntry \
         -export:ZIP_ReadEntry -export:ZIP_GetNextEntry \
-        -export:ZIP_InflateFully -export:ZIP_CRC32 \
-        jvm.lib $(WIN_JAVA_LIB), \
-    LDFLAGS_SUFFIX_linux := -ljvm -ljava $(LIBZ), \
-    LDFLAGS_SUFFIX_solaris := -ljvm -ljava $(LIBZ) -lc, \
-    LDFLAGS_SUFFIX_aix := -ljvm -ljava $(LIBZ),\
-    LDFLAGS_SUFFIX_macosx := $(LIBZ) -ljava -ljvm, \
+        -export:ZIP_InflateFully -export:ZIP_CRC32, \
+    LIBS_unix := -ljvm -ljava $(LIBZ), \
+    LIBS_solaris := -lc, \
+    LIBS_windows := jvm.lib $(WIN_JAVA_LIB), \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=zip.dll" \
@@ -261,18 +265,15 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJIMAGE, \
     CFLAGS_unix := -UDEBUG, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjimage/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN) \
-        $(EXPORT_JIMAGE_FUNCS), \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_windows := -export:JIMAGE_Open -export:JIMAGE_Close \
         -export:JIMAGE_PackageToModule \
         -export:JIMAGE_FindResource -export:JIMAGE_GetResource \
         -export:JIMAGE_ResourceIterator, \
-    LDFLAGS_SUFFIX_unix := -ljvm -ldl $(LIBCXX), \
-    LDFLAGS_SUFFIX_linux := , \
-    LDFLAGS_SUFFIX_solaris := -lc, \
-    LDFLAGS_SUFFIX_aix := ,\
-    LDFLAGS_SUFFIX_macosx := -lc++, \
-    LDFLAGS_SUFFIX_windows := jvm.lib, \
+    LIBS_unix := -ljvm -ldl $(LIBCXX), \
+    LIBS_solaris := -lc, \
+    LIBS_macosx := -lc++, \
+    LIBS_windows := jvm.lib, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=jimage.dll" \
@@ -364,12 +365,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_linux := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
     LDFLAGS_solaris := $(call SET_SHARED_LIBRARY_ORIGIN,/..), \
-    LDFLAGS_macosx := -framework Cocoa -framework Security -framework ApplicationServices, \
-    LDFLAGS_SUFFIX_solaris := $(LIBZ) $(LIBDL) -lc, \
-    LDFLAGS_SUFFIX_linux := $(LIBZ) $(LIBDL) -lc -lpthread, \
-    LDFLAGS_SUFFIX_aix := $(LIBZ) $(LIBDL),\
-    LDFLAGS_SUFFIX_macosx := $(LIBZ), \
-    LDFLAGS_SUFFIX_windows := \
+    LDFLAGS_windows := \
         -export:JLI_Launch \
         -export:JLI_ManifestIterate \
         -export:JLI_SetTraceLauncher \
@@ -387,10 +383,13 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJLI, \
         -export:JLI_MemFree \
         -export:JLI_InitArgProcessing \
         -export:JLI_PreprocessArg \
-        -export:JLI_GetAppArgIndex \
-        advapi32.lib \
-        comctl32.lib \
-        user32.lib, \
+        -export:JLI_GetAppArgIndex, \
+    LIBS_unix := $(LIBZ), \
+    LIBS_linux := $(LIBDL) -lc -lpthread, \
+    LIBS_solaris := $(LIBDL) -lc, \
+    LIBS_aix := $(LIBDL),\
+    LIBS_macosx := -framework Cocoa -framework Security -framework ApplicationServices, \
+    LIBS_windows := advapi32.lib comctl32.lib user32.lib, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=jli.dll" \

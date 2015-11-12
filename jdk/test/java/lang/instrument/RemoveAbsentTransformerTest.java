@@ -27,7 +27,6 @@
  * @summary remove an transformer that was never added
  * @author Gabriel Adauto, Wily Technology
  *
- * @modules java.instrument
  * @run build RemoveAbsentTransformerTest
  * @run shell MakeJAR.sh redefineAgent
  * @run main/othervm -javaagent:redefineAgent.jar RemoveAbsentTransformerTest RemoveAbsentTransformerTest

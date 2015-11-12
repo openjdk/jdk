@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import java.util.Collection;
  * {@link ArrayList} with a final marker to help JIT.
  * @author Kohsuke Kawaguchi
  */
-public final class FinalArrayList extends ArrayList {
+public final class FinalArrayList<E> extends ArrayList<E> {
     public FinalArrayList(int initialCapacity) {
         super(initialCapacity);
     }
@@ -40,7 +40,7 @@ public final class FinalArrayList extends ArrayList {
     public FinalArrayList() {
     }
 
-    public FinalArrayList(Collection collection) {
+    public FinalArrayList(Collection<? extends E> collection) {
         super(collection);
     }
 

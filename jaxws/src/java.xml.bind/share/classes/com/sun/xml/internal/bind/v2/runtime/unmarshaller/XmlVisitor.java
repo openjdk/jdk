@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ public interface XmlVisitor {
          * <p>
          * If this method returns true, all the whitespaces are considered significant
          * and thus need to be reported as a {@link XmlVisitor#text} event. Furthermore,
-         * if the element has no children (like &lt;foo/>), then it has to be reported
+         * if the element has no children (like {@code <foo/>}), then it has to be reported
          * an empty {@link XmlVisitor#text} event.
          */
         boolean expectText();

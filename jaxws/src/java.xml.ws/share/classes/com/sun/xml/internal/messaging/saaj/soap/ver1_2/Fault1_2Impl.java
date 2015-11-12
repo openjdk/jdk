@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,7 +146,7 @@ public class Fault1_2Impl extends FaultImpl {
             findReasonElement();
         Iterator eachTextElement =
             this.faultStringElement.getChildElements(textName);
-        List texts = new ArrayList();
+        List<String> texts = new ArrayList<String>();
         while (eachTextElement.hasNext()) {
             SOAPElement textElement = (SOAPElement) eachTextElement.next();
             Locale thisLocale = getLocale(textElement);
@@ -235,7 +235,7 @@ public class Fault1_2Impl extends FaultImpl {
             findReasonElement();
         Iterator eachTextElement =
             this.faultStringElement.getChildElements(textName);
-        List localeSet = new ArrayList();
+        List<Locale> localeSet = new ArrayList<Locale>();
         while (eachTextElement.hasNext()) {
             SOAPElement textElement = (SOAPElement) eachTextElement.next();
             Locale thisLocale = getLocale(textElement);
@@ -435,7 +435,7 @@ public class Fault1_2Impl extends FaultImpl {
     public Iterator getFaultSubcodes() {
         if (this.faultCodeElement == null)
             findFaultCodeElement();
-        final List subcodeList = new ArrayList();
+        final List<QName> subcodeList = new ArrayList<QName>();
         SOAPElement currentCodeElement = this.faultCodeElement;
         Iterator subcodeElements =
             currentCodeElement.getChildElements(subcodeName);
@@ -449,14 +449,14 @@ public class Fault1_2Impl extends FaultImpl {
             subcodeElements = currentCodeElement.getChildElements(subcodeName);
         }
         //return subcodeList.iterator();
-        return new Iterator() {
-            Iterator subCodeIter = subcodeList.iterator();
+        return new Iterator<QName>() {
+            Iterator<QName> subCodeIter = subcodeList.iterator();
 
             public boolean hasNext() {
                 return subCodeIter.hasNext();
             }
 
-            public Object next() {
+            public QName next() {
                 return subCodeIter.next();
             }
 

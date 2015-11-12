@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.code;
 
-import java.util.*;
+import java.util.Arrays;
 
 /**
  * A collection of register attributes. The specific attribute values for a register may be local to

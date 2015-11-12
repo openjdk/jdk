@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package com.sun.xml.internal.messaging.saaj.soap;
 
 import javax.xml.namespace.QName;
 import javax.xml.soap.SOAPException;
+import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 
 import com.sun.xml.internal.org.jvnet.staxex.util.XMLStreamReaderToXMLStreamWriter;
@@ -65,14 +66,14 @@ public class StaxReaderBridge extends StaxBridge {
     }
 
     public QName getPayloadQName() {
-        return (in.getEventType() == in.START_ELEMENT) ? in.getName() : null;
+        return (in.getEventType() == XMLStreamConstants.START_ELEMENT) ? in.getName() : null;
     }
 
     public String getPayloadAttributeValue(String attName) {
-        return (in.getEventType() == in.START_ELEMENT) ? in.getAttributeValue(null, attName) : null;
+        return (in.getEventType() == XMLStreamConstants.START_ELEMENT) ? in.getAttributeValue(null, attName) : null;
     }
 
     public String getPayloadAttributeValue(QName attName) {
-        return (in.getEventType() == in.START_ELEMENT) ? in.getAttributeValue(attName.getNamespaceURI(), attName.getLocalPart()) : null;
+        return (in.getEventType() == XMLStreamConstants.START_ELEMENT) ? in.getAttributeValue(attName.getNamespaceURI(), attName.getLocalPart()) : null;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,24 +38,18 @@ public abstract class WellKnownNamespace {
 
     /**
      * @deprecated Use javax.xml.XMLConstants.W3C_XML_SCHEMA_NS_URI instead;
-     * @return
-     * @throws CloneNotSupportedException
      */
     @Deprecated()
     public static final String XML_SCHEMA = XMLConstants.W3C_XML_SCHEMA_NS_URI;
 
     /**
      * @deprecated Use javax.xml.XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI instead
-     * @return
-     * @throws CloneNotSupportedException
      */
     @Deprecated()
     public static final String XML_SCHEMA_INSTANCE = XMLConstants.W3C_XML_SCHEMA_INSTANCE_NS_URI;
 
     /**
      * @deprecated Use javax.xml.XMLConstants.XML_NS_URI instead;
-     * @return
-     * @throws CloneNotSupportedException
      */
     @Deprecated()
     public static final String XML_NAMESPACE_URI = XMLConstants.XML_NS_URI;

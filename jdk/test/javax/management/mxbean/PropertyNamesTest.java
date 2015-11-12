@@ -26,14 +26,13 @@
  * @bug 6175517
  * @summary Test the PropertyNames annotation with MXBeans
  * @author Eamonn McManus
- * @modules java.desktop
- *          java.management
+ * @modules java.management
  * @run clean PropertyNamesTest
  * @run build PropertyNamesTest
  * @run main PropertyNamesTest
  */
 
-import java.beans.ConstructorProperties;
+import javax.management.ConstructorParameters;
 import java.util.Collections;
 import java.util.List;
 import javax.management.JMX;
@@ -95,7 +94,7 @@ public class PropertyNamesTest {
     }
 
     public static class Point {
-        @ConstructorProperties({"x", "y"})
+        @ConstructorParameters({"x", "y"})
         public Point(int x, int y) {
             this.x = x;
             this.y = y;
@@ -123,17 +122,17 @@ public class PropertyNamesTest {
     }
 
     public static class Evolve {
-        @ConstructorProperties({"oldInt"})
+        @ConstructorParameters({"oldInt"})
         public Evolve(int oldInt) {
             this(oldInt, "defaultString");
         }
 
-        @ConstructorProperties({"oldInt", "newString"})
+        @ConstructorParameters({"oldInt", "newString"})
         public Evolve(int oldInt, String newString) {
             this(oldInt, newString, Collections.<String>emptyList());
         }
 
-        @ConstructorProperties({"oldInt", "newString", "newerList"})
+        @ConstructorParameters({"oldInt", "newString", "newerList"})
         public Evolve(int oldInt, String newString, List<String> newerList) {
             this.oldInt = oldInt;
             this.newString = newString;

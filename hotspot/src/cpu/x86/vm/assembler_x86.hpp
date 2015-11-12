@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1504,6 +1504,8 @@ private:
   void movb(Address dst, int imm8);
   void movb(Register dst, Address src);
 
+  void movddup(XMMRegister dst, XMMRegister src);
+
   void kmovql(KRegister dst, KRegister src);
   void kmovql(KRegister dst, Register src);
   void kmovdl(KRegister dst, Register src);
@@ -1680,6 +1682,12 @@ private:
   void pcmpestri(XMMRegister xmm1, XMMRegister xmm2, int imm8);
   void pcmpestri(XMMRegister xmm1, Address src, int imm8);
 
+  void pcmpeqw(XMMRegister dst, XMMRegister src);
+  void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+
+  void pmovmskb(Register dst, XMMRegister src);
+  void vpmovmskb(Register dst, XMMRegister src);
+
   // SSE 4.1 extract
   void pextrd(Register dst, XMMRegister src, int imm8);
   void pextrq(Register dst, XMMRegister src, int imm8);
@@ -1695,6 +1703,8 @@ private:
   // SSE4.1 packed move
   void pmovzxbw(XMMRegister dst, XMMRegister src);
   void pmovzxbw(XMMRegister dst, Address src);
+
+  void vpmovzxbw(XMMRegister dst, Address src);
 
 #ifndef _LP64 // no 32bit push/pop on amd64
   void popl(Address dst);
@@ -1767,6 +1777,10 @@ private:
   void rclq(Register dst, int imm8);
 
   void rcrq(Register dst, int imm8);
+
+  void rcpps(XMMRegister dst, XMMRegister src);
+
+  void rcpss(XMMRegister dst, XMMRegister src);
 
   void rdtsc();
 
@@ -2110,6 +2124,9 @@ private:
   // duplicate 4-bytes integer data from src into 8 locations in dest
   void vpbroadcastd(XMMRegister dst, XMMRegister src);
 
+  // duplicate 2-bytes integer data from src into 16 locations in dest
+  void vpbroadcastw(XMMRegister dst, XMMRegister src);
+
   // duplicate n-bytes integer data from src into vector_len locations in dest
   void evpbroadcastb(XMMRegister dst, XMMRegister src, int vector_len);
   void evpbroadcastb(XMMRegister dst, Address src, int vector_len);
@@ -2140,6 +2157,11 @@ private:
   // they always clear upper 128 bits. It should be used before calling
   // runtime code and native libraries.
   void vzeroupper();
+
+  // AVX support for vectorized conditional move (double). The following two instructions used only coupled.
+  void cmppd(XMMRegister dst, XMMRegister nds, XMMRegister src, int cop, int vector_len);
+  void vpblendd(XMMRegister dst, XMMRegister nds, XMMRegister src1, XMMRegister src2, int vector_len);
+
 
  protected:
   // Next instructions require address alignment 16 bytes SSE mode.

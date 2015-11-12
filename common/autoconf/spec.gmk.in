@@ -113,10 +113,6 @@ endif
 SYSROOT_CFLAGS := @SYSROOT_CFLAGS@
 SYSROOT_LDFLAGS := @SYSROOT_LDFLAGS@
 
-# Paths to the source code
-ADD_SRC_ROOT:=@ADD_SRC_ROOT@
-OVERRIDE_SRC_ROOT:=@OVERRIDE_SRC_ROOT@
-
 # The top-level directory of the forest (SRC_ROOT is a traditional alias)
 TOPDIR:=@TOPDIR@
 # These two versions of TOPDIR are used in string comparisons
@@ -340,11 +336,11 @@ USING_BROKEN_SUSE_LD:=@USING_BROKEN_SUSE_LD@
 
 # LDFLAGS used to link the jdk native libraries (C-code)
 LDFLAGS_JDKLIB:=@LDFLAGS_JDKLIB@
-LDFLAGS_JDKLIB_SUFFIX:=@LDFLAGS_JDKLIB_SUFFIX@
+JDKLIB_LIBS:=@JDKLIB_LIBS@
 
 # LDFLAGS used to link the jdk native launchers (C-code)
 LDFLAGS_JDKEXE:=@LDFLAGS_JDKEXE@
-LDFLAGS_JDKEXE_SUFFIX:=@LDFLAGS_JDKEXE_SUFFIX@
+JDKEXE_LIBS:=@JDKEXE_LIBS@
 
 # LDFLAGS specific to C++ linking.
 LDFLAGS_CXX_JDK:=@LDFLAGS_CXX_JDK@
@@ -360,9 +356,7 @@ CXXFLAGS_TESTLIB:=@CXXFLAGS_TESTLIB@
 CFLAGS_TESTEXE:=@CFLAGS_TESTEXE@
 CXXFLAGS_TESTEXE:=@CXXFLAGS_TESTEXE@
 LDFLAGS_TESTLIB:=@LDFLAGS_TESTLIB@
-LDFLAGS_TESTLIB_SUFFIX:=@LDFLAGS_TESTLIB_SUFFIX@
 LDFLAGS_TESTEXE:=@LDFLAGS_TESTEXE@
-LDFLAGS_TESTEXE_SUFFIX:=@LDFLAGS_TESTEXE_SUFFIX@
 
 # BUILD_CC/BUILD_LD is a compiler/linker that generates code that is runnable on the
 # build platform.
@@ -549,34 +543,6 @@ USE_EXTERNAL_LIBZ:=@USE_EXTERNAL_LIBZ@
 LIBZIP_CAN_USE_MMAP:=@LIBZIP_CAN_USE_MMAP@
 MSVCR_DLL:=@MSVCR_DLL@
 MSVCP_DLL:=@MSVCP_DLL@
-
-
-# ADD_SRCS takes a single argument with source roots
-# and appends any corresponding source roots found
-# below --with-add-source-root and below
-# --with-override-source-root. It is the responsibility
-# of the next macro to get rid of superfluous files.
-ADD_SRCS=$1
-ifneq (,$(ADD_SRC_ROOT))
-  # Append wildcard rule to pickup any matching source roots found below ADD_SRC_ROOT
-  ADD_SRCS+=$(wildcard $(subst $(SRC_ROOT),$(ADD_SRC_ROOT),$1))
-endif
-ifneq (,$(OVERRIDE_SRC_ROOT))
-  # Append wildcard rule to pickup any matching source roots found below OVERRIDE_SRC_ROOT
-  ADD_SRCS+=$(wildcard $(subst $(SRC_ROOT),$(OVERRIDE_SRC_ROOT),$1))
-endif
-
-# OVR_SRCS creates a filter expression to filter out sources in
-# the original source directory that lie inside directories below
-# --with-override-source-root.
-# Use := here since we want to scan for these files here. To avoid recomputation later.
-# We cannot do the scan in configure, since that would force us to rerun configure when
-# we add overridden sources.
-ifneq (,$(OVERRIDE_SRC_ROOT))
-  OVR_SRCS:=$(addsuffix %,$(subst $(OVERRIDE_SRC_ROOT),$(SRC_ROOT),$(sort $(dir $(shell $(FIND) $(OVERRIDE_SRC_ROOT) -type f)))))
-else
-  OVR_SRCS:=
-endif
 
 ####################################################
 #

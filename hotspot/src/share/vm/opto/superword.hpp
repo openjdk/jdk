@@ -29,6 +29,7 @@
 #include "opto/phaseX.hpp"
 #include "opto/vectornode.hpp"
 #include "utilities/growableArray.hpp"
+#include "libadt/dict.hpp"
 
 //
 //                  S U P E R W O R D   T R A N S F O R M
@@ -200,6 +201,24 @@ class SWNodeInfo VALUE_OBJ_CLASS_SPEC {
   static const SWNodeInfo initial;
 };
 
+class SuperWord;
+class CMoveKit {
+ friend class SuperWord;
+ private:
+  SuperWord* _sw;
+  Dict* _dict;
+  CMoveKit(Arena* a, SuperWord* sw) : _sw(sw)  {_dict = new Dict(cmpkey, hashkey, a);}
+  void*     _2p(Node* key)        const  { return (void*)(intptr_t)key; } // 2 conversion functions to make gcc happy
+  Dict*     dict()                const  { return _dict; }
+  void map(Node* key, Node_List* val)    { assert(_dict->operator[](_2p(key)) == NULL, "key existed"); _dict->Insert(_2p(key), (void*)val); }
+  void unmap(Node* key)                  { _dict->Delete(_2p(key)); }
+  Node_List* pack(Node* key)      const  { return (Node_List*)_dict->operator[](_2p(key)); }
+  Node* is_Bool_candidate(Node* nd) const; // if it is the right candidate return corresponding CMove* ,
+  Node* is_CmpD_candidate(Node* nd) const; // otherwise return NULL
+  Node_List* make_cmovevd_pack(Node_List* cmovd_pk);
+  bool test_cmpd_pack(Node_List* cmpd_pk, Node_List* cmovd_pk);
+};//class CMoveKit
+
 // JVMCI: OrderedPair is moved up to deal with compilation issues on Windows
 //------------------------------OrderedPair---------------------------
 // Ordered pair of Node*.
@@ -229,6 +248,7 @@ class OrderedPair VALUE_OBJ_CLASS_SPEC {
 // Transforms scalar operations into packed (superword) operations.
 class SuperWord : public ResourceObj {
  friend class SWPointer;
+ friend class CMoveKit;
  private:
   PhaseIdealLoop* _phase;
   Arena*          _arena;
@@ -247,8 +267,8 @@ class SuperWord : public ResourceObj {
   GrowableArray<Node*> _iteration_first; // nodes in the generation that has deps from phi
   GrowableArray<Node*> _iteration_last;  // nodes in the generation that has deps to   phi
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
-  CloneMap&                 _clone_map;  // map of nodes created in cloning
-
+  CloneMap&            _clone_map;       // map of nodes created in cloning
+  CMoveKit             _cmovev_kit;      // support for vectorization of CMov
   MemNode* _align_to_ref;                // Memory reference that pre-loop will align to
 
   GrowableArray<OrderedPair> _disjoint_ptrs; // runtime disambiguated pointer pairs
@@ -282,8 +302,11 @@ class SuperWord : public ResourceObj {
   bool     is_trace_mem_slice()    { return (_vector_loop_debug & 4) > 0; }
   bool     is_trace_loop()         { return (_vector_loop_debug & 8) > 0; }
   bool     is_trace_adjacent()     { return (_vector_loop_debug & 16) > 0; }
+  bool     is_trace_cmov()         { return (_vector_loop_debug & 32) > 0; }
+  bool     is_trace_loop_reverse() { return (_vector_loop_debug & 64) > 0; }
 #endif
   bool     do_vector_loop()        { return _do_vector_loop; }
+  bool     do_reserve_copy()       { return _do_reserve_copy; }
  private:
   IdealLoopTree* _lpt;             // Current loop tree node
   LoopNode*      _lp;              // Current LoopNode
@@ -292,6 +315,7 @@ class SuperWord : public ResourceObj {
   bool           _race_possible;   // In cases where SDMU is true
   bool           _early_return;    // True if we do not initialize
   bool           _do_vector_loop;  // whether to do vectorization/simd style
+  bool           _do_reserve_copy; // do reserve copy of the graph(loop) before final modification in output
   int            _num_work_vecs;   // Number of non memory vector operations
   int            _num_reductions;  // Number of reduction expressions applied
   int            _ii_first;        // generation with direct deps from mem phi
@@ -299,7 +323,6 @@ class SuperWord : public ResourceObj {
   GrowableArray<int> _ii_order;
 #ifndef PRODUCT
   uintx          _vector_loop_debug; // provide more printing in debug mode
-  uintx          _CountedLoopReserveKit_debug; // for debugging CountedLoopReserveKit
 #endif
 
   // Accessors
@@ -360,9 +383,13 @@ class SuperWord : public ResourceObj {
   bool same_velt_type(Node* n1, Node* n2);
 
   // my_pack
-  Node_List* my_pack(Node* n)                { return !in_bb(n) ? NULL : _node_info.adr_at(bb_idx(n))->_my_pack; }
-  void set_my_pack(Node* n, Node_List* p)    { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
-
+  Node_List* my_pack(Node* n)                 { return !in_bb(n) ? NULL : _node_info.adr_at(bb_idx(n))->_my_pack; }
+  void set_my_pack(Node* n, Node_List* p)     { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
+  // is pack good for converting into one vector node replacing 12 nodes of Cmp, Bool, CMov
+  bool is_cmov_pack(Node_List* p);
+  bool is_cmov_pack_internal_node(Node_List* p, Node* nd) { return is_cmov_pack(p) && !nd->is_CMove(); }
+  // For pack p, are all idx operands the same?
+  bool same_inputs(Node_List* p, int idx);
   // CloneMap utilities
   bool same_origin_idx(Node* a, Node* b) const;
   bool same_generation(Node* a, Node* b) const;
@@ -439,6 +466,8 @@ class SuperWord : public ResourceObj {
   void construct_my_pack_map();
   // Remove packs that are not implemented or not profitable.
   void filter_packs();
+  // Merge CMoveD into new vector-nodes
+  void merge_packs_to_cmovd();
   // Adjust the memory graph for the packed operations
   void schedule();
   // Remove "current" from its current position in the memory graph and insert

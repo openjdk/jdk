@@ -25,6 +25,7 @@
 
 package com.sun.tools.sjavac;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Arrays;
 
@@ -46,8 +47,10 @@ import com.sun.tools.sjavac.pubapi.PubApi;
 public class PubApiExtractor {
     // Setup a compiler context for finding classes in the classpath
     // and to execute annotation processors.
-    Context context;
-    CompilationTask task;
+    final Context context;
+    final CompilationTask task;
+
+    final SmartFileManager fileManager;
 
     /**
      * Setup a compilation context, used for reading public apis of classes on the classpath
@@ -55,7 +58,7 @@ public class PubApiExtractor {
      */
     public PubApiExtractor(Options options) {
         JavacTool compiler = com.sun.tools.javac.api.JavacTool.create();
-        SmartFileManager fileManager = new SmartFileManager(compiler.getStandardFileManager(null, null, null));
+        fileManager = new SmartFileManager(compiler.getStandardFileManager(null, null, null));
         context = new com.sun.tools.javac.util.Context();
         String[] args = options.prepJavacArgs();
         task = compiler.getTask(new PrintWriter(System.err),
@@ -81,5 +84,9 @@ public class PubApiExtractor {
         PubapiVisitor v = new PubapiVisitor();
         v.visit(cs);
         return v.getCollectedPubApi();
+    }
+
+    public void close() throws IOException {
+        fileManager.close();
     }
 }

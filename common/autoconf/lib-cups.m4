@@ -35,8 +35,9 @@ AC_DEFUN_ONCE([LIB_SETUP_CUPS],
       [specify directory for the cups include files])])
 
   if test "x$NEEDS_LIB_CUPS" = xfalse; then
-    if test "x${with_cups}" != x || test "x${with_cups_include}" != x; then
-      AC_MSG_WARN([cups not used, so --with-cups is ignored])
+    if (test "x${with_cups}" != x && test "x${with_cups}" != xno) || \
+        (test "x${with_cups_include}" != x && test "x${with_cups_include}" != xno); then
+      AC_MSG_WARN([[cups not used, so --with-cups[-*] is ignored]])
     fi
     CUPS_CFLAGS=
   else

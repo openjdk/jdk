@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,9 +131,9 @@ public class ImageDataContentHandler extends Component
                     + obj.getClass().toString());
             }
             ImageWriter writer = null;
-            Iterator i = ImageIO.getImageWritersByMIMEType(type);
+            Iterator<ImageWriter> i = ImageIO.getImageWritersByMIMEType(type);
             if (i.hasNext()) {
-                writer = (ImageWriter)i.next();
+                writer = i.next();
             }
             if (writer != null) {
                 ImageOutputStream stream = null;

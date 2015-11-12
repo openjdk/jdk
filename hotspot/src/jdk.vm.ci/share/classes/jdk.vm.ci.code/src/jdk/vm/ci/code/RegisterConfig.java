@@ -22,8 +22,10 @@
  */
 package jdk.vm.ci.code;
 
-import jdk.vm.ci.code.CallingConvention.*;
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.code.CallingConvention.Type;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.PlatformKind;
 
 /**
  * A register configuration binds roles and {@linkplain RegisterAttributes attributes} to physical

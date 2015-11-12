@@ -41,6 +41,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.function.BooleanSupplier;
@@ -78,7 +80,7 @@ public final class Utils {
     /**
      * Returns the value of 'test.src' system property.
      */
-    public static final String TEST_SRC = System.getProperty("test.src", "").trim();
+    public static final String TEST_SRC = System.getProperty("test.src", ".").trim();
 
     private static Unsafe unsafe = null;
 
@@ -412,6 +414,23 @@ public final class Utils {
     }
 
     /**
+     * Returns random element of non empty array
+     *
+     * @param <T> a type of array element
+     * @param array array of elements
+     * @return random element of array
+     * @throws IllegalArgumentException if array is empty
+     */
+    public static <T> T getRandomElement(T[] array)
+            throws IllegalArgumentException {
+        if (array == null || array.length == 0) {
+            throw new IllegalArgumentException("Empty or null array");
+        }
+        Random random = getRandomInstance();
+        return array[random.nextInt(array.length)];
+    }
+
+    /**
      * Wait for condition to be true
      *
      * @param condition, a condition to wait for
@@ -576,6 +595,26 @@ public final class Utils {
             return "L" + result + ";";
         }
         return result;
+    }
+
+    public static Object[] getNullValues(Class<?>... types) {
+        Object[] result = new Object[types.length];
+        int i = 0;
+        for (Class<?> type : types) {
+            result[i++] = NULL_VALUES.get(type);
+        }
+        return result;
+    }
+    private static Map<Class<?>, Object> NULL_VALUES = new HashMap<>();
+    static {
+        NULL_VALUES.put(boolean.class, false);
+        NULL_VALUES.put(byte.class, (byte) 0);
+        NULL_VALUES.put(short.class, (short) 0);
+        NULL_VALUES.put(char.class, '\0');
+        NULL_VALUES.put(int.class, 0);
+        NULL_VALUES.put(long.class, 0L);
+        NULL_VALUES.put(float.class, 0.0f);
+        NULL_VALUES.put(double.class, 0.0d);
     }
 }
 

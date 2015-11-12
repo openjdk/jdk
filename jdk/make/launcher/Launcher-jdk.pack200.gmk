@@ -25,8 +25,9 @@
 
 include LauncherCommon.gmk
 
-$(eval $(call SetupLauncher,pack200, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.java.util.jar.pack.Driver"$(COMMA) }'))
+$(eval $(call SetupBuildLauncher, pack200, \
+    MAIN_CLASS := com.sun.java.util.jar.pack.Driver, \
+))
 
 ################################################################################
 # The order of the object files on the link command line affects the size of the resulting
@@ -90,10 +91,9 @@ $(eval $(call SetupNativeCompilation,BUILD_UNPACKEXE, \
         $(LDFLAGS_JDKEXE) $(LDFLAGS_CXX_JDK) \
         $(call SET_SHARED_LIBRARY_NAME,$(LIBRARY_PREFIX)unpack$(SHARED_LIBRARY_SUFFIX)) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_linux := , \
-    LDFLAGS_solaris := $(UNPACKEXE_LDFLAGS_solaris) -lc, \
-    LDFLAGS_SUFFIX := $(UNPACKEXE_LIBS) $(LIBCXX), \
-    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/unpackexe$(OUTPUT_SUBDIR), \
+    LIBS := $(UNPACKEXE_LIBS) $(LIBCXX), \
+    LIBS_solaris :=  -lc, \
+    OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/unpackexe, \
     OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_cmds/$(MODULE), \
     PROGRAM := unpack200, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \

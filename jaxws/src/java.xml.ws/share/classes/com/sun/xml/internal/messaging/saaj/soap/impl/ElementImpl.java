@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -162,8 +162,8 @@ public class ElementImpl
                    !(currentAncestor instanceof Document)) {
 
                 if (currentAncestor instanceof ElementImpl) {
-                    QName name = ((ElementImpl) currentAncestor).getElementQName();
                     /*
+                    QName name = ((ElementImpl) currentAncestor).getElementQName();
                     if (prefix.equals(name.getPrefix())) {
                         String uri = name.getNamespaceURI();
                         if ("".equals(uri)) {
@@ -339,7 +339,7 @@ public class ElementImpl
                    log.severe("SAAJ0158.impl.version.mismatch.fault");
                    throw new SOAPExceptionImpl("SOAP Version mismatch encountered when trying to add SOAPFault to SOAPBody");
                }
-               Iterator it = this.getChildElements();
+               Iterator<Node> it = this.getChildElements();
                if (it.hasNext()) {
                    log.severe("SAAJ0156.impl.adding.fault.error");
                    throw new SOAPExceptionImpl("Cannot add SOAPFault as a child of a non-Empty SOAPBody");
@@ -450,7 +450,7 @@ public class ElementImpl
     }
 
     protected SOAPElement findAndConvertChildElement(NameImpl name) {
-        Iterator eachChild = getChildElementNodes();
+        Iterator<Node> eachChild = getChildElementNodes();
         while (eachChild.hasNext()) {
             SOAPElement child = (SOAPElement) eachChild.next();
             if (child.getElementName().equals(name)) {
@@ -560,10 +560,10 @@ public class ElementImpl
     }
 
     public Iterator getAllAttributes() {
-        Iterator i = getAllAttributesFrom(this);
-        ArrayList list = new ArrayList();
+        Iterator<Name> i = getAllAttributesFrom(this);
+        ArrayList<Name> list = new ArrayList<Name>();
         while (i.hasNext()) {
-            Name name = (Name) i.next();
+            Name name = i.next();
             if (!"xmlns".equalsIgnoreCase(name.getPrefix()))
                 list.add(name);
         }
@@ -571,10 +571,10 @@ public class ElementImpl
     }
 
     public Iterator getAllAttributesAsQNames() {
-        Iterator i = getAllAttributesFrom(this);
-        ArrayList list = new ArrayList();
+        Iterator<Name> i = getAllAttributesFrom(this);
+        ArrayList<QName> list = new ArrayList<QName>();
         while (i.hasNext()) {
-            Name name = (Name) i.next();
+            Name name = i.next();
             if (!"xmlns".equalsIgnoreCase(name.getPrefix())) {
                 list.add(NameImpl.convertToQName(name));
             }
@@ -591,8 +591,8 @@ public class ElementImpl
         return doGetNamespacePrefixes(true);
     }
 
-    protected Iterator doGetNamespacePrefixes(final boolean deep) {
-        return new Iterator() {
+    protected Iterator<String> doGetNamespacePrefixes(final boolean deep) {
+        return new Iterator<String>() {
             String next = null;
             String last = null;
             NamespaceContextIterator eachNamespace =
@@ -613,7 +613,7 @@ public class ElementImpl
                 return next != null;
             }
 
-            public Object next() {
+            public String next() {
                 findNext();
                 if (next == null) {
                     throw new NoSuchElementException();
@@ -676,7 +676,7 @@ public class ElementImpl
         return true;
     }
 
-    public Iterator getChildElements() {
+    public Iterator<Node> getChildElements() {
         return getChildElementsFrom(this);
     }
 
@@ -694,15 +694,15 @@ public class ElementImpl
         Element element,
         ElementImpl copy) {
 
-        Iterator eachAttribute = getAllAttributesFrom(element);
+        Iterator<Name> eachAttribute = getAllAttributesFrom(element);
         while (eachAttribute.hasNext()) {
-            Name name = (Name) eachAttribute.next();
+            Name name = eachAttribute.next();
             copy.addAttributeBare(name, getAttributeValueFrom(element, name));
         }
 
-        Iterator eachChild = getChildElementsFrom(element);
+        Iterator<Node> eachChild = getChildElementsFrom(element);
         while (eachChild.hasNext()) {
-            Node nextChild = (Node) eachChild.next();
+            Node nextChild = eachChild.next();
             copy.insertBefore(nextChild, null);
         }
 
@@ -714,16 +714,16 @@ public class ElementImpl
         return copy;
     }
 
-    protected Iterator getChildElementNodes() {
-        return new Iterator() {
-            Iterator eachNode = getChildElements();
+    protected Iterator<Node> getChildElementNodes() {
+        return new Iterator<Node>() {
+            Iterator<Node> eachNode = getChildElements();
             Node next = null;
             Node last = null;
 
             public boolean hasNext() {
                 if (next == null) {
                     while (eachNode.hasNext()) {
-                        Node node = (Node) eachNode.next();
+                        Node node = eachNode.next();
                         if (node instanceof SOAPElement) {
                             next = node;
                             break;
@@ -733,7 +733,7 @@ public class ElementImpl
                 return next != null;
             }
 
-            public Object next() {
+            public Node next() {
                 if (hasNext()) {
                     last = next;
                     next = null;
@@ -761,16 +761,16 @@ public class ElementImpl
         return getChildElements(qname.getNamespaceURI(), qname.getLocalPart());
     }
 
-    private Iterator getChildElements(final String nameUri, final String nameLocal) {
-        return new Iterator() {
-            Iterator eachElement = getChildElementNodes();
+    private Iterator<Node> getChildElements(final String nameUri, final String nameLocal) {
+        return new Iterator<Node>() {
+            Iterator<Node> eachElement = getChildElementNodes();
             Node next = null;
             Node last = null;
 
             public boolean hasNext() {
                 if (next == null) {
                     while (eachElement.hasNext()) {
-                        Node element = (Node) eachElement.next();
+                        Node element = eachElement.next();
                         String elementUri = element.getNamespaceURI();
                         elementUri = elementUri == null ? "" : elementUri;
                         String elementName = element.getLocalName();
@@ -784,7 +784,7 @@ public class ElementImpl
                 return next != null;
             }
 
-            public Object next() {
+            public Node next() {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
@@ -894,7 +894,7 @@ public class ElementImpl
     }
 
     protected javax.xml.soap.Node getValueNode() {
-        Iterator i = getChildElements();
+        Iterator<Node> i = getChildElements();
         while (i.hasNext()) {
             javax.xml.soap.Node n = (javax.xml.soap.Node) i.next();
             if (n.getNodeType() == org.w3c.dom.Node.TEXT_NODE ||
@@ -1054,10 +1054,10 @@ public class ElementImpl
         return null;
     }
 
-    protected static Iterator getAllAttributesFrom(final Element element) {
+    protected static Iterator<Name> getAllAttributesFrom(final Element element) {
         final NamedNodeMap attributes = element.getAttributes();
 
-        return new Iterator() {
+        return new Iterator<Name>() {
             int attributesLength = attributes.getLength();
             int attributeIndex = 0;
             String currentName;
@@ -1066,7 +1066,7 @@ public class ElementImpl
                 return attributeIndex < attributesLength;
             }
 
-            public Object next() {
+            public Name next() {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
@@ -1133,8 +1133,8 @@ public class ElementImpl
         return attribute == null ? null : attribute.getValue();
     }
 
-    protected static Iterator getChildElementsFrom(final Element element) {
-        return new Iterator() {
+    protected static Iterator<Node> getChildElementsFrom(final Element element) {
+        return new Iterator<Node>() {
             Node next = element.getFirstChild();
             Node nextNext = null;
             Node last = null;
@@ -1150,7 +1150,7 @@ public class ElementImpl
                 return next != null;
             }
 
-            public Object next() {
+            public Node next() {
                 if (hasNext()) {
                     last = next;
                     next = null;

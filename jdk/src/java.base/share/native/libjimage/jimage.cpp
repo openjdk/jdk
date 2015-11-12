@@ -102,14 +102,29 @@ extern "C" const char* JIMAGE_PackageToModule(JImageFile* image, const char* pac
 extern "C" JImageLocationRef JIMAGE_FindResource(JImageFile* image,
         const char* module_name, const char* version, const char* name,
         jlong* size) {
-    ImageLocation location;
-    char fullpath[IMAGE_MAX_PATH];
-
     // Concatenate to get full path
-    strncpy(fullpath, "/", IMAGE_MAX_PATH - 1);
-    strncat(fullpath, module_name, IMAGE_MAX_PATH - 1);
-    strncat(fullpath, "/", IMAGE_MAX_PATH - 1);
-    strncat(fullpath, name, IMAGE_MAX_PATH - 1);
+    char fullpath[IMAGE_MAX_PATH];
+    size_t moduleNameLen = strlen(module_name);
+    size_t nameLen = strlen(name);
+    size_t index;
+
+    // TBD:   assert(moduleNameLen > 0 && "module name must be non-empty");
+    assert(nameLen > 0 && "name must non-empty");
+
+    // If the concatenated string is too long for the buffer, return not found
+    if (1 + moduleNameLen + 1 + nameLen + 1 > IMAGE_MAX_PATH) {
+        return 0L;
+    }
+
+    index = 0;
+    fullpath[index++] = '/';
+    memcpy(&fullpath[index], module_name, moduleNameLen);
+    index += moduleNameLen;
+    fullpath[index++] = '/';
+    memcpy(&fullpath[index], name, nameLen);
+    index += nameLen;
+    fullpath[index++] = '\0';
+
     JImageLocationRef loc =
             (JImageLocationRef) ((ImageFileReader*) image)->find_location_index(fullpath, (u8*) size);
     return loc;

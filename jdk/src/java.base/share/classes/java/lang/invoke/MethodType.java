@@ -1187,20 +1187,23 @@ s.writeObject(this.parameterArray());
         // store them into the implementation-specific final fields.
         checkRtype(rtype);
         checkPtypes(ptypes);
-        UNSAFE.putObject(this, rtypeOffset, rtype);
-        UNSAFE.putObject(this, ptypesOffset, ptypes);
+        UNSAFE.putObject(this, OffsetHolder.rtypeOffset, rtype);
+        UNSAFE.putObject(this, OffsetHolder.ptypesOffset, ptypes);
     }
 
-    // Support for resetting final fields while deserializing
-    private static final long rtypeOffset, ptypesOffset;
-    static {
-        try {
-            rtypeOffset = UNSAFE.objectFieldOffset
-                (MethodType.class.getDeclaredField("rtype"));
-            ptypesOffset = UNSAFE.objectFieldOffset
-                (MethodType.class.getDeclaredField("ptypes"));
-        } catch (Exception ex) {
-            throw new Error(ex);
+    // Support for resetting final fields while deserializing. Implement Holder
+    // pattern to make the rarely needed offset calculation lazy.
+    private static class OffsetHolder {
+        private static final long rtypeOffset, ptypesOffset;
+        static {
+            try {
+                rtypeOffset = UNSAFE.objectFieldOffset
+                    (MethodType.class.getDeclaredField("rtype"));
+                ptypesOffset = UNSAFE.objectFieldOffset
+                    (MethodType.class.getDeclaredField("ptypes"));
+            } catch (Exception ex) {
+                throw new Error(ex);
+            }
         }
     }
 

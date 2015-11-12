@@ -200,12 +200,16 @@ class LibraryCallKit : public GraphKit {
   }
   Node * load_field_from_object(Node * fromObj, const char * fieldName, const char * fieldTypeString, bool is_exact, bool is_static, ciInstanceKlass * fromKls);
 
-  Node* make_string_method_node(int opcode, Node* str1_start, Node* cnt1, Node* str2_start, Node* cnt2);
-  Node* make_string_method_node(int opcode, Node* str1, Node* str2);
-  bool inline_string_compareTo();
-  bool inline_string_indexOf();
-  Node* string_indexOf(Node* string_object, ciTypeArray* target_array, jint offset, jint cache_i, jint md2_i);
-  bool inline_string_equals();
+  Node* make_string_method_node(int opcode, Node* str1_start, Node* cnt1, Node* str2_start, Node* cnt2, StrIntrinsicNode::ArgEnc ae);
+  bool inline_string_compareTo(StrIntrinsicNode::ArgEnc ae);
+  bool inline_string_indexOf(StrIntrinsicNode::ArgEnc ae);
+  bool inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae);
+  bool inline_string_indexOfChar();
+  bool inline_string_equals(StrIntrinsicNode::ArgEnc ae);
+  bool inline_string_toBytesU();
+  bool inline_string_getCharsU();
+  bool inline_string_copy(bool compress);
+  bool inline_string_char_access(bool is_store);
   Node* round_double_node(Node* n);
   bool runtime_math(const TypeFunc* call_type, address funcAddr, const char* funcName);
   bool inline_math_native(vmIntrinsics::ID id);
@@ -251,7 +255,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_newArray();
   bool inline_native_getLength();
   bool inline_array_copyOf(bool is_copyOfRange);
-  bool inline_array_equals();
+  bool inline_array_equals(StrIntrinsicNode::ArgEnc ae);
   void copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, bool is_array, bool card_mark);
   bool inline_native_clone(bool is_virtual);
   bool inline_native_Reflection_getCallerClass();
@@ -298,6 +302,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_updateBytesAdler32();
   bool inline_updateByteBufferAdler32();
   bool inline_multiplyToLen();
+  bool inline_hasNegatives();
   bool inline_squareToLen();
   bool inline_mulAdd();
   bool inline_montgomeryMultiply();
@@ -326,9 +331,10 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     // methods access VM-internal data.
     VM_ENTRY_MARK;
     methodHandle mh(THREAD, m->get_Method());
-    methodHandle ct(THREAD, method()->get_Method());
     is_available = compiler->is_intrinsic_supported(mh, is_virtual) &&
-                   !vmIntrinsics::is_disabled_by_flags(mh, ct);
+                   !C->directive()->is_intrinsic_disabled(mh) &&
+                   !vmIntrinsics::is_disabled_by_flags(mh);
+
   }
 
   if (is_available) {
@@ -457,6 +463,7 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
 bool LibraryCallKit::try_to_inline(int predicate) {
   // Handle symbolic names for otherwise undistinguished boolean switches:
   const bool is_store       = true;
+  const bool is_compress    = true;
   const bool is_native_ptr  = true;
   const bool is_static      = true;
   const bool is_volatile    = true;
@@ -511,9 +518,31 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_arraycopy:                return inline_arraycopy();
 
-  case vmIntrinsics::_compareTo:                return inline_string_compareTo();
-  case vmIntrinsics::_indexOf:                  return inline_string_indexOf();
-  case vmIntrinsics::_equals:                   return inline_string_equals();
+  case vmIntrinsics::_compareToL:               return inline_string_compareTo(StrIntrinsicNode::LL);
+  case vmIntrinsics::_compareToU:               return inline_string_compareTo(StrIntrinsicNode::UU);
+  case vmIntrinsics::_compareToLU:              return inline_string_compareTo(StrIntrinsicNode::LU);
+  case vmIntrinsics::_compareToUL:              return inline_string_compareTo(StrIntrinsicNode::UL);
+
+  case vmIntrinsics::_indexOfL:                 return inline_string_indexOf(StrIntrinsicNode::LL);
+  case vmIntrinsics::_indexOfU:                 return inline_string_indexOf(StrIntrinsicNode::UU);
+  case vmIntrinsics::_indexOfUL:                return inline_string_indexOf(StrIntrinsicNode::UL);
+  case vmIntrinsics::_indexOfIL:                return inline_string_indexOfI(StrIntrinsicNode::LL);
+  case vmIntrinsics::_indexOfIU:                return inline_string_indexOfI(StrIntrinsicNode::UU);
+  case vmIntrinsics::_indexOfIUL:               return inline_string_indexOfI(StrIntrinsicNode::UL);
+  case vmIntrinsics::_indexOfU_char:            return inline_string_indexOfChar();
+
+  case vmIntrinsics::_equalsL:                  return inline_string_equals(StrIntrinsicNode::LL);
+  case vmIntrinsics::_equalsU:                  return inline_string_equals(StrIntrinsicNode::UU);
+
+  case vmIntrinsics::_toBytesStringU:           return inline_string_toBytesU();
+  case vmIntrinsics::_getCharsStringU:          return inline_string_getCharsU();
+  case vmIntrinsics::_getCharStringU:           return inline_string_char_access(!is_store);
+  case vmIntrinsics::_putCharStringU:           return inline_string_char_access( is_store);
+
+  case vmIntrinsics::_compressStringC:
+  case vmIntrinsics::_compressStringB:          return inline_string_copy( is_compress);
+  case vmIntrinsics::_inflateStringC:
+  case vmIntrinsics::_inflateStringB:           return inline_string_copy(!is_compress);
 
   case vmIntrinsics::_getObject:                return inline_unsafe_access(!is_native_ptr, !is_store, T_OBJECT,  !is_volatile);
   case vmIntrinsics::_getBoolean:               return inline_unsafe_access(!is_native_ptr, !is_store, T_BOOLEAN, !is_volatile);
@@ -616,7 +645,8 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_getLength:                return inline_native_getLength();
   case vmIntrinsics::_copyOf:                   return inline_array_copyOf(false);
   case vmIntrinsics::_copyOfRange:              return inline_array_copyOf(true);
-  case vmIntrinsics::_equalsC:                  return inline_array_equals();
+  case vmIntrinsics::_equalsB:                  return inline_array_equals(StrIntrinsicNode::LL);
+  case vmIntrinsics::_equalsC:                  return inline_array_equals(StrIntrinsicNode::UU);
   case vmIntrinsics::_clone:                    return inline_native_clone(intrinsic()->is_virtual());
 
   case vmIntrinsics::_isAssignableFrom:         return inline_native_subtype_check();
@@ -686,6 +716,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_ghash_processBlocks();
 
   case vmIntrinsics::_encodeISOArray:
+  case vmIntrinsics::_encodeByteISOArray:
     return inline_encodeISOArray();
 
   case vmIntrinsics::_updateCRC32:
@@ -709,6 +740,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_profileBoolean();
   case vmIntrinsics::_isCompileConstant:
     return inline_isCompileConstant();
+
+  case vmIntrinsics::_hasNegatives:
+    return inline_hasNegatives();
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
@@ -875,75 +909,24 @@ Node* LibraryCallKit::generate_current_thread(Node* &tls_output) {
 
 
 //------------------------------make_string_method_node------------------------
-// Helper method for String intrinsic functions. This version is called
-// with str1 and str2 pointing to String object nodes.
-//
-Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1, Node* str2) {
-  Node* no_ctrl = NULL;
-
-  // Get start addr of string
-  Node* str1_value   = load_String_value(no_ctrl, str1);
-  Node* str1_offset  = load_String_offset(no_ctrl, str1);
-  Node* str1_start   = array_element_address(str1_value, str1_offset, T_CHAR);
-
-  // Get length of string 1
-  Node* str1_len  = load_String_length(no_ctrl, str1);
-
-  Node* str2_value   = load_String_value(no_ctrl, str2);
-  Node* str2_offset  = load_String_offset(no_ctrl, str2);
-  Node* str2_start   = array_element_address(str2_value, str2_offset, T_CHAR);
-
-  Node* str2_len = NULL;
-  Node* result = NULL;
-
-  switch (opcode) {
-  case Op_StrIndexOf:
-    // Get length of string 2
-    str2_len = load_String_length(no_ctrl, str2);
-
-    result = new StrIndexOfNode(control(), memory(TypeAryPtr::CHARS),
-                                str1_start, str1_len, str2_start, str2_len);
-    break;
-  case Op_StrComp:
-    // Get length of string 2
-    str2_len = load_String_length(no_ctrl, str2);
-
-    result = new StrCompNode(control(), memory(TypeAryPtr::CHARS),
-                             str1_start, str1_len, str2_start, str2_len);
-    break;
-  case Op_StrEquals:
-    result = new StrEqualsNode(control(), memory(TypeAryPtr::CHARS),
-                               str1_start, str2_start, str1_len);
-    break;
-  default:
-    ShouldNotReachHere();
-    return NULL;
-  }
-
-  // All these intrinsics have checks.
-  C->set_has_split_ifs(true); // Has chance for split-if optimization
-
-  return _gvn.transform(result);
-}
-
-// Helper method for String intrinsic functions. This version is called
-// with str1 and str2 pointing to char[] nodes, with cnt1 and cnt2 pointing
-// to Int nodes containing the lenghts of str1 and str2.
-//
-Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1_start, Node* cnt1, Node* str2_start, Node* cnt2) {
+// Helper method for String intrinsic functions. This version is called with
+// str1 and str2 pointing to byte[] nodes containing Latin1 or UTF16 encoded
+// characters (depending on 'is_byte'). cnt1 and cnt2 are pointing to Int nodes
+// containing the lengths of str1 and str2.
+Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1_start, Node* cnt1, Node* str2_start, Node* cnt2, StrIntrinsicNode::ArgEnc ae) {
   Node* result = NULL;
   switch (opcode) {
   case Op_StrIndexOf:
-    result = new StrIndexOfNode(control(), memory(TypeAryPtr::CHARS),
-                                str1_start, cnt1, str2_start, cnt2);
+    result = new StrIndexOfNode(control(), memory(TypeAryPtr::BYTES),
+                                str1_start, cnt1, str2_start, cnt2, ae);
     break;
   case Op_StrComp:
-    result = new StrCompNode(control(), memory(TypeAryPtr::CHARS),
-                             str1_start, cnt1, str2_start, cnt2);
+    result = new StrCompNode(control(), memory(TypeAryPtr::BYTES),
+                             str1_start, cnt1, str2_start, cnt2, ae);
     break;
   case Op_StrEquals:
-    result = new StrEqualsNode(control(), memory(TypeAryPtr::CHARS),
-                               str1_start, str2_start, cnt1);
+    result = new StrEqualsNode(control(), memory(TypeAryPtr::BYTES),
+                               str1_start, str2_start, cnt1, ae);
     break;
   default:
     ShouldNotReachHere();
@@ -957,98 +940,54 @@ Node* LibraryCallKit::make_string_method_node(int opcode, Node* str1_start, Node
 }
 
 //------------------------------inline_string_compareTo------------------------
-// public int java.lang.String.compareTo(String anotherString);
-bool LibraryCallKit::inline_string_compareTo() {
-  Node* receiver = null_check(argument(0));
-  Node* arg      = null_check(argument(1));
-  if (stopped()) {
-    return true;
-  }
-  set_result(make_string_method_node(Op_StrComp, receiver, arg));
+bool LibraryCallKit::inline_string_compareTo(StrIntrinsicNode::ArgEnc ae) {
+  Node* arg1 = argument(0);
+  Node* arg2 = argument(1);
+
+  // Get start addr and length of first argument
+  Node* arg1_start  = array_element_address(arg1, intcon(0), T_BYTE);
+  Node* arg1_cnt    = load_array_length(arg1);
+
+  // Get start addr and length of second argument
+  Node* arg2_start  = array_element_address(arg2, intcon(0), T_BYTE);
+  Node* arg2_cnt    = load_array_length(arg2);
+
+  Node* result = make_string_method_node(Op_StrComp, arg1_start, arg1_cnt, arg2_start, arg2_cnt, ae);
+  set_result(result);
   return true;
 }
 
 //------------------------------inline_string_equals------------------------
-bool LibraryCallKit::inline_string_equals() {
-  Node* receiver = null_check_receiver();
-  // NOTE: Do not null check argument for String.equals() because spec
-  // allows to specify NULL as argument.
-  Node* argument = this->argument(1);
-  if (stopped()) {
-    return true;
-  }
+bool LibraryCallKit::inline_string_equals(StrIntrinsicNode::ArgEnc ae) {
+  Node* arg1 = argument(0);
+  Node* arg2 = argument(1);
 
   // paths (plus control) merge
-  RegionNode* region = new RegionNode(5);
+  RegionNode* region = new RegionNode(3);
   Node* phi = new PhiNode(region, TypeInt::BOOL);
 
-  // does source == target string?
-  Node* cmp = _gvn.transform(new CmpPNode(receiver, argument));
-  Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
-
-  Node* if_eq = generate_slow_guard(bol, NULL);
-  if (if_eq != NULL) {
-    // receiver == argument
-    phi->init_req(2, intcon(1));
-    region->init_req(2, if_eq);
-  }
-
-  // get String klass for instanceOf
-  ciInstanceKlass* klass = env()->String_klass();
-
   if (!stopped()) {
-    Node* inst = gen_instanceof(argument, makecon(TypeKlassPtr::make(klass)));
-    Node* cmp  = _gvn.transform(new CmpINode(inst, intcon(1)));
-    Node* bol  = _gvn.transform(new BoolNode(cmp, BoolTest::ne));
+    // Get start addr and length of first argument
+    Node* arg1_start  = array_element_address(arg1, intcon(0), T_BYTE);
+    Node* arg1_cnt    = load_array_length(arg1);
 
-    Node* inst_false = generate_guard(bol, NULL, PROB_MIN);
-    //instanceOf == true, fallthrough
+    // Get start addr and length of second argument
+    Node* arg2_start  = array_element_address(arg2, intcon(0), T_BYTE);
+    Node* arg2_cnt    = load_array_length(arg2);
 
-    if (inst_false != NULL) {
-      phi->init_req(3, intcon(0));
-      region->init_req(3, inst_false);
-    }
-  }
-
-  if (!stopped()) {
-    const TypeOopPtr* string_type = TypeOopPtr::make_from_klass(klass);
-
-    // Properly cast the argument to String
-    argument = _gvn.transform(new CheckCastPPNode(control(), argument, string_type));
-    // This path is taken only when argument's type is String:NotNull.
-    argument = cast_not_null(argument, false);
-
-    Node* no_ctrl = NULL;
-
-    // Get start addr of receiver
-    Node* receiver_val    = load_String_value(no_ctrl, receiver);
-    Node* receiver_offset = load_String_offset(no_ctrl, receiver);
-    Node* receiver_start = array_element_address(receiver_val, receiver_offset, T_CHAR);
-
-    // Get length of receiver
-    Node* receiver_cnt  = load_String_length(no_ctrl, receiver);
-
-    // Get start addr of argument
-    Node* argument_val    = load_String_value(no_ctrl, argument);
-    Node* argument_offset = load_String_offset(no_ctrl, argument);
-    Node* argument_start = array_element_address(argument_val, argument_offset, T_CHAR);
-
-    // Get length of argument
-    Node* argument_cnt  = load_String_length(no_ctrl, argument);
-
-    // Check for receiver count != argument count
-    Node* cmp = _gvn.transform(new CmpINode(receiver_cnt, argument_cnt));
+    // Check for arg1_cnt != arg2_cnt
+    Node* cmp = _gvn.transform(new CmpINode(arg1_cnt, arg2_cnt));
     Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::ne));
     Node* if_ne = generate_slow_guard(bol, NULL);
     if (if_ne != NULL) {
-      phi->init_req(4, intcon(0));
-      region->init_req(4, if_ne);
+      phi->init_req(2, intcon(0));
+      region->init_req(2, if_ne);
     }
 
     // Check for count == 0 is done by assembler code for StrEquals.
 
     if (!stopped()) {
-      Node* equals = make_string_method_node(Op_StrEquals, receiver_start, receiver_cnt, argument_start, argument_cnt);
+      Node* equals = make_string_method_node(Op_StrEquals, arg1_start, arg1_cnt, arg2_start, arg2_cnt, ae);
       phi->init_req(1, equals);
       region->init_req(1, control());
     }
@@ -1063,289 +1002,462 @@ bool LibraryCallKit::inline_string_equals() {
 }
 
 //------------------------------inline_array_equals----------------------------
-bool LibraryCallKit::inline_array_equals() {
+bool LibraryCallKit::inline_array_equals(StrIntrinsicNode::ArgEnc ae) {
+  assert(ae == StrIntrinsicNode::UU || ae == StrIntrinsicNode::LL, "unsupported array types");
   Node* arg1 = argument(0);
   Node* arg2 = argument(1);
-  set_result(_gvn.transform(new AryEqNode(control(), memory(TypeAryPtr::CHARS), arg1, arg2)));
+
+  const TypeAryPtr* mtype = (ae == StrIntrinsicNode::UU) ? TypeAryPtr::CHARS : TypeAryPtr::BYTES;
+  set_result(_gvn.transform(new AryEqNode(control(), memory(mtype), arg1, arg2, ae)));
   return true;
 }
 
-// Java version of String.indexOf(constant string)
-// class StringDecl {
-//   StringDecl(char[] ca) {
-//     offset = 0;
-//     count = ca.length;
-//     value = ca;
-//   }
-//   int offset;
-//   int count;
-//   char[] value;
-// }
-//
-// static int string_indexOf_J(StringDecl string_object, char[] target_object,
-//                             int targetOffset, int cache_i, int md2) {
-//   int cache = cache_i;
-//   int sourceOffset = string_object.offset;
-//   int sourceCount = string_object.count;
-//   int targetCount = target_object.length;
-//
-//   int targetCountLess1 = targetCount - 1;
-//   int sourceEnd = sourceOffset + sourceCount - targetCountLess1;
-//
-//   char[] source = string_object.value;
-//   char[] target = target_object;
-//   int lastChar = target[targetCountLess1];
-//
-//  outer_loop:
-//   for (int i = sourceOffset; i < sourceEnd; ) {
-//     int src = source[i + targetCountLess1];
-//     if (src == lastChar) {
-//       // With random strings and a 4-character alphabet,
-//       // reverse matching at this point sets up 0.8% fewer
-//       // frames, but (paradoxically) makes 0.3% more probes.
-//       // Since those probes are nearer the lastChar probe,
-//       // there is may be a net D$ win with reverse matching.
-//       // But, reversing loop inhibits unroll of inner loop
-//       // for unknown reason.  So, does running outer loop from
-//       // (sourceOffset - targetCountLess1) to (sourceOffset + sourceCount)
-//       for (int j = 0; j < targetCountLess1; j++) {
-//         if (target[targetOffset + j] != source[i+j]) {
-//           if ((cache & (1 << source[i+j])) == 0) {
-//             if (md2 < j+1) {
-//               i += j+1;
-//               continue outer_loop;
-//             }
-//           }
-//           i += md2;
-//           continue outer_loop;
-//         }
-//       }
-//       return i - sourceOffset;
-//     }
-//     if ((cache & (1 << src)) == 0) {
-//       i += targetCountLess1;
-//     } // using "i += targetCount;" and an "else i++;" causes a jump to jump.
-//     i++;
-//   }
-//   return -1;
-// }
+//------------------------------inline_hasNegatives------------------------------
+bool LibraryCallKit::inline_hasNegatives() {
+  if (too_many_traps(Deoptimization::Reason_intrinsic))  return false;
 
-//------------------------------string_indexOf------------------------
-Node* LibraryCallKit::string_indexOf(Node* string_object, ciTypeArray* target_array, jint targetOffset_i,
-                                     jint cache_i, jint md2_i) {
+  assert(callee()->signature()->size() == 3, "hasNegatives has 3 parameters");
+  // no receiver since it is static method
+  Node* ba         = argument(0);
+  Node* offset     = argument(1);
+  Node* len        = argument(2);
 
-  Node* no_ctrl  = NULL;
-  float likely   = PROB_LIKELY(0.9);
-  float unlikely = PROB_UNLIKELY(0.9);
+  RegionNode* bailout = new RegionNode(1);
+  record_for_igvn(bailout);
 
-  const int nargs = 0; // no arguments to push back for uncommon trap in predicate
+  // offset must not be negative.
+  generate_negative_guard(offset, bailout);
 
-  Node* source        = load_String_value(no_ctrl, string_object);
-  Node* sourceOffset  = load_String_offset(no_ctrl, string_object);
-  Node* sourceCount   = load_String_length(no_ctrl, string_object);
+  // offset + length must not exceed length of ba.
+  generate_limit_guard(offset, len, load_array_length(ba), bailout);
 
-  Node* target = _gvn.transform( makecon(TypeOopPtr::make_from_constant(target_array, true)));
-  jint target_length = target_array->length();
-  const TypeAry* target_array_type = TypeAry::make(TypeInt::CHAR, TypeInt::make(0, target_length, Type::WidenMin));
-  const TypeAryPtr* target_type = TypeAryPtr::make(TypePtr::BotPTR, target_array_type, target_array->klass(), true, Type::OffsetBot);
-
-  // String.value field is known to be @Stable.
-  if (UseImplicitStableValues) {
-    target = cast_array_to_stable(target, target_type);
+  if (bailout->req() > 1) {
+    PreserveJVMState pjvms(this);
+    set_control(_gvn.transform(bailout));
+    uncommon_trap(Deoptimization::Reason_intrinsic,
+                  Deoptimization::Action_maybe_recompile);
   }
-
-  IdealKit kit(this, false, true);
-#define __ kit.
-  Node* zero             = __ ConI(0);
-  Node* one              = __ ConI(1);
-  Node* cache            = __ ConI(cache_i);
-  Node* md2              = __ ConI(md2_i);
-  Node* lastChar         = __ ConI(target_array->char_at(target_length - 1));
-  Node* targetCountLess1 = __ ConI(target_length - 1);
-  Node* targetOffset     = __ ConI(targetOffset_i);
-  Node* sourceEnd        = __ SubI(__ AddI(sourceOffset, sourceCount), targetCountLess1);
-
-  IdealVariable rtn(kit), i(kit), j(kit); __ declarations_done();
-  Node* outer_loop = __ make_label(2 /* goto */);
-  Node* return_    = __ make_label(1);
-
-  __ set(rtn,__ ConI(-1));
-  __ loop(this, nargs, i, sourceOffset, BoolTest::lt, sourceEnd); {
-       Node* i2  = __ AddI(__ value(i), targetCountLess1);
-       // pin to prohibit loading of "next iteration" value which may SEGV (rare)
-       Node* src = load_array_element(__ ctrl(), source, i2, TypeAryPtr::CHARS);
-       __ if_then(src, BoolTest::eq, lastChar, unlikely); {
-         __ loop(this, nargs, j, zero, BoolTest::lt, targetCountLess1); {
-              Node* tpj = __ AddI(targetOffset, __ value(j));
-              Node* targ = load_array_element(no_ctrl, target, tpj, target_type);
-              Node* ipj  = __ AddI(__ value(i), __ value(j));
-              Node* src2 = load_array_element(no_ctrl, source, ipj, TypeAryPtr::CHARS);
-              __ if_then(targ, BoolTest::ne, src2); {
-                __ if_then(__ AndI(cache, __ LShiftI(one, src2)), BoolTest::eq, zero); {
-                  __ if_then(md2, BoolTest::lt, __ AddI(__ value(j), one)); {
-                    __ increment(i, __ AddI(__ value(j), one));
-                    __ goto_(outer_loop);
-                  } __ end_if(); __ dead(j);
-                }__ end_if(); __ dead(j);
-                __ increment(i, md2);
-                __ goto_(outer_loop);
-              }__ end_if();
-              __ increment(j, one);
-         }__ end_loop(); __ dead(j);
-         __ set(rtn, __ SubI(__ value(i), sourceOffset)); __ dead(i);
-         __ goto_(return_);
-       }__ end_if();
-       __ if_then(__ AndI(cache, __ LShiftI(one, src)), BoolTest::eq, zero, likely); {
-         __ increment(i, targetCountLess1);
-       }__ end_if();
-       __ increment(i, one);
-       __ bind(outer_loop);
-  }__ end_loop(); __ dead(i);
-  __ bind(return_);
-
-  // Final sync IdealKit and GraphKit.
-  final_sync(kit);
-  Node* result = __ value(rtn);
-#undef __
-  C->set_has_loops(true);
-  return result;
+  if (!stopped()) {
+    Node* ba_start = array_element_address(ba, offset, T_BYTE);
+    Node* result = new HasNegativesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
+    set_result(_gvn.transform(result));
+  }
+  return true;
 }
 
 //------------------------------inline_string_indexOf------------------------
-bool LibraryCallKit::inline_string_indexOf() {
-  Node* receiver = argument(0);
-  Node* arg      = argument(1);
-
-  Node* result;
-  if (Matcher::has_match_rule(Op_StrIndexOf) &&
-      UseSSE42Intrinsics) {
-    // Generate SSE4.2 version of indexOf
-    // We currently only have match rules that use SSE4.2
-
-    receiver = null_check(receiver);
-    arg      = null_check(arg);
-    if (stopped()) {
-      return true;
-    }
-
-    // Make the merge point
-    RegionNode* result_rgn = new RegionNode(4);
-    Node*       result_phi = new PhiNode(result_rgn, TypeInt::INT);
-    Node* no_ctrl  = NULL;
-
-    // Get start addr of source string
-    Node* source = load_String_value(no_ctrl, receiver);
-    Node* source_offset = load_String_offset(no_ctrl, receiver);
-    Node* source_start = array_element_address(source, source_offset, T_CHAR);
-
-    // Get length of source string
-    Node* source_cnt  = load_String_length(no_ctrl, receiver);
-
-    // Get start addr of substring
-    Node* substr = load_String_value(no_ctrl, arg);
-    Node* substr_offset = load_String_offset(no_ctrl, arg);
-    Node* substr_start = array_element_address(substr, substr_offset, T_CHAR);
-
-    // Get length of source string
-    Node* substr_cnt  = load_String_length(no_ctrl, arg);
-
-    // Check for substr count > string count
-    Node* cmp = _gvn.transform(new CmpINode(substr_cnt, source_cnt));
-    Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::gt));
-    Node* if_gt = generate_slow_guard(bol, NULL);
-    if (if_gt != NULL) {
-      result_phi->init_req(2, intcon(-1));
-      result_rgn->init_req(2, if_gt);
-    }
-
-    if (!stopped()) {
-      // Check for substr count == 0
-      cmp = _gvn.transform(new CmpINode(substr_cnt, intcon(0)));
-      bol = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
-      Node* if_zero = generate_slow_guard(bol, NULL);
-      if (if_zero != NULL) {
-        result_phi->init_req(3, intcon(0));
-        result_rgn->init_req(3, if_zero);
-      }
-    }
-
-    if (!stopped()) {
-      result = make_string_method_node(Op_StrIndexOf, source_start, source_cnt, substr_start, substr_cnt);
-      result_phi->init_req(1, result);
-      result_rgn->init_req(1, control());
-    }
-    set_control(_gvn.transform(result_rgn));
-    record_for_igvn(result_rgn);
-    result = _gvn.transform(result_phi);
-
-  } else { // Use LibraryCallKit::string_indexOf
-    // don't intrinsify if argument isn't a constant string.
-    if (!arg->is_Con()) {
-     return false;
-    }
-    const TypeOopPtr* str_type = _gvn.type(arg)->isa_oopptr();
-    if (str_type == NULL) {
-      return false;
-    }
-    ciInstanceKlass* klass = env()->String_klass();
-    ciObject* str_const = str_type->const_oop();
-    if (str_const == NULL || str_const->klass() != klass) {
-      return false;
-    }
-    ciInstance* str = str_const->as_instance();
-    assert(str != NULL, "must be instance");
-
-    ciObject* v = str->field_value_by_offset(java_lang_String::value_offset_in_bytes()).as_object();
-    ciTypeArray* pat = v->as_type_array(); // pattern (argument) character array
-
-    int o;
-    int c;
-    if (java_lang_String::has_offset_field()) {
-      o = str->field_value_by_offset(java_lang_String::offset_offset_in_bytes()).as_int();
-      c = str->field_value_by_offset(java_lang_String::count_offset_in_bytes()).as_int();
-    } else {
-      o = 0;
-      c = pat->length();
-    }
-
-    // constant strings have no offset and count == length which
-    // simplifies the resulting code somewhat so lets optimize for that.
-    if (o != 0 || c != pat->length()) {
-     return false;
-    }
-
-    receiver = null_check(receiver, T_OBJECT);
-    // NOTE: No null check on the argument is needed since it's a constant String oop.
-    if (stopped()) {
-      return true;
-    }
-
-    // The null string as a pattern always returns 0 (match at beginning of string)
-    if (c == 0) {
-      set_result(intcon(0));
-      return true;
-    }
-
-    // Generate default indexOf
-    jchar lastChar = pat->char_at(o + (c - 1));
-    int cache = 0;
-    int i;
-    for (i = 0; i < c - 1; i++) {
-      assert(i < pat->length(), "out of range");
-      cache |= (1 << (pat->char_at(o + i) & (sizeof(cache) * BitsPerByte - 1)));
-    }
-
-    int md2 = c;
-    for (i = 0; i < c - 1; i++) {
-      assert(i < pat->length(), "out of range");
-      if (pat->char_at(o + i) == lastChar) {
-        md2 = (c - 1) - i;
-      }
-    }
-
-    result = string_indexOf(receiver, pat, o, cache, md2);
+bool LibraryCallKit::inline_string_indexOf(StrIntrinsicNode::ArgEnc ae) {
+  if (!Matcher::has_match_rule(Op_StrIndexOf) || !UseSSE42Intrinsics) {
+    return false;
   }
-  set_result(result);
+  Node* src = argument(0);
+  Node* tgt = argument(1);
+
+  // Make the merge point
+  RegionNode* result_rgn = new RegionNode(4);
+  Node*       result_phi = new PhiNode(result_rgn, TypeInt::INT);
+
+  // Get start addr and length of source string
+  Node* src_start = array_element_address(src, intcon(0), T_BYTE);
+  Node* src_count = load_array_length(src);
+
+  // Get start addr and length of substring
+  Node* tgt_start = array_element_address(tgt, intcon(0), T_BYTE);
+  Node* tgt_count = load_array_length(tgt);
+
+  if (ae == StrIntrinsicNode::UU || ae == StrIntrinsicNode::UL) {
+    // Divide src size by 2 if String is UTF16 encoded
+    src_count = _gvn.transform(new RShiftINode(src_count, intcon(1)));
+  }
+  if (ae == StrIntrinsicNode::UU) {
+    // Divide substring size by 2 if String is UTF16 encoded
+    tgt_count = _gvn.transform(new RShiftINode(tgt_count, intcon(1)));
+  }
+
+  // Check for substr count > string count
+  Node* cmp = _gvn.transform(new CmpINode(tgt_count, src_count));
+  Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::gt));
+  Node* if_gt = generate_slow_guard(bol, NULL);
+  if (if_gt != NULL) {
+    result_phi->init_req(2, intcon(-1));
+    result_rgn->init_req(2, if_gt);
+  }
+
+  if (!stopped()) {
+    // Check for substr count == 0
+    cmp = _gvn.transform(new CmpINode(tgt_count, intcon(0)));
+    bol = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
+    Node* if_zero = generate_slow_guard(bol, NULL);
+    if (if_zero != NULL) {
+      result_phi->init_req(3, intcon(0));
+      result_rgn->init_req(3, if_zero);
+    }
+  }
+
+  if (!stopped()) {
+    Node* result = make_string_method_node(Op_StrIndexOf, src_start, src_count, tgt_start, tgt_count, ae);
+    result_phi->init_req(1, result);
+    result_rgn->init_req(1, control());
+  }
+  set_control(_gvn.transform(result_rgn));
+  record_for_igvn(result_rgn);
+  set_result(_gvn.transform(result_phi));
+
+  return true;
+}
+
+//-----------------------------inline_string_indexOf-----------------------
+bool LibraryCallKit::inline_string_indexOfI(StrIntrinsicNode::ArgEnc ae) {
+  if (!Matcher::has_match_rule(Op_StrIndexOf) || !UseSSE42Intrinsics) {
+    return false;
+  }
+  assert(callee()->signature()->size() == 5, "String.indexOf() has 5 arguments");
+  Node* src         = argument(0); // byte[]
+  Node* src_count   = argument(1);
+  Node* tgt         = argument(2); // byte[]
+  Node* tgt_count   = argument(3);
+  Node* from_index  = argument(4);
+
+  // Java code which calls this method has range checks for from_index value.
+  src_count = _gvn.transform(new SubINode(src_count, from_index));
+
+  // Multiply byte array index by 2 if String is UTF16 encoded
+  Node* src_offset = (ae == StrIntrinsicNode::LL) ? from_index : _gvn.transform(new LShiftINode(from_index, intcon(1)));
+  Node* src_start = array_element_address(src, src_offset, T_BYTE);
+  Node* tgt_start = array_element_address(tgt, intcon(0), T_BYTE);
+
+  Node* result = make_string_method_node(Op_StrIndexOf, src_start, src_count, tgt_start, tgt_count, ae);
+
+  // The result is index relative to from_index if substring was found, -1 otherwise.
+  // Generate code which will fold into cmove.
+  RegionNode* region = new RegionNode(3);
+  Node* phi = new PhiNode(region, TypeInt::INT);
+
+  Node* cmp = _gvn.transform(new CmpINode(result, intcon(0)));
+  Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
+
+  Node* if_lt = generate_slow_guard(bol, NULL);
+  if (if_lt != NULL) {
+    // result == -1
+    phi->init_req(2, result);
+    region->init_req(2, if_lt);
+  }
+  if (!stopped()) {
+    result = _gvn.transform(new AddINode(result, from_index));
+    phi->init_req(1, result);
+    region->init_req(1, control());
+  }
+
+  set_control(_gvn.transform(region));
+  record_for_igvn(region);
+  set_result(_gvn.transform(phi));
+
+  return true;
+}
+
+//-----------------------------inline_string_indexOfChar-----------------------
+bool LibraryCallKit::inline_string_indexOfChar() {
+  if (!Matcher::has_match_rule(Op_StrIndexOfChar) || !(UseSSE > 4)) {
+    return false;
+  }
+  assert(callee()->signature()->size() == 4, "String.indexOfChar() has 4 arguments");
+  Node* src         = argument(0); // byte[]
+  Node* tgt         = argument(1); // tgt is int ch
+  Node* from_index  = argument(2);
+  Node* max         = argument(3);
+
+  Node* src_offset = _gvn.transform(new LShiftINode(from_index, intcon(1)));
+  Node* src_start = array_element_address(src, src_offset, T_BYTE);
+
+  Node* src_count = _gvn.transform(new SubINode(max, from_index));
+
+  RegionNode* region = new RegionNode(3);
+  Node* phi = new PhiNode(region, TypeInt::INT);
+
+  Node* result = new StrIndexOfCharNode(control(), memory(TypeAryPtr::BYTES), src_start, src_count, tgt, StrIntrinsicNode::none);
+  C->set_has_split_ifs(true); // Has chance for split-if optimization
+  _gvn.transform(result);
+
+  Node* cmp = _gvn.transform(new CmpINode(result, intcon(0)));
+  Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::lt));
+
+  Node* if_lt = generate_slow_guard(bol, NULL);
+  if (if_lt != NULL) {
+    // result == -1
+    phi->init_req(2, result);
+    region->init_req(2, if_lt);
+  }
+  if (!stopped()) {
+    result = _gvn.transform(new AddINode(result, from_index));
+    phi->init_req(1, result);
+    region->init_req(1, control());
+  }
+  set_control(_gvn.transform(region));
+  record_for_igvn(region);
+  set_result(_gvn.transform(phi));
+
+  return true;
+}
+//---------------------------inline_string_copy---------------------
+// compressIt == true --> generate a compressed copy operation (compress char[]/byte[] to byte[])
+//   int StringUTF16.compress(char[] src, int srcOff, byte[] dst, int dstOff, int len)
+//   int StringUTF16.compress(byte[] src, int srcOff, byte[] dst, int dstOff, int len)
+// compressIt == false --> generate an inflated copy operation (inflate byte[] to char[]/byte[])
+//   void StringLatin1.inflate(byte[] src, int srcOff, char[] dst, int dstOff, int len)
+//   void StringLatin1.inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len)
+bool LibraryCallKit::inline_string_copy(bool compress) {
+  int nargs = 5;  // 2 oops, 3 ints
+  assert(callee()->signature()->size() == nargs, "string copy has 5 arguments");
+
+  Node* src         = argument(0);
+  Node* src_offset  = argument(1);
+  Node* dst         = argument(2);
+  Node* dst_offset  = argument(3);
+  Node* length      = argument(4);
+
+  // Check for allocation before we add nodes that would confuse
+  // tightly_coupled_allocation()
+  AllocateArrayNode* alloc = tightly_coupled_allocation(dst, NULL);
+
+  // Figure out the size and type of the elements we will be copying.
+  const Type* src_type = src->Value(&_gvn);
+  const Type* dst_type = dst->Value(&_gvn);
+  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  BasicType dst_elem = dst_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  assert((compress && dst_elem == T_BYTE && (src_elem == T_BYTE || src_elem == T_CHAR)) ||
+         (!compress && src_elem == T_BYTE && (dst_elem == T_BYTE || dst_elem == T_CHAR)),
+         "Unsupported array types for inline_string_copy");
+
+  // Convert char[] offsets to byte[] offsets
+  if (compress && src_elem == T_BYTE) {
+    src_offset = _gvn.transform(new LShiftINode(src_offset, intcon(1)));
+  } else if (!compress && dst_elem == T_BYTE) {
+    dst_offset = _gvn.transform(new LShiftINode(dst_offset, intcon(1)));
+  }
+
+  Node* src_start = array_element_address(src, src_offset, src_elem);
+  Node* dst_start = array_element_address(dst, dst_offset, dst_elem);
+  // 'src_start' points to src array + scaled offset
+  // 'dst_start' points to dst array + scaled offset
+  Node* count = NULL;
+  if (compress) {
+    count = compress_string(src_start, dst_start, length);
+  } else {
+    inflate_string(src_start, dst_start, length);
+  }
+
+  if (alloc != NULL) {
+    if (alloc->maybe_set_complete(&_gvn)) {
+      // "You break it, you buy it."
+      InitializeNode* init = alloc->initialization();
+      assert(init->is_complete(), "we just did this");
+      init->set_complete_with_arraycopy();
+      assert(dst->is_CheckCastPP(), "sanity");
+      assert(dst->in(0)->in(0) == init, "dest pinned");
+    }
+    // Do not let stores that initialize this object be reordered with
+    // a subsequent store that would make this object accessible by
+    // other threads.
+    // Record what AllocateNode this StoreStore protects so that
+    // escape analysis can go from the MemBarStoreStoreNode to the
+    // AllocateNode and eliminate the MemBarStoreStoreNode if possible
+    // based on the escape status of the AllocateNode.
+    insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out(AllocateNode::RawAddress));
+  }
+  if (compress) {
+    set_result(_gvn.transform(count));
+  }
+  return true;
+}
+
+#ifdef _LP64
+#define XTOP ,top() /*additional argument*/
+#else  //_LP64
+#define XTOP        /*no additional argument*/
+#endif //_LP64
+
+//------------------------inline_string_toBytesU--------------------------
+// public static byte[] StringUTF16.toBytes(char[] value, int off, int len)
+bool LibraryCallKit::inline_string_toBytesU() {
+  // Get the arguments.
+  Node* value     = argument(0);
+  Node* offset    = argument(1);
+  Node* length    = argument(2);
+
+  Node* newcopy = NULL;
+
+  // Set the original stack and the reexecute bit for the interpreter to reexecute
+  // the bytecode that invokes StringUTF16.toBytes() if deoptimization happens.
+  { PreserveReexecuteState preexecs(this);
+    jvms()->set_should_reexecute(true);
+
+    // Check if a null path was taken unconditionally.
+    value = null_check(value);
+
+    RegionNode* bailout = new RegionNode(1);
+    record_for_igvn(bailout);
+
+    // Make sure that resulting byte[] length does not overflow Integer.MAX_VALUE
+    generate_negative_guard(length, bailout);
+    generate_limit_guard(length, intcon(0), intcon(max_jint/2), bailout);
+
+    if (bailout->req() > 1) {
+      PreserveJVMState pjvms(this);
+      set_control(_gvn.transform(bailout));
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_maybe_recompile);
+    }
+    if (stopped()) return true;
+
+    // Range checks are done by caller.
+
+    Node* size = _gvn.transform(new LShiftINode(length, intcon(1)));
+    Node* klass_node = makecon(TypeKlassPtr::make(ciTypeArrayKlass::make(T_BYTE)));
+    newcopy = new_array(klass_node, size, 0);  // no arguments to push
+    AllocateArrayNode* alloc = tightly_coupled_allocation(newcopy, NULL);
+
+    // Calculate starting addresses.
+    Node* src_start = array_element_address(value, offset, T_CHAR);
+    Node* dst_start = basic_plus_adr(newcopy, arrayOopDesc::base_offset_in_bytes(T_BYTE));
+
+    // Check if src array address is aligned to HeapWordSize (dst is always aligned)
+    const TypeInt* toffset = gvn().type(offset)->is_int();
+    bool aligned = toffset->is_con() && ((toffset->get_con() * type2aelembytes(T_CHAR)) % HeapWordSize == 0);
+
+    // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
+    const char* copyfunc_name = "arraycopy";
+    address     copyfunc_addr = StubRoutines::select_arraycopy_function(T_CHAR, aligned, true, copyfunc_name, true);
+    Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
+                      OptoRuntime::fast_arraycopy_Type(),
+                      copyfunc_addr, copyfunc_name, TypeRawPtr::BOTTOM,
+                      src_start, dst_start, ConvI2X(length) XTOP);
+    // Do not let reads from the cloned object float above the arraycopy.
+    if (alloc != NULL) {
+      if (alloc->maybe_set_complete(&_gvn)) {
+        // "You break it, you buy it."
+        InitializeNode* init = alloc->initialization();
+        assert(init->is_complete(), "we just did this");
+        init->set_complete_with_arraycopy();
+        assert(newcopy->is_CheckCastPP(), "sanity");
+        assert(newcopy->in(0)->in(0) == init, "dest pinned");
+      }
+      // Do not let stores that initialize this object be reordered with
+      // a subsequent store that would make this object accessible by
+      // other threads.
+      // Record what AllocateNode this StoreStore protects so that
+      // escape analysis can go from the MemBarStoreStoreNode to the
+      // AllocateNode and eliminate the MemBarStoreStoreNode if possible
+      // based on the escape status of the AllocateNode.
+      insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out(AllocateNode::RawAddress));
+    } else {
+      insert_mem_bar(Op_MemBarCPUOrder);
+    }
+  } // original reexecute is set back here
+
+  C->set_has_split_ifs(true); // Has chance for split-if optimization
+  if (!stopped()) {
+    set_result(newcopy);
+  }
+  return true;
+}
+
+//------------------------inline_string_getCharsU--------------------------
+// public void StringUTF16.getChars(byte[] value, int srcBegin, int srcEnd, char dst[], int dstBegin)
+bool LibraryCallKit::inline_string_getCharsU() {
+  if (too_many_traps(Deoptimization::Reason_intrinsic))  return false;
+
+  // Get the arguments.
+  Node* value     = argument(0);
+  Node* src_begin = argument(1);
+  Node* src_end   = argument(2); // exclusive offset (i < src_end)
+  Node* dst       = argument(3);
+  Node* dst_begin = argument(4);
+
+  // Check for allocation before we add nodes that would confuse
+  // tightly_coupled_allocation()
+  AllocateArrayNode* alloc = tightly_coupled_allocation(dst, NULL);
+
+  // Check if a null path was taken unconditionally.
+  value = null_check(value);
+  dst = null_check(dst);
+  if (stopped()) {
+    return true;
+  }
+
+  // Range checks are done by caller.
+
+  // Get length and convert char[] offset to byte[] offset
+  Node* length = _gvn.transform(new SubINode(src_end, src_begin));
+  src_begin = _gvn.transform(new LShiftINode(src_begin, intcon(1)));
+
+  if (!stopped()) {
+    // Calculate starting addresses.
+    Node* src_start = array_element_address(value, src_begin, T_BYTE);
+    Node* dst_start = array_element_address(dst, dst_begin, T_CHAR);
+
+    // Check if array addresses are aligned to HeapWordSize
+    const TypeInt* tsrc = gvn().type(src_begin)->is_int();
+    const TypeInt* tdst = gvn().type(dst_begin)->is_int();
+    bool aligned = tsrc->is_con() && ((tsrc->get_con() * type2aelembytes(T_BYTE)) % HeapWordSize == 0) &&
+                   tdst->is_con() && ((tdst->get_con() * type2aelembytes(T_CHAR)) % HeapWordSize == 0);
+
+    // Figure out which arraycopy runtime method to call (disjoint, uninitialized).
+    const char* copyfunc_name = "arraycopy";
+    address     copyfunc_addr = StubRoutines::select_arraycopy_function(T_CHAR, aligned, true, copyfunc_name, true);
+    Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
+                      OptoRuntime::fast_arraycopy_Type(),
+                      copyfunc_addr, copyfunc_name, TypeRawPtr::BOTTOM,
+                      src_start, dst_start, ConvI2X(length) XTOP);
+    // Do not let reads from the cloned object float above the arraycopy.
+    if (alloc != NULL) {
+      if (alloc->maybe_set_complete(&_gvn)) {
+        // "You break it, you buy it."
+        InitializeNode* init = alloc->initialization();
+        assert(init->is_complete(), "we just did this");
+        init->set_complete_with_arraycopy();
+        assert(dst->is_CheckCastPP(), "sanity");
+        assert(dst->in(0)->in(0) == init, "dest pinned");
+      }
+      // Do not let stores that initialize this object be reordered with
+      // a subsequent store that would make this object accessible by
+      // other threads.
+      // Record what AllocateNode this StoreStore protects so that
+      // escape analysis can go from the MemBarStoreStoreNode to the
+      // AllocateNode and eliminate the MemBarStoreStoreNode if possible
+      // based on the escape status of the AllocateNode.
+      insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out(AllocateNode::RawAddress));
+    } else {
+      insert_mem_bar(Op_MemBarCPUOrder);
+    }
+  }
+
+  C->set_has_split_ifs(true); // Has chance for split-if optimization
+  return true;
+}
+
+//----------------------inline_string_char_access----------------------------
+// Store/Load char to/from byte[] array.
+// static void StringUTF16.putChar(byte[] val, int index, int c)
+// static char StringUTF16.getChar(byte[] val, int index)
+bool LibraryCallKit::inline_string_char_access(bool is_store) {
+  Node* value  = argument(0);
+  Node* index  = argument(1);
+  Node* ch = is_store ? argument(2) : NULL;
+
+  // This intrinsic accesses byte[] array as char[] array. Computing the offsets
+  // correctly requires matched array shapes.
+  assert (arrayOopDesc::base_offset_in_bytes(T_CHAR) == arrayOopDesc::base_offset_in_bytes(T_BYTE),
+          "sanity: byte[] and char[] bases agree");
+  assert (type2aelembytes(T_CHAR) == type2aelembytes(T_BYTE)*2,
+          "sanity: byte[] and char[] scales agree");
+
+  Node* adr = array_element_address(value, index, T_CHAR);
+  if (is_store) {
+    (void) store_to_memory(control(), adr, ch, T_CHAR, TypeAryPtr::BYTES, MemNode::unordered);
+  } else {
+    ch = make_load(control(), adr, TypeInt::CHAR, T_CHAR, MemNode::unordered);
+    set_result(ch);
+  }
   return true;
 }
 
@@ -1368,7 +1480,6 @@ bool LibraryCallKit::inline_math(vmIntrinsics::ID id) {
   switch (id) {
   case vmIntrinsics::_dabs:   n = new AbsDNode(                arg);  break;
   case vmIntrinsics::_dsqrt:  n = new SqrtDNode(C, control(),  arg);  break;
-  case vmIntrinsics::_dlog:   n = new LogDNode(C, control(),   arg);  break;
   case vmIntrinsics::_dlog10: n = new Log10DNode(C, control(), arg);  break;
   default:  fatal_unexpected_iid(id);  break;
   }
@@ -1752,7 +1863,9 @@ bool LibraryCallKit::inline_math_native(vmIntrinsics::ID id) {
   case vmIntrinsics::_dtan:   return Matcher::has_match_rule(Op_TanD)   ? inline_trig(id) :
     runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dtan),   "TAN");
 
-  case vmIntrinsics::_dlog:   return Matcher::has_match_rule(Op_LogD)   ? inline_math(id) :
+  case vmIntrinsics::_dlog:
+    return StubRoutines::dlog() != NULL ?
+    runtime_math(OptoRuntime::Math_D_D_Type(), StubRoutines::dlog(), "dlog") :
     runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog),   "LOG");
   case vmIntrinsics::_dlog10: return Matcher::has_match_rule(Op_Log10D) ? inline_math(id) :
     runtime_math(OptoRuntime::Math_D_D_Type(), FN_PTR(SharedRuntime::dlog10), "LOG10");
@@ -4187,12 +4300,6 @@ bool LibraryCallKit::inline_fp_conversions(vmIntrinsics::ID id) {
   return true;
 }
 
-#ifdef _LP64
-#define XTOP ,top() /*additional argument*/
-#else  //_LP64
-#define XTOP        /*no additional argument*/
-#endif //_LP64
-
 //----------------------inline_unsafe_copyMemory-------------------------
 // public native void Unsafe.copyMemory(Object srcBase, long srcOffset, Object destBase, long destOffset, long bytes);
 bool LibraryCallKit::inline_unsafe_copyMemory() {
@@ -5001,10 +5108,11 @@ bool LibraryCallKit::inline_encodeISOArray() {
   // Figure out the size and type of the elements we will be copying.
   BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
   BasicType dst_elem = dst_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
-  if (src_elem != T_CHAR || dst_elem != T_BYTE) {
+  if (!((src_elem == T_CHAR) || (src_elem== T_BYTE)) || dst_elem != T_BYTE) {
     return false;
   }
-  Node* src_start = array_element_address(src, src_offset, src_elem);
+
+  Node* src_start = array_element_address(src, src_offset, T_CHAR);
   Node* dst_start = array_element_address(dst, dst_offset, dst_elem);
   // 'src_start' points to src array + scaled offset
   // 'dst_start' points to dst array + scaled offset
@@ -5122,7 +5230,7 @@ bool LibraryCallKit::inline_multiplyToLen() {
 
 //-------------inline_squareToLen------------------------------------
 bool LibraryCallKit::inline_squareToLen() {
-  assert(UseSquareToLenIntrinsic, "not implementated on this platform");
+  assert(UseSquareToLenIntrinsic, "not implemented on this platform");
 
   address stubAddr = StubRoutines::squareToLen();
   if (stubAddr == NULL) {
@@ -5168,7 +5276,7 @@ bool LibraryCallKit::inline_squareToLen() {
 
 //-------------inline_mulAdd------------------------------------------
 bool LibraryCallKit::inline_mulAdd() {
-  assert(UseMulAddIntrinsic, "not implementated on this platform");
+  assert(UseMulAddIntrinsic, "not implemented on this platform");
 
   address stubAddr = StubRoutines::mulAdd();
   if (stubAddr == NULL) {
