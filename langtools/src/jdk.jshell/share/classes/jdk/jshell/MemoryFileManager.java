@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeMap;
+
 import javax.tools.JavaFileObject.Kind;
 import static javax.tools.StandardLocation.CLASS_PATH;
 import javax.tools.FileObject;
@@ -49,6 +50,7 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
 import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
 
 import com.sun.tools.javac.util.DefinedBy;
 import com.sun.tools.javac.util.DefinedBy.Api;
@@ -76,6 +78,10 @@ class MemoryFileManager implements JavaFileManager {
     // Upcoming Jigsaw
     private Method inferModuleNameMethod = null;
     private Method listModuleLocationsMethod = null;
+
+    Iterable<? extends Path> getLocationAsPaths(Location loc) {
+        return this.stdFileManager.getLocationAsPaths(loc);
+    }
 
     static abstract class MemoryJavaFileObject extends SimpleJavaFileObject {
 
