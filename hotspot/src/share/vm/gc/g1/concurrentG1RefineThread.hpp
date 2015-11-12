@@ -31,14 +31,14 @@
 class CardTableEntryClosure;
 class ConcurrentG1Refine;
 
-// The G1 Concurrent Refinement Thread (could be several in the future).
-
+// One or more G1 Concurrent Refinement Threads may be active if concurrent
+// refinement is in progress.
 class ConcurrentG1RefineThread: public ConcurrentGCThread {
   friend class VMStructs;
   friend class G1CollectedHeap;
 
   double _vtime_start;  // Initial virtual time.
-  double _vtime_accum;  // Initial virtual time.
+  double _vtime_accum;  // Accumulated virtual time.
   uint _worker_id;
   uint _worker_id_offset;
 
@@ -59,14 +59,17 @@ class ConcurrentG1RefineThread: public ConcurrentGCThread {
   // This thread deactivation threshold
   int _deactivation_threshold;
 
-  void sample_young_list_rs_lengths();
-  void run_young_rs_sampling();
   void wait_for_completed_buffers();
 
   void set_active(bool x) { _active = x; }
   bool is_active();
   void activate();
   void deactivate();
+
+  bool is_primary() { return (_worker_id == 0); }
+
+  void run_service();
+  void stop_service();
 
 public:
   virtual void run();

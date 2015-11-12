@@ -116,20 +116,6 @@ public class JVMOptionsUtils {
     }
 
     /**
-     * Add dependency for option depending on it's type. E.g. run the JVM in
-     * compilation mode for compiler options.
-     *
-     * @param option option
-     * @param type type of the option
-     */
-    private static void addTypeDependency(JVMOption option, String type) {
-        if (type.contains("C1") || type.contains("C2")) {
-            /* Run in compiler mode for compiler flags */
-            option.addPrepend("-Xcomp");
-        }
-    }
-
-    /**
      * Parse JVM Options. Get input from "inputReader". Parse using
      * "-XX:+PrintFlagsRanges" output format.
      *
@@ -214,7 +200,6 @@ public class JVMOptionsUtils {
             token = token.substring(1, token.indexOf("}"));
 
             if (acceptOrigin.test(token)) {
-                addTypeDependency(option, token);
                 addNameDependency(option);
 
                 allOptions.put(name, option);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -324,7 +324,7 @@ int DebugInformationRecorder::find_sharable_decode_offset(int stream_offset) {
 // must call add_safepoint before: it sets PcDesc and this routine uses
 // the last PcDesc set
 void DebugInformationRecorder::describe_scope(int         pc_offset,
-                                              methodHandle methodH,
+                                              const methodHandle& methodH,
                                               ciMethod*   method,
                                               int         bci,
                                               bool        reexecute,

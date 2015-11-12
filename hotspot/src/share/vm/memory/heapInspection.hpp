@@ -313,31 +313,12 @@ class KlassInfoHisto : public StackObj {
     return HeapWordSize * x->size();
   }
 
-  // returns a format string to print a julong with the given width. E.g,
-  // printf(num_fmt(6), julong(10)) would print out the number 10 with 4
-  // leading spaces.
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED
-
   static void print_julong(outputStream* st, int width, julong n) {
     int num_spaces = width - julong_width(n);
     if (num_spaces > 0) {
-      st->print(str_fmt(num_spaces), "");
+      st->print("%*s", num_spaces, "");
     }
     st->print(JULONG_FORMAT, n);
-  }
-PRAGMA_DIAG_POP
-
-  static char* perc_fmt(int width) {
-    static char buf[32];
-    jio_snprintf(buf, sizeof(buf), "%%%d.1f%%%%", width-1);
-    return buf;
-  }
-
-  static char* str_fmt(int width) {
-    static char buf[32];
-    jio_snprintf(buf, sizeof(buf), "%%%ds", width);
-    return buf;
   }
 
   static int julong_width(julong n) {

@@ -79,9 +79,6 @@ class ConcurrentMarkSweepThread: public ConcurrentGCThread {
   static void makeSurrogateLockerThread(TRAPS);
   static SurrogateLockerThread* slt() { return _slt; }
 
-  // Tester
-  bool is_ConcurrentGC_thread() const { return true;       }
-
   static void threads_do(ThreadClosure* tc);
 
   // Printing

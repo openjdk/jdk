@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,11 +213,11 @@ protected:
   jlong start_time() const     { return _start_time; }
 
   // Submit a given method for compilation (and update the rate).
-  virtual void submit_compile(methodHandle mh, int bci, CompLevel level, JavaThread* thread);
+  virtual void submit_compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread);
   // event() from SimpleThresholdPolicy would call these.
-  virtual void method_invocation_event(methodHandle method, methodHandle inlinee,
+  virtual void method_invocation_event(const methodHandle& method, const methodHandle& inlinee,
                                        CompLevel level, nmethod* nm, JavaThread* thread);
-  virtual void method_back_branch_event(methodHandle method, methodHandle inlinee,
+  virtual void method_back_branch_event(const methodHandle& method, const methodHandle& inlinee,
                                         int bci, CompLevel level, nmethod* nm, JavaThread* thread);
 public:
   AdvancedThresholdPolicy() : _start_time(0) { }

@@ -90,7 +90,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
 static GrowableArray<Klass*>* _global_klass_objects;
 static void collect_classes(Klass* k) {
   _global_klass_objects->append_if_missing(k);
-  if (k->oop_is_instance()) {
+  if (k->is_instance_klass()) {
     // Add in the array classes too
     InstanceKlass* ik = InstanceKlass::cast(k);
     ik->array_klasses_do(collect_classes);
@@ -126,7 +126,7 @@ static void rewrite_nofast_bytecode(Method* method) {
 static void rewrite_nofast_bytecodes_and_calculate_fingerprints() {
   for (int i = 0; i < _global_klass_objects->length(); i++) {
     Klass* k = _global_klass_objects->at(i);
-    if (k->oop_is_instance()) {
+    if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
       for (int i = 0; i < ik->methods()->length(); i++) {
         Method* m = ik->methods()->at(i);
@@ -199,9 +199,9 @@ static void patch_klass_vtables(void** vtbl_list, void* new_vtable_start) {
   int n = _global_klass_objects->length();
   for (int i = 0; i < n; i++) {
     Klass* obj = _global_klass_objects->at(i);
-    // Note oop_is_instance() is a virtual call.  After patching vtables
+    // Note is_instance_klass() is a virtual call in debug.  After patching vtables
     // all virtual calls on the dummy vtables will restore the original!
-    if (obj->oop_is_instance()) {
+    if (obj->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(obj);
       *(void**)ik = find_matching_vtbl_ptr(vtbl_list, new_vtable_start, ik);
       ConstantPool* cp = ik->constants();
@@ -482,12 +482,12 @@ void VM_PopulateDumpSharedSpace::doit() {
     int num_type_array = 0, num_obj_array = 0, num_inst = 0;
     for (int i = 0; i < _global_klass_objects->length(); i++) {
       Klass* k = _global_klass_objects->at(i);
-      if (k->oop_is_instance()) {
+      if (k->is_instance_klass()) {
         num_inst ++;
-      } else if (k->oop_is_objArray()) {
+      } else if (k->is_objArray_klass()) {
         num_obj_array ++;
       } else {
-        assert(k->oop_is_typeArray(), "sanity");
+        assert(k->is_typeArray_klass(), "sanity");
         num_type_array ++;
       }
     }
@@ -540,7 +540,7 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   NOT_PRODUCT(SystemDictionary::verify();)
 
-  // Copy the the symbol table, string table, and the system dictionary to the shared
+  // Copy the symbol table, string table, and the system dictionary to the shared
   // space in usable form.  Copy the hashtable
   // buckets first [read-write], then copy the linked lists of entries
   // [read-only].
@@ -679,8 +679,8 @@ void VM_PopulateDumpSharedSpace::doit() {
 
 void MetaspaceShared::link_one_shared_class(Klass* obj, TRAPS) {
   Klass* k = obj;
-  if (k->oop_is_instance()) {
-    InstanceKlass* ik = (InstanceKlass*) k;
+  if (k->is_instance_klass()) {
+    InstanceKlass* ik = InstanceKlass::cast(k);
     // Link the class to cause the bytecodes to be rewritten and the
     // cpcache to be created. Class verification is done according
     // to -Xverify setting.
@@ -690,7 +690,7 @@ void MetaspaceShared::link_one_shared_class(Klass* obj, TRAPS) {
 }
 
 void MetaspaceShared::check_one_shared_class(Klass* k) {
-  if (k->oop_is_instance() && InstanceKlass::cast(k)->check_sharing_error_state()) {
+  if (k->is_instance_klass() && InstanceKlass::cast(k)->check_sharing_error_state()) {
     _check_classes_made_progress = true;
   }
 }

@@ -42,7 +42,7 @@ import compiler.jvmci.common.testcases.SingleSubclass;
 import java.util.HashSet;
 import java.util.Set;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
@@ -86,7 +86,7 @@ public class LookupTypeTest {
 
     private void runTest(TestCase tcase) {
         System.out.println(tcase);
-        HotSpotResolvedObjectTypeImpl metaspaceKlass;
+        HotSpotResolvedObjectType metaspaceKlass;
         try {
             metaspaceKlass = CompilerToVMHelper.lookupType(tcase.className,
                     tcase.accessing, tcase.resolve);

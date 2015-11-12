@@ -53,28 +53,28 @@
 class java_lang_String : AllStatic {
  private:
   static int value_offset;
-  static int offset_offset;
-  static int count_offset;
   static int hash_offset;
+  static int coder_offset;
 
   static bool initialized;
 
-  static Handle basic_create(int length, TRAPS);
+  static Handle basic_create(int length, bool byte_arr, TRAPS);
 
-  static void set_offset(oop string, int offset) {
+  static void set_coder(oop string, jbyte coder) {
     assert(initialized, "Must be initialized");
-    if (offset_offset > 0) {
-      string->int_field_put(offset_offset, offset);
-    }
-  }
-  static void set_count( oop string, int count) {
-    assert(initialized, "Must be initialized");
-    if (count_offset > 0) {
-      string->int_field_put(count_offset,  count);
+    if (coder_offset > 0) {
+      string->byte_field_put(coder_offset, coder);
     }
   }
 
  public:
+
+  // Coders
+  enum Coder {
+    CODER_LATIN1 =  0,
+    CODER_UTF16  =  1
+  };
+
   static void compute_offsets();
 
   // Instance creation
@@ -86,36 +86,28 @@ class java_lang_String : AllStatic {
   static Handle create_from_platform_dependent_str(const char* str, TRAPS);
   static Handle char_converter(Handle java_string, jchar from_char, jchar to_char, TRAPS);
 
-  static bool has_offset_field()  {
-    assert(initialized, "Must be initialized");
-    return (offset_offset > 0);
-  }
-
-  static bool has_count_field()  {
-    assert(initialized, "Must be initialized");
-    return (count_offset > 0);
-  }
-
   static bool has_hash_field()  {
     assert(initialized, "Must be initialized");
     return (hash_offset > 0);
   }
+  static bool has_coder_field()  {
+    assert(initialized, "Must be initialized");
+    return (coder_offset > 0);
+  }
+
+  static void set_compact_strings(bool value);
 
   static int value_offset_in_bytes()  {
     assert(initialized && (value_offset > 0), "Must be initialized");
     return value_offset;
   }
-  static int count_offset_in_bytes()  {
-    assert(initialized && (count_offset > 0), "Must be initialized");
-    return count_offset;
-  }
-  static int offset_offset_in_bytes() {
-    assert(initialized && (offset_offset > 0), "Must be initialized");
-    return offset_offset;
-  }
   static int hash_offset_in_bytes()   {
     assert(initialized && (hash_offset > 0), "Must be initialized");
     return hash_offset;
+  }
+  static int coder_offset_in_bytes()   {
+    assert(initialized && (coder_offset > 0), "Must be initialized");
+    return coder_offset;
   }
 
   static void set_value_raw(oop string, typeArrayOop buffer) {
@@ -142,28 +134,30 @@ class java_lang_String : AllStatic {
     assert(is_instance(java_string), "must be java_string");
     return java_string->int_field(hash_offset);
   }
-  static int offset(oop java_string) {
+  static bool is_latin1(oop java_string) {
     assert(initialized, "Must be initialized");
     assert(is_instance(java_string), "must be java_string");
-    if (offset_offset > 0) {
-      return java_string->int_field(offset_offset);
+    if (coder_offset > 0) {
+      jbyte coder = java_string->byte_field(coder_offset);
+      assert(CompactStrings || coder == CODER_UTF16, "Must be UTF16 without CompactStrings");
+      return coder == CODER_LATIN1;
     } else {
-      return 0;
+      return false;
     }
   }
   static int length(oop java_string) {
     assert(initialized, "Must be initialized");
     assert(is_instance(java_string), "must be java_string");
-    if (count_offset > 0) {
-      return java_string->int_field(count_offset);
-    } else {
-      typeArrayOop value_array = ((typeArrayOop)java_string->obj_field(value_offset));
-      if (value_array == NULL) {
-        return 0;
-      } else {
-        return value_array->length();
-      }
+    typeArrayOop value_array = ((typeArrayOop)java_string->obj_field(value_offset));
+    if (value_array == NULL) {
+     return 0;
     }
+    int arr_length = value_array->length();
+    if (!is_latin1(java_string)) {
+      assert((arr_length & 1) == 0, "should be even for UTF16 string");
+      arr_length >>= 1; // convert number of bytes to number of elements
+    }
+    return arr_length;
   }
   static int utf8_length(oop java_string);
 
@@ -187,7 +181,7 @@ class java_lang_String : AllStatic {
   // hash P(31) from Kernighan & Ritchie
   //
   // For this reason, THIS ALGORITHM MUST MATCH String.hashCode().
-  template <typename T> static unsigned int hash_code(T* s, int len) {
+  static unsigned int hash_code(const jchar* s, int len) {
     unsigned int h = 0;
     while (len-- > 0) {
       h = 31*h + (unsigned int) *s;
@@ -195,7 +189,18 @@ class java_lang_String : AllStatic {
     }
     return h;
   }
+
+  static unsigned int hash_code(const jbyte* s, int len) {
+    unsigned int h = 0;
+    while (len-- > 0) {
+      h = 31*h + (((unsigned int) *s) & 0xFF);
+      s++;
+    }
+    return h;
+  }
+
   static unsigned int hash_code(oop java_string);
+  static unsigned int latin1_hash_code(typeArrayOop value, int len);
 
   // This is the string hash code used by the StringTable, which may be
   // the same as String.hashCode or an alternate hash code.
@@ -451,7 +456,7 @@ class java_lang_ThreadGroup : AllStatic {
   // parent ThreadGroup
   static oop  parent(oop java_thread_group);
   // name
-  static typeArrayOop name(oop java_thread_group);
+  static const char* name(oop java_thread_group);
   // ("name as oop" accessor is not necessary)
   // Number of threads in group
   static int nthreads(oop java_thread_group);
@@ -532,7 +537,7 @@ class java_lang_Throwable: AllStatic {
   static Symbol* detail_message(oop throwable);
   static void print_stack_element(outputStream *st, Handle mirror, int method,
                                   int version, int bci, int cpref);
-  static void print_stack_element(outputStream *st, methodHandle method, int bci);
+  static void print_stack_element(outputStream *st, const methodHandle& method, int bci);
   static void print_stack_usage(Handle stream);
 
   // Allocate space for backtrace (created but stack trace not filled in)
@@ -540,8 +545,8 @@ class java_lang_Throwable: AllStatic {
   // Fill in current stack trace for throwable with preallocated backtrace (no GC)
   static void fill_in_stack_trace_of_preallocated_backtrace(Handle throwable);
   // Fill in current stack trace, can cause GC
-  static void fill_in_stack_trace(Handle throwable, methodHandle method, TRAPS);
-  static void fill_in_stack_trace(Handle throwable, methodHandle method = methodHandle());
+  static void fill_in_stack_trace(Handle throwable, const methodHandle& method, TRAPS);
+  static void fill_in_stack_trace(Handle throwable, const methodHandle& method = methodHandle());
   // Programmatic access to stack trace
   static oop  get_stack_trace_element(oop throwable, int index, TRAPS);
   static int  get_stack_trace_depth(oop throwable, TRAPS);
@@ -1347,7 +1352,7 @@ class java_lang_StackTraceElement: AllStatic {
 
   // Create an instance of StackTraceElement
   static oop create(Handle mirror, int method, int version, int bci, int cpref, TRAPS);
-  static oop create(methodHandle method, int bci, TRAPS);
+  static oop create(const methodHandle& method, int bci, TRAPS);
 
   // Debugging
   friend class JavaClasses;

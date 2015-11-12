@@ -42,7 +42,7 @@
 package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.CTVMUtilities;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
 
@@ -100,7 +100,7 @@ public class GetLocalVariableTableTest {
 
     private static void runSanityTest(Executable aMethod,
                                       Integer expectedTableLength) {
-        HotSpotResolvedJavaMethodImpl method = CTVMUtilities
+        HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
 
         int tblLength = CompilerToVMHelper.getLocalVariableTableLength(method);

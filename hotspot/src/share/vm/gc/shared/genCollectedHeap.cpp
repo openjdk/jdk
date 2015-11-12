@@ -460,10 +460,9 @@ void GenCollectedHeap::do_collection(bool           full,
 
     bool prepared_for_verification = false;
     bool collected_old = false;
-    bool old_collects_young = complete &&
-                              _old_gen->full_collects_young_generation();
-    if (!old_collects_young &&
-        _young_gen->should_collect(full, size, is_tlab)) {
+    bool old_collects_young = complete && !ScavengeBeforeFullGC;
+
+    if (!old_collects_young && _young_gen->should_collect(full, size, is_tlab)) {
       if (run_verification && VerifyGCLevel <= 0 && VerifyBeforeGC) {
         prepare_for_verify();
         prepared_for_verification = true;
@@ -1105,10 +1104,6 @@ void GenCollectedHeap::prepare_for_compaction() {
   CompactPoint cp(_old_gen);
   _old_gen->prepare_for_compaction(&cp);
   _young_gen->prepare_for_compaction(&cp);
-}
-
-GCStats* GenCollectedHeap::gc_stats(Generation* gen) const {
-  return gen->gc_stats();
 }
 
 void GenCollectedHeap::verify(bool silent, VerifyOption option /* ignored */) {

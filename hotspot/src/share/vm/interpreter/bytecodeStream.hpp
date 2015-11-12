@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ class BaseBytecodeStream: StackObj {
   bool            _is_raw;                       // false in 'cooked' BytecodeStream
 
   // Construction
-  BaseBytecodeStream(methodHandle method) : _method(method) {
+  BaseBytecodeStream(const methodHandle& method) : _method(method) {
     set_interval(0, _method->code_size());
     _is_raw = false;
   }
@@ -118,7 +118,7 @@ class BaseBytecodeStream: StackObj {
 class RawBytecodeStream: public BaseBytecodeStream {
  public:
   // Construction
-  RawBytecodeStream(methodHandle method) : BaseBytecodeStream(method) {
+  RawBytecodeStream(const methodHandle& method) : BaseBytecodeStream(method) {
     _is_raw = true;
   }
 
@@ -169,7 +169,7 @@ class BytecodeStream: public BaseBytecodeStream {
 
  public:
   // Construction
-  BytecodeStream(methodHandle method) : BaseBytecodeStream(method) { }
+  BytecodeStream(const methodHandle& method) : BaseBytecodeStream(method) { }
 
   // Iteration
   Bytecodes::Code next() {

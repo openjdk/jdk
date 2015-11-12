@@ -22,7 +22,11 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaMethodProfile;
+import jdk.vm.ci.meta.JavaTypeProfile;
+import jdk.vm.ci.meta.ProfilingInfo;
+import jdk.vm.ci.meta.TriState;
 
 public final class HotSpotProfilingInfo implements ProfilingInfo, HotSpotProxified {
 

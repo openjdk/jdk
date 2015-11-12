@@ -604,15 +604,15 @@ class ConstantPool : public Metadata {
     return offset;
   }
   // Compare a bootsrap specifier in the operands arrays
-  bool compare_operand_to(int bootstrap_specifier_index1, constantPoolHandle cp2,
+  bool compare_operand_to(int bootstrap_specifier_index1, const constantPoolHandle& cp2,
                           int bootstrap_specifier_index2, TRAPS);
   // Find a bootsrap specifier in the operands array
-  int find_matching_operand(int bootstrap_specifier_index, constantPoolHandle search_cp,
+  int find_matching_operand(int bootstrap_specifier_index, const constantPoolHandle& search_cp,
                             int operands_cur_len, TRAPS);
   // Resize the operands array with delta_len and delta_size
   void resize_operands(int delta_len, int delta_size, TRAPS);
   // Extend the operands array with the length and size of the ext_cp operands
-  void extend_operands(constantPoolHandle ext_cp, TRAPS);
+  void extend_operands(const constantPoolHandle& ext_cp, TRAPS);
   // Shrink the operands array to a smaller array with new_len length
   void shrink_operands(int new_len, TRAPS);
 
@@ -735,13 +735,13 @@ class ConstantPool : public Metadata {
   friend class SystemDictionary;
 
   // Used by compiler to prevent classloading.
-  static Method*          method_at_if_loaded      (constantPoolHandle this_cp, int which);
-  static bool       has_appendix_at_if_loaded      (constantPoolHandle this_cp, int which);
-  static oop            appendix_at_if_loaded      (constantPoolHandle this_cp, int which);
-  static bool    has_method_type_at_if_loaded      (constantPoolHandle this_cp, int which);
-  static oop         method_type_at_if_loaded      (constantPoolHandle this_cp, int which);
-  static Klass*            klass_at_if_loaded      (constantPoolHandle this_cp, int which);
-  static Klass*        klass_ref_at_if_loaded      (constantPoolHandle this_cp, int which);
+  static Method*          method_at_if_loaded      (const constantPoolHandle& this_cp, int which);
+  static bool       has_appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which);
+  static oop            appendix_at_if_loaded      (const constantPoolHandle& this_cp, int which);
+  static bool    has_method_type_at_if_loaded      (const constantPoolHandle& this_cp, int which);
+  static oop         method_type_at_if_loaded      (const constantPoolHandle& this_cp, int which);
+  static Klass*            klass_at_if_loaded      (const constantPoolHandle& this_cp, int which);
+  static Klass*        klass_ref_at_if_loaded      (const constantPoolHandle& this_cp, int which);
 
   // Routines currently used for annotations (only called by jvm.cpp) but which might be used in the
   // future by other Java code. These take constant pool indices rather than
@@ -797,38 +797,38 @@ class ConstantPool : public Metadata {
   }
 
   // Performs the LinkResolver checks
-  static void verify_constant_pool_resolve(constantPoolHandle this_cp, KlassHandle klass, TRAPS);
+  static void verify_constant_pool_resolve(const constantPoolHandle& this_cp, KlassHandle klass, TRAPS);
 
   // Implementation of methods that needs an exposed 'this' pointer, in order to
   // handle GC while executing the method
-  static Klass* klass_at_impl(constantPoolHandle this_cp, int which,
+  static Klass* klass_at_impl(const constantPoolHandle& this_cp, int which,
                               bool save_resolution_error, TRAPS);
-  static oop string_at_impl(constantPoolHandle this_cp, int which, int obj_index, TRAPS);
+  static oop string_at_impl(const constantPoolHandle& this_cp, int which, int obj_index, TRAPS);
 
-  static void trace_class_resolution(constantPoolHandle this_cp, KlassHandle k);
+  static void trace_class_resolution(const constantPoolHandle& this_cp, KlassHandle k);
 
   // Resolve string constants (to prevent allocation during compilation)
-  static void resolve_string_constants_impl(constantPoolHandle this_cp, TRAPS);
+  static void resolve_string_constants_impl(const constantPoolHandle& this_cp, TRAPS);
 
-  static oop resolve_constant_at_impl(constantPoolHandle this_cp, int index, int cache_index, TRAPS);
-  static oop resolve_bootstrap_specifier_at_impl(constantPoolHandle this_cp, int index, TRAPS);
+  static oop resolve_constant_at_impl(const constantPoolHandle& this_cp, int index, int cache_index, TRAPS);
+  static oop resolve_bootstrap_specifier_at_impl(const constantPoolHandle& this_cp, int index, TRAPS);
 
   // Exception handling
-  static void throw_resolution_error(constantPoolHandle this_cp, int which, TRAPS);
-  static Symbol* exception_message(constantPoolHandle this_cp, int which, constantTag tag, oop pending_exception);
-  static void save_and_throw_exception(constantPoolHandle this_cp, int which, constantTag tag, TRAPS);
+  static void throw_resolution_error(const constantPoolHandle& this_cp, int which, TRAPS);
+  static Symbol* exception_message(const constantPoolHandle& this_cp, int which, constantTag tag, oop pending_exception);
+  static void save_and_throw_exception(const constantPoolHandle& this_cp, int which, constantTag tag, TRAPS);
 
  public:
   // Merging ConstantPool* support:
-  bool compare_entry_to(int index1, constantPoolHandle cp2, int index2, TRAPS);
-  void copy_cp_to(int start_i, int end_i, constantPoolHandle to_cp, int to_i, TRAPS) {
+  bool compare_entry_to(int index1, const constantPoolHandle& cp2, int index2, TRAPS);
+  void copy_cp_to(int start_i, int end_i, const constantPoolHandle& to_cp, int to_i, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
     copy_cp_to_impl(h_this, start_i, end_i, to_cp, to_i, THREAD);
   }
-  static void copy_cp_to_impl(constantPoolHandle from_cp, int start_i, int end_i, constantPoolHandle to_cp, int to_i, TRAPS);
-  static void copy_entry_to(constantPoolHandle from_cp, int from_i, constantPoolHandle to_cp, int to_i, TRAPS);
-  static void copy_operands(constantPoolHandle from_cp, constantPoolHandle to_cp, TRAPS);
-  int  find_matching_entry(int pattern_i, constantPoolHandle search_cp, TRAPS);
+  static void copy_cp_to_impl(const constantPoolHandle& from_cp, int start_i, int end_i, const constantPoolHandle& to_cp, int to_i, TRAPS);
+  static void copy_entry_to(const constantPoolHandle& from_cp, int from_i, const constantPoolHandle& to_cp, int to_i, TRAPS);
+  static void copy_operands(const constantPoolHandle& from_cp, const constantPoolHandle& to_cp, TRAPS);
+  int  find_matching_entry(int pattern_i, const constantPoolHandle& search_cp, TRAPS);
   int  version() const                    { return _saved._version; }
   void set_version(int version)           { _saved._version = version; }
   void increment_and_save_version(int version) {

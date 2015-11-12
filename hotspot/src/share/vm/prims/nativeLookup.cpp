@@ -67,7 +67,7 @@ static void mangle_name_on(outputStream* st, Symbol* name) {
 }
 
 
-char* NativeLookup::pure_jni_name(methodHandle method) {
+char* NativeLookup::pure_jni_name(const methodHandle& method) {
   stringStream st;
   // Prefix
   st.print("Java_");
@@ -80,7 +80,7 @@ char* NativeLookup::pure_jni_name(methodHandle method) {
 }
 
 
-char* NativeLookup::critical_jni_name(methodHandle method) {
+char* NativeLookup::critical_jni_name(const methodHandle& method) {
   stringStream st;
   // Prefix
   st.print("JavaCritical_");
@@ -93,7 +93,7 @@ char* NativeLookup::critical_jni_name(methodHandle method) {
 }
 
 
-char* NativeLookup::long_jni_name(methodHandle method) {
+char* NativeLookup::long_jni_name(const methodHandle& method) {
   // Signature ignore the wrapping parenteses and the trailing return type
   stringStream st;
   Symbol* signature = method->signature();
@@ -121,6 +121,7 @@ extern "C" {
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &f)
 
 static JNINativeMethod lookup_special_native_methods[] = {
+  { CC"Java_jdk_internal_misc_Unsafe_registerNatives",             NULL, FN_PTR(JVM_RegisterUnsafeMethods)       },
   { CC"Java_sun_misc_Unsafe_registerNatives",                      NULL, FN_PTR(JVM_RegisterUnsafeMethods)       },
   { CC"Java_java_lang_invoke_MethodHandleNatives_registerNatives", NULL, FN_PTR(JVM_RegisterMethodHandleMethods) },
   { CC"Java_sun_misc_Perf_registerNatives",                        NULL, FN_PTR(JVM_RegisterPerfMethods)         },
@@ -142,7 +143,7 @@ static address lookup_special_native(char* jni_name) {
   return NULL;
 }
 
-address NativeLookup::lookup_style(methodHandle method, char* pure_name, const char* long_name, int args_size, bool os_style, bool& in_base_library, TRAPS) {
+address NativeLookup::lookup_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, bool os_style, bool& in_base_library, TRAPS) {
   address entry;
   // Compute complete JNI name for style
   stringStream st;
@@ -199,7 +200,7 @@ address NativeLookup::lookup_style(methodHandle method, char* pure_name, const c
 }
 
 
-address NativeLookup::lookup_critical_style(methodHandle method, char* pure_name, const char* long_name, int args_size, bool os_style) {
+address NativeLookup::lookup_critical_style(const methodHandle& method, char* pure_name, const char* long_name, int args_size, bool os_style) {
   if (!method->has_native_function()) {
     return NULL;
   }
@@ -229,7 +230,7 @@ address NativeLookup::lookup_critical_style(methodHandle method, char* pure_name
 
 // Check all the formats of native implementation name to see if there is one
 // for the specified method.
-address NativeLookup::lookup_entry(methodHandle method, bool& in_base_library, TRAPS) {
+address NativeLookup::lookup_entry(const methodHandle& method, bool& in_base_library, TRAPS) {
   address entry = NULL;
   in_base_library = false;
   // Compute pure name
@@ -264,7 +265,7 @@ address NativeLookup::lookup_entry(methodHandle method, bool& in_base_library, T
 
 // Check all the formats of native implementation name to see if there is one
 // for the specified method.
-address NativeLookup::lookup_critical_entry(methodHandle method) {
+address NativeLookup::lookup_critical_entry(const methodHandle& method) {
   if (!CriticalJNINatives) return NULL;
 
   if (method->is_synchronized() ||
@@ -318,7 +319,7 @@ address NativeLookup::lookup_critical_entry(methodHandle method) {
 // If any are found, remove them before attemping the look up of the
 // native implementation again.
 // See SetNativeMethodPrefix in the JVM TI Spec for more details.
-address NativeLookup::lookup_entry_prefixed(methodHandle method, bool& in_base_library, TRAPS) {
+address NativeLookup::lookup_entry_prefixed(const methodHandle& method, bool& in_base_library, TRAPS) {
 #if INCLUDE_JVMTI
   ResourceMark rm(THREAD);
 
@@ -354,7 +355,7 @@ address NativeLookup::lookup_entry_prefixed(methodHandle method, bool& in_base_l
   return NULL;
 }
 
-address NativeLookup::lookup_base(methodHandle method, bool& in_base_library, TRAPS) {
+address NativeLookup::lookup_base(const methodHandle& method, bool& in_base_library, TRAPS) {
   address entry = NULL;
   ResourceMark rm(THREAD);
 
@@ -372,7 +373,7 @@ address NativeLookup::lookup_base(methodHandle method, bool& in_base_library, TR
 }
 
 
-address NativeLookup::lookup(methodHandle method, bool& in_base_library, TRAPS) {
+address NativeLookup::lookup(const methodHandle& method, bool& in_base_library, TRAPS) {
   if (!method->has_native_function()) {
     address entry = lookup_base(method, in_base_library, CHECK_NULL);
     method->set_native_function(entry,

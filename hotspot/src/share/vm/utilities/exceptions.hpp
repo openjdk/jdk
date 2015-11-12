@@ -163,7 +163,7 @@ class Exceptions {
                               const char* message,
                               ExceptionMsgToUtf8Mode to_utf8_safe = safe_to_utf8);
 
-  static void throw_stack_overflow_exception(Thread* thread, const char* file, int line, methodHandle method);
+  static void throw_stack_overflow_exception(Thread* thread, const char* file, int line, const methodHandle& method);
 
   // Exception counting for error files of interesting exceptions that may have
   // caused a problem for the jvm

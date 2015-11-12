@@ -242,7 +242,7 @@ class Fingerprinter: public SignatureIterator {
 
   void do_void()    { ShouldNotReachHere(); }
 
-  Fingerprinter(methodHandle method) : SignatureIterator(method->signature()) {
+  Fingerprinter(const methodHandle& method) : SignatureIterator(method->signature()) {
     mh = method;
     _fingerprint = 0;
   }
@@ -320,7 +320,7 @@ class NativeSignatureIterator: public SignatureIterator {
   virtual void pass_double()           { pass_long(); }  // may be same as long
 #endif
 
-  NativeSignatureIterator(methodHandle method) : SignatureIterator(method->signature()) {
+  NativeSignatureIterator(const methodHandle& method) : SignatureIterator(method->signature()) {
     _method = method;
     _offset = 0;
     _jni_offset = 0;

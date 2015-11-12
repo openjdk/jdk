@@ -178,7 +178,7 @@ int ConstantPool::cp_to_object_index(int cp_index) {
   return (i < 0) ? _no_index_sentinel : i;
 }
 
-void ConstantPool::trace_class_resolution(constantPoolHandle this_cp, KlassHandle k) {
+void ConstantPool::trace_class_resolution(const constantPoolHandle& this_cp, KlassHandle k) {
   ResourceMark rm;
   int line_number = -1;
   const char * source_file = NULL;
@@ -198,16 +198,16 @@ void ConstantPool::trace_class_resolution(constantPoolHandle this_cp, KlassHandl
     if (source_file != NULL) {
       tty->print("RESOLVE %s %s %s:%d\n",
                  this_cp->pool_holder()->external_name(),
-                 InstanceKlass::cast(k())->external_name(), source_file, line_number);
+                 k->external_name(), source_file, line_number);
     } else {
       tty->print("RESOLVE %s %s\n",
                  this_cp->pool_holder()->external_name(),
-                 InstanceKlass::cast(k())->external_name());
+                 k->external_name());
     }
   }
 }
 
-Klass* ConstantPool::klass_at_impl(constantPoolHandle this_cp, int which,
+Klass* ConstantPool::klass_at_impl(const constantPoolHandle& this_cp, int which,
                                    bool save_resolution_error, TRAPS) {
   assert(THREAD->is_Java_thread(), "must be a Java thread");
 
@@ -269,7 +269,7 @@ Klass* ConstantPool::klass_at_impl(constantPoolHandle this_cp, int which,
   ClassLoaderData* this_key = this_cp->pool_holder()->class_loader_data();
   this_key->record_dependency(k(), CHECK_NULL); // Can throw OOM
 
-  if (TraceClassResolution && !k->oop_is_array()) {
+  if (TraceClassResolution && !k->is_array_klass()) {
     // skip resolving the constant pool so that this code gets
     // called the next time some bytecodes refer to this class.
     trace_class_resolution(this_cp, k);
@@ -288,7 +288,7 @@ Klass* ConstantPool::klass_at_impl(constantPoolHandle this_cp, int which,
 // by compiler and exception handling.  Also used to avoid classloads for
 // instanceof operations. Returns NULL if the class has not been loaded or
 // if the verification of constant pool failed
-Klass* ConstantPool::klass_at_if_loaded(constantPoolHandle this_cp, int which) {
+Klass* ConstantPool::klass_at_if_loaded(const constantPoolHandle& this_cp, int which) {
   CPSlot entry = this_cp->slot_at(which);
   if (entry.is_resolved()) {
     assert(entry.get_klass()->is_klass(), "must be");
@@ -321,12 +321,12 @@ Klass* ConstantPool::klass_at_if_loaded(constantPoolHandle this_cp, int which) {
 }
 
 
-Klass* ConstantPool::klass_ref_at_if_loaded(constantPoolHandle this_cp, int which) {
+Klass* ConstantPool::klass_ref_at_if_loaded(const constantPoolHandle& this_cp, int which) {
   return klass_at_if_loaded(this_cp, this_cp->klass_ref_index_at(which));
 }
 
 
-Method* ConstantPool::method_at_if_loaded(constantPoolHandle cpool,
+Method* ConstantPool::method_at_if_loaded(const constantPoolHandle& cpool,
                                                    int which) {
   if (cpool->cache() == NULL)  return NULL;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
@@ -342,14 +342,14 @@ Method* ConstantPool::method_at_if_loaded(constantPoolHandle cpool,
 }
 
 
-bool ConstantPool::has_appendix_at_if_loaded(constantPoolHandle cpool, int which) {
+bool ConstantPool::has_appendix_at_if_loaded(const constantPoolHandle& cpool, int which) {
   if (cpool->cache() == NULL)  return false;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
   ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
   return e->has_appendix();
 }
 
-oop ConstantPool::appendix_at_if_loaded(constantPoolHandle cpool, int which) {
+oop ConstantPool::appendix_at_if_loaded(const constantPoolHandle& cpool, int which) {
   if (cpool->cache() == NULL)  return NULL;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
   ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
@@ -357,14 +357,14 @@ oop ConstantPool::appendix_at_if_loaded(constantPoolHandle cpool, int which) {
 }
 
 
-bool ConstantPool::has_method_type_at_if_loaded(constantPoolHandle cpool, int which) {
+bool ConstantPool::has_method_type_at_if_loaded(const constantPoolHandle& cpool, int which) {
   if (cpool->cache() == NULL)  return false;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
   ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
   return e->has_method_type();
 }
 
-oop ConstantPool::method_type_at_if_loaded(constantPoolHandle cpool, int which) {
+oop ConstantPool::method_type_at_if_loaded(const constantPoolHandle& cpool, int which) {
   if (cpool->cache() == NULL)  return NULL;  // nothing to load yet
   int cache_index = decode_cpcache_index(which, true);
   ConstantPoolCacheEntry* e = cpool->cache()->entry_at(cache_index);
@@ -434,15 +434,15 @@ int ConstantPool::remap_instruction_operand_from_cache(int operand) {
 }
 
 
-void ConstantPool::verify_constant_pool_resolve(constantPoolHandle this_cp, KlassHandle k, TRAPS) {
- if (k->oop_is_instance() || k->oop_is_objArray()) {
+void ConstantPool::verify_constant_pool_resolve(const constantPoolHandle& this_cp, KlassHandle k, TRAPS) {
+ if (k->is_instance_klass() || k->is_objArray_klass()) {
     instanceKlassHandle holder (THREAD, this_cp->pool_holder());
-    Klass* elem = k->oop_is_instance() ? k() : ObjArrayKlass::cast(k())->bottom_klass();
+    Klass* elem = k->is_instance_klass() ? k() : ObjArrayKlass::cast(k())->bottom_klass();
     KlassHandle element (THREAD, elem);
 
     // The element type could be a typeArray - we only need the access check if it is
     // an reference to another class
-    if (element->oop_is_instance()) {
+    if (element->is_instance_klass()) {
       LinkResolver::check_klass_accessability(holder, element, CHECK);
     }
   }
@@ -502,7 +502,7 @@ BasicType ConstantPool::basic_type_for_signature_at(int which) {
 }
 
 
-void ConstantPool::resolve_string_constants_impl(constantPoolHandle this_cp, TRAPS) {
+void ConstantPool::resolve_string_constants_impl(const constantPoolHandle& this_cp, TRAPS) {
   for (int index = 1; index < this_cp->length(); index++) { // Index 0 is unused
     if (this_cp->tag_at(index).is_string()) {
       this_cp->string_at(index, CHECK);
@@ -526,7 +526,7 @@ bool ConstantPool::resolve_class_constants(TRAPS) {
   return true;
 }
 
-Symbol* ConstantPool::exception_message(constantPoolHandle this_cp, int which, constantTag tag, oop pending_exception) {
+Symbol* ConstantPool::exception_message(const constantPoolHandle& this_cp, int which, constantTag tag, oop pending_exception) {
   // Dig out the detailed message to reuse if possible
   Symbol* message = java_lang_Throwable::detail_message(pending_exception);
   if (message != NULL) {
@@ -554,7 +554,7 @@ Symbol* ConstantPool::exception_message(constantPoolHandle this_cp, int which, c
   return message;
 }
 
-void ConstantPool::throw_resolution_error(constantPoolHandle this_cp, int which, TRAPS) {
+void ConstantPool::throw_resolution_error(const constantPoolHandle& this_cp, int which, TRAPS) {
   Symbol* message = NULL;
   Symbol* error = SystemDictionary::find_resolution_error(this_cp, which, &message);
   assert(error != NULL && message != NULL, "checking");
@@ -565,7 +565,7 @@ void ConstantPool::throw_resolution_error(constantPoolHandle this_cp, int which,
 
 // If resolution for Class, MethodHandle or MethodType fails, save the exception
 // in the resolution error table, so that the same exception is thrown again.
-void ConstantPool::save_and_throw_exception(constantPoolHandle this_cp, int which,
+void ConstantPool::save_and_throw_exception(const constantPoolHandle& this_cp, int which,
                                             constantTag tag, TRAPS) {
   Symbol* error = PENDING_EXCEPTION->klass()->name();
 
@@ -603,7 +603,7 @@ void ConstantPool::save_and_throw_exception(constantPoolHandle this_cp, int whic
 // Called to resolve constants in the constant pool and return an oop.
 // Some constant pool entries cache their resolved oop. This is also
 // called to create oops from constants to use in arguments for invokedynamic
-oop ConstantPool::resolve_constant_at_impl(constantPoolHandle this_cp, int index, int cache_index, TRAPS) {
+oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp, int index, int cache_index, TRAPS) {
   oop result_oop = NULL;
   Handle throw_exception;
 
@@ -756,7 +756,7 @@ oop ConstantPool::uncached_string_at(int which, TRAPS) {
 }
 
 
-oop ConstantPool::resolve_bootstrap_specifier_at_impl(constantPoolHandle this_cp, int index, TRAPS) {
+oop ConstantPool::resolve_bootstrap_specifier_at_impl(const constantPoolHandle& this_cp, int index, TRAPS) {
   assert(this_cp->tag_at(index).is_invoke_dynamic(), "Corrupted constant pool");
 
   Handle bsm;
@@ -794,7 +794,7 @@ oop ConstantPool::resolve_bootstrap_specifier_at_impl(constantPoolHandle this_cp
   return info();
 }
 
-oop ConstantPool::string_at_impl(constantPoolHandle this_cp, int which, int obj_index, TRAPS) {
+oop ConstantPool::string_at_impl(const constantPoolHandle& this_cp, int which, int obj_index, TRAPS) {
   // If the string has already been interned, this entry will be non-null
   oop str = this_cp->resolved_references()->obj_at(obj_index);
   if (str != NULL) return str;
@@ -830,7 +830,7 @@ void ConstantPool::unreference_symbols() {
 
 // Compare this constant pool's entry at index1 to the constant pool
 // cp2's entry at index2.
-bool ConstantPool::compare_entry_to(int index1, constantPoolHandle cp2,
+bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
        int index2, TRAPS) {
 
   // The error tags are equivalent to non-error tags when comparing
@@ -1056,7 +1056,7 @@ void ConstantPool::resize_operands(int delta_len, int delta_size, TRAPS) {
 
 // Extend the operands array with the length and size of the ext_cp operands.
 // Used in RedefineClasses for CP merge.
-void ConstantPool::extend_operands(constantPoolHandle ext_cp, TRAPS) {
+void ConstantPool::extend_operands(const constantPoolHandle& ext_cp, TRAPS) {
   int delta_len = operand_array_length(ext_cp->operands());
   if (delta_len == 0) {
     return; // nothing to do
@@ -1096,8 +1096,8 @@ void ConstantPool::shrink_operands(int new_len, TRAPS) {
 } // end shrink_operands()
 
 
-void ConstantPool::copy_operands(constantPoolHandle from_cp,
-                                 constantPoolHandle to_cp,
+void ConstantPool::copy_operands(const constantPoolHandle& from_cp,
+                                 const constantPoolHandle& to_cp,
                                  TRAPS) {
 
   int from_oplen = operand_array_length(from_cp->operands());
@@ -1160,8 +1160,8 @@ void ConstantPool::copy_operands(constantPoolHandle from_cp,
 // Copy this constant pool's entries at start_i to end_i (inclusive)
 // to the constant pool to_cp's entries starting at to_i. A total of
 // (end_i - start_i) + 1 entries are copied.
-void ConstantPool::copy_cp_to_impl(constantPoolHandle from_cp, int start_i, int end_i,
-       constantPoolHandle to_cp, int to_i, TRAPS) {
+void ConstantPool::copy_cp_to_impl(const constantPoolHandle& from_cp, int start_i, int end_i,
+       const constantPoolHandle& to_cp, int to_i, TRAPS) {
 
 
   int dest_i = to_i;  // leave original alone for debug purposes
@@ -1191,8 +1191,8 @@ void ConstantPool::copy_cp_to_impl(constantPoolHandle from_cp, int start_i, int 
 
 // Copy this constant pool's entry at from_i to the constant pool
 // to_cp's entry at to_i.
-void ConstantPool::copy_entry_to(constantPoolHandle from_cp, int from_i,
-                                        constantPoolHandle to_cp, int to_i,
+void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
+                                        const constantPoolHandle& to_cp, int to_i,
                                         TRAPS) {
 
   int tag = from_cp->tag_at(from_i).value();
@@ -1339,7 +1339,7 @@ void ConstantPool::copy_entry_to(constantPoolHandle from_cp, int from_i,
 // constant pool's entry at pattern_i. Returns the index of a
 // matching entry or zero (0) if there is no matching entry.
 int ConstantPool::find_matching_entry(int pattern_i,
-      constantPoolHandle search_cp, TRAPS) {
+      const constantPoolHandle& search_cp, TRAPS) {
 
   // index zero (0) is not used
   for (int i = 1; i < search_cp->length(); i++) {
@@ -1355,7 +1355,7 @@ int ConstantPool::find_matching_entry(int pattern_i,
 
 // Compare this constant pool's bootstrap specifier at idx1 to the constant pool
 // cp2's bootstrap specifier at idx2.
-bool ConstantPool::compare_operand_to(int idx1, constantPoolHandle cp2, int idx2, TRAPS) {
+bool ConstantPool::compare_operand_to(int idx1, const constantPoolHandle& cp2, int idx2, TRAPS) {
   int k1 = operand_bootstrap_method_ref_index_at(idx1);
   int k2 = cp2->operand_bootstrap_method_ref_index_at(idx2);
   bool match = compare_entry_to(k1, cp2, k2, CHECK_false);
@@ -1382,7 +1382,7 @@ bool ConstantPool::compare_operand_to(int idx1, constantPoolHandle cp2, int idx2
 // this constant pool's bootstrap specifier at pattern_i index.
 // Return the index of a matching bootstrap specifier or (-1) if there is no match.
 int ConstantPool::find_matching_operand(int pattern_i,
-                    constantPoolHandle search_cp, int search_len, TRAPS) {
+                    const constantPoolHandle& search_cp, int search_len, TRAPS) {
   for (int i = 0; i < search_len; i++) {
     bool found = compare_operand_to(pattern_i, search_cp, i, CHECK_(-1));
     if (found) {
@@ -1843,7 +1843,7 @@ void ConstantPool::preload_and_initialize_all_classes(ConstantPool* obj, TRAPS) 
     if (cp->tag_at(i).is_unresolved_klass()) {
       // This will force loading of the class
       Klass* klass = cp->klass_at(i, CHECK);
-      if (klass->oop_is_instance()) {
+      if (klass->is_instance_klass()) {
         // Force initialization of class
         InstanceKlass::cast(klass)->initialize(CHECK);
       }
