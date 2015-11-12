@@ -32,6 +32,7 @@ import com.sun.tools.javac.code.Attribute.TypeCompound;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.tree.JCTree.JCMemberReference.ReferenceKind;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
@@ -855,7 +856,14 @@ public class TransTypes extends TreeTranslator {
     }
 
     public void visitReference(JCMemberReference tree) {
-        tree.expr = translate(tree.expr, erasure(tree.expr.type));
+        Type t = types.skipTypeVars(tree.expr.type, false);
+        Type receiverTarget = t.isCompound() ? erasure(tree.sym.owner.type) : erasure(t);
+        if (tree.kind == ReferenceKind.UNBOUND) {
+            tree.expr = make.Type(receiverTarget);
+        } else {
+            tree.expr = translate(tree.expr, receiverTarget);
+        }
+
         tree.type = erasure(tree.type);
         if (tree.varargsElement != null)
             tree.varargsElement = erasure(tree.varargsElement);
