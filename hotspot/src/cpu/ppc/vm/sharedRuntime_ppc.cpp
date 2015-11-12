@@ -2802,7 +2802,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ set_last_Java_frame(R1_SP, noreg);
 
   // With EscapeAnalysis turned on, this call may safepoint!
-  __ call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info), R16_thread);
+  __ call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info), R16_thread, exec_mode_reg);
   address calls_return_pc = __ last_calls_return_pc();
   // Set an oopmap for the call site that describes all our saved registers.
   oop_maps->add_gc_map(calls_return_pc - start, map);
@@ -2815,6 +2815,8 @@ void SharedRuntime::generate_deopt_blob() {
   // by save_volatile_registers(...).
   RegisterSaver::restore_result_registers(masm, first_frame_size_in_bytes);
 
+  // reload the exec mode from the UnrollBlock (it might have changed)
+  __ lwz(exec_mode_reg, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes(), unroll_block_reg);
   // In excp_deopt_mode, restore and clear exception oop which we
   // stored in the thread during exception entry above. The exception
   // oop will be the return value of this stub.
@@ -2945,8 +2947,9 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ set_last_Java_frame(/*sp*/R1_SP, /*pc*/R11_scratch1);
 
   __ mr(klass_index_reg, R3);
+  __ li(R5, Deoptimization::Unpack_exception);
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap),
-                  R16_thread, klass_index_reg);
+                  R16_thread, klass_index_reg, R5);
 
   // Set an oopmap for the call site.
   oop_maps->add_gc_map(gc_map_pc - start, map);
@@ -2965,6 +2968,12 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ pop_frame();
 
   // stack: (caller_of_deoptee, ...).
+
+#ifdef ASSERT
+  __ lwz(R22_tmp2, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes(), unroll_block_reg);
+  __ cmpdi(CCR0, R22_tmp2, (unsigned)Deoptimization::Unpack_uncommon_trap);
+  __ asm_assert_eq("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap", 0);
+#endif
 
   // Allocate new interpreter frame(s) and possibly a c2i adapter
   // frame.

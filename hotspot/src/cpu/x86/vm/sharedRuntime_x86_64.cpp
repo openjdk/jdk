@@ -2829,6 +2829,7 @@ void SharedRuntime::generate_deopt_blob() {
 
     __ movl(r14, (int32_t)Deoptimization::Unpack_reexecute);
     __ mov(c_rarg0, r15_thread);
+    __ movl(c_rarg2, r14); // exec mode
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap)));
     oop_maps->add_gc_map( __ pc()-start, map->deep_copy());
 
@@ -2915,6 +2916,7 @@ void SharedRuntime::generate_deopt_blob() {
   }
 #endif // ASSERT
   __ mov(c_rarg0, r15_thread);
+  __ movl(c_rarg1, r14); // exec_mode
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::fetch_unroll_info)));
 
   // Need to have an oopmap that tells fetch_unroll_info where to
@@ -2932,6 +2934,7 @@ void SharedRuntime::generate_deopt_blob() {
   // Load UnrollBlock* into rdi
   __ mov(rdi, rax);
 
+  __ movl(r14, Address(rdi, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
    Label noException;
   __ cmpl(r14, Deoptimization::Unpack_exception);   // Was exception pending?
   __ jcc(Assembler::notEqual, noException);
@@ -3150,6 +3153,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // UnrollBlock* uncommon_trap(JavaThread* thread, jint unloaded_class_index);
 
   __ mov(c_rarg0, r15_thread);
+  __ movl(c_rarg2, Deoptimization::Unpack_uncommon_trap);
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap)));
 
   // Set an oopmap for the call site
@@ -3164,6 +3168,16 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   // Load UnrollBlock* into rdi
   __ mov(rdi, rax);
+
+#ifdef ASSERT
+  { Label L;
+    __ cmpptr(Address(rdi, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()),
+            (int32_t)Deoptimization::Unpack_uncommon_trap);
+    __ jcc(Assembler::equal, L);
+    __ stop("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap");
+    __ bind(L);
+  }
+#endif
 
   // Pop all the frames we must move/replace.
   //
