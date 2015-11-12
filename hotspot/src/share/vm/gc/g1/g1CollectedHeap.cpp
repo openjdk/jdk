@@ -2278,6 +2278,10 @@ void G1CollectedHeap::allocate_dummy_regions() {
   // And as a result the region we'll allocate will be humongous.
   guarantee(is_humongous(word_size), "sanity");
 
+  // _filler_array_max_size is set to humongous object threshold
+  // but temporarily change it to use CollectedHeap::fill_with_object().
+  SizeTFlagSetting fs(_filler_array_max_size, word_size);
+
   for (uintx i = 0; i < G1DummyRegionsPerGC; ++i) {
     // Let's use the existing mechanism for the allocation
     HeapWord* dummy_obj = humongous_obj_allocate(word_size,
