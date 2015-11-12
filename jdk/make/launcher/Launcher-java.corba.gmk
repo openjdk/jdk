@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,26 @@
 
 include LauncherCommon.gmk
 
-$(eval $(call SetupLauncher,idlj, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.tools.corba.se.idl.toJavaPortable.Compile"$(COMMA) }'))
+$(eval $(call SetupBuildLauncher, idlj, \
+    MAIN_CLASS := com.sun.tools.corba.se.idl.toJavaPortable.Compile, \
+))
 
-$(eval $(call SetupLauncher,orbd, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) \
-        "-J-Dcom.sun.CORBA.activation.DbDir=./orb.db"$(COMMA) \
-        "-J-Dcom.sun.CORBA.activation.Port=1049"$(COMMA) \
-        "-J-Dcom.sun.CORBA.POA.ORBServerId=1"$(COMMA) \
-        "com.sun.corba.se.impl.activation.ORBD"$(COMMA) }'))
+$(eval $(call SetupBuildLauncher, orbd, \
+    MAIN_CLASS := com.sun.corba.se.impl.activation.ORBD, \
+    JAVA_ARGS := \
+        -Dcom.sun.CORBA.activation.DbDir=./orb.db \
+        -Dcom.sun.CORBA.activation.Port=1049 \
+        -Dcom.sun.CORBA.POA.ORBServerId=1, \
+))
 
-$(eval $(call SetupLauncher,servertool, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "com.sun.corba.se.impl.activation.ServerTool"$(COMMA) }'))
+$(eval $(call SetupBuildLauncher, servertool, \
+    MAIN_CLASS := com.sun.corba.se.impl.activation.ServerTool, \
+))
 
-$(eval $(call SetupLauncher,tnameserv, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) \
-        "-J-Dcom.sun.CORBA.activation.DbDir=./orb.db"$(COMMA) \
-        "-J-Djava.util.logging.LoggingPermission=contol"$(COMMA) \
-        "-J-Dcom.sun.CORBA.POA.ORBServerId=1"$(COMMA) \
-        "com.sun.corba.se.impl.naming.cosnaming.TransientNameServer"$(COMMA) }'))
-
+$(eval $(call SetupBuildLauncher, tnameserv, \
+    MAIN_CLASS := com.sun.corba.se.impl.naming.cosnaming.TransientNameServer, \
+    JAVA_ARGS := \
+        -Dcom.sun.CORBA.activation.DbDir=./orb.db \
+        -Djava.util.logging.LoggingPermission=contol \
+        -Dcom.sun.CORBA.POA.ORBServerId=1, \
+))

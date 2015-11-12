@@ -46,7 +46,8 @@ class CompilerOracle : AllStatic {
   static void parse_from_file();
 
   // Tells whether we to exclude compilation of method
-  static bool should_exclude(const methodHandle& method, bool& quietly);
+  static bool should_exclude(const methodHandle& method);
+  static bool should_exclude_quietly() { return _quiet; }
 
   // Tells whether we want to inline this method
   static bool should_inline(const methodHandle& method);
@@ -70,6 +71,9 @@ class CompilerOracle : AllStatic {
   // otherwise leave value unchanged and return false.
   template<typename T>
   static bool has_option_value(const methodHandle& method, const char* option, T& value);
+
+  // Fast check if there is any option available that compile control needs to know about
+  static bool has_any_option();
 
   // Reads from string instead of file
   static void parse_from_string(const char* command_string, void (*parser)(char*));

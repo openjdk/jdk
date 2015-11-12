@@ -32,7 +32,7 @@
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
-#include "compiler/compilerOracle.hpp"
+#include "compiler/compilerDirectives.hpp"
 #include "compiler/disassembler.hpp"
 #include "interpreter/bytecode.hpp"
 #include "oops/methodData.hpp"
@@ -582,9 +582,6 @@ nmethod* nmethod::new_native_nmethod(const methodHandle& method,
                                             basic_lock_owner_sp_offset,
                                             basic_lock_sp_offset, oop_maps);
     NOT_PRODUCT(if (nm != NULL)  native_nmethod_stats.note_native_nmethod(nm));
-    if ((PrintAssembly || CompilerOracle::should_print(method)) && nm != NULL) {
-      Disassembler::decode(nm);
-    }
   }
   // verify nmethod
   debug_only(if (nm) nm->verify();) // might block
@@ -666,9 +663,6 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
         }
       }
       NOT_PRODUCT(if (nm != NULL)  note_java_nmethod(nm));
-      if (PrintAssembly || CompilerOracle::has_option_string(method, "PrintAssembly")) {
-        Disassembler::decode(nm);
-      }
     }
   }
   // Do verification and logging outside CodeCache_lock.
@@ -899,13 +893,6 @@ nmethod::nmethod(
     assert(compiler->is_c2() || compiler->is_jvmci() ||
            _method->is_static() == (entry_point() == _verified_entry_point),
            " entry points must be same for static methods and vice versa");
-  }
-
-  bool printnmethods = PrintNMethods || PrintNMethodsAtLevel == _comp_level
-    || CompilerOracle::should_print(_method)
-    || CompilerOracle::has_option_string(_method, "PrintNMethods");
-  if (printnmethods || PrintDebugInfo || PrintRelocations || PrintDependencies || PrintExceptionHandlers) {
-    print_nmethod(printnmethods);
   }
 }
 
@@ -1355,19 +1342,16 @@ void nmethod::make_unloaded(BoolObjectClosure* is_alive, oop cause) {
   // Unregister must be done before the state change
   Universe::heap()->unregister_nmethod(this);
 
+  _state = unloaded;
+
 #if INCLUDE_JVMCI
   // The method can only be unloaded after the pointer to the installed code
   // Java wrapper is no longer alive. Here we need to clear out this weak
   // reference to the dead object. Nulling out the reference has to happen
   // after the method is unregistered since the original value may be still
   // tracked by the rset.
-  if (_jvmci_installed_code != NULL) {
-    InstalledCode::set_address(_jvmci_installed_code, 0);
-    _jvmci_installed_code = NULL;
-  }
+  maybe_invalidate_installed_code();
 #endif
-
-  _state = unloaded;
 
   // Log the unloading.
   log_state_change();
@@ -1530,12 +1514,8 @@ bool nmethod::make_not_entrant_or_zombie(unsigned int state) {
   } else {
     assert(state == not_entrant, "other cases may need to be handled differently");
   }
-#if INCLUDE_JVMCI
-  if (_jvmci_installed_code != NULL) {
-    // Break the link between nmethod and InstalledCode such that the nmethod can subsequently be flushed safely.
-    InstalledCode::set_address(_jvmci_installed_code, 0);
-  }
-#endif
+
+  JVMCI_ONLY(maybe_invalidate_installed_code());
 
   if (TraceCreateZombies) {
     ResourceMark m;
@@ -3393,6 +3373,22 @@ void nmethod::print_statistics() {
 #endif // !PRODUCT
 
 #if INCLUDE_JVMCI
+void nmethod::maybe_invalidate_installed_code() {
+  if (_jvmci_installed_code != NULL) {
+     if (!is_alive()) {
+       // Break the link between nmethod and InstalledCode such that the nmethod
+       // can subsequently be flushed safely.  The link must be maintained while
+       // the method could have live activations since invalidateInstalledCode
+       // might want to invalidate all existing activations.
+       InstalledCode::set_address(_jvmci_installed_code, 0);
+       InstalledCode::set_entryPoint(_jvmci_installed_code, 0);
+       _jvmci_installed_code = NULL;
+     } else if (is_not_entrant()) {
+       InstalledCode::set_entryPoint(_jvmci_installed_code, 0);
+     }
+  }
+}
+
 char* nmethod::jvmci_installed_code_name(char* buf, size_t buflen) {
   if (!this->is_compiled_by_jvmci()) {
     return NULL;

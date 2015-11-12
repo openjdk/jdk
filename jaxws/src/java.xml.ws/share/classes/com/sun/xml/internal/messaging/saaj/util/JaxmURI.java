@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,8 @@ import java.io.Serializable;
 * string and fragment) that may constitute a URI.
 * <p>
 * Parsing of a URI specification is done according to the URI
-* syntax described in RFC 2396
-* <http://www.ietf.org/rfc/rfc2396.txt?number=2396>. Every URI consists
-* of a scheme, followed by a colon (':'), followed by a scheme-specific
+* syntax described in <a href="http://www.ietf.org/rfc/rfc2396.txt?number=2396">RFC 2396</a>.
+* Every URI consists of a scheme, followed by a colon (':'), followed by a scheme-specific
 * part. For URIs that follow the "generic URI" syntax, the scheme-
 * specific part begins with two slashes ("//") and may be followed
 * by an authority segment (comprised of user information, host, and
@@ -128,8 +127,6 @@ import java.io.Serializable;
 
   /** If specified, stores the fragment for this URI; otherwise null */
   private String m_fragment = null;
-
-  private static boolean DEBUG = false;
 
   /**
   * Construct a new and uninitialized URI.
@@ -725,7 +722,7 @@ import java.io.Serializable;
   * @return the scheme-specific part for this URI
   */
   public String getSchemeSpecificPart() {
-    StringBuffer schemespec = new StringBuffer();
+    StringBuilder schemespec = new StringBuilder();
 
     if (m_userinfo != null || m_host != null || m_port != -1) {
       schemespec.append("//");
@@ -805,7 +802,7 @@ import java.io.Serializable;
   */
   public String getPath(boolean p_includeQueryString,
                         boolean p_includeFragment) {
-    StringBuffer pathString = new StringBuffer(m_path);
+    StringBuilder pathString = new StringBuilder(m_path);
 
     if (p_includeQueryString && m_queryString != null) {
       pathString.append('?');
@@ -1148,7 +1145,7 @@ import java.io.Serializable;
   * @return the URI string specification
   */
   public String toString() {
-    StringBuffer uriSpecString = new StringBuffer();
+    StringBuilder uriSpecString = new StringBuilder();
 
     if (m_scheme != null) {
       uriSpecString.append(m_scheme);

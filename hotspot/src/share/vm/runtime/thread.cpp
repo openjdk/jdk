@@ -2930,12 +2930,8 @@ const char* JavaThread::get_threadgroup_name() const {
   if (thread_obj != NULL) {
     oop thread_group = java_lang_Thread::threadGroup(thread_obj);
     if (thread_group != NULL) {
-      typeArrayOop name = java_lang_ThreadGroup::name(thread_group);
       // ThreadGroup.name can be null
-      if (name != NULL) {
-        const char* str = UNICODE::as_utf8((jchar*) name->base(T_CHAR), name->length());
-        return str;
-      }
+      return java_lang_ThreadGroup::name(thread_group);
     }
   }
   return NULL;
@@ -2949,12 +2945,8 @@ const char* JavaThread::get_parent_name() const {
     if (thread_group != NULL) {
       oop parent = java_lang_ThreadGroup::parent(thread_group);
       if (parent != NULL) {
-        typeArrayOop name = java_lang_ThreadGroup::name(parent);
         // ThreadGroup.name can be null
-        if (name != NULL) {
-          const char* str = UNICODE::as_utf8((jchar*) name->base(T_CHAR), name->length());
-          return str;
-        }
+        return java_lang_ThreadGroup::name(parent);
       }
     }
   }
@@ -3301,6 +3293,9 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
 
   initialize_class(vmSymbols::java_lang_String(), CHECK);
 
+  // Inject CompactStrings value after the static initializers for String ran.
+  java_lang_String::set_compact_strings(CompactStrings);
+
   // Initialize java_lang.System (needed before creating the thread)
   initialize_class(vmSymbols::java_lang_System(), CHECK);
   // The VM creates & returns objects of this class. Make sure it's initialized.
@@ -3627,6 +3622,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     if (jvmciCompiler != NULL) {
       JVMCIRuntime::save_compiler(jvmciCompiler);
     }
+    JVMCIRuntime::maybe_print_flags(CHECK_JNI_ERR);
   }
 #endif // INCLUDE_JVMCI
 

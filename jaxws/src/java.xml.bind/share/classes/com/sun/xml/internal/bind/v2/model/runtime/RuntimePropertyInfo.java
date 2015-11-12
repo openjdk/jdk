@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 
 import com.sun.xml.internal.bind.v2.model.core.PropertyInfo;
+import com.sun.xml.internal.bind.v2.runtime.JAXBContextImpl;
 import com.sun.xml.internal.bind.v2.runtime.reflect.Accessor;
 
 /**
@@ -58,7 +59,7 @@ public interface RuntimePropertyInfo extends PropertyInfo<Type,Class> {
      * @return
      *      never null.
      *
-     * @see Accessor#optimize()
+     * @see Accessor#optimize(JAXBContextImpl)
      */
     Accessor getAccessor();
 

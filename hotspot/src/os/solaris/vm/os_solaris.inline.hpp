@@ -65,6 +65,8 @@ inline void os::bang_stack_shadow_pages() {
 }
 inline void os::dll_unload(void *lib) { ::dlclose(lib); }
 
+inline const int os::default_file_open_flags() { return 0;}
+
 inline DIR* os::opendir(const char* dirname) {
   assert(dirname != NULL, "just checking");
   return ::opendir(dirname);

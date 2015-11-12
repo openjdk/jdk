@@ -27,32 +27,41 @@
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
  * @library /testlibrary /test/lib /
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @compile ./common/CompilerToVMHelper.java
+ * @run main ClassFileInstaller jdk.vm.ci.hotspot.CompilerToVMHelper
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xbootclasspath/a:.
+ *      -XX:+EnableJVMCI
  *      compiler.jvmci.SecurityRestrictionsTest
  *      NO_SEC_MAN
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xbootclasspath/a:.
+ *      -XX:+EnableJVMCI
  *      compiler.jvmci.SecurityRestrictionsTest
  *      NO_PERM
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xbootclasspath/a:.
+ *      -XX:+EnableJVMCI
  *      compiler.jvmci.SecurityRestrictionsTest
  *      ALL_PERM
- * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xbootclasspath/a:.
+ *      -XX:+EnableJVMCI
  *      compiler.jvmci.SecurityRestrictionsTest
  *      NO_JVMCI_ACCESS_PERM
- * @run main/othervm -XX:+UnlockExperimentalVMOptions
+ * @run main/othervm -XX:+UnlockExperimentalVMOptions -Xbootclasspath/a:.
+ *      -XX:-EnableJVMCI
  *      compiler.jvmci.SecurityRestrictionsTest
  *      NO_JVMCI
  */
 
 package compiler.jvmci;
 
-import jdk.vm.ci.hotspot.CompilerToVM;
 import jdk.test.lib.Utils;
 import java.lang.InternalError;
+import java.lang.reflect.Constructor;
 import java.security.AccessControlException;
 import java.security.Permission;
 import java.util.PropertyPermission;
 import java.util.function.Consumer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class SecurityRestrictionsTest {
 
@@ -164,7 +173,14 @@ public class SecurityRestrictionsTest {
                     }
                 }
             };
-            Utils.runAndCheckException(CompilerToVM::new, exceptionCheck);
+            Utils.runAndCheckException(() -> {
+                try {
+                    // CompilerToVM::<cinit> provokes CompilerToVM::<init>
+                    Class.forName("jdk.vm.ci.hotspot.CompilerToVMHelper");
+                } catch (ClassNotFoundException e) {
+                    throw new Error("TESTBUG : " + e, e);
+                }
+            }, exceptionCheck);
         }
 
         public SecurityManager getSecurityManager() {

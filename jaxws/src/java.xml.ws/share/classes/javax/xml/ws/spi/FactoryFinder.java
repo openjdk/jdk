@@ -125,7 +125,7 @@ class FactoryFinder {
                 path = Paths.get(JAVA_HOME, "lib", "jaxws.properties");
             }
 
-            if (!Files.exists(path)) {
+            if (Files.exists(path)) {
                 Properties props = new Properties();
                 try (InputStream inStream = Files.newInputStream(path)) {
                     props.load(inStream);
@@ -137,8 +137,7 @@ class FactoryFinder {
         } catch (Exception ignored) {
             logger.log(Level.SEVERE, "Error reading JAX-WS configuration from ["  + path +
                     "] file. Check it is accessible and has correct format.", ignored);
-        }
-        return null;
+        }        return null;
     }
 
     private static final String OSGI_SERVICE_LOADER_CLASS_NAME = "com.sun.org.glassfish.hk2.osgiresourcelocator.ServiceLoader";

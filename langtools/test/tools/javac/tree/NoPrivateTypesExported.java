@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8026180
+ * @bug 8026180 8132096
  * @summary Ensuring javax.lang.model.**, javax.tools.**, javax.annotation.processing.**
  *          and com.sun.source.** don't export inappropriate types.
  * @library /tools/javac/lib
@@ -87,6 +87,7 @@ public class NoPrivateTypesExported extends JavacTestingAbstractProcessor {
             "java.lang.",
             "java.net.",
             "java.nio.",
+            "java.text.",
             "java.util.",
             "javax.lang.model.",
             "javax.annotation.processing.SupportedSourceVersion",

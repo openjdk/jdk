@@ -22,16 +22,25 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static java.lang.String.*;
+import static java.lang.String.format;
 
-import java.io.*;
-import java.lang.reflect.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.util.Arrays;
+import java.util.Objects;
 
-import jdk.internal.org.objectweb.asm.*;
+import jdk.vm.ci.common.JVMCIError;
+import jdk.internal.org.objectweb.asm.ClassReader;
+import jdk.internal.org.objectweb.asm.ClassVisitor;
+import jdk.internal.org.objectweb.asm.Label;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
-import jdk.vm.ci.common.*;
-import sun.misc.*;
+import sun.misc.Unsafe;
 
 /**
  * A {@link ClassVisitor} that verifies {@link HotSpotVMConfig} does not access {@link Unsafe} from

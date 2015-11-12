@@ -22,10 +22,12 @@
  */
 package jdk.vm.ci.meta;
 
-import java.lang.annotation.*;
-import java.lang.invoke.*;
-import java.lang.reflect.*;
-import java.util.*;
+import java.lang.annotation.Annotation;
+import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Array;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.Type;
 
 /**
  * Represents a resolved Java method. Methods, like fields and types, are resolved through

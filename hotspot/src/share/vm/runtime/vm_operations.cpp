@@ -28,7 +28,6 @@
 #include "code/codeCache.hpp"
 #include "code/codeCacheExtensions.hpp"
 #include "compiler/compileBroker.hpp"
-#include "compiler/compilerOracle.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"

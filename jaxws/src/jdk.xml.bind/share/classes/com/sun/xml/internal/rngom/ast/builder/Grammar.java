@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
  * questions.
  */
 /*
- * Copyright (C) 2004-2011
+ * Copyright (C) 2004-2015
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -50,8 +50,8 @@ import com.sun.xml.internal.rngom.ast.om.ParsedPattern;
 import com.sun.xml.internal.rngom.ast.om.ParsedElementAnnotation;
 
 /**
- * {@link Scope} for &lt;grammar> element that serves as a container
- * of &lt;define>s.
+ * {@link Scope} for {@code <grammar>} element that serves as a container
+ * of {@code <define>}s.
  */
 public interface Grammar<
     P extends ParsedPattern,

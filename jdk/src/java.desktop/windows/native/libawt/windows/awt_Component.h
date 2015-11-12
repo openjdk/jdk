@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -900,13 +900,13 @@ public:
 
     void            AddDC(HDC hDC, HWND hWnd);
     void            AddDCItem(DCItem *newItem);
-    DCItem          *RemoveDC(HDC hDC);
+    DCItem          *RemoveDC(HDC hDC, HWND hWnd);
     DCItem          *RemoveAllDCs(HWND hWnd);
     void            RealizePalettes(int screen);
 };
 
 void ReleaseDCList(HWND hwnd, DCList &list);
-void MoveDCToPassiveList(HDC hDC);
+void MoveDCToPassiveList(HDC hDC, HWND hWnd);
 
 #include "ObjectList.h"
 

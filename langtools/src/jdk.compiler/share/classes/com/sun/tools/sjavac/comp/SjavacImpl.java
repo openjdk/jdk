@@ -209,21 +209,20 @@ public class SjavacImpl implements Sjavac {
             // Go through all sources and taint all packages that miss artifacts.
             javac_state.taintPackagesThatMissArtifacts();
 
-            // Check recorded classpath public apis. Taint packages that depend on
-            // classpath classes whose public apis have changed.
-            javac_state.taintPackagesDependingOnChangedClasspathPackages();
-
-            // Now clean out all known artifacts belonging to tainted packages.
-            javac_state.deleteClassArtifactsInTaintedPackages();
-            // Copy files, for example property files, images files, xml files etc etc.
-            javac_state.performCopying(Util.pathToFile(options.getDestDir()), suffixRules);
-            // Translate files, for example compile properties or compile idls.
-            javac_state.performTranslation(Util.pathToFile(gensrc), suffixRules);
-            // Add any potentially generated java sources to the tobe compiled list.
-            // (Generated sources must always have a package.)
-            Map<String,Source> generated_sources = new HashMap<>();
-
             try {
+                // Check recorded classpath public apis. Taint packages that depend on
+                // classpath classes whose public apis have changed.
+                javac_state.taintPackagesDependingOnChangedClasspathPackages();
+
+                // Now clean out all known artifacts belonging to tainted packages.
+                javac_state.deleteClassArtifactsInTaintedPackages();
+                // Copy files, for example property files, images files, xml files etc etc.
+                javac_state.performCopying(Util.pathToFile(options.getDestDir()), suffixRules);
+                // Translate files, for example compile properties or compile idls.
+                javac_state.performTranslation(Util.pathToFile(gensrc), suffixRules);
+                // Add any potentially generated java sources to the tobe compiled list.
+                // (Generated sources must always have a package.)
+                Map<String,Source> generated_sources = new HashMap<>();
 
                 Source.scanRoot(Util.pathToFile(options.getGenSrcDir()), Util.set(".java"), null, null, null, null,
                         generated_sources, modules, current_module, false, true, false);

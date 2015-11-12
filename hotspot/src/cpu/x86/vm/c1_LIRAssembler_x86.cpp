@@ -509,86 +509,6 @@ int LIR_Assembler::emit_deopt_handler() {
 }
 
 
-// This is the fast version of java.lang.String.compare; it has not
-// OSR-entry and therefore, we generate a slow version for OSR's
-void LIR_Assembler::emit_string_compare(LIR_Opr arg0, LIR_Opr arg1, LIR_Opr dst, CodeEmitInfo* info) {
-  __ movptr (rbx, rcx); // receiver is in rcx
-  __ movptr (rax, arg1->as_register());
-
-  // Get addresses of first characters from both Strings
-  __ load_heap_oop(rsi, Address(rax, java_lang_String::value_offset_in_bytes()));
-  if (java_lang_String::has_offset_field()) {
-    __ movptr     (rcx, Address(rax, java_lang_String::offset_offset_in_bytes()));
-    __ movl       (rax, Address(rax, java_lang_String::count_offset_in_bytes()));
-    __ lea        (rsi, Address(rsi, rcx, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
-  } else {
-    __ movl       (rax, Address(rsi, arrayOopDesc::length_offset_in_bytes()));
-    __ lea        (rsi, Address(rsi, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
-  }
-
-  // rbx, may be NULL
-  add_debug_info_for_null_check_here(info);
-  __ load_heap_oop(rdi, Address(rbx, java_lang_String::value_offset_in_bytes()));
-  if (java_lang_String::has_offset_field()) {
-    __ movptr     (rcx, Address(rbx, java_lang_String::offset_offset_in_bytes()));
-    __ movl       (rbx, Address(rbx, java_lang_String::count_offset_in_bytes()));
-    __ lea        (rdi, Address(rdi, rcx, Address::times_2, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
-  } else {
-    __ movl       (rbx, Address(rdi, arrayOopDesc::length_offset_in_bytes()));
-    __ lea        (rdi, Address(rdi, arrayOopDesc::base_offset_in_bytes(T_CHAR)));
-  }
-
-  // compute minimum length (in rax) and difference of lengths (on top of stack)
-  __ mov   (rcx, rbx);
-  __ subptr(rbx, rax); // subtract lengths
-  __ push  (rbx);      // result
-  __ cmov  (Assembler::lessEqual, rax, rcx);
-
-  // is minimum length 0?
-  Label noLoop, haveResult;
-  __ testptr (rax, rax);
-  __ jcc (Assembler::zero, noLoop);
-
-  // compare first characters
-  __ load_unsigned_short(rcx, Address(rdi, 0));
-  __ load_unsigned_short(rbx, Address(rsi, 0));
-  __ subl(rcx, rbx);
-  __ jcc(Assembler::notZero, haveResult);
-  // starting loop
-  __ decrement(rax); // we already tested index: skip one
-  __ jcc(Assembler::zero, noLoop);
-
-  // set rsi.edi to the end of the arrays (arrays have same length)
-  // negate the index
-
-  __ lea(rsi, Address(rsi, rax, Address::times_2, type2aelembytes(T_CHAR)));
-  __ lea(rdi, Address(rdi, rax, Address::times_2, type2aelembytes(T_CHAR)));
-  __ negptr(rax);
-
-  // compare the strings in a loop
-
-  Label loop;
-  __ align(wordSize);
-  __ bind(loop);
-  __ load_unsigned_short(rcx, Address(rdi, rax, Address::times_2, 0));
-  __ load_unsigned_short(rbx, Address(rsi, rax, Address::times_2, 0));
-  __ subl(rcx, rbx);
-  __ jcc(Assembler::notZero, haveResult);
-  __ increment(rax);
-  __ jcc(Assembler::notZero, loop);
-
-  // strings are equal up to min length
-
-  __ bind(noLoop);
-  __ pop(rax);
-  return_op(LIR_OprFact::illegalOpr);
-
-  __ bind(haveResult);
-  // leave instruction is going to discard the TOS value
-  __ mov (rax, rcx); // result of call is in rax,
-}
-
-
 void LIR_Assembler::return_op(LIR_Opr result) {
   assert(result->is_illegal() || !result->is_single_cpu() || result->as_register() == rax, "word returns are in rax,");
   if (!result->is_illegal() && result->is_float_kind() && !result->is_xmm_register()) {
@@ -2441,7 +2361,6 @@ void LIR_Assembler::intrinsic_op(LIR_Code code, LIR_Opr value, LIR_Opr unused, L
   } else if (value->is_double_fpu()) {
     assert(value->fpu_regnrLo() == 0 && dest->fpu_regnrLo() == 0, "both must be on TOS");
     switch(code) {
-      case lir_log   : __ flog() ; break;
       case lir_log10 : __ flog10() ; break;
       case lir_abs   : __ fabs() ; break;
       case lir_sqrt  : __ fsqrt(); break;

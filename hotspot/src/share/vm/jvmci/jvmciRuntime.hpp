@@ -54,24 +54,6 @@ protected:
   void set_filename(char* path) {_filename = path; _lineNo = 0;}
 };
 
-#define CHECK_ABORT THREAD); \
-  if (HAS_PENDING_EXCEPTION) { \
-    char buf[256]; \
-    jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
-    JVMCIRuntime::abort_on_pending_exception(PENDING_EXCEPTION, buf); \
-    return; \
-  } \
-  (void)(0
-
-#define CHECK_ABORT_(result) THREAD); \
-  if (HAS_PENDING_EXCEPTION) { \
-    char buf[256]; \
-    jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
-    JVMCIRuntime::abort_on_pending_exception(PENDING_EXCEPTION, buf); \
-    return result; \
-  } \
-  (void)(0
-
 class JVMCIRuntime: public AllStatic {
  private:
   static jobject _HotSpotJVMCIRuntime_instance;
@@ -80,6 +62,9 @@ class JVMCIRuntime: public AllStatic {
   static const char* _compiler;
   static int _options_count;
   static SystemProperty** _options;
+
+  static int _trivial_prefixes_count;
+  static char** _trivial_prefixes;
 
   static bool _shutdown_called;
 
@@ -108,9 +93,14 @@ class JVMCIRuntime: public AllStatic {
    * when JVMCI is initialized.
    *
    * @param props the head of the system property list
-   * @return JNI_ERR if a JVMCI option has a zero length value, JNI_OK otherwise
    */
-  static jint save_options(SystemProperty* props);
+  static void save_options(SystemProperty* props);
+
+  /**
+   * If either the PrintFlags or ShowFlags JVMCI option is present,
+   * then JVMCI is initialized to show the help message.
+   */
+  static void maybe_print_flags(TRAPS);
 
   static bool is_HotSpotJVMCIRuntime_initialized() { return _HotSpotJVMCIRuntime_initialized; }
 
@@ -150,6 +140,7 @@ class JVMCIRuntime: public AllStatic {
     return _shutdown_called;
   }
 
+  static bool treat_as_trivial(Method* method);
   static void parse_lines(char* path, ParseClosure* closure, bool warnStatFailure);
 
   /**
@@ -161,6 +152,24 @@ class JVMCIRuntime: public AllStatic {
    * Calls Throwable.printStackTrace() on a given exception.
    */
   static void call_printStackTrace(Handle exception, Thread* thread);
+
+#define CHECK_ABORT THREAD); \
+  if (HAS_PENDING_EXCEPTION) { \
+    char buf[256]; \
+    jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
+    JVMCIRuntime::abort_on_pending_exception(PENDING_EXCEPTION, buf); \
+    return; \
+  } \
+  (void)(0
+
+#define CHECK_ABORT_(result) THREAD); \
+  if (HAS_PENDING_EXCEPTION) { \
+    char buf[256]; \
+    jio_snprintf(buf, 256, "Uncaught exception at %s:%d", __FILE__, __LINE__); \
+    JVMCIRuntime::abort_on_pending_exception(PENDING_EXCEPTION, buf); \
+    return result; \
+  } \
+  (void)(0
 
   static BasicType kindToBasicType(jchar ch);
 
@@ -183,13 +192,11 @@ class JVMCIRuntime: public AllStatic {
   static oopDesc* load_and_clear_exception(JavaThread* thread);
   static void log_printf(JavaThread* thread, oopDesc* format, jlong v1, jlong v2, jlong v3);
   static void log_primitive(JavaThread* thread, jchar typeChar, jlong value, jboolean newline);
-  // Note: Must be kept in sync with constants in com.oracle.graal.replacements.Log
-  enum {
-    LOG_OBJECT_NEWLINE = 0x01,
-    LOG_OBJECT_STRING  = 0x02,
-    LOG_OBJECT_ADDRESS = 0x04
-  };
-  static void log_object(JavaThread* thread, oopDesc* msg, jint flags);
+  // Print the passed in object, optionally followed by a newline.  If
+  // as_string is true and the object is a java.lang.String then it
+  // printed as a string, otherwise the type of the object is printed
+  // followed by its address.
+  static void log_object(JavaThread* thread, oopDesc* object, bool as_string, bool newline);
   static void write_barrier_pre(JavaThread* thread, oopDesc* obj);
   static void write_barrier_post(JavaThread* thread, void* card);
   static jboolean validate_object(JavaThread* thread, oopDesc* parent, oopDesc* child);

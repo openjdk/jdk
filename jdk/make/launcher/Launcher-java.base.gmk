@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,32 +25,51 @@
 
 include LauncherCommon.gmk
 
+JAVA_RC_FLAGS += -i $(JDK_TOPDIR)/src/java.base/windows/native/common
+ifdef OPENJDK
+  JAVA_RC_FLAGS += -i "$(JDK_TOPDIR)/src/java.base/windows/native/launcher/icons"
+else
+  JAVA_RC_FLAGS += -i "$(JDK_TOPDIR)/src/closed/java.base/windows/native/launcher/icons"
+endif
+
 ################################################################################
 
 # On windows, the debuginfo files get the same name as for java.dll. Build
 # into another dir and copy selectively so debuginfo for java.dll isn't
 # overwritten.
-$(eval $(call SetupLauncher,java, \
-    -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES,,,user32.lib comctl32.lib, \
-    $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jli_static.lib, $(JAVA_RC_FLAGS), \
-    $(JAVA_VERSION_INFO_RESOURCE), $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/java_objs,true))
+$(eval $(call SetupBuildLauncher, java, \
+    CFLAGS := -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES, \
+    LDFLAGS_solaris := -R$(OPENWIN_HOME)/lib$(OPENJDK_TARGET_CPU_ISADIR), \
+    LIBS_windows := user32.lib comctl32.lib, \
+    RC_FLAGS := $(JAVA_RC_FLAGS), \
+    VERSION_INFO_RESOURCE := $(JAVA_VERSION_INFO_RESOURCE), \
+    OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/java_objs, \
+    OPTIMIZATION := HIGH, \
+    WINDOWS_STATIC_LINK := true, \
+    NO_JAVA_MS := true, \
+))
 
 $(SUPPORT_OUTPUTDIR)/modules_cmds/java.base/java$(EXE_SUFFIX): $(BUILD_LAUNCHER_java)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
-	$(CP) $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/java_objs$(OUTPUT_SUBDIR)/java$(EXE_SUFFIX) $@
+	$(CP) $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/java_objs/java$(EXE_SUFFIX) $@
 
 TARGETS += $(SUPPORT_OUTPUTDIR)/modules_cmds/java.base/java$(EXE_SUFFIX)
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
-  $(eval $(call SetupLauncher,javaw, \
-      -DJAVAW -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES,,,user32.lib comctl32.lib, \
-      $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jli_static.lib, $(JAVA_RC_FLAGS), \
-      $(JAVA_VERSION_INFO_RESOURCE),,true))
+  $(eval $(call SetupBuildLauncher, javaw, \
+      CFLAGS := -DJAVAW -DEXPAND_CLASSPATH_WILDCARDS -DENABLE_ARG_FILES, \
+      LIBS_windows := user32.lib comctl32.lib, \
+      RC_FLAGS := $(JAVA_RC_FLAGS), \
+      VERSION_INFO_RESOURCE := $(JAVA_VERSION_INFO_RESOURCE), \
+      WINDOWS_STATIC_LINK := true, \
+      NO_JAVA_MS := true, \
+  ))
 endif
 
-$(eval $(call SetupLauncher,keytool, \
-    -DJAVA_ARGS='{ "-J-ms8m"$(COMMA) "sun.security.tools.keytool.Main"$(COMMA) }'))
+$(eval $(call SetupBuildLauncher, keytool, \
+    MAIN_CLASS := sun.security.tools.keytool.Main, \
+))
 
 ################################################################################
 
@@ -125,7 +144,7 @@ BUILD_JSPAWNHELPER_SRC := $(JDK_TOPDIR)/src/java.base/unix/native/jspawnhelper
 JSPAWNHELPER_CFLAGS := -I$(JDK_TOPDIR)/src/java.base/unix/native/libjava
 BUILD_JSPAWNHELPER_DST_DIR := $(SUPPORT_OUTPUTDIR)/modules_libs/java.base$(OPENJDK_TARGET_CPU_LIBDIR)
 LINK_JSPAWNHELPER_OBJECTS := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjava/childproc.o
-LINK_JSPAWNHELPER_FLAGS :=
+BUILD_JSPAWNHELPER_LDFLAGS :=
 
 ifneq ($(findstring $(OPENJDK_TARGET_OS), macosx solaris aix), )
   BUILD_JSPAWNHELPER := 1
@@ -136,7 +155,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 endif
 
 ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
-  LINK_JSPAWNHELPER_FLAGS += $(COMPILER_TARGET_BITS_FLAG)64
+  BUILD_JSPAWNHELPER_LDFLAGS += $(COMPILER_TARGET_BITS_FLAG)64
 endif
 
 ifeq ($(BUILD_JSPAWNHELPER), 1)
@@ -145,8 +164,8 @@ ifeq ($(BUILD_JSPAWNHELPER), 1)
       INCLUDE_FILES := jspawnhelper.c, \
       OPTIMIZATION := LOW, \
       CFLAGS := $(CFLAGS_JDKEXE) $(JSPAWNHELPER_CFLAGS), \
-      LDFLAGS := $(LDFLAGS_JDKEXE) $(LINK_JSPAWNHELPER_FLAGS), \
-      LDFLAGS_SUFFIX := $(LINK_JSPAWNHELPER_OBJECTS), \
+      LDFLAGS := $(LDFLAGS_JDKEXE) $(BUILD_JSPAWNHELPER_LDFLAGS), \
+      LIBS := $(LINK_JSPAWNHELPER_OBJECTS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/jspawnhelper, \
       OUTPUT_DIR := $(BUILD_JSPAWNHELPER_DST_DIR), \
       PROGRAM := jspawnhelper))

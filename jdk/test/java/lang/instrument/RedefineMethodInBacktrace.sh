@@ -27,6 +27,7 @@
 # @author Stefan Karlsson
 #
 # @modules java.instrument
+#          java.management
 # @run shell MakeJAR3.sh RedefineMethodInBacktraceAgent 'Can-Redefine-Classes: true'
 # @run build RedefineMethodInBacktraceTarget RedefineMethodInBacktraceApp
 # @run shell RedefineMethodInBacktrace.sh

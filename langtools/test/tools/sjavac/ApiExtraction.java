@@ -92,6 +92,7 @@ public class ApiExtraction {
         Options options = Options.parseArgs("-d", "bin", "--state-dir=bin", "-cp", ".");
         PubApiExtractor pubApiExtr = new PubApiExtractor(options);
         PubApi actualApi = pubApiExtr.getPubApi("TestClass");
+        pubApiExtr.close();
 
         // Validate result
         PubApi expectedApi = getExpectedPubApi();

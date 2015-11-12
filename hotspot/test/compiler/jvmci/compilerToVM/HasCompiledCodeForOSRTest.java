@@ -43,22 +43,19 @@ package compiler.jvmci.compilerToVM;
 import compiler.jvmci.common.CTVMUtilities;
 
 import java.lang.reflect.Executable;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import compiler.testlibrary.CompilerUtils;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
-import sun.hotspot.WhiteBox;
+import jdk.test.lib.Utils;
 import sun.hotspot.code.NMethod;
 
 public class HasCompiledCodeForOSRTest {
     public static void main(String[] args) {
-        List<CompileCodeTestCase>testCases = createTestCases();
+        List<CompileCodeTestCase> testCases = createTestCases();
         testCases.forEach(HasCompiledCodeForOSRTest::runSanityTest);
     }
 
@@ -67,7 +64,8 @@ public class HasCompiledCodeForOSRTest {
 
         try {
             Class<?> aClass = DummyClass.class;
-            testCases.add(new CompileCodeTestCase(
+            Object receiver = new DummyClass();
+            testCases.add(new CompileCodeTestCase(receiver,
                     aClass.getMethod("withLoop"), 17));
         } catch (NoSuchMethodException e) {
             throw new Error("TEST BUG : " + e.getMessage(), e);
@@ -78,8 +76,9 @@ public class HasCompiledCodeForOSRTest {
     private static void runSanityTest(CompileCodeTestCase testCase) {
         System.out.println(testCase);
         Executable aMethod = testCase.executable;
-        HotSpotResolvedJavaMethodImpl method = CTVMUtilities
+        HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
+        testCase.invoke(Utils.getNullValues(aMethod.getParameterTypes()));
         testCase.deoptimize();
         int[] levels = CompilerUtils.getAvailableCompilationLevels();
         // not compiled
@@ -98,7 +97,9 @@ public class HasCompiledCodeForOSRTest {
 
         boolean isCompiled;
         int level = nm.comp_level;
-        for (int i : levels) {
+        int[] someLevels = new int[] {-4, 0, 1, 2, 3, 4, 5, 45};
+        // check levels
+        for (int i : someLevels) {
             isCompiled = CompilerToVMHelper.hasCompiledCodeForOSR(
                     method, testCase.bci, i);
             Asserts.assertEQ(isCompiled, level == i, String.format(
@@ -106,8 +107,20 @@ public class HasCompiledCodeForOSRTest {
                             + "level %d", testCase, i));
         }
 
-        for (int i : new int[] {-1, +1}) {
-            int bci = testCase.bci + i;
+        // check bci
+        byte[] bytecode = CompilerToVMHelper.getBytecode(CTVMUtilities
+                .getResolvedMethod(testCase.executable));
+        int[] incorrectBci = new int[] {
+                testCase.bci + 1,
+                testCase.bci - 1,
+                -200,
+                -10,
+                bytecode.length,
+                bytecode.length + 1,
+                bytecode.length + 4,
+                bytecode.length + 200
+        };
+        for (int bci : incorrectBci) {
             isCompiled = CompilerToVMHelper.hasCompiledCodeForOSR(
                     method, bci, level);
             Asserts.assertFalse(isCompiled, String.format(

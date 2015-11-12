@@ -728,7 +728,9 @@ void Canonicalizer::do_If(If* x) {
         set_canonical(new IfInstanceOf(inst->klass(), inst->obj(), true, inst->state_before()->bci(), is_inst_sux, no_inst_sux));
       }
     }
-  } else if (rt == objectNull && (l->as_NewInstance() || l->as_NewArray())) {
+  } else if (rt == objectNull &&
+           (l->as_NewInstance() || l->as_NewArray() ||
+             (UseNewCode && l->as_Local() && l->as_Local()->is_receiver()))) {
     if (x->cond() == Instruction::eql) {
       BlockBegin* sux = x->fsux();
       set_canonical(new Goto(sux, x->state_before(), is_safepoint(x, sux)));

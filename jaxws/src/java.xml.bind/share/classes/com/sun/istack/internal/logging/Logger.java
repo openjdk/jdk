@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ import java.util.logging.Level;
  * The class also makes sure that logger names of each Metro subsystem are consistent
  * with each other.
  *
- * @author Marek Potociar <marek.potociar at sun.com>
+ * @author Marek Potociar
  * @author Fabian Ritzmann
  */
 public class Logger {
@@ -335,7 +335,7 @@ public class Logger {
     /**
      * Method logs {@code exception}'s message as a {@code SEVERE} logging level
      * message.
-     * <p/>
+     * <p>
      * If {@code cause} parameter is not {@code null}, it is logged as well and
      * {@code exception} original cause is initialized with instance referenced
      * by {@code cause} parameter.
@@ -363,7 +363,7 @@ public class Logger {
     /**
      * Method logs {@code exception}'s message as a {@code SEVERE} logging level
      * message.
-     * <p/>
+     * <p>
      * If {@code logCause} parameter is {@code true}, {@code exception}'s original
      * cause is logged as well (if exists). This may be used in cases when
      * {@code exception}'s class provides constructor to initialize the original
@@ -408,7 +408,7 @@ public class Logger {
     /**
      * Method logs {@code exception}'s message at the logging level specified by the
      * {@code level} argument.
-     * <p/>
+     * <p>
      * If {@code cause} parameter is not {@code null}, it is logged as well and
      * {@code exception} original cause is initialized with instance referenced
      * by {@code cause} parameter.
@@ -437,7 +437,7 @@ public class Logger {
     /**
      * Method logs {@code exception}'s message at the logging level specified by the
      * {@code level} argument.
-     * <p/>
+     * <p>
      * If {@code logCause} parameter is {@code true}, {@code exception}'s original
      * cause is logged as well (if exists). This may be used in cases when
      * {@code exception}'s class provides constructor to initialize the original

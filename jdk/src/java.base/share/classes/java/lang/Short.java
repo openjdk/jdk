@@ -468,6 +468,22 @@ public final class Short extends Number implements Comparable<Short> {
     }
 
     /**
+     * Compares two {@code short} values numerically treating the values
+     * as unsigned.
+     *
+     * @param  x the first {@code short} to compare
+     * @param  y the second {@code short} to compare
+     * @return the value {@code 0} if {@code x == y}; a value less
+     *         than {@code 0} if {@code x < y} as unsigned values; and
+     *         a value greater than {@code 0} if {@code x > y} as
+     *         unsigned values
+     * @since 9
+     */
+    public static int compareUnsigned(short x, short y) {
+        return Short.toUnsignedInt(x) - Short.toUnsignedInt(y);
+    }
+
+    /**
      * The number of bits used to represent a {@code short} value in two's
      * complement binary form.
      * @since 1.5
