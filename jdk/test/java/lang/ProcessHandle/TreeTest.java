@@ -193,21 +193,21 @@ public class TreeTest extends ProcessUtil {
             }
 
             // show the complete list of children (for debug)
-            List<ProcessHandle> allChildren = getAllChildren(p1Handle);
-            printf(" allChildren:  %s%n",
-                    allChildren.stream().map(p -> p.getPid())
-                            .collect(Collectors.toList()));
+            List<ProcessHandle> descendants = getDescendants(p1Handle);
+            printf(" descendants:  %s%n",
+                    descendants.stream().map(p -> p.getPid())
+                           .collect(Collectors.toList()));
 
-            // Verify that all spawned children show up in the allChildren List
+            // Verify that all spawned children show up in the descendants  List
             processes.forEach((p, parent) -> {
                 Assert.assertEquals(p.isAlive(), true, "Child should be alive: " + p);
-                Assert.assertTrue(allChildren.contains(p), "Spawned child should be listed in allChildren: " + p);
+                Assert.assertTrue(descendants.contains(p), "Spawned child should be listed in descendants: " + p);
             });
 
             // Closing JavaChild's InputStream will cause all children to exit
             p1.getOutputStream().close();
 
-            for (ProcessHandle p : allChildren) {
+            for (ProcessHandle p : descendants) {
                 try {
                     p.onExit().get();       // wait for the child to exit
                 } catch (ExecutionException e) {
@@ -228,9 +228,9 @@ public class TreeTest extends ProcessUtil {
     /**
      * Test destroy of processes.
      * A JavaChild is started and it starts three children.
-     * Each one is then checked to be alive and listed by allChildren
+     * Each one is then checked to be alive and listed by descendants
      * and forcibly destroyed.
-     * After they exit they should no longer be listed by allChildren.
+     * After they exit they should no longer be listed by descendants.
      */
     @Test
     public static void test3() {
@@ -263,24 +263,24 @@ public class TreeTest extends ProcessUtil {
             Assert.assertTrue(spawnCount.await(Utils.adjustTimeout(30L), TimeUnit.SECONDS),
                     "Timeout waiting for processes to start");
 
-            // Debugging; list allChildren that are not expected in processes
-            List<ProcessHandle> allChildren = ProcessUtil.getAllChildren(p1Handle);
-            long count = allChildren.stream()
+            // Debugging; list descendants that are not expected in processes
+            List<ProcessHandle> descendants = ProcessUtil.getDescendants(p1Handle);
+            long count = descendants.stream()
                     .filter(ph -> !processes.containsKey(ph))
                     .count();
             if (count > 0) {
-                allChildren.stream()
+                descendants.stream()
                     .filter(ph -> !processes.containsKey(ph))
                     .forEach(ph1 -> ProcessUtil.printProcess(ph1, "Extra process: "));
                 ProcessUtil.logTaskList();
-                Assert.assertEquals(0, count, "Extra processes in allChildren");
+                Assert.assertEquals(0, count, "Extra processes in descendants");
             }
 
-            // Verify that all spawned children are alive, show up in the allChildren list
+            // Verify that all spawned children are alive, show up in the descendants list
             // then destroy them
             processes.forEach((p, parent) -> {
                 Assert.assertEquals(p.isAlive(), true, "Child should be alive: " + p);
-                Assert.assertTrue(allChildren.contains(p), "Spawned child should be listed in allChildren: " + p);
+                Assert.assertTrue(descendants.contains(p), "Spawned child should be listed in descendants: " + p);
                 p.destroyForcibly();
             });
             Assert.assertEquals(processes.size(), newChildren, "Wrong number of children");
@@ -305,8 +305,8 @@ public class TreeTest extends ProcessUtil {
             p1.destroyForcibly();
             p1.waitFor();
 
-            // Verify that none of the spawned children are still listed by allChildren
-            List<ProcessHandle> remaining = getAllChildren(self);
+            // Verify that none of the spawned children are still listed by descendants
+            List<ProcessHandle> remaining = getDescendants(self);
             Assert.assertFalse(remaining.remove(p1Handle), "Child p1 should have exited");
             remaining = remaining.stream().filter(processes::containsKey).collect(Collectors.toList());
             Assert.assertEquals(remaining.size(), 0, "Subprocess(es) should have exited: " + remaining);
@@ -415,28 +415,28 @@ public class TreeTest extends ProcessUtil {
             Assert.assertTrue(spawnCount.await(Utils.adjustTimeout(30L), TimeUnit.SECONDS),
                     "Timeout waiting for processes to start");
 
-            // Debugging; list allChildren that are not expected in processes
-            List<ProcessHandle> allChildren = ProcessUtil.getAllChildren(p1Handle);
-            long count = allChildren.stream()
+            // Debugging; list descendants that are not expected in processes
+            List<ProcessHandle> descendants = ProcessUtil.getDescendants(p1Handle);
+            long count = descendants.stream()
                     .filter(ph -> !processes.containsKey(ph))
                     .count();
             if (count > 0) {
-                allChildren.stream()
+                descendants.stream()
                     .filter(ph -> !processes.containsKey(ph))
                     .forEach(ph1 -> ProcessUtil.printProcess(ph1, "Extra process: "));
                 ProcessUtil.logTaskList();
-                Assert.assertEquals(0, count, "Extra processes in allChildren");
+                Assert.assertEquals(0, count, "Extra processes in descendants");
             }
 
             Assert.assertEquals(getChildren(p1Handle).size(),
                     factor, "expected direct children");
-            count = getAllChildren(p1Handle).size();
+            count = getDescendants(p1Handle).size();
             long totalChildren = factor * factor * factor + factor * factor + factor;
             Assert.assertTrue(count >= totalChildren,
                     "expected at least " + totalChildren + ", actual: " + count);
 
-            List<ProcessHandle> subprocesses = getAllChildren(p1Handle);
-            printf(" allChildren:  %s%n",
+            List<ProcessHandle> subprocesses = getDescendants(p1Handle);
+            printf(" descendants:  %s%n",
                     subprocesses.stream().map(p -> p.getPid())
                     .collect(Collectors.toList()));
 

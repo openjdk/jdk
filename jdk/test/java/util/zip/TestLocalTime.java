@@ -21,9 +21,10 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8075526
+ * @key intermittent
  * @summary Test timestamp via ZipEntry.get/setTimeLocal()
  */
 

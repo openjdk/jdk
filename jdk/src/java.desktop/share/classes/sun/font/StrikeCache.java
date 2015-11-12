@@ -37,7 +37,7 @@ import sun.java2d.Disposer;
 import sun.java2d.pipe.BufferedContext;
 import sun.java2d.pipe.RenderQueue;
 import sun.java2d.pipe.hw.AccelGraphicsConfig;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
 

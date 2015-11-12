@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,10 @@ typedef struct {
 #define ERR_OPEN_JVM_FAIL           200
 #define ERR_GET_ENQUEUE_FUNC_FAIL   201
 
+/*
+ * Declare library specific JNI_Onload entry if static build
+ */
+DEF_STATIC_JNI_OnLoad
 
 /*
  * Code copied to target process

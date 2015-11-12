@@ -62,7 +62,7 @@ public class IBM834 extends Charset
     protected static class Encoder extends DoubleByte.Encoder_DBCSONLY {
         public Encoder(Charset cs) {
             super(cs, new byte[] {(byte)0xfe, (byte)0xfe},
-                  IBM933.c2b, IBM933.c2bIndex);
+                  IBM933.c2b, IBM933.c2bIndex, false);
         }
 
         public int encodeChar(char ch) {

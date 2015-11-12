@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,10 @@
 static void *theNullScalerContext = NULL;
 extern void AccelGlyphCache_RemoveAllCellInfos(GlyphInfo *glyph);
 
+/*
+ * Declare library specific JNI_Onload entry if static build
+ */
+DEF_STATIC_JNI_OnLoad
 
 JNIEXPORT jlong JNICALL
 Java_sun_font_NullFontScaler_getNullScalerContext

@@ -775,7 +775,7 @@ class InvokerBytecodeGenerator {
         // Sample classes from each package we are willing to bind to statically:
         java.lang.Object.class,
         java.util.Arrays.class,
-        sun.misc.Unsafe.class
+        jdk.internal.misc.Unsafe.class
         //MethodHandle.class already covered
     };
 

@@ -36,7 +36,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.security.AccessController;
 import sun.security.action.GetPropertyAction;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Windows implementation of AsynchronousChannelGroup encapsulating an I/O

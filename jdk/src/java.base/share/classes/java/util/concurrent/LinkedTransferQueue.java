@@ -538,7 +538,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         private static final long serialVersionUID = -3375979862319811754L;
 
         // Unsafe mechanics
-        private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+        private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
         private static final long ITEM;
         private static final long NEXT;
         private static final long WAITER;
@@ -1564,7 +1564,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
 
     // Unsafe mechanics
 
-    private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
     private static final long HEAD;
     private static final long TAIL;
     private static final long SWEEPVOTES;

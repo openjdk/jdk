@@ -49,6 +49,7 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Objects;
 
 import java.time.DateTimeException;
 import java.time.Instant;
@@ -3860,7 +3861,7 @@ public final class Formatter implements Closeable, Flushable {
                     ampm = dfs.getAmPmStrings();
                 }
                 String s = ampm[t.get(Calendar.AM_PM)];
-                sb.append(s.toLowerCase(l != null ? l : Locale.US));
+                sb.append(s.toLowerCase(Objects.requireNonNullElse(l, Locale.US)));
                 break;
             }
             case DateTime.SECONDS_SINCE_EPOCH: { // 's' (0 - 99...?)
@@ -3893,7 +3894,7 @@ public final class Formatter implements Closeable, Flushable {
                 TimeZone tz = t.getTimeZone();
                 sb.append(tz.getDisplayName((t.get(Calendar.DST_OFFSET) != 0),
                                            TimeZone.SHORT,
-                                            (l == null) ? Locale.US : l));
+                                           Objects.requireNonNullElse(l, Locale.US)));
                 break;
             }
 
@@ -3901,7 +3902,7 @@ public final class Formatter implements Closeable, Flushable {
             case DateTime.NAME_OF_DAY_ABBREV:     // 'a'
             case DateTime.NAME_OF_DAY:          { // 'A'
                 int i = t.get(Calendar.DAY_OF_WEEK);
-                Locale lt = ((l == null) ? Locale.US : l);
+                Locale lt = Objects.requireNonNullElse(l, Locale.US);
                 DateFormatSymbols dfs = DateFormatSymbols.getInstance(lt);
                 if (c == DateTime.NAME_OF_DAY)
                     sb.append(dfs.getWeekdays()[i]);
@@ -3913,7 +3914,7 @@ public final class Formatter implements Closeable, Flushable {
             case DateTime.NAME_OF_MONTH_ABBREV_X: // 'h' -- same b
             case DateTime.NAME_OF_MONTH:        { // 'B'
                 int i = t.get(Calendar.MONTH);
-                Locale lt = ((l == null) ? Locale.US : l);
+                Locale lt = Objects.requireNonNullElse(l, Locale.US);
                 DateFormatSymbols dfs = DateFormatSymbols.getInstance(lt);
                 if (c == DateTime.NAME_OF_MONTH)
                     sb.append(dfs.getMonths()[i]);
@@ -3984,7 +3985,7 @@ public final class Formatter implements Closeable, Flushable {
                 StringBuilder tsb = new StringBuilder();
                 print(tsb, t, DateTime.AM_PM, l);
 
-                sb.append(tsb.toString().toUpperCase(l != null ? l : Locale.US));
+                sb.append(tsb.toString().toUpperCase(Objects.requireNonNullElse(l, Locale.US)));
                 break;
             }
             case DateTime.DATE_TIME:    { // 'c' (Sat Nov 04 12:02:33 EST 1999)
@@ -4092,7 +4093,7 @@ public final class Formatter implements Closeable, Flushable {
                         ampm = dfs.getAmPmStrings();
                     }
                     String s = ampm[t.get(ChronoField.AMPM_OF_DAY)];
-                    sb.append(s.toLowerCase(l != null ? l : Locale.US));
+                    sb.append(s.toLowerCase(Objects.requireNonNullElse(l, Locale.US)));
                     break;
                 }
                 case DateTime.SECONDS_SINCE_EPOCH: { // 's' (0 - 99...?)
@@ -4131,7 +4132,7 @@ public final class Formatter implements Closeable, Flushable {
                         sb.append(TimeZone.getTimeZone(zid.getId())
                                           .getDisplayName(zid.getRules().isDaylightSavings(instant),
                                                           TimeZone.SHORT,
-                                                          (l == null) ? Locale.US : l));
+                                                          Objects.requireNonNullElse(l, Locale.US)));
                         break;
                     }
                     sb.append(zid.getId());
@@ -4141,7 +4142,7 @@ public final class Formatter implements Closeable, Flushable {
                 case DateTime.NAME_OF_DAY_ABBREV:     // 'a'
                 case DateTime.NAME_OF_DAY:          { // 'A'
                     int i = t.get(ChronoField.DAY_OF_WEEK) % 7 + 1;
-                    Locale lt = ((l == null) ? Locale.US : l);
+                    Locale lt = Objects.requireNonNullElse(l, Locale.US);
                     DateFormatSymbols dfs = DateFormatSymbols.getInstance(lt);
                     if (c == DateTime.NAME_OF_DAY)
                         sb.append(dfs.getWeekdays()[i]);
@@ -4153,7 +4154,7 @@ public final class Formatter implements Closeable, Flushable {
                 case DateTime.NAME_OF_MONTH_ABBREV_X: // 'h' -- same b
                 case DateTime.NAME_OF_MONTH:        { // 'B'
                     int i = t.get(ChronoField.MONTH_OF_YEAR) - 1;
-                    Locale lt = ((l == null) ? Locale.US : l);
+                    Locale lt = Objects.requireNonNullElse(l, Locale.US);
                     DateFormatSymbols dfs = DateFormatSymbols.getInstance(lt);
                     if (c == DateTime.NAME_OF_MONTH)
                         sb.append(dfs.getMonths()[i]);
@@ -4223,7 +4224,7 @@ public final class Formatter implements Closeable, Flushable {
                     // this may be in wrong place for some locales
                     StringBuilder tsb = new StringBuilder();
                     print(tsb, t, DateTime.AM_PM, l);
-                    sb.append(tsb.toString().toUpperCase(l != null ? l : Locale.US));
+                    sb.append(tsb.toString().toUpperCase(Objects.requireNonNullElse(l, Locale.US)));
                     break;
                 }
                 case DateTime.DATE_TIME:    { // 'c' (Sat Nov 04 12:02:33 EST 1999)

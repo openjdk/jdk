@@ -366,7 +366,7 @@ public abstract class AtomicLongFieldUpdater<T> {
     }
 
     private static class CASUpdater<T> extends AtomicLongFieldUpdater<T> {
-        private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+        private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
         private final long offset;
         private final Class<T> tclass;
         private final Class<?> cclass;
@@ -490,7 +490,7 @@ public abstract class AtomicLongFieldUpdater<T> {
 
 
     private static class LockedUpdater<T> extends AtomicLongFieldUpdater<T> {
-        private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+        private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
         private final long offset;
         private final Class<T> tclass;
         private final Class<?> cclass;
