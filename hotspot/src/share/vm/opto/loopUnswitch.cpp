@@ -361,16 +361,22 @@ bool CountedLoopReserveKit::create_reserve() {
   }
 
   if(!_lpt->_head->is_CountedLoop()) {
-    NOT_PRODUCT(if(TraceLoopOpts) {tty->print_cr("CountedLoopReserveKit::create_reserve: %d not counted loop", _lpt->_head->_idx);})
+    if (TraceLoopOpts) {
+      tty->print_cr("CountedLoopReserveKit::create_reserve: %d not counted loop", _lpt->_head->_idx);
+    }
     return false;
   }
   CountedLoopNode *cl = _lpt->_head->as_CountedLoop();
   if (!cl->is_valid_counted_loop()) {
-    NOT_PRODUCT(if(TraceLoopOpts) {tty->print_cr("CountedLoopReserveKit::create_reserve: %d not valid counted loop", cl->_idx);})
+    if (TraceLoopOpts) {
+      tty->print_cr("CountedLoopReserveKit::create_reserve: %d not valid counted loop", cl->_idx);
+    }
     return false; // skip malformed counted loop
   }
   if (!cl->is_main_loop()) {
-    NOT_PRODUCT(if(TraceLoopOpts) {tty->print_cr("CountedLoopReserveKit::create_reserve: %d not main loop", cl->_idx);})
+    if (TraceLoopOpts) {
+      tty->print_cr("CountedLoopReserveKit::create_reserve: %d not main loop", cl->_idx);
+    }
     return false; // skip normal, pre, and post loops
   }
 

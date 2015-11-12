@@ -358,7 +358,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, false);
   }
 
-#ifndef PRODUCT
   if (PrintMiscellaneous && Verbose) {
     tty->print_cr("L1 data cache line size: %u", L1_data_cache_line_size());
     tty->print_cr("L2 data cache line size: %u", L2_data_cache_line_size());
@@ -391,7 +390,6 @@ void VM_Version::initialize() {
       tty->print_cr("ContendedPaddingWidth %d", (int) ContendedPaddingWidth);
     }
   }
-#endif // PRODUCT
 }
 
 void VM_Version::print_features() {
@@ -400,7 +398,7 @@ void VM_Version::print_features() {
 
 int VM_Version::determine_features() {
   if (UseV8InstrsOnly) {
-    NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Version is Forced-V8");)
+    if (PrintMiscellaneous && Verbose) { tty->print_cr("Version is Forced-V8"); }
     return generic_v8_m;
   }
 
@@ -416,12 +414,12 @@ int VM_Version::determine_features() {
     if (is_T_family(features)) {
       // Happy to accomodate...
     } else {
-      NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Version is Forced-Niagara");)
+      if (PrintMiscellaneous && Verbose) { tty->print_cr("Version is Forced-Niagara"); }
       features |= T_family_m;
     }
   } else {
     if (is_T_family(features) && !FLAG_IS_DEFAULT(UseNiagaraInstrs)) {
-      NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Version is Forced-Not-Niagara");)
+      if (PrintMiscellaneous && Verbose) { tty->print_cr("Version is Forced-Not-Niagara"); }
       features &= ~(T_family_m | T1_model_m);
     } else {
       // Happy to accomodate...

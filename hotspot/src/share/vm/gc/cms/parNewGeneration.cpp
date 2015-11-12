@@ -1162,7 +1162,6 @@ oop ParNewGeneration::copy_to_survivor_space(ParScanThreadState* par_scan_state,
   }
   assert(new_obj != NULL, "just checking");
 
-#ifndef PRODUCT
   // This code must come after the CAS test, or it will print incorrect
   // information.
   if (TraceScavenge) {
@@ -1170,7 +1169,6 @@ oop ParNewGeneration::copy_to_survivor_space(ParScanThreadState* par_scan_state,
        is_in_reserved(new_obj) ? "copying" : "tenuring",
        new_obj->klass()->internal_name(), p2i(old), p2i(new_obj), new_obj->size());
   }
-#endif
 
   if (forward_ptr == NULL) {
     oop obj_to_push = new_obj;
