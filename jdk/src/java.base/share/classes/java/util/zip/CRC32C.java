@@ -28,7 +28,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import jdk.internal.HotSpotIntrinsicCandidate;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import sun.nio.ch.DirectBuffer;
 
 /**

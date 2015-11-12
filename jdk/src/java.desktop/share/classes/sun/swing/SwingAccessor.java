@@ -25,7 +25,7 @@
 
 package sun.swing;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import java.awt.*;
 import javax.swing.*;

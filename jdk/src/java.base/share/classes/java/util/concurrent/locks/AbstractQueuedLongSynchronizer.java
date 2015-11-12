@@ -1821,7 +1821,7 @@ public abstract class AbstractQueuedLongSynchronizer
      * are at it, we do the same for other CASable fields (which could
      * otherwise be done with atomic field updaters).
      */
-    private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
     private static final long STATE;
     private static final long HEAD;
     private static final long TAIL;

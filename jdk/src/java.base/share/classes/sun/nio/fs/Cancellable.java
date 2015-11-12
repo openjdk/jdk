@@ -26,7 +26,7 @@
 package sun.nio.fs;
 
 import sun.misc.ManagedLocalsThread;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import java.util.concurrent.ExecutionException;
 
 /**

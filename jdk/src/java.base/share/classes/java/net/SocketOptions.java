@@ -61,21 +61,21 @@ public interface SocketOptions {
      * If the requested option is binary, it can be set using this method by
      * a java.lang.Boolean:
      * <BR><PRE>
-     * s.setOption(TCP_NODELAY, new Boolean(true));
+     * s.setOption(TCP_NODELAY, Boolean.TRUE);
      *    // OK - enables TCP_NODELAY, a binary option
      * </PRE>
      * <BR>
-     * Any option can be disabled using this method with a Boolean(false):
+     * Any option can be disabled using this method with a Boolean.FALSE:
      * <BR><PRE>
-     * s.setOption(TCP_NODELAY, new Boolean(false));
+     * s.setOption(TCP_NODELAY, Boolean.FALSE);
      *    // OK - disables TCP_NODELAY
-     * s.setOption(SO_LINGER, new Boolean(false));
+     * s.setOption(SO_LINGER, Boolean.FALSE);
      *    // OK - disables SO_LINGER
      * </PRE>
      * <BR>
      * For an option that has a notion of on and off, and requires
      * a non-boolean parameter, setting its value to anything other than
-     * <I>Boolean(false)</I> implicitly enables it.
+     * <I>Boolean.FALSE</I> implicitly enables it.
      * <BR>
      * Throws SocketException if the option is unrecognized,
      * the socket is closed, or some low-level error occurred
@@ -91,8 +91,8 @@ public interface SocketOptions {
 
     /**
      * Fetch the value of an option.
-     * Binary options will return java.lang.Boolean(true)
-     * if enabled, java.lang.Boolean(false) if disabled, e.g.:
+     * Binary options will return java.lang.Boolean.TRUE
+     * if enabled, java.lang.Boolean.FALSE if disabled, e.g.:
      * <BR><PRE>
      * SocketImpl s;
      * ...
@@ -105,13 +105,13 @@ public interface SocketOptions {
      * <P>
      * For options that take a particular type as a parameter,
      * getOption(int) will return the parameter's value, else
-     * it will return java.lang.Boolean(false):
+     * it will return java.lang.Boolean.FALSE:
      * <PRE>
      * Object o = s.getOption(SO_LINGER);
      * if (o instanceof Integer) {
      *     System.out.print("Linger time is " + ((Integer)o).intValue());
      * } else {
-     *   // the true type of o is java.lang.Boolean(false);
+     *   // the true type of o is java.lang.Boolean.FALSE;
      * }
      * </PRE>
      *
