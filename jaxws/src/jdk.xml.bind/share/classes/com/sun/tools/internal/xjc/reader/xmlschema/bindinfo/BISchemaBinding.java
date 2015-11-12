@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ public final class BISchemaBinding extends AbstractDeclarationImpl {
     /**
      * If false, it means not to generate any classes from this namespace.
      * No ObjectFactory, no classes (the only way to bind them is by using
-     * &lt;jaxb:class ref="..."/>)
+     * {@code <jaxb:class ref="..."/>})
      */
     @XmlAttribute(name="map")
     public boolean map = true;

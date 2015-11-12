@@ -37,8 +37,10 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBFFI],
       [specify directory for the libffi library])])
 
   if test "x$NEEDS_LIB_FFI" = xfalse; then
-    if test "x${with_libffi}" != x || test "x${with_libffi_include}" != x || test "x${with_libffi_lib}" != x; then
-      AC_MSG_WARN([libffi not used, so --with-libffi is ignored])
+    if (test "x${with_libffi}" != x && test "x${with_libffi}" != xno) || \
+        (test "x${with_libffi_include}" != x && test "x${with_libffi_include}" != xno) || \
+        (test "x${with_libffi_lib}" != x && test "x${with_libffi_lib}" != xno); then
+      AC_MSG_WARN([[libffi not used, so --with-libffi[-*] is ignored]])
     fi
     LIBFFI_CFLAGS=
     LIBFFI_LIBS=

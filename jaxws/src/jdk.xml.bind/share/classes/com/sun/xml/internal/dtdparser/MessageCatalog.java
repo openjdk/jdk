@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,12 +43,12 @@ import java.util.ResourceBundle;
  * for the language used in presenting a message from some package, where
  * both user (client) preferences and application (server) support are
  * accounted for when choosing locales and formatting messages.
- * <p/>
- * <P> Each package should have a singleton package-private message catalog
+ *
+ * <p>Each package should have a singleton package-private message catalog
  * class.  This ensures that the correct class loader will always be used to
- * access message resources, and minimizes use of memory: <PRE>
+ * access message resources, and minimizes use of memory:</p><pre>
  * package <em>some.package</em>;
- * <p/>
+ *
  * // "foo" might be public
  * class foo {
  * ...
@@ -59,14 +59,14 @@ import java.util.ResourceBundle;
  * }
  * ...
  * }
- * </PRE>
- * <p/>
- * <P> Messages for a known client could be generated using code
- * something like this:  <PRE>
+ * </pre>
+ *
+ * <p> Messages for a known client could be generated using code
+ * something like this:</p><pre>
  * String clientLanguages [];
  * Locale clientLocale;
  * String clientMessage;
- * <p/>
+ *
  * // client languages will probably be provided by client,
  * // e.g. by an HTTP/1.1 "Accept-Language" header.
  * clientLanguages = new String [] { "en-ca", "fr-ca", "ja", "zh" };
@@ -75,27 +75,27 @@ import java.util.ResourceBundle;
  * "fileCount",
  * new Object [] { new Integer (numberOfFiles) }
  * );
- * </PRE>
- * <p/>
- * <P> At this time, this class does not include functionality permitting
+ * </pre>
+ *
+ * <p> At this time, this class does not include functionality permitting
  * messages to be passed around and localized after-the-fact.  The consequence
  * of this is that the locale for messages must be passed down through layers
  * which have no normal reason to support such passdown, or else the system
- * default locale must be used instead of the one the client needs.
- * <p/>
- * <P> <hr> The following guidelines should be used when constructiong
- * multi-language applications:  <OL>
- * <p/>
- * <LI> Always use <a href=#chooseLocale>chooseLocale</a> to select the
+ * default locale must be used instead of the one the client needs.</p>
+ *
+ * <p> The following guidelines should be used when constructiong
+ * multi-language applications:</p>
+ * <ol>
+ * <li> Always use <a href=#chooseLocale>chooseLocale</a> to select the
  * locale you pass to your <code>getMessage</code> call.  This lets your
  * applications use IETF standard locale names, and avoids needless
- * use of system defaults.
- * <p/>
- * <LI> The localized messages for a given package should always go in
+ * use of system defaults.</li>
+ *
+ * <li> The localized messages for a given package should always go in
  * a separate <em>resources</em> sub-package.  There are security
- * implications; see below.
- * <p/>
- * <LI> Make sure that a language name is included in each bundle name,
+ * implications; see below.</li>
+ *
+ * <li> Make sure that a language name is included in each bundle name,
  * so that the developer's locale will not be inadvertently used. That
  * is, don't create defaults like <em>resources/Messages.properties</em>
  * or <em>resources/Messages.class</em>, since ResourceBundle will choose
@@ -103,21 +103,20 @@ import java.util.ResourceBundle;
  * appropriate language for its messages.  Your message bundles should
  * have names like <em>Messages_en.properties</em> (for the "en", or
  * English, language) or <em>Messages_ja.class</em> ("ja" indicates the
- * Japanese language).
- * <p/>
- * <LI> Only use property files for messages in languages which can
+ * Japanese language).</li>
+ *
+ * <li> Only use property files for messages in languages which can
  * be limited to the ISO Latin/1 (8859-1) characters supported by the
  * property file format.  (This is mostly Western European languages.)
  * Otherwise, subclass ResourceBundle to provide your messages; it is
- * simplest to subclass <code>java.util.ListResourceBundle</code>.
- * <p/>
- * <LI> Never use another package's message catalog or resource bundles.
+ * simplest to subclass <code>java.util.ListResourceBundle</code>.</li>
+ *
+ * <li> Never use another package's message catalog or resource bundles.
  * It should not be possible for a change internal to one package (such
- * as eliminating or improving messages) to break another package.
- * <p/>
- * </OL>
- * <p/>
- * <P> The "resources" sub-package can be treated separately from the
+ * as eliminating or improving messages) to break another package.</li>
+ *</ol>
+ *
+ * <p>The "resources" sub-package can be treated separately from the
  * package with which it is associated.  That main package may be sealed
  * and possibly signed, preventing other software from adding classes to
  * the package which would be able to access methods and data which are
@@ -127,7 +126,7 @@ import java.util.ResourceBundle;
  * (text and class files) need to be added to some package.  Since they
  * should not be added to the main package, the "resources" subpackage is
  * used without risking the security or integrity of that main package
- * as distributed in its JAR file.
+ * as distributed in its JAR file.</p>
  *
  * @author David Brownell
  * @version 1.1, 00/08/05
@@ -281,11 +280,11 @@ abstract public class MessageCatalog {
      * languages is supported, a null value is returned.  Such a list of
      * languages might be provided in an HTTP/1.1 "Accept-Language" header
      * field, or through some other content negotiation mechanism.
-     * <p/>
-     * <P> The language specifiers recognized are RFC 1766 style ("fr" for
+     *
+     * <p> The language specifiers recognized are RFC 1766 style ("fr" for
      * all French, "fr-ca" for Canadian French), although only the strict
      * ISO subset (two letter language and country specifiers) is currently
-     * supported.  Java-style locale strings ("fr_CA") are also supported.
+     * supported.  Java-style locale strings ("fr_CA") are also supported.</p>
      *
      * @param languages Array of language specifiers, ordered with the most
      *                  preferable one at the front.  For example, "en-ca" then "fr-ca",
@@ -335,7 +334,7 @@ abstract public class MessageCatalog {
 
             // language code ... if already lowercase, we change nothing
             if (len == 2) {
-                lang = lang.toLowerCase();
+                lang = lang.toLowerCase(Locale.ENGLISH);
                 if (lang != languages[i]) {
                     if (!didClone) {
                         languages = (String[]) languages.clone();
@@ -437,7 +436,7 @@ abstract public class MessageCatalog {
      * Returns true iff the specified locale has explicit language support.
      * For example, the traditional Chinese locale "zh_TW" has such support
      * if there are message bundles suffixed with either "zh_TW" or "zh".
-     * <p/>
+     *
      * <P> This method is used to bypass part of the search path mechanism
      * of the <code>ResourceBundle</code> class, specifically the parts which
      * force use of default locales and bundles.  Such bypassing is required

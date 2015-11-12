@@ -321,7 +321,7 @@ _sequence-do = \
 
 ################################################################################
 
-MAX_PARAMS := 30
+MAX_PARAMS := 35
 PARAM_SEQUENCE := $(call sequence, 2, $(MAX_PARAMS))
 
 # Template for creating a macro taking named parameters. To use it, assign the

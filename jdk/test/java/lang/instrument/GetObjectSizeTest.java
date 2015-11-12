@@ -27,7 +27,6 @@
  * @summary round-trip test for getObjectSize (does it return, and is the result non-zero?)
  * @author Gabriel Adauto, Wily Technology
  *
- * @modules java.instrument
  * @run build GetObjectSizeTest
  * @run shell MakeJAR.sh basicAgent
  * @run main/othervm -javaagent:basicAgent.jar GetObjectSizeTest GetObjectSizeTest

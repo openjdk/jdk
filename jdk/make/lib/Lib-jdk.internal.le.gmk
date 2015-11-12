@@ -44,7 +44,7 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
       CFLAGS := $(CFLAGS_JDKLIB) $(LIBJAVA_HEADER_FLAGS)\
           $(LIBLE_CPPFLAGS), \
       LDFLAGS := $(LDFLAGS_JDKLIB), \
-      LDFLAGS_SUFFIX := $(LDFLAGS_JDKLIB_SUFFIX) user32.lib, \
+      LIBS := $(JDKLIB_LIBS) user32.lib, \
       VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
       RC_FLAGS := $(RC_FLAGS) \
           -D "JDK_FNAME=le.dll" \

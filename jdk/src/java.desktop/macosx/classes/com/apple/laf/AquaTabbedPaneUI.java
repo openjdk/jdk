@@ -845,7 +845,7 @@ public class AquaTabbedPaneUI extends AquaTabbedPaneCopyFromBasicUI {
         boolean isDefaultFocusReceiver(final JComponent component) {
             if (isDefaultFocusReceiver == null) {
                 Component defaultFocusReceiver = KeyboardFocusManager.getCurrentKeyboardFocusManager().getDefaultFocusTraversalPolicy().getDefaultComponent(getTopLevelFocusCycleRootAncestor(component));
-                isDefaultFocusReceiver = new Boolean(defaultFocusReceiver != null && defaultFocusReceiver.equals(component));
+                isDefaultFocusReceiver = defaultFocusReceiver != null && defaultFocusReceiver.equals(component);
             }
             return isDefaultFocusReceiver.booleanValue();
         }

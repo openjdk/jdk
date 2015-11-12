@@ -65,6 +65,7 @@ class JVMCIJavaClasses : AllStatic {
   end_class                                                                                                                                                    \
   start_class(InstalledCode)                                                                                                                                   \
     long_field(InstalledCode, address)                                                                                                                         \
+    long_field(InstalledCode, entryPoint)                                                                                                                      \
     long_field(InstalledCode, version)                                                                                                                         \
     oop_field(InstalledCode, name, "Ljava/lang/String;")                                                                                                       \
   end_class                                                                                                                                                    \
@@ -215,8 +216,7 @@ class JVMCIJavaClasses : AllStatic {
     boolean_field(HotSpotObjectConstantImpl, compressed)                                                                                                       \
   end_class                                                                                                                                                    \
   start_class(HotSpotMetaspaceConstantImpl)                                                                                                                    \
-    long_field(HotSpotMetaspaceConstantImpl, primitive)                                                                                                        \
-    oop_field(HotSpotMetaspaceConstantImpl, metaspaceObject, "Ljava/lang/Object;")                                                                             \
+    oop_field(HotSpotMetaspaceConstantImpl, metaspaceObject, "Ljdk/vm/ci/hotspot/MetaspaceWrapperObject;")                                            \
     boolean_field(HotSpotMetaspaceConstantImpl, compressed)                                                                                                    \
   end_class                                                                                                                                                    \
   start_class(HotSpotSentinelConstant)                                                                                                                         \
@@ -261,11 +261,11 @@ class JVMCIJavaClasses : AllStatic {
   end_class                                                                                                                                                    \
   start_class(StackLockValue)                                                                                                                                  \
     oop_field(StackLockValue, owner, "Ljdk/vm/ci/meta/JavaValue;")                                                                                             \
-    oop_field(StackLockValue, slot, "Ljdk/vm/ci/code/StackSlotValue;")                                                                                         \
+    oop_field(StackLockValue, slot, "Ljdk/vm/ci/meta/AllocatableValue;")                                                                                       \
     boolean_field(StackLockValue, eliminated)                                                                                                                  \
   end_class                                                                                                                                                    \
-  start_class(SpeculationLog)                                                                                                                                  \
-    oop_field(SpeculationLog, lastFailed, "Ljava/lang/Object;")                                                                                                \
+  start_class(HotSpotSpeculationLog)                                                                                                                           \
+    oop_field(HotSpotSpeculationLog, lastFailed, "Ljava/lang/Object;")                                                                                         \
   end_class                                                                                                                                                    \
   start_class(HotSpotStackFrameReference)                                                                                                                      \
     oop_field(HotSpotStackFrameReference, compilerToVM, "Ljdk/vm/ci/hotspot/CompilerToVM;")                                                                    \
@@ -292,8 +292,10 @@ class JVMCIJavaClasses : AllStatic {
   start_class(HotSpotConstantPool)                                                                                                                             \
     long_field(HotSpotConstantPool, metaspaceConstantPool)                                                                                                     \
   end_class                                                                                                                                                    \
+  start_class(HotSpotJVMCIRuntime)                                                                                                                             \
+  objArrayOop_field(HotSpotJVMCIRuntime, trivialPrefixes, "[Ljava/lang/String;")                                                                               \
+  end_class                                                                                                                                                    \
   /* end*/
-
 
 #define START_CLASS(name)                                                                                                                                      \
 class name : AllStatic {                                                                                                                                       \

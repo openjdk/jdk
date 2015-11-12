@@ -210,7 +210,7 @@ public class XMLStreamReaderToXMLStreamWriter {
         int nsCount = in.getNamespaceCount();
         for (int i = 0; i < nsCount; i++) {
             out.writeNamespace(
-                in.getNamespacePrefix(i),
+                fixNull(in.getNamespacePrefix(i)), //StAX reader will return null for default NS
                 fixNull(in.getNamespaceURI(i)));    // zephyr doesn't like null, I don't know what is correct, so just fix null to "" for now
         }
 

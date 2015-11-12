@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,12 +75,13 @@ public final class Util {
 
     /**
      * Calculate the normalized form of the given uriPath.
-     *
-     * For example:
+     * <p>
+     * For example: <pre>{@code
      *    /a/b/c/ -> /a/b/c/
      *    /a/b/c  -> /a/b/
      *    /a/     -> /a/
      *    /a      -> /
+     *    }</pre>
      *
      * @param uriPath path of a URI (as returned by java.net.URI#getPath()
      * @return the normalized uri path

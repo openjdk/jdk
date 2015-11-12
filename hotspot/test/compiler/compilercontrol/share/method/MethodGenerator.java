@@ -124,6 +124,23 @@ public class MethodGenerator {
     }
 
     /**
+     * Method descriptor that matches any method. Its full signature is *.*
+     *
+     * @param executable executable used to generate descriptor
+     * @return MethodDescriptor instance
+     */
+    public static MethodDescriptor anyMatchDescriptor(Executable executable) {
+        MethodDescriptor md = new MethodDescriptor(executable);
+        Combination<PatternType> patterns = new Combination<>(PatternType.ANY,
+                PatternType.ANY, PatternType.ANY);
+        md.aClass.setSeparator(Separator.SLASH);
+        md.aMethod.setSeparator(Separator.DOT);
+        md.aSignature.setSeparator(Separator.NONE);
+        md.setPatterns(patterns);
+        return md;
+    }
+
+    /**
      * Generates a list of method patterns from the pool of methods
      *
      * @return a list of test cases
@@ -206,6 +223,8 @@ public class MethodGenerator {
         elements.add(input -> "_" + input);
         elements.add(input -> "$" + input);
         elements.add(input -> "0" + input);
+
+        /* TODO: uncomment this together with the fix for 8140631
         // Unicode characters
         elements.add(input -> embed(input, "\u0001"));
         elements.add(input -> embed(input, "\u007F"));
@@ -214,6 +233,7 @@ public class MethodGenerator {
         elements.add(input -> embed(input, "\u0306"));
         // Supplementary character
         elements.add(input -> new String(Character.toChars(0x1F64C)));
+        */
         return elements;
     }
 

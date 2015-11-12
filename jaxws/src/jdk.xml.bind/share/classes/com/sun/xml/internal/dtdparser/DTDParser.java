@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,28 +38,31 @@ import java.util.Hashtable;
 import java.util.Locale;
 import java.util.Set;
 import java.util.Vector;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * This implements parsing of XML 1.0 DTDs.
- * <p/>
- * This conforms to the portion of the XML 1.0 specification related
- * to the external DTD subset.
- * <p/>
- * For multi-language applications (such as web servers using XML
- * processing to create dynamic content), a method supports choosing
- * a locale for parser diagnostics which is both understood by the
- * message recipient and supported by the parser.
- * <p/>
- * This parser produces a stream of parse events.  It supports some
- * features (exposing comments, CDATA sections, and entity references)
- * which are not required to be reported by conformant XML processors.
+ * <p>
+ * This conforms to the portion of the XML 1.0 specification related to the
+ * external DTD subset.
+ * <p>
+ * For multi-language applications (such as web servers using XML processing to
+ * create dynamic content), a method supports choosing a locale for parser
+ * diagnostics which is both understood by the message recipient and supported
+ * by the parser.
+ * <p>
+ * This parser produces a stream of parse events. It supports some features
+ * (exposing comments, CDATA sections, and entity references) which are not
+ * required to be reported by conformant XML processors.
  *
  * @author David Brownell
  * @author Janet Koenig
  * @author Kohsuke KAWAGUCHI
- * @version $Id: DTDParser.java,v 1.2 2009/04/16 15:25:49 snajper Exp $
+ * @version $Id: DTDParser.java,v 1.2 2009-04-16 15:25:49 snajper Exp $
  */
 public class DTDParser {
+
     public final static String TYPE_CDATA = "CDATA";
     public final static String TYPE_ID = "ID";
     public final static String TYPE_IDREF = "IDREF";
@@ -70,47 +73,39 @@ public class DTDParser {
     public final static String TYPE_NMTOKENS = "NMTOKENS";
     public final static String TYPE_NOTATION = "NOTATION";
     public final static String TYPE_ENUMERATION = "ENUMERATION";
-
-
     // stack of input entities being merged
     private InputEntity in;
-
     // temporaries reused during parsing
     private StringBuffer strTmp;
-    private char nameTmp [];
+    private char nameTmp[];
     private NameCache nameCache;
-    private char charTmp [] = new char[2];
-
+    private char charTmp[] = new char[2];
     // temporary DTD parsing state
     private boolean doLexicalPE;
-
     // DTD state, used during parsing
 //    private SimpleHashtable    elements = new SimpleHashtable (47);
     protected final Set declaredElements = new java.util.HashSet();
     private SimpleHashtable params = new SimpleHashtable(7);
-
     // exposed to package-private subclass
     Hashtable notations = new Hashtable(7);
     SimpleHashtable entities = new SimpleHashtable(17);
-
     private SimpleHashtable ids = new SimpleHashtable();
-
     // listeners for DTD parsing events
     private DTDEventListener dtdHandler;
-
     private EntityResolver resolver;
     private Locale locale;
-
     // string constants -- use these copies so "==" works
     // package private
     static final String strANY = "ANY";
     static final String strEMPTY = "EMPTY";
 
+    private static final Logger LOGGER = Logger.getLogger(DTDParser.class.getName());
+
     /**
      * Used by applications to request locale for diagnostics.
      *
-     * @param l The locale to use, or null to use system defaults
-     *          (which may include only message IDs).
+     * @param l The locale to use, or null to use system defaults (which may
+     * include only message IDs).
      */
     public void setLocale(Locale l) throws SAXException {
 
@@ -129,20 +124,19 @@ public class DTDParser {
     }
 
     /**
-     * Chooses a client locale to use for diagnostics, using the first
-     * language specified in the list that is supported by this parser.
-     * That locale is then set using <a href="#setLocale(java.util.Locale)">
-     * setLocale()</a>.  Such a list could be provided by a variety of user
-     * preference mechanisms, including the HTTP <em>Accept-Language</em>
-     * header field.
+     * Chooses a client locale to use for diagnostics, using the first language
+     * specified in the list that is supported by this parser. That locale is
+     * then set using <a href="#setLocale(java.util.Locale)"> setLocale()</a>.
+     * Such a list could be provided by a variety of user preference mechanisms,
+     * including the HTTP <em>Accept-Language</em> header field.
      *
      * @param languages Array of language specifiers, ordered with the most
-     *                  preferable one at the front.  For example, "en-ca" then "fr-ca",
-     *                  followed by "zh_CN".  Both RFC 1766 and Java styles are supported.
+     * preferable one at the front. For example, "en-ca" then "fr-ca", followed
+     * by "zh_CN". Both RFC 1766 and Java styles are supported.
      * @return The chosen locale, or null.
      * @see MessageCatalog
      */
-    public Locale chooseLocale(String languages [])
+    public Locale chooseLocale(String languages[])
             throws SAXException {
 
         Locale l = messages.chooseLocale(languages);
@@ -174,24 +168,29 @@ public class DTDParser {
      */
     public void setDtdHandler(DTDEventListener handler) {
         dtdHandler = handler;
-        if (handler != null)
+        if (handler != null) {
             handler.setDocumentLocator(new Locator() {
+                @Override
                 public String getPublicId() {
                     return DTDParser.this.getPublicId();
                 }
 
+                @Override
                 public String getSystemId() {
                     return DTDParser.this.getSystemId();
                 }
 
+                @Override
                 public int getLineNumber() {
                     return DTDParser.this.getLineNumber();
                 }
 
+                @Override
                 public int getColumnNumber() {
                     return DTDParser.this.getColumnNumber();
                 }
             });
+        }
     }
 
     /**
@@ -215,25 +214,25 @@ public class DTDParser {
      */
     public void parse(String uri)
             throws IOException, SAXException {
-        InputSource in;
+        InputSource inSource;
 
         init();
         // System.out.println ("parse (\"" + uri + "\")");
-        in = resolver.resolveEntity(null, uri);
+        inSource = resolver.resolveEntity(null, uri);
 
         // If custom resolver punts resolution to parser, handle it ...
-        if (in == null) {
-            in = Resolver.createInputSource(new java.net.URL(uri), false);
+        if (inSource == null) {
+            inSource = Resolver.createInputSource(new java.net.URL(uri), false);
 
             // ... or if custom resolver doesn't correctly construct the
             // input entity, patch it up enough so relative URIs work, and
             // issue a warning to minimize later confusion.
-        } else if (in.getSystemId() == null) {
+        } else if (inSource.getSystemId() == null) {
             warning("P-065", null);
-            in.setSystemId(uri);
+            inSource.setSystemId(uri);
         }
 
-        parseInternal(in);
+        parseInternal(inSource);
     }
 
     // makes sure the parser is reset to "before a document"
@@ -263,12 +262,15 @@ public class DTDParser {
         builtin("quot", "\"");
         builtin("apos", "'");
 
-        if (locale == null)
+        if (locale == null) {
             locale = Locale.getDefault();
-        if (resolver == null)
+        }
+        if (resolver == null) {
             resolver = new Resolver();
-        if (dtdHandler == null)
+        }
+        if (dtdHandler == null) {
             dtdHandler = new DTDHandlerBase();
+        }
     }
 
     private void builtin(String entityName, String entityValue) {
@@ -276,7 +278,6 @@ public class DTDParser {
         entity = new InternalEntity(entityName, entityValue.toCharArray());
         entities.put(entityName, entity);
     }
-
 
     ////////////////////////////////////////////////////////////////
     //
@@ -289,13 +290,13 @@ public class DTDParser {
     // relatively easy to get diagnostics that make sense.
     //
     ////////////////////////////////////////////////////////////////
-
-
+    @SuppressWarnings("CallToThreadDumpStack")
     private void parseInternal(InputSource input)
             throws IOException, SAXException {
 
-        if (input == null)
+        if (input == null) {
             fatal("P-000");
+        }
 
         try {
             in = InputEntity.getInputEntity(dtdHandler, locale);
@@ -312,8 +313,7 @@ public class DTDParser {
             externalParameterEntity(externalSubset);
 
             if (!in.isEOF()) {
-                fatal("P-001", new Object[]
-                {Integer.toHexString(((int) getc()))});
+                fatal("P-001", new Object[]{Integer.toHexString(((int) getc()))});
             }
             afterRoot();
             dtdHandler.endDTD();
@@ -329,10 +329,7 @@ public class DTDParser {
                 fatal("P-003", null);
             }
         } catch (RuntimeException e) {
-            // Don't discard location that triggered the exception
-            // ## Should properly wrap exception
-            System.err.print("Internal DTD parser error: "); // ##
-            e.printStackTrace();
+            LOGGER.log(Level.SEVERE, "Internal DTD parser error.", e);
             throw new SAXParseException(e.getMessage() != null
                     ? e.getMessage() : e.getClass().getName(),
                     getPublicId(), getSystemId(),
@@ -368,15 +365,14 @@ public class DTDParser {
         // references, and only now can we know if they're all resolved.
 
         for (Enumeration e = ids.keys();
-             e.hasMoreElements();
-                ) {
+                e.hasMoreElements();) {
             String id = (String) e.nextElement();
             Boolean value = (Boolean) ids.get(id);
-            if (Boolean.FALSE == value)
+            if (Boolean.FALSE.equals(value)) {
                 error("V-024", new Object[]{id});
+            }
         }
     }
-
 
     // role is for diagnostics
     private void whitespace(String roleId)
@@ -384,8 +380,7 @@ public class DTDParser {
 
         // [3] S ::= (#x20 | #x9 | #xd | #xa)+
         if (!maybeWhitespace()) {
-            fatal("P-004", new Object[]
-            {messages.getMessage(locale, roleId)});
+            fatal("P-004", new Object[]{messages.getMessage(locale, roleId)});
         }
     }
 
@@ -393,8 +388,9 @@ public class DTDParser {
     private boolean maybeWhitespace()
             throws IOException, SAXException {
 
-        if (!doLexicalPE)
+        if (!doLexicalPE) {
             return in.maybeWhitespace();
+        }
 
         // see getc() for the PE logic -- this lets us splice
         // expansions of PEs in "anywhere".  getc() has smarts,
@@ -418,8 +414,9 @@ public class DTDParser {
             // this gracefully ends things when we stop playing
             // with internal parameters.  caller should have a
             // grammar rule allowing whitespace at end of entity.
-            if (in.isEOF() && !in.isInternal())
+            if (in.isEOF() && !in.isInternal()) {
                 return saw;
+            }
             c = getc();
         }
         ungetc();
@@ -452,8 +449,9 @@ public class DTDParser {
 
         // [7] Nmtoken ::= (Namechar)+
         char c = getc();
-        if (!XmlChars.isNameChar(c))
-            fatal("P-006", new Object[]{new Character(c)});
+        if (!XmlChars.isNameChar(c)) {
+            fatal("P-006", new Object[]{Character.valueOf(c)});
+        }
         return nameCharString(c).name;
     }
 
@@ -461,18 +459,18 @@ public class DTDParser {
     // internal references) so we can't use strTmp; it's also
     // a hotspot for CPU and memory in the parser (called at least
     // once for each element) so this has been optimized a bit.
-
     private NameCacheEntry nameCharString(char c)
             throws IOException, SAXException {
 
         int i = 1;
 
         nameTmp[0] = c;
-        for (; ;) {
-            if ((c = in.getNameChar()) == 0)
+        for (;;) {
+            if ((c = in.getNameChar()) == 0) {
                 break;
+            }
             if (i >= nameTmp.length) {
-                char tmp [] = new char[nameTmp.length + 10];
+                char tmp[] = new char[nameTmp.length + 10];
                 System.arraycopy(nameTmp, 0, tmp, 0, nameTmp.length);
                 nameTmp = tmp;
             }
@@ -490,6 +488,7 @@ public class DTDParser {
     // or else partially normalized attribute value (the first bit
     // of 3.3.3's spec, without the "if not CDATA" bits).
     //
+    @SuppressWarnings("UnusedAssignment")
     private void parseLiteral(boolean isEntityValue)
             throws IOException, SAXException {
 
@@ -516,7 +515,7 @@ public class DTDParser {
 
         // scan, allowing entity push/pop wherever ...
         // expanded entities can't terminate the literal!
-        for (; ;) {
+        for (;;) {
             if (in != source && in.isEOF()) {
                 // we don't report end of parsed entities
                 // within attributes (no SAX hooks)
@@ -547,20 +546,22 @@ public class DTDParser {
                     }
                     expandEntityInLiteral(entityName, entities, isEntityValue);
 
-
                     // character references are always included immediately
-                } else if ((c = getc()) == '#') {
+                } else if ((getc()) == '#') {
                     int tmp = parseCharNumber();
 
                     if (tmp > 0xffff) {
                         tmp = surrogatesToCharTmp(tmp);
                         strTmp.append(charTmp[0]);
-                        if (tmp == 2)
+                        if (tmp == 2) {
                             strTmp.append(charTmp[1]);
-                    } else
+                        }
+                    } else {
                         strTmp.append((char) tmp);
-                } else
+                    }
+                } else {
                     fatal("P-009");
+                }
                 continue;
 
             }
@@ -573,8 +574,9 @@ public class DTDParser {
                     nextChar(';', "F-021", entityName);
                     expandEntityInLiteral(entityName, params, isEntityValue);
                     continue;
-                } else
+                } else {
                     fatal("P-011");
+                }
             }
 
             // For attribute values ...
@@ -586,8 +588,9 @@ public class DTDParser {
                 }
 
                 // "<" not legal in parsed literals ...
-                if (c == '<')
+                if (c == '<') {
                     fatal("P-012");
+                }
             }
 
             strTmp.append(c);
@@ -597,7 +600,7 @@ public class DTDParser {
 
     // does a SINGLE expansion of the entity (often reparsed later)
     private void expandEntityInLiteral(String name, SimpleHashtable table,
-                                       boolean isEntityValue)
+            boolean isEntityValue)
             throws IOException, SAXException {
 
         Object entity = table.get(name);
@@ -607,8 +610,10 @@ public class DTDParser {
             pushReader(value.buf, name, !value.isPE);
 
         } else if (entity instanceof ExternalEntity) {
-            if (!isEntityValue)    // must be a PE ...
+            if (!isEntityValue) // must be a PE ...
+            {
                 fatal("P-013", new Object[]{name});
+            }
             // XXX if this returns false ...
             pushReader((ExternalEntity) entity);
 
@@ -625,31 +630,30 @@ public class DTDParser {
 
     // [11] SystemLiteral ::= ('"' [^"]* '"') | ("'" [^']* "'")
     // for PUBLIC and SYSTEM literals, also "<?xml ...type='literal'?>'
-
     // NOTE:  XML spec should explicitly say that PE ref syntax is
     // ignored in PIs, comments, SystemLiterals, and Pubid Literal
     // values ... can't process the XML spec's own DTD without doing
     // that for comments.
-
     private String getQuotedString(String type, String extra)
             throws IOException, SAXException {
 
         // use in.getc to bypass PE processing
         char quote = in.getc();
 
-        if (quote != '\'' && quote != '"')
+        if (quote != '\'' && quote != '"') {
             fatal("P-015", new Object[]{
-                messages.getMessage(locale, type, new Object[]{extra})
-            });
+                        messages.getMessage(locale, type, new Object[]{extra})
+                    });
+        }
 
         char c;
 
         strTmp = new StringBuffer();
-        while ((c = in.getc()) != quote)
+        while ((c = in.getc()) != quote) {
             strTmp.append((char) c);
+        }
         return strTmp.toString();
     }
-
 
     private String parsePublicId() throws IOException, SAXException {
 
@@ -660,8 +664,9 @@ public class DTDParser {
             char c = retval.charAt(i);
             if (" \r\n-'()+,./:=?;!*#@$_%0123456789".indexOf(c) == -1
                     && !(c >= 'A' && c <= 'Z')
-                    && !(c >= 'a' && c <= 'z'))
-                fatal("P-016", new Object[]{new Character(c)});
+                    && !(c >= 'a' && c <= 'z')) {
+                fatal("P-016", new Object[]{Character.valueOf(c)});
+            }
         }
         strTmp = new StringBuffer();
         strTmp.append(retval);
@@ -670,44 +675,47 @@ public class DTDParser {
 
     // [14] CharData ::= [^<&]* - ([^<&]* ']]>' [^<&]*)
     // handled by:  InputEntity.parsedContent()
-
     private boolean maybeComment(boolean skipStart)
             throws IOException, SAXException {
 
         // [15] Comment ::= '<!--'
         //        ( (Char - '-') | ('-' (Char - '-'))*
         //        '-->'
-        if (!in.peek(skipStart ? "!--" : "<!--", null))
+        if (!in.peek(skipStart ? "!--" : "<!--", null)) {
             return false;
+        }
 
         boolean savedLexicalPE = doLexicalPE;
         boolean saveCommentText;
 
         doLexicalPE = false;
         saveCommentText = false;
-        if (saveCommentText)
+        if (saveCommentText) {
             strTmp = new StringBuffer();
+        }
 
         oneComment:
-        for (; ;) {
+        for (;;) {
             try {
                 // bypass PE expansion, but permit PEs
                 // to complete ... valid docs won't care.
-                for (; ;) {
+                for (;;) {
                     int c = getc();
                     if (c == '-') {
                         c = getc();
                         if (c != '-') {
-                            if (saveCommentText)
+                            if (saveCommentText) {
                                 strTmp.append('-');
+                            }
                             ungetc();
                             continue;
                         }
                         nextChar('>', "F-022", null);
                         break oneComment;
                     }
-                    if (saveCommentText)
+                    if (saveCommentText) {
                         strTmp.append((char) c);
+                    }
                 }
             } catch (EndOfInputException e) {
                 //
@@ -723,8 +731,9 @@ public class DTDParser {
             }
         }
         doLexicalPE = savedLexicalPE;
-        if (saveCommentText)
+        if (saveCommentText) {
             dtdHandler.comment(strTmp.toString());
+        }
         return true;
     }
 
@@ -737,8 +746,9 @@ public class DTDParser {
         // [17] PITarget ::= Name - (('X'|'x')('M'|'m')('L'|'l')
         boolean savedLexicalPE = doLexicalPE;
 
-        if (!in.peek(skipStart ? "?" : "<?", null))
+        if (!in.peek(skipStart ? "?" : "<?", null)) {
             return false;
+        }
         doLexicalPE = false;
 
         String target = maybeGetName();
@@ -756,12 +766,13 @@ public class DTDParser {
         if (maybeWhitespace()) {
             strTmp = new StringBuffer();
             try {
-                for (; ;) {
+                for (;;) {
                     // use in.getc to bypass PE processing
                     char c = in.getc();
                     //Reached the end of PI.
-                    if (c == '?' && in.peekc('>'))
+                    if (c == '?' && in.peekc('>')) {
                         break;
+                    }
                     strTmp.append(c);
                 }
             } catch (EndOfInputException e) {
@@ -785,7 +796,6 @@ public class DTDParser {
     // [21] CDEnd ::= ']]>'
     //
     //    ... handled by InputEntity.unparsedContent()
-
     // collapsing several rules together ...
     // simpler than attribute literals -- no reference parsing!
     private String maybeReadAttribute(String name, boolean must)
@@ -829,8 +839,9 @@ public class DTDParser {
 
         // [26] versionNum ::= ([a-zA-Z0-9_.:]| '-')+
 
-        if (must && value == null)
+        if (must && value == null) {
             fatal("P-025", new Object[]{versionNum});
+        }
         if (value != null) {
             int length = value.length();
             for (int i = 0; i < length; i++) {
@@ -839,13 +850,14 @@ public class DTDParser {
                         || c == '_' || c == '.'
                         || (c >= 'a' && c <= 'z')
                         || (c >= 'A' && c <= 'Z')
-                        || c == ':' || c == '-')
-                )
+                        || c == ':' || c == '-')) {
                     fatal("P-026", new Object[]{value});
+                }
             }
         }
-        if (value != null && !value.equals(versionNum))
+        if (value != null && !value.equals(versionNum)) {
             error("P-027", new Object[]{versionNum, value});
+        }
     }
 
     // common code used by most markup declarations
@@ -857,9 +869,9 @@ public class DTDParser {
 
         whitespace(roleId);
         name = maybeGetName();
-        if (name == null)
-            fatal("P-005", new Object[]
-            {messages.getMessage(locale, roleId)});
+        if (name == null) {
+            fatal("P-005", new Object[]{messages.getMessage(locale, roleId)});
+        }
         return name;
     }
 
@@ -875,7 +887,6 @@ public class DTDParser {
                 || maybePI(false)
                 || maybeComment(false);
     }
-
     private static final String XmlLang = "xml:lang";
 
     private boolean isXmlLang(String value) {
@@ -893,168 +904,169 @@ public class DTDParser {
         int nextSuffix;
         char c;
 
-        if (value.length() < 2)
+        if (value.length() < 2) {
             return false;
+        }
         c = value.charAt(1);
         if (c == '-') {        // IANA, or user, code
             c = value.charAt(0);
-            if (!(c == 'i' || c == 'I' || c == 'x' || c == 'X'))
+            if (!(c == 'i' || c == 'I' || c == 'x' || c == 'X')) {
                 return false;
+            }
             nextSuffix = 1;
         } else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
             // 2 letter ISO code, or error
             c = value.charAt(0);
-            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')))
+            if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))) {
                 return false;
+            }
             nextSuffix = 2;
-        } else
+        } else {
             return false;
+        }
 
         // here "suffix" ::= '-' [a-zA-Z]+ suffix*
         while (nextSuffix < value.length()) {
             c = value.charAt(nextSuffix);
-            if (c != '-')
+            if (c != '-') {
                 break;
+            }
             while (++nextSuffix < value.length()) {
                 c = value.charAt(nextSuffix);
-                if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')))
+                if (!((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))) {
                     break;
+                }
             }
         }
         return value.length() == nextSuffix && c != '-';
     }
 
-
     //
     // CHAPTER 3:  Logical Structures
     //
-
     /**
-     * To validate, subclassers should at this time make sure that
-     * values are of the declared types:<UL>
-     * <LI> ID and IDREF(S) values are Names
-     * <LI> NMTOKEN(S) are Nmtokens
-     * <LI> ENUMERATION values match one of the tokens
-     * <LI> NOTATION values match a notation name
-     * <LI> ENTITIY(IES) values match an unparsed external entity
-     * </UL>
-     * <p/>
-     * <P> Separately, make sure IDREF values match some ID
-     * provided in the document (in the afterRoot method).
+     * To validate, subclassers should at this time make sure that values are of
+     * the declared types:<UL> <LI> ID and IDREF(S) values are Names <LI>
+     * NMTOKEN(S) are Nmtokens <LI> ENUMERATION values match one of the tokens
+     * <LI> NOTATION values match a notation name <LI> ENTITIY(IES) values match
+     * an unparsed external entity </UL>
+     * <p>
+     * <P> Separately, make sure IDREF values match some ID provided in the
+     * document (in the afterRoot method).
      */
-/*    void validateAttributeSyntax (Attribute attr, String value)
-         throws DTDParseException {
-        // ID, IDREF(S) ... values are Names
-        if (Attribute.ID == attr.type()) {
-            if (!XmlNames.isName (value))
-                error ("V-025", new Object [] { value });
+    /*    void validateAttributeSyntax (Attribute attr, String value)
+     throws DTDParseException {
+     // ID, IDREF(S) ... values are Names
+     if (Attribute.ID == attr.type()) {
+     if (!XmlNames.isName (value))
+     error ("V-025", new Object [] { value });
 
-            Boolean             b = (Boolean) ids.getNonInterned (value);
-            if (b == null || b.equals (Boolean.FALSE))
-                ids.put (value.intern (), Boolean.TRUE);
-            else
-                error ("V-026", new Object [] { value });
+     Boolean             b = (Boolean) ids.getNonInterned (value);
+     if (b == null || b.equals (Boolean.FALSE))
+     ids.put (value.intern (), Boolean.TRUE);
+     else
+     error ("V-026", new Object [] { value });
 
-        } else if (Attribute.IDREF == attr.type()) {
-            if (!XmlNames.isName (value))
-                error ("V-027", new Object [] { value });
+     } else if (Attribute.IDREF == attr.type()) {
+     if (!XmlNames.isName (value))
+     error ("V-027", new Object [] { value });
 
-            Boolean             b = (Boolean) ids.getNonInterned (value);
-            if (b == null)
-                ids.put (value.intern (), Boolean.FALSE);
+     Boolean             b = (Boolean) ids.getNonInterned (value);
+     if (b == null)
+     ids.put (value.intern (), Boolean.FALSE);
 
-        } else if (Attribute.IDREFS == attr.type()) {
-            StringTokenizer     tokenizer = new StringTokenizer (value);
-            Boolean             b;
-            boolean             sawValue = false;
+     } else if (Attribute.IDREFS == attr.type()) {
+     StringTokenizer     tokenizer = new StringTokenizer (value);
+     Boolean             b;
+     boolean             sawValue = false;
 
-            while (tokenizer.hasMoreTokens ()) {
-                value = tokenizer.nextToken ();
-                if (!XmlNames.isName (value))
-                    error ("V-027", new Object [] { value });
-                b = (Boolean) ids.getNonInterned (value);
-                if (b == null)
-                    ids.put (value.intern (), Boolean.FALSE);
-                sawValue = true;
-            }
-            if (!sawValue)
-                error ("V-039", null);
+     while (tokenizer.hasMoreTokens ()) {
+     value = tokenizer.nextToken ();
+     if (!XmlNames.isName (value))
+     error ("V-027", new Object [] { value });
+     b = (Boolean) ids.getNonInterned (value);
+     if (b == null)
+     ids.put (value.intern (), Boolean.FALSE);
+     sawValue = true;
+     }
+     if (!sawValue)
+     error ("V-039", null);
 
 
-        // NMTOKEN(S) ... values are Nmtoken(s)
-        } else if (Attribute.NMTOKEN == attr.type()) {
-            if (!XmlNames.isNmtoken (value))
-                error ("V-028", new Object [] { value });
+     // NMTOKEN(S) ... values are Nmtoken(s)
+     } else if (Attribute.NMTOKEN == attr.type()) {
+     if (!XmlNames.isNmtoken (value))
+     error ("V-028", new Object [] { value });
 
-        } else if (Attribute.NMTOKENS == attr.type()) {
-            StringTokenizer     tokenizer = new StringTokenizer (value);
-            boolean             sawValue = false;
+     } else if (Attribute.NMTOKENS == attr.type()) {
+     StringTokenizer     tokenizer = new StringTokenizer (value);
+     boolean             sawValue = false;
 
-            while (tokenizer.hasMoreTokens ()) {
-                value = tokenizer.nextToken ();
-                if (!XmlNames.isNmtoken (value))
-                    error ("V-028", new Object [] { value });
-                sawValue = true;
-            }
-            if (!sawValue)
-                error ("V-032", null);
+     while (tokenizer.hasMoreTokens ()) {
+     value = tokenizer.nextToken ();
+     if (!XmlNames.isNmtoken (value))
+     error ("V-028", new Object [] { value });
+     sawValue = true;
+     }
+     if (!sawValue)
+     error ("V-032", null);
 
-        // ENUMERATION ... values match one of the tokens
-        } else if (Attribute.ENUMERATION == attr.type()) {
-            for (int i = 0; i < attr.values().length; i++)
-                if (value.equals (attr.values()[i]))
-                    return;
-            error ("V-029", new Object [] { value });
+     // ENUMERATION ... values match one of the tokens
+     } else if (Attribute.ENUMERATION == attr.type()) {
+     for (int i = 0; i < attr.values().length; i++)
+     if (value.equals (attr.values()[i]))
+     return;
+     error ("V-029", new Object [] { value });
 
-        // NOTATION values match a notation name
-        } else if (Attribute.NOTATION == attr.type()) {
-            //
-            // XXX XML 1.0 spec should probably list references to
-            // externally defined notations in standalone docs as
-            // validity errors.  Ditto externally defined unparsed
-            // entities; neither should show up in attributes, else
-            // one needs to read the external declarations in order
-            // to make sense of the document (exactly what tagging
-            // a doc as "standalone" intends you won't need to do).
-            //
-            for (int i = 0; i < attr.values().length; i++)
-                if (value.equals (attr.values()[i]))
-                    return;
-            error ("V-030", new Object [] { value });
+     // NOTATION values match a notation name
+     } else if (Attribute.NOTATION == attr.type()) {
+     //
+     // XXX XML 1.0 spec should probably list references to
+     // externally defined notations in standalone docs as
+     // validity errors.  Ditto externally defined unparsed
+     // entities; neither should show up in attributes, else
+     // one needs to read the external declarations in order
+     // to make sense of the document (exactly what tagging
+     // a doc as "standalone" intends you won't need to do).
+     //
+     for (int i = 0; i < attr.values().length; i++)
+     if (value.equals (attr.values()[i]))
+     return;
+     error ("V-030", new Object [] { value });
 
-        // ENTITY(IES) values match an unparsed entity(ies)
-        } else if (Attribute.ENTITY == attr.type()) {
-            // see note above re standalone
-            if (!isUnparsedEntity (value))
-                error ("V-031", new Object [] { value });
+     // ENTITY(IES) values match an unparsed entity(ies)
+     } else if (Attribute.ENTITY == attr.type()) {
+     // see note above re standalone
+     if (!isUnparsedEntity (value))
+     error ("V-031", new Object [] { value });
 
-        } else if (Attribute.ENTITIES == attr.type()) {
-            StringTokenizer     tokenizer = new StringTokenizer (value);
-            boolean             sawValue = false;
+     } else if (Attribute.ENTITIES == attr.type()) {
+     StringTokenizer     tokenizer = new StringTokenizer (value);
+     boolean             sawValue = false;
 
-            while (tokenizer.hasMoreTokens ()) {
-                value = tokenizer.nextToken ();
-                // see note above re standalone
-                if (!isUnparsedEntity (value))
-                    error ("V-031", new Object [] { value });
-                sawValue = true;
-            }
-            if (!sawValue)
-                error ("V-040", null);
+     while (tokenizer.hasMoreTokens ()) {
+     value = tokenizer.nextToken ();
+     // see note above re standalone
+     if (!isUnparsedEntity (value))
+     error ("V-031", new Object [] { value });
+     sawValue = true;
+     }
+     if (!sawValue)
+     error ("V-040", null);
 
-        } else if (Attribute.CDATA != attr.type())
-            throw new InternalError (attr.type());
-    }
-*/
-/*
-    private boolean isUnparsedEntity (String name)
-    {
-        Object e = entities.getNonInterned (name);
-        if (e == null || !(e instanceof ExternalEntity))
-            return false;
-        return ((ExternalEntity)e).notation != null;
-    }
-*/
+     } else if (Attribute.CDATA != attr.type())
+     throw new InternalError (attr.type());
+     }
+     */
+    /*
+     private boolean isUnparsedEntity (String name)
+     {
+     Object e = entities.getNonInterned (name);
+     if (e == null || !(e instanceof ExternalEntity))
+     return false;
+     return ((ExternalEntity)e).notation != null;
+     }
+     */
     private boolean maybeElementDecl()
             throws IOException, SAXException {
 
@@ -1062,8 +1074,9 @@ public class DTDParser {
         // [46] contentspec ::= 'EMPTY' | 'ANY' | Mixed | children
         InputEntity start = peekDeclaration("!ELEMENT");
 
-        if (start == null)
+        if (start == null) {
             return false;
+        }
 
         // n.b. for content models where inter-element whitespace is
         // ignorable, we mark that fact here.
@@ -1071,20 +1084,20 @@ public class DTDParser {
 //    Element        element = (Element) elements.get (name);
 //    boolean        declEffective = false;
 
-/*
-    if (element != null) {
-        if (element.contentModel() != null) {
-            error ("V-012", new Object [] { name });
-        } // else <!ATTLIST name ...> came first
-    } else {
-        element = new Element(name);
-        elements.put (element.name(), element);
-        declEffective = true;
-    }
-*/
-        if (declaredElements.contains(name))
+        /*
+         if (element != null) {
+         if (element.contentModel() != null) {
+         error ("V-012", new Object [] { name });
+         } // else <!ATTLIST name ...> came first
+         } else {
+         element = new Element(name);
+         elements.put (element.name(), element);
+         declEffective = true;
+         }
+         */
+        if (declaredElements.contains(name)) {
             error("V-012", new Object[]{name});
-        else {
+        } else {
             declaredElements.add(name);
 //        declEffective = true;
         }
@@ -1105,10 +1118,12 @@ public class DTDParser {
 
         maybeWhitespace();
         char c = getc();
-        if (c != '>')
-            fatal("P-036", new Object[]{name, new Character(c)});
-        if (start != in)
+        if (c != '>') {
+            fatal("P-036", new Object[]{name, Character.valueOf(c)});
+        }
+        if (start != in) {
             error("V-013", null);
+        }
 
 ///        dtdHandler.elementDecl(element);
 
@@ -1119,7 +1134,6 @@ public class DTDParser {
     // it's an efficient natural way to express such things, and
     // libraries often interpret them.  No whitespace in the
     // model we store, though!
-
     /**
      * returns content model type.
      */
@@ -1186,10 +1200,11 @@ public class DTDParser {
                 getcps(elementName, next);
 ///                getFrequency();        <- this looks like a bug
 ///<-
-            } else
-                fatal((type == 0) ? "P-039" :
-                        ((type == ',') ? "P-037" : "P-038"),
-                        new Object[]{new Character(getc())});
+            } else {
+                fatal((type == 0) ? "P-039"
+                        : ((type == ',') ? "P-037" : "P-038"),
+                        new Object[]{Character.valueOf(getc())});
+            }
 
             maybeWhitespace();
             if (decided) {
@@ -1209,21 +1224,21 @@ public class DTDParser {
                 } else {
                     fatal((type == 0) ? "P-041" : "P-040",
                             new Object[]{
-                                new Character(c),
-                                new Character(type)
+                                Character.valueOf(c),
+                                Character.valueOf(type)
                             });
                 }
             } else {
                 type = getc();
                 switch (type) {
-                case '|':
-                case ',':
-                    reportConnector(type);
-                    break;
-                default:
+                    case '|':
+                    case ',':
+                        reportConnector(type);
+                        break;
+                    default:
 //                        retval = temp;
-                    ungetc();
-                    continue;
+                        ungetc();
+                        continue;
                 }
 //                retval = (ContentModel)current;
                 decided = true;
@@ -1233,8 +1248,9 @@ public class DTDParser {
             maybeWhitespace();
         } while (!peek(")"));
 
-        if (in != start)
+        if (in != start) {
             error("V-014", new Object[]{elementName});
+        }
         strTmp.append(')');
 
         dtdHandler.endModelGroup(getFrequency());
@@ -1243,14 +1259,14 @@ public class DTDParser {
 
     private void reportConnector(char type) throws SAXException {
         switch (type) {
-        case '|':
-            dtdHandler.connector(DTDEventListener.CHOICE);    ///<-
-            return;
-        case ',':
-            dtdHandler.connector(DTDEventListener.SEQUENCE); ///<-
-            return;
-        default:
-            throw new Error();    //assertion failed.
+            case '|':
+                dtdHandler.connector(DTDEventListener.CHOICE);    ///<-
+                return;
+            case ',':
+                dtdHandler.connector(DTDEventListener.SEQUENCE); ///<-
+                return;
+            default:
+                throw new Error();    //assertion failed.
         }
     }
 
@@ -1286,8 +1302,9 @@ public class DTDParser {
         //        | '(' S? '#PCDATA'                   S? ')'
         maybeWhitespace();
         if (peek("\u0029*") || peek("\u0029")) {
-            if (in != start)
+            if (in != start) {
                 error("V-014", new Object[]{elementName});
+            }
             strTmp.append(')');
 //            element.setContentModel(new StringModel(StringModelType.PCDATA));
             return;
@@ -1305,9 +1322,9 @@ public class DTDParser {
 
             doLexicalPE = true;
             name = maybeGetName();
-            if (name == null)
-                fatal("P-042", new Object[]
-                {elementName, Integer.toHexString(getc())});
+            if (name == null) {
+                fatal("P-042", new Object[]{elementName, Integer.toHexString(getc())});
+            }
             if (l.contains(name)) {
                 error("V-015", new Object[]{name});
             } else {
@@ -1318,11 +1335,13 @@ public class DTDParser {
             maybeWhitespace();
         }
 
-        if (!peek("\u0029*"))    // right paren
-            fatal("P-043", new Object[]
-            {elementName, new Character(getc())});
-        if (in != start)
+        if (!peek("\u0029*")) // right paren
+        {
+            fatal("P-043", new Object[]{elementName, Character.valueOf(getc())});
+        }
+        if (in != start) {
             error("V-014", new Object[]{elementName});
+        }
         strTmp.append(')');
 //        ChoiceModel cm = new ChoiceModel((Collection)l);
 //    cm.setRepeat(Repeat.ZERO_OR_MORE);
@@ -1335,8 +1354,9 @@ public class DTDParser {
         // [52] AttlistDecl ::= '<!ATTLIST' S Name AttDef* S? '>'
         InputEntity start = peekDeclaration("!ATTLIST");
 
-        if (start == null)
+        if (start == null) {
             return false;
+        }
 
         String elementName = getMarkupDeclname("F-016", true);
 //    Element    element = (Element) elements.get (name);
@@ -1361,15 +1381,16 @@ public class DTDParser {
                     nextChar(';', "F-021", entityName);
                     whitespace("F-021");
                     continue;
-                } else
+                } else {
                     fatal("P-011");
+                }
             }
 
             ungetc();
             // look for attribute name otherwise
             String attName = maybeGetName();
             if (attName == null) {
-                fatal("P-044", new Object[]{new Character(getc())});
+                fatal("P-044", new Object[]{Character.valueOf(getc())});
             }
             whitespace("F-001");
 
@@ -1382,36 +1403,34 @@ public class DTDParser {
             // so that "==" may be used (faster)
 
             // [55] StringType ::= 'CDATA'
-            if (peek(TYPE_CDATA))
-///            a.setType(Attribute.CDATA);
+            if (peek(TYPE_CDATA)) ///            a.setType(Attribute.CDATA);
+            {
                 typeName = TYPE_CDATA;
-
-            // [56] TokenizedType ::= 'ID' | 'IDREF' | 'IDREFS'
+            } // [56] TokenizedType ::= 'ID' | 'IDREF' | 'IDREFS'
             //        | 'ENTITY' | 'ENTITIES'
             //        | 'NMTOKEN' | 'NMTOKENS'
             // n.b. if "IDREFS" is there, both "ID" and "IDREF"
             // match peekahead ... so this order matters!
-            else if (peek(TYPE_IDREFS))
+            else if (peek(TYPE_IDREFS)) {
                 typeName = TYPE_IDREFS;
-            else if (peek(TYPE_IDREF))
+            } else if (peek(TYPE_IDREF)) {
                 typeName = TYPE_IDREF;
-            else if (peek(TYPE_ID)) {
+            } else if (peek(TYPE_ID)) {
                 typeName = TYPE_ID;
 // TODO: should implement this error check?
 ///        if (element.id() != null) {
 ///                    error ("V-016", new Object [] { element.id() });
 ///        } else
 ///            element.setId(name);
-            } else if (peek(TYPE_ENTITY))
+            } else if (peek(TYPE_ENTITY)) {
                 typeName = TYPE_ENTITY;
-            else if (peek(TYPE_ENTITIES))
+            } else if (peek(TYPE_ENTITIES)) {
                 typeName = TYPE_ENTITIES;
-            else if (peek(TYPE_NMTOKENS))
+            } else if (peek(TYPE_NMTOKENS)) {
                 typeName = TYPE_NMTOKENS;
-            else if (peek(TYPE_NMTOKEN))
+            } else if (peek(TYPE_NMTOKEN)) {
                 typeName = TYPE_NMTOKEN;
-
-            // [57] EnumeratedType ::= NotationType | Enumeration
+            } // [57] EnumeratedType ::= NotationType | Enumeration
             // [58] NotationType ::= 'NOTATION' S '(' S? Name
             //        (S? '|' S? Name)* S? ')'
             else if (peek(TYPE_NOTATION)) {
@@ -1423,15 +1442,18 @@ public class DTDParser {
                 values = new Vector();
                 do {
                     String name;
-                    if ((name = maybeGetName()) == null)
+                    if ((name = maybeGetName()) == null) {
                         fatal("P-068");
+                    }
                     // permit deferred declarations
-                    if (notations.get(name) == null)
+                    if (notations.get(name) == null) {
                         notations.put(name, name);
+                    }
                     values.addElement(name);
                     maybeWhitespace();
-                    if (peek("|"))
+                    if (peek("|")) {
                         maybeWhitespace();
+                    }
                 } while (!peek(")"));
 ///            a.setValues(new String [v.size ()]);
 ///            for (int i = 0; i < v.size (); i++)
@@ -1451,15 +1473,16 @@ public class DTDParser {
 ///                v.addElement (name);
                     values.addElement(name);
                     maybeWhitespace();
-                    if (peek("|"))
+                    if (peek("|")) {
                         maybeWhitespace();
+                    }
                 } while (!peek(")"));
 ///            a.setValues(new String [v.size ()]);
 ///            for (int i = 0; i < v.size (); i++)
 ///                a.setValue(i, (String)v.elementAt(i));
             } else {
                 fatal("P-045",
-                        new Object[]{attName, new Character(getc())});
+                        new Object[]{attName, Character.valueOf(getc())});
                 typeName = null;
             }
 
@@ -1469,13 +1492,14 @@ public class DTDParser {
             // [60] DefaultDecl ::= '#REQUIRED' | '#IMPLIED'
             //        | (('#FIXED' S)? AttValue)
             whitespace("F-003");
-            if (peek("#REQUIRED"))
+            if (peek("#REQUIRED")) {
                 attributeUse = DTDEventListener.USE_REQUIRED;
-///            a.setIsRequired(true);
+            } ///            a.setIsRequired(true);
             else if (peek("#FIXED")) {
 ///            if (a.type() == Attribute.ID)
-                if (typeName == TYPE_ID)
+                if (typeName == TYPE_ID) {
                     error("V-017", new Object[]{attName});
+                }
 ///            a.setIsFixed(true);
                 attributeUse = DTDEventListener.USE_FIXED;
                 whitespace("F-004");
@@ -1485,10 +1509,11 @@ public class DTDParser {
 ///            else
 ///                a.setDefaultValue(strTmp.toString());
 
-                if (typeName == TYPE_CDATA)
+                if (typeName == TYPE_CDATA) {
                     defaultValue = normalize(false);
-                else
+                } else {
                     defaultValue = strTmp.toString();
+                }
 
 // TODO: implement this check
 ///            if (a.type() != Attribute.CDATA)
@@ -1497,17 +1522,19 @@ public class DTDParser {
                 attributeUse = DTDEventListener.USE_IMPLIED;
 
 ///            if (a.type() == Attribute.ID)
-                if (typeName == TYPE_ID)
+                if (typeName == TYPE_ID) {
                     error("V-018", new Object[]{attName});
+                }
                 parseLiteral(false);
 ///            if (a.type() != Attribute.CDATA)
 ///                a.setDefaultValue(normalize(false));
 ///            else
 ///                a.setDefaultValue(strTmp.toString());
-                if (typeName == TYPE_CDATA)
+                if (typeName == TYPE_CDATA) {
                     defaultValue = normalize(false);
-                else
+                } else {
                     defaultValue = strTmp.toString();
+                }
 
 // TODO: implement this check
 ///            if (a.type() != Attribute.CDATA)
@@ -1519,8 +1546,9 @@ public class DTDParser {
 
             if (XmlLang.equals(attName)
                     && defaultValue/* a.defaultValue()*/ != null
-                    && !isXmlLang(defaultValue/*a.defaultValue()*/))
+                    && !isXmlLang(defaultValue/*a.defaultValue()*/)) {
                 error("P-033", new Object[]{defaultValue /*a.defaultValue()*/});
+            }
 
 // TODO: isn't it an error to specify the same attribute twice?
 ///        if (!element.attributes().contains(a)) {
@@ -1528,12 +1556,13 @@ public class DTDParser {
 ///            dtdHandler.attributeDecl(a);
 ///        }
 
-            String[] v = (values != null) ? (String[]) values.toArray(new String[0]) : null;
+            String[] v = (values != null) ? (String[]) values.toArray(new String[values.size()]) : null;
             dtdHandler.attributeDecl(elementName, attName, typeName, v, attributeUse, defaultValue);
             maybeWhitespace();
         }
-        if (start != in)
+        if (start != in) {
             error("V-013", null);
+        }
         return true;
     }
 
@@ -1551,7 +1580,6 @@ public class DTDParser {
 
         if (s != s2) {
             s = s2;
-            s2 = null;
             didStrip = true;
         }
         strTmp = new StringBuffer();
@@ -1562,14 +1590,16 @@ public class DTDParser {
                 continue;
             }
             strTmp.append(' ');
-            while (++i < s.length() && XmlChars.isSpace(s.charAt(i)))
+            while (++i < s.length() && XmlChars.isSpace(s.charAt(i))) {
                 didStrip = true;
+            }
             i--;
         }
-        if (didStrip)
+        if (didStrip) {
             return strTmp.toString();
-        else
+        } else {
             return s;
+        }
     }
 
     private boolean maybeConditionalSect()
@@ -1577,39 +1607,46 @@ public class DTDParser {
 
         // [61] conditionalSect ::= includeSect | ignoreSect
 
-        if (!peek("<!["))
+        if (!peek("<![")) {
             return false;
+        }
 
         String keyword;
         InputEntity start = in;
 
         maybeWhitespace();
 
-        if ((keyword = maybeGetName()) == null)
+        if ((keyword = maybeGetName()) == null) {
             fatal("P-046");
+        }
         maybeWhitespace();
         nextChar('[', "F-030", null);
 
         // [62] includeSect ::= '<![' S? 'INCLUDE' S? '['
         //                extSubsetDecl ']]>'
         if ("INCLUDE".equals(keyword)) {
-            for (; ;) {
-                while (in.isEOF() && in != start)
+            for (;;) {
+                while (in.isEOF() && in != start) {
                     in = in.pop();
+                }
                 if (in.isEOF()) {
                     error("V-020", null);
                 }
-                if (peek("]]>"))
+                if (peek("]]>")) {
                     break;
+                }
 
                 doLexicalPE = false;
-                if (maybeWhitespace())
+                if (maybeWhitespace()) {
                     continue;
-                if (maybePEReference())
+                }
+                if (maybePEReference()) {
                     continue;
+                }
                 doLexicalPE = true;
-                if (maybeMarkupDecl() || maybeConditionalSect())
+                if (maybeMarkupDecl() || maybeConditionalSect()) {
                     continue;
+                }
 
                 fatal("P-047");
             }
@@ -1626,24 +1663,26 @@ public class DTDParser {
             while (nestlevel > 0) {
                 char c = getc();    // will pop input entities
                 if (c == '<') {
-                    if (peek("!["))
+                    if (peek("![")) {
                         nestlevel++;
+                    }
                 } else if (c == ']') {
-                    if (peek("]>"))
+                    if (peek("]>")) {
                         nestlevel--;
-                } else
+                    }
+                } else {
                     continue;
+                }
             }
-        } else
+        } else {
             fatal("P-048", new Object[]{keyword});
+        }
         return true;
     }
-
 
     //
     // CHAPTER 4:  Physical Structures
     //
-
     // parse decimal or hex numeric character reference
     private int parseCharNumber()
             throws IOException, SAXException {
@@ -1654,19 +1693,20 @@ public class DTDParser {
         // n.b. we ignore overflow ...
         if (getc() != 'x') {
             ungetc();
-            for (; ;) {
+            for (;;) {
                 c = getc();
                 if (c >= '0' && c <= '9') {
                     retval *= 10;
                     retval += (c - '0');
                     continue;
                 }
-                if (c == ';')
+                if (c == ';') {
                     return retval;
+                }
                 fatal("P-049");
             }
-        } else
-            for (; ;) {
+        } else {
+            for (;;) {
                 c = getc();
                 if (c >= '0' && c <= '9') {
                     retval <<= 4;
@@ -1683,10 +1723,12 @@ public class DTDParser {
                     retval += 10 + (c - 'A');
                     continue;
                 }
-                if (c == ';')
+                if (c == ';') {
                     return retval;
+                }
                 fatal("P-050");
             }
+        }
     }
 
     // parameter is a UCS-4 character ... i.e. not just 16 bit UNICODE,
@@ -1719,14 +1761,16 @@ public class DTDParser {
         // a LEXICAL version; see getc() and doLexicalPE.
 
         // [69] PEReference ::= '%' Name ';'
-        if (!in.peekc('%'))
+        if (!in.peekc('%')) {
             return false;
+        }
 
         String name = maybeGetName();
         Object entity;
 
-        if (name == null)
+        if (name == null) {
             fatal("P-011");
+        }
         nextChar(';', "F-021", name);
         entity = params.get(name);
 
@@ -1755,8 +1799,9 @@ public class DTDParser {
         //
         InputEntity start = peekDeclaration("!ENTITY");
 
-        if (start == null)
+        if (start == null) {
             return false;
+        }
 
         String entityName;
         SimpleHashtable defns;
@@ -1775,8 +1820,9 @@ public class DTDParser {
         if (in.peekc('%')) {
             whitespace("F-006");
             defns = params;
-        } else
+        } else {
             defns = entities;
+        }
 
         ungetc();    // leave some whitespace
         doLexicalPE = true;
@@ -1792,12 +1838,13 @@ public class DTDParser {
         // non-parameter entities.
         //
         doStore = (defns.get(entityName) == null);
-        if (!doStore && defns == entities)
+        if (!doStore && defns == entities) {
             warning("P-054", new Object[]{entityName});
+        }
 
         // internal entities
         if (externalId == null) {
-            char value [];
+            char value[];
             InternalEntity entity;
 
             doLexicalPE = false;        // "ab%bar;cd" -maybe-> "abcd"
@@ -1805,15 +1852,16 @@ public class DTDParser {
             doLexicalPE = true;
             if (doStore) {
                 value = new char[strTmp.length()];
-                if (value.length != 0)
+                if (value.length != 0) {
                     strTmp.getChars(0, value.length, value, 0);
+                }
                 entity = new InternalEntity(entityName, value);
                 entity.isPE = (defns == params);
-                entity.isFromInternalSubset = false;
                 defns.put(entityName, entity);
-                if (defns == entities)
+                if (defns == entities) {
                     dtdHandler.internalGeneralEntityDecl(entityName,
                             new String(value));
+                }
             }
 
             // external entities (including unparsed)
@@ -1825,27 +1873,29 @@ public class DTDParser {
 
                 // flag undeclared notation for checking after
                 // the DTD is fully processed
-                if (notations.get(externalId.notation) == null)
+                if (notations.get(externalId.notation) == null) {
                     notations.put(externalId.notation, Boolean.TRUE);
+                }
             }
             externalId.name = entityName;
             externalId.isPE = (defns == params);
-            externalId.isFromInternalSubset = false;
             if (doStore) {
                 defns.put(entityName, externalId);
-                if (externalId.notation != null)
+                if (externalId.notation != null) {
                     dtdHandler.unparsedEntityDecl(entityName,
                             externalId.publicId, externalId.systemId,
                             externalId.notation);
-                else if (defns == entities)
+                } else if (defns == entities) {
                     dtdHandler.externalGeneralEntityDecl(entityName,
                             externalId.publicId, externalId.systemId);
+                }
             }
         }
         maybeWhitespace();
         nextChar('>', "F-031", entityName);
-        if (start != in)
+        if (start != in) {
             error("V-013", null);
+        }
         return true;
     }
 
@@ -1860,8 +1910,9 @@ public class DTDParser {
         if (peek("PUBLIC")) {
             whitespace("F-009");
             temp = parsePublicId();
-        } else if (!peek("SYSTEM"))
+        } else if (!peek("SYSTEM")) {
             return null;
+        }
 
         retval = new ExternalEntity(in);
         retval.publicId = temp;
@@ -1887,14 +1938,16 @@ public class DTDParser {
             String baseURI;
 
             baseURI = in.getSystemId();
-            if (baseURI == null)
+            if (baseURI == null) {
                 fatal("P-055", new Object[]{uri});
-            if (uri.length() == 0)
+            }
+            if (uri.length() == 0) {
                 uri = ".";
+            }
             baseURI = baseURI.substring(0, baseURI.lastIndexOf('/') + 1);
-            if (uri.charAt(0) != '/')
+            if (uri.charAt(0) != '/') {
                 uri = baseURI + uri;
-            else {
+            } else {
                 // XXX slashes at the beginning of a relative URI are
                 // a special case we don't handle.
                 throw new InternalError();
@@ -1904,8 +1957,9 @@ public class DTDParser {
             // since all URIs must handle it the same.
         }
         // check for fragment ID in URI
-        if (uri.indexOf('#') != -1)
+        if (uri.indexOf('#') != -1) {
             error("P-056", new Object[]{uri});
+        }
         return uri;
     }
 
@@ -1917,8 +1971,9 @@ public class DTDParser {
             readVersion(false, "1.0");
             readEncoding(true);
             maybeWhitespace();
-            if (!peek("?>"))
+            if (!peek("?>")) {
                 fatal("P-057");
+            }
         }
     }
 
@@ -1952,18 +2007,22 @@ public class DTDParser {
                 continue;
             }
             doLexicalPE = false;
-            if (maybeWhitespace())
+            if (maybeWhitespace()) {
                 continue;
-            if (maybePEReference())
+            }
+            if (maybePEReference()) {
                 continue;
+            }
             doLexicalPE = true;
-            if (maybeMarkupDecl() || maybeConditionalSect())
+            if (maybeMarkupDecl() || maybeConditionalSect()) {
                 continue;
+            }
             break;
         }
         // if (in != pe) throw new InternalError("who popped my PE?");
-        if (!pe.isEOF())
+        if (!pe.isEOF()) {
             fatal("P-059", new Object[]{in.getName()});
+        }
     }
 
     private void readEncoding(boolean must)
@@ -1972,21 +2031,23 @@ public class DTDParser {
         // [81] EncName ::= [A-Za-z] ([A-Za-z0-9._] | '-')*
         String name = maybeReadAttribute("encoding", must);
 
-        if (name == null)
+        if (name == null) {
             return;
+        }
         for (int i = 0; i < name.length(); i++) {
             char c = name.charAt(i);
             if ((c >= 'A' && c <= 'Z')
-                    || (c >= 'a' && c <= 'z'))
+                    || (c >= 'a' && c <= 'z')) {
                 continue;
+            }
             if (i != 0
                     && ((c >= '0' && c <= '9')
                     || c == '-'
                     || c == '_'
-                    || c == '.'
-                    ))
+                    || c == '.')) {
                 continue;
-            fatal("P-060", new Object[]{new Character(c)});
+            }
+            fatal("P-060", new Object[]{Character.valueOf(c)});
         }
 
         //
@@ -2001,8 +2062,9 @@ public class DTDParser {
         String currentEncoding = in.getEncoding();
 
         if (currentEncoding != null
-                && !name.equalsIgnoreCase(currentEncoding))
+                && !name.equalsIgnoreCase(currentEncoding)) {
             warning("P-061", new Object[]{name, currentEncoding});
+        }
     }
 
     private boolean maybeNotationDecl()
@@ -2013,8 +2075,9 @@ public class DTDParser {
         // [83] PublicID ::= 'PUBLIC' S PubidLiteral
         InputEntity start = peekDeclaration("!NOTATION");
 
-        if (start == null)
+        if (start == null) {
             return false;
+        }
 
         String name = getMarkupDeclname("F-019", false);
         ExternalEntity entity = new ExternalEntity(in);
@@ -2024,28 +2087,31 @@ public class DTDParser {
             whitespace("F-009");
             entity.publicId = parsePublicId();
             if (maybeWhitespace()) {
-                if (!peek(">"))
+                if (!peek(">")) {
                     entity.systemId = parseSystemId();
-                else
+                } else {
                     ungetc();
+                }
             }
         } else if (peek("SYSTEM")) {
             whitespace("F-008");
             entity.systemId = parseSystemId();
-        } else
+        } else {
             fatal("P-062");
+        }
         maybeWhitespace();
         nextChar('>', "F-032", name);
-        if (start != in)
+        if (start != in) {
             error("V-013", null);
-        if (entity.systemId != null && entity.systemId.indexOf('#') != -1)
+        }
+        if (entity.systemId != null && entity.systemId.indexOf('#') != -1) {
             error("P-056", new Object[]{entity.systemId});
+        }
 
         Object value = notations.get(name);
-        if (value != null && value instanceof ExternalEntity)
+        if (value != null && value instanceof ExternalEntity) {
             warning("P-063", new Object[]{name});
-
-        else {
+        } else {
             notations.put(name, entity);
             dtdHandler.notationDecl(name, entity.publicId,
                     entity.systemId);
@@ -2053,13 +2119,11 @@ public class DTDParser {
         return true;
     }
 
-
     ////////////////////////////////////////////////////////////////
     //
     //    UTILITIES
     //
     ////////////////////////////////////////////////////////////////
-
     private char getc() throws IOException, SAXException {
 
         if (!doLexicalPE) {
@@ -2086,9 +2150,9 @@ public class DTDParser {
         char c;
 
         while (in.isEOF()) {
-            if (in.isInternal() || (doLexicalPE && !in.isDocument()))
+            if (in.isInternal() || (doLexicalPE && !in.isDocument())) {
                 in = in.pop();
-            else {
+            } else {
                 fatal("P-064", new Object[]{in.getName()});
             }
         }
@@ -2097,25 +2161,27 @@ public class DTDParser {
             String name = maybeGetName();
             Object entity;
 
-            if (name == null)
+            if (name == null) {
                 fatal("P-011");
+            }
             nextChar(';', "F-021", name);
             entity = params.get(name);
 
             // push a magic "entity" before and after the
             // real one, so ungetc() behaves uniformly
             pushReader(" ".toCharArray(), null, false);
-            if (entity instanceof InternalEntity)
+            if (entity instanceof InternalEntity) {
                 pushReader(((InternalEntity) entity).buf, name, false);
-            else if (entity instanceof ExternalEntity)
-            // PEs can't be unparsed!
+            } else if (entity instanceof ExternalEntity) // PEs can't be unparsed!
             // XXX if this returns false ...
+            {
                 pushReader((ExternalEntity) entity);
-            else if (entity == null)
-            // see note in maybePEReference re making this be nonfatal.
+            } else if (entity == null) // see note in maybePEReference re making this be nonfatal.
+            {
                 fatal("V-022");
-            else
+            } else {
                 throw new InternalError();
+            }
             pushReader(" ".toCharArray(), null, false);
             return in.getc();
         }
@@ -2135,17 +2201,18 @@ public class DTDParser {
 
     // Return the entity starting the specified declaration
     // (for validating declaration nesting) else null.
-
     private InputEntity peekDeclaration(String s)
             throws IOException, SAXException {
 
         InputEntity start;
 
-        if (!in.peekc('<'))
+        if (!in.peekc('<')) {
             return null;
+        }
         start = in;
-        if (in.peek(s, null))
+        if (in.peek(s, null)) {
             return start;
+        }
         in.ungetc();
         return null;
     }
@@ -2153,17 +2220,17 @@ public class DTDParser {
     private void nextChar(char c, String location, String near)
             throws IOException, SAXException {
 
-        while (in.isEOF() && !in.isDocument())
+        while (in.isEOF() && !in.isDocument()) {
             in = in.pop();
-        if (!in.peekc(c))
-            fatal("P-008", new Object[]
-            {new Character(c),
-             messages.getMessage(locale, location),
-             (near == null ? "" : ('"' + near + '"'))});
+        }
+        if (!in.peekc(c)) {
+            fatal("P-008", new Object[]{Character.valueOf(c),
+                        messages.getMessage(locale, location),
+                        (near == null ? "" : ('"' + near + '"'))});
+        }
     }
 
-
-    private void pushReader(char buf [], String name, boolean isGeneral)
+    private void pushReader(char buf[], String name, boolean isGeneral)
             throws SAXException {
 
         InputEntity r = InputEntity.getInputEntity(dtdHandler, locale);
@@ -2181,8 +2248,9 @@ public class DTDParser {
         } catch (IOException e) {
             String msg =
                     "unable to open the external entity from :" + next.systemId;
-            if (next.publicId != null)
+            if (next.publicId != null) {
                 msg += " (public id:" + next.publicId + ")";
+            }
 
             SAXParseException spe = new SAXParseException(msg,
                     getPublicId(), getSystemId(), getLineNumber(), getColumnNumber(), e);
@@ -2216,8 +2284,7 @@ public class DTDParser {
     }
 
     // error handling convenience routines
-
-    private void warning(String messageId, Object parameters [])
+    private void warning(String messageId, Object parameters[])
             throws SAXException {
 
         SAXParseException e = new SAXParseException(messages.getMessage(locale, messageId, parameters),
@@ -2226,7 +2293,7 @@ public class DTDParser {
         dtdHandler.warning(e);
     }
 
-    void error(String messageId, Object parameters [])
+    void error(String messageId, Object parameters[])
             throws SAXException {
 
         SAXParseException e = new SAXParseException(messages.getMessage(locale, messageId, parameters),
@@ -2240,7 +2307,7 @@ public class DTDParser {
         fatal(messageId, null);
     }
 
-    private void fatal(String messageId, Object parameters [])
+    private void fatal(String messageId, Object parameters[])
             throws SAXException {
 
         SAXParseException e = new SAXParseException(messages.getMessage(locale, messageId, parameters),
@@ -2267,12 +2334,13 @@ public class DTDParser {
         // we've yet seen (and be prime).  If it's too small, the
         // penalty is just excess cache collisions.
         //
-        NameCacheEntry hashtable [] = new NameCacheEntry[541];
+
+        NameCacheEntry hashtable[] = new NameCacheEntry[541];
 
         //
         // Usually we just want to get the 'symbol' for these chars
         //
-        String lookup(char value [], int len) {
+        String lookup(char value[], int len) {
 
             return lookupEntry(value, len).name;
         }
@@ -2282,23 +2350,25 @@ public class DTDParser {
         // string, so there's an accessor which exposes them.
         // (Mostly for element end tags.)
         //
-        NameCacheEntry lookupEntry(char value [], int len) {
+        NameCacheEntry lookupEntry(char value[], int len) {
 
             int index = 0;
             NameCacheEntry entry;
 
             // hashing to get index
-            for (int i = 0; i < len; i++)
+            for (int i = 0; i < len; i++) {
                 index = index * 31 + value[i];
+            }
             index &= 0x7fffffff;
             index %= hashtable.length;
 
             // return entry if one's there ...
             for (entry = hashtable[index];
-                 entry != null;
-                 entry = entry.next) {
-                if (entry.matches(value, len))
+                    entry != null;
+                    entry = entry.next) {
+                if (entry.matches(value, len)) {
                     return entry;
+                }
             }
 
             // else create new one
@@ -2321,16 +2391,18 @@ public class DTDParser {
     static class NameCacheEntry {
 
         String name;
-        char chars [];
+        char chars[];
         NameCacheEntry next;
 
-        boolean matches(char value [], int len) {
-
-            if (chars.length != len)
+        boolean matches(char value[], int len) {
+            if (chars == null || chars.length != len) {
                 return false;
-            for (int i = 0; i < len; i++)
-                if (value[i] != chars[i])
+            }
+            for (int i = 0; i < len; i++) {
+                if (value[i] != chars[i]) {
                     return false;
+                }
+            }
             return true;
         }
     }
@@ -2346,5 +2418,4 @@ public class DTDParser {
             super(DTDParser.class);
         }
     }
-
 }

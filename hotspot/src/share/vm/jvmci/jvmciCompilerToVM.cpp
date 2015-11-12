@@ -84,6 +84,24 @@ oop CompilerToVM::get_jvmci_type(KlassHandle klass, TRAPS) {
   return NULL;
 }
 
+void CompilerToVM::invalidate_installed_code(Handle installedCode, TRAPS) {
+  if (installedCode() == NULL) {
+    THROW(vmSymbols::java_lang_NullPointerException());
+  }
+  jlong nativeMethod = InstalledCode::address(installedCode);
+  nmethod* nm = (nmethod*)nativeMethod;
+  assert(nm == NULL || nm->jvmci_installed_code() == installedCode(), "sanity check");
+  if (nm != NULL && nm->is_alive()) {
+    // The nmethod state machinery maintains the link between the
+    // HotSpotInstalledCode and nmethod* so as long as the nmethod appears to be
+    // alive assume there is work to do and deoptimize the nmethod.
+    nm->mark_for_deoptimization();
+    VM_Deoptimize op;
+    VMThread::execute(&op);
+  }
+  InstalledCode::set_address(installedCode, 0);
+}
+
 extern "C" {
 extern VMStructEntry* gHotSpotVMStructs;
 extern uint64_t gHotSpotVMStructEntryTypeNameOffset;
@@ -538,8 +556,8 @@ C2V_VMENTRY(jint, getVtableIndexForInterfaceMethod, (JNIEnv *, jobject, jobject 
   if (!method->method_holder()->is_interface()) {
     THROW_MSG_0(vmSymbols::java_lang_InternalError(), err_msg("Method %s is not held by an interface, this case should be handled in Java code", method->name_and_sig_as_C_string()));
   }
-  if (!InstanceKlass::cast(klass)->is_initialized()) {
-    THROW_MSG_0(vmSymbols::java_lang_InternalError(), err_msg("Class %s must be initialized", klass->external_name()));
+  if (!InstanceKlass::cast(klass)->is_linked()) {
+    THROW_MSG_0(vmSymbols::java_lang_InternalError(), err_msg("Class %s must be linked", klass->external_name()));
   }
   return LinkResolver::vtable_index_of_interface_method(klass, method);
 C2V_END
@@ -670,8 +688,13 @@ C2V_VMENTRY(jint, installCode, (JNIEnv *jniEnv, jobject, jobject target, jobject
   } else {
     if (!installed_code_handle.is_null()) {
       assert(installed_code_handle->is_a(InstalledCode::klass()), "wrong type");
+      CompilerToVM::invalidate_installed_code(installed_code_handle, CHECK_0);
       InstalledCode::set_address(installed_code_handle, (jlong) cb);
-      InstalledCode::set_version(installed_code_handle, InstalledCode::version(installed_code_handle) + 1);
+      if (cb->is_nmethod()) {
+        InstalledCode::set_entryPoint(installed_code_handle, (jlong) cb->as_nmethod_or_null()->verified_entry_point());
+      } else {
+        InstalledCode::set_entryPoint(installed_code_handle, (jlong) cb->code_begin());
+      }
       if (installed_code_handle->is_a(HotSpotInstalledCode::klass())) {
         HotSpotInstalledCode::set_size(installed_code_handle, cb->size());
         HotSpotInstalledCode::set_codeStart(installed_code_handle, (jlong) cb->code_begin());
@@ -782,9 +805,18 @@ C2V_VMENTRY(void, resetCompilationStatistics, (JNIEnv *jniEnv, jobject))
   stats->_osr.reset();
 C2V_END
 
-C2V_VMENTRY(jobject, disassembleCodeBlob, (JNIEnv *jniEnv, jobject, jlong codeBlob))
+C2V_VMENTRY(jobject, disassembleCodeBlob, (JNIEnv *jniEnv, jobject, jobject installedCode))
   ResourceMark rm;
   HandleMark hm;
+
+  if (installedCode == NULL) {
+    THROW_MSG_NULL(vmSymbols::java_lang_NullPointerException(), "installedCode is null");
+  }
+
+  jlong codeBlob = InstalledCode::address(installedCode);
+  if (codeBlob == 0L) {
+    return NULL;
+  }
 
   CodeBlob* cb = (CodeBlob*) (address) codeBlob;
   if (cb == NULL) {
@@ -936,15 +968,9 @@ C2V_VMENTRY(void, reprofile, (JNIEnv*, jobject, jobject jvmci_method))
 C2V_END
 
 
-C2V_VMENTRY(void, invalidateInstalledCode, (JNIEnv*, jobject, jobject hotspotInstalledCode))
-  jlong nativeMethod = InstalledCode::address(hotspotInstalledCode);
-  nmethod* m = (nmethod*)nativeMethod;
-  if (m != NULL && !m->is_not_entrant()) {
-    m->mark_for_deoptimization();
-    VM_Deoptimize op;
-    VMThread::execute(&op);
-  }
-  InstalledCode::set_address(hotspotInstalledCode, 0);
+C2V_VMENTRY(void, invalidateInstalledCode, (JNIEnv*, jobject, jobject installed_code))
+  Handle installed_code_handle = JNIHandles::resolve(installed_code);
+  CompilerToVM::invalidate_installed_code(installed_code_handle, CHECK);
 C2V_END
 
 C2V_VMENTRY(jobject, readUncompressedOop, (JNIEnv*, jobject, jlong addr))
@@ -991,7 +1017,8 @@ bool matches(jobjectArray methods, Method* method) {
   objArrayOop methods_oop = (objArrayOop) JNIHandles::resolve(methods);
 
   for (int i = 0; i < methods_oop->length(); i++) {
-    if (CompilerToVM::asMethod(methods_oop->obj_at(i)) == method) {
+    oop resolved = methods_oop->obj_at(i);
+    if (resolved->is_a(HotSpotResolvedJavaMethodImpl::klass()) && CompilerToVM::asMethod(resolved) == method) {
       return true;
     }
   }
@@ -1284,11 +1311,29 @@ C2V_VMENTRY(void, flushDebugOutput, (JNIEnv*, jobject))
   tty->flush();
 C2V_END
 
+C2V_VMENTRY(int, methodDataProfileDataSize, (JNIEnv*, jobject, jlong metaspace_method_data, jint position))
+  ResourceMark rm;
+  MethodData* mdo = CompilerToVM::asMethodData(metaspace_method_data);
+  ProfileData* profile_data = mdo->data_at(position);
+  if (mdo->is_valid(profile_data)) {
+    return profile_data->size_in_bytes();
+  }
+  DataLayout* data    = mdo->extra_data_base();
+  DataLayout* end   = mdo->extra_data_limit();
+  for (;; data = mdo->next_extra(data)) {
+    assert(data < end, "moved past end of extra data");
+    profile_data = data->data_in();
+    if (mdo->dp_to_di(profile_data->dp()) == position) {
+      return profile_data->size_in_bytes();
+    }
+  }
+  THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), err_msg("Invalid profile data position %d", position));
+C2V_END
+
 
 #define CC (char*)  /*cast a literal from (const char*)*/
 #define FN_PTR(f) CAST_FROM_FN_PTR(void*, &(c2v_ ## f))
 
-#define SPECULATION_LOG       "Ljdk/vm/ci/meta/SpeculationLog;"
 #define STRING                "Ljava/lang/String;"
 #define OBJECT                "Ljava/lang/Object;"
 #define CLASS                 "Ljava/lang/Class;"
@@ -1300,8 +1345,10 @@ C2V_END
 #define HS_RESOLVED_KLASS     "Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;"
 #define HS_CONSTANT_POOL      "Ljdk/vm/ci/hotspot/HotSpotConstantPool;"
 #define HS_COMPILED_CODE      "Ljdk/vm/ci/hotspot/HotSpotCompiledCode;"
+#define HS_CONFIG             "Ljdk/vm/ci/hotspot/HotSpotVMConfig;"
 #define HS_METADATA           "Ljdk/vm/ci/hotspot/HotSpotMetaData;"
 #define HS_STACK_FRAME_REF    "Ljdk/vm/ci/hotspot/HotSpotStackFrameReference;"
+#define HS_SPECULATION_LOG    "Ljdk/vm/ci/hotspot/HotSpotSpeculationLog;"
 #define METASPACE_METHOD_DATA "J"
 
 JNINativeMethod CompilerToVM::methods[] = {
@@ -1339,12 +1386,12 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC"getResolvedJavaMethod",                        CC"(Ljava/lang/Object;J)"HS_RESOLVED_METHOD,                                      FN_PTR(getResolvedJavaMethod)},
   {CC"getConstantPool",                              CC"(Ljava/lang/Object;J)"HS_CONSTANT_POOL,                                        FN_PTR(getConstantPool)},
   {CC"getResolvedJavaType",                          CC"(Ljava/lang/Object;JZ)"HS_RESOLVED_KLASS,                                      FN_PTR(getResolvedJavaType)},
-  {CC"initializeConfiguration",                      CC"()J",                                                                          FN_PTR(initializeConfiguration)},
-  {CC"installCode",                                  CC"("TARGET_DESCRIPTION HS_COMPILED_CODE INSTALLED_CODE SPECULATION_LOG")I",      FN_PTR(installCode)},
+  {CC"initializeConfiguration",                      CC"("HS_CONFIG")J",                                                               FN_PTR(initializeConfiguration)},
+  {CC"installCode",                                  CC"("TARGET_DESCRIPTION HS_COMPILED_CODE INSTALLED_CODE HS_SPECULATION_LOG")I",   FN_PTR(installCode)},
   {CC"getMetadata",                                  CC"("TARGET_DESCRIPTION HS_COMPILED_CODE HS_METADATA")I",                         FN_PTR(getMetadata)},
   {CC"notifyCompilationStatistics",                  CC"(I"HS_RESOLVED_METHOD"ZIJJ"INSTALLED_CODE")V",                                 FN_PTR(notifyCompilationStatistics)},
   {CC"resetCompilationStatistics",                   CC"()V",                                                                          FN_PTR(resetCompilationStatistics)},
-  {CC"disassembleCodeBlob",                          CC"(J)"STRING,                                                                    FN_PTR(disassembleCodeBlob)},
+  {CC"disassembleCodeBlob",                          CC"("INSTALLED_CODE")"STRING,                                                     FN_PTR(disassembleCodeBlob)},
   {CC"executeInstalledCode",                         CC"(["OBJECT INSTALLED_CODE")"OBJECT,                                             FN_PTR(executeInstalledCode)},
   {CC"getLineNumberTable",                           CC"("HS_RESOLVED_METHOD")[J",                                                     FN_PTR(getLineNumberTable)},
   {CC"getLocalVariableTableStart",                   CC"("HS_RESOLVED_METHOD")J",                                                      FN_PTR(getLocalVariableTableStart)},
@@ -1357,11 +1404,12 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC"isMature",                                     CC"("METASPACE_METHOD_DATA")Z",                                                   FN_PTR(isMature)},
   {CC"hasCompiledCodeForOSR",                        CC"("HS_RESOLVED_METHOD"II)Z",                                                    FN_PTR(hasCompiledCodeForOSR)},
   {CC"getSymbol",                                    CC"(J)"STRING,                                                                    FN_PTR(getSymbol)},
-  {CC"getNextStackFrame",                            CC"("HS_STACK_FRAME_REF "["HS_RESOLVED_METHOD"I)"HS_STACK_FRAME_REF,              FN_PTR(getNextStackFrame)},
+  {CC"getNextStackFrame",                            CC"("HS_STACK_FRAME_REF "["RESOLVED_METHOD"I)"HS_STACK_FRAME_REF,                 FN_PTR(getNextStackFrame)},
   {CC"materializeVirtualObjects",                    CC"("HS_STACK_FRAME_REF"Z)V",                                                     FN_PTR(materializeVirtualObjects)},
   {CC"shouldDebugNonSafepoints",                     CC"()Z",                                                                          FN_PTR(shouldDebugNonSafepoints)},
   {CC"writeDebugOutput",                             CC"([BII)V",                                                                      FN_PTR(writeDebugOutput)},
   {CC"flushDebugOutput",                             CC"()V",                                                                          FN_PTR(flushDebugOutput)},
+  {CC"methodDataProfileDataSize",                    CC"(JI)I",                                                                        FN_PTR(methodDataProfileDataSize)},
 };
 
 int CompilerToVM::methods_count() {

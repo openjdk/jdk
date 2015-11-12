@@ -26,7 +26,6 @@
 # @summary Redefine a class with a native method.
 # @author Daniel D. Daugherty as modified from the test submitted by clovis@par.univie.ac.at
 #
-# @modules java.instrument
 # @run shell MakeJAR3.sh RedefineClassWithNativeMethodAgent 'Can-Redefine-Classes: true'
 # @run build RedefineClassWithNativeMethodApp
 # @run shell RedefineClassWithNativeMethod.sh

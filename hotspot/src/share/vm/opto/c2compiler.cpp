@@ -94,15 +94,16 @@ void C2Compiler::initialize() {
   }
 }
 
-void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci) {
+void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, DirectiveSet* directive) {
   assert(is_initialized(), "Compiler thread must be initialized");
 
   bool subsume_loads = SubsumeLoads;
   bool do_escape_analysis = DoEscapeAnalysis && !env->should_retain_local_variables();
   bool eliminate_boxing = EliminateAutoBox;
+
   while (!env->failing()) {
     // Attempt to compile while subsuming loads into machine instructions.
-    Compile C(env, this, target, entry_bci, subsume_loads, do_escape_analysis, eliminate_boxing);
+    Compile C(env, this, target, entry_bci, subsume_loads, do_escape_analysis, eliminate_boxing, directive);
 
     // Check result and retry if appropriate.
     if (C.failure_reason() != NULL) {
@@ -180,12 +181,25 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   }
 
   switch (id) {
-  case vmIntrinsics::_compareTo:
+  case vmIntrinsics::_compressStringC:
+  case vmIntrinsics::_compressStringB:
+    if (!Matcher::has_match_rule(Op_StrCompressedCopy)) return false;
+    break;
+  case vmIntrinsics::_inflateStringC:
+  case vmIntrinsics::_inflateStringB:
+    if (!Matcher::has_match_rule(Op_StrInflatedCopy)) return false;
+    break;
+  case vmIntrinsics::_compareToL:
+  case vmIntrinsics::_compareToU:
+  case vmIntrinsics::_compareToLU:
+  case vmIntrinsics::_compareToUL:
     if (!Matcher::match_rule_supported(Op_StrComp)) return false;
     break;
-  case vmIntrinsics::_equals:
+  case vmIntrinsics::_equalsL:
+  case vmIntrinsics::_equalsU:
     if (!Matcher::match_rule_supported(Op_StrEquals)) return false;
     break;
+  case vmIntrinsics::_equalsB:
   case vmIntrinsics::_equalsC:
     if (!Matcher::match_rule_supported(Op_AryEq)) return false;
     break;
@@ -193,7 +207,11 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
     if (StubRoutines::unsafe_arraycopy() == NULL) return false;
     break;
   case vmIntrinsics::_encodeISOArray:
+  case vmIntrinsics::_encodeByteISOArray:
     if (!Matcher::match_rule_supported(Op_EncodeISOArray)) return false;
+    break;
+  case vmIntrinsics::_hasNegatives:
+    if (!Matcher::match_rule_supported(Op_HasNegatives))  return false;
     break;
   case vmIntrinsics::_bitCount_i:
     if (!Matcher::match_rule_supported(Op_PopCountI)) return false;
@@ -301,7 +319,17 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method, bool is_virt
   case vmIntrinsics::_min:
   case vmIntrinsics::_max:
   case vmIntrinsics::_arraycopy:
-  case vmIntrinsics::_indexOf:
+  case vmIntrinsics::_indexOfL:
+  case vmIntrinsics::_indexOfU:
+  case vmIntrinsics::_indexOfUL:
+  case vmIntrinsics::_indexOfIL:
+  case vmIntrinsics::_indexOfIU:
+  case vmIntrinsics::_indexOfIUL:
+  case vmIntrinsics::_indexOfU_char:
+  case vmIntrinsics::_toBytesStringU:
+  case vmIntrinsics::_getCharsStringU:
+  case vmIntrinsics::_getCharStringU:
+  case vmIntrinsics::_putCharStringU:
   case vmIntrinsics::_getObject:
   case vmIntrinsics::_getBoolean:
   case vmIntrinsics::_getByte:

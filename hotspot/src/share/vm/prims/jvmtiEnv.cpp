@@ -966,7 +966,7 @@ JvmtiEnv::GetThreadInfo(jthread thread, jvmtiThreadInfo* info_ptr) {
     if (name() != NULL) {
       n = java_lang_String::as_utf8_string(name());
     } else {
-      n = UNICODE::as_utf8(NULL, 0);
+      n = UNICODE::as_utf8((jchar*) NULL, 0);
     }
 
     info_ptr->name = (char *) jvmtiMalloc(strlen(n)+1);
@@ -1187,15 +1187,14 @@ JvmtiEnv::GetThreadGroupInfo(jthreadGroup group, jvmtiThreadGroupInfo* info_ptr)
   Handle group_obj (current_thread, JNIHandles::resolve_external_guard(group));
   NULL_CHECK(group_obj(), JVMTI_ERROR_INVALID_THREAD_GROUP);
 
-  typeArrayHandle name;
+  const char* name;
   Handle parent_group;
   bool is_daemon;
   ThreadPriority max_priority;
 
   { MutexLocker mu(Threads_lock);
 
-    name         = typeArrayHandle(current_thread,
-                                   java_lang_ThreadGroup::name(group_obj()));
+    name         = java_lang_ThreadGroup::name(group_obj());
     parent_group = Handle(current_thread, java_lang_ThreadGroup::parent(group_obj()));
     is_daemon    = java_lang_ThreadGroup::is_daemon(group_obj());
     max_priority = java_lang_ThreadGroup::maxPriority(group_obj());
@@ -1205,11 +1204,10 @@ JvmtiEnv::GetThreadGroupInfo(jthreadGroup group, jvmtiThreadGroupInfo* info_ptr)
   info_ptr->max_priority = max_priority;
   info_ptr->parent       = jni_reference(parent_group);
 
-  if (name() != NULL) {
-    const char* n = UNICODE::as_utf8((jchar*) name->base(T_CHAR), name->length());
-    info_ptr->name = (char *)jvmtiMalloc(strlen(n)+1);
+  if (name != NULL) {
+    info_ptr->name = (char*)jvmtiMalloc(strlen(name)+1);
     NULL_CHECK(info_ptr->name, JVMTI_ERROR_OUT_OF_MEMORY);
-    strcpy(info_ptr->name, n);
+    strcpy(info_ptr->name, name);
   } else {
     info_ptr->name = NULL;
   }

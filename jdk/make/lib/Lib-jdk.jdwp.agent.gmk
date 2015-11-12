@@ -46,9 +46,10 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBDT_SOCKET, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libdt_socket/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_SUFFIX_linux := -lpthread, \
-    LDFLAGS_SUFFIX_solaris := -lnsl -lsocket -lc, \
-    LDFLAGS_SUFFIX_windows := $(LDFLAGS_JDKLIB_SUFFIX) -export:jdwpTransport_OnLoad ws2_32.lib, \
+    LDFLAGS_windows := -export:jdwpTransport_OnLoad, \
+    LIBS_linux := -lpthread, \
+    LIBS_solaris := -lnsl -lsocket -lc, \
+    LIBS_windows := $(JDKLIB_LIBS) ws2_32.lib, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=dt_socket.dll" \
@@ -83,10 +84,11 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJDWP, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjdwp/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_SUFFIX_linux := $(LIBDL), \
-    LDFLAGS_SUFFIX_solaris := $(LIBDL) -lc, \
-    LDFLAGS_SUFFIX_windows := $(LDFLAGS_JDKLIB_SUFFIX), \
-    LDFLAGS_SUFFIX_macosx := -liconv, \
+    LIBS := $(JDKLIB_LIBS), \
+    LIBS_linux := $(LIBDL), \
+    LIBS_solaris := $(LIBDL), \
+    LIBS_macosx := -liconv, \
+    LIBS_aix := -liconv, \
     VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=jdwp.dll" \
