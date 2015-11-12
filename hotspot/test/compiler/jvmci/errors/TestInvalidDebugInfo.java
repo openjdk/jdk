@@ -25,7 +25,7 @@
  * @test
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
  * @compile CodeInstallerTest.java
- * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI compiler.jvmci.errors.TestInvalidDebugInfo
+ * @run junit/othervm -da:jdk.vm.ci... -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI compiler.jvmci.errors.TestInvalidDebugInfo
  */
 
 package compiler.jvmci.errors;
@@ -68,7 +68,7 @@ public class TestInvalidDebugInfo extends CodeInstallerTest {
         DebugInfo info = new DebugInfo(frame, vobj);
         info.setReferenceMap(new HotSpotReferenceMap(new Location[0], new Location[0], new int[0], 8));
 
-        CompilationResult result = new CompilationResult();
+        CompilationResult result = createEmptyCompilationResult();
         result.addInfopoint(new Infopoint(0, info, InfopointReason.SAFEPOINT));
         installCode(result);
     }
