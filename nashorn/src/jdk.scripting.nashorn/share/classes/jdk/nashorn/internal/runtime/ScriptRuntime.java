@@ -836,9 +836,9 @@ public final class ScriptRuntime {
         } else if (yType == JSType.BOOLEAN) {
             // Can reverse order as y is primitive
             return equalBooleanToAny(y, x);
-        } else if (isWrappedPrimitiveAndObject(xType, yType)) {
+        } else if (isPrimitiveAndObject(xType, yType)) {
             return equalWrappedPrimitiveToObject(x, y);
-        } else if (isWrappedPrimitiveAndObject(yType, xType)) {
+        } else if (isPrimitiveAndObject(yType, xType)) {
             // Can reverse order as y is primitive
             return equalWrappedPrimitiveToObject(y, x);
         }
@@ -854,7 +854,7 @@ public final class ScriptRuntime {
         return xType == JSType.NUMBER && yType == JSType.STRING;
     }
 
-    private static boolean isWrappedPrimitiveAndObject(final JSType xType, final JSType yType) {
+    private static boolean isPrimitiveAndObject(final JSType xType, final JSType yType) {
         return (xType == JSType.NUMBER || xType == JSType.STRING || xType == JSType.SYMBOL) && yType == JSType.OBJECT;
     }
 

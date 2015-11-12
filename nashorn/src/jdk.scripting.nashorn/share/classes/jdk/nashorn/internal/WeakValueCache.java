@@ -50,8 +50,20 @@ public final class WeakValueCache<K, V> {
      * @return the value or null if none exists
      */
     public V get(final K key) {
-        removeClearedEntries();
-        return findValue(key);
+        // Remove cleared entries
+        for (;;) {
+            final KeyValueReference<?, ?> ref = (KeyValueReference) refQueue.poll();
+            if (ref == null) {
+                break;
+            }
+            map.remove(ref.key, ref);
+        }
+
+        final KeyValueReference<K, V> ref = map.get(key);
+        if (ref != null) {
+            return ref.get();
+        }
+        return null;
     }
 
     /**
@@ -63,9 +75,7 @@ public final class WeakValueCache<K, V> {
      * @return the existing value, or a new one if none existed
      */
     public V getOrCreate(final K key, final Function<? super K, ? extends V> creator) {
-        removeClearedEntries();
-
-        V value = findValue(key);
+        V value = get(key);
 
         if (value == null) {
             // Define a new value if it does not exist
@@ -74,25 +84,6 @@ public final class WeakValueCache<K, V> {
         }
 
         return value;
-    }
-
-    private V findValue(final K key) {
-        final KeyValueReference<K, V> ref = map.get(key);
-        if (ref != null) {
-            return ref.get();
-        }
-        return null;
-    }
-
-    private void removeClearedEntries() {
-        // Remove cleared entries
-        for (;;) {
-            final KeyValueReference ref = (KeyValueReference) refQueue.poll();
-            if (ref == null) {
-                break;
-            }
-            map.remove(ref.key, ref);
-        }
     }
 
     private static class KeyValueReference<K, V> extends WeakReference<V> {
