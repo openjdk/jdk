@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 6636323 6636319 7040220 7096080 7183053 8080248
+ * @bug 6636323 6636319 7040220 7096080 7183053 8080248 8054307
  * @summary Test if StringCoding and NIO result have the same de/encoding result
  * @modules java.base/sun.nio.cs
  * @run main/othervm/timeout=2000 TestStringCoding
@@ -36,41 +36,61 @@ import java.nio.charset.*;
 public class TestStringCoding {
     public static void main(String[] args) throws Throwable {
 
+        // full bmp first
+        char[] bmp = new char[0x10000];
+        for (int i = 0; i < 0x10000; i++) {
+            bmp[i] = (char)i;
+        }
+        char[] latin = Arrays.copyOf(bmp, 0x100);
+        char[] ascii =  Arrays.copyOf(bmp, 0x80);
+
+        byte[] latinBA = new byte[0x100];
+        for (int i = 0; i < 0x100; i++) {
+            latinBA[i] = (byte)i;
+        }
+        byte[] asciiBA =  Arrays.copyOf(latinBA, 0x80);
+
         for (Boolean hasSM: new boolean[] { false, true }) {
-            if (hasSM)
+            if (hasSM) {
                 System.setSecurityManager(new PermissiveSecurityManger());
+            }
             for (Charset cs:  Charset.availableCharsets().values()) {
                 if ("ISO-2022-CN".equals(cs.name()) ||
                     "x-COMPOUND_TEXT".equals(cs.name()) ||
                     "x-JISAutoDetect".equals(cs.name()))
                     continue;
                 System.out.printf("Testing(sm=%b) " + cs.name() + "....", hasSM);
-                // full bmp first
-                char[] bmpCA = new char[0x10000];
-                for (int i = 0; i < 0x10000; i++) {
-                     bmpCA[i] = (char)i;
-                }
-                byte[] sbBA = new byte[0x100];
-                for (int i = 0; i < 0x100; i++) {
-                    sbBA[i] = (byte)i;
-                }
-                test(cs, bmpCA, sbBA);
+
+                testNewString(cs, testGetBytes(cs, new String(bmp)));
+                testNewString(cs, testGetBytes(cs, new String(latin)));
+                testNewString(cs, testGetBytes(cs, new String(ascii)));
+                testGetBytes(cs, testNewString(cs, latinBA));
+                testGetBytes(cs, testNewString(cs, asciiBA));
+
                 // "randomed" sizes
                 Random rnd = new Random();
                 for (int i = 0; i < 10; i++) {
-                    int clen = rnd.nextInt(0x10000);
-                    int blen = rnd.nextInt(0x100);
                     //System.out.printf("    blen=%d, clen=%d%n", blen, clen);
-                    test(cs, Arrays.copyOf(bmpCA, clen), Arrays.copyOf(sbBA, blen));
+                    char[] bmp0 = Arrays.copyOf(bmp, rnd.nextInt(0x10000));
+                    testNewString(cs, testGetBytes(cs, new String(bmp0)));
                     //add a pair of surrogates
-                    int pos = clen / 2;
-                    if ((pos + 1) < blen) {
-                        bmpCA[pos] = '\uD800';
-                        bmpCA[pos+1] = '\uDC00';
+                    int pos = bmp0.length / 2;
+                    if ((pos + 1) < bmp0.length) {
+                        bmp0[pos] = '\uD800';
+                        bmp0[pos+1] = '\uDC00';
                     }
-                    test(cs, Arrays.copyOf(bmpCA, clen), Arrays.copyOf(sbBA, blen));
-                }
+                    testNewString(cs, testGetBytes(cs, new String(bmp0)));
 
+                    char[] latin0 = Arrays.copyOf(latin, rnd.nextInt(0x100));
+                    char[] ascii0 = Arrays.copyOf(ascii, rnd.nextInt(0x80));
+                    byte[] latinBA0 = Arrays.copyOf(latinBA, rnd.nextInt(0x100));
+                    byte[] asciiBA0 = Arrays.copyOf(asciiBA, rnd.nextInt(0x80));
+                    testNewString(cs, testGetBytes(cs, new String(latin0)));
+                    testNewString(cs, testGetBytes(cs, new String(ascii0)));
+                    testGetBytes(cs, testNewString(cs, latinBA0));
+                    testGetBytes(cs, testNewString(cs, asciiBA0));
+                }
+                testSurrogates(cs);
                 testMixed(cs);
                 System.out.println("done!");
             }
@@ -109,8 +129,9 @@ public class TestStringCoding {
 
         //getBytes(cs);
         bmpBA = bmpStr.getBytes(cs);
-        if (!Arrays.equals(bmpBA, baNIO))
+        if (!Arrays.equals(bmpBA, baNIO)) {
             throw new RuntimeException("getBytes(cs) failed  -> " + cs.name());
+        }
 
         //new String(csn);
         String strSC = new String(bmpBA, cs.name());
@@ -118,49 +139,61 @@ public class TestStringCoding {
         if(!strNIO.equals(strSC)) {
             throw new RuntimeException("new String(csn) failed  -> " + cs.name());
         }
-
         //new String(cs);
         strSC = new String(bmpBA, cs);
-        if (!strNIO.equals(strSC))
+        if (!strNIO.equals(strSC)) {
             throw new RuntimeException("new String(cs) failed  -> " + cs.name());
-
+        }
     }
 
-    static void test(Charset cs, char[] bmpCA, byte[] sbBA) throws Throwable {
-        String bmpStr = new String(bmpCA);
-        CharsetDecoder dec = cs.newDecoder()
-            .onMalformedInput(CodingErrorAction.REPLACE)
-            .onUnmappableCharacter(CodingErrorAction.REPLACE);
+    static byte[] getBytes(CharsetEncoder enc, String str) throws Throwable {
+        ByteBuffer bf = enc.reset().encode(CharBuffer.wrap(str.toCharArray()));
+        byte[] ba = new byte[bf.limit()];
+        bf.get(ba, 0, ba.length);
+        return ba;
+    }
+
+    static byte[] testGetBytes(Charset cs, String str) throws Throwable {
         CharsetEncoder enc = cs.newEncoder()
             .onMalformedInput(CodingErrorAction.REPLACE)
             .onUnmappableCharacter(CodingErrorAction.REPLACE);
-
         //getBytes(csn);
-        byte[] baSC = bmpStr.getBytes(cs.name());
-        ByteBuffer bf = enc.reset().encode(CharBuffer.wrap(bmpCA));
-        byte[] baNIO = new byte[bf.limit()];
-        bf.get(baNIO, 0, baNIO.length);
-        if (!Arrays.equals(baSC, baNIO))
+        byte[] baSC = str.getBytes(cs.name());
+        byte[] baNIO = getBytes(enc, str);
+        if (!Arrays.equals(baSC, baNIO)) {
             throw new RuntimeException("getBytes(csn) failed  -> " + cs.name());
-
+        }
         //getBytes(cs);
-        baSC = bmpStr.getBytes(cs);
-        if (!Arrays.equals(baSC, baNIO))
+        baSC = str.getBytes(cs);
+        if (!Arrays.equals(baSC, baNIO)) {
             throw new RuntimeException("getBytes(cs) failed  -> " + cs.name());
+        }
+        return baSC;
+    }
 
+    static String testNewString(Charset cs, byte[] ba) throws Throwable {
+        CharsetDecoder dec = cs.newDecoder()
+            .onMalformedInput(CodingErrorAction.REPLACE)
+            .onUnmappableCharacter(CodingErrorAction.REPLACE);
         //new String(csn);
-        String strSC = new String(sbBA, cs.name());
-        String strNIO = dec.reset().decode(ByteBuffer.wrap(sbBA)).toString();
-
-        if(!strNIO.equals(strSC))
+        String strSC = new String(ba, cs.name());
+        String strNIO = dec.reset().decode(ByteBuffer.wrap(ba)).toString();
+        if(!strNIO.equals(strSC)) {
             throw new RuntimeException("new String(csn) failed  -> " + cs.name());
-
+        }
         //new String(cs);
-        strSC = new String(sbBA, cs);
-        if (!strNIO.equals(strSC))
-            throw new RuntimeException("new String(cs) failed  -> " + cs.name());
+        strSC = new String(ba, cs);
+        if (!strNIO.equals(strSC)) {
+            throw new RuntimeException("new String(cs)/bmp failed  -> " + cs.name());
+        }
+        return strSC;
+    }
 
+    static void testSurrogates(Charset cs) throws Throwable {
         //encode unmappable surrogates
+        CharsetEncoder enc = cs.newEncoder()
+            .onMalformedInput(CodingErrorAction.REPLACE)
+            .onUnmappableCharacter(CodingErrorAction.REPLACE);
         if (enc instanceof sun.nio.cs.ArrayEncoder &&
             cs.contains(Charset.forName("ASCII"))) {
             if (cs.name().equals("UTF-8") ||     // utf8 handles surrogates

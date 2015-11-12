@@ -94,7 +94,7 @@ public class Exceptions {
 
         System.out.println("StringBuffer.replace(int start, int end, String str)");
         tryCatch("  -1, 2, \" \"",
-                 new StringIndexOutOfBoundsException(-1),
+                 new StringIndexOutOfBoundsException("start -1, end 2, length 7"),
                  new Runnable() {
                 public void run() {
                     StringBuffer sb = new StringBuffer("hilbert");
@@ -102,14 +102,14 @@ public class Exceptions {
                 }});
 
         tryCatch("  7, 8, \" \"",
-                 new StringIndexOutOfBoundsException("start > length()"),
+                 new StringIndexOutOfBoundsException("start 7, end 6, length 6"),
                  new Runnable() {
                 public void run() {
                     StringBuffer sb = new StringBuffer("banach");
                     sb.replace(7, 8, " ");
                 }});
         tryCatch("  2, 1, \" \"",
-                 new StringIndexOutOfBoundsException("start > end"),
+                 new StringIndexOutOfBoundsException("start 2, end 1, length 7"),
                  new Runnable() {
                 public void run() {
                     StringBuffer sb = new StringBuffer("riemann");

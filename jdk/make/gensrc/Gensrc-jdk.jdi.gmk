@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ HEADER_FILE := $(SUPPORT_OUTPUTDIR)/headers/jdk.jdwp.agent/JDWPCommands.h
 JAVA_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/jdk.jdi/com/sun/tools/jdi/JDWP.java
 
 # Both the header and java file are created using the same recipe. By declaring
-# this rule and adding header file to dependencies for java file, both are 
+# this rule and adding header file to dependencies for java file, both are
 # rebuilt if either is missing
 $(HEADER_FILE): $(JDWP_SPEC_FILE) $(BUILD_TOOLS_JDK)
 
@@ -90,10 +90,10 @@ endif
 
 include GensrcProperties.gmk
 
-$(eval $(call SetupCompileProperties,COMPILE_PROPERTIES, \
-    $(filter %.properties, \
-        $(call CacheFind, $(JDK_TOPDIR)/src/jdk.jdi/share/classes/com/sun/tools/jdi/resources)), \
-    ListResourceBundle))
+$(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
+    SRC_DIRS := $(JDK_TOPDIR)/src/jdk.jdi/share/classes/com/sun/tools/jdi/resources, \
+    CLASS := ListResourceBundle, \
+))
 
 GENSRC_JDK_JDI += $(COMPILE_PROPERTIES)
 

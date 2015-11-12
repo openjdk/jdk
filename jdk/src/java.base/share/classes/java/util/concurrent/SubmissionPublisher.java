@@ -1596,7 +1596,7 @@ public class SubmissionPublisher<T> implements Flow.Publisher<T>,
         }
 
         // Unsafe mechanics
-        private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+        private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
         private static final long CTL;
         private static final long TAIL;
         private static final long HEAD;

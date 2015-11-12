@@ -1545,7 +1545,7 @@ public class CopyOnWriteArrayList<E>
     private void resetLock() {
         U.putObjectVolatile(this, LOCK, new Object());
     }
-    private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
     private static final long LOCK;
     static {
         try {

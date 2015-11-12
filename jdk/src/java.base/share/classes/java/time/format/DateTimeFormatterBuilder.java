@@ -2892,7 +2892,8 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public String toString() {
-            return "ReducedValue(" + field + "," + minWidth + "," + maxWidth + "," + (baseDate != null ? baseDate : baseValue) + ")";
+            return "ReducedValue(" + field + "," + minWidth + "," + maxWidth +
+                    "," + Objects.requireNonNullElse(baseDate, baseValue) + ")";
         }
     }
 
@@ -3851,6 +3852,10 @@ public final class DateTimeFormatterBuilder {
                     return parseOffsetBased(context, text, position, position + 2, OffsetIdPrinterParser.INSTANCE_ID_ZERO);
                 } else if (context.charEquals(nextChar, 'G') && length >= position + 3 &&
                         context.charEquals(nextNextChar, 'M') && context.charEquals(text.charAt(position + 2), 'T')) {
+                    if (length >= position + 4 && context.charEquals(text.charAt(position + 3), '0')) {
+                        context.setParsed(ZoneId.of("GMT0"));
+                        return position + 4;
+                    }
                     return parseOffsetBased(context, text, position, position + 3, OffsetIdPrinterParser.INSTANCE_ID_ZERO);
                 }
             }
@@ -4328,7 +4333,7 @@ public final class DateTimeFormatterBuilder {
         private String getChronologyName(Chronology chrono, Locale locale) {
             String key = "calendarname." + chrono.getCalendarType();
             String name = DateTimeTextProvider.getLocalizedResource(key, locale);
-            return name != null ? name : chrono.getId();
+            return Objects.requireNonNullElseGet(name, () -> chrono.getId());
         }
     }
 

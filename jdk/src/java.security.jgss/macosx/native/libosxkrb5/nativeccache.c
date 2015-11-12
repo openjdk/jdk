@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 #import <Kerberos/Kerberos.h>
 #import <string.h>
 #import <time.h>
+
+#include "jni_util.h"
 
 /*
  * Based largely on klist.c,
@@ -92,7 +94,7 @@ static jclass FindClass(JNIEnv *env, char *className)
  * Class:     sun_security_krb5_KrbCreds
  * Method:    JNI_OnLoad
  */
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
+JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *jvm, void *reserved)
 {
     JNIEnv *env;
 
@@ -191,7 +193,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *jvm, void *reserved)
  * Class:     sun_security_jgss_KrbCreds
  * Method:    JNI_OnUnload
  */
-JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *jvm, void *reserved)
+JNIEXPORT void JNICALL DEF_JNI_OnUnload(JavaVM *jvm, void *reserved)
 {
     JNIEnv *env;
 
