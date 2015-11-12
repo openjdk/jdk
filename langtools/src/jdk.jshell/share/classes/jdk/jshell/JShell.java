@@ -93,7 +93,7 @@ public class JShell implements AutoCloseable {
 
 
     private ExecutionControl executionControl = null;
-    private SourceCodeAnalysis sourceCodeAnalysis = null;
+    private SourceCodeAnalysisImpl sourceCodeAnalysis = null;
 
 
     JShell(Builder b) {
@@ -378,6 +378,9 @@ public class JShell implements AutoCloseable {
     public void addToClasspath(String path) {
         taskFactory.addToClasspath(path);  // Compiler
         executionControl().commandAddToClasspath(path);       // Runtime
+        if (sourceCodeAnalysis != null) {
+            sourceCodeAnalysis.classpathChanged();
+        }
     }
 
     /**
