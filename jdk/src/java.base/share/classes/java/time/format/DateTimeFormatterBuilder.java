@@ -2892,7 +2892,8 @@ public final class DateTimeFormatterBuilder {
 
         @Override
         public String toString() {
-            return "ReducedValue(" + field + "," + minWidth + "," + maxWidth + "," + (baseDate != null ? baseDate : baseValue) + ")";
+            return "ReducedValue(" + field + "," + minWidth + "," + maxWidth +
+                    "," + Objects.requireNonNullElse(baseDate, baseValue) + ")";
         }
     }
 
@@ -4332,7 +4333,7 @@ public final class DateTimeFormatterBuilder {
         private String getChronologyName(Chronology chrono, Locale locale) {
             String key = "calendarname." + chrono.getCalendarType();
             String name = DateTimeTextProvider.getLocalizedResource(key, locale);
-            return name != null ? name : chrono.getId();
+            return Objects.requireNonNullElseGet(name, () -> chrono.getId());
         }
     }
 
