@@ -2545,7 +2545,8 @@ void SharedRuntime::generate_deopt_blob() {
 
   oop_maps->add_gc_map( __ pc()-start, map);
 
-  // Discard arg to fetch_unroll_info
+  // Discard args to fetch_unroll_info
+  __ pop(rcx);
   __ pop(rcx);
 
   __ get_thread(rcx);
@@ -2558,9 +2559,8 @@ void SharedRuntime::generate_deopt_blob() {
   // we are very short of registers
 
   Address unpack_kind(rdi, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes());
-  // retrieve the deopt kind from where we left it.
-  __ pop(rax);
-  __ movl(unpack_kind, rax);                      // save the unpack_kind value
+  // retrieve the deopt kind from the UnrollBlock.
+  __ movl(rax, unpack_kind);
 
    Label noException;
   __ cmpl(rax, Deoptimization::Unpack_exception);   // Was exception pending?
@@ -2770,11 +2770,12 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   enum frame_layout {
     arg0_off,      // thread                     sp + 0 // Arg location for
     arg1_off,      // unloaded_class_index       sp + 1 // calling C
+    arg2_off,      // exec_mode                  sp + 2
     // The frame sender code expects that rbp will be in the "natural" place and
     // will override any oopMap setting for it. We must therefore force the layout
     // so that it agrees with the frame sender code.
-    rbp_off,       // callee saved register      sp + 2
-    return_off,    // slot for return address    sp + 3
+    rbp_off,       // callee saved register      sp + 3
+    return_off,    // slot for return address    sp + 4
     framesize
   };
 
@@ -2806,6 +2807,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ movptr(Address(rsp, arg0_off*wordSize), rdx);
   // argument already in ECX
   __ movl(Address(rsp, arg1_off*wordSize),rcx);
+  __ movl(Address(rsp, arg2_off*wordSize), Deoptimization::Unpack_uncommon_trap);
   __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap)));
 
   // Set an oopmap for the call site
@@ -2821,6 +2823,16 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
   // Load UnrollBlock into EDI
   __ movptr(rdi, rax);
+
+#ifdef ASSERT
+  { Label L;
+    __ cmpptr(Address(rdi, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()),
+            (int32_t)Deoptimization::Unpack_uncommon_trap);
+    __ jcc(Assembler::equal, L);
+    __ stop("SharedRuntime::generate_deopt_blob: expected Unpack_uncommon_trap");
+    __ bind(L);
+  }
+#endif
 
   // Pop all the frames we must move/replace.
   //
