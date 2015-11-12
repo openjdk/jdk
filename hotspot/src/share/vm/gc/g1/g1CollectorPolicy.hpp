@@ -272,7 +272,7 @@ class G1CollectorPolicy: public CollectorPolicy {
   size_t _pending_cards;
 
 public:
-  G1Predictions& predictor() { return _predictor; }
+  const G1Predictions& predictor() const { return _predictor; }
 
   // Accessors
 
