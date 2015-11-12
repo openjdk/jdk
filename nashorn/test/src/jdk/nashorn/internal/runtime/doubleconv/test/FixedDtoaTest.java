@@ -70,9 +70,6 @@ import static org.testng.Assert.assertTrue;
 
 /**
  * FixedDtoa tests
- *
- * @test
- * @run testng jdk.nashorn.internal.runtime.doubleconv.test.FixedDtoaTest
  */
 @SuppressWarnings("javadoc")
 public class FixedDtoaTest {
