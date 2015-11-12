@@ -49,7 +49,6 @@ import com.sun.corba.se.impl.javax.rmi.CORBA.Util ;
 
 import com.sun.corba.se.spi.oa.OAInvocationInfo ;
 import com.sun.corba.se.spi.oa.NullServant ;
-import com.sun.corba.se.impl.transport.ManagedLocalsThread;
 
 /** Implementation of POARequesHandler that provides policy specific
  * operations on the POA.
@@ -303,7 +302,7 @@ public class POAPolicyMediatorImpl_R_USM extends POAPolicyMediatorBase_R {
         throw new WrongPolicy();
     }
 
-    class Etherealizer extends ManagedLocalsThread {
+    class Etherealizer extends sun.misc.ManagedLocalsThread {
         private POAPolicyMediatorImpl_R_USM mediator ;
         private ActiveObjectMap.Key key ;
         private AOMEntry entry ;
