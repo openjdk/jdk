@@ -24,7 +24,7 @@
 /*
  * @test UintxTest
  * @bug 8028756
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management/sun.management
  * @build UintxTest

@@ -147,7 +147,7 @@ uint32_t crc32c_multiply(uint32_t a, uint32_t b) {
   b_pow_x_table[0] = b;
   for (int k = 0; k < D; ++k) {
     // If "a" has non-zero coefficient at x**k,/ add ((b * x**k) mod P) to the result.
-    if ((a & (uint64_t)(1 << (D - 1 - k))) != 0) product ^= b_pow_x_table[k];
+    if ((a & (((uint32_t)1) << (D - 1 - k))) != 0) product ^= b_pow_x_table[k];
 
     // Compute b_pow_x_table[k+1] = (b ** x**(k+1)) mod P.
     if (b_pow_x_table[k] & 1) {

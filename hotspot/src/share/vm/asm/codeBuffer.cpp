@@ -873,6 +873,7 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
 
   // Figure new capacity for each section.
   csize_t new_capacity[SECT_LIMIT];
+  memset(new_capacity, 0, sizeof(csize_t) * SECT_LIMIT);
   csize_t new_total_cap
     = figure_expanded_capacities(which_cs, amount, new_capacity);
 

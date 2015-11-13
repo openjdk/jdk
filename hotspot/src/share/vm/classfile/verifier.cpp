@@ -2846,7 +2846,7 @@ void ClassVerifier::verify_invoke_instructions(
   if (sig_stream.type() != T_VOID) {
     if (method_name == vmSymbols::object_initializer_name()) {
       // <init> method must have a void return type
-      /* Unreachable?  Class file parser verifies that <init> methods have
+      /* Unreachable?  Class file parser verifies that methods with '<' have
        * void return */
       verify_error(ErrorContext::bad_code(bci),
           "Return type must be void in <init> method");

@@ -117,8 +117,9 @@ void PeriodicTask::enroll() {
 
   if (_num_tasks == PeriodicTask::max_tasks) {
     fatal("Overflow in PeriodicTask table");
+  } else {
+    _tasks[_num_tasks++] = this;
   }
-  _tasks[_num_tasks++] = this;
 
   WatcherThread* thread = WatcherThread::watcher_thread();
   if (thread != NULL) {

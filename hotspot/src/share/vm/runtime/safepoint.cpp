@@ -33,6 +33,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/gcLocker.inline.hpp"
 #include "interpreter/interpreter.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -104,9 +105,7 @@ void SafepointSynchronize::begin() {
 
   int nof_threads = Threads::number_of_threads();
 
-  if (TraceSafepoint) {
-    tty->print_cr("Safepoint synchronization initiated. (%d)", nof_threads);
-  }
+  log_debug(safepoint)("Safepoint synchronization initiated. (%d)", nof_threads);
 
   RuntimeService::record_safepoint_begin();
 
@@ -219,7 +218,10 @@ void SafepointSynchronize::begin() {
            //   steps = MIN(steps, 2000-100)
            //   if (iterations != 0) steps -= NNN
         }
-        if (TraceSafepoint && Verbose) cur_state->print();
+        if (log_is_enabled(Trace, safepoint)) {
+          ResourceMark rm;
+          cur_state->print_on(LogHandle(safepoint)::debug_stream());
+        }
       }
     }
 
@@ -316,7 +318,7 @@ void SafepointSynchronize::begin() {
 
   // wait until all threads are stopped
   while (_waiting_to_block > 0) {
-    if (TraceSafepoint) tty->print_cr("Waiting for %d thread(s) to block", _waiting_to_block);
+    log_debug(safepoint)("Waiting for %d thread(s) to block", _waiting_to_block);
     if (!SafepointTimeout || timeout_error_printed) {
       Safepoint_lock->wait(true);  // true, means with no safepoint checks
     } else {
@@ -362,9 +364,10 @@ void SafepointSynchronize::begin() {
   // Update the count of active JNI critical regions
   GC_locker::set_jni_lock_count(_current_jni_active_count);
 
-  if (TraceSafepoint) {
+  if (log_is_enabled(Debug, safepoint)) {
     VM_Operation *op = VMThread::vm_operation();
-    tty->print_cr("Entering safepoint region: %s", (op != NULL) ? op->name() : "no vm operation");
+    log_debug(safepoint)("Entering safepoint region: %s",
+                         (op != NULL) ? op->name() : "no vm operation");
   }
 
   RuntimeService::record_safepoint_synchronized();
@@ -428,9 +431,7 @@ void SafepointSynchronize::end() {
     _state = _not_synchronized;
     OrderAccess::fence();
 
-    if (TraceSafepoint) {
-       tty->print_cr("Leaving safepoint region");
-    }
+    log_debug(safepoint)("Leaving safepoint region");
 
     // Start suspended threads
     for(JavaThread *current = Threads::first(); current; current = current->next()) {
@@ -918,7 +919,6 @@ void ThreadSafepointState::print_on(outputStream *st) const {
 
   _thread->print_thread_state_on(st);
 }
-
 
 // ---------------------------------------------------------------------------------------------------------------------
 

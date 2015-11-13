@@ -380,6 +380,11 @@ public:
 
 protected:
   virtual double average_time_ms(G1GCPhaseTimes::GCParPhases phase) const;
+  virtual double other_time_ms(double pause_time_ms) const;
+
+  double young_other_time_ms() const;
+  double non_young_other_time_ms() const;
+  double constant_other_time_ms(double pause_time_ms) const;
 
 private:
   // Statistics kept per GC stoppage, pause or full.
@@ -529,6 +534,8 @@ private:
   // as a percentage of the current heap capacity.
   double reclaimable_bytes_perc(size_t reclaimable_bytes) const;
 
+  // Sets up marking if proper conditions are met.
+  void maybe_start_marking();
 public:
 
   G1CollectorPolicy();
@@ -549,6 +556,8 @@ public:
 
   void init();
 
+  virtual void note_gc_start(uint num_active_workers);
+
   // Create jstat counters for the policy.
   virtual void initialize_gc_policy_counters();
 
@@ -562,6 +571,8 @@ public:
                                               bool is_tlab);
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
+
+  bool about_to_start_mixed_phase() const;
 
   // Record the start and end of an evacuation pause.
   void record_collection_pause_start(double start_time_sec);
@@ -592,6 +603,8 @@ public:
   void print_heap_transition(size_t bytes_before) const;
   void print_heap_transition() const;
   void print_detailed_heap_transition(bool full = false) const;
+
+  virtual void print_phases(double pause_time_sec);
 
   void record_stop_world_start();
   void record_concurrent_pause();

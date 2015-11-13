@@ -60,7 +60,7 @@ void NativeInstruction::verify_data64_sethi(address instaddr, intptr_t x) {
   masm.patchable_sethi(x, destreg);
   int len = buffer - masm.pc();
   for (int i = 0; i < len; i++) {
-    assert(instaddr[i] == buffer[i], "instructions must match");
+    guarantee(instaddr[i] == buffer[i], "instructions must match");
   }
 }
 

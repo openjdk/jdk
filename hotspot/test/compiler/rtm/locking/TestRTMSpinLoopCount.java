@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify that RTMSpinLoopCount affects time spent
  *          between locking attempts.
- * @library /testlibrary /../../test/lib /compiler/testlibrary
+ * @library /testlibrary /test/lib /compiler/testlibrary
  * @modules java.base/sun.misc
  *          java.management
  * @build TestRTMSpinLoopCount

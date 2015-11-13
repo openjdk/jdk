@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -82,8 +82,7 @@ all: $(TraceGeneratedFiles)
 
 GENERATE_CODE= \
   $(QUIETLY) echo $(LOG_INFO) Generating $@; \
-  $(XSLT) -IN $(word 1,$^) -XSL $(word 2,$^) -OUT $@; \
-  test -f $@
+  $(XSLT) -IN $(word 1,$^) -XSL $(word 2,$^) -OUT $@
 
 $(TraceOutDir)/traceEventIds.hpp: $(TraceSrcDir)/trace.xml $(TraceSrcDir)/traceEventIds.xsl $(XML_DEPS)
 	$(GENERATE_CODE)

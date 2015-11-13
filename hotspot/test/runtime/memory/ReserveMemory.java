@@ -26,7 +26,7 @@
  * @key regression
  * @bug 8012015
  * @summary Make sure reserved (but uncommitted) memory is not accessible
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build ReserveMemory

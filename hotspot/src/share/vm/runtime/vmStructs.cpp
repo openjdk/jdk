@@ -1025,7 +1025,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(JavaThread,                  _stack_size,                                   size_t)                                \
   nonstatic_field(JavaThread,                  _vframe_array_head,                            vframeArray*)                          \
   nonstatic_field(JavaThread,                  _vframe_array_last,                            vframeArray*)                          \
-  nonstatic_field(JavaThread,                  _satb_mark_queue,                              ObjPtrQueue)                           \
+  nonstatic_field(JavaThread,                  _satb_mark_queue,                              SATBMarkQueue)                         \
   nonstatic_field(JavaThread,                  _dirty_card_queue,                             DirtyCardQueue)                        \
   nonstatic_field(Thread,                      _resource_area,                                ResourceArea*)                         \
   nonstatic_field(CompilerThread,              _env,                                          ciEnv*)                                \
@@ -1617,7 +1617,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_toplevel_type(MemRegion)                                        \
   declare_toplevel_type(ThreadLocalAllocBuffer)                           \
   declare_toplevel_type(VirtualSpace)                                     \
-  declare_toplevel_type(ObjPtrQueue)                                      \
+  declare_toplevel_type(SATBMarkQueue)                                    \
   declare_toplevel_type(DirtyCardQueue)                                   \
                                                                           \
   /* Pointers to Garbage Collection types */                              \

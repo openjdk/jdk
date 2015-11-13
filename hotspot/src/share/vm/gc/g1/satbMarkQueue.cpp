@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
-#include "gc/g1/satbQueue.hpp"
+#include "gc/g1/satbMarkQueue.hpp"
 #include "gc/shared/collectedHeap.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -33,7 +33,16 @@
 #include "runtime/thread.hpp"
 #include "runtime/vmThread.hpp"
 
-void ObjPtrQueue::flush() {
+SATBMarkQueue::SATBMarkQueue(SATBMarkQueueSet* qset, bool permanent) :
+  // SATB queues are only active during marking cycles. We create
+  // them with their active field set to false. If a thread is
+  // created during a cycle and its SATB queue needs to be activated
+  // before the thread starts running, we'll need to set its active
+  // field to true. This is done in JavaThread::initialize_queues().
+  PtrQueue(qset, permanent, false /* active */)
+{ }
+
+void SATBMarkQueue::flush() {
   // Filter now to possibly save work later.  If filtering empties the
   // buffer then flush_impl can deallocate the buffer.
   filter();
@@ -79,7 +88,7 @@ inline bool requires_marking(const void* entry, G1CollectedHeap* heap) {
   assert(heap->is_in_reserved(entry),
          "Non-heap pointer in SATB buffer: " PTR_FORMAT, p2i(entry));
 
-  HeapRegion* region = heap->heap_region_containing_raw(entry);
+  HeapRegion* region = heap->heap_region_containing(entry);
   assert(region != NULL, "No region for " PTR_FORMAT, p2i(entry));
   if (entry >= region->next_top_at_mark_start()) {
     return false;
@@ -96,10 +105,9 @@ inline bool requires_marking(const void* entry, G1CollectedHeap* heap) {
 // they require marking and are not already marked. Retained entries
 // are compacted toward the top of the buffer.
 
-void ObjPtrQueue::filter() {
+void SATBMarkQueue::filter() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   void** buf = _buf;
-  size_t sz = _sz;
 
   if (buf == NULL) {
     // nothing to do
@@ -107,43 +115,37 @@ void ObjPtrQueue::filter() {
   }
 
   // Used for sanity checking at the end of the loop.
-  debug_only(size_t entries = 0; size_t retained = 0;)
+  DEBUG_ONLY(size_t entries = 0; size_t retained = 0;)
 
-  size_t i = sz;
-  size_t new_index = sz;
+  assert(_index <= _sz, "invariant");
+  void** limit = &buf[byte_index_to_index(_index)];
+  void** src = &buf[byte_index_to_index(_sz)];
+  void** dst = src;
 
-  while (i > _index) {
-    assert(i > 0, "we should have at least one more entry to process");
-    i -= oopSize;
-    debug_only(entries += 1;)
-    void** p = &buf[byte_index_to_index((int) i)];
-    void* entry = *p;
+  while (limit < src) {
+    DEBUG_ONLY(entries += 1;)
+    --src;
+    void* entry = *src;
     // NULL the entry so that unused parts of the buffer contain NULLs
     // at the end. If we are going to retain it we will copy it to its
     // final place. If we have retained all entries we have visited so
     // far, we'll just end up copying it to the same place.
-    *p = NULL;
+    *src = NULL;
 
     if (requires_marking(entry, g1h) && !g1h->isMarkedNext((oop)entry)) {
-      assert(new_index > 0, "we should not have already filled up the buffer");
-      new_index -= oopSize;
-      assert(new_index >= i,
-             "new_index should never be below i, as we always compact 'up'");
-      void** new_p = &buf[byte_index_to_index((int) new_index)];
-      assert(new_p >= p, "the destination location should never be below "
-             "the source as we always compact 'up'");
-      assert(*new_p == NULL,
-             "we should have already cleared the destination location");
-      *new_p = entry;
-      debug_only(retained += 1;)
+      --dst;
+      assert(*dst == NULL, "filtering destination should be clear");
+      *dst = entry;
+      DEBUG_ONLY(retained += 1;);
     }
   }
+  size_t new_index = pointer_delta(dst, buf, 1);
 
 #ifdef ASSERT
-  size_t entries_calc = (sz - _index) / oopSize;
+  size_t entries_calc = (_sz - _index) / sizeof(void*);
   assert(entries == entries_calc, "the number of entries we counted "
          "should match the number of entries we calculated");
-  size_t retained_calc = (sz - new_index) / oopSize;
+  size_t retained_calc = (_sz - new_index) / sizeof(void*);
   assert(retained == retained_calc, "the number of retained entries we counted "
          "should match the number of retained entries we calculated");
 #endif // ASSERT
@@ -157,7 +159,7 @@ void ObjPtrQueue::filter() {
 // allow the mutator to carry on executing using the same buffer
 // instead of replacing it.
 
-bool ObjPtrQueue::should_enqueue_buffer() {
+bool SATBMarkQueue::should_enqueue_buffer() {
   assert(_lock == NULL || _lock->owned_by_self(),
          "we should have taken the lock before calling this");
 
@@ -170,23 +172,20 @@ bool ObjPtrQueue::should_enqueue_buffer() {
 
   filter();
 
-  size_t sz = _sz;
-  size_t all_entries = sz / oopSize;
-  size_t retained_entries = (sz - _index) / oopSize;
-  size_t perc = retained_entries * 100 / all_entries;
-  bool should_enqueue = perc > (size_t) G1SATBBufferEnqueueingThresholdPercent;
+  size_t percent_used = ((_sz - _index) * 100) / _sz;
+  bool should_enqueue = percent_used > G1SATBBufferEnqueueingThresholdPercent;
   return should_enqueue;
 }
 
-void ObjPtrQueue::apply_closure_and_empty(SATBBufferClosure* cl) {
+void SATBMarkQueue::apply_closure_and_empty(SATBBufferClosure* cl) {
   assert(SafepointSynchronize::is_at_safepoint(),
          "SATB queues must only be processed at safepoints");
   if (_buf != NULL) {
     assert(_index % sizeof(void*) == 0, "invariant");
     assert(_sz % sizeof(void*) == 0, "invariant");
     assert(_index <= _sz, "invariant");
-    cl->do_buffer(_buf + byte_index_to_index((int)_index),
-                  byte_index_to_index((int)(_sz - _index)));
+    cl->do_buffer(_buf + byte_index_to_index(_index),
+                  byte_index_to_index(_sz - _index));
     _index = _sz;
   }
 }
@@ -194,25 +193,21 @@ void ObjPtrQueue::apply_closure_and_empty(SATBBufferClosure* cl) {
 #ifndef PRODUCT
 // Helpful for debugging
 
-void ObjPtrQueue::print(const char* name) {
+void SATBMarkQueue::print(const char* name) {
   print(name, _buf, _index, _sz);
 }
 
-void ObjPtrQueue::print(const char* name,
-                        void** buf, size_t index, size_t sz) {
+void SATBMarkQueue::print(const char* name,
+                          void** buf, size_t index, size_t sz) {
   gclog_or_tty->print_cr("  SATB BUFFER [%s] buf: " PTR_FORMAT " "
                          "index: " SIZE_FORMAT " sz: " SIZE_FORMAT,
                          name, p2i(buf), index, sz);
 }
 #endif // PRODUCT
 
-#ifdef _MSC_VER // the use of 'this' below gets a warning, make it go away
-#pragma warning( disable:4355 ) // 'this' : used in base member initializer list
-#endif // _MSC_VER
-
 SATBMarkQueueSet::SATBMarkQueueSet() :
   PtrQueueSet(),
-  _shared_satb_queue(this, true /*perm*/) { }
+  _shared_satb_queue(this, true /* permanent */) { }
 
 void SATBMarkQueueSet::initialize(Monitor* cbl_mon, Mutex* fl_lock,
                                   int process_completed_threshold,
@@ -299,7 +294,7 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer(SATBBufferClosure* cl) 
     // Filtering can result in non-full completed buffers; see
     // should_enqueue_buffer.
     assert(_sz % sizeof(void*) == 0, "invariant");
-    size_t limit = ObjPtrQueue::byte_index_to_index((int)_sz);
+    size_t limit = SATBMarkQueue::byte_index_to_index(_sz);
     for (size_t i = 0; i < limit; ++i) {
       if (buf[i] != NULL) {
         // Found the end of the block of NULLs; process the remainder.
@@ -331,7 +326,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
   while (nd != NULL) {
     void** buf = BufferNode::make_buffer_from_node(nd);
     jio_snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Enqueued: %d", i);
-    ObjPtrQueue::print(buffer, buf, 0, _sz);
+    SATBMarkQueue::print(buffer, buf, 0, _sz);
     nd = nd->next();
     i += 1;
   }

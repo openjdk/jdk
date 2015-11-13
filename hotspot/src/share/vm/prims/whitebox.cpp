@@ -322,8 +322,8 @@ WB_ENTRY(jlong, WB_G1NumFreeRegions(JNIEnv* env, jobject o))
 WB_END
 
 WB_ENTRY(jboolean, WB_G1InConcurrentMark(JNIEnv* env, jobject o))
-  G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  return g1->concurrent_mark()->cmThread()->during_cycle();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  return g1h->concurrent_mark()->cmThread()->during_cycle();
 WB_END
 
 WB_ENTRY(jboolean, WB_G1StartMarkCycle(JNIEnv* env, jobject o))
