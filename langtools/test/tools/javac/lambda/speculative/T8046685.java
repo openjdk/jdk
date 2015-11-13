@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug 8046685
+ * @bug 8046685 8142948
  * @summary Uncompilable large expressions involving generics.
  * @compile T8046685.java
  */
@@ -44,17 +44,7 @@ class T8046685 {
         and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even,
                 and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even,
                 and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even,
-                and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even,
-                and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even,
-                and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even,
-                and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even,
-                and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even,
-                and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even,
-                and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even,
-                and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even,
-                and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even,
-                and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, even)
-                ))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
-                )))))))))))))))))))))))))))))))))));
+                and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, and(even, even)
+                ))))))))))))))))))))))))))))))))))))))))))))))));
     }
 }
