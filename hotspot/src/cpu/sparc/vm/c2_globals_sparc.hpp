@@ -65,6 +65,7 @@ define_pd_global(bool, UseCISCSpill,                 false);
 define_pd_global(bool, OptoBundling,                 false);
 define_pd_global(bool, OptoScheduling,               true);
 define_pd_global(bool, OptoRegScheduling,            false);
+define_pd_global(bool, SuperWordLoopUnrollAnalysis,  false);
 
 #ifdef _LP64
 // We need to make sure that all generated code is within

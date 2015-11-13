@@ -39,11 +39,14 @@ class PhaseTransform;
 //------------------------------MemNode----------------------------------------
 // Load or Store, possibly throwing a NULL pointer exception
 class MemNode : public Node {
+private:
+  bool _unaligned_access; // Unaligned access from unsafe
+  bool _mismatched_access; // Mismatched access from unsafe: byte read in integer array for instance
 protected:
 #ifdef ASSERT
   const TypePtr* _adr_type;     // What kind of memory is being addressed?
 #endif
-  virtual uint size_of() const; // Size is bigger (ASSERT only)
+  virtual uint size_of() const;
 public:
   enum { Control,               // When is it safe to do this load?
          Memory,                // Chunk of memory is being loaded from
@@ -57,17 +60,17 @@ public:
   } MemOrd;
 protected:
   MemNode( Node *c0, Node *c1, Node *c2, const TypePtr* at )
-    : Node(c0,c1,c2   ) {
+    : Node(c0,c1,c2   ), _unaligned_access(false), _mismatched_access(false) {
     init_class_id(Class_Mem);
     debug_only(_adr_type=at; adr_type();)
   }
   MemNode( Node *c0, Node *c1, Node *c2, const TypePtr* at, Node *c3 )
-    : Node(c0,c1,c2,c3) {
+    : Node(c0,c1,c2,c3), _unaligned_access(false), _mismatched_access(false) {
     init_class_id(Class_Mem);
     debug_only(_adr_type=at; adr_type();)
   }
   MemNode( Node *c0, Node *c1, Node *c2, const TypePtr* at, Node *c3, Node *c4)
-    : Node(c0,c1,c2,c3,c4) {
+    : Node(c0,c1,c2,c3,c4), _unaligned_access(false), _mismatched_access(false) {
     init_class_id(Class_Mem);
     debug_only(_adr_type=at; adr_type();)
   }
@@ -126,6 +129,11 @@ public:
   // Can this node (load or store) accurately see a stored value in
   // the given memory state?  (The state may or may not be in(Memory).)
   Node* can_see_stored_value(Node* st, PhaseTransform* phase) const;
+
+  void set_unaligned_access() { _unaligned_access = true; }
+  bool is_unaligned_access() const { return _unaligned_access; }
+  void set_mismatched_access() { _mismatched_access = true; }
+  bool is_mismatched_access() const { return _mismatched_access; }
 
 #ifndef PRODUCT
   static void dump_adr_type(const Node* mem, const TypePtr* adr_type, outputStream *st);

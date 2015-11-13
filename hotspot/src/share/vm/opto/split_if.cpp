@@ -390,13 +390,13 @@ void PhaseIdealLoop::handle_use( Node *use, Node *def, small_cache *cache, Node 
 // Found an If getting its condition-code input from a Phi in the same block.
 // Split thru the Region.
 void PhaseIdealLoop::do_split_if( Node *iff ) {
-#ifndef PRODUCT
-  if( PrintOpto && VerifyLoopOptimizations )
+  if (PrintOpto && VerifyLoopOptimizations) {
     tty->print_cr("Split-if");
+  }
   if (TraceLoopOpts) {
     tty->print_cr("SplitIf");
   }
-#endif
+
   C->set_major_progress();
   Node *region = iff->in(0);
   Node *region_dom = idom(region);

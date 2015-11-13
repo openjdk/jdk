@@ -29,6 +29,7 @@ import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import compiler.whitebox.CompilerWhiteBoxTest;
 
 /**
  * Executes given test in a separate VM with enabled Tiered Compilation for

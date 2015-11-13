@@ -27,6 +27,7 @@ import intrinsics.Verifier;
 import java.io.FileOutputStream;
 import java.lang.reflect.Executable;
 import java.util.Properties;
+import compiler.whitebox.CompilerWhiteBoxTest;
 
 public abstract class IntrinsicBase extends CompilerWhiteBoxTest {
     protected String javaVmName;

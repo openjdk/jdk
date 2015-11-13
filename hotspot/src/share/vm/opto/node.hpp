@@ -125,6 +125,7 @@ class PhaseValues;
 class PhiNode;
 class Pipeline;
 class ProjNode;
+class RangeCheckNode;
 class RegMask;
 class RegionNode;
 class RootNode;
@@ -584,6 +585,7 @@ public:
           DEFINE_CLASS_ID(Jump,        PCTable, 1)
         DEFINE_CLASS_ID(If,          MultiBranch, 1)
           DEFINE_CLASS_ID(CountedLoopEnd, If, 0)
+          DEFINE_CLASS_ID(RangeCheck, If, 1)
         DEFINE_CLASS_ID(NeverBranch, MultiBranch, 2)
       DEFINE_CLASS_ID(Start,       Multi, 2)
       DEFINE_CLASS_ID(MemBar,      Multi, 3)
@@ -758,6 +760,7 @@ public:
   DEFINE_CLASS_QUERY(FastLock)
   DEFINE_CLASS_QUERY(FastUnlock)
   DEFINE_CLASS_QUERY(If)
+  DEFINE_CLASS_QUERY(RangeCheck)
   DEFINE_CLASS_QUERY(IfFalse)
   DEFINE_CLASS_QUERY(IfTrue)
   DEFINE_CLASS_QUERY(Initialize)

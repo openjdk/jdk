@@ -315,10 +315,10 @@ class name : AllStatic {                                                        
 #define FIELD(name, type, accessor, cast)                                                                                                                         \
     static int _##name##_offset;                                                                                                                                  \
     static type name(oop obj)                   { check(obj, #name, _##name##_offset); return cast obj->accessor(_##name##_offset); }                                               \
-    static type name(Handle& obj)                { check(obj(), #name, _##name##_offset); return cast obj->accessor(_##name##_offset); }                                            \
+    static type name(Handle obj)                { check(obj(), #name, _##name##_offset); return cast obj->accessor(_##name##_offset); }                                             \
     static type name(jobject obj)               { check(JNIHandles::resolve(obj), #name, _##name##_offset); return cast JNIHandles::resolve(obj)->accessor(_##name##_offset); }     \
     static void set_##name(oop obj, type x)     { check(obj, #name, _##name##_offset); obj->accessor##_put(_##name##_offset, x); }                                                  \
-    static void set_##name(Handle& obj, type x)  { check(obj(), #name, _##name##_offset); obj->accessor##_put(_##name##_offset, x); }                                               \
+    static void set_##name(Handle obj, type x)  { check(obj(), #name, _##name##_offset); obj->accessor##_put(_##name##_offset, x); }                                                \
     static void set_##name(jobject obj, type x) { check(JNIHandles::resolve(obj), #name, _##name##_offset); JNIHandles::resolve(obj)->accessor##_put(_##name##_offset, x); }
 
 #define EMPTY_CAST

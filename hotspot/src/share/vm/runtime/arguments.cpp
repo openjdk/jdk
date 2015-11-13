@@ -457,7 +457,7 @@ const char* Arguments::real_flag_name(const char *flag_name) {
   return flag_name;
 }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 static bool lookup_special_flag(const char *flag_name, size_t skip_index) {
   for (size_t i = 0; special_jvm_flags[i].name != NULL; i++) {
     if ((i != skip_index) && (strcmp(special_jvm_flags[i].name, flag_name) == 0)) {

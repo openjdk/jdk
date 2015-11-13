@@ -1539,7 +1539,7 @@ void nmethod::flush() {
   if (PrintMethodFlushing) {
     tty->print_cr("*flushing nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT
                   "/Free CodeCache:" SIZE_FORMAT "Kb",
-                  _compile_id, p2i(this), CodeCache::nof_blobs(),
+                  _compile_id, p2i(this), CodeCache::blob_count(),
                   CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(this))/1024);
   }
 
@@ -1819,9 +1819,7 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred)
   if (_jvmci_installed_code != NULL) {
     if (_jvmci_installed_code->is_a(HotSpotNmethod::klass()) && HotSpotNmethod::isDefault(_jvmci_installed_code)) {
       if (!is_alive->do_object_b(_jvmci_installed_code)) {
-        bs->write_ref_nmethod_pre(&_jvmci_installed_code, this);
-        _jvmci_installed_code = NULL;
-        bs->write_ref_nmethod_post(&_jvmci_installed_code, this);
+        clear_jvmci_installed_code();
       }
     } else {
       if (can_unload(is_alive, (oop*)&_jvmci_installed_code, unloading_occurred)) {
@@ -1922,27 +1920,6 @@ bool nmethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_
     unloading_occurred = true;
   }
 
-#if INCLUDE_JVMCI
-  // Follow JVMCI method
-  if (_jvmci_installed_code != NULL) {
-    if (_jvmci_installed_code->is_a(HotSpotNmethod::klass()) && HotSpotNmethod::isDefault(_jvmci_installed_code)) {
-      if (!is_alive->do_object_b(_jvmci_installed_code)) {
-        _jvmci_installed_code = NULL;
-      }
-    } else {
-      if (can_unload(is_alive, (oop*)&_jvmci_installed_code, unloading_occurred)) {
-        return false;
-      }
-    }
-  }
-
-  if (_speculation_log != NULL) {
-    if (!is_alive->do_object_b(_speculation_log)) {
-      _speculation_log = NULL;
-    }
-  }
-#endif
-
   // Exception cache
   clean_exception_cache(is_alive);
 
@@ -2006,9 +1983,7 @@ bool nmethod::do_unloading_parallel(BoolObjectClosure* is_alive, bool unloading_
   if (_jvmci_installed_code != NULL) {
     if (_jvmci_installed_code->is_a(HotSpotNmethod::klass()) && HotSpotNmethod::isDefault(_jvmci_installed_code)) {
       if (!is_alive->do_object_b(_jvmci_installed_code)) {
-        bs->write_ref_nmethod_pre(&_jvmci_installed_code, this);
-        _jvmci_installed_code = NULL;
-        bs->write_ref_nmethod_post(&_jvmci_installed_code, this);
+        clear_jvmci_installed_code();
       }
     } else {
       if (can_unload(is_alive, (oop*)&_jvmci_installed_code, unloading_occurred)) {
@@ -2271,7 +2246,7 @@ bool nmethod::test_set_oops_do_mark() {
           break;
       }
       // Mark was clear when we first saw this guy.
-      NOT_PRODUCT(if (TraceScavenge)  print_on(tty, "oops_do, mark"));
+      if (TraceScavenge) { print_on(tty, "oops_do, mark"); }
       return false;
     }
   }
@@ -2280,7 +2255,7 @@ bool nmethod::test_set_oops_do_mark() {
 }
 
 void nmethod::oops_do_marking_prologue() {
-  NOT_PRODUCT(if (TraceScavenge)  tty->print_cr("[oops_do_marking_prologue"));
+  if (TraceScavenge) { tty->print_cr("[oops_do_marking_prologue"); }
   assert(_oops_do_mark_nmethods == NULL, "must not call oops_do_marking_prologue twice in a row");
   // We use cmpxchg_ptr instead of regular assignment here because the user
   // may fork a bunch of threads, and we need them all to see the same state.
@@ -2302,7 +2277,7 @@ void nmethod::oops_do_marking_epilogue() {
   void* required = _oops_do_mark_nmethods;
   void* observed = Atomic::cmpxchg_ptr(NULL, &_oops_do_mark_nmethods, required);
   guarantee(observed == required, "no races in this sequential code");
-  NOT_PRODUCT(if (TraceScavenge)  tty->print_cr("oops_do_marking_epilogue]"));
+  if (TraceScavenge) { tty->print_cr("oops_do_marking_epilogue]"); }
 }
 
 class DetectScavengeRoot: public OopClosure {
@@ -3373,6 +3348,14 @@ void nmethod::print_statistics() {
 #endif // !PRODUCT
 
 #if INCLUDE_JVMCI
+void nmethod::clear_jvmci_installed_code() {
+  // This must be done carefully to maintain nmethod remembered sets properly
+  BarrierSet* bs = Universe::heap()->barrier_set();
+  bs->write_ref_nmethod_pre(&_jvmci_installed_code, this);
+  _jvmci_installed_code = NULL;
+  bs->write_ref_nmethod_post(&_jvmci_installed_code, this);
+}
+
 void nmethod::maybe_invalidate_installed_code() {
   if (_jvmci_installed_code != NULL) {
      if (!is_alive()) {
@@ -3382,7 +3365,7 @@ void nmethod::maybe_invalidate_installed_code() {
        // might want to invalidate all existing activations.
        InstalledCode::set_address(_jvmci_installed_code, 0);
        InstalledCode::set_entryPoint(_jvmci_installed_code, 0);
-       _jvmci_installed_code = NULL;
+       clear_jvmci_installed_code();
      } else if (is_not_entrant()) {
        InstalledCode::set_entryPoint(_jvmci_installed_code, 0);
      }

@@ -2064,6 +2064,17 @@ const bool Matcher::match_rule_supported(int opcode) {
   return true;  // Per default match rules are supported.
 }
 
+const bool Matcher::match_rule_supported_vector(int opcode, int vlen) {
+
+  // TODO
+  // identify extra cases that we might want to provide match rules for
+  // e.g. Op_ vector nodes and other intrinsics while guarding with vlen
+  bool ret_value = match_rule_supported(opcode);
+  // Add rules here.
+
+  return ret_value;  // Per default match rules are supported.
+}
+
 const int Matcher::float_pressure(int default_pressure_threshold) {
   return default_pressure_threshold;
 }
@@ -3416,7 +3427,7 @@ encode %{
       // The stub for call to interpreter.
       address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
       if (stub == NULL) {
-        ciEnv::current()->record_failure("CodeCache is full"); 
+        ciEnv::current()->record_failure("CodeCache is full");
         return;
       }
     }
@@ -3465,7 +3476,7 @@ encode %{
     // The stub for call to interpreter.
     address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
     if (stub == NULL) {
-      ciEnv::current()->record_failure("CodeCache is full"); 
+      ciEnv::current()->record_failure("CodeCache is full");
       return;
     }
 
@@ -6911,7 +6922,7 @@ instruct decodeN_Disjoint_isel_Ex(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
     n_compare->_opnds[0] = op_crx;
     n_compare->_opnds[1] = op_src;
     n_compare->_opnds[2] = new immN_0Oper(TypeNarrowOop::NULL_PTR);
-    
+
     decodeN_mergeDisjointNode *n2 = new decodeN_mergeDisjointNode();
     n2->add_req(n_region, n_src, n1);
     n2->_opnds[0] = op_dst;
@@ -10588,7 +10599,7 @@ instruct cmpP_reg_imm16(flagsReg crx, iRegPsrc src1, immL16 src2) %{
 
 instruct cmpFUnordered_reg_reg(flagsReg crx, regF src1, regF src2) %{
   // Needs matchrule, see cmpDUnordered.
-  match(Set crx (CmpF src1 src2)); 
+  match(Set crx (CmpF src1 src2));
   // no match-rule, false predicate
   predicate(false);
 
@@ -10697,13 +10708,13 @@ instruct cmpF3_reg_reg_ExEx(iRegIdst dst, regF src1, regF src2) %{
 %}
 
 instruct cmpDUnordered_reg_reg(flagsReg crx, regD src1, regD src2) %{
-  // Needs matchrule so that ideal opcode is Cmp. This causes that gcm places the 
-  // node right before the conditional move using it. 
+  // Needs matchrule so that ideal opcode is Cmp. This causes that gcm places the
+  // node right before the conditional move using it.
   // In jck test api/java_awt/geom/QuadCurve2DFloat/index.html#SetCurveTesttestCase7,
   // compilation of java.awt.geom.RectangularShape::getBounds()Ljava/awt/Rectangle
   // crashed in register allocation where the flags Reg between cmpDUnoredered and a
   // conditional move was supposed to be spilled.
-  match(Set crx (CmpD src1 src2)); 
+  match(Set crx (CmpD src1 src2));
   // False predicate, shall not be matched.
   predicate(false);
 

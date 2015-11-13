@@ -34,7 +34,6 @@
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      -XX:-BackgroundCompilation
-        -XX:+LogCompilation
  *      compiler.jvmci.compilerToVM.AllocateCompileIdTest
  */
 
@@ -45,22 +44,21 @@ import compiler.jvmci.common.CTVMUtilities;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.HashSet;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import compiler.jvmci.common.testcases.TestCase;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Pair;
 import jdk.test.lib.Utils;
-import sun.hotspot.WhiteBox;
 import sun.hotspot.code.NMethod;
 
 public class AllocateCompileIdTest {
 
+    private static final int SOME_REPEAT_VALUE = 5;
     private final HashSet<Integer> ids = new HashSet<>();
 
     public static void main(String[] args) {
@@ -68,7 +66,6 @@ public class AllocateCompileIdTest {
         createTestCasesCorrectBci().forEach(test::runSanityCorrectTest);
         createTestCasesIncorrectBci().forEach(test::runSanityIncorrectTest);
     }
-
 
     private static List<CompileCodeTestCase> createTestCasesCorrectBci() {
         List<CompileCodeTestCase> result = new ArrayList<>();
@@ -84,29 +81,29 @@ public class AllocateCompileIdTest {
         return result;
     }
 
-
     private static List<Pair<CompileCodeTestCase, Class<? extends Throwable>>>
             createTestCasesIncorrectBci() {
         List<Pair<CompileCodeTestCase, Class<? extends Throwable>>> result
                 = new ArrayList<>();
-
         try {
             Class<?> aClass = DummyClass.class;
             Object receiver = new DummyClass();
             Method method = aClass.getMethod("dummyInstanceFunction");
             // greater than bytecode.length
-            int[] bcis = new int[] {30, 50, 200};
-            for (int bci : bcis) {
-                result.add(new Pair<>(
-                        new CompileCodeTestCase(receiver, method, bci),
-                        IllegalArgumentException.class));
-            }
-            bcis = new int[] {-4, -50, -200};
-            for (int bci : bcis) {
-                result.add(new Pair<>(
-                        new CompileCodeTestCase(receiver, method, bci),
-                        IllegalArgumentException.class));
-            }
+            byte[] bytecode = CompilerToVMHelper.getBytecode(CTVMUtilities
+                    .getResolvedMethod(method));
+            Stream.of(
+                    // greater than bytecode.length
+                    bytecode.length + 4,
+                    bytecode.length + 50,
+                    bytecode.length + 200,
+                    // negative cases
+                    -4, -50, -200)
+                    .map(bci -> new Pair<CompileCodeTestCase,
+                            Class<? extends Throwable>>(
+                            new CompileCodeTestCase(receiver, method, bci),
+                            IllegalArgumentException.class))
+                    .collect(Collectors.toList());
         } catch (NoSuchMethodException e) {
             throw new Error("TEST BUG : " + e.getMessage(), e);
         }
@@ -117,27 +114,20 @@ public class AllocateCompileIdTest {
         System.out.println(testCase);
         Executable aMethod = testCase.executable;
         // to generate ciTypeFlow
-        System.out.println(testCase.invoke(Utils.getNullValues(aMethod.getParameterTypes())));
+        testCase.invoke(Utils.getNullValues(aMethod.getParameterTypes()));
         int bci = testCase.bci;
         HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
-        int wbCompileID = getWBCompileID(testCase);
-        int id = CompilerToVMHelper.allocateCompileId(method, bci);
-        Asserts.assertNE(id, 0, testCase + " : zero compile id");
-
-        if (wbCompileID > 0) {
+        for (int i = 0; i < SOME_REPEAT_VALUE; ++i) {
+            int wbCompileID = getWBCompileID(testCase);
+            int id = CompilerToVMHelper.allocateCompileId(method, bci);
+            Asserts.assertNE(id, 0, testCase + " : zero compile id");
             Asserts.assertGT(id, wbCompileID, testCase
                     + " : allocated 'compile id' not  greater than existed");
-            if (!ids.add(wbCompileID)) {
-                throw new AssertionError(String.format(
-                        "%s : vm compilation allocated existed id -- %d",
-                        testCase, id));
-            }
-        }
-        if (!ids.add(id)) {
-            throw new AssertionError(String.format(
-                    "%s : allocateCompileId returned existed id %d",
-                    testCase, id));
+            Asserts.assertTrue(ids.add(wbCompileID), testCase
+                    + " : vm compilation allocated existing id " + id);
+            Asserts.assertTrue(ids.add(id), testCase
+                    + " : allocateCompileId returned existing id " + id);
         }
     }
 
@@ -156,8 +146,8 @@ public class AllocateCompileIdTest {
 
     private int getWBCompileID(CompileCodeTestCase testCase) {
         NMethod nm = testCase.deoptimizeAndCompile();
-        if (nm == null) {
-            throw new Error("[TEST BUG] cannot compile method " + testCase);
+        if (nm == null || nm.compile_id <= 0) {
+            throw new Error("TEST BUG : cannot compile method " + testCase);
         }
         return nm.compile_id;
     }
