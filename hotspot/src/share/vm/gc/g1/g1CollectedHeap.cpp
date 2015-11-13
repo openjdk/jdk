@@ -3561,6 +3561,9 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
             }
           }
         }
+        assert(hrrs.n_yielded() == r->rem_set()->occupied(),
+               "Remembered set hash maps out of sync, cur: " SIZE_FORMAT " entries, next: " SIZE_FORMAT " entries",
+               hrrs.n_yielded(), r->rem_set()->occupied());
         r->rem_set()->clear_locked();
       }
       assert(r->rem_set()->is_empty(), "At this point any humongous candidate remembered set must be empty.");
@@ -3847,6 +3850,13 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         g1_policy()->finalize_old_cset_part(time_remaining_ms);
 
         evacuation_info.set_collectionset_regions(g1_policy()->cset_region_length());
+
+        // Make sure the remembered sets are up to date. This needs to be
+        // done before register_humongous_regions_with_cset(), because the
+        // remembered sets are used there to choose eager reclaim candidates.
+        // If the remembered sets are not up to date we might miss some
+        // entries that need to be handled.
+        g1_rem_set()->cleanupHRRS();
 
         register_humongous_regions_with_cset();
 

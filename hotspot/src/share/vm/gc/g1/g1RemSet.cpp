@@ -307,7 +307,6 @@ size_t G1RemSet::oops_into_collection_set_do(G1ParPushHeapRSClosure* oc,
 }
 
 void G1RemSet::prepare_for_oops_into_collection_set_do() {
-  cleanupHRRS();
   _g1->set_refine_cte_cl_concurrency(false);
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   dcqs.concatenate_logs();
