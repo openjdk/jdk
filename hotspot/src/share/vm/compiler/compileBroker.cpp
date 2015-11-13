@@ -1676,13 +1676,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   bool should_break = false;
   int task_level = task->comp_level();
 
-  // Look up matching directives
-  DirectiveSet* directive = DirectivesStack::getMatchingDirective(task->method(), compiler(task_level));
-
-  should_break = directive->BreakAtExecuteOption || task->check_break_at_flags();
-  if (should_log && !directive->LogOption) {
-    should_log = false;
-  }
+  DirectiveSet* directive;
   {
     // create the handle inside it's own block so it can't
     // accidentally be referenced once the thread transitions to
@@ -1691,10 +1685,18 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
     methodHandle method(thread, task->method());
     assert(!method->is_native(), "no longer compile natives");
 
+    // Look up matching directives
+    directive = DirectivesStack::getMatchingDirective(method, compiler(task_level));
+
     // Save information about this method in case of failure.
     set_last_compile(thread, method, is_osr, task_level);
 
     DTRACE_METHOD_COMPILE_BEGIN_PROBE(method, compiler_name(task_level));
+  }
+
+  should_break = directive->BreakAtExecuteOption || task->check_break_at_flags();
+  if (should_log && !directive->LogOption) {
+    should_log = false;
   }
 
   // Allocate a new set of JNI handles.
