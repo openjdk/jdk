@@ -632,12 +632,36 @@ void VM_Version::get_processor_features() {
   // Use AES instructions if available.
   if (supports_aes()) {
     if (FLAG_IS_DEFAULT(UseAES)) {
-      UseAES = true;
+      FLAG_SET_DEFAULT(UseAES, true);
     }
-  } else if (UseAES) {
-    if (!FLAG_IS_DEFAULT(UseAES))
+    if (!UseAES) {
+      if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+        warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
+      }
+      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+    } else {
+      if (UseSSE > 2) {
+        if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+          FLAG_SET_DEFAULT(UseAESIntrinsics, true);
+        }
+      } else {
+        // The AES intrinsic stubs require AES instruction support (of course)
+        // but also require sse3 mode or higher for instructions it use.
+        if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+          warning("X86 AES intrinsics require SSE3 instructions or higher. Intrinsics will be disabled.");
+        }
+        FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+      }
+    }
+  } else if (UseAES || UseAESIntrinsics) {
+    if (UseAES && !FLAG_IS_DEFAULT(UseAES)) {
       warning("AES instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAES, false);
+      FLAG_SET_DEFAULT(UseAES, false);
+    }
+    if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+      warning("AES intrinsics are not available on this CPU");
+      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+    }
   }
 
   // Use CLMUL instructions if available.
@@ -671,18 +695,6 @@ void VM_Version::get_processor_features() {
       warning("CRC32C intrinsics are not available on this CPU");
     }
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
-  }
-
-  // The AES intrinsic stubs require AES instruction support (of course)
-  // but also require sse3 mode for instructions it use.
-  if (UseAES && (UseSSE > 2)) {
-    if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-      UseAESIntrinsics = true;
-    }
-  } else if (UseAESIntrinsics) {
-    if (!FLAG_IS_DEFAULT(UseAESIntrinsics))
-      warning("AES intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAESIntrinsics, false);
   }
 
   // GHASH/GCM intrinsics
