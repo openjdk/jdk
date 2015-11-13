@@ -969,6 +969,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(Deoptimization::UnrollBlock, _caller_adjustment,                            int)                                   \
   nonstatic_field(Deoptimization::UnrollBlock, _number_of_frames,                             int)                                   \
   nonstatic_field(Deoptimization::UnrollBlock, _total_frame_sizes,                            int)                                   \
+  nonstatic_field(Deoptimization::UnrollBlock, _unpack_kind,                                  int)                                   \
   nonstatic_field(Deoptimization::UnrollBlock, _frame_sizes,                                  intptr_t*)                             \
   nonstatic_field(Deoptimization::UnrollBlock, _frame_pcs,                                    address*)                              \
   nonstatic_field(Deoptimization::UnrollBlock, _register_block,                               intptr_t*)                             \

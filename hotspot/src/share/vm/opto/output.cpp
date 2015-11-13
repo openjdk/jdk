@@ -91,13 +91,10 @@ void Compile::Output() {
   }
 
   // Break before main entry point
-  if( (_method && C->directive()->BreakAtExecuteOption)
-#ifndef PRODUCT
-    ||(OptoBreakpoint && is_method_compilation())
-    ||(OptoBreakpointOSR && is_osr_compilation())
-    ||(OptoBreakpointC2R && !_method)
-#endif
-    ) {
+  if ((_method && C->directive()->BreakAtExecuteOption) ||
+      (OptoBreakpoint && is_method_compilation())       ||
+      (OptoBreakpointOSR && is_osr_compilation())       ||
+      (OptoBreakpointC2R && !_method)                   ) {
     // checking for _method means that OptoBreakpoint does not apply to
     // runtime stubs or frame converters
     _cfg->insert( entry, 1, new MachBreakpointNode() );

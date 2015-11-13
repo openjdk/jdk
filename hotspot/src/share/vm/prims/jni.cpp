@@ -3902,7 +3902,7 @@ void TestG1BiasedArray_test();
 void TestBufferingOopClosure_test();
 void TestCodeCacheRemSet_test();
 void FreeRegionList_test();
-void test_memset_with_concurrent_readers();
+void test_memset_with_concurrent_readers() NOT_DEBUG_RETURN;
 void TestPredictions_test();
 void WorkerDataArray_test();
 #endif

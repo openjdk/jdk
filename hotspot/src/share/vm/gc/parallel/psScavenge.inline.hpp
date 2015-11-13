@@ -138,7 +138,6 @@ class PSScavengeKlassClosure: public KlassClosure {
     // If the klass has not been dirtied we know that there's
     // no references into  the young gen and we can skip it.
 
-#ifndef PRODUCT
     if (TraceScavenge) {
       ResourceMark rm;
       gclog_or_tty->print_cr("PSScavengeKlassClosure::do_klass " PTR_FORMAT ", %s, dirty: %s",
@@ -146,7 +145,6 @@ class PSScavengeKlassClosure: public KlassClosure {
                              klass->external_name(),
                              klass->has_modified_oops() ? "true" : "false");
     }
-#endif
 
     if (klass->has_modified_oops()) {
       // Clean the klass since we're going to scavenge all the metadata.

@@ -3711,7 +3711,7 @@ void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest) {
     if (left->as_xmm_float_reg() != dest->as_xmm_float_reg()) {
       __ movflt(dest->as_xmm_float_reg(), left->as_xmm_float_reg());
     }
-    if (UseAVX > 1) {
+    if (UseAVX > 0) {
       __ vnegatess(dest->as_xmm_float_reg(), dest->as_xmm_float_reg(),
                    ExternalAddress((address)float_signflip_pool));
     } else {
@@ -3722,7 +3722,7 @@ void LIR_Assembler::negate(LIR_Opr left, LIR_Opr dest) {
     if (left->as_xmm_double_reg() != dest->as_xmm_double_reg()) {
       __ movdbl(dest->as_xmm_double_reg(), left->as_xmm_double_reg());
     }
-    if (UseAVX > 1) {
+    if (UseAVX > 0) {
       __ vnegatesd(dest->as_xmm_double_reg(), dest->as_xmm_double_reg(),
                    ExternalAddress((address)double_signflip_pool));
     } else {

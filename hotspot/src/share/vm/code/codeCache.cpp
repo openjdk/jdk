@@ -133,13 +133,9 @@ class CodeBlob_sizes {
 
 address CodeCache::_low_bound = 0;
 address CodeCache::_high_bound = 0;
-int CodeCache::_number_of_blobs = 0;
-int CodeCache::_number_of_adapters = 0;
-int CodeCache::_number_of_nmethods = 0;
 int CodeCache::_number_of_nmethods_with_dependencies = 0;
 bool CodeCache::_needs_cache_clean = false;
 nmethod* CodeCache::_scavenge_root_nmethods = NULL;
-int CodeCache::_codemem_full_count = 0;
 
 // Initialize array of CodeHeaps
 GrowableArray<CodeHeap*>* CodeCache::_heaps = new(ResourceObj::C_HEAP, mtCode) GrowableArray<CodeHeap*> (CodeBlobType::All, true);
@@ -420,42 +416,41 @@ CodeBlob* CodeCache::allocate(int size, int code_blob_type, bool strict) {
     }
   }
   print_trace("allocation", cb, size);
-  _number_of_blobs++;
   return cb;
 }
 
 void CodeCache::free(CodeBlob* cb) {
   assert_locked_or_safepoint(CodeCache_lock);
-
+  CodeHeap* heap = get_code_heap(cb);
   print_trace("free", cb);
   if (cb->is_nmethod()) {
-    _number_of_nmethods--;
+    heap->set_nmethod_count(heap->nmethod_count() - 1);
     if (((nmethod *)cb)->has_dependencies()) {
       _number_of_nmethods_with_dependencies--;
     }
   }
   if (cb->is_adapter_blob()) {
-    _number_of_adapters--;
+    heap->set_adapter_count(heap->adapter_count() - 1);
   }
-  _number_of_blobs--;
 
   // Get heap for given CodeBlob and deallocate
   get_code_heap(cb)->deallocate(cb);
 
-  assert(_number_of_blobs >= 0, "sanity check");
+  assert(heap->blob_count() >= 0, "sanity check");
 }
 
 void CodeCache::commit(CodeBlob* cb) {
   // this is called by nmethod::nmethod, which must already own CodeCache_lock
   assert_locked_or_safepoint(CodeCache_lock);
+  CodeHeap* heap = get_code_heap(cb);
   if (cb->is_nmethod()) {
-    _number_of_nmethods++;
+    heap->set_nmethod_count(heap->nmethod_count() + 1);
     if (((nmethod *)cb)->has_dependencies()) {
       _number_of_nmethods_with_dependencies++;
     }
   }
   if (cb->is_adapter_blob()) {
-    _number_of_adapters++;
+    heap->set_adapter_count(heap->adapter_count() + 1);
   }
 
   // flush the hardware I-cache
@@ -577,11 +572,9 @@ void CodeCache::scavenge_root_nmethods_do(CodeBlobClosure* f) {
     assert(cur->on_scavenge_root_list(), "else shouldn't be on this list");
 
     bool is_live = (!cur->is_zombie() && !cur->is_unloaded());
-#ifndef PRODUCT
     if (TraceScavenge) {
       cur->print_on(tty, is_live ? "scavenge root" : "dead scavenge root"); tty->cr();
     }
-#endif //PRODUCT
     if (is_live) {
       // Perform cur->oops_do(f), maybe just once per nmethod.
       f->do_code_blob(cur);
@@ -774,6 +767,55 @@ void CodeCache::verify_oops() {
   }
 }
 
+int CodeCache::blob_count(int code_blob_type) {
+  CodeHeap* heap = get_code_heap(code_blob_type);
+  return (heap != NULL) ? heap->blob_count() : 0;
+}
+
+int CodeCache::blob_count() {
+  int count = 0;
+  FOR_ALL_HEAPS(heap) {
+    count += (*heap)->blob_count();
+  }
+  return count;
+}
+
+int CodeCache::nmethod_count(int code_blob_type) {
+  CodeHeap* heap = get_code_heap(code_blob_type);
+  return (heap != NULL) ? heap->nmethod_count() : 0;
+}
+
+int CodeCache::nmethod_count() {
+  int count = 0;
+  FOR_ALL_HEAPS(heap) {
+    count += (*heap)->nmethod_count();
+  }
+  return count;
+}
+
+int CodeCache::adapter_count(int code_blob_type) {
+  CodeHeap* heap = get_code_heap(code_blob_type);
+  return (heap != NULL) ? heap->adapter_count() : 0;
+}
+
+int CodeCache::adapter_count() {
+  int count = 0;
+  FOR_ALL_HEAPS(heap) {
+    count += (*heap)->adapter_count();
+  }
+  return count;
+}
+
+address CodeCache::low_bound(int code_blob_type) {
+  CodeHeap* heap = get_code_heap(code_blob_type);
+  return (heap != NULL) ? (address)heap->low_boundary() : NULL;
+}
+
+address CodeCache::high_bound(int code_blob_type) {
+  CodeHeap* heap = get_code_heap(code_blob_type);
+  return (heap != NULL) ? (address)heap->high_boundary() : NULL;
+}
+
 size_t CodeCache::capacity() {
   size_t cap = 0;
   FOR_ALL_HEAPS(heap) {
@@ -863,6 +905,9 @@ void CodeCache::initialize() {
     initialize_heaps();
   } else {
     // Use a single code heap
+    FLAG_SET_ERGO(uintx, NonNMethodCodeHeapSize, 0);
+    FLAG_SET_ERGO(uintx, ProfiledCodeHeapSize, 0);
+    FLAG_SET_ERGO(uintx, NonProfiledCodeHeapSize, 0);
     ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize);
     add_heap(rs, "CodeCache", CodeBlobType::All);
   }
@@ -1104,9 +1149,8 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
   CodeHeap* heap = get_code_heap(code_blob_type);
   assert(heap != NULL, "heap is null");
 
-  if (!heap->was_full() || print) {
+  if ((heap->full_count() == 0) || print) {
     // Not yet reported for this heap, report
-    heap->report_full();
     if (SegmentedCodeCache) {
       warning("%s is full. Compiler has been disabled.", get_code_heap_name(code_blob_type));
       warning("Try increasing the code heap size using -XX:%s=", get_code_heap_flag_name(code_blob_type));
@@ -1125,18 +1169,19 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
     tty->print("%s", s.as_string());
   }
 
-  _codemem_full_count++;
+  heap->report_full();
+
   EventCodeCacheFull event;
   if (event.should_commit()) {
     event.set_codeBlobType((u1)code_blob_type);
     event.set_startAddress((u8)heap->low_boundary());
     event.set_commitedTopAddress((u8)heap->high());
     event.set_reservedTopAddress((u8)heap->high_boundary());
-    event.set_entryCount(nof_blobs());
-    event.set_methodCount(nof_nmethods());
-    event.set_adaptorCount(nof_adapters());
+    event.set_entryCount(heap->blob_count());
+    event.set_methodCount(heap->nmethod_count());
+    event.set_adaptorCount(heap->adapter_count());
     event.set_unallocatedCapacity(heap->unallocated_capacity()/K);
-    event.set_fullCount(_codemem_full_count);
+    event.set_fullCount(heap->full_count());
     event.commit();
   }
 }
@@ -1360,7 +1405,7 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
   if (detailed) {
     st->print_cr(" total_blobs=" UINT32_FORMAT " nmethods=" UINT32_FORMAT
                        " adapters=" UINT32_FORMAT,
-                       nof_blobs(), nof_nmethods(), nof_adapters());
+                       blob_count(), nmethod_count(), adapter_count());
     st->print_cr(" compilation: %s", CompileBroker::should_compile_new_jobs() ?
                  "enabled" : Arguments::mode() == Arguments::_int ?
                  "disabled (interpreter mode)" :
@@ -1392,6 +1437,6 @@ void CodeCache::print_layout(outputStream* st) {
 void CodeCache::log_state(outputStream* st) {
   st->print(" total_blobs='" UINT32_FORMAT "' nmethods='" UINT32_FORMAT "'"
             " adapters='" UINT32_FORMAT "' free_code_cache='" SIZE_FORMAT "'",
-            nof_blobs(), nof_nmethods(), nof_adapters(),
+            blob_count(), nmethod_count(), adapter_count(),
             unallocated_capacity());
 }

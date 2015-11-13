@@ -134,7 +134,6 @@ void FastScanClosure::do_oop(oop* p)       { FastScanClosure::do_oop_work(p); }
 void FastScanClosure::do_oop(narrowOop* p) { FastScanClosure::do_oop_work(p); }
 
 void KlassScanClosure::do_klass(Klass* klass) {
-#ifndef PRODUCT
   if (TraceScavenge) {
     ResourceMark rm;
     gclog_or_tty->print_cr("KlassScanClosure::do_klass " PTR_FORMAT ", %s, dirty: %s",
@@ -142,7 +141,6 @@ void KlassScanClosure::do_klass(Klass* klass) {
                            klass->external_name(),
                            klass->has_modified_oops() ? "true" : "false");
   }
-#endif
 
   // If the klass has not been dirtied we know that there's
   // no references into  the young gen and we can skip it.
