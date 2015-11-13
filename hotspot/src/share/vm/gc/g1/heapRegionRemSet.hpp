@@ -220,11 +220,6 @@ class HeapRegionRemSet : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class HeapRegionRemSetIterator;
 
-public:
-  enum Event {
-    Event_EvacStart, Event_EvacEnd, Event_RSUpdateEnd, Event_illegal
-  };
-
 private:
   G1BlockOffsetSharedArray* _bosa;
 
@@ -239,21 +234,6 @@ private:
   enum ParIterState { Unclaimed, Claimed, Complete };
   volatile ParIterState _iter_state;
   volatile size_t _iter_claimed;
-
-  // Unused unless G1RecordHRRSOops is true.
-
-  static const int MaxRecorded = 1000000;
-  static OopOrNarrowOopStar* _recorded_oops;
-  static HeapWord**          _recorded_cards;
-  static HeapRegion**        _recorded_regions;
-  static int                 _n_recorded;
-
-  static const int MaxRecordedEvents = 1000;
-  static Event*       _recorded_events;
-  static int*         _recorded_event_index;
-  static int          _n_recorded_events;
-
-  static void print_event(outputStream* str, Event evnt);
 
 public:
   HeapRegionRemSet(G1BlockOffsetSharedArray* bosa, HeapRegion* hr);
@@ -403,10 +383,6 @@ public:
     FromCardCache::print();
   }
 #endif
-
-  static void record(HeapRegion* hr, OopOrNarrowOopStar f);
-  static void print_recorded();
-  static void record_event(Event evnt);
 
   // These are wrappers for the similarly-named methods on
   // SparsePRT. Look at sparsePRT.hpp for more details.

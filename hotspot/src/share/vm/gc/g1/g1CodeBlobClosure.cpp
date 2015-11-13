@@ -36,7 +36,7 @@ void G1CodeBlobClosure::HeapRegionGatheringOopClosure::do_oop_work(T* p) {
   T oop_or_narrowoop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(oop_or_narrowoop)) {
     oop o = oopDesc::decode_heap_oop_not_null(oop_or_narrowoop);
-    HeapRegion* hr = _g1h->heap_region_containing_raw(o);
+    HeapRegion* hr = _g1h->heap_region_containing(o);
     assert(!_g1h->obj_in_cs(o) || hr->rem_set()->strong_code_roots_list_contains(_nm), "if o still in collection set then evacuation failed and nm must already be in the remset");
     hr->add_strong_code_root(_nm);
   }

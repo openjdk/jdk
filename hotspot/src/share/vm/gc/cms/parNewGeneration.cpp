@@ -57,10 +57,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/stack.inline.hpp"
 
-#ifdef _MSC_VER
-#pragma warning( push )
-#pragma warning( disable:4355 ) // 'this' : used in base member initializer list
-#endif
 ParScanThreadState::ParScanThreadState(Space* to_space_,
                                        ParNewGeneration* young_gen_,
                                        Generation* old_gen_,
@@ -104,9 +100,6 @@ ParScanThreadState::ParScanThreadState(Space* to_space_,
   _old_gen_closure.set_generation(old_gen_);
   _old_gen_root_closure.set_generation(old_gen_);
 }
-#ifdef _MSC_VER
-#pragma warning( pop )
-#endif
 
 void ParScanThreadState::record_survivor_plab(HeapWord* plab_start,
                                               size_t plab_word_size) {
@@ -597,10 +590,6 @@ void ParNewGenTask::work(uint worker_id) {
   par_scan_state.evacuate_followers_closure().do_void();
 }
 
-#ifdef _MSC_VER
-#pragma warning( push )
-#pragma warning( disable:4355 ) // 'this' : used in base member initializer list
-#endif
 ParNewGeneration::ParNewGeneration(ReservedSpace rs, size_t initial_byte_size)
   : DefNewGeneration(rs, initial_byte_size, "PCopy"),
   _overflow_list(NULL),
@@ -643,9 +632,6 @@ ParNewGeneration::ParNewGeneration(ReservedSpace rs, size_t initial_byte_size)
                                      ParallelGCThreads, CHECK);
   }
 }
-#ifdef _MSC_VER
-#pragma warning( pop )
-#endif
 
 // ParNewGeneration::
 ParKeepAliveClosure::ParKeepAliveClosure(ParScanWeakRefClosure* cl) :

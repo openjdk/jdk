@@ -31,6 +31,8 @@
 SLASH_JAVA ?= J:
 PATH_SEP = ;
 
+MAKE_ARGS += WARNINGS_AS_ERRORS=$(WARNINGS_AS_ERRORS)
+
 # Need PLATFORM (os-arch combo names) for jdk and hotspot, plus libarch name
 ifeq ($(ARCH_DATA_MODEL),32)
   ARCH_DATA_MODEL=32

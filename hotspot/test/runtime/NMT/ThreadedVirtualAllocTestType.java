@@ -24,7 +24,7 @@
 /*
  * @test
  * @key nmt jcmd
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build ThreadedVirtualAllocTestType

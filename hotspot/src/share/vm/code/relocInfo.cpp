@@ -438,10 +438,10 @@ void Relocation::const_set_data_value(address x) {
 void Relocation::const_verify_data_value(address x) {
 #ifdef _LP64
   if (format() == relocInfo::narrow_oop_in_const) {
-    assert(*(narrowOop*)addr() == oopDesc::encode_heap_oop((oop) x), "must agree");
+    guarantee(*(narrowOop*)addr() == oopDesc::encode_heap_oop((oop) x), "must agree");
   } else {
 #endif
-    assert(*(address*)addr() == x, "must agree");
+    guarantee(*(address*)addr() == x, "must agree");
 #ifdef _LP64
   }
 #endif

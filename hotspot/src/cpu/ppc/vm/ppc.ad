@@ -5572,7 +5572,6 @@ instruct loadN2P_unscaled(iRegPdst dst, memory mem) %{
 
 instruct loadN2P_klass_unscaled(iRegPdst dst, memory mem) %{
   match(Set dst (DecodeNKlass (LoadNKlass mem)));
-  // SAPJVM GL 2014-05-21 Differs.
   predicate(Universe::narrow_klass_base() == NULL && Universe::narrow_klass_shift() == 0 &&
             _kids[0]->_leaf->as_Load()->is_unordered());
   ins_cost(MEMORY_REF_COST);
@@ -10949,7 +10948,7 @@ instruct cmpFastLock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iR
     // TODO: PPC port $archOpcode(ppc64Opcode_compound);
     __ compiler_fast_lock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
                                  $tmp3$$Register, $tmp1$$Register, $tmp2$$Register,
-                                 UseBiasedLocking && !UseOptoBiasInlining); // SAPJVM MD 2014-11-06 UseOptoBiasInlining
+                                 UseBiasedLocking && !UseOptoBiasInlining);
     // If locking was successfull, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_locking_Java for the case where crx is 'NE'.
