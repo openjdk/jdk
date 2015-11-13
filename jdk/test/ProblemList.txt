@@ -133,9 +133,6 @@ java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java generic-all
 # 8029891
 java/lang/ClassLoader/deadlock/GetResource.java                 generic-all
 
-# 8131129
-java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        windows-all
-
 ############################################################################
 
 # jdk_instrument
