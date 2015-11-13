@@ -182,6 +182,7 @@ public class Infer {
                     argtypes, mt.getParameterTypes(), warn);
 
             if (allowGraphInference && resultInfo != null && resultInfo.pt == anyPoly) {
+                checkWithinBounds(inferenceContext, warn);
                 //we are inside method attribution - just return a partially inferred type
                 return new PartiallyInferredMethodType(mt, inferenceContext, env, warn);
             } else if (allowGraphInference &&
@@ -189,13 +190,21 @@ public class Infer {
                     !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
                 //inject return constraints earlier
                 checkWithinBounds(inferenceContext, warn); //propagation
+
+                boolean shouldPropagate = resultInfo.checkContext.inferenceContext().free(resultInfo.pt);
+
+                InferenceContext minContext = shouldPropagate ?
+                        inferenceContext.min(roots(mt, deferredAttrContext), true, warn) :
+                        inferenceContext;
+
                 Type newRestype = generateReturnConstraints(env.tree, resultInfo,  //B3
-                        mt, inferenceContext);
+                        mt, minContext);
                 mt = (MethodType)types.createMethodTypeWithReturn(mt, newRestype);
+
                 //propagate outwards if needed
-                if (resultInfo.checkContext.inferenceContext().free(resultInfo.pt)) {
+                if (shouldPropagate) {
                     //propagate inference context outwards and exit
-                    inferenceContext.dupTo(resultInfo.checkContext.inferenceContext());
+                    minContext.dupTo(resultInfo.checkContext.inferenceContext());
                     deferredAttrContext.complete();
                     return mt;
                 }
@@ -242,6 +251,19 @@ public class Infer {
             dumpGraphsIfNeeded(env.tree, msym, resolveContext);
         }
     }
+    //where
+        private List<Type> roots(MethodType mt, DeferredAttrContext deferredAttrContext) {
+            ListBuffer<Type> roots = new ListBuffer<>();
+            roots.add(mt.getReturnType());
+            if (deferredAttrContext != null && deferredAttrContext.mode == AttrMode.CHECK) {
+                roots.addAll(mt.getThrownTypes());
+                for (DeferredAttr.DeferredAttrNode n : deferredAttrContext.deferredAttrNodes) {
+                    roots.addAll(n.deferredStuckPolicy.stuckVars());
+                    roots.addAll(n.deferredStuckPolicy.depVars());
+                }
+            }
+            return roots.toList();
+        }
 
     /**
      * A partially infered method/constructor type; such a type can be checked multiple times
@@ -284,16 +306,21 @@ public class Infer {
                  */
                 saved_undet = inferenceContext.save();
                 if (allowGraphInference && !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
-                    //inject return constraints earlier
-                    checkWithinBounds(inferenceContext, noWarnings); //propagation
-                    Type res = generateReturnConstraints(env.tree, resultInfo,  //B3
-                        this, inferenceContext);
+                    boolean shouldPropagate = resultInfo.checkContext.inferenceContext().free(resultInfo.pt);
 
-                    if (resultInfo.checkContext.inferenceContext().free(resultInfo.pt)) {
+                    InferenceContext minContext = shouldPropagate ?
+                            inferenceContext.min(roots(asMethodType(), null), false, warn) :
+                            inferenceContext;
+
+                    MethodType other = (MethodType)minContext.update(asMethodType());
+                    Type newRestype = generateReturnConstraints(env.tree, resultInfo,  //B3
+                            other, minContext);
+
+                    if (shouldPropagate) {
                         //propagate inference context outwards and exit
-                        inferenceContext.dupTo(resultInfo.checkContext.inferenceContext(),
+                        minContext.dupTo(resultInfo.checkContext.inferenceContext(),
                                 resultInfo.checkContext.deferredAttrContext().insideOverloadPhase());
-                        return res;
+                        return newRestype;
                     }
                 }
                 inferenceContext.solve(noWarnings);
@@ -588,6 +615,18 @@ public class Infer {
                 return t;
             }
         }
+
+    TypeMapping<Void> fromTypeVarFun = new TypeMapping<Void>() {
+        @Override
+        public Type visitTypeVar(TypeVar tv, Void aVoid) {
+            return new UndetVar(tv, types);
+        }
+
+        @Override
+        public Type visitCapturedType(CapturedType t, Void aVoid) {
+            return new CapturedUndetVar(t, types);
+        }
+    };
 
     /**
       * This method is used to infer a suitable target SAM in case the original

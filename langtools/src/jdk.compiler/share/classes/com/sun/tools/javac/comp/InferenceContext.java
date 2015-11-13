@@ -25,38 +25,34 @@
 
 package com.sun.tools.javac.comp;
 
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
-import com.sun.tools.javac.code.Type.CapturedType;
-import com.sun.tools.javac.code.Type.CapturedUndetVar;
-import com.sun.tools.javac.code.Type.TypeMapping;
+import com.sun.tools.javac.code.Type.ArrayType;
+import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.code.Type.UndetVar;
 import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
+import com.sun.tools.javac.code.Type.WildcardType;
 import com.sun.tools.javac.code.Types;
-import com.sun.tools.javac.comp.Infer.BestLeafSolver;
 import com.sun.tools.javac.comp.Infer.FreeTypeListener;
 import com.sun.tools.javac.comp.Infer.GraphSolver;
 import com.sun.tools.javac.comp.Infer.GraphStrategy;
 import com.sun.tools.javac.comp.Infer.InferenceException;
 import com.sun.tools.javac.comp.Infer.InferenceStep;
-import com.sun.tools.javac.comp.Infer.LeafSolver;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Assert;
-import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Filter;
-import com.sun.tools.javac.util.JCDiagnostic;
-import com.sun.tools.javac.util.JCDiagnostic.Factory;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Warner;
+
+import static com.sun.tools.javac.code.TypeTag.UNDETVAR;
 
 /**
  * An inference context keeps track of the set of variables that are free
@@ -76,43 +72,34 @@ class InferenceContext {
     /** list of inference vars as undet vars */
     List<Type> undetvars;
 
+    Type update(Type t) {
+        return t;
+    }
+
     /** list of inference vars in this context */
     List<Type> inferencevars;
 
     Map<FreeTypeListener, List<Type>> freeTypeListeners = new HashMap<>();
 
-    List<FreeTypeListener> freetypeListeners = List.nil();
-
     Types types;
     Infer infer;
 
     public InferenceContext(Infer infer, List<Type> inferencevars) {
-        this.inferencevars = inferencevars;
-
-        this.infer = infer;
-        this.types = infer.types;
-
-        fromTypeVarFun = new TypeMapping<Void>() {
-            @Override
-            public Type visitTypeVar(TypeVar tv, Void aVoid) {
-                return new UndetVar(tv, types);
-            }
-
-            @Override
-            public Type visitCapturedType(CapturedType t, Void aVoid) {
-                return new CapturedUndetVar(t, types);
-            }
-        };
-        this.undetvars = inferencevars.map(fromTypeVarFun);
+        this(infer, inferencevars, inferencevars.map(infer.fromTypeVarFun));
     }
 
-    TypeMapping<Void> fromTypeVarFun;
+    public InferenceContext(Infer infer, List<Type> inferencevars, List<Type> undetvars) {
+        this.inferencevars = inferencevars;
+        this.undetvars = undetvars;
+        this.infer = infer;
+        this.types = infer.types;
+    }
 
     /**
      * add a new inference var to this inference context
      */
     void addVar(TypeVar t) {
-        this.undetvars = this.undetvars.prepend(fromTypeVarFun.apply(t));
+        this.undetvars = this.undetvars.prepend(infer.fromTypeVarFun.apply(t));
         this.inferencevars = this.inferencevars.prepend(t);
     }
 
@@ -363,6 +350,124 @@ class InferenceContext {
                     InferenceContext.this.notifyChange();
                 }
             }, List.of(t));
+        }
+    }
+
+    InferenceContext min(List<Type> roots, boolean shouldSolve, Warner warn) {
+        ReachabilityVisitor rv = new ReachabilityVisitor();
+        rv.scan(roots);
+        if (rv.min.size() == inferencevars.length()) {
+            return this;
+        }
+
+        List<Type> minVars = List.from(rv.min);
+        List<Type> redundantVars = inferencevars.diff(minVars);
+
+        //compute new undet variables (bounds associated to redundant variables are dropped)
+        ListBuffer<Type> minUndetVars = new ListBuffer<>();
+        for (Type minVar : minVars) {
+            UndetVar uv = (UndetVar)asUndetVar(minVar);
+            UndetVar uv2 = new UndetVar((TypeVar)minVar, types);
+            for (InferenceBound ib : InferenceBound.values()) {
+                List<Type> newBounds = uv.getBounds(ib).stream()
+                        .filter(b -> !redundantVars.contains(b))
+                        .collect(List.collector());
+                uv2.setBounds(ib, newBounds);
+            }
+            minUndetVars.add(uv2);
+        }
+
+        //compute new minimal inference context
+        InferenceContext minContext = new InferenceContext(infer, minVars, minUndetVars.toList());
+        for (Type t : minContext.inferencevars) {
+            //add listener that forwards notifications to original context
+            minContext.addFreeTypeListener(List.of(t), (inferenceContext) -> {
+                    List<Type> depVars = List.from(rv.minMap.get(t));
+                    solve(depVars, warn);
+                    notifyChange();
+            });
+        }
+        if (shouldSolve) {
+            //solve definitively unreachable variables
+            List<Type> unreachableVars = redundantVars.diff(List.from(rv.equiv));
+            solve(unreachableVars, warn);
+        }
+        return minContext;
+    }
+
+    class ReachabilityVisitor extends Types.UnaryVisitor<Void> {
+
+        Set<Type> equiv = new HashSet<>();
+        Set<Type> min = new HashSet<>();
+        Map<Type, Set<Type>> minMap = new HashMap<>();
+
+        void scan(List<Type> roots) {
+            roots.stream().forEach(this::visit);
+        }
+
+        @Override
+        public Void visitType(Type t, Void _unused) {
+            return null;
+        }
+
+        @Override
+        public Void visitUndetVar(UndetVar t, Void _unused) {
+            if (min.add(t.qtype)) {
+                Set<Type> deps = minMap.getOrDefault(t.qtype, new HashSet<>(Collections.singleton(t.qtype)));
+                for (Type b : t.getBounds(InferenceBound.values())) {
+                    Type undet = asUndetVar(b);
+                    if (!undet.hasTag(UNDETVAR)) {
+                        visit(undet);
+                    } else if (isEquiv((UndetVar)undet, b)){
+                        deps.add(b);
+                        equiv.add(b);
+                    } else {
+                        visit(undet);
+                    }
+                }
+                minMap.put(t.qtype, deps);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitWildcardType(WildcardType t, Void _unused) {
+            return visit(t.type);
+        }
+
+        @Override
+        public Void visitTypeVar(TypeVar t, Void aVoid) {
+            Type undet = asUndetVar(t);
+            if (undet.hasTag(UNDETVAR)) {
+                visitUndetVar((UndetVar)undet, null);
+            }
+            return null;
+        }
+
+        @Override
+        public Void visitArrayType(ArrayType t, Void _unused) {
+            return visit(t.elemtype);
+        }
+
+        @Override
+        public Void visitClassType(ClassType t, Void _unused) {
+            visit(t.getEnclosingType());
+            for (Type targ : t.getTypeArguments()) {
+                visit(targ);
+            }
+            return null;
+        }
+
+        boolean isEquiv(UndetVar from, Type t) {
+            UndetVar uv = (UndetVar)asUndetVar(t);
+            for (InferenceBound ib : InferenceBound.values()) {
+                List<Type> b1 = uv.getBounds(ib);
+                List<Type> b2 = from.getBounds(ib);
+                if (!b1.containsAll(b2) || !b2.containsAll(b1)) {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 
