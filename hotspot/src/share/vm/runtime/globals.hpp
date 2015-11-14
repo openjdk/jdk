@@ -2523,9 +2523,6 @@ public:
   develop(bool, TraceWorkGang, false,                                       \
           "Trace activities of work gangs")                                 \
                                                                             \
-  product(bool, TraceParallelOldGCTasks, false,                             \
-          "Trace multithreaded GC activity")                                \
-                                                                            \
   develop(bool, TraceBlockOffsetTable, false,                               \
           "Print BlockOffsetTable maps")                                    \
                                                                             \
