@@ -38,7 +38,7 @@ public final class OutputAnalyzer {
     private final OutputBuffer output;
     private final String stdout;
     private final String stderr;
-    private final int exitValue;
+    private final int exitValue;    // useless now. output contains exit value.
 
     /**
      * Create an OutputAnalyzer, a utility class for verifying output and exit
