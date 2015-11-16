@@ -569,7 +569,7 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
     return false;
   }
   Node* range = cmp->in(2);
-  if (range->Opcode() != Op_LoadRange) {
+  if (range->Opcode() != Op_LoadRange && !iff->is_RangeCheck()) {
     const TypeInt* tint = phase->_igvn.type(range)->isa_int();
     if (tint == NULL || tint->empty() || tint->_lo < 0) {
       // Allow predication on positive values that aren't LoadRanges.

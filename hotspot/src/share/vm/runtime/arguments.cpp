@@ -1466,24 +1466,6 @@ void Arguments::set_tiered_flags() {
   // Enable SegmentedCodeCache if TieredCompilation is enabled and ReservedCodeCacheSize >= 240M
   if (FLAG_IS_DEFAULT(SegmentedCodeCache) && ReservedCodeCacheSize >= 240*M) {
     FLAG_SET_ERGO(bool, SegmentedCodeCache, true);
-
-    if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
-      // Multiply sizes by 5 but fix NonNMethodCodeHeapSize (distribute among non-profiled and profiled code heap)
-      if (FLAG_IS_DEFAULT(ProfiledCodeHeapSize)) {
-        FLAG_SET_ERGO(uintx, ProfiledCodeHeapSize, ProfiledCodeHeapSize * 5 + NonNMethodCodeHeapSize * 2);
-      }
-      if (FLAG_IS_DEFAULT(NonProfiledCodeHeapSize)) {
-        FLAG_SET_ERGO(uintx, NonProfiledCodeHeapSize, NonProfiledCodeHeapSize * 5 + NonNMethodCodeHeapSize * 2);
-      }
-      // Check consistency of code heap sizes
-      if ((NonNMethodCodeHeapSize + NonProfiledCodeHeapSize + ProfiledCodeHeapSize) != ReservedCodeCacheSize) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid code heap sizes: NonNMethodCodeHeapSize(%dK) + ProfiledCodeHeapSize(%dK) + NonProfiledCodeHeapSize(%dK) = %dK. Must be equal to ReservedCodeCacheSize = %uK.\n",
-                    NonNMethodCodeHeapSize/K, ProfiledCodeHeapSize/K, NonProfiledCodeHeapSize/K,
-                    (NonNMethodCodeHeapSize + ProfiledCodeHeapSize + NonProfiledCodeHeapSize)/K, ReservedCodeCacheSize/K);
-        vm_exit(1);
-      }
-    }
   }
   if (!UseInterpreter) { // -Xcomp
     Tier3InvokeNotifyFreqLog = 0;
@@ -2533,17 +2515,10 @@ bool Arguments::check_vm_args_consistency() {
                 "Invalid ReservedCodeCacheSize=%dM. Must be at most %uM.\n", ReservedCodeCacheSize/M,
                 CODE_CACHE_SIZE_LIMIT/M);
     status = false;
-  } else if (NonNMethodCodeHeapSize < min_code_cache_size){
+  } else if (NonNMethodCodeHeapSize < min_code_cache_size) {
     jio_fprintf(defaultStream::error_stream(),
                 "Invalid NonNMethodCodeHeapSize=%dK. Must be at least %uK.\n", NonNMethodCodeHeapSize/K,
                 min_code_cache_size/K);
-    status = false;
-  } else if ((!FLAG_IS_DEFAULT(NonNMethodCodeHeapSize) || !FLAG_IS_DEFAULT(ProfiledCodeHeapSize) || !FLAG_IS_DEFAULT(NonProfiledCodeHeapSize))
-             && (NonNMethodCodeHeapSize + NonProfiledCodeHeapSize + ProfiledCodeHeapSize) != ReservedCodeCacheSize) {
-    jio_fprintf(defaultStream::error_stream(),
-                "Invalid code heap sizes: NonNMethodCodeHeapSize(%dK) + ProfiledCodeHeapSize(%dK) + NonProfiledCodeHeapSize(%dK) = %dK. Must be equal to ReservedCodeCacheSize = %uK.\n",
-                NonNMethodCodeHeapSize/K, ProfiledCodeHeapSize/K, NonProfiledCodeHeapSize/K,
-                (NonNMethodCodeHeapSize + ProfiledCodeHeapSize + NonProfiledCodeHeapSize)/K, ReservedCodeCacheSize/K);
     status = false;
   }
 

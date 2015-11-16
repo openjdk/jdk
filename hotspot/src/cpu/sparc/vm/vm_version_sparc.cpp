@@ -229,35 +229,35 @@ void VM_Version::initialize() {
 
   // SPARC T4 and above should have support for AES instructions
   if (has_aes()) {
-    if (UseVIS > 2) { // AES intrinsics use MOVxTOd/MOVdTOx which are VIS3
-      if (FLAG_IS_DEFAULT(UseAES)) {
-        FLAG_SET_DEFAULT(UseAES, true);
+    if (FLAG_IS_DEFAULT(UseAES)) {
+      FLAG_SET_DEFAULT(UseAES, true);
+    }
+    if (!UseAES) {
+      if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+        warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
       }
-      if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-        FLAG_SET_DEFAULT(UseAESIntrinsics, true);
-      }
-      // we disable both the AES flags if either of them is disabled on the command line
-      if (!UseAES || !UseAESIntrinsics) {
-        FLAG_SET_DEFAULT(UseAES, false);
+      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+    } else {
+      // The AES intrinsic stubs require AES instruction support (of course)
+      // but also require VIS3 mode or higher for instructions it use.
+      if (UseVIS > 2) {
+        if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+          FLAG_SET_DEFAULT(UseAESIntrinsics, true);
+        }
+      } else {
+        if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+          warning("SPARC AES intrinsics require VIS3 instructions. Intrinsics will be disabled.");
+        }
         FLAG_SET_DEFAULT(UseAESIntrinsics, false);
       }
-    } else {
-        if (UseAES || UseAESIntrinsics) {
-          warning("SPARC AES intrinsics require VIS3 instruction support. Intrinsics will be disabled.");
-          if (UseAES) {
-            FLAG_SET_DEFAULT(UseAES, false);
-          }
-          if (UseAESIntrinsics) {
-            FLAG_SET_DEFAULT(UseAESIntrinsics, false);
-          }
-        }
     }
   } else if (UseAES || UseAESIntrinsics) {
-    warning("AES instructions are not available on this CPU");
-    if (UseAES) {
+    if (UseAES && !FLAG_IS_DEFAULT(UseAES)) {
+      warning("AES instructions are not available on this CPU");
       FLAG_SET_DEFAULT(UseAES, false);
     }
-    if (UseAESIntrinsics) {
+    if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+      warning("AES intrinsics are not available on this CPU");
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
     }
   }
