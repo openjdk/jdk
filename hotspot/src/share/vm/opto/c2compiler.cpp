@@ -451,6 +451,7 @@ bool C2Compiler::is_intrinsic_supported(methodHandle method, bool is_virtual) {
   case vmIntrinsics::_updateByteBufferAdler32:
   case vmIntrinsics::_profileBoolean:
   case vmIntrinsics::_isCompileConstant:
+  case vmIntrinsics::_Objects_checkIndex:
     break;
   default:
     return false;
