@@ -27,6 +27,7 @@ package java.util;
 
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
+import jdk.internal.HotSpotIntrinsicCandidate;
 
 /**
  * This class consists of {@code static} utility methods for operating
@@ -416,14 +417,14 @@ public final class Objects {
      * @throws IndexOutOfBoundsException if the {@code index} is out of bounds
      *         and the exception mapping function is {@code null}
      * @since 9
-     */
-    /*
-    @HotSpotIntrinsicCandidate
-    This method will be made intrinsic in C2 to guide HotSpot to perform
-    unsigned comparisons of the index and length when it is known the length is
-    a non-negative value (such as that of an array length or from the upper
-    bound of a loop)
+     *
+     * @implNote
+     * This method is made intrinsic in optimizing compilers to guide
+     * them to perform unsigned comparisons of the index and length
+     * when it is known the length is a non-negative value (such as
+     * that of an array length or from the upper bound of a loop)
     */
+    @HotSpotIntrinsicCandidate
     public static <T extends RuntimeException>
     int checkIndex(int index, int length,
                    BiFunction<Integer, Integer, T> oobe) throws T, IndexOutOfBoundsException {
