@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,12 +220,8 @@ public final class LocalDate
      */
     public static LocalDate now(Clock clock) {
         Objects.requireNonNull(clock, "clock");
-        // inline to avoid creating object and Instant checks
         final Instant now = clock.instant();  // called once
-        ZoneOffset offset = clock.getZone().getRules().getOffset(now);
-        long epochSec = now.getEpochSecond() + offset.getTotalSeconds();  // overflow caught later
-        long epochDay = Math.floorDiv(epochSec, SECONDS_PER_DAY);
-        return LocalDate.ofEpochDay(epochDay);
+        return ofInstant(now, clock.getZone());
     }
 
     //-----------------------------------------------------------------------
@@ -296,6 +292,30 @@ public final class LocalDate
         }
         int dom = dayOfYear - moy.firstDayOfYear(leap) + 1;
         return new LocalDate(year, moy.getValue(), dom);
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     * Obtains an instance of {@code LocalDate} from an {@code Instant} and zone ID.
+     * <p>
+     * This creates a local date based on the specified instant.
+     * First, the offset from UTC/Greenwich is obtained using the zone ID and instant,
+     * which is simple as there is only one valid offset for each instant.
+     * Then, the instant and offset are used to calculate the local date.
+     *
+     * @param instant  the instant to create the date from, not null
+     * @param zone  the time-zone, which may be an offset, not null
+     * @return the local date, not null
+     * @throws DateTimeException if the result exceeds the supported range
+     */
+    public static LocalDate ofInstant(Instant instant, ZoneId zone) {
+        Objects.requireNonNull(instant, "instant");
+        Objects.requireNonNull(zone, "zone");
+        ZoneRules rules = zone.getRules();
+        ZoneOffset offset = rules.getOffset(instant);
+        long localSecond = instant.getEpochSecond() + offset.getTotalSeconds();
+        long localEpochDay = Math.floorDiv(localSecond, SECONDS_PER_DAY);
+        return ofEpochDay(localEpochDay);
     }
 
     //-----------------------------------------------------------------------
