@@ -806,7 +806,11 @@ bool IfNode::has_only_uncommon_traps(ProjNode* proj, ProjNode*& success, ProjNod
       // that the call stacks are equal for both JVMStates.
       JVMState* dom_caller = dom_unc->jvms()->caller();
       JVMState* caller = unc->jvms()->caller();
-      if (!dom_caller->same_calls_as(caller)) {
+      if ((dom_caller == NULL) != (caller == NULL)) {
+        // The current method must either be inlined into both dom_caller and
+        // caller or must not be inlined at all (top method). Bail out otherwise.
+        return false;
+      } else if (dom_caller != NULL && !dom_caller->same_calls_as(caller)) {
         return false;
       }
       // Check that the bci of the dominating uncommon trap dominates the bci
