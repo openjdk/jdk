@@ -366,6 +366,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "StarvationMonitorInterval",     JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "PreInflateSpin",                JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "JNIDetachReleasesMonitors",     JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "UseAltSigs",                    JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },
@@ -2949,11 +2950,12 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
                        round_to((int)long_ThreadStackSize, K) / K) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
-    // -Xoss, -Xsqnopause, -Xoptimize, -Xboundthreads
+    // -Xoss, -Xsqnopause, -Xoptimize, -Xboundthreads, -Xusealtsigs
     } else if (match_option(option, "-Xoss", &tail) ||
                match_option(option, "-Xsqnopause") ||
                match_option(option, "-Xoptimize") ||
-               match_option(option, "-Xboundthreads")) {
+               match_option(option, "-Xboundthreads") ||
+               match_option(option, "-Xusealtsigs")) {
       // All these options are deprecated in JDK 9 and will be removed in a future release
       char version[256];
       JDK_Version::jdk(9).to_string(version, sizeof(version));
@@ -3034,11 +3036,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     } else if (match_option(option, "-Xrs")) {
           // Classic/EVM option, new functionality
       if (FLAG_SET_CMDLINE(bool, ReduceSignalUsage, true) != Flag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-    } else if (match_option(option, "-Xusealtsigs")) {
-          // change default internal VM signals used - lower case for back compat
-      if (FLAG_SET_CMDLINE(bool, UseAltSigs, true) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
     // -Xprof
