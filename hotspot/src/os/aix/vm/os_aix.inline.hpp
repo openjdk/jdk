@@ -60,6 +60,8 @@ inline bool os::allocate_stack_guard_pages() {
 // On Aix, reservations are made on a page by page basis, nothing to do.
 inline void os::pd_split_reserved_memory(char *base, size_t size,
                                          size_t split, bool realloc) {
+  // TODO: Determine whether Sys V memory is split. If yes, we need to treat
+  // this the same way Windows treats its VirtualAlloc allocations.
 }
 
 // Bang the shadow pages if they need to be touched to be mapped.

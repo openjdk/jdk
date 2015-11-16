@@ -1,5 +1,4 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,33 +22,17 @@
  *
  */
 
-// no precompiled headers
+// This is only a stub. Will flesh out later when/if we add further support
+// for PASE.
 
-#include "runtime/handles.inline.hpp"
-#include "runtime/mutexLocker.hpp"
-#include "runtime/os.hpp"
-#include "runtime/osThread.hpp"
-#include "runtime/safepoint.hpp"
-#include "runtime/vmThread.hpp"
+#include "libo4.hpp"
 
-void OSThread::pd_initialize() {
-  assert(this != NULL, "check");
-  _thread_id        = 0;
-  _kernel_thread_id = 0;
-  _siginfo = NULL;
-  _ucontext = NULL;
-  _expanding_stack = 0;
-  _alt_sig_stack = NULL;
-
-  _last_cpu_times.sys = _last_cpu_times.user = 0L;
-
-  sigemptyset(&_caller_sigmask);
-
-  _startThread_lock = new Monitor(Mutex::event, "startThread_lock", true,
-                                  Monitor::_safepoint_check_never);
-  assert(_startThread_lock != NULL, "check");
+bool libo4::init() { return false; }
+void libo4::cleanup() {}
+bool libo4::get_memory_info (unsigned long long* p_virt_total, unsigned long long* p_real_total,
+  unsigned long long* p_real_free, unsigned long long* p_pgsp_total, unsigned long long* p_pgsp_free) {
+  return false;
 }
+bool libo4::get_load_avg (double* p_avg1, double* p_avg5, double* p_avg15) { return false; }
+bool libo4::realpath (const char* file_name, char* resolved_name, int resolved_name_len) { return false; }
 
-void OSThread::pd_destroy() {
-  delete _startThread_lock;
-}
