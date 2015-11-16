@@ -3563,7 +3563,7 @@ public:
                                                                             \
   product_pd(intx, CompilerThreadStackSize,                                 \
           "Compiler Thread Stack Size (in Kbytes)")                         \
-          range(0, max_intx)                                                \
+          range(0, max_intx /(1 * K))                                       \
                                                                             \
   develop_pd(size_t, JVMInvokeMethodSlack,                                  \
           "Stack space (bytes) required for JVM_InvokeMethod to complete")  \
