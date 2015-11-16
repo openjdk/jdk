@@ -485,7 +485,7 @@ ProjNode* IfNode::range_check_trap_proj(int& flip_test, Node*& l, Node*& r) {
     return NULL;
   }
   if (l->is_top())  return NULL;   // Top input means dead test
-  if (r->Opcode() != Op_LoadRange)  return NULL;
+  if (r->Opcode() != Op_LoadRange && !is_RangeCheck())  return NULL;
 
   // We have recognized one of these forms:
   //  Flip 1:  If (Bool[<] CmpU(l, LoadRange)) ...
@@ -525,9 +525,9 @@ int RangeCheckNode::is_range_check(Node* &range, Node* &index, jint &offset) {
     return 0;
   } else if (l->Opcode() == Op_AddI) {
     if ((off = l->in(1)->find_int_con(0)) != 0) {
-      ind = l->in(2);
+      ind = l->in(2)->uncast();
     } else if ((off = l->in(2)->find_int_con(0)) != 0) {
-      ind = l->in(1);
+      ind = l->in(1)->uncast();
     }
   } else if ((off = l->find_int_con(-1)) >= 0) {
     // constant offset with no variable index
