@@ -32,7 +32,7 @@
  */
 
 import java.lang.reflect.*;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 public class TestUnsafeUnalignedMismatchedAccesses {
 
