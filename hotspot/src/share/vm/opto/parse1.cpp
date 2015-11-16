@@ -964,11 +964,12 @@ void Parse::do_exits() {
     }
   }
 
-  // Any method can write a @Stable field; insert memory barriers after
-  // those also. If there is a predecessor allocation node, bind the
-  // barrier there.
+  // Any method can write a @Stable field; insert memory barriers
+  // after those also. Can't bind predecessor allocation node (if any)
+  // with barrier because allocation doesn't always dominate
+  // MemBarRelease.
   if (wrote_stable()) {
-    _exits.insert_mem_bar(Op_MemBarRelease, alloc_with_final());
+    _exits.insert_mem_bar(Op_MemBarRelease);
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name();
       tty->print_cr(" writes @Stable and needs a memory barrier");
