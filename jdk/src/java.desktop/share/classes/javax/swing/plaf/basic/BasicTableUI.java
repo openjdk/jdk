@@ -1812,9 +1812,11 @@ public class BasicTableUI extends TableUI
 
         boolean ltr = table.getComponentOrientation().isLeftToRight();
 
-        Point upperLeft = clip.getLocation();
-        Point lowerRight = new Point(clip.x + clip.width - 1,
-                                     clip.y + clip.height - 1);
+        // compute the visible part of table which needs to be painted
+        Rectangle visibleBounds = clip.intersection(bounds);
+        Point upperLeft = visibleBounds.getLocation();
+        Point lowerRight = new Point(visibleBounds.x + visibleBounds.width - 1,
+                                     visibleBounds.y + visibleBounds.height - 1);
 
         int rMin = table.rowAtPoint(upperLeft);
         int rMax = table.rowAtPoint(lowerRight);
@@ -1841,6 +1843,21 @@ public class BasicTableUI extends TableUI
         // Replace this with the index of the last column.
         if (cMax == -1) {
             cMax = table.getColumnCount()-1;
+        }
+
+        Container comp = SwingUtilities.getUnwrappedParent(table);
+        if (comp != null) {
+            comp = comp.getParent();
+        }
+
+        if (comp != null && !(comp instanceof JViewport) && !(comp instanceof JScrollPane)) {
+            // We did rMax-1 to paint the same number of rows that are drawn on console
+            // otherwise 1 extra row is printed per page than that are displayed
+            // when there is no scrollPane and we do printing of table
+            // but not when rmax is already pointing to index of last row
+            if (rMax != (table.getRowCount() - 1)) {
+                rMax = rMax - 1;
+            }
         }
 
         // Paint the grid.
