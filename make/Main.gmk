@@ -482,6 +482,8 @@ else
 
   test-hotspot-jtreg: jimages test-image
 
+  install: product-images
+
 endif
 
 ################################################################################
