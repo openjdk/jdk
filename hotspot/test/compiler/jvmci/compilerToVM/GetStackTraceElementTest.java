@@ -41,6 +41,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
+
+import compiler.jvmci.common.testcases.TestCase;
 import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
@@ -56,22 +58,49 @@ public class GetStackTraceElementTest {
         HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
         String className = aMethod.getDeclaringClass().getName();
+        String methodName = aMethod.getName().equals(className)
+                ? "<init>"
+                : aMethod.getName();
+        String fileName = getFileName(className);
+        Map<Integer, Integer> bciWithLineNumber = CTVMUtilities
+                .getBciToLineNumber(aMethod);
+        boolean isNative = Modifier.isNative(aMethod.getModifiers());
+        int lineNumber = -1;
+        for (int bci : bcis) {
+            StackTraceElement ste = CompilerToVMHelper
+                    .getStackTraceElement(method, bci);
+            Asserts.assertNotNull(ste, aMethod + " : got null StackTraceElement"
+                    + " at bci " + bci);
+            Asserts.assertEQ(className, ste.getClassName(), aMethod
+                    + " : unexpected class name");
+            Asserts.assertEQ(fileName, ste.getFileName(), aMethod
+                    + " : unexpected filename");
+            Asserts.assertEQ(methodName, ste.getMethodName(), aMethod
+                    + " : unexpected method name");
+            Asserts.assertEQ(isNative, ste.isNativeMethod(), aMethod
+                    + " : unexpected 'isNative' value");
+            if (bciWithLineNumber.size() > 0) {
+                if (bciWithLineNumber.containsKey(bci)) {
+                    lineNumber = bciWithLineNumber.get(bci);
+                }
+                Asserts.assertEQ(lineNumber, ste.getLineNumber(), aMethod
+                        + " : unexpected line number");
+            } else {
+                // native and abstract function
+                Asserts.assertLT(0, ste.getLineNumber(),
+                        aMethod + " : unexpected line number for abstract "
+                                + "or native method");
+            }
+        }
+
+    }
+
+    private static String getFileName(String className) {
         int lastDot = className.lastIndexOf('.');
         int firstDol = className.contains("$")
                 ? className.indexOf('$')
                 : className.length();
-        String fileName = className.substring(lastDot + 1, firstDol) + ".java";
-        for (int bci : bcis) {
-            StackTraceElement ste = CompilerToVMHelper
-                    .getStackTraceElement(method, bci);
-            Asserts.assertNotNull(ste);
-            Asserts.assertEQ(ste.getClassName(), className);
-            Asserts.assertEQ(ste.getFileName(), fileName);
-            Asserts.assertEQ(ste.getMethodName(), aMethod.getName());
-            Asserts.assertEQ(ste.isNativeMethod(), Modifier
-                    .isNative(aMethod.getModifiers()));
-        }
-
+        return className.substring(lastDot + 1, firstDol) + ".java";
     }
 
     private static Map<Executable, int[]> createTestCases() {
@@ -86,6 +115,13 @@ public class GetStackTraceElementTest {
             aMethod = aClass.getDeclaredMethod("dummyEmptyFunction");
             bci = new int[] {0};
             testCases.put(aMethod, bci);
+
+            aMethod = aClass.getDeclaredMethod("nativeFunction");
+            bci = new int[] {0};
+            testCases.put(aMethod, bci);
+
+            TestCase.getAllExecutables()
+                    .forEach(c -> testCases.put(c, new int[] {0}));
         } catch (NoSuchMethodException e) {
             throw new Error("TEST BUG : test method not found", e);
         }
@@ -102,5 +138,7 @@ public class GetStackTraceElementTest {
         }
 
         public void dummyEmptyFunction() {}
+
+        public native void nativeFunction();
     }
 }
