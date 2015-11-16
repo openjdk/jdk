@@ -329,6 +329,9 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
 
   Node* phi_incr = NULL;
   // Trip-counter increment must be commutative & associative.
+  if (incr->Opcode() == Op_CastII) {
+    incr = incr->in(1);
+  }
   if (incr->is_Phi()) {
     if (incr->as_Phi()->region() != x || incr->req() != 3)
       return false; // Not simple trip counter expression
@@ -355,6 +358,9 @@ bool PhaseIdealLoop::is_counted_loop( Node *x, IdealLoopTree *loop ) {
     Node *tmp = xphi;           // 'incr' is commutative, so ok to swap
     xphi = stride;
     stride = tmp;
+  }
+  if (xphi->Opcode() == Op_CastII) {
+    xphi = xphi->in(1);
   }
   // Stride must be constant
   int stride_con = stride->get_int();

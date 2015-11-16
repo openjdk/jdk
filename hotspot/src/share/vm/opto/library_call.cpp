@@ -256,6 +256,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_getLength();
   bool inline_array_copyOf(bool is_copyOfRange);
   bool inline_array_equals(StrIntrinsicNode::ArgEnc ae);
+  bool inline_objects_checkIndex();
   void copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, bool is_array, bool card_mark);
   bool inline_native_clone(bool is_virtual);
   bool inline_native_Reflection_getCallerClass();
@@ -647,6 +648,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_copyOfRange:              return inline_array_copyOf(true);
   case vmIntrinsics::_equalsB:                  return inline_array_equals(StrIntrinsicNode::LL);
   case vmIntrinsics::_equalsC:                  return inline_array_equals(StrIntrinsicNode::UU);
+  case vmIntrinsics::_Objects_checkIndex:       return inline_objects_checkIndex();
   case vmIntrinsics::_clone:                    return inline_native_clone(intrinsic()->is_virtual());
 
   case vmIntrinsics::_isAssignableFrom:         return inline_native_subtype_check();
@@ -1042,6 +1044,54 @@ bool LibraryCallKit::inline_hasNegatives() {
     Node* result = new HasNegativesNode(control(), memory(TypeAryPtr::BYTES), ba_start, len);
     set_result(_gvn.transform(result));
   }
+  return true;
+}
+
+bool LibraryCallKit::inline_objects_checkIndex() {
+  Node* index = argument(0);
+  Node* length = argument(1);
+  if (too_many_traps(Deoptimization::Reason_intrinsic) || too_many_traps(Deoptimization::Reason_range_check)) {
+    return false;
+  }
+
+  Node* len_pos_cmp = _gvn.transform(new CmpINode(length, intcon(0)));
+  Node* len_pos_bol = _gvn.transform(new BoolNode(len_pos_cmp, BoolTest::ge));
+
+  {
+    BuildCutout unless(this, len_pos_bol, PROB_MAX);
+    uncommon_trap(Deoptimization::Reason_intrinsic,
+                  Deoptimization::Action_make_not_entrant);
+  }
+
+  if (stopped()) {
+    return false;
+  }
+
+  Node* rc_cmp = _gvn.transform(new CmpUNode(index, length));
+  BoolTest::mask btest = BoolTest::lt;
+  Node* rc_bool = _gvn.transform(new BoolNode(rc_cmp, btest));
+  RangeCheckNode* rc = new RangeCheckNode(control(), rc_bool, PROB_MAX, COUNT_UNKNOWN);
+  _gvn.set_type(rc, rc->Value(&_gvn));
+  if (!rc_bool->is_Con()) {
+    record_for_igvn(rc);
+  }
+  set_control(_gvn.transform(new IfTrueNode(rc)));
+  {
+    PreserveJVMState pjvms(this);
+    set_control(_gvn.transform(new IfFalseNode(rc)));
+    uncommon_trap(Deoptimization::Reason_range_check,
+                  Deoptimization::Action_make_not_entrant);
+  }
+
+  if (stopped()) {
+    return false;
+  }
+
+  Node* result = new CastIINode(index, TypeInt::make(0, _gvn.type(length)->is_int()->_hi, Type::WidenMax));
+  result->set_req(0, control());
+  result = _gvn.transform(result);
+  set_result(result);
+  replace_in_map(index, result);
   return true;
 }
 
