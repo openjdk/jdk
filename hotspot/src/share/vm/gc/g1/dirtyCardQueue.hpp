@@ -112,14 +112,6 @@ public:
 
   static void handle_zero_index_for_thread(JavaThread* t);
 
-  // Apply the given closure to all entries in all currently-active buffers.
-  // This should only be applied at a safepoint. (Currently must not be called
-  // in parallel; this should change in the future.)  If "consume" is true,
-  // processed entries are discarded.
-  void iterate_closure_all_threads(CardTableEntryClosure* cl,
-                                   bool consume = true,
-                                   uint worker_i = 0);
-
   // If there exists some completed buffer, pop it, then apply the
   // specified closure to all its elements, nulling out those elements
   // processed.  If all elements are processed, returns "true".  If no
