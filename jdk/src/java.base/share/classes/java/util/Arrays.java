@@ -3305,6 +3305,103 @@ public class Arrays {
         return true;
     }
 
+    /**
+     * Returns {@code true} if the two specified arrays of Objects are
+     * <i>equal</i> to one another.
+     *
+     * <p>Two arrays are considered equal if both arrays contain the same number
+     * of elements, and all corresponding pairs of elements in the two arrays
+     * are equal.  In other words, the two arrays are equal if they contain the
+     * same elements in the same order.  Also, two array references are
+     * considered equal if both are {@code null}.
+     *
+     * <p>Two objects {@code e1} and {@code e2} are considered <i>equal</i> if,
+     * given the specified comparator, {@code cmp.compare(e1, e2) == 0}.
+     *
+     * @param a one array to be tested for equality
+     * @param a2 the other array to be tested for equality
+     * @param cmp the comparator to compare array elements
+     * @param <T> the type of array elements
+     * @return {@code true} if the two arrays are equal
+     * @throws NullPointerException if the comparator is {@code null}
+     * @since 9
+     */
+    public static <T> boolean equals(T[] a, T[] a2, Comparator<? super T> cmp) {
+        Objects.requireNonNull(cmp);
+        if (a==a2)
+            return true;
+        if (a==null || a2==null)
+            return false;
+
+        int length = a.length;
+        if (a2.length != length)
+            return false;
+
+        for (int i=0; i<length; i++) {
+            if (cmp.compare(a[i], a2[i]) != 0)
+                return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Returns true if the two specified arrays of Objects, over the specified
+     * ranges, are <i>equal</i> to one another.
+     *
+     * <p>Two arrays are considered equal if the number of elements covered by
+     * each range is the same, and all corresponding pairs of elements over the
+     * specified ranges in the two arrays are equal.  In other words, two arrays
+     * are equal if they contain, over the specified ranges, the same elements
+     * in the same order.
+     *
+     * <p>Two objects {@code e1} and {@code e2} are considered <i>equal</i> if,
+     * given the specified comparator, {@code cmp.compare(e1, e2) == 0}.
+     *
+     * @param a the first array to be tested for equality
+     * @param aFromIndex the index (inclusive) of the first element in the
+     *                   first array to be tested
+     * @param aToIndex the index (exclusive) of the last element in the
+     *                 first array to be tested
+     * @param b the second array to be tested fro equality
+     * @param bFromIndex the index (inclusive) of the first element in the
+     *                   second array to be tested
+     * @param bToIndex the index (exclusive) of the last element in the
+     *                 second array to be tested
+     * @param cmp the comparator to compare array elements
+     * @param <T> the type of array elements
+     * @return {@code true} if the two arrays, over the specified ranges, are
+     *         equal
+     * @throws IllegalArgumentException
+     *         if {@code aFromIndex > aToIndex} or
+     *         if {@code bFromIndex > bToIndex}
+     * @throws ArrayIndexOutOfBoundsException
+     *         if {@code aFromIndex < 0 or aToIndex > a.length} or
+     *         if {@code bFromIndex < 0 or bToIndex > b.length}
+     * @throws NullPointerException
+     *         if either array or the comparator is {@code null}
+     * @since 9
+     */
+    public static <T> boolean equals(T[] a, int aFromIndex, int aToIndex,
+                                     T[] b, int bFromIndex, int bToIndex,
+                                     Comparator<? super T> cmp) {
+        Objects.requireNonNull(cmp);
+        rangeCheck(a.length, aFromIndex, aToIndex);
+        rangeCheck(b.length, bFromIndex, bToIndex);
+
+        int aLength = aToIndex - aFromIndex;
+        int bLength = bToIndex - bFromIndex;
+        if (aLength != bLength)
+            return false;
+
+        for (int i = 0; i < aLength; i++) {
+            if (cmp.compare(a[aFromIndex++], b[bFromIndex++]) != 0)
+                return false;
+        }
+
+        return true;
+    }
+
     // Filling
 
     /**
@@ -8744,9 +8841,7 @@ public class Arrays {
      * <pre>{@code
      *     pl >= 0 &&
      *     pl < Math.min(a.length, b.length) &&
-     *     IntStream.range(0, pl).
-     *         map(i -> cmp.compare(a[i], b[i])).
-     *         allMatch(c -> c == 0) &&
+     *     Arrays.equals(a, 0, pl, b, 0, pl, cmp)
      *     cmp.compare(a[pl], b[pl]) != 0
      * }</pre>
      * Note that a common prefix length of {@code 0} indicates that the first
@@ -8756,9 +8851,9 @@ public class Arrays {
      * prefix if the following expression is true:
      * <pre>{@code
      *     a.length != b.length &&
-     *     IntStream.range(0, Math.min(a.length, b.length)).
-     *         map(i -> cmp.compare(a[i], b[i])).
-     *         allMatch(c -> c == 0) &&
+     *     Arrays.equals(a, 0, Math.min(a.length, b.length),
+     *                   b, 0, Math.min(a.length, b.length),
+     *                   cmp)
      * }</pre>
      *
      * @param a the first array to be tested for a mismatch
@@ -8815,9 +8910,7 @@ public class Arrays {
      * <pre>{@code
      *     pl >= 0 &&
      *     pl < Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex) &&
-     *     IntStream.range(0, pl).
-     *         map(i -> cmp.compare(a[aFromIndex + i], b[bFromIndex + i])).
-     *         allMatch(c -> c == 0) &&
+     *     Arrays.equals(a, aFromIndex, aFromIndex + pl, b, bFromIndex, bFromIndex + pl, cmp) &&
      *     cmp.compare(a[aFromIndex + pl], b[bFromIndex + pl]) != 0
      * }</pre>
      * Note that a common prefix length of {@code 0} indicates that the first
@@ -8829,9 +8922,9 @@ public class Arrays {
      * if the following expression is true:
      * <pre>{@code
      *     (aToIndex - aFromIndex) != (bToIndex - bFromIndex) &&
-     *     IntStream.range(0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex)).
-     *         map(i -> cmp.compare(a[aFromIndex + i], b[bFromIndex + i])).
-     *         allMatch(c -> c == 0)
+     *     Arrays.equals(a, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex),
+     *                   b, 0, Math.min(aToIndex - aFromIndex, bToIndex - bFromIndex),
+     *                   cmp)
      * }</pre>
      *
      * @param a the first array to be tested for a mismatch
