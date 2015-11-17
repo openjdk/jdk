@@ -461,8 +461,15 @@ public abstract class Font2D {
      * to check the font class before attempting to run, rather than needing
      * to promote this method up from TrueTypeFont
      */
-    byte[] getTableBytes(int tag) {
+    protected byte[] getTableBytes(int tag) {
         return null;
+    }
+
+    /* implemented for fonts backed by an sfnt that has
+     * OpenType or AAT layout tables.
+     */
+    protected long getLayoutTableCache() {
+        return 0L;
     }
 
     /* for layout code */
