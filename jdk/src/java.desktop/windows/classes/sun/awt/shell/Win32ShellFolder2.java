@@ -141,6 +141,9 @@ final class Win32ShellFolder2 extends ShellFolder {
     public static final int SHGDN_FORADDRESSBAR     = 0x4000;
     public static final int SHGDN_FORPARSING        = 0x8000;
 
+    /** The referent to be registered with the Disposer. */
+    private Object disposerReferent = new Object();
+
     // Values for system call LoadIcon()
     public enum SystemIcon {
         IDI_APPLICATION(32512),
@@ -297,7 +300,7 @@ final class Win32ShellFolder2 extends ShellFolder {
             }
         }, InterruptedException.class);
 
-        sun.java2d.Disposer.addRecord(this, disposer);
+        sun.java2d.Disposer.addObjectRecord(disposerReferent, disposer);
     }
 
 
@@ -309,7 +312,7 @@ final class Win32ShellFolder2 extends ShellFolder {
         this.isLib = isLib;
         this.disposer.pIShellFolder = pIShellFolder;
         this.disposer.relativePIDL = relativePIDL;
-        sun.java2d.Disposer.addRecord(this, disposer);
+        sun.java2d.Disposer.addObjectRecord(disposerReferent, disposer);
     }
 
 
