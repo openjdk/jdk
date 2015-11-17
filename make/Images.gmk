@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2015 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -363,13 +363,14 @@ endef
 
 # Param 1 - The file containing the MODULES list
 define create-info-file
-  $(call info-file-item, "JAVA_VERSION", "$(JDK_VERSION)")
+  $(call info-file-item, "JAVA_VERSION", "$(VERSION_NUMBER)")
+  $(call info-file-item, "JAVA_FULL_VERSION", "$(VERSION_STRING)")
   $(call info-file-item, "OS_NAME", "$(REQUIRED_OS_NAME)")
   $(call info-file-item, "OS_VERSION", "$(REQUIRED_OS_VERSION)")
   $(call info-file-item, "OS_ARCH", "$(OPENJDK_TARGET_CPU_LEGACY)")
   $(if $(JDK_ARCH_ABI_PROP_NAME), \
     $(call info-file-item, "SUN_ARCH_ABI", "$(JDK_ARCH_ABI_PROP_NAME)"))
-  $(call info-file-item, "SOURCE", "$(ALL_SOURCE_TIPS)")
+  $(call info-file-item, "SOURCE", "$(strip $(ALL_SOURCE_TIPS))")
   $(call info-file-item, "MODULES", "`$(CAT) $1`")
 endef
 
