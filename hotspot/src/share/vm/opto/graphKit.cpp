@@ -3986,16 +3986,16 @@ void GraphKit::g1_write_barrier_pre(bool do_load,
   float likely  = PROB_LIKELY(0.999);
   float unlikely  = PROB_UNLIKELY(0.999);
 
-  BasicType active_type = in_bytes(PtrQueue::byte_width_of_active()) == 4 ? T_INT : T_BYTE;
-  assert(in_bytes(PtrQueue::byte_width_of_active()) == 4 || in_bytes(PtrQueue::byte_width_of_active()) == 1, "flag width");
+  BasicType active_type = in_bytes(SATBMarkQueue::byte_width_of_active()) == 4 ? T_INT : T_BYTE;
+  assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 4 || in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "flag width");
 
   // Offsets into the thread
   const int marking_offset = in_bytes(JavaThread::satb_mark_queue_offset() +  // 648
-                                          PtrQueue::byte_offset_of_active());
+                                          SATBMarkQueue::byte_offset_of_active());
   const int index_offset   = in_bytes(JavaThread::satb_mark_queue_offset() +  // 656
-                                          PtrQueue::byte_offset_of_index());
+                                          SATBMarkQueue::byte_offset_of_index());
   const int buffer_offset  = in_bytes(JavaThread::satb_mark_queue_offset() +  // 652
-                                          PtrQueue::byte_offset_of_buf());
+                                          SATBMarkQueue::byte_offset_of_buf());
 
   // Now the actual pointers into the thread
   Node* marking_adr = __ AddP(no_base, tls, __ ConX(marking_offset));
@@ -4008,7 +4008,7 @@ void GraphKit::g1_write_barrier_pre(bool do_load,
   // if (!marking)
   __ if_then(marking, BoolTest::ne, zero, unlikely); {
     BasicType index_bt = TypeX_X->basic_type();
-    assert(sizeof(size_t) == type2aelembytes(index_bt), "Loading G1 PtrQueue::_index with wrong size.");
+    assert(sizeof(size_t) == type2aelembytes(index_bt), "Loading G1 SATBMarkQueue::_index with wrong size.");
     Node* index   = __ load(__ ctrl(), index_adr, TypeX_X, index_bt, Compile::AliasIdxRaw);
 
     if (do_load) {
@@ -4196,9 +4196,9 @@ void GraphKit::g1_write_barrier_post(Node* oop_store,
 
   // Offsets into the thread
   const int index_offset  = in_bytes(JavaThread::dirty_card_queue_offset() +
-                                     PtrQueue::byte_offset_of_index());
+                                     DirtyCardQueue::byte_offset_of_index());
   const int buffer_offset = in_bytes(JavaThread::dirty_card_queue_offset() +
-                                     PtrQueue::byte_offset_of_buf());
+                                     DirtyCardQueue::byte_offset_of_buf());
 
   // Pointers into the thread
 

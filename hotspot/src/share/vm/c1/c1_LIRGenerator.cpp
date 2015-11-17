@@ -1464,10 +1464,10 @@ void LIRGenerator::G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, LIR_Opr p
                                                      bool do_load, bool patch, CodeEmitInfo* info) {
   // First we test whether marking is in progress.
   BasicType flag_type;
-  if (in_bytes(PtrQueue::byte_width_of_active()) == 4) {
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
     flag_type = T_INT;
   } else {
-    guarantee(in_bytes(PtrQueue::byte_width_of_active()) == 1,
+    guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1,
               "Assumption");
     // Use unsigned type T_BOOLEAN here rather than signed T_BYTE since some platforms, eg. ARM,
     // need to use unsigned instructions to use the large offset to load the satb_mark_queue.
@@ -1477,7 +1477,7 @@ void LIRGenerator::G1SATBCardTableModRef_pre_barrier(LIR_Opr addr_opr, LIR_Opr p
   LIR_Address* mark_active_flag_addr =
     new LIR_Address(thrd,
                     in_bytes(JavaThread::satb_mark_queue_offset() +
-                             PtrQueue::byte_offset_of_active()),
+                             SATBMarkQueue::byte_offset_of_active()),
                     flag_type);
   // Read the marking-in-progress flag.
   LIR_Opr flag_val = new_register(T_INT);
