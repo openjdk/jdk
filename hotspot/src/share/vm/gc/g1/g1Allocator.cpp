@@ -33,6 +33,8 @@
 
 G1DefaultAllocator::G1DefaultAllocator(G1CollectedHeap* heap) :
   G1Allocator(heap),
+  _survivor_is_full(false),
+  _old_is_full(false),
   _retained_old_gc_alloc_region(NULL),
   _survivor_gc_alloc_region(heap->alloc_buffer_stats(InCSetState::Young)),
   _old_gc_alloc_region(heap->alloc_buffer_stats(InCSetState::Old)) {
@@ -87,7 +89,8 @@ void G1Allocator::reuse_retained_old_region(EvacuationInfo& evacuation_info,
 void G1DefaultAllocator::init_gc_alloc_regions(EvacuationInfo& evacuation_info) {
   assert_at_safepoint(true /* should_be_vm_thread */);
 
-  G1Allocator::init_gc_alloc_regions(evacuation_info);
+  _survivor_is_full = false;
+  _old_is_full = false;
 
   _survivor_gc_alloc_region.init();
   _old_gc_alloc_region.init();
@@ -116,6 +119,22 @@ void G1DefaultAllocator::abandon_gc_alloc_regions() {
   assert(survivor_gc_alloc_region(AllocationContext::current())->get() == NULL, "pre-condition");
   assert(old_gc_alloc_region(AllocationContext::current())->get() == NULL, "pre-condition");
   _retained_old_gc_alloc_region = NULL;
+}
+
+bool G1DefaultAllocator::survivor_is_full(AllocationContext_t context) const {
+  return _survivor_is_full;
+}
+
+bool G1DefaultAllocator::old_is_full(AllocationContext_t context) const {
+  return _old_is_full;
+}
+
+void G1DefaultAllocator::set_survivor_full(AllocationContext_t context) {
+  _survivor_is_full = true;
+}
+
+void G1DefaultAllocator::set_old_full(AllocationContext_t context) {
+  _old_is_full = true;
 }
 
 G1PLAB::G1PLAB(size_t gclab_word_size) :
@@ -163,22 +182,6 @@ HeapWord* G1Allocator::par_allocate_during_gc(InCSetState dest,
       ShouldNotReachHere();
       return NULL; // Keep some compilers happy
   }
-}
-
-bool G1Allocator::survivor_is_full(AllocationContext_t context) const {
-  return _survivor_is_full;
-}
-
-bool G1Allocator::old_is_full(AllocationContext_t context) const {
-  return _old_is_full;
-}
-
-void G1Allocator::set_survivor_full(AllocationContext_t context) {
-  _survivor_is_full = true;
-}
-
-void G1Allocator::set_old_full(AllocationContext_t context) {
-  _old_is_full = true;
 }
 
 HeapWord* G1Allocator::survivor_attempt_allocation(size_t min_word_size,
@@ -230,11 +233,6 @@ HeapWord* G1Allocator::old_attempt_allocation(size_t min_word_size,
     }
   }
   return result;
-}
-
-void G1Allocator::init_gc_alloc_regions(EvacuationInfo& evacuation_info) {
-  _survivor_is_full = false;
-  _old_is_full = false;
 }
 
 G1PLABAllocator::G1PLABAllocator(G1Allocator* allocator) :
