@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,10 @@
  * questions.
  */
 
+// Must include this before JavaNativeFoundation.h to get jni.h from build
+#include "jni.h"
+#include "jni_util.h"
+
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 /*
@@ -30,6 +34,7 @@
  *    <rdar://4984599> AWT's JNI_OnLoad called multiple times
  *    Please remove when <rdar://5121166> has been resolved.
  */
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
+{
     return JNI_VERSION_1_4;
 }

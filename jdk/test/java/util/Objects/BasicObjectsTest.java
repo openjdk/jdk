@@ -241,12 +241,12 @@ public class BasicObjectsTest {
         String nonNullString = "non-null";
 
         // Confirm the compile time return type matches
-        String result = Objects.nonNullElse(nullString, defString);
+        String result = Objects.requireNonNullElse(nullString, defString);
         errors += (result == defString) ? 0 : 1;
-        errors += (Objects.nonNullElse(nonNullString, defString) == nonNullString) ? 0 : 1;
-        errors += (Objects.nonNullElse(nonNullString, null) == nonNullString) ? 0 : 1;
+        errors += (Objects.requireNonNullElse(nonNullString, defString) == nonNullString) ? 0 : 1;
+        errors += (Objects.requireNonNullElse(nonNullString, null) == nonNullString) ? 0 : 1;
         try {
-            Objects.nonNullElse(null, null);
+            Objects.requireNonNullElse(null, null);
             errors += 1;
         } catch (NullPointerException npe) {
             // expected
@@ -254,20 +254,20 @@ public class BasicObjectsTest {
         }
 
 
-        // Test nonNullElseGet with a supplier
-        errors += (Objects.nonNullElseGet(nullString, () -> defString) == defString) ? 0 : 1;
-        errors += (Objects.nonNullElseGet(nonNullString, () -> defString) == nonNullString) ? 0 : 1;
-        errors += (Objects.nonNullElseGet(nonNullString, () -> null) == nonNullString) ? 0 : 1;
+        // Test requireNonNullElseGet with a supplier
+        errors += (Objects.requireNonNullElseGet(nullString, () -> defString) == defString) ? 0 : 1;
+        errors += (Objects.requireNonNullElseGet(nonNullString, () -> defString) == nonNullString) ? 0 : 1;
+        errors += (Objects.requireNonNullElseGet(nonNullString, () -> null) == nonNullString) ? 0 : 1;
 
         try {
-            Objects.nonNullElseGet(null, () -> null);
+            Objects.requireNonNullElseGet(null, () -> null);
             errors += 1;
         } catch (NullPointerException npe) {
             // expected
             errors += npe.getMessage().equals("supplier.get()") ? 0 : 1;
         }
         try {       // supplier is null
-            Objects.nonNullElseGet(null, null);
+            Objects.requireNonNullElseGet(null, null);
             errors += 1;
         } catch (NullPointerException npe) {
             // expected

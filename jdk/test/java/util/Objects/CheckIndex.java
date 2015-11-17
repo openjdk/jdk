@@ -25,7 +25,7 @@
  * @test
  * @summary IndexOutOfBoundsException check index tests
  * @run testng CheckIndex
- * @bug 8135248
+ * @bug 8135248 8142493
  */
 
 import org.testng.annotations.DataProvider;
@@ -51,6 +51,15 @@ public class CheckIndex {
             assertEquals(fromIndex, Integer.valueOf(expFromIndex));
             assertEquals(toIndexOrSizeorLength, Integer.valueOf(expToIndexOrSizeOrLength));
             return new AssertingOutOfBoundsException();
+        };
+    }
+
+    static BiFunction<Integer, Integer, AssertingOutOfBoundsException> assertingOutOfBoundsReturnNull(
+            int expFromIndex, int expToIndexOrSizeOrLength) {
+        return (fromIndex, toIndexOrSizeorLength) -> {
+            assertEquals(fromIndex, Integer.valueOf(expFromIndex));
+            assertEquals(toIndexOrSizeorLength, Integer.valueOf(expToIndexOrSizeOrLength));
+            return null;
         };
     }
 
@@ -94,6 +103,8 @@ public class CheckIndex {
 
         check.accept(AssertingOutOfBoundsException.class,
                      () -> Objects.checkIndex(index, length, assertingOutOfBounds(index, length)));
+        check.accept(IndexOutOfBoundsException.class,
+                     () -> Objects.checkIndex(index, length, assertingOutOfBoundsReturnNull(index, length)));
         check.accept(IndexOutOfBoundsException.class,
                      () -> Objects.checkIndex(index, length, null));
         check.accept(IndexOutOfBoundsException.class,
@@ -139,6 +150,8 @@ public class CheckIndex {
 
         check.accept(AssertingOutOfBoundsException.class,
                      () -> Objects.checkFromToIndex(fromIndex, toIndex, length, assertingOutOfBounds(fromIndex, toIndex)));
+        check.accept(IndexOutOfBoundsException.class,
+                     () -> Objects.checkFromToIndex(fromIndex, toIndex, length, assertingOutOfBoundsReturnNull(fromIndex, toIndex)));
         check.accept(IndexOutOfBoundsException.class,
                      () -> Objects.checkFromToIndex(fromIndex, toIndex, length, null));
         check.accept(IndexOutOfBoundsException.class,
@@ -191,6 +204,8 @@ public class CheckIndex {
 
         check.accept(AssertingOutOfBoundsException.class,
                      () -> Objects.checkFromIndexSize(fromIndex, size, length, assertingOutOfBounds(fromIndex, size)));
+        check.accept(IndexOutOfBoundsException.class,
+                     () -> Objects.checkFromIndexSize(fromIndex, size, length, assertingOutOfBoundsReturnNull(fromIndex, size)));
         check.accept(IndexOutOfBoundsException.class,
                      () -> Objects.checkFromIndexSize(fromIndex, size, length, null));
         check.accept(IndexOutOfBoundsException.class,

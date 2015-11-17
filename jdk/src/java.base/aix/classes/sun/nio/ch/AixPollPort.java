@@ -34,7 +34,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * AsynchronousChannelGroup implementation based on the AIX pollset framework.
