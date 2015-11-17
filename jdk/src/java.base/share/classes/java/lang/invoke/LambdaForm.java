@@ -1024,7 +1024,7 @@ class LambdaForm {
 
     static class NamedFunction {
         final MemberName member;
-        @Stable MethodHandle resolvedHandle;
+        private @Stable MethodHandle resolvedHandle;
         @Stable MethodHandle invoker;
 
         NamedFunction(MethodHandle resolvedHandle) {
@@ -1074,8 +1074,10 @@ class LambdaForm {
             return resolvedHandle;
         }
 
-        void resolve() {
-            resolvedHandle = DirectMethodHandle.make(member);
+        synchronized void resolve() {
+            if (resolvedHandle == null) {
+                resolvedHandle = DirectMethodHandle.make(member);
+            }
         }
 
         @Override
@@ -1235,6 +1237,7 @@ class LambdaForm {
                     traceInterpreter("| getInvoker", this);
                     invoker();
                 }
+                // resolvedHandle might be uninitialized, ok for tracing
                 if (resolvedHandle == null) {
                     traceInterpreter("| resolve", this);
                     resolvedHandle();

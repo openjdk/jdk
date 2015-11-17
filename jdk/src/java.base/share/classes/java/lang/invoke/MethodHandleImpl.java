@@ -219,7 +219,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             if (convSpec == null)  continue;
             MethodHandle fn;
             if (convSpec instanceof Class) {
-                fn = Lazy.MH_cast.bindTo(convSpec);
+                fn = getConstantHandle(MH_cast).bindTo(convSpec);
             } else {
                 fn = (MethodHandle) convSpec;
             }
@@ -239,7 +239,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 if (convSpec == void.class)
                     fn = null;
                 else
-                    fn = Lazy.MH_cast.bindTo(convSpec);
+                    fn = getConstantHandle(MH_cast).bindTo(convSpec);
             } else {
                 fn = (MethodHandle) convSpec;
             }
@@ -302,7 +302,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             Name conv;
             if (convSpec instanceof Class) {
                 Class<?> convClass = (Class<?>) convSpec;
-                conv = new Name(Lazy.MH_cast, convClass, names[INARG_BASE + i]);
+                conv = new Name(getConstantHandle(MH_cast), convClass, names[INARG_BASE + i]);
             } else {
                 MethodHandle fn = (MethodHandle) convSpec;
                 conv = new Name(fn, names[INARG_BASE + i]);
@@ -326,7 +326,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 conv = new Name(LambdaForm.constantZero(BasicType.basicType(srcType.returnType())));
             } else if (convSpec instanceof Class) {
                 Class<?> convClass = (Class<?>) convSpec;
-                conv = new Name(Lazy.MH_cast, convClass, names[OUT_CALL]);
+                conv = new Name(getConstantHandle(MH_cast), convClass, names[OUT_CALL]);
             } else {
                 MethodHandle fn = (MethodHandle) convSpec;
                 if (fn.type().parameterCount() == 0)
@@ -529,7 +529,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 // Spread the array.
                 MethodHandle aload = MethodHandles.arrayElementGetter(spreadArgType);
                 Name array = names[argIndex];
-                names[nameCursor++] = new Name(Lazy.NF_checkSpreadArgument, array, spreadArgCount);
+                names[nameCursor++] = new Name(NF_checkSpreadArgument, array, spreadArgCount);
                 for (int j = 0; j < spreadArgCount; i++, j++) {
                     indexes[i] = nameCursor;
                     names[nameCursor++] = new Name(aload, array, j);
@@ -564,66 +564,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
         // fall through to error:
         throw newIllegalArgumentException("array is not of length "+n);
-    }
-
-    /**
-     * Pre-initialized NamedFunctions for bootstrapping purposes.
-     * Factored in an inner class to delay initialization until first usage.
-     */
-    static class Lazy {
-        private static final Class<?> MHI = MethodHandleImpl.class;
-        private static final Class<?> CLS = Class.class;
-
-        private static final MethodHandle[] ARRAYS;
-        private static final MethodHandle[] FILL_ARRAYS;
-
-        static final NamedFunction NF_checkSpreadArgument;
-        static final NamedFunction NF_guardWithCatch;
-        static final NamedFunction NF_throwException;
-        static final NamedFunction NF_profileBoolean;
-
-        static final MethodHandle MH_cast;
-        static final MethodHandle MH_selectAlternative;
-        static final MethodHandle MH_copyAsPrimitiveArray;
-        static final MethodHandle MH_fillNewTypedArray;
-        static final MethodHandle MH_fillNewArray;
-        static final MethodHandle MH_arrayIdentity;
-
-        static {
-            ARRAYS      = makeArrays();
-            FILL_ARRAYS = makeFillArrays();
-
-            try {
-                NF_checkSpreadArgument = new NamedFunction(MHI.getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
-                NF_guardWithCatch      = new NamedFunction(MHI.getDeclaredMethod("guardWithCatch", MethodHandle.class, Class.class,
-                                                                                 MethodHandle.class, Object[].class));
-                NF_throwException      = new NamedFunction(MHI.getDeclaredMethod("throwException", Throwable.class));
-                NF_profileBoolean      = new NamedFunction(MHI.getDeclaredMethod("profileBoolean", boolean.class, int[].class));
-
-                NF_checkSpreadArgument.resolve();
-                NF_guardWithCatch.resolve();
-                NF_throwException.resolve();
-                NF_profileBoolean.resolve();
-
-                MH_cast                 = IMPL_LOOKUP.findVirtual(CLS, "cast",
-                                            MethodType.methodType(Object.class, Object.class));
-                MH_copyAsPrimitiveArray = IMPL_LOOKUP.findStatic(MHI, "copyAsPrimitiveArray",
-                                            MethodType.methodType(Object.class, Wrapper.class, Object[].class));
-                MH_arrayIdentity        = IMPL_LOOKUP.findStatic(MHI, "identity",
-                                            MethodType.methodType(Object[].class, Object[].class));
-                MH_fillNewArray         = IMPL_LOOKUP.findStatic(MHI, "fillNewArray",
-                                            MethodType.methodType(Object[].class, Integer.class, Object[].class));
-                MH_fillNewTypedArray    = IMPL_LOOKUP.findStatic(MHI, "fillNewTypedArray",
-                                            MethodType.methodType(Object[].class, Object[].class, Integer.class, Object[].class));
-
-                MH_selectAlternative    = makeIntrinsic(
-                        IMPL_LOOKUP.findStatic(MHI, "selectAlternative",
-                                MethodType.methodType(MethodHandle.class, boolean.class, MethodHandle.class, MethodHandle.class)),
-                        Intrinsic.SELECT_ALTERNATIVE);
-            } catch (ReflectiveOperationException ex) {
-                throw newInternalError(ex);
-            }
-        }
     }
 
     /** Factory method:  Collect or filter selected argument(s). */
@@ -911,10 +851,10 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
         // profile branch
         if (PROFILE != -1) {
-            names[PROFILE] = new Name(Lazy.NF_profileBoolean, names[CALL_TEST], names[GET_COUNTERS]);
+            names[PROFILE] = new Name(NF_profileBoolean, names[CALL_TEST], names[GET_COUNTERS]);
         }
         // call selectAlternative
-        names[SELECT_ALT] = new Name(Lazy.MH_selectAlternative, names[TEST], names[GET_TARGET], names[GET_FALLBACK]);
+        names[SELECT_ALT] = new Name(getConstantHandle(MH_selectAlternative), names[TEST], names[GET_TARGET], names[GET_FALLBACK]);
 
         // call target or fallback
         invokeArgs[0] = names[SELECT_ALT];
@@ -989,7 +929,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
         // t_{i+1}:L=MethodHandleImpl.guardWithCatch(target:L,exType:L,catcher:L,t_{i}:L);
         Object[] gwcArgs = new Object[] {names[GET_TARGET], names[GET_CLASS], names[GET_CATCHER], names[BOXED_ARGS]};
-        names[TRY_CATCH] = new Name(Lazy.NF_guardWithCatch, gwcArgs);
+        names[TRY_CATCH] = new Name(NF_guardWithCatch, gwcArgs);
 
         // t_{i+2}:I=MethodHandle.invokeBasic(unbox:L,t_{i+1}:L);
         MethodHandle invokeBasicUnbox = MethodHandles.basicInvoker(MethodType.methodType(basicType.rtype(), Object.class));
@@ -1073,7 +1013,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             mh = MethodHandles.dropArguments(mh, 1, type.parameterList().subList(1, arity));
             return mh;
         }
-        return makePairwiseConvert(Lazy.NF_throwException.resolvedHandle(), type, false, true);
+        return makePairwiseConvert(NF_throwException.resolvedHandle(), type, false, true);
     }
 
     static <T extends Throwable> Empty throwException(T t) throws T { throw t; }
@@ -1421,25 +1361,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 { return makeArray(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
 
     private static final int ARRAYS_COUNT = 11;
-
-    private static MethodHandle[] makeArrays() {
-        MethodHandle[] mhs = new MethodHandle[MAX_ARITY + 1];
-        for (int i = 0; i < ARRAYS_COUNT; i++) {
-            MethodHandle mh = findCollector("array", i, Object[].class);
-            mh = makeIntrinsic(mh, Intrinsic.NEW_ARRAY);
-            mhs[i] = mh;
-        }
-        assert(assertArrayMethodCount(mhs));
-        return mhs;
-    }
-
-    private static boolean assertArrayMethodCount(MethodHandle[] mhs) {
-        assert(findCollector("array", ARRAYS_COUNT, Object[].class) == null);
-        for (int i = 0; i < ARRAYS_COUNT; i++) {
-            assert(mhs[i] != null);
-        }
-        return true;
-    }
+    private static final @Stable MethodHandle[] ARRAYS = new MethodHandle[MAX_ARITY + 1];
 
     // filling versions of the above:
     // using Integer len instead of int len and no varargs to avoid bootstrapping problems
@@ -1488,24 +1410,17 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); return a; }
 
     private static final int FILL_ARRAYS_COUNT = 11; // current number of fillArray methods
+    private static final @Stable MethodHandle[] FILL_ARRAYS = new MethodHandle[FILL_ARRAYS_COUNT];
 
-    private static MethodHandle[] makeFillArrays() {
-        MethodHandle[] mhs = new MethodHandle[FILL_ARRAYS_COUNT];
-        mhs[0] = null;  // there is no empty fill; at least a0 is required
-        for (int i = 1; i < FILL_ARRAYS_COUNT; i++) {
-            MethodHandle mh = findCollector("fillArray", i, Object[].class, Integer.class, Object[].class);
-            mhs[i] = mh;
+    private static MethodHandle getFillArray(int count) {
+        assert (count > 0 && count < FILL_ARRAYS_COUNT);
+        MethodHandle mh = FILL_ARRAYS[count];
+        if (mh != null) {
+            return mh;
         }
-        assert(assertFillArrayMethodCount(mhs));
-        return mhs;
-    }
-
-    private static boolean assertFillArrayMethodCount(MethodHandle[] mhs) {
-        assert(findCollector("fillArray", FILL_ARRAYS_COUNT, Object[].class, Integer.class, Object[].class) == null);
-        for (int i = 1; i < FILL_ARRAYS_COUNT; i++) {
-            assert(mhs[i] != null);
-        }
-        return true;
+        mh = findCollector("fillArray", count, Object[].class, Integer.class, Object[].class);
+        FILL_ARRAYS[count] = mh;
+        return mh;
     }
 
     private static Object copyAsPrimitiveArray(Wrapper w, Object... boxes) {
@@ -1518,12 +1433,19 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
      *  arguments and returns an Object array of them, as if for varargs.
      */
     static MethodHandle varargsArray(int nargs) {
-        MethodHandle mh = Lazy.ARRAYS[nargs];
-        if (mh != null)  return mh;
-        mh = buildVarargsArray(Lazy.MH_fillNewArray, Lazy.MH_arrayIdentity, nargs);
+        MethodHandle mh = ARRAYS[nargs];
+        if (mh != null) {
+            return mh;
+        }
+        if (nargs < ARRAYS_COUNT) {
+            mh = findCollector("array", nargs, Object[].class);
+        } else {
+            mh = buildVarargsArray(getConstantHandle(MH_fillNewArray),
+                    getConstantHandle(MH_arrayIdentity), nargs);
+        }
         assert(assertCorrectArity(mh, nargs));
         mh = makeIntrinsic(mh, Intrinsic.NEW_ARRAY);
-        return Lazy.ARRAYS[nargs] = mh;
+        return ARRAYS[nargs] = mh;
     }
 
     private static boolean assertCorrectArity(MethodHandle mh, int arity) {
@@ -1531,7 +1453,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         return true;
     }
 
-    // Array identity function (used as Lazy.MH_arrayIdentity).
+    // Array identity function (used as getConstantHandle(MH_arrayIdentity)).
     static <T> T[] identity(T[] x) {
         return x;
     }
@@ -1547,12 +1469,12 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         MethodHandle mh = finisher;
         if (rightLen > 0) {
             MethodHandle rightFiller = fillToRight(LEFT_ARGS + rightLen);
-            if (mh == Lazy.MH_arrayIdentity)
+            if (mh.equals(getConstantHandle(MH_arrayIdentity)))
                 mh = rightFiller;
             else
                 mh = MethodHandles.collectArguments(mh, 0, rightFiller);
         }
-        if (mh == Lazy.MH_arrayIdentity)
+        if (mh.equals(getConstantHandle(MH_arrayIdentity)))
             mh = leftCollector;
         else
             mh = MethodHandles.collectArguments(mh, 0, leftCollector);
@@ -1560,7 +1482,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
 
     private static final int LEFT_ARGS = FILL_ARRAYS_COUNT - 1;
-    private static final MethodHandle[] FILL_ARRAY_TO_RIGHT = new MethodHandle[MAX_ARITY+1];
+    private static final @Stable MethodHandle[] FILL_ARRAY_TO_RIGHT = new MethodHandle[MAX_ARITY+1];
     /** fill_array_to_right(N).invoke(a, argL..arg[N-1])
      *  fills a[L]..a[N-1] with corresponding arguments,
      *  and then returns a.  The value L is a global constant (LEFT_ARGS).
@@ -1574,7 +1496,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
     private static MethodHandle buildFiller(int nargs) {
         if (nargs <= LEFT_ARGS)
-            return Lazy.MH_arrayIdentity;  // no args to fill; return the array unchanged
+            return getConstantHandle(MH_arrayIdentity);  // no args to fill; return the array unchanged
         // we need room for both mh and a in mh.invoke(a, arg*[nargs])
         final int CHUNK = LEFT_ARGS;
         int rightLen = nargs % CHUNK;
@@ -1590,7 +1512,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         if (midLen < LEFT_ARGS) rightLen = nargs - (midLen = LEFT_ARGS);
         assert(rightLen > 0);
         MethodHandle midFill = fillToRight(midLen);  // recursive fill
-        MethodHandle rightFill = Lazy.FILL_ARRAYS[rightLen].bindTo(midLen);  // [midLen..nargs-1]
+        MethodHandle rightFill = getFillArray(rightLen).bindTo(midLen);  // [midLen..nargs-1]
         assert(midFill.type().parameterCount()   == 1 + midLen - LEFT_ARGS);
         assert(rightFill.type().parameterCount() == 1 + rightLen);
 
@@ -1641,14 +1563,14 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             Object example = java.lang.reflect.Array.newInstance(arrayType.getComponentType(), 0);
             mh = MethodHandles.constant(arrayType, example);
         } else if (elemType.isPrimitive()) {
-            MethodHandle builder = Lazy.MH_fillNewArray;
+            MethodHandle builder = getConstantHandle(MH_fillNewArray);
             MethodHandle producer = buildArrayProducer(arrayType);
             mh = buildVarargsArray(builder, producer, nargs);
         } else {
             Class<? extends Object[]> objArrayType = arrayType.asSubclass(Object[].class);
             Object[] example = Arrays.copyOf(NO_ARGS_ARRAY, 0, objArrayType);
-            MethodHandle builder = Lazy.MH_fillNewTypedArray.bindTo(example);
-            MethodHandle producer = Lazy.MH_arrayIdentity; // must be weakly typed
+            MethodHandle builder = getConstantHandle(MH_fillNewTypedArray).bindTo(example);
+            MethodHandle producer = getConstantHandle(MH_arrayIdentity); // must be weakly typed
             mh = buildVarargsArray(builder, producer, nargs);
         }
         mh = mh.asType(MethodType.methodType(arrayType, Collections.<Class<?>>nCopies(nargs, elemType)));
@@ -1662,7 +1584,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     private static MethodHandle buildArrayProducer(Class<?> arrayType) {
         Class<?> elemType = arrayType.getComponentType();
         assert(elemType.isPrimitive());
-        return Lazy.MH_copyAsPrimitiveArray.bindTo(Wrapper.forPrimitiveType(elemType));
+        return getConstantHandle(MH_copyAsPrimitiveArray).bindTo(Wrapper.forPrimitiveType(elemType));
     }
 
     /*non-public*/ static void assertSame(Object mh1, Object mh2) {
@@ -1672,5 +1594,92 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                     mh2, ((MethodHandle)mh2).form);
             throw newInternalError(msg);
         }
+    }
+
+    // Local constant functions:
+    /*non-public*/ static final NamedFunction
+        NF_checkSpreadArgument,
+        NF_guardWithCatch,
+        NF_throwException,
+        NF_profileBoolean;
+
+    static {
+        try {
+            NamedFunction nfs[] = {
+                NF_checkSpreadArgument = new NamedFunction(MethodHandleImpl.class
+                        .getDeclaredMethod("checkSpreadArgument", Object.class, int.class)),
+                NF_guardWithCatch = new NamedFunction(MethodHandleImpl.class
+                        .getDeclaredMethod("guardWithCatch", MethodHandle.class, Class.class,
+                                MethodHandle.class, Object[].class)),
+                NF_throwException = new NamedFunction(MethodHandleImpl.class
+                        .getDeclaredMethod("throwException", Throwable.class)),
+                NF_profileBoolean = new NamedFunction(MethodHandleImpl.class
+                        .getDeclaredMethod("profileBoolean", boolean.class, int[].class))
+            };
+            // Each nf must be statically invocable or we get tied up in our bootstraps.
+            assert(InvokerBytecodeGenerator.isStaticallyInvocable(nfs));
+        } catch (ReflectiveOperationException ex) {
+            throw newInternalError(ex);
+        }
+    }
+
+    // Indexes into constant method handles:
+    private static final int
+            MH_cast                  =  0,
+            MH_selectAlternative     =  1,
+            MH_copyAsPrimitiveArray  =  2,
+            MH_fillNewTypedArray     =  3,
+            MH_fillNewArray          =  4,
+            MH_arrayIdentity         =  5,
+            MH_LIMIT                 =  6;
+
+    private static MethodHandle getConstantHandle(int idx) {
+        MethodHandle handle = HANDLES[idx];
+        if (handle != null) {
+            return handle;
+        }
+        return setCachedHandle(idx, makeConstantHandle(idx));
+    }
+
+    private static synchronized MethodHandle setCachedHandle(int idx, final MethodHandle method) {
+        // Simulate a CAS, to avoid racy duplication of results.
+        MethodHandle prev = HANDLES[idx];
+        if (prev != null) {
+            return prev;
+        }
+        HANDLES[idx] = method;
+        return method;
+    }
+
+    // Local constant method handles:
+    private static final @Stable MethodHandle[] HANDLES = new MethodHandle[MH_LIMIT];
+
+    private static MethodHandle makeConstantHandle(int idx) {
+        try {
+            switch (idx) {
+                case MH_cast:
+                    return IMPL_LOOKUP.findVirtual(Class.class, "cast",
+                            MethodType.methodType(Object.class, Object.class));
+                case MH_copyAsPrimitiveArray:
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "copyAsPrimitiveArray",
+                            MethodType.methodType(Object.class, Wrapper.class, Object[].class));
+                case MH_arrayIdentity:
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "identity",
+                            MethodType.methodType(Object[].class, Object[].class));
+                case MH_fillNewArray:
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "fillNewArray",
+                            MethodType.methodType(Object[].class, Integer.class, Object[].class));
+                case MH_fillNewTypedArray:
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "fillNewTypedArray",
+                            MethodType.methodType(Object[].class, Object[].class, Integer.class, Object[].class));
+                case MH_selectAlternative:
+                    return makeIntrinsic(IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "selectAlternative",
+                            MethodType.methodType(MethodHandle.class, boolean.class, MethodHandle.class, MethodHandle.class)),
+                        Intrinsic.SELECT_ALTERNATIVE);
+            }
+        } catch (ReflectiveOperationException ex) {
+            throw newInternalError(ex);
+        }
+        throw newInternalError("Unknown function index: " + idx);
     }
 }
