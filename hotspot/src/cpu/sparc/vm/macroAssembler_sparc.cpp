@@ -3632,19 +3632,19 @@ static void generate_satb_log_enqueue(bool with_frame) {
 
   int satb_q_index_byte_offset =
     in_bytes(JavaThread::satb_mark_queue_offset() +
-             PtrQueue::byte_offset_of_index());
+             SATBMarkQueue::byte_offset_of_index());
 
   int satb_q_buf_byte_offset =
     in_bytes(JavaThread::satb_mark_queue_offset() +
-             PtrQueue::byte_offset_of_buf());
+             SATBMarkQueue::byte_offset_of_buf());
 
-  assert(in_bytes(PtrQueue::byte_width_of_index()) == sizeof(intptr_t) &&
-         in_bytes(PtrQueue::byte_width_of_buf()) == sizeof(intptr_t),
+  assert(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t) &&
+         in_bytes(SATBMarkQueue::byte_width_of_buf()) == sizeof(intptr_t),
          "check sizes in assembly below");
 
   __ bind(restart);
 
-  // Load the index into the SATB buffer. PtrQueue::_index is a size_t
+  // Load the index into the SATB buffer. SATBMarkQueue::_index is a size_t
   // so ld_ptr is appropriate.
   __ ld_ptr(G2_thread, satb_q_index_byte_offset, L0);
 
@@ -3736,17 +3736,17 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
   }
 
   // Is marking active?
-  if (in_bytes(PtrQueue::byte_width_of_active()) == 4) {
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
     ld(G2,
        in_bytes(JavaThread::satb_mark_queue_offset() +
-                PtrQueue::byte_offset_of_active()),
+                SATBMarkQueue::byte_offset_of_active()),
        tmp);
   } else {
-    guarantee(in_bytes(PtrQueue::byte_width_of_active()) == 1,
+    guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1,
               "Assumption");
     ldsb(G2,
          in_bytes(JavaThread::satb_mark_queue_offset() +
-                  PtrQueue::byte_offset_of_active()),
+                  SATBMarkQueue::byte_offset_of_active()),
          tmp);
   }
 
@@ -3847,13 +3847,13 @@ static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
 
   int dirty_card_q_index_byte_offset =
     in_bytes(JavaThread::dirty_card_queue_offset() +
-             PtrQueue::byte_offset_of_index());
+             DirtyCardQueue::byte_offset_of_index());
   int dirty_card_q_buf_byte_offset =
     in_bytes(JavaThread::dirty_card_queue_offset() +
-             PtrQueue::byte_offset_of_buf());
+             DirtyCardQueue::byte_offset_of_buf());
   __ bind(restart);
 
-  // Load the index into the update buffer. PtrQueue::_index is
+  // Load the index into the update buffer. DirtyCardQueue::_index is
   // a size_t so ld_ptr is appropriate here.
   __ ld_ptr(G2_thread, dirty_card_q_index_byte_offset, L0);
 

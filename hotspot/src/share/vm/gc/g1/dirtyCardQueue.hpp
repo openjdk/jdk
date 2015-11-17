@@ -72,6 +72,18 @@ public:
   void **get_buf() { return _buf;}
   size_t get_index() { return _index;}
   void reinitialize() { _buf = 0; _sz = 0; _index = 0;}
+
+  // Compiler support.
+  static ByteSize byte_offset_of_index() {
+    return PtrQueue::byte_offset_of_index<DirtyCardQueue>();
+  }
+  using PtrQueue::byte_width_of_index;
+
+  static ByteSize byte_offset_of_buf() {
+    return PtrQueue::byte_offset_of_buf<DirtyCardQueue>();
+  }
+  using PtrQueue::byte_width_of_buf;
+
 };
 
 
