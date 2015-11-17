@@ -429,11 +429,8 @@ class Invokers {
                 NF_checkCustomized = new NamedFunction(Invokers.class
                         .getDeclaredMethod("checkCustomized", Object.class))
             };
-            for (NamedFunction nf : nfs) {
-                // Each nf must be statically invocable or we get tied up in our bootstraps.
-                assert(InvokerBytecodeGenerator.isStaticallyInvocable(nf.member)) : nf;
-                nf.resolve();
-            }
+            // Each nf must be statically invocable or we get tied up in our bootstraps.
+            assert(InvokerBytecodeGenerator.isStaticallyInvocable(nfs));
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
         }

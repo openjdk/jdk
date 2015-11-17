@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -45,8 +45,16 @@ endif
 #
 # Import hotspot
 #
+
+# Don't import jsig library for static builds
+ifneq ($(STATIC_BUILD), true)
+  JSIG_IMPORT = jsig.*
+else
+  JSIG_IMPORT = 
+endif
+
 HOTSPOT_BASE_IMPORT_FILES := \
-    $(addprefix $(LIBRARY_PREFIX), jvm.* jsig.* jvm_db.* jvm_dtrace.*) \
+    $(addprefix $(LIBRARY_PREFIX), jvm.* $(JSIG_IMPORT) jvm_db.* jvm_dtrace.*) \
     Xusage.txt \
     #
 
@@ -79,32 +87,34 @@ SA_TARGETS := $(COPY_HOTSPOT_SA)
 
 ################################################################################
 
-ifeq ($(OPENJDK_TARGET_OS), macosx)
-  JSIG_DEBUGINFO := $(strip $(wildcard $(HOTSPOT_DIST)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig$(SHARED_LIBRARY_SUFFIX).dSYM) \
-      $(wildcard $(HOTSPOT_DIST)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.diz) )
-else
-  JSIG_DEBUGINFO := $(strip $(wildcard $(HOTSPOT_DIST)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.debuginfo) \
-      $(wildcard $(HOTSPOT_DIST)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.diz) )
-endif
+ifneq ($(STATIC_BUILD), true)
+  ifeq ($(OPENJDK_TARGET_OS), macosx)
+    JSIG_DEBUGINFO := $(strip $(wildcard $(HOTSPOT_DIST)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig$(SHARED_LIBRARY_SUFFIX).dSYM) \
+        $(wildcard $(HOTSPOT_DIST)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.diz) )
+  else
+    JSIG_DEBUGINFO := $(strip $(wildcard $(HOTSPOT_DIST)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.debuginfo) \
+        $(wildcard $(HOTSPOT_DIST)/lib$(OPENJDK_TARGET_CPU_LIBDIR)/libjsig.diz) )
+  endif
 
-ifneq ($(OPENJDK_TARGET_OS), windows)
-  ifeq ($(JVM_VARIANT_SERVER), true)
-    BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/server/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
-    ifneq (, $(JSIG_DEBUGINFO))
-      BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/server/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+  ifneq ($(OPENJDK_TARGET_OS), windows)
+    ifeq ($(JVM_VARIANT_SERVER), true)
+      BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/server/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
+      ifneq (, $(JSIG_DEBUGINFO))
+        BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/server/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+      endif
     endif
-  endif
-  ifeq ($(JVM_VARIANT_CLIENT), true)
-    BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/client/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
-    ifneq (, $(JSIG_DEBUGINFO))
-      BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/client/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+    ifeq ($(JVM_VARIANT_CLIENT), true)
+      BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/client/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
+      ifneq (, $(JSIG_DEBUGINFO))
+        BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/client/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+      endif
     endif
-  endif
-  ifneq ($(OPENJDK_TARGET_OS), macosx)
-    ifeq ($(JVM_VARIANT_MINIMAL1), true)
-      BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/minimal/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
-      ifneq (,$(JSIG_DEBUGINFO))
-        BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/minimal/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+    ifneq ($(OPENJDK_TARGET_OS), macosx)
+      ifeq ($(JVM_VARIANT_MINIMAL1), true)
+        BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/minimal/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
+        ifneq (,$(JSIG_DEBUGINFO))
+          BASE_TARGETS += $(BASE_INSTALL_LIBRARIES_HERE)/minimal/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+        endif
       endif
     endif
   endif

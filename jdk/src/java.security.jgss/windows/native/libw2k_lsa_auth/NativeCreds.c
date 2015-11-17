@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,7 @@
 #include <lmcons.h>
 #include <lmapibuf.h>
 #include <jni.h>
+#include "jni_util.h"
 #include <winsock.h>
 
 #undef LSA_SUCCESS
@@ -107,7 +108,7 @@ jobject BuildKerberosTime(JNIEnv *env, PLARGE_INTEGER kerbtime);
  * Method:    JNI_OnLoad
  */
 
-JNIEXPORT jint JNICALL JNI_OnLoad(
+JNIEXPORT jint JNICALL DEF_JNI_OnLoad(
         JavaVM  *jvm,
         void    *reserved) {
 
@@ -329,7 +330,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(
  * Method:    JNI_OnUnload
  */
 
-JNIEXPORT void JNICALL JNI_OnUnload(
+JNIEXPORT void JNICALL DEF_JNI_OnUnload(
         JavaVM  *jvm,
         void    *reserved) {
 

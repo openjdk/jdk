@@ -26,7 +26,7 @@
 package sun.nio.ch;
 
 import java.io.IOException;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Provides access to the Linux epoll facility.
