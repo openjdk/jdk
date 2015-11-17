@@ -750,7 +750,7 @@ class InvokerBytecodeGenerator {
         assert(!isLinkerMethodInvoke(name));  // should use the static path for these
         if (true) {
             // push receiver
-            MethodHandle target = name.function.resolvedHandle;
+            MethodHandle target = name.function.resolvedHandle();
             assert(target != null) : name.exprString();
             mv.visitLdcInsn(constantPlaceholder(target));
             emitReferenceCast(MethodHandle.class, target);
@@ -778,6 +778,15 @@ class InvokerBytecodeGenerator {
         jdk.internal.misc.Unsafe.class
         //MethodHandle.class already covered
     };
+
+    static boolean isStaticallyInvocable(NamedFunction[] functions) {
+        for (NamedFunction nf : functions) {
+            if (!isStaticallyInvocable(nf.member)) {
+                return false;
+            }
+        }
+        return true;
+    }
 
     static boolean isStaticallyInvocable(Name name) {
         return isStaticallyInvocable(name.function.member());
@@ -881,7 +890,7 @@ class InvokerBytecodeGenerator {
             // The array will be a constant.
             Object emptyArray;
             try {
-                emptyArray = name.function.resolvedHandle.invoke();
+                emptyArray = name.function.resolvedHandle().invoke();
             } catch (Throwable ex) {
                 throw newInternalError(ex);
             }
@@ -1085,8 +1094,8 @@ class InvokerBytecodeGenerator {
         Label L_handler = new Label();
         Label L_done = new Label();
 
-        Class<?> returnType = result.function.resolvedHandle.type().returnType();
-        MethodType type = args.function.resolvedHandle.type()
+        Class<?> returnType = result.function.resolvedHandle().type().returnType();
+        MethodType type = args.function.resolvedHandle().type()
                               .dropParameterTypes(0,1)
                               .changeReturnType(returnType);
 
