@@ -720,7 +720,7 @@ void JVMCIRuntime::initialize_well_known_classes(TRAPS) {
   if (JVMCIRuntime::_well_known_classes_initialized == false) {
     SystemDictionary::WKID scan = SystemDictionary::FIRST_JVMCI_WKID;
     SystemDictionary::initialize_wk_klasses_through(SystemDictionary::LAST_JVMCI_WKID, scan, CHECK);
-    JVMCIJavaClasses::compute_offsets();
+    JVMCIJavaClasses::compute_offsets(CHECK);
     JVMCIRuntime::_well_known_classes_initialized = true;
   }
 }

@@ -29,7 +29,7 @@
 
 class JVMCIJavaClasses : AllStatic {
  public:
-  static void compute_offsets();
+  static void compute_offsets(TRAPS);
 };
 
 /* This macro defines the structure of the CompilationResult - classes.
@@ -306,7 +306,7 @@ class name : AllStatic {                                                        
         assert(obj->is_a(SystemDictionary::name##_klass()), "wrong class, " #name " expected, found %s", obj->klass()->external_name());                       \
         assert(offset != 0, "must be valid offset");                                                                                                           \
     }                                                                                                                                                          \
-    static void compute_offsets();                                                                                                                             \
+    static void compute_offsets(TRAPS);                                                                                                                             \
   public:                                                                                                                                                      \
     static InstanceKlass* klass() { return SystemDictionary::name##_klass(); }
 
@@ -392,6 +392,6 @@ COMPILER_CLASSES_DO(START_CLASS, END_CLASS, CHAR_FIELD, INT_FIELD, BOOLEAN_FIELD
 #undef STATIC_BOOLEAN_FIELD
 #undef EMPTY_CAST
 
-void compute_offset(int &dest_offset, Klass* klass, const char* name, const char* signature, bool static_field);
+void compute_offset(int &dest_offset, Klass* klass, const char* name, const char* signature, bool static_field, TRAPS);
 
 #endif // SHARE_VM_JVMCI_JVMCIJAVACLASSES_HPP
