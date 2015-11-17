@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,8 +86,6 @@ import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertSame;
 import static org.testng.Assert.assertTrue;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
@@ -135,6 +133,7 @@ public class TCKLocalDate extends AbstractDateTimeTest {
 
     private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);
     private static final ZoneOffset OFFSET_PTWO = ZoneOffset.ofHours(2);
+    private static final ZoneOffset OFFSET_MTWO = ZoneOffset.ofHours(-2);
     private static final ZoneId ZONE_PARIS = ZoneId.of("Europe/Paris");
     private static final ZoneId ZONE_GAZA = ZoneId.of("Asia/Gaza");
 
@@ -474,6 +473,48 @@ public class TCKLocalDate extends AbstractDateTimeTest {
         }
         return date.withDayOfMonth(date.getMonth().length(isIsoLeap(date.getYear())));
     }
+
+     //-----------------------------------------------------------------------
+     // ofInstant()
+     //-----------------------------------------------------------------------
+     @DataProvider(name="instantFactory")
+     Object[][] data_instantFactory() {
+         return new Object[][] {
+                 {Instant.ofEpochSecond(86400 + 3600 + 120 + 4, 500), ZONE_PARIS, LocalDate.of(1970, 1, 2)},
+                 {Instant.ofEpochSecond(86400 + 3600 + 120 + 4, 500), OFFSET_MTWO, LocalDate.of(1970, 1, 1)},
+                 {Instant.ofEpochSecond(-86400 + 4, 500), OFFSET_PTWO, LocalDate.of(1969, 12, 31)},
+                 {OffsetDateTime.of(LocalDateTime.of(Year.MIN_VALUE, 1, 1, 0, 0), ZoneOffset.UTC).toInstant(),
+                         ZoneOffset.UTC, LocalDate.MIN},
+                 {OffsetDateTime.of(LocalDateTime.of(Year.MAX_VALUE, 12, 31, 23, 59, 59, 999_999_999), ZoneOffset.UTC).toInstant(),
+                         ZoneOffset.UTC, LocalDate.MAX},
+         };
+     }
+
+     @Test(dataProvider="instantFactory")
+     public void factory_ofInstant(Instant instant, ZoneId zone, LocalDate expected) {
+         LocalDate test = LocalDate.ofInstant(instant, zone);
+         assertEquals(test, expected);
+     }
+
+     @Test(expectedExceptions=DateTimeException.class)
+     public void factory_ofInstant_instantTooBig() {
+         LocalDate.ofInstant(Instant.MAX, OFFSET_PONE);
+     }
+
+     @Test(expectedExceptions=DateTimeException.class)
+     public void factory_ofInstant_instantTooSmall() {
+         LocalDate.ofInstant(Instant.MIN, OFFSET_PONE);
+     }
+
+     @Test(expectedExceptions=NullPointerException.class)
+     public void factory_ofInstant_nullInstant() {
+         LocalDate.ofInstant((Instant) null, ZONE_GAZA);
+     }
+
+     @Test(expectedExceptions=NullPointerException.class)
+     public void factory_ofInstant_nullZone() {
+         LocalDate.ofInstant(Instant.EPOCH, (ZoneId) null);
+     }
 
     //-----------------------------------------------------------------------
     // ofEpochDay()
