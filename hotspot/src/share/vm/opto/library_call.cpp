@@ -2588,6 +2588,10 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
     } else {
       bt = alias_type->field()->type()->basic_type();
     }
+    if (bt == T_ARRAY) {
+      // accessing an array field with getObject is not a mismatch
+      bt = T_OBJECT;
+    }
     if (bt != type) {
       mismatched = true;
     }

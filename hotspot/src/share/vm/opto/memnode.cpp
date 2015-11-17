@@ -761,7 +761,8 @@ bool LoadNode::is_immutable_value(Node* adr) {
 
 //----------------------------LoadNode::make-----------------------------------
 // Polymorphic factory method:
-Node *LoadNode::make(PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const TypePtr* adr_type, const Type *rt, BasicType bt, MemOrd mo, ControlDependency control_dependency) {
+Node *LoadNode::make(PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const TypePtr* adr_type, const Type *rt, BasicType bt, MemOrd mo,
+                     ControlDependency control_dependency, bool unaligned, bool mismatched) {
   Compile* C = gvn.C;
 
   // sanity check the alias category against the created node type
@@ -776,40 +777,68 @@ Node *LoadNode::make(PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const TypeP
           // oop will be recorded in oop map if load crosses safepoint
           rt->isa_oopptr() || is_immutable_value(adr),
           "raw memory operations should have control edge");
+  LoadNode* load = NULL;
   switch (bt) {
-  case T_BOOLEAN: return new LoadUBNode(ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency);
-  case T_BYTE:    return new LoadBNode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency);
-  case T_INT:     return new LoadINode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency);
-  case T_CHAR:    return new LoadUSNode(ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency);
-  case T_SHORT:   return new LoadSNode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency);
-  case T_LONG:    return new LoadLNode (ctl, mem, adr, adr_type, rt->is_long(), mo, control_dependency);
-  case T_FLOAT:   return new LoadFNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency);
-  case T_DOUBLE:  return new LoadDNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency);
-  case T_ADDRESS: return new LoadPNode (ctl, mem, adr, adr_type, rt->is_ptr(),  mo, control_dependency);
+  case T_BOOLEAN: load = new LoadUBNode(ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
+  case T_BYTE:    load = new LoadBNode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
+  case T_INT:     load = new LoadINode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
+  case T_CHAR:    load = new LoadUSNode(ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
+  case T_SHORT:   load = new LoadSNode (ctl, mem, adr, adr_type, rt->is_int(),  mo, control_dependency); break;
+  case T_LONG:    load = new LoadLNode (ctl, mem, adr, adr_type, rt->is_long(), mo, control_dependency); break;
+  case T_FLOAT:   load = new LoadFNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency); break;
+  case T_DOUBLE:  load = new LoadDNode (ctl, mem, adr, adr_type, rt,            mo, control_dependency); break;
+  case T_ADDRESS: load = new LoadPNode (ctl, mem, adr, adr_type, rt->is_ptr(),  mo, control_dependency); break;
   case T_OBJECT:
 #ifdef _LP64
     if (adr->bottom_type()->is_ptr_to_narrowoop()) {
-      Node* load  = gvn.transform(new LoadNNode(ctl, mem, adr, adr_type, rt->make_narrowoop(), mo, control_dependency));
-      return new DecodeNNode(load, load->bottom_type()->make_ptr());
+      load = new LoadNNode(ctl, mem, adr, adr_type, rt->make_narrowoop(), mo, control_dependency);
     } else
 #endif
     {
       assert(!adr->bottom_type()->is_ptr_to_narrowoop() && !adr->bottom_type()->is_ptr_to_narrowklass(), "should have got back a narrow oop");
-      return new LoadPNode(ctl, mem, adr, adr_type, rt->is_oopptr(), mo, control_dependency);
+      load = new LoadPNode(ctl, mem, adr, adr_type, rt->is_oopptr(), mo, control_dependency);
     }
+    break;
   }
-  ShouldNotReachHere();
-  return (LoadNode*)NULL;
+  assert(load != NULL, "LoadNode should have been created");
+  if (unaligned) {
+    load->set_unaligned_access();
+  }
+  if (mismatched) {
+    load->set_mismatched_access();
+  }
+  if (load->Opcode() == Op_LoadN) {
+    Node* ld = gvn.transform(load);
+    return new DecodeNNode(ld, ld->bottom_type()->make_ptr());
+  }
+
+  return load;
 }
 
-LoadLNode* LoadLNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo, ControlDependency control_dependency) {
+LoadLNode* LoadLNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo,
+                                  ControlDependency control_dependency, bool unaligned, bool mismatched) {
   bool require_atomic = true;
-  return new LoadLNode(ctl, mem, adr, adr_type, rt->is_long(), mo, control_dependency, require_atomic);
+  LoadLNode* load = new LoadLNode(ctl, mem, adr, adr_type, rt->is_long(), mo, control_dependency, require_atomic);
+  if (unaligned) {
+    load->set_unaligned_access();
+  }
+  if (mismatched) {
+    load->set_mismatched_access();
+  }
+  return load;
 }
 
-LoadDNode* LoadDNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo, ControlDependency control_dependency) {
+LoadDNode* LoadDNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo,
+                                  ControlDependency control_dependency, bool unaligned, bool mismatched) {
   bool require_atomic = true;
-  return new LoadDNode(ctl, mem, adr, adr_type, rt, mo, control_dependency, require_atomic);
+  LoadDNode* load = new LoadDNode(ctl, mem, adr, adr_type, rt, mo, control_dependency, require_atomic);
+  if (unaligned) {
+    load->set_unaligned_access();
+  }
+  if (mismatched) {
+    load->set_mismatched_access();
+  }
+  return load;
 }
 
 
