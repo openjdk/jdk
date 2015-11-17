@@ -49,8 +49,6 @@ DOCSTMPDIR = $(SUPPORT_OUTPUTDIR)/docs
 
 HOTSPOT_DOCS_IMPORT_PATH=$(HOTSPOT_OUTPUTDIR)/docs
 
-BUILD_NUMBER=$(JDK_BUILD_NUMBER)
-
 JAVADOC_CMD = $(JAVA) \
     -Djava.awt.headless=true \
     $(NEW_JAVADOC)
@@ -122,11 +120,8 @@ BUG_SUBMIT_URL = http://bugreport.java.com/bugreport/
 BUG_SUBMIT_LINE = <a href="$(BUG_SUBMIT_URL)">Submit a bug or feature</a>
 
 # Url to devdocs page
-# Was: http://java.sun.com/javase/6/webnotes/devdocs-vs-specs.html
-DEV_DOCS_URL-7 = http://download.oracle.com/javase/7/docs/index.html
-DEV_DOCS_URL-8 = http://download.oracle.com/javase/8/docs/index.html
-DEV_DOCS_URL = $(DEV_DOCS_URL-$(JDK_MINOR_VERSION))
-DOCS_BASE_URL = http://download.oracle.com/javase/7/docs
+DOCS_BASE_URL = http://docs.oracle.com/javase/$(VERSION_SPECIFICATION)/docs
+DEV_DOCS_URL = $(DOCS_BASE_URL)/index.html
 
 # Common Java trademark line
 JAVA_TRADEMARK_LINE = Java is a trademark or registered trademark of \
@@ -313,14 +308,13 @@ endef
 
 
 
-# Draft used for non-fcs documents
-DRAFT_HEADER =
-ifneq ($(MILESTONE), fcs)
-  DRAFT_HEADER = <br><strong>DRAFT&nbsp;$(MILESTONE)-$(BUILD_NUMBER)</strong>
-  DRAFT_BOTTOM = <br><strong>DRAFT&nbsp;$(MILESTONE)-$(BUILD_NUMBER)</strong>
-  DRAFT_WINTITLE = $(BUILD_NUMBER)
+# Assume we need a draft format when the version string is not a GA version.
+ifeq ($(VERSION_IS_GA), false)
+  DRAFT_HEADER := <br><strong>DRAFT&nbsp;$(VERSION_STRING)</strong>
+  DRAFT_BOTTOM := <br><strong>DRAFT&nbsp;$(VERSION_STRING)</strong>
+  DRAFT_WINTITLE := $(VERSION_BUILD)
   # Early access top text (not used in FCS releases)
-  COREAPI_TOP_EARLYACCESS = \
+  COREAPI_TOP_EARLYACCESS := \
 <div style="background-color: \#EEEEEE"> \
 <div style="padding: 6px; margin-top: 2px; margin-bottom: 6px; \
 margin-left: 6px; margin-right: 6px; text-align: justify; \
@@ -331,7 +325,11 @@ contained herein are not final and are subject to change. \
 The information is being made available to you solely for purpose of \
 evaluation. \
 </div> </div>
-
+else
+  DRAFT_HEADER :=
+  DRAFT_BOTTOM :=
+  DRAFT_WINTITLE :=
+  COREAPI_TOP_EARLYACCESS :=
 endif
 
 #################################################################
@@ -351,39 +349,15 @@ $(eval $(call IncludeCustomExtension, , Javadoc.gmk))
 all: docs
 docs: coredocs otherdocs
 
-#################################################################
-# Production Targets -- USE THESE TARGETS WHEN:
-# a) You're generating docs outside of release engineering's
-#    standard control build.
-# b) The docs will be pushed to the web and/or included in
-#    the downloaded doc bundle.
-#
-# See: Notes.html#releaseTargets
-# Note: Spaces precede ifdef/ifndef indents. Tabs precede target commands (!)
-#
-
-sanitycheckcoredocs:
-	@$(ECHO) ""
-	@$(ECHO) "Building core api docs with these values:"
-	@$(ECHO) "    BUILD_NUMBER = $(BUILD_NUMBER)"
-	@$(ECHO) "    MILESTONE = $(MILESTONE)"
-	@$(ECHO) ""
-        ifeq ($(BUILD_NUMBER), b00)
-	  @$(ECHO) "ERROR: Build number must be defined"
-	  @$(ECHO) "MILESTONE is set to $(MILESTONE)"
-	  @$(ECHO) ""
-	  exit 1
-        endif
-
 #############################################################
 #
 # coredocs
 #
 COREAPI_DOCTITLE = Java$(TRADEMARK) Platform, Standard Edition \
-$(JDK_MINOR_VERSION)<br>API Specification
-COREAPI_WINDOWTITLE = Java Platform SE $(JDK_MINOR_VERSION)
+$(VERSION_SPECIFICATION)<br>API Specification
+COREAPI_WINDOWTITLE = Java Platform SE $(VERSION_SPECIFICATION)
 COREAPI_HEADER = \
-<strong>Java$(TRADEMARK)&nbsp;Platform<br>Standard&nbsp;Ed.&nbsp;$(JDK_MINOR_VERSION)</strong>
+<strong>Java$(TRADEMARK)&nbsp;Platform<br>Standard&nbsp;Ed.&nbsp;$(VERSION_SPECIFICATION)</strong>
 
 # Overview file for core apis
 COREAPI_OVERVIEW = $(JDK_TOPDIR)/src/java.base/share/classes/overview-core.html
@@ -1338,55 +1312,9 @@ $(JDKNET_PACKAGES_FILE): $(call PackageDependencies,$(JDKNET_PKGS))
 	$(prep-target)
 	$(call PackageFilter,$(JDKNET_PKGS))
 
-#############################################################
-#release version of core packages ########
-
-# The rel-coredocs and rel-docs targets were added by Eric Armstrong. rel-coredocs
-# assumes the kind of large, 32-bit machine used in the javapubs group's docs-release
-# process. It specifies memory settings accordingly to maximize performance.
-#
-# The performance settings, like the sanity check, are most important for the core
-# docs--the platform APIs. Running javadoc on those APIs takes a significant amount
-# of time and memory. Setting the initial heap size as large as possible is important
-# to prevent thrashing as the heap grows. Setting the maximum as large as necessary
-# is also important to keep the job from failing.
-#
-#    -J-Xmx512 sets a maximum of 512, which became necessary in 6.0
-#    -J-Xms256 sets starting size to 256 (default is 8)
-#
-# rel-coredocs also includes a sanity check to help ensure that BUILD_NUMBER and
-# MILESTONE are specified properly when docs are built outside of the normal release
-# engineering process, with the intention of releasing them on the web or in a downloaded
-# docs bundle. (When invoked in release engineering's control build, the values are always
-# set properly. But when the targets are run by themselves, they default to b00 and
-# "internal"--which silently sabotage the result of a build that can take many hours
-# to complete.
-
-# Maximize performance and ensure that build number & milestone are set.
-
-rel-coredocs: sanitycheckcoredocs
-	$(MAKE) coredocs
-
-rel-docs: rel-coredocs $(ALL_OTHER_TARGETS)
-#
-# end of production targets
 
 otherdocs: $(ALL_OTHER_TARGETS)
 
-clean:
-	$(RM) -r $(DOCSDIR) $(DOCSTMPDIR)
-
 #############################################################
-# DEBUG TARGET
-# List the values defined in the makefile hierarchy, to make sure everything
-# is set properly, and to help identify values we can use instead of making new ones.
-# (Most of them come from common/shared/Defs.gmk)
-#
-# Notes:
-# * BUILD_NUMBER defaults to b00 if not set on command line with BUILD_NUMBER=<value>
-# * MILESTONE defaults to internal unless set to beta, rc, or fcs on command line
-#
-
-#############################################################
-.PHONY: all docs coredocs rel-docs otherdocs rel-coredocs \
-    sanitycheckcoredocs $(ALL_OTHER_TARGETS)
+.PHONY: all docs coredocs otherdocs \
+     $(ALL_OTHER_TARGETS)
