@@ -125,7 +125,8 @@ private:
                            instanceKlassHandle&  holder,
                            Symbol*         name,
                            Symbol*         sig,
-                           Bytecodes::Code bc);
+                           Bytecodes::Code bc,
+                           constantTag     tag);
 
   private:
 

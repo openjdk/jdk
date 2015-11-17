@@ -574,7 +574,7 @@ C2V_VMENTRY(jobject, resolveMethod, (JNIEnv *, jobject, jobject receiver_jvmci_t
 
     if (holder_klass->is_interface()) {
       // do link-time resolution to check all access rules.
-      LinkInfo link_info(holder_klass, method_name, method_signature, caller_klass, true);
+      LinkInfo link_info(holder_klass, method_name, method_signature, caller_klass);
       methodHandle resolved_method = LinkResolver::linktime_resolve_interface_method_or_null(link_info);
       if (resolved_method.is_null() || resolved_method->is_private()) {
         return NULL;
@@ -586,7 +586,7 @@ C2V_VMENTRY(jobject, resolveMethod, (JNIEnv *, jobject, jobject receiver_jvmci_t
       return JNIHandles::make_local(THREAD, result);
     } else {
       // do link-time resolution to check all access rules.
-      LinkInfo link_info(holder_klass, method_name, method_signature, caller_klass, true);
+      LinkInfo link_info(holder_klass, method_name, method_signature, caller_klass);
       methodHandle resolved_method = LinkResolver::linktime_resolve_virtual_method_or_null(link_info);
       if (resolved_method.is_null()) {
         return NULL;
