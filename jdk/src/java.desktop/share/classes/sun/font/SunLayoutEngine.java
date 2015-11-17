@@ -155,10 +155,7 @@ public final class SunLayoutEngine implements LayoutEngine, LayoutEngineFactory 
                        Point2D.Float pt, GVData data) {
         Font2D font = key.font();
         FontStrike strike = font.getStrike(desc);
-        long layoutTables = 0;
-        if (font instanceof TrueTypeFont) {
-            layoutTables = ((TrueTypeFont) font).getLayoutTableCache();
-        }
+        long layoutTables = font.getLayoutTableCache();
         nativeLayout(font, strike, mat, gmask, baseIndex,
              tr.text, tr.start, tr.limit, tr.min, tr.max,
              key.script(), key.lang(), typo_flags, pt, data,

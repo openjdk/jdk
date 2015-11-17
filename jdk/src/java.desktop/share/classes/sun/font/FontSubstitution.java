@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,17 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package sun.font;
 
-#import <Cocoa/Cocoa.h>
-#import <JavaRuntimeSupport/JavaRuntimeSupport.h>
 
-#import "fontscalerdefs.h"
 
-#define MAX_STACK_ALLOC_GLYPH_BUFFER_SIZE 256
-
-@interface AWTFont : NSObject {
-@public
-    NSFont    *fFont;
-    CGFontRef  fNativeCGFont;
-    BOOL       fIsFakeItalic;
-    TTLayoutTableCache* layoutTableCache;
+/**
+ * Interface that indicates a Font2D that is not a Composite but has the
+ * property that it internally behaves like one, substituting glyphs
+ * from another font at render time.
+ * In this case the Font must provide a way to behave like a regular
+ * composite when that behaviour is not wanted.
+ */
+public interface FontSubstitution {
+    public CompositeFont getCompositeFont2D();
 }
-
-+ (AWTFont *) awtFontForName:(NSString *)name
-    style:(int)style isFakeItalic:(BOOL)isFakeItalic;
-
-+ (NSFont *) nsFontForJavaFont:(jobject)javaFont env:(JNIEnv *)env;
-
-@end
