@@ -778,8 +778,15 @@ public abstract class RasterPrinterJob extends PrinterJob {
         // Check for native, note that default dialog is COMMON.
         if (dlg == DialogTypeSelection.NATIVE) {
             PrintService pservice = getPrintService();
-            PageFormat page = pageDialog(attributeToPageFormat(pservice,
-                                                               attributes));
+            PageFormat pageFrmAttrib = attributeToPageFormat(pservice,
+                                                             attributes);
+            PageFormat page = pageDialog(pageFrmAttrib);
+
+            // If user cancels the dialog, pageDialog() will return the original
+            // page object and as per spec, we should return null in that case.
+            if (page == pageFrmAttrib) {
+                return null;
+            }
             updateAttributesWithPageFormat(pservice, page, attributes);
             return page;
         }
