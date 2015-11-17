@@ -102,6 +102,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.chrono.IsoChronology;
+import java.time.chrono.IsoEra;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoField;
@@ -2326,4 +2327,13 @@ public class TCKLocalDate extends AbstractDateTimeTest {
         return LocalDate.of(year, month, day);
     }
 
+    //-----------------------------------------------------------------
+    // getEra()
+    // ----------------------------------------------------------------
+    @Test
+    public void test_getEra() {
+        IsoEra isoEra = LocalDate.MAX.getEra();
+        assertSame(isoEra,IsoEra.CE);
+        assertSame(LocalDate.MIN.getEra(),IsoEra.BCE);
+    }
 }
