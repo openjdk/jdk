@@ -740,7 +740,19 @@ public abstract class RasterPrinterJob extends PrinterJob {
         }
         updatePageAttributes(service, page);
 
-        PageFormat newPage = pageDialog(attributes);
+        PageFormat newPage = null;
+        DialogTypeSelection dts =
+            (DialogTypeSelection)attributes.get(DialogTypeSelection.class);
+        if (dts == DialogTypeSelection.NATIVE) {
+            // Remove DialogTypeSelection.NATIVE to prevent infinite loop in
+            // RasterPrinterJob.
+            attributes.remove(DialogTypeSelection.class);
+            newPage = pageDialog(attributes);
+            // restore attribute
+            attributes.add(DialogTypeSelection.NATIVE);
+        } else {
+            newPage = pageDialog(attributes);
+        }
 
         if (newPage == null) {
             return page;
