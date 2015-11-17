@@ -1605,19 +1605,15 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
     static {
         try {
-            NamedFunction nfs[] = {
-                NF_checkSpreadArgument = new NamedFunction(MethodHandleImpl.class
-                        .getDeclaredMethod("checkSpreadArgument", Object.class, int.class)),
-                NF_guardWithCatch = new NamedFunction(MethodHandleImpl.class
-                        .getDeclaredMethod("guardWithCatch", MethodHandle.class, Class.class,
-                                MethodHandle.class, Object[].class)),
-                NF_throwException = new NamedFunction(MethodHandleImpl.class
-                        .getDeclaredMethod("throwException", Throwable.class)),
-                NF_profileBoolean = new NamedFunction(MethodHandleImpl.class
-                        .getDeclaredMethod("profileBoolean", boolean.class, int[].class))
-            };
-            // Each nf must be statically invocable or we get tied up in our bootstraps.
-            assert(InvokerBytecodeGenerator.isStaticallyInvocable(nfs));
+            NF_checkSpreadArgument = new NamedFunction(MethodHandleImpl.class
+                    .getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
+            NF_guardWithCatch = new NamedFunction(MethodHandleImpl.class
+                    .getDeclaredMethod("guardWithCatch", MethodHandle.class, Class.class,
+                            MethodHandle.class, Object[].class));
+            NF_throwException = new NamedFunction(MethodHandleImpl.class
+                    .getDeclaredMethod("throwException", Throwable.class));
+            NF_profileBoolean = new NamedFunction(MethodHandleImpl.class
+                    .getDeclaredMethod("profileBoolean", boolean.class, int[].class));
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
         }
