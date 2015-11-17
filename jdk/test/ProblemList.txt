@@ -234,6 +234,7 @@ java/security/Security/ClassLoaderDeadlock/Deadlock2.sh         generic-all
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      generic-all
 
 # 8077138: Some PKCS11 tests fail because NSS library is not initialized
+# 8023434: NSS initialization failed
 sun/security/pkcs11/Cipher/ReinitCipher.java                    windows-all
 sun/security/pkcs11/Cipher/TestPKCS5PaddingError.java           windows-all
 sun/security/pkcs11/Cipher/TestRSACipher.java                   windows-all
@@ -263,6 +264,7 @@ sun/security/pkcs11/Secmod/AddTrustedCert.java                  windows-all
 sun/security/pkcs11/Secmod/Crypto.java                          windows-all
 sun/security/pkcs11/Secmod/GetPrivateKey.java                   windows-all
 sun/security/pkcs11/Secmod/JksSetPrivateKey.java                windows-all
+sun/security/pkcs11/Secmod/LoadKeystore.java                    windows-all
 sun/security/pkcs11/SecureRandom/Basic.java                     windows-all
 sun/security/pkcs11/SecureRandom/TestDeserialization.java       windows-all
 sun/security/pkcs11/Serialize/SerializeProvider.java            windows-all
