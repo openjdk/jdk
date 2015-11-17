@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ public final class Version {
      * @return version string
      */
     public static String version() {
-        return version("release");  // mm.nn.oo[-milestone]
+        return version("version_short");  // E.g. "9-internal" or "9.1.2"
     }
 
     /**
@@ -49,7 +49,7 @@ public final class Version {
      * @return full version string
      */
     public static String fullVersion() {
-        return version("full"); // mm.mm.oo[-milestone]-build
+        return version("version_string"); // E.g. "9.1.2.3-ea-4+nashorn-testing"
     }
 
     private static final String   VERSION_RB_NAME = "jdk.nashorn.internal.runtime.resources.version";
