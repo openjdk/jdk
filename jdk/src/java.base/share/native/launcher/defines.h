@@ -28,22 +28,20 @@
 
 #include "java.h"
 
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
+
 /*
  * This file contains commonly defined constants used only by main.c
  * and should not be included by another file.
  */
-#ifndef FULL_VERSION
+#ifndef VERSION_STRING
 /* make sure the compilation fails */
-#error "FULL_VERSION must be defined"
+#error "VERSION_STRING must be defined"
 #endif
 
-#if defined(JDK_MAJOR_VERSION) && defined(JDK_MINOR_VERSION)
-#define DOT_VERSION JDK_MAJOR_VERSION "." JDK_MINOR_VERSION
-#else
-/* make sure the compilation fails */
-#error "JDK_MAJOR_VERSION and JDK_MINOR_VERSION must be defined"
-#endif
-
+/* Unused, but retained for JLI_Launch compatibility*/
+#define DOT_VERSION "0.0"
 
 #ifdef JAVA_ARGS
 #define HAS_JAVA_ARGS JNI_TRUE
