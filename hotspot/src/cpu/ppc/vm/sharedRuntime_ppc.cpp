@@ -753,6 +753,21 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
     // in farg_reg[j] if argument i is the j-th float argument of this call.
     //
     case T_FLOAT:
+#if defined(LINUX)
+      // Linux uses ELF ABI. Both original ELF and ELFv2 ABIs have float
+      // in the least significant word of an argument slot.
+#if defined(VM_LITTLE_ENDIAN)
+#define FLOAT_WORD_OFFSET_IN_SLOT 0
+#else
+#define FLOAT_WORD_OFFSET_IN_SLOT 1
+#endif
+#elif defined(AIX)
+      // Although AIX runs on big endian CPU, float is in the most
+      // significant word of an argument slot.
+#define FLOAT_WORD_OFFSET_IN_SLOT 0
+#else
+#error "unknown OS"
+#endif
       if (freg < Argument::n_float_register_parameters_c) {
         // Put float in register ...
         reg = farg_reg[freg];
@@ -766,14 +781,14 @@ int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
         if (arg >= Argument::n_regs_not_on_stack_c) {
           // ... and on the stack.
           guarantee(regs2 != NULL, "must pass float in register and stack slot");
-          VMReg reg2 = VMRegImpl::stack2reg(stk LINUX_ONLY(+1));
+          VMReg reg2 = VMRegImpl::stack2reg(stk + FLOAT_WORD_OFFSET_IN_SLOT);
           regs2[i].set1(reg2);
           stk += inc_stk_for_intfloat;
         }
 
       } else {
         // Put float on stack.
-        reg = VMRegImpl::stack2reg(stk LINUX_ONLY(+1));
+        reg = VMRegImpl::stack2reg(stk + FLOAT_WORD_OFFSET_IN_SLOT);
         stk += inc_stk_for_intfloat;
       }
       regs[i].set1(reg);
