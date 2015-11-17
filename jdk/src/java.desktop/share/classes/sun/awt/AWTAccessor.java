@@ -25,7 +25,7 @@
 
 package sun.awt;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import javax.accessibility.AccessibleContext;
 import java.awt.*;

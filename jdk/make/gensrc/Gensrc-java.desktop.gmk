@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -66,11 +66,11 @@ else
   PROP_SRC_DIRS += $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/java/swing/plaf/gtk/resources
 endif
 
-PROP_SRC_FILES := $(filter-out %cursors.properties, \
-    $(filter %.properties, $(call CacheFind, $(PROP_SRC_DIRS))))
-
-$(eval $(call SetupCompileProperties,COMPILE_PROPERTIES, \
-    $(PROP_SRC_FILES), ListResourceBundle))
+$(eval $(call SetupCompileProperties, COMPILE_PROPERTIES, \
+    SRC_DIRS := $(PROP_SRC_DIRS), \
+    EXCLUDE := %cursors.properties, \
+    CLASS := ListResourceBundle, \
+))
 
 GENSRC_JAVA_DESKTOP += $(COMPILE_PROPERTIES)
 

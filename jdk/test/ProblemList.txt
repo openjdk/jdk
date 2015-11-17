@@ -133,9 +133,6 @@ java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java generic-all
 # 8029891
 java/lang/ClassLoader/deadlock/GetResource.java                 generic-all
 
-# 8131129
-java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        windows-all
-
 ############################################################################
 
 # jdk_instrument
@@ -237,6 +234,7 @@ java/security/Security/ClassLoaderDeadlock/Deadlock2.sh         generic-all
 sun/security/tools/jarsigner/warnings/BadKeyUsageTest.java      generic-all
 
 # 8077138: Some PKCS11 tests fail because NSS library is not initialized
+# 8023434: NSS initialization failed
 sun/security/pkcs11/Cipher/ReinitCipher.java                    windows-all
 sun/security/pkcs11/Cipher/TestPKCS5PaddingError.java           windows-all
 sun/security/pkcs11/Cipher/TestRSACipher.java                   windows-all
@@ -266,6 +264,7 @@ sun/security/pkcs11/Secmod/AddTrustedCert.java                  windows-all
 sun/security/pkcs11/Secmod/Crypto.java                          windows-all
 sun/security/pkcs11/Secmod/GetPrivateKey.java                   windows-all
 sun/security/pkcs11/Secmod/JksSetPrivateKey.java                windows-all
+sun/security/pkcs11/Secmod/LoadKeystore.java                    windows-all
 sun/security/pkcs11/SecureRandom/Basic.java                     windows-all
 sun/security/pkcs11/SecureRandom/TestDeserialization.java       windows-all
 sun/security/pkcs11/Serialize/SerializeProvider.java            windows-all
@@ -362,6 +361,18 @@ com/sun/jdi/GetLocalVariables4Test.sh				windows-all
 
 # 8062512
 java/util/spi/ResourceBundleControlProvider/UserDefaultControlTest.java generic-all
+
+# 8076458
+java/util/stream/test/org/openjdk/tests/java/util/stream/FlatMapOpTest.java generic-all
+
+# 8130337
+java/util/stream/test/org/openjdk/tests/java/util/stream/IntPrimitiveOpsTests.java generic-all
+
+# 8080165, 8085982
+java/util/Arrays/ParallelPrefix.java generic-all
+
+# 8079538
+java/util/BitSet/BitSetStreamTest.java generic-all
 
 ############################################################################
 

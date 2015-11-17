@@ -37,6 +37,7 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Set;
 import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
@@ -625,6 +626,7 @@ public abstract class Charset
 
     private final String name;          // tickles a bug in oldjavac
     private final String[] aliases;     // tickles a bug in oldjavac
+    private final String[] zeroAliases = new String[0];
     private Set<String> aliasSet = null;
 
     /**
@@ -642,7 +644,7 @@ public abstract class Charset
      */
     protected Charset(String canonicalName, String[] aliases) {
         checkName(canonicalName);
-        String[] as = (aliases == null) ? new String[0] : aliases;
+        String[] as = Objects.requireNonNullElse(aliases, zeroAliases);
         for (int i = 0; i < as.length; i++)
             checkName(as[i]);
         this.name = canonicalName;
