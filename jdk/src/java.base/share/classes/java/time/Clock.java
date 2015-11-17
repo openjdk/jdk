@@ -65,7 +65,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import static java.time.LocalTime.NANOS_PER_MINUTE;
 import static java.time.LocalTime.NANOS_PER_SECOND;
-
+import static java.time.LocalTime.NANOS_PER_MILLI;
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.TimeZone;
@@ -182,7 +182,7 @@ public abstract class Clock {
     }
 
     /**
-     * Obtains a clock that returns the current instant using best available
+     * Obtains a clock that returns the current instant using the best available
      * system clock.
      * <p>
      * This clock is based on the best available system clock.
@@ -206,8 +206,32 @@ public abstract class Clock {
 
     //-------------------------------------------------------------------------
     /**
+     * Obtains a clock that returns the current instant ticking in whole milliseconds
+     * using the best available system clock.
+     * <p>
+     * This clock will always have the nano-of-second field truncated to milliseconds.
+     * This ensures that the visible time ticks in whole milliseconds.
+     * The underlying clock is the best available system clock, equivalent to
+     * using {@link #system(ZoneId)}.
+     * <p>
+     * Implementations may use a caching strategy for performance reasons.
+     * As such, it is possible that the start of the millisecond observed via this
+     * clock will be later than that observed directly via the underlying clock.
+     * <p>
+     * The returned implementation is immutable, thread-safe and {@code Serializable}.
+     * It is equivalent to {@code tick(system(zone), Duration.ofMillis(1))}.
+     *
+     * @param zone  the time-zone to use to convert the instant to date-time, not null
+     * @return a clock that ticks in whole milliseconds using the specified zone, not null
+     */
+    public static Clock tickMillis(ZoneId zone) {
+        return new TickClock(system(zone), NANOS_PER_MILLI);
+    }
+
+    //-------------------------------------------------------------------------
+    /**
      * Obtains a clock that returns the current instant ticking in whole seconds
-     * using best available system clock.
+     * using the best available system clock.
      * <p>
      * This clock will always have the nano-of-second field set to zero.
      * This ensures that the visible time ticks in whole seconds.
@@ -230,7 +254,7 @@ public abstract class Clock {
 
     /**
      * Obtains a clock that returns the current instant ticking in whole minutes
-     * using best available system clock.
+     * using the best available system clock.
      * <p>
      * This clock will always have the nano-of-second and second-of-minute fields set to zero.
      * This ensures that the visible time ticks in whole minutes.

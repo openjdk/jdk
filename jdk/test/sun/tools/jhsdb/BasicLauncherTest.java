@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Basic test for jhsdb launcher
- * @library /../../test/lib/share/classes
+ * @library /test/lib/share/classes
  * @library /lib/testlibrary
  * @build jdk.testlibrary.*
  * @build jdk.test.lib.apps.*

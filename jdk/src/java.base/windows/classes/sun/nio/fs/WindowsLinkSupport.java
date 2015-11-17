@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.io.IOError;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;
 import static sun.nio.fs.WindowsConstants.*;

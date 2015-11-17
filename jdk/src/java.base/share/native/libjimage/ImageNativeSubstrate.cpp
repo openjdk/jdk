@@ -26,6 +26,7 @@
 #include <string.h>
 
 #include "jni.h"
+#include "jni_util.h"
 
 #include "endian.hpp"
 #include "imageDecompressor.hpp"
@@ -201,6 +202,9 @@ static jlong* JIMAGE_FindAttributes(JNIEnv *env, jlong* rawAttributes, jbyte* ra
     if (reader == NULL) return NULL;
     // Convert byte array to a cstring.
     char* path = new char[size + 1];
+    if (path == NULL) {
+        return NULL;
+    }
     memcpy(path, rawBytes, size);
     path[size] = '\0';
     // Locate resource location data.
@@ -246,7 +250,7 @@ static unsigned int JIMAGE_AttributeOffsetsLength(JNIEnv *env, jlong id) {
 }
 
 JNIEXPORT jint JNICALL
-JNI_OnLoad(JavaVM *vm, void *reserved) {
+DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv *env;
 
     if (vm->GetEnv((void**) &env, JNI_VERSION_1_2) != JNI_OK) {
@@ -646,6 +650,6 @@ JNIEXPORT jstring JNICALL Java_jdk_internal_jimage_ImageNativeSubstrate_JIMAGE_1
     return module;
 }
 
-JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *vm, void *reserved) {
+JNIEXPORT void JNICALL DEF_JNI_OnUnload(JavaVM *vm, void *reserved) {
     ImageDecompressor::image_decompressor_close();
 }

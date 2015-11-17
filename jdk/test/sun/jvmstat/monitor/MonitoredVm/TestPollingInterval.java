@@ -42,7 +42,7 @@ import sun.jvmstat.monitor.VmIdentifier;
  * @summary setInterval() for local MonitoredHost and local MonitoredVm
  * @modules jdk.jvmstat/sun.jvmstat.monitor
  * @library /lib/testlibrary
- * @library /../../test/lib/share/classes
+ * @library /test/lib/share/classes
  * @build jdk.testlibrary.*
  * @build jdk.test.lib.apps.*
  * @run main TestPollingInterval

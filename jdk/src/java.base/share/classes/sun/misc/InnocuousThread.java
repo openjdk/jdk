@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * ThreadGroup and supports the ability to erase ThreadLocals.
  */
 public final class InnocuousThread extends ManagedLocalsThread {
-    private static final Unsafe UNSAFE;
+    private static final jdk.internal.misc.Unsafe UNSAFE;
     private static final ThreadGroup INNOCUOUSTHREADGROUP;
     private static final AccessControlContext ACC;
     private static final long INHERITEDACCESSCONTROLCONTEXT;
@@ -92,7 +92,7 @@ public final class InnocuousThread extends ManagedLocalsThread {
             });
 
             // Find and use topmost ThreadGroup as parent of new group
-            UNSAFE = Unsafe.getUnsafe();
+            UNSAFE = jdk.internal.misc.Unsafe.getUnsafe();
             Class<?> tk = Thread.class;
             Class<?> gk = ThreadGroup.class;
 

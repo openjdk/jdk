@@ -27,7 +27,7 @@
 
 package sun.awt.X11;
 import java.util.Hashtable;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import sun.util.logging.PlatformLogger;
 

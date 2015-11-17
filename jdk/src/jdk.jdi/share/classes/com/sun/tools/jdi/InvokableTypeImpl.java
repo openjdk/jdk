@@ -236,6 +236,15 @@ abstract class InvokableTypeImpl extends ReferenceTypeImpl {
                                            final MethodImpl method,
                                            final ValueImpl[] args,
                                            final int options) {
+        /*
+         * Cache the values of args when TRACE_SENDS is enabled, for later printing.
+         * If not cached, printing causes a remote call while synchronized, and deadlock.
+         */
+        if ((vm.traceFlags & VirtualMachineImpl.TRACE_SENDS) != 0) {
+           for (ValueImpl arg: args) {
+              arg.toString();
+           }
+        }
         CommandSender sender = getInvokeMethodSender(thread, method, args, options);
         PacketStream stream;
         if ((options & ClassType.INVOKE_SINGLE_THREADED) != 0) {
