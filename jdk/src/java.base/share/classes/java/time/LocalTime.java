@@ -190,9 +190,13 @@ public final class LocalTime
      */
     static final long MICROS_PER_DAY = SECONDS_PER_DAY * 1000_000L;
     /**
+     * Nanos per millisecond.
+     */
+    static final long NANOS_PER_MILLI = 1000_000L;
+    /**
      * Nanos per second.
      */
-    static final long NANOS_PER_SECOND = 1000_000_000L;
+    static final long NANOS_PER_SECOND =  1000_000_000L;
     /**
      * Nanos per minute.
      */
