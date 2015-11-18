@@ -24,6 +24,7 @@
  */
 package com.sun.java.swing.plaf.gtk;
 
+import javax.swing.plaf.synth.SynthIcon;
 import java.util.*;
 import javax.swing.plaf.synth.*;
 import java.awt.*;

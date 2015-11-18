@@ -36,7 +36,7 @@ import javax.swing.plaf.synth.*;
 import sun.awt.AppContext;
 import sun.awt.UNIXToolkit;
 import sun.swing.SwingUtilities2;
-import sun.swing.plaf.synth.SynthIcon;
+import javax.swing.plaf.synth.SynthIcon;
 
 import com.sun.java.swing.plaf.gtk.GTKEngine.WidgetType;
 import static java.awt.RenderingHints.KEY_TEXT_ANTIALIASING;
