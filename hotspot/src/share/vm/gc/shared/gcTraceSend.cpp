@@ -278,7 +278,7 @@ void G1NewTracer::send_basic_ihop_statistics(size_t threshold,
     evt.set_gcId(GCId::current());
     evt.set_threshold(threshold);
     evt.set_targetOccupancy(target_occupancy);
-    evt.set_thresholdPercentage(target_occupancy > 0 ? threshold * 100.0 / target_occupancy : 0.0);
+    evt.set_thresholdPercentage(target_occupancy > 0 ? (threshold * 100 / target_occupancy) : 0);
     evt.set_currentOccupancy(current_occupancy);
     evt.set_lastAllocationSize(last_allocation_size);
     evt.set_lastAllocationDuration(last_allocation_duration);
@@ -299,7 +299,7 @@ void G1NewTracer::send_adaptive_ihop_statistics(size_t threshold,
   if (evt.should_commit()) {
     evt.set_gcId(GCId::current());
     evt.set_threshold(threshold);
-    evt.set_thresholdPercentage(internal_target_occupancy > 0 ? threshold * 100.0 / internal_target_occupancy : 0.0);
+    evt.set_thresholdPercentage(internal_target_occupancy > 0 ? (threshold * 100 / internal_target_occupancy) : 0);
     evt.set_internalTargetOccupancy(internal_target_occupancy);
     evt.set_currentOccupancy(current_occupancy);
     evt.set_additionalBufferSize(additional_buffer_size);
