@@ -1031,9 +1031,10 @@ public:
   product(bool, CreateCoredumpOnCrash, true,                                \
           "Create core/mini dump on VM fatal error")                        \
                                                                             \
-  product(uintx, ErrorLogTimeout, 2 * 60,                                   \
+  product(uint64_t, ErrorLogTimeout, 2 * 60,                                \
           "Timeout, in seconds, to limit the time spent on writing an "     \
           "error log in case of a crash.")                                  \
+          range(0, (uint64_t)max_jlong/1000)                                \
                                                                             \
   product_pd(bool, UseOSErrorReporting,                                     \
           "Let VM fatal error propagate to the OS (ie. WER on Windows)")    \
