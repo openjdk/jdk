@@ -1781,23 +1781,27 @@ class LambdaForm {
         NamedFunction idFun;
         LambdaForm zeForm;
         NamedFunction zeFun;
+
+        // Create the LFs and NamedFunctions. Precompiling LFs to byte code is needed to break circular
+        // bootstrap dependency on this method in case we're interpreting LFs
         if (isVoid) {
             Name[] idNames = new Name[] { argument(0, L_TYPE) };
             idForm = new LambdaForm(idMem.getName(), 1, idNames, VOID_RESULT);
+            idForm.compileToBytecode();
             idFun = new NamedFunction(idMem, SimpleMethodHandle.make(idMem.getInvocationType(), idForm));
 
-            assert(zeMem == null);
             zeForm = idForm;
             zeFun = idFun;
         } else {
             Name[] idNames = new Name[] { argument(0, L_TYPE), argument(1, type) };
             idForm = new LambdaForm(idMem.getName(), 2, idNames, 1);
+            idForm.compileToBytecode();
             idFun = new NamedFunction(idMem, SimpleMethodHandle.make(idMem.getInvocationType(), idForm));
 
-            assert(zeMem != null);
             Object zeValue = Wrapper.forBasicType(btChar).zero();
             Name[] zeNames = new Name[] { argument(0, L_TYPE), new Name(idFun, zeValue) };
             zeForm = new LambdaForm(zeMem.getName(), 1, zeNames, 1);
+            zeForm.compileToBytecode();
             zeFun = new NamedFunction(zeMem, SimpleMethodHandle.make(zeMem.getInvocationType(), zeForm));
         }
 
