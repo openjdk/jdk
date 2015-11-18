@@ -42,7 +42,11 @@ public final class CompileThresholdBootstrapTest {
     }
 
     public static void main(String ... args) {
-        CompileThresholdBootstrapTest test = CompileThresholdBootstrapTest();
-        test.testBootstrap();
+        try {
+            CompileThresholdBootstrapTest test = new CompileThresholdBootstrapTest();
+            test.testBootstrap();
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
     }
 }
