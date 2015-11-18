@@ -28,6 +28,7 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/debugInfo.hpp"
+#include "code/dependencyContext.hpp"
 #include "code/pcDesc.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/oopFactory.hpp"
@@ -3216,14 +3217,16 @@ void java_lang_invoke_MethodHandleNatives_CallSiteContext::compute_offsets() {
   }
 }
 
-nmethodBucket* java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(oop call_site) {
+DependencyContext java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(oop call_site) {
   assert(java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(call_site), "");
-  return (nmethodBucket*) (address) call_site->long_field(_vmdependencies_offset);
-}
-
-void java_lang_invoke_MethodHandleNatives_CallSiteContext::set_vmdependencies(oop call_site, nmethodBucket* context) {
-  assert(java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(call_site), "");
-  call_site->long_field_put(_vmdependencies_offset, (jlong) (address) context);
+  intptr_t* vmdeps_addr = (intptr_t*)call_site->address_field_addr(_vmdependencies_offset);
+#ifndef ASSERT
+  DependencyContext dep_ctx(vmdeps_addr);
+#else
+  // Verify that call_site isn't moved during DependencyContext lifetime.
+  DependencyContext dep_ctx(vmdeps_addr, Handle(call_site));
+#endif // ASSERT
+  return dep_ctx;
 }
 
 // Support for java_security_AccessControlContext

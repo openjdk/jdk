@@ -27,6 +27,7 @@
 #include "classfile/stringTable.hpp"
 #include "code/codeCache.hpp"
 #include "code/codeCacheExtensions.hpp"
+#include "code/dependencyContext.hpp"
 #include "compiler/compileBroker.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/oopMapCache.hpp"
@@ -945,30 +946,33 @@ int MethodHandles::find_MemberNames(KlassHandle k,
   return rfill + overflow;
 }
 
+// Is it safe to remove stale entries from a dependency list?
+static bool safe_to_expunge() {
+  // Since parallel GC threads can concurrently iterate over a dependency
+  // list during safepoint, it is safe to remove entries only when
+  // CodeCache lock is held.
+  return CodeCache_lock->owned_by_self();
+}
+
 void MethodHandles::add_dependent_nmethod(oop call_site, nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
 
   oop context = java_lang_invoke_CallSite::context(call_site);
-  nmethodBucket* deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
-
-  nmethodBucket* new_deps = nmethodBucket::add_dependent_nmethod(deps, nm);
-  if (deps != new_deps) {
-    java_lang_invoke_MethodHandleNatives_CallSiteContext::set_vmdependencies(context, new_deps);
-  }
+  DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
+  // Try to purge stale entries on updates.
+  // Since GC doesn't clean dependency contexts rooted at CallSiteContext objects,
+  // in order to avoid memory leak, stale entries are purged whenever a dependency list
+  // is changed (both on addition and removal). Though memory reclamation is delayed,
+  // it avoids indefinite memory usage growth.
+  deps.add_dependent_nmethod(nm, /*expunge_stale_entries=*/safe_to_expunge());
 }
 
 void MethodHandles::remove_dependent_nmethod(oop call_site, nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
 
   oop context = java_lang_invoke_CallSite::context(call_site);
-  nmethodBucket* deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
-
-  if (nmethodBucket::remove_dependent_nmethod(deps, nm)) {
-    nmethodBucket* new_deps = nmethodBucket::clean_dependent_nmethods(deps);
-    if (deps != new_deps) {
-      java_lang_invoke_MethodHandleNatives_CallSiteContext::set_vmdependencies(context, new_deps);
-    }
-  }
+  DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
+  deps.remove_dependent_nmethod(nm, /*expunge_stale_entries=*/safe_to_expunge());
 }
 
 void MethodHandles::flush_dependent_nmethods(Handle call_site, Handle target) {
@@ -977,21 +981,15 @@ void MethodHandles::flush_dependent_nmethods(Handle call_site, Handle target) {
   int marked = 0;
   CallSiteDepChange changes(call_site(), target());
   {
+    No_Safepoint_Verifier nsv;
     MutexLockerEx mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     oop context = java_lang_invoke_CallSite::context(call_site());
-    nmethodBucket* deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
-
-    marked = nmethodBucket::mark_dependent_nmethods(deps, changes);
-    if (marked > 0) {
-      nmethodBucket* new_deps = nmethodBucket::clean_dependent_nmethods(deps);
-      if (deps != new_deps) {
-        java_lang_invoke_MethodHandleNatives_CallSiteContext::set_vmdependencies(context, new_deps);
-      }
-    }
+    DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context);
+    marked = deps.mark_dependent_nmethods(changes);
   }
   if (marked > 0) {
-    // At least one nmethod has been marked for deoptimization
+    // At least one nmethod has been marked for deoptimization.
     VM_Deoptimize op;
     VMThread::execute(&op);
   }
@@ -1331,6 +1329,8 @@ JVM_ENTRY(void, MHN_setCallSiteTargetVolatile(JNIEnv* env, jobject igcls, jobjec
 }
 JVM_END
 
+// It is called by a Cleaner object which ensures that dropped CallSites properly
+// deallocate their dependency information.
 JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject context_jh)) {
   Handle context(THREAD, JNIHandles::resolve_non_null(context_jh));
   {
@@ -1339,19 +1339,11 @@ JVM_ENTRY(void, MHN_clearCallSiteContext(JNIEnv* env, jobject igcls, jobject con
 
     int marked = 0;
     {
+      No_Safepoint_Verifier nsv;
       MutexLockerEx mu2(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-      nmethodBucket* b = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
-      while(b != NULL) {
-        nmethod* nm = b->get_nmethod();
-        if (b->count() > 0 && nm->is_alive() && !nm->is_marked_for_deoptimization()) {
-          nm->mark_for_deoptimization();
-          marked++;
-        }
-        nmethodBucket* next = b->next();
-        delete b;
-        b = next;
-      }
-      java_lang_invoke_MethodHandleNatives_CallSiteContext::set_vmdependencies(context(), NULL); // reset context
+      assert(safe_to_expunge(), "removal is not safe");
+      DependencyContext deps = java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(context());
+      marked = deps.remove_all_dependents();
     }
     if (marked > 0) {
       // At least one nmethod has been marked for deoptimization

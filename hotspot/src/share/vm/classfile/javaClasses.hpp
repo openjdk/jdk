@@ -1212,6 +1212,8 @@ public:
 #define CALLSITECONTEXT_INJECTED_FIELDS(macro) \
   macro(java_lang_invoke_MethodHandleNatives_CallSiteContext, vmdependencies, intptr_signature, false)
 
+class DependencyContext;
+
 class java_lang_invoke_MethodHandleNatives_CallSiteContext : AllStatic {
   friend class JavaClasses;
 
@@ -1222,8 +1224,7 @@ private:
 
 public:
   // Accessors
-  static nmethodBucket* vmdependencies(oop context);
-  static void       set_vmdependencies(oop context, nmethodBucket* bucket);
+  static DependencyContext vmdependencies(oop context);
 
   // Testers
   static bool is_subclass(Klass* klass) {
