@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,9 @@
  */
 
 import java.io.*;
-import java.net.*;
-import java.util.*;
 import java.security.*;
 import javax.net.*;
 import javax.net.ssl.*;
-import java.lang.reflect.*;
 
 import sun.security.util.KeyUtil;
 

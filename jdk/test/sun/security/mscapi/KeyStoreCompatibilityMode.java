@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,17 +37,6 @@ public class KeyStoreCompatibilityMode {
     private static boolean mode;
 
     public static void main(String[] args) throws Exception {
-
-        // Check if the provider is available
-        try {
-            Class.forName("sun.security.mscapi.SunMSCAPI");
-
-        } catch (Exception e) {
-            System.out.println(
-                "The SunMSCAPI provider is not available on this platform: " +
-                e);
-            return;
-        }
 
         if (args.length > 0 && "-disable".equals(args[0])) {
             mode = false;
