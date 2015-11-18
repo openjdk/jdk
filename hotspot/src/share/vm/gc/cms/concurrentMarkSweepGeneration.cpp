@@ -2730,7 +2730,7 @@ class CMSPhaseAccounting: public StackObj {
  public:
   // Not MT-safe; so do not pass around these StackObj's
   // where they may be accessed by other threads.
-  jlong wallclock_millis() {
+  double wallclock_millis() {
     return TimeHelper::counter_to_millis(os::elapsed_counter() - _trace_time.start_time());
   }
 };
