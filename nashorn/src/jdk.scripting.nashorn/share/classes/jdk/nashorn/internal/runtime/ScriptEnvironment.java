@@ -81,6 +81,9 @@ public final class ScriptEnvironment {
     /** Generate line number table in class files */
     public final boolean _debug_lines;
 
+    /** Put all variables in scopes to make them debuggable */
+    public final boolean _debug_scopes;
+
     /** Directory in which source files and generated class files are dumped */
     public final String  _dest_dir;
 
@@ -246,6 +249,7 @@ public final class ScriptEnvironment {
         _compile_only         = options.getBoolean("compile.only");
         _const_as_var         = options.getBoolean("const.as.var");
         _debug_lines          = options.getBoolean("debug.lines");
+        _debug_scopes         = options.getBoolean("debug.scopes");
         _dest_dir             = options.getString("d");
         _dump_on_error        = options.getBoolean("doe");
         _early_lvalue_error   = options.getBoolean("early.lvalue.error");
