@@ -90,6 +90,7 @@ void CompileTask::initialize(int compile_id,
   _method_holder = JNIHandles::make_global(method->method_holder()->klass_holder());
   _osr_bci = osr_bci;
   _is_blocking = is_blocking;
+  JVMCI_ONLY(_has_waiter = CompileBroker::compiler(comp_level)->is_jvmci();)
   _comp_level = comp_level;
   _num_inlined_bytecodes = 0;
 
