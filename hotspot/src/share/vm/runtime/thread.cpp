@@ -1299,7 +1299,7 @@ void WatcherThread::run() {
         if (!ShowMessageBoxOnError
             && (OnError == NULL || OnError[0] == '\0')
             && Arguments::abort_hook() == NULL) {
-          os::sleep(this, ErrorLogTimeout * 60 * 1000, false);
+          os::sleep(this, (jlong)ErrorLogTimeout * 1000, false); // in seconds
           fdStream err(defaultStream::output_fd());
           err.print_raw_cr("# [ timer expired, abort... ]");
           // skip atexit/vm_exit/vm_abort hooks
