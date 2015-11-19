@@ -245,7 +245,6 @@ LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, TRAPS) {
   // Get name, signature, and static klass
   _name          = pool->name_ref_at(index);
   _signature     = pool->signature_ref_at(index);
-  _tag           = pool->tag_ref_at(index);
   _current_klass = KlassHandle(THREAD, pool->pool_holder());
 
   // Coming from the constant pool always checks access
@@ -682,15 +681,6 @@ methodHandle LinkResolver::resolve_method(const LinkInfo& link_info,
     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
-  // check tag at call is method
-  if (!link_info.tag().is_invalid() && !link_info.tag().is_method()) {
-    ResourceMark rm(THREAD);
-    char buf[200];
-    jio_snprintf(buf, sizeof(buf), "Resolving to non regular method %s", link_info.method_string());
-    THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
-  }
-
-
   // 2. lookup method in resolved klass and its super klasses
   methodHandle resolved_method = lookup_method_in_klasses(link_info, true, false, CHECK_NULL);
 
@@ -747,14 +737,6 @@ methodHandle LinkResolver::resolve_interface_method(const LinkInfo& link_info,
     ResourceMark rm(THREAD);
     char buf[200];
     jio_snprintf(buf, sizeof(buf), "Found class %s, but interface was expected", resolved_klass()->external_name());
-    THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
-  }
-
-  // check tag at call is an interface method
-  if (!link_info.tag().is_invalid() && !link_info.tag().is_interface_method()) {
-    ResourceMark rm(THREAD);
-    char buf[200];
-    jio_snprintf(buf, sizeof(buf), "Resolving to non interface method %s", link_info.method_string());
     THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
   }
 
@@ -935,8 +917,7 @@ void LinkResolver::resolve_static_call(CallInfo& result,
     resolved_klass->initialize(CHECK);
     // Use updated LinkInfo (to reresolve with resolved_klass as method_holder?)
     LinkInfo new_info(resolved_klass, link_info.name(), link_info.signature(),
-                      link_info.current_klass(),
-                      link_info.check_access() ? LinkInfo::needs_access_check : LinkInfo::skip_access_check);
+                      link_info.current_klass(), link_info.check_access());
     resolved_method = linktime_resolve_static_method(new_info, CHECK);
   }
 
