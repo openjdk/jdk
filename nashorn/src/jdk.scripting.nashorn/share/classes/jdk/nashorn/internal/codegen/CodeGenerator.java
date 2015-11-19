@@ -3323,9 +3323,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         if (needsScope) {
             method.loadCompilerConstant(SCOPE);
-        }
-
-        if (needsScope) {
             loadExpressionUnbounded(init);
             // block scoped variables need a DECLARE flag to signal end of temporal dead zone (TDZ)
             final int flags = getScopeCallSiteFlags(identSymbol) | (varNode.isBlockScoped() ? CALLSITE_DECLARE : 0);
