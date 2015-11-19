@@ -137,7 +137,7 @@ juint* CompactHashtableWriter::dump_buckets(juint* compact_table, juint* p,
   if (_type == CompactHashtable<Symbol*, char>::_symbol_table) {
     base_address = uintx(MetaspaceShared::shared_rs()->base());
     max_delta    = uintx(MetaspaceShared::shared_rs()->size());
-    assert(max_delta <= 0x7fffffff, "range check");
+    assert(max_delta <= MAX_SHARED_DELTA, "range check");
   } else {
     assert((_type == CompactHashtable<oop, char>::_string_table), "unknown table");
     assert(UseCompressedOops, "UseCompressedOops is required");
