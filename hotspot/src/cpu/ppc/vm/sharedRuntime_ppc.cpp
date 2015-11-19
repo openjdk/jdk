@@ -2962,9 +2962,9 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   __ set_last_Java_frame(/*sp*/R1_SP, /*pc*/R11_scratch1);
 
   __ mr(klass_index_reg, R3);
-  __ li(R5, Deoptimization::Unpack_exception);
+  __ li(R5_ARG3, Deoptimization::Unpack_uncommon_trap);
   __ call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::uncommon_trap),
-                  R16_thread, klass_index_reg, R5);
+                  R16_thread, klass_index_reg, R5_ARG3);
 
   // Set an oopmap for the call site.
   oop_maps->add_gc_map(gc_map_pc - start, map);
