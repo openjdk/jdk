@@ -24,6 +24,7 @@
 /*
  * @test
  * @summary Tests for Basic tests for REPL tool
+ * @ignore 8139873
  * @library /tools/lib
  * @build KullaTesting TestingInputStream ToolBox Compiler
  * @run testng ToolBasicTest
