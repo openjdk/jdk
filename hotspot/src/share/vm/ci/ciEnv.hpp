@@ -158,8 +158,7 @@ private:
                            InstanceKlass*  holder,
                            Symbol*         name,
                            Symbol*         sig,
-                           Bytecodes::Code bc,
-                           constantTag     tag);
+                           Bytecodes::Code bc);
 
   // Get a ciObject from the object factory.  Ensures uniqueness
   // of ciObjects.
