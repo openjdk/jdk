@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ TOOL_PARSEPROPS_CMD := $(JAVA) -cp $(BUILDTOOLS_OUTPUTDIR)/langtools_tools_class
 define SetupVersionProperties
   $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/$$(strip $2):
 	$(MKDIR) -p $$(@D)
-	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" \
+	$(PRINTF) "jdk=$(VERSION_NUMBER)\nfull=$(VERSION_STRING)\nrelease=$(VERSION_SHORT)\n" \
 	    > $$@
 
   $$(strip $1) += $(SUPPORT_OUTPUTDIR)/gensrc/$(MODULE)/$$(strip $2)
@@ -68,7 +68,7 @@ define SetupCompileProperties
 
   # Convert .../src/<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN.properties
   # to .../langtools/gensrc/<module>/com/sun/tools/javac/resources/javac_zh_CN.java
-  # Strip away prefix and suffix, leaving for example only: 
+  # Strip away prefix and suffix, leaving for example only:
   # "<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN"
   PROPJAVAS := $$(patsubst $(LANGTOOLS_TOPDIR)/src/%, \
       $(SUPPORT_OUTPUTDIR)/gensrc/%, \
