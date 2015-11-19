@@ -202,6 +202,9 @@ static jlong* JIMAGE_FindAttributes(JNIEnv *env, jlong* rawAttributes, jbyte* ra
     if (reader == NULL) return NULL;
     // Convert byte array to a cstring.
     char* path = new char[size + 1];
+    if (path == NULL) {
+        return NULL;
+    }
     memcpy(path, rawBytes, size);
     path[size] = '\0';
     // Locate resource location data.

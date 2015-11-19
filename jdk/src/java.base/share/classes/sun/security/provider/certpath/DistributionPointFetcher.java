@@ -33,7 +33,6 @@ import javax.security.auth.x500.X500Principal;
 import java.util.*;
 
 import sun.security.util.Debug;
-import sun.security.util.DerOutputStream;
 import static sun.security.x509.PKIXExtensions.*;
 import sun.security.x509.*;
 
@@ -607,12 +606,9 @@ public class DistributionPointFetcher {
             AuthorityKeyIdentifierExtension akidext =
                                             crlImpl.getAuthKeyIdExtension();
             if (akidext != null) {
-                KeyIdentifier akid = (KeyIdentifier)akidext.get(
-                        AuthorityKeyIdentifierExtension.KEY_ID);
-                if (akid != null) {
-                    DerOutputStream derout = new DerOutputStream();
-                    derout.putOctetString(akid.getIdentifier());
-                    certSel.setSubjectKeyIdentifier(derout.toByteArray());
+                byte[] kid = akidext.getEncodedKeyIdentifier();
+                if (kid != null) {
+                    certSel.setSubjectKeyIdentifier(kid);
                 }
 
                 SerialNumber asn = (SerialNumber)akidext.get(

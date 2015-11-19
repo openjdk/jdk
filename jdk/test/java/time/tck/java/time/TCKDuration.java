@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -521,6 +521,8 @@ public class TCKDuration extends AbstractTCKTest {
                 {"PT-123456789S", -123456789, 0},
                 {"PT" + Long.MIN_VALUE + "S", Long.MIN_VALUE, 0},
 
+
+                {"PT0.1S", 0, 100000000},
                 {"PT1.1S", 1, 100000000},
                 {"PT1.12S", 1, 120000000},
                 {"PT1.123S", 1, 123000000},
@@ -531,6 +533,7 @@ public class TCKDuration extends AbstractTCKTest {
                 {"PT1.12345678S", 1, 123456780},
                 {"PT1.123456789S", 1, 123456789},
 
+                {"PT-0.1S", -1, 1000000000 - 100000000},
                 {"PT-1.1S", -2, 1000000000 - 100000000},
                 {"PT-1.12S", -2, 1000000000 - 120000000},
                 {"PT-1.123S", -2, 1000000000 - 123000000},
@@ -543,6 +546,24 @@ public class TCKDuration extends AbstractTCKTest {
 
                 {"PT" + Long.MAX_VALUE + ".123456789S", Long.MAX_VALUE, 123456789},
                 {"PT" + Long.MIN_VALUE + ".000000000S", Long.MIN_VALUE, 0},
+
+                {"PT12M", 12 * 60, 0},
+                {"PT12M0.35S", 12 * 60, 350000000},
+                {"PT12M1.35S", 12 * 60 + 1, 350000000},
+                {"PT12M-0.35S", 12 * 60 - 1, 1000000000 - 350000000},
+                {"PT12M-1.35S", 12 * 60 - 2, 1000000000 - 350000000},
+
+                {"PT12H", 12 * 3600, 0},
+                {"PT12H0.35S", 12 * 3600, 350000000},
+                {"PT12H1.35S", 12 * 3600 + 1, 350000000},
+                {"PT12H-0.35S", 12 * 3600 - 1, 1000000000 - 350000000},
+                {"PT12H-1.35S", 12 * 3600 - 2, 1000000000 - 350000000},
+
+                {"P12D", 12 * 24 * 3600, 0},
+                {"P12DT0.35S", 12 * 24 * 3600, 350000000},
+                {"P12DT1.35S", 12 * 24 * 3600 + 1, 350000000},
+                {"P12DT-0.35S", 12 * 24 * 3600 - 1, 1000000000 - 350000000},
+                {"P12DT-1.35S", 12 * 24 * 3600 - 2, 1000000000 - 350000000},
 
                 {"PT01S", 1, 0},
                 {"PT001S", 1, 0},
