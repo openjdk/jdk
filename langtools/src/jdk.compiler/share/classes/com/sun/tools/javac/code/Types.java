@@ -3843,7 +3843,7 @@ public class Types {
 
             @Override
             public Integer visitTypeVar(TypeVar t, Void ignored) {
-                return System.identityHashCode(t.tsym);
+                return System.identityHashCode(t);
             }
 
             @Override

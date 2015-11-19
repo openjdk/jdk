@@ -39,6 +39,7 @@ import com.sun.tools.javac.code.Type.TypeVar;
 import com.sun.tools.javac.code.Type.UndetVar;
 import com.sun.tools.javac.code.Type.UndetVar.InferenceBound;
 import com.sun.tools.javac.code.Type.WildcardType;
+import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.comp.Infer.FreeTypeListener;
 import com.sun.tools.javac.comp.Infer.GraphSolver;
@@ -51,8 +52,6 @@ import com.sun.tools.javac.util.Filter;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Warner;
-
-import static com.sun.tools.javac.code.TypeTag.UNDETVAR;
 
 /**
  * An inference context keeps track of the set of variables that are free
@@ -118,7 +117,7 @@ class InferenceContext {
     List<Type> restvars() {
         return filterVars(new Filter<UndetVar>() {
             public boolean accepts(UndetVar uv) {
-                return uv.inst == null;
+                return uv.getInst() == null;
             }
         });
     }
@@ -130,7 +129,7 @@ class InferenceContext {
     List<Type> instvars() {
         return filterVars(new Filter<UndetVar>() {
             public boolean accepts(UndetVar uv) {
-                return uv.inst != null;
+                return uv.getInst() != null;
             }
         });
     }
@@ -224,7 +223,7 @@ class InferenceContext {
         ListBuffer<Type> buf = new ListBuffer<>();
         for (Type t : undetvars) {
             UndetVar uv = (UndetVar)t;
-            buf.append(uv.inst != null ? uv.inst : uv.qtype);
+            buf.append(uv.getInst() != null ? uv.getInst() : uv.qtype);
         }
         return buf.toList();
     }
@@ -289,15 +288,7 @@ class InferenceContext {
     List<Type> save() {
         ListBuffer<Type> buf = new ListBuffer<>();
         for (Type t : undetvars) {
-            UndetVar uv = (UndetVar)t;
-            UndetVar uv2 = new UndetVar((TypeVar)uv.qtype, types);
-            for (InferenceBound ib : InferenceBound.values()) {
-                for (Type b : uv.getBounds(ib)) {
-                    uv2.addBound(ib, b, types);
-                }
-            }
-            uv2.inst = uv.inst;
-            buf.add(uv2);
+            buf.add(((UndetVar)t).dup(infer.types));
         }
         return buf.toList();
     }
@@ -315,10 +306,7 @@ class InferenceContext {
             UndetVar uv = (UndetVar)undetvars.head;
             UndetVar uv_saved = (UndetVar)saved_undet.head;
             if (uv.qtype == uv_saved.qtype) {
-                for (InferenceBound ib : InferenceBound.values()) {
-                    uv.setBounds(ib, uv_saved.getBounds(ib));
-                }
-                uv.inst = uv_saved.inst;
+                uv_saved.dupTo(uv, types);
                 undetvars = undetvars.tail;
                 saved_undet = saved_undet.tail;
                 newUndetVars.add(uv);
@@ -367,7 +355,7 @@ class InferenceContext {
         ListBuffer<Type> minUndetVars = new ListBuffer<>();
         for (Type minVar : minVars) {
             UndetVar uv = (UndetVar)asUndetVar(minVar);
-            UndetVar uv2 = new UndetVar((TypeVar)minVar, types);
+            UndetVar uv2 = new UndetVar((TypeVar)minVar, infer.incorporationEngine(), types);
             for (InferenceBound ib : InferenceBound.values()) {
                 List<Type> newBounds = uv.getBounds(ib).stream()
                         .filter(b -> !redundantVars.contains(b))
@@ -416,7 +404,7 @@ class InferenceContext {
                 Set<Type> deps = minMap.getOrDefault(t.qtype, new HashSet<>(Collections.singleton(t.qtype)));
                 for (Type b : t.getBounds(InferenceBound.values())) {
                     Type undet = asUndetVar(b);
-                    if (!undet.hasTag(UNDETVAR)) {
+                    if (!undet.hasTag(TypeTag.UNDETVAR)) {
                         visit(undet);
                     } else if (isEquiv((UndetVar)undet, b)){
                         deps.add(b);
@@ -438,7 +426,7 @@ class InferenceContext {
         @Override
         public Void visitTypeVar(TypeVar t, Void aVoid) {
             Type undet = asUndetVar(t);
-            if (undet.hasTag(UNDETVAR)) {
+            if (undet.hasTag(TypeTag.UNDETVAR)) {
                 visitUndetVar((UndetVar)undet, null);
             }
             return null;
@@ -519,23 +507,23 @@ class InferenceContext {
     /**
      * Apply a set of inference steps
      */
-    private boolean solveBasic(EnumSet<InferenceStep> steps) {
+    private List<Type> solveBasic(EnumSet<InferenceStep> steps) {
         return solveBasic(inferencevars, steps);
     }
 
-    boolean solveBasic(List<Type> varsToSolve, EnumSet<InferenceStep> steps) {
-        boolean changed = false;
+    List<Type> solveBasic(List<Type> varsToSolve, EnumSet<InferenceStep> steps) {
+        ListBuffer<Type> solvedVars = new ListBuffer<>();
         for (Type t : varsToSolve.intersect(restvars())) {
             UndetVar uv = (UndetVar)asUndetVar(t);
             for (InferenceStep step : steps) {
                 if (step.accepts(uv, this)) {
-                    uv.inst = step.solve(uv, this);
-                    changed = true;
+                    uv.setInst(step.solve(uv, this));
+                    solvedVars.add(uv.qtype);
                     break;
                 }
             }
         }
-        return changed;
+        return solvedVars.toList();
     }
 
     /**
@@ -547,11 +535,11 @@ class InferenceContext {
      */
     public void solveLegacy(boolean partial, Warner warn, EnumSet<InferenceStep> steps) {
         while (true) {
-            boolean stuck = !solveBasic(steps);
+            List<Type> solvedVars = solveBasic(steps);
             if (restvars().isEmpty() || partial) {
                 //all variables have been instantiated - exit
                 break;
-            } else if (stuck) {
+            } else if (solvedVars.isEmpty()) {
                 //some variables could not be instantiated because of cycles in
                 //upper bounds - provide a (possibly recursive) default instantiation
                 infer.instantiateAsUninferredVars(restvars(), this);
@@ -561,11 +549,11 @@ class InferenceContext {
                 //variables in remaining upper bounds and continue
                 for (Type t : undetvars) {
                     UndetVar uv = (UndetVar)t;
-                    uv.substBounds(inferenceVars(), instTypes(), types);
+                    uv.substBounds(solvedVars, asInstTypes(solvedVars), types);
                 }
             }
         }
-        infer.checkWithinBounds(this, warn);
+        infer.doIncorporation(this, warn);
     }
 
     @Override
