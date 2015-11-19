@@ -1379,9 +1379,6 @@ public class LambdaToMethod extends TreeTranslator {
             List<Frame> prevStack = frameStack;
             try {
                 LambdaTranslationContext context = new LambdaTranslationContext(tree);
-                if (dumpLambdaToMethodStats) {
-                    log.note(tree, statKey, context.needsAltMetafactory(), context.translatedSym);
-                }
                 frameStack = frameStack.prepend(new Frame(tree));
                 for (JCVariableDecl param : tree.params) {
                     context.addSymbol(param.sym, PARAM);
@@ -1390,6 +1387,9 @@ public class LambdaToMethod extends TreeTranslator {
                 contextMap.put(tree, context);
                 super.visitLambda(tree);
                 context.complete();
+                if (dumpLambdaToMethodStats) {
+                    log.note(tree, statKey, context.needsAltMetafactory(), context.translatedSym);
+                }
                 return context;
             }
             finally {
