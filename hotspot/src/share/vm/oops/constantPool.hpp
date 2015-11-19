@@ -664,8 +664,6 @@ class ConstantPool : public Metadata {
 
   int remap_instruction_operand_from_cache(int operand);  // operand must be biased by CPCACHE_INDEX_TAG
 
-  constantTag tag_ref_at(int cp_cache_index)      { return impl_tag_ref_at(cp_cache_index, false); }
-
   // Lookup for entries consisting of (name_index, signature_index)
   int name_ref_index_at(int which_nt);            // ==  low-order jshort of name_and_type_at(which_nt)
   int signature_ref_index_at(int which_nt);       // == high-order jshort of name_and_type_at(which_nt)
@@ -786,7 +784,6 @@ class ConstantPool : public Metadata {
   Symbol* impl_signature_ref_at(int which, bool uncached);
   int       impl_klass_ref_index_at(int which, bool uncached);
   int       impl_name_and_type_ref_index_at(int which, bool uncached);
-  constantTag impl_tag_ref_at(int which, bool uncached);
 
   // Used while constructing constant pool (only by ClassFileParser)
   jint klass_index_at(int which) {

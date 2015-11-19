@@ -704,14 +704,13 @@ Method* ciEnv::lookup_method(InstanceKlass*  accessor,
                                InstanceKlass*  holder,
                                Symbol*       name,
                                Symbol*       sig,
-                               Bytecodes::Code bc,
-                               constantTag    tag) {
+                               Bytecodes::Code bc) {
   EXCEPTION_CONTEXT;
   KlassHandle h_accessor(THREAD, accessor);
   KlassHandle h_holder(THREAD, holder);
   LinkResolver::check_klass_accessability(h_accessor, h_holder, KILL_COMPILE_ON_FATAL_(NULL));
   methodHandle dest_method;
-  LinkInfo link_info(h_holder, name, sig, h_accessor, LinkInfo::needs_access_check, tag);
+  LinkInfo link_info(h_holder, name, sig, h_accessor, /*check_access*/true);
   switch (bc) {
   case Bytecodes::_invokestatic:
     dest_method =
@@ -797,9 +796,7 @@ ciMethod* ciEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
 
     if (holder_is_accessible) {  // Our declared holder is loaded.
       InstanceKlass* lookup = declared_holder->get_instanceKlass();
-      constantTag tag = cpool->tag_ref_at(index);
-      assert(accessor->get_instanceKlass() == cpool->pool_holder(), "not the pool holder?");
-      Method* m = lookup_method(accessor->get_instanceKlass(), lookup, name_sym, sig_sym, bc, tag);
+      Method* m = lookup_method(accessor->get_instanceKlass(), lookup, name_sym, sig_sym, bc);
       if (m != NULL &&
           (bc == Bytecodes::_invokestatic
            ?  m->method_holder()->is_not_initialized()
