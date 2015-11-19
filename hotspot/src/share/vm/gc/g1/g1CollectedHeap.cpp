@@ -1202,9 +1202,8 @@ void G1CollectedHeap::print_hrm_post_compaction() {
   heap_region_iterate(&cl);
 }
 
-bool G1CollectedHeap::do_collection(bool explicit_gc,
-                                    bool clear_all_soft_refs,
-                                    size_t word_size) {
+bool G1CollectedHeap::do_full_collection(bool explicit_gc,
+                                         bool clear_all_soft_refs) {
   assert_at_safepoint(true /* should_be_vm_thread */);
 
   if (GC_locker::check_active_before_gc()) {
@@ -1362,8 +1361,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
       clear_rsets_post_compaction();
       check_gc_time_stamps();
 
-      // Resize the heap if necessary.
-      resize_if_necessary_after_full_collection(explicit_gc ? 0 : word_size);
+      resize_if_necessary_after_full_collection();
 
       if (_hr_printer.is_active()) {
         // We should do this after we potentially resize the heap so
@@ -1471,22 +1469,15 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 }
 
 void G1CollectedHeap::do_full_collection(bool clear_all_soft_refs) {
-  // do_collection() will return whether it succeeded in performing
-  // the GC. Currently, there is no facility on the
-  // do_full_collection() API to notify the caller than the collection
-  // did not succeed (e.g., because it was locked out by the GC
-  // locker). So, right now, we'll ignore the return value.
-  bool dummy = do_collection(true,                /* explicit_gc */
-                             clear_all_soft_refs,
-                             0                    /* word_size */);
+  // Currently, there is no facility in the do_full_collection(bool) API to notify
+  // the caller that the collection did not succeed (e.g., because it was locked
+  // out by the GC locker). So, right now, we'll ignore the return value.
+  bool dummy = do_full_collection(true,                /* explicit_gc */
+                                  clear_all_soft_refs);
 }
 
-// This code is mostly copied from TenuredGeneration.
-void
-G1CollectedHeap::
-resize_if_necessary_after_full_collection(size_t word_size) {
-  // Include the current allocation, if any, and bytes that will be
-  // pre-allocated to support collections, as "used".
+void G1CollectedHeap::resize_if_necessary_after_full_collection() {
+  // Include bytes that will be pre-allocated to support collections, as "used".
   const size_t used_after_gc = used();
   const size_t capacity_after_gc = capacity();
   const size_t free_after_gc = capacity_after_gc - used_after_gc;
@@ -1598,9 +1589,8 @@ HeapWord* G1CollectedHeap::satisfy_failed_allocation_helper(size_t word_size,
 
   if (do_gc) {
     // Expansion didn't work, we'll try to do a Full GC.
-    *gc_succeeded = do_collection(false, /* explicit_gc */
-                                  clear_all_soft_refs,
-                                  word_size);
+    *gc_succeeded = do_full_collection(false, /* explicit_gc */
+                                       clear_all_soft_refs);
   }
 
   return NULL;
