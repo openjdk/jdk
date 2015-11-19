@@ -498,9 +498,13 @@ Node* PhaseCFG::select(
       continue;
 
     // Schedule IV increment last.
-    if (e->is_Mach() && e->as_Mach()->ideal_Opcode() == Op_CountedLoopEnd &&
-        e->in(1)->in(1) == n && n->is_iteratively_computed())
-      continue;
+    if (e->is_Mach() && e->as_Mach()->ideal_Opcode() == Op_CountedLoopEnd) {
+      // Cmp might be matched into CountedLoopEnd node.
+      Node *cmp = (e->in(1)->ideal_reg() == Op_RegFlags) ? e->in(1) : e;
+      if (cmp->req() > 1 && cmp->in(1) == n && n->is_iteratively_computed()) {
+        continue;
+      }
+    }
 
     uint n_choice  = 2;
 
