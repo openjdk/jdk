@@ -91,20 +91,18 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
       unsigned offset_lo = dest & 0xfff;
       offset = adr_page - pc_page;
 
-      // We handle 3 types of PC relative addressing
+      // We handle 4 types of PC relative addressing
       //   1 - adrp    Rx, target_page
       //       ldr/str Ry, [Rx, #offset_in_page]
       //   2 - adrp    Rx, target_page
       //       add     Ry, Rx, #offset_in_page
       //   3 - adrp    Rx, target_page (page aligned reloc, offset == 0)
-      // In the first 2 cases we must check that Rx is the same in the adrp and the
-      // subsequent ldr/str or add instruction. Otherwise we could accidentally end
-      // up treating a type 3 relocation as a type 1 or 2 just because it happened
-      // to be followed by a random unrelated ldr/str or add instruction.
-      //
-      // In the case of a type 3 relocation, we know that these are only generated
-      // for the safepoint polling page, or for the card type byte map base so we
-      // assert as much and of course that the offset is 0.
+      //       movk    Rx, #imm16<<32
+      //   4 - adrp    Rx, target_page (page aligned reloc, offset == 0)
+      // In the first 3 cases we must check that Rx is the same in the adrp and the
+      // subsequent ldr/str, add or movk instruction. Otherwise we could accidentally end
+      // up treating a type 4 relocation as a type 1, 2 or 3 just because it happened
+      // to be followed by a random unrelated ldr/str, add or movk instruction.
       //
       unsigned insn2 = ((unsigned*)branch)[1];
       if (Instruction_aarch64::extract(insn2, 29, 24) == 0b111001 &&
@@ -123,13 +121,13 @@ int MacroAssembler::pd_patch_instruction_size(address branch, address target) {
         Instruction_aarch64::patch(branch + sizeof (unsigned),
                                    21, 10, offset_lo);
         instructions = 2;
-      } else {
-        assert((jbyte *)target ==
-                ((CardTableModRefBS*)(Universe::heap()->barrier_set()))->byte_map_base ||
-               target == StubRoutines::crc_table_addr() ||
-               (address)target == os::get_polling_page(),
-               "adrp must be polling page or byte map base");
-        assert(offset_lo == 0, "offset must be 0 for polling page or byte map base");
+      } else if (Instruction_aarch64::extract(insn2, 31, 21) == 0b11110010110 &&
+                   Instruction_aarch64::extract(insn, 4, 0) ==
+                     Instruction_aarch64::extract(insn2, 4, 0)) {
+        // movk #imm16<<32
+        Instruction_aarch64::patch(branch + 4, 20, 5, (uint64_t)target >> 32);
+        offset &= (1<<20)-1;
+        instructions = 2;
       }
     }
     int offset_lo = offset & 3;
@@ -212,16 +210,16 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, unsigned insn) {
       // Return the target address for the following sequences
       //   1 - adrp    Rx, target_page
       //       ldr/str Ry, [Rx, #offset_in_page]
-      //   2 - adrp    Rx, target_page         ]
+      //   2 - adrp    Rx, target_page
       //       add     Ry, Rx, #offset_in_page
       //   3 - adrp    Rx, target_page (page aligned reloc, offset == 0)
+      //       movk    Rx, #imm12<<32
+      //   4 - adrp    Rx, target_page (page aligned reloc, offset == 0)
       //
       // In the first two cases  we check that the register is the same and
       // return the target_page + the offset within the page.
       // Otherwise we assume it is a page aligned relocation and return
-      // the target page only. The only cases this is generated is for
-      // the safepoint polling page or for the card table byte map base so
-      // we assert as much.
+      // the target page only.
       //
       unsigned insn2 = ((unsigned*)insn_addr)[1];
       if (Instruction_aarch64::extract(insn2, 29, 24) == 0b111001 &&
@@ -238,10 +236,12 @@ address MacroAssembler::target_addr_for_insn(address insn_addr, unsigned insn) {
         unsigned int byte_offset = Instruction_aarch64::extract(insn2, 21, 10);
         return address(target_page + byte_offset);
       } else {
-        assert((jbyte *)target_page ==
-                ((CardTableModRefBS*)(Universe::heap()->barrier_set()))->byte_map_base ||
-               (address)target_page == os::get_polling_page(),
-               "adrp must be polling page or byte map base");
+        if (Instruction_aarch64::extract(insn2, 31, 21) == 0b11110010110  &&
+               Instruction_aarch64::extract(insn, 4, 0) ==
+                 Instruction_aarch64::extract(insn2, 4, 0)) {
+          target_page = (target_page & 0xffffffff) |
+                         ((uint64_t)Instruction_aarch64::extract(insn2, 20, 5) << 32);
+        }
         return (address)target_page;
       }
     } else {
@@ -3964,22 +3964,26 @@ address MacroAssembler::read_polling_page(Register r, relocInfo::relocType rtype
 
 void MacroAssembler::adrp(Register reg1, const Address &dest, unsigned long &byte_offset) {
   relocInfo::relocType rtype = dest.rspec().reloc()->type();
-  if (uabs(pc() - dest.target()) >= (1LL << 32)) {
-    guarantee(rtype == relocInfo::none
-              || rtype == relocInfo::external_word_type
-              || rtype == relocInfo::poll_type
-              || rtype == relocInfo::poll_return_type,
-              "can only use a fixed address with an ADRP");
-    // Out of range.  This doesn't happen very often, but we have to
-    // handle it
-    mov(reg1, dest);
-    byte_offset = 0;
-  } else {
-    InstructionMark im(this);
-    code_section()->relocate(inst_mark(), dest.rspec());
-    byte_offset = (uint64_t)dest.target() & 0xfff;
+  unsigned long low_page = (unsigned long)CodeCache::low_bound() >> 12;
+  unsigned long high_page = (unsigned long)(CodeCache::high_bound()-1) >> 12;
+  unsigned long dest_page = (unsigned long)dest.target() >> 12;
+  long offset_low = dest_page - low_page;
+  long offset_high = dest_page - high_page;
+
+  InstructionMark im(this);
+  code_section()->relocate(inst_mark(), dest.rspec());
+  // 8143067: Ensure that the adrp can reach the dest from anywhere within
+  // the code cache so that if it is relocated we know it will still reach
+  if (offset_high >= -(1<<20) && offset_low < (1<<20)) {
     _adrp(reg1, dest.target());
+  } else {
+    unsigned long pc_page = (unsigned long)pc() >> 12;
+    long offset = dest_page - pc_page;
+    offset = (offset & ((1<<20)-1)) << 12;
+    _adrp(reg1, pc()+offset);
+    movk(reg1, ((unsigned long)dest.target() >> 32) & 0xffff, 32);
   }
+  byte_offset = (unsigned long)dest.target() & 0xfff;
 }
 
 void MacroAssembler::build_frame(int framesize) {
