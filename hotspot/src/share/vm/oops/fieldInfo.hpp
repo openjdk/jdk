@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ class FieldInfo VALUE_OBJ_CLASS_SPEC {
     return (_shorts[low_packed_offset] & FIELDINFO_TAG_MASK) == FIELDINFO_TAG_OFFSET;
   }
 
-  Symbol* name(constantPoolHandle cp) const {
+  Symbol* name(const constantPoolHandle& cp) const {
     int index = name_index();
     if (is_internal()) {
       return lookup_symbol(index);
@@ -184,7 +184,7 @@ class FieldInfo VALUE_OBJ_CLASS_SPEC {
     return cp->symbol_at(index);
   }
 
-  Symbol* signature(constantPoolHandle cp) const {
+  Symbol* signature(const constantPoolHandle& cp) const {
     int index = signature_index();
     if (is_internal()) {
       return lookup_symbol(index);

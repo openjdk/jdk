@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.meta;
 
-import java.lang.invoke.*;
+import java.lang.invoke.MethodHandle;
 
 /**
  * Reflection operations on values represented as {@linkplain JavaConstant constants}. All methods
@@ -142,8 +142,12 @@ public interface ConstantReflectionProvider {
 
     /**
      * Check if the constant is embeddable in the code.
+     *
+     * @param constant the constant to test
      */
-    boolean isEmbeddable(Constant constant);
+    default boolean isEmbeddable(Constant constant) {
+        return true;
+    }
 
     /**
      * Gets access to the internals of {@link MethodHandle}.

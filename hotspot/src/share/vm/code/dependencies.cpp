@@ -151,7 +151,7 @@ void Dependencies::assert_has_no_finalizable_subclasses(Klass* ctxk) {
 }
 
 void Dependencies::assert_leaf_type(Klass* ctxk) {
-  if (ctxk->oop_is_array()) {
+  if (ctxk->is_array_klass()) {
     // As a special case, support this assertion on an array type,
     // which reduces to an assertion on its element type.
     // Note that this cannot be done with assertions that
@@ -1084,10 +1084,10 @@ class ClassHierarchyWalker {
       return true;  // Must punt the assertion to true.
     Klass* k = ctxk;
     Method* lm = k->lookup_method(m->name(), m->signature());
-    if (lm == NULL && k->oop_is_instance()) {
+    if (lm == NULL && k->is_instance_klass()) {
       // It might be an interface method
-        lm = ((InstanceKlass*)k)->lookup_method_in_ordered_interfaces(m->name(),
-                                                                m->signature());
+      lm = InstanceKlass::cast(k)->lookup_method_in_ordered_interfaces(m->name(),
+                                                                 m->signature());
     }
     if (lm == m)
       // Method m is inherited into ctxk.
@@ -1135,7 +1135,7 @@ class ClassHierarchyWalker {
   bool is_witness(Klass* k) {
     if (doing_subtype_search()) {
       return Dependencies::is_concrete_klass(k);
-    } else if (!k->oop_is_instance()) {
+    } else if (!k->is_instance_klass()) {
       return false; // no methods to find in an array type
     } else {
       // Search class hierarchy first.
@@ -1840,20 +1840,20 @@ void DepChange::print() {
     Klass* k = str.klass();
     switch (str.change_type()) {
     case Change_new_type:
-      tty->print_cr("  dependee = %s", InstanceKlass::cast(k)->external_name());
+      tty->print_cr("  dependee = %s", k->external_name());
       break;
     case Change_new_sub:
       if (!WizardMode) {
         ++nsup;
       } else {
-        tty->print_cr("  context super = %s", InstanceKlass::cast(k)->external_name());
+        tty->print_cr("  context super = %s", k->external_name());
       }
       break;
     case Change_new_impl:
       if (!WizardMode) {
         ++nint;
       } else {
-        tty->print_cr("  context interface = %s", InstanceKlass::cast(k)->external_name());
+        tty->print_cr("  context interface = %s", k->external_name());
       }
       break;
     }
@@ -1885,7 +1885,7 @@ bool DepChange::ContextStream::next() {
   case Change_new_sub:
     // 6598190: brackets workaround Sun Studio C++ compiler bug 6629277
     {
-      _klass = InstanceKlass::cast(_klass)->super();
+      _klass = _klass->super();
       if (_klass != NULL) {
         return true;
       }
@@ -1931,7 +1931,7 @@ KlassDepChange::~KlassDepChange() {
 }
 
 bool KlassDepChange::involves_context(Klass* k) {
-  if (k == NULL || !k->oop_is_instance()) {
+  if (k == NULL || !k->is_instance_klass()) {
     return false;
   }
   InstanceKlass* ik = InstanceKlass::cast(k);

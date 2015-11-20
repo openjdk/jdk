@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -28,9 +28,9 @@
 JSIG   = jsig
 
 ifeq ($(OS_VENDOR), Darwin)
-  LIBJSIG   = lib$(JSIG).dylib
+  LIBJSIG   = lib$(JSIG).$(LIBRARY_SUFFIX)
 
-  LIBJSIG_DEBUGINFO   = lib$(JSIG).dylib.dSYM
+  LIBJSIG_DEBUGINFO   = lib$(JSIG).$(LIBRARY_SUFFIX).dSYM
   LIBJSIG_DIZ         = lib$(JSIG).diz
 else
   LIBJSIG   = lib$(JSIG).so
@@ -61,8 +61,14 @@ endif
 
 $(LIBJSIG): $(JSIGSRCDIR)/jsig.c $(LIBJSIG_MAPFILE)
 	@echo $(LOG_INFO) Making signal interposition lib...
+ifeq ($(STATIC_BUILD),true)
+	$(QUIETLY) $(CC) -c $(SYMFLAG) $(EXTRA_CFLAGS) $(ARCHFLAG) $(PICFLAG) \
+                          $(LFLAGS_JSIG) $(JSIG_DEBUG_CFLAGS) -o $(JSIG).o $<
+	$(QUIETLY) $(AR) $(ARFLAGS) $@ $(JSIG).o
+else
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG) \
-                         $(LFLAGS_JSIG) $(JSIG_DEBUG_CFLAGS) $(EXTRA_CFLAGS) -o $@ $<
+                          $(LFLAGS_JSIG) $(JSIG_DEBUG_CFLAGS) $(EXTRA_CFLAGS) -o $@ $<
+endif
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   ifeq ($(OS_VENDOR), Darwin)
 	$(DSYMUTIL) $@

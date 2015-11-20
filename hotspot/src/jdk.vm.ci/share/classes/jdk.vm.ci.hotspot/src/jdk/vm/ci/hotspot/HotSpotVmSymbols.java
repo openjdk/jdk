@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,15 +22,14 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.*;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
-
-import sun.misc.*;
+import sun.misc.Unsafe;
 
 /**
  * Class to access the C++ {@code vmSymbols} table.
  */
-public final class HotSpotVmSymbols {
+final class HotSpotVmSymbols {
 
     /**
      * Returns the symbol in the {@code vmSymbols} table at position {@code index} as {@link String}
@@ -39,7 +38,7 @@ public final class HotSpotVmSymbols {
      * @param index position in the symbol table
      * @return the symbol at position id
      */
-    public static String symbolAt(int index) {
+    static String symbolAt(int index) {
         HotSpotJVMCIRuntimeProvider runtime = runtime();
         HotSpotVMConfig config = runtime.getConfig();
         assert config.vmSymbolsFirstSID <= index && index < config.vmSymbolsSIDLimit : "index " + index + " is out of bounds";

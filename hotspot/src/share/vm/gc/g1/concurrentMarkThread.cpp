@@ -92,15 +92,31 @@ void ConcurrentMarkThread::cm_log(bool doit, bool join_sts, const char* fmt, ...
   }
 }
 
+// Marking pauses can be scheduled flexibly, so we might delay marking to meet MMU.
+void ConcurrentMarkThread::delay_to_keep_mmu(G1CollectorPolicy* g1_policy, bool remark) {
+  if (g1_policy->adaptive_young_list_length()) {
+    double now = os::elapsedTime();
+    double prediction_ms = remark ? g1_policy->predict_remark_time_ms()
+                                  : g1_policy->predict_cleanup_time_ms();
+    G1MMUTracker *mmu_tracker = g1_policy->mmu_tracker();
+    jlong sleep_time_ms = mmu_tracker->when_ms(now, prediction_ms);
+    os::sleep(this, sleep_time_ms, false);
+  }
+}
 void ConcurrentMarkThread::run() {
   initialize_in_thread();
-  _vtime_start = os::elapsedVTime();
   wait_for_universe_init();
+
+  run_service();
+
+  terminate();
+}
+
+void ConcurrentMarkThread::run_service() {
+  _vtime_start = os::elapsedVTime();
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   G1CollectorPolicy* g1_policy = g1h->g1_policy();
-  G1MMUTracker *mmu_tracker = g1_policy->mmu_tracker();
-  Thread *current_thread = Thread::current();
 
   while (!_should_terminate) {
     // wait until started is set.
@@ -141,12 +157,7 @@ void ConcurrentMarkThread::run() {
         double mark_end_sec = os::elapsedTime();
         _vtime_mark_accum += (mark_end_time - cycle_start);
         if (!cm()->has_aborted()) {
-          if (g1_policy->adaptive_young_list_length()) {
-            double now = os::elapsedTime();
-            double remark_prediction_ms = g1_policy->predict_remark_time_ms();
-            jlong sleep_time_ms = mmu_tracker->when_ms(now, remark_prediction_ms);
-            os::sleep(current_thread, sleep_time_ms, false);
-          }
+          delay_to_keep_mmu(g1_policy, true /* remark */);
 
           cm_log(G1Log::fine(), true, "[GC concurrent-mark-end, %1.7lf secs]", mark_end_sec - mark_start_sec);
 
@@ -167,12 +178,7 @@ void ConcurrentMarkThread::run() {
       _vtime_accum = (end_time - _vtime_start);
 
       if (!cm()->has_aborted()) {
-        if (g1_policy->adaptive_young_list_length()) {
-          double now = os::elapsedTime();
-          double cleanup_prediction_ms = g1_policy->predict_cleanup_time_ms();
-          jlong sleep_time_ms = mmu_tracker->when_ms(now, cleanup_prediction_ms);
-          os::sleep(current_thread, sleep_time_ms, false);
-        }
+        delay_to_keep_mmu(g1_policy, false /* cleanup */);
 
         CMCleanUp cl_cl(_cm);
         VM_CGC_Operation op(&cl_cl, "GC cleanup", false /* needs_pll */);
@@ -272,9 +278,6 @@ void ConcurrentMarkThread::run() {
       g1h->register_concurrent_cycle_end();
     }
   }
-  assert(_should_terminate, "just checking");
-
-  terminate();
 }
 
 void ConcurrentMarkThread::stop() {
@@ -283,10 +286,7 @@ void ConcurrentMarkThread::stop() {
     _should_terminate = true;
   }
 
-  {
-    MutexLockerEx ml(CGC_lock, Mutex::_no_safepoint_check_flag);
-    CGC_lock->notify_all();
-  }
+  stop_service();
 
   {
     MutexLockerEx ml(Terminator_lock);
@@ -294,6 +294,11 @@ void ConcurrentMarkThread::stop() {
       Terminator_lock->wait();
     }
   }
+}
+
+void ConcurrentMarkThread::stop_service() {
+  MutexLockerEx ml(CGC_lock, Mutex::_no_safepoint_check_flag);
+  CGC_lock->notify_all();
 }
 
 void ConcurrentMarkThread::sleepBeforeNextCycle() {

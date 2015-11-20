@@ -47,6 +47,8 @@
   do_klass(HotSpotOopMap_klass,                          jdk_vm_ci_hotspot_HotSpotOopMap,                       Jvmci) \
   do_klass(HotSpotConstantPool_klass,                    jdk_vm_ci_hotspot_HotSpotConstantPool,                 Jvmci) \
   do_klass(HotSpotJVMCIMetaAccessContext_klass,          jdk_vm_ci_hotspot_HotSpotJVMCIMetaAccessContext,       Jvmci) \
+  do_klass(HotSpotJVMCIRuntime_klass,                    jdk_vm_ci_hotspot_HotSpotJVMCIRuntime,                 Jvmci) \
+  do_klass(HotSpotSpeculationLog_klass,                  jdk_vm_ci_hotspot_HotSpotSpeculationLog,               Jvmci) \
   do_klass(Assumptions_ConcreteMethod_klass,             jdk_vm_ci_meta_Assumptions_ConcreteMethod,             Jvmci) \
   do_klass(Assumptions_NoFinalizableSubclass_klass,      jdk_vm_ci_meta_Assumptions_NoFinalizableSubclass,      Jvmci) \
   do_klass(Assumptions_ConcreteSubtype_klass,            jdk_vm_ci_meta_Assumptions_ConcreteSubtype,            Jvmci) \
@@ -74,7 +76,6 @@
   do_klass(StackSlot_klass,                              jdk_vm_ci_code_StackSlot,                              Jvmci) \
   do_klass(StackLockValue_klass,                         jdk_vm_ci_code_StackLockValue,                         Jvmci) \
   do_klass(VirtualObject_klass,                          jdk_vm_ci_code_VirtualObject,                          Jvmci) \
-  do_klass(SpeculationLog_klass,                         jdk_vm_ci_meta_SpeculationLog,                         Jvmci) \
   do_klass(JavaConstant_klass,                           jdk_vm_ci_meta_JavaConstant,                           Jvmci) \
   do_klass(PrimitiveConstant_klass,                      jdk_vm_ci_meta_PrimitiveConstant,                      Jvmci) \
   do_klass(RawConstant_klass,                            jdk_vm_ci_meta_RawConstant,                            Jvmci) \

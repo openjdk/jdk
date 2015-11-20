@@ -22,6 +22,8 @@
  */
 package jdk.vm.ci.hotspot;
 
+import jdk.vm.ci.inittimer.SuppressFBWarnings;
+
 public class HotSpotOopMap {
     @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD", justification = "field is set by the native part") private int offset;
     @SuppressFBWarnings(value = "UWF_UNWRITTEN_FIELD", justification = "field is set by the native part") private int count;

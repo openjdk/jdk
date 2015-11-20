@@ -84,8 +84,8 @@
 package jdk.internal.dynalink.beans;
 
 import java.lang.invoke.MethodHandles.Lookup;
-import java.util.Collection;
 import java.util.Collections;
+import java.util.Set;
 import jdk.internal.dynalink.DynamicLinkerFactory;
 import jdk.internal.dynalink.StandardOperation;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -229,11 +229,11 @@ public class BeansLinker implements GuardingDynamicLinker {
     }
 
     /**
-     * Returns a collection of names of all readable instance properties of a class.
+     * Returns a set of names of all readable instance properties of a class.
      * @param clazz the class
-     * @return a collection of names of all readable instance properties of a class.
+     * @return a set of names of all readable instance properties of a class.
      */
-    public static Collection<String> getReadableInstancePropertyNames(final Class<?> clazz) {
+    public static Set<String> getReadableInstancePropertyNames(final Class<?> clazz) {
         final TypeBasedGuardingDynamicLinker linker = getLinkerForClass(clazz);
         if(linker instanceof BeanLinker) {
             return ((BeanLinker)linker).getReadablePropertyNames();
@@ -242,11 +242,11 @@ public class BeansLinker implements GuardingDynamicLinker {
     }
 
     /**
-     * Returns a collection of names of all writable instance properties of a class.
+     * Returns a set of names of all writable instance properties of a class.
      * @param clazz the class
-     * @return a collection of names of all writable instance properties of a class.
+     * @return a set of names of all writable instance properties of a class.
      */
-    public static Collection<String> getWritableInstancePropertyNames(final Class<?> clazz) {
+    public static Set<String> getWritableInstancePropertyNames(final Class<?> clazz) {
         final TypeBasedGuardingDynamicLinker linker = getLinkerForClass(clazz);
         if(linker instanceof BeanLinker) {
             return ((BeanLinker)linker).getWritablePropertyNames();
@@ -255,11 +255,11 @@ public class BeansLinker implements GuardingDynamicLinker {
     }
 
     /**
-     * Returns a collection of names of all instance methods of a class.
+     * Returns a set of names of all instance methods of a class.
      * @param clazz the class
-     * @return a collection of names of all instance methods of a class.
+     * @return a set of names of all instance methods of a class.
      */
-    public static Collection<String> getInstanceMethodNames(final Class<?> clazz) {
+    public static Set<String> getInstanceMethodNames(final Class<?> clazz) {
         final TypeBasedGuardingDynamicLinker linker = getLinkerForClass(clazz);
         if(linker instanceof BeanLinker) {
             return ((BeanLinker)linker).getMethodNames();
@@ -268,29 +268,29 @@ public class BeansLinker implements GuardingDynamicLinker {
     }
 
     /**
-     * Returns a collection of names of all readable static properties of a class.
+     * Returns a set of names of all readable static properties of a class.
      * @param clazz the class
-     * @return a collection of names of all readable static properties of a class.
+     * @return a set of names of all readable static properties of a class.
      */
-    public static Collection<String> getReadableStaticPropertyNames(final Class<?> clazz) {
+    public static Set<String> getReadableStaticPropertyNames(final Class<?> clazz) {
         return StaticClassLinker.getReadableStaticPropertyNames(clazz);
     }
 
     /**
-     * Returns a collection of names of all writable static properties of a class.
+     * Returns a set of names of all writable static properties of a class.
      * @param clazz the class
-     * @return a collection of names of all writable static properties of a class.
+     * @return a set of names of all writable static properties of a class.
      */
-    public static Collection<String> getWritableStaticPropertyNames(final Class<?> clazz) {
+    public static Set<String> getWritableStaticPropertyNames(final Class<?> clazz) {
         return StaticClassLinker.getWritableStaticPropertyNames(clazz);
     }
 
     /**
-     * Returns a collection of names of all static methods of a class.
+     * Returns a set of names of all static methods of a class.
      * @param clazz the class
-     * @return a collection of names of all static methods of a class.
+     * @return a set of names of all static methods of a class.
      */
-    public static Collection<String> getStaticMethodNames(final Class<?> clazz) {
+    public static Set<String> getStaticMethodNames(final Class<?> clazz) {
         return StaticClassLinker.getStaticMethodNames(clazz);
     }
 
