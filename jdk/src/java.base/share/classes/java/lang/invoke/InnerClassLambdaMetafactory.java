@@ -27,7 +27,7 @@ package java.lang.invoke;
 
 import jdk.internal.org.objectweb.asm.*;
 import sun.invoke.util.BytecodeDescriptor;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import sun.security.action.GetPropertyAction;
 
 import java.io.FilePermission;

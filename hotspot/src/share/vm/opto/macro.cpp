@@ -379,13 +379,25 @@ static Node *scan_mem_chain(Node *mem, int alias_idx, int offset, Node *start_me
       if (mem->is_LoadStore()) {
         adr = mem->in(MemNode::Address);
       } else {
-        assert(mem->Opcode() == Op_EncodeISOArray, "sanity");
+        assert(mem->Opcode() == Op_EncodeISOArray ||
+               mem->Opcode() == Op_StrCompressedCopy, "sanity");
         adr = mem->in(3); // Destination array
       }
       const TypePtr* atype = adr->bottom_type()->is_ptr();
       int adr_idx = phase->C->get_alias_index(atype);
       if (adr_idx == alias_idx) {
-        assert(false, "Object is not scalar replaceable if a LoadStore node access its field");
+        DEBUG_ONLY(mem->dump();)
+        assert(false, "Object is not scalar replaceable if a LoadStore node accesses its field");
+        return NULL;
+      }
+      mem = mem->in(MemNode::Memory);
+   } else if (mem->Opcode() == Op_StrInflatedCopy) {
+      Node* adr = mem->in(3); // Destination array
+      const TypePtr* atype = adr->bottom_type()->is_ptr();
+      int adr_idx = phase->C->get_alias_index(atype);
+      if (adr_idx == alias_idx) {
+        DEBUG_ONLY(mem->dump();)
+        assert(false, "Object is not scalar replaceable if a StrInflatedCopy node accesses its field");
         return NULL;
       }
       mem = mem->in(MemNode::Memory);
@@ -516,8 +528,10 @@ Node *PhaseMacroExpand::value_from_mem_phi(Node *mem, BasicType ft, const Type *
         }
         values.at_put(j, val);
       } else if (val->Opcode() == Op_SCMemProj) {
-        assert(val->in(0)->is_LoadStore() || val->in(0)->Opcode() == Op_EncodeISOArray, "sanity");
-        assert(false, "Object is not scalar replaceable if a LoadStore node access its field");
+        assert(val->in(0)->is_LoadStore() ||
+               val->in(0)->Opcode() == Op_EncodeISOArray ||
+               val->in(0)->Opcode() == Op_StrCompressedCopy, "sanity");
+        assert(false, "Object is not scalar replaceable if a LoadStore node accesses its field");
         return NULL;
       } else if (val->is_ArrayCopy()) {
         Node* res = make_arraycopy_load(val->as_ArrayCopy(), offset, val->in(0), ft, phi_type, alloc);
@@ -779,10 +793,10 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
   ciKlass* klass = NULL;
   ciInstanceKlass* iklass = NULL;
   int nfields = 0;
-  int array_base;
-  int element_size;
-  BasicType basic_elem_type;
-  ciType* elem_type;
+  int array_base = 0;
+  int element_size = 0;
+  BasicType basic_elem_type = T_ILLEGAL;
+  ciType* elem_type = NULL;
 
   Node* res = alloc->result_cast();
   assert(res == NULL || res->is_CheckCastPP(), "unexpected AllocateNode result");
@@ -1305,10 +1319,10 @@ void PhaseMacroExpand::expand_allocate_common(
   // We need a Region and corresponding Phi's to merge the slow-path and fast-path results.
   // they will not be used if "always_slow" is set
   enum { slow_result_path = 1, fast_result_path = 2 };
-  Node *result_region;
-  Node *result_phi_rawmem;
-  Node *result_phi_rawoop;
-  Node *result_phi_i_o;
+  Node *result_region = NULL;
+  Node *result_phi_rawmem = NULL;
+  Node *result_phi_rawoop = NULL;
+  Node *result_phi_i_o = NULL;
 
   // The initial slow comparison is a size check, the comparison
   // we want to do is a BoolTest::gt

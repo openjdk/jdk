@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8141092
  * @summary Test Completion
  * @library /tools/lib
  * @build KullaTesting TestingInputStream ToolBox Compiler
@@ -44,6 +45,9 @@ import static jdk.jshell.Snippet.Status.OVERWRITTEN;
 
 @Test
 public class CompletionSuggestionTest extends KullaTesting {
+
+    private final Compiler compiler = new Compiler();
+    private final Path outDir = Paths.get("completion_suggestion_test");
 
     public void testMemberExpr() {
         assertEval("class Test { static void test() { } }");
@@ -232,6 +236,23 @@ public class CompletionSuggestionTest extends KullaTesting {
 
         assertCompletion("Object.notElement.|");
         assertCompletion("Object o = com.su|", "sun");
+
+        Path p1 = outDir.resolve("dir1");
+        compiler.compile(p1,
+                "package p1.p2;\n" +
+                "public class Test {\n" +
+                "}",
+                "package p1.p3;\n" +
+                "public class Test {\n" +
+                "}");
+        String jarName = "test.jar";
+        compiler.jar(p1, jarName, "p1/p2/Test.class", "p1/p3/Test.class");
+        addToClasspath(compiler.getPath(p1.resolve(jarName)));
+
+        assertCompletionIncludesExcludes("|", new HashSet<>(Collections.singletonList("p1")), Collections.emptySet());
+        assertCompletion("p1.|", "p2", "p3");
+        assertCompletion("p1.p2.|", "Test");
+        assertCompletion("p1.p3.|", "Test");
     }
 
     public void testCheckAccessibility() {

@@ -22,11 +22,16 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.*;
-import static jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl.*;
-
-import jdk.vm.ci.common.*;
-import jdk.vm.ci.meta.*;
+import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
+import static jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl.fromObjectClass;
+import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.meta.ConstantReflectionProvider;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.MethodHandleAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProvider, HotSpotProxified {
 
@@ -155,6 +160,6 @@ public class HotSpotMethodHandleAccessProvider implements MethodHandleAccessProv
 
         Object object = ((HotSpotObjectConstantImpl) memberName).object();
         /* Read the ResolvedJavaMethod from the injected field MemberName.vmtarget */
-        return runtime().compilerToVm.getResolvedJavaMethod(object, LazyInitialization.memberNameVmtargetField.offset());
+        return compilerToVM().getResolvedJavaMethod(object, LazyInitialization.memberNameVmtargetField.offset());
     }
 }

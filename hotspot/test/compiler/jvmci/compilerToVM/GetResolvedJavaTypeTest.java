@@ -27,11 +27,13 @@
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
  * @library / /testlibrary /../../test/lib
  * @compile ../common/CompilerToVMHelper.java
+ *          ../common/PublicMetaspaceWrapperObject.java
  * @build compiler.jvmci.compilerToVM.GetResolvedJavaTypeTest
  * @run main ClassFileInstaller
  *      sun.hotspot.WhiteBox
  *      sun.hotspot.WhiteBox$WhiteBoxPermission
  *      jdk.vm.ci.hotspot.CompilerToVMHelper
+ *      jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockExperimentalVMOptions
  *      -XX:+EnableJVMCI -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      -XX:+UseCompressedOops
@@ -45,11 +47,11 @@
 package compiler.jvmci.compilerToVM;
 
 import java.lang.reflect.Field;
+import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotConstantPool;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl;
-import jdk.vm.ci.hotspot.MetaspaceWrapperObject;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
+import jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import sun.hotspot.WhiteBox;
@@ -59,21 +61,22 @@ public class GetResolvedJavaTypeTest {
     private static enum TestCase {
         NULL_BASE {
             @Override
-            HotSpotResolvedObjectTypeImpl getResolvedJavaType() {
+            HotSpotResolvedObjectType getResolvedJavaType() {
                 return CompilerToVMHelper.getResolvedJavaType(
                         null, getPtrToKlass(), COMPRESSED);
             }
         },
         JAVA_METHOD_BASE {
             @Override
-            HotSpotResolvedObjectTypeImpl getResolvedJavaType() {
-                HotSpotResolvedJavaMethodImpl methodInstance
+            HotSpotResolvedObjectType getResolvedJavaType() {
+                HotSpotResolvedJavaMethod methodInstance
                         = CompilerToVMHelper.getResolvedJavaMethodAtSlot(
                         TEST_CLASS, 0);
                 Field field;
                 try {
-                    field = HotSpotResolvedJavaMethodImpl
-                            .class.getDeclaredField("metaspaceMethod");
+                    // jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl.metaspaceMethod
+                    field = methodInstance.getClass()
+                            .getDeclaredField("metaspaceMethod");
                     field.setAccessible(true);
                     field.set(methodInstance, getPtrToKlass());
                 } catch (ReflectiveOperationException e) {
@@ -86,17 +89,18 @@ public class GetResolvedJavaTypeTest {
         },
         CONSTANT_POOL_BASE {
             @Override
-            HotSpotResolvedObjectTypeImpl getResolvedJavaType() {
-                HotSpotConstantPool cpInst;
+            HotSpotResolvedObjectType getResolvedJavaType() {
+                ConstantPool cpInst;
                 try {
                     cpInst = CompilerToVMHelper.getConstantPool(null,
                             getPtrToKlass());
-                    Field field = HotSpotConstantPool.class
+                    // jdk.vm.ci.hotspot.HotSpotConstantPool.metaspaceConstantPool
+                    Field field = cpInst.getClass()
                             .getDeclaredField("metaspaceConstantPool");
                     field.setAccessible(true);
                     field.set(cpInst, getPtrToKlass());
                 } catch (ReflectiveOperationException e) {
-                    throw new Error("TESTBUG : " + e.getMessage(), e);
+                    throw new Error("TESTBUG : " + e, e);
                 }
                 return CompilerToVMHelper.getResolvedJavaType(cpInst,
                         0L, COMPRESSED);
@@ -104,17 +108,18 @@ public class GetResolvedJavaTypeTest {
         },
         CONSTANT_POOL_BASE_IN_TWO {
             @Override
-            HotSpotResolvedObjectTypeImpl getResolvedJavaType() {
+            HotSpotResolvedObjectType getResolvedJavaType() {
                 long ptr = getPtrToKlass();
-                HotSpotConstantPool cpInst = HotSpotResolvedObjectTypeImpl
-                        .fromObjectClass(TEST_CLASS).getConstantPool();
+                ConstantPool cpInst = HotSpotResolvedObjectType
+                        .fromObjectClass(TEST_CLASS)
+                        .getConstantPool();
                 try {
-                    Field field = HotSpotConstantPool.class
+                    Field field = cpInst.getClass()
                             .getDeclaredField("metaspaceConstantPool");
                     field.setAccessible(true);
                     field.set(cpInst, ptr / 2L);
                 } catch (ReflectiveOperationException e) {
-                    throw new Error("TESTBUG : " + e.getMessage(), e);
+                    throw new Error("TESTBUG : " + e, e);
                 }
                 return CompilerToVMHelper.getResolvedJavaType(cpInst,
                         ptr - ptr / 2L, COMPRESSED);
@@ -122,17 +127,18 @@ public class GetResolvedJavaTypeTest {
         },
         CONSTANT_POOL_BASE_ZERO {
             @Override
-            HotSpotResolvedObjectTypeImpl getResolvedJavaType() {
+            HotSpotResolvedObjectType getResolvedJavaType() {
                 long ptr = getPtrToKlass();
-                HotSpotConstantPool cpInst = HotSpotResolvedObjectTypeImpl
-                        .fromObjectClass(TEST_CLASS).getConstantPool();
+                ConstantPool cpInst = HotSpotResolvedObjectType
+                        .fromObjectClass(TEST_CLASS)
+                        .getConstantPool();
                 try {
-                    Field field = HotSpotConstantPool.class
+                    Field field = cpInst.getClass()
                             .getDeclaredField("metaspaceConstantPool");
                     field.setAccessible(true);
                     field.set(cpInst, 0L);
                 } catch (ReflectiveOperationException e) {
-                    throw new Error("TESTBUG : " + e.getMessage(), e);
+                    throw new Error("TESTBUG : " + e, e);
                 }
                 return CompilerToVMHelper.getResolvedJavaType(cpInst,
                         ptr, COMPRESSED);
@@ -140,9 +146,9 @@ public class GetResolvedJavaTypeTest {
         },
         OBJECT_TYPE_BASE {
             @Override
-            HotSpotResolvedObjectTypeImpl getResolvedJavaType() {
-                HotSpotResolvedObjectTypeImpl type
-                        = HotSpotResolvedObjectTypeImpl.fromObjectClass(
+            HotSpotResolvedObjectType getResolvedJavaType() {
+                HotSpotResolvedObjectType type
+                        = HotSpotResolvedObjectType.fromObjectClass(
                         OBJECT_TYPE_BASE.getClass());
                 long ptrToClass = UNSAFE.getKlassPointer(OBJECT_TYPE_BASE);
                 return CompilerToVMHelper.getResolvedJavaType(type,
@@ -150,7 +156,7 @@ public class GetResolvedJavaTypeTest {
             }
         },
         ;
-        abstract HotSpotResolvedObjectTypeImpl getResolvedJavaType();
+        abstract HotSpotResolvedObjectType getResolvedJavaType();
     }
 
     private static final Unsafe UNSAFE = Utils.getUnsafe();
@@ -176,9 +182,10 @@ public class GetResolvedJavaTypeTest {
 
     public void test(TestCase testCase) {
         System.out.println(testCase.name());
-        HotSpotResolvedObjectTypeImpl type = testCase.getResolvedJavaType();
-        Asserts.assertEQ(type.mirror(), TEST_CLASS, testCase +
-                        " Unexpected Class returned by getResolvedJavaType");
+        HotSpotResolvedObjectType type = testCase.getResolvedJavaType();
+        Asserts.assertEQ(TEST_CLASS,
+                CompilerToVMHelper.getMirror(type),
+                testCase +  " : unexpected class returned");
     }
 
     public static void main(String[] args) {
@@ -192,9 +199,9 @@ public class GetResolvedJavaTypeTest {
 
     private static void testMetaspaceWrapperBase() {
         try {
-            HotSpotResolvedObjectTypeImpl type
+            HotSpotResolvedObjectType type
                     = CompilerToVMHelper.getResolvedJavaType(
-                            new MetaspaceWrapperObject() {
+                            new PublicMetaspaceWrapperObject() {
                                 @Override
                                 public long getMetaspacePointer() {
                                     return getPtrToKlass();
@@ -209,7 +216,7 @@ public class GetResolvedJavaTypeTest {
 
     private static void testObjectBase() {
         try {
-            HotSpotResolvedObjectTypeImpl type
+            HotSpotResolvedObjectType type
                     = CompilerToVMHelper.getResolvedJavaType(new Object(), 0L,
                             COMPRESSED);
             throw new AssertionError("Test OBJECT_BASE."

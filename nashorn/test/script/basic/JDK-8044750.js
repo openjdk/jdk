@@ -25,8 +25,7 @@
  * JDK-8044750: megamorphic getter for scope objects does not call __noSuchProperty__ hook
  *
  * @test
- * @fork
- * @option -Dnashorn.unstable.relink.threshold=16
+ * @option --unstable-relink-threshold=16
  * @run
  */
 

@@ -29,7 +29,7 @@ import java.nio.file.attribute.*;
 import java.util.Map;
 import java.util.Set;
 import java.io.IOException;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import static sun.nio.fs.UnixNativeDispatcher.*;
 import static sun.nio.fs.UnixConstants.*;

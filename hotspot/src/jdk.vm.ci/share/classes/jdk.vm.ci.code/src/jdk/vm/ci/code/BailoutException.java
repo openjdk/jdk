@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.code;
 
-import java.util.*;
+import java.util.Locale;
 
 /**
  * Exception thrown when the compiler refuses to compile a method because of problems with the

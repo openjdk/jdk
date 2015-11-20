@@ -243,6 +243,9 @@ hotspot_%:
 	$(ECHO) "Running tests: $@"
 	$(MAKE) -j 1 TEST_SELECTION=":$@" UNIQUE_DIR=$@ jtreg_tests;
 
+hotspot_internal:
+	$(ALT_OUTPUTDIR)/jdk/bin/java -XX:+ExecuteInternalVMTests -XX:+ShowMessageBoxOnError -version
+
 # Prep for output
 prep: clean
 	@$(MKDIR) -p $(ABS_TEST_OUTPUT_DIR)

@@ -126,8 +126,6 @@ public:
 
   WorkGang* workers() const { return _workers; }
 
-  GCStats* gc_stats(Generation* generation) const;
-
   // Returns JNI_OK on success
   virtual jint initialize();
 

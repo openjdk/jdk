@@ -512,7 +512,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
             case LETEXPR: {
                 LetExpr t = (LetExpr) node;
                 List<JCVariableDecl> defs = copy(t.defs, p);
-                JCTree expr = copy(t.expr, p);
+                JCExpression expr = copy(t.expr, p);
                 return M.at(t.pos).LetExpr(defs, expr);
             }
             default:

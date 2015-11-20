@@ -575,6 +575,11 @@ void vm_shutdown()
 void vm_abort(bool dump_core) {
   vm_perform_shutdown_actions();
   os::wait_for_keypress_at_exit();
+
+  // Flush stdout and stderr before abort.
+  fflush(stdout);
+  fflush(stderr);
+
   os::abort(dump_core);
   ShouldNotReachHere();
 }

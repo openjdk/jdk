@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2015, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -894,7 +894,7 @@ parse_agent_options(char *options)
  *   loaded. This is the first code executed.
  */
 JNIEXPORT jint JNICALL
-Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
+DEF_Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
 {
     static GlobalAgentData data;
     jvmtiEnv              *jvmti;
@@ -1010,7 +1010,7 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved)
  *   unloaded. This is the last code executed.
  */
 JNIEXPORT void JNICALL
-Agent_OnUnload(JavaVM *vm)
+DEF_Agent_OnUnload(JavaVM *vm)
 {
     /* Skip any cleanup, VM is about to die anyway */
 }

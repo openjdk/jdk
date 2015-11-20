@@ -85,6 +85,23 @@ void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle& constant) {
   }
 }
 
+void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle& constant) {
+  address pc = _instructions->start() + pc_offset;
+  if (HotSpotMetaspaceConstantImpl::compressed(constant)) {
+#ifdef _LP64
+    address operand = Assembler::locate_operand(pc, Assembler::narrow_oop_operand);
+    *((narrowKlass*) operand) = record_narrow_metadata_reference(constant);
+    TRACE_jvmci_3("relocating (narrow metaspace constant) at " PTR_FORMAT "/" PTR_FORMAT, p2i(pc), p2i(operand));
+#else
+    fatal("compressed Klass* on 32bit");
+#endif
+  } else {
+    address operand = Assembler::locate_operand(pc, Assembler::imm_operand);
+    *((Metadata**) operand) = record_metadata_reference(constant);
+    TRACE_jvmci_3("relocating (metaspace constant) at " PTR_FORMAT "/" PTR_FORMAT, p2i(pc), p2i(operand));
+  }
+}
+
 void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset) {
   address pc = _instructions->start() + pc_offset;
 
@@ -98,16 +115,6 @@ void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset
 
   _instructions->relocate(pc, section_word_Relocation::spec((address) dest, CodeBuffer::SECT_CONSTS), Assembler::disp32_operand);
   TRACE_jvmci_3("relocating at " PTR_FORMAT "/" PTR_FORMAT " with destination at " PTR_FORMAT " (%d)", p2i(pc), p2i(operand), p2i(dest), data_offset);
-}
-
-void CodeInstaller::pd_relocate_CodeBlob(CodeBlob* cb, NativeInstruction* inst) {
-  if (cb->is_nmethod()) {
-    nmethod* nm = (nmethod*) cb;
-    nativeJump_at((address)inst)->set_jump_destination(nm->verified_entry_point());
-  } else {
-    nativeJump_at((address)inst)->set_jump_destination(cb->code_begin());
-  }
-  _instructions->relocate((address)inst, runtime_call_Relocation::spec(), Assembler::call32_operand);
 }
 
 void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination) {

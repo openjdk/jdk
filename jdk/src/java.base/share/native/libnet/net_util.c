@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ JNIEXPORT jint JNICALL ipv6_available()
 }
 
 JNIEXPORT jint JNICALL
-JNI_OnLoad(JavaVM *vm, void *reserved)
+DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
 {
     JNIEnv *env;
     jclass iCls;
