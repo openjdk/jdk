@@ -562,7 +562,7 @@ void TemplateInterpreterGenerator::generate_and_dispatch(Template* t, TosState t
   if (StopInterpreterAt > 0)                                     stop_interpreter_at();
   __ verify_FPU(1, t->tos_in());
 #endif // !PRODUCT
-  int step;
+  int step = 0;
   if (!t->does_dispatch()) {
     step = t->is_wide() ? Bytecodes::wide_length_for(t->bytecode()) : Bytecodes::length_for(t->bytecode());
     if (tos_out == ilgl) tos_out = t->tos_out();

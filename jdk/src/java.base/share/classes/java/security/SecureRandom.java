@@ -419,7 +419,7 @@ public class SecureRandom extends java.util.Random {
      * @since 1.5
      */
     public String getAlgorithm() {
-        return (algorithm != null) ? algorithm : "unknown";
+        return Objects.toString(algorithm, "unknown");
     }
 
     /**

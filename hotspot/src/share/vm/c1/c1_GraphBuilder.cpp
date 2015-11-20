@@ -3089,7 +3089,7 @@ ValueStack* GraphBuilder::state_at_entry() {
   int idx = 0;
   if (!method()->is_static()) {
     // we should always see the receiver
-    state->store_local(idx, new Local(method()->holder(), objectType, idx));
+    state->store_local(idx, new Local(method()->holder(), objectType, idx, true));
     idx = 1;
   }
 
@@ -3101,7 +3101,7 @@ ValueStack* GraphBuilder::state_at_entry() {
     // don't allow T_ARRAY to propagate into locals types
     if (basic_type == T_ARRAY) basic_type = T_OBJECT;
     ValueType* vt = as_ValueType(basic_type);
-    state->store_local(idx, new Local(type, vt, idx));
+    state->store_local(idx, new Local(type, vt, idx, false));
     idx += type->size();
   }
 
@@ -3445,6 +3445,8 @@ void GraphBuilder::build_graph_for_intrinsic(ciMethod* callee) {
   case vmIntrinsics::_getAndSetInt       :
   case vmIntrinsics::_getAndSetLong      :
   case vmIntrinsics::_getAndSetObject    : append_unsafe_get_and_set_obj(callee, false); return;
+  case vmIntrinsics::_getCharStringU     : append_char_access(callee, false); return;
+  case vmIntrinsics::_putCharStringU     : append_char_access(callee, true); return;
   default:
     break;
   }
@@ -3823,8 +3825,8 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
   caller_state->truncate_stack(args_base);
   assert(callee_state->stack_size() == 0, "callee stack must be empty");
 
-  Value lock;
-  BlockBegin* sync_handler;
+  Value lock = NULL;
+  BlockBegin* sync_handler = NULL;
 
   // Inline the locking of the receiver if the callee is synchronized
   if (callee->is_synchronized()) {
@@ -4179,6 +4181,30 @@ void GraphBuilder::append_unsafe_CAS(ciMethod* callee) {
   compilation()->set_has_unsafe_access(true);
 }
 
+void GraphBuilder::append_char_access(ciMethod* callee, bool is_store) {
+  // This intrinsic accesses byte[] array as char[] array. Computing the offsets
+  // correctly requires matched array shapes.
+  assert (arrayOopDesc::base_offset_in_bytes(T_CHAR) == arrayOopDesc::base_offset_in_bytes(T_BYTE),
+          "sanity: byte[] and char[] bases agree");
+  assert (type2aelembytes(T_CHAR) == type2aelembytes(T_BYTE)*2,
+          "sanity: byte[] and char[] scales agree");
+
+  ValueStack* state_before = copy_state_indexed_access();
+  compilation()->set_has_access_indexed(true);
+  Values* args = state()->pop_arguments(callee->arg_size());
+  Value array = args->at(0);
+  Value index = args->at(1);
+  if (is_store) {
+    Value value = args->at(2);
+    Instruction* store = append(new StoreIndexed(array, index, NULL, T_CHAR, value, state_before));
+    store->set_flag(Instruction::NeedsRangeCheckFlag, false);
+    _memory->store_value(value);
+  } else {
+    Instruction* load = append(new LoadIndexed(array, index, NULL, T_CHAR, state_before));
+    load->set_flag(Instruction::NeedsRangeCheckFlag, false);
+    push(load->type(), load);
+  }
+}
 
 void GraphBuilder::print_inlining(ciMethod* callee, const char* msg, bool success) {
   CompileLog* log = compilation()->log();

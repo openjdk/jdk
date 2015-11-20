@@ -141,14 +141,14 @@ class Generation: public CHeapObj<mtGC> {
   }
 
   virtual Generation::Name kind() { return Generation::Other; }
-  GenerationSpec* spec();
 
   // This properly belongs in the collector, but for now this
   // will do.
   virtual bool refs_discovery_is_atomic() const { return true;  }
   virtual bool refs_discovery_is_mt()     const { return false; }
 
-  // Space enquiries (results in bytes)
+  // Space inquiries (results in bytes)
+  size_t initial_size();
   virtual size_t capacity() const = 0;  // The maximum number of object bytes the
                                         // generation can currently hold.
   virtual size_t used() const = 0;      // The number of used bytes in the gen.
@@ -309,10 +309,6 @@ class Generation: public CHeapObj<mtGC> {
   // do nothing.
   virtual void par_oop_since_save_marks_iterate_done(int thread_num) {}
 
-  // This generation will collect all younger generations
-  // during a full collection.
-  virtual bool full_collects_young_generation() const { return false; }
-
   // This generation does in-place marking, meaning that mark words
   // are mutated during the marking phase and presumably reinitialized
   // to a canonical value after the GC. This is currently used by the
@@ -403,7 +399,7 @@ class Generation: public CHeapObj<mtGC> {
   // that was most recently collected. This allows the generation to
   // decide what statistics are valid to collect. For example, the
   // generation can decide to gather the amount of promoted data if
-  // the collection of the younger generations has completed.
+  // the collection of the young generation has completed.
   GCStats* gc_stats() const { return _gc_stats; }
   virtual void update_gc_stats(Generation* current_generation, bool full) {}
 

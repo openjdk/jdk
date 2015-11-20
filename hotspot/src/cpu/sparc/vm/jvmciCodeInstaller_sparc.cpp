@@ -66,6 +66,25 @@ void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle& constant) {
   }
 }
 
+void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle& constant) {
+  address pc = _instructions->start() + pc_offset;
+  if (HotSpotMetaspaceConstantImpl::compressed(constant)) {
+#ifdef _LP64
+    NativeMovConstReg32* move = nativeMovConstReg32_at(pc);
+    narrowKlass narrowOop = record_narrow_metadata_reference(constant);
+    move->set_data((intptr_t)narrowOop);
+    TRACE_jvmci_3("relocating (narrow metaspace constant) at %p/%p", pc, narrowOop);
+#else
+    fatal("compressed Klass* on 32bit");
+#endif
+  } else {
+    NativeMovConstReg* move = nativeMovConstReg_at(pc);
+    Metadata* reference = record_metadata_reference(constant);
+    move->set_data((intptr_t)reference);
+    TRACE_jvmci_3("relocating (metaspace constant) at %p/%p", pc, reference);
+  }
+}
+
 void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset) {
   address pc = _instructions->start() + pc_offset;
   NativeInstruction* inst = nativeInstruction_at(pc);
@@ -85,10 +104,6 @@ void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset
     load->set_offset(- (const_size - data_offset + Assembler::min_simm13()));
     TRACE_jvmci_3("relocating ld at " PTR_FORMAT " (+%d) with destination at %d", p2i(pc), pc_offset, data_offset);
   }
-}
-
-void CodeInstaller::pd_relocate_CodeBlob(CodeBlob* cb, NativeInstruction* inst) {
-  fatal("CodeInstaller::pd_relocate_CodeBlob - sparc unimp");
 }
 
 void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination) {
@@ -168,16 +183,25 @@ void CodeInstaller::pd_relocate_poll(address pc, jint mark) {
 
 // convert JVMCI register indices (as used in oop maps) to HotSpot registers
 VMReg CodeInstaller::get_hotspot_reg(jint jvmci_reg) {
-  if (jvmci_reg < RegisterImpl::number_of_registers) {
+  // JVMCI Registers are numbered as follows:
+  //   0..31: Thirty-two General Purpose registers (CPU Registers)
+  //   32..63: Thirty-two single precision float registers
+  //   64..95: Thirty-two double precision float registers
+  //   96..111: Sixteen quad precision float registers
+  if (jvmci_reg < 32) {
     return as_Register(jvmci_reg)->as_VMReg();
   } else {
-    jint floatRegisterNumber = jvmci_reg - RegisterImpl::number_of_registers;
-    floatRegisterNumber += MAX2(0, floatRegisterNumber-32); // Beginning with f32, only every second register is going to be addressed
-    if (floatRegisterNumber < FloatRegisterImpl::number_of_registers) {
-      return as_FloatRegister(floatRegisterNumber)->as_VMReg();
+    jint floatRegisterNumber;
+    if(jvmci_reg < 64) { // Single precision
+      floatRegisterNumber = jvmci_reg - 32;
+    } else if(jvmci_reg < 96) {
+      floatRegisterNumber = 2 * (jvmci_reg - 64);
+    } else if(jvmci_reg < 112) {
+      floatRegisterNumber = 4 * (jvmci_reg - 96);
+    } else {
+      fatal("Unknown jvmci register");
     }
-    ShouldNotReachHere();
-    return NULL;
+    return as_FloatRegister(floatRegisterNumber)->as_VMReg();
   }
 }
 

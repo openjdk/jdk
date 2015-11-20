@@ -89,7 +89,7 @@ struct Final_Reshape_Counts;
 typedef unsigned int node_idx_t;
 class NodeCloneInfo {
  private:
-  uint64_t  _idx_clone_orig;
+  uint64_t _idx_clone_orig;
  public:
 
   void set_idx(node_idx_t idx) {
@@ -98,17 +98,17 @@ class NodeCloneInfo {
   node_idx_t idx() const { return (node_idx_t)(_idx_clone_orig & 0xFFFFFFFF); }
 
   void set_gen(int generation) {
-    uint64_t  g = (uint64_t)generation << 32;
+    uint64_t g = (uint64_t)generation << 32;
     _idx_clone_orig = _idx_clone_orig & 0xFFFFFFFF | g;
   }
   int gen() const { return (int)(_idx_clone_orig >> 32); }
 
-  void set(uint64_t x) {  _idx_clone_orig = x; }
-  void set(node_idx_t x, int g) {  set_idx(x); set_gen(g); }
+  void set(uint64_t x) { _idx_clone_orig = x; }
+  void set(node_idx_t x, int g) { set_idx(x); set_gen(g); }
   uint64_t get() const { return _idx_clone_orig; }
 
   NodeCloneInfo(uint64_t idx_clone_orig) : _idx_clone_orig(idx_clone_orig) {}
-  NodeCloneInfo(node_idx_t x, int g) {set(x, g);}
+  NodeCloneInfo(node_idx_t x, int g) : _idx_clone_orig(0) { set(x, g); }
 
   void dump() const;
 };

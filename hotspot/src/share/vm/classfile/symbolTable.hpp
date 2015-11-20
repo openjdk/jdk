@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -100,12 +100,12 @@ private:
   Symbol* basic_add(int index, u1* name, int len, unsigned int hashValue,
                     bool c_heap, TRAPS);
   bool basic_add(ClassLoaderData* loader_data,
-                 constantPoolHandle cp, int names_count,
+                 const constantPoolHandle& cp, int names_count,
                  const char** names, int* lengths, int* cp_indices,
                  unsigned int* hashValues, TRAPS);
 
   static void new_symbols(ClassLoaderData* loader_data,
-                          constantPoolHandle cp, int names_count,
+                          const constantPoolHandle& cp, int names_count,
                           const char** name, int* lengths,
                           int* cp_indices, unsigned int* hashValues,
                           TRAPS) {
@@ -165,12 +165,12 @@ public:
   // Look up the address of the literal in the SymbolTable for this Symbol*
   static Symbol** lookup_symbol_addr(Symbol* sym);
 
-  // jchar (utf16) version of lookups
+  // jchar (UTF16) version of lookups
   static Symbol* lookup_unicode(const jchar* name, int len, TRAPS);
   static Symbol* lookup_only_unicode(const jchar* name, int len, unsigned int& hash);
 
   static void add(ClassLoaderData* loader_data,
-                  constantPoolHandle cp, int names_count,
+                  const constantPoolHandle& cp, int names_count,
                   const char** names, int* lengths, int* cp_indices,
                   unsigned int* hashValues, TRAPS);
 

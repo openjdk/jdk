@@ -138,15 +138,13 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // Linear allocation blocks
   LinearAllocBlock _smallLinearAllocBlock;
 
-  FreeBlockDictionary<FreeChunk>::DictionaryChoice _dictionaryChoice;
   AFLBinaryTreeDictionary* _dictionary;    // Pointer to dictionary for large size blocks
 
   // Indexed array for small size blocks
   AdaptiveFreeList<FreeChunk> _indexedFreeList[IndexSetSize];
 
   // Allocation strategy
-  bool       _fitStrategy;        // Use best fit strategy
-  bool       _adaptive_freelists; // Use adaptive freelists
+  bool _fitStrategy;  // Use best fit strategy
 
   // This is an address close to the largest free chunk in the heap.
   // It is currently assumed to be at the end of the heap.  Free
@@ -204,10 +202,6 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // strategy that attempts to keep the needed number of chunks in each
   // indexed free lists.
   HeapWord* allocate_adaptive_freelists(size_t size);
-  // Allocate from the linear allocation buffers first.  This allocation
-  // strategy assumes maximal coalescing can maintain chunks large enough
-  // to be used as linear allocation buffers.
-  HeapWord* allocate_non_adaptive_freelists(size_t size);
 
   // Gets a chunk from the linear allocation block (LinAB).  If there
   // is not enough space in the LinAB, refills it.
@@ -333,9 +327,7 @@ class CompactibleFreeListSpace: public CompactibleSpace {
 
  public:
   // Constructor
-  CompactibleFreeListSpace(BlockOffsetSharedArray* bs, MemRegion mr,
-                           bool use_adaptive_freelists,
-                           FreeBlockDictionary<FreeChunk>::DictionaryChoice);
+  CompactibleFreeListSpace(BlockOffsetSharedArray* bs, MemRegion mr);
   // Accessors
   bool bestFitFirst() { return _fitStrategy == FreeBlockBestFitFirst; }
   FreeBlockDictionary<FreeChunk>* dictionary() const { return _dictionary; }
@@ -348,8 +340,6 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   // Return the free chunk at the end of the space.  If no such
   // chunk exists, return NULL.
   FreeChunk* find_chunk_at_end();
-
-  bool adaptive_freelists() const { return _adaptive_freelists; }
 
   void set_collector(CMSCollector* collector) { _collector = collector; }
 
@@ -535,9 +525,6 @@ class CompactibleFreeListSpace: public CompactibleSpace {
   void      removeFreeChunkFromFreeLists(FreeChunk* chunk);
   void      addChunkAndRepairOffsetTable(HeapWord* chunk, size_t size,
               bool coalesced);
-
-  // Support for decisions regarding concurrent collection policy.
-  bool should_concurrent_collect() const;
 
   // Support for compaction.
   void prepare_for_compaction(CompactPoint* cp);

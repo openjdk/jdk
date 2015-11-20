@@ -25,7 +25,7 @@
 
 package java.lang.invoke;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import sun.invoke.util.VerifyAccess;

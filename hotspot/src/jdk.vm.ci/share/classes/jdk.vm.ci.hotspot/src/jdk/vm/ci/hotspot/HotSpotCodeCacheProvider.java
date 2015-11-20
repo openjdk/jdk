@@ -22,15 +22,30 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.hotspot.HotSpotCompressedNullConstant.*;
+import static jdk.vm.ci.hotspot.HotSpotCompressedNullConstant.COMPRESSED_NULL;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
 
-import jdk.vm.ci.code.*;
-import jdk.vm.ci.code.CompilationResult.*;
-import jdk.vm.ci.code.DataSection.*;
-import jdk.vm.ci.common.*;
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.code.BailoutException;
+import jdk.vm.ci.code.CodeCacheProvider;
+import jdk.vm.ci.code.CompilationRequest;
+import jdk.vm.ci.code.CompilationResult;
+import jdk.vm.ci.code.CompilationResult.Call;
+import jdk.vm.ci.code.CompilationResult.ConstantReference;
+import jdk.vm.ci.code.CompilationResult.DataPatch;
+import jdk.vm.ci.code.CompilationResult.Mark;
+import jdk.vm.ci.code.DataSection;
+import jdk.vm.ci.code.DataSection.Data;
+import jdk.vm.ci.code.DataSection.DataBuilder;
+import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.SerializableConstant;
+import jdk.vm.ci.meta.SpeculationLog;
+import jdk.vm.ci.meta.VMConstant;
 
 /**
  * HotSpot implementation of {@link CodeCacheProvider}.
@@ -98,72 +113,64 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
         return runtime.getConfig().runtimeCallStackSize;
     }
 
-    public InstalledCode logOrDump(InstalledCode installedCode, CompilationResult compResult) {
-        HotSpotJVMCIRuntime.runtime().notifyInstall(this, installedCode, compResult);
+    private InstalledCode logOrDump(InstalledCode installedCode, CompilationResult compResult) {
+        ((HotSpotJVMCIRuntime) runtime).notifyInstall(this, installedCode, compResult);
         return installedCode;
     }
 
-    private InstalledCode installCode(CompilationResult compResult, HotSpotCompiledNmethod compiledCode, InstalledCode installedCode, SpeculationLog log) {
-        int result = runtime.getCompilerToVM().installCode(target, compiledCode, installedCode, log);
-        if (result != config.codeInstallResultOk) {
-            String msg = compiledCode.getInstallationFailureMessage();
-            String resultDesc = config.getCodeInstallResultDescription(result);
-            if (msg != null) {
-                msg = String.format("Code installation failed: %s%n%s", resultDesc, msg);
-            } else {
-                msg = String.format("Code installation failed: %s", resultDesc);
-            }
-            if (result == config.codeInstallResultDependenciesInvalid) {
-                throw new AssertionError(resultDesc + " " + msg);
-            }
-            throw new BailoutException(result != config.codeInstallResultDependenciesFailed, msg);
-        }
-        return logOrDump(installedCode, compResult);
-    }
-
-    public InstalledCode installMethod(HotSpotResolvedJavaMethod method, CompilationResult compResult, long jvmciEnv, boolean isDefault) {
-        if (compResult.getId() == -1) {
-            compResult.setId(method.allocateCompileId(compResult.getEntryBCI()));
-        }
-        HotSpotInstalledCode installedCode = new HotSpotNmethod(method, compResult.getName(), isDefault);
-        HotSpotCompiledNmethod compiledCode = new HotSpotCompiledNmethod(method, compResult, jvmciEnv);
-        return installCode(compResult, compiledCode, installedCode, method.getSpeculationLog());
-    }
-
-    @Override
-    public InstalledCode addMethod(ResolvedJavaMethod method, CompilationResult compResult, SpeculationLog log, InstalledCode predefinedInstalledCode) {
-        HotSpotResolvedJavaMethod hotspotMethod = (HotSpotResolvedJavaMethod) method;
-        if (compResult.getId() == -1) {
-            compResult.setId(hotspotMethod.allocateCompileId(compResult.getEntryBCI()));
-        }
-        InstalledCode installedCode = predefinedInstalledCode;
+    public InstalledCode installCode(CompilationRequest compRequest, CompilationResult compResult, InstalledCode installedCode, SpeculationLog log, boolean isDefault) {
+        HotSpotResolvedJavaMethod method = compRequest != null ? (HotSpotResolvedJavaMethod) compRequest.getMethod() : null;
+        InstalledCode resultInstalledCode;
         if (installedCode == null) {
-            HotSpotInstalledCode code = new HotSpotNmethod(hotspotMethod, compResult.getName(), false);
-            installedCode = code;
+            if (method == null) {
+                // Must be a stub
+                resultInstalledCode = new HotSpotRuntimeStub(compResult.getName());
+            } else {
+                resultInstalledCode = new HotSpotNmethod(method, compResult.getName(), isDefault);
+            }
+        } else {
+            resultInstalledCode = installedCode;
         }
-        HotSpotCompiledNmethod compiledCode = new HotSpotCompiledNmethod(hotspotMethod, compResult);
-        return installCode(compResult, compiledCode, installedCode, log);
+        HotSpotCompiledCode compiledCode;
+        if (method != null) {
+            final int id;
+            final long jvmciEnv;
+            if (compRequest instanceof HotSpotCompilationRequest) {
+                HotSpotCompilationRequest hsCompRequest = (HotSpotCompilationRequest) compRequest;
+                id = hsCompRequest.getId();
+                jvmciEnv = hsCompRequest.getJvmciEnv();
+            } else {
+                id = method.allocateCompileId(compRequest.getEntryBCI());
+                jvmciEnv = 0L;
+            }
+            compiledCode = new HotSpotCompiledNmethod(method, compResult, id, jvmciEnv);
+        } else {
+            compiledCode = new HotSpotCompiledCode(compResult);
+        }
+        int result = runtime.getCompilerToVM().installCode(target, compiledCode, resultInstalledCode, (HotSpotSpeculationLog) log);
+        if (result != config.codeInstallResultOk) {
+            String resultDesc = config.getCodeInstallResultDescription(result);
+            if (compiledCode instanceof HotSpotCompiledNmethod) {
+                HotSpotCompiledNmethod compiledNmethod = (HotSpotCompiledNmethod) compiledCode;
+                String msg = compiledNmethod.getInstallationFailureMessage();
+                if (msg != null) {
+                    msg = String.format("Code installation failed: %s%n%s", resultDesc, msg);
+                } else {
+                    msg = String.format("Code installation failed: %s", resultDesc);
+                }
+                if (result == config.codeInstallResultDependenciesInvalid) {
+                    throw new AssertionError(resultDesc + " " + msg);
+                }
+                throw new BailoutException(result != config.codeInstallResultDependenciesFailed, msg);
+            } else {
+                throw new BailoutException("Error installing %s: %s", compResult.getName(), resultDesc);
+            }
+        }
+        return logOrDump(resultInstalledCode, compResult);
     }
 
-    @Override
-    public InstalledCode setDefaultMethod(ResolvedJavaMethod method, CompilationResult compResult) {
-        HotSpotResolvedJavaMethod hotspotMethod = (HotSpotResolvedJavaMethod) method;
-        return installMethod(hotspotMethod, compResult, 0L, true);
-    }
-
-    public HotSpotNmethod addExternalMethod(ResolvedJavaMethod method, CompilationResult compResult) {
-        HotSpotResolvedJavaMethod javaMethod = (HotSpotResolvedJavaMethod) method;
-        if (compResult.getId() == -1) {
-            compResult.setId(javaMethod.allocateCompileId(compResult.getEntryBCI()));
-        }
-        HotSpotNmethod code = new HotSpotNmethod(javaMethod, compResult.getName(), false, true);
-        HotSpotCompiledNmethod compiled = new HotSpotCompiledNmethod(javaMethod, compResult);
-        CompilerToVM vm = runtime.getCompilerToVM();
-        int result = vm.installCode(target, compiled, code, null);
-        if (result != runtime.getConfig().codeInstallResultOk) {
-            return null;
-        }
-        return code;
+    public void invalidateInstalledCode(InstalledCode installedCode) {
+        runtime.getCompilerToVM().invalidateInstalledCode(installedCode);
     }
 
     public boolean needsDataPatch(JavaConstant constant) {
@@ -176,35 +183,29 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
         if (constant instanceof VMConstant) {
             VMConstant vmConstant = (VMConstant) constant;
             boolean compressed;
-            long raw;
-            if (constant instanceof HotSpotObjectConstant) {
-                HotSpotObjectConstant c = (HotSpotObjectConstant) vmConstant;
+            if (constant instanceof HotSpotConstant) {
+                HotSpotConstant c = (HotSpotConstant) vmConstant;
                 compressed = c.isCompressed();
-                raw = 0xDEADDEADDEADDEADL;
-            } else if (constant instanceof HotSpotMetaspaceConstant) {
-                HotSpotMetaspaceConstant meta = (HotSpotMetaspaceConstant) constant;
-                compressed = meta.isCompressed();
-                raw = meta.rawValue();
             } else {
                 throw new JVMCIError(String.valueOf(constant));
             }
 
-            size = target.getSizeInBytes(compressed ? JavaKind.Int : target.wordKind);
+            size = compressed ? 4 : target.wordSize;
             if (size == 4) {
                 builder = (buffer, patch) -> {
                     patch.accept(new DataPatch(buffer.position(), new ConstantReference(vmConstant)));
-                    buffer.putInt((int) raw);
+                    buffer.putInt(0xDEADDEAD);
                 };
             } else {
                 assert size == 8;
                 builder = (buffer, patch) -> {
                     patch.accept(new DataPatch(buffer.position(), new ConstantReference(vmConstant)));
-                    buffer.putLong(raw);
+                    buffer.putLong(0xDEADDEADDEADDEADL);
                 };
             }
         } else if (JavaConstant.isNull(constant)) {
             boolean compressed = COMPRESSED_NULL.equals(constant);
-            size = target.getSizeInBytes(compressed ? JavaKind.Int : target.wordKind);
+            size = compressed ? 4 : target.wordSize;
             builder = DataBuilder.zero(size);
         } else if (constant instanceof SerializableConstant) {
             SerializableConstant s = (SerializableConstant) constant;
@@ -250,13 +251,43 @@ public class HotSpotCodeCacheProvider implements CodeCacheProvider {
 
     public String disassemble(InstalledCode code) {
         if (code.isValid()) {
-            long codeBlob = code.getAddress();
-            return runtime.getCompilerToVM().disassembleCodeBlob(codeBlob);
+            return runtime.getCompilerToVM().disassembleCodeBlob(code);
         }
         return null;
     }
 
     public SpeculationLog createSpeculationLog() {
         return new HotSpotSpeculationLog();
+    }
+
+    public long getMaxCallTargetOffset(long address) {
+        return runtime.getCompilerToVM().getMaxCallTargetOffset(address);
+    }
+
+    public boolean shouldDebugNonSafepoints() {
+        return runtime.getCompilerToVM().shouldDebugNonSafepoints();
+    }
+
+    /**
+     * Notifies the VM of statistics for a completed compilation.
+     *
+     * @param id the identifier of the compilation
+     * @param method the method compiled
+     * @param osr specifies if the compilation was for on-stack-replacement
+     * @param processedBytecodes the number of bytecodes processed during the compilation, including
+     *            the bytecodes of all inlined methods
+     * @param time the amount time spent compiling {@code method}
+     * @param timeUnitsPerSecond the granularity of the units for the {@code time} value
+     * @param installedCode the nmethod installed as a result of the compilation
+     */
+    public void notifyCompilationStatistics(int id, HotSpotResolvedJavaMethod method, boolean osr, int processedBytecodes, long time, long timeUnitsPerSecond, InstalledCode installedCode) {
+        runtime.getCompilerToVM().notifyCompilationStatistics(id, (HotSpotResolvedJavaMethodImpl) method, osr, processedBytecodes, time, timeUnitsPerSecond, installedCode);
+    }
+
+    /**
+     * Resets all compilation statistics.
+     */
+    public void resetCompilationStatistics() {
+        runtime.getCompilerToVM().resetCompilationStatistics();
     }
 }

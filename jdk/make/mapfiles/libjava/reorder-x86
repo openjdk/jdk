@@ -31,6 +31,7 @@ text: .text%Java_sun_reflect_Reflection_getCallerClass__;
 text: .text%Java_sun_reflect_Reflection_getCallerClass__I;
 text: .text%Java_java_lang_Class_forName0;
 text: .text%Java_java_lang_String_intern;
+text: .text%Java_java_lang_StringUTF16_isBigEndian;
 text: .text%Java_sun_reflect_NativeConstructorAccessorImpl_newInstance0;
 text: .text%Java_java_lang_Throwable_fillInStackTrace;
 text: .text%Java_java_lang_System_setOut0;
