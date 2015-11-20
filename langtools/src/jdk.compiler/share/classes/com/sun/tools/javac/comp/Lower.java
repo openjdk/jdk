@@ -1740,7 +1740,7 @@ public class Lower extends TreeTranslator {
     private JCStatement makeResourceCloseInvocation(JCExpression resource) {
         // convert to AutoCloseable if needed
         if (types.asSuper(resource.type, syms.autoCloseableType.tsym) == null) {
-            resource = (JCExpression) convert(resource, syms.autoCloseableType);
+            resource = convert(resource, syms.autoCloseableType);
         }
 
         // create resource.close() method invocation
@@ -2179,7 +2179,7 @@ public class Lower extends TreeTranslator {
  *************************************************************************/
 
     interface TreeBuilder {
-        JCTree build(JCTree arg);
+        JCExpression build(JCExpression arg);
     }
 
     /** Construct an expression using the builder, with the given rval
@@ -2197,7 +2197,7 @@ public class Lower extends TreeTranslator {
      *  where <code><b>TEMP</b></code> is a newly declared variable
      *  in the let expression.
      */
-    JCTree abstractRval(JCTree rval, Type type, TreeBuilder builder) {
+    JCExpression abstractRval(JCExpression rval, Type type, TreeBuilder builder) {
         rval = TreeInfo.skipParens(rval);
         switch (rval.getTag()) {
         case LITERAL:
@@ -2215,15 +2215,15 @@ public class Lower extends TreeTranslator {
                                       type,
                                       currentMethodSym);
         rval = convert(rval,type);
-        JCVariableDecl def = make.VarDef(var, (JCExpression)rval); // XXX cast
-        JCTree built = builder.build(make.Ident(var));
-        JCTree res = make.LetExpr(def, built);
+        JCVariableDecl def = make.VarDef(var, rval); // XXX cast
+        JCExpression built = builder.build(make.Ident(var));
+        JCExpression res = make.LetExpr(def, built);
         res.type = built.type;
         return res;
     }
 
     // same as above, with the type of the temporary variable computed
-    JCTree abstractRval(JCTree rval, TreeBuilder builder) {
+    JCExpression abstractRval(JCExpression rval, TreeBuilder builder) {
         return abstractRval(rval, rval.type, builder);
     }
 
@@ -2232,30 +2232,28 @@ public class Lower extends TreeTranslator {
     // Select expressions, where we place the left-hand-side of the
     // select in a temporary, and for Indexed expressions, where we
     // place both the indexed expression and the index value in temps.
-    JCTree abstractLval(JCTree lval, final TreeBuilder builder) {
+    JCExpression abstractLval(JCExpression lval, final TreeBuilder builder) {
         lval = TreeInfo.skipParens(lval);
         switch (lval.getTag()) {
         case IDENT:
             return builder.build(lval);
         case SELECT: {
             final JCFieldAccess s = (JCFieldAccess)lval;
-            JCTree selected = TreeInfo.skipParens(s.selected);
             Symbol lid = TreeInfo.symbol(s.selected);
             if (lid != null && lid.kind == TYP) return builder.build(lval);
             return abstractRval(s.selected, new TreeBuilder() {
-                    public JCTree build(final JCTree selected) {
-                        return builder.build(make.Select((JCExpression)selected, s.sym));
+                    public JCExpression build(final JCExpression selected) {
+                        return builder.build(make.Select(selected, s.sym));
                     }
                 });
         }
         case INDEXED: {
             final JCArrayAccess i = (JCArrayAccess)lval;
             return abstractRval(i.indexed, new TreeBuilder() {
-                    public JCTree build(final JCTree indexed) {
+                    public JCExpression build(final JCExpression indexed) {
                         return abstractRval(i.index, syms.intType, new TreeBuilder() {
-                                public JCTree build(final JCTree index) {
-                                    JCTree newLval = make.Indexed((JCExpression)indexed,
-                                                                (JCExpression)index);
+                                public JCExpression build(final JCExpression index) {
+                                    JCExpression newLval = make.Indexed(indexed, index);
                                     newLval.setType(i.type);
                                     return builder.build(newLval);
                                 }
@@ -2271,9 +2269,9 @@ public class Lower extends TreeTranslator {
     }
 
     // evaluate and discard the first expression, then evaluate the second.
-    JCTree makeComma(final JCTree expr1, final JCTree expr2) {
+    JCExpression makeComma(final JCExpression expr1, final JCExpression expr2) {
         return abstractRval(expr1, new TreeBuilder() {
-                public JCTree build(final JCTree discarded) {
+                public JCExpression build(final JCExpression discarded) {
                     return expr2;
                 }
             });
@@ -2306,7 +2304,7 @@ public class Lower extends TreeTranslator {
 
     /** Visitor method: Translate a single node, boxing or unboxing if needed.
      */
-    public <T extends JCTree> T translate(T tree, Type type) {
+    public <T extends JCExpression> T translate(T tree, Type type) {
         return (tree == null) ? null : boxIfNeeded(translate(tree), type);
     }
 
@@ -2332,7 +2330,7 @@ public class Lower extends TreeTranslator {
 
     /** Visitor method: Translate list of trees.
      */
-    public <T extends JCTree> List<T> translate(List<T> trees, Type type) {
+    public <T extends JCExpression> List<T> translate(List<T> trees, Type type) {
         if (trees == null) return null;
         for (List<T> l = trees; l.nonEmpty(); l = l.tail)
             l.head = translate(l.head, type);
@@ -2907,10 +2905,10 @@ public class Lower extends TreeTranslator {
         }
     }
 //where
-    private JCTree convert(JCTree tree, Type pt) {
+    private JCExpression convert(JCExpression tree, Type pt) {
         if (tree.type == pt || tree.type.hasTag(BOT))
             return tree;
-        JCTree result = make_at(tree.pos()).TypeCast(make.Type(pt), (JCExpression)tree);
+        JCExpression result = make_at(tree.pos()).TypeCast(make.Type(pt), tree);
         result.type = (tree.type.constValue() != null) ? cfolder.coerce(tree.type, pt)
                                                        : pt;
         return result;
@@ -3075,7 +3073,7 @@ public class Lower extends TreeTranslator {
 
     /** Expand a boxing or unboxing conversion if needed. */
     @SuppressWarnings("unchecked") // XXX unchecked
-    <T extends JCTree> T boxIfNeeded(T tree, Type type) {
+    <T extends JCExpression> T boxIfNeeded(T tree, Type type) {
         boolean havePrimitive = tree.type.isPrimitive();
         if (havePrimitive == type.isPrimitive())
             return tree;
@@ -3084,12 +3082,12 @@ public class Lower extends TreeTranslator {
             if (!unboxedTarget.hasTag(NONE)) {
                 if (!types.isSubtype(tree.type, unboxedTarget)) //e.g. Character c = 89;
                     tree.type = unboxedTarget.constType(tree.type.constValue());
-                return (T)boxPrimitive((JCExpression)tree, types.erasure(type));
+                return (T)boxPrimitive(tree, types.erasure(type));
             } else {
-                tree = (T)boxPrimitive((JCExpression)tree);
+                tree = (T)boxPrimitive(tree);
             }
         } else {
-            tree = (T)unbox((JCExpression)tree, type);
+            tree = (T)unbox(tree, type);
         }
         return tree;
     }
@@ -3172,7 +3170,7 @@ public class Lower extends TreeTranslator {
             // or if x == (typeof x)z then z = (unbox typeof x)((typeof x)z op y)
             // (but without recomputing x)
             JCTree newTree = abstractLval(tree.lhs, new TreeBuilder() {
-                    public JCTree build(final JCTree lhs) {
+                    public JCExpression build(final JCExpression lhs) {
                         JCTree.Tag newTag = tree.getTag().noAssignOp();
                         // Erasure (TransTypes) can change the type of
                         // tree.lhs.  However, we can still get the
@@ -3182,7 +3180,7 @@ public class Lower extends TreeTranslator {
                                                                       newTag,
                                                                       tree.type,
                                                                       tree.rhs.type);
-                        JCExpression expr = (JCExpression)lhs;
+                        JCExpression expr = lhs;
                         if (expr.type != tree.type)
                             expr = make.TypeCast(tree.type, expr);
                         JCBinary opResult = make.Binary(newTag, expr, tree.rhs);
@@ -3191,7 +3189,7 @@ public class Lower extends TreeTranslator {
                         JCExpression newRhs = boxingReq ?
                             make.TypeCast(types.unboxedType(tree.type), opResult) :
                             opResult;
-                        return make.Assign((JCExpression)lhs, newRhs).setType(tree.type);
+                        return make.Assign(lhs, newRhs).setType(tree.type);
                     }
                 });
             result = translate(newTree);
@@ -3218,22 +3216,22 @@ public class Lower extends TreeTranslator {
     }
 
     /** Lower a tree of the form e++ or e-- where e is an object type */
-    JCTree lowerBoxedPostop(final JCUnary tree) {
+    JCExpression lowerBoxedPostop(final JCUnary tree) {
         // translate to tmp1=lval(e); tmp2=tmp1; tmp1 OP 1; tmp2
         // or
         // translate to tmp1=lval(e); tmp2=tmp1; (typeof tree)tmp1 OP 1; tmp2
         // where OP is += or -=
         final boolean cast = TreeInfo.skipParens(tree.arg).hasTag(TYPECAST);
         return abstractLval(tree.arg, new TreeBuilder() {
-                public JCTree build(final JCTree tmp1) {
+                public JCExpression build(final JCExpression tmp1) {
                     return abstractRval(tmp1, tree.arg.type, new TreeBuilder() {
-                            public JCTree build(final JCTree tmp2) {
+                            public JCExpression build(final JCExpression tmp2) {
                                 JCTree.Tag opcode = (tree.hasTag(POSTINC))
                                     ? PLUS_ASG : MINUS_ASG;
                                 JCTree lhs = cast
-                                    ? make.TypeCast(tree.arg.type, (JCExpression)tmp1)
+                                    ? make.TypeCast(tree.arg.type, tmp1)
                                     : tmp1;
-                                JCTree update = makeAssignop(opcode,
+                                JCExpression update = makeAssignop(opcode,
                                                              lhs,
                                                              make.Literal(1));
                                 return makeComma(update, tmp2);

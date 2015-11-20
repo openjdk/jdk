@@ -136,6 +136,10 @@ public final class StaticClass implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * The runtime {@code Class} object whose static members this
+     * {@code StaticClass} represents.
+     */
     private final Class<?> clazz;
 
     /*private*/ StaticClass(final Class<?> clazz) {
@@ -164,6 +168,11 @@ public final class StaticClass implements Serializable {
         return "StaticClass[" + clazz.getName() + "]";
     }
 
+    /**
+     * Returns {@link #forClass(Class)} for the underlying {@code clazz} field
+     * ensuring that deserialization doesn't create non-canonical instances.
+     * @return {@link #forClass(Class)} for the underlying {@code clazz} field.
+     */
     private Object readResolve() {
         return forClass(clazz);
     }
