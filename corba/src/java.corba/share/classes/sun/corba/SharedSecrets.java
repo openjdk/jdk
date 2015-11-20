@@ -26,7 +26,7 @@
 package sun.corba;
 
 import com.sun.corba.se.impl.io.ValueUtility;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 import java.lang.reflect.Field;
 import java.security.AccessController;
@@ -48,7 +48,7 @@ public class SharedSecrets {
 
      private static Unsafe getUnsafe() {
           PrivilegedAction<Unsafe> pa = () -> {
-               Class<?> unsafeClass = sun.misc.Unsafe.class ;
+               Class<?> unsafeClass = jdk.internal.misc.Unsafe.class ;
                try {
                     Field f = unsafeClass.getDeclaredField("theUnsafe");
                     f.setAccessible(true);

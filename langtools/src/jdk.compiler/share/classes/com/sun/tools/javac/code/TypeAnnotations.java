@@ -32,6 +32,7 @@ import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.Attribute.Array;
 import com.sun.tools.javac.code.Attribute.TypeCompound;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.TypeSymbol;
 import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.code.Type.CapturedType;
@@ -388,8 +389,21 @@ public class TypeAnnotations {
                 sym.getKind() == ElementKind.RESOURCE_VARIABLE ||
                 sym.getKind() == ElementKind.EXCEPTION_PARAMETER) {
                 // Make sure all type annotations from the symbol are also
-                // on the owner.
-                sym.owner.appendUniqueTypeAttributes(sym.getRawTypeAttributes());
+                // on the owner. If the owner is an initializer block, propagate
+                // to the type.
+                final long ownerFlags = sym.owner.flags();
+                if ((ownerFlags & Flags.BLOCK) != 0) {
+                    // Store init and clinit type annotations with the ClassSymbol
+                    // to allow output in Gen.normalizeDefs.
+                    ClassSymbol cs = (ClassSymbol) sym.owner.owner;
+                    if ((ownerFlags & Flags.STATIC) != 0) {
+                        cs.appendClassInitTypeAttributes(typeAnnotations);
+                    } else {
+                        cs.appendInitTypeAttributes(typeAnnotations);
+                    }
+                } else {
+                    sym.owner.appendUniqueTypeAttributes(sym.getRawTypeAttributes());
+                }
             }
         }
 

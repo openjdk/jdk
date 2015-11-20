@@ -72,8 +72,19 @@ AC_DEFUN([TOOLCHAIN_SETUP_FILENAME_PATTERNS],
     OBJ_SUFFIX='.o'
     EXE_SUFFIX=''
     if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-      SHARED_LIBRARY='lib[$]1.dylib'
-      SHARED_LIBRARY_SUFFIX='.dylib'
+      # For full static builds, we're overloading the SHARED_LIBRARY
+      # variables in order to limit the amount of changes required.
+      # It would be better to remove SHARED and just use LIBRARY and
+      # LIBRARY_SUFFIX for libraries that can be built either 
+      # shared or static and use STATIC_* for libraries that are 
+      # always built statically.
+      if test "x$STATIC_BUILD" = xtrue; then
+        SHARED_LIBRARY='lib[$]1.a'
+        SHARED_LIBRARY_SUFFIX='.a'
+      else
+        SHARED_LIBRARY='lib[$]1.dylib'
+        SHARED_LIBRARY_SUFFIX='.dylib'
+      fi
     fi
   fi
 

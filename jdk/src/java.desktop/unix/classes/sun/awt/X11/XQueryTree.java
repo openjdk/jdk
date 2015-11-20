@@ -27,7 +27,7 @@
 
 package sun.awt.X11;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 public class XQueryTree {
         private static Unsafe unsafe = XlibWrapper.unsafe;
