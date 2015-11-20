@@ -24,7 +24,7 @@
  */
 package sun.awt.X11;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import sun.util.logging.PlatformLogger;
 
 class UnsafeXDisposerRecord implements sun.java2d.DisposerRecord {

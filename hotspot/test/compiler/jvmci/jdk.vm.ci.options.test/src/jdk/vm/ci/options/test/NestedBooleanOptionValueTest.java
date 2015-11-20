@@ -29,12 +29,20 @@
 
 package jdk.vm.ci.options.test;
 
-import static jdk.vm.ci.options.test.NestedBooleanOptionValueTest.Options.*;
-import static org.junit.Assert.*;
-import jdk.vm.ci.options.*;
-import jdk.vm.ci.options.OptionValue.*;
+import static jdk.vm.ci.options.test.NestedBooleanOptionValueTest.Options.Master0;
+import static jdk.vm.ci.options.test.NestedBooleanOptionValueTest.Options.Master1;
+import static jdk.vm.ci.options.test.NestedBooleanOptionValueTest.Options.Master2;
+import static jdk.vm.ci.options.test.NestedBooleanOptionValueTest.Options.NestedOption0;
+import static jdk.vm.ci.options.test.NestedBooleanOptionValueTest.Options.NestedOption1;
+import static jdk.vm.ci.options.test.NestedBooleanOptionValueTest.Options.NestedOption2;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import jdk.vm.ci.options.NestedBooleanOptionValue;
+import jdk.vm.ci.options.OptionDescriptor;
+import jdk.vm.ci.options.OptionValue;
+import jdk.vm.ci.options.OptionValue.OverrideScope;
 
-import org.junit.*;
+import org.junit.Test;
 
 public class NestedBooleanOptionValueTest {
 

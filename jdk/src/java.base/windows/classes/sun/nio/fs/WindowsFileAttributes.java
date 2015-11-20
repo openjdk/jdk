@@ -28,7 +28,7 @@ package sun.nio.fs;
 import java.nio.file.attribute.*;
 import java.util.concurrent.TimeUnit;
 import java.security.AccessController;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import sun.security.action.GetPropertyAction;
 
 import static sun.nio.fs.WindowsNativeDispatcher.*;

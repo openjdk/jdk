@@ -24,10 +24,11 @@
 package compiler.jvmci.common;
 
 import jdk.vm.ci.code.Architecture;
+import jdk.vm.ci.code.CompilationRequest;
 import jdk.vm.ci.hotspot.HotSpotVMEventListener;
-import jdk.vm.ci.compiler.Compiler;
-import jdk.vm.ci.compiler.CompilerFactory;
 import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.runtime.JVMCICompiler;
+import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
 
 /*
@@ -39,16 +40,15 @@ public class JVMCIHelpers {
         // just empty, using default interface methods
     }
 
-    public static class EmptyHotspotCompiler implements Compiler {
+    public static class EmptyHotspotCompiler implements JVMCICompiler {
 
         @Override
-        public void compileMethod(ResolvedJavaMethod method, int entryBCI,
-                long jvmciEnv, int id) {
+        public void compileMethod(CompilationRequest request) {
             // do nothing
         }
     }
 
-    public static class EmptyCompilerFactory implements CompilerFactory {
+    public static class EmptyCompilerFactory implements JVMCICompilerFactory {
 
         @Override
         public String getCompilerName() {
@@ -56,12 +56,7 @@ public class JVMCIHelpers {
         }
 
         @Override
-        public Architecture initializeArchitecture(Architecture arch) {
-            return arch;
-        }
-
-        @Override
-        public Compiler createCompiler(JVMCIRuntime runtime) {
+        public JVMCICompiler createCompiler(JVMCIRuntime runtime) {
             return new EmptyHotspotCompiler();
         }
     }

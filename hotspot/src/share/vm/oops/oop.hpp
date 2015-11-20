@@ -110,18 +110,12 @@ class oopDesc {
 
   // type test operations (inlined in oop.inline.hpp)
   bool is_instance()            const;
-  bool is_instanceMirror()      const;
-  bool is_instanceClassLoader() const;
-  bool is_instanceRef()         const;
   bool is_array()               const;
   bool is_objArray()            const;
   bool is_typeArray()           const;
 
   // type test operations that don't require inclusion of oop.inline.hpp.
   bool is_instance_noinline()          const;
-  bool is_instanceMirror_noinline()    const;
-  bool is_instanceClassLoader_noline() const;
-  bool is_instanceRef_noline()         const;
   bool is_array_noinline()             const;
   bool is_objArray_noinline()          const;
   bool is_typeArray_noinline()         const;

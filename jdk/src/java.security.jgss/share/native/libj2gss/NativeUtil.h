@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,9 +53,6 @@ extern "C" {
 
   extern jstring getMinorMessage(JNIEnv *, jobject, OM_uint32);
   extern int sameMech(gss_OID, gss_OID);
-
-  JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *, void *);
-  JNIEXPORT void JNICALL JNI_OnUnload(JavaVM *, void *);
 
   extern int JGSS_DEBUG;
 

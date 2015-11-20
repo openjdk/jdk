@@ -22,47 +22,38 @@
  */
 package jdk.vm.ci.meta;
 
-import java.util.*;
-import java.util.concurrent.*;
-
 /**
- * Manages a list of unique deoptimization reasons.
+ * Manages unique deoptimization reasons. Reasons are embedded in compiled code and can be
+ * invalidated at run time. Subsequent compilations then should not speculate again on such
+ * invalidated reasons to avoid repeated deoptimization.
  *
+ * All methods of this interface are called by the compiler. There is no need for API to register
+ * failed speculations during deoptimization, since every VM has different needs there.
  */
-public abstract class SpeculationLog {
-    private volatile Object lastFailed;
-    private volatile Collection<Object> speculations;
-    private Set<Object> failedSpeculations;
+public interface SpeculationLog {
 
-    public synchronized void collectFailedSpeculations() {
-        if (lastFailed != null) {
-            if (failedSpeculations == null) {
-                failedSpeculations = new HashSet<>(2);
-            }
-            failedSpeculations.add(lastFailed);
-            lastFailed = null;
-            speculations = null;
-        }
+    /**
+     * Marker interface for speculation objects that can be added to the speculation log.
+     */
+    public interface SpeculationReason {
     }
 
-    public boolean maySpeculate(Object reason) {
-        if (failedSpeculations != null && failedSpeculations.contains(reason)) {
-            return false;
-        }
-        return true;
-    }
+    /**
+     * Must be called before compilation, i.e., before a compiler calls {@link #maySpeculate}.
+     */
+    void collectFailedSpeculations();
 
-    protected void addSpeculation(Object reason) {
-        assert maySpeculate(reason);
-        if (speculations == null) {
-            synchronized (this) {
-                if (speculations == null) {
-                    speculations = new ConcurrentLinkedQueue<>();
-                }
-            }
-        }
-        speculations.add(reason);
-    }
+    /**
+     * If this method returns true, the compiler is allowed to {@link #speculate} with the given
+     * reason.
+     */
+    boolean maySpeculate(SpeculationReason reason);
 
-    public abstract JavaConstant speculate(Object reason);
+    /**
+     * Registers a speculation that was performed by the compiler.
+     *
+     * @return A compiler constant encapsulating the provided reason. It is usually passed as an
+     *         argument to the deoptimization function.
+     */
+    JavaConstant speculate(SpeculationReason reason);
 }

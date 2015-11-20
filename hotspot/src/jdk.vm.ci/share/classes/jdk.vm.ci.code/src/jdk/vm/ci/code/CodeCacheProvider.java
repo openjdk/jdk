@@ -22,9 +22,14 @@
  */
 package jdk.vm.ci.code;
 
-import jdk.vm.ci.code.CompilationResult.*;
-import jdk.vm.ci.code.DataSection.*;
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.code.CompilationResult.Call;
+import jdk.vm.ci.code.CompilationResult.DataPatch;
+import jdk.vm.ci.code.CompilationResult.Mark;
+import jdk.vm.ci.code.DataSection.Data;
+import jdk.vm.ci.meta.Constant;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.SpeculationLog;
 
 /**
  * Access to code cache related details and requirements.
@@ -32,26 +37,62 @@ import jdk.vm.ci.meta.*;
 public interface CodeCacheProvider {
 
     /**
-     * Adds the given compilation result as an implementation of the given method without making it
-     * the default implementation.
+     * Installs code for a given method based on a given compilation result without making it the
+     * default implementation of the method.
      *
-     * @param method a method to which the executable code is begin added
+     * @param method a method implemented by the installed code
      * @param compResult the compilation result to be added
-     * @param speculationLog the speculation log to be used
-     * @return a reference to the compiled and ready-to-run code or throws a
-     *         {@link BailoutException} if the code installation failed
+     * @param log the speculation log to be used
+     * @param installedCode a predefined {@link InstalledCode} object to use as a reference to the
+     *            installed code. If {@code null}, a new {@link InstalledCode} object will be
+     *            created.
+     * @return a reference to the ready-to-run code
+     * @throws BailoutException if the code installation failed
      */
-    InstalledCode addMethod(ResolvedJavaMethod method, CompilationResult compResult, SpeculationLog speculationLog, InstalledCode predefinedInstalledCode);
+    default InstalledCode addCode(ResolvedJavaMethod method, CompilationResult compResult, SpeculationLog log, InstalledCode installedCode) {
+        return installCode(new CompilationRequest(method), compResult, installedCode, log, false);
+    }
 
     /**
-     * Sets the given compilation result as the default implementation of the given method.
+     * Installs code for a given method based on a given compilation result and makes it the default
+     * implementation of the method.
      *
-     * @param method a method to which the executable code is begin added
+     * @param method a method implemented by the installed code and for which the installed code
+     *            becomes the default implementation
      * @param compResult the compilation result to be added
-     * @return a reference to the compiled and ready-to-run code or null if the code installation
-     *         failed
+     * @return a reference to the ready-to-run code
+     * @throws BailoutException if the code installation failed
      */
-    InstalledCode setDefaultMethod(ResolvedJavaMethod method, CompilationResult compResult);
+    default InstalledCode setDefaultCode(ResolvedJavaMethod method, CompilationResult compResult) {
+        return installCode(new CompilationRequest(method), compResult, null, null, true);
+    }
+
+    /**
+     * Installs code based on a given compilation result.
+     *
+     * @param compRequest details of the method compiled to produce {@code compResult} or
+     *            {@code null} if the input to {@code compResult} was not a
+     *            {@link ResolvedJavaMethod}
+     * @param compResult the compilation result to be added
+     * @param installedCode a pre-allocated {@link InstalledCode} object to use as a reference to
+     *            the installed code. If {@code null}, a new {@link InstalledCode} object will be
+     *            created.
+     * @param log the speculation log to be used
+     * @param isDefault specifies if the installed code should be made the default implementation of
+     *            {@code compRequest.getMethod()}. The default implementation for a method is the
+     *            code executed for standard calls to the method. This argument is ignored if
+     *            {@code compRequest == null}.
+     * @return a reference to the compiled and ready-to-run installed code
+     * @throws BailoutException if the code installation failed
+     */
+    InstalledCode installCode(CompilationRequest compRequest, CompilationResult compResult, InstalledCode installedCode, SpeculationLog log, boolean isDefault);
+
+    /**
+     * Invalidates {@code installedCode} such that {@link InvalidInstalledCodeException} will be
+     * raised the next time {@code installedCode} is
+     * {@linkplain InstalledCode#executeVarargs(Object...) executed}.
+     */
+    void invalidateInstalledCode(InstalledCode installedCode);
 
     /**
      * Gets a name for a {@link Mark} mark.
@@ -102,4 +143,16 @@ public interface CodeCacheProvider {
      * Create a new speculation log for the target runtime.
      */
     SpeculationLog createSpeculationLog();
+
+    /**
+     * Returns the maximum absolute offset of a PC relative call to a given address from any
+     * position in the code cache or -1 when not applicable. Intended for determining the required
+     * size of address/offset fields.
+     */
+    long getMaxCallTargetOffset(long address);
+
+    /**
+     * Determines if debug info should also be emitted at non-safepoint locations.
+     */
+    boolean shouldDebugNonSafepoints();
 }

@@ -538,7 +538,7 @@ public:
   // Returns true if the heap was expanded by the requested amount;
   // false otherwise.
   // (Rounds up to a HeapRegion boundary.)
-  bool expand(size_t expand_bytes);
+  bool expand(size_t expand_bytes, double* expand_time_ms = NULL);
 
   // Returns the PLAB statistics for a given destination.
   inline G1EvacStats* alloc_buffer_stats(InCSetState dest);
@@ -728,7 +728,10 @@ protected:
   bool do_collection_pause_at_safepoint(double target_pause_time_ms);
 
   // Actually do the work of evacuating the collection set.
-  void evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states);
+  virtual void evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states);
+
+  void pre_evacuate_collection_set();
+  void post_evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* pss);
 
   // Print the header for the per-thread termination statistics.
   static void print_termination_stats_hdr(outputStream* const st);

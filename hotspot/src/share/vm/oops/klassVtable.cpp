@@ -39,9 +39,7 @@
 #include "utilities/copy.hpp"
 
 inline InstanceKlass* klassVtable::ik() const {
-  Klass* k = _klass();
-  assert(k->oop_is_instance(), "not an InstanceKlass");
-  return (InstanceKlass*)k;
+  return InstanceKlass::cast(_klass());
 }
 
 
@@ -66,8 +64,7 @@ void klassVtable::compute_vtable_size_and_num_mirandas(
   int vtable_length = 0;
 
   // start off with super's vtable length
-  InstanceKlass* sk = (InstanceKlass*)super;
-  vtable_length = super == NULL ? 0 : sk->vtable_length();
+  vtable_length = super == NULL ? 0 : super->vtable_length();
 
   // go thru each method in the methods table to see if it needs a new entry
   int len = methods->length();
@@ -131,10 +128,7 @@ int klassVtable::initialize_from_super(KlassHandle super) {
     return 0;
   } else {
     // copy methods from superKlass
-    // can't inherit from array class, so must be InstanceKlass
-    assert(super->oop_is_instance(), "must be instance klass");
-    InstanceKlass* sk = (InstanceKlass*)super();
-    klassVtable* superVtable = sk->vtable();
+    klassVtable* superVtable = super->vtable();
     assert(superVtable->length() <= _length, "vtable too short");
 #ifdef ASSERT
     superVtable->verify(tty, true);
@@ -143,7 +137,7 @@ int klassVtable::initialize_from_super(KlassHandle super) {
 #ifndef PRODUCT
     if (PrintVtables && Verbose) {
       ResourceMark rm;
-      tty->print_cr("copy vtable from %s to %s size %d", sk->internal_name(), klass()->internal_name(), _length);
+      tty->print_cr("copy vtable from %s to %s size %d", super->internal_name(), klass()->internal_name(), _length);
     }
 #endif
     return superVtable->length();
@@ -158,7 +152,7 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
   KlassHandle super (THREAD, klass()->java_super());
   int nofNewEntries = 0;
 
-  if (PrintVtables && !klass()->oop_is_array()) {
+  if (PrintVtables && !klass()->is_array_klass()) {
     ResourceMark rm(THREAD);
     tty->print_cr("Initializing: %s", _klass->name()->as_C_string());
   }
@@ -176,10 +170,10 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
   }
 
   int super_vtable_len = initialize_from_super(super);
-  if (klass()->oop_is_array()) {
+  if (klass()->is_array_klass()) {
     assert(super_vtable_len == _length, "arrays shouldn't introduce new methods");
   } else {
-    assert(_klass->oop_is_instance(), "must be InstanceKlass");
+    assert(_klass->is_instance_klass(), "must be InstanceKlass");
 
     Array<Method*>* methods = ik()->methods();
     int len = methods->length();
@@ -303,7 +297,7 @@ InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper
       break;
     }
     // if no override found yet, continue to search up
-    superk = InstanceKlass::cast(superk->super());
+    superk = superk->super() == NULL ? NULL : InstanceKlass::cast(superk->super());
   }
 
   return superk;
@@ -318,7 +312,7 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle tar
                                           bool checkconstraints, TRAPS) {
   ResourceMark rm;
   bool allocate_new = true;
-  assert(klass->oop_is_instance(), "must be InstanceKlass");
+  assert(klass->is_instance_klass(), "must be InstanceKlass");
 
   Array<int>* def_vtable_indices = NULL;
   bool is_default = false;
@@ -761,15 +755,14 @@ bool klassVtable::is_miranda(Method* m, Array<Method*>* class_methods,
      return false;
    }
 
-  InstanceKlass* cursuper;
-  // Iterate on all superclasses, which should have instanceKlasses
+  // Iterate on all superclasses, which should be InstanceKlasses.
   // Note that we explicitly look for overpasses at each level.
   // Overpasses may or may not exist for supers for pass 1,
   // they should have been created for pass 2 and later.
 
-  for (cursuper = InstanceKlass::cast(super); cursuper != NULL;  cursuper = (InstanceKlass*)cursuper->super())
+  for (Klass* cursuper = super; cursuper != NULL; cursuper = cursuper->super())
   {
-     if (cursuper->find_local_method(name, signature,
+     if (InstanceKlass::cast(cursuper)->find_local_method(name, signature,
            Klass::find_overpass, Klass::skip_static, Klass::skip_private) != NULL) {
        return false;
      }
@@ -1117,7 +1110,7 @@ int klassItable::assign_itable_indices_for_interface(Klass* klass) {
 }
 
 int klassItable::method_count_for_interface(Klass* interf) {
-  assert(interf->oop_is_instance(), "must be");
+  assert(interf->is_instance_klass(), "must be");
   assert(interf->is_interface(), "must be");
   Array<Method*>* methods = InstanceKlass::cast(interf)->methods();
   int nof_methods = methods->length();
@@ -1534,11 +1527,11 @@ class VtableStats : AllStatic {
     klassVtable* vt = kl->vtable();
     if (vt == NULL) return;
     no_klasses++;
-    if (kl->oop_is_instance()) {
+    if (kl->is_instance_klass()) {
       no_instance_klasses++;
       kl->array_klasses_do(do_class);
     }
-    if (kl->oop_is_array()) {
+    if (kl->is_array_klass()) {
       no_array_klasses++;
       sum_of_array_vtable_len += vt->length();
     }

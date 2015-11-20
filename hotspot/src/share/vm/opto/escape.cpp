@@ -560,9 +560,13 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
       break;
     }
     case Op_AryEq:
+    case Op_HasNegatives:
     case Op_StrComp:
     case Op_StrEquals:
     case Op_StrIndexOf:
+    case Op_StrIndexOfChar:
+    case Op_StrInflatedCopy:
+    case Op_StrCompressedCopy:
     case Op_EncodeISOArray: {
       add_local_var(n, PointsToNode::ArgEscape);
       delayed_worklist->push(n); // Process it later.
@@ -743,11 +747,15 @@ void ConnectionGraph::add_final_edges(Node *n) {
       ELSE_FAIL("Op_StoreP");
     }
     case Op_AryEq:
+    case Op_HasNegatives:
     case Op_StrComp:
     case Op_StrEquals:
     case Op_StrIndexOf:
+    case Op_StrIndexOfChar:
+    case Op_StrInflatedCopy:
+    case Op_StrCompressedCopy:
     case Op_EncodeISOArray: {
-      // char[] arrays passed to string intrinsic do not escape but
+      // char[]/byte[] arrays passed to string intrinsic do not escape but
       // they are not scalar replaceable. Adjust escape state for them.
       // Start from in(2) edge since in(1) is memory edge.
       for (uint i = 2; i < n->req(); i++) {
@@ -2722,17 +2730,34 @@ Node* ConnectionGraph::find_inst_mem(Node *orig_mem, int alias_idx, GrowableArra
       if (mem->is_LoadStore()) {
         adr = mem->in(MemNode::Address);
       } else {
-        assert(mem->Opcode() == Op_EncodeISOArray, "sanity");
+        assert(mem->Opcode() == Op_EncodeISOArray ||
+               mem->Opcode() == Op_StrCompressedCopy, "sanity");
         adr = mem->in(3); // Memory edge corresponds to destination array
       }
       const Type *at = igvn->type(adr);
       if (at != Type::TOP) {
-        assert (at->isa_ptr() != NULL, "pointer type required.");
+        assert(at->isa_ptr() != NULL, "pointer type required.");
         int idx = C->get_alias_index(at->is_ptr());
-        assert(idx != alias_idx, "Object is not scalar replaceable if a LoadStore node access its field");
-        break;
+        if (idx == alias_idx) {
+          // Assert in debug mode
+          assert(false, "Object is not scalar replaceable if a LoadStore node accesses its field");
+          break; // In product mode return SCMemProj node
+        }
       }
       result = mem->in(MemNode::Memory);
+    } else if (result->Opcode() == Op_StrInflatedCopy) {
+      Node* adr = result->in(3); // Memory edge corresponds to destination array
+      const Type *at = igvn->type(adr);
+      if (at != Type::TOP) {
+        assert(at->isa_ptr() != NULL, "pointer type required.");
+        int idx = C->get_alias_index(at->is_ptr());
+        if (idx == alias_idx) {
+          // Assert in debug mode
+          assert(false, "Object is not scalar replaceable if a StrInflatedCopy node accesses its field");
+          break; // In product mode return SCMemProj node
+        }
+      }
+      result = result->in(MemNode::Memory);
     }
   }
   if (result->is_Phi()) {
@@ -3096,10 +3121,15 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         }
       } else {
         uint op = use->Opcode();
-        if (!(op == Op_CmpP || op == Op_Conv2B ||
+        if ((use->in(MemNode::Memory) == n) &&
+            (op == Op_StrCompressedCopy || op == Op_StrInflatedCopy)) {
+          // They overwrite memory edge corresponding to destination array,
+          memnode_worklist.append_if_missing(use);
+        } else if (!(op == Op_CmpP || op == Op_Conv2B ||
               op == Op_CastP2X || op == Op_StoreCM ||
-              op == Op_FastLock || op == Op_AryEq || op == Op_StrComp ||
-              op == Op_StrEquals || op == Op_StrIndexOf)) {
+              op == Op_FastLock || op == Op_AryEq || op == Op_StrComp || op == Op_HasNegatives ||
+              op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
+              op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar)) {
           n->dump();
           use->dump();
           assert(false, "EA: missing allocation reference path");
@@ -3161,7 +3191,8 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
       n = n->as_MemBar()->proj_out(TypeFunc::Memory);
       if (n == NULL)
         continue;
-    } else if (n->Opcode() == Op_EncodeISOArray) {
+    } else if (n->Opcode() == Op_StrCompressedCopy ||
+               n->Opcode() == Op_EncodeISOArray) {
       // get the memory projection
       n = n->find_out_with(Op_SCMemProj);
       assert(n->Opcode() == Op_SCMemProj, "memory projection required");
@@ -3216,11 +3247,16 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
         }
       } else {
         uint op = use->Opcode();
-        if (!(op == Op_StoreCM ||
+        if ((use->in(MemNode::Memory) == n) &&
+            (op == Op_StrCompressedCopy || op == Op_StrInflatedCopy)) {
+          // They overwrite memory edge corresponding to destination array,
+          memnode_worklist.append_if_missing(use);
+        } else if (!(op == Op_StoreCM ||
               (op == Op_CallLeaf && use->as_CallLeaf()->_name != NULL &&
                strcmp(use->as_CallLeaf()->_name, "g1_wb_pre") == 0) ||
-              op == Op_AryEq || op == Op_StrComp ||
-              op == Op_StrEquals || op == Op_StrIndexOf)) {
+              op == Op_AryEq || op == Op_StrComp || op == Op_HasNegatives ||
+              op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
+              op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar)) {
           n->dump();
           use->dump();
           assert(false, "EA: missing memory path");

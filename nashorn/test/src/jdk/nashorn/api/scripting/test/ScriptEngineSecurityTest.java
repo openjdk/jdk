@@ -38,6 +38,9 @@ import org.testng.annotations.Test;
 
 /**
  * jsr223 tests for security access checks.
+ *
+ * @test
+ * @run testng/othervm jdk.nashorn.api.scripting.test.ScriptEngineSecurityTest
  */
 @SuppressWarnings("javadoc")
 public class ScriptEngineSecurityTest {
@@ -244,7 +247,7 @@ public class ScriptEngineSecurityTest {
         final ScriptEngineManager m = new ScriptEngineManager();
         final ScriptEngine e = m.getEngineByName("nashorn");
         final Runnable r = (Runnable)Proxy.newProxyInstance(
-            ScriptEngineTest.class.getClassLoader(),
+            ScriptEngineSecurityTest.class.getClassLoader(),
             new Class[] { Runnable.class },
             new InvocationHandler() {
                 @Override

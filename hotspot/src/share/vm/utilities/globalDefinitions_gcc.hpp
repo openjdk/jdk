@@ -287,8 +287,6 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 // Tested to work with clang version 3.1 and better.
 #define PRAGMA_DIAG_PUSH             _Pragma("GCC diagnostic push")
 #define PRAGMA_DIAG_POP              _Pragma("GCC diagnostic pop")
-#define PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
-#define PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL PRAGMA_FORMAT_NONLITERAL_IGNORED
 
 // Hack to deal with gcc yammering about non-security format stuff
 #else
@@ -297,8 +295,6 @@ inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 // versions of the macro-pragma to obtain better checking with newer compilers.
 #define PRAGMA_DIAG_PUSH
 #define PRAGMA_DIAG_POP
-#define PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL PRAGMA_FORMAT_NONLITERAL_IGNORED
-#define PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
 #endif
 
 #if (__GNUC__ == 2) && (__GNUC_MINOR__ < 95)

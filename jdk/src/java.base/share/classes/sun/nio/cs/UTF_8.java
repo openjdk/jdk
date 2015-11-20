@@ -549,6 +549,10 @@ class UTF_8 extends Unicode
             }
             return dp;
         }
+
+        public boolean isASCIICompatible() {
+            return true;
+        }
     }
 
     private static final class Encoder extends CharsetEncoder
@@ -741,6 +745,10 @@ class UTF_8 extends Unicode
                 }
             }
             return dp;
+        }
+
+        public boolean isASCIICompatible() {
+            return true;
         }
     }
 }

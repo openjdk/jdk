@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,15 +37,15 @@ DtraceOutDir = $(GENERATED)/dtracefiles
 # Bsd does not build libjvm_db, does not compile on macosx
 # disabled in build: rule in vm.make
 JVM_DB = libjvm_db
-LIBJVM_DB = libjvm_db.dylib
+LIBJVM_DB = libjvm_db.$(LIBRARY_SUFFIX)
 
-LIBJVM_DB_DEBUGINFO   = libjvm_db.dylib.dSYM
+LIBJVM_DB_DEBUGINFO   = libjvm_db.$(LIBRARY_SUFFIX).dSYM
 LIBJVM_DB_DIZ         = libjvm_db.diz
 
 JVM_DTRACE = jvm_dtrace
-LIBJVM_DTRACE = libjvm_dtrace.dylib
+LIBJVM_DTRACE = libjvm_dtrace.$(LIBRARY_SUFFIX)
 
-LIBJVM_DTRACE_DEBUGINFO   = libjvm_dtrace.dylib.dSYM
+LIBJVM_DTRACE_DEBUGINFO   = libjvm_dtrace.$(LIBRARY_SUFFIX).dSYM
 LIBJVM_DTRACE_DIZ         = libjvm_dtrace.diz
 
 JVMOFFS = JvmOffsets
@@ -167,14 +167,14 @@ endif # ifneq ("${ISA}","${BUILDARCH}")
 
 LFLAGS_GENOFFS += -L.
 
-lib$(GENOFFS).dylib: $(DTRACE_SRCDIR)/$(GENOFFS).cpp $(DTRACE_SRCDIR)/$(GENOFFS).h \
+lib$(GENOFFS).$(LIBRARY_SUFFIX): $(DTRACE_SRCDIR)/$(GENOFFS).cpp $(DTRACE_SRCDIR)/$(GENOFFS).h \
                   $(LIBJVM.o)
 	$(QUIETLY) $(CXX) $(CXXFLAGS) $(GENOFFS_CFLAGS) $(SHARED_FLAG) $(PICFLAG) \
 		 $(LFLAGS_GENOFFS) -o $@ $(DTRACE_SRCDIR)/$(GENOFFS).cpp -ljvm
 
-$(GENOFFS): $(DTRACE_SRCDIR)/$(GENOFFS)Main.c lib$(GENOFFS).dylib
+$(GENOFFS): $(DTRACE_SRCDIR)/$(GENOFFS)Main.c lib$(GENOFFS).$(LIBRARY_SUFFIX)
 	$(QUIETLY) $(LINK.CXX) -o $@ $(DTRACE_SRCDIR)/$(GENOFFS)Main.c \
-		./lib$(GENOFFS).dylib
+		./lib$(GENOFFS).$(LIBRARY_SUFFIX)
 
 # $@.tmp is created first to avoid an empty $(JVMOFFS).h if an error occurs.
 $(JVMOFFS).h: $(GENOFFS)

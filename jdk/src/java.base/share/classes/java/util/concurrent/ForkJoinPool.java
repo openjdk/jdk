@@ -1337,7 +1337,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         }
 
         // Unsafe mechanics. Note that some are (and must be) the same as in FJP
-        private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+        private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
         private static final long QLOCK;
         private static final int ABASE;
         private static final int ASHIFT;
@@ -3452,7 +3452,7 @@ public class ForkJoinPool extends AbstractExecutorService {
     }
 
     // Unsafe mechanics
-    private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
     private static final long CTL;
     private static final long RUNSTATE;
     private static final int ABASE;
