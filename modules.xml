@@ -459,6 +459,10 @@
       <to>jdk.localedata</to>
     </export>
     <export>
+      <name>jdk.internal.logger</name>
+      <to>java.logging</to>
+    </export>
+    <export>
       <name>sun.util.logging</name>
       <to>java.desktop</to>
       <to>java.logging</to>
