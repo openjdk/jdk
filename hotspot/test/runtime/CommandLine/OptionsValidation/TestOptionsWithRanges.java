@@ -55,8 +55,27 @@ public class TestOptionsWithRanges {
          * JDK-8136766
          * Temporarily remove ThreadStackSize from testing because Windows can set it to 0
          * (for default OS size) but other platforms insist it must be greater than 0
-        */
+         */
         allOptionsAsMap.remove("ThreadStackSize");
+
+        /*
+         * JDK-8141650
+         * Temporarily exclude SharedMiscDataSize as it will exit the VM with exit code 2 and
+         * "The shared miscellaneous data space is not large enough to preload requested classes."
+         * message at min value.
+         */
+        allOptionsAsMap.remove("SharedMiscDataSize");
+
+        /*
+         * JDK-8142874
+         * Temporarily exclude Shared* flagse as they will exit the VM with exit code 2 and
+         * "The shared miscellaneous data space is not large enough to preload requested classes."
+         * message at max values.
+         */
+        allOptionsAsMap.remove("SharedReadWriteSize");
+        allOptionsAsMap.remove("SharedReadOnlySize");
+        allOptionsAsMap.remove("SharedMiscDataSize");
+        allOptionsAsMap.remove("SharedMiscCodeSize");
 
         /*
          * Exclude MallocMaxTestWords as it is expected to exit VM at small values (>=0)
