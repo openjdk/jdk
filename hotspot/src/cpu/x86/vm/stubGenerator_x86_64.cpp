@@ -1439,8 +1439,8 @@ class StubGenerator: public StubCodeGenerator {
       // Copy 64-bytes per iteration
       __ BIND(L_loop);
       if (UseAVX > 2) {
-        __ evmovdqul(xmm0, Address(from, qword_count, Address::times_8, 32), Assembler::AVX_512bit);
-        __ evmovdqul(Address(dest, qword_count, Address::times_8, 32), xmm0, Assembler::AVX_512bit);
+        __ evmovdqul(xmm0, Address(from, qword_count, Address::times_8, 0), Assembler::AVX_512bit);
+        __ evmovdqul(Address(dest, qword_count, Address::times_8, 0), xmm0, Assembler::AVX_512bit);
       } else if (UseAVX == 2) {
         __ vmovdqu(xmm0, Address(from, qword_count, Address::times_8, 32));
         __ vmovdqu(Address(dest, qword_count, Address::times_8, 32), xmm0);

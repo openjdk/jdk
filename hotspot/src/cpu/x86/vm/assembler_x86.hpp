@@ -1331,12 +1331,17 @@ private:
 
   void movddup(XMMRegister dst, XMMRegister src);
 
+  void kmovwl(KRegister dst, Register src);
+  void kmovdl(KRegister dst, Register src);
   void kmovql(KRegister dst, KRegister src);
   void kmovql(KRegister dst, Register src);
-  void kmovdl(KRegister dst, Register src);
-  void kmovwl(KRegister dst, Register src);
   void kmovql(Address dst, KRegister src);
   void kmovql(KRegister dst, Address src);
+
+  void kortestbl(KRegister dst, KRegister src);
+  void kortestwl(KRegister dst, KRegister src);
+  void kortestdl(KRegister dst, KRegister src);
+  void kortestql(KRegister dst, KRegister src);
 
   void movdl(XMMRegister dst, Register src);
   void movdl(Register dst, XMMRegister src);
@@ -1362,6 +1367,12 @@ private:
   void vmovdqu(XMMRegister dst, XMMRegister src);
 
    // Move Unaligned 512bit Vector
+  void evmovdqub(Address dst, XMMRegister src, int vector_len);
+  void evmovdqub(XMMRegister dst, Address src, int vector_len);
+  void evmovdqub(XMMRegister dst, XMMRegister src, int vector_len);
+  void evmovdquw(Address dst, XMMRegister src, int vector_len);
+  void evmovdquw(XMMRegister dst, Address src, int vector_len);
+  void evmovdquw(XMMRegister dst, XMMRegister src, int vector_len);
   void evmovdqul(Address dst, XMMRegister src, int vector_len);
   void evmovdqul(XMMRegister dst, Address src, int vector_len);
   void evmovdqul(XMMRegister dst, XMMRegister src, int vector_len);
@@ -1507,8 +1518,22 @@ private:
   void pcmpestri(XMMRegister xmm1, XMMRegister xmm2, int imm8);
   void pcmpestri(XMMRegister xmm1, Address src, int imm8);
 
+  void pcmpeqb(XMMRegister dst, XMMRegister src);
+  void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpcmpeqb(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
+
   void pcmpeqw(XMMRegister dst, XMMRegister src);
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpcmpeqw(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
+
+  void pcmpeqd(XMMRegister dst, XMMRegister src);
+  void vpcmpeqd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpcmpeqd(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
+
+  void pcmpeqq(XMMRegister dst, XMMRegister src);
+  void vpcmpeqq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpcmpeqq(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpcmpeqq(KRegister kdst, XMMRegister nds, Address src, int vector_len);
 
   void pmovmskb(Register dst, XMMRegister src);
   void vpmovmskb(Register dst, XMMRegister src);
@@ -1529,7 +1554,7 @@ private:
   void pmovzxbw(XMMRegister dst, XMMRegister src);
   void pmovzxbw(XMMRegister dst, Address src);
 
-  void vpmovzxbw(XMMRegister dst, Address src);
+  void vpmovzxbw(XMMRegister dst, Address src, int vector_len);
 
 #ifndef _LP64 // no 32bit push/pop on amd64
   void popl(Address dst);

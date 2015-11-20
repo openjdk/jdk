@@ -1004,6 +1004,19 @@ public:
     Assembler::pclmulqdq(dst, src, 0x11);
   }
 
+  void pcmpeqb(XMMRegister dst, XMMRegister src);
+  void pcmpeqw(XMMRegister dst, XMMRegister src);
+
+  void pcmpestri(XMMRegister dst, Address src, int imm8);
+  void pcmpestri(XMMRegister dst, XMMRegister src, int imm8);
+
+  void pmovzxbw(XMMRegister dst, XMMRegister src);
+  void pmovzxbw(XMMRegister dst, Address src);
+
+  void pmovmskb(Register dst, XMMRegister src);
+
+  void ptest(XMMRegister dst, XMMRegister src);
+
   void sqrtsd(XMMRegister dst, XMMRegister src)    { Assembler::sqrtsd(dst, src); }
   void sqrtsd(XMMRegister dst, Address src)        { Assembler::sqrtsd(dst, src); }
   void sqrtsd(XMMRegister dst, AddressLiteral src);
@@ -1061,14 +1074,22 @@ public:
   void vpaddw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpaddw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
+  void vpbroadcastw(XMMRegister dst, XMMRegister src);
+
+  void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+
+  void vpmovzxbw(XMMRegister dst, Address src, int vector_len);
+  void vpmovmskb(Register dst, XMMRegister src);
+
+  void vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
+  void vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
+
   void vpsubb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpsubb(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
   void vpsubw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void vpsubw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
-
-  void vpmullw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
-  void vpmullw(XMMRegister dst, XMMRegister nds, Address src, int vector_len);
 
   void vpsraw(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
   void vpsraw(XMMRegister dst, XMMRegister nds, int shift, int vector_len);
@@ -1078,6 +1099,8 @@ public:
 
   void vpsllw(XMMRegister dst, XMMRegister nds, XMMRegister shift, int vector_len);
   void vpsllw(XMMRegister dst, XMMRegister nds, int shift, int vector_len);
+
+  void vptest(XMMRegister dst, XMMRegister src);
 
   void punpcklbw(XMMRegister dst, XMMRegister src);
   void punpcklbw(XMMRegister dst, Address src) { Assembler::punpcklbw(dst, src); }
