@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -123,37 +123,11 @@ VARIANT_TEXT=Tiered
 # or make/hotspot_distro.
 !ifndef HOTSPOT_VM_DISTRO
 !if exists($(WorkSpace)\src\closed)
-
-# if the build is for JDK6 or earlier version, it should include jdk6_hotspot_distro,
-# instead of hotspot_distro.
-JDK6_OR_EARLIER=0
-!if "$(JDK_MAJOR_VERSION)" != "" && "$(JDK_MINOR_VERSION)" != "" && "$(JDK_MICRO_VERSION)" != ""
-!if $(JDK_MAJOR_VERSION) == 1 && $(JDK_MINOR_VERSION) < 7
-JDK6_OR_EARLIER=1
-!endif
-!else
-!if $(JDK_MAJOR_VER) == 1 && $(JDK_MINOR_VER) < 7
-JDK6_OR_EARLIER=1
-!endif
-!endif
-
-!if $(JDK6_OR_EARLIER) == 1
-!include $(WorkSpace)\make\jdk6_hotspot_distro
-!else
 !include $(WorkSpace)\make\hotspot_distro
-!endif
 !else
 !include $(WorkSpace)\make\openjdk_distro
 !endif
 !endif
-
-# Following the Web Start / Plugin model here....
-# We can have update versions like "01a", but Windows requires
-# we use only integers in the file version field.  So:
-# JDK_UPDATE_VER = JDK_UPDATE_VERSION * 10 + EXCEPTION_VERSION
-#
-JDK_UPDATE_VER=0
-JDK_BUILD_NUMBER=0
 
 HS_FILEDESC=$(HOTSPOT_VM_DISTRO) $(ARCH_TEXT) $(VARIANT_TEXT) VM
 
@@ -163,34 +137,27 @@ HS_FILEDESC=$(HOTSPOT_VM_DISTRO) $(ARCH_TEXT) $(VARIANT_TEXT) VM
 #       1.6.0-b01     will be 6.0.0.1
 #       1.6.0_01a-b02 will be 6.0.11.2
 #
-# JDK_* variables are defined in make/jdk_version or on command line
+# STANDALONE_JDK_* variables are defined in make/jdk_version or on command line
 #
-JDK_VER=$(JDK_MINOR_VER),$(JDK_MICRO_VER),$(JDK_UPDATE_VER),$(JDK_BUILD_NUMBER)
-JDK_DOTVER=$(JDK_MINOR_VER).$(JDK_MICRO_VER).$(JDK_UPDATE_VER).$(JDK_BUILD_NUMBER)
-!if "$(JRE_RELEASE_VERSION)" == ""
-JRE_RELEASE_VER=$(JDK_MAJOR_VER).$(JDK_MINOR_VER).$(JDK_MICRO_VER)
-!else
-JRE_RELEASE_VER=$(JRE_RELEASE_VERSION)
+!if "$(JDK_VER)" == ""
+JDK_VER=$(STANDALONE_JDK_MAJOR_VER),$(STANDALONE_JDK_MINOR_VER),$(STANDALONE_JDK_SECURITY_VER),$(STANDALONE_JDK_PATCH_VER)
 !endif
-!if "$(JDK_MKTG_VERSION)" == ""
-JDK_MKTG_VERSION=$(JDK_MINOR_VER).$(JDK_MICRO_VER)
+!if "$(JDK_DOTVER)" == ""
+JDK_DOTVER=$(STANDALONE_JDK_MAJOR_VER).$(STANDALONE_JDK_MINOR_VER).$(STANDALONE_JDK_SECURITY_VER).$(STANDALONE_JDK_PATCH_VER)
+!endif
+!if "$(VERSION_SHORT)" == ""
+VERSION_SHORT=$(STANDALONE_JDK_MAJOR_VER).$(STANDALONE_JDK_MINOR_VER).$(STANDALONE_JDK_SECURITY_VER)
 !endif
 
-# Hotspot Express VM FileVersion:
-# 10.0-b<yz> will have DLL version 10.0.0.yz (need 4 numbers).
-#
-#
 HS_VER=$(JDK_VER)
 HS_DOTVER=$(JDK_DOTVER)
 
 !if "$(HOTSPOT_RELEASE_VERSION)" == ""
-HOTSPOT_RELEASE_VERSION=$(JRE_RELEASE_VERSION)
+HOTSPOT_RELEASE_VERSION=$(VERSION_STRING)
 !endif
 
-!if "$(HOTSPOT_BUILD_VERSION)" == ""
-HS_BUILD_VER=$(HOTSPOT_RELEASE_VERSION)
-!else
-HS_BUILD_VER=$(HOTSPOT_RELEASE_VERSION)-$(HOTSPOT_BUILD_VERSION)
+!if "$(HOTSPOT_VERSION_STRING)" == ""
+HOTSPOT_VERSION_STRING=$(HOTSPOT_RELEASE_VERSION)
 !endif
 
 # End VERSIONINFO parameters
@@ -280,15 +247,15 @@ $(variantDir)\local.make: checks
 	@ echo HOTSPOT_VM_DISTRO=$(HOTSPOT_VM_DISTRO)		>> $@
 	@ if "$(OPENJDK)" NEQ "" echo OPENJDK=$(OPENJDK)	>> $@
 	@ echo HS_COPYRIGHT=$(HOTSPOT_VM_COPYRIGHT)		>> $@
-	@ echo HS_NAME=$(PRODUCT_NAME) $(JDK_MKTG_VERSION)	>> $@
-	@ echo HS_BUILD_VER=$(HS_BUILD_VER)			>> $@
+	@ echo HS_NAME=$(PRODUCT_NAME) $(VERSION_SHORT)		>> $@
+	@ echo HOTSPOT_VERSION_STRING=$(HOTSPOT_VERSION_STRING)	>> $@
 	@ echo BUILD_WIN_SA=$(BUILD_WIN_SA)    			>> $@
-	@ echo SA_BUILD_VERSION=$(HS_BUILD_VER)                 >> $@
+	@ echo SA_BUILD_VERSION=$(HOTSPOT_VERSION_STRING)       >> $@
 	@ echo SA_INCLUDE=$(SA_INCLUDE)      			>> $@
 	@ echo SA_LIB=$(SA_LIB)         			>> $@
 	@ echo JDK_VER=$(JDK_VER)				>> $@
 	@ echo JDK_DOTVER=$(JDK_DOTVER)				>> $@
-	@ echo JRE_RELEASE_VER=$(JRE_RELEASE_VER)		>> $@
+	@ echo VERSION_STRING=$(VERSION_STRING)			>> $@
 	@ echo BUILDARCH=$(BUILDARCH)         			>> $@
 	@ echo Platform_arch=$(Platform_arch)        		>> $@
 	@ echo Platform_arch_model=$(Platform_arch_model)	>> $@
