@@ -23,41 +23,33 @@
  * questions.
  */
 
-/*
- * A class to manage AccessBridge debugging
- */
+#ifndef __MessageHistory_H__
+#define __MessageHistory_H__
 
-#ifndef __AccessBridgeDebug_H__
-#define __AccessBridgeDebug_H__
+#include <list>
+#include <string>
 
-#include <crtdbg.h>
-#include <windows.h>
+class MessageHistory
+{
+public:
+    static size_t sm_MaxMessages;
+private:
+    typedef std::list< std::string > stringlist;
+    stringlist m_Messages;
+    stringlist::const_iterator m_CurrentPosition;
 
-#ifdef DEBUG
-#define DEBUGGING_ON
-#define SEND_TO_OUTPUT_DEBUG_STRING
-//#define JAVA_DEBUGGING_ON
-#endif
-
-#ifdef DEBUGGING_ON
-#define DEBUG_CODE(x) x
-#else
-#define DEBUG_CODE(x) /* */
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-    char *printError(char *msg);
-    void PrintDebugString(char *msg, ...);
-    void PrintJavaDebugString(char *msg, ...);
-    void wPrintJavaDebugString(wchar_t *msg, ...);
-    void wPrintDebugString(wchar_t *msg, ...);
-
-#ifdef __cplusplus
-}
-#endif
-
-
+public:
+    void AddMessage(const char * message);
+    const char * GetFirstMessage();
+    const char * GetPreviousMessage();
+    const char * GetNextMessage();
+    const char * GetLastMessage();
+    const char * GetCurrentMessage();
+    const char * GetMessage(const size_t messageIndex);
+    size_t GetCurrentMessageIndex();
+    BOOL IsFirstMessage();
+    BOOL IsLastMessage();
+    size_t GetMessageCount();
+    void clear();
+};
 #endif
