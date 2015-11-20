@@ -1707,6 +1707,9 @@
     <export>
       <name>com.sun.jarsigner</name>
     </export>
+    <export>
+      <name>jdk.security.jarsigner</name>
+    </export>
   </module>
   <module>
     <name>jdk.javadoc</name>
