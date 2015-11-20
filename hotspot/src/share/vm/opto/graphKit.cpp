@@ -4387,7 +4387,8 @@ void GraphKit::inflate_string_slow(Node* src, Node* dst, Node* start, Node* coun
   set_memory(mem, TypeAryPtr::BYTES);
   Node* ch = load_array_element(control(), src, i_byte, TypeAryPtr::BYTES);
   Node* st = store_to_memory(control(), array_element_address(dst, i_char, T_BYTE),
-                             AndI(ch, intcon(0xff)), T_CHAR, TypeAryPtr::BYTES, MemNode::unordered);
+                             AndI(ch, intcon(0xff)), T_CHAR, TypeAryPtr::BYTES, MemNode::unordered,
+                             false, false, true /* mismatched */);
 
   IfNode* iff = create_and_map_if(head, Bool(CmpI(i_byte, count), BoolTest::lt), PROB_FAIR, COUNT_UNKNOWN);
   head->init_req(2, IfTrue(iff));

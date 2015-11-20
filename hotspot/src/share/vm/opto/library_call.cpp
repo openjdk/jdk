@@ -1503,9 +1503,11 @@ bool LibraryCallKit::inline_string_char_access(bool is_store) {
 
   Node* adr = array_element_address(value, index, T_CHAR);
   if (is_store) {
-    (void) store_to_memory(control(), adr, ch, T_CHAR, TypeAryPtr::BYTES, MemNode::unordered);
+    (void) store_to_memory(control(), adr, ch, T_CHAR, TypeAryPtr::BYTES, MemNode::unordered,
+                           false, false, true /* mismatched */);
   } else {
-    ch = make_load(control(), adr, TypeInt::CHAR, T_CHAR, MemNode::unordered);
+    ch = make_load(control(), adr, TypeInt::CHAR, T_CHAR, MemNode::unordered,
+                   LoadNode::DependsOnlyOnTest, false, false, true /* mismatched */);
     set_result(ch);
   }
   return true;
