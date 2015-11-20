@@ -22,7 +22,10 @@
  */
 package jdk.vm.ci.service;
 
-import java.util.*;
+import java.util.Formatter;
+import java.util.Iterator;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 
 /**
  * A mechanism for accessing service providers via JVMCI.

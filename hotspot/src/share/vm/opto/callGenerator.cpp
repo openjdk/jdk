@@ -671,7 +671,7 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
                                            &exact_receiver);
 
   SafePointNode* slow_map = NULL;
-  JVMState* slow_jvms;
+  JVMState* slow_jvms = NULL;
   { PreserveJVMState pjvms(&kit);
     kit.set_control(slow_ctl);
     if (!kit.stopped()) {

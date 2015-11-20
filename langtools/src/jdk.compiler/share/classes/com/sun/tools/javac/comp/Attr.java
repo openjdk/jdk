@@ -1890,7 +1890,8 @@ public class Attr extends JCTree.Visitor {
 
             // Check that value of resulting type is admissible in the
             // current context.  Also, capture the return type
-            result = check(tree, capture(restype), KindSelector.VAL, resultInfo);
+            Type capturedRes = resultInfo.checkContext.inferenceContext().cachedCapture(tree, restype, true);
+            result = check(tree, capturedRes, KindSelector.VAL, resultInfo);
         }
         chk.validate(tree.typeargs, localEnv);
     }

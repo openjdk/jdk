@@ -33,7 +33,8 @@
  * @build sun.hotspot.WhiteBox.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run testng/othervm -Xbootclasspath/a:. -XX:+PrintAssembly -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestCompilerDirectivesCompatibilityFlag
+ * @run testng/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+PrintAssembly -XX:+WhiteBoxAPI TestCompilerDirectivesCompatibilityFlag
  * @summary Test compiler control compatibility with compile command
  */
 
