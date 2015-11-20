@@ -175,6 +175,9 @@ public class SBCS {
                 else
                     line = "        return (cs instanceof " + clzName + ");";
             }
+            if (line.indexOf("$ASCIICOMPATIBLE$") != -1) {
+                line = line.replace("$ASCIICOMPATIBLE$", isASCII ? "true" : "false");
+            }
             if (line.indexOf("$B2CTABLE$") != -1) {
                 line = line.replace("$B2CTABLE$", b2c);
             }

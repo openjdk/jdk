@@ -44,8 +44,8 @@ import compiler.jvmci.common.testcases.SingleImplementerInterface;
 import java.util.HashSet;
 import java.util.Set;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
@@ -78,10 +78,10 @@ public class GetClassInitializerTest {
     private void runTest(TestCase tcase) {
         System.out.println(tcase);
         String className = tcase.holder.getName();
-        HotSpotResolvedObjectTypeImpl resolvedClazz = CompilerToVMHelper
+        HotSpotResolvedObjectType resolvedClazz = CompilerToVMHelper
                 .lookupType(Utils.toJVMTypeSignature(tcase.holder),
                         getClass(), /* resolve = */ true);
-        HotSpotResolvedJavaMethodImpl initializer = CompilerToVMHelper
+        HotSpotResolvedJavaMethod initializer = CompilerToVMHelper
                 .getClassInitializer(resolvedClazz);
         if (tcase.isPositive) {
             Asserts.assertNotNull(initializer, "Couldn't get initializer for "

@@ -212,7 +212,8 @@ ResetNoHandleMark::~ResetNoHandleMark() {
 }
 
 bool instanceKlassHandle::is_instanceKlass(const Klass* k) {
-  return k->oop_is_instance();
+  // Need this to avoid circular include dependency
+  return k->is_instance_klass();
 }
 
 #endif

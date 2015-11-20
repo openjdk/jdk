@@ -24,12 +24,17 @@
 
 package compiler.jvmci.compilerToVM;
 
+import compiler.jvmci.common.CTVMUtilities;
 import compiler.testlibrary.CompilerUtils;
 import jdk.test.lib.Utils;
+import jdk.vm.ci.code.InstalledCode;
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.NMethod;
 
 import java.lang.reflect.Executable;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,12 +42,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import jdk.test.lib.Pair;
 
 /**
  * A test case for tests which require compiled code.
  */
-public final class CompileCodeTestCase {
-    public static final Map<Class<?>, Object> RECEIVERS;
+public class CompileCodeTestCase {
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
     private static final int COMP_LEVEL;
     static {
@@ -56,19 +61,49 @@ public final class CompileCodeTestCase {
             Interface.class,
             Dummy.class,
             DummyEx.class};
+    private static final Map<Class<?>, Object> RECEIVERS;
 
+    public final Object receiver;
     public final Executable executable;
     public final int bci;
     private final boolean isOsr;
 
-    public CompileCodeTestCase(Executable executable, int bci) {
+    public CompileCodeTestCase(Object receiver, Executable executable,
+            int bci) {
+        this.receiver = receiver;
         this.executable = executable;
         this.bci = bci;
-        isOsr = bci >= 0;
+        isOsr = (bci >= 0);
     }
 
     public NMethod compile() {
         return compile(COMP_LEVEL);
+    }
+
+    public Pair<Object, ? extends Throwable> invoke(Object[] args) {
+        boolean old = executable.isAccessible();
+        executable.setAccessible(true);
+        try {
+            try {
+                if (executable instanceof Method) {
+                    Method m = (Method) executable;
+                    return new Pair<>(m.invoke(receiver, args), null);
+                }
+
+                if (executable instanceof Constructor) {
+                    Constructor c = (Constructor) executable;
+                    return new Pair<>(c.newInstance(args), null);
+                }
+            } catch (InvocationTargetException e) {
+                return new Pair<>(null, e.getCause());
+            } catch (Throwable e) {
+                return new Pair<>(null, e);
+            }
+        } finally {
+            executable.setAccessible(old);
+        }
+        throw new Error(executable + " has unsupported type "
+                + executable.getClass());
     }
 
     public NMethod compile(int level) {
@@ -86,13 +121,17 @@ public final class CompileCodeTestCase {
     public static List<CompileCodeTestCase> generate(int bci) {
         ArrayList<CompileCodeTestCase> result = new ArrayList<>();
         for (Class<?> aClass : CLASSES) {
+            Object receiver = RECEIVERS.get(aClass);
+            if (receiver == null) {
+                throw new Error("TESTBUG : no receiver for class " + aClass);
+            }
             for (Executable m : aClass.getDeclaredConstructors()) {
-                result.add(new CompileCodeTestCase(m, bci));
+                result.add(new CompileCodeTestCase(receiver, m, bci));
             }
             Arrays.stream(aClass.getDeclaredMethods())
                     .filter(m -> !Modifier.isAbstract(m.getModifiers()))
                     .filter(m -> !Modifier.isNative(m.getModifiers()))
-                    .map(m -> new CompileCodeTestCase(m, bci))
+                    .map(m -> new CompileCodeTestCase(receiver, m, bci))
                     .forEach(result::add);
         }
         return result;
@@ -100,6 +139,14 @@ public final class CompileCodeTestCase {
 
     public NMethod toNMethod() {
         return NMethod.get(executable, isOsr);
+    }
+
+    public InstalledCode toInstalledCode() {
+        NMethod nmethod = toNMethod();
+        long address = nmethod == null ? 0L : nmethod.address;
+        long entryPoint = nmethod == null ? 0L : nmethod.entry_point;
+        return CTVMUtilities.getInstalledCode(
+                executable.getName(), address, entryPoint);
     }
 
     @Override

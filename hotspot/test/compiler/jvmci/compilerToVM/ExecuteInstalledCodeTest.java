@@ -4,6 +4,7 @@ import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.code.InvalidInstalledCodeException;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import jdk.test.lib.Pair;
 import sun.hotspot.code.NMethod;
 
@@ -35,7 +36,6 @@ import java.util.Map;
 
 public class ExecuteInstalledCodeTest {
 
-
     public static void main(String[] args) {
         ExecuteInstalledCodeTest test = new ExecuteInstalledCodeTest();
         List<CompileCodeTestCase> testCases = new ArrayList<>();
@@ -54,15 +54,14 @@ public class ExecuteInstalledCodeTest {
         // to have a clean state
         testCase.deoptimize();
         Pair<Object, ? extends Throwable> reflectionResult;
-        Object[] args = getArguments(testCase.executable);
-        reflectionResult = invoke(testCase, args);
+        Object[] args = Utils.getNullValues(
+                testCase.executable.getParameterTypes());
+        reflectionResult = testCase.invoke(args);
         NMethod nMethod = testCase.compile();
         if (nMethod == null) {
             throw new Error(testCase + " : nmethod is null");
         }
-        InstalledCode installedCode = new InstalledCode(
-                testCase.executable.getName());
-        installedCode.setAddress(nMethod.address);
+        InstalledCode installedCode = testCase.toInstalledCode();
         Object result = null;
         Throwable expectedException = reflectionResult.second;
         boolean gotException = true;
@@ -107,70 +106,10 @@ public class ExecuteInstalledCodeTest {
         if (!Modifier.isStatic(testCase.executable.getModifiers())) {
             // add instance as 0th arg
             Object[] newArgs = new Object[args.length + 1];
-            newArgs[0] = getReciever(testCase);
+            newArgs[0] = testCase.receiver;
             System.arraycopy(args, 0, newArgs, 1, args.length);
             args = newArgs;
         }
         return args;
-    }
-
-    private Object getReciever(CompileCodeTestCase testCase) {
-        return CompileCodeTestCase.RECEIVERS.get(
-                testCase.executable.getDeclaringClass());
-    }
-
-    public Pair<Object, ? extends Throwable> invoke(
-            CompileCodeTestCase testCase, Object[] args) {
-        Executable executable = testCase.executable;
-        boolean old = executable.isAccessible();
-        executable.setAccessible(true);
-        try {
-            try {
-                if (executable instanceof Method) {
-                    Method m = (Method) executable;
-                    return new Pair<>(m.invoke(getReciever(testCase), args), null);
-                }
-
-                if (executable instanceof Constructor) {
-                    Constructor c = (Constructor) executable;
-                    return new Pair<>(c.newInstance(args), null);
-                }
-            } catch (InvocationTargetException e) {
-                return new Pair<>(null, e.getCause());
-            } catch (Throwable e) {
-                return new Pair<>(null, e);
-            }
-        } finally {
-            executable.setAccessible(old);
-        }
-        throw new Error(executable + " has unsupported type "
-                + executable.getClass());
-    }
-
-    private Object[] getArguments(Executable method) {
-        Class<?>[] params = method.getParameterTypes();
-        Object[] result = new Object[params.length];
-        int i = 0;
-        for (Class<?> aClass : params) {
-            result[i++] = getArgument(aClass);
-        }
-        return result;
-    }
-    private static Map<Class<?>, Object> DEFAULT_VALUES = new HashMap<>();
-    static {
-        DEFAULT_VALUES.put(boolean.class, false);
-        DEFAULT_VALUES.put(byte.class, (byte) 0);
-        DEFAULT_VALUES.put(short.class, (short) 0);
-        DEFAULT_VALUES.put(char.class, '\0');
-        DEFAULT_VALUES.put(int.class, 0);
-        DEFAULT_VALUES.put(long.class, 0L);
-        DEFAULT_VALUES.put(float.class, 0.0f);
-        DEFAULT_VALUES.put(double.class, 0.0d);
-    }
-    private Object getArgument(Class<?> aClass) {
-        if (aClass.isPrimitive()) {
-            return DEFAULT_VALUES.get(aClass);
-        }
-        return null;
     }
 }

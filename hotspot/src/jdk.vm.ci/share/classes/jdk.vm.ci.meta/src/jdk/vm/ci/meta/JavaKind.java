@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.meta;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Array;
 
 //JaCoCo Exclude
 
@@ -31,7 +31,7 @@ import java.lang.reflect.*;
  * {@link JavaKind#Int} for {@code int} and {@link JavaKind#Object} for all object types. A kind has
  * a single character short name, a Java name, and a set of flags further describing its behavior.
  */
-public enum JavaKind implements PlatformKind {
+public enum JavaKind {
     /** The primitive boolean kind, represented as an int on the stack. */
     Boolean('z', "boolean", 1, true, java.lang.Boolean.TYPE, java.lang.Boolean.class),
 
@@ -70,7 +70,6 @@ public enum JavaKind implements PlatformKind {
     private final boolean isStackInt;
     private final Class<?> primitiveJavaClass;
     private final Class<?> boxedJavaClass;
-    private final EnumKey<JavaKind> key = new EnumKey<>(this);
     private final int slotCount;
 
     private JavaKind(char typeChar, String javaName, int slotCount, boolean isStackInt, Class<?> primitiveJavaClass, Class<?> boxedJavaClass) {
@@ -111,10 +110,6 @@ public enum JavaKind implements PlatformKind {
      */
     public String getJavaName() {
         return javaName;
-    }
-
-    public Key getKey() {
-        return key;
     }
 
     /**
@@ -459,38 +454,5 @@ public enum JavaKind implements PlatformKind {
             default:
                 throw new IllegalArgumentException("illegal call to bits on " + this);
         }
-    }
-
-    public JavaConstant getDefaultValue() {
-        switch (this) {
-            case Boolean:
-                return JavaConstant.FALSE;
-            case Int:
-                return JavaConstant.INT_0;
-            case Long:
-                return JavaConstant.LONG_0;
-            case Float:
-                return JavaConstant.FLOAT_0;
-            case Double:
-                return JavaConstant.DOUBLE_0;
-            case Object:
-                return JavaConstant.NULL_POINTER;
-            case Byte:
-            case Char:
-            case Short:
-                return new PrimitiveConstant(this, 0);
-            default:
-                throw new IllegalArgumentException("illegal call to getDefaultValue on " + this);
-        }
-    }
-
-    @Override
-    public int getSizeInBytes() {
-        return getByteCount();
-    }
-
-    @Override
-    public int getVectorLength() {
-        return 1;
     }
 }

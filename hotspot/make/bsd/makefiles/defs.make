@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -186,13 +186,16 @@ ifeq ($(JDK6_OR_EARLIER),0)
   # executed multiple times. We reduce the noise by at least checking that
   # BUILD_FLAVOR has been set.
   ifneq ($(BUILD_FLAVOR),)
-    ifeq ($(BUILD_FLAVOR), product)
-      FULL_DEBUG_SYMBOLS ?= 1
-      ENABLE_FULL_DEBUG_SYMBOLS = $(FULL_DEBUG_SYMBOLS)
-    else
-      # debug variants always get Full Debug Symbols (if available)
-      ENABLE_FULL_DEBUG_SYMBOLS = 1
-    endif
+    # FULL_DEBUG_SYMBOLS not created for individual static libraries
+    ifeq ($(STATIC_BUILD),false)
+      ifeq ($(BUILD_FLAVOR), product)
+        FULL_DEBUG_SYMBOLS ?= 1
+        ENABLE_FULL_DEBUG_SYMBOLS = $(FULL_DEBUG_SYMBOLS)
+      else
+        # debug variants always get Full Debug Symbols (if available)
+        ENABLE_FULL_DEBUG_SYMBOLS = 1
+      endif
+     endif
     $(eval $(call print_info, "ENABLE_FULL_DEBUG_SYMBOLS=$(ENABLE_FULL_DEBUG_SYMBOLS)"))
     # since objcopy is optional, we set ZIP_DEBUGINFO_FILES later
 
@@ -256,16 +259,24 @@ endif # JDK_6_OR_EARLIER
 JDK_INCLUDE_SUBDIR=bsd
 
 # Library suffix
-ifeq ($(OS_VENDOR),Darwin)
-  LIBRARY_SUFFIX=dylib
+ifneq ($(STATIC_BUILD),true)
+  ifeq ($(OS_VENDOR),Darwin)
+    LIBRARY_SUFFIX=dylib
+  else
+    LIBRARY_SUFFIX=so
+  endif
 else
-  LIBRARY_SUFFIX=so
+  LIBRARY_SUFFIX=a
 endif
+
 
 EXPORT_LIST += $(EXPORT_DOCS_DIR)/platform/jvmti/jvmti.html
 
+# jsig library not needed for static builds
+ifneq ($(STATIC_BUILD),true)
 # client and server subdirectories have symbolic links to ../libjsig.so
-EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libjsig.$(LIBRARY_SUFFIX)
+  EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libjsig.$(LIBRARY_SUFFIX)
+endif
 
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   ifeq ($(ZIP_DEBUGINFO_FILES),1)
@@ -286,6 +297,9 @@ EXPORT_MINIMAL_DIR = $(EXPORT_LIB_ARCH_DIR)/minimal
 ifeq ($(findstring true, $(JVM_VARIANT_SERVER) $(JVM_VARIANT_ZERO) $(JVM_VARIANT_ZEROSHARK)), true)
   EXPORT_LIST += $(EXPORT_SERVER_DIR)/Xusage.txt
   EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.$(LIBRARY_SUFFIX)
+  ifeq ($(STATIC_BUILD),true)
+    EXPORT_LIST += $(EXPORT_SERVER_DIR)/libjvm.symbols
+  endif
 
   ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     ifeq ($(ZIP_DEBUGINFO_FILES),1)
@@ -303,6 +317,9 @@ endif
 ifeq ($(JVM_VARIANT_CLIENT),true)
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/Xusage.txt
   EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.$(LIBRARY_SUFFIX)
+  ifeq ($(STATIC_BUILD),true)
+    EXPORT_LIST += $(EXPORT_CLIENT_DIR)/libjvm.symbols
+  endif
 
   ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     ifeq ($(ZIP_DEBUGINFO_FILES),1)
@@ -320,6 +337,9 @@ endif
 ifeq ($(JVM_VARIANT_MINIMAL1),true)
   EXPORT_LIST += $(EXPORT_MINIMAL_DIR)/Xusage.txt
   EXPORT_LIST += $(EXPORT_MINIMAL_DIR)/libjvm.$(LIBRARY_SUFFIX)
+  ifeq ($(STATIC_BUILD),true)
+    EXPORT_LIST += $(EXPORT_MINIMAL_DIR)/libjvm.symbols
+  endif
 endif
 
 # Serviceability Binaries
@@ -388,7 +408,9 @@ ifeq ($(OS_VENDOR), Darwin)
     endif
 
     # Binaries to 'universalize' if built
-    UNIVERSAL_LIPO_LIST += $(EXPORT_LIB_DIR)/libjsig.$(LIBRARY_SUFFIX)
+    ifneq ($(STATIC_BUILD),true)
+      UNIVERSAL_LIPO_LIST += $(EXPORT_LIB_DIR)/libjsig.$(LIBRARY_SUFFIX)
+    endif
     UNIVERSAL_LIPO_LIST += $(EXPORT_LIB_DIR)/libsaproc.$(LIBRARY_SUFFIX)
     UNIVERSAL_LIPO_LIST += $(EXPORT_LIB_DIR)/server/libjvm.$(LIBRARY_SUFFIX)
     UNIVERSAL_LIPO_LIST += $(EXPORT_LIB_DIR)/client/libjvm.$(LIBRARY_SUFFIX)
@@ -396,6 +418,13 @@ ifeq ($(OS_VENDOR), Darwin)
     # Files to simply copy in place
     UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/server/Xusage.txt
     UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/client/Xusage.txt
+
+    ifeq ($(STATIC_BUILD),true)
+      UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/server/libjvm.symbols
+      UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/client/libjvm.symbols
+      UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/minimal/libjvm.symbols
+    endif
+
     ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
       ifeq ($(ZIP_DEBUGINFO_FILES),1)
           UNIVERSAL_COPY_LIST += $(EXPORT_LIB_DIR)/server/libjvm.diz

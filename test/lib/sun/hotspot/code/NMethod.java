@@ -39,12 +39,12 @@ public class NMethod extends CodeBlob {
     comp_level = (Integer) obj[1];
     insts = (byte[]) obj[2];
     compile_id = (Integer) obj[3];
-    address = (Long) obj[4];
+    entry_point = (Long) obj[4];
   }
   public final byte[] insts;
   public final int comp_level;
   public final int compile_id;
-  public final long address;
+  public final long entry_point;
 
   @Override
   public String toString() {
@@ -53,7 +53,7 @@ public class NMethod extends CodeBlob {
         + ", insts=" + insts
         + ", comp_level=" + comp_level
         + ", compile_id=" + compile_id
-        + ", address=" + address
+        + ", entry_point=" + entry_point
         + '}';
   }
 }

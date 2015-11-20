@@ -28,9 +28,9 @@ package sun.reflect;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
-/** Base class for sun.misc.Unsafe-based FieldAccessors for static
+/** Base class for jdk.internal.misc.Unsafe-based FieldAccessors for static
     fields. The observation is that there are only nine types of
     fields from the standpoint of reflection code: the eight primitive
     types and Object. Using class Unsafe instead of generated

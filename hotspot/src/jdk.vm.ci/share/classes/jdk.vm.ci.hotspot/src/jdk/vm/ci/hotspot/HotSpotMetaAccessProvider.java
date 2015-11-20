@@ -22,14 +22,31 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl.*;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayBaseOffset;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider.getArrayIndexScale;
+import static jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl.fromObjectClass;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
-import jdk.vm.ci.code.*;
-import jdk.vm.ci.common.*;
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.code.CodeUtil;
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.meta.DeoptimizationAction;
+import jdk.vm.ci.meta.DeoptimizationReason;
+import jdk.vm.ci.meta.JavaConstant;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.meta.Signature;
 
 // JaCoCo Exclude
 
@@ -292,9 +309,9 @@ public class HotSpotMetaAccessProvider implements MetaAccessProvider, HotSpotPro
                     int length = Array.getLength(((HotSpotObjectConstantImpl) constant).object());
                     ResolvedJavaType elementType = lookupJavaType.getComponentType();
                     JavaKind elementKind = elementType.getJavaKind();
-                    final int headerSize = runtime.getArrayBaseOffset(elementKind);
+                    final int headerSize = getArrayBaseOffset(elementKind);
                     TargetDescription target = runtime.getHostJVMCIBackend().getTarget();
-                    int sizeOfElement = target.getSizeInBytes(elementKind);
+                    int sizeOfElement = getArrayIndexScale(elementKind);
                     int alignment = target.wordSize;
                     int log2ElementSize = CodeUtil.log2(sizeOfElement);
                     return computeArrayAllocationSize(length, alignment, headerSize, log2ElementSize);

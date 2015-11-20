@@ -73,8 +73,8 @@ public:
 
   // Constructors
   OopMapValue () { set_value(0); set_content_reg(VMRegImpl::Bad()); }
-  OopMapValue (VMReg reg, oop_types t) { set_reg_type(reg,t); }
-  OopMapValue (VMReg reg, oop_types t, VMReg reg2) { set_reg_type(reg,t); set_content_reg(reg2); }
+  OopMapValue (VMReg reg, oop_types t) { set_reg_type(reg, t); set_content_reg(VMRegImpl::Bad()); }
+  OopMapValue (VMReg reg, oop_types t, VMReg reg2) { set_reg_type(reg, t); set_content_reg(reg2); }
   OopMapValue (CompressedReadStream* stream) { read_from(stream); }
 
   // Archiving
@@ -87,7 +87,7 @@ public:
 
   void read_from(CompressedReadStream* stream) {
     set_value(stream->read_int());
-    if(is_callee_saved() || is_derived_oop()) {
+    if (is_callee_saved() || is_derived_oop()) {
       set_content_reg(VMRegImpl::as_VMReg(stream->read_int(), true));
     }
   }

@@ -35,7 +35,7 @@ import java.util.Map;
 
 import sun.util.logging.PlatformLogger;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * XDragSourceProtocol implementation for XDnD protocol.
