@@ -4526,12 +4526,12 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
 
     // Support for resetting final fields while deserializing
     private static class UnsafeHolder {
-        private static final sun.misc.Unsafe unsafe;
+        private static final jdk.internal.misc.Unsafe unsafe;
         private static final long signumOffset;
         private static final long magOffset;
         static {
             try {
-                unsafe = sun.misc.Unsafe.getUnsafe();
+                unsafe = jdk.internal.misc.Unsafe.getUnsafe();
                 signumOffset = unsafe.objectFieldOffset
                     (BigInteger.class.getDeclaredField("signum"));
                 magOffset = unsafe.objectFieldOffset

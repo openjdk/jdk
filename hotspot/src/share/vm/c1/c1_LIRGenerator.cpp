@@ -3348,7 +3348,7 @@ void LIRGenerator::do_ProfileInvoke(ProfileInvoke* x) {
 }
 
 void LIRGenerator::increment_event_counter(CodeEmitInfo* info, int bci, bool backedge) {
-  int freq_log;
+  int freq_log = 0;
   int level = compilation()->env()->comp_level();
   if (level == CompLevel_limited_profile) {
     freq_log = (backedge ? Tier2BackedgeNotifyFreqLog : Tier2InvokeNotifyFreqLog);
@@ -3394,7 +3394,7 @@ void LIRGenerator::increment_event_counter_impl(CodeEmitInfo* info,
   assert(level > CompLevel_simple, "Shouldn't be here");
 
   int offset = -1;
-  LIR_Opr counter_holder;
+  LIR_Opr counter_holder = NULL;
   if (level == CompLevel_limited_profile) {
     MethodCounters* counters_adr = method->ensure_method_counters();
     if (counters_adr == NULL) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,10 @@
 #import "apple_applescript_AppleScriptEngine.h"
 #import "apple_applescript_AppleScriptEngineFactory.h"
 
+// Must include this before JavaNativeFoundation.h to get jni.h from build
+#include "jni.h"
+#include "jni_util.h"
+
 #import <JavaNativeFoundation/JavaNativeFoundation.h>
 
 #import "NS_Java_ConversionUtils.h"
@@ -33,6 +37,10 @@
 
 //#define DEBUG 1
 
+/*
+ * Declare library specific JNI_Onload entry if static build
+ */
+DEF_STATIC_JNI_OnLoad
 
 /*
  * Class:     apple_applescript_AppleScriptEngineFactory

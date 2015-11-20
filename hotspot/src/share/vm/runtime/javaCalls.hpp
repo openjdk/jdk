@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,7 +189,7 @@ class JavaCallArguments : public StackObj {
   int   size_of_parameters() const { return _size; }
 
   // Verify that pushed arguments fits a given method
-  void verify(methodHandle method, BasicType return_type, Thread *thread);
+  void verify(const methodHandle& method, BasicType return_type, Thread *thread);
 };
 
 // All calls to Java have to go via JavaCalls. Sets up the stack frame
@@ -197,7 +197,7 @@ class JavaCallArguments : public StackObj {
 //
 
 class JavaCalls: AllStatic {
-  static void call_helper(JavaValue* result, methodHandle* method, JavaCallArguments* args, TRAPS);
+  static void call_helper(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS);
  public:
   // call_special
   // ------------
@@ -227,7 +227,7 @@ class JavaCalls: AllStatic {
   static void call_static(JavaValue* result, KlassHandle klass, Symbol* name, Symbol* signature, Handle arg1, Handle arg2, TRAPS);
 
   // Low-level interface
-  static void call(JavaValue* result, methodHandle method, JavaCallArguments* args, TRAPS);
+  static void call(JavaValue* result, const methodHandle& method, JavaCallArguments* args, TRAPS);
 };
 
 #endif // SHARE_VM_RUNTIME_JAVACALLS_HPP

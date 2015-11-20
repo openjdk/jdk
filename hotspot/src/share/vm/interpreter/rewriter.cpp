@@ -509,7 +509,7 @@ void Rewriter::rewrite(instanceKlassHandle klass, TRAPS) {
   // (That's all, folks.)
 }
 
-Rewriter::Rewriter(instanceKlassHandle klass, constantPoolHandle cpool, Array<Method*>* methods, TRAPS)
+Rewriter::Rewriter(instanceKlassHandle klass, const constantPoolHandle& cpool, Array<Method*>* methods, TRAPS)
   : _klass(klass),
     _pool(cpool),
     _methods(methods)

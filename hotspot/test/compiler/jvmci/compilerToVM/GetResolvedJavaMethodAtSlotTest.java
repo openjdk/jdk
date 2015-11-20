@@ -36,7 +36,7 @@
 
 package compiler.jvmci.compilerToVM;
 
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
 import java.util.HashMap;
@@ -94,7 +94,7 @@ public class GetResolvedJavaMethodAtSlotTest {
     }
 
     private static void testSlotBigger(Class<?> holder) {
-        HotSpotResolvedJavaMethodImpl method
+        HotSpotResolvedJavaMethod method
                 = CompilerToVMHelper.getResolvedJavaMethodAtSlot(holder, 50);
         Asserts.assertNull(method, "Got method for non existing slot 50 in "
                 + holder);
@@ -102,10 +102,14 @@ public class GetResolvedJavaMethodAtSlotTest {
 
     private static void testCorrectMethods(Class<?> holder, int methodsNumber) {
         for (int i = 0; i < methodsNumber; i++) {
-            HotSpotResolvedJavaMethodImpl method = CompilerToVMHelper
+            String caseName = String.format("slot %d in %s",
+                    i, holder.getCanonicalName());
+            HotSpotResolvedJavaMethod method = CompilerToVMHelper
                     .getResolvedJavaMethodAtSlot(holder, i);
-            Asserts.assertNotNull(method, "Did not got method for slot " + i
-                    + " in class " + holder.getCanonicalName());
+            Asserts.assertNotNull(method, caseName + " did not got method");
+            Asserts.assertEQ(holder,
+                    CompilerToVMHelper.getMirror(method.getDeclaringClass()),
+                    caseName + " : unexpected declaring class");
         }
     }
 }

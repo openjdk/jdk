@@ -51,12 +51,12 @@ public class Big5_Solaris extends Charset implements HistoricallyNamedCharset
 
     public CharsetDecoder newDecoder() {
         initb2c();
-        return new  DoubleByte.Decoder(this, b2c, b2cSB, 0x40, 0xfe);
+        return new  DoubleByte.Decoder(this, b2c, b2cSB, 0x40, 0xfe, true);
     }
 
     public CharsetEncoder newEncoder() {
         initc2b();
-        return new DoubleByte.Encoder(this, c2b, c2bIndex);
+        return new DoubleByte.Encoder(this, c2b, c2bIndex, true);
     }
 
     static char[][] b2c;
