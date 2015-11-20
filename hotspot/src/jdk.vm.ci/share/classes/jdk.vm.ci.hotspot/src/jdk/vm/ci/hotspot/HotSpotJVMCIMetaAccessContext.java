@@ -22,10 +22,17 @@
  */
 package jdk.vm.ci.hotspot;
 
-import java.lang.ref.*;
-import java.util.*;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.WeakHashMap;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.JVMCIMetaAccessContext;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 /**
  * This class manages the set of metadata roots that must be scanned during garbage collection.

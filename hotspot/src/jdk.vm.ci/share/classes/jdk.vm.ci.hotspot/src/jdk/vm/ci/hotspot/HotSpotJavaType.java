@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.JavaType;
 
 /**
  * Common base class for all HotSpot {@link JavaType} implementations.
@@ -39,5 +39,4 @@ public abstract class HotSpotJavaType implements JavaType {
     public final String getName() {
         return name;
     }
-
 }

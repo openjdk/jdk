@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,27 @@
  */
 package jdk.vm.ci.hotspot;
 
-import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.*;
-import static jdk.vm.ci.hotspot.HotSpotResolvedJavaFieldImpl.Options.*;
+import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
+import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 
-import java.lang.annotation.*;
-import java.lang.reflect.*;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Field;
 
-import jdk.vm.ci.common.*;
-import jdk.vm.ci.meta.*;
-import jdk.vm.ci.options.*;
+import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.LocationIdentity;
+import jdk.vm.ci.meta.MetaAccessProvider;
+import jdk.vm.ci.meta.ModifiersProvider;
+import jdk.vm.ci.meta.ResolvedJavaField;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.options.Option;
+import jdk.vm.ci.options.OptionType;
+import jdk.vm.ci.options.OptionValue;
 
 /**
  * Represents a field in a HotSpot type.
  */
-public class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, HotSpotProxified {
+class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, HotSpotProxified {
 
     static class Options {
         //@formatter:off
@@ -91,7 +98,7 @@ public class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, H
         }
     }
 
-    public HotSpotResolvedJavaFieldImpl(HotSpotResolvedObjectTypeImpl holder, String name, JavaType type, long offset, int modifiers) {
+    HotSpotResolvedJavaFieldImpl(HotSpotResolvedObjectTypeImpl holder, String name, JavaType type, long offset, int modifiers) {
         this.holder = holder;
         this.name = name;
         this.type = type;
@@ -130,7 +137,7 @@ public class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, H
 
     @Override
     public boolean isInternal() {
-        return (modifiers & runtime().getConfig().jvmAccFieldInternal) != 0;
+        return (modifiers & config().jvmAccFieldInternal) != 0;
     }
 
     /**
@@ -183,7 +190,7 @@ public class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, H
 
     @Override
     public boolean isSynthetic() {
-        return (runtime().getConfig().syntheticFlag & modifiers) != 0;
+        return (config().syntheticFlag & modifiers) != 0;
     }
 
     /**
@@ -192,11 +199,11 @@ public class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, H
      * @return true if field has {@link Stable} annotation, false otherwise
      */
     public boolean isStable() {
-        if ((runtime().getConfig().jvmAccFieldStable & modifiers) != 0) {
+        if ((config().jvmAccFieldStable & modifiers) != 0) {
             return true;
         }
         assert getAnnotation(Stable.class) == null;
-        if (ImplicitStableValues.getValue() && isImplicitStableField()) {
+        if (Options.ImplicitStableValues.getValue() && isImplicitStableField()) {
             return true;
         }
         return false;
@@ -243,19 +250,25 @@ public class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, H
     }
 
     private boolean isImplicitStableField() {
-        if (isSynthetic()) {
-            if (isSyntheticImplicitStableField()) {
-                return true;
-            }
-        } else if (isWellKnownImplicitStableField()) {
+        if (isSyntheticEnumSwitchMap()) {
+            return true;
+        }
+        if (isWellKnownImplicitStableField()) {
             return true;
         }
         return false;
     }
 
-    private boolean isSyntheticImplicitStableField() {
-        assert this.isSynthetic();
-        if (isStatic() && isArray()) {
+    public boolean isDefaultStable() {
+        assert this.isStable();
+        if (isSyntheticEnumSwitchMap()) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean isSyntheticEnumSwitchMap() {
+        if (isSynthetic() && isStatic() && isArray()) {
             if (isFinal() && name.equals("$VALUES") || name.equals("ENUM$VALUES")) {
                 // generated int[] field for EnumClass::values()
                 return true;
@@ -281,6 +294,7 @@ public class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField, H
         }
 
         private static final ResolvedJavaField STRING_VALUE_FIELD;
+
         static {
             try {
                 MetaAccessProvider metaAccess = runtime().getHostJVMCIBackend().getMetaAccess();

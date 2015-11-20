@@ -36,6 +36,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -47,6 +48,7 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.objects.Global;
+import jdk.nashorn.internal.objects.NativeSymbol;
 import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
@@ -54,7 +56,10 @@ import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
+import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.runtime.Symbol;
+import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
@@ -474,7 +479,7 @@ public class Shell implements PartialParser {
                 try {
                     final Object res = context.eval(global, source, global, "<shell>");
                     if (res != ScriptRuntime.UNDEFINED) {
-                        err.println(JSType.toString(res));
+                        err.println(toString(res, global));
                     }
                 } catch (final Exception e) {
                     err.println(e);
@@ -490,5 +495,57 @@ public class Shell implements PartialParser {
         }
 
         return SUCCESS;
+    }
+
+    /**
+     * Converts {@code result} to a printable string. The reason we don't use {@link JSType#toString(Object)}
+     * or {@link ScriptRuntime#safeToString(Object)} is that we want to be able to render Symbol values
+     * even if they occur within an Array, and therefore have to implement our own Array to String
+     * conversion.
+     *
+     * @param result the result
+     * @param global the global object
+     * @return the string representation
+     */
+    protected static String toString(final Object result, final Global global) {
+        if (result instanceof Symbol) {
+            // Normal implicit conversion of symbol to string would throw TypeError
+            return result.toString();
+        }
+
+        if (result instanceof NativeSymbol) {
+            return JSType.toPrimitive(result).toString();
+        }
+
+        if (isArrayWithDefaultToString(result, global)) {
+            // This should yield the same string as Array.prototype.toString but
+            // will not throw if the array contents include symbols.
+            final StringBuilder sb = new StringBuilder();
+            final Iterator<Object> iter = ArrayLikeIterator.arrayLikeIterator(result, true);
+
+            while (iter.hasNext()) {
+                final Object obj = iter.next();
+
+                if (obj != null && obj != ScriptRuntime.UNDEFINED) {
+                    sb.append(toString(obj, global));
+                }
+
+                if (iter.hasNext()) {
+                    sb.append(',');
+                }
+            }
+
+            return sb.toString();
+        }
+
+        return JSType.toString(result);
+    }
+
+    private static boolean isArrayWithDefaultToString(final Object result, final Global global) {
+        if (result instanceof ScriptObject) {
+            final ScriptObject sobj = (ScriptObject) result;
+            return sobj.isArray() && sobj.get("toString") == global.getArrayPrototype().get("toString");
+        }
+        return false;
     }
 }

@@ -22,7 +22,9 @@
  */
 package jdk.vm.ci.options;
 
-import java.util.*;
+import java.util.ServiceLoader;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * Helper class used to load option descriptors. Only to be used in the slow-path.

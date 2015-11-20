@@ -103,7 +103,6 @@ import com.sun.corba.se.impl.orbutil.concurrent.Sync ;
 import com.sun.corba.se.impl.orbutil.concurrent.SyncUtil ;
 import com.sun.corba.se.impl.orbutil.concurrent.ReentrantMutex ;
 import com.sun.corba.se.impl.orbutil.concurrent.CondVar ;
-import com.sun.corba.se.impl.transport.ManagedLocalsThread;
 
 /**
  * POAImpl is the implementation of the Portable Object Adapter. It
@@ -517,7 +516,7 @@ public class POAImpl extends ObjectAdapterBase implements POA
 
     // Converted from anonymous class to local class
     // so that we can call performDestroy() directly.
-    static class DestroyThread extends ManagedLocalsThread {
+    static class DestroyThread extends sun.misc.ManagedLocalsThread {
         private boolean wait ;
         private boolean etherealize ;
         private boolean debug ;

@@ -27,7 +27,7 @@ package sun.nio.fs;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /**
  * Win32 and library calls.
