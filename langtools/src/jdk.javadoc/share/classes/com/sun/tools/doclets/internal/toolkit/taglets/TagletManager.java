@@ -663,6 +663,7 @@ public class TagletManager {
         addStandardTaglet(new ValueTaglet());
         addStandardTaglet(new LiteralTaglet());
         addStandardTaglet(new CodeTaglet());
+        addStandardTaglet(new IndexTaglet());
 
         // Keep track of the names of standard tags for error
         // checking purposes. The following are not handled above.

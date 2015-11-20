@@ -104,6 +104,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     private boolean isContainerDocumented = false;
 
+    HtmlTree fixedNavDiv = new HtmlTree(HtmlTag.DIV);
+
     /**
      * Constructor to construct the HtmlStandardWriter object.
      *
@@ -420,8 +422,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 head.addContent(meta);
             }
         }
-        head.addContent(getStyleSheetProperties());
-        head.addContent(getScriptProperties());
+        addStyleSheetProperties(head);
+        addScriptProperties(head);
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
                 head, body);
         Content htmlDocument = new HtmlDocument(htmlDocType,
@@ -470,7 +472,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public void addTop(Content htmlTree) {
         Content top = new RawHtml(replaceDocRootDir(configuration.top));
-        htmlTree.addContent(top);
+        fixedNavDiv.addContent(top);
     }
 
     /**
@@ -498,9 +500,10 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     : htmlTree;
             String allClassesId = "allclasses_";
             HtmlTree navDiv = new HtmlTree(HtmlTag.DIV);
+            fixedNavDiv.addStyle(HtmlStyle.fixedNav);
             Content skipNavLinks = configuration.getResource("doclet.Skip_navigation_links");
             if (header) {
-                tree.addContent(HtmlConstants.START_OF_TOP_NAVBAR);
+                fixedNavDiv.addContent(HtmlConstants.START_OF_TOP_NAVBAR);
                 navDiv.addStyle(HtmlStyle.topNav);
                 allClassesId += "navbar_top";
                 Content a = getMarkerAnchor(SectionName.NAVBAR_TOP);
@@ -558,7 +561,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             navDiv.addContent(navList);
             Content aboutDiv = HtmlTree.DIV(HtmlStyle.aboutLanguage, getUserHeaderFooter(header));
             navDiv.addContent(aboutDiv);
-            tree.addContent(navDiv);
+            if (header) {
+                fixedNavDiv.addContent(navDiv);
+            } else {
+                tree.addContent(navDiv);
+            }
             Content ulNav = HtmlTree.UL(HtmlStyle.navList, getNavLinkPrevious());
             ulNav.addContent(getNavLinkNext());
             Content subDiv = HtmlTree.DIV(HtmlStyle.subNav, ulNav);
@@ -568,12 +575,24 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             HtmlTree ulAllClasses = HtmlTree.UL(HtmlStyle.navList, getNavLinkClassIndex());
             ulAllClasses.addAttr(HtmlAttr.ID, allClassesId.toString());
             subDiv.addContent(ulAllClasses);
+            if (header && configuration.createindex) {
+                HtmlTree inputText = HtmlTree.INPUT("text", "search");
+                HtmlTree inputReset = HtmlTree.INPUT("reset", "reset");
+                Content searchTxt = configuration.getResource("doclet.search");
+                searchTxt.addContent(getSpace());
+                HtmlTree liInput = HtmlTree.LI(HtmlTree.SPAN(searchTxt));
+                liInput.addContent(inputText);
+                liInput.addContent(inputReset);
+                HtmlTree ulSearch = HtmlTree.UL(HtmlStyle.navListSearch, liInput);
+                subDiv.addContent(ulSearch);
+            }
             subDiv.addContent(getAllClassesLinkScript(allClassesId.toString()));
             addSummaryDetailLinks(subDiv);
             if (header) {
                 subDiv.addContent(getMarkerAnchor(SectionName.SKIP_NAVBAR_TOP));
-                tree.addContent(subDiv);
-                tree.addContent(HtmlConstants.END_OF_TOP_NAVBAR);
+                fixedNavDiv.addContent(subDiv);
+                fixedNavDiv.addContent(HtmlConstants.END_OF_TOP_NAVBAR);
+                tree.addContent(fixedNavDiv);
             } else {
                 subDiv.addContent(getMarkerAnchor(SectionName.SKIP_NAVBAR_BOTTOM));
                 tree.addContent(subDiv);
@@ -1819,11 +1838,11 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
-     * Returns a link to the stylesheet file.
+     * Add a link to the stylesheet file.
      *
-     * @return an HtmlTree for the lINK tag which provides the stylesheet location
+     * @param head the content tree to which the files will be added
      */
-    public HtmlTree getStyleSheetProperties() {
+    public void addStyleSheetProperties(Content head) {
         String stylesheetfile = configuration.stylesheetfile;
         DocPath stylesheet;
         if (stylesheetfile.isEmpty()) {
@@ -1835,17 +1854,48 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         HtmlTree link = HtmlTree.LINK("stylesheet", "text/css",
                 pathToRoot.resolve(stylesheet).getPath(),
                 "Style");
-        return link;
+        head.addContent(link);
+        if (configuration.createindex) {
+            HtmlTree jq_link = HtmlTree.LINK("stylesheet", "text/css",
+                    pathToRoot.resolve(DocPaths.JQUERY_FILES.resolve(DocPaths.JQUERY_STYLESHEET_FILE)).getPath(),
+                    "Style");
+            head.addContent(jq_link);
+        }
     }
 
     /**
-     * Returns a link to the JavaScript file.
+     * Add a link to the JavaScript file.
      *
-     * @return an HtmlTree for the Script tag which provides the JavaScript location
+     * @param head the content tree to which the files will be added
      */
-    public HtmlTree getScriptProperties() {
-        HtmlTree script = HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.JAVASCRIPT).getPath());
-        return script;
+    public void addScriptProperties(Content head) {
+        HtmlTree javascript = HtmlTree.SCRIPT(pathToRoot.resolve(DocPaths.JAVASCRIPT).getPath());
+        head.addContent(javascript);
+        if (configuration.createindex) {
+            if (pathToRoot != null && script != null) {
+                String path = pathToRoot.isEmpty() ? "." : pathToRoot.getPath();
+                script.addContent(new RawHtml("var pathtoroot = \"" + path + "/\";loadScripts(document, \'script\');"));
+            }
+            addJQueryFile(head, DocPaths.JSZIP_MIN);
+            addJQueryFile(head, DocPaths.JSZIPUTILS_MIN);
+            head.addContent(new RawHtml("<!--[if IE]>"));
+            addJQueryFile(head, DocPaths.JSZIPUTILS_IE_MIN);
+            head.addContent(new RawHtml("<![endif]-->"));
+            addJQueryFile(head, DocPaths.JQUERY_JS_1_10);
+            addJQueryFile(head, DocPaths.JQUERY_JS);
+        }
+    }
+
+    /**
+     * Add a link to the JQuery javascript file.
+     *
+     * @param head the content tree to which the files will be added
+     * @param filePath the DocPath of the file that needs to be added
+     */
+    private void addJQueryFile(Content head, DocPath filePath) {
+        HtmlTree jqyeryScriptFile = HtmlTree.SCRIPT(
+                pathToRoot.resolve(DocPaths.JQUERY_FILES.resolve(filePath)).getPath());
+        head.addContent(jqyeryScriptFile);
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,9 @@ public class DocPaths {
     /** The name of the subdirectory for user-provided additional documentation files. */
     public static final DocPath DOC_FILES = DocPath.create("doc-files");
 
+    /** The name of the image file showing a magnifying glass on the search box. */
+    public static final DocPath GLASS_IMG = DocPath.create("glass.png");
+
     /** The name of the file for help info. */
     public static final DocPath HELP_DOC = DocPath.create("help-doc.html");
 
@@ -75,6 +78,42 @@ public class DocPaths {
     /** The name of the default javascript file. */
     public static final DocPath JAVASCRIPT = DocPath.create("script.js");
 
+    /** The name of the directory for the jQuery. */
+    public static final DocPath JQUERY_FILES = DocPath.create("jquery");
+
+    /** The name of the default jQuery stylesheet file. */
+    public static final DocPath JQUERY_STYLESHEET_FILE = DocPath.create("jquery-ui.css");
+
+    /** The name of the default jQuery javascript file. */
+    public static final DocPath JQUERY_JS_1_10 = DocPath.create("jquery-1.10.2.js");
+
+    /** The name of the default jQuery javascript file. */
+    public static final DocPath JQUERY_JS = DocPath.create("jquery-ui.js");
+
+    /** The name of the default jszip javascript file. */
+    public static final DocPath JSZIP = DocPath.create("jszip/dist/jszip.js");
+
+    /** The name of the default jszip javascript file. */
+    public static final DocPath JSZIP_MIN = DocPath.create("jszip/dist/jszip.min.js");
+
+    /** The name of the default jszip-utils javascript file. */
+    public static final DocPath JSZIPUTILS = DocPath.create("jszip-utils/dist/jszip-utils.js");
+
+    /** The name of the default jszip-utils javascript file. */
+    public static final DocPath JSZIPUTILS_MIN = DocPath.create("jszip-utils/dist/jszip-utils.min.js");
+
+    /** The name of the default jszip-utils javascript file. */
+    public static final DocPath JSZIPUTILS_IE = DocPath.create("jszip-utils/dist/jszip-utils-ie.js");
+
+    /** The name of the default jszip-utils javascript file. */
+    public static final DocPath JSZIPUTILS_IE_MIN = DocPath.create("jszip-utils/dist/jszip-utils-ie.min.js");
+
+    /** The name of the member search index file. */
+    public static final DocPath MEMBER_SEARCH_INDEX_JSON = DocPath.create("member-search-index.json");
+
+    /** The name of the member search index zip file. */
+    public static final DocPath MEMBER_SEARCH_INDEX_ZIP = DocPath.create("member-search-index.zip");
+
     /** The name of the file for the overview frame. */
     public static final DocPath OVERVIEW_FRAME = DocPath.create("overview-frame.html");
 
@@ -86,6 +125,27 @@ public class DocPaths {
 
     /** The name of the file for the package frame. */
     public static final DocPath PACKAGE_FRAME = DocPath.create("package-frame.html");
+
+    /** The name of the file for the package list. */
+    public static final DocPath PACKAGE_LIST = DocPath.create("package-list");
+
+    /** The name of the package search index file. */
+    public static final DocPath PACKAGE_SEARCH_INDEX_JSON = DocPath.create("package-search-index.json");
+
+    /** The name of the package search index zipfile. */
+    public static final DocPath PACKAGE_SEARCH_INDEX_ZIP = DocPath.create("package-search-index.zip");
+
+    /** The name of the file for the package summary. */
+    public static final DocPath PACKAGE_SUMMARY = DocPath.create("package-summary.html");
+
+    /** The name of the file for the package tree. */
+    public static final DocPath PACKAGE_TREE = DocPath.create("package-tree.html");
+
+    /** The name of the file for the package usage info. */
+    public static final DocPath PACKAGE_USE = DocPath.create("package-use.html");
+
+    /** The name of the file for the overview frame. */
+    public static final DocPath PROFILE_OVERVIEW_FRAME = DocPath.create("profile-overview-frame.html");
 
     /** The name of the file for the profile frame. */
      public static DocPath profileFrame(String profileName) {
@@ -107,23 +167,11 @@ public class DocPaths {
         return DocPath.create(profileName + "-summary.html");
     }
 
-    /** The name of the file for the package list. */
-    public static final DocPath PACKAGE_LIST = DocPath.create("package-list");
-
-    /** The name of the file for the package summary. */
-    public static final DocPath PACKAGE_SUMMARY = DocPath.create("package-summary.html");
-
-    /** The name of the file for the package tree. */
-    public static final DocPath PACKAGE_TREE = DocPath.create("package-tree.html");
-
-    /** The name of the file for the package usage info. */
-    public static final DocPath PACKAGE_USE = DocPath.create("package-use.html");
-
-    /** The name of the file for the overview frame. */
-    public static final DocPath PROFILE_OVERVIEW_FRAME = DocPath.create("profile-overview-frame.html");
-
     /** The name of the sub-package from which resources are read. */
     public static final DocPath RESOURCES = DocPath.create("resources");
+
+    /** The name of the search javascript file. */
+    public static final DocPath SEARCH_JS = DocPath.create("search.js");
 
     /** The name of the file for the serialized form info. */
     public static final DocPath SERIALIZED_FORM = DocPath.create("serialized-form.html");
@@ -135,5 +183,20 @@ public class DocPaths {
 
     /** The name of the default stylesheet. */
     public static final DocPath STYLESHEET = DocPath.create("stylesheet.css");
+
+    /** The name of the tag search index file. */
+    public static final DocPath TAG_SEARCH_INDEX_JSON = DocPath.create("tag-search-index.json");
+
+    /** The name of the tag search index zip file. */
+    public static final DocPath TAG_SEARCH_INDEX_ZIP = DocPath.create("tag-search-index.zip");
+
+    /** The name of the type search index file. */
+    public static final DocPath TYPE_SEARCH_INDEX_JSON = DocPath.create("type-search-index.json");
+
+    /** The name of the type search index zip file. */
+    public static final DocPath TYPE_SEARCH_INDEX_ZIP = DocPath.create("type-search-index.zip");
+
+    /** The name of the image file for undo button on the search box. */
+    public static final DocPath X_IMG = DocPath.create("x.png");
 
 }
