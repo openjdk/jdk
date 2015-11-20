@@ -27,16 +27,17 @@ package java.lang.invoke;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
-import jdk.internal.HotSpotIntrinsicCandidate;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import static java.lang.invoke.LambdaForm.*;
@@ -1297,7 +1298,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         @Override
         public MethodHandle asCollector(Class<?> arrayType, int arrayLength) {
             if (intrinsicName == Intrinsic.IDENTITY) {
-                MethodType resultType = type().asCollectorType(arrayType, arrayLength);
+                MethodType resultType = type().asCollectorType(arrayType, type().parameterCount() - 1, arrayLength);
                 MethodHandle newArray = MethodHandleImpl.varargsArray(arrayType, arrayLength);
                 return newArray.asType(resultType);
             }
@@ -1619,17 +1620,251 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
     }
 
+    /**
+     * Assembles a loop method handle from the given handles and type information. This works by binding and configuring
+     * the {@linkplain #looper(MethodHandle[], MethodHandle[], MethodHandle[], MethodHandle[], int, int, Object[]) "most
+     * generic loop"}.
+     *
+     * @param tloop the return type of the loop.
+     * @param targs types of the arguments to be passed to the loop.
+     * @param tvars types of loop-local variables.
+     * @param init sanitized array of initializers for loop-local variables.
+     * @param step sanitited array of loop bodies.
+     * @param pred sanitized array of predicates.
+     * @param fini sanitized array of loop finalizers.
+     *
+     * @return a handle that, when invoked, will execute the loop.
+     */
+    static MethodHandle makeLoop(Class<?> tloop, List<Class<?>> targs, List<Class<?>> tvars, List<MethodHandle> init,
+                                 List<MethodHandle> step, List<MethodHandle> pred, List<MethodHandle> fini) {
+        MethodHandle[] ainit = toArrayArgs(init);
+        MethodHandle[] astep = toArrayArgs(step);
+        MethodHandle[] apred = toArrayArgs(pred);
+        MethodHandle[] afini = toArrayArgs(fini);
+
+        MethodHandle l = getConstantHandle(MH_looper);
+
+        // Bind the statically known arguments.
+        l = MethodHandles.insertArguments(l, 0, ainit, astep, apred, afini, tvars.size(), targs.size());
+
+        // Turn the args array into an argument list.
+        l = l.asCollector(Object[].class, targs.size());
+
+        // Finally, make loop type.
+        MethodType loopType = MethodType.methodType(tloop, targs);
+        l = l.asType(loopType);
+
+        return l;
+    }
+
+    /**
+     * Converts all handles in the {@code hs} array to handles that accept an array of arguments.
+     *
+     * @param hs method handles to be converted.
+     *
+     * @return the {@code hs} array, with all method handles therein converted.
+     */
+    static MethodHandle[] toArrayArgs(List<MethodHandle> hs) {
+        return hs.stream().map(h -> h.asSpreader(Object[].class, h.type().parameterCount())).toArray(MethodHandle[]::new);
+    }
+
+    /**
+     * This method embodies the most generic loop for use by {@link MethodHandles#loop(MethodHandle[][])}. A handle on
+     * it will be transformed into a handle on a concrete loop instantiation by {@link #makeLoop}.
+     *
+     * @param init loop-local variable initializers.
+     * @param step bodies.
+     * @param pred predicates.
+     * @param fini finalizers.
+     * @param varSize number of loop-local variables.
+     * @param nArgs number of arguments passed to the loop.
+     * @param args arguments to the loop invocation.
+     *
+     * @return the result of executing the loop.
+     */
+    static Object looper(MethodHandle[] init, MethodHandle[] step, MethodHandle[] pred, MethodHandle[] fini,
+                         int varSize, int nArgs, Object[] args) throws Throwable {
+        Object[] varsAndArgs = new Object[varSize + nArgs];
+        for (int i = 0, v = 0; i < init.length; ++i) {
+            if (init[i].type().returnType() == void.class) {
+                init[i].invoke(args);
+            } else {
+                varsAndArgs[v++] = init[i].invoke(args);
+            }
+        }
+        System.arraycopy(args, 0, varsAndArgs, varSize, nArgs);
+        final int nSteps = step.length;
+        for (; ; ) {
+            for (int i = 0, v = 0; i < nSteps; ++i) {
+                MethodHandle p = pred[i];
+                MethodHandle s = step[i];
+                MethodHandle f = fini[i];
+                if (s.type().returnType() == void.class) {
+                    s.invoke(varsAndArgs);
+                } else {
+                    varsAndArgs[v++] = s.invoke(varsAndArgs);
+                }
+                if (!(boolean) p.invoke(varsAndArgs)) {
+                    return f.invoke(varsAndArgs);
+                }
+            }
+        }
+    }
+
+    /**
+     * This method is bound as the predicate in {@linkplain MethodHandles#countedLoop(MethodHandle, MethodHandle,
+     * MethodHandle) counting loops}.
+     *
+     * @param counter the counter parameter, passed in during loop execution.
+     * @param limit the upper bound of the parameter, statically bound at loop creation time.
+     *
+     * @return whether the counter has reached the limit.
+     */
+    static boolean countedLoopPredicate(int counter, int limit) {
+        return counter <= limit;
+    }
+
+    /**
+     * This method is bound as the step function in {@linkplain MethodHandles#countedLoop(MethodHandle, MethodHandle,
+     * MethodHandle) counting loops} to increment the counter.
+     *
+     * @param counter the loop counter.
+     *
+     * @return the loop counter incremented by 1.
+     */
+    static int countedLoopStep(int counter, int limit) {
+        return counter + 1;
+    }
+
+    /**
+     * This is bound to initialize the loop-local iterator in {@linkplain MethodHandles#iteratedLoop iterating loops}.
+     *
+     * @param it the {@link Iterable} over which the loop iterates.
+     *
+     * @return an {@link Iterator} over the argument's elements.
+     */
+    static Iterator<?> initIterator(Iterable<?> it) {
+        return it.iterator();
+    }
+
+    /**
+     * This method is bound as the predicate in {@linkplain MethodHandles#iteratedLoop iterating loops}.
+     *
+     * @param it the iterator to be checked.
+     *
+     * @return {@code true} iff there are more elements to iterate over.
+     */
+    static boolean iteratePredicate(Iterator<?> it) {
+        return it.hasNext();
+    }
+
+    /**
+     * This method is bound as the step for retrieving the current value from the iterator in {@linkplain
+     * MethodHandles#iteratedLoop iterating loops}.
+     *
+     * @param it the iterator.
+     *
+     * @return the next element from the iterator.
+     */
+    static Object iterateNext(Iterator<?> it) {
+        return it.next();
+    }
+
+    /**
+     * Makes a {@code try-finally} handle that conforms to the type constraints.
+     *
+     * @param target the target to execute in a {@code try-finally} block.
+     * @param cleanup the cleanup to execute in the {@code finally} block.
+     * @param type the result type of the entire construct.
+     * @param argTypes the types of the arguments.
+     *
+     * @return a handle on the constructed {@code try-finally} block.
+     */
+    static MethodHandle makeTryFinally(MethodHandle target, MethodHandle cleanup, Class<?> type, List<Class<?>> argTypes) {
+        MethodHandle tf = getConstantHandle(type == void.class ? MH_tryFinallyVoidExec : MH_tryFinallyExec);
+
+        // Bind the statically known arguments.
+        tf = MethodHandles.insertArguments(tf, 0, target, cleanup);
+
+        // Turn the args array into an argument list.
+        tf = tf.asCollector(Object[].class, argTypes.size());
+
+        // Finally, make try-finally type.
+        MethodType tfType = MethodType.methodType(type, argTypes);
+        tf = tf.asType(tfType);
+
+        return tf;
+    }
+
+    /**
+     * A method that will be bound during construction of a {@code try-finally} handle with non-{@code void} return type
+     * by {@link MethodHandles#tryFinally(MethodHandle, MethodHandle)}.
+     *
+     * @param target the handle to wrap in a {@code try-finally} block. This will be bound.
+     * @param cleanup the handle to run in any case before returning. This will be bound.
+     * @param args the arguments to the call. These will remain as the argument list.
+     *
+     * @return whatever the execution of the {@code target} returned (it may have been modified by the execution of
+     *         {@code cleanup}).
+     * @throws Throwable in case anything is thrown by the execution of {@code target}, the {@link Throwable} will be
+     *         passed to the {@code cleanup} handle, which may decide to throw any exception it sees fit.
+     */
+    static Object tryFinallyExecutor(MethodHandle target, MethodHandle cleanup, Object[] args) throws Throwable {
+        Throwable t = null;
+        Object r = null;
+        try {
+            r = target.invoke(args);
+        } catch (Throwable thrown) {
+            t = thrown;
+            throw t;
+        } finally {
+            r = cleanup.invoke(t, r, args);
+        }
+        return r;
+    }
+
+    /**
+     * A method that will be bound during construction of a {@code try-finally} handle with {@code void} return type by
+     * {@link MethodHandles#tryFinally(MethodHandle, MethodHandle)}.
+     *
+     * @param target the handle to wrap in a {@code try-finally} block. This will be bound.
+     * @param cleanup the handle to run in any case before returning. This will be bound.
+     * @param args the arguments to the call. These will remain as the argument list.
+     *
+     * @throws Throwable in case anything is thrown by the execution of {@code target}, the {@link Throwable} will be
+     *         passed to the {@code cleanup} handle, which may decide to throw any exception it sees fit.
+     */
+    static void tryFinallyVoidExecutor(MethodHandle target, MethodHandle cleanup, Object[] args) throws Throwable {
+        Throwable t = null;
+        try {
+            target.invoke(args);
+        } catch (Throwable thrown) {
+            t = thrown;
+            throw t;
+        } finally {
+            cleanup.invoke(t, args);
+        }
+    }
+
     // Indexes into constant method handles:
-    private static final int
+    static final int
             MH_cast                  =  0,
             MH_selectAlternative     =  1,
             MH_copyAsPrimitiveArray  =  2,
             MH_fillNewTypedArray     =  3,
             MH_fillNewArray          =  4,
             MH_arrayIdentity         =  5,
-            MH_LIMIT                 =  6;
+            MH_looper                =  6,
+            MH_countedLoopPred       =  7,
+            MH_countedLoopStep       =  8,
+            MH_iteratePred           =  9,
+            MH_initIterator          = 10,
+            MH_iterateNext           = 11,
+            MH_tryFinallyExec        = 12,
+            MH_tryFinallyVoidExec    = 13,
+            MH_LIMIT                 = 14;
 
-    private static MethodHandle getConstantHandle(int idx) {
+    static MethodHandle getConstantHandle(int idx) {
         MethodHandle handle = HANDLES[idx];
         if (handle != null) {
             return handle;
@@ -1672,6 +1907,31 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                     return makeIntrinsic(IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "selectAlternative",
                             MethodType.methodType(MethodHandle.class, boolean.class, MethodHandle.class, MethodHandle.class)),
                         Intrinsic.SELECT_ALTERNATIVE);
+                case MH_looper:
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "looper", MethodType.methodType(Object.class,
+                            MethodHandle[].class, MethodHandle[].class, MethodHandle[].class, MethodHandle[].class,
+                            int.class, int.class, Object[].class));
+                case MH_countedLoopPred:
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "countedLoopPredicate",
+                            MethodType.methodType(boolean.class, int.class, int.class));
+                case MH_countedLoopStep:
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "countedLoopStep",
+                            MethodType.methodType(int.class, int.class, int.class));
+                case MH_iteratePred:
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "iteratePredicate",
+                            MethodType.methodType(boolean.class, Iterator.class));
+                case MH_initIterator:
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "initIterator",
+                            MethodType.methodType(Iterator.class, Iterable.class));
+                case MH_iterateNext:
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "iterateNext",
+                            MethodType.methodType(Object.class, Iterator.class));
+                case MH_tryFinallyExec:
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "tryFinallyExecutor",
+                            MethodType.methodType(Object.class, MethodHandle.class, MethodHandle.class, Object[].class));
+                case MH_tryFinallyVoidExec:
+                    return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, "tryFinallyVoidExecutor",
+                            MethodType.methodType(void.class, MethodHandle.class, MethodHandle.class, Object[].class));
             }
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
