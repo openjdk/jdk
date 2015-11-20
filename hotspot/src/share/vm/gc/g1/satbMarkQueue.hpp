@@ -68,6 +68,23 @@ public:
   void print(const char* name);
   static void print(const char* name, void** buf, size_t index, size_t sz);
 #endif // PRODUCT
+
+  // Compiler support.
+  static ByteSize byte_offset_of_index() {
+    return PtrQueue::byte_offset_of_index<SATBMarkQueue>();
+  }
+  using PtrQueue::byte_width_of_index;
+
+  static ByteSize byte_offset_of_buf() {
+    return PtrQueue::byte_offset_of_buf<SATBMarkQueue>();
+  }
+  using PtrQueue::byte_width_of_buf;
+
+  static ByteSize byte_offset_of_active() {
+    return PtrQueue::byte_offset_of_active<SATBMarkQueue>();
+  }
+  using PtrQueue::byte_width_of_active;
+
 };
 
 class SATBMarkQueueSet: public PtrQueueSet {

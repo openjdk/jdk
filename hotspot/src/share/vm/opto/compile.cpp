@@ -3549,7 +3549,7 @@ void Compile::verify_graph_edges(bool no_dead_code) {
 void Compile::verify_barriers() {
   if (UseG1GC) {
     // Verify G1 pre-barriers
-    const int marking_offset = in_bytes(JavaThread::satb_mark_queue_offset() + PtrQueue::byte_offset_of_active());
+    const int marking_offset = in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active());
 
     ResourceArea *area = Thread::current()->resource_area();
     Unique_Node_List visited(area);

@@ -49,6 +49,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/compilationPolicy.hpp"
+#include "runtime/deoptimization.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/init.hpp"
 #include "runtime/interfaceSupport.hpp"

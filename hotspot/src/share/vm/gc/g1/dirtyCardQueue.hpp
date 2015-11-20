@@ -72,6 +72,18 @@ public:
   void **get_buf() { return _buf;}
   size_t get_index() { return _index;}
   void reinitialize() { _buf = 0; _sz = 0; _index = 0;}
+
+  // Compiler support.
+  static ByteSize byte_offset_of_index() {
+    return PtrQueue::byte_offset_of_index<DirtyCardQueue>();
+  }
+  using PtrQueue::byte_width_of_index;
+
+  static ByteSize byte_offset_of_buf() {
+    return PtrQueue::byte_offset_of_buf<DirtyCardQueue>();
+  }
+  using PtrQueue::byte_width_of_buf;
+
 };
 
 
@@ -111,14 +123,6 @@ public:
   static uint num_par_ids();
 
   static void handle_zero_index_for_thread(JavaThread* t);
-
-  // Apply the given closure to all entries in all currently-active buffers.
-  // This should only be applied at a safepoint. (Currently must not be called
-  // in parallel; this should change in the future.)  If "consume" is true,
-  // processed entries are discarded.
-  void iterate_closure_all_threads(CardTableEntryClosure* cl,
-                                   bool consume = true,
-                                   uint worker_i = 0);
 
   // If there exists some completed buffer, pop it, then apply the
   // specified closure to all its elements, nulling out those elements
