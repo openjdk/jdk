@@ -200,7 +200,7 @@ void InstanceMirrorKlass::oop_pc_follow_contents(oop obj, ParCompactionManager* 
     // by calling follow_class_loader explicitly. For non-anonymous classes
     // the call to follow_class_loader is made when the class loader itself
     // is handled.
-    if (klass->oop_is_instance() && InstanceKlass::cast(klass)->is_anonymous()) {
+    if (klass->is_instance_klass() && InstanceKlass::cast(klass)->is_anonymous()) {
       cm->follow_class_loader(klass->class_loader_data());
     } else {
       cm->follow_klass(klass);

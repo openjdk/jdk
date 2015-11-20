@@ -25,8 +25,7 @@
  * JDK-8136544: Call site switching to megamorphic causes incorrect property read
  *
  * @test
- * @fork
- * @option -Dnashorn.unstable.relink.threshold=8
+ * @option --unstable-relink-threshold=8
  * @run
  */
 

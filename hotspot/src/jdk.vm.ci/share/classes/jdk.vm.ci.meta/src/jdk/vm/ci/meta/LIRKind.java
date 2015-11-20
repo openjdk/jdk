@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.meta;
 
-import java.util.*;
+import java.util.ArrayList;
 
 /**
  * Represents the type of values in the LIR. It is composed of a {@link PlatformKind} that gives the
@@ -57,10 +57,32 @@ import java.util.*;
  */
 public final class LIRKind {
 
+    private static enum IllegalKind implements PlatformKind {
+        ILLEGAL;
+
+        private final EnumKey<IllegalKind> key = new EnumKey<>(this);
+
+        public Key getKey() {
+            return key;
+        }
+
+        public int getSizeInBytes() {
+            return 0;
+        }
+
+        public int getVectorLength() {
+            return 0;
+        }
+
+        public char getTypeChar() {
+            return '-';
+        }
+    }
+
     /**
      * The non-type. This uses {@link #unknownReference}, so it can never be part of an oop map.
      */
-    public static final LIRKind Illegal = unknownReference(JavaKind.Illegal);
+    public static final LIRKind Illegal = unknownReference(IllegalKind.ILLEGAL);
 
     private final PlatformKind platformKind;
     private final int referenceMask;
@@ -70,7 +92,6 @@ public final class LIRKind {
     private static final int UNKNOWN_REFERENCE = -1;
 
     private LIRKind(PlatformKind platformKind, int referenceMask, AllocatableValue derivedReferenceBase) {
-        assert platformKind != JavaKind.Object : "Kind.Object shouldn't be used in the backend";
         this.platformKind = platformKind;
         this.referenceMask = referenceMask;
         this.derivedReferenceBase = derivedReferenceBase;
@@ -431,21 +452,9 @@ public final class LIRKind {
         if (src.equals(dst)) {
             return true;
         }
-        /*
-         * TODO(je,rs) What we actually want is toStackKind(src.getPlatformKind()).equals(
-         * dst.getPlatformKind()) but due to the handling of sub-integer at the current point
-         * (phi-)moves from e.g. integer to short can happen. Therefore we compare stack kinds.
-         */
-        if (toStackKind(src.getPlatformKind()).equals(toStackKind(dst.getPlatformKind()))) {
+        if (src.getPlatformKind().equals(dst.getPlatformKind())) {
             return !src.isUnknownReference() || dst.isUnknownReference();
         }
         return false;
-    }
-
-    private static PlatformKind toStackKind(PlatformKind platformKind) {
-        if (platformKind instanceof JavaKind) {
-            return ((JavaKind) platformKind).getStackKind();
-        }
-        return platformKind;
     }
 }

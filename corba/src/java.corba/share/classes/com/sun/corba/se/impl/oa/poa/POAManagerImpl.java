@@ -48,7 +48,6 @@ import com.sun.corba.se.spi.protocol.PIHandler ;
 import com.sun.corba.se.impl.logging.POASystemException ;
 
 import com.sun.corba.se.impl.orbutil.ORBUtility ;
-import com.sun.corba.se.impl.transport.ManagedLocalsThread;
 
 /** POAManagerImpl is the implementation of the POAManager interface.
  *  Its public methods are activate(), hold_requests(), discard_requests()
@@ -358,7 +357,7 @@ public class POAManagerImpl extends org.omg.CORBA.LocalObject implements
             if (wait_for_completion)
                 deactivator.run() ;
             else {
-                Thread thr = new ManagedLocalsThread(deactivator) ;
+                Thread thr = new sun.misc.ManagedLocalsThread(deactivator) ;
                 thr.start() ;
             }
         } finally {

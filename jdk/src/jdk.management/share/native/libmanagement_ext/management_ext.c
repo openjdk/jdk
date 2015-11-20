@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <jni.h>
+#include "jni_util.h"
 #include "jvm.h"
 #include "management_ext.h"
 
@@ -35,7 +36,7 @@ JavaVM* jvm = NULL;
 jint jmm_version = 0;
 
 JNIEXPORT jint JNICALL
-   JNI_OnLoad(JavaVM *vm, void *reserved) {
+   DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv* env;
 
     jvm = vm;

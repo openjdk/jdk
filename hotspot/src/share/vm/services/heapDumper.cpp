@@ -722,7 +722,7 @@ void DumperSupport::dump_field_value(DumpWriter* writer, char type, address addr
         o = oopDesc::load_decode_heap_oop((oop*)addr);
       }
 
-      // reflection and sun.misc.Unsafe classes may have a reference to a
+      // reflection and Unsafe classes may have a reference to a
       // Klass* so filter it out.
       assert(o->is_oop_or_null(), "Expected an oop or NULL at " PTR_FORMAT, p2i(o));
       writer->write_objectID(o);
@@ -895,9 +895,7 @@ void DumperSupport::dump_instance(DumpWriter* writer, oop o) {
 // creates HPROF_GC_CLASS_DUMP record for the given class and each of
 // its array classes
 void DumperSupport::dump_class_and_array_classes(DumpWriter* writer, Klass* k) {
-  Klass* klass = k;
-  assert(klass->oop_is_instance(), "not an InstanceKlass");
-  InstanceKlass* ik = (InstanceKlass*)klass;
+  InstanceKlass* ik = InstanceKlass::cast(k);
 
   // Ignore the class if it hasn't been initialized yet
   if (!ik->is_linked()) {
@@ -939,10 +937,10 @@ void DumperSupport::dump_class_and_array_classes(DumpWriter* writer, Klass* k) {
   dump_instance_field_descriptors(writer, k);
 
   // array classes
-  k = klass->array_klass_or_null();
+  k = k->array_klass_or_null();
   while (k != NULL) {
     Klass* klass = k;
-    assert(klass->oop_is_objArray(), "not an ObjArrayKlass");
+    assert(klass->is_objArray_klass(), "not an ObjArrayKlass");
 
     writer->write_u1(HPROF_GC_CLASS_DUMP);
     writer->write_classID(klass);
@@ -1126,7 +1124,7 @@ void DumperSupport::dump_stack_frame(DumpWriter* writer,
   writer->write_symbolID(m->name());                // method's name
   writer->write_symbolID(m->signature());           // method's signature
 
-  assert(m->method_holder()->oop_is_instance(), "not InstanceKlass");
+  assert(m->method_holder()->is_instance_klass(), "not InstanceKlass");
   writer->write_symbolID(m->method_holder()->source_file_name());  // source file name
   writer->write_u4(class_serial_num);               // class serial number
   writer->write_u4((u4) line_number);               // line number
@@ -1248,7 +1246,7 @@ class StickyClassDumper : public KlassClosure {
     _writer = writer;
   }
   void do_klass(Klass* k) {
-    if (k->oop_is_instance()) {
+    if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k);
         writer()->write_u1(HPROF_GC_ROOT_STICKY_CLASS);
         writer()->write_classID(ik);
@@ -1396,7 +1394,7 @@ class VM_HeapDumper : public VM_GC_Operation {
     if (oome) {
       assert(!Thread::current()->is_VM_thread(), "Dump from OutOfMemoryError cannot be called by the VMThread");
       // get OutOfMemoryError zero-parameter constructor
-      InstanceKlass* oome_ik = InstanceKlass::cast(SystemDictionary::OutOfMemoryError_klass());
+      InstanceKlass* oome_ik = SystemDictionary::OutOfMemoryError_klass();
       _oome_constructor = oome_ik->find_method(vmSymbols::object_initializer_name(),
                                                           vmSymbols::void_method_signature());
       // get thread throwing OOME when generating the heap dump at OOME
@@ -1553,7 +1551,7 @@ void VM_HeapDumper::do_load_class(Klass* k) {
 
 // writes a HPROF_GC_CLASS_DUMP record for the given class
 void VM_HeapDumper::do_class_dump(Klass* k) {
-  if (k->oop_is_instance()) {
+  if (k->is_instance_klass()) {
     DumperSupport::dump_class_and_array_classes(writer(), k);
   }
 }
@@ -1850,7 +1848,6 @@ void VM_HeapDumper::dump_stack_traces() {
 }
 
 // dump the heap to given path.
-PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
 int HeapDumper::dump(const char* path) {
   assert(path != NULL && strlen(path) > 0, "path missing");
 
@@ -1888,13 +1885,8 @@ int HeapDumper::dump(const char* path) {
   if (print_to_tty()) {
     timer()->stop();
     if (error() == NULL) {
-      char msg[256];
-      sprintf(msg, "Heap dump file created [%s bytes in %3.3f secs]",
-        JLONG_FORMAT, timer()->seconds());
-PRAGMA_DIAG_PUSH
-PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
-      tty->print_cr(msg, writer.bytes_written());
-PRAGMA_DIAG_POP
+      tty->print_cr("Heap dump file created [" JLONG_FORMAT " bytes in %3.3f secs]",
+                    writer.bytes_written(), timer()->seconds());
     } else {
       tty->print_cr("Dump file is incomplete: %s", writer.error());
     }

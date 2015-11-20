@@ -96,7 +96,7 @@ public class PropertyMap implements Iterable<Object>, Serializable {
     private transient SharedPropertyMap sharedProtoMap;
 
     /** {@link SwitchPoint}s for gets on inherited properties. */
-    private transient HashMap<String, SwitchPoint> protoSwitches;
+    private transient HashMap<Object, SwitchPoint> protoSwitches;
 
     /** History of maps, used to limit map duplication. */
     private transient WeakHashMap<Property, Reference<PropertyMap>> history;
@@ -354,7 +354,7 @@ public class PropertyMap implements Iterable<Object>, Serializable {
      *
      * @param key {@link Property} key to invalidate.
      */
-    synchronized void invalidateProtoSwitchPoint(final String key) {
+    synchronized void invalidateProtoSwitchPoint(final Object key) {
         if (protoSwitches != null) {
             final SwitchPoint sp = protoSwitches.get(key);
             if (sp != null) {
@@ -496,7 +496,7 @@ public class PropertyMap implements Iterable<Object>, Serializable {
     public final synchronized PropertyMap deleteProperty(final Property property) {
         propertyDeleted(property, true);
         PropertyMap newMap = checkHistory(property);
-        final String key = property.getKey();
+        final Object key = property.getKey();
 
         if (newMap == null && properties.containsKey(key)) {
             final PropertyHashMap newProperties = properties.immutableRemove(key);
@@ -577,7 +577,7 @@ public class PropertyMap implements Iterable<Object>, Serializable {
      * @param propertyFlags attribute flags of the property
      * @return the newly created UserAccessorProperty
      */
-    public final UserAccessorProperty newUserAccessors(final String key, final int propertyFlags) {
+    public final UserAccessorProperty newUserAccessors(final Object key, final int propertyFlags) {
         return new UserAccessorProperty(key, propertyFlags, getFreeSpillSlot());
     }
 
@@ -588,7 +588,7 @@ public class PropertyMap implements Iterable<Object>, Serializable {
      *
      * @return {@link Property} matching key.
      */
-    public final Property findProperty(final String key) {
+    public final Property findProperty(final Object key) {
         return properties.find(key);
     }
 

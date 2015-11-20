@@ -30,22 +30,31 @@
 
 package jdk.vm.ci.runtime.test;
 
-import static org.junit.Assume.*;
+import static org.junit.Assume.assumeTrue;
 
-import java.io.*;
-import java.lang.instrument.*;
-import java.lang.management.*;
-import java.lang.reflect.*;
-import java.nio.file.*;
-import java.security.*;
-import java.util.*;
-import java.util.jar.*;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.instrument.ClassFileTransformer;
+import java.lang.instrument.IllegalClassFormatException;
+import java.lang.instrument.Instrumentation;
+import java.lang.management.ManagementFactory;
+import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.ProtectionDomain;
+import java.util.Arrays;
+import java.util.jar.Attributes;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
 
-import javax.tools.*;
+import javax.tools.ToolProvider;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * Tests that {@link ResolvedJavaMethod}s are safe in the context of class redefinition being used

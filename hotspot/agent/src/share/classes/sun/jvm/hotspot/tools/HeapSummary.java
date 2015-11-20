@@ -268,8 +268,8 @@ public class HeapSummary extends Tool {
             VM vm = VM.getVM();
             SystemDictionary sysDict = vm.getSystemDictionary();
             InstanceKlass strKlass = sysDict.getStringKlass();
-            // String has a field named 'value' of type 'char[]'.
-            stringValueField = (OopField) strKlass.findField("value", "[C");
+            // String has a field named 'value' of type 'byte[]'.
+            stringValueField = (OopField) strKlass.findField("value", "[B");
          }
 
          private long stringSize(Instance instance) {

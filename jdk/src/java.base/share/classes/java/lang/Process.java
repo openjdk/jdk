@@ -83,7 +83,7 @@ import java.util.stream.Stream;
  * {@link #getPid() process id},
  * {@link #info() information about the process},
  * {@link #children() direct children}, and
- * {@link #allChildren() direct and indirect children} of the process.
+ * {@link #descendants() direct children plus descendants of those children} of the process.
  * Delegating to the underlying Process or ProcessHandle is typically
  * easiest and most efficient.
  *
@@ -351,7 +351,7 @@ public abstract class Process {
      * The {@link java.util.concurrent.CompletableFuture} provides the ability
      * to trigger dependent functions or actions that may be run synchronously
      * or asynchronously upon process termination.
-     * When the process terminates the CompletableFuture is
+     * When the process has terminated the CompletableFuture is
      * {@link java.util.concurrent.CompletableFuture#complete completed} regardless
      * of the exit status of the process.
      * <p>
@@ -361,9 +361,6 @@ public abstract class Process {
      * {@link java.util.concurrent.CompletableFuture#get() wait} for it to terminate.
      * {@link java.util.concurrent.CompletableFuture#cancel(boolean) Cancelling}
      * the CompletableFuture does not affect the Process.
-     * <p>
-     * If the process is {@link #isAlive not alive} the {@link CompletableFuture}
-     * returned has been {@link java.util.concurrent.CompletableFuture#complete completed}.
      * <p>
      * Processes returned from {@link ProcessBuilder#start} override the
      * default implementation to provide an efficient mechanism to wait
@@ -406,6 +403,9 @@ public abstract class Process {
      *       return delegate.onExit().thenApply(p -> this);
      *    }
      * }</pre>
+     * @apiNote
+     * The process may be observed to have terminated with {@link #isAlive}
+     * before the ComputableFuture is completed and dependent actions are invoked.
      *
      * @return a new {@code CompletableFuture<Process>} for the Process
      *
@@ -464,7 +464,7 @@ public abstract class Process {
      * {@link java.lang.UnsupportedOperationException} and performs no other action.
      * Subclasses should override this method to provide a ProcessHandle for the
      * process.  The methods {@link #getPid}, {@link #info}, {@link #children},
-     * and {@link #allChildren}, unless overridden, operate on the ProcessHandle.
+     * and {@link #descendants}, unless overridden, operate on the ProcessHandle.
      *
      * @return Returns a ProcessHandle for the Process
      * @throws UnsupportedOperationException if the Process implementation
@@ -481,9 +481,8 @@ public abstract class Process {
     /**
      * Returns a snapshot of information about the process.
      *
-     * <p> An {@link ProcessHandle.Info} instance has various accessor methods
-     * that return information about the process, if the process is alive and
-     * the information is available, otherwise {@code null} is returned.
+     * <p> A {@link ProcessHandle.Info} instance has accessor methods
+     * that return information about the process if it is available.
      *
      * @implSpec
      * This implementation returns information about the process as:
@@ -524,9 +523,9 @@ public abstract class Process {
     }
 
     /**
-     * Returns a snapshot of the direct and indirect children of the process.
-     * An indirect child is one whose parent is either a direct child or
-     * another indirect child.
+     * Returns a snapshot of the descendants of the process.
+     * The descendants of a process are the children of the process
+     * plus the descendants of those children, recursively.
      * Typically, a process that is {@link #isAlive not alive} has no children.
      * <p>
      * <em>Note that processes are created and terminate asynchronously.
@@ -535,18 +534,18 @@ public abstract class Process {
      *
      * @implSpec
      * This implementation returns all children as:
-     * {@link #toHandle toHandle().allChildren()}.
+     * {@link #toHandle toHandle().descendants()}.
      *
-     * @return a sequential Stream of ProcessHandles for processes that are
-     *         direct and indirect children of the process
+     * @return a sequential Stream of ProcessHandles for processes that
+     *         are descendants of the process
      * @throws UnsupportedOperationException if the Process implementation
      *         does not support this operation
      * @throws SecurityException if a security manager has been installed and
      *         it denies RuntimePermission("manageProcess")
      * @since 1.9
      */
-    public Stream<ProcessHandle> allChildren() {
-        return toHandle().allChildren();
+    public Stream<ProcessHandle> descendants() {
+        return toHandle().descendants();
     }
 
 

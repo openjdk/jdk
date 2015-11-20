@@ -442,6 +442,14 @@ class FrameValue VALUE_OBJ_CLASS_SPEC {
   char* description;
   int owner;
   int priority;
+
+  FrameValue() {
+    location = NULL;
+    description = NULL;
+    owner = -1;
+    priority = 0;
+  }
+
 };
 
 

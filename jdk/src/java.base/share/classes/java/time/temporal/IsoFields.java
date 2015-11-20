@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ import sun.util.locale.provider.LocaleResources;
  * The complete date is expressed using three fields:
  * <ul>
  * <li>{@link #DAY_OF_QUARTER DAY_OF_QUARTER} - the day within the quarter, from 1 to 90, 91 or 92
- * <li>{@link #QUARTER_OF_YEAR QUARTER_OF_YEAR} - the week within the week-based-year
+ * <li>{@link #QUARTER_OF_YEAR QUARTER_OF_YEAR} - the quarter within the year, from 1 to 4
  * <li>{@link ChronoField#YEAR YEAR} - the standard ISO year
  * </ul>
  *
@@ -571,9 +571,6 @@ public final class IsoFields {
         //-------------------------------------------------------------------------
         private static final int[] QUARTER_DAYS = {0, 90, 181, 273, 0, 91, 182, 274};
 
-        private static boolean isIso(TemporalAccessor temporal) {
-            return Chronology.from(temporal).equals(IsoChronology.INSTANCE);
-        }
 
         private static void ensureIso(TemporalAccessor temporal) {
             if (isIso(temporal) == false) {
@@ -681,7 +678,7 @@ public final class IsoFields {
 
         @Override
         public boolean isSupportedBy(Temporal temporal) {
-            return temporal.isSupported(EPOCH_DAY);
+            return temporal.isSupported(EPOCH_DAY) && isIso(temporal);
         }
 
         @SuppressWarnings("unchecked")
@@ -720,5 +717,9 @@ public final class IsoFields {
         public String toString() {
             return name;
         }
+    }
+
+    static boolean isIso(TemporalAccessor temporal) {
+        return Chronology.from(temporal).equals(IsoChronology.INSTANCE);
     }
 }
