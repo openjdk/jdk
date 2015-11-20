@@ -282,12 +282,11 @@ methodHandle JVMCIEnv::lookup_method(instanceKlassHandle& h_accessor,
                                instanceKlassHandle& h_holder,
                                Symbol*       name,
                                Symbol*       sig,
-                               Bytecodes::Code bc,
-                               constantTag   tag) {
+                               Bytecodes::Code bc) {
   JVMCI_EXCEPTION_CONTEXT;
   LinkResolver::check_klass_accessability(h_accessor, h_holder, KILL_COMPILE_ON_FATAL_(NULL));
   methodHandle dest_method;
-  LinkInfo link_info(h_holder, name, sig, h_accessor, LinkInfo::needs_access_check, tag);
+  LinkInfo link_info(h_holder, name, sig, h_accessor, /*check_access*/true);
   switch (bc) {
   case Bytecodes::_invokestatic:
     dest_method =
@@ -360,8 +359,7 @@ methodHandle JVMCIEnv::get_method_by_index_impl(const constantPoolHandle& cpool,
 
   if (holder_is_accessible) { // Our declared holder is loaded.
     instanceKlassHandle lookup = get_instance_klass_for_declared_method_holder(holder);
-    constantTag tag = cpool->tag_ref_at(index);
-    methodHandle m = lookup_method(accessor, lookup, name_sym, sig_sym, bc, tag);
+    methodHandle m = lookup_method(accessor, lookup, name_sym, sig_sym, bc);
     if (!m.is_null() &&
         (bc == Bytecodes::_invokestatic
          ?  InstanceKlass::cast(m->method_holder())->is_not_initialized()
