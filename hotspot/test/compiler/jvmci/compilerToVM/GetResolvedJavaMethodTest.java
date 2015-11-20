@@ -27,11 +27,13 @@
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
  * @library / /testlibrary /../../test/lib
  * @compile ../common/CompilerToVMHelper.java
+ *          ../common/PublicMetaspaceWrapperObject.java
  * @build compiler.jvmci.compilerToVM.GetResolvedJavaMethodTest
  * @run main ClassFileInstaller
  *      sun.hotspot.WhiteBox
  *      sun.hotspot.WhiteBox$WhiteBoxPermission
  *      jdk.vm.ci.hotspot.CompilerToVMHelper
+ *      jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockExperimentalVMOptions
  *      -XX:+EnableJVMCI -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *      compiler.jvmci.compilerToVM.GetResolvedJavaMethodTest
@@ -40,8 +42,8 @@
 package compiler.jvmci.compilerToVM;
 
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
-import jdk.vm.ci.hotspot.MetaspaceWrapperObject;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import sun.hotspot.WhiteBox;
@@ -53,23 +55,20 @@ public class GetResolvedJavaMethodTest {
     private static enum TestCase {
         NULL_BASE {
             @Override
-            HotSpotResolvedJavaMethodImpl getResolvedJavaMethod() {
+            HotSpotResolvedJavaMethod getResolvedJavaMethod() {
                 return CompilerToVMHelper.getResolvedJavaMethod(
                         null, getPtrToMethod());
             }
         },
         JAVA_METHOD_BASE {
             @Override
-            HotSpotResolvedJavaMethodImpl getResolvedJavaMethod() {
-                HotSpotResolvedJavaMethodImpl methodInstance
+            HotSpotResolvedJavaMethod getResolvedJavaMethod() {
+                HotSpotResolvedJavaMethod methodInstance
                         = CompilerToVMHelper.getResolvedJavaMethodAtSlot(
-                       TEST_CLASS, 0);
-                Field field;
+                                TEST_CLASS, 0);
                 try {
-                    field = HotSpotResolvedJavaMethodImpl
-                            .class.getDeclaredField("metaspaceMethod");
-                    field.setAccessible(true);
-                    field.set(methodInstance, getPtrToMethod());
+                    METASPACE_METHOD_FIELD.set(methodInstance,
+                            getPtrToMethod());
                 } catch (ReflectiveOperationException e) {
                     throw new Error("TEST BUG : " + e, e);
                 }
@@ -79,19 +78,15 @@ public class GetResolvedJavaMethodTest {
         },
         JAVA_METHOD_BASE_IN_TWO {
             @Override
-            HotSpotResolvedJavaMethodImpl getResolvedJavaMethod() {
+            HotSpotResolvedJavaMethod getResolvedJavaMethod() {
                 long ptr = getPtrToMethod();
-                HotSpotResolvedJavaMethodImpl methodInstance
+                HotSpotResolvedJavaMethod methodInstance
                         = CompilerToVMHelper.getResolvedJavaMethodAtSlot(
                         TEST_CLASS, 0);
-                Field field;
                 try {
-                    field = HotSpotResolvedJavaMethodImpl
-                            .class.getDeclaredField("metaspaceMethod");
-                    field.setAccessible(true);
-                    field.set(methodInstance, ptr / 2L);
+                    METASPACE_METHOD_FIELD.set(methodInstance, ptr / 2L);
                 } catch (ReflectiveOperationException e) {
-                    throw new Error("TESTBUG : " + e.getMessage(), e);
+                    throw new Error("TESTBUG : " + e, e);
                 }
                 return CompilerToVMHelper.getResolvedJavaMethod(methodInstance,
                         ptr - ptr / 2L);
@@ -99,36 +94,42 @@ public class GetResolvedJavaMethodTest {
         },
         JAVA_METHOD_BASE_ZERO {
             @Override
-            HotSpotResolvedJavaMethodImpl getResolvedJavaMethod() {
+            HotSpotResolvedJavaMethod getResolvedJavaMethod() {
                 long ptr = getPtrToMethod();
-                HotSpotResolvedJavaMethodImpl methodInstance
+                HotSpotResolvedJavaMethod methodInstance
                         = CompilerToVMHelper.getResolvedJavaMethodAtSlot(
                         TEST_CLASS, 0);
-                Field field;
                 try {
-                    field = HotSpotResolvedJavaMethodImpl
-                            .class.getDeclaredField("metaspaceMethod");
-                    field.setAccessible(true);
-                    field.set(methodInstance, 0L);
+                    METASPACE_METHOD_FIELD.set(methodInstance, 0L);
                 } catch (ReflectiveOperationException e) {
-                    throw new Error("TESTBUG : " + e.getMessage(), e);
+                    throw new Error("TESTBUG : " + e, e);
                 }
                 return CompilerToVMHelper.getResolvedJavaMethod(methodInstance,
                         ptr);
             }
         }
         ;
-        abstract HotSpotResolvedJavaMethodImpl getResolvedJavaMethod();
+        abstract HotSpotResolvedJavaMethod getResolvedJavaMethod();
     }
 
     private static final Unsafe UNSAFE = Utils.getUnsafe();
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
+    private static final Field METASPACE_METHOD_FIELD;
     private static final Class<?> TEST_CLASS = GetResolvedJavaMethodTest.class;
     private static final long PTR;
     static  {
-        HotSpotResolvedJavaMethodImpl method
+        HotSpotResolvedJavaMethod method
                 = CompilerToVMHelper.getResolvedJavaMethodAtSlot(TEST_CLASS, 0);
-        PTR = method.getMetaspacePointer();
+        try {
+            // jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl.metaspaceMethod
+            METASPACE_METHOD_FIELD = method.getClass()
+                    .getDeclaredField("metaspaceMethod");
+            METASPACE_METHOD_FIELD.setAccessible(true);
+            PTR = (long) METASPACE_METHOD_FIELD.get(method);
+        } catch (ReflectiveOperationException e) {
+            throw new Error("TESTBUG : " + e, e);
+        }
+
     }
 
     private static long getPtrToMethod() {
@@ -144,10 +145,11 @@ public class GetResolvedJavaMethodTest {
 
     public void test(TestCase testCase) {
         System.out.println(testCase.name());
-        HotSpotResolvedJavaMethodImpl result = testCase.getResolvedJavaMethod();
+        HotSpotResolvedJavaMethod result = testCase.getResolvedJavaMethod();
         Asserts.assertNotNull(result, testCase + " : got null");
-        Asserts.assertEQ(result.getDeclaringClass().mirror(), TEST_CLASS,
-                testCase + " : returned method has unexpected declaring class");
+        Asserts.assertEQ(TEST_CLASS,
+                CompilerToVMHelper.getMirror(result.getDeclaringClass()),
+                testCase + " : unexpected declaring class");
     }
 
     public static void main(String[] args) {
@@ -161,9 +163,9 @@ public class GetResolvedJavaMethodTest {
 
     private static void testMetaspaceWrapperBase() {
         try {
-            HotSpotResolvedJavaMethodImpl method
+            HotSpotResolvedJavaMethod method
                     = CompilerToVMHelper.getResolvedJavaMethod(
-                            new MetaspaceWrapperObject() {
+                            new PublicMetaspaceWrapperObject() {
                                 @Override
                                 public long getMetaspacePointer() {
                                     return getPtrToMethod();
@@ -171,18 +173,18 @@ public class GetResolvedJavaMethodTest {
                             }, 0L);
             throw new AssertionError("Test METASPACE_WRAPPER_BASE."
                     + " Expected IllegalArgumentException has not been caught");
-        } catch (IllegalArgumentException iae) {
+        } catch (IllegalArgumentException e) {
             // expected
         }
     }
 
     private static void testObjectBase() {
         try {
-            HotSpotResolvedJavaMethodImpl method
+            HotSpotResolvedJavaMethod method
                     = CompilerToVMHelper.getResolvedJavaMethod(new Object(), 0L);
             throw new AssertionError("Test OBJECT_BASE."
                 + " Expected IllegalArgumentException has not been caught");
-        } catch (IllegalArgumentException iae) {
+        } catch (IllegalArgumentException e) {
             // expected
         }
     }

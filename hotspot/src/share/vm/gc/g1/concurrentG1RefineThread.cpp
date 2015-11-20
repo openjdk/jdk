@@ -50,9 +50,8 @@ ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *nex
   // Each thread has its own monitor. The i-th thread is responsible for signaling
   // to thread i+1 if the number of buffers in the queue exceeds a threshold for this
   // thread. Monitors are also used to wake up the threads during termination.
-  // The 0th worker in notified by mutator threads and has a special monitor.
-  // The last worker is used for young gen rset size sampling.
-  if (worker_id > 0) {
+  // The 0th (primary) worker is notified by mutator threads and has a special monitor.
+  if (!is_primary()) {
     _monitor = new Monitor(Mutex::nonleaf, "Refinement monitor", true,
                            Monitor::_safepoint_check_never);
   } else {
@@ -66,61 +65,11 @@ ConcurrentG1RefineThread(ConcurrentG1Refine* cg1r, ConcurrentG1RefineThread *nex
 }
 
 void ConcurrentG1RefineThread::initialize() {
-  if (_worker_id < cg1r()->worker_thread_num()) {
-    // Current thread activation threshold
-    _threshold = MIN2<int>(cg1r()->thread_threshold_step() * (_worker_id + 1) + cg1r()->green_zone(),
-                           cg1r()->yellow_zone());
-    // A thread deactivates once the number of buffer reached a deactivation threshold
-    _deactivation_threshold = MAX2<int>(_threshold - cg1r()->thread_threshold_step(), cg1r()->green_zone());
-  } else {
-    set_active(true);
-  }
-}
-
-void ConcurrentG1RefineThread::sample_young_list_rs_lengths() {
-  SuspendibleThreadSetJoiner sts_join;
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  G1CollectorPolicy* g1p = g1h->g1_policy();
-  if (g1p->adaptive_young_list_length()) {
-    int regions_visited = 0;
-    g1h->young_list()->rs_length_sampling_init();
-    while (g1h->young_list()->rs_length_sampling_more()) {
-      g1h->young_list()->rs_length_sampling_next();
-      ++regions_visited;
-
-      // we try to yield every time we visit 10 regions
-      if (regions_visited == 10) {
-        if (sts_join.should_yield()) {
-          sts_join.yield();
-          // we just abandon the iteration
-          break;
-        }
-        regions_visited = 0;
-      }
-    }
-
-    g1p->revise_young_list_target_length_if_necessary();
-  }
-}
-
-void ConcurrentG1RefineThread::run_young_rs_sampling() {
-  DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
-  _vtime_start = os::elapsedVTime();
-  while(!_should_terminate) {
-    sample_young_list_rs_lengths();
-
-    if (os::supports_vtime()) {
-      _vtime_accum = (os::elapsedVTime() - _vtime_start);
-    } else {
-      _vtime_accum = 0.0;
-    }
-
-    MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
-    if (_should_terminate) {
-      break;
-    }
-    _monitor->wait(Mutex::_no_safepoint_check_flag, G1ConcRefinementServiceIntervalMillis);
-  }
+  // Current thread activation threshold
+  _threshold = MIN2<int>(cg1r()->thread_threshold_step() * (_worker_id + 1) + cg1r()->green_zone(),
+                         cg1r()->yellow_zone());
+  // A thread deactivates once the number of buffer reached a deactivation threshold
+  _deactivation_threshold = MAX2<int>(_threshold - cg1r()->thread_threshold_step(), cg1r()->green_zone());
 }
 
 void ConcurrentG1RefineThread::wait_for_completed_buffers() {
@@ -133,12 +82,12 @@ void ConcurrentG1RefineThread::wait_for_completed_buffers() {
 
 bool ConcurrentG1RefineThread::is_active() {
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
-  return _worker_id > 0 ? _active : dcqs.process_completed_buffers();
+  return is_primary() ? dcqs.process_completed_buffers() : _active;
 }
 
 void ConcurrentG1RefineThread::activate() {
   MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
-  if (_worker_id > 0) {
+  if (!is_primary()) {
     if (G1TraceConcRefinement) {
       DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
       gclog_or_tty->print_cr("G1-Refine-activated worker %d, on threshold %d, current %d",
@@ -154,7 +103,7 @@ void ConcurrentG1RefineThread::activate() {
 
 void ConcurrentG1RefineThread::deactivate() {
   MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
-  if (_worker_id > 0) {
+  if (!is_primary()) {
     if (G1TraceConcRefinement) {
       DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
       gclog_or_tty->print_cr("G1-Refine-deactivated worker %d, off threshold %d, current %d",
@@ -171,25 +120,24 @@ void ConcurrentG1RefineThread::run() {
   initialize_in_thread();
   wait_for_universe_init();
 
-  if (_worker_id >= cg1r()->worker_thread_num()) {
-    run_young_rs_sampling();
-    terminate();
-    return;
-  }
+  run_service();
 
+  terminate();
+}
+
+void ConcurrentG1RefineThread::run_service() {
   _vtime_start = os::elapsedVTime();
-  while (!_should_terminate) {
-    DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
 
+  while (!_should_terminate) {
     // Wait for work
     wait_for_completed_buffers();
-
     if (_should_terminate) {
       break;
     }
 
     {
       SuspendibleThreadSetJoiner sts_join;
+      DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
 
       do {
         int curr_buffer_num = (int)dcqs.completed_buffers_num();
@@ -199,7 +147,7 @@ void ConcurrentG1RefineThread::run() {
           dcqs.set_completed_queue_padding(0);
         }
 
-        if (_worker_id > 0 && curr_buffer_num <= _deactivation_threshold) {
+        if (!is_primary() && curr_buffer_num <= _deactivation_threshold) {
           // If the number of the buffer has fallen below our threshold
           // we should deactivate. The predecessor will reactivate this
           // thread should the number of the buffers cross the threshold again.
@@ -225,8 +173,10 @@ void ConcurrentG1RefineThread::run() {
       _vtime_accum = 0.0;
     }
   }
-  assert(_should_terminate, "just checking");
-  terminate();
+
+  if (G1TraceConcRefinement) {
+    gclog_or_tty->print_cr("G1-Refine-stop");
+  }
 }
 
 void ConcurrentG1RefineThread::stop() {
@@ -236,10 +186,7 @@ void ConcurrentG1RefineThread::stop() {
     _should_terminate = true;
   }
 
-  {
-    MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
-    _monitor->notify();
-  }
+  stop_service();
 
   {
     MutexLockerEx mu(Terminator_lock);
@@ -247,8 +194,9 @@ void ConcurrentG1RefineThread::stop() {
       Terminator_lock->wait();
     }
   }
-  if (G1TraceConcRefinement) {
-    gclog_or_tty->print_cr("G1-Refine-stop");
-  }
 }
 
+void ConcurrentG1RefineThread::stop_service() {
+  MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
+  _monitor->notify();
+}

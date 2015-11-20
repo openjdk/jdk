@@ -45,7 +45,7 @@
 #endif // INCLUDE_ALL_GCS
 
 /*
- *      Implementation of class sun.misc.Unsafe
+ *      Implementation of class Unsafe
  */
 
 
@@ -766,12 +766,12 @@ static void getBaseAndScale(int& base, int& scale, jclass acls, TRAPS) {
   }
   oop      mirror = JNIHandles::resolve_non_null(acls);
   Klass* k      = java_lang_Class::as_Klass(mirror);
-  if (k == NULL || !k->oop_is_array()) {
+  if (k == NULL || !k->is_array_klass()) {
     THROW(vmSymbols::java_lang_InvalidClassException());
-  } else if (k->oop_is_objArray()) {
+  } else if (k->is_objArray_klass()) {
     base  = arrayOopDesc::base_offset_in_bytes(T_OBJECT);
     scale = heapOopSize;
-  } else if (k->oop_is_typeArray()) {
+  } else if (k->is_typeArray_klass()) {
     TypeArrayKlass* tak = TypeArrayKlass::cast(k);
     base  = tak->array_header_in_bytes();
     assert(base == arrayOopDesc::base_offset_in_bytes(tak->element_type()), "array_header_size semantics ok");
@@ -783,7 +783,7 @@ static void getBaseAndScale(int& base, int& scale, jclass acls, TRAPS) {
 
 UNSAFE_ENTRY(jint, Unsafe_ArrayBaseOffset(JNIEnv *env, jobject unsafe, jclass acls))
   UnsafeWrapper("Unsafe_ArrayBaseOffset");
-  int base, scale;
+  int base = 0, scale = 0;
   getBaseAndScale(base, scale, acls, CHECK_0);
   return field_offset_from_byte_offset(base);
 UNSAFE_END
@@ -791,7 +791,7 @@ UNSAFE_END
 
 UNSAFE_ENTRY(jint, Unsafe_ArrayIndexScale(JNIEnv *env, jobject unsafe, jclass acls))
   UnsafeWrapper("Unsafe_ArrayIndexScale");
-  int base, scale;
+  int base = 0, scale = 0;
   getBaseAndScale(base, scale, acls, CHECK_0);
   // This VM packs both fields and array elements down to the byte.
   // But watch out:  If this changes, so that array references for

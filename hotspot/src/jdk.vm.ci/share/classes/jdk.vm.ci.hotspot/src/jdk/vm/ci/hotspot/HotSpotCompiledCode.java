@@ -22,12 +22,16 @@
  */
 package jdk.vm.ci.hotspot;
 
-import java.nio.*;
-import java.util.*;
-import java.util.stream.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Stream;
 import java.util.stream.Stream.Builder;
 
-import jdk.vm.ci.code.*;
+import jdk.vm.ci.code.BytecodeFrame;
+import jdk.vm.ci.code.CompilationResult;
 import jdk.vm.ci.code.CompilationResult.CodeAnnotation;
 import jdk.vm.ci.code.CompilationResult.CodeComment;
 import jdk.vm.ci.code.CompilationResult.DataPatch;
@@ -36,14 +40,15 @@ import jdk.vm.ci.code.CompilationResult.Infopoint;
 import jdk.vm.ci.code.CompilationResult.JumpTable;
 import jdk.vm.ci.code.CompilationResult.Mark;
 import jdk.vm.ci.code.CompilationResult.Site;
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.code.DataSection;
 import jdk.vm.ci.meta.Assumptions.Assumption;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
  * A {@link CompilationResult} with additional HotSpot-specific information required for installing
  * the code in HotSpot's code cache.
  */
-public abstract class HotSpotCompiledCode {
+public class HotSpotCompiledCode {
 
     public final String name;
     public final Site[] sites;
@@ -113,9 +118,7 @@ public abstract class HotSpotCompiledCode {
         targetCodeSize = compResult.getTargetCodeSize();
 
         DataSection data = compResult.getDataSection();
-        if (!data.isFinalized()) {
-            data.finalizeLayout();
-        }
+        data.finalizeLayout();
         dataSection = new byte[data.getSectionSize()];
 
         ByteBuffer buffer = ByteBuffer.wrap(dataSection).order(ByteOrder.nativeOrder());
@@ -175,5 +178,10 @@ public abstract class HotSpotCompiledCode {
         }
         Arrays.sort(result, new SiteComparator());
         return result;
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }

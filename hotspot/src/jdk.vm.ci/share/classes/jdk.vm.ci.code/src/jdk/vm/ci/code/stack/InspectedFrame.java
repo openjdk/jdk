@@ -22,7 +22,7 @@
  */
 package jdk.vm.ci.code.stack;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 public interface InspectedFrame {
 

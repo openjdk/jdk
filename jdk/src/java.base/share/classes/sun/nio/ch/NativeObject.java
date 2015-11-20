@@ -29,7 +29,7 @@
 package sun.nio.ch;                                     // Formerly in sun.misc
 
 import java.nio.ByteOrder;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 
 // ## In the fullness of time, this class will be eliminated

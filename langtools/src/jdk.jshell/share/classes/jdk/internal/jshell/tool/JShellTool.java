@@ -675,6 +675,9 @@ public class JShellTool {
         registerCommand(new Command("/classes", "/c", null, "list the declared classes",
                                     arg -> cmdClasses(),
                                     EMPTY_COMPLETION_PROVIDER));
+        registerCommand(new Command("/imports", "/i", null, "list the imported items",
+                                    arg -> cmdImports(),
+                                    EMPTY_COMPLETION_PROVIDER));
         registerCommand(new Command("/exit", "/x", null, "exit the REPL",
                                     arg -> cmdExit(),
                                     EMPTY_COMPLETION_PROVIDER));
@@ -1254,6 +1257,12 @@ public class JShellTool {
             }
             hard("  %s %s", kind, ck.name());
         }
+    }
+
+    private void cmdImports() {
+        state.imports().forEach(ik -> {
+            hard("  import %s%s", ik.isStatic() ? "static " : "", ik.fullname());
+        });
     }
 
     private void cmdUseHistoryEntry(int index) {

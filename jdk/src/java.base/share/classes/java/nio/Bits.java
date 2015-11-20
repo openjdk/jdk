@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.LongAdder;
 import jdk.internal.misc.JavaNioAccess;
 import jdk.internal.misc.JavaLangRefAccess;
 import jdk.internal.misc.SharedSecrets;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import sun.misc.VM;
 
 /**

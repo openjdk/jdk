@@ -30,7 +30,7 @@ import java.io.Console;
 import java.io.FileDescriptor;
 import java.security.ProtectionDomain;
 import java.security.AccessController;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 
 /** A repository of "shared secrets", which are a mechanism for
     calling implementation-private methods in another package without

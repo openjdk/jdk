@@ -124,6 +124,8 @@ class Assembler : public AbstractAssembler  {
     impdep1_op3  = 0x36,
     aes3_op3     = 0x36,
     sha_op3      = 0x36,
+    bmask_op3    = 0x36,
+    bshuffle_op3   = 0x36,
     alignaddr_op3  = 0x36,
     faligndata_op3 = 0x36,
     flog3_op3    = 0x36,
@@ -194,6 +196,7 @@ class Assembler : public AbstractAssembler  {
     fnegd_opf          = 0x06,
 
     alignaddr_opf      = 0x18,
+    bmask_opf          = 0x19,
 
     fadds_opf          = 0x41,
     faddd_opf          = 0x42,
@@ -204,6 +207,7 @@ class Assembler : public AbstractAssembler  {
 
     fmuls_opf          = 0x49,
     fmuld_opf          = 0x4a,
+    bshuffle_opf       = 0x4c,
     fdivs_opf          = 0x4d,
     fdivd_opf          = 0x4e,
 
@@ -1225,6 +1229,9 @@ public:
   //  VIS2 instructions
 
   void edge8n( Register s1, Register s2, Register d ) { vis2_only(); emit_int32( op(arith_op) | rd(d) | op3(edge_op3) | rs1(s1) | opf(edge8n_opf) | rs2(s2)); }
+
+  void bmask( Register s1, Register s2, Register d ) { vis2_only(); emit_int32( op(arith_op) | rd(d) | op3(bmask_op3) | rs1(s1) | opf(bmask_opf) | rs2(s2)); }
+  void bshuffle( FloatRegister s1, FloatRegister s2, FloatRegister d ) { vis2_only(); emit_int32( op(arith_op) | fd(d, FloatRegisterImpl::D) | op3(bshuffle_op3) | fs1(s1, FloatRegisterImpl::D) | opf(bshuffle_opf) | fs2(s2, FloatRegisterImpl::D)); }
 
   // VIS3 instructions
 

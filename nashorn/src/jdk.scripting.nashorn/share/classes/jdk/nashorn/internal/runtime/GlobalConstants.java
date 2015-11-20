@@ -105,7 +105,7 @@ public final class GlobalConstants implements Loggable {
      * Access map for this global - associates a symbol name with an Access object, with getter
      * and invalidation information
      */
-    private final Map<String, Access> map = new HashMap<>();
+    private final Map<Object, Access> map = new HashMap<>();
 
     private final AtomicBoolean invalidatedForever = new AtomicBoolean(false);
 
@@ -301,7 +301,7 @@ public final class GlobalConstants implements Loggable {
      * that might be linked as MethodHandle.constant and force relink
      * @param name name of property
      */
-    void delete(final String name) {
+    void delete(final Object name) {
         if (!invalidatedForever.get()) {
             synchronized (this) {
                 final Access acc = map.get(name);
