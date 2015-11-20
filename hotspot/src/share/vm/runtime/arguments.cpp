@@ -197,6 +197,7 @@ void Arguments::init_system_properties() {
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.version", VM_Version::vm_release(),  false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.name", VM_Version::vm_name(),  false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.info", VM_Version::vm_info_string(),  true));
+  PropertyList_add(&_system_properties, new SystemProperty("jdk.debug", VM_Version::jdk_debug_level(),  false));
 
   // Following are JVMTI agent writable properties.
   // Properties values are set to NULL and they are
@@ -228,7 +229,7 @@ void Arguments::init_version_specific_system_properties() {
   const char* spec_vendor = "Oracle Corporation";
   uint32_t spec_version = JDK_Version::current().major_version();
 
-  jio_snprintf(buffer, bufsz, "1." UINT32_FORMAT, spec_version);
+  jio_snprintf(buffer, bufsz, UINT32_FORMAT, spec_version);
 
   PropertyList_add(&_system_properties,
       new SystemProperty("java.vm.specification.vendor",  spec_vendor, false));
