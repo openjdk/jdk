@@ -44,8 +44,8 @@ MAIN_MODULES += java.se java.smartcardio jdk.httpserver jdk.sctp \
                jdk.vm.ci jdk.management
 
 # providers
-PROVIDER_MODULES += jdk.charsets jdk.crypto.ec jdk.crypto.pkcs11 jdk.jvmstat jdk.localedata \
-               jdk.naming.dns jdk.naming.rmi jdk.zipfs
+PROVIDER_MODULES += jdk.charsets jdk.crypto.ec jdk.crypto.pkcs11 jdk.jvmstat jdk.jvmstat.rmi \
+               jdk.localedata jdk.naming.dns jdk.naming.rmi jdk.zipfs
 
 # tools
 TOOLS_MODULES += jdk.attach jdk.compiler jdk.dev \

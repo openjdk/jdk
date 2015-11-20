@@ -1810,16 +1810,31 @@
   <module>
     <name>jdk.jvmstat</name>
     <depend>java.base</depend>
-    <depend>java.rmi</depend>
     <export>
       <name>sun.jvmstat.monitor</name>
       <to>jdk.attach</to>
       <to>jdk.jcmd</to>
       <to>jdk.jconsole</to>
+      <to>jdk.jvmstat.rmi</to>
     </export>
     <export>
       <name>sun.jvmstat.monitor.event</name>
       <to>jdk.jcmd</to>
+      <to>jdk.jvmstat.rmi</to>
+    </export>
+    <export>
+      <name>sun.jvmstat.perfdata.monitor</name>
+      <to>jdk.jvmstat.rmi</to>
+    </export>
+  </module>
+  <module>
+    <name>jdk.jvmstat.rmi</name>
+    <depend>java.base</depend>
+    <depend>java.rmi</depend>
+    <depend>jdk.jvmstat</depend>
+    <export>
+      <name>sun.jvmstat.monitor.remote</name>
+      <to>java.rmi</to>
     </export>
   </module>
   <module>
