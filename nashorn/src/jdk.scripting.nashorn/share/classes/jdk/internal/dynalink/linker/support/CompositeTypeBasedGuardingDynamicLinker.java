@@ -83,7 +83,6 @@
 
 package jdk.internal.dynalink.linker.support;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -102,9 +101,7 @@ import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
  * type is encountered, the linking is delegated to those linkers only, speeding
  * up dispatch.
  */
-public class CompositeTypeBasedGuardingDynamicLinker implements TypeBasedGuardingDynamicLinker, Serializable {
-    private static final long serialVersionUID = 1L;
-
+public class CompositeTypeBasedGuardingDynamicLinker implements TypeBasedGuardingDynamicLinker {
     // Using a separate static class instance so there's no strong reference from the class value back to the composite
     // linker.
     private static class ClassToLinker extends ClassValue<List<TypeBasedGuardingDynamicLinker>> {

@@ -29,7 +29,7 @@
  *          java.management
  *          jdk.attach
  *          jdk.management/sun.tools.attach
- * @run main/othervm/timeout=600 TestOptionsWithRanges
+ * @run main/othervm/timeout=780 TestOptionsWithRanges
  */
 
 import java.util.ArrayList;
@@ -70,6 +70,8 @@ public class TestOptionsWithRanges {
         allOptionsAsMap.remove("G1ConcRefinementThreads");
         allOptionsAsMap.remove("G1RSetRegionEntries");
         allOptionsAsMap.remove("G1RSetSparseRegionEntries");
+        allOptionsAsMap.remove("G1UpdateBufferSize");
+        allOptionsAsMap.remove("InitialBootClassLoaderMetaspaceSize");
 
         /*
          * Remove parameters controlling the code cache. As these

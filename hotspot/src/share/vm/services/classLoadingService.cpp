@@ -164,7 +164,7 @@ size_t ClassLoadingService::compute_class_size(InstanceKlass* k) {
 
   class_size += k->size();
 
-  if (k->oop_is_instance()) {
+  if (k->is_instance_klass()) {
     class_size += k->methods()->size();
     // FIXME: Need to count the contents of methods
     class_size += k->constants()->size();

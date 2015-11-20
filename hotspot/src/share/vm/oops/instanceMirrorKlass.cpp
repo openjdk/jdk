@@ -40,7 +40,7 @@
 int InstanceMirrorKlass::_offset_of_static_fields = 0;
 
 int InstanceMirrorKlass::instance_size(KlassHandle k) {
-  if (k() != NULL && k->oop_is_instance()) {
+  if (k() != NULL && k->is_instance_klass()) {
     return align_object_size(size_helper() + InstanceKlass::cast(k())->static_field_size());
   }
   return size_helper();
@@ -65,7 +65,7 @@ int InstanceMirrorKlass::oop_size(oop obj) const {
 
 int InstanceMirrorKlass::compute_static_oop_field_count(oop obj) {
   Klass* k = java_lang_Class::as_Klass(obj);
-  if (k != NULL && k->oop_is_instance()) {
+  if (k != NULL && k->is_instance_klass()) {
     return InstanceKlass::cast(k)->static_oop_field_count();
   }
   return 0;

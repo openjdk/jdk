@@ -29,14 +29,19 @@ package jdk.vm.ci.code;
 public class InstalledCode {
 
     /**
-     * Raw address of this code blob.
+     * Raw address address of entity representing this installed code.
      */
-    private long address;
+    protected long address;
+
+    /**
+     * Raw address of entryPoint of this installed code.
+     */
+    protected long entryPoint;
 
     /**
      * Counts how often the address field was reassigned.
      */
-    private long version;
+    protected long version;
 
     protected final String name;
 
@@ -44,27 +49,29 @@ public class InstalledCode {
         this.name = name;
     }
 
-    public final void setAddress(long address) {
-        this.address = address;
-        version++;
-    }
-
     /**
-     * @return the address of this code blob
+     * @return the address of entity representing this installed code.
      */
     public final long getAddress() {
         return address;
     }
 
     /**
-     * @return the address of this code blob
+     * @return the address of the normal entry point of the installed code.
+     */
+    public final long getEntryPoint() {
+        return entryPoint;
+    }
+
+    /**
+     * @return the version number of this installed code
      */
     public final long getVersion() {
         return version;
     }
 
     /**
-     * Returns the name of this code blob.
+     * Returns the name of this installed code.
      */
     public String getName() {
         return name;
@@ -79,10 +86,19 @@ public class InstalledCode {
     }
 
     /**
-     * Returns the number of instruction bytes for this code.
+     * @return true if the code represented by this object is still valid for invocation, false
+     *         otherwise (may happen due to deopt, etc.)
      */
-    public long getCodeSize() {
-        return 0;
+    public boolean isValid() {
+        return entryPoint != 0;
+    }
+
+    /**
+     * @return true if the code represented by this object still exists and might have live
+     *         activations, false otherwise (may happen due to deopt, etc.)
+     */
+    public boolean isAlive() {
+        return address != 0;
     }
 
     /**
@@ -93,17 +109,9 @@ public class InstalledCode {
     }
 
     /**
-     * @return true if the code represented by this object is still valid, false otherwise (may
-     *         happen due to deopt, etc.)
-     */
-    public boolean isValid() {
-        return address != 0;
-    }
-
-    /**
      * Invalidates this installed code such that any subsequent
      * {@linkplain #executeVarargs(Object...) invocation} will throw an
-     * {@link InvalidInstalledCodeException}.
+     * {@link InvalidInstalledCodeException} and all existing invocations will be deoptimized.
      */
     public void invalidate() {
         throw new UnsupportedOperationException();

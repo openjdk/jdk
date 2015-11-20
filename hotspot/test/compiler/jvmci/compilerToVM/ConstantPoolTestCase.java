@@ -26,8 +26,7 @@ package compiler.jvmci.compilerToVM;
 
 import java.util.HashMap;
 import java.util.Map;
-import jdk.vm.ci.hotspot.HotSpotConstantPool;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.internal.misc.SharedSecrets;
 import sun.reflect.ConstantPool;
 
@@ -35,15 +34,15 @@ import sun.reflect.ConstantPool;
  * Common class for jdk.vm.ci.hotspot.CompilerToVM constant pool tests
  */
 public class ConstantPoolTestCase {
-
     private final Map<ConstantPoolTestsHelper.ConstantTypes, Validator> typeTests;
 
     public static interface Validator {
-        void validate(HotSpotConstantPool constantPoolCTVM, ConstantPool constantPoolSS,
+        void validate(jdk.vm.ci.meta.ConstantPool constantPoolCTVM,
+                ConstantPool constantPoolSS,
             ConstantPoolTestsHelper.DummyClasses dummyClass, int index);
     }
 
-    public ConstantPoolTestCase(Map<ConstantPoolTestsHelper.ConstantTypes, Validator> typeTests) {
+    public ConstantPoolTestCase(Map<ConstantPoolTestsHelper.ConstantTypes,Validator> typeTests) {
         this.typeTests = new HashMap<>();
         this.typeTests.putAll(typeTests);
     }
@@ -120,9 +119,10 @@ public class ConstantPoolTestCase {
         for (ConstantPoolTestsHelper.DummyClasses dummyClass
                 : ConstantPoolTestsHelper.DummyClasses.values()) {
             System.out.printf("%nTesting dummy %s%n", dummyClass.klass);
-            HotSpotResolvedObjectTypeImpl holder = HotSpotResolvedObjectTypeImpl
+            HotSpotResolvedObjectType holder = HotSpotResolvedObjectType
                     .fromObjectClass(dummyClass.klass);
-            HotSpotConstantPool constantPoolCTVM = holder.getConstantPool();
+            jdk.vm.ci.meta.ConstantPool constantPoolCTVM
+                    = holder.getConstantPool();
             ConstantPool constantPoolSS = SharedSecrets.getJavaLangAccess().
                         getConstantPool(dummyClass.klass);
             for (Integer i : dummyClass.cp.keySet()) {

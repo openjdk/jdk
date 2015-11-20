@@ -93,7 +93,7 @@ public class JShell implements AutoCloseable {
 
 
     private ExecutionControl executionControl = null;
-    private SourceCodeAnalysis sourceCodeAnalysis = null;
+    private SourceCodeAnalysisImpl sourceCodeAnalysis = null;
 
 
     JShell(Builder b) {
@@ -378,6 +378,9 @@ public class JShell implements AutoCloseable {
     public void addToClasspath(String path) {
         taskFactory.addToClasspath(path);  // Compiler
         executionControl().commandAddToClasspath(path);       // Runtime
+        if (sourceCodeAnalysis != null) {
+            sourceCodeAnalysis.classpathChanged();
+        }
     }
 
     /**
@@ -465,6 +468,22 @@ public class JShell implements AutoCloseable {
         return snippets().stream()
                 .filter(sn -> status(sn).isActive && sn.kind() == Snippet.Kind.TYPE_DECL)
                 .map(sn -> (TypeDeclSnippet) sn)
+                .collect(collectingAndThen(toList(), Collections::unmodifiableList));
+    }
+
+    /**
+     * Returns the active import snippets.
+     * This convenience method is equivalent to <code>snippets()</code> filtered for
+     * {@link jdk.jshell.Snippet.Status#isActive status(snippet).isActive}
+     * <code>&amp;&amp; snippet.kind() == Kind.IMPORT</code>
+     * and cast to ImportSnippet.
+     * @return the active declared import declarations.
+     * @throws IllegalStateException if this JShell instance is closed.
+     */
+    public List<ImportSnippet> imports() throws IllegalStateException {
+        return snippets().stream()
+                .filter(sn -> status(sn).isActive && sn.kind() == Snippet.Kind.IMPORT)
+                .map(sn -> (ImportSnippet) sn)
                 .collect(collectingAndThen(toList(), Collections::unmodifiableList));
     }
 

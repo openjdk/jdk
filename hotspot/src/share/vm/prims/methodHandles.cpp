@@ -148,7 +148,7 @@ oop MethodHandles::init_MemberName(Handle mname, Handle target) {
     oop clazz = java_lang_reflect_Field::clazz(target_oop); // fd.field_holder()
     int slot  = java_lang_reflect_Field::slot(target_oop);  // fd.index()
     KlassHandle k(thread, java_lang_Class::as_Klass(clazz));
-    if (!k.is_null() && k->oop_is_instance()) {
+    if (!k.is_null() && k->is_instance_klass()) {
       fieldDescriptor fd(InstanceKlass::cast(k()), slot);
       oop mname2 = init_field_MemberName(mname, fd);
       if (mname2 != NULL) {
@@ -164,7 +164,7 @@ oop MethodHandles::init_MemberName(Handle mname, Handle target) {
     oop clazz  = java_lang_reflect_Method::clazz(target_oop);
     int slot   = java_lang_reflect_Method::slot(target_oop);
     KlassHandle k(thread, java_lang_Class::as_Klass(clazz));
-    if (!k.is_null() && k->oop_is_instance()) {
+    if (!k.is_null() && k->is_instance_klass()) {
       Method* m = InstanceKlass::cast(k())->method_with_idnum(slot);
       if (m == NULL || is_signature_polymorphic(m->intrinsic_id()))
         return NULL;            // do not resolve unless there is a concrete signature
@@ -175,7 +175,7 @@ oop MethodHandles::init_MemberName(Handle mname, Handle target) {
     oop clazz  = java_lang_reflect_Constructor::clazz(target_oop);
     int slot   = java_lang_reflect_Constructor::slot(target_oop);
     KlassHandle k(thread, java_lang_Class::as_Klass(clazz));
-    if (!k.is_null() && k->oop_is_instance()) {
+    if (!k.is_null() && k->is_instance_klass()) {
       Method* m = InstanceKlass::cast(k())->method_with_idnum(slot);
       if (m == NULL)  return NULL;
       CallInfo info(m, k());
@@ -637,8 +637,8 @@ Handle MethodHandles::resolve_MemberName(Handle mname, KlassHandle caller, TRAPS
   {
     Klass* defc_klass = java_lang_Class::as_Klass(defc_oop());
     if (defc_klass == NULL)  return empty;  // a primitive; no resolution possible
-    if (!defc_klass->oop_is_instance()) {
-      if (!defc_klass->oop_is_array())  return empty;
+    if (!defc_klass->is_instance_klass()) {
+      if (!defc_klass->is_array_klass())  return empty;
       defc_klass = SystemDictionary::Object_klass();
     }
     defc = instanceKlassHandle(THREAD, defc_klass);
@@ -804,7 +804,7 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
   case IS_FIELD:
     {
       assert(vmtarget->is_klass(), "field vmtarget is Klass*");
-      if (!((Klass*) vmtarget)->oop_is_instance())  break;
+      if (!((Klass*) vmtarget)->is_instance_klass())  break;
       instanceKlassHandle defc(THREAD, (Klass*) vmtarget);
       DEBUG_ONLY(vmtarget = NULL);  // safety
       bool is_static = ((flags & JVM_ACC_STATIC) != 0);
@@ -841,7 +841,7 @@ int MethodHandles::find_MemberNames(KlassHandle k,
 
   Thread* thread = Thread::current();
 
-  if (k.is_null() || !k->oop_is_instance())  return -1;
+  if (k.is_null() || !k->is_instance_klass())  return -1;
 
   int rfill = 0, rlimit = results->length(), rskip = skip;
   // overflow measurement:
@@ -1164,12 +1164,12 @@ JVM_ENTRY(jobject, MHN_resolve_Mem(JNIEnv *env, jobject igcls, jobject mname_jh,
   if (VerifyMethodHandles && caller_jh != NULL &&
       java_lang_invoke_MemberName::clazz(mname()) != NULL) {
     Klass* reference_klass = java_lang_Class::as_Klass(java_lang_invoke_MemberName::clazz(mname()));
-    if (reference_klass != NULL && reference_klass->oop_is_objArray()) {
+    if (reference_klass != NULL && reference_klass->is_objArray_klass()) {
       reference_klass = ObjArrayKlass::cast(reference_klass)->bottom_klass();
     }
 
     // Reflection::verify_class_access can only handle instance classes.
-    if (reference_klass != NULL && reference_klass->oop_is_instance()) {
+    if (reference_klass != NULL && reference_klass->is_instance_klass()) {
       // Emulate LinkResolver::check_klass_accessability.
       Klass* caller = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(caller_jh));
       if (!Reflection::verify_class_access(caller,

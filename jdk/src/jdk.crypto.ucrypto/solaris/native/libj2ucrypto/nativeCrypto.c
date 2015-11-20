@@ -27,6 +27,7 @@
 #include <string.h>
 #include <strings.h>
 #include <jni.h>
+#include "jni_util.h"
 #include <libsoftcrypto.h>
 #include "nativeCrypto.h"
 #include "nativeFunc.h"
@@ -59,7 +60,7 @@ void throwOutOfMemoryError(JNIEnv *env, const char *msg)
   (*env)->DeleteLocalRef(env, jExClass);
 }
 
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+JNIEXPORT jint JNICALL DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
     return JNI_VERSION_1_4;
 }
 

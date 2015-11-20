@@ -372,6 +372,9 @@ public class Infer {
                         resultInfo, inferenceContext);
                 }
             }
+        } else if (rsInfoInfContext.free(resultInfo.pt)) {
+            //propagation - cache captured vars
+            qtype = inferenceContext.asUndetVar(rsInfoInfContext.cachedCapture(tree, from, false));
         }
         Assert.check(allowGraphInference || !rsInfoInfContext.free(to),
                 "legacy inference engine cannot handle constraints on both sides of a subtyping assertion");

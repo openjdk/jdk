@@ -1716,7 +1716,7 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size, AllocationConte
   return NULL;
 }
 
-bool G1CollectedHeap::expand(size_t expand_bytes) {
+bool G1CollectedHeap::expand(size_t expand_bytes, double* expand_time_ms) {
   size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
   aligned_expand_bytes = align_size_up(aligned_expand_bytes,
                                        HeapRegion::GrainBytes);
@@ -1733,10 +1733,14 @@ bool G1CollectedHeap::expand(size_t expand_bytes) {
     return false;
   }
 
+  double expand_heap_start_time_sec = os::elapsedTime();
   uint regions_to_expand = (uint)(aligned_expand_bytes / HeapRegion::GrainBytes);
   assert(regions_to_expand > 0, "Must expand by at least one region");
 
   uint expanded_by = _hrm.expand_by(regions_to_expand);
+  if (expand_time_ms != NULL) {
+    *expand_time_ms = (os::elapsedTime() - expand_heap_start_time_sec) * MILLIUNITS;
+  }
 
   if (expanded_by > 0) {
     size_t actual_expand_bytes = expanded_by * HeapRegion::GrainBytes;
@@ -3930,8 +3934,12 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         _allocator->init_gc_alloc_regions(evacuation_info);
 
         G1ParScanThreadStateSet per_thread_states(this, workers()->active_workers(), g1_policy()->young_cset_region_length());
+        pre_evacuate_collection_set();
+
         // Actually do the work...
         evacuate_collection_set(evacuation_info, &per_thread_states);
+
+        post_evacuate_collection_set(evacuation_info, &per_thread_states);
 
         const size_t* surviving_young_words = per_thread_states.surviving_young_words();
         free_collection_set(g1_policy()->collection_set(), evacuation_info, surviving_young_words);
@@ -3997,9 +4005,11 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
             size_t bytes_before = capacity();
             // No need for an ergo verbose message here,
             // expansion_amount() does this when it returns a value > 0.
-            if (!expand(expand_bytes)) {
+            double expand_ms;
+            if (!expand(expand_bytes, &expand_ms)) {
               // We failed to expand the heap. Cannot do anything about it.
             }
+            g1_policy()->phase_times()->record_expand_heap_time(expand_ms);
           }
         }
 
@@ -4584,20 +4594,16 @@ class G1KlassCleaningTask : public StackObj {
     Klass* klass;
     do {
       klass =_klass_iterator.next_klass();
-    } while (klass != NULL && !klass->oop_is_instance());
+    } while (klass != NULL && !klass->is_instance_klass());
 
-    return (InstanceKlass*)klass;
+    // this can be null so don't call InstanceKlass::cast
+    return static_cast<InstanceKlass*>(klass);
   }
 
 public:
 
   void clean_klass(InstanceKlass* ik) {
-    ik->clean_implementors_list(_is_alive);
-    ik->clean_method_data(_is_alive);
-
-    // G1 specific cleanup work that has
-    // been moved here to be done in parallel.
-    ik->clean_dependent_nmethods();
+    ik->clean_weak_instanceklass_links(_is_alive);
   }
 
   void work() {
@@ -5164,27 +5170,29 @@ void G1CollectedHeap::enqueue_discovered_references(G1ParScanThreadStateSet* per
   g1_policy()->phase_times()->record_ref_enq_time(ref_enq_time * 1000.0);
 }
 
-void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
+void G1CollectedHeap::pre_evacuate_collection_set() {
   _expand_heap_after_alloc_failure = true;
   _evacuation_failed = false;
-
-  // Should G1EvacuationFailureALot be in effect for this GC?
-  NOT_PRODUCT(set_evacuation_failure_alot_for_current_gc();)
-
-  g1_rem_set()->prepare_for_oops_into_collection_set_do();
 
   // Disable the hot card cache.
   G1HotCardCache* hot_card_cache = _cg1r->hot_card_cache();
   hot_card_cache->reset_hot_cache_claimed_index();
   hot_card_cache->set_use_cache(false);
 
-  const uint n_workers = workers()->active_workers();
+}
+
+void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
+  g1_rem_set()->prepare_for_oops_into_collection_set_do();
+
+  // Should G1EvacuationFailureALot be in effect for this GC?
+  NOT_PRODUCT(set_evacuation_failure_alot_for_current_gc();)
 
   assert(dirty_card_queue_set().completed_buffers_num() == 0, "Should be empty");
   double start_par_time_sec = os::elapsedTime();
   double end_par_time_sec;
 
   {
+    const uint n_workers = workers()->active_workers();
     G1RootProcessor root_processor(this, n_workers);
     G1ParTask g1_par_task(this, per_thread_states, _task_queues, &root_processor, n_workers);
     // InitialMark needs claim bits to keep track of the marked-through CLDs.
@@ -5234,20 +5242,7 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G
     phase_times->record_string_dedup_fixup_time(fixup_time_ms);
   }
 
-  _allocator->release_gc_alloc_regions(evacuation_info);
   g1_rem_set()->cleanup_after_oops_into_collection_set_do();
-
-  per_thread_states->flush();
-
-  record_obj_copy_mem_stats();
-
-  // Reset and re-enable the hot card cache.
-  // Note the counts for the cards in the regions in the
-  // collection set are reset when the collection set is freed.
-  hot_card_cache->reset_hot_cache();
-  hot_card_cache->set_use_cache(true);
-
-  purge_code_root_memory();
 
   if (evacuation_failed()) {
     remove_self_forwarding_pointers();
@@ -5266,6 +5261,23 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G
   // cards). We need these updates logged to update any
   // RSets.
   enqueue_discovered_references(per_thread_states);
+}
+
+void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
+  _allocator->release_gc_alloc_regions(evacuation_info);
+
+  per_thread_states->flush();
+
+  record_obj_copy_mem_stats();
+
+  // Reset and re-enable the hot card cache.
+  // Note the counts for the cards in the regions in the
+  // collection set are reset when the collection set is freed.
+  G1HotCardCache* hot_card_cache = _cg1r->hot_card_cache();
+  hot_card_cache->reset_hot_cache();
+  hot_card_cache->set_use_cache(true);
+
+  purge_code_root_memory();
 
   redirty_logged_cards();
 #if defined(COMPILER2) || INCLUDE_JVMCI

@@ -29,6 +29,7 @@ text: .text%Java_sun_reflect_Reflection_getCallerClass__;
 text: .text%Java_sun_reflect_Reflection_getCallerClass__I;
 text: .text%Java_java_lang_Class_forName0;
 text: .text%Java_java_lang_String_intern;
+text: .text%Java_java_lang_StringUTF16_isBigEndian;
 text: .text%Java_java_lang_Float_floatToRawIntBits;
 text: .text%Java_java_lang_Double_doubleToRawLongBits;
 text: .text%Java_java_lang_ClassLoader_findLoadedClass0;

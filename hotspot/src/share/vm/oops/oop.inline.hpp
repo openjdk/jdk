@@ -127,27 +127,12 @@ inline void   oopDesc::init_mark()                 { set_mark(markOopDesc::proto
 inline bool oopDesc::is_a(Klass* k)        const { return klass()->is_subtype_of(k); }
 
 inline bool oopDesc::is_instance() const {
-  return klass()->oop_is_instance();
+  return klass()->is_instance_klass();
 }
 
-inline bool oopDesc::is_instanceClassLoader() const {
-  Klass* k = klass();
-  return k->oop_is_instance() && InstanceKlass::cast(k)->is_class_loader_instance_klass();
-}
-
-inline bool oopDesc::is_instanceMirror() const {
-  Klass* k = klass();
-  return k->oop_is_instance() && InstanceKlass::cast(k)->is_mirror_instance_klass();
-}
-
-inline bool oopDesc::is_instanceRef() const {
-  Klass* k = klass();
-  return k->oop_is_instance() && InstanceKlass::cast(k)->is_reference_instance_klass();
-}
-
-inline bool oopDesc::is_array()               const { return klass()->oop_is_array(); }
-inline bool oopDesc::is_objArray()            const { return klass()->oop_is_objArray(); }
-inline bool oopDesc::is_typeArray()           const { return klass()->oop_is_typeArray(); }
+inline bool oopDesc::is_array()               const { return klass()->is_array_klass(); }
+inline bool oopDesc::is_objArray()            const { return klass()->is_objArray_klass(); }
+inline bool oopDesc::is_typeArray()           const { return klass()->is_typeArray_klass(); }
 
 inline void*     oopDesc::field_base(int offset)        const { return (void*)&((char*)this)[offset]; }
 
@@ -724,7 +709,7 @@ inline void oopDesc::pc_follow_contents(ParCompactionManager* cm) {
 
 inline void oopDesc::pc_update_contents() {
   Klass* k = klass();
-  if (!k->oop_is_typeArray()) {
+  if (!k->is_typeArray_klass()) {
     // It might contain oops beyond the header, so take the virtual call.
     k->oop_pc_update_pointers(this);
   }
@@ -733,7 +718,7 @@ inline void oopDesc::pc_update_contents() {
 
 inline void oopDesc::ps_push_contents(PSPromotionManager* pm) {
   Klass* k = klass();
-  if (!k->oop_is_typeArray()) {
+  if (!k->is_typeArray_klass()) {
     // It might contain oops beyond the header, so take the virtual call.
     k->oop_ps_push_contents(this, pm);
   }

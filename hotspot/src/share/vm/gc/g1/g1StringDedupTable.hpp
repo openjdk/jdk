@@ -40,12 +40,14 @@ class G1StringDedupEntry : public CHeapObj<mtGC> {
 private:
   G1StringDedupEntry* _next;
   unsigned int      _hash;
+  bool              _latin1;
   typeArrayOop      _obj;
 
 public:
   G1StringDedupEntry() :
     _next(NULL),
     _hash(0),
+    _latin1(false),
     _obj(NULL) {
   }
 
@@ -67,6 +69,14 @@ public:
 
   void set_hash(unsigned int hash) {
     _hash = hash;
+  }
+
+  bool latin1() {
+    return _latin1;
+  }
+
+  void set_latin1(bool latin1) {
+    _latin1 = latin1;
   }
 
   typeArrayOop obj() {
@@ -152,7 +162,7 @@ private:
   }
 
   // Adds a new table entry to the given hash bucket.
-  void add(typeArrayOop value, unsigned int hash, G1StringDedupEntry** list);
+  void add(typeArrayOop value, bool latin1, unsigned int hash, G1StringDedupEntry** list);
 
   // Removes the given table entry from the table.
   void remove(G1StringDedupEntry** pentry, uint worker_id);
@@ -162,20 +172,20 @@ private:
 
   // Returns an existing character array in the given hash bucket, or NULL
   // if no matching character array exists.
-  typeArrayOop lookup(typeArrayOop value, unsigned int hash,
+  typeArrayOop lookup(typeArrayOop value, bool latin1, unsigned int hash,
                       G1StringDedupEntry** list, uintx &count);
 
   // Returns an existing character array in the table, or inserts a new
   // table entry if no matching character array exists.
-  typeArrayOop lookup_or_add_inner(typeArrayOop value, unsigned int hash);
+  typeArrayOop lookup_or_add_inner(typeArrayOop value, bool latin1, unsigned int hash);
 
   // Thread safe lookup or add of table entry
-  static typeArrayOop lookup_or_add(typeArrayOop value, unsigned int hash) {
+  static typeArrayOop lookup_or_add(typeArrayOop value, bool latin1, unsigned int hash) {
     // Protect the table from concurrent access. Also note that this lock
     // acts as a fence for _table, which could have been replaced by a new
     // instance if the table was resized or rehashed.
     MutexLockerEx ml(StringDedupTable_lock, Mutex::_no_safepoint_check_flag);
-    return _table->lookup_or_add_inner(value, hash);
+    return _table->lookup_or_add_inner(value, latin1, hash);
   }
 
   // Returns true if the hashtable is currently using a Java compatible
@@ -188,7 +198,7 @@ private:
 
   // Computes the hash code for the given character array, using the
   // currently active hash function and hash seed.
-  static unsigned int hash_code(typeArrayOop value);
+  static unsigned int hash_code(typeArrayOop value, bool latin1);
 
   static uintx unlink_or_oops_do(G1StringDedupUnlinkOrOopsDoClosure* cl,
                                  size_t partition_begin,

@@ -738,7 +738,7 @@ public class MethodEmitter {
      * @param recovery start label for catch
      */
     void _try(final Label entry, final Label exit, final Label recovery) {
-        _try(entry, exit, recovery, (String)null, false);
+        _try(entry, exit, recovery, null, false);
     }
 
     void markLabelAsOptimisticCatchHandler(final Label label, final int liveLocalCount) {
