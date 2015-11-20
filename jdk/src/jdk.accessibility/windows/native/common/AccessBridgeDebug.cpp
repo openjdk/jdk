@@ -36,6 +36,41 @@
 extern "C" {
 #endif
 
+/**
+ * print a GetLastError message
+ */
+char *printError(char *msg) {
+    LPVOID lpMsgBuf = NULL;
+    static char retbuf[256];
+
+    if (msg != NULL) {
+        strncpy((char *)retbuf, msg, sizeof(retbuf));
+        // if msg text is >= 256 ensure buffer is null terminated
+        retbuf[255] = '\0';
+    }
+    if (!FormatMessage(
+                       FORMAT_MESSAGE_ALLOCATE_BUFFER |
+                       FORMAT_MESSAGE_FROM_SYSTEM |
+                       FORMAT_MESSAGE_IGNORE_INSERTS,
+                       NULL,
+                       GetLastError(),
+                       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
+                       (LPTSTR) &lpMsgBuf,
+                       0,
+                       NULL ))
+        {
+            PrintDebugString("  %s: FormatMessage failed", msg);
+        } else {
+            PrintDebugString("  %s: %s", msg, (char *)lpMsgBuf);
+        }
+    if (lpMsgBuf != NULL) {
+        strncat((char *)retbuf, ": ", sizeof(retbuf) - strlen(retbuf) - 1);
+        strncat((char *)retbuf, (char *)lpMsgBuf, sizeof(retbuf) - strlen(retbuf) - 1);
+    }
+    return (char *)retbuf;
+}
+
+
     /**
      * Send debugging info to the appropriate place
      */

@@ -23,41 +23,34 @@
  * questions.
  */
 
+typedef void (WINAPI * LogStringCallbackFP) (const char * lpString);
+extern LogStringCallbackFP g_LogStringCallback;
+
+#define LINE_BUFSIZE 1024
+#define LARGE_BUFSIZE 5120
+#define HUGE_BUFSIZE 20480
+
 /*
- * A class to manage AccessBridge debugging
+ * returns formatted date and time
  */
+char *getTimeAndDate();
 
-#ifndef __AccessBridgeDebug_H__
-#define __AccessBridgeDebug_H__
+/*
+ * displays a message in a dialog and writes the message to a logfile
+ */
+void displayAndLog(HWND hDlg, int nIDDlgItem, FILE *logfile, char *msg, ...);
 
-#include <crtdbg.h>
-#include <windows.h>
+/*
+ * writes a text string to a logfile
+ */
+void logString(FILE *logfile, char *msg, ...);
 
-#ifdef DEBUG
-#define DEBUGGING_ON
-#define SEND_TO_OUTPUT_DEBUG_STRING
-//#define JAVA_DEBUGGING_ON
-#endif
+/**
+ * returns accessibility information for an AccessibleContext
+ */
+char *getAccessibleInfo(long vmID, AccessibleContext ac, char *buffer, int bufsize);
 
-#ifdef DEBUGGING_ON
-#define DEBUG_CODE(x) x
-#else
-#define DEBUG_CODE(x) /* */
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-    char *printError(char *msg);
-    void PrintDebugString(char *msg, ...);
-    void PrintJavaDebugString(char *msg, ...);
-    void wPrintJavaDebugString(wchar_t *msg, ...);
-    void wPrintDebugString(wchar_t *msg, ...);
-
-#ifdef __cplusplus
-}
-#endif
-
-
-#endif
+/**
+ * returns accessibility information at the specified coordinates in an AccessibleContext
+ */
+char *getAccessibleInfo(long vmID, AccessibleContext ac, int x, int y, char *buffer, int bufsize);

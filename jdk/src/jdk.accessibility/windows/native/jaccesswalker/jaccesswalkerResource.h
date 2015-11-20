@@ -23,41 +23,24 @@
  * questions.
  */
 
-/*
- * A class to manage AccessBridge debugging
- */
+#define cTreeControl                    1001
+#define cAccessInfoText                 2001
+#define cMonkeyMenus                    10000
+#define cFileMenu                       10100
+#define cRefreshTreeItem                10101
+#define cExitMenuItem                   10103
+#define cSettingsMenu                   10200
+#define cAPIMenuItem                    10201
+#define cAPIPopupItem                   10202
 
-#ifndef __AccessBridgeDebug_H__
-#define __AccessBridgeDebug_H__
-
-#include <crtdbg.h>
-#include <windows.h>
-
-#ifdef DEBUG
-#define DEBUGGING_ON
-#define SEND_TO_OUTPUT_DEBUG_STRING
-//#define JAVA_DEBUGGING_ON
+// Next default values for new objects
+//
+#ifdef APSTUDIO_INVOKED
+#ifndef APSTUDIO_READONLY_SYMBOLS
+#define _APS_NO_MFC                     1
+#define _APS_NEXT_RESOURCE_VALUE        102
+#define _APS_NEXT_COMMAND_VALUE         40003
+#define _APS_NEXT_CONTROL_VALUE         1032
+#define _APS_NEXT_SYMED_VALUE           101
 #endif
-
-#ifdef DEBUGGING_ON
-#define DEBUG_CODE(x) x
-#else
-#define DEBUG_CODE(x) /* */
-#endif
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-    char *printError(char *msg);
-    void PrintDebugString(char *msg, ...);
-    void PrintJavaDebugString(char *msg, ...);
-    void wPrintJavaDebugString(wchar_t *msg, ...);
-    void wPrintDebugString(wchar_t *msg, ...);
-
-#ifdef __cplusplus
-}
-#endif
-
-
 #endif

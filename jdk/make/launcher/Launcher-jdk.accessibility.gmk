@@ -56,6 +56,77 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   ))
 
   TARGETS += $(BUILD_JABSWITCH)
+
+################################################################################
+# jaccessinspector
+
+  TOPDIR := $(JDK_TOPDIR)/src/jdk.accessibility/windows/native
+  TOOLS_CFLAGS := $(addprefix -I, \
+      $(TOPDIR)/include/bridge \
+      $(TOPDIR)/common \
+      $(TOPDIR)/toolscommon)
+
+  define SetupInspector
+  # Parameter 1 File name suffix
+  # Parameter 2 ACCESSBRIDGE_ARCH_ -D suffix
+
+    $$(eval $$(call SetupNativeCompilation, BUILD_JACCESSINSPECTOR$1, \
+      SRC := $(TOPDIR)/jaccessinspector $(TOPDIR)/common \
+          $(TOPDIR)/toolscommon $(TOPDIR)/include/bridge, \
+      CFLAGS := $$(CFLAGS_JDKEXE) $(TOOLS_CFLAGS) -DACCESSBRIDGE_ARCH_$2 /EHsc, \
+      LDFLAGS := $$(LDFLAGS_JDKEXE) /STACK:655360 Advapi32.lib User32.lib, \
+      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/jdk.accessibility/jaccessinspector$1, \
+      OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_cmds/jdk.accessibility, \
+      PROGRAM := jaccessinspector$1, \
+      DEBUG_SYMBOLS := true, \
+      VERSIONINFO_RESOURCE := $(TOPDIR)/jaccessinspector/jaccessinspectorWindow.rc, \
+      RC_FLAGS := $$(RC_FLAGS) \
+          -D "JDK_FNAME=jaccessinspector$1.exe" \
+          -D "JDK_INTERNAL_NAME=jaccessinspector$1" \
+          -D "JDK_FTYPE=0x01L", \
+    ))
+
+    TARGETS += $$(BUILD_JACCESSINSPECTOR$1)
+
+  endef
+
+################################################################################
+# jaccesswalker
+
+  define SetupWalker
+  # Parameter 1 File name suffix
+  # Parameter 2 ACCESSBRIDGE_ARCH_ -D suffix
+
+    $$(eval $$(call SetupNativeCompilation,BUILD_JACCESSWALKER$1, \
+      SRC := $(TOPDIR)/jaccesswalker $(TOPDIR)/common \
+          $(TOPDIR)/toolscommon $(TOPDIR)/include/bridge, \
+      CFLAGS :== $$(CFLAGS_JDKEXE) $(TOOLS_CFLAGS) -DACCESSBRIDGE_ARCH_$2 /EHsc, \
+      LDFLAGS := $$(LDFLAGS_JDKEXE) /STACK:655360 Advapi32.lib Comctl32.lib Gdi32.lib User32.lib, \
+      OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/jdk.accessibility/jaccesswalker$1, \
+      OUTPUT_DIR := $(SUPPORT_OUTPUTDIR)/modules_cmds/jdk.accessibility, \
+      PROGRAM := jaccesswalker$1, \
+      DEBUG_SYMBOLS := true, \
+      VERSIONINFO_RESOURCE := $(TOPDIR)/jaccesswalker/jaccesswalkerWindow.rc, \
+      RC_FLAGS := $$(RC_FLAGS) \
+          -D "JDK_FNAME=jaccesswalker$1.exe" \
+          -D "JDK_INTERNAL_NAME=jaccesswalker$1" \
+          -D "JDK_FTYPE=0x01L", \
+   ))
+
+    TARGETS += $$(BUILD_JACCESSWALKER$1)
+
+  endef
+
+  ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
+    $(eval $(call SetupInspector,-32,32))
+    $(eval $(call SetupWalker,-32,32))
+    $(eval $(call SetupInspector,,LEGACY))
+    $(eval $(call SetupWalker,,LEGACY))
+  else
+    $(eval $(call SetupInspector,,64))
+    $(eval $(call SetupWalker,,64))
+  endif
+
 endif
 
 ################################################################################
