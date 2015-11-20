@@ -1378,10 +1378,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(vframeArrayElement,          _bci,                                          int)                                   \
   nonstatic_field(vframeArrayElement,          _method,                                       Method*)                               \
                                                                                                                                      \
-  nonstatic_field(PtrQueue,                    _active,                                       bool)                                  \
-  nonstatic_field(PtrQueue,                    _buf,                                          void**)                                \
-  nonstatic_field(PtrQueue,                    _index,                                        size_t)                                \
-                                                                                                                                     \
   nonstatic_field(AccessFlags,                 _flags,                                        jint)                                  \
   nonstatic_field(elapsedTimer,                _counter,                                      jlong)                                 \
   nonstatic_field(elapsedTimer,                _active,                                       bool)                                  \
@@ -2273,8 +2269,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   /* Miscellaneous types */                                               \
   /***************/                                                       \
                                                                           \
-  declare_toplevel_type(PtrQueue)                                         \
-                                                                          \
   /* freelist */                                                          \
   declare_toplevel_type(FreeChunk*)                                       \
   declare_toplevel_type(AdaptiveFreeList<FreeChunk>*)                     \
@@ -3066,6 +3060,9 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 #define GENERATE_VM_INT_CONSTANT_ENTRY(name) \
  { QUOTE(name), (int32_t) name },
 
+#define GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY(name, value) \
+ { (name), (int32_t)(value) },
+
 #define GENERATE_PREPROCESSOR_VM_INT_CONSTANT_ENTRY(name, value) \
  { name, (int32_t) value },
 
@@ -3296,6 +3293,9 @@ VMIntConstantEntry VMStructs::localHotSpotVMIntConstants[] = {
   VM_INT_CONSTANTS_CMS(GENERATE_VM_INT_CONSTANT_ENTRY)
 
   VM_INT_CONSTANTS_PARNEW(GENERATE_VM_INT_CONSTANT_ENTRY)
+
+  VM_INT_CONSTANTS_G1(GENERATE_VM_INT_CONSTANT_ENTRY,
+                      GENERATE_VM_INT_CONSTANT_WITH_VALUE_ENTRY)
 #endif // INCLUDE_ALL_GCS
 
 #if INCLUDE_TRACE

@@ -36,12 +36,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdint.h>
 
-#define MAXSIGNUM 32
-#define MASK(sig) ((unsigned int)1 << sig)
-
-static struct sigaction sact[MAXSIGNUM]; /* saved signal handlers */
-static unsigned int jvmsigs = 0; /* signals used by jvm */
+#define MASK(sig) ((uint32_t)1 << (sig-1))  // 0 is not a signal.
+#if (32 < NSIG-1)
+#error "Not all signals can be encoded in jvmsigs. Adapt its type!"
+#endif
+static struct sigaction sact[NSIG]; /* saved signal handlers */
+static uint32_t jvmsigs = 0; /* signals used by jvm */
 static __thread bool reentry = false; /* prevent reentry deadlock (per-thread) */
 
 /* used to synchronize the installation of signal handlers */

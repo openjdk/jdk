@@ -22,11 +22,10 @@
  *
  */
 
-#ifndef SHARE_VM_gc_G1_G1EVACSTATS_HPP
-#define SHARE_VM_gc_G1_G1EVACSTATS_HPP
+#ifndef SHARE_VM_GC_G1_G1EVACSTATS_HPP
+#define SHARE_VM_GC_G1_G1EVACSTATS_HPP
 
 #include "gc/shared/plab.hpp"
-#include "runtime/atomic.hpp"
 
 // Records various memory allocation statistics gathered during evacuation.
 class G1EvacStats : public PLABStats {
@@ -75,19 +74,11 @@ class G1EvacStats : public PLABStats {
   // Amount of space in heapwords wasted (unused) in the failing regions when an evacuation failure happens.
   size_t failure_waste() const { return _failure_waste; }
 
-  void add_direct_allocated(size_t value) {
-    Atomic::add_ptr(value, &_direct_allocated);
-  }
+  inline void add_direct_allocated(size_t value);
+  inline void add_region_end_waste(size_t value);
+  inline void add_failure_used_and_waste(size_t used, size_t waste);
 
-  void add_region_end_waste(size_t value) {
-    Atomic::add_ptr(value, &_region_end_waste);
-    Atomic::add_ptr(1, &_regions_filled);
-  }
-
-  void add_failure_used_and_waste(size_t used, size_t waste) {
-    Atomic::add_ptr(used, &_failure_used);
-    Atomic::add_ptr(waste, &_failure_waste);
-  }
+  ~G1EvacStats();
 };
 
-#endif // SHARE_VM_gc_G1_G1EVACSTATS_HPP
+#endif // SHARE_VM_GC_G1_G1EVACSTATS_HPP

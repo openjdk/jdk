@@ -539,11 +539,11 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
               if (tls->Opcode() == Op_ThreadLocal) {
                 int offs = (int)igvn->find_intptr_t_con(adr->in(AddPNode::Offset), Type::OffsetBot);
                 if (offs == in_bytes(JavaThread::satb_mark_queue_offset() +
-                                     PtrQueue::byte_offset_of_buf())) {
+                                     SATBMarkQueue::byte_offset_of_buf())) {
                   break; // G1 pre barrier previous oop value store.
                 }
                 if (offs == in_bytes(JavaThread::dirty_card_queue_offset() +
-                                     PtrQueue::byte_offset_of_buf())) {
+                                     DirtyCardQueue::byte_offset_of_buf())) {
                   break; // G1 post barrier card address store.
                 }
               }

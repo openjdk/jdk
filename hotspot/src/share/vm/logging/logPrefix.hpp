@@ -27,12 +27,17 @@
 #include "gc/shared/gcId.hpp"
 #include "logging/logTag.hpp"
 
-// Prefixes prepend each log message for a specified tagset with the given prefix.
-// A prefix consists of a format string and a value or callback. Prefixes are added
-// after the decorations but before the log message.
+// Prefixes prepend each log message for a specified tagset with a given prefix.
+// These prefixes are written before the log message but after the log decorations.
+//
+// A prefix is defined as a function that takes a buffer (with some size) as argument.
+// This function will be called for each log message, and should write the prefix
+// to the given buffer. The function should return how many characters it wrote,
+// which should never exceed the given size.
 //
 // List of prefixes for specific tags and/or tagsets.
-// Syntax: LOG_PREFIX(<printf format>, <value/callback for value>, LOG_TAGS(<chosen log tags>))
+// Syntax: LOG_PREFIX(<name of prefixer function>, LOG_TAGS(<chosen log tags>))
+// Where the prefixer function matches the following signature: size_t (*)(char*, size_t)
 #define LOG_PREFIX_LIST // Currently unused/empty
 
 // The empty prefix, used when there's no prefix defined.
@@ -44,12 +49,12 @@ struct LogPrefix : public AllStatic {
   }
 };
 
-#define LOG_PREFIX(fmt, fn, ...) \
+#define LOG_PREFIX(fn, ...) \
 template <> struct LogPrefix<__VA_ARGS__> { \
   static size_t prefix(char* buf, size_t len) { \
-    int ret = jio_snprintf(buf, len, fmt, fn); \
-    assert(ret >= 0, \
-           "Failed to prefix log message using prefix ('%s', '%s'), log buffer too small?", fmt, #fn); \
+    DEBUG_ONLY(buf[0] = '\0';) \
+    size_t ret = fn(buf, len); \
+    assert(ret == strlen(buf), "Length mismatch ret (" SIZE_FORMAT ") != buf length (" SIZE_FORMAT ")", ret, strlen(buf)); \
     return ret; \
   } \
 };

@@ -630,11 +630,11 @@ class StubGenerator: public StubCodeGenerator {
           Label filtered;
 
           // Is marking active?
-          if (in_bytes(PtrQueue::byte_width_of_active()) == 4) {
-            __ lwz(Rtmp1, in_bytes(JavaThread::satb_mark_queue_offset() + PtrQueue::byte_offset_of_active()), R16_thread);
+          if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+            __ lwz(Rtmp1, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), R16_thread);
           } else {
-            guarantee(in_bytes(PtrQueue::byte_width_of_active()) == 1, "Assumption");
-            __ lbz(Rtmp1, in_bytes(JavaThread::satb_mark_queue_offset() + PtrQueue::byte_offset_of_active()), R16_thread);
+            guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+            __ lbz(Rtmp1, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), R16_thread);
           }
           __ cmpdi(CCR0, Rtmp1, 0);
           __ beq(CCR0, filtered);

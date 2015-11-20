@@ -48,6 +48,16 @@ BUILD_HOTSPOT_JTREG_NATIVE_SRC := \
     $(HOTSPOT_TOPDIR)/test/runtime/SameObject \
     #
 
+# Add conditional directories here when needed.
+ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
+BUILD_HOTSPOT_JTREG_NATIVE_SRC += \
+    $(HOTSPOT_TOPDIR)/test/runtime/libadimalloc.solaris.sparc
+endif
+
+ifeq ($(TOOLCHAIN_TYPE), solstudio)
+    BUILD_HOTSPOT_JTREG_LIBRARIES_LDFLAGS_liboverflow := -lc
+endif
+
 BUILD_HOTSPOT_JTREG_OUTPUT_DIR := $(BUILD_OUTPUT)/support/test/hotspot/jtreg/native
 
 BUILD_HOTSPOT_JTREG_IMAGE_DIR := $(TEST_IMAGE_DIR)/hotspot/jtreg

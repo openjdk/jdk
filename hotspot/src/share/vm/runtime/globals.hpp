@@ -1031,9 +1031,10 @@ public:
   product(bool, CreateCoredumpOnCrash, true,                                \
           "Create core/mini dump on VM fatal error")                        \
                                                                             \
-  product(uintx, ErrorLogTimeout, 2 * 60,                                   \
+  product(uint64_t, ErrorLogTimeout, 2 * 60,                                \
           "Timeout, in seconds, to limit the time spent on writing an "     \
           "error log in case of a crash.")                                  \
+          range(0, (uint64_t)max_jlong/1000)                                \
                                                                             \
   product_pd(bool, UseOSErrorReporting,                                     \
           "Let VM fatal error propagate to the OS (ie. WER on Windows)")    \
@@ -1333,10 +1334,6 @@ public:
   product(bool, UseSignalChaining, true,                                    \
           "Use signal-chaining to invoke signal handlers installed "        \
           "by the application (Solaris & Linux only)")                      \
-                                                                            \
-  product(bool, UseAltSigs, false,                                          \
-          "Use alternate signals instead of SIGUSR1 & SIGUSR2 for VM "      \
-          "internal signals (Solaris only)")                                \
                                                                             \
   product(bool, AllowJNIEnvProxy, false,                                    \
           "Allow JNIEnv proxies for jdbx")                                  \

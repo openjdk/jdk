@@ -331,7 +331,9 @@ static void crash_with_sigfpe() {
   volatile int x = 0;
   volatile int y = 1/x;
 #ifndef _WIN32
-  raise(SIGFPE);
+  // OSX implements raise(sig) incorrectly so we need to
+  // explicitly target the current thread
+  pthread_kill(pthread_self(), SIGFPE);
 #endif
 } // end: crash_with_sigfpe
 

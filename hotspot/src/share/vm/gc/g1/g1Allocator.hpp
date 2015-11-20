@@ -38,19 +38,16 @@ class EvacuationInfo;
 // Also keeps track of retained regions across GCs.
 class G1Allocator : public CHeapObj<mtGC> {
   friend class VMStructs;
-private:
-  bool _survivor_is_full;
-  bool _old_is_full;
 protected:
   G1CollectedHeap* _g1h;
 
   virtual MutatorAllocRegion* mutator_alloc_region(AllocationContext_t context) = 0;
 
-  virtual bool survivor_is_full(AllocationContext_t context) const;
-  virtual bool old_is_full(AllocationContext_t context) const;
+  virtual bool survivor_is_full(AllocationContext_t context) const = 0;
+  virtual bool old_is_full(AllocationContext_t context) const = 0;
 
-  virtual void set_survivor_full(AllocationContext_t context);
-  virtual void set_old_full(AllocationContext_t context);
+  virtual void set_survivor_full(AllocationContext_t context) = 0;
+  virtual void set_old_full(AllocationContext_t context) = 0;
 
   // Accessors to the allocation regions.
   virtual SurvivorGCAllocRegion* survivor_gc_alloc_region(AllocationContext_t context) = 0;
@@ -67,7 +64,7 @@ protected:
                                           size_t* actual_word_size,
                                           AllocationContext_t context);
 public:
-  G1Allocator(G1CollectedHeap* heap) : _g1h(heap), _survivor_is_full(false), _old_is_full(false) { }
+  G1Allocator(G1CollectedHeap* heap) : _g1h(heap) { }
   virtual ~G1Allocator() { }
 
   static G1Allocator* create_allocator(G1CollectedHeap* g1h);
@@ -79,7 +76,7 @@ public:
   virtual void init_mutator_alloc_region() = 0;
   virtual void release_mutator_alloc_region() = 0;
 
-  virtual void init_gc_alloc_regions(EvacuationInfo& evacuation_info);
+  virtual void init_gc_alloc_regions(EvacuationInfo& evacuation_info) = 0;
   virtual void release_gc_alloc_regions(EvacuationInfo& evacuation_info) = 0;
   virtual void abandon_gc_alloc_regions() = 0;
 
@@ -119,6 +116,9 @@ public:
 // and old generation allocation region.
 // Can retain the (single) old generation allocation region across GCs.
 class G1DefaultAllocator : public G1Allocator {
+private:
+  bool _survivor_is_full;
+  bool _old_is_full;
 protected:
   // Alloc region used to satisfy mutator allocation requests.
   MutatorAllocRegion _mutator_alloc_region;
@@ -134,6 +134,12 @@ protected:
   HeapRegion* _retained_old_gc_alloc_region;
 public:
   G1DefaultAllocator(G1CollectedHeap* heap);
+
+  virtual bool survivor_is_full(AllocationContext_t context) const;
+  virtual bool old_is_full(AllocationContext_t context) const ;
+
+  virtual void set_survivor_full(AllocationContext_t context);
+  virtual void set_old_full(AllocationContext_t context);
 
   virtual void init_mutator_alloc_region();
   virtual void release_mutator_alloc_region();

@@ -290,7 +290,7 @@ void PhaseMacroExpand::eliminate_card_mark(Node* p2x) {
             cmpx->in(1)->is_Load()) {
           Node* adr = cmpx->in(1)->as_Load()->in(MemNode::Address);
           const int marking_offset = in_bytes(JavaThread::satb_mark_queue_offset() +
-                                              PtrQueue::byte_offset_of_active());
+                                              SATBMarkQueue::byte_offset_of_active());
           if (adr->is_AddP() && adr->in(AddPNode::Base) == top() &&
               adr->in(AddPNode::Address)->Opcode() == Op_ThreadLocal &&
               adr->in(AddPNode::Offset) == MakeConX(marking_offset)) {
