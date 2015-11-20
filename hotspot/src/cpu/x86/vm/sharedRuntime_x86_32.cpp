@@ -198,7 +198,7 @@ OopMap* RegisterSaver::save_live_registers(MacroAssembler* masm, int additional_
     }
   }
 
-  if (vect_words > 0) {
+  if (save_vectors) {
     assert(vect_words*wordSize == 128, "");
     __ subptr(rsp, 128); // Save upper half of YMM registes
     for (int n = 0; n < num_xmm_regs; n++) {
@@ -266,21 +266,7 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
 #else
   assert(!restore_vectors, "vectors are generated only by C2");
 #endif
-  int off = xmm0_off;
-  int delta = xmm1_off - off;
 
-  if (UseSSE == 1) {
-    assert(additional_frame_bytes == 0, "");
-    for (int n = 0; n < num_xmm_regs; n++) {
-      __ movflt(as_XMMRegister(n), Address(rsp, off*wordSize));
-      off += delta;
-    }
-  } else if (UseSSE >= 2) {
-    for (int n = 0; n < num_xmm_regs; n++) {
-      __ movdqu(as_XMMRegister(n), Address(rsp, off*wordSize+additional_frame_bytes));
-      off += delta;
-    }
-  }
   if (restore_vectors) {
     assert(additional_frame_bytes == 128, "");
     if (UseAVX > 2) {
@@ -296,6 +282,23 @@ void RegisterSaver::restore_live_registers(MacroAssembler* masm, bool restore_ve
     }
     __ addptr(rsp, additional_frame_bytes); // Save upper half of YMM registes
   }
+
+  int off = xmm0_off;
+  int delta = xmm1_off - off;
+
+  if (UseSSE == 1) {
+    for (int n = 0; n < num_xmm_regs; n++) {
+      __ movflt(as_XMMRegister(n), Address(rsp, off*wordSize));
+      off += delta;
+    }
+  } else if (UseSSE >= 2) {
+    // additional_frame_bytes only populated for the restore_vector case, else it is 0
+    for (int n = 0; n < num_xmm_regs; n++) {
+      __ movdqu(as_XMMRegister(n), Address(rsp, off*wordSize+additional_frame_bytes));
+      off += delta;
+    }
+  }
+
   __ pop_FPU_state();
   __ addptr(rsp, FPU_regs_live*wordSize); // Pop FPU registers
 
