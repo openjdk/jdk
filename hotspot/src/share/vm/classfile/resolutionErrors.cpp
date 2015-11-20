@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
 // add new entry to the table
 void ResolutionErrorTable::add_entry(int index, unsigned int hash,
-                                     constantPoolHandle pool, int cp_index,
+                                     const constantPoolHandle& pool, int cp_index,
                                      Symbol* error, Symbol* message)
 {
   assert_locked_or_safepoint(SystemDictionary_lock);
@@ -44,7 +44,7 @@ void ResolutionErrorTable::add_entry(int index, unsigned int hash,
 
 // find entry in the table
 ResolutionErrorEntry* ResolutionErrorTable::find_entry(int index, unsigned int hash,
-                                                       constantPoolHandle pool, int cp_index)
+                                                       const constantPoolHandle& pool, int cp_index)
 {
   assert_locked_or_safepoint(SystemDictionary_lock);
 

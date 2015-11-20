@@ -22,28 +22,36 @@
  */
 package jdk.vm.ci.hotspot.sparc;
 
-import static jdk.vm.ci.inittimer.InitTimer.*;
+import static jdk.vm.ci.inittimer.InitTimer.timer;
 
-import java.util.*;
+import java.util.EnumSet;
 
-import jdk.vm.ci.code.*;
-import jdk.vm.ci.compiler.*;
-import jdk.vm.ci.hotspot.*;
-import jdk.vm.ci.inittimer.*;
-import jdk.vm.ci.runtime.*;
-import jdk.vm.ci.service.*;
-import jdk.vm.ci.sparc.*;
+import jdk.vm.ci.code.Architecture;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.code.stack.StackIntrospection;
+import jdk.vm.ci.hotspot.HotSpotCodeCacheProvider;
+import jdk.vm.ci.hotspot.HotSpotConstantReflectionProvider;
+import jdk.vm.ci.hotspot.HotSpotJVMCIBackendFactory;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntimeProvider;
+import jdk.vm.ci.hotspot.HotSpotMetaAccessProvider;
+import jdk.vm.ci.hotspot.HotSpotStackIntrospection;
+import jdk.vm.ci.hotspot.HotSpotVMConfig;
+import jdk.vm.ci.inittimer.InitTimer;
+import jdk.vm.ci.runtime.JVMCIBackend;
+import jdk.vm.ci.service.ServiceProvider;
+import jdk.vm.ci.sparc.SPARC;
 import jdk.vm.ci.sparc.SPARC.CPUFeature;
 
 @ServiceProvider(HotSpotJVMCIBackendFactory.class)
 public class SPARCHotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFactory {
 
-    protected TargetDescription createTarget(HotSpotVMConfig config, CompilerFactory compilerFactory) {
+    protected TargetDescription createTarget(HotSpotVMConfig config) {
         final int stackFrameAlignment = 16;
         final int implicitNullCheckLimit = 4096;
         final boolean inlineObjects = false;
         Architecture arch = new SPARC(computeFeatures(config));
-        return new TargetDescription(compilerFactory.initializeArchitecture(arch), true, stackFrameAlignment, implicitNullCheckLimit, inlineObjects);
+        return new TargetDescription(arch, true, stackFrameAlignment, implicitNullCheckLimit, inlineObjects);
     }
 
     protected HotSpotCodeCacheProvider createCodeCache(HotSpotJVMCIRuntimeProvider runtime, TargetDescription target, RegisterConfig regConfig) {
@@ -64,8 +72,62 @@ public class SPARCHotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
         if ((config.sparcFeatures & config.cbcondInstructions) != 0) {
             features.add(CPUFeature.CBCOND);
         }
-        if (config.useBlockZeroing) {
-            features.add(CPUFeature.BLOCK_ZEROING);
+        if ((config.sparcFeatures & config.v8Instructions) != 0) {
+            features.add(CPUFeature.V8);
+        }
+        if ((config.sparcFeatures & config.hardwareMul32) != 0) {
+            features.add(CPUFeature.HARDWARE_MUL32);
+        }
+        if ((config.sparcFeatures & config.hardwareDiv32) != 0) {
+            features.add(CPUFeature.HARDWARE_DIV32);
+        }
+        if ((config.sparcFeatures & config.hardwareFsmuld) != 0) {
+            features.add(CPUFeature.HARDWARE_FSMULD);
+        }
+        if ((config.sparcFeatures & config.hardwarePopc) != 0) {
+            features.add(CPUFeature.HARDWARE_POPC);
+        }
+        if ((config.sparcFeatures & config.v9Instructions) != 0) {
+            features.add(CPUFeature.V9);
+        }
+        if ((config.sparcFeatures & config.sun4v) != 0) {
+            features.add(CPUFeature.SUN4V);
+        }
+        if ((config.sparcFeatures & config.blkInitInstructions) != 0) {
+            features.add(CPUFeature.BLK_INIT_INSTRUCTIONS);
+        }
+        if ((config.sparcFeatures & config.fmafInstructions) != 0) {
+            features.add(CPUFeature.FMAF);
+        }
+        if ((config.sparcFeatures & config.fmauInstructions) != 0) {
+            features.add(CPUFeature.FMAU);
+        }
+        if ((config.sparcFeatures & config.sparc64Family) != 0) {
+            features.add(CPUFeature.SPARC64_FAMILY);
+        }
+        if ((config.sparcFeatures & config.mFamily) != 0) {
+            features.add(CPUFeature.M_FAMILY);
+        }
+        if ((config.sparcFeatures & config.tFamily) != 0) {
+            features.add(CPUFeature.T_FAMILY);
+        }
+        if ((config.sparcFeatures & config.t1Model) != 0) {
+            features.add(CPUFeature.T1_MODEL);
+        }
+        if ((config.sparcFeatures & config.sparc5Instructions) != 0) {
+            features.add(CPUFeature.SPARC5);
+        }
+        if ((config.sparcFeatures & config.aesInstructions) != 0) {
+            features.add(CPUFeature.SPARC64_FAMILY);
+        }
+        if ((config.sparcFeatures & config.sha1Instruction) != 0) {
+            features.add(CPUFeature.SHA1);
+        }
+        if ((config.sparcFeatures & config.sha256Instruction) != 0) {
+            features.add(CPUFeature.SHA256);
+        }
+        if ((config.sparcFeatures & config.sha512Instruction) != 0) {
+            features.add(CPUFeature.SHA512);
         }
         return features;
     }
@@ -81,20 +143,22 @@ public class SPARCHotSpotJVMCIBackendFactory implements HotSpotJVMCIBackendFacto
     }
 
     @SuppressWarnings("try")
-    public JVMCIBackend createJVMCIBackend(HotSpotJVMCIRuntimeProvider runtime, CompilerFactory compilerFactory, JVMCIBackend host) {
+    public JVMCIBackend createJVMCIBackend(HotSpotJVMCIRuntimeProvider runtime, JVMCIBackend host) {
         assert host == null;
-        TargetDescription target = createTarget(runtime.getConfig(), compilerFactory);
+        TargetDescription target = createTarget(runtime.getConfig());
 
         HotSpotMetaAccessProvider metaAccess = new HotSpotMetaAccessProvider(runtime);
-        RegisterConfig regConfig = new SPARCHotSpotRegisterConfig(target, runtime.getConfig());
+        RegisterConfig regConfig = new SPARCHotSpotRegisterConfig(target.arch, runtime.getConfig());
         HotSpotCodeCacheProvider codeCache = createCodeCache(runtime, target, regConfig);
         HotSpotConstantReflectionProvider constantReflection = new HotSpotConstantReflectionProvider(runtime);
+        StackIntrospection stackIntrospection = new HotSpotStackIntrospection(runtime);
         try (InitTimer rt = timer("instantiate backend")) {
-            return createBackend(metaAccess, codeCache, constantReflection);
+            return createBackend(metaAccess, codeCache, constantReflection, stackIntrospection);
         }
     }
 
-    protected JVMCIBackend createBackend(HotSpotMetaAccessProvider metaAccess, HotSpotCodeCacheProvider codeCache, HotSpotConstantReflectionProvider constantReflection) {
-        return new JVMCIBackend(metaAccess, codeCache, constantReflection);
+    protected JVMCIBackend createBackend(HotSpotMetaAccessProvider metaAccess, HotSpotCodeCacheProvider codeCache, HotSpotConstantReflectionProvider constantReflection,
+                    StackIntrospection stackIntrospection) {
+        return new JVMCIBackend(metaAccess, codeCache, constantReflection, stackIntrospection);
     }
 }

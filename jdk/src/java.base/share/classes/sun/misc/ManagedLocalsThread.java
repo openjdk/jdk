@@ -30,7 +30,7 @@ package sun.misc;
  * locals erased on construction.
  */
 public class ManagedLocalsThread extends Thread {
-    private static final Unsafe UNSAFE;
+    private static final jdk.internal.misc.Unsafe UNSAFE;
     private static final long THREAD_LOCALS;
     private static final long INHERITABLE_THREAD_LOCALS;
 
@@ -77,7 +77,7 @@ public class ManagedLocalsThread extends Thread {
     }
 
     static {
-        UNSAFE = Unsafe.getUnsafe();
+        UNSAFE = jdk.internal.misc.Unsafe.getUnsafe();
         Class<?> t = Thread.class;
         try {
             THREAD_LOCALS = UNSAFE.objectFieldOffset

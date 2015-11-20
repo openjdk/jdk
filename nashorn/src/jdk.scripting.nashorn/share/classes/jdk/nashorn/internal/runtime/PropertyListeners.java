@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.LongAdder;
  */
 public class PropertyListeners {
 
-    private Map<String, WeakPropertyMapSet> listeners;
+    private Map<Object, WeakPropertyMapSet> listeners;
 
     // These counters are updated in debug mode
     private static LongAdder listenersAdded;

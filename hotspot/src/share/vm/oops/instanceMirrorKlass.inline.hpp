@@ -60,7 +60,7 @@ void InstanceMirrorKlass::oop_oop_iterate(oop obj, OopClosureType* closure) {
     Klass* klass = java_lang_Class::as_Klass(obj);
     // We'll get NULL for primitive mirrors.
     if (klass != NULL) {
-      if (klass->oop_is_instance() && InstanceKlass::cast(klass)->is_anonymous()) {
+      if (klass->is_instance_klass() && InstanceKlass::cast(klass)->is_anonymous()) {
         // An anonymous class doesn't have its own class loader, so when handling
         // the java mirror for an anonymous class we need to make sure its class
         // loader data is claimed, this is done by calling do_cld explicitly.

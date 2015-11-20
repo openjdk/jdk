@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -320,7 +320,7 @@ Klass* LoaderConstraintTable::find_constrained_klass(Symbol* name,
                                                        Handle loader) {
   LoaderConstraintEntry *p = *(find_loader_constraint(name, loader));
   if (p != NULL && p->klass() != NULL) {
-    if (p->klass()->oop_is_instance() && !InstanceKlass::cast(p->klass())->is_loaded()) {
+    if (p->klass()->is_instance_klass() && !InstanceKlass::cast(p->klass())->is_loaded()) {
       // Only return fully loaded classes.  Classes found through the
       // constraints might still be in the process of loading.
       return NULL;

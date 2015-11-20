@@ -45,7 +45,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
@@ -81,7 +81,7 @@ public class HasFinalizableSubclassTest {
 
     private void runTest(TestCase tcase) {
         System.out.println(tcase);
-        HotSpotResolvedObjectTypeImpl metaspaceKlass = CompilerToVMHelper
+        HotSpotResolvedObjectType metaspaceKlass = CompilerToVMHelper
                 .lookupType(Utils.toJVMTypeSignature(tcase.aClass),
                         getClass(), /* resolve = */ true);
         Asserts.assertEQ(tcase.expected,

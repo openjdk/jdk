@@ -36,7 +36,7 @@ import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
 
-import sun.misc.Unsafe ;
+import jdk.internal.misc.Unsafe ;
 import sun.reflect.ReflectionFactory ;
 
 /** This class provides the methods for fundamental JVM operations
@@ -120,7 +120,7 @@ public final class Bridge
                     Field fld = null ;
 
                     try {
-                        Class unsafeClass = sun.misc.Unsafe.class ;
+                        Class unsafeClass = jdk.internal.misc.Unsafe.class ;
                         fld = unsafeClass.getDeclaredField( "theUnsafe" ) ;
                         fld.setAccessible( true ) ;
                         return fld ;
