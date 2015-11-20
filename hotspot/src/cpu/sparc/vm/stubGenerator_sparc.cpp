@@ -5292,6 +5292,38 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+/**
+   *  Arguments:
+   *
+   * Inputs:
+   *   O0   - int   crc
+   *   O1   - byte* buf
+   *   O2   - int   len
+   *   O3   - int*  table
+   *
+   * Output:
+   *   O0   - int crc result
+   */
+  address generate_updateBytesCRC32() {
+    assert(UseCRC32Intrinsics, "need VIS3 instructions");
+
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "updateBytesCRC32");
+    address start = __ pc();
+
+    const Register crc   = O0; // crc
+    const Register buf   = O1; // source java byte array address
+    const Register len   = O2; // length
+    const Register table = O3; // crc_table address (reuse register)
+
+    __ kernel_crc32(crc, buf, len, table);
+
+    __ retl();
+    __ delayed()->nop();
+
+    return start;
+  }
+
   void generate_initial() {
     // Generates all stubs and initializes the entry points
 
@@ -5324,6 +5356,12 @@ class StubGenerator: public StubCodeGenerator {
 
     // Build this early so it's available for the interpreter.
     StubRoutines::_throw_StackOverflowError_entry          = generate_throw_exception("StackOverflowError throw_exception",           CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
+
+    if (UseCRC32Intrinsics) {
+      // set table address before stub generation which use it
+      StubRoutines::_crc_table_adr = (address)StubRoutines::Sparc::_crc_table;
+      StubRoutines::_updateBytesCRC32 = generate_updateBytesCRC32();
+    }
   }
 
 
