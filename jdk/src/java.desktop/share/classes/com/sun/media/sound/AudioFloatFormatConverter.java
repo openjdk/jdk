@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Objects;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -538,6 +539,7 @@ public final class AudioFloatFormatConverter extends FormatConversionProvider {
 
     public AudioFormat[] getTargetFormats(Encoding targetEncoding,
             AudioFormat sourceFormat) {
+        Objects.requireNonNull(targetEncoding);
         if (AudioFloatConverter.getConverter(sourceFormat) == null)
             return new AudioFormat[0];
         int channels = sourceFormat.getChannels();
@@ -592,6 +594,7 @@ public final class AudioFloatFormatConverter extends FormatConversionProvider {
 
     public boolean isConversionSupported(AudioFormat targetFormat,
             AudioFormat sourceFormat) {
+        Objects.requireNonNull(targetFormat);
         if (AudioFloatConverter.getConverter(sourceFormat) == null)
             return false;
         if (AudioFloatConverter.getConverter(targetFormat) == null)
@@ -605,6 +608,7 @@ public final class AudioFloatFormatConverter extends FormatConversionProvider {
 
     public boolean isConversionSupported(Encoding targetEncoding,
             AudioFormat sourceFormat) {
+        Objects.requireNonNull(targetEncoding);
         if (AudioFloatConverter.getConverter(sourceFormat) == null)
             return false;
         for (int i = 0; i < formats.length; i++) {
