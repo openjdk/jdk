@@ -1359,6 +1359,85 @@ class java_lang_StackTraceElement: AllStatic {
 };
 
 
+class Backtrace: AllStatic {
+ public:
+  // Helper backtrace functions to store bci|version together.
+  static int merge_bci_and_version(int bci, int version);
+  static int merge_mid_and_cpref(int mid, int cpref);
+  static int bci_at(unsigned int merged);
+  static int version_at(unsigned int merged);
+  static int mid_at(unsigned int merged);
+  static int cpref_at(unsigned int merged);
+  static int get_line_number(const methodHandle& method, int bci);
+  static Symbol* get_source_file_name(InstanceKlass* holder, int version);
+
+  // Debugging
+  friend class JavaClasses;
+};
+
+// Interface to java.lang.StackFrameInfo objects
+
+#define STACKFRAMEINFO_INJECTED_FIELDS(macro)                      \
+  macro(java_lang_StackFrameInfo, mid,     short_signature, false) \
+  macro(java_lang_StackFrameInfo, version, short_signature, false) \
+  macro(java_lang_StackFrameInfo, cpref,   short_signature, false)
+
+class java_lang_StackFrameInfo: AllStatic {
+private:
+  static int _declaringClass_offset;
+  static int _memberName_offset;
+  static int _bci_offset;
+  static int _methodName_offset;
+  static int _fileName_offset;
+  static int _lineNumber_offset;
+
+  static int _mid_offset;
+  static int _version_offset;
+  static int _cpref_offset;
+
+  static Method* get_method(Handle stackFrame, InstanceKlass* holder, TRAPS);
+  static Symbol* get_file_name(Handle stackFrame, InstanceKlass* holder);
+
+public:
+  // Setters
+  static void set_declaringClass(oop info, oop value);
+  static void set_method_and_bci(Handle stackFrame, const methodHandle& method, int bci);
+  static void set_bci(oop info, int value);
+
+  // set method info in an instance of StackFrameInfo
+  static void fill_methodInfo(Handle info, TRAPS);
+  static void set_methodName(oop info, oop value);
+  static void set_fileName(oop info, oop value);
+  static void set_lineNumber(oop info, int value);
+
+  // these injected fields are only used if -XX:-MemberNameInStackFrame set
+  static void set_mid(oop info, short value);
+  static void set_version(oop info, short value);
+  static void set_cpref(oop info, short value);
+
+  static void compute_offsets();
+
+  // Debugging
+  friend class JavaClasses;
+};
+
+class java_lang_LiveStackFrameInfo: AllStatic {
+ private:
+  static int _monitors_offset;
+  static int _locals_offset;
+  static int _operands_offset;
+
+ public:
+  static void set_monitors(oop info, oop value);
+  static void set_locals(oop info, oop value);
+  static void set_operands(oop info, oop value);
+
+  static void compute_offsets();
+
+  // Debugging
+  friend class JavaClasses;
+};
+
 // Interface to java.lang.AssertionStatusDirectives objects
 
 class java_lang_AssertionStatusDirectives: AllStatic {
@@ -1442,7 +1521,9 @@ class InjectedField {
   CLASS_INJECTED_FIELDS(macro)              \
   CLASSLOADER_INJECTED_FIELDS(macro)        \
   MEMBERNAME_INJECTED_FIELDS(macro)         \
-  CALLSITECONTEXT_INJECTED_FIELDS(macro)
+  CALLSITECONTEXT_INJECTED_FIELDS(macro)    \
+  STACKFRAMEINFO_INJECTED_FIELDS(macro)
+
 
 // Interface to hard-coded offset checking
 
