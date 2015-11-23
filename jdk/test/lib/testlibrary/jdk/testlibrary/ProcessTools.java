@@ -27,8 +27,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -253,11 +251,8 @@ public final class ProcessTools {
      *
      * @return Process id
      */
-    public static int getProcessId() throws Exception {
-        RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
-        int pid = Integer.parseInt(runtime.getName().split("@")[0]);
-
-        return pid;
+    public static long getProcessId() {
+        return ProcessHandle.current().getPid();
     }
 
     /**

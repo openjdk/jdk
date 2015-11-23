@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ public final class JpsBase {
     }
 
     public static void main(String[] args) throws Exception {
-        int pid = ProcessTools.getProcessId();
+        long pid = ProcessTools.getProcessId();
 
         List<List<JpsHelper.JpsArg>> combinations = JpsHelper.JpsArg.generateCombinations();
         for (List<JpsHelper.JpsArg> combination : combinations) {
@@ -76,7 +76,7 @@ public final class JpsBase {
                     // 30673
                     isQuiet = true;
                     JpsHelper.verifyJpsOutput(output, "^\\d+$");
-                    output.shouldContain(Integer.toString(pid));
+                    output.shouldContain(Long.toString(pid));
                     break;
                 case l:
                     // If '-l' is specified output should contain the full package name for the application's main class
