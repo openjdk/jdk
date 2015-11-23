@@ -43,6 +43,7 @@ import java.util.stream.Stream;
 import jdk.internal.misc.JavaAWTAccess;
 import jdk.internal.misc.SharedSecrets;
 import sun.misc.ManagedLocalsThread;
+import sun.util.logging.internal.LoggingProviderImpl;
 
 /**
  * There is a single global LogManager object that is used to
@@ -436,7 +437,8 @@ public class LogManager {
                 readConfiguration();
 
                 // Platform loggers begin to delegate to java.util.logging.Logger
-                sun.util.logging.PlatformLogger.redirectPlatformLoggers();
+                jdk.internal.logger.BootstrapLogger.redirectTemporaryLoggers();
+
             } catch (Exception ex) {
                 assert false : "Exception raised while reading logging configuration: " + ex;
             }
@@ -1481,7 +1483,7 @@ public class LogManager {
      * <p>
      * Any {@linkplain #addConfigurationListener registered configuration
      * listener} will be invoked after the properties are read.
-     * <p>
+     *
      * @apiNote This {@code readConfiguration} method should only be used for
      * initializing the configuration during LogManager initialization or
      * used with the "java.util.logging.config.class" property.
@@ -2363,7 +2365,8 @@ public class LogManager {
         }
     }
 
-    static final Permission controlPermission = new LoggingPermission("control", null);
+    static final Permission controlPermission =
+            new LoggingPermission("control", null);
 
     void checkPermission() {
         SecurityManager sm = System.getSecurityManager();
@@ -2605,6 +2608,71 @@ public class LogManager {
         // after all listeners have been invoked.
         if (t instanceof Error) throw (Error)t;
         if (t instanceof RuntimeException) throw (RuntimeException)t;
+    }
+
+    /**
+     * This class allows the {@link LoggingProviderImpl} to demand loggers on
+     * behalf of system and application classes.
+     */
+    private static final class LoggingProviderAccess
+        implements LoggingProviderImpl.LogManagerAccess,
+                   PrivilegedAction<Void> {
+
+        private LoggingProviderAccess() {
+        }
+
+        /**
+         * Demands a logger on behalf of the given {@code caller}.
+         * <p>
+         * If a named logger suitable for the given caller is found
+         * returns it.
+         * Otherwise, creates a new logger suitable for the given caller.
+         *
+         * @param name   The logger name.
+         * @param caller The caller on which behalf the logger is created/retrieved.
+         * @return A logger for the given {@code caller}.
+         *
+         * @throws NullPointerException if {@code name} is {@code null}
+         *         or {@code caller} is {@code null}.
+         * @throws IllegalArgumentException if {@code manager} is not the default
+         *         LogManager.
+         * @throws SecurityException if a security manager is present and the
+         *         calling code doesn't have the
+         *        {@link LoggingPermission LoggingPermission("demandLogger", null)}.
+         */
+        @Override
+        public Logger demandLoggerFor(LogManager manager, String name, /* Module */ Class<?> caller) {
+            if (manager != getLogManager()) {
+                // having LogManager as parameter just ensures that the
+                // caller will have initialized the LogManager before reaching
+                // here.
+                throw new IllegalArgumentException("manager");
+            }
+            Objects.requireNonNull(name);
+            SecurityManager sm = System.getSecurityManager();
+            if (sm != null) {
+                sm.checkPermission(controlPermission);
+            }
+            if (caller.getClassLoader() == null) {
+                return manager.demandSystemLogger(name,
+                    Logger.SYSTEM_LOGGER_RB_NAME, caller);
+            } else {
+                return manager.demandLogger(name, null, caller);
+            }
+        }
+
+        @Override
+        public Void run() {
+            LoggingProviderImpl.setLogManagerAccess(INSTANCE);
+            return null;
+        }
+
+        static final LoggingProviderAccess INSTANCE = new LoggingProviderAccess();
+    }
+
+    static {
+        AccessController.doPrivileged(LoggingProviderAccess.INSTANCE, null,
+                                      controlPermission);
     }
 
 }

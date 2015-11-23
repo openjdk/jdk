@@ -1,7 +1,7 @@
 #!/bin/sh
 
 #
-# Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 # @test
 # @bug 7106773
 # @summary 512 bits RSA key cannot work with SHA384 and SHA512
+# @requires os.family == "windows"
 # @run shell ShortRSAKey1024.sh 1024
 # @run shell ShortRSAKey1024.sh 768
 # @run shell ShortRSAKey1024.sh 512
