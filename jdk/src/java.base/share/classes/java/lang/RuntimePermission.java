@@ -348,6 +348,19 @@ import java.util.StringTokenizer;
  *   {@code java.util.spi.LocaleServiceProvider}</a> for more
  *   information.</td>
  * </tr>
+ *
+ * <tr>
+ *   <td>loggerFinder</td>
+ *   <td>This {@code RuntimePermission} is required to be granted to
+ *   classes which subclass or call methods on
+ *   {@code java.lang.System.LoggerFinder}. The permission is
+ *   checked during invocation of the abstract base class constructor, as
+ *   well as on the invocation of its public methods.
+ *   This permission ensures trust in classes which provide loggers
+ *   to system classes.</td>
+ *   <td>See {@link java.lang.System.LoggerFinder java.lang.System.LoggerFinder}
+ *   for more information.</td>
+ * </tr>
  * </table>
  *
  * @implNote

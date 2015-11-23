@@ -29,22 +29,16 @@ import java.io.*;
 import java.util.*;
 import java.util.zip.*;
 import java.util.jar.*;
-import java.math.BigInteger;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.text.Collator;
 import java.text.MessageFormat;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 import java.security.*;
-import java.lang.reflect.Constructor;
 
-import com.sun.jarsigner.ContentSigner;
-import com.sun.jarsigner.ContentSignerParameters;
 import java.net.SocketTimeoutException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertificateExpiredException;
@@ -53,11 +47,12 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.util.Map.Entry;
+
+import jdk.security.jarsigner.JarSigner;
+import jdk.security.jarsigner.JarSignerException;
 import sun.security.tools.KeyStoreUtil;
-import sun.security.tools.PathList;
 import sun.security.x509.*;
 import sun.security.util.*;
-import java.util.Base64;
 
 
 /**
@@ -87,10 +82,6 @@ public class Main {
         // this is for case insensitive string comparisions
         collator.setStrength(Collator.PRIMARY);
     }
-
-    private static final String META_INF = "META-INF/";
-
-    private static final Class<?>[] PARAM_STRING = { String.class };
 
     private static final String NONE = "NONE";
     private static final String P11KEYSTORE = "PKCS11";
@@ -133,13 +124,13 @@ public class Main {
     char[] keypass; // private key password
     String sigfile; // name of .SF file
     String sigalg; // name of signature algorithm
-    String digestalg = "SHA-256"; // name of digest algorithm
+    String digestalg; // name of digest algorithm
     String signedjar; // output filename
     String tsaUrl; // location of the Timestamping Authority
     String tsaAlias; // alias for the Timestamping Authority's certificate
     String altCertChain; // file to read alternative cert chain from
     String tSAPolicyID;
-    String tSADigestAlg = "SHA-256";
+    String tSADigestAlg;
     boolean verify = false; // verify the jar
     String verbose = null; // verbose output when signing/verifying
     boolean showcerts = false; // show certs when verifying
@@ -149,9 +140,6 @@ public class Main {
     boolean strict = false;  // treat warnings as error
 
     // read zip entry raw bytes
-    private ByteArrayOutputStream baos = new ByteArrayOutputStream(2048);
-    private byte[] buffer = new byte[8192];
-    private ContentSigner signingMechanism = null;
     private String altSignerClass = null;
     private String altSignerClasspath = null;
     private ZipFile zipFile = null;
@@ -216,6 +204,9 @@ public class Main {
                     if ((keystore != null) || (storepass != null)) {
                         System.out.println(rb.getString("jarsigner.error.") +
                                         e.getMessage());
+                        if (debug) {
+                            e.printStackTrace();
+                        }
                         System.exit(1);
                     }
                 }
@@ -229,12 +220,7 @@ public class Main {
                 loadKeyStore(keystore, true);
                 getAliasInfo(alias);
 
-                // load the alternative signing mechanism
-                if (altSignerClass != null) {
-                    signingMechanism = loadSigningMechanism(altSignerClass,
-                        altSignerClasspath);
-                }
-                signJar(jarfile, alias, args);
+                signJar(jarfile, alias);
             }
         } catch (Exception e) {
             System.out.println(rb.getString("jarsigner.error.") + e);
@@ -626,8 +612,7 @@ public class Main {
                 InputStream is = null;
                 try {
                     is = jf.getInputStream(je);
-                    int n;
-                    while ((n = is.read(buffer, 0, buffer.length)) != -1) {
+                    while (is.read(buffer, 0, buffer.length) != -1) {
                         // we just read. this will throw a SecurityException
                         // if  a signature/digest check fails.
                     }
@@ -1035,7 +1020,6 @@ public class Main {
             return cacheForInKS.get(signer);
         }
 
-        boolean found = false;
         int result = 0;
         List<? extends Certificate> certs = signer.getSignerCertPath().getCertificates();
         for (Certificate c : certs) {
@@ -1058,7 +1042,6 @@ public class Main {
                     }
                     if (alias != null) {
                         storeHash.put(c, "(" + alias + ")");
-                        found = true;
                         result |= IN_KEYSTORE;
                     }
                 }
@@ -1090,7 +1073,7 @@ public class Main {
         return output;
     }
 
-    void signJar(String jarName, String alias, String[] args)
+    void signJar(String jarName, String alias)
         throws Exception {
         boolean aliasUsed = false;
         X509Certificate tsaCert = null;
@@ -1110,17 +1093,17 @@ public class Main {
         for (int j = 0; j < sigfile.length(); j++) {
             char c = sigfile.charAt(j);
             if (!
-                ((c>= 'A' && c<= 'Z') ||
-                (c>= '0' && c<= '9') ||
-                (c == '-') ||
-                (c == '_'))) {
+                    ((c>= 'A' && c<= 'Z') ||
+                            (c>= '0' && c<= '9') ||
+                            (c == '-') ||
+                            (c == '_'))) {
                 if (aliasUsed) {
                     // convert illegal characters from the alias to be _'s
                     c = '_';
                 } else {
-                 throw new
-                   RuntimeException(rb.getString
-                        ("signature.filename.must.consist.of.the.following.characters.A.Z.0.9.or."));
+                    throw new
+                            RuntimeException(rb.getString
+                            ("signature.filename.must.consist.of.the.following.characters.A.Z.0.9.or."));
                 }
             }
             tmpSigFile.append(c);
@@ -1149,275 +1132,88 @@ public class Main {
             error(rb.getString("unable.to.create.")+tmpJarName, ioe);
         }
 
-        PrintStream ps = new PrintStream(fos);
-        ZipOutputStream zos = new ZipOutputStream(ps);
+        CertPath cp = CertificateFactory.getInstance("X.509")
+                .generateCertPath(Arrays.asList(certChain));
+        JarSigner.Builder builder = new JarSigner.Builder(privateKey, cp);
 
-        /* First guess at what they might be - we don't xclude RSA ones. */
-        String sfFilename = (META_INF + sigfile + ".SF").toUpperCase(Locale.ENGLISH);
-        String bkFilename = (META_INF + sigfile + ".DSA").toUpperCase(Locale.ENGLISH);
+        if (verbose != null) {
+            builder.eventHandler((action, file) -> {
+                System.out.println(rb.getString("." + action + ".") + file);
+            });
+        }
 
-        Manifest manifest = new Manifest();
-        Map<String,Attributes> mfEntries = manifest.getEntries();
+        if (digestalg != null) {
+            builder.digestAlgorithm(digestalg);
+        }
+        if (sigalg != null) {
+            builder.signatureAlgorithm(sigalg);
+        }
 
-        // The Attributes of manifest before updating
-        Attributes oldAttr = null;
+        URI tsaURI = null;
 
-        boolean mfModified = false;
-        boolean mfCreated = false;
-        byte[] mfRawBytes = null;
+        if (tsaUrl != null) {
+            tsaURI = new URI(tsaUrl);
+        } else if (tsaAlias != null) {
+            tsaCert = getTsaCert(tsaAlias);
+            tsaURI = TimestampedSigner.getTimestampingURI(tsaCert);
+        }
 
-        try {
-            MessageDigest digests[] = { MessageDigest.getInstance(digestalg) };
-
-            // Check if manifest exists
-            ZipEntry mfFile;
-            if ((mfFile = getManifestFile(zipFile)) != null) {
-                // Manifest exists. Read its raw bytes.
-                mfRawBytes = getBytes(zipFile, mfFile);
-                manifest.read(new ByteArrayInputStream(mfRawBytes));
-                oldAttr = (Attributes)(manifest.getMainAttributes().clone());
-            } else {
-                // Create new manifest
-                Attributes mattr = manifest.getMainAttributes();
-                mattr.putValue(Attributes.Name.MANIFEST_VERSION.toString(),
-                               "1.0");
-                String javaVendor = System.getProperty("java.vendor");
-                String jdkVersion = System.getProperty("java.version");
-                mattr.putValue("Created-By", jdkVersion + " (" +javaVendor
-                               + ")");
-                mfFile = new ZipEntry(JarFile.MANIFEST_NAME);
-                mfCreated = true;
-            }
-
-            /*
-             * For each entry in jar
-             * (except for signature-related META-INF entries),
-             * do the following:
-             *
-             * - if entry is not contained in manifest, add it to manifest;
-             * - if entry is contained in manifest, calculate its hash and
-             *   compare it with the one in the manifest; if they are
-             *   different, replace the hash in the manifest with the newly
-             *   generated one. (This may invalidate existing signatures!)
-             */
-            Vector<ZipEntry> mfFiles = new Vector<>();
-
-            boolean wasSigned = false;
-
-            for (Enumeration<? extends ZipEntry> enum_=zipFile.entries();
-                        enum_.hasMoreElements();) {
-                ZipEntry ze = enum_.nextElement();
-
-                if (ze.getName().startsWith(META_INF)) {
-                    // Store META-INF files in vector, so they can be written
-                    // out first
-                    mfFiles.addElement(ze);
-
-                    if (SignatureFileVerifier.isBlockOrSF(
-                            ze.getName().toUpperCase(Locale.ENGLISH))) {
-                        wasSigned = true;
-                    }
-
-                    if (signatureRelated(ze.getName())) {
-                        // ignore signature-related and manifest files
-                        continue;
-                    }
-                }
-
-                if (manifest.getAttributes(ze.getName()) != null) {
-                    // jar entry is contained in manifest, check and
-                    // possibly update its digest attributes
-                    if (updateDigests(ze, zipFile, digests,
-                                      manifest) == true) {
-                        mfModified = true;
-                    }
-                } else if (!ze.isDirectory()) {
-                    // Add entry to manifest
-                    Attributes attrs = getDigestAttributes(ze, zipFile,
-                                                           digests);
-                    mfEntries.put(ze.getName(), attrs);
-                    mfModified = true;
-                }
-            }
-
-            // Recalculate the manifest raw bytes if necessary
-            if (mfModified) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                manifest.write(baos);
-                if (wasSigned) {
-                    byte[] newBytes = baos.toByteArray();
-                    if (mfRawBytes != null
-                            && oldAttr.equals(manifest.getMainAttributes())) {
-
-                        /*
-                         * Note:
-                         *
-                         * The Attributes object is based on HashMap and can handle
-                         * continuation columns. Therefore, even if the contents are
-                         * not changed (in a Map view), the bytes that it write()
-                         * may be different from the original bytes that it read()
-                         * from. Since the signature on the main attributes is based
-                         * on raw bytes, we must retain the exact bytes.
-                         */
-
-                        int newPos = findHeaderEnd(newBytes);
-                        int oldPos = findHeaderEnd(mfRawBytes);
-
-                        if (newPos == oldPos) {
-                            System.arraycopy(mfRawBytes, 0, newBytes, 0, oldPos);
-                        } else {
-                            // cat oldHead newTail > newBytes
-                            byte[] lastBytes = new byte[oldPos +
-                                    newBytes.length - newPos];
-                            System.arraycopy(mfRawBytes, 0, lastBytes, 0, oldPos);
-                            System.arraycopy(newBytes, newPos, lastBytes, oldPos,
-                                    newBytes.length - newPos);
-                            newBytes = lastBytes;
-                        }
-                    }
-                    mfRawBytes = newBytes;
-                } else {
-                    mfRawBytes = baos.toByteArray();
-                }
-            }
-
-            // Write out the manifest
-            if (mfModified) {
-                // manifest file has new length
-                mfFile = new ZipEntry(JarFile.MANIFEST_NAME);
-            }
+        if (tsaURI != null) {
             if (verbose != null) {
-                if (mfCreated) {
-                    System.out.println(rb.getString(".adding.") +
-                                        mfFile.getName());
-                } else if (mfModified) {
-                    System.out.println(rb.getString(".updating.") +
-                                        mfFile.getName());
-                }
-            }
-            zos.putNextEntry(mfFile);
-            zos.write(mfRawBytes);
-
-            // Calculate SignatureFile (".SF") and SignatureBlockFile
-            ManifestDigester manDig = new ManifestDigester(mfRawBytes);
-            SignatureFile sf = new SignatureFile(digests, manifest, manDig,
-                                                 sigfile, signManifest);
-
-            if (tsaAlias != null) {
-                tsaCert = getTsaCert(tsaAlias);
-            }
-
-            if (tsaUrl == null && tsaCert == null) {
-                noTimestamp = true;
-            }
-
-            SignatureFile.Block block = null;
-
-            try {
-                block =
-                    sf.generateBlock(privateKey, sigalg, certChain,
-                        externalSF, tsaUrl, tsaCert, tSAPolicyID, tSADigestAlg,
-                        signingMechanism, args, zipFile);
-            } catch (SocketTimeoutException e) {
-                // Provide a helpful message when TSA is beyond a firewall
-                error(rb.getString("unable.to.sign.jar.") +
-                rb.getString("no.response.from.the.Timestamping.Authority.") +
-                "\n  -J-Dhttp.proxyHost=<hostname>" +
-                "\n  -J-Dhttp.proxyPort=<portnumber>\n" +
-                rb.getString("or") +
-                "\n  -J-Dhttps.proxyHost=<hostname> " +
-                "\n  -J-Dhttps.proxyPort=<portnumber> ", e);
-            }
-
-            sfFilename = sf.getMetaName();
-            bkFilename = block.getMetaName();
-
-            ZipEntry sfFile = new ZipEntry(sfFilename);
-            ZipEntry bkFile = new ZipEntry(bkFilename);
-
-            long time = System.currentTimeMillis();
-            sfFile.setTime(time);
-            bkFile.setTime(time);
-
-            // signature file
-            zos.putNextEntry(sfFile);
-            sf.write(zos);
-            if (verbose != null) {
-                if (zipFile.getEntry(sfFilename) != null) {
-                    System.out.println(rb.getString(".updating.") +
-                                sfFilename);
-                } else {
-                    System.out.println(rb.getString(".adding.") +
-                                sfFilename);
-                }
-            }
-
-            if (verbose != null) {
-                if (tsaUrl != null || tsaCert != null) {
-                    System.out.println(
+                System.out.println(
                         rb.getString("requesting.a.signature.timestamp"));
-                }
                 if (tsaUrl != null) {
                     System.out.println(rb.getString("TSA.location.") + tsaUrl);
-                }
-                if (tsaCert != null) {
-                    URI tsaURI = TimestampedSigner.getTimestampingURI(tsaCert);
-                    if (tsaURI != null) {
-                        System.out.println(rb.getString("TSA.location.") +
-                            tsaURI);
-                    }
+                } else if (tsaCert != null) {
                     System.out.println(rb.getString("TSA.certificate.") +
-                        printCert("", tsaCert, false, null, false));
-                }
-                if (signingMechanism != null) {
-                    System.out.println(
-                        rb.getString("using.an.alternative.signing.mechanism"));
+                            printCert("", tsaCert, false, null, false));
                 }
             }
+            builder.tsa(tsaURI);
+            if (tSADigestAlg != null) {
+                builder.setProperty("tsaDigestAlg", tSADigestAlg);
+            }
 
-            // signature block file
-            zos.putNextEntry(bkFile);
-            block.write(zos);
+            if (tSAPolicyID != null) {
+                builder.setProperty("tsaPolicyId", tSAPolicyID);
+            }
+        } else {
+            noTimestamp = true;
+        }
+
+        if (altSignerClass != null) {
+            builder.setProperty("altSigner", altSignerClass);
             if (verbose != null) {
-                if (zipFile.getEntry(bkFilename) != null) {
-                    System.out.println(rb.getString(".updating.") +
-                        bkFilename);
-                } else {
-                    System.out.println(rb.getString(".adding.") +
-                        bkFilename);
-                }
+                System.out.println(
+                        rb.getString("using.an.alternative.signing.mechanism"));
             }
+        }
 
-            // Write out all other META-INF files that we stored in the
-            // vector
-            for (int i=0; i<mfFiles.size(); i++) {
-                ZipEntry ze = mfFiles.elementAt(i);
-                if (!ze.getName().equalsIgnoreCase(JarFile.MANIFEST_NAME)
-                    && !ze.getName().equalsIgnoreCase(sfFilename)
-                    && !ze.getName().equalsIgnoreCase(bkFilename)) {
-                    writeEntry(zipFile, zos, ze);
-                }
+        if (altSignerClasspath != null) {
+            builder.setProperty("altSignerPath", altSignerClasspath);
+        }
+
+        builder.signerName(sigfile);
+
+        builder.setProperty("sectionsOnly", Boolean.toString(!signManifest));
+        builder.setProperty("internalSF", Boolean.toString(!externalSF));
+
+        try {
+            builder.build().sign(zipFile, fos);
+        } catch (JarSignerException e) {
+            Throwable cause = e.getCause();
+            if (cause != null && cause instanceof SocketTimeoutException) {
+                // Provide a helpful message when TSA is beyond a firewall
+                error(rb.getString("unable.to.sign.jar.") +
+                        rb.getString("no.response.from.the.Timestamping.Authority.") +
+                        "\n  -J-Dhttp.proxyHost=<hostname>" +
+                        "\n  -J-Dhttp.proxyPort=<portnumber>\n" +
+                        rb.getString("or") +
+                        "\n  -J-Dhttps.proxyHost=<hostname> " +
+                        "\n  -J-Dhttps.proxyPort=<portnumber> ", e);
+            } else {
+                error(rb.getString("unable.to.sign.jar.")+e.getCause(), e.getCause());
             }
-
-            // Write out all other files
-            for (Enumeration<? extends ZipEntry> enum_=zipFile.entries();
-                        enum_.hasMoreElements();) {
-                ZipEntry ze = enum_.nextElement();
-
-                if (!ze.getName().startsWith(META_INF)) {
-                    if (verbose != null) {
-                        if (manifest.getAttributes(ze.getName()) != null)
-                          System.out.println(rb.getString(".signing.") +
-                                ze.getName());
-                        else
-                          System.out.println(rb.getString(".adding.") +
-                                ze.getName());
-                    }
-                    writeEntry(zipFile, zos, ze);
-                }
-            }
-        } catch(IOException ioe) {
-            error(rb.getString("unable.to.sign.jar.")+ioe, ioe);
         } finally {
             // close the resouces
             if (zipFile != null) {
@@ -1425,8 +1221,8 @@ public class Main {
                 zipFile = null;
             }
 
-            if (zos != null) {
-                zos.close();
+            if (fos != null) {
+                fos.close();
             }
         }
 
@@ -1527,35 +1323,6 @@ public class Main {
     }
 
     /**
-     * Find the length of header inside bs. The header is a multiple (>=0)
-     * lines of attributes plus an empty line. The empty line is included
-     * in the header.
-     */
-    @SuppressWarnings("fallthrough")
-    private int findHeaderEnd(byte[] bs) {
-        // Initial state true to deal with empty header
-        boolean newline = true;     // just met a newline
-        int len = bs.length;
-        for (int i=0; i<len; i++) {
-            switch (bs[i]) {
-                case '\r':
-                    if (i < len - 1 && bs[i+1] == '\n') i++;
-                    // fallthrough
-                case '\n':
-                    if (newline) return i+1;    //+1 to get length
-                    newline = true;
-                    break;
-                default:
-                    newline = false;
-            }
-        }
-        // If header end is not found, it means the MANIFEST.MF has only
-        // the main attributes section and it does not end with 2 newlines.
-        // Returns the whole length so that it can be completely replaced.
-        return len;
-    }
-
-    /**
      * signature-related files include:
      * . META-INF/MANIFEST.MF
      * . META-INF/SIG-*
@@ -1617,45 +1384,6 @@ public class Main {
         String result = sb.toString();
         cacheForSignerInfo.put(signer, result);
         return result;
-    }
-
-    private void writeEntry(ZipFile zf, ZipOutputStream os, ZipEntry ze)
-    throws IOException
-    {
-        ZipEntry ze2 = new ZipEntry(ze.getName());
-        ze2.setMethod(ze.getMethod());
-        ze2.setTime(ze.getTime());
-        ze2.setComment(ze.getComment());
-        ze2.setExtra(ze.getExtra());
-        if (ze.getMethod() == ZipEntry.STORED) {
-            ze2.setSize(ze.getSize());
-            ze2.setCrc(ze.getCrc());
-        }
-        os.putNextEntry(ze2);
-        writeBytes(zf, ze, os);
-    }
-
-    /**
-     * Writes all the bytes for a given entry to the specified output stream.
-     */
-    private synchronized void writeBytes
-        (ZipFile zf, ZipEntry ze, ZipOutputStream os) throws IOException {
-        int n;
-
-        InputStream is = null;
-        try {
-            is = zf.getInputStream(ze);
-            long left = ze.getSize();
-
-            while((left > 0) && (n = is.read(buffer, 0, buffer.length)) != -1) {
-                os.write(buffer, 0, n);
-                left -= n;
-            }
-        } finally {
-            if (is != null) {
-                is.close();
-            }
-        }
     }
 
     void loadKeyStore(String keyStoreName, boolean prompt) {
@@ -1958,15 +1686,13 @@ public class Main {
         }
     }
 
-    void error(String message)
-    {
+    void error(String message) {
         System.out.println(rb.getString("jarsigner.")+message);
         System.exit(1);
     }
 
 
-    void error(String message, Exception e)
-    {
+    void error(String message, Throwable e) {
         System.out.println(rb.getString("jarsigner.")+message);
         if (debug) {
             e.printStackTrace();
@@ -1990,8 +1716,7 @@ public class Main {
         }
     }
 
-    char[] getPass(String prompt)
-    {
+    char[] getPass(String prompt) {
         System.err.print(prompt);
         System.err.flush();
         try {
@@ -2007,570 +1732,5 @@ public class Main {
         }
         // this shouldn't happen
         return null;
-    }
-
-    /*
-     * Reads all the bytes for a given zip entry.
-     */
-    private synchronized byte[] getBytes(ZipFile zf,
-                                         ZipEntry ze) throws IOException {
-        int n;
-
-        InputStream is = null;
-        try {
-            is = zf.getInputStream(ze);
-            baos.reset();
-            long left = ze.getSize();
-
-            while((left > 0) && (n = is.read(buffer, 0, buffer.length)) != -1) {
-                baos.write(buffer, 0, n);
-                left -= n;
-            }
-        } finally {
-            if (is != null) {
-                is.close();
-            }
-        }
-
-        return baos.toByteArray();
-    }
-
-    /*
-     * Returns manifest entry from given jar file, or null if given jar file
-     * does not have a manifest entry.
-     */
-    private ZipEntry getManifestFile(ZipFile zf) {
-        ZipEntry ze = zf.getEntry(JarFile.MANIFEST_NAME);
-        if (ze == null) {
-            // Check all entries for matching name
-            Enumeration<? extends ZipEntry> enum_ = zf.entries();
-            while (enum_.hasMoreElements() && ze == null) {
-                ze = enum_.nextElement();
-                if (!JarFile.MANIFEST_NAME.equalsIgnoreCase
-                    (ze.getName())) {
-                    ze = null;
-                }
-            }
-        }
-        return ze;
-    }
-
-    /*
-     * Computes the digests of a zip entry, and returns them as an array
-     * of base64-encoded strings.
-     */
-    private synchronized String[] getDigests(ZipEntry ze, ZipFile zf,
-                                             MessageDigest[] digests)
-        throws IOException {
-
-        int n, i;
-        InputStream is = null;
-        try {
-            is = zf.getInputStream(ze);
-            long left = ze.getSize();
-            while((left > 0)
-                && (n = is.read(buffer, 0, buffer.length)) != -1) {
-                for (i=0; i<digests.length; i++) {
-                    digests[i].update(buffer, 0, n);
-                }
-                left -= n;
-            }
-        } finally {
-            if (is != null) {
-                is.close();
-            }
-        }
-
-        // complete the digests
-        String[] base64Digests = new String[digests.length];
-        for (i=0; i<digests.length; i++) {
-            base64Digests[i] = Base64.getEncoder().encodeToString(digests[i].digest());
-        }
-        return base64Digests;
-    }
-
-    /*
-     * Computes the digests of a zip entry, and returns them as a list of
-     * attributes
-     */
-    private Attributes getDigestAttributes(ZipEntry ze, ZipFile zf,
-                                           MessageDigest[] digests)
-        throws IOException {
-
-        String[] base64Digests = getDigests(ze, zf, digests);
-        Attributes attrs = new Attributes();
-
-        for (int i=0; i<digests.length; i++) {
-            attrs.putValue(digests[i].getAlgorithm()+"-Digest",
-                           base64Digests[i]);
-        }
-        return attrs;
-    }
-
-    /*
-     * Updates the digest attributes of a manifest entry, by adding or
-     * replacing digest values.
-     * A digest value is added if the manifest entry does not contain a digest
-     * for that particular algorithm.
-     * A digest value is replaced if it is obsolete.
-     *
-     * Returns true if the manifest entry has been changed, and false
-     * otherwise.
-     */
-    private boolean updateDigests(ZipEntry ze, ZipFile zf,
-                                  MessageDigest[] digests,
-                                  Manifest mf) throws IOException {
-        boolean update = false;
-
-        Attributes attrs = mf.getAttributes(ze.getName());
-        String[] base64Digests = getDigests(ze, zf, digests);
-
-        for (int i=0; i<digests.length; i++) {
-            // The entry name to be written into attrs
-            String name = null;
-            try {
-                // Find if the digest already exists
-                AlgorithmId aid = AlgorithmId.get(digests[i].getAlgorithm());
-                for (Object key: attrs.keySet()) {
-                    if (key instanceof Attributes.Name) {
-                        String n = ((Attributes.Name)key).toString();
-                        if (n.toUpperCase(Locale.ENGLISH).endsWith("-DIGEST")) {
-                            String tmp = n.substring(0, n.length() - 7);
-                            if (AlgorithmId.get(tmp).equals(aid)) {
-                                name = n;
-                                break;
-                            }
-                        }
-                    }
-                }
-            } catch (NoSuchAlgorithmException nsae) {
-                // Ignored. Writing new digest entry.
-            }
-
-            if (name == null) {
-                name = digests[i].getAlgorithm()+"-Digest";
-                attrs.putValue(name, base64Digests[i]);
-                update=true;
-            } else {
-                // compare digests, and replace the one in the manifest
-                // if they are different
-                String mfDigest = attrs.getValue(name);
-                if (!mfDigest.equalsIgnoreCase(base64Digests[i])) {
-                    attrs.putValue(name, base64Digests[i]);
-                    update=true;
-                }
-            }
-        }
-        return update;
-    }
-
-    /*
-     * Try to load the specified signing mechanism.
-     * The URL class loader is used.
-     */
-    private ContentSigner loadSigningMechanism(String signerClassName,
-        String signerClassPath) throws Exception {
-
-        // construct class loader
-        String cpString = null;   // make sure env.class.path defaults to dot
-
-        // do prepends to get correct ordering
-        cpString = PathList.appendPath(System.getProperty("env.class.path"), cpString);
-        cpString = PathList.appendPath(System.getProperty("java.class.path"), cpString);
-        cpString = PathList.appendPath(signerClassPath, cpString);
-        URL[] urls = PathList.pathToURLs(cpString);
-        ClassLoader appClassLoader = new URLClassLoader(urls);
-
-        // attempt to find signer
-        Class<?> signerClass = appClassLoader.loadClass(signerClassName);
-
-        // Check that it implements ContentSigner
-        Object signer = signerClass.newInstance();
-        if (!(signer instanceof ContentSigner)) {
-            MessageFormat form = new MessageFormat(
-                rb.getString("signerClass.is.not.a.signing.mechanism"));
-            Object[] source = {signerClass.getName()};
-            throw new IllegalArgumentException(form.format(source));
-        }
-        return (ContentSigner)signer;
-    }
-}
-
-class SignatureFile {
-
-    /** SignatureFile */
-    Manifest sf;
-
-    /** .SF base name */
-    String baseName;
-
-    public SignatureFile(MessageDigest digests[],
-                         Manifest mf,
-                         ManifestDigester md,
-                         String baseName,
-                         boolean signManifest)
-
-    {
-        this.baseName = baseName;
-
-        String version = System.getProperty("java.version");
-        String javaVendor = System.getProperty("java.vendor");
-
-        sf = new Manifest();
-        Attributes mattr = sf.getMainAttributes();
-
-        mattr.putValue(Attributes.Name.SIGNATURE_VERSION.toString(), "1.0");
-        mattr.putValue("Created-By", version + " (" + javaVendor + ")");
-
-        if (signManifest) {
-            // sign the whole manifest
-            for (int i=0; i < digests.length; i++) {
-                mattr.putValue(digests[i].getAlgorithm()+"-Digest-Manifest",
-                               Base64.getEncoder().encodeToString(md.manifestDigest(digests[i])));
-            }
-        }
-
-        // create digest of the manifest main attributes
-        ManifestDigester.Entry mde =
-                md.get(ManifestDigester.MF_MAIN_ATTRS, false);
-        if (mde != null) {
-            for (int i=0; i < digests.length; i++) {
-                mattr.putValue(digests[i].getAlgorithm() +
-                        "-Digest-" + ManifestDigester.MF_MAIN_ATTRS,
-                        Base64.getEncoder().encodeToString(mde.digest(digests[i])));
-            }
-        } else {
-            throw new IllegalStateException
-                ("ManifestDigester failed to create " +
-                "Manifest-Main-Attribute entry");
-        }
-
-        /* go through the manifest entries and create the digests */
-
-        Map<String,Attributes> entries = sf.getEntries();
-        Iterator<Map.Entry<String,Attributes>> mit =
-                                mf.getEntries().entrySet().iterator();
-        while(mit.hasNext()) {
-            Map.Entry<String,Attributes> e = mit.next();
-            String name = e.getKey();
-            mde = md.get(name, false);
-            if (mde != null) {
-                Attributes attr = new Attributes();
-                for (int i=0; i < digests.length; i++) {
-                    attr.putValue(digests[i].getAlgorithm()+"-Digest",
-                                  Base64.getEncoder().encodeToString(mde.digest(digests[i])));
-                }
-                entries.put(name, attr);
-            }
-        }
-    }
-
-    /**
-     * Writes the SignatureFile to the specified OutputStream.
-     *
-     * @param out the output stream
-     * @exception IOException if an I/O error has occurred
-     */
-
-    public void write(OutputStream out) throws IOException
-    {
-        sf.write(out);
-    }
-
-    /**
-     * get .SF file name
-     */
-    public String getMetaName()
-    {
-        return "META-INF/"+ baseName + ".SF";
-    }
-
-    /**
-     * get base file name
-     */
-    public String getBaseName()
-    {
-        return baseName;
-    }
-
-    /*
-     * Generate a signed data block.
-     * If a URL or a certificate (containing a URL) for a Timestamping
-     * Authority is supplied then a signature timestamp is generated and
-     * inserted into the signed data block.
-     *
-     * @param sigalg signature algorithm to use, or null to use default
-     * @param tsaUrl The location of the Timestamping Authority. If null
-     *               then no timestamp is requested.
-     * @param tsaCert The certificate for the Timestamping Authority. If null
-     *               then no timestamp is requested.
-     * @param signingMechanism The signing mechanism to use.
-     * @param args The command-line arguments to jarsigner.
-     * @param zipFile The original source Zip file.
-     */
-    @SuppressWarnings("deprecation")
-    public Block generateBlock(PrivateKey privateKey,
-                               String sigalg,
-                               X509Certificate[] certChain,
-                               boolean externalSF, String tsaUrl,
-                               X509Certificate tsaCert,
-                               String tSAPolicyID,
-                               String tSADigestAlg,
-                               ContentSigner signingMechanism,
-                               String[] args, ZipFile zipFile)
-        throws NoSuchAlgorithmException, InvalidKeyException, IOException,
-            SignatureException, CertificateException
-    {
-        return new Block(this, privateKey, sigalg, certChain, externalSF,
-                tsaUrl, tsaCert, tSAPolicyID, tSADigestAlg, signingMechanism, args, zipFile);
-    }
-
-
-    public static class Block {
-
-        private byte[] block;
-        private String blockFileName;
-
-        /*
-         * Construct a new signature block.
-         */
-        @SuppressWarnings("deprecation")
-        Block(SignatureFile sfg, PrivateKey privateKey, String sigalg,
-            X509Certificate[] certChain, boolean externalSF, String tsaUrl,
-            X509Certificate tsaCert, String tSAPolicyID, String tSADigestAlg,
-            ContentSigner signingMechanism, String[] args, ZipFile zipFile)
-            throws NoSuchAlgorithmException, InvalidKeyException, IOException,
-            SignatureException, CertificateException {
-
-            Principal issuerName = certChain[0].getIssuerDN();
-            if (!(issuerName instanceof X500Name)) {
-                // must extract the original encoded form of DN for subsequent
-                // name comparison checks (converting to a String and back to
-                // an encoded DN could cause the types of String attribute
-                // values to be changed)
-                X509CertInfo tbsCert = new
-                    X509CertInfo(certChain[0].getTBSCertificate());
-                issuerName = (Principal)
-                    tbsCert.get(X509CertInfo.ISSUER + "." +
-                                X509CertInfo.DN_NAME);
-                }
-            BigInteger serial = certChain[0].getSerialNumber();
-
-            String signatureAlgorithm;
-            String keyAlgorithm = privateKey.getAlgorithm();
-            /*
-             * If no signature algorithm was specified, we choose a
-             * default that is compatible with the private key algorithm.
-             */
-            if (sigalg == null) {
-
-                if (keyAlgorithm.equalsIgnoreCase("DSA"))
-                    signatureAlgorithm = "SHA256withDSA";
-                else if (keyAlgorithm.equalsIgnoreCase("RSA"))
-                    signatureAlgorithm = "SHA256withRSA";
-                else if (keyAlgorithm.equalsIgnoreCase("EC"))
-                    signatureAlgorithm = "SHA256withECDSA";
-                else
-                    throw new RuntimeException("private key is not a DSA or "
-                                               + "RSA key");
-            } else {
-                signatureAlgorithm = sigalg;
-            }
-
-            // check common invalid key/signature algorithm combinations
-            String sigAlgUpperCase = signatureAlgorithm.toUpperCase(Locale.ENGLISH);
-            if ((sigAlgUpperCase.endsWith("WITHRSA") &&
-                !keyAlgorithm.equalsIgnoreCase("RSA")) ||
-                (sigAlgUpperCase.endsWith("WITHECDSA") &&
-                !keyAlgorithm.equalsIgnoreCase("EC")) ||
-                (sigAlgUpperCase.endsWith("WITHDSA") &&
-                !keyAlgorithm.equalsIgnoreCase("DSA"))) {
-                throw new SignatureException
-                    ("private key algorithm is not compatible with signature algorithm");
-            }
-
-            blockFileName = "META-INF/"+sfg.getBaseName()+"."+keyAlgorithm;
-
-            AlgorithmId sigAlg = AlgorithmId.get(signatureAlgorithm);
-            AlgorithmId digEncrAlg = AlgorithmId.get(keyAlgorithm);
-
-            Signature sig = Signature.getInstance(signatureAlgorithm);
-            sig.initSign(privateKey);
-
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            sfg.write(baos);
-
-            byte[] content = baos.toByteArray();
-
-            sig.update(content);
-            byte[] signature = sig.sign();
-
-            // Timestamp the signature and generate the signature block file
-            if (signingMechanism == null) {
-                signingMechanism = new TimestampedSigner();
-            }
-            URI tsaUri = null;
-            try {
-                if (tsaUrl != null) {
-                    tsaUri = new URI(tsaUrl);
-                }
-            } catch (URISyntaxException e) {
-                throw new IOException(e);
-            }
-
-            // Assemble parameters for the signing mechanism
-            ContentSignerParameters params =
-                new JarSignerParameters(args, tsaUri, tsaCert, tSAPolicyID,
-                        tSADigestAlg, signature,
-                    signatureAlgorithm, certChain, content, zipFile);
-
-            // Generate the signature block
-            block = signingMechanism.generateSignedData(
-                    params, externalSF, (tsaUrl != null || tsaCert != null));
-        }
-
-        /*
-         * get block file name.
-         */
-        public String getMetaName()
-        {
-            return blockFileName;
-        }
-
-        /**
-         * Writes the block file to the specified OutputStream.
-         *
-         * @param out the output stream
-         * @exception IOException if an I/O error has occurred
-         */
-
-        public void write(OutputStream out) throws IOException
-        {
-            out.write(block);
-        }
-    }
-}
-
-
-/*
- * This object encapsulates the parameters used to perform content signing.
- */
-@SuppressWarnings("deprecation")
-class JarSignerParameters implements ContentSignerParameters {
-
-    private String[] args;
-    private URI tsa;
-    private X509Certificate tsaCertificate;
-    private byte[] signature;
-    private String signatureAlgorithm;
-    private X509Certificate[] signerCertificateChain;
-    private byte[] content;
-    private ZipFile source;
-    private String tSAPolicyID;
-    private String tSADigestAlg;
-
-    /**
-     * Create a new object.
-     */
-    JarSignerParameters(String[] args, URI tsa, X509Certificate tsaCertificate,
-        String tSAPolicyID, String tSADigestAlg,
-        byte[] signature, String signatureAlgorithm,
-        X509Certificate[] signerCertificateChain, byte[] content,
-        ZipFile source) {
-
-        if (signature == null || signatureAlgorithm == null ||
-            signerCertificateChain == null || tSADigestAlg == null) {
-            throw new NullPointerException();
-        }
-        this.args = args;
-        this.tsa = tsa;
-        this.tsaCertificate = tsaCertificate;
-        this.tSAPolicyID = tSAPolicyID;
-        this.tSADigestAlg = tSADigestAlg;
-        this.signature = signature;
-        this.signatureAlgorithm = signatureAlgorithm;
-        this.signerCertificateChain = signerCertificateChain;
-        this.content = content;
-        this.source = source;
-    }
-
-    /**
-     * Retrieves the command-line arguments.
-     *
-     * @return The command-line arguments. May be null.
-     */
-    public String[] getCommandLine() {
-        return args;
-    }
-
-    /**
-     * Retrieves the identifier for a Timestamping Authority (TSA).
-     *
-     * @return The TSA identifier. May be null.
-     */
-    public URI getTimestampingAuthority() {
-        return tsa;
-    }
-
-    /**
-     * Retrieves the certificate for a Timestamping Authority (TSA).
-     *
-     * @return The TSA certificate. May be null.
-     */
-    public X509Certificate getTimestampingAuthorityCertificate() {
-        return tsaCertificate;
-    }
-
-    public String getTSAPolicyID() {
-        return tSAPolicyID;
-    }
-
-    public String getTSADigestAlg() {
-        return tSADigestAlg;
-    }
-
-    /**
-     * Retrieves the signature.
-     *
-     * @return The non-null signature bytes.
-     */
-    public byte[] getSignature() {
-        return signature;
-    }
-
-    /**
-     * Retrieves the name of the signature algorithm.
-     *
-     * @return The non-null string name of the signature algorithm.
-     */
-    public String getSignatureAlgorithm() {
-        return signatureAlgorithm;
-    }
-
-    /**
-     * Retrieves the signer's X.509 certificate chain.
-     *
-     * @return The non-null array of X.509 public-key certificates.
-     */
-    public X509Certificate[] getSignerCertificateChain() {
-        return signerCertificateChain;
-    }
-
-    /**
-     * Retrieves the content that was signed.
-     *
-     * @return The content bytes. May be null.
-     */
-    public byte[] getContent() {
-        return content;
-    }
-
-    /**
-     * Retrieves the original source ZIP file before it was signed.
-     *
-     * @return The original ZIP file. May be null.
-     */
-    public ZipFile getSource() {
-        return source;
     }
 }

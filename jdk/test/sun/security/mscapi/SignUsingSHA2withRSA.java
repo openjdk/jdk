@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,12 +58,12 @@ public class SignUsingSHA2withRSA {
         ks.load(null, null);
         System.out.println("Loaded keystore: Windows-MY");
 
-        Enumeration e = ks.aliases();
+        Enumeration<String> e = ks.aliases();
         PrivateKey privateKey = null;
         PublicKey publicKey = null;
 
         while (e.hasMoreElements()) {
-            String alias = (String) e.nextElement();
+            String alias = e.nextElement();
             if (alias.equals("6753664")) {
                 System.out.println("Loaded entry: " + alias);
                 privateKey = (PrivateKey) ks.getKey(alias, null);

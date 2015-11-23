@@ -1584,7 +1584,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
      * @param dstBegin  the char index, not offset of byte[]
      * @param coder     the coder of dst[]
      */
-    protected void getBytes(byte dst[], int dstBegin, byte coder) {
+    void getBytes(byte dst[], int dstBegin, byte coder) {
         if (this.coder == coder) {
             System.arraycopy(value, 0, dst, dstBegin << coder, count << coder);
         } else {        // this.coder == LATIN && coder == UTF16
@@ -1593,7 +1593,7 @@ abstract class AbstractStringBuilder implements Appendable, CharSequence {
     }
 
     /* for readObject() */
-    protected void initBytes(char[] value, int off, int len) {
+    void initBytes(char[] value, int off, int len) {
         if (String.COMPACT_STRINGS) {
             this.value = StringUTF16.compress(value, off, len);
             if (this.value != null) {
