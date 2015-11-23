@@ -1329,11 +1329,9 @@ class Thread implements Runnable {
     /**
      * Prints a stack trace of the current thread to the standard error stream.
      * This method is used only for debugging.
-     *
-     * @see     Throwable#printStackTrace()
      */
     public static void dumpStack() {
-        new Exception("Stack trace").printStackTrace();
+        StackStreamFactory.makeStackTrace().printStackTrace(System.err);
     }
 
     /**
@@ -1556,7 +1554,7 @@ class Thread implements Runnable {
             return stackTrace;
         } else {
             // Don't need JVM help for current thread
-            return (new Exception()).getStackTrace();
+            return StackStreamFactory.makeStackTrace().getStackTraceElements();
         }
     }
 
