@@ -223,7 +223,7 @@ public class IntJVMOption extends JVMOption {
             validValues.add("1");
         }
 
-        if (max.compareTo(MAX_4_BYTE_INT_PLUS_ONE) == 1) {
+        if ((min.compareTo(MAX_4_BYTE_INT_PLUS_ONE) == -1) && (max.compareTo(MAX_4_BYTE_INT_PLUS_ONE) == 1)) {
             /*
              * Check for overflow when flag is assigned to the
              * 4 byte int variable
@@ -231,7 +231,7 @@ public class IntJVMOption extends JVMOption {
             validValues.add(MAX_4_BYTE_INT_PLUS_ONE.toString());
         }
 
-        if (max.compareTo(MAX_4_BYTE_UNSIGNED_INT_PLUS_ONE) == 1) {
+        if ((min.compareTo(MAX_4_BYTE_UNSIGNED_INT_PLUS_ONE) == -1) && (max.compareTo(MAX_4_BYTE_UNSIGNED_INT_PLUS_ONE) == 1)) {
             /*
              * Check for overflow when flag is assigned to the
              * 4 byte unsigned int variable

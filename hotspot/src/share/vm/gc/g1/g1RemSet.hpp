@@ -156,6 +156,41 @@ public:
   }
 };
 
+class ScanRSClosure : public HeapRegionClosure {
+  size_t _cards_done, _cards;
+  G1CollectedHeap* _g1h;
+
+  G1ParPushHeapRSClosure* _oc;
+  CodeBlobClosure* _code_root_cl;
+
+  G1BlockOffsetSharedArray* _bot_shared;
+  G1SATBCardTableModRefBS *_ct_bs;
+
+  double _strong_code_root_scan_time_sec;
+  uint   _worker_i;
+  size_t _block_size;
+  bool   _try_claimed;
+
+public:
+  ScanRSClosure(G1ParPushHeapRSClosure* oc,
+                CodeBlobClosure* code_root_cl,
+                uint worker_i);
+
+  bool doHeapRegion(HeapRegion* r);
+
+  double strong_code_root_scan_time_sec() {
+    return _strong_code_root_scan_time_sec;
+  }
+  size_t cards_done() { return _cards_done;}
+  size_t cards_looked_up() { return _cards;}
+  void set_try_claimed() { _try_claimed = true; }
+private:
+  void scanCard(size_t index, HeapRegion *r);
+  void printCard(HeapRegion* card_region, size_t card_index,
+                 HeapWord* card_start);
+  void scan_strong_code_roots(HeapRegion* r);
+};
+
 class UpdateRSOopClosure: public ExtendedOopClosure {
   HeapRegion* _from;
   G1RemSet* _rs;

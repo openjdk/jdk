@@ -471,26 +471,20 @@ protected:
   void retire_gc_alloc_region(HeapRegion* alloc_region,
                               size_t allocated_bytes, InCSetState dest);
 
-  // - if explicit_gc is true, the GC is for a System.gc() or a heap
-  //   inspection request and should collect the entire heap
+  // - if explicit_gc is true, the GC is for a System.gc() etc,
+  //   otherwise it's for a failed allocation.
   // - if clear_all_soft_refs is true, all soft references should be
-  //   cleared during the GC
-  // - if explicit_gc is false, word_size describes the allocation that
-  //   the GC should attempt (at least) to satisfy
+  //   cleared during the GC.
   // - it returns false if it is unable to do the collection due to the
-  //   GC locker being active, true otherwise
-  bool do_collection(bool explicit_gc,
-                     bool clear_all_soft_refs,
-                     size_t word_size);
+  //   GC locker being active, true otherwise.
+  bool do_full_collection(bool explicit_gc,
+                          bool clear_all_soft_refs);
 
-  // Callback from VM_G1CollectFull operation.
-  // Perform a full collection.
+  // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
   virtual void do_full_collection(bool clear_all_soft_refs);
 
-  // Resize the heap if necessary after a full collection.  If this is
-  // after a collect-for allocation, "word_size" is the allocation size,
-  // and will be considered part of the used portion of the heap.
-  void resize_if_necessary_after_full_collection(size_t word_size);
+  // Resize the heap if necessary after a full collection.
+  void resize_if_necessary_after_full_collection();
 
   // Callback from VM_G1CollectForAllocation operation.
   // This function does everything necessary/possible to satisfy a
@@ -1150,9 +1144,6 @@ public:
   // "CollectedHeap" supports.
   virtual void collect(GCCause::Cause cause);
 
-  // The same as above but assume that the caller holds the Heap_lock.
-  void collect_locked(GCCause::Cause cause);
-
   virtual bool copy_allocation_context_stats(const jint* contexts,
                                              jlong* totals,
                                              jbyte* accuracy,
@@ -1351,14 +1342,6 @@ public:
   static size_t humongous_threshold_for(size_t region_size) {
     return (region_size / 2);
   }
-
-  // Update mod union table with the set of dirty cards.
-  void updateModUnion();
-
-  // Set the mod union bits corresponding to the given memRegion.  Note
-  // that this is always a safe operation, since it doesn't clear any
-  // bits.
-  void markModUnionRange(MemRegion mr);
 
   // Print the maximum heap capacity.
   virtual size_t max_capacity() const;
