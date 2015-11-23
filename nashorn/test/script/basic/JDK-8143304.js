@@ -22,7 +22,7 @@
  */
 
 /**
- * JDK-8059934: Random failures when script size exceeds token limits
+ * JDK-8143304: Random failures when script size exceeds token limits
  *
  * @test
  * @run
