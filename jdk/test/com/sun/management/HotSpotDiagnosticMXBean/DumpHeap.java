@@ -41,9 +41,9 @@ import com.sun.management.HotSpotDiagnosticMXBean;
  * @library /test/lib/share/classes
  * @build jdk.testlibrary.*
  * @build jdk.test.lib.hprof.*
- * @build jdk.test.lib.hprof.module.*
+ * @build jdk.test.lib.hprof.model.*
  * @build jdk.test.lib.hprof.parser.*
- * @build jdk.test.lib.hprof.utils.*
+ * @build jdk.test.lib.hprof.util.*
  * @run main DumpHeap
  */
 public class DumpHeap {

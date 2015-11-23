@@ -2581,19 +2581,17 @@ public class TreeMap<K,V>
     }
 
     /**
-     * Find the level down to which to assign all nodes BLACK.  This is the
-     * last `full' level of the complete binary tree produced by
-     * buildTree. The remaining nodes are colored RED. (This makes a `nice'
-     * set of color assignments wrt future insertions.) This level number is
+     * Finds the level down to which to assign all nodes BLACK.  This is the
+     * last `full' level of the complete binary tree produced by buildTree.
+     * The remaining nodes are colored RED. (This makes a `nice' set of
+     * color assignments wrt future insertions.) This level number is
      * computed by finding the number of splits needed to reach the zeroeth
-     * node.  (The answer is ~lg(N), but in any case must be computed by same
-     * quick O(lg(N)) loop.)
+     * node.
+     *
+     * @param size the (non-negative) number of keys in the tree to be built
      */
-    private static int computeRedLevel(int sz) {
-        int level = 0;
-        for (int m = sz - 1; m >= 0; m = m / 2 - 1)
-            level++;
-        return level;
+    private static int computeRedLevel(int size) {
+        return 31 - Integer.numberOfLeadingZeros(size + 1);
     }
 
     /**
