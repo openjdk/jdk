@@ -96,6 +96,7 @@ public final class GlyphLayout {
     private Point2D.Float _pt;
     private FontStrikeDesc _sd;
     private float[] _mat;
+    private float ptSize;
     private int _typo_flags;
     private int _offset;
 
@@ -172,7 +173,7 @@ public final class GlyphLayout {
          * If the GVData does not have room for the glyphs, throws an IndexOutOfBoundsException and
          * leave pt and the gvdata unchanged.
          */
-        public void layout(FontStrikeDesc sd, float[] mat, int gmask,
+        public void layout(FontStrikeDesc sd, float[] mat, float ptSize, int gmask,
                            int baseIndex, TextRecord text, int typo_flags, Point2D.Float pt, GVData data);
     }
 
@@ -386,6 +387,7 @@ public final class GlyphLayout {
         _mat[2] = (float)txinfo.gtx.getShearX();
         _mat[3] = (float)txinfo.gtx.getScaleY();
         _pt.setLocation(txinfo.delta);
+        ptSize = font.getSize2D();
 
         int lim = offset + count;
 
@@ -682,7 +684,7 @@ public final class GlyphLayout {
         void layout() {
             _textRecord.start = start;
             _textRecord.limit = limit;
-            engine.layout(_sd, _mat, gmask, start - _offset, _textRecord,
+            engine.layout(_sd, _mat, ptSize, gmask, start - _offset, _textRecord,
                           _typo_flags | eflags, _pt, _gvdata);
         }
     }

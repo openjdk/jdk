@@ -83,6 +83,7 @@ public class TrueTypeFont extends FileFont {
     public static final int GPOSTag = 0x47504F53; // 'GPOS'
     public static final int GSUBTag = 0x47535542; // 'GSUB'
     public static final int mortTag = 0x6D6F7274; // 'mort'
+    public static final int morxTag = 0x6D6F7278; // 'morx'
 
     /* -- Tags for non-standard tables */
     public static final int fdscTag = 0x66647363; // 'fdsc' - gxFont descriptor
