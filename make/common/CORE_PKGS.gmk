@@ -155,6 +155,7 @@ CORE_PKGS = \
     javax.imageio.metadata \
     javax.imageio.plugins.jpeg \
     javax.imageio.plugins.bmp \
+    javax.imageio.plugins.tiff \
     javax.imageio.spi \
     javax.imageio.stream \
     javax.jws \
