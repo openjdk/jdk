@@ -49,11 +49,21 @@
 #define log_info(...)    (!log_is_enabled(Info, __VA_ARGS__))    ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Info>
 #define log_debug(...)   (!log_is_enabled(Debug, __VA_ARGS__))   ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Debug>
 #define log_trace(...)   (!log_is_enabled(Trace, __VA_ARGS__))   ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Trace>
+
+// Macros for logging that should be excluded in product builds.
+// Available for levels Info, Debug and Trace. Includes test macro that
+// evaluates to false in product builds.
 #ifndef PRODUCT
-#define log_develop(...) (!log_is_enabled(Develop, __VA_ARGS__)) ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Develop>
+#define log_develop_info(...)  (!log_is_enabled(Info, __VA_ARGS__))   ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Info>
+#define log_develop_debug(...) (!log_is_enabled(Debug, __VA_ARGS__)) ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Debug>
+#define log_develop_trace(...) (!log_is_enabled(Trace, __VA_ARGS__))  ? (void)0 : Log<LOG_TAGS(__VA_ARGS__)>::write<LogLevel::Trace>
+#define develop_log_is_enabled(level, ...)  log_is_enabled(level, __VA_ARGS__)
 #else
 #define DUMMY_ARGUMENT_CONSUMER(...)
-#define log_develop(...) DUMMY_ARGUMENT_CONSUMER
+#define log_develop_info(...)  DUMMY_ARGUMENT_CONSUMER
+#define log_develop_debug(...) DUMMY_ARGUMENT_CONSUMER
+#define log_develop_trace(...) DUMMY_ARGUMENT_CONSUMER
+#define develop_log_is_enabled(...)  false
 #endif
 
 // Convenience macro to test if the logging is enabled on the specified level for given tags.
@@ -87,6 +97,11 @@ class Log VALUE_OBJ_CLASS_SPEC {
   // The GuardTag allows this to be detected if/when it happens. If the GuardTag
   // is not __NO_TAG, the number of tags given exceeds the maximum allowed.
   STATIC_ASSERT(GuardTag == LogTag::__NO_TAG); // Number of logging tags exceeds maximum supported!
+
+  // Empty constructor to avoid warnings on MSVC about unused variables
+  // when the log instance is only used for static functions.
+  Log() {
+  }
 
   static bool is_level(LogLevelType level) {
     return LogTagSetMapping<T0, T1, T2, T3, T4>::tagset().is_level(level);

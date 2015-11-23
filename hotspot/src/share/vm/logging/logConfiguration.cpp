@@ -44,6 +44,7 @@ void LogConfiguration::post_initialize() {
   LogDiagnosticCommand::registerCommand();
   LogHandle(logging) log;
   log.info("Log configuration fully initialized.");
+  log_develop_info(logging)("Develop logging is available.");
   if (log.is_trace()) {
     ResourceMark rm;
     MutexLocker ml(LogConfiguration_lock);
