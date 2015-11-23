@@ -930,10 +930,15 @@ void VM_Version::get_processor_features() {
         UseXmmI2D = false;
       }
     }
-    if( FLAG_IS_DEFAULT(UseSSE42Intrinsics) ) {
-      if( supports_sse4_2() && UseSSE >= 4 ) {
-        UseSSE42Intrinsics = true;
+    if (supports_sse4_2() && UseSSE >= 4) {
+      if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
+        FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
       }
+    } else {
+      if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+        warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
+      }
+      FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
     }
 
     // some defaults for AMD family 15h
@@ -1007,8 +1012,13 @@ void VM_Version::get_processor_features() {
       }
       if (supports_sse4_2() && UseSSE >= 4) {
         if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
-          UseSSE42Intrinsics = true;
+          FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
         }
+      } else {
+        if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+          warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
+        }
+        FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
       }
     }
     if ((cpu_family() == 0x06) &&
