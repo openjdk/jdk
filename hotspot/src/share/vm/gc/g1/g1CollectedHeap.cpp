@@ -339,11 +339,18 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
   // thread to calculate the object size incorrectly.
   Copy::fill_to_words(new_obj, oopDesc::header_size(), 0);
 
+  size_t fill_size = word_size_sum - word_size;
+  if (fill_size >= min_fill_size()) {
+    fill_with_objects(obj_top, fill_size);
+  } else {
+    fill_size = 0;
+  }
+
   // We will set up the first region as "starts humongous". This
   // will also update the BOT covering all the regions to reflect
   // that there is a single object that starts at the bottom of the
   // first region.
-  first_hr->set_starts_humongous(obj_top);
+  first_hr->set_starts_humongous(obj_top, fill_size);
   first_hr->set_allocation_context(context);
   // Then, if there are any, we will set up the "continues
   // humongous" regions.
@@ -365,9 +372,9 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
 
   // Now that the BOT and the object header have been initialized,
   // we can update top of the "starts humongous" region.
-  first_hr->set_top(MIN2(first_hr->end(), obj_top));
+  first_hr->set_top(first_hr->end());
   if (_hr_printer.is_active()) {
-    _hr_printer.alloc(G1HRPrinter::StartsHumongous, first_hr, first_hr->top());
+    _hr_printer.alloc(G1HRPrinter::StartsHumongous, first_hr, first_hr->end());
   }
 
   // Now, we will update the top fields of the "continues humongous"
@@ -375,25 +382,18 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
   hr = NULL;
   for (uint i = first + 1; i < last; ++i) {
     hr = region_at(i);
-    if ((i + 1) == last) {
-      // last continues humongous region
-      assert(hr->bottom() < obj_top && obj_top <= hr->end(),
-             "new_top should fall on this region");
-      hr->set_top(obj_top);
-      _hr_printer.alloc(G1HRPrinter::ContinuesHumongous, hr, obj_top);
-    } else {
-      // not last one
-      assert(obj_top > hr->end(), "obj_top should be above this region");
-      hr->set_top(hr->end());
+    hr->set_top(hr->end());
+    if (_hr_printer.is_active()) {
       _hr_printer.alloc(G1HRPrinter::ContinuesHumongous, hr, hr->end());
     }
   }
-  // If we have continues humongous regions (hr != NULL), its top should
-  // match obj_top.
-  assert(hr == NULL || (hr->top() == obj_top), "sanity");
+
+  assert(hr == NULL || (hr->bottom() < obj_top && obj_top <= hr->end()),
+         "obj_top should be in last region");
+
   check_bitmaps("Humongous Region Allocation", first_hr);
 
-  increase_used(word_size * HeapWordSize);
+  increase_used(word_size_sum * HeapWordSize);
 
   for (uint i = first; i < last; ++i) {
     _humongous_set.add(region_at(i));
