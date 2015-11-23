@@ -756,7 +756,9 @@ public final class ScriptRuntime {
 
     /** ECMA 11.9.3 The Abstract Equality Comparison Algorithm */
     private static boolean equals(final Object x, final Object y) {
-        if (x == y) {
+        // We want to keep this method small so we skip reference equality check for numbers
+        // as NaN should return false when compared to itself (JDK-8043608).
+        if (x == y && !(x instanceof Number)) {
             return true;
         }
         if (x instanceof ScriptObject && y instanceof ScriptObject) {
