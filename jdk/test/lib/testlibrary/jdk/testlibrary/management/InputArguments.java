@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,7 +21,7 @@
  * questions.
  */
 
-package jdk.testlibrary;
+package jdk.testlibrary.management;
 
 import java.lang.management.RuntimeMXBean;
 import java.lang.management.ManagementFactory;
@@ -65,7 +65,7 @@ public class InputArguments {
      * @return {@code true} if the given argument is the start of an input
      *         argument, otherwise {@code false}.
      */
-    public static boolean containsPrefix(String prefix) {
+    public static boolean hasArgStartingWith(String prefix) {
         for (String arg : args) {
             if (arg.startsWith(prefix)) {
                 return true;
