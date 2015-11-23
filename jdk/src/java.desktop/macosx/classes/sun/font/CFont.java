@@ -198,6 +198,13 @@ public final class CFont extends PhysicalFont implements FontSubstitution {
         return nativeFontPtr;
     }
 
+    private native long getCGFontPtrNative(long ptr);
+
+    // This digs the CGFont out of the AWTFont.
+    protected synchronized long getPlatformNativeFontPtr() {
+        return getCGFontPtrNative(getNativeFontPtr());
+    }
+
     static native void getCascadeList(long nativeFontPtr, ArrayList<String> listOfString);
 
     private CompositeFont createCompositeFont() {

@@ -602,6 +602,34 @@ LIBFONTMANAGER_CFLAGS := \
     $(LIBJAVA_HEADER_FLAGS) \
     #
 
+#### Begin harfbuzz configuration
+
+HARFBUZZ_CFLAGS := -DHAVE_OT -DHAVE_FALLBACK -DHAVE_UCDN
+
+ifneq ($(OPENJDK_TARGET_OS), windows)
+  HARFBUZZ_CFLAGS += -DGETPAGESIZE -DHAVE_MPROTECT -DHAVE_PTHREAD \
+                      -DHAVE_SYSCONF -DHAVE_SYS_MMAN_H -DHAVE_UNISTD_H
+endif
+ifneq (, $(findstring $(OPENJDK_TARGET_OS), linux macosx))
+  HARFBUZZ_CFLAGS += -DHAVE_INTEL_ATOMIC_PRIMITIVES
+endif
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+  HARFBUZZ_CFLAGS += -DHAVE_SOLARIS_ATOMIC_OPS
+endif
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  HARFBUZZ_CFLAGS += -DHAVE_CORETEXT
+endif
+ifneq ($(OPENJDK_TARGET_OS), macosx)
+  LIBFONTMANAGER_EXCLUDE_FILES += harfbuzz/hb-coretext.cc
+endif
+ifndef OPENJDK
+  LIBFONTMANAGER_EXCLUDE_FILES += harfbuzz/hb-ft.cc
+endif
+
+LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
+
+#### End harfbuzz configuration
+
 ifndef OPENJDK
   LIBFONTMANAGER_CFLAGS += -I$(JDK_TOPDIR)/src/closed/java.desktop/share/native/libt2k
   BUILD_LIBFONTMANAGER_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libfontmanager/mapfile-vers
@@ -648,11 +676,11 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBFONTMANAGER, \
     OPTIMIZATION := $(LIBFONTMANAGER_OPTIMIZATION), \
     CFLAGS_windows = -DCC_NOEX, \
     DISABLED_WARNINGS_gcc := sign-compare int-to-pointer-cast reorder \
-        delete-non-virtual-dtor type-limits, \
+        delete-non-virtual-dtor type-limits missing-field-initializers, \
     DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast, \
     DISABLED_WARNINGS_solstudio := truncwarn, \
-    DISABLED_WARNINGS_microsoft := 4267 4244 4018 4090 4996 4146, \
+    DISABLED_WARNINGS_microsoft := 4267 4244 4018 4090 4996 4146 4334, \
     WARNINGS_AS_ERRORS_gcc := false, \
     WARNINGS_AS_ERRORS_solstudio := false, \
     MAPFILE := $(BUILD_LIBFONTMANAGER_MAPFILE), \
