@@ -460,6 +460,10 @@
       <to>jdk.localedata</to>
     </export>
     <export>
+      <name>jdk.internal.logger</name>
+      <to>java.logging</to>
+    </export>
+    <export>
       <name>sun.util.logging</name>
       <to>java.desktop</to>
       <to>java.logging</to>
@@ -1707,6 +1711,9 @@
     <depend>java.base</depend>
     <export>
       <name>com.sun.jarsigner</name>
+    </export>
+    <export>
+      <name>jdk.security.jarsigner</name>
     </export>
   </module>
   <module>
