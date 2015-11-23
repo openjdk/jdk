@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8033148
+ * @bug 8033148 8141409
  * @summary tests for array equals and compare
  * @run testng ArraysEqCmpTest
 */
@@ -312,6 +312,8 @@ public class ArraysEqCmpTest {
                 return Integer.compare(b, a);
             };
 
+            final MethodHandle eqc;
+            final MethodHandle eqcr;
             final MethodHandle cmpc;
             final MethodHandle cmpcr;
             final MethodHandle mismatchc;
@@ -327,6 +329,8 @@ public class ArraysEqCmpTest {
                             int.class, Object[].class, int.class, int.class,
                             Object[].class, int.class, int.class, Comparator.class);
 
+                    eqc = l.findStatic(Arrays.class, "equals", cmpt.changeReturnType(boolean.class));
+                    eqcr = l.findStatic(Arrays.class, "equals", cmprt.changeReturnType(boolean.class));
                     cmpc = l.findStatic(Arrays.class, "compare", cmpt);
                     cmpcr = l.findStatic(Arrays.class, "compare", cmprt);
                     mismatchc = l.findStatic(Arrays.class, "mismatch", cmpt);
@@ -334,6 +338,33 @@ public class ArraysEqCmpTest {
                 }
                 catch (Exception e) {
                     throw new Error(e);
+                }
+            }
+
+            @Override
+            boolean equals(Object a, Object b) {
+                try {
+                    return (boolean) eqc.invoke(a, b, c);
+                }
+                catch (RuntimeException | Error e) {
+                    throw e;
+                }
+                catch (Throwable t) {
+                    throw new Error(t);
+                }
+            }
+
+            @Override
+            boolean equals(Object a, int aFromIndex, int aToIndex,
+                           Object b, int bFromIndex, int bToIndex) {
+                try {
+                    return (boolean) eqcr.invoke(a, aFromIndex, aToIndex, b, bFromIndex, bToIndex, c);
+                }
+                catch (RuntimeException | Error e) {
+                    throw e;
+                }
+                catch (Throwable t) {
+                    throw new Error(t);
                 }
             }
 
@@ -1002,10 +1033,12 @@ public class ArraysEqCmpTest {
                         continue;
 
                     if (o3 == null) {
+                        testNPE(() -> Arrays.equals(o1, o2, o3));
                         testNPE(() -> Arrays.compare(o1, o2, o3));
                         testNPE(() -> Arrays.mismatch(o1, o2, o3));
                     }
 
+                    testNPE(() -> Arrays.equals(o1, 0, 0, o2, 0, 0, o3));
                     testNPE(() -> Arrays.compare(o1, 0, 0, o2, 0, 0, o3));
                     testNPE(() -> Arrays.mismatch(o1, 0, 0, o2, 0, 0, o3));
                 }

@@ -25,6 +25,7 @@
  * @test
  * @bug 8050374
  * @compile ../../../java/security/SignedObject/Chain.java
+ * @requires os.family == "windows"
  * @summary Verify a chain of signed objects
  */
 public class SignedObjectChain {
