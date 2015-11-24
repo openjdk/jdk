@@ -358,10 +358,13 @@ int main(int argc, char const ** argv)
     char *line;
     char *current;
     int i, cmd;
-    DWORD exitCode;
+    DWORD exitCode = 0;
+    DWORD processFlags = 0;
+    BOOL processInheritHandles = TRUE;
+    BOOL waitForChild = TRUE;
 
     if (argc<2 || argv[1][0] != '-' || (argv[1][1] != 'c' && argv[1][1] != 'm')) {
-        fprintf(stderr, "Usage: fixpath -c|m<path@path@...> /cygdrive/c/WINDOWS/notepad.exe [/cygdrive/c/x/test.txt|@/cygdrive/c/x/atfile]\n");
+        fprintf(stderr, "Usage: fixpath -c|m<path@path@...> [--detach] /cygdrive/c/WINDOWS/notepad.exe [/cygdrive/c/x/test.txt|@/cygdrive/c/x/atfile]\n");
         exit(0);
     }
 
@@ -386,7 +389,22 @@ int main(int argc, char const ** argv)
       exit(-1);
     }
 
-    i = 2;
+    if (argv[2][0] == '-') {
+      if (strcmp(argv[2], "--detach") == 0) {
+        if (getenv("DEBUG_FIXPATH") != NULL) {
+          fprintf(stderr, "fixpath in detached mode\n");
+        }
+        processFlags |= DETACHED_PROCESS;
+        processInheritHandles = FALSE;
+        waitForChild = FALSE;
+      } else {
+        fprintf(stderr, "fixpath Unknown argument: %s\n", argv[2]);
+        exit(-1);
+      }
+      i = 3;
+    } else {
+      i = 2;
+    }
 
     // handle assignments
     while (i < argc) {
@@ -428,6 +446,10 @@ int main(int argc, char const ** argv)
     while (i < argc) {
       char const *replaced = replace_cygdrive(argv[i]);
       if (replaced[0] == '@') {
+        if (waitForChild == FALSE) {
+          fprintf(stderr, "fixpath Cannot use @-files in detached mode: %s\n", replaced);
+          exit(1);
+        }
         // Found at-file! Fix it!
         replaced = fix_at_file(replaced);
       }
@@ -480,8 +502,8 @@ int main(int argc, char const ** argv)
                        line,
                        0,
                        0,
-                       TRUE,
-                       0,
+                       processInheritHandles,
+                       processFlags,
                        NULL,
                        NULL,
                        &si,
@@ -492,24 +514,30 @@ int main(int argc, char const ** argv)
       exit(126);
     }
 
-    WaitForSingleObject(pi.hProcess, INFINITE);
-    GetExitCodeProcess(pi.hProcess, &exitCode);
+    if (waitForChild == TRUE) {
+      WaitForSingleObject(pi.hProcess, INFINITE);
+      GetExitCodeProcess(pi.hProcess, &exitCode);
 
-    if (getenv("DEBUG_FIXPATH") != NULL) {
-      for (i=0; i<num_files_to_delete; ++i) {
-        fprintf(stderr, "fixpath Not deleting temporary file %s\n",
-                files_to_delete[i]);
+      if (getenv("DEBUG_FIXPATH") != NULL) {
+        for (i=0; i<num_files_to_delete; ++i) {
+          fprintf(stderr, "fixpath Not deleting temporary file %s\n",
+                  files_to_delete[i]);
+        }
+      } else {
+        for (i=0; i<num_files_to_delete; ++i) {
+          remove(files_to_delete[i]);
+        }
+      }
+
+      if (exitCode != 0) {
+        if (getenv("DEBUG_FIXPATH") != NULL) {
+          fprintf(stderr, "fixpath exit code %d\n",
+                  exitCode);
+        }
       }
     } else {
-      for (i=0; i<num_files_to_delete; ++i) {
-        remove(files_to_delete[i]);
-      }
-    }
-
-    if (exitCode != 0) {
       if (getenv("DEBUG_FIXPATH") != NULL) {
-        fprintf(stderr, "fixpath exit code %d\n",
-                exitCode);
+        fprintf(stderr, "fixpath Not waiting for child process");
       }
     }
 
