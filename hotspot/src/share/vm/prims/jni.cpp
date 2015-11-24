@@ -3889,6 +3889,7 @@ void TestG1BiasedArray_test();
 void TestBufferingOopClosure_test();
 void TestCodeCacheRemSet_test();
 void FreeRegionList_test();
+void IHOP_test();
 void test_memset_with_concurrent_readers();
 void TestPredictions_test();
 void WorkerDataArray_test();
@@ -3937,6 +3938,7 @@ void execute_internal_vm_tests() {
     run_unit_test(TestCodeCacheRemSet_test());
     if (UseG1GC) {
       run_unit_test(FreeRegionList_test());
+      run_unit_test(IHOP_test());
     }
     run_unit_test(test_memset_with_concurrent_readers());
     run_unit_test(TestPredictions_test());
