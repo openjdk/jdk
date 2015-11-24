@@ -3723,6 +3723,35 @@ JVM_ENTRY(void, JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t i
 }
 JVM_END
 
+// Returns an array of java.lang.String objects containing the input arguments to the VM.
+JVM_ENTRY(jobjectArray, JVM_GetVmArguments(JNIEnv *env))
+  ResourceMark rm(THREAD);
+
+  if (Arguments::num_jvm_args() == 0 && Arguments::num_jvm_flags() == 0) {
+    return NULL;
+  }
+
+  char** vm_flags = Arguments::jvm_flags_array();
+  char** vm_args = Arguments::jvm_args_array();
+  int num_flags = Arguments::num_jvm_flags();
+  int num_args = Arguments::num_jvm_args();
+
+  instanceKlassHandle ik (THREAD, SystemDictionary::String_klass());
+  objArrayOop r = oopFactory::new_objArray(ik(), num_args + num_flags, CHECK_NULL);
+  objArrayHandle result_h(THREAD, r);
+
+  int index = 0;
+  for (int j = 0; j < num_flags; j++, index++) {
+    Handle h = java_lang_String::create_from_platform_dependent_str(vm_flags[j], CHECK_NULL);
+    result_h->obj_at_put(index, h());
+  }
+  for (int i = 0; i < num_args; i++, index++) {
+    Handle h = java_lang_String::create_from_platform_dependent_str(vm_args[i], CHECK_NULL);
+    result_h->obj_at_put(index, h());
+  }
+  return (jobjectArray) JNIHandles::make_local(env, result_h());
+JVM_END
+
 JVM_ENTRY_NO_ENV(jint, JVM_FindSignal(const char *name))
   return os::get_signal_number(name);
 JVM_END
