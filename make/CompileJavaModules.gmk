@@ -361,6 +361,29 @@ jdk.compiler_CLEAN_FILES := $(wildcard \
 
 ################################################################################
 
+jdk.hotspot.agent_SRC += \
+    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent \
+    $(HOTSPOT_TOPDIR)/agent/src/share/classes \
+    #
+jdk.hotspot.agent_ADD_JAVAC_FLAGS := $(DISABLE_WARNINGS),-overrides
+jdk.hotspot.agent_COPY := .png sa.js .properties
+
+ifeq ($(MODULE), jdk.hotspot.agent)
+  ### Copy gif files
+  # Special handling to copy gif files in images/toolbarButtonGraphics \
+  #   -> classes/toolbarButtonGraphics.
+  # These can't be handled by COPY to SetupJavaCompilation since they chop off
+  # one directory level.
+  $(eval $(call SetupCopyFiles, COPY_SA_IMAGES, \
+      SRC := $(HOTSPOT_TOPDIR)/agent/src/share/classes/images, \
+      DEST := $(JDK_OUTPUTDIR)/modules/$(MODULE), \
+      FILES := $(wildcard $(HOTSPOT_TOPDIR)/agent/src/share/classes/images/*/*/*.gif), \
+  ))
+  jdk.hotspot.agent: $(COPY_SA_IMAGES)
+endif
+
+################################################################################
+
 jdk.internal.le_COPY := .properties
 
 ################################################################################
@@ -534,11 +557,6 @@ define SetupModuleCompilation
   # output dir.
   ifneq ($(BUILD_CRYPTO), true)
     $1_CLASSPATH += $(JDK_OUTPUTDIR)/modules/$1
-  endif
-  ifeq ($1, jdk.hotspot.agent)
-    ## The source of this module is compiled elsewhere, hotspot, and imported.
-    ## Service types are required in the classpath when compiing module-info
-    $1_CLASSPATH := $$($1_CLASSPATH) $$(addprefix $(JDK_OUTPUTDIR)/modules/,jdk.hotspot.agent)
   endif
   $1_JAVAC_FLAGS := -bootclasspath $(EMPTY_DIR) -extdirs $(EMPTY_DIR) -endorseddirs $(EMPTY_DIR) $$($1_ADD_JAVAC_FLAGS)
 
