@@ -24,8 +24,6 @@
  */
 
 package java.lang;
-import sun.misc.VM;
-
 import  java.io.*;
 import  java.util.*;
 
@@ -780,11 +778,7 @@ public class Throwable implements Serializable {
     public synchronized Throwable fillInStackTrace() {
         if (stackTrace != null ||
             backtrace != null /* Out of protocol state */ ) {
-            if (backtrace == null && StackStreamFactory.useStackTrace(this)) {
-                backtrace = StackStreamFactory.makeStackTrace(this);
-            } else {
-                fillInStackTrace(0);
-            }
+            fillInStackTrace(0);
             stackTrace = UNASSIGNED_STACK;
         }
         return this;
@@ -825,14 +819,10 @@ public class Throwable implements Serializable {
         // backtrace if this is the first call to this method
         if (stackTrace == UNASSIGNED_STACK ||
             (stackTrace == null && backtrace != null) /* Out of protocol state */) {
-            if (backtrace instanceof StackStreamFactory.StackTrace) {
-                stackTrace = ((StackStreamFactory.StackTrace)backtrace).getStackTraceElements();
-            } else {
-                int depth = getStackTraceDepth();
-                stackTrace = new StackTraceElement[depth];
-                for (int i = 0; i < depth; i++)
-                    stackTrace[i] = getStackTraceElement(i);
-            }
+            int depth = getStackTraceDepth();
+            stackTrace = new StackTraceElement[depth];
+            for (int i=0; i < depth; i++)
+                stackTrace[i] = getStackTraceElement(i);
         } else if (stackTrace == null) {
             return UNASSIGNED_STACK;
         }
