@@ -59,6 +59,13 @@ public class TestOptionsWithRanges {
         allOptionsAsMap.remove("ThreadStackSize");
 
         /*
+         * Remove the flag controlling the size of the stack because the
+         * flag has direct influence on the physical memory usage of
+         * the VM.
+         */
+        allOptionsAsMap.remove("CompilerThreadStackSize");
+
+        /*
          * Exclude MallocMaxTestWords as it is expected to exit VM at small values (>=0)
          */
         allOptionsAsMap.remove("MallocMaxTestWords");

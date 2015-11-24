@@ -542,10 +542,11 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
     if (i == cfg->number_of_blocks()) {
       break;                    // Got 'em all
     }
-#ifndef PRODUCT
-    if( PrintOpto && Verbose )
+
+    if (PrintOpto && Verbose) {
       tty->print_cr("retripping live calc");
-#endif
+    }
+
     // Force the issue (expensively): recheck everybody
     for (i = 1; i < cfg->number_of_blocks(); i++) {
       worklist->push(cfg->get_block(i));

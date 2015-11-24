@@ -433,36 +433,49 @@ bool MachNode::rematerialize() const {
   if (is_MachTemp()) return true;
 
   uint r = rule();              // Match rule
-  if( r <  Matcher::_begin_rematerialize ||
-      r >= Matcher::_end_rematerialize )
+  if (r <  Matcher::_begin_rematerialize ||
+      r >= Matcher::_end_rematerialize) {
     return false;
-
-  // For 2-address instructions, the input live range is also the output
-  // live range.  Remateralizing does not make progress on the that live range.
-  if( two_adr() )  return false;
-
-  // Check for rematerializing float constants, or not
-  if( !Matcher::rematerialize_float_constants ) {
-    int op = ideal_Opcode();
-    if( op == Op_ConF || op == Op_ConD )
-      return false;
   }
 
-  // Defining flags - can't spill these!  Must remateralize.
-  if( ideal_reg() == Op_RegFlags )
+  // For 2-address instructions, the input live range is also the output
+  // live range. Remateralizing does not make progress on the that live range.
+  if (two_adr()) return false;
+
+  // Check for rematerializing float constants, or not
+  if (!Matcher::rematerialize_float_constants) {
+    int op = ideal_Opcode();
+    if (op == Op_ConF || op == Op_ConD) {
+      return false;
+    }
+  }
+
+  // Defining flags - can't spill these! Must remateralize.
+  if (ideal_reg() == Op_RegFlags) {
     return true;
+  }
 
   // Stretching lots of inputs - don't do it.
-  if( req() > 2 )
+  if (req() > 2) {
     return false;
+  }
+
+  if (req() == 2 && in(1) && in(1)->ideal_reg() == Op_RegFlags) {
+    // In(1) will be rematerialized, too.
+    // Stretching lots of inputs - don't do it.
+    if (in(1)->req() > 2) {
+      return false;
+    }
+  }
 
   // Don't remateralize somebody with bound inputs - it stretches a
   // fixed register lifetime.
   uint idx = oper_input_base();
   if (req() > idx) {
     const RegMask &rm = in_RegMask(idx);
-    if (rm.is_bound(ideal_reg()))
+    if (rm.is_bound(ideal_reg())) {
       return false;
+    }
   }
 
   return true;
