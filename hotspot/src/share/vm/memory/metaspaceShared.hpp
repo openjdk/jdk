@@ -190,5 +190,8 @@ class MetaspaceShared : AllStatic {
 
   static int count_class(const char* classlist_file);
   static void estimate_regions_size() NOT_CDS_RETURN;
+
+  // Allocate a block of memory from the "md" region.
+  static char* misc_data_space_alloc(size_t num_bytes);
 };
 #endif // SHARE_VM_MEMORY_METASPACESHARED_HPP

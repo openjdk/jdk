@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_CLASSFILE_VMSYMBOLS_HPP
 #define SHARE_VM_CLASSFILE_VMSYMBOLS_HPP
 
+#include "classfile/vmSymbols_ext.hpp"
 #include "oops/symbol.hpp"
 #include "memory/iterator.hpp"
 #include "trace/traceMacros.hpp"
@@ -645,6 +646,9 @@
                                                                                                                   \
   /* trace signatures */                                                                                          \
   TRACE_TEMPLATES(template)                                                                                       \
+                                                                                                                  \
+  /* extensions */                                                                                                \
+  VM_SYMBOLS_DO_EXT(template, do_alias)                                                                           \
                                                                                                                   \
   /*end*/
 
