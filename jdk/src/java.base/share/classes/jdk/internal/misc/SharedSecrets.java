@@ -45,7 +45,6 @@ public class SharedSecrets {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
     private static JavaUtilJarAccess javaUtilJarAccess;
     private static JavaLangAccess javaLangAccess;
-    private static JavaLangInvokeAccess javaLangInvokeAccess;
     private static JavaLangRefAccess javaLangRefAccess;
     private static JavaIOAccess javaIOAccess;
     private static JavaNetAccess javaNetAccess;
@@ -79,20 +78,6 @@ public class SharedSecrets {
 
     public static JavaLangAccess getJavaLangAccess() {
         return javaLangAccess;
-    }
-
-    public static void setJavaLangInvokeAccess(JavaLangInvokeAccess jlia) {
-        javaLangInvokeAccess = jlia;
-    }
-
-    public static JavaLangInvokeAccess getJavaLangInvokeAccess() {
-        if (javaLangInvokeAccess == null) {
-            try {
-                Class<?> c = Class.forName("java.lang.invoke.MemberName");
-                unsafe.ensureClassInitialized(c);
-            } catch (ClassNotFoundException e) {};
-        }
-        return javaLangInvokeAccess;
     }
 
     public static void setJavaLangRefAccess(JavaLangRefAccess jlra) {

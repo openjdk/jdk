@@ -103,6 +103,16 @@ public interface JavaLangAccess {
     void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook);
 
     /**
+     * Returns the number of stack frames represented by the given throwable.
+     */
+    int getStackTraceDepth(Throwable t);
+
+    /**
+     * Returns the ith StackTraceElement for the given throwable.
+     */
+    StackTraceElement getStackTraceElement(Throwable t, int i);
+
+    /**
      * Returns a new string backed by the provided character array. The
      * character array is not copied and must never be modified after the
      * String is created, in order to fulfill String's contract.

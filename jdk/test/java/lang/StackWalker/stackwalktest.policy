@@ -1,5 +1,0 @@
-grant {
-  permission java.lang.StackFramePermission "retainClassReference";
-  permission java.util.PropertyPermission "seed", "read";
-};
-
