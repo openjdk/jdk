@@ -342,6 +342,7 @@
       <to>java.logging</to>
       <to>java.sql</to>
       <to>java.sql.rowset</to>
+      <to>jdk.dynalink</to>
       <to>jdk.scripting.nashorn</to>
     </export>
     <export>
@@ -1657,6 +1658,26 @@
     <depend>java.base</depend>
   </module>
   <module>
+    <name>jdk.dynalink</name>
+    <depend>java.base</depend>
+    <depend>java.logging</depend>
+    <export>
+      <name>jdk.dynalink</name>
+    </export>
+    <export>
+      <name>jdk.dynalink.beans</name>
+    </export>
+    <export>
+      <name>jdk.dynalink.linker</name>
+    </export>
+    <export>
+      <name>jdk.dynalink.linker.support</name>
+    </export>
+    <export>
+      <name>jdk.dynalink.support</name>
+    </export>
+  </module>
+  <module>
     <name>jdk.hotspot.agent</name>
     <depend>java.base</depend>
     <depend>java.datatransfer</depend>
@@ -1849,6 +1870,7 @@
     <name>jdk.scripting.nashorn</name>
     <depend>java.base</depend>
     <depend>java.logging</depend>
+    <depend>jdk.dynalink</depend>
     <depend re-exports="true">java.scripting</depend>
     <export>
       <name>jdk.nashorn.internal.runtime</name>
