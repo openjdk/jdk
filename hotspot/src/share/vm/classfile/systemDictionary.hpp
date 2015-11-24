@@ -27,6 +27,7 @@
 
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/systemDictionary_ext.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/java.hpp"
@@ -200,15 +201,18 @@ class Ticks;
   do_klass(Integer_klass,                               java_lang_Integer,                         Pre                 ) \
   do_klass(Long_klass,                                  java_lang_Long,                            Pre                 ) \
                                                                                                                          \
+  /* Extensions */                                                                                                       \
+  WK_KLASSES_DO_EXT(do_klass)                                                                                            \
   /* JVMCI classes. These are loaded on-demand. */                                                                       \
-  JVMCI_WK_KLASSES_DO(do_klass) \
-
+  JVMCI_WK_KLASSES_DO(do_klass)                                                                                          \
+                                                                                                                         \
   /*end*/
 
 
 class SystemDictionary : AllStatic {
   friend class VMStructs;
   friend class SystemDictionaryHandles;
+  friend class SharedClassUtil;
 
  public:
   enum WKID {
@@ -672,11 +676,6 @@ protected:
 
   // Basic find on classes in the midst of being loaded
   static Symbol* find_placeholder(Symbol* name, ClassLoaderData* loader_data);
-
-  // Updating entry in dictionary
-  // Add a completely loaded class
-  static void add_klass(int index, Symbol* class_name,
-                        ClassLoaderData* loader_data, KlassHandle obj);
 
   // Add a placeholder for a class being loaded
   static void add_placeholder(int index,
