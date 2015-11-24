@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 /**
  * Directive file and state builder class
@@ -66,7 +67,10 @@ public class DirectiveBuilder implements StateBuilder<CompileCommand> {
 
     @Override
     public List<CompileCommand> getCompileCommands() {
-        throw new Error("TESTBUG: isn't applicable for directives");
+        return matchBlocks.keySet().stream()
+                // only method descriptor is required to check print_directives
+                .map(md -> new CompileCommand(null, md, null, null))
+                .collect(Collectors.toList());
     }
 
     @Override

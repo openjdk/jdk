@@ -38,6 +38,7 @@ import java.lang.reflect.Executable;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -46,6 +47,7 @@ public class Executor {
     private final List<String> vmOptions;
     private final Map<Executable, State> states;
     private final List<String> jcmdCommands;
+    private OutputAnalyzer[] jcmdOutputAnalyzers;
 
     /**
      * Constructor
@@ -73,7 +75,7 @@ public class Executor {
      * Executes separate VM a gets an OutputAnalyzer instance with the results
      * of execution
      */
-    public OutputAnalyzer execute() {
+    public List<OutputAnalyzer> execute() {
         // Add class name that would be executed in a separate VM
         String classCmd = BaseAction.class.getName();
         vmOptions.add(classCmd);
@@ -99,7 +101,13 @@ public class Executor {
         } catch (Throwable thr) {
             throw new Error("Execution failed: " + thr.getMessage(), thr);
         }
-        return output;
+
+        List<OutputAnalyzer> outputList = new ArrayList<>();
+        outputList.add(output);
+        if (jcmdOutputAnalyzers != null) {
+            Collections.addAll(outputList, jcmdOutputAnalyzers);
+        }
+        return outputList;
     }
 
     /*
@@ -121,7 +129,7 @@ public class Executor {
             // Get pid of the executed process
             int pid = Integer.parseInt(in.readLine());
             Asserts.assertNE(pid, 0, "Got incorrect pid");
-            executeJCMD(pid);
+            jcmdOutputAnalyzers = executeJCMD(pid);
             if (states != null) {
                 // serialize and send state map
                 states.forEach((executable, state) -> {
@@ -139,10 +147,13 @@ public class Executor {
     }
 
     // Executes all diagnostic commands
-    protected void executeJCMD(int pid) {
+    protected OutputAnalyzer[] executeJCMD(int pid) {
+        int size = jcmdCommands.size();
+        OutputAnalyzer[] outputArray = new OutputAnalyzer[size];
         CommandExecutor jcmdExecutor = new PidJcmdExecutor(String.valueOf(pid));
-        for (String command : jcmdCommands) {
-            jcmdExecutor.execute(command);
+        for (int i = 0; i < size; i++) {
+            outputArray[i] = jcmdExecutor.execute(jcmdCommands.get(i));
         }
+        return outputArray;
     }
 }
