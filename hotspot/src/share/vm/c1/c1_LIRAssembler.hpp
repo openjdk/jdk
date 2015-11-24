@@ -99,8 +99,8 @@ class LIR_Assembler: public CompilationResourceObj {
   void add_debug_info_for_branch(CodeEmitInfo* info);
   void add_debug_info_for_div0(int pc_offset, CodeEmitInfo* cinfo);
   void add_debug_info_for_div0_here(CodeEmitInfo* info);
-  void add_debug_info_for_null_check(int pc_offset, CodeEmitInfo* cinfo);
-  void add_debug_info_for_null_check_here(CodeEmitInfo* info);
+  ImplicitNullCheckStub* add_debug_info_for_null_check(int pc_offset, CodeEmitInfo* cinfo);
+  ImplicitNullCheckStub* add_debug_info_for_null_check_here(CodeEmitInfo* info);
 
   void set_24bit_FPU();
   void reset_FPU();
