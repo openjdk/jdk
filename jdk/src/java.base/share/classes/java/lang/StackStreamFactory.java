@@ -225,17 +225,17 @@ final class StackStreamFactory {
             }
             switch (state) {
                 case NEW:
-                    if (this.anchor != 0) {
+                    if (anchor != 0) {
                         throw new IllegalStateException("This stack stream is being reused.");
                     }
                     break;
                 case OPEN:
-                    if (this.anchor <= 0) {
-                        throw new IllegalStateException("This stack stream is not valid for walking");
+                    if (anchor == 0 || anchor == -1L) {
+                        throw new IllegalStateException("This stack stream is not valid for walking.");
                     }
                     break;
                 case CLOSED:
-                    if (this.anchor != -1L) {
+                    if (anchor != -1L) {
                         throw new IllegalStateException("This stack stream is not closed.");
                     }
             }
