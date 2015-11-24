@@ -648,12 +648,14 @@ class LIR_OprFact: public AllStatic {
                                                                              LIR_OprDesc::double_size          |
                                                                              LIR_OprDesc::is_xmm_mask); }
 #endif // X86
-#ifdef PPC
+#if defined(PPC)
   static LIR_Opr double_fpu(int reg)            { return (LIR_Opr)(intptr_t)((reg  << LIR_OprDesc::reg1_shift) |
                                                                              (reg  << LIR_OprDesc::reg2_shift) |
                                                                              LIR_OprDesc::double_type          |
                                                                              LIR_OprDesc::fpu_register         |
                                                                              LIR_OprDesc::double_size); }
+#endif
+#ifdef PPC32
   static LIR_Opr single_softfp(int reg)            { return (LIR_Opr)((reg  << LIR_OprDesc::reg1_shift)        |
                                                                              LIR_OprDesc::float_type           |
                                                                              LIR_OprDesc::cpu_register         |
@@ -663,7 +665,7 @@ class LIR_OprFact: public AllStatic {
                                                                              LIR_OprDesc::double_type          |
                                                                              LIR_OprDesc::cpu_register         |
                                                                              LIR_OprDesc::double_size); }
-#endif // PPC
+#endif // PPC32
 
   static LIR_Opr virtual_register(int index, BasicType type) {
     LIR_Opr res;
@@ -1475,7 +1477,7 @@ class LIR_OpConvert: public LIR_Op1 {
  private:
    Bytecodes::Code _bytecode;
    ConversionStub* _stub;
-#ifdef PPC
+#ifdef PPC32
   LIR_Opr _tmp1;
   LIR_Opr _tmp2;
 #endif
@@ -1484,13 +1486,13 @@ class LIR_OpConvert: public LIR_Op1 {
    LIR_OpConvert(Bytecodes::Code code, LIR_Opr opr, LIR_Opr result, ConversionStub* stub)
      : LIR_Op1(lir_convert, opr, result)
      , _stub(stub)
-#ifdef PPC
+#ifdef PPC32
      , _tmp1(LIR_OprDesc::illegalOpr())
      , _tmp2(LIR_OprDesc::illegalOpr())
 #endif
      , _bytecode(code)                           {}
 
-#ifdef PPC
+#ifdef PPC32
    LIR_OpConvert(Bytecodes::Code code, LIR_Opr opr, LIR_Opr result, ConversionStub* stub
                  ,LIR_Opr tmp1, LIR_Opr tmp2)
      : LIR_Op1(lir_convert, opr, result)
@@ -1502,7 +1504,7 @@ class LIR_OpConvert: public LIR_Op1 {
 
   Bytecodes::Code bytecode() const               { return _bytecode; }
   ConversionStub* stub() const                   { return _stub; }
-#ifdef PPC
+#ifdef PPC32
   LIR_Opr tmp1() const                           { return _tmp1; }
   LIR_Opr tmp2() const                           { return _tmp2; }
 #endif
@@ -2142,7 +2144,7 @@ class LIR_List: public CompilationResourceObj {
 
   void safepoint(LIR_Opr tmp, CodeEmitInfo* info)  { append(new LIR_Op1(lir_safepoint, tmp, info)); }
 
-#ifdef PPC
+#ifdef PPC32
   void convert(Bytecodes::Code code, LIR_Opr left, LIR_Opr dst, LIR_Opr tmp1, LIR_Opr tmp2) { append(new LIR_OpConvert(code, left, dst, NULL, tmp1, tmp2)); }
 #endif
   void convert(Bytecodes::Code code, LIR_Opr left, LIR_Opr dst, ConversionStub* stub = NULL/*, bool is_32bit = false*/) { append(new LIR_OpConvert(code, left, dst, stub)); }
