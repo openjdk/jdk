@@ -26,6 +26,9 @@
 #define SHARE_VM_GC_G1_G1IHOPCONTROL_HPP
 
 #include "memory/allocation.hpp"
+#include "utilities/numberSeq.hpp"
+
+class G1Predictions;
 
 // Base class for algorithms that calculate the heap occupancy at which
 // concurrent marking should start. This heap usage threshold should be relative
@@ -90,6 +93,55 @@ class G1StaticIHOPControl : public G1IHOPControl {
     _last_marking_length_s = marking_length_s;
   }
 
+#ifndef PRODUCT
+  static void test();
+#endif
+};
+
+// This algorithm tries to return a concurrent mark starting occupancy value that
+// makes sure that during marking the given target occupancy is never exceeded,
+// based on predictions of current allocation rate and time periods between
+// initial mark and the first mixed gc.
+class G1AdaptiveIHOPControl : public G1IHOPControl {
+  size_t _heap_reserve_percent; // Percentage of maximum heap capacity we should avoid to touch
+  size_t _heap_waste_percent;   // Percentage of free heap that should be considered as waste.
+
+  const G1Predictions * _predictor;
+
+  TruncatedSeq _marking_times_s;
+  TruncatedSeq _allocation_rate_s;
+
+  size_t _last_allocation_bytes; // Most recent mutator allocation since last GC.
+  // The most recent unrestrained size of the young gen. This is used as an additional
+  // factor in the calculation of the threshold, as the threshold is based on
+  // non-young gen occupancy at the end of GC. For the IHOP threshold, we need to
+  // consider the young gen size during that time too.
+  // Since we cannot know what young gen sizes are used in the future, we will just
+  // use the current one. We expect that this one will be one with a fairly large size,
+  // as there is no marking or mixed gc that could impact its size too much.
+  size_t _last_unrestrained_young_size;
+
+  bool have_enough_data_for_prediction() const;
+
+  // The "actual" target threshold the algorithm wants to keep during and at the
+  // end of marking. This is typically lower than the requested threshold, as the
+  // algorithm needs to consider restrictions by the environment.
+  size_t actual_target_threshold() const;
+ protected:
+  virtual double last_marking_length_s() const { return _marking_times_s.last(); }
+ public:
+  G1AdaptiveIHOPControl(double ihop_percent,
+                        size_t initial_target_occupancy,
+                        G1Predictions const* predictor,
+                        size_t heap_reserve_percent, // The percentage of total heap capacity that should not be tapped into.
+                        size_t heap_waste_percent);  // The percentage of the free space in the heap that we think is not usable for allocation.
+
+  virtual size_t get_conc_mark_start_threshold();
+
+  virtual void update_allocation_info(double allocation_time_s, size_t allocated_bytes, size_t additional_buffer_size);
+  virtual void update_marking_length(double marking_length_s);
+
+  virtual void print();
 #ifndef PRODUCT
   static void test();
 #endif

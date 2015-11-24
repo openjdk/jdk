@@ -1239,8 +1239,16 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
 }
 
 G1IHOPControl* G1CollectorPolicy::create_ihop_control() const {
-  return new G1StaticIHOPControl(InitiatingHeapOccupancyPercent,
-                                 G1CollectedHeap::heap()->max_capacity());
+  if (G1UseAdaptiveIHOP) {
+    return new G1AdaptiveIHOPControl(InitiatingHeapOccupancyPercent,
+                                     G1CollectedHeap::heap()->max_capacity(),
+                                     &_predictor,
+                                     G1ReservePercent,
+                                     G1HeapWastePercent);
+  } else {
+    return new G1StaticIHOPControl(InitiatingHeapOccupancyPercent,
+                                   G1CollectedHeap::heap()->max_capacity());
+  }
 }
 
 void G1CollectorPolicy::update_ihop_prediction(double mutator_time_s,
