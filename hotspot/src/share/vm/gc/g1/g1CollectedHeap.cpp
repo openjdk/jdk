@@ -301,8 +301,8 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
   assert(is_humongous(word_size), "word_size should be humongous");
   assert(num_regions * HeapRegion::GrainWords >= word_size, "pre-condition");
 
-  // Index of last region in the series + 1.
-  uint last = first + num_regions;
+  // Index of last region in the series.
+  uint last = first + num_regions - 1;
 
   // We need to initialize the region(s) we just discovered. This is
   // a bit tricky given that it can happen concurrently with
@@ -339,23 +339,30 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
   // thread to calculate the object size incorrectly.
   Copy::fill_to_words(new_obj, oopDesc::header_size(), 0);
 
-  size_t fill_size = word_size_sum - word_size;
-  if (fill_size >= min_fill_size()) {
-    fill_with_objects(obj_top, fill_size);
-  } else {
-    fill_size = 0;
+  // How many words we use for filler objects.
+  size_t word_fill_size = word_size_sum - word_size;
+
+  // How many words memory we "waste" which cannot hold a filler object.
+  size_t words_not_fillable = 0;
+
+  if (word_fill_size >= min_fill_size()) {
+    fill_with_objects(obj_top, word_fill_size);
+  } else if (word_fill_size > 0) {
+    // We have space to fill, but we cannot fit an object there.
+    words_not_fillable = word_fill_size;
+    word_fill_size = 0;
   }
 
   // We will set up the first region as "starts humongous". This
   // will also update the BOT covering all the regions to reflect
   // that there is a single object that starts at the bottom of the
   // first region.
-  first_hr->set_starts_humongous(obj_top, fill_size);
+  first_hr->set_starts_humongous(obj_top, word_fill_size);
   first_hr->set_allocation_context(context);
   // Then, if there are any, we will set up the "continues
   // humongous" regions.
   HeapRegion* hr = NULL;
-  for (uint i = first + 1; i < last; ++i) {
+  for (uint i = first + 1; i <= last; ++i) {
     hr = region_at(i);
     hr->set_continues_humongous(first_hr);
     hr->set_allocation_context(context);
@@ -370,33 +377,38 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
   // object header and the BOT initialization.
   OrderAccess::storestore();
 
-  // Now that the BOT and the object header have been initialized,
-  // we can update top of the "starts humongous" region.
-  first_hr->set_top(first_hr->end());
-  if (_hr_printer.is_active()) {
-    _hr_printer.alloc(G1HRPrinter::StartsHumongous, first_hr, first_hr->end());
-  }
-
   // Now, we will update the top fields of the "continues humongous"
-  // regions.
-  hr = NULL;
-  for (uint i = first + 1; i < last; ++i) {
+  // regions except the last one.
+  for (uint i = first; i < last; ++i) {
     hr = region_at(i);
     hr->set_top(hr->end());
-    if (_hr_printer.is_active()) {
-      _hr_printer.alloc(G1HRPrinter::ContinuesHumongous, hr, hr->end());
-    }
   }
 
-  assert(hr == NULL || (hr->bottom() < obj_top && obj_top <= hr->end()),
+  hr = region_at(last);
+  // If we cannot fit a filler object, we must set top to the end
+  // of the humongous object, otherwise we cannot iterate the heap
+  // and the BOT will not be complete.
+  hr->set_top(hr->end() - words_not_fillable);
+
+  assert(hr->bottom() < obj_top && obj_top <= hr->end(),
          "obj_top should be in last region");
 
   check_bitmaps("Humongous Region Allocation", first_hr);
 
-  increase_used(word_size_sum * HeapWordSize);
+  assert(words_not_fillable == 0 ||
+         first_hr->bottom() + word_size_sum - words_not_fillable == hr->top(),
+         "Miscalculation in humongous allocation");
 
-  for (uint i = first; i < last; ++i) {
-    _humongous_set.add(region_at(i));
+  increase_used((word_size_sum - words_not_fillable) * HeapWordSize);
+
+  for (uint i = first; i <= last; ++i) {
+    hr = region_at(i);
+    _humongous_set.add(hr);
+    if (i == first) {
+      _hr_printer.alloc(G1HRPrinter::StartsHumongous, hr, hr->top());
+    } else {
+      _hr_printer.alloc(G1HRPrinter::ContinuesHumongous, hr, hr->top());
+    }
   }
 
   return new_obj;
