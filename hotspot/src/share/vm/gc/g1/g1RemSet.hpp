@@ -54,16 +54,6 @@ protected:
   uint n_workers();
 
 protected:
-  enum SomePrivateConstants {
-    UpdateRStoMergeSync  = 0,
-    MergeRStoDoDirtySync = 1,
-    DoDirtySync          = 2,
-    LastSync             = 3,
-
-    SeqTask              = 0,
-    NumSeqTasks          = 1
-  };
-
   CardTableModRefBS*     _ct_bs;
   G1CollectorPolicy*     _g1p;
 
@@ -123,7 +113,6 @@ public:
 
   // Record, if necessary, the fact that *p (where "p" is in region "from",
   // which is required to be non-NULL) has changed to a new non-NULL value.
-  template <class T> void write_ref(HeapRegion* from, T* p);
   template <class T> void par_write_ref(HeapRegion* from, T* p, uint tid);
 
   // Requires "region_bm" and "card_bm" to be bitmaps with 1 bit per region
