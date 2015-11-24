@@ -1073,9 +1073,6 @@ public:
   develop(bool, BreakAtWarning, false,                                      \
           "Execute breakpoint upon encountering VM warning")                \
                                                                             \
-  develop(bool, TraceVMOperation, false,                                    \
-          "Trace VM operations")                                            \
-                                                                            \
   develop(bool, UseFakeTimers, false,                                       \
           "Tell whether the VM should use system time or a fake timer")     \
                                                                             \
