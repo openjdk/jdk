@@ -55,6 +55,16 @@ public abstract class JVMOption {
     protected boolean withRange;
 
     /**
+     * Test valid min range value and additional small values
+     */
+    protected boolean testMinRange;
+
+    /**
+     * Test valid max range value and additional big values
+     */
+    protected boolean testMaxRange;
+
+    /**
      * Prepend string which added before testing option to the command line
      */
     private final List<String> prepend;
@@ -64,6 +74,8 @@ public abstract class JVMOption {
         this.prepend = new ArrayList<>();
         prependString = new StringBuilder();
         withRange = false;
+        testMinRange = true;
+        testMaxRange = true;
     }
 
     /**
@@ -133,6 +145,20 @@ public abstract class JVMOption {
      */
     final void optionWithRange() {
         withRange = true;
+    }
+
+    /**
+     * Exclude testing of min range value for this option
+     */
+    public final void excludeTestMinRange() {
+        testMinRange = false;
+    }
+
+    /**
+     * Exclude testing of max range value for this option
+     */
+    public final void excludeTestMaxRange() {
+        testMaxRange = false;
     }
 
     /**
