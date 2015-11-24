@@ -1426,17 +1426,8 @@ public:
                                                                             \
   /* tracing */                                                             \
                                                                             \
-  notproduct(bool, TraceRuntimeCalls, false,                                \
-          "Trace run-time calls")                                           \
-                                                                            \
-  develop(bool, TraceJNICalls, false,                                       \
-          "Trace JNI calls")                                                \
-                                                                            \
   develop(bool, StressRewriter, false,                                      \
           "Stress linktime bytecode rewriting")                             \
-                                                                            \
-  notproduct(bool, TraceJVMCalls, false,                                    \
-          "Trace JVM calls")                                                \
                                                                             \
   product(ccstr, TraceJVMTI, NULL,                                          \
           "Trace flags for JVMTI functions and events")                     \
