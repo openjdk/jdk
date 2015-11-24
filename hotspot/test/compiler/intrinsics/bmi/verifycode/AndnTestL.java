@@ -24,27 +24,27 @@
 /*
  * @test
  * @bug 8031321
- * @library /testlibrary /test/lib /compiler/whitebox ..
+ * @library /testlibrary /test/lib /compiler/whitebox / ..
  * @modules java.base/sun.misc
  *          java.management
- * @build AddnTestL
+ * @build AndnTestL
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseBMI1Instructions AddnTestL
+ * @run main/bootclasspath -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                         -XX:+IgnoreUnrecognizedVMOptions -XX:+UseBMI1Instructions AndnTestL
  */
 
 import java.lang.reflect.Method;
 
-public class AddnTestL extends AddnTestI {
+public class AndnTestL extends AndnTestI {
 
-    protected AddnTestL(Method method) {
+    protected AndnTestL(Method method) {
         super(method);
         isLongOperation = true;
     }
 
     public static void main(String[] args) throws Exception {
-        BmiIntrinsicBase.verifyTestCase(AddnTestL::new, TestAndnL.AndnLExpr.class.getDeclaredMethods());
-        BmiIntrinsicBase.verifyTestCase(AddnTestL::new, TestAndnL.AndnLCommutativeExpr.class.getDeclaredMethods());
+        BmiIntrinsicBase.verifyTestCase(AndnTestL::new, TestAndnL.AndnLExpr.class.getDeclaredMethods());
+        BmiIntrinsicBase.verifyTestCase(AndnTestL::new, TestAndnL.AndnLCommutativeExpr.class.getDeclaredMethods());
     }
 }

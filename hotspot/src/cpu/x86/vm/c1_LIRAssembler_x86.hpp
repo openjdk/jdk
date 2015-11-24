@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,9 +49,10 @@
                            Register recv, Label* update_done);
 public:
 
-  void store_parameter(Register r, int offset_from_esp_in_words);
-  void store_parameter(jint c,     int offset_from_esp_in_words);
-  void store_parameter(jobject c,  int offset_from_esp_in_words);
+  void store_parameter(Register r,  int offset_from_esp_in_words);
+  void store_parameter(jint c,      int offset_from_esp_in_words);
+  void store_parameter(jobject c,   int offset_from_esp_in_words);
+  void store_parameter(Metadata* c, int offset_from_esp_in_words);
 
   enum { call_stub_size = NOT_LP64(15) LP64_ONLY(28),
          exception_handler_size = DEBUG_ONLY(1*K) NOT_DEBUG(175),
