@@ -46,7 +46,6 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/nativeLookup.hpp"
 #include "prims/privilegedStack.hpp"
-#include "prims/stackwalk.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -547,94 +546,6 @@ JVM_ENTRY(jobject, JVM_GetStackTraceElement(JNIEnv *env, jobject throwable, jint
   return JNIHandles::make_local(env, element);
 JVM_END
 
-
-// java.lang.StackWalker //////////////////////////////////////////////////////
-
-
-JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mode,
-                                     jint skip_frames, jint frame_count, jint start_index,
-                                     jobjectArray classes,
-                                     jobjectArray frames))
-  JVMWrapper("JVM_CallStackWalk");
-  JavaThread* jt = (JavaThread*) THREAD;
-  if (!jt->is_Java_thread() || !jt->has_last_Java_frame()) {
-    THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: no stack trace", NULL);
-  }
-
-  Handle stackStream_h(THREAD, JNIHandles::resolve_non_null(stackStream));
-  objArrayOop ca = objArrayOop(JNIHandles::resolve_non_null(classes));
-  objArrayHandle classes_array_h(THREAD, ca);
-
-  // frames array is null when only getting caller reference
-  objArrayOop fa = objArrayOop(JNIHandles::resolve(frames));
-  objArrayHandle frames_array_h(THREAD, fa);
-
-  int limit = start_index + frame_count;
-  if (classes_array_h->length() < limit) {
-    THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(), "not enough space in buffers", NULL);
-  }
-
-  Handle result = StackWalk::walk(stackStream_h, mode, skip_frames, frame_count,
-                                  start_index, classes_array_h,
-                                  frames_array_h, CHECK_NULL);
-  return JNIHandles::make_local(env, result());
-JVM_END
-
-
-JVM_ENTRY(jint, JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jlong mode, jlong anchor,
-                                  jint frame_count, jint start_index,
-                                  jobjectArray classes,
-                                  jobjectArray frames))
-  JVMWrapper("JVM_MoreStackWalk");
-  JavaThread* jt = (JavaThread*) THREAD;
-  objArrayOop ca = objArrayOop(JNIHandles::resolve_non_null(classes));
-  objArrayHandle classes_array_h(THREAD, ca);
-
-  // frames array is null when only getting caller reference
-  objArrayOop fa = objArrayOop(JNIHandles::resolve(frames));
-  objArrayHandle frames_array_h(THREAD, fa);
-
-  int limit = start_index+frame_count;
-  if (classes_array_h->length() < limit) {
-    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "not enough space in buffers");
-  }
-
-  Handle stackStream_h(THREAD, JNIHandles::resolve_non_null(stackStream));
-  return StackWalk::moreFrames(stackStream_h, mode, anchor, frame_count,
-                               start_index, classes_array_h,
-                               frames_array_h, THREAD);
-JVM_END
-
-JVM_ENTRY(void, JVM_FillStackFrames(JNIEnv *env, jclass stackStream,
-                                    jint start_index,
-                                    jobjectArray frames,
-                                    jint from_index, jint to_index))
-  JVMWrapper("JVM_FillStackFrames");
-  if (TraceStackWalk) {
-    tty->print("JVM_FillStackFrames() start_index=%d from_index=%d to_index=%d\n",
-               start_index, from_index, to_index);
-  }
-
-  JavaThread* jt = (JavaThread*) THREAD;
-
-  objArrayOop fa = objArrayOop(JNIHandles::resolve_non_null(frames));
-  objArrayHandle frames_array_h(THREAD, fa);
-
-  if (frames_array_h->length() < to_index) {
-    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "array length not matched");
-  }
-
-  for (int i = from_index; i < to_index; i++) {
-    Handle stackFrame(THREAD, frames_array_h->obj_at(i));
-    java_lang_StackFrameInfo::fill_methodInfo(stackFrame, CHECK);
-  }
-JVM_END
-
-JVM_ENTRY(void, JVM_SetMethodInfo(JNIEnv *env, jobject frame))
-  JVMWrapper("JVM_SetMethodInfo");
-  Handle stackFrame(THREAD, JNIHandles::resolve(frame));
-  java_lang_StackFrameInfo::fill_methodInfo(stackFrame, THREAD);
-JVM_END
 
 // java.lang.Object ///////////////////////////////////////////////
 
