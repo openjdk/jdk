@@ -4101,42 +4101,6 @@ void G1CollectedHeap::preserve_mark_during_evac_failure(uint worker_id, oop obj,
   }
 }
 
-class G1ParEvacuateFollowersClosure : public VoidClosure {
-private:
-  double _start_term;
-  double _term_time;
-  size_t _term_attempts;
-
-  void start_term_time() { _term_attempts++; _start_term = os::elapsedTime(); }
-  void end_term_time() { _term_time += os::elapsedTime() - _start_term; }
-protected:
-  G1CollectedHeap*              _g1h;
-  G1ParScanThreadState*         _par_scan_state;
-  RefToScanQueueSet*            _queues;
-  ParallelTaskTerminator*       _terminator;
-
-  G1ParScanThreadState*   par_scan_state() { return _par_scan_state; }
-  RefToScanQueueSet*      queues()         { return _queues; }
-  ParallelTaskTerminator* terminator()     { return _terminator; }
-
-public:
-  G1ParEvacuateFollowersClosure(G1CollectedHeap* g1h,
-                                G1ParScanThreadState* par_scan_state,
-                                RefToScanQueueSet* queues,
-                                ParallelTaskTerminator* terminator)
-    : _g1h(g1h), _par_scan_state(par_scan_state),
-      _queues(queues), _terminator(terminator),
-      _start_term(0.0), _term_time(0.0), _term_attempts(0) {}
-
-  void do_void();
-
-  double term_time() const { return _term_time; }
-  size_t term_attempts() const { return _term_attempts; }
-
-private:
-  inline bool offer_termination();
-};
-
 bool G1ParEvacuateFollowersClosure::offer_termination() {
   G1ParScanThreadState* const pss = par_scan_state();
   start_term_time();
