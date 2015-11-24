@@ -143,6 +143,10 @@ class DependencyContext : public StackObj {
 
   void expunge_stale_entries();
 
+  // Unsafe deallocation of nmethodBuckets. Used in IK::release_C_heap_structures
+  // to clean up the context possibly containing live entries pointing to unloaded nmethods.
+  void wipe();
+
 #ifndef PRODUCT
   void print_dependent_nmethods(bool verbose);
   bool is_dependent_nmethod(nmethod* nm);

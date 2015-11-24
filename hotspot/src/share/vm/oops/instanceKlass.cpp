@@ -2063,12 +2063,16 @@ void InstanceKlass::release_C_heap_structures() {
     }
   }
 
-  // release dependencies
-  {
-    DependencyContext ctx(&_dep_context);
-    int marked = ctx.remove_all_dependents();
-    assert(marked == 0, "all dependencies should be already invalidated");
-  }
+  // Release dependencies.
+  // It is desirable to use DC::remove_all_dependents() here, but, unfortunately,
+  // it is not safe (see JDK-8143408). The problem is that the klass dependency
+  // context can contain live dependencies, since there's a race between nmethod &
+  // klass unloading. If the klass is dead when nmethod unloading happens, relevant
+  // dependencies aren't removed from the context associated with the class (see
+  // nmethod::flush_dependencies). It ends up during klass unloading as seemingly
+  // live dependencies pointing to unloaded nmethods and causes a crash in
+  // DC::remove_all_dependents() when it touches unloaded nmethod.
+  dependencies().wipe();
 
   // Deallocate breakpoint records
   if (breakpoints() != 0x0) {

@@ -218,6 +218,18 @@ int DependencyContext::remove_all_dependents() {
   return marked;
 }
 
+void DependencyContext::wipe() {
+  assert_locked_or_safepoint(CodeCache_lock);
+  nmethodBucket* b = dependencies();
+  set_dependencies(NULL);
+  set_has_stale_entries(false);
+  while (b != NULL) {
+    nmethodBucket* next = b->next();
+    delete b;
+    b = next;
+  }
+}
+
 #ifndef PRODUCT
 void DependencyContext::print_dependent_nmethods(bool verbose) {
   int idx = 0;
@@ -271,28 +283,31 @@ class TestDependencyContext {
 
   intptr_t _dependency_context;
 
+  DependencyContext dependencies() {
+    DependencyContext depContext(&_dependency_context);
+    return depContext;
+  }
+
   TestDependencyContext() : _dependency_context(DependencyContext::EMPTY) {
     CodeCache_lock->lock_without_safepoint_check();
-
-    DependencyContext depContext(&_dependency_context);
 
     _nmethods[0] = reinterpret_cast<nmethod*>(0x8 * 0);
     _nmethods[1] = reinterpret_cast<nmethod*>(0x8 * 1);
     _nmethods[2] = reinterpret_cast<nmethod*>(0x8 * 2);
 
-    depContext.add_dependent_nmethod(_nmethods[2]);
-    depContext.add_dependent_nmethod(_nmethods[1]);
-    depContext.add_dependent_nmethod(_nmethods[0]);
+    dependencies().add_dependent_nmethod(_nmethods[2]);
+    dependencies().add_dependent_nmethod(_nmethods[1]);
+    dependencies().add_dependent_nmethod(_nmethods[0]);
   }
 
   ~TestDependencyContext() {
-    wipe();
+    dependencies().wipe();
     CodeCache_lock->unlock();
   }
 
   static void testRemoveDependentNmethod(int id, bool delete_immediately) {
     TestDependencyContext c;
-    DependencyContext depContext(&c._dependency_context);
+    DependencyContext depContext = c.dependencies();
     assert(!has_stale_entries(depContext), "check");
 
     nmethod* nm = c._nmethods[id];
@@ -325,18 +340,6 @@ class TestDependencyContext {
   static bool has_stale_entries(DependencyContext ctx) {
     assert(ctx.has_stale_entries() == ctx.find_stale_entries(), "check");
     return ctx.has_stale_entries();
-  }
-
-  void wipe() {
-    DependencyContext ctx(&_dependency_context);
-    nmethodBucket* b = ctx.dependencies();
-    ctx.set_dependencies(NULL);
-    ctx.set_has_stale_entries(false);
-    while (b != NULL) {
-      nmethodBucket* next = b->next();
-      delete b;
-      b = next;
-    }
   }
 };
 
