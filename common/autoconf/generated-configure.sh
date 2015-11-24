@@ -638,6 +638,7 @@ SJAVAC_SERVER_JAVA_FLAGS
 SJAVAC_SERVER_JAVA
 JAVA_TOOL_FLAGS_SMALL
 JAVA_FLAGS_SMALL
+JAVA_FLAGS_JAVAC
 JAVA_FLAGS_BIG
 JAVA_FLAGS
 JOBS
@@ -679,6 +680,7 @@ MSVCP_DLL
 MSVCR_DLL
 LIBCXX
 STATIC_CXX_SETTING
+FIXPATH_DETACH_FLAG
 FIXPATH
 GCOV_ENABLED
 ZIP_DEBUGINFO_FILES
@@ -4610,7 +4612,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1446762265
+DATE_WHEN_GENERATED=1448375773
 
 ###############################################################################
 #
@@ -45488,7 +45490,10 @@ $as_echo "no" >&6; }
     fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
+
+    FIXPATH_DETACH_FLAG="--detach"
   fi
+
 
 
 
@@ -54791,6 +54796,9 @@ $as_echo "$boot_jdk_jvmargs_big" >&6; }
   JAVA_FLAGS_BIG=$boot_jdk_jvmargs_big
 
 
+  # By default, the main javac compilations use big
+  JAVA_FLAGS_JAVAC="$JAVA_FLAGS_BIG"
+
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking flags for boot jdk java command for small workloads" >&5
 $as_echo_n "checking flags for boot jdk java command for small workloads... " >&6; }
@@ -54966,6 +54974,12 @@ $as_echo_n "checking whether to use javac server... " >&6; }
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ENABLE_JAVAC_SERVER" >&5
 $as_echo "$ENABLE_JAVAC_SERVER" >&6; }
 
+
+  if test "x$ENABLE_JAVAC_SERVER" = "xyes" || "x$ENABLE_SJAVAC" = "xyes"; then
+    # When using a server javac, the small client instances do not need much
+    # resources.
+    JAVA_FLAGS_JAVAC="$JAVA_FLAGS_SMALL"
+  fi
 
 
 # Can the C/C++ compiler use precompiled headers?

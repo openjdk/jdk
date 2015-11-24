@@ -63,7 +63,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_OLDBYTECODE, \
 # The generate new bytecode javac setup uses the new compiler to compile for the
 # new jdk. This new bytecode might only be possible to run using the new jvm.
 $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE, \
-    JVM := $(JAVA), \
+    JVM := $(JAVA_JAVAC), \
     JAVAC := $(NEW_JAVAC), \
     FLAGS := -source 9 -target 9 \
         -encoding ascii -XDignore.symbol.file=true $(JAVAC_WARNINGS), \
@@ -73,7 +73,7 @@ $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE, \
 # The generate new bytecode javac setup uses the new compiler to compile for the
 # new jdk. This new bytecode might only be possible to run using the new jvm.
 $(eval $(call SetupJavaCompiler,GENERATE_JDKBYTECODE_NOWARNINGS, \
-    JVM := $(JAVA), \
+    JVM := $(JAVA_JAVAC), \
     JAVAC := $(NEW_JAVAC), \
     FLAGS := -source 9 -target 9 \
         -encoding ascii -XDignore.symbol.file=true $(DISABLE_WARNINGS), \
