@@ -33,7 +33,8 @@
 #define LOG_TAG_LIST \
   LOG_TAG(defaultmethods) \
   LOG_TAG(logging) \
-  LOG_TAG(safepoint)
+  LOG_TAG(safepoint) \
+  LOG_TAG(vmoperation)
 
 #define PREFIX_LOG_TAG(T) (LogTag::T)
 
