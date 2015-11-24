@@ -223,19 +223,6 @@ void trace_class_resolution(Klass* to_class) {
 // Wrapper to trace JVM functions
 
 #ifdef ASSERT
-  class JVMTraceWrapper : public StackObj {
-   public:
-    JVMTraceWrapper(const char* format, ...) ATTRIBUTE_PRINTF(2, 3) {
-      if (TraceJVMCalls) {
-        va_list ap;
-        va_start(ap, format);
-        tty->print("JVM ");
-        tty->vprint_cr(format, ap);
-        va_end(ap);
-      }
-    }
-  };
-
   Histogram* JVMHistogram;
   volatile jint JVMHistogram_lock = 0;
 
@@ -269,15 +256,9 @@ void trace_class_resolution(Klass* to_class) {
       static JVMHistogramElement* e = new JVMHistogramElement(arg); \
       if (e != NULL) e->increment_count();  // Due to bug in VC++, we need a NULL check here eventhough it should never happen!
 
-  #define JVMWrapper(arg1)                    JVMCountWrapper(arg1); JVMTraceWrapper(arg1)
-  #define JVMWrapper2(arg1, arg2)             JVMCountWrapper(arg1); JVMTraceWrapper(arg1, arg2)
-  #define JVMWrapper3(arg1, arg2, arg3)       JVMCountWrapper(arg1); JVMTraceWrapper(arg1, arg2, arg3)
-  #define JVMWrapper4(arg1, arg2, arg3, arg4) JVMCountWrapper(arg1); JVMTraceWrapper(arg1, arg2, arg3, arg4)
+  #define JVMWrapper(arg) JVMCountWrapper(arg);
 #else
-  #define JVMWrapper(arg1)
-  #define JVMWrapper2(arg1, arg2)
-  #define JVMWrapper3(arg1, arg2, arg3)
-  #define JVMWrapper4(arg1, arg2, arg3, arg4)
+  #define JVMWrapper(arg)
 #endif
 
 
@@ -672,7 +653,7 @@ JVM_END
 // java.io.File ///////////////////////////////////////////////////////////////
 
 JVM_LEAF(char*, JVM_NativePath(char* path))
-  JVMWrapper2("JVM_NativePath (%s)", path);
+  JVMWrapper("JVM_NativePath");
   return os::native_path(path);
 JVM_END
 
@@ -749,7 +730,7 @@ JVM_END
 // FindClassFromBootLoader is exported to the launcher for windows.
 JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env,
                                               const char* name))
-  JVMWrapper2("JVM_FindClassFromBootLoader %s", name);
+  JVMWrapper("JVM_FindClassFromBootLoader");
 
   // Java libraries should ensure that name is never null...
   if (name == NULL || (int)strlen(name) > Symbol::max_length()) {
@@ -774,7 +755,7 @@ JVM_END
 JVM_ENTRY(jclass, JVM_FindClassFromCaller(JNIEnv* env, const char* name,
                                           jboolean init, jobject loader,
                                           jclass caller))
-  JVMWrapper2("JVM_FindClassFromCaller %s throws ClassNotFoundException", name);
+  JVMWrapper("JVM_FindClassFromCaller throws ClassNotFoundException");
   // Java libraries should ensure that name is never null...
   if (name == NULL || (int)strlen(name) > Symbol::max_length()) {
     // It's impossible to create this class;  the name cannot fit
@@ -809,7 +790,7 @@ JVM_END
 
 JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
                                          jboolean init, jclass from))
-  JVMWrapper2("JVM_FindClassFromClass %s", name);
+  JVMWrapper("JVM_FindClassFromClass");
   if (name == NULL || (int)strlen(name) > Symbol::max_length()) {
     // It's impossible to create this class;  the name cannot fit
     // into the constant pool.
@@ -916,14 +897,14 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name,
 
 
 JVM_ENTRY(jclass, JVM_DefineClass(JNIEnv *env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd))
-  JVMWrapper2("JVM_DefineClass %s", name);
+  JVMWrapper("JVM_DefineClass");
 
   return jvm_define_class_common(env, name, loader, buf, len, pd, NULL, THREAD);
 JVM_END
 
 
 JVM_ENTRY(jclass, JVM_DefineClassWithSource(JNIEnv *env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd, const char *source))
-  JVMWrapper2("JVM_DefineClassWithSource %s", name);
+  JVMWrapper("JVM_DefineClassWithSource");
 
   return jvm_define_class_common(env, name, loader, buf, len, pd, source, THREAD);
 JVM_END
@@ -3350,7 +3331,7 @@ JVM_END
 
 JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name))
   //%note jvm_ct
-  JVMWrapper2("JVM_LoadLibrary (%s)", name);
+  JVMWrapper("JVM_LoadLibrary");
   char ebuf[1024];
   void *load_result;
   {
@@ -3382,7 +3363,7 @@ JVM_END
 
 
 JVM_LEAF(void*, JVM_FindLibraryEntry(void* handle, const char* name))
-  JVMWrapper2("JVM_FindLibraryEntry (%s)", name);
+  JVMWrapper("JVM_FindLibraryEntry");
   return os::dll_lookup(handle, name);
 JVM_END
 
@@ -3390,7 +3371,7 @@ JVM_END
 // JNI version ///////////////////////////////////////////////////////////////////////////////
 
 JVM_LEAF(jboolean, JVM_IsSupportedJNIVersion(jint version))
-  JVMWrapper2("JVM_IsSupportedJNIVersion (%d)", version);
+  JVMWrapper("JVM_IsSupportedJNIVersion");
   return Threads::is_supported_jni_version_including_1_1(version);
 JVM_END
 
