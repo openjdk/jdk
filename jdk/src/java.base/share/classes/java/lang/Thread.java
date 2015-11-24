@@ -2026,15 +2026,15 @@ class Thread implements Runnable {
     // Hence, the fields are isolated with @Contended.
 
     /** The current seed for a ThreadLocalRandom */
-    @sun.misc.Contended("tlr")
+    @jdk.internal.vm.annotation.Contended("tlr")
     long threadLocalRandomSeed;
 
     /** Probe hash value; nonzero if threadLocalRandomSeed initialized */
-    @sun.misc.Contended("tlr")
+    @jdk.internal.vm.annotation.Contended("tlr")
     int threadLocalRandomProbe;
 
     /** Secondary seed isolated from public ThreadLocalRandom sequence */
-    @sun.misc.Contended("tlr")
+    @jdk.internal.vm.annotation.Contended("tlr")
     int threadLocalRandomSecondarySeed;
 
     /* Some private helper methods */
