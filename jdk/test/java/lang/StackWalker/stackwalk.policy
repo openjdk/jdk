@@ -1,4 +1,0 @@
-grant {
-  permission java.lang.StackFramePermission "retainClassReference";
-};
-
