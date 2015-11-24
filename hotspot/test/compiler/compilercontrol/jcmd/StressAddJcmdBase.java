@@ -55,8 +55,8 @@ public abstract class StressAddJcmdBase {
     public void test() {
         List<String> commands = prepareCommands();
         Executor executor = new TimeLimitedExecutor(commands);
-        OutputAnalyzer outputAnalyzer = executor.execute();
-        outputAnalyzer.shouldHaveExitValue(0);
+        List<OutputAnalyzer> outputAnalyzers = executor.execute();
+        outputAnalyzers.get(0).shouldHaveExitValue(0);
     }
 
     /**
@@ -95,7 +95,7 @@ public abstract class StressAddJcmdBase {
         }
 
         @Override
-        protected void executeJCMD(int pid) {
+        protected OutputAnalyzer[] executeJCMD(int pid) {
             TimeLimitedRunner runner = new TimeLimitedRunner(
                     Utils.DEFAULT_TEST_TIMEOUT,
                     Utils.TIMEOUT_FACTOR,
@@ -106,6 +106,7 @@ public abstract class StressAddJcmdBase {
                 throw new Error("Exception during the execution: " + e, e);
             }
             finish();
+            return new OutputAnalyzer[0];
         }
     }
 }

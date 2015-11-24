@@ -24,13 +24,13 @@
 /*
  * @test
  * @bug 8137167
- * @summary Tests clear JCMD command
+ * @summary Tests jcmd to be able to add a directive to compile only specified methods
  * @library /testlibrary /test/lib /compiler/testlibrary ../share /
- * @build ClearDirectivesStackTest pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
+ * @build pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm compiler.compilercontrol.jcmd.ClearDirectivesStackTest
+ * @run main/othervm compiler.compilercontrol.jcmd.PrintDirectivesTest
  */
 
 package compiler.compilercontrol.jcmd;
@@ -46,32 +46,35 @@ import jdk.test.lib.Utils;
 
 import java.lang.reflect.Executable;
 
-public class ClearDirectivesStackTest extends AbstractTestBase {
-    private static final int AMOUNT = Utils.getRandomInstance().nextInt(100);
+public class PrintDirectivesTest extends AbstractTestBase {
+    private static final int AMOUNT = Utils.getRandomInstance().nextInt(
+            Integer.getInteger("compiler.compilercontrol.jcmd."
+                    + "PrintDirectivesTest.amount", 20));
     private final CommandGenerator cmdGen = new CommandGenerator();
 
     public static void main(String[] args) {
-        new ClearDirectivesStackTest().test();
+        new PrintDirectivesTest().test();
     }
 
     @Override
     public void test() {
         Scenario.Builder builder = Scenario.getBuilder();
-        // Add some commands with JCMD
+        // Add some commands with directives file
         for (int i = 0; i < AMOUNT; i++) {
             Executable exec = Utils.getRandomElement(METHODS).first;
             MethodDescriptor methodDescriptor = getValidMethodDescriptor(exec);
-            CompileCommand compileCommand = new JcmdCommand(
-                    cmdGen.generateCommand(), methodDescriptor,
-                    cmdGen.generateCompiler(), Scenario.Type.JCMD,
-                    Scenario.JcmdType.ADD);
+            Command command = cmdGen.generateCommand();
+            if (command == Command.NONEXISTENT) {
+                // skip invalid command
+                command = Command.COMPILEONLY;
+            }
+            CompileCommand compileCommand = new CompileCommand(command,
+                    methodDescriptor, cmdGen.generateCompiler(),
+                    Scenario.Type.DIRECTIVE);
             compileCommand.print();
             builder.add(compileCommand);
         }
-        // clear the stack
-        builder.add(new JcmdCommand(Command.NONEXISTENT, null, null,
-                Scenario.Type.JCMD, Scenario.JcmdType.CLEAR));
-        // print all directives after the clear
+        // print all directives
         builder.add(new JcmdCommand(Command.NONEXISTENT, null, null,
                 Scenario.Type.JCMD, Scenario.JcmdType.PRINT));
         Scenario scenario = builder.build();

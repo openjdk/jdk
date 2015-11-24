@@ -36,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 public class JcmdStateBuilder implements StateBuilder<JcmdCommand> {
     private static final List<Pair<Executable, Callable<?>>> METHODS
@@ -44,7 +45,6 @@ public class JcmdStateBuilder implements StateBuilder<JcmdCommand> {
     private final DirectiveBuilder directiveBuilder;
     private Map<MethodDescriptor, List<CompileCommand>> matchBlocks
             = new LinkedHashMap<>();
-    private List<JcmdCommand> commands = new ArrayList<>();
     private boolean isFileValid = true;
 
     public JcmdStateBuilder(String fileName) {
@@ -53,7 +53,6 @@ public class JcmdStateBuilder implements StateBuilder<JcmdCommand> {
 
     @Override
     public void add(JcmdCommand compileCommand) {
-        commands.add(compileCommand);
         switch (compileCommand.jcmdType) {
             case ADD:
                 directiveBuilder.add(compileCommand);
@@ -159,6 +158,15 @@ public class JcmdStateBuilder implements StateBuilder<JcmdCommand> {
 
     @Override
     public List<JcmdCommand> getCompileCommands() {
-        return commands;
+        if (isFileValid) {
+            return matchBlocks.keySet().stream()
+                    /* only method descriptor is required
+                       to check print_directives */
+                    .map(md -> new JcmdCommand(null, md, null, null,
+                            Scenario.JcmdType.ADD))
+                    .collect(Collectors.toList());
+        } else {
+            return new ArrayList<>();
+        }
     }
 }
