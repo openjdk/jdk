@@ -402,6 +402,11 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
   return new_obj;
 }
 
+size_t G1CollectedHeap::humongous_obj_size_in_regions(size_t word_size) {
+  assert(is_humongous(word_size), "Object of size " SIZE_FORMAT " must be humongous here", word_size);
+  return align_size_up_(word_size, HeapRegion::GrainWords) / HeapRegion::GrainWords;
+}
+
 // If could fit into free regions w/o expansion, try.
 // Otherwise, if can expand, do so.
 // Otherwise, if using ex regions might help, try with ex given back.
@@ -411,7 +416,7 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size, AllocationCo
   verify_region_sets_optional();
 
   uint first = G1_NO_HRM_INDEX;
-  uint obj_regions = (uint)(align_size_up_(word_size, HeapRegion::GrainWords) / HeapRegion::GrainWords);
+  uint obj_regions = (uint) humongous_obj_size_in_regions(word_size);
 
   if (obj_regions == 1) {
     // Only one region to allocate, try to use a fast path by directly allocating
@@ -1011,6 +1016,8 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
       // collection hoping that there's enough space in the heap.
       result = humongous_obj_allocate(word_size, AllocationContext::current());
       if (result != NULL) {
+        size_t size_in_regions = humongous_obj_size_in_regions(word_size);
+        g1_policy()->add_bytes_allocated_in_old_since_last_gc(size_in_regions * HeapRegion::GrainBytes);
         return result;
       }
 
@@ -5234,6 +5241,8 @@ void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_in
 }
 
 void G1CollectedHeap::record_obj_copy_mem_stats() {
+  g1_policy()->add_bytes_allocated_in_old_since_last_gc(_old_evac_stats.allocated() * HeapWordSize);
+
   _gc_tracer_stw->report_evacuation_statistics(create_g1_evac_summary(&_survivor_evac_stats),
                                                create_g1_evac_summary(&_old_evac_stats));
 }
@@ -5618,6 +5627,14 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
         cur->set_young_index_in_cset(-1);
       }
       cur->set_evacuation_failed(false);
+      // When moving a young gen region to old gen, we "allocate" that whole region
+      // there. This is in addition to any already evacuated objects. Notify the
+      // policy about that.
+      // Old gen regions do not cause an additional allocation: both the objects
+      // still in the region and the ones already moved are accounted for elsewhere.
+      if (cur->is_young()) {
+        policy->add_bytes_allocated_in_old_since_last_gc(HeapRegion::GrainBytes);
+      }
       // The region is now considered to be old.
       cur->set_old();
       // Do some allocation statistics accounting. Regions that failed evacuation
