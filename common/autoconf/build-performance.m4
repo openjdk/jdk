@@ -246,6 +246,73 @@ AC_DEFUN([BPERF_SETUP_CCACHE_USAGE],
   fi
 ])
 
+################################################################################
+#
+# Optionally enable distributed compilation of native code using icecc/icecream
+#
+AC_DEFUN([BPERF_SETUP_ICECC],
+[
+  AC_ARG_ENABLE([icecc], [AS_HELP_STRING([--enable-icecc],
+      [enable distribted compilation of native code using icecc/icecream @<:@disabled@:>@])])
+
+  if test "x${enable_icecc}" = "xyes"; then
+    BASIC_REQUIRE_PROGS(ICECC_CMD, icecc)
+    old_path="$PATH"
+
+    # Look for icecc-create-env in some known places
+    PATH="$PATH:/usr/lib/icecc:/usr/lib64/icecc"
+    BASIC_REQUIRE_PROGS(ICECC_CREATE_ENV, icecc-create-env)
+    # Use icecc-create-env to create a minimal compilation environment that can
+    # be sent to the other hosts in the icecream cluster.
+    icecc_create_env_log="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/icecc_create_env.log"
+    ${MKDIR} -p ${CONFIGURESUPPORT_OUTPUTDIR}/icecc
+    AC_MSG_CHECKING([for icecc build environment for target compiler])
+    if test "x${TOOLCHAIN_TYPE}" = "xgcc"; then
+      cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+          && ${ICECC_CREATE_ENV} --gcc ${CC} ${CXX} > ${icecc_create_env_log}
+    elif test "x$TOOLCHAIN_TYPE" = "xclang"; then
+      # For clang, the icecc compilerwrapper is needed. It usually resides next
+      # to icecc-create-env.
+      BASIC_REQUIRE_PROGS(ICECC_WRAPPER, compilerwrapper)
+      cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+          && ${ICECC_CREATE_ENV} --clang ${CC} ${ICECC_WRAPPER} > ${icecc_create_env_log}
+    else
+      AC_MSG_ERROR([Can only create icecc compiler packages for toolchain types gcc and clang])
+    fi
+    PATH="$old_path"
+    # The bundle with the compiler gets a name based on checksums. Parse log file
+    # to find it.
+    ICECC_ENV_BUNDLE_BASENAME="`${SED} -n '/^creating/s/creating //p' ${icecc_create_env_log}`"
+    ICECC_ENV_BUNDLE="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/${ICECC_ENV_BUNDLE_BASENAME}"
+    AC_MSG_RESULT([${ICECC_ENV_BUNDLE}])
+    ICECC="ICECC_VERSION=${ICECC_ENV_BUNDLE} ICECC_CC=${CC} ICECC_CXX=${CXX} ${ICECC_CMD}"
+
+    if test "x${COMPILE_TYPE}" = "xcross"; then
+      # If cross compiling, create a separate env package for the build compiler
+      AC_MSG_CHECKING([for icecc build environment for build compiler])
+      # Assume "gcc" or "cc" is gcc and "clang" is clang. Otherwise bail.
+      if test "x${BUILD_CC##*/}" = "xgcc" ||  test "x${BUILD_CC##*/}" = "xcc"; then
+        cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+            && ${ICECC_CREATE_ENV} --gcc ${BUILD_CC} ${BUILD_CXX} > ${icecc_create_env_log}
+      elif test "x${BUILD_CC##*/}" = "xclang"; then
+        cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+            && ${ICECC_CREATE_ENV} --clang ${BUILD_CC} ${ICECC_WRAPPER} > ${icecc_create_env_log}
+      else
+        AC_MSG_ERROR([Cannot create icecc compiler package for ${BUILD_CC}])
+      fi
+      ICECC_ENV_BUNDLE_BASENAME="`${SED} -n '/^creating/s/creating //p' ${icecc_create_env_log}`"
+      ICECC_ENV_BUNDLE="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/${ICECC_ENV_BUNDLE_BASENAME}"
+      AC_MSG_RESULT([${ICECC_ENV_BUNDLE}])
+      BUILD_ICECC="ICECC_VERSION=${ICECC_ENV_BUNDLE} ICECC_CC=${BUILD_CC} \
+          ICECC_CXX=${BUILD_CXX} ${ICECC_CMD}"
+    else
+      BUILD_ICECC="${ICECC}"
+    fi
+    AC_SUBST(ICECC)
+    AC_SUBST(BUILD_ICECC)
+  fi
+])
+
 AC_DEFUN_ONCE([BPERF_SETUP_PRECOMPILED_HEADERS],
 [
 
@@ -258,8 +325,15 @@ AC_DEFUN_ONCE([BPERF_SETUP_PRECOMPILED_HEADERS],
       [ENABLE_PRECOMPH=${enable_precompiled_headers}], [ENABLE_PRECOMPH=yes])
 
   USE_PRECOMPILED_HEADER=1
+  AC_MSG_CHECKING([If precompiled header is enabled])
   if test "x$ENABLE_PRECOMPH" = xno; then
+    AC_MSG_RESULT([no, forced])
     USE_PRECOMPILED_HEADER=0
+  elif test "x$ICECC" != "x"; then
+    AC_MSG_RESULT([no, does not work effectively with icecc])
+    USE_PRECOMPILED_HEADER=0
+  else
+    AC_MSG_RESULT([yes])
   fi
 
   if test "x$ENABLE_PRECOMPH" = xyes; then

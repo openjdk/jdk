@@ -632,6 +632,11 @@ LIBOBJS
 CFLAGS_CCACHE
 CCACHE
 USE_PRECOMPILED_HEADER
+BUILD_ICECC
+ICECC
+ICECC_WRAPPER
+ICECC_CREATE_ENV
+ICECC_CMD
 ENABLE_JAVAC_SERVER
 ENABLE_SJAVAC
 SJAVAC_SERVER_JAVA_FLAGS
@@ -1124,6 +1129,7 @@ with_boot_jdk_jvmargs
 with_sjavac_server_java
 enable_sjavac
 enable_javac_server
+enable_icecc
 enable_precompiled_headers
 enable_ccache
 with_ccache_dir
@@ -1232,6 +1238,9 @@ PNG_CFLAGS
 PNG_LIBS
 LCMS_CFLAGS
 LCMS_LIBS
+ICECC_CMD
+ICECC_CREATE_ENV
+ICECC_WRAPPER
 CCACHE'
 
 
@@ -1879,6 +1888,8 @@ Optional Features:
                           [disabled]
   --enable-javac-server   use only the server part of sjavac for faster javac
                           compiles [disabled]
+  --enable-icecc          enable distribted compilation of native code using
+                          icecc/icecream [disabled]
   --disable-precompiled-headers
                           disable using precompiled headers when compiling C++
                           [enabled]
@@ -2125,6 +2136,11 @@ Some influential environment variables:
   PNG_LIBS    linker flags for PNG, overriding pkg-config
   LCMS_CFLAGS C compiler flags for LCMS, overriding pkg-config
   LCMS_LIBS   linker flags for LCMS, overriding pkg-config
+  ICECC_CMD   Override default value for ICECC_CMD
+  ICECC_CREATE_ENV
+              Override default value for ICECC_CREATE_ENV
+  ICECC_WRAPPER
+              Override default value for ICECC_WRAPPER
   CCACHE      Override default value for CCACHE
 
 Use these variables to override the choices made by `configure' or to help
@@ -3722,6 +3738,12 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
+################################################################################
+#
+# Optionally enable distributed compilation of native code using icecc/icecream
+#
+
+
 
 
 
@@ -4619,7 +4641,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1448376134
+DATE_WHEN_GENERATED=1448383548
 
 ###############################################################################
 #
@@ -56657,6 +56679,685 @@ $as_echo "$ENABLE_JAVAC_SERVER" >&6; }
   fi
 
 
+# Setup use of icecc if requested
+
+  # Check whether --enable-icecc was given.
+if test "${enable_icecc+set}" = set; then :
+  enableval=$enable_icecc;
+fi
+
+
+  if test "x${enable_icecc}" = "xyes"; then
+
+
+
+  # Publish this variable in the help.
+
+
+  if [ -z "${ICECC_CMD+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in icecc
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ICECC_CMD+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ICECC_CMD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ICECC_CMD="$ICECC_CMD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ICECC_CMD="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ICECC_CMD=$ac_cv_path_ICECC_CMD
+if test -n "$ICECC_CMD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICECC_CMD" >&5
+$as_echo "$ICECC_CMD" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ICECC_CMD" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !ICECC_CMD! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!ICECC_CMD!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xICECC_CMD" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of ICECC_CMD from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of ICECC_CMD from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in icecc
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ICECC_CMD+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ICECC_CMD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ICECC_CMD="$ICECC_CMD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ICECC_CMD="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ICECC_CMD=$ac_cv_path_ICECC_CMD
+if test -n "$ICECC_CMD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICECC_CMD" >&5
+$as_echo "$ICECC_CMD" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ICECC_CMD" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$ICECC_CMD" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool ICECC_CMD= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool ICECC_CMD= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ICECC_CMD" >&5
+$as_echo_n "checking for ICECC_CMD... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$ICECC_CMD"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool ICECC_CMD=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool ICECC_CMD=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ICECC_CMD+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ICECC_CMD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ICECC_CMD="$ICECC_CMD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ICECC_CMD="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ICECC_CMD=$ac_cv_path_ICECC_CMD
+if test -n "$ICECC_CMD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICECC_CMD" >&5
+$as_echo "$ICECC_CMD" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$ICECC_CMD" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool ICECC_CMD=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool ICECC_CMD=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ICECC_CMD" >&5
+$as_echo_n "checking for ICECC_CMD... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool ICECC_CMD=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+
+  fi
+
+
+
+  if test "x$ICECC_CMD" = x; then
+    as_fn_error $? "Could not find required tool for ICECC_CMD" "$LINENO" 5
+  fi
+
+
+    old_path="$PATH"
+
+    # Look for icecc-create-env in some known places
+    PATH="$PATH:/usr/lib/icecc:/usr/lib64/icecc"
+
+
+
+  # Publish this variable in the help.
+
+
+  if [ -z "${ICECC_CREATE_ENV+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in icecc-create-env
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ICECC_CREATE_ENV+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ICECC_CREATE_ENV in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ICECC_CREATE_ENV="$ICECC_CREATE_ENV" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ICECC_CREATE_ENV="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ICECC_CREATE_ENV=$ac_cv_path_ICECC_CREATE_ENV
+if test -n "$ICECC_CREATE_ENV"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICECC_CREATE_ENV" >&5
+$as_echo "$ICECC_CREATE_ENV" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ICECC_CREATE_ENV" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !ICECC_CREATE_ENV! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!ICECC_CREATE_ENV!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xICECC_CREATE_ENV" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of ICECC_CREATE_ENV from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of ICECC_CREATE_ENV from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in icecc-create-env
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ICECC_CREATE_ENV+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ICECC_CREATE_ENV in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ICECC_CREATE_ENV="$ICECC_CREATE_ENV" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ICECC_CREATE_ENV="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ICECC_CREATE_ENV=$ac_cv_path_ICECC_CREATE_ENV
+if test -n "$ICECC_CREATE_ENV"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICECC_CREATE_ENV" >&5
+$as_echo "$ICECC_CREATE_ENV" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ICECC_CREATE_ENV" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$ICECC_CREATE_ENV" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool ICECC_CREATE_ENV= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool ICECC_CREATE_ENV= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ICECC_CREATE_ENV" >&5
+$as_echo_n "checking for ICECC_CREATE_ENV... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$ICECC_CREATE_ENV"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool ICECC_CREATE_ENV=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool ICECC_CREATE_ENV=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ICECC_CREATE_ENV+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ICECC_CREATE_ENV in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ICECC_CREATE_ENV="$ICECC_CREATE_ENV" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ICECC_CREATE_ENV="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ICECC_CREATE_ENV=$ac_cv_path_ICECC_CREATE_ENV
+if test -n "$ICECC_CREATE_ENV"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICECC_CREATE_ENV" >&5
+$as_echo "$ICECC_CREATE_ENV" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$ICECC_CREATE_ENV" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool ICECC_CREATE_ENV=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool ICECC_CREATE_ENV=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ICECC_CREATE_ENV" >&5
+$as_echo_n "checking for ICECC_CREATE_ENV... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool ICECC_CREATE_ENV=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+
+  fi
+
+
+
+  if test "x$ICECC_CREATE_ENV" = x; then
+    as_fn_error $? "Could not find required tool for ICECC_CREATE_ENV" "$LINENO" 5
+  fi
+
+
+    # Use icecc-create-env to create a minimal compilation environment that can
+    # be sent to the other hosts in the icecream cluster.
+    icecc_create_env_log="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/icecc_create_env.log"
+    ${MKDIR} -p ${CONFIGURESUPPORT_OUTPUTDIR}/icecc
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for icecc build environment for target compiler" >&5
+$as_echo_n "checking for icecc build environment for target compiler... " >&6; }
+    if test "x${TOOLCHAIN_TYPE}" = "xgcc"; then
+      cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+          && ${ICECC_CREATE_ENV} --gcc ${CC} ${CXX} > ${icecc_create_env_log}
+    elif test "x$TOOLCHAIN_TYPE" = "xclang"; then
+      # For clang, the icecc compilerwrapper is needed. It usually resides next
+      # to icecc-create-env.
+
+
+
+  # Publish this variable in the help.
+
+
+  if [ -z "${ICECC_WRAPPER+x}" ]; then
+    # The variable is not set by user, try to locate tool using the code snippet
+    for ac_prog in compilerwrapper
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ICECC_WRAPPER+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ICECC_WRAPPER in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ICECC_WRAPPER="$ICECC_WRAPPER" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ICECC_WRAPPER="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ICECC_WRAPPER=$ac_cv_path_ICECC_WRAPPER
+if test -n "$ICECC_WRAPPER"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICECC_WRAPPER" >&5
+$as_echo "$ICECC_WRAPPER" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ICECC_WRAPPER" && break
+done
+
+  else
+    # The variable is set, but is it from the command line or the environment?
+
+    # Try to remove the string !ICECC_WRAPPER! from our list.
+    try_remove_var=${CONFIGURE_OVERRIDDEN_VARIABLES//!ICECC_WRAPPER!/}
+    if test "x$try_remove_var" = "x$CONFIGURE_OVERRIDDEN_VARIABLES"; then
+      # If it failed, the variable was not from the command line. Ignore it,
+      # but warn the user (except for BASH, which is always set by the calling BASH).
+      if test "xICECC_WRAPPER" != xBASH; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Ignoring value of ICECC_WRAPPER from the environment. Use command line variables instead." >&5
+$as_echo "$as_me: WARNING: Ignoring value of ICECC_WRAPPER from the environment. Use command line variables instead." >&2;}
+      fi
+      # Try to locate tool using the code snippet
+      for ac_prog in compilerwrapper
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ICECC_WRAPPER+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ICECC_WRAPPER in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ICECC_WRAPPER="$ICECC_WRAPPER" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ICECC_WRAPPER="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ICECC_WRAPPER=$ac_cv_path_ICECC_WRAPPER
+if test -n "$ICECC_WRAPPER"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICECC_WRAPPER" >&5
+$as_echo "$ICECC_WRAPPER" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$ICECC_WRAPPER" && break
+done
+
+    else
+      # If it succeeded, then it was overridden by the user. We will use it
+      # for the tool.
+
+      # First remove it from the list of overridden variables, so we can test
+      # for unknown variables in the end.
+      CONFIGURE_OVERRIDDEN_VARIABLES="$try_remove_var"
+
+      # Check if we try to supply an empty value
+      if test "x$ICECC_WRAPPER" = x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Setting user supplied tool ICECC_WRAPPER= (no value)" >&5
+$as_echo "$as_me: Setting user supplied tool ICECC_WRAPPER= (no value)" >&6;}
+        { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ICECC_WRAPPER" >&5
+$as_echo_n "checking for ICECC_WRAPPER... " >&6; }
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+      else
+        # Check if the provided tool contains a complete path.
+        tool_specified="$ICECC_WRAPPER"
+        tool_basename="${tool_specified##*/}"
+        if test "x$tool_basename" = "x$tool_specified"; then
+          # A command without a complete path is provided, search $PATH.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will search for user supplied tool ICECC_WRAPPER=$tool_basename" >&5
+$as_echo "$as_me: Will search for user supplied tool ICECC_WRAPPER=$tool_basename" >&6;}
+          # Extract the first word of "$tool_basename", so it can be a program name with args.
+set dummy $tool_basename; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ICECC_WRAPPER+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ICECC_WRAPPER in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ICECC_WRAPPER="$ICECC_WRAPPER" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ICECC_WRAPPER="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ICECC_WRAPPER=$ac_cv_path_ICECC_WRAPPER
+if test -n "$ICECC_WRAPPER"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ICECC_WRAPPER" >&5
+$as_echo "$ICECC_WRAPPER" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+          if test "x$ICECC_WRAPPER" = x; then
+            as_fn_error $? "User supplied tool $tool_basename could not be found" "$LINENO" 5
+          fi
+        else
+          # Otherwise we believe it is a complete path. Use it as it is.
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Will use user supplied tool ICECC_WRAPPER=$tool_specified" >&5
+$as_echo "$as_me: Will use user supplied tool ICECC_WRAPPER=$tool_specified" >&6;}
+          { $as_echo "$as_me:${as_lineno-$LINENO}: checking for ICECC_WRAPPER" >&5
+$as_echo_n "checking for ICECC_WRAPPER... " >&6; }
+          if test ! -x "$tool_specified"; then
+            { $as_echo "$as_me:${as_lineno-$LINENO}: result: not found" >&5
+$as_echo "not found" >&6; }
+            as_fn_error $? "User supplied tool ICECC_WRAPPER=$tool_specified does not exist or is not executable" "$LINENO" 5
+          fi
+          { $as_echo "$as_me:${as_lineno-$LINENO}: result: $tool_specified" >&5
+$as_echo "$tool_specified" >&6; }
+        fi
+      fi
+    fi
+
+  fi
+
+
+
+  if test "x$ICECC_WRAPPER" = x; then
+    as_fn_error $? "Could not find required tool for ICECC_WRAPPER" "$LINENO" 5
+  fi
+
+
+      cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+          && ${ICECC_CREATE_ENV} --clang ${CC} ${ICECC_WRAPPER} > ${icecc_create_env_log}
+    else
+      as_fn_error $? "Can only create icecc compiler packages for toolchain types gcc and clang" "$LINENO" 5
+    fi
+    PATH="$old_path"
+    # The bundle with the compiler gets a name based on checksums. Parse log file
+    # to find it.
+    ICECC_ENV_BUNDLE_BASENAME="`${SED} -n '/^creating/s/creating //p' ${icecc_create_env_log}`"
+    ICECC_ENV_BUNDLE="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/${ICECC_ENV_BUNDLE_BASENAME}"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${ICECC_ENV_BUNDLE}" >&5
+$as_echo "${ICECC_ENV_BUNDLE}" >&6; }
+    ICECC="ICECC_VERSION=${ICECC_ENV_BUNDLE} ICECC_CC=${CC} ICECC_CXX=${CXX} ${ICECC_CMD}"
+
+    if test "x${COMPILE_TYPE}" = "xcross"; then
+      # If cross compiling, create a separate env package for the build compiler
+      { $as_echo "$as_me:${as_lineno-$LINENO}: checking for icecc build environment for build compiler" >&5
+$as_echo_n "checking for icecc build environment for build compiler... " >&6; }
+      # Assume "gcc" or "cc" is gcc and "clang" is clang. Otherwise bail.
+      if test "x${BUILD_CC##*/}" = "xgcc" ||  test "x${BUILD_CC##*/}" = "xcc"; then
+        cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+            && ${ICECC_CREATE_ENV} --gcc ${BUILD_CC} ${BUILD_CXX} > ${icecc_create_env_log}
+      elif test "x${BUILD_CC##*/}" = "xclang"; then
+        cd ${CONFIGURESUPPORT_OUTPUTDIR}/icecc \
+            && ${ICECC_CREATE_ENV} --clang ${BUILD_CC} ${ICECC_WRAPPER} > ${icecc_create_env_log}
+      else
+        as_fn_error $? "Cannot create icecc compiler package for ${BUILD_CC}" "$LINENO" 5
+      fi
+      ICECC_ENV_BUNDLE_BASENAME="`${SED} -n '/^creating/s/creating //p' ${icecc_create_env_log}`"
+      ICECC_ENV_BUNDLE="${CONFIGURESUPPORT_OUTPUTDIR}/icecc/${ICECC_ENV_BUNDLE_BASENAME}"
+      { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${ICECC_ENV_BUNDLE}" >&5
+$as_echo "${ICECC_ENV_BUNDLE}" >&6; }
+      BUILD_ICECC="ICECC_VERSION=${ICECC_ENV_BUNDLE} ICECC_CC=${BUILD_CC} \
+          ICECC_CXX=${BUILD_CXX} ${ICECC_CMD}"
+    else
+      BUILD_ICECC="${ICECC}"
+    fi
+
+
+  fi
+
+
 # Can the C/C++ compiler use precompiled headers?
 
 
@@ -56673,8 +57374,19 @@ fi
 
 
   USE_PRECOMPILED_HEADER=1
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking If precompiled header is enabled" >&5
+$as_echo_n "checking If precompiled header is enabled... " >&6; }
   if test "x$ENABLE_PRECOMPH" = xno; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, forced" >&5
+$as_echo "no, forced" >&6; }
     USE_PRECOMPILED_HEADER=0
+  elif test "x$ICECC" != "x"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no, does not work effectively with icecc" >&5
+$as_echo "no, does not work effectively with icecc" >&6; }
+    USE_PRECOMPILED_HEADER=0
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
   fi
 
   if test "x$ENABLE_PRECOMPH" = xyes; then
