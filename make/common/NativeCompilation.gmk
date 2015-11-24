@@ -120,9 +120,11 @@ $(eval $(call DefineNativeToolchain, TOOLCHAIN_LINK_CXX, \
 # are to be run during the build.
 # The BUILD_SYSROOT_*FLAGS variables are empty for now.
 $(eval $(call DefineNativeToolchain, TOOLCHAIN_BUILD, \
-    EXTENDS := TOOLCHAIN_DEFAULT, \
     CC := $(BUILD_CC), \
+    CXX := $(BUILD_CXX), \
     LD := $(BUILD_LD), \
+    AR := $(BUILD_AR), \
+    AS := $(BUILD_AS), \
     SYSROOT_CFLAGS := $(BUILD_SYSROOT_CFLAGS), \
     SYSROOT_LDFLAGS := $(BUILD_SYSROOT_LDFLAGS), \
 ))
