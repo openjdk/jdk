@@ -28,11 +28,11 @@ import java.io.*;
 import java.lang.reflect.Executable;
 import java.lang.annotation.Annotation;
 import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Properties;
 import java.util.PropertyPermission;
 import java.util.Map;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.nio.channels.Channel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.Objects;
@@ -1895,6 +1895,12 @@ public final class System {
             }
             public void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook) {
                 Shutdown.add(slot, registerShutdownInProgress, hook);
+            }
+            public int getStackTraceDepth(Throwable t) {
+                return t.getStackTraceDepth();
+            }
+            public StackTraceElement getStackTraceElement(Throwable t, int i) {
+                return t.getStackTraceElement(i);
             }
             public String newStringUnsafe(char[] chars) {
                 return new String(chars, true);

@@ -138,14 +138,9 @@ SUNWprivate_1.1 {
 		Java_java_lang_Double_longBitsToDouble;
 		Java_java_lang_Double_doubleToRawLongBits;
 		Java_java_lang_reflect_Proxy_defineClass0;
+		Java_java_lang_Shutdown_runAllFinalizers;
 		Java_java_lang_Float_intBitsToFloat;
 		Java_java_lang_Float_floatToRawIntBits;
-                Java_java_lang_StackFrameInfo_fillInStackFrames;
-                Java_java_lang_StackFrameInfo_setMethodInfo;
-                Java_java_lang_StackStreamFactory_checkStackWalkModes;
-                Java_java_lang_StackStreamFactory_00024AbstractStackWalker_callStackWalk;
-                Java_java_lang_StackStreamFactory_00024AbstractStackWalker_fetchStackFrames;
-		Java_java_lang_Shutdown_runAllFinalizers;
 		Java_java_lang_StrictMath_IEEEremainder;
 		Java_java_lang_StrictMath_acos;
 		Java_java_lang_StrictMath_asin;
