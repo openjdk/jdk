@@ -28,7 +28,6 @@ import compiler.compilercontrol.share.processors.CommandProcessor;
 import compiler.compilercontrol.share.processors.LogProcessor;
 import compiler.compilercontrol.share.processors.PrintDirectivesProcessor;
 import compiler.compilercontrol.share.processors.PrintProcessor;
-import compiler.compilercontrol.share.processors.QuietProcessor;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.Pair;
@@ -77,8 +76,7 @@ public final class Scenario {
                 nonQuieted.add(cc);
             }
         }
-        processors.add(new CommandProcessor(nonQuieted));
-        processors.add(new QuietProcessor(quieted));
+        processors.add(new CommandProcessor(nonQuieted, quieted));
         List<String> jcmdExecCommands = new ArrayList<>();
         boolean addCommandMet = false;
         boolean printCommandMet = false;
@@ -273,9 +271,7 @@ public final class Scenario {
             ccList.addAll(builders.get(Type.OPTION).getCompileCommands());
             ccList.addAll(builders.get(Type.FILE).getCompileCommands());
 
-            /*
-             * Create a list of directives to check which one was printed
-             */
+            // Create a list of directives to check which one was printed
             List<CompileCommand> directives = new ArrayList<>();
             if (jcmdContainsCommand(JcmdType.PRINT)) {
                 if (!isClearedState) {
