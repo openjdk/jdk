@@ -200,43 +200,51 @@ public class IntJVMOption extends JVMOption {
     protected List<String> getValidValues() {
         List<String> validValues = new ArrayList<>();
 
-        validValues.add(min.toString());
-        validValues.add(max.toString());
-
-        if ((min.compareTo(MINUS_ONE) == -1) && (max.compareTo(MINUS_ONE) == 1)) {
-            /*
-             * Add -1 as valid value if min is less than -1 and max is greater than -1
-             */
-            validValues.add("-1");
+        if (testMinRange) {
+            validValues.add(min.toString());
+        }
+        if (testMaxRange) {
+            validValues.add(max.toString());
         }
 
-        if ((min.compareTo(BigInteger.ZERO) == -1) && (max.compareTo(BigInteger.ZERO) == 1)) {
-            /*
-             * Add 0 as valid value if min is less than 0 and max is greater than 0
-             */
-            validValues.add("0");
-        }
-        if ((min.compareTo(BigInteger.ONE) == -1) && (max.compareTo(BigInteger.ONE) == 1)) {
-            /*
-             * Add 1 as valid value if min is less than 1 and max is greater than 1
-             */
-            validValues.add("1");
+        if (testMinRange) {
+            if ((min.compareTo(MINUS_ONE) == -1) && (max.compareTo(MINUS_ONE) == 1)) {
+                /*
+                 * Add -1 as valid value if min is less than -1 and max is greater than -1
+                 */
+                validValues.add("-1");
+            }
+
+            if ((min.compareTo(BigInteger.ZERO) == -1) && (max.compareTo(BigInteger.ZERO) == 1)) {
+                /*
+                 * Add 0 as valid value if min is less than 0 and max is greater than 0
+                 */
+                validValues.add("0");
+            }
+            if ((min.compareTo(BigInteger.ONE) == -1) && (max.compareTo(BigInteger.ONE) == 1)) {
+                /*
+                 * Add 1 as valid value if min is less than 1 and max is greater than 1
+                 */
+                validValues.add("1");
+            }
         }
 
-        if ((min.compareTo(MAX_4_BYTE_INT_PLUS_ONE) == -1) && (max.compareTo(MAX_4_BYTE_INT_PLUS_ONE) == 1)) {
-            /*
-             * Check for overflow when flag is assigned to the
-             * 4 byte int variable
-             */
-            validValues.add(MAX_4_BYTE_INT_PLUS_ONE.toString());
-        }
+        if (testMaxRange) {
+            if ((min.compareTo(MAX_4_BYTE_INT_PLUS_ONE) == -1) && (max.compareTo(MAX_4_BYTE_INT_PLUS_ONE) == 1)) {
+                /*
+                 * Check for overflow when flag is assigned to the
+                 * 4 byte int variable
+                 */
+                validValues.add(MAX_4_BYTE_INT_PLUS_ONE.toString());
+            }
 
-        if ((min.compareTo(MAX_4_BYTE_UNSIGNED_INT_PLUS_ONE) == -1) && (max.compareTo(MAX_4_BYTE_UNSIGNED_INT_PLUS_ONE) == 1)) {
-            /*
-             * Check for overflow when flag is assigned to the
-             * 4 byte unsigned int variable
-             */
-            validValues.add(MAX_4_BYTE_UNSIGNED_INT_PLUS_ONE.toString());
+            if ((min.compareTo(MAX_4_BYTE_UNSIGNED_INT_PLUS_ONE) == -1) && (max.compareTo(MAX_4_BYTE_UNSIGNED_INT_PLUS_ONE) == 1)) {
+                /*
+                 * Check for overflow when flag is assigned to the
+                 * 4 byte unsigned int variable
+                 */
+                validValues.add(MAX_4_BYTE_UNSIGNED_INT_PLUS_ONE.toString());
+            }
         }
 
         return validValues;
@@ -252,24 +260,28 @@ public class IntJVMOption extends JVMOption {
     protected List<String> getInvalidValues() {
         List<String> invalidValues = new ArrayList<>();
 
+        /* Return invalid values only for options which have defined range in VM */
         if (withRange) {
-            /* Return invalid values only for options which have defined range in VM */
-            if ((is32Bit && min.compareTo(MIN_4_BYTE_INT) != 0)
-                    || (!is32Bit && min.compareTo(MIN_LONG) != 0)) {
-                invalidValues.add(min.subtract(BigInteger.ONE).toString());
-            }
+            if (unsigned) {
+                /* Only add non-negative out-of-range values for unsigned options */
+                if (min.compareTo(BigInteger.ZERO) == 1) {
+                    invalidValues.add(min.subtract(BigInteger.ONE).toString());
+                }
 
-            if (!unsigned
-                    && ((is32Bit && (max.compareTo(MAX_4_BYTE_INT) != 0))
-                    || (!is32Bit && (max.compareTo(MAX_LONG) != 0)))) {
-                invalidValues.add(max.add(BigInteger.ONE).toString());
-            }
-
-            if (unsigned
-                    && ((is32Bit && (max.compareTo(MAX_4_BYTE_UNSIGNED_INT) != 0))
-                    || (!is32Bit && !uint64 && (max.compareTo(MAX_UNSIGNED_LONG) != 0))
-                    || (uint64 && (max.compareTo(MAX_UNSIGNED_LONG_64) != 0)))) {
-                invalidValues.add(max.add(BigInteger.ONE).toString());
+                if ((is32Bit && (max.compareTo(MAX_4_BYTE_UNSIGNED_INT) != 0))
+                        || (!is32Bit && !uint64 && (max.compareTo(MAX_UNSIGNED_LONG) != 0))
+                        || (uint64 && (max.compareTo(MAX_UNSIGNED_LONG_64) != 0))) {
+                    invalidValues.add(max.add(BigInteger.ONE).toString());
+                }
+            } else {
+                if ((is32Bit && min.compareTo(MIN_4_BYTE_INT) != 0)
+                        || (!is32Bit && min.compareTo(MIN_LONG) != 0)) {
+                    invalidValues.add(min.subtract(BigInteger.ONE).toString());
+                }
+                if ((is32Bit && (max.compareTo(MAX_4_BYTE_INT) != 0))
+                        || (!is32Bit && (max.compareTo(MAX_LONG) != 0))) {
+                    invalidValues.add(max.add(BigInteger.ONE).toString());
+                }
             }
         }
 
