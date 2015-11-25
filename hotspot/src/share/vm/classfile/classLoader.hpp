@@ -328,7 +328,7 @@ class ClassLoader: AllStatic {
   static void  exit_with_path_failure(const char* error, const char* message);
 #endif
 
-  static void  trace_class_path(const char* msg, const char* name = NULL);
+  static void  trace_class_path(outputStream* out, const char* msg, const char* name = NULL);
 
   // VM monitoring and management support
   static jlong classloader_time_ms();

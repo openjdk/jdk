@@ -3425,7 +3425,7 @@ void Arguments::fix_appclasspath() {
   }
 
   if (!PrintSharedArchiveAndExit) {
-    ClassLoader::trace_class_path("[classpath: ", _java_class_path->value());
+    ClassLoader::trace_class_path(tty, "[classpath: ", _java_class_path->value());
   }
 }
 
