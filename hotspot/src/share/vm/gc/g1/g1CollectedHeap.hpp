@@ -1343,6 +1343,10 @@ public:
     return (region_size / 2);
   }
 
+  // Returns the number of regions the humongous object of the given word size
+  // requires.
+  static size_t humongous_obj_size_in_regions(size_t word_size);
+
   // Print the maximum heap capacity.
   virtual size_t max_capacity() const;
 

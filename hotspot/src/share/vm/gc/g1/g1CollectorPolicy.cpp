@@ -28,6 +28,7 @@
 #include "gc/g1/concurrentMarkThread.inline.hpp"
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
+#include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1ErgoVerbose.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1Log.hpp"
@@ -38,6 +39,7 @@
 #include "runtime/java.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/debug.hpp"
+#include "utilities/pair.hpp"
 
 // Different defaults for different number of GC threads
 // They were chosen by running GCOld and SPECjbb on debris with different
@@ -148,7 +150,11 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _recorded_survivor_tail(NULL),
   _survivors_age_table(true),
 
-  _gc_overhead_perc(0.0) {
+  _gc_overhead_perc(0.0),
+
+  _bytes_allocated_in_old_since_last_gc(0),
+  _ihop_control(NULL),
+  _initial_mark_to_mixed() {
 
   // SurvRateGroups below must be initialized after the predictor because they
   // indirectly use it through this object passed to their constructor.
@@ -288,6 +294,10 @@ G1CollectorPolicy::G1CollectorPolicy() :
   _collectionSetChooser = new CollectionSetChooser();
 }
 
+G1CollectorPolicy::~G1CollectorPolicy() {
+  delete _ihop_control;
+}
+
 double G1CollectorPolicy::get_new_prediction(TruncatedSeq const* seq) const {
   return _predictor.get_new_prediction(seq);
 }
@@ -317,6 +327,8 @@ void G1CollectorPolicy::post_heap_initialize() {
   if (max_young_size != MaxNewSize) {
     FLAG_SET_ERGO(size_t, MaxNewSize, max_young_size);
   }
+
+  _ihop_control = create_ihop_control();
 }
 
 G1CollectorState* G1CollectorPolicy::collector_state() const { return _g1->collector_state(); }
@@ -522,25 +534,26 @@ uint G1CollectorPolicy::calculate_young_list_desired_max_length() const {
   return _young_gen_sizer->max_desired_young_length();
 }
 
-void G1CollectorPolicy::update_young_list_max_and_target_length() {
-  update_young_list_max_and_target_length(get_new_prediction(_rs_lengths_seq));
+uint G1CollectorPolicy::update_young_list_max_and_target_length() {
+  return update_young_list_max_and_target_length(get_new_prediction(_rs_lengths_seq));
 }
 
-void G1CollectorPolicy::update_young_list_max_and_target_length(size_t rs_lengths) {
-  update_young_list_target_length(rs_lengths);
+uint G1CollectorPolicy::update_young_list_max_and_target_length(size_t rs_lengths) {
+  uint unbounded_target_length = update_young_list_target_length(rs_lengths);
   update_max_gc_locker_expansion();
+  return unbounded_target_length;
 }
 
-void G1CollectorPolicy::update_young_list_target_length(size_t rs_lengths) {
-  _young_list_target_length = bounded_young_list_target_length(rs_lengths);
+uint G1CollectorPolicy::update_young_list_target_length(size_t rs_lengths) {
+  YoungTargetLengths young_lengths = young_list_target_lengths(rs_lengths);
+  _young_list_target_length = young_lengths.first;
+  return young_lengths.second;
 }
 
-void G1CollectorPolicy::update_young_list_target_length() {
-  update_young_list_target_length(get_new_prediction(_rs_lengths_seq));
-}
+G1CollectorPolicy::YoungTargetLengths G1CollectorPolicy::young_list_target_lengths(size_t rs_lengths) const {
+  YoungTargetLengths result;
 
-uint G1CollectorPolicy::bounded_young_list_target_length(size_t rs_lengths) const {
-  // Calculate the absolute and desired min bounds.
+  // Calculate the absolute and desired min bounds first.
 
   // This is how many young regions we already have (currently: the survivors).
   uint base_min_length = recorded_survivor_regions();
@@ -552,15 +565,7 @@ uint G1CollectorPolicy::bounded_young_list_target_length(size_t rs_lengths) cons
   desired_min_length = MAX2(desired_min_length, absolute_min_length);
   // Calculate the absolute and desired max bounds.
 
-  // We will try our best not to "eat" into the reserve.
-  uint absolute_max_length = 0;
-  if (_free_regions_at_end_of_collection > _reserve_regions) {
-    absolute_max_length = _free_regions_at_end_of_collection - _reserve_regions;
-  }
   uint desired_max_length = calculate_young_list_desired_max_length();
-  if (desired_max_length > absolute_max_length) {
-    desired_max_length = absolute_max_length;
-  }
 
   uint young_list_target_length = 0;
   if (adaptive_young_list_length()) {
@@ -581,6 +586,17 @@ uint G1CollectorPolicy::bounded_young_list_target_length(size_t rs_lengths) cons
     young_list_target_length = _young_list_fixed_length;
   }
 
+  result.second = young_list_target_length;
+
+  // We will try our best not to "eat" into the reserve.
+  uint absolute_max_length = 0;
+  if (_free_regions_at_end_of_collection > _reserve_regions) {
+    absolute_max_length = _free_regions_at_end_of_collection - _reserve_regions;
+  }
+  if (desired_max_length > absolute_max_length) {
+    desired_max_length = absolute_max_length;
+  }
+
   // Make sure we don't go over the desired max length, nor under the
   // desired min length. In case they clash, desired_min_length wins
   // which is why that test is second.
@@ -595,7 +611,8 @@ uint G1CollectorPolicy::bounded_young_list_target_length(size_t rs_lengths) cons
          "we should be able to allocate at least one eden region");
   assert(young_list_target_length >= absolute_min_length, "post-condition");
 
-  return young_list_target_length;
+  result.first = young_list_target_length;
+  return result;
 }
 
 uint
@@ -838,6 +855,10 @@ void G1CollectorPolicy::record_full_collection_end() {
   update_young_list_max_and_target_length();
   update_rs_lengths_prediction();
   _collectionSetChooser->clear();
+
+  _bytes_allocated_in_old_since_last_gc = 0;
+
+  record_pause(FullGC, _full_collection_start_sec, end_sec);
 }
 
 void G1CollectorPolicy::record_stop_world_start() {
@@ -895,7 +916,7 @@ void G1CollectorPolicy::record_concurrent_mark_remark_end() {
   _cur_mark_stop_world_time_ms += elapsed_time_ms;
   _prev_collection_pause_end_ms += elapsed_time_ms;
 
-  _mmu_tracker->add_pause(_mark_remark_start_sec, end_time_sec);
+  record_pause(Remark, _mark_remark_start_sec, end_time_sec);
 }
 
 void G1CollectorPolicy::record_concurrent_mark_cleanup_start() {
@@ -906,6 +927,10 @@ void G1CollectorPolicy::record_concurrent_mark_cleanup_completed() {
   bool should_continue_with_reclaim = next_gc_should_be_mixed("request last young-only gc",
                                                               "skip last young-only gc");
   collector_state()->set_last_young_gc(should_continue_with_reclaim);
+  // We skip the marking phase.
+  if (!should_continue_with_reclaim) {
+    abort_time_to_mixed_tracking();
+  }
   collector_state()->set_in_marking_window(false);
 }
 
@@ -952,12 +977,13 @@ bool G1CollectorPolicy::need_to_start_conc_mark(const char* source, size_t alloc
     return false;
   }
 
-  size_t marking_initiating_used_threshold =
-    (_g1->capacity() / 100) * InitiatingHeapOccupancyPercent;
+  size_t marking_initiating_used_threshold = _ihop_control->get_conc_mark_start_threshold();
+
   size_t cur_used_bytes = _g1->non_young_capacity_bytes();
   size_t alloc_byte_size = alloc_word_size * HeapWordSize;
+  size_t marking_request_bytes = cur_used_bytes + alloc_byte_size;
 
-  if ((cur_used_bytes + alloc_byte_size) > marking_initiating_used_threshold) {
+  if (marking_request_bytes > marking_initiating_used_threshold) {
     if (collector_state()->gcs_are_young() && !collector_state()->last_young_gc()) {
       ergo_verbose5(ErgoConcCycles,
         "request concurrent cycle initiation",
@@ -969,7 +995,7 @@ bool G1CollectorPolicy::need_to_start_conc_mark(const char* source, size_t alloc
         cur_used_bytes,
         alloc_byte_size,
         marking_initiating_used_threshold,
-        (double) InitiatingHeapOccupancyPercent,
+        (double) marking_initiating_used_threshold / _g1->capacity() * 100,
         source);
       return true;
     } else {
@@ -996,10 +1022,7 @@ bool G1CollectorPolicy::need_to_start_conc_mark(const char* source, size_t alloc
 
 void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t cards_scanned) {
   double end_time_sec = os::elapsedTime();
-  assert(_cur_collection_pause_used_regions_at_start >= cset_region_length(),
-         "otherwise, the subtraction below does not make sense");
-  size_t rs_size =
-            _cur_collection_pause_used_regions_at_start - cset_region_length();
+
   size_t cur_used_bytes = _g1->used();
   assert(cur_used_bytes == _g1->recalculate_used(), "It should!");
   bool last_pause_included_initial_mark = false;
@@ -1013,6 +1036,8 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
   }
 #endif // PRODUCT
 
+  record_pause(young_gc_pause_kind(), end_time_sec - pause_time_ms / 1000.0, end_time_sec);
+
   last_pause_included_initial_mark = collector_state()->during_initial_mark_pause();
   if (last_pause_included_initial_mark) {
     record_concurrent_mark_init_end(0.0);
@@ -1020,19 +1045,16 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
     maybe_start_marking();
   }
 
-  _mmu_tracker->add_pause(end_time_sec - pause_time_ms/1000.0, end_time_sec);
+  double app_time_ms = (phase_times()->cur_collection_start_sec() * 1000.0 - _prev_collection_pause_end_ms);
+  if (app_time_ms < MIN_TIMER_GRANULARITY) {
+    // This usually happens due to the timer not having the required
+    // granularity. Some Linuxes are the usual culprits.
+    // We'll just set it to something (arbitrarily) small.
+    app_time_ms = 1.0;
+  }
 
   if (update_stats) {
     _trace_young_gen_time_data.record_end_collection(pause_time_ms, phase_times());
-    // this is where we update the allocation rate of the application
-    double app_time_ms =
-      (phase_times()->cur_collection_start_sec() * 1000.0 - _prev_collection_pause_end_ms);
-    if (app_time_ms < MIN_TIMER_GRANULARITY) {
-      // This usually happens due to the timer not having the required
-      // granularity. Some Linuxes are the usual culprits.
-      // We'll just set it to something (arbitrarily) small.
-      app_time_ms = 1.0;
-    }
     // We maintain the invariant that all objects allocated by mutator
     // threads will be allocated out of eden regions. So, we can use
     // the eden region number allocated since the previous GC to
@@ -1077,6 +1099,9 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
     if (next_gc_should_be_mixed("start mixed GCs",
                                 "do not start mixed GCs")) {
       collector_state()->set_gcs_are_young(false);
+    } else {
+      // We aborted the mixed GC phase early.
+      abort_time_to_mixed_tracking();
     }
 
     collector_state()->set_last_young_gc(false);
@@ -1085,7 +1110,6 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
   if (!collector_state()->last_gc_was_young()) {
     // This is a mixed GC. Here we decide whether to continue doing
     // mixed GCs or not.
-
     if (!next_gc_should_be_mixed("continue mixed GCs",
                                  "do not continue mixed GCs")) {
       collector_state()->set_gcs_are_young(true);
@@ -1177,8 +1201,19 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
   collector_state()->set_in_marking_window(new_in_marking_window);
   collector_state()->set_in_marking_window_im(new_in_marking_window_im);
   _free_regions_at_end_of_collection = _g1->num_free_regions();
-  update_young_list_max_and_target_length();
+  // IHOP control wants to know the expected young gen length if it were not
+  // restrained by the heap reserve. Using the actual length would make the
+  // prediction too small and the limit the young gen every time we get to the
+  // predicted target occupancy.
+  size_t last_unrestrained_young_length = update_young_list_max_and_target_length();
   update_rs_lengths_prediction();
+
+  update_ihop_prediction(app_time_ms / 1000.0,
+                         _bytes_allocated_in_old_since_last_gc,
+                         last_unrestrained_young_length * HeapRegion::GrainBytes);
+  _bytes_allocated_in_old_since_last_gc = 0;
+
+  _ihop_control->send_trace_event(_g1->gc_tracer_stw());
 
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
@@ -1205,6 +1240,61 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
   _collectionSetChooser->verify();
 }
 
+G1IHOPControl* G1CollectorPolicy::create_ihop_control() const {
+  if (G1UseAdaptiveIHOP) {
+    return new G1AdaptiveIHOPControl(InitiatingHeapOccupancyPercent,
+                                     G1CollectedHeap::heap()->max_capacity(),
+                                     &_predictor,
+                                     G1ReservePercent,
+                                     G1HeapWastePercent);
+  } else {
+    return new G1StaticIHOPControl(InitiatingHeapOccupancyPercent,
+                                   G1CollectedHeap::heap()->max_capacity());
+  }
+}
+
+void G1CollectorPolicy::update_ihop_prediction(double mutator_time_s,
+                                               size_t mutator_alloc_bytes,
+                                               size_t young_gen_size) {
+  // Always try to update IHOP prediction. Even evacuation failures give information
+  // about e.g. whether to start IHOP earlier next time.
+
+  // Avoid using really small application times that might create samples with
+  // very high or very low values. They may be caused by e.g. back-to-back gcs.
+  double const min_valid_time = 1e-6;
+
+  bool report = false;
+
+  double marking_to_mixed_time = -1.0;
+  if (!collector_state()->last_gc_was_young() && _initial_mark_to_mixed.has_result()) {
+    marking_to_mixed_time = _initial_mark_to_mixed.last_marking_time();
+    assert(marking_to_mixed_time > 0.0,
+           "Initial mark to mixed time must be larger than zero but is %.3f",
+           marking_to_mixed_time);
+    if (marking_to_mixed_time > min_valid_time) {
+      _ihop_control->update_marking_length(marking_to_mixed_time);
+      report = true;
+    }
+  }
+
+  // As an approximation for the young gc promotion rates during marking we use
+  // all of them. In many applications there are only a few if any young gcs during
+  // marking, which makes any prediction useless. This increases the accuracy of the
+  // prediction.
+  if (collector_state()->last_gc_was_young() && mutator_time_s > min_valid_time) {
+    _ihop_control->update_allocation_info(mutator_time_s, mutator_alloc_bytes, young_gen_size);
+    report = true;
+  }
+
+  if (report) {
+    report_ihop_statistics();
+  }
+}
+
+void G1CollectorPolicy::report_ihop_statistics() {
+  _ihop_control->print();
+}
+
 #define EXT_SIZE_FORMAT "%.1f%s"
 #define EXT_SIZE_PARAMS(bytes)                                  \
   byte_size_in_proper_unit((double)(bytes)),                    \
@@ -1216,7 +1306,6 @@ void G1CollectorPolicy::record_heap_size_info_at_start(bool full) {
   _survivor_used_bytes_before_gc = young_list->survivor_used_bytes();
   _heap_capacity_bytes_before_gc = _g1->capacity();
   _heap_used_bytes_before_gc = _g1->used();
-  _cur_collection_pause_used_regions_at_start = _g1->num_used_regions();
 
   _eden_capacity_bytes_before_gc =
          (_young_list_target_length * HeapRegion::GrainBytes) - _survivor_used_bytes_before_gc;
@@ -1717,8 +1806,7 @@ uint G1CollectorPolicy::calculate_parallel_work_chunk_size(uint n_workers, uint 
   return MAX2(n_regions / (n_workers * overpartition_factor), min_chunk_size);
 }
 
-void
-G1CollectorPolicy::record_concurrent_mark_cleanup_end() {
+void G1CollectorPolicy::record_concurrent_mark_cleanup_end() {
   _collectionSetChooser->clear();
 
   WorkGang* workers = _g1->workers();
@@ -1737,7 +1825,8 @@ G1CollectorPolicy::record_concurrent_mark_cleanup_end() {
   _concurrent_mark_cleanup_times_ms->add(elapsed_time_ms);
   _cur_mark_stop_world_time_ms += elapsed_time_ms;
   _prev_collection_pause_end_ms += elapsed_time_ms;
-  _mmu_tracker->add_pause(_mark_cleanup_start_sec, end_sec);
+
+  record_pause(Cleanup, _mark_cleanup_start_sec, end_sec);
 }
 
 // Add the heap region at the head of the non-incremental collection set
@@ -1951,6 +2040,59 @@ void G1CollectorPolicy::maybe_start_marking() {
     // this pause we decided to postpone it. That's OK.
     collector_state()->set_initiate_conc_mark_if_possible(true);
   }
+}
+
+G1CollectorPolicy::PauseKind G1CollectorPolicy::young_gc_pause_kind() const {
+  assert(!collector_state()->full_collection(), "must be");
+  if (collector_state()->during_initial_mark_pause()) {
+    assert(collector_state()->last_gc_was_young(), "must be");
+    assert(!collector_state()->last_young_gc(), "must be");
+    return InitialMarkGC;
+  } else if (collector_state()->last_young_gc()) {
+    assert(!collector_state()->during_initial_mark_pause(), "must be");
+    assert(collector_state()->last_gc_was_young(), "must be");
+    return LastYoungGC;
+  } else if (!collector_state()->last_gc_was_young()) {
+    assert(!collector_state()->during_initial_mark_pause(), "must be");
+    assert(!collector_state()->last_young_gc(), "must be");
+    return MixedGC;
+  } else {
+    assert(collector_state()->last_gc_was_young(), "must be");
+    assert(!collector_state()->during_initial_mark_pause(), "must be");
+    assert(!collector_state()->last_young_gc(), "must be");
+    return YoungOnlyGC;
+  }
+}
+
+void G1CollectorPolicy::record_pause(PauseKind kind, double start, double end) {
+  // Manage the MMU tracker. For some reason it ignores Full GCs.
+  if (kind != FullGC) {
+    _mmu_tracker->add_pause(start, end);
+  }
+  // Manage the mutator time tracking from initial mark to first mixed gc.
+  switch (kind) {
+    case FullGC:
+      abort_time_to_mixed_tracking();
+      break;
+    case Cleanup:
+    case Remark:
+    case YoungOnlyGC:
+    case LastYoungGC:
+      _initial_mark_to_mixed.add_pause(end - start);
+      break;
+    case InitialMarkGC:
+      _initial_mark_to_mixed.record_initial_mark_end(end);
+      break;
+    case MixedGC:
+      _initial_mark_to_mixed.record_mixed_gc_start(start);
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+}
+
+void G1CollectorPolicy::abort_time_to_mixed_tracking() {
+  _initial_mark_to_mixed.reset();
 }
 
 bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
