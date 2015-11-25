@@ -34,6 +34,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.WrongMethodTypeException;
 import java.util.*;
 
 import static java.lang.invoke.MethodType.methodType;
@@ -410,6 +411,18 @@ public class T8139885 {
             }
         }
         assertEquals(illegalPos.length, caught);
+    }
+
+    @Test
+    public static void testAsSpreaderIllegalMethodType() throws Throwable {
+        MethodHandle h = MethodHandles.dropArguments(MethodHandles.constant(String.class, ""), 0, int.class, int.class);
+        boolean caught = false;
+        try {
+            MethodHandle s = h.asSpreader(String[].class, 1);
+        } catch (WrongMethodTypeException wmte) {
+            caught = true;
+        }
+        assertTrue(caught);
     }
 
     @Test
