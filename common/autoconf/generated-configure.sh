@@ -1886,8 +1886,7 @@ Optional Features:
                           --with-freetype, disabled otherwise]
   --enable-sjavac         use sjavac to do fast incremental compiles
                           [disabled]
-  --enable-javac-server   use only the server part of sjavac for faster javac
-                          compiles [disabled]
+  --disable-javac-server  disable javac server [enabled]
   --enable-icecc          enable distribted compilation of native code using
                           icecc/icecream [disabled]
   --disable-precompiled-headers
@@ -4641,7 +4640,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1448383548
+DATE_WHEN_GENERATED=1448463381
 
 ###############################################################################
 #
@@ -56658,7 +56657,7 @@ $as_echo "$ENABLE_SJAVAC" >&6; }
 if test "${enable_javac_server+set}" = set; then :
   enableval=$enable_javac_server; ENABLE_JAVAC_SERVER="${enableval}"
 else
-  ENABLE_JAVAC_SERVER="no"
+  ENABLE_JAVAC_SERVER="yes"
 fi
 
   if test "x$JVM_ARG_OK" = "xfalse"; then

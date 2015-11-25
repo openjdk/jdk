@@ -411,9 +411,9 @@ AC_DEFUN_ONCE([BPERF_SETUP_SMART_JAVAC],
   AC_MSG_RESULT([$ENABLE_SJAVAC])
   AC_SUBST(ENABLE_SJAVAC)
 
-  AC_ARG_ENABLE([javac-server], [AS_HELP_STRING([--enable-javac-server],
-      [use only the server part of sjavac for faster javac compiles @<:@disabled@:>@])],
-      [ENABLE_JAVAC_SERVER="${enableval}"], [ENABLE_JAVAC_SERVER="no"])
+  AC_ARG_ENABLE([javac-server], [AS_HELP_STRING([--disable-javac-server],
+      [disable javac server @<:@enabled@:>@])],
+      [ENABLE_JAVAC_SERVER="${enableval}"], [ENABLE_JAVAC_SERVER="yes"])
   if test "x$JVM_ARG_OK" = "xfalse"; then
     AC_MSG_WARN([Could not set -Xms${MS_VALUE}M -Xmx${MX_VALUE}M, disabling javac server])
     ENABLE_JAVAC_SERVER="no"
