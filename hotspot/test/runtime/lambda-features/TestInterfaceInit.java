@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,8 @@
 /*
  * @test
  * @bug 8034275
- * @summary [JDK 8u40] Test interface initialization: only for interfaces declaring default methods
+ * @bug 8098557
+ * @summary [JDK 8u40] Test interface init: only for interfaces declaring default methods, when subclass inits
  * @run main TestInterfaceInit
  */
 import java.util.List;
@@ -39,43 +40,59 @@ public class TestInterfaceInit {
    // Declares a default method and initializes
    interface I {
        boolean v = TestInterfaceInit.out(I.class);
-        default void x() {}
+        default void ix() {}
    }
 
    // Declares a default method and initializes
    interface J extends I {
        boolean v = TestInterfaceInit.out(J.class);
-       default void x() {}
+       default void jx() {}
    }
-   // No default method, does not initialize
+   // No default method, has an abstract method, does not initialize
    interface JN extends J {
        boolean v = TestInterfaceInit.out(JN.class);
+       public abstract void jnx();
    }
 
    // Declares a default method and initializes
    interface K extends I {
        boolean v = TestInterfaceInit.out(K.class);
-        default void x() {}
+        default void kx() {}
    }
 
-   // No default method, does not initialize
+   // No default method, has a static method, does not initialize
    interface KN extends K {
        boolean v = TestInterfaceInit.out(KN.class);
+       static void knx() {}
    }
 
    interface L extends JN, KN {
        boolean v = TestInterfaceInit.out(L.class);
-        default void x() {}
+        default void lx() {}
+   }
+
+   static class ChildClass implements JN, KN {
+       boolean v = TestInterfaceInit.out(ChildClass.class);
+       public void jnx() {}
    }
 
    public static void main(String[] args) {
        // Trigger initialization
        boolean v = L.v;
 
-       List<Class<?>> expectedCInitOrder = Arrays.asList(I.class,J.class,K.class,L.class);
+       List<Class<?>> expectedCInitOrder = Arrays.asList(L.class);
        if (!cInitOrder.equals(expectedCInitOrder)) {
          throw new RuntimeException(String.format("Class initialization array %s not equal to expected array %s", cInitOrder, expectedCInitOrder));
        }
+
+       ChildClass myC = new ChildClass();
+       boolean w = myC.v;
+
+       expectedCInitOrder = Arrays.asList(L.class,I.class,J.class,K.class,ChildClass.class);
+       if (!cInitOrder.equals(expectedCInitOrder)) {
+         throw new RuntimeException(String.format("Class initialization array %s not equal to expected array %s", cInitOrder, expectedCInitOrder));
+       }
+
    }
 
    static boolean out(Class c) {
