@@ -74,9 +74,6 @@ class InterfaceSupport: AllStatic {
   static long _number_of_calls;
   static long _fullgc_alot_invocation;
 
-  // tracing
-  static void trace(const char* result_type, const char* header);
-
   // Helper methods used to implement +ScavengeALot and +FullGCALot
   static void check_gc_alot() { if (ScavengeALot || FullGCALot) gc_alot(); }
   static void gc_alot();
@@ -402,8 +399,6 @@ class RuntimeHistogramElement : public HistogramElement {
 
 #define TRACE_CALL(result_type, header)                            \
   InterfaceSupport::_number_of_calls++;                            \
-  if (TraceRuntimeCalls)                                           \
-    InterfaceSupport::trace(#result_type, #header);                \
   if (CountRuntimeCalls) {                                         \
     static RuntimeHistogramElement* e = new RuntimeHistogramElement(#header); \
     if (e != NULL) e->increment_count();                           \
