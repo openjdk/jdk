@@ -261,19 +261,6 @@ void jfieldIDWorkaround::verify_instance_jfieldID(Klass* k, jfieldID id) {
   Histogram* JNIHistogram;
   static volatile jint JNIHistogram_lock = 0;
 
-  class JNITraceWrapper : public StackObj {
-   public:
-    JNITraceWrapper(const char* format, ...) ATTRIBUTE_PRINTF(2, 3) {
-      if (TraceJNICalls) {
-        va_list ap;
-        va_start(ap, format);
-        tty->print("JNI ");
-        tty->vprint_cr(format, ap);
-        va_end(ap);
-      }
-    }
-  };
-
   class JNIHistogramElement : public HistogramElement {
     public:
      JNIHistogramElement(const char* name);
@@ -305,7 +292,7 @@ void jfieldIDWorkaround::verify_instance_jfieldID(Klass* k, jfieldID id) {
      static JNIHistogramElement* e = new JNIHistogramElement(arg); \
       /* There is a MT-race condition in VC++. So we need to make sure that that e has been initialized */ \
      if (e != NULL) e->increment_count()
-  #define JNIWrapper(arg) JNICountWrapper(arg); JNITraceWrapper(arg)
+  #define JNIWrapper(arg) JNICountWrapper(arg);
 #else
   #define JNIWrapper(arg)
 #endif
@@ -3759,7 +3746,7 @@ void copy_jni_function_table(const struct JNINativeInterface_ *new_jni_NativeInt
 void quicken_jni_functions() {
   // Replace Get<Primitive>Field with fast versions
   if (UseFastJNIAccessors && !JvmtiExport::can_post_field_access()
-      && !VerifyJNIFields && !TraceJNICalls && !CountJNICalls && !CheckJNICalls
+      && !VerifyJNIFields && !CountJNICalls && !CheckJNICalls
 #if defined(_WINDOWS) && defined(IA32) && defined(COMPILER2)
       // windows x86 currently needs SEH wrapper and the gain of the fast
       // versions currently isn't certain for server vm on uniprocessor.

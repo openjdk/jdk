@@ -4022,13 +4022,6 @@ bool Threads::destroy_vm() {
   // will be stopped at native=>Java/VM barriers. Note that we can't
   // simply kill or suspend them, as it is inherently deadlock-prone.
 
-#ifndef PRODUCT
-  // disable function tracing at JNI/JVM barriers
-  TraceJNICalls = false;
-  TraceJVMCalls = false;
-  TraceRuntimeCalls = false;
-#endif
-
   VM_Exit::set_vm_exited();
 
   notify_vm_shutdown();
