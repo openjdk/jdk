@@ -29,6 +29,7 @@
 #include "utilities/numberSeq.hpp"
 
 class G1Predictions;
+class G1NewTracer;
 
 // Base class for algorithms that calculate the heap occupancy at which
 // concurrent marking should start. This heap usage threshold should be relative
@@ -73,6 +74,7 @@ class G1IHOPControl : public CHeapObj<mtGC> {
   virtual void update_marking_length(double marking_length_s) = 0;
 
   virtual void print();
+  virtual void send_trace_event(G1NewTracer* tracer);
 };
 
 // The returned concurrent mark starting occupancy threshold is a fixed value
@@ -111,7 +113,6 @@ class G1AdaptiveIHOPControl : public G1IHOPControl {
   TruncatedSeq _marking_times_s;
   TruncatedSeq _allocation_rate_s;
 
-  size_t _last_allocation_bytes; // Most recent mutator allocation since last GC.
   // The most recent unrestrained size of the young gen. This is used as an additional
   // factor in the calculation of the threshold, as the threshold is based on
   // non-young gen occupancy at the end of GC. For the IHOP threshold, we need to
@@ -142,6 +143,7 @@ class G1AdaptiveIHOPControl : public G1IHOPControl {
   virtual void update_marking_length(double marking_length_s);
 
   virtual void print();
+  virtual void send_trace_event(G1NewTracer* tracer);
 #ifndef PRODUCT
   static void test();
 #endif

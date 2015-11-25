@@ -1213,6 +1213,8 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
                          last_unrestrained_young_length * HeapRegion::GrainBytes);
   _bytes_allocated_in_old_since_last_gc = 0;
 
+  _ihop_control->send_trace_event(_g1->gc_tracer_stw());
+
   // Note that _mmu_tracker->max_gc_time() returns the time in seconds.
   double update_rs_time_goal_ms = _mmu_tracker->max_gc_time() * MILLIUNITS * G1RSetUpdatingPauseTimePercent / 100.0;
 

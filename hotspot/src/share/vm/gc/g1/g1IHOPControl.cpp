@@ -27,6 +27,7 @@
 #include "gc/g1/g1ErgoVerbose.hpp"
 #include "gc/g1/g1IHOPControl.hpp"
 #include "gc/g1/g1Predictions.hpp"
+#include "gc/shared/gcTrace.hpp"
 
 G1IHOPControl::G1IHOPControl(double initial_ihop_percent, size_t target_occupancy) :
   _initial_ihop_percent(initial_ihop_percent),
@@ -60,6 +61,15 @@ void G1IHOPControl::print() {
                 G1CollectedHeap::heap()->used(),
                 _last_allocation_time_s > 0.0 ? _last_allocated_bytes / _last_allocation_time_s : 0.0,
                 last_marking_length_s());
+}
+
+void G1IHOPControl::send_trace_event(G1NewTracer* tracer) {
+  tracer->report_basic_ihop_statistics(get_conc_mark_start_threshold(),
+                                       _target_occupancy,
+                                       G1CollectedHeap::heap()->used(),
+                                       _last_allocated_bytes,
+                                       _last_allocation_time_s,
+                                       last_marking_length_s());
 }
 
 G1StaticIHOPControl::G1StaticIHOPControl(double ihop_percent, size_t target_occupancy) :
@@ -166,11 +176,11 @@ size_t G1AdaptiveIHOPControl::get_conc_mark_start_threshold() {
 }
 
 void G1AdaptiveIHOPControl::update_allocation_info(double allocation_time_s, size_t allocated_bytes, size_t additional_buffer_size) {
-  assert(allocation_time_s >= 0.0, "Allocation time must be positive but is %.3f", allocation_time_s);
+  G1IHOPControl::update_allocation_info(allocation_time_s, allocated_bytes, additional_buffer_size);
+
   double allocation_rate = (double) allocated_bytes / allocation_time_s;
   _allocation_rate_s.add(allocation_rate);
 
-  _last_allocation_bytes = allocated_bytes;
   _last_unrestrained_young_size = additional_buffer_size;
 }
 
@@ -180,21 +190,7 @@ void G1AdaptiveIHOPControl::update_marking_length(double marking_length_s) {
 }
 
 void G1AdaptiveIHOPControl::print() {
-  ergo_verbose6(ErgoIHOP,
-                "basic information",
-                ergo_format_reason("value update")
-                ergo_format_byte_perc("threshold")
-                ergo_format_byte("target occupancy")
-                ergo_format_byte("current occupancy")
-                ergo_format_double("recent old gen allocation rate")
-                ergo_format_double("recent marking phase length"),
-                get_conc_mark_start_threshold(),
-                percent_of(get_conc_mark_start_threshold(), _target_occupancy),
-                _target_occupancy,
-                G1CollectedHeap::heap()->used(),
-                _allocation_rate_s.last(),
-                _marking_times_s.last()
-                );
+  G1IHOPControl::print();
   size_t actual_target = actual_target_threshold();
   ergo_verbose6(ErgoIHOP,
                 "adaptive IHOP information",
@@ -211,6 +207,17 @@ void G1AdaptiveIHOPControl::print() {
                 _predictor->get_new_prediction(&_marking_times_s),
                 have_enough_data_for_prediction() ? "true" : "false"
                 );
+}
+
+void G1AdaptiveIHOPControl::send_trace_event(G1NewTracer* tracer) {
+  G1IHOPControl::send_trace_event(tracer);
+  tracer->report_adaptive_ihop_statistics(get_conc_mark_start_threshold(),
+                                          actual_target_threshold(),
+                                          G1CollectedHeap::heap()->used(),
+                                          _last_unrestrained_young_size,
+                                          _predictor->get_new_prediction(&_allocation_rate_s),
+                                          _predictor->get_new_prediction(&_marking_times_s),
+                                          have_enough_data_for_prediction());
 }
 
 #ifndef PRODUCT
