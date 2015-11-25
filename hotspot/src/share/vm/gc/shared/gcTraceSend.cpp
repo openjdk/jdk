@@ -35,6 +35,7 @@
 #if INCLUDE_ALL_GCS
 #include "gc/g1/evacuationInfo.hpp"
 #include "gc/g1/g1YCTypes.hpp"
+#include "tracefiles/traceEventClasses.hpp"
 #endif
 
 // All GC dependencies against the trace framework is contained within this file.
@@ -265,6 +266,50 @@ void G1NewTracer::send_old_evacuation_statistics(const G1EvacSummary& summary) c
     old_evt.commit();
   }
 }
+
+void G1NewTracer::send_basic_ihop_statistics(size_t threshold,
+                                             size_t target_occupancy,
+                                             size_t current_occupancy,
+                                             size_t last_allocation_size,
+                                             double last_allocation_duration,
+                                             double last_marking_length) {
+  EventGCG1BasicIHOP evt;
+  if (evt.should_commit()) {
+    evt.set_gcId(GCId::current());
+    evt.set_threshold(threshold);
+    evt.set_targetOccupancy(target_occupancy);
+    evt.set_thresholdPercentage(target_occupancy > 0 ? threshold * 100.0 / target_occupancy : 0.0);
+    evt.set_currentOccupancy(current_occupancy);
+    evt.set_lastAllocationSize(last_allocation_size);
+    evt.set_lastAllocationDuration(last_allocation_duration);
+    evt.set_lastAllocationRate(last_allocation_duration != 0.0 ? last_allocation_size / last_allocation_duration : 0.0);
+    evt.set_lastMarkingLength(last_marking_length);
+    evt.commit();
+  }
+}
+
+void G1NewTracer::send_adaptive_ihop_statistics(size_t threshold,
+                                                size_t internal_target_occupancy,
+                                                size_t current_occupancy,
+                                                size_t additional_buffer_size,
+                                                double predicted_allocation_rate,
+                                                double predicted_marking_length,
+                                                bool prediction_active) {
+  EventGCG1AdaptiveIHOP evt;
+  if (evt.should_commit()) {
+    evt.set_gcId(GCId::current());
+    evt.set_threshold(threshold);
+    evt.set_thresholdPercentage(internal_target_occupancy > 0 ? threshold * 100.0 / internal_target_occupancy : 0.0);
+    evt.set_internalTargetOccupancy(internal_target_occupancy);
+    evt.set_currentOccupancy(current_occupancy);
+    evt.set_additionalBufferSize(additional_buffer_size);
+    evt.set_predictedAllocationRate(predicted_allocation_rate);
+    evt.set_predictedMarkingLength(predicted_marking_length);
+    evt.set_predictionActive(prediction_active);
+    evt.commit();
+  }
+}
+
 #endif
 
 static TraceStructVirtualSpace to_trace_struct(const VirtualSpaceSummary& summary) {
