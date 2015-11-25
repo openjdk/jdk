@@ -65,7 +65,7 @@ protected:
   bool read(void* ptr, size_t size);
 
   static void trace_class_path(const char* msg, const char* name = NULL) {
-    ClassLoader::trace_class_path(msg, name);
+    ClassLoader::trace_class_path(tty, msg, name);
   }
 protected:
   static bool fail(const char* msg, const char* name = NULL);
