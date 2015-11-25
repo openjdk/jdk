@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 !include ../local.make
@@ -33,9 +33,6 @@ JvmtiOutDir=jvmtifiles
 # Pick up rules for building trace
 TraceOutDir=tracefiles
 !include $(WorkSpace)/make/windows/makefiles/trace.make
-
-# Pick up rules for building SA
-!include $(WorkSpace)/make/windows/makefiles/sa.make
 
 AdlcOutDir=adfiles
 

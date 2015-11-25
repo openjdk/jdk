@@ -44,9 +44,7 @@
 #  ALT_EXPORT_PATH            Directory to export hotspot build to
 #  ALT_JDK_IMPORT_PATH        Current JDK build (only for create_jdk rules)
 #  ALT_JDK_TARGET_IMPORT_PATH Current JDK build when cross-compiling
-#  ALT_BUILD_WIN_SA           Building SA on Windows is disabled by default.
-#                             Set ALT_BUILD_WIN_SA=1 to enable building SA on
-#                             Windows.
+#
 # Version strings and numbers:
 #  JDK_VERSION                Current JDK version (e.g. 1.6.0)
 #  PREVIOUS_JDK_VERSION       Previous (bootdir) JDK version (e.g. 1.5.0)
