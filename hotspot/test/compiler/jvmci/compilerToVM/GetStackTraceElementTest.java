@@ -87,7 +87,7 @@ public class GetStackTraceElementTest {
                         + " : unexpected line number");
             } else {
                 // native and abstract function
-                Asserts.assertLT(0, ste.getLineNumber(),
+                Asserts.assertGT(0, ste.getLineNumber(),
                         aMethod + " : unexpected line number for abstract "
                                 + "or native method");
             }
