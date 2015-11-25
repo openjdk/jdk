@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_CLASSFILE_VMSYMBOLS_HPP
 #define SHARE_VM_CLASSFILE_VMSYMBOLS_HPP
 
+#include "classfile/vmSymbols_ext.hpp"
 #include "oops/symbol.hpp"
 #include "memory/iterator.hpp"
 #include "trace/traceMacros.hpp"
@@ -209,7 +210,7 @@
   template(java_util_concurrent_atomic_AtomicLongFieldUpdater_CASUpdater,    "java/util/concurrent/atomic/AtomicLongFieldUpdater$CASUpdater") \
   template(java_util_concurrent_atomic_AtomicLongFieldUpdater_LockedUpdater, "java/util/concurrent/atomic/AtomicLongFieldUpdater$LockedUpdater") \
   template(java_util_concurrent_atomic_AtomicReferenceFieldUpdater_Impl,     "java/util/concurrent/atomic/AtomicReferenceFieldUpdater$AtomicReferenceFieldUpdaterImpl") \
-  template(sun_misc_Contended_signature,              "Lsun/misc/Contended;")                     \
+  template(jdk_internal_vm_annotation_Contended_signature,                   "Ljdk/internal/vm/annotation/Contended;")    \
                                                                                                   \
   /* class symbols needed by intrinsics */                                                        \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, template, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
@@ -309,6 +310,22 @@
                                                                                                                                       \
   /* Support for JVMCI */                                                                                                             \
   JVMCI_VM_SYMBOLS_DO(template, do_alias)                                                         \
+                                                                                                  \
+  template(java_lang_StackWalker,                     "java/lang/StackWalker")                    \
+  template(java_lang_StackFrameInfo,                  "java/lang/StackFrameInfo")                 \
+  template(java_lang_LiveStackFrameInfo,              "java/lang/LiveStackFrameInfo")             \
+  template(java_lang_StackStreamFactory_AbstractStackWalker, "java/lang/StackStreamFactory$AbstractStackWalker") \
+  template(doStackWalk_name,                          "doStackWalk")                              \
+  template(doStackWalk_signature,                     "(JIIII)Ljava/lang/Object;")                \
+  template(asPrimitive_name,                          "asPrimitive")                              \
+  template(asPrimitive_int_signature,                 "(I)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
+  template(asPrimitive_long_signature,                "(J)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
+  template(asPrimitive_short_signature,               "(S)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
+  template(asPrimitive_byte_signature,                "(B)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
+  template(asPrimitive_char_signature,                "(C)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
+  template(asPrimitive_float_signature,               "(F)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
+  template(asPrimitive_double_signature,              "(D)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
+  template(asPrimitive_boolean_signature,             "(Z)Ljava/lang/LiveStackFrame$PrimitiveValue;") \
                                                                                                   \
   /* common method and field names */                                                             \
   template(object_initializer_name,                   "<init>")                                   \
@@ -410,6 +427,18 @@
   template(append_name,                               "append")                                   \
   template(klass_name,                                "klass")                                    \
   template(array_klass_name,                          "array_klass")                              \
+  template(declaringClass_name,                       "declaringClass")                           \
+  template(memberName_name,                           "memberName")                               \
+  template(mid_name,                                  "mid")                                      \
+  template(cpref_name,                                "cpref")                                    \
+  template(version_name,                              "version")                                  \
+  template(bci_name,                                  "bci")                                      \
+  template(methodName_name,                           "methodName")                               \
+  template(fileName_name,                             "fileName")                                 \
+  template(lineNumber_name,                           "lineNumber")                               \
+  template(monitors_name,                             "monitors")                                 \
+  template(locals_name,                               "locals")                                   \
+  template(operands_name,                             "operands")                                 \
   template(oop_size_name,                             "oop_size")                                 \
   template(static_oop_field_count_name,               "static_oop_field_count")                   \
   template(protection_domain_name,                    "protection_domain")                        \
@@ -514,6 +543,7 @@
   template(class_array_signature,                     "[Ljava/lang/Class;")                                       \
   template(classloader_signature,                     "Ljava/lang/ClassLoader;")                                  \
   template(object_signature,                          "Ljava/lang/Object;")                                       \
+  template(object_array_signature,                    "[Ljava/lang/Object;")                                      \
   template(class_signature,                           "Ljava/lang/Class;")                                        \
   template(string_signature,                          "Ljava/lang/String;")                                       \
   template(reference_signature,                       "Ljava/lang/ref/Reference;")                                \
@@ -616,6 +646,9 @@
                                                                                                                   \
   /* trace signatures */                                                                                          \
   TRACE_TEMPLATES(template)                                                                                       \
+                                                                                                                  \
+  /* extensions */                                                                                                \
+  VM_SYMBOLS_DO_EXT(template, do_alias)                                                                           \
                                                                                                                   \
   /*end*/
 

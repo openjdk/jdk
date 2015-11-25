@@ -32,14 +32,55 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
-#define LargeSharedArchiveSize    (300*M)
-#define HugeSharedArchiveSize     (800*M)
-#define ReadOnlyRegionPercentage  0.4
-#define ReadWriteRegionPercentage 0.55
-#define MiscDataRegionPercentage  0.03
-#define MiscCodeRegionPercentage  0.02
-#define LargeThresholdClassCount  5000
-#define HugeThresholdClassCount   40000
+#define DEFAULT_VTBL_LIST_SIZE          (17)  // number of entries in the shared space vtable list.
+#define DEFAULT_VTBL_VIRTUALS_COUNT     (200) // maximum number of virtual functions
+// If virtual functions are added to Metadata,
+// this number needs to be increased.  Also,
+// SharedMiscCodeSize will need to be increased.
+// The following 2 sizes were based on
+// MetaspaceShared::generate_vtable_methods()
+#define DEFAULT_VTBL_METHOD_SIZE        (16)  // conservative size of the mov1 and jmp instructions
+// for the x64 platform
+#define DEFAULT_VTBL_COMMON_CODE_SIZE   (1*K) // conservative size of the "common_code" for the x64 platform
+
+#define DEFAULT_SHARED_READ_WRITE_SIZE  (NOT_LP64(12*M) LP64_ONLY(16*M))
+#define MIN_SHARED_READ_WRITE_SIZE      (NOT_LP64(7*M) LP64_ONLY(12*M))
+
+#define DEFAULT_SHARED_READ_ONLY_SIZE   (NOT_LP64(12*M) LP64_ONLY(16*M))
+#define MIN_SHARED_READ_ONLY_SIZE       (NOT_LP64(8*M) LP64_ONLY(9*M))
+
+// the MIN_SHARED_MISC_DATA_SIZE and MIN_SHARED_MISC_CODE_SIZE estimates are based on
+// MetaspaceShared::generate_vtable_methods().
+// The minimum size only accounts for the vtable methods. Any size less than the
+// minimum required size would cause vm crash when allocating the vtable methods.
+#define SHARED_MISC_SIZE_FOR(size)      (DEFAULT_VTBL_VIRTUALS_COUNT*DEFAULT_VTBL_LIST_SIZE*size)
+
+#define DEFAULT_SHARED_MISC_DATA_SIZE   (NOT_LP64(2*M) LP64_ONLY(4*M))
+#define MIN_SHARED_MISC_DATA_SIZE       (SHARED_MISC_SIZE_FOR(sizeof(void*)))
+
+#define DEFAULT_SHARED_MISC_CODE_SIZE   (120*K)
+#define MIN_SHARED_MISC_CODE_SIZE       (SHARED_MISC_SIZE_FOR(sizeof(void*))+SHARED_MISC_SIZE_FOR(DEFAULT_VTBL_METHOD_SIZE)+DEFAULT_VTBL_COMMON_CODE_SIZE)
+
+#define DEFAULT_COMBINED_SIZE           (DEFAULT_SHARED_READ_WRITE_SIZE+DEFAULT_SHARED_READ_ONLY_SIZE+DEFAULT_SHARED_MISC_DATA_SIZE+DEFAULT_SHARED_MISC_CODE_SIZE)
+
+// the max size is the MAX size (ie. 0x7FFFFFFF) - the total size of
+// the other 3 sections - page size (to avoid overflow in case the final
+// size will get aligned up on page size)
+#define SHARED_PAGE                     ((size_t)os::vm_page_size())
+#define MAX_SHARED_DELTA                (0x7FFFFFFF)
+#define MAX_SHARED_READ_WRITE_SIZE      (MAX_SHARED_DELTA-(MIN_SHARED_READ_ONLY_SIZE+MIN_SHARED_MISC_DATA_SIZE+MIN_SHARED_MISC_CODE_SIZE)-SHARED_PAGE)
+#define MAX_SHARED_READ_ONLY_SIZE       (MAX_SHARED_DELTA-(MIN_SHARED_READ_WRITE_SIZE+MIN_SHARED_MISC_DATA_SIZE+MIN_SHARED_MISC_CODE_SIZE)-SHARED_PAGE)
+#define MAX_SHARED_MISC_DATA_SIZE       (MAX_SHARED_DELTA-(MIN_SHARED_READ_WRITE_SIZE+MIN_SHARED_READ_ONLY_SIZE+MIN_SHARED_MISC_CODE_SIZE)-SHARED_PAGE)
+#define MAX_SHARED_MISC_CODE_SIZE       (MAX_SHARED_DELTA-(MIN_SHARED_READ_WRITE_SIZE+MIN_SHARED_READ_ONLY_SIZE+MIN_SHARED_MISC_DATA_SIZE)-SHARED_PAGE)
+
+#define LargeSharedArchiveSize          (300*M)
+#define HugeSharedArchiveSize           (800*M)
+#define ReadOnlyRegionPercentage        0.4
+#define ReadWriteRegionPercentage       0.55
+#define MiscDataRegionPercentage        0.03
+#define MiscCodeRegionPercentage        0.02
+#define LargeThresholdClassCount        5000
+#define HugeThresholdClassCount         40000
 
 #define SET_ESTIMATED_SIZE(type, region)                              \
   Shared ##region## Size  = FLAG_IS_DEFAULT(Shared ##region## Size) ? \
@@ -69,21 +110,10 @@ class MetaspaceShared : AllStatic {
   static bool _archive_loading_failed;
  public:
   enum {
-    vtbl_list_size         = 17,   // number of entries in the shared space vtable list.
-    num_virtuals           = 200,  // maximum number of virtual functions
-                                   // If virtual functions are added to Metadata,
-                                   // this number needs to be increased.  Also,
-                                   // SharedMiscCodeSize will need to be increased.
-                                   // The following 2 sizes were based on
-                                   // MetaspaceShared::generate_vtable_methods()
-    vtbl_method_size       = 16,   // conservative size of the mov1 and jmp instructions
-                                   // for the x64 platform
-    vtbl_common_code_size  = (1*K) // conservative size of the "common_code" for the x64 platform
-  };
-
-  enum {
-    min_ro_size = NOT_LP64(8*M) LP64_ONLY(9*M), // minimum ro and rw regions sizes based on dumping
-    min_rw_size = NOT_LP64(7*M) LP64_ONLY(12*M) // of a shared archive using the default classlist
+    vtbl_list_size         = DEFAULT_VTBL_LIST_SIZE,
+    num_virtuals           = DEFAULT_VTBL_VIRTUALS_COUNT,
+    vtbl_method_size       = DEFAULT_VTBL_METHOD_SIZE,
+    vtbl_common_code_size  = DEFAULT_VTBL_COMMON_CODE_SIZE
   };
 
   enum {
@@ -160,5 +190,8 @@ class MetaspaceShared : AllStatic {
 
   static int count_class(const char* classlist_file);
   static void estimate_regions_size() NOT_CDS_RETURN;
+
+  // Allocate a block of memory from the "md" region.
+  static char* misc_data_space_alloc(size_t num_bytes);
 };
 #endif // SHARE_VM_MEMORY_METASPACESHARED_HPP

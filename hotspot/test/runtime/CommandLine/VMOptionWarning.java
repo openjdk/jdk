@@ -47,12 +47,12 @@ public class VMOptionWarning {
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Error: VM option 'PrintInlining' is diagnostic and must be enabled via -XX:+UnlockDiagnosticVMOptions.");
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+TraceJNICalls", "-version");
+        pb = ProcessTools.createJavaProcessBuilder("-XX:+VerifyStack", "-version");
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Error: VM option 'TraceJNICalls' is develop and is available only in debug version of VM.");
+        output.shouldContain("Error: VM option 'VerifyStack' is develop and is available only in debug version of VM.");
 
-        pb = ProcessTools.createJavaProcessBuilder("-XX:+TraceJVMCalls", "-version");
+        pb = ProcessTools.createJavaProcessBuilder("-XX:+ExecuteInternalVMTests", "-version");
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Error: VM option 'TraceJVMCalls' is notproduct and is available only in debug version of VM.");
+        output.shouldContain("Error: VM option 'ExecuteInternalVMTests' is notproduct and is available only in debug version of VM.");
     }
 }

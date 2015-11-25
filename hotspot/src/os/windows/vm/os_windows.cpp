@@ -5254,7 +5254,13 @@ bool os::check_heap(bool force) {
     // Note: HeapValidate executes two hardware breakpoints when it finds something
     // wrong; at these points, eax contains the address of the offending block (I think).
     // To get to the exlicit error message(s) below, just continue twice.
-    HANDLE heap = GetProcessHeap();
+    //
+    // Note:  we want to check the CRT heap, which is not necessarily located in the
+    // process default heap.
+    HANDLE heap = (HANDLE) _get_heap_handle();
+    if (!heap) {
+      return true;
+    }
 
     // If we fail to lock the heap, then gflags.exe has been used
     // or some other special heap flag has been set that prevents
@@ -5267,11 +5273,13 @@ bool os::check_heap(bool force) {
             !HeapValidate(heap, 0, phe.lpData)) {
           tty->print_cr("C heap has been corrupted (time: %d allocations)", mallocDebugCounter);
           tty->print_cr("corrupted block near address %#x, length %d", phe.lpData, phe.cbData);
+          HeapUnlock(heap);
           fatal("corrupted C heap");
         }
       }
       DWORD err = GetLastError();
       if (err != ERROR_NO_MORE_ITEMS && err != ERROR_CALL_NOT_IMPLEMENTED) {
+        HeapUnlock(heap);
         fatal("heap walk aborted with error %d", err);
       }
       HeapUnlock(heap);

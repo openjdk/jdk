@@ -41,37 +41,79 @@ import optionsvalidation.JVMOptionsUtils;
 
 public class TestOptionsWithRanges {
 
+    private static Map<String, JVMOption> allOptionsAsMap;
+
+    private static void excludeTestMaxRange(String optionName) {
+        JVMOption option = allOptionsAsMap.get(optionName);
+
+        if (option != null) {
+            option.excludeTestMaxRange();
+        }
+    }
+
+    private static void excludeTestMinRange(String optionName) {
+        JVMOption option = allOptionsAsMap.get(optionName);
+
+        if (option != null) {
+            option.excludeTestMinRange();
+        }
+    }
+
+    private static void excludeTestRange(String optionName) {
+        allOptionsAsMap.remove(optionName);
+    }
+
     public static void main(String[] args) throws Exception {
         int failedTests;
-        Map<String, JVMOption> allOptionsAsMap = JVMOptionsUtils.getOptionsWithRangeAsMap();
         List<JVMOption> allOptions;
+
+        allOptionsAsMap = JVMOptionsUtils.getOptionsWithRangeAsMap();
 
         /*
          * Remove CICompilerCount from testing because currently it can hang system
          */
-        allOptionsAsMap.remove("CICompilerCount");
+        excludeTestMaxRange("CICompilerCount");
 
         /*
          * JDK-8136766
          * Temporarily remove ThreadStackSize from testing because Windows can set it to 0
          * (for default OS size) but other platforms insist it must be greater than 0
         */
-        allOptionsAsMap.remove("ThreadStackSize");
+        excludeTestRange("ThreadStackSize");
+
+        /*
+         * JDK-8141650
+         * Temporarily exclude SharedMiscDataSize as it will exit the VM with exit code 2 and
+         * "The shared miscellaneous data space is not large enough to preload requested classes."
+         * message at min value.
+         */
+        excludeTestRange("SharedMiscDataSize");
+
+        /*
+         * JDK-8142874
+         * Temporarily exclude Shared* flagse as they will exit the VM with exit code 2 and
+         * "The shared miscellaneous data space is not large enough to preload requested classes."
+         * message at max values.
+         */
+        excludeTestRange("SharedReadWriteSize");
+        excludeTestRange("SharedReadOnlySize");
+        excludeTestRange("SharedMiscDataSize");
+        excludeTestRange("SharedMiscCodeSize");
 
         /*
          * Exclude MallocMaxTestWords as it is expected to exit VM at small values (>=0)
          */
-        allOptionsAsMap.remove("MallocMaxTestWords");
+        excludeTestMinRange("MallocMaxTestWords");
 
         /*
          * Exclude below options as their maximum value would consume too much memory
          * and would affect other tests that run in parallel.
          */
-        allOptionsAsMap.remove("G1ConcRefinementThreads");
-        allOptionsAsMap.remove("G1RSetRegionEntries");
-        allOptionsAsMap.remove("G1RSetSparseRegionEntries");
-        allOptionsAsMap.remove("G1UpdateBufferSize");
-        allOptionsAsMap.remove("InitialBootClassLoaderMetaspaceSize");
+        excludeTestMaxRange("G1ConcRefinementThreads");
+        excludeTestMaxRange("G1RSetRegionEntries");
+        excludeTestMaxRange("G1RSetSparseRegionEntries");
+        excludeTestMaxRange("G1UpdateBufferSize");
+        excludeTestMaxRange("InitialBootClassLoaderMetaspaceSize");
 
         /*
          * Remove parameters controlling the code cache. As these
@@ -83,13 +125,13 @@ public class TestOptionsWithRanges {
          * hotspot/src/shared/vm/code/codeCache.cpp), therefore
          * omitting testing for them does not pose a problem.
          */
-        allOptionsAsMap.remove("InitialCodeCacheSize");
-        allOptionsAsMap.remove("CodeCacheMinimumUseSpace");
-        allOptionsAsMap.remove("ReservedCodeCacheSize");
-        allOptionsAsMap.remove("NonProfiledCodeHeapSize");
-        allOptionsAsMap.remove("ProfiledCodeHeapSize");
-        allOptionsAsMap.remove("NonNMethodCodeHeapSize");
-        allOptionsAsMap.remove("CodeCacheExpansionSize");
+        excludeTestMaxRange("InitialCodeCacheSize");
+        excludeTestMaxRange("CodeCacheMinimumUseSpace");
+        excludeTestMaxRange("ReservedCodeCacheSize");
+        excludeTestMaxRange("NonProfiledCodeHeapSize");
+        excludeTestMaxRange("ProfiledCodeHeapSize");
+        excludeTestMaxRange("NonNMethodCodeHeapSize");
+        excludeTestMaxRange("CodeCacheExpansionSize");
 
         allOptions = new ArrayList<>(allOptionsAsMap.values());
 

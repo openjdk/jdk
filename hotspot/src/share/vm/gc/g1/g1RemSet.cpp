@@ -73,138 +73,111 @@ G1RemSet::~G1RemSet() {
   FREE_C_HEAP_ARRAY(G1ParPushHeapRSClosure*, _cset_rs_update_cl);
 }
 
-class ScanRSClosure : public HeapRegionClosure {
-  size_t _cards_done, _cards;
-  G1CollectedHeap* _g1h;
-
-  G1ParPushHeapRSClosure* _oc;
-  CodeBlobClosure* _code_root_cl;
-
-  G1BlockOffsetSharedArray* _bot_shared;
-  G1SATBCardTableModRefBS *_ct_bs;
-
-  double _strong_code_root_scan_time_sec;
-  uint   _worker_i;
-  size_t _block_size;
-  bool   _try_claimed;
-
-public:
-  ScanRSClosure(G1ParPushHeapRSClosure* oc,
-                CodeBlobClosure* code_root_cl,
-                uint worker_i) :
+ScanRSClosure::ScanRSClosure(G1ParPushHeapRSClosure* oc,
+                             CodeBlobClosure* code_root_cl,
+                             uint worker_i) :
     _oc(oc),
     _code_root_cl(code_root_cl),
     _strong_code_root_scan_time_sec(0.0),
     _cards(0),
     _cards_done(0),
     _worker_i(worker_i),
-    _try_claimed(false)
-  {
-    _g1h = G1CollectedHeap::heap();
-    _bot_shared = _g1h->bot_shared();
-    _ct_bs = _g1h->g1_barrier_set();
-    _block_size = MAX2<size_t>(G1RSetScanBlockSize, 1);
+    _try_claimed(false) {
+  _g1h = G1CollectedHeap::heap();
+  _bot_shared = _g1h->bot_shared();
+  _ct_bs = _g1h->g1_barrier_set();
+  _block_size = MAX2<size_t>(G1RSetScanBlockSize, 1);
+}
+
+void ScanRSClosure::scanCard(size_t index, HeapRegion *r) {
+  // Stack allocate the DirtyCardToOopClosure instance
+  HeapRegionDCTOC cl(_g1h, r, _oc,
+      CardTableModRefBS::Precise);
+
+  // Set the "from" region in the closure.
+  _oc->set_region(r);
+  MemRegion card_region(_bot_shared->address_for_index(index), G1BlockOffsetSharedArray::N_words);
+  MemRegion pre_gc_allocated(r->bottom(), r->scan_top());
+  MemRegion mr = pre_gc_allocated.intersection(card_region);
+  if (!mr.is_empty() && !_ct_bs->is_card_claimed(index)) {
+    // We make the card as "claimed" lazily (so races are possible
+    // but they're benign), which reduces the number of duplicate
+    // scans (the rsets of the regions in the cset can intersect).
+    _ct_bs->set_card_claimed(index);
+    _cards_done++;
+    cl.do_MemRegion(mr);
   }
+}
 
-  void set_try_claimed() { _try_claimed = true; }
+void ScanRSClosure::printCard(HeapRegion* card_region, size_t card_index,
+    HeapWord* card_start) {
+  gclog_or_tty->print_cr("T %u Region [" PTR_FORMAT ", " PTR_FORMAT ") "
+      "RS names card " SIZE_FORMAT_HEX ": "
+      "[" PTR_FORMAT ", " PTR_FORMAT ")",
+      _worker_i,
+      p2i(card_region->bottom()), p2i(card_region->end()),
+      card_index,
+      p2i(card_start), p2i(card_start + G1BlockOffsetSharedArray::N_words));
+}
 
-  void scanCard(size_t index, HeapRegion *r) {
-    // Stack allocate the DirtyCardToOopClosure instance
-    HeapRegionDCTOC cl(_g1h, r, _oc,
-                       CardTableModRefBS::Precise);
+void ScanRSClosure::scan_strong_code_roots(HeapRegion* r) {
+  double scan_start = os::elapsedTime();
+  r->strong_code_roots_do(_code_root_cl);
+  _strong_code_root_scan_time_sec += (os::elapsedTime() - scan_start);
+}
 
-    // Set the "from" region in the closure.
-    _oc->set_region(r);
-    MemRegion card_region(_bot_shared->address_for_index(index), G1BlockOffsetSharedArray::N_words);
-    MemRegion pre_gc_allocated(r->bottom(), r->scan_top());
-    MemRegion mr = pre_gc_allocated.intersection(card_region);
-    if (!mr.is_empty() && !_ct_bs->is_card_claimed(index)) {
-      // We make the card as "claimed" lazily (so races are possible
-      // but they're benign), which reduces the number of duplicate
-      // scans (the rsets of the regions in the cset can intersect).
-      _ct_bs->set_card_claimed(index);
-      _cards_done++;
-      cl.do_MemRegion(mr);
+bool ScanRSClosure::doHeapRegion(HeapRegion* r) {
+  assert(r->in_collection_set(), "should only be called on elements of CS.");
+  HeapRegionRemSet* hrrs = r->rem_set();
+  if (hrrs->iter_is_complete()) return false; // All done.
+  if (!_try_claimed && !hrrs->claim_iter()) return false;
+  // If we ever free the collection set concurrently, we should also
+  // clear the card table concurrently therefore we won't need to
+  // add regions of the collection set to the dirty cards region.
+  _g1h->push_dirty_cards_region(r);
+  // If we didn't return above, then
+  //   _try_claimed || r->claim_iter()
+  // is true: either we're supposed to work on claimed-but-not-complete
+  // regions, or we successfully claimed the region.
+
+  HeapRegionRemSetIterator iter(hrrs);
+  size_t card_index;
+
+  // We claim cards in block so as to reduce the contention. The block size is determined by
+  // the G1RSetScanBlockSize parameter.
+  size_t jump_to_card = hrrs->iter_claimed_next(_block_size);
+  for (size_t current_card = 0; iter.has_next(card_index); current_card++) {
+    if (current_card >= jump_to_card + _block_size) {
+      jump_to_card = hrrs->iter_claimed_next(_block_size);
     }
-  }
-
-  void printCard(HeapRegion* card_region, size_t card_index,
-                 HeapWord* card_start) {
-    gclog_or_tty->print_cr("T %u Region [" PTR_FORMAT ", " PTR_FORMAT ") "
-                           "RS names card " SIZE_FORMAT_HEX ": "
-                           "[" PTR_FORMAT ", " PTR_FORMAT ")",
-                           _worker_i,
-                           p2i(card_region->bottom()), p2i(card_region->end()),
-                           card_index,
-                           p2i(card_start), p2i(card_start + G1BlockOffsetSharedArray::N_words));
-  }
-
-  void scan_strong_code_roots(HeapRegion* r) {
-    double scan_start = os::elapsedTime();
-    r->strong_code_roots_do(_code_root_cl);
-    _strong_code_root_scan_time_sec += (os::elapsedTime() - scan_start);
-  }
-
-  bool doHeapRegion(HeapRegion* r) {
-    assert(r->in_collection_set(), "should only be called on elements of CS.");
-    HeapRegionRemSet* hrrs = r->rem_set();
-    if (hrrs->iter_is_complete()) return false; // All done.
-    if (!_try_claimed && !hrrs->claim_iter()) return false;
-    // If we ever free the collection set concurrently, we should also
-    // clear the card table concurrently therefore we won't need to
-    // add regions of the collection set to the dirty cards region.
-    _g1h->push_dirty_cards_region(r);
-    // If we didn't return above, then
-    //   _try_claimed || r->claim_iter()
-    // is true: either we're supposed to work on claimed-but-not-complete
-    // regions, or we successfully claimed the region.
-
-    HeapRegionRemSetIterator iter(hrrs);
-    size_t card_index;
-
-    // We claim cards in block so as to reduce the contention. The block size is determined by
-    // the G1RSetScanBlockSize parameter.
-    size_t jump_to_card = hrrs->iter_claimed_next(_block_size);
-    for (size_t current_card = 0; iter.has_next(card_index); current_card++) {
-      if (current_card >= jump_to_card + _block_size) {
-        jump_to_card = hrrs->iter_claimed_next(_block_size);
-      }
-      if (current_card < jump_to_card) continue;
-      HeapWord* card_start = _g1h->bot_shared()->address_for_index(card_index);
+    if (current_card < jump_to_card) continue;
+    HeapWord* card_start = _g1h->bot_shared()->address_for_index(card_index);
 #if 0
-      gclog_or_tty->print("Rem set iteration yielded card [" PTR_FORMAT ", " PTR_FORMAT ").\n",
-                          card_start, card_start + CardTableModRefBS::card_size_in_words);
+    gclog_or_tty->print("Rem set iteration yielded card [" PTR_FORMAT ", " PTR_FORMAT ").\n",
+        card_start, card_start + CardTableModRefBS::card_size_in_words);
 #endif
 
-      HeapRegion* card_region = _g1h->heap_region_containing(card_start);
-      _cards++;
+    HeapRegion* card_region = _g1h->heap_region_containing(card_start);
+    _cards++;
 
-      if (!card_region->is_on_dirty_cards_region_list()) {
-        _g1h->push_dirty_cards_region(card_region);
-      }
-
-      // If the card is dirty, then we will scan it during updateRS.
-      if (!card_region->in_collection_set() &&
-          !_ct_bs->is_card_dirty(card_index)) {
-        scanCard(card_index, card_region);
-      }
+    if (!card_region->is_on_dirty_cards_region_list()) {
+      _g1h->push_dirty_cards_region(card_region);
     }
-    if (!_try_claimed) {
-      // Scan the strong code root list attached to the current region
-      scan_strong_code_roots(r);
 
-      hrrs->set_iter_complete();
+    // If the card is dirty, then we will scan it during updateRS.
+    if (!card_region->in_collection_set() &&
+        !_ct_bs->is_card_dirty(card_index)) {
+      scanCard(card_index, card_region);
     }
-    return false;
   }
+  if (!_try_claimed) {
+    // Scan the strong code root list attached to the current region
+    scan_strong_code_roots(r);
 
-  double strong_code_root_scan_time_sec() {
-    return _strong_code_root_scan_time_sec;
+    hrrs->set_iter_complete();
   }
-
-  size_t cards_done() { return _cards_done;}
-  size_t cards_looked_up() { return _cards;}
-};
+  return false;
+}
 
 size_t G1RemSet::scanRS(G1ParPushHeapRSClosure* oc,
                         CodeBlobClosure* heap_region_codeblobs,
