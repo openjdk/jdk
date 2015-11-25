@@ -414,30 +414,30 @@ void ClassLoader::exit_with_path_failure(const char* error, const char* message)
 }
 #endif
 
-void ClassLoader::trace_class_path(const char* msg, const char* name) {
+void ClassLoader::trace_class_path(outputStream* out, const char* msg, const char* name) {
   if (!TraceClassPaths) {
     return;
   }
 
   if (msg) {
-    tty->print("%s", msg);
+    out->print("%s", msg);
   }
   if (name) {
     if (strlen(name) < 256) {
-      tty->print("%s", name);
+      out->print("%s", name);
     } else {
       // For very long paths, we need to print each character separately,
       // as print_cr() has a length limit
       while (name[0] != '\0') {
-        tty->print("%c", name[0]);
+        out->print("%c", name[0]);
         name++;
       }
     }
   }
   if (msg && msg[0] == '[') {
-    tty->print_cr("]");
+    out->print_cr("]");
   } else {
-    tty->cr();
+    out->cr();
   }
 }
 
@@ -466,7 +466,7 @@ void ClassLoader::setup_bootstrap_search_path() {
     // Don't print sys_class_path - this is the bootcp of this current VM process, not necessarily
     // the same as the bootcp of the shared archive.
   } else {
-    trace_class_path("[Bootstrap loader class path=", sys_class_path);
+    trace_class_path(tty, "[Bootstrap loader class path=", sys_class_path);
   }
 #if INCLUDE_CDS
   if (DumpSharedSpaces) {
