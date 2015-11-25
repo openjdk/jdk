@@ -815,10 +815,13 @@ void InstanceKlass::initialize_impl(instanceKlassHandle this_k, TRAPS) {
     }
   }
 
+  // If C is an interface that declares a non-abstract, non-static method,
+  // the initialization of a class (not an interface) that implements C directly or
+  // indirectly.
   // Recursively initialize any superinterfaces that declare default methods
   // Only need to recurse if has_default_methods which includes declaring and
   // inheriting default methods
-  if (this_k->has_default_methods()) {
+  if (!this_k->is_interface() && this_k->has_default_methods()) {
     this_k->initialize_super_interfaces(this_k, CHECK);
   }
 
