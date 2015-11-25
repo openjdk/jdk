@@ -32,6 +32,7 @@
 // not be used in log calls, and should not be listed below.)
 #define LOG_TAG_LIST \
   LOG_TAG(defaultmethods) \
+  LOG_TAG(gc) \
   LOG_TAG(logging) \
   LOG_TAG(safepoint)
 
