@@ -3220,12 +3220,7 @@ void java_lang_invoke_MethodHandleNatives_CallSiteContext::compute_offsets() {
 DependencyContext java_lang_invoke_MethodHandleNatives_CallSiteContext::vmdependencies(oop call_site) {
   assert(java_lang_invoke_MethodHandleNatives_CallSiteContext::is_instance(call_site), "");
   intptr_t* vmdeps_addr = (intptr_t*)call_site->address_field_addr(_vmdependencies_offset);
-#ifndef ASSERT
   DependencyContext dep_ctx(vmdeps_addr);
-#else
-  // Verify that call_site isn't moved during DependencyContext lifetime.
-  DependencyContext dep_ctx(vmdeps_addr, Handle(call_site));
-#endif // ASSERT
   return dep_ctx;
 }
 
