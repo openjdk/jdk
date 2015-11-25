@@ -4005,7 +4005,7 @@ void os::wait_for_keypress_at_exit(void) {
 }
 
 
-int os::message_box(const char* title, const char* message) {
+bool os::message_box(const char* title, const char* message) {
   int result = MessageBox(NULL, message, title,
                           MB_YESNO | MB_ICONERROR | MB_SYSTEMMODAL | MB_DEFAULT_DESKTOP_ONLY);
   return result == IDYES;
@@ -5505,7 +5505,31 @@ void os::Kernel32Dll::initializeCommon() {
   }
 }
 
+bool os::start_debugging(char *buf, int buflen) {
+  int len = (int)strlen(buf);
+  char *p = &buf[len];
 
+  jio_snprintf(p, buflen-len,
+             "\n\n"
+             "Do you want to debug the problem?\n\n"
+             "To debug, attach Visual Studio to process %d; then switch to thread 0x%x\n"
+             "Select 'Yes' to launch Visual Studio automatically (PATH must include msdev)\n"
+             "Otherwise, select 'No' to abort...",
+             os::current_process_id(), os::current_thread_id());
+
+  bool yes = os::message_box("Unexpected Error", buf);
+
+  if (yes) {
+    // os::breakpoint() calls DebugBreak(), which causes a breakpoint
+    // exception. If VM is running inside a debugger, the debugger will
+    // catch the exception. Otherwise, the breakpoint exception will reach
+    // the default windows exception handler, which can spawn a debugger and
+    // automatically attach to the dying VM.
+    os::breakpoint();
+    yes = false;
+  }
+  return yes;
+}
 
 #ifndef JDK6_OR_EARLIER
 
