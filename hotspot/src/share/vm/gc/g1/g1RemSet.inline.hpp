@@ -35,11 +35,6 @@ inline uint G1RemSet::n_workers() {
 }
 
 template <class T>
-inline void G1RemSet::write_ref(HeapRegion* from, T* p) {
-  par_write_ref(from, p, 0);
-}
-
-template <class T>
 inline void G1RemSet::par_write_ref(HeapRegion* from, T* p, uint tid) {
   oop obj = oopDesc::load_decode_heap_oop(p);
   if (obj == NULL) {

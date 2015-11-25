@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 HS_INTERNAL_NAME=jvm
@@ -32,7 +32,7 @@ GENERATED=../generated
 BUILD_PCH_FILE=_build_pch_file.obj
 !endif
 
-default:: $(BUILD_PCH_FILE) $(AOUT) checkAndBuildSA
+default:: $(BUILD_PCH_FILE) $(AOUT)
 
 !include ../local.make
 !include compile.make
@@ -69,4 +69,3 @@ $(AOUT): $(Res_Files) $(Obj_Files) vm.def
 !endif
 
 !include $(WorkSpace)/make/windows/makefiles/shared.make
-!include $(WorkSpace)/make/windows/makefiles/sa.make

@@ -1073,9 +1073,6 @@ public:
   develop(bool, BreakAtWarning, false,                                      \
           "Execute breakpoint upon encountering VM warning")                \
                                                                             \
-  develop(bool, TraceVMOperation, false,                                    \
-          "Trace VM operations")                                            \
-                                                                            \
   develop(bool, UseFakeTimers, false,                                       \
           "Tell whether the VM should use system time or a fake timer")     \
                                                                             \
@@ -1429,17 +1426,8 @@ public:
                                                                             \
   /* tracing */                                                             \
                                                                             \
-  notproduct(bool, TraceRuntimeCalls, false,                                \
-          "Trace run-time calls")                                           \
-                                                                            \
-  develop(bool, TraceJNICalls, false,                                       \
-          "Trace JNI calls")                                                \
-                                                                            \
   develop(bool, StressRewriter, false,                                      \
           "Stress linktime bytecode rewriting")                             \
-                                                                            \
-  notproduct(bool, TraceJVMCalls, false,                                    \
-          "Trace JVM calls")                                                \
                                                                             \
   product(ccstr, TraceJVMTI, NULL,                                          \
           "Trace flags for JVMTI functions and events")                     \
@@ -3118,6 +3106,12 @@ public:
           "exceptions (0 means all)")                                       \
           range(0, max_jint/2)                                              \
                                                                             \
+  develop(bool, TraceStackWalk, false,                                      \
+          "Trace stack walking")                                            \
+                                                                            \
+  product(bool, MemberNameInStackFrame, true,                               \
+          "Use MemberName in StackFrame")                                   \
+                                                                            \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
   NOT_EMBEDDED(diagnostic(intx, GuaranteedSafepointInterval, 1000,          \
@@ -4110,21 +4104,26 @@ public:
           "If PrintSharedArchiveAndExit is true, also print the shared "    \
           "dictionary")                                                     \
                                                                             \
-  product(size_t, SharedReadWriteSize, NOT_LP64(12*M) LP64_ONLY(16*M),      \
+  product(size_t, SharedReadWriteSize, DEFAULT_SHARED_READ_WRITE_SIZE,      \
           "Size of read-write space for metadata (in bytes)")               \
+          range(MIN_SHARED_READ_WRITE_SIZE, MAX_SHARED_READ_WRITE_SIZE)     \
                                                                             \
-  product(size_t, SharedReadOnlySize, NOT_LP64(12*M) LP64_ONLY(16*M),       \
+  product(size_t, SharedReadOnlySize, DEFAULT_SHARED_READ_ONLY_SIZE,        \
           "Size of read-only space for metadata (in bytes)")                \
+          range(MIN_SHARED_READ_ONLY_SIZE, MAX_SHARED_READ_ONLY_SIZE)       \
                                                                             \
-  product(uintx, SharedMiscDataSize,    NOT_LP64(2*M) LP64_ONLY(4*M),       \
+  product(size_t, SharedMiscDataSize, DEFAULT_SHARED_MISC_DATA_SIZE,        \
           "Size of the shared miscellaneous data area (in bytes)")          \
+          range(MIN_SHARED_MISC_DATA_SIZE, MAX_SHARED_MISC_DATA_SIZE)       \
                                                                             \
-  product(uintx, SharedMiscCodeSize,    120*K,                              \
+  product(size_t, SharedMiscCodeSize, DEFAULT_SHARED_MISC_CODE_SIZE,        \
           "Size of the shared miscellaneous code area (in bytes)")          \
+          range(MIN_SHARED_MISC_CODE_SIZE, MAX_SHARED_MISC_CODE_SIZE)       \
                                                                             \
-  product(uintx, SharedBaseAddress, LP64_ONLY(32*G)                         \
+  product(size_t, SharedBaseAddress, LP64_ONLY(32*G)                        \
           NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
           "Address to allocate shared memory region for class data")        \
+          range(0, SIZE_MAX)                                                \
                                                                             \
   product(uintx, SharedSymbolTableBucketSize, 4,                            \
           "Average number of symbols per bucket in shared table")           \
