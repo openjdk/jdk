@@ -33,6 +33,16 @@
 
 #define G1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw, range, constraint) \
                                                                             \
+  product(bool, G1UseAdaptiveIHOP, false,                                   \
+          "Adaptively adjust InitiatingHeapOccupancyPercent from the "      \
+          "initial value.")                                                 \
+                                                                            \
+  experimental(size_t, G1AdaptiveIHOPNumInitialSamples, 3,                  \
+          "How many completed time periods from initial mark to first "     \
+          "mixed gc are required to use the input values for prediction "   \
+          "of the optimal occupancy to start marking.")                     \
+          range(1, max_intx)                                                \
+                                                                            \
   product(uintx, G1ConfidencePercent, 50,                                   \
           "Confidence level for MMU/pause predictions")                     \
           range(0, 100)                                                     \
