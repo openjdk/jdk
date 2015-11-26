@@ -2287,15 +2287,21 @@ size_t G1CollectedHeap::recalculate_used() const {
   return blk.result();
 }
 
+bool  G1CollectedHeap::is_user_requested_concurrent_full_gc(GCCause::Cause cause) {
+  switch (cause) {
+    case GCCause::_java_lang_system_gc:                 return ExplicitGCInvokesConcurrent;
+    case GCCause::_dcmd_gc_run:                         return ExplicitGCInvokesConcurrent;
+    case GCCause::_update_allocation_context_stats_inc: return true;
+    case GCCause::_wb_conc_mark:                        return true;
+    default :                                           return false;
+  }
+}
+
 bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
   switch (cause) {
     case GCCause::_gc_locker:               return GCLockerInvokesConcurrent;
-    case GCCause::_java_lang_system_gc:     return ExplicitGCInvokesConcurrent;
-    case GCCause::_dcmd_gc_run:             return ExplicitGCInvokesConcurrent;
     case GCCause::_g1_humongous_allocation: return true;
-    case GCCause::_update_allocation_context_stats_inc: return true;
-    case GCCause::_wb_conc_mark:            return true;
-    default:                                return false;
+    default:                                return is_user_requested_concurrent_full_gc(cause);
   }
 }
 
