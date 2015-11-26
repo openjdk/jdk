@@ -1710,6 +1710,11 @@ bool G1CollectorPolicy::force_initial_mark_if_outside_cycle(GCCause::Cause gc_ca
   }
 }
 
+void G1CollectorPolicy::initiate_conc_mark() {
+  collector_state()->set_during_initial_mark_pause(true);
+  collector_state()->set_initiate_conc_mark_if_possible(false);
+}
+
 void G1CollectorPolicy::decide_on_conc_mark_initiation() {
   // We are about to decide on whether this pause will be an
   // initial-mark pause.
@@ -1726,17 +1731,22 @@ void G1CollectorPolicy::decide_on_conc_mark_initiation() {
     // concurrent marking cycle. So we might initiate one.
 
     if (!about_to_start_mixed_phase() && collector_state()->gcs_are_young()) {
-      // Initiate a new initial mark only if there is no marking or reclamation going
-      // on.
-
-      collector_state()->set_during_initial_mark_pause(true);
-      // And we can now clear initiate_conc_mark_if_possible() as
-      // we've already acted on it.
-      collector_state()->set_initiate_conc_mark_if_possible(false);
-
+      // Initiate a new initial mark if there is no marking or reclamation going on.
+      initiate_conc_mark();
       ergo_verbose0(ErgoConcCycles,
-                  "initiate concurrent cycle",
-                  ergo_format_reason("concurrent cycle initiation requested"));
+                    "initiate concurrent cycle",
+                    ergo_format_reason("concurrent cycle initiation requested"));
+    } else if (_g1->is_user_requested_concurrent_full_gc(_g1->gc_cause())) {
+      // Initiate a user requested initial mark. An initial mark must be young only
+      // GC, so the collector state must be updated to reflect this.
+      collector_state()->set_gcs_are_young(true);
+      collector_state()->set_last_young_gc(false);
+
+      abort_time_to_mixed_tracking();
+      initiate_conc_mark();
+      ergo_verbose0(ErgoConcCycles,
+                    "initiate concurrent cycle",
+                    ergo_format_reason("user requested concurrent cycle"));
     } else {
       // The concurrent marking thread is still finishing up the
       // previous cycle. If we start one right now the two cycles

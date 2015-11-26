@@ -729,6 +729,11 @@ private:
   // (should not be called directly).
   void add_region_to_incremental_cset_common(HeapRegion* hr);
 
+  // Set the state to start a concurrent marking cycle and clear
+  // _initiate_conc_mark_if_possible because it has now been
+  // acted on.
+  void initiate_conc_mark();
+
 public:
   // Add hr to the LHS of the incremental collection set.
   void add_region_to_incremental_cset_lhs(HeapRegion* hr);
