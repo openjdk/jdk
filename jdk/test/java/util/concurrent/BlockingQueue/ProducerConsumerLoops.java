@@ -34,149 +34,126 @@
 /*
  * @test
  * @bug 4486658
- * @run main/timeout=3600 ProducerConsumerLoops
  * @summary  multiple producers and consumers using blocking queues
  */
 
-import java.util.concurrent.*;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ProducerConsumerLoops {
-    static final int CAPACITY =      100;
-
-    static final ExecutorService pool = Executors.newCachedThreadPool();
-    static boolean print = false;
-    static int producerSum;
-    static int consumerSum;
-    static synchronized void addProducerSum(int x) {
-        producerSum += x;
-    }
-
-    static synchronized void addConsumerSum(int x) {
-        consumerSum += x;
-    }
-
-    static synchronized void checkSum() {
-        if (producerSum != consumerSum)
-            throw new Error("CheckSum mismatch");
-    }
+    static ExecutorService pool;
 
     public static void main(String[] args) throws Exception {
-        int maxPairs = 8;
+        final int maxPairs = (args.length > 0)
+            ? Integer.parseInt(args[0])
+            : 5;
         int iters = 10000;
 
-        if (args.length > 0)
-            maxPairs = Integer.parseInt(args[0]);
-
-        print = false;
-        System.out.println("Warmup...");
-        oneTest(1, 10000);
-        Thread.sleep(100);
-        oneTest(2, 10000);
-        Thread.sleep(100);
-        print = true;
-
+        pool = Executors.newCachedThreadPool();
         for (int i = 1; i <= maxPairs; i += (i+1) >>> 1) {
-            System.out.println("----------------------------------------");
-            System.out.println("Pairs: " + i);
-            oneTest(i, iters);
-            Thread.sleep(100);
+            // Adjust iterations to limit typical single runs to <= 10 ms;
+            // Notably, fair queues get fewer iters.
+            // Unbounded queues can legitimately OOME if iterations
+            // high enough, but we have a sufficiently low limit here.
+            run(new ArrayBlockingQueue<Integer>(100), i, 500);
+            run(new LinkedBlockingQueue<Integer>(100), i, 1000);
+            run(new LinkedBlockingDeque<Integer>(100), i, 1000);
+            run(new LinkedTransferQueue<Integer>(), i, 1000);
+            run(new PriorityBlockingQueue<Integer>(), i, 1000);
+            run(new SynchronousQueue<Integer>(), i, 400);
+            run(new SynchronousQueue<Integer>(true), i, 300);
+            run(new ArrayBlockingQueue<Integer>(100, true), i, 100);
         }
         pool.shutdown();
-        if (! pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS))
+        if (! pool.awaitTermination(60L, SECONDS))
             throw new Error();
+        pool = null;
    }
 
-    static void oneTest(int pairs, int iters) throws Exception {
-        oneRun(new ArrayBlockingQueue<Integer>(CAPACITY), pairs, iters);
-        oneRun(new LinkedBlockingQueue<Integer>(CAPACITY), pairs, iters);
-        oneRun(new LinkedBlockingDeque<Integer>(CAPACITY), pairs, iters);
-        oneRun(new LinkedTransferQueue<Integer>(), pairs, iters);
-        oneRun(new PriorityBlockingQueue<Integer>(), pairs, iters);
-        oneRun(new SynchronousQueue<Integer>(), pairs, iters);
-
-        if (print)
-            System.out.println("fair implementations:");
-
-        oneRun(new SynchronousQueue<Integer>(true), pairs, iters);
-        oneRun(new ArrayBlockingQueue<Integer>(CAPACITY, true), pairs, iters);
+    static void run(BlockingQueue<Integer> queue, int pairs, int iters) throws Exception {
+        new ProducerConsumerLoops(queue, pairs, iters).run();
     }
 
-    abstract static class Stage implements Runnable {
-        final int iters;
-        final BlockingQueue<Integer> queue;
-        final CyclicBarrier barrier;
-        Stage(BlockingQueue<Integer> q, CyclicBarrier b, int iters) {
-            queue = q;
-            barrier = b;
-            this.iters = iters;
-        }
+    final BlockingQueue<Integer> queue;
+    final int pairs;
+    final int iters;
+    final LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();
+    final CyclicBarrier barrier;
+    final AtomicInteger checksum = new AtomicInteger(0);
+    Throwable fail;
+
+    ProducerConsumerLoops(BlockingQueue<Integer> queue, int pairs, int iters) {
+        this.queue = queue;
+        this.pairs = pairs;
+        this.iters = iters;
+        this.barrier = new CyclicBarrier(2 * pairs + 1, timer);
     }
 
-    static class Producer extends Stage {
-        Producer(BlockingQueue<Integer> q, CyclicBarrier b, int iters) {
-            super(q, b, iters);
-        }
-
-        public void run() {
-            try {
-                barrier.await();
-                int s = 0;
-                int l = hashCode();
-                for (int i = 0; i < iters; ++i) {
-                    l = LoopHelpers.compute2(l);
-                    queue.put(new Integer(l));
-                    s += LoopHelpers.compute1(l);
-                }
-                addProducerSum(s);
-                barrier.await();
-            }
-            catch (Exception ie) {
-                ie.printStackTrace();
-                return;
-            }
-        }
-    }
-
-    static class Consumer extends Stage {
-        Consumer(BlockingQueue<Integer> q, CyclicBarrier b, int iters) {
-            super(q, b, iters);
-        }
-
-        public void run() {
-            try {
-                barrier.await();
-                int l = 0;
-                int s = 0;
-                for (int i = 0; i < iters; ++i) {
-                    l = LoopHelpers.compute1(queue.take().intValue());
-                    s += l;
-                }
-                addConsumerSum(s);
-                barrier.await();
-            }
-            catch (Exception ie) {
-                ie.printStackTrace();
-                return;
-            }
-        }
-
-    }
-
-    static void oneRun(BlockingQueue<Integer> q, int npairs, int iters) throws Exception {
-        if (print)
-            System.out.printf("%-18s", q.getClass().getSimpleName());
-        LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();
-        CyclicBarrier barrier = new CyclicBarrier(npairs * 2 + 1, timer);
-        for (int i = 0; i < npairs; ++i) {
-            pool.execute(new Producer(q, barrier, iters));
-            pool.execute(new Consumer(q, barrier, iters));
+    void run() throws Exception {
+        for (int i = 0; i < pairs; i++) {
+            pool.execute(new Producer());
+            pool.execute(new Consumer());
         }
         barrier.await();
         barrier.await();
-        long time = timer.getTime();
-        checkSum();
-        if (print)
-            System.out.println("\t: " + LoopHelpers.rightJustify(time / (iters * npairs)) + " ns per transfer");
+        System.out.printf("%s, pairs=%d:  %d ms%n",
+                          queue.getClass().getSimpleName(), pairs,
+                          NANOSECONDS.toMillis(timer.getTime()));
+        if (checksum.get() != 0) throw new AssertionError("checksum mismatch");
+        if (fail != null) throw new AssertionError(fail);
     }
 
+    abstract class CheckedRunnable implements Runnable {
+        abstract void realRun() throws Throwable;
+        public final void run() {
+            try {
+                realRun();
+            } catch (Throwable t) {
+                fail = t;
+                t.printStackTrace();
+                throw new AssertionError(t);
+            }
+        }
+    }
+
+    class Producer extends CheckedRunnable {
+        void realRun() throws Throwable {
+            barrier.await();
+            int s = 0;
+            int l = hashCode();
+            for (int i = 0; i < iters; i++) {
+                l = LoopHelpers.compute2(l);
+                queue.put(new Integer(l));
+                s += LoopHelpers.compute1(l);
+            }
+            checksum.getAndAdd(s);
+            barrier.await();
+        }
+    }
+
+    class Consumer extends CheckedRunnable {
+        void realRun() throws Throwable {
+            barrier.await();
+            int l = 0;
+            int s = 0;
+            for (int i = 0; i < iters; i++) {
+                l = LoopHelpers.compute1(queue.take().intValue());
+                s += l;
+            }
+            checksum.getAndAdd(-s);
+            barrier.await();
+        }
+    }
 }
