@@ -36,7 +36,6 @@
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ErgoVerbose.hpp"
-#include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1Log.hpp"
@@ -4090,21 +4089,21 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
   return true;
 }
 
-void G1CollectedHeap::remove_self_forwarding_pointers() {
-  double remove_self_forwards_start = os::elapsedTime();
+void G1CollectedHeap::restore_preserved_marks() {
+  G1RestorePreservedMarksTask rpm_task(_preserved_objs);
+  workers()->run_task(&rpm_task);
+}
 
+void G1CollectedHeap::remove_self_forwarding_pointers() {
   G1ParRemoveSelfForwardPtrsTask rsfp_task;
   workers()->run_task(&rsfp_task);
+}
 
-  // Now restore saved marks, if any.
-  for (uint i = 0; i < ParallelGCThreads; i++) {
-    OopAndMarkOopStack& cur = _preserved_objs[i];
-    while (!cur.is_empty()) {
-      OopAndMarkOop elem = cur.pop();
-      elem.set_mark();
-    }
-    cur.clear(true);
-  }
+void G1CollectedHeap::restore_after_evac_failure() {
+  double remove_self_forwards_start = os::elapsedTime();
+
+  remove_self_forwarding_pointers();
+  restore_preserved_marks();
 
   g1_policy()->phase_times()->record_evac_fail_remove_self_forwards((os::elapsedTime() - remove_self_forwards_start) * 1000.0);
 }
@@ -5193,7 +5192,7 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G
   g1_rem_set()->cleanup_after_oops_into_collection_set_do();
 
   if (evacuation_failed()) {
-    remove_self_forwarding_pointers();
+    restore_after_evac_failure();
 
     // Reset the G1EvacuationFailureALot counters and flags
     // Note: the values are reset only when an actual

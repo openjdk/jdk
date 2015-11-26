@@ -33,6 +33,7 @@
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1InCSetState.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
+#include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1EvacStats.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/g1YCTypes.hpp"
@@ -780,20 +781,13 @@ protected:
   // forwarding pointers to themselves.  Reset them.
   void remove_self_forwarding_pointers();
 
-  struct OopAndMarkOop {
-   private:
-    oop _o;
-    markOop _m;
-   public:
-    OopAndMarkOop(oop obj, markOop m) : _o(obj), _m(m) {
-    }
+  // Restore the preserved mark words for objects with self-forwarding pointers.
+  void restore_preserved_marks();
 
-    void set_mark() {
-      _o->set_mark(_m);
-    }
-  };
+  // Restore the objects in the regions in the collection set after an
+  // evacuation failure.
+  void restore_after_evac_failure();
 
-  typedef Stack<OopAndMarkOop,mtGC> OopAndMarkOopStack;
   // Stores marks with the corresponding oop that we need to preserve during evacuation
   // failure.
   OopAndMarkOopStack*  _preserved_objs;
