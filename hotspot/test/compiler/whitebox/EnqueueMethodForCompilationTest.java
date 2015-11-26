@@ -21,15 +21,17 @@
  * questions.
  */
 
+import compiler.whitebox.CompilerWhiteBoxTest;
+
 /*
  * @test EnqueueMethodForCompilationTest
  * @bug 8006683 8007288 8022832
- * @library /testlibrary /test/lib
+ * @library /testlibrary /test/lib /
  * @modules java.management
  * @build EnqueueMethodForCompilationTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,SimpleTestCase$Helper::* EnqueueMethodForCompilationTest
+ * @run main/othervm/timeout=600 -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,compiler.whitebox.SimpleTestCase$Helper::* EnqueueMethodForCompilationTest
  * @summary testing of WB::enqueueMethodForCompilation()
  * @author igor.ignatyev@oracle.com
  */

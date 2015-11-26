@@ -24,7 +24,8 @@
 /*
  * @test InlineMatcherTest
  * @bug 8074095
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
+ * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI InlineMatcherTest

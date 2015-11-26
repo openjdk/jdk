@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,32 @@
 
 /*
  * @test
- * @bug 8031321
- * @library /testlibrary /test/lib /compiler/whitebox ..
- * @modules java.base/sun.misc
- *          java.management
- * @build AddnTestL
+ * @bug 8137167
+ * @summary Tests jcmd to be able to add a lot of huge directives
+ * @library /testlibrary /test/lib /compiler/testlibrary ../share /
+ * @build StressAddSequentiallyTest pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
+ *        compiler.testlibrary.CompilerUtils
+ *        compiler.compilercontrol.share.actions.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseBMI1Instructions AddnTestL
+ * @run main/othervm/timeout=300 compiler.compilercontrol.jcmd.StressAddSequentiallyTest
  */
 
-import java.lang.reflect.Method;
+package compiler.compilercontrol.jcmd;
 
-public class AddnTestL extends AddnTestI {
+import jdk.test.lib.dcmd.PidJcmdExecutor;
 
-    protected AddnTestL(Method method) {
-        super(method);
-        isLongOperation = true;
+import java.util.List;
+
+public class StressAddSequentiallyTest extends StressAddJcmdBase {
+    public static void main(String[] args) {
+        new StressAddSequentiallyTest().test();
     }
 
-    public static void main(String[] args) throws Exception {
-        BmiIntrinsicBase.verifyTestCase(AddnTestL::new, TestAndnL.AndnLExpr.class.getDeclaredMethods());
-        BmiIntrinsicBase.verifyTestCase(AddnTestL::new, TestAndnL.AndnLCommutativeExpr.class.getDeclaredMethods());
+    @Override
+    protected boolean makeConnection(int pid, List<String> commands) {
+        commands.forEach(command -> new PidJcmdExecutor(String.valueOf(pid))
+                .execute(command));
+        return true;
     }
 }

@@ -29,7 +29,7 @@
 #include "runtime/sharedRuntime.hpp"
 #include "vmreg_sparc.inline.hpp"
 
-jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, oop method) {
+jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, Handle method, TRAPS) {
   if (inst->is_call() || inst->is_jump()) {
     return pc_offset + NativeCall::instruction_size;
   } else if (inst->is_call_reg()) {
@@ -37,12 +37,12 @@ jint CodeInstaller::pd_next_offset(NativeInstruction* inst, jint pc_offset, oop 
   } else if (inst->is_sethi()) {
     return pc_offset + NativeFarCall::instruction_size;
   } else {
-    fatal("unsupported type of instruction for call site");
+    JVMCI_ERROR_0("unsupported type of instruction for call site");
     return 0;
   }
 }
 
-void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle& constant) {
+void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle constant, TRAPS) {
   address pc = _instructions->start() + pc_offset;
   Handle obj = HotSpotObjectConstantImpl::object(constant);
   jobject value = JNIHandles::make_local(obj());
@@ -52,7 +52,7 @@ void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle& constant) {
     RelocationHolder rspec = oop_Relocation::spec(oop_index);
     _instructions->relocate(pc, rspec, 1);
 #else
-    fatal("compressed oop on 32bit");
+    JVMCI_ERROR("compressed oop on 32bit");
 #endif
   } else {
     NativeMovConstReg* move = nativeMovConstReg_at(pc);
@@ -66,20 +66,20 @@ void CodeInstaller::pd_patch_OopConstant(int pc_offset, Handle& constant) {
   }
 }
 
-void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle& constant) {
+void CodeInstaller::pd_patch_MetaspaceConstant(int pc_offset, Handle constant, TRAPS) {
   address pc = _instructions->start() + pc_offset;
   if (HotSpotMetaspaceConstantImpl::compressed(constant)) {
 #ifdef _LP64
     NativeMovConstReg32* move = nativeMovConstReg32_at(pc);
-    narrowKlass narrowOop = record_narrow_metadata_reference(constant);
+    narrowKlass narrowOop = record_narrow_metadata_reference(constant, CHECK);
     move->set_data((intptr_t)narrowOop);
     TRACE_jvmci_3("relocating (narrow metaspace constant) at %p/%p", pc, narrowOop);
 #else
-    fatal("compressed Klass* on 32bit");
+    JVMCI_ERROR("compressed Klass* on 32bit");
 #endif
   } else {
     NativeMovConstReg* move = nativeMovConstReg_at(pc);
-    Metadata* reference = record_metadata_reference(constant);
+    Metadata* reference = record_metadata_reference(constant, CHECK);
     move->set_data((intptr_t)reference);
     TRACE_jvmci_3("relocating (metaspace constant) at %p/%p", pc, reference);
   }
@@ -106,7 +106,7 @@ void CodeInstaller::pd_patch_DataSectionReference(int pc_offset, int data_offset
   }
 }
 
-void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination) {
+void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong foreign_call_destination, TRAPS) {
   address pc = (address) inst;
   if (inst->is_call()) {
     NativeCall* call = nativeCall_at(pc);
@@ -117,17 +117,17 @@ void CodeInstaller::pd_relocate_ForeignCall(NativeInstruction* inst, jlong forei
     jump->set_jump_destination((address) foreign_call_destination);
     _instructions->relocate(jump->instruction_address(), runtime_call_Relocation::spec());
   } else {
-    fatal(err_msg("unknown call or jump instruction at " PTR_FORMAT, p2i(pc)));
+    JVMCI_ERROR("unknown call or jump instruction at " PTR_FORMAT, p2i(pc));
   }
   TRACE_jvmci_3("relocating (foreign call) at " PTR_FORMAT, p2i(inst));
 }
 
-void CodeInstaller::pd_relocate_JavaMethod(oop hotspot_method, jint pc_offset) {
+void CodeInstaller::pd_relocate_JavaMethod(Handle hotspot_method, jint pc_offset, TRAPS) {
 #ifdef ASSERT
   Method* method = NULL;
   // we need to check, this might also be an unresolved method
   if (hotspot_method->is_a(HotSpotResolvedJavaMethodImpl::klass())) {
-    method = getMethodFromHotSpotMethod(hotspot_method);
+    method = getMethodFromHotSpotMethod(hotspot_method());
   }
 #endif
   switch (_next_call_type) {
@@ -156,33 +156,33 @@ void CodeInstaller::pd_relocate_JavaMethod(oop hotspot_method, jint pc_offset) {
       break;
     }
     default:
-      fatal("invalid _next_call_type value");
+      JVMCI_ERROR("invalid _next_call_type value");
       break;
   }
 }
 
-void CodeInstaller::pd_relocate_poll(address pc, jint mark) {
+void CodeInstaller::pd_relocate_poll(address pc, jint mark, TRAPS) {
   switch (mark) {
     case POLL_NEAR:
-      fatal("unimplemented");
+      JVMCI_ERROR("unimplemented");
       break;
     case POLL_FAR:
       _instructions->relocate(pc, relocInfo::poll_type);
       break;
     case POLL_RETURN_NEAR:
-      fatal("unimplemented");
+      JVMCI_ERROR("unimplemented");
       break;
     case POLL_RETURN_FAR:
       _instructions->relocate(pc, relocInfo::poll_return_type);
       break;
     default:
-      fatal("invalid mark value");
+      JVMCI_ERROR("invalid mark value");
       break;
   }
 }
 
 // convert JVMCI register indices (as used in oop maps) to HotSpot registers
-VMReg CodeInstaller::get_hotspot_reg(jint jvmci_reg) {
+VMReg CodeInstaller::get_hotspot_reg(jint jvmci_reg, TRAPS) {
   // JVMCI Registers are numbered as follows:
   //   0..31: Thirty-two General Purpose registers (CPU Registers)
   //   32..63: Thirty-two single precision float registers
@@ -199,7 +199,7 @@ VMReg CodeInstaller::get_hotspot_reg(jint jvmci_reg) {
     } else if(jvmci_reg < 112) {
       floatRegisterNumber = 4 * (jvmci_reg - 96);
     } else {
-      fatal("Unknown jvmci register");
+      JVMCI_ERROR_NULL("invalid register number: %d", jvmci_reg);
     }
     return as_FloatRegister(floatRegisterNumber)->as_VMReg();
   }

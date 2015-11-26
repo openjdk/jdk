@@ -47,7 +47,10 @@ CodeHeap::CodeHeap(const char* name, const int code_blob_type)
   _freelist_segments            = 0;
   _freelist_length              = 0;
   _max_allocated_capacity       = 0;
-  _was_full                     = false;
+  _blob_count                   = 0;
+  _nmethod_count                = 0;
+  _adapter_count                = 0;
+  _full_count                   = 0;
 }
 
 
@@ -185,6 +188,7 @@ void* CodeHeap::allocate(size_t instance_size) {
     assert(!block->free(), "must be marked free");
     DEBUG_ONLY(memset((void*)block->allocated_space(), badCodeHeapNewVal, instance_size));
     _max_allocated_capacity = MAX2(_max_allocated_capacity, allocated_capacity());
+    _blob_count++;
     return block->allocated_space();
   }
 
@@ -198,6 +202,7 @@ void* CodeHeap::allocate(size_t instance_size) {
     _next_segment += number_of_segments;
     DEBUG_ONLY(memset((void *)b->allocated_space(), badCodeHeapNewVal, instance_size));
     _max_allocated_capacity = MAX2(_max_allocated_capacity, allocated_capacity());
+    _blob_count++;
     return b->allocated_space();
   } else {
     return NULL;

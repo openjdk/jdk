@@ -343,10 +343,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(InstanceKlass,               _methods_jmethod_ids,                          jmethodID*)                            \
   volatile_nonstatic_field(InstanceKlass,      _idnum_allocated_count,                        u2)                                    \
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
-  nonstatic_field(InstanceKlass,               _dependencies,                                 nmethodBucket*)                        \
-  nonstatic_field(nmethodBucket,               _nmethod,                                      nmethod*)                              \
-  nonstatic_field(nmethodBucket,               _count,                                        int)                                   \
-  nonstatic_field(nmethodBucket,               _next,                                         nmethodBucket*)                        \
   nonstatic_field(InstanceKlass,               _method_ordering,                              Array<int>*)                           \
   nonstatic_field(InstanceKlass,               _default_vtable_indices,                       Array<int>*)                           \
   nonstatic_field(Klass,                       _super_check_offset,                           juint)                                 \
@@ -969,6 +965,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(Deoptimization::UnrollBlock, _caller_adjustment,                            int)                                   \
   nonstatic_field(Deoptimization::UnrollBlock, _number_of_frames,                             int)                                   \
   nonstatic_field(Deoptimization::UnrollBlock, _total_frame_sizes,                            int)                                   \
+  nonstatic_field(Deoptimization::UnrollBlock, _unpack_kind,                                  int)                                   \
   nonstatic_field(Deoptimization::UnrollBlock, _frame_sizes,                                  intptr_t*)                             \
   nonstatic_field(Deoptimization::UnrollBlock, _frame_pcs,                                    address*)                              \
   nonstatic_field(Deoptimization::UnrollBlock, _register_block,                               intptr_t*)                             \
@@ -1550,7 +1547,6 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_toplevel_type(volatile Metadata*)                               \
                                                                           \
   declare_toplevel_type(DataLayout)                                       \
-  declare_toplevel_type(nmethodBucket)                                    \
                                                                           \
   /********/                                                              \
   /* Oops */                                                              \
