@@ -14299,6 +14299,9 @@ instruct string_compare(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cn
 
   format %{ "String Compare $str1,$cnt1,$str2,$cnt2 -> $result   # KILL $tmp1" %}
   ins_encode %{
+    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
+    __ asrw($cnt1$$Register, $cnt1$$Register, 1);
+    __ asrw($cnt2$$Register, $cnt2$$Register, 1);
     __ string_compare($str1$$Register, $str2$$Register,
                       $cnt1$$Register, $cnt2$$Register, $result$$Register,
                       $tmp1$$Register);
@@ -14355,6 +14358,8 @@ instruct string_equals(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
 
   format %{ "String Equals $str1,$str2,$cnt -> $result    // KILL $tmp" %}
   ins_encode %{
+    // Count is in 8-bit bytes; non-Compact chars are 16 bits.
+    __ asrw($cnt$$Register, $cnt$$Register, 1);
     __ string_equals($str1$$Register, $str2$$Register,
                       $cnt$$Register, $result$$Register,
                       $tmp$$Register);
