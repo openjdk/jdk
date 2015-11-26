@@ -703,7 +703,8 @@ public class ForkJoinPool extends AbstractExecutorService {
          * Returns a new worker thread operating in the given pool.
          *
          * @param pool the pool this thread works in
-         * @return the new worker thread
+         * @return the new worker thread, or {@code null} if the request
+         *         to create a thread is rejected
          * @throws NullPointerException if the pool is null
          */
         public ForkJoinWorkerThread newThread(ForkJoinPool pool);
@@ -1053,7 +1054,7 @@ public class ForkJoinPool extends AbstractExecutorService {
         }
 
         /**
-         * Shared version of pop.
+         * Shared version of tryUnpush.
          */
         final boolean trySharedUnpush(ForkJoinTask<?> task) {
             boolean popped = false;
@@ -1064,7 +1065,8 @@ public class ForkJoinPool extends AbstractExecutorService {
                 ForkJoinTask<?> t = (ForkJoinTask<?>) U.getObject(a, offset);
                 if (t == task &&
                     U.compareAndSwapInt(this, QLOCK, 0, 1)) {
-                    if (U.compareAndSwapObject(a, offset, task, null)) {
+                    if (top == s + 1 && array == a &&
+                        U.compareAndSwapObject(a, offset, task, null)) {
                         popped = true;
                         top = s;
                     }
@@ -1250,12 +1252,14 @@ public class ForkJoinPool extends AbstractExecutorService {
                     for (CountedCompleter<?> r = t;;) {
                         if (r == task) {
                             if ((mode & IS_OWNED) == 0) {
-                                boolean popped;
+                                boolean popped = false;
                                 if (U.compareAndSwapInt(this, QLOCK, 0, 1)) {
-                                    if (popped =
+                                    if (top == s && array == a &&
                                         U.compareAndSwapObject(a, offset,
-                                                               t, null))
+                                                               t, null)) {
+                                        popped = true;
                                         top = s - 1;
+                                    }
                                     U.putOrderedInt(this, QLOCK, 0);
                                     if (popped)
                                         return t;
