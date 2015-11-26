@@ -114,22 +114,19 @@ class DependencyContext : public StackObj {
 
  public:
 #ifdef ASSERT
-  // Verification for dependency contexts rooted at Java objects.
-  Handle _base; // non-NULL if dependency context resides in an oop (e.g. CallSite).
-  oop _base_oop;
+  // Safepoints are forbidden during DC lifetime. GC can invalidate
+  // _dependency_context_addr if it relocates the holder
+  // (e.g. CallSiteContext Java object).
+  int _safepoint_counter;
 
-  DependencyContext(intptr_t* addr, Handle base = Handle())
-    : _dependency_context_addr(addr), _base(base)
-  {
-      _base_oop = _base();
-  }
+  DependencyContext(intptr_t* addr) : _dependency_context_addr(addr),
+    _safepoint_counter(SafepointSynchronize::_safepoint_counter) {}
 
   ~DependencyContext() {
-    // Base oop relocation invalidates _dependency_context_addr.
-    assert(_base_oop == _base(), "base oop relocation is forbidden");
+    assert(_safepoint_counter == SafepointSynchronize::_safepoint_counter, "safepoint happened");
   }
 #else
-    DependencyContext(intptr_t* addr) : _dependency_context_addr(addr) {}
+  DependencyContext(intptr_t* addr) : _dependency_context_addr(addr) {}
 #endif // ASSERT
 
   static const intptr_t EMPTY = 0; // dependencies = NULL, has_stale_entries = false
