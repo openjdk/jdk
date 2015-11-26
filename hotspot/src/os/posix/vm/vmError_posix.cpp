@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,38 +30,23 @@
 
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/syscall.h>
-#include <unistd.h>
 #include <signal.h>
 
-void VMError::show_message_box(char *buf, int buflen) {
-  bool yes;
-  do {
-    error_string(buf, buflen);
-    int len = (int)strlen(buf);
-    char *p = &buf[len];
+#ifdef TARGET_OS_FAMILY_linux
+#include <sys/syscall.h>
+#include <unistd.h>
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+#include <thread.h>
+#endif
+#ifdef TARGET_OS_FAMILY_aix
+#include <unistd.h>
+#endif
+#ifdef TARGET_OS_FAMILY_bsd
+#include <sys/syscall.h>
+#include <unistd.h>
+#endif
 
-    jio_snprintf(p, buflen - len,
-               "\n\n"
-               "Do you want to debug the problem?\n\n"
-               "To debug, run 'gdb /proc/%d/exe %d'; then switch to thread " INTX_FORMAT " (" INTPTR_FORMAT ")\n"
-               "Enter 'yes' to launch gdb automatically (PATH must include gdb)\n"
-               "Otherwise, press RETURN to abort...",
-               os::current_process_id(), os::current_process_id(),
-               os::current_thread_id(), os::current_thread_id());
-
-    yes = os::message_box("Unexpected Error", buf);
-
-    if (yes) {
-      // yes, user asked VM to launch debugger
-      jio_snprintf(buf, buflen, "gdb /proc/%d/exe %d",
-                   os::current_process_id(), os::current_process_id());
-
-      os::fork_and_exec(buf);
-      yes = false;
-    }
-  } while (yes);
-}
 
 // handle all synchronous program error signals which may happen during error
 // reporting. They must be unblocked, caught, handled.
@@ -110,14 +95,14 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
   for (int i = 0; i < NUM_SIGNALS; i++) {
     sigaddset(&newset, SIGNALS[i]);
   }
-  pthread_sigmask(SIG_UNBLOCK, &newset, NULL);
+  os::Posix::unblock_thread_signal_mask(&newset);
 
   // support safefetch faults in error handling
   ucontext_t* const uc = (ucontext_t*) ucVoid;
-  address const pc = uc ? os::Bsd::ucontext_get_pc(uc) : NULL;
+  address const pc = uc ? os::Posix::ucontext_get_pc(uc) : NULL;
 
   if (uc && pc && StubRoutines::is_safefetch_fault(pc)) {
-    os::Bsd::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
+    os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
     return;
   }
 
@@ -134,5 +119,6 @@ void VMError::reset_signal_handlers() {
     os::signal(SIGNALS[i], CAST_FROM_FN_PTR(void *, crash_handler));
     sigaddset(&newset, SIGNALS[i]);
   }
-  pthread_sigmask(SIG_UNBLOCK, &newset, NULL);
+  os::Posix::unblock_thread_signal_mask(&newset);
+
 }
