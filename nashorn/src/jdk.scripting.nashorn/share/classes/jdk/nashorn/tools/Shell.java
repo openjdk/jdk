@@ -36,10 +36,12 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.ResourceBundle;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+import java.util.stream.Collectors;
+
 import jdk.nashorn.api.scripting.NashornException;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
@@ -201,7 +203,8 @@ public class Shell implements PartialParser {
         // parse options
         if (args != null) {
             try {
-                options.process(args);
+                final String[] prepArgs = preprocessArgs(args);
+                options.process(prepArgs);
             } catch (final IllegalArgumentException e) {
                 werr.println(bundle.getString("shell.usage"));
                 options.displayHelp(e);
@@ -229,6 +232,74 @@ public class Shell implements PartialParser {
         }
 
         return new Context(options, errors, wout, werr, Thread.currentThread().getContextClassLoader());
+    }
+
+    /**
+     * Preprocess the command line arguments passed in by the shell. This checks, for each of the arguments, whether it
+     * can be a file name, and if so, whether the file exists. If the file exists and begins with a shebang line, and
+     * the arguments on that line are a prefix of {@code args} with the file removed, it is assumed that a script file
+     * being executed via shebang was found, and it is moved to the appropriate position in the argument list. The first
+     * such match is used.
+     * <p>
+     * This method canonicalizes the command line arguments to the form {@code <options> <scripts> -- <arguments>},
+     * where the last of the {@code scripts} is the one being run in shebang fashion.
+     * <p>
+     * @implNote Example:<ul>
+     * <li>Shebang line in {@code script.js}: {@code #!/path/to/jjs --language=es6 other.js -- arg1}</li>
+     * <li>Command line: {@code ./script.js arg2}</li>
+     * <li>{@code args} array passed to Nashorn: {@code --language=es6,other.js,--,arg1,./script.js,arg2}</li>
+     * <li>Required canonicalized arguments array: {@code --language=es6,other.js,./script.js,--,arg1,arg2}</li>
+     * </ul>
+     *
+     * @param args the command line arguments as passed into Nashorn.
+     * @return a properly ordered argument list
+     */
+    private static String[] preprocessArgs(final String[] args) {
+        final List<String> largs = new ArrayList<>();
+        Collections.addAll(largs, args);
+        final List<String> pa = new ArrayList<>();
+        String scriptFile = null;
+        boolean found = false;
+        for (int i = 0; i < args.length; ++i) {
+            final String a = args[i];
+            final Path p = Paths.get(a);
+            if (!found && (!a.startsWith("-") || a.length() == 1) && Files.exists(p)) {
+                String l = "";
+                try (final BufferedReader r = Files.newBufferedReader(p)) {
+                    l = r.readLine();
+                } catch (IOException ioe) {
+                    // ignore
+                }
+                if (l.startsWith("#!")) {
+                    List<String> shebangArgs = Arrays.asList(l.split(" "));
+                    shebangArgs = shebangArgs.subList(1, shebangArgs.size()); // remove #! part
+                    final int ssize = shebangArgs.size();
+                    final List<String> filteredArgs = largs.stream().filter(x -> !x.equals(a)).collect(Collectors.toList());
+                    if (filteredArgs.size() >= ssize && shebangArgs.equals(filteredArgs.subList(0, ssize))) {
+                        scriptFile = a;
+                        found = true;
+                        continue;
+                    }
+                }
+            }
+            pa.add(a);
+        }
+        if (scriptFile != null) {
+            // Insert the found script file name either before a -- argument, or at the end of the options list, before
+            // any other arguments, with an extra --.
+            int argidx = pa.indexOf("--");
+            if (argidx == -1) {
+                for (String s : pa) {
+                    ++argidx;
+                    if (s.charAt(0) != '-') {
+                        pa.add(argidx, "--");
+                        break;
+                    }
+                }
+            }
+            pa.add(argidx, scriptFile);
+        }
+        return pa.stream().toArray(String[]::new);
     }
 
     /**
