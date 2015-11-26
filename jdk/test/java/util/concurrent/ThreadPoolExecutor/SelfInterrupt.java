@@ -27,7 +27,10 @@
  * @summary non-idle worker threads should not be interrupted
  */
 
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class SelfInterrupt {
     void test(String[] args) throws Throwable {
