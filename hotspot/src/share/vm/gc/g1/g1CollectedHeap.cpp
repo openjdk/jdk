@@ -5121,11 +5121,10 @@ void G1CollectedHeap::pre_evacuate_collection_set() {
   hot_card_cache->reset_hot_cache_claimed_index();
   hot_card_cache->set_use_cache(false);
 
+  g1_rem_set()->prepare_for_oops_into_collection_set_do();
 }
 
 void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
-  g1_rem_set()->prepare_for_oops_into_collection_set_do();
-
   // Should G1EvacuationFailureALot be in effect for this GC?
   NOT_PRODUCT(set_evacuation_failure_alot_for_current_gc();)
 
