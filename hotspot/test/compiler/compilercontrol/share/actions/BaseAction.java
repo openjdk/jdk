@@ -55,12 +55,16 @@ public class BaseAction {
                 pair -> pair.first));
     }
 
+    public static void main(String[] args) {
+        new BaseAction().communicate(args);
+    }
+
     /*
      * args[0] is a port to connect
      * args[1] is an optional parameter that shows that the state map should be
      *         passed
      */
-    public static void main(String[] args) {
+    protected void communicate(String[] args) {
         if (args.length < 1) {
             throw new Error("TESTBUG: requires port as parameter: "
                     + Arrays.toString(args));
@@ -102,7 +106,7 @@ public class BaseAction {
         }
     }
 
-    private static Map<Executable, State> decodeMap(List<String> lines) {
+    private Map<Executable, State> decodeMap(List<String> lines) {
         if (lines == null || lines.size() == 0) {
             throw new Error("TESTBUG: unexpected lines list");
         }
@@ -130,7 +134,7 @@ public class BaseAction {
         return stateMap;
     }
 
-    protected static void check(Map<Executable, State> methodStates) {
+    protected void check(Map<Executable, State> methodStates) {
         // Check each method from the pool
         METHODS.forEach(pair -> {
             Executable x = pair.first;

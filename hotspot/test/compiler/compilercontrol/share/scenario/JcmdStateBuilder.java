@@ -43,8 +43,9 @@ public class JcmdStateBuilder implements StateBuilder<JcmdCommand> {
             = new PoolHelper().getAllMethods();
     private final Map<Executable, State> stateMap = new HashMap<>();
     private final DirectiveBuilder directiveBuilder;
-    private Map<MethodDescriptor, List<CompileCommand>> matchBlocks
+    private final Map<MethodDescriptor, List<CompileCommand>> matchBlocks
             = new LinkedHashMap<>();
+    private final List<CompileCommand> inlines = new ArrayList<>();
     private boolean isFileValid = true;
 
     public JcmdStateBuilder(String fileName) {
@@ -63,6 +64,7 @@ public class JcmdStateBuilder implements StateBuilder<JcmdCommand> {
                 break;
             case CLEAR:
                 matchBlocks.clear();
+                inlines.clear();
                 break;
             case REMOVE:
                 removeDirective();
@@ -72,15 +74,24 @@ public class JcmdStateBuilder implements StateBuilder<JcmdCommand> {
 
     private void addCommand(JcmdCommand compileCommand) {
         isFileValid &= compileCommand.isValid();
+        MethodDescriptor methodDescriptor = compileCommand.methodDescriptor;
+
+        switch (compileCommand.command) {
+            case INLINE:
+            case DONTINLINE:
+                inlines.add(compileCommand);
+                break;
+        }
         for (MethodDescriptor md: matchBlocks.keySet()) {
-            if (compileCommand.methodDescriptor.getCanonicalString()
-                    .matches(md.getRegexp())) {
+            if (methodDescriptor.getCanonicalString().matches(md.getRegexp())) {
                 matchBlocks.get(md).add(compileCommand);
             }
         }
-        List<CompileCommand> commands = new ArrayList<>();
-        commands.add(compileCommand);
-        matchBlocks.put(compileCommand.methodDescriptor, commands);
+        if (!matchBlocks.containsKey(compileCommand.methodDescriptor)) {
+            List<CompileCommand> commands = new ArrayList<>();
+            commands.add(compileCommand);
+            matchBlocks.put(compileCommand.methodDescriptor, commands);
+        }
     }
 
     private void removeDirective() {
@@ -100,14 +111,38 @@ public class JcmdStateBuilder implements StateBuilder<JcmdCommand> {
     @Override
     public Map<Executable, State> getStates() {
         directiveBuilder.getStates();
-        // Build states for each method according to match blocks
-        for (Pair<Executable, Callable<?>> pair : METHODS) {
-            State state = getState(pair);
-            if (state != null) {
-                stateMap.put(pair.first, state);
+        for (MethodDescriptor matchDescriptor : matchBlocks.keySet()) {
+            if ("Inlinee.caller()".matches(matchDescriptor.getRegexp())
+                    && !inlines.isEmpty()) {
+                // Got a *.* match block, where inline would be written
+                inlines.clear();
             }
         }
+        /*
+         * Write inline directive in the end to the latest match block
+         * if we didn't do this before
+         * Inlinee caller methods should match this block only
+         */
+        if (!inlines.isEmpty()) {
+            Pair<Executable, Callable<?>> pair = METHODS.get(0);
+            MethodDescriptor md = MethodGenerator.anyMatchDescriptor(
+                    pair.first);
+            CompileCommand cc = new CompileCommand(Command.QUIET, md,
+                    null, Scenario.Type.DIRECTIVE);
+            List<CompileCommand> commands = new ArrayList<>();
+
+            // Add appropriate "*.*" match block
+            commands.add(cc);
+            matchBlocks.put(md, commands);
+        }
         if (isFileValid) {
+            // Build states for each method according to match blocks
+            for (Pair<Executable, Callable<?>> pair : METHODS) {
+                State state = getState(pair);
+                if (state != null) {
+                    stateMap.put(pair.first, state);
+                }
+            }
             return stateMap;
         } else {
             // return empty map because invalid file doesn't change states
@@ -131,7 +166,9 @@ public class JcmdStateBuilder implements StateBuilder<JcmdCommand> {
                  * then apply commands from this match to the state
                  */
                 for (CompileCommand cc : matchBlocks.get(matchDesc)) {
-                    state = new State();
+                    if (state == null) {
+                        state = new State();
+                    }
                     if (!isMatchFound) {
                         // this is a first found match, apply all commands
                         state.apply(cc);

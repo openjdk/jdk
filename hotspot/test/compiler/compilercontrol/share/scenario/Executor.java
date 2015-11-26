@@ -47,6 +47,9 @@ public class Executor {
     private final List<String> vmOptions;
     private final Map<Executable, State> states;
     private final List<String> jcmdCommands;
+    private final String execClass = System.getProperty("compiler."
+            + "compilercontrol.share.executor.executeClass",
+            BaseAction.class.getName());
     private OutputAnalyzer[] jcmdOutputAnalyzers;
 
     /**
@@ -77,8 +80,7 @@ public class Executor {
      */
     public List<OutputAnalyzer> execute() {
         // Add class name that would be executed in a separate VM
-        String classCmd = BaseAction.class.getName();
-        vmOptions.add(classCmd);
+        vmOptions.add(execClass);
         OutputAnalyzer output;
         try (ServerSocket serverSocket = new ServerSocket(0)) {
             if (isValid) {

@@ -253,13 +253,13 @@ public final class Scenario {
                 State st = State.merge(commandOptionState, commandFileState);
                 if (!isClearedState) {
                     State directiveState = directiveFileStates.get(x);
-                    if (directiveState != null) {
-                        st = directiveState;
+                    State jcmdState = jcmdStates.get(x);
+                    if (jcmdState != null) {
+                        st = State.merge(st, jcmdState);
+                    } else if (directiveState != null) {
+                        st = State.merge(st, directiveState);
                     }
                 }
-                State jcmdState = jcmdStates.get(x);
-                st = State.merge(st, jcmdState);
-
                 finalStates.put(x, st);
             }
 

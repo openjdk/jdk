@@ -31,6 +31,7 @@ import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.ProcessTools;
 import jdk.test.lib.Utils;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
@@ -80,19 +81,21 @@ public final class HugeDirectiveUtil {
             // emit compiler block
             file.emitCompiler(Utils.getRandomElement(
                     Scenario.Compiler.values()));
+            // add option inside the compiler block
             file.option(Utils.getRandomElement(DirectiveWriter.Option.values()),
                     RANDOM.nextBoolean());
             file.end(); // ends compiler block
 
-            // add standalone option
-            file.option(Utils.getRandomElement(DirectiveWriter.Option.values()),
-                    RANDOM.nextBoolean());
+            // add standalone option, enable can't be used standalone
+            EnumSet<DirectiveWriter.Option> options = EnumSet.complementOf(
+                    EnumSet.of(DirectiveWriter.Option.ENABLE));
+            file.option(Utils.getRandomElement(options), RANDOM.nextBoolean());
         }
         // add inline block with random inlinees
         methods = getRandomDescriptors(descriptors).stream()
                 .map(s -> (RANDOM.nextBoolean() ? "+" : "-") + s)
                 .collect(Collectors.toList());
-        file.inline(methods.toArray(new String[methods.size()]));
+        file.inline(methods);
 
         // end match block
         file.end();
