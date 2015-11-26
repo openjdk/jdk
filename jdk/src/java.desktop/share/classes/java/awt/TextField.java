@@ -198,7 +198,7 @@ public class TextField extends TextComponent {
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
     public TextField(String text, int columns) throws HeadlessException {
-        super(text);
+        super(replaceEOL(text));
         this.columns = (columns >= 0) ? columns : 0;
     }
 
@@ -297,11 +297,27 @@ public class TextField extends TextComponent {
      * @see         java.awt.TextComponent#getText
      */
     public void setText(String t) {
-        super.setText(t);
+        super.setText(replaceEOL(t));
 
         // This could change the preferred size of the Component.
         invalidateIfValid();
     }
+
+    /**
+     * Replaces EOL characters from the text variable with a space character.
+     * @param       text   the new text.
+     * @return      Returns text after replacing EOL characters.
+     */
+    private static String replaceEOL(String text) {
+        String[] strEOLs = {System.lineSeparator(), "\n"};
+        for (String eol : strEOLs) {
+            if (text.contains(eol)) {
+                text = text.replace(eol, " ");
+            }
+        }
+        return text;
+    }
+
 
     /**
      * Indicates whether or not this text field has a
@@ -704,6 +720,7 @@ public class TextField extends TextComponent {
     {
         // HeadlessException will be thrown by TextComponent's readObject
         s.defaultReadObject();
+        text = replaceEOL(text);
 
         // Make sure the state we just read in for columns has legal values
         if (columns < 0) {
