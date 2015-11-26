@@ -27,6 +27,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/dependencyContext.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/specialized_oop_closures.hpp"
@@ -203,7 +204,6 @@ InstanceKlass::InstanceKlass(int vtable_len,
 
   int iksize = InstanceKlass::size(vtable_len, itable_len, nonstatic_oop_map_size,
                                    access_flags.is_interface(), is_anonymous);
-
   set_vtable_length(vtable_len);
   set_itable_length(itable_len);
   set_static_field_size(static_field_size);
@@ -232,7 +232,7 @@ InstanceKlass::InstanceKlass(int vtable_len,
   set_static_oop_field_count(0);
   set_nonstatic_field_size(0);
   set_is_marked_dependent(false);
-  set_has_unloaded_dependent(false);
+  _dep_context = DependencyContext::EMPTY;
   set_init_state(InstanceKlass::allocated);
   set_init_thread(NULL);
   set_reference_type(rt);
@@ -246,7 +246,6 @@ InstanceKlass::InstanceKlass(int vtable_len,
   set_annotations(NULL);
   set_jvmti_cached_class_field_map(NULL);
   set_initial_method_idnum(0);
-  _dependencies = NULL;
   set_jvmti_cached_class_field_map(NULL);
   set_cached_class_file(NULL);
   set_initial_method_idnum(0);
@@ -1854,200 +1853,30 @@ jmethodID InstanceKlass::jmethod_id_or_null(Method* method) {
   return id;
 }
 
-int nmethodBucket::decrement() {
-  return Atomic::add(-1, (volatile int *)&_count);
+inline DependencyContext InstanceKlass::dependencies() {
+  DependencyContext dep_context(&_dep_context);
+  return dep_context;
 }
-
-//
-// Walk the list of dependent nmethods searching for nmethods which
-// are dependent on the changes that were passed in and mark them for
-// deoptimization.  Returns the number of nmethods found.
-//
-int nmethodBucket::mark_dependent_nmethods(nmethodBucket* deps, DepChange& changes) {
-  assert_locked_or_safepoint(CodeCache_lock);
-  int found = 0;
-  for (nmethodBucket* b = deps; b != NULL; b = b->next()) {
-    nmethod* nm = b->get_nmethod();
-    // since dependencies aren't removed until an nmethod becomes a zombie,
-    // the dependency list may contain nmethods which aren't alive.
-    if (b->count() > 0 && nm->is_alive() && !nm->is_marked_for_deoptimization() && nm->check_dependency_on(changes)) {
-      if (TraceDependencies) {
-        ResourceMark rm;
-        tty->print_cr("Marked for deoptimization");
-        changes.print();
-        nm->print();
-        nm->print_dependencies();
-      }
-      nm->mark_for_deoptimization();
-      found++;
-    }
-  }
-  return found;
-}
-
-//
-// Add an nmethodBucket to the list of dependencies for this nmethod.
-// It's possible that an nmethod has multiple dependencies on this klass
-// so a count is kept for each bucket to guarantee that creation and
-// deletion of dependencies is consistent. Returns new head of the list.
-//
-nmethodBucket* nmethodBucket::add_dependent_nmethod(nmethodBucket* deps, nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-  for (nmethodBucket* b = deps; b != NULL; b = b->next()) {
-    if (nm == b->get_nmethod()) {
-      b->increment();
-      return deps;
-    }
-  }
-  return new nmethodBucket(nm, deps);
-}
-
-//
-// Decrement count of the nmethod in the dependency list and remove
-// the bucket completely when the count goes to 0.  This method must
-// find a corresponding bucket otherwise there's a bug in the
-// recording of dependencies. Returns true if the bucket was deleted,
-// or marked ready for reclaimation.
-bool nmethodBucket::remove_dependent_nmethod(nmethodBucket** deps, nmethod* nm, bool delete_immediately) {
-  assert_locked_or_safepoint(CodeCache_lock);
-
-  nmethodBucket* first = *deps;
-  nmethodBucket* last = NULL;
-
-  for (nmethodBucket* b = first; b != NULL; b = b->next()) {
-    if (nm == b->get_nmethod()) {
-      int val = b->decrement();
-      guarantee(val >= 0, "Underflow: %d", val);
-      if (val == 0) {
-        if (delete_immediately) {
-          if (last == NULL) {
-            *deps = b->next();
-          } else {
-            last->set_next(b->next());
-          }
-          delete b;
-        }
-      }
-      return true;
-    }
-    last = b;
-  }
-
-#ifdef ASSERT
-  tty->print_raw_cr("### can't find dependent nmethod");
-  nm->print();
-#endif // ASSERT
-  ShouldNotReachHere();
-  return false;
-}
-
-// Convenience overload, for callers that don't want to delete the nmethodBucket entry.
-bool nmethodBucket::remove_dependent_nmethod(nmethodBucket* deps, nmethod* nm) {
-  nmethodBucket** deps_addr = &deps;
-  return remove_dependent_nmethod(deps_addr, nm, false /* Don't delete */);
-}
-
-//
-// Reclaim all unused buckets. Returns new head of the list.
-//
-nmethodBucket* nmethodBucket::clean_dependent_nmethods(nmethodBucket* deps) {
-  nmethodBucket* first = deps;
-  nmethodBucket* last = NULL;
-  nmethodBucket* b = first;
-
-  while (b != NULL) {
-    assert(b->count() >= 0, "bucket count: %d", b->count());
-    nmethodBucket* next = b->next();
-    if (b->count() == 0) {
-      if (last == NULL) {
-        first = next;
-      } else {
-        last->set_next(next);
-      }
-      delete b;
-      // last stays the same.
-    } else {
-      last = b;
-    }
-    b = next;
-  }
-  return first;
-}
-
-#ifndef PRODUCT
-void nmethodBucket::print_dependent_nmethods(nmethodBucket* deps, bool verbose) {
-  int idx = 0;
-  for (nmethodBucket* b = deps; b != NULL; b = b->next()) {
-    nmethod* nm = b->get_nmethod();
-    tty->print("[%d] count=%d { ", idx++, b->count());
-    if (!verbose) {
-      nm->print_on(tty, "nmethod");
-      tty->print_cr(" } ");
-    } else {
-      nm->print();
-      nm->print_dependencies();
-      tty->print_cr("--- } ");
-    }
-  }
-}
-
-bool nmethodBucket::is_dependent_nmethod(nmethodBucket* deps, nmethod* nm) {
-  for (nmethodBucket* b = deps; b != NULL; b = b->next()) {
-    if (nm == b->get_nmethod()) {
-#ifdef ASSERT
-      int count = b->count();
-      assert(count >= 0, "count shouldn't be negative: %d", count);
-#endif
-      return true;
-    }
-  }
-  return false;
-}
-#endif //PRODUCT
 
 int InstanceKlass::mark_dependent_nmethods(DepChange& changes) {
-  assert_locked_or_safepoint(CodeCache_lock);
-  return nmethodBucket::mark_dependent_nmethods(_dependencies, changes);
-}
-
-void InstanceKlass::clean_dependent_nmethods() {
-  assert_locked_or_safepoint(CodeCache_lock);
-
-  if (has_unloaded_dependent()) {
-    _dependencies = nmethodBucket::clean_dependent_nmethods(_dependencies);
-    set_has_unloaded_dependent(false);
-  }
-#ifdef ASSERT
-  else {
-    // Verification
-    for (nmethodBucket* b = _dependencies; b != NULL; b = b->next()) {
-      assert(b->count() >= 0, "bucket count: %d", b->count());
-      assert(b->count() != 0, "empty buckets need to be cleaned");
-    }
-  }
-#endif
+  return dependencies().mark_dependent_nmethods(changes);
 }
 
 void InstanceKlass::add_dependent_nmethod(nmethod* nm) {
-  assert_locked_or_safepoint(CodeCache_lock);
-  _dependencies = nmethodBucket::add_dependent_nmethod(_dependencies, nm);
+  dependencies().add_dependent_nmethod(nm);
 }
 
 void InstanceKlass::remove_dependent_nmethod(nmethod* nm, bool delete_immediately) {
-  assert_locked_or_safepoint(CodeCache_lock);
-
-  if (nmethodBucket::remove_dependent_nmethod(&_dependencies, nm, delete_immediately)) {
-    set_has_unloaded_dependent(true);
-  }
+  dependencies().remove_dependent_nmethod(nm, delete_immediately);
 }
 
 #ifndef PRODUCT
 void InstanceKlass::print_dependent_nmethods(bool verbose) {
-  nmethodBucket::print_dependent_nmethods(_dependencies, verbose);
+  dependencies().print_dependent_nmethods(verbose);
 }
 
 bool InstanceKlass::is_dependent_nmethod(nmethod* nm) {
-  return nmethodBucket::is_dependent_nmethod(_dependencies, nm);
+  return dependencies().is_dependent_nmethod(nm);
 }
 #endif //PRODUCT
 
@@ -2055,7 +1884,9 @@ void InstanceKlass::clean_weak_instanceklass_links(BoolObjectClosure* is_alive) 
   clean_implementors_list(is_alive);
   clean_method_data(is_alive);
 
-  clean_dependent_nmethods();
+  // Since GC iterates InstanceKlasses sequentially, it is safe to remove stale entries here.
+  DependencyContext dep_context(&_dep_context);
+  dep_context.expunge_stale_entries();
 }
 
 void InstanceKlass::clean_implementors_list(BoolObjectClosure* is_alive) {
@@ -2101,6 +1932,8 @@ void InstanceKlass::remove_unshareable_info() {
   init_implementor();
 
   constants()->remove_unshareable_info();
+
+  assert(_dep_context == DependencyContext::EMPTY, "dependency context is not shareable");
 
   for (int i = 0; i < methods()->length(); i++) {
     Method* m = methods()->at(i);
@@ -2230,14 +2063,16 @@ void InstanceKlass::release_C_heap_structures() {
     }
   }
 
-  // release dependencies
-  nmethodBucket* b = _dependencies;
-  _dependencies = NULL;
-  while (b != NULL) {
-    nmethodBucket* next = b->next();
-    delete b;
-    b = next;
-  }
+  // Release dependencies.
+  // It is desirable to use DC::remove_all_dependents() here, but, unfortunately,
+  // it is not safe (see JDK-8143408). The problem is that the klass dependency
+  // context can contain live dependencies, since there's a race between nmethod &
+  // klass unloading. If the klass is dead when nmethod unloading happens, relevant
+  // dependencies aren't removed from the context associated with the class (see
+  // nmethod::flush_dependencies). It ends up during klass unloading as seemingly
+  // live dependencies pointing to unloaded nmethods and causes a crash in
+  // DC::remove_all_dependents() when it touches unloaded nmethod.
+  dependencies().wipe();
 
   // Deallocate breakpoint records
   if (breakpoints() != 0x0) {
@@ -3558,199 +3393,3 @@ jint InstanceKlass::get_cached_class_file_len() {
 unsigned char * InstanceKlass::get_cached_class_file_bytes() {
   return VM_RedefineClasses::get_cached_class_file_bytes(_cached_class_file);
 }
-
-
-/////////////// Unit tests ///////////////
-
-#ifndef PRODUCT
-
-class TestNmethodBucketContext {
- public:
-  nmethod* _nmethodLast;
-  nmethod* _nmethodMiddle;
-  nmethod* _nmethodFirst;
-
-  nmethodBucket* _bucketLast;
-  nmethodBucket* _bucketMiddle;
-  nmethodBucket* _bucketFirst;
-
-  nmethodBucket* _bucketList;
-
-  TestNmethodBucketContext() {
-    CodeCache_lock->lock_without_safepoint_check();
-
-    _nmethodLast   = reinterpret_cast<nmethod*>(0x8 * 0);
-    _nmethodMiddle = reinterpret_cast<nmethod*>(0x8 * 1);
-    _nmethodFirst  = reinterpret_cast<nmethod*>(0x8 * 2);
-
-    _bucketLast   = new nmethodBucket(_nmethodLast,   NULL);
-    _bucketMiddle = new nmethodBucket(_nmethodMiddle, _bucketLast);
-    _bucketFirst  = new nmethodBucket(_nmethodFirst,   _bucketMiddle);
-
-    _bucketList = _bucketFirst;
-  }
-
-  ~TestNmethodBucketContext() {
-    delete _bucketLast;
-    delete _bucketMiddle;
-    delete _bucketFirst;
-
-    CodeCache_lock->unlock();
-  }
-};
-
-class TestNmethodBucket {
- public:
-  static void testRemoveDependentNmethodFirstDeleteImmediately() {
-    TestNmethodBucketContext c;
-
-    nmethodBucket::remove_dependent_nmethod(&c._bucketList, c._nmethodFirst, true /* delete */);
-
-    assert(c._bucketList == c._bucketMiddle, "check");
-    assert(c._bucketList->next() == c._bucketLast, "check");
-    assert(c._bucketList->next()->next() == NULL, "check");
-
-    // Cleanup before context is deleted.
-    c._bucketFirst = NULL;
-  }
-
-  static void testRemoveDependentNmethodMiddleDeleteImmediately() {
-    TestNmethodBucketContext c;
-
-    nmethodBucket::remove_dependent_nmethod(&c._bucketList, c._nmethodMiddle, true /* delete */);
-
-    assert(c._bucketList == c._bucketFirst, "check");
-    assert(c._bucketList->next() == c._bucketLast, "check");
-    assert(c._bucketList->next()->next() == NULL, "check");
-
-    // Cleanup before context is deleted.
-    c._bucketMiddle = NULL;
-  }
-
-  static void testRemoveDependentNmethodLastDeleteImmediately() {
-    TestNmethodBucketContext c;
-
-    nmethodBucket::remove_dependent_nmethod(&c._bucketList, c._nmethodLast, true /* delete */);
-
-    assert(c._bucketList == c._bucketFirst, "check");
-    assert(c._bucketList->next() == c._bucketMiddle, "check");
-    assert(c._bucketList->next()->next() == NULL, "check");
-
-    // Cleanup before context is deleted.
-    c._bucketLast = NULL;
-  }
-
-  static void testRemoveDependentNmethodFirstDeleteDeferred() {
-    TestNmethodBucketContext c;
-
-    nmethodBucket::remove_dependent_nmethod(&c._bucketList, c._nmethodFirst, false /* delete */);
-
-    assert(c._bucketList                         == c._bucketFirst,  "check");
-    assert(c._bucketList->next()                 == c._bucketMiddle, "check");
-    assert(c._bucketList->next()->next()         == c._bucketLast,   "check");
-    assert(c._bucketList->next()->next()->next() == NULL,            "check");
-
-    assert(c._bucketFirst->count()  == 0, "check");
-    assert(c._bucketMiddle->count() == 1, "check");
-    assert(c._bucketLast->count()   == 1, "check");
-  }
-
-  static void testRemoveDependentNmethodMiddleDeleteDeferred() {
-    TestNmethodBucketContext c;
-
-    nmethodBucket::remove_dependent_nmethod(&c._bucketList, c._nmethodMiddle, false /* delete */);
-
-    assert(c._bucketList                         == c._bucketFirst,  "check");
-    assert(c._bucketList->next()                 == c._bucketMiddle, "check");
-    assert(c._bucketList->next()->next()         == c._bucketLast,   "check");
-    assert(c._bucketList->next()->next()->next() == NULL,            "check");
-
-    assert(c._bucketFirst->count()  == 1, "check");
-    assert(c._bucketMiddle->count() == 0, "check");
-    assert(c._bucketLast->count()   == 1, "check");
-  }
-
-  static void testRemoveDependentNmethodLastDeleteDeferred() {
-    TestNmethodBucketContext c;
-
-    nmethodBucket::remove_dependent_nmethod(&c._bucketList, c._nmethodLast, false /* delete */);
-
-    assert(c._bucketList                         == c._bucketFirst,  "check");
-    assert(c._bucketList->next()                 == c._bucketMiddle, "check");
-    assert(c._bucketList->next()->next()         == c._bucketLast,   "check");
-    assert(c._bucketList->next()->next()->next() == NULL,            "check");
-
-    assert(c._bucketFirst->count()  == 1, "check");
-    assert(c._bucketMiddle->count() == 1, "check");
-    assert(c._bucketLast->count()   == 0, "check");
-  }
-
-  static void testRemoveDependentNmethodConvenienceFirst() {
-    TestNmethodBucketContext c;
-
-    nmethodBucket::remove_dependent_nmethod(c._bucketList, c._nmethodFirst);
-
-    assert(c._bucketList                         == c._bucketFirst,  "check");
-    assert(c._bucketList->next()                 == c._bucketMiddle, "check");
-    assert(c._bucketList->next()->next()         == c._bucketLast,   "check");
-    assert(c._bucketList->next()->next()->next() == NULL,            "check");
-
-    assert(c._bucketFirst->count()  == 0, "check");
-    assert(c._bucketMiddle->count() == 1, "check");
-    assert(c._bucketLast->count()   == 1, "check");
-  }
-
-  static void testRemoveDependentNmethodConvenienceMiddle() {
-    TestNmethodBucketContext c;
-
-    nmethodBucket::remove_dependent_nmethod(c._bucketList, c._nmethodMiddle);
-
-    assert(c._bucketList                         == c._bucketFirst,  "check");
-    assert(c._bucketList->next()                 == c._bucketMiddle, "check");
-    assert(c._bucketList->next()->next()         == c._bucketLast,   "check");
-    assert(c._bucketList->next()->next()->next() == NULL,            "check");
-
-    assert(c._bucketFirst->count()  == 1, "check");
-    assert(c._bucketMiddle->count() == 0, "check");
-    assert(c._bucketLast->count()   == 1, "check");
-  }
-
-  static void testRemoveDependentNmethodConvenienceLast() {
-    TestNmethodBucketContext c;
-
-    nmethodBucket::remove_dependent_nmethod(c._bucketList, c._nmethodLast);
-
-    assert(c._bucketList                         == c._bucketFirst,  "check");
-    assert(c._bucketList->next()                 == c._bucketMiddle, "check");
-    assert(c._bucketList->next()->next()         == c._bucketLast,   "check");
-    assert(c._bucketList->next()->next()->next() == NULL,            "check");
-
-    assert(c._bucketFirst->count()  == 1, "check");
-    assert(c._bucketMiddle->count() == 1, "check");
-    assert(c._bucketLast->count()   == 0, "check");
-  }
-
-  static void testRemoveDependentNmethod() {
-    testRemoveDependentNmethodFirstDeleteImmediately();
-    testRemoveDependentNmethodMiddleDeleteImmediately();
-    testRemoveDependentNmethodLastDeleteImmediately();
-
-    testRemoveDependentNmethodFirstDeleteDeferred();
-    testRemoveDependentNmethodMiddleDeleteDeferred();
-    testRemoveDependentNmethodLastDeleteDeferred();
-
-    testRemoveDependentNmethodConvenienceFirst();
-    testRemoveDependentNmethodConvenienceMiddle();
-    testRemoveDependentNmethodConvenienceLast();
-  }
-
-  static void test() {
-    testRemoveDependentNmethod();
-  }
-};
-
-void TestNmethodBucket_test() {
-  TestNmethodBucket::test();
-}
-
-#endif

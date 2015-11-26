@@ -2285,7 +2285,7 @@ methodHandle SystemDictionary::find_method_handle_intrinsic(vmIntrinsics::ID iid
       // Check if have the compiled code.
       if (!m->has_compiled_code()) {
         THROW_MSG_(vmSymbols::java_lang_VirtualMachineError(),
-                   "out of space in CodeCache for method handle intrinsic", empty);
+                   "Out of space in CodeCache for method handle intrinsic", empty);
       }
     }
     // Now grab the lock.  We might have to throw away the new method,

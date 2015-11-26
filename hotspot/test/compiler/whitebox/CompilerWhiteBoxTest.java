@@ -20,13 +20,11 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package compiler.whitebox;
 
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.NMethod;
-
-import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
-import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
@@ -38,19 +36,19 @@ import java.util.function.Function;
  */
 public abstract class CompilerWhiteBoxTest {
     /** {@code CompLevel::CompLevel_none} -- Interpreter */
-    protected static final int COMP_LEVEL_NONE = 0;
+    public static final int COMP_LEVEL_NONE = 0;
     /** {@code CompLevel::CompLevel_any}, {@code CompLevel::CompLevel_all} */
-    protected static final int COMP_LEVEL_ANY = -1;
+    public static final int COMP_LEVEL_ANY = -1;
     /** {@code CompLevel::CompLevel_simple} -- C1 */
-    protected static final int COMP_LEVEL_SIMPLE = 1;
+    public static final int COMP_LEVEL_SIMPLE = 1;
     /** {@code CompLevel::CompLevel_limited_profile} -- C1, invocation &amp; backedge counters */
-    protected static final int COMP_LEVEL_LIMITED_PROFILE = 2;
+    public static final int COMP_LEVEL_LIMITED_PROFILE = 2;
     /** {@code CompLevel::CompLevel_full_profile} -- C1, invocation &amp; backedge counters + mdo */
-    protected static final int COMP_LEVEL_FULL_PROFILE = 3;
+    public static final int COMP_LEVEL_FULL_PROFILE = 3;
     /** {@code CompLevel::CompLevel_full_optimization} -- C2 or Shark */
-    protected static final int COMP_LEVEL_FULL_OPTIMIZATION = 4;
+    public static final int COMP_LEVEL_FULL_OPTIMIZATION = 4;
     /** Maximal value for CompLevel */
-    protected static final int COMP_LEVEL_MAX = COMP_LEVEL_FULL_OPTIMIZATION;
+    public static final int COMP_LEVEL_MAX = COMP_LEVEL_FULL_OPTIMIZATION;
 
     /** Instance of WhiteBox */
     protected static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
@@ -70,7 +68,7 @@ public abstract class CompilerWhiteBoxTest {
     protected static final boolean IS_VERBOSE
             = System.getProperty("verbose") != null;
     /** invocation count to trigger compilation */
-    protected static final int THRESHOLD;
+    public static final int THRESHOLD;
     /** invocation count to trigger OSR compilation */
     protected static final long BACKEDGE_THRESHOLD;
     /** Value of {@code java.vm.info} (interpreted|mixed|comp mode) */
@@ -312,7 +310,7 @@ public abstract class CompilerWhiteBoxTest {
      *
      * @param executable Executable
      */
-    protected static final void waitBackgroundCompilation(Executable executable) {
+    public static final void waitBackgroundCompilation(Executable executable) {
         if (!BACKGROUND_COMPILATION) {
             return;
         }
@@ -441,7 +439,7 @@ public abstract class CompilerWhiteBoxTest {
      * @return {@code true} if the test should be skipped,
      *         {@code false} otherwise
      */
-    protected static boolean skipOnTieredCompilation(boolean value) {
+    public static boolean skipOnTieredCompilation(boolean value) {
         if (value == CompilerWhiteBoxTest.TIERED_COMPILATION) {
             System.err.println("Test isn't applicable w/ "
                     + (value ? "enabled" : "disabled")
@@ -452,256 +450,3 @@ public abstract class CompilerWhiteBoxTest {
     }
 }
 
-enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
-    /** constructor test case */
-    CONSTRUCTOR_TEST(Helper.CONSTRUCTOR, Helper.CONSTRUCTOR_CALLABLE, false),
-    /** method test case */
-    METHOD_TEST(Helper.METHOD, Helper.METHOD_CALLABLE, false),
-    /** static method test case */
-    STATIC_TEST(Helper.STATIC, Helper.STATIC_CALLABLE, false),
-    /** OSR constructor test case */
-    OSR_CONSTRUCTOR_TEST(Helper.OSR_CONSTRUCTOR,
-            Helper.OSR_CONSTRUCTOR_CALLABLE, true),
-    /** OSR method test case */
-    OSR_METHOD_TEST(Helper.OSR_METHOD, Helper.OSR_METHOD_CALLABLE, true),
-    /** OSR static method test case */
-    OSR_STATIC_TEST(Helper.OSR_STATIC, Helper.OSR_STATIC_CALLABLE, true);
-
-    private final Executable executable;
-    private final Callable<Integer> callable;
-    private final boolean isOsr;
-
-    private SimpleTestCase(Executable executable, Callable<Integer> callable,
-            boolean isOsr) {
-        this.executable = executable;
-        this.callable = callable;
-        this.isOsr = isOsr;
-    }
-
-    @Override
-    public Executable getExecutable() {
-        return executable;
-    }
-
-    @Override
-    public Callable<Integer> getCallable() {
-        return callable;
-    }
-
-    @Override
-    public boolean isOsr() {
-        return isOsr;
-    }
-
-    private static class Helper {
-
-        private static final Callable<Integer> CONSTRUCTOR_CALLABLE
-                = new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                return new Helper(1337).hashCode();
-            }
-        };
-
-        private static final Callable<Integer> METHOD_CALLABLE
-                = new Callable<Integer>() {
-            private final Helper helper = new Helper();
-
-            @Override
-            public Integer call() throws Exception {
-                return helper.method();
-            }
-        };
-
-        private static final Callable<Integer> STATIC_CALLABLE
-                = new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                return staticMethod();
-            }
-        };
-
-        private static final Callable<Integer> OSR_CONSTRUCTOR_CALLABLE
-                = new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                return new Helper(null, CompilerWhiteBoxTest.BACKEDGE_THRESHOLD).hashCode();
-            }
-        };
-
-        private static final Callable<Integer> OSR_METHOD_CALLABLE
-                = new Callable<Integer>() {
-            private final Helper helper = new Helper();
-
-            @Override
-            public Integer call() throws Exception {
-                return helper.osrMethod(CompilerWhiteBoxTest.BACKEDGE_THRESHOLD);
-            }
-        };
-
-        private static final Callable<Integer> OSR_STATIC_CALLABLE
-                = new Callable<Integer>() {
-            @Override
-            public Integer call() throws Exception {
-                return osrStaticMethod(CompilerWhiteBoxTest.BACKEDGE_THRESHOLD);
-            }
-        };
-
-        private static final Constructor CONSTRUCTOR;
-        private static final Constructor OSR_CONSTRUCTOR;
-        private static final Method METHOD;
-        private static final Method STATIC;
-        private static final Method OSR_METHOD;
-        private static final Method OSR_STATIC;
-
-        static {
-            try {
-                CONSTRUCTOR = Helper.class.getDeclaredConstructor(int.class);
-            } catch (NoSuchMethodException | SecurityException e) {
-                throw new RuntimeException(
-                        "exception on getting method Helper.<init>(int)", e);
-            }
-            try {
-                OSR_CONSTRUCTOR = Helper.class.getDeclaredConstructor(
-                        Object.class, long.class);
-            } catch (NoSuchMethodException | SecurityException e) {
-                throw new RuntimeException(
-                        "exception on getting method Helper.<init>(Object, long)", e);
-            }
-            METHOD = getMethod("method");
-            STATIC = getMethod("staticMethod");
-            OSR_METHOD = getMethod("osrMethod", long.class);
-            OSR_STATIC = getMethod("osrStaticMethod", long.class);
-        }
-
-        private static Method getMethod(String name, Class<?>... parameterTypes) {
-            try {
-                return Helper.class.getDeclaredMethod(name, parameterTypes);
-            } catch (NoSuchMethodException | SecurityException e) {
-                throw new RuntimeException(
-                        "exception on getting method Helper." + name, e);
-            }
-        }
-
-        private static int staticMethod() {
-            return 1138;
-        }
-
-        private int method() {
-            return 42;
-        }
-
-        /**
-         * Deoptimizes all non-osr versions of the given executable after
-         * compilation finished.
-         *
-         * @param e Executable
-         * @throws Exception
-         */
-        private static void waitAndDeoptimize(Executable e) {
-            CompilerWhiteBoxTest.waitBackgroundCompilation(e);
-            if (WhiteBox.getWhiteBox().isMethodQueuedForCompilation(e)) {
-                throw new RuntimeException(e + " must not be in queue");
-            }
-            // Deoptimize non-osr versions of executable
-            WhiteBox.getWhiteBox().deoptimizeMethod(e, false);
-        }
-
-        /**
-         * Executes the method multiple times to make sure we have
-         * enough profiling information before triggering an OSR
-         * compilation. Otherwise the C2 compiler may add uncommon traps.
-         *
-         * @param m Method to be executed
-         * @return Number of times the method was executed
-         * @throws Exception
-         */
-        private static int warmup(Method m) throws Exception {
-            waitAndDeoptimize(m);
-            Helper helper = new Helper();
-            int result = 0;
-            for (long i = 0; i < CompilerWhiteBoxTest.THRESHOLD; ++i) {
-                result += (int)m.invoke(helper, 1);
-            }
-            // Wait to make sure OSR compilation is not blocked by
-            // non-OSR compilation in the compile queue
-            CompilerWhiteBoxTest.waitBackgroundCompilation(m);
-            return result;
-        }
-
-        /**
-         * Executes the constructor multiple times to make sure we
-         * have enough profiling information before triggering an OSR
-         * compilation. Otherwise the C2 compiler may add uncommon traps.
-         *
-         * @param c Constructor to be executed
-         * @return Number of times the constructor was executed
-         * @throws Exception
-         */
-        private static int warmup(Constructor c) throws Exception {
-            waitAndDeoptimize(c);
-            int result = 0;
-            for (long i = 0; i < CompilerWhiteBoxTest.THRESHOLD; ++i) {
-                result += c.newInstance(null, 1).hashCode();
-            }
-            // Wait to make sure OSR compilation is not blocked by
-            // non-OSR compilation in the compile queue
-            CompilerWhiteBoxTest.waitBackgroundCompilation(c);
-            return result;
-        }
-
-        private static int osrStaticMethod(long limit) throws Exception {
-            int result = 0;
-            if (limit != 1) {
-                result = warmup(OSR_STATIC);
-            }
-            // Trigger osr compilation
-            for (long i = 0; i < limit; ++i) {
-                result += staticMethod();
-            }
-            return result;
-        }
-
-        private int osrMethod(long limit) throws Exception {
-            int result = 0;
-            if (limit != 1) {
-                result = warmup(OSR_METHOD);
-            }
-            // Trigger osr compilation
-            for (long i = 0; i < limit; ++i) {
-                result += method();
-            }
-            return result;
-        }
-
-        private final int x;
-
-        // for method and OSR method test case
-        public Helper() {
-            x = 0;
-        }
-
-        // for OSR constructor test case
-        private Helper(Object o, long limit) throws Exception {
-            int result = 0;
-            if (limit != 1) {
-                result = warmup(OSR_CONSTRUCTOR);
-            }
-            // Trigger osr compilation
-            for (long i = 0; i < limit; ++i) {
-                result += method();
-            }
-            x = result;
-        }
-
-        // for constructor test case
-        private Helper(int x) {
-            this.x = x;
-        }
-
-        @Override
-        public int hashCode() {
-            return x;
-        }
-    }
-}
