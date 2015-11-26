@@ -274,6 +274,34 @@ public class ToolBox {
     }
 
     /**
+     * Deletes all content of a directory (but not the directory itself).
+     * @param root the directory to be cleaned
+     */
+    public void cleanDirectory(Path root) throws IOException {
+        if (!Files.isDirectory(root)) {
+            throw new IOException(root + " is not a directory");
+        }
+        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes a) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException e) throws IOException {
+                if (e != null) {
+                    throw e;
+                }
+                if (!dir.equals(root)) {
+                    Files.delete(dir);
+                }
+                return FileVisitResult.CONTINUE;
+            }
+        });
+    }
+
+    /**
      * Moves a file.
      * If the given destination exists and is a directory, the file will be moved
      * to that directory.  Otherwise, the file will be moved to the destination,

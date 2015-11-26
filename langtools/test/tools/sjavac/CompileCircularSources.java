@@ -36,6 +36,7 @@
  * @run main Wrapper CompileCircularSources
  */
 
+import java.io.IOException;
 import java.util.*;
 import java.nio.file.*;
 
@@ -46,13 +47,11 @@ public class CompileCircularSources extends SJavacTester {
     }
 
     void test() throws Exception {
-        clean(TEST_ROOT);
         Files.createDirectories(BIN);
-        clean(GENSRC, BIN);
+        Files.createDirectories(GENSRC);
 
         Map<String,Long> previous_bin_state = collectState(BIN);
 
-        ToolBox tb = new ToolBox();
         tb.writeFile(GENSRC.resolve("alfa/omega/A.java"),
                      "package alfa.omega; public class A { beta.B b; }");
         tb.writeFile(GENSRC.resolve("beta/B.java"),
@@ -74,6 +73,5 @@ public class CompileCircularSources extends SJavacTester {
                                      BIN + "/beta/B.class",
                                      BIN + "/gamma/C.class",
                                      BIN + "/javac_state");
-        clean(GENSRC, BIN);
     }
 }

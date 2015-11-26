@@ -46,7 +46,6 @@ public class StateDir extends SJavacTester {
     }
 
     void test() throws Exception {
-        clean(TEST_ROOT);
         Path BAR = TEST_ROOT.resolve("bar");
         Files.createDirectories(BAR);
         Files.createDirectories(BIN);
@@ -69,6 +68,5 @@ public class StateDir extends SJavacTester {
         Map<String,Long> new_bar_state = collectState(BAR);
         verifyThatFilesHaveBeenAdded(previous_bar_state, new_bar_state,
                                      BAR + "/javac_state");
-        clean(GENSRC, BIN, BAR);
     }
 }
