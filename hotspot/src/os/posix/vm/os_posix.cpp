@@ -988,6 +988,39 @@ void os::Posix::print_siginfo_brief(outputStream* os, const siginfo_t* si) {
   }
 }
 
+int os::Posix::unblock_thread_signal_mask(const sigset_t *set) {
+  return pthread_sigmask(SIG_UNBLOCK, set, NULL);
+}
+
+address os::Posix::ucontext_get_pc(ucontext_t* ctx) {
+#ifdef TARGET_OS_FAMILY_linux
+   return Linux::ucontext_get_pc(ctx);
+#elif defined(TARGET_OS_FAMILY_solaris)
+   return Solaris::ucontext_get_pc(ctx);
+#elif defined(TARGET_OS_FAMILY_aix)
+   return Aix::ucontext_get_pc(ctx);
+#elif defined(TARGET_OS_FAMILY_bsd)
+   return Bsd::ucontext_get_pc(ctx);
+#else
+   VMError::report_and_die("unimplemented ucontext_get_pc");
+#endif
+}
+
+void os::Posix::ucontext_set_pc(ucontext_t* ctx, address pc) {
+#ifdef TARGET_OS_FAMILY_linux
+   Linux::ucontext_set_pc(ctx, pc);
+#elif defined(TARGET_OS_FAMILY_solaris)
+   Solaris::ucontext_set_pc(ctx, pc);
+#elif defined(TARGET_OS_FAMILY_aix)
+   Aix::ucontext_set_pc(ctx, pc);
+#elif defined(TARGET_OS_FAMILY_bsd)
+   Bsd::ucontext_set_pc(ctx, pc);
+#else
+   VMError::report_and_die("unimplemented ucontext_get_pc");
+#endif
+}
+
+
 os::WatcherThreadCrashProtection::WatcherThreadCrashProtection() {
   assert(Thread::current()->is_Watcher_thread(), "Must be WatcherThread");
 }

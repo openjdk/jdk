@@ -3785,7 +3785,7 @@ os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& me
 void os::print_statistics() {
 }
 
-int os::message_box(const char* title, const char* message) {
+bool os::message_box(const char* title, const char* message) {
   int i;
   fdStream err(defaultStream::error_fd());
   for (i = 0; i < 78; i++) err.print_raw("=");
@@ -4914,3 +4914,28 @@ void TestReserveMemorySpecial_test() {
   // No tests available for this platform
 }
 #endif
+
+bool os::start_debugging(char *buf, int buflen) {
+  int len = (int)strlen(buf);
+  char *p = &buf[len];
+
+  jio_snprintf(p, buflen -len,
+                 "\n\n"
+                 "Do you want to debug the problem?\n\n"
+                 "To debug, run 'dbx -a %d'; then switch to thread tid " INTX_FORMAT ", k-tid " INTX_FORMAT "\n"
+                 "Enter 'yes' to launch dbx automatically (PATH must include dbx)\n"
+                 "Otherwise, press RETURN to abort...",
+                 os::current_process_id(),
+                 os::current_thread_id(), thread_self());
+
+  bool yes = os::message_box("Unexpected Error", buf);
+
+  if (yes) {
+    // yes, user asked VM to launch debugger
+    jio_snprintf(buf, buflen, "dbx -a %d", os::current_process_id());
+
+    os::fork_and_exec(buf);
+    yes = false;
+  }
+  return yes;
+}
