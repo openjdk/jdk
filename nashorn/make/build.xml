@@ -632,7 +632,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
 
   <target name="test262-parallel" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
     <!-- use just build.test.classes.dir to avoid referring to TestNG -->
-    <java classname="${parallel.test.runner}" dir="${basedir}" fork="true">
+    <java classname="${parallel.test.runner}" dir="${basedir}" fork="true" failonerror="true">
       <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs} -Dbuild.dir=${build.dir}"/>
       <!-- avoid too many typeinfo cache files. Each script is run only once anyway -->
