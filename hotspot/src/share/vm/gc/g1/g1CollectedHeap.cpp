@@ -5164,7 +5164,9 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G
   double code_root_fixup_time_ms =
         (os::elapsedTime() - end_par_time_sec) * 1000.0;
   phase_times->record_code_root_fixup_time(code_root_fixup_time_ms);
+}
 
+void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
   // Process any discovered reference objects - we have
   // to do this _before_ we retire the GC alloc regions
   // as we may have to copy some 'reachable' referent
@@ -5182,10 +5184,10 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G
 
     G1STWIsAliveClosure is_alive(this);
     G1KeepAliveClosure keep_alive(this);
-    G1StringDedup::unlink_or_oops_do(&is_alive, &keep_alive, true, phase_times);
+    G1StringDedup::unlink_or_oops_do(&is_alive, &keep_alive, true, g1_policy()->phase_times());
 
     double fixup_time_ms = (os::elapsedTime() - fixup_start) * 1000.0;
-    phase_times->record_string_dedup_fixup_time(fixup_time_ms);
+    g1_policy()->phase_times()->record_string_dedup_fixup_time(fixup_time_ms);
   }
 
   g1_rem_set()->cleanup_after_oops_into_collection_set_do();
@@ -5211,9 +5213,7 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info, G
   } else {
     g1_policy()->phase_times()->record_ref_enq_time(0);
   }
-}
 
-void G1CollectedHeap::post_evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* per_thread_states) {
   _allocator->release_gc_alloc_regions(evacuation_info);
 
   per_thread_states->flush();
