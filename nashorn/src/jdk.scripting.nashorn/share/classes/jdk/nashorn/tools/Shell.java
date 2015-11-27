@@ -203,7 +203,8 @@ public class Shell implements PartialParser {
         // parse options
         if (args != null) {
             try {
-                final String[] prepArgs = preprocessArgs(args);
+                // FIXME: preprocessArgs does not yet work fine
+                final String[] prepArgs = args; // preprocessArgs(args);
                 options.process(prepArgs);
             } catch (final IllegalArgumentException e) {
                 werr.println(bundle.getString("shell.usage"));
