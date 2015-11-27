@@ -79,7 +79,7 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
   SA_EXCLUDE_FILES := BsdDebuggerLocal.c ps_proc.c salibelf.c StubDebuggerLocal.c
   SA_CFLAGS := $(CFLAGS_JDKLIB) \
       -Damd64 -D_GNU_SOURCE -mno-omit-leaf-frame-pointer \
-      -mstack-alignment=1 -fPIC
+      -mstack-alignment=16 -fPIC
   SA_LDFLAGS := $(LDFLAGS_JDKLIB)
   SA_LIBS := -framework Foundation -framework JavaNativeFoundation \
       -framework Security -framework CoreFoundation
