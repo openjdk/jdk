@@ -378,17 +378,6 @@ JVM_DefineClassWithSource(JNIEnv *env, const char *name, jobject loader,
                           const jbyte *buf, jsize len, jobject pd,
                           const char *source);
 
-/* Define a class with a source with conditional verification (added HSX 14)
- * -Xverify:all will verify anyway, -Xverify:none will not verify,
- * -Xverify:remote (default) will obey this conditional
- * i.e. true = should_verify_class
- */
-JNIEXPORT jclass JNICALL
-JVM_DefineClassWithSourceCond(JNIEnv *env, const char *name,
-                              jobject loader, const jbyte *buf,
-                              jsize len, jobject pd, const char *source,
-                              jboolean verify);
-
 /*
  * Reflection support functions
  */
