@@ -58,6 +58,7 @@ class LogLevel : public AllStatic {
 #undef LOG_LEVEL
     Count,
     Invalid,
+    NotMentioned,
     First = Off + 1,
     Last = Error,
     Default = Warning,
@@ -65,6 +66,7 @@ class LogLevel : public AllStatic {
   };
 
   static const char *name(LogLevel::type level) {
+    assert(level >= 0 && level < LogLevel::Count, "Invalid level (enum value %d).", level);
     return _name[level];
   }
 

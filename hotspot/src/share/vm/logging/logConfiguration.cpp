@@ -33,6 +33,7 @@
 #include "logging/logTagSet.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/mutexLocker.hpp"
 #include "runtime/os.inline.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -127,33 +128,72 @@ void LogConfiguration::delete_output(size_t idx) {
 void LogConfiguration::configure_output(size_t idx, const LogTagLevelExpression& tag_level_expression, const LogDecorators& decorators) {
   assert(idx < _n_outputs, "Invalid index, idx = " SIZE_FORMAT " and _n_outputs = " SIZE_FORMAT, idx, _n_outputs);
   LogOutput* output = _outputs[idx];
-  output->set_decorators(decorators);
-  output->set_config_string(tag_level_expression.to_string());
+
+  // Clear the previous config description
+  output->clear_config_string();
+
   bool enabled = false;
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
     LogLevelType level = tag_level_expression.level_for(*ts);
-    if (level != LogLevel::Off) {
-      enabled = true;
+
+    // Ignore tagsets that do not, and will not log on the output
+    if (!ts->has_output(output) && (level == LogLevel::NotMentioned || level == LogLevel::Off)) {
+      continue;
     }
-    ts->update_decorators(decorators);
-    ts->set_output_level(output, level);
+
+    // Update decorators before adding/updating output level,
+    // so that the tagset will have the necessary decorators when requiring them.
+    if (level != LogLevel::Off) {
+      ts->update_decorators(decorators);
+    }
+
+    // Set the new level, if it changed
+    if (level != LogLevel::NotMentioned) {
+      ts->set_output_level(output, level);
+    }
+
+    if (level != LogLevel::Off) {
+      // Keep track of whether or not the output is ever used by some tagset
+      enabled = true;
+
+      if (level == LogLevel::NotMentioned) {
+        // Look up the previously set level for this output on this tagset
+        level = ts->level_for(output);
+      }
+
+      // Update the config description with this tagset and level
+      output->add_to_config_string(ts, level);
+    }
   }
 
-  // If the output is not used by any tagset it should be removed, unless it is stdout/stderr.
-  if (!enabled && idx > 1) {
+  // It is now safe to set the new decorators for the actual output
+  output->set_decorators(decorators);
+
+  // Update the decorators on all tagsets to get rid of unused decorators
+  for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
+    ts->update_decorators();
+  }
+
+  if (enabled) {
+    assert(strlen(output->config_string()) > 0,
+           "Should always have a config description if the output is enabled.");
+  } else if (idx > 1) {
+    // Output is unused and should be removed.
     delete_output(idx);
+  } else {
+    // Output is either stdout or stderr, which means we can't remove it.
+    // Update the config description to reflect that the output is disabled.
+    output->set_config_string("all=off");
   }
 }
 
 void LogConfiguration::disable_output(size_t idx) {
   LogOutput* out = _outputs[idx];
-  LogDecorators empty_decorators;
-  empty_decorators.clear();
 
   // Remove the output from all tagsets.
   for (LogTagSet* ts = LogTagSet::first(); ts != NULL; ts = ts->next()) {
     ts->set_output_level(out, LogLevel::Off);
-    ts->update_decorators(empty_decorators);
+    ts->update_decorators();
   }
 
   // Delete the output unless stdout/stderr
@@ -170,6 +210,36 @@ void LogConfiguration::disable_logging() {
   for (size_t i = 0; i < _n_outputs; i++) {
     disable_output(i);
   }
+}
+
+void LogConfiguration::configure_stdout(LogLevelType level, bool exact_match, ...) {
+  assert(LogConfiguration_lock == NULL || LogConfiguration_lock->owned_by_self(),
+         "LogConfiguration lock must be held when calling this function");
+
+  size_t i;
+  va_list ap;
+  LogTagLevelExpression expr;
+  va_start(ap, exact_match);
+  for (i = 0; i < LogTag::MaxTags; i++) {
+    LogTagType tag = static_cast<LogTagType>(va_arg(ap, int));
+    expr.add_tag(tag);
+    if (tag == LogTag::__NO_TAG) {
+      assert(i > 0, "Must specify at least one tag!");
+      break;
+    }
+  }
+  assert(i < LogTag::MaxTags || static_cast<LogTagType>(va_arg(ap, int)) == LogTag::__NO_TAG,
+         "Too many tags specified! Can only have up to " SIZE_FORMAT " tags in a tag set.", LogTag::MaxTags);
+  va_end(ap);
+
+  if (!exact_match) {
+    expr.set_allow_other_tags();
+  }
+  expr.set_level(level);
+  expr.new_combination();
+
+  // Apply configuration to stdout (output #0), with the same decorators as before.
+  configure_output(0, expr, LogOutput::Stdout->decorators());
 }
 
 bool LogConfiguration::parse_command_line_arguments(const char* opts) {
