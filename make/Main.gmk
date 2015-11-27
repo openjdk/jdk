@@ -226,8 +226,8 @@ $(SUPPORT_OUTPUTDIR)/source_tips: FRC
 BOOTCYCLE_TARGET := product-images
 bootcycle-images:
 	@$(ECHO) Boot cycle build step 2: Building a new JDK image using previously built image
-	+$(MAKE) $(MAKE_ARGS) -f $(SRC_ROOT)/make/Main.gmk \
-	    SPEC=$(dir $(SPEC))bootcycle-spec.gmk $(BOOTCYCLE_TARGET)
+	+$(MAKE) -f $(SRC_ROOT)/make/Init.gmk PARALLEL_TARGETS=$(BOOTCYCLE_TARGET) \
+	    JOBS= SPEC=$(dir $(SPEC))bootcycle-spec.gmk main
 
 zip-security:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f ZipSecurity.gmk)
