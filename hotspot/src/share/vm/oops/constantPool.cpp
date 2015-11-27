@@ -409,6 +409,19 @@ int ConstantPool::impl_name_and_type_ref_index_at(int which, bool uncached) {
   return extract_high_short_from_int(ref_index);
 }
 
+constantTag ConstantPool::impl_tag_ref_at(int which, bool uncached) {
+  int pool_index = which;
+  if (!uncached && cache() != NULL) {
+    if (ConstantPool::is_invokedynamic_index(which)) {
+      // Invokedynamic index is index into resolved_references
+      pool_index = invokedynamic_cp_cache_entry_at(which)->constant_pool_index();
+    } else {
+      // change byte-ordering and go via cache
+      pool_index = remap_instruction_operand_from_cache(which);
+    }
+  }
+  return tag_at(pool_index);
+}
 
 int ConstantPool::impl_klass_ref_index_at(int which, bool uncached) {
   guarantee(!ConstantPool::is_invokedynamic_index(which),
@@ -664,6 +677,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp, in
       int callee_index             = this_cp->method_handle_klass_index_at(index);
       Symbol*  name =      this_cp->method_handle_name_ref_at(index);
       Symbol*  signature = this_cp->method_handle_signature_ref_at(index);
+      constantTag m_tag  = this_cp->tag_at(this_cp->method_handle_index_at(index));
       if (PrintMiscellaneous)
         tty->print_cr("resolve JVM_CONSTANT_MethodHandle:%d [%d/%d/%d] %s.%s",
                       ref_kind, index, this_cp->method_handle_index_at(index),
@@ -672,6 +686,15 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp, in
       { Klass* k = klass_at_impl(this_cp, callee_index, true, CHECK_NULL);
         callee = KlassHandle(THREAD, k);
       }
+      if ((callee->is_interface() && m_tag.is_method()) ||
+          (!callee->is_interface() && m_tag.is_interface_method())) {
+        ResourceMark rm(THREAD);
+        char buf[200];
+        jio_snprintf(buf, sizeof(buf), "Inconsistent constant data for %s.%s%s at index %d",
+          callee->name()->as_C_string(), name->as_C_string(), signature->as_C_string(), index);
+        THROW_MSG_NULL(vmSymbols::java_lang_IncompatibleClassChangeError(), buf);
+      }
+
       KlassHandle klass(THREAD, this_cp->pool_holder());
       Handle value = SystemDictionary::link_method_handle_constant(klass, ref_kind,
                                                                    callee, name, signature,

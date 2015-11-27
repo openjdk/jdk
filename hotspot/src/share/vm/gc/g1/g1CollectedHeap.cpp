@@ -37,6 +37,7 @@
 #include "gc/g1/g1CollectorState.hpp"
 #include "gc/g1/g1ErgoVerbose.hpp"
 #include "gc/g1/g1EvacFailure.hpp"
+#include "gc/g1/g1EvacStats.inline.hpp"
 #include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1Log.hpp"
 #include "gc/g1/g1MarkSweep.hpp"

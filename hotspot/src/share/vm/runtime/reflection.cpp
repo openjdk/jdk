@@ -830,7 +830,7 @@ methodHandle Reflection::resolve_interface_call(instanceKlassHandle klass, const
   Symbol*  signature  = method->signature();
   Symbol*  name       = method->name();
   LinkResolver::resolve_interface_call(info, receiver, recv_klass,
-                                       LinkInfo(klass, name, signature, KlassHandle(), false),
+                                       LinkInfo(klass, name, signature),
                                        true,
                                        CHECK_(methodHandle()));
   return info.selected_method();

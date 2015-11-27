@@ -680,7 +680,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, KlassHandle caller, TRAPS
   case IS_METHOD:
     {
       CallInfo result;
-      LinkInfo link_info(defc, name, type, caller, caller.not_null());
+      LinkInfo link_info(defc, name, type, caller);
       {
         assert(!HAS_PENDING_EXCEPTION, "");
         if (ref_kind == JVM_REF_invokeStatic) {
@@ -717,7 +717,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, KlassHandle caller, TRAPS
   case IS_CONSTRUCTOR:
     {
       CallInfo result;
-      LinkInfo link_info(defc, name, type, caller, caller.not_null());
+      LinkInfo link_info(defc, name, type, caller);
       {
         assert(!HAS_PENDING_EXCEPTION, "");
         if (name == vmSymbols::object_initializer_name()) {
@@ -738,7 +738,7 @@ Handle MethodHandles::resolve_MemberName(Handle mname, KlassHandle caller, TRAPS
       fieldDescriptor result; // find_field initializes fd if found
       {
         assert(!HAS_PENDING_EXCEPTION, "");
-        LinkInfo link_info(defc, name, type, caller, /*check_access*/false);
+        LinkInfo link_info(defc, name, type, caller, LinkInfo::skip_access_check);
         LinkResolver::resolve_field(result, link_info, Bytecodes::_nop, false, THREAD);
         if (HAS_PENDING_EXCEPTION) {
           return empty;

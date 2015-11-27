@@ -861,11 +861,10 @@ static void is_lock_held_by_thread(Handle loader, PerfCounter* counter, TRAPS) {
 }
 
 // common code for JVM_DefineClass() and JVM_DefineClassWithSource()
-// and JVM_DefineClassWithSourceCond()
 static jclass jvm_define_class_common(JNIEnv *env, const char *name,
                                       jobject loader, const jbyte *buf,
                                       jsize len, jobject pd, const char *source,
-                                      jboolean verify, TRAPS) {
+                                      TRAPS) {
   if (source == NULL)  source = "__JVM_DefineClass__";
 
   assert(THREAD->is_Java_thread(), "must be a JavaThread");
@@ -906,8 +905,7 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name,
   Handle protection_domain (THREAD, JNIHandles::resolve(pd));
   Klass* k = SystemDictionary::resolve_from_stream(class_name, class_loader,
                                                      protection_domain, &st,
-                                                     verify != 0,
-                                                     CHECK_NULL);
+                                                     true, CHECK_NULL);
 
   if (TraceClassResolution && k != NULL) {
     trace_class_resolution(k);
@@ -920,23 +918,14 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name,
 JVM_ENTRY(jclass, JVM_DefineClass(JNIEnv *env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd))
   JVMWrapper2("JVM_DefineClass %s", name);
 
-  return jvm_define_class_common(env, name, loader, buf, len, pd, NULL, true, THREAD);
+  return jvm_define_class_common(env, name, loader, buf, len, pd, NULL, THREAD);
 JVM_END
 
 
 JVM_ENTRY(jclass, JVM_DefineClassWithSource(JNIEnv *env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd, const char *source))
   JVMWrapper2("JVM_DefineClassWithSource %s", name);
 
-  return jvm_define_class_common(env, name, loader, buf, len, pd, source, true, THREAD);
-JVM_END
-
-JVM_ENTRY(jclass, JVM_DefineClassWithSourceCond(JNIEnv *env, const char *name,
-                                                jobject loader, const jbyte *buf,
-                                                jsize len, jobject pd,
-                                                const char *source, jboolean verify))
-  JVMWrapper2("JVM_DefineClassWithSourceCond %s", name);
-
-  return jvm_define_class_common(env, name, loader, buf, len, pd, source, verify, THREAD);
+  return jvm_define_class_common(env, name, loader, buf, len, pd, source, THREAD);
 JVM_END
 
 JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name))
