@@ -191,7 +191,7 @@ class G1CollectorPolicy: public CollectorPolicy {
   void initialize_alignments();
   void initialize_flags();
 
-  CollectionSetChooser* _collectionSetChooser;
+  CollectionSetChooser* _cset_chooser;
 
   double _full_collection_start_sec;
 
@@ -404,6 +404,10 @@ protected:
   double young_other_time_ms() const;
   double non_young_other_time_ms() const;
   double constant_other_time_ms(double pause_time_ms) const;
+
+  CollectionSetChooser* cset_chooser() const {
+    return _cset_chooser;
+  }
 
 private:
   // Statistics kept per GC stoppage, pause or full.

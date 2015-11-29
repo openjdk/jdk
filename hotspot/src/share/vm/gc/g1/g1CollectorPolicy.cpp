@@ -291,7 +291,7 @@ G1CollectorPolicy::G1CollectorPolicy() :
   // for the first time during initialization.
   _reserve_regions = 0;
 
-  _collectionSetChooser = new CollectionSetChooser();
+  _cset_chooser = new CollectionSetChooser();
 }
 
 G1CollectorPolicy::~G1CollectorPolicy() {
@@ -854,7 +854,7 @@ void G1CollectorPolicy::record_full_collection_end() {
   _survivor_surv_rate_group->reset();
   update_young_list_max_and_target_length();
   update_rs_lengths_prediction();
-  _collectionSetChooser->clear();
+  cset_chooser()->clear();
 
   _bytes_allocated_in_old_since_last_gc = 0;
 
@@ -1237,7 +1237,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, size_t
                                phase_times()->sum_thread_work_items(G1GCPhaseTimes::UpdateRS),
                                update_rs_time_goal_ms);
 
-  _collectionSetChooser->verify();
+  cset_chooser()->verify();
 }
 
 G1IHOPControl* G1CollectorPolicy::create_ihop_control() const {
@@ -1807,18 +1807,18 @@ uint G1CollectorPolicy::calculate_parallel_work_chunk_size(uint n_workers, uint 
 }
 
 void G1CollectorPolicy::record_concurrent_mark_cleanup_end() {
-  _collectionSetChooser->clear();
+  cset_chooser()->clear();
 
   WorkGang* workers = _g1->workers();
   uint n_workers = workers->active_workers();
 
   uint n_regions = _g1->num_regions();
   uint chunk_size = calculate_parallel_work_chunk_size(n_workers, n_regions);
-  _collectionSetChooser->prepare_for_par_region_addition(n_workers, n_regions, chunk_size);
-  ParKnownGarbageTask par_known_garbage_task(_collectionSetChooser, chunk_size, n_workers);
+  cset_chooser()->prepare_for_par_region_addition(n_workers, n_regions, chunk_size);
+  ParKnownGarbageTask par_known_garbage_task(cset_chooser(), chunk_size, n_workers);
   workers->run_task(&par_known_garbage_task);
 
-  _collectionSetChooser->sort_regions();
+  cset_chooser()->sort_regions();
 
   double end_sec = os::elapsedTime();
   double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;
@@ -2097,8 +2097,7 @@ void G1CollectorPolicy::abort_time_to_mixed_tracking() {
 
 bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
                                                 const char* false_action_str) const {
-  CollectionSetChooser* cset_chooser = _collectionSetChooser;
-  if (cset_chooser->is_empty()) {
+  if (cset_chooser()->is_empty()) {
     ergo_verbose0(ErgoMixedGCs,
                   false_action_str,
                   ergo_format_reason("candidate old regions not available"));
@@ -2106,7 +2105,7 @@ bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
   }
 
   // Is the amount of uncollected reclaimable space above G1HeapWastePercent?
-  size_t reclaimable_bytes = cset_chooser->remaining_reclaimable_bytes();
+  size_t reclaimable_bytes = cset_chooser()->remaining_reclaimable_bytes();
   double reclaimable_perc = reclaimable_bytes_perc(reclaimable_bytes);
   double threshold = (double) G1HeapWastePercent;
   if (reclaimable_perc <= threshold) {
@@ -2116,7 +2115,7 @@ bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
               ergo_format_region("candidate old regions")
               ergo_format_byte_perc("reclaimable")
               ergo_format_perc("threshold"),
-              cset_chooser->remaining_regions(),
+              cset_chooser()->remaining_regions(),
               reclaimable_bytes,
               reclaimable_perc, threshold);
     return false;
@@ -2128,7 +2127,7 @@ bool G1CollectorPolicy::next_gc_should_be_mixed(const char* true_action_str,
                 ergo_format_region("candidate old regions")
                 ergo_format_byte_perc("reclaimable")
                 ergo_format_perc("threshold"),
-                cset_chooser->remaining_regions(),
+                cset_chooser()->remaining_regions(),
                 reclaimable_bytes,
                 reclaimable_perc, threshold);
   return true;
@@ -2145,7 +2144,7 @@ uint G1CollectorPolicy::calc_min_old_cset_length() const {
   // to the CSet chooser in the first place, not how many remain, so
   // that the result is the same during all mixed GCs that follow a cycle.
 
-  const size_t region_num = (size_t) _collectionSetChooser->length();
+  const size_t region_num = (size_t) cset_chooser()->length();
   const size_t gc_num = (size_t) MAX2(G1MixedGCCountTarget, (uintx) 1);
   size_t result = region_num / gc_num;
   // emulate ceiling
@@ -2254,15 +2253,14 @@ void G1CollectorPolicy::finalize_old_cset_part(double time_remaining_ms) {
 
 
   if (!collector_state()->gcs_are_young()) {
-    CollectionSetChooser* cset_chooser = _collectionSetChooser;
-    cset_chooser->verify();
+    cset_chooser()->verify();
     const uint min_old_cset_length = calc_min_old_cset_length();
     const uint max_old_cset_length = calc_max_old_cset_length();
 
     uint expensive_region_num = 0;
     bool check_time_remaining = adaptive_young_list_length();
 
-    HeapRegion* hr = cset_chooser->peek();
+    HeapRegion* hr = cset_chooser()->peek();
     while (hr != NULL) {
       if (old_cset_region_length() >= max_old_cset_length) {
         // Added maximum number of old regions to the CSet.
@@ -2278,7 +2276,7 @@ void G1CollectorPolicy::finalize_old_cset_part(double time_remaining_ms) {
 
       // Stop adding regions if the remaining reclaimable space is
       // not above G1HeapWastePercent.
-      size_t reclaimable_bytes = cset_chooser->remaining_reclaimable_bytes();
+      size_t reclaimable_bytes = cset_chooser()->remaining_reclaimable_bytes();
       double reclaimable_perc = reclaimable_bytes_perc(reclaimable_bytes);
       double threshold = (double) G1HeapWastePercent;
       if (reclaimable_perc <= threshold) {
@@ -2340,11 +2338,11 @@ void G1CollectorPolicy::finalize_old_cset_part(double time_remaining_ms) {
       // We will add this region to the CSet.
       time_remaining_ms = MAX2(time_remaining_ms - predicted_time_ms, 0.0);
       predicted_old_time_ms += predicted_time_ms;
-      cset_chooser->pop(); // already have region via peek()
+      cset_chooser()->pop(); // already have region via peek()
       _g1->old_set_remove(hr);
       add_old_region_to_cset(hr);
 
-      hr = cset_chooser->peek();
+      hr = cset_chooser()->peek();
     }
     if (hr == NULL) {
       ergo_verbose0(ErgoCSetConstruction,
@@ -2369,7 +2367,7 @@ void G1CollectorPolicy::finalize_old_cset_part(double time_remaining_ms) {
                     time_remaining_ms);
     }
 
-    cset_chooser->verify();
+    cset_chooser()->verify();
   }
 
   stop_incremental_cset_building();
