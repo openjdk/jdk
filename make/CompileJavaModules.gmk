@@ -56,6 +56,14 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   java.base_EXCLUDE_FILES += sun/nio/fs/GnomeFileTypeDetector.java
 endif
 
+ifneq ($(filter solaris macosx linux windows,$(OPENJDK_TARGET_OS)), )
+  java.base_EXCLUDE_FILES += \
+      sun/nio/ch/AbstractPollSelectorImpl.java \
+      sun/nio/ch/PollSelectorImpl.java \
+      sun/nio/ch/PollSelectorProvider.java \
+      #
+endif
+
 ifneq ($(OPENJDK_TARGET_OS), solaris)
   java.base_EXCLUDE_FILES += \
       SolarisLoginModule.java \
@@ -72,8 +80,6 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   java.base_EXCLUDE_FILES += \
-      sun/nio/ch/AbstractPollSelectorImpl.java \
-      sun/nio/ch/PollSelectorProvider.java \
       sun/nio/ch/SimpleAsynchronousFileChannelImpl.java \
       #
 endif
