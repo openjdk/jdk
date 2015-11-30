@@ -4,9 +4,7 @@
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -22,17 +20,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
- * @test
- * @bug 7002837 8064365 8078660
- *
- * @summary  Diamond: javac generates diamond inference errors when in 'finder' mode
- * @author mcimadamore
- * @compile -Werror -XDrawDiagnostics -XDfind=diamond T7002837.java
- *
- */
 
-class T7002837<X extends java.io.Serializable & Comparable<?>> {
-    T7002837() {}
-    { new T7002837<Integer>(); }
+package pkg;
+
+abstract class PackagePrivateBase8143647 {
+    public String getX() {
+        return "PackagePrivateBase";
+    }
+}
+
+public class PublicDerived8143647 extends PackagePrivateBase8143647 {
 }

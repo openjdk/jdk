@@ -51,7 +51,6 @@ public class IncCompileChangeNative extends SJavacTester {
     ToolBox tb = new ToolBox();
 
     void test() throws Exception {
-        clean(TEST_ROOT);
         Files.createDirectories(GENSRC);
         Files.createDirectories(BIN);
         Files.createDirectories(HEADERS);
@@ -59,8 +58,6 @@ public class IncCompileChangeNative extends SJavacTester {
         initialCompile();
         incrementalCompileDropAllNatives();
         incrementalCompileAddNative();
-
-        clean(GENSRC, BIN, HEADERS);
     }
 
     // Update B.java with one less native method i.e. it has no longer any methods

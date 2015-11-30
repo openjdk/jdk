@@ -50,15 +50,12 @@ public class IncCompileNoChanges  extends SJavacTester {
     Map<String,Long> previous_headers_state;
 
     void test() throws Exception {
-        clean(Paths.get(getClass().getSimpleName()));
         Files.createDirectories(GENSRC);
         Files.createDirectories(BIN);
         Files.createDirectories(HEADERS);
 
         initialCompile();
         incrementalCompileNoChanges();
-
-        clean(GENSRC, BIN, HEADERS);
     }
 
     // Testing that no change in sources implies no change in binaries

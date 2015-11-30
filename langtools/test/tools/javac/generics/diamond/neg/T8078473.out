@@ -1,3 +1,0 @@
-T8078473.java:15:14: compiler.warn.diamond.redundant.args.1: T8078473.C<Q,Q>, T8078473.C<java.lang.Object,java.lang.Object>
-T8078473.java:16:14: compiler.warn.diamond.redundant.args.1: T8078473.C<Q,Q>, T8078473.C<java.lang.Object,java.lang.Object>
-2 warnings

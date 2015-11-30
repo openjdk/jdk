@@ -34,6 +34,7 @@ public class SJavacTester {
             + "portfile=testportfile,"
             + "background=false";
 
+    final ToolBox tb = new ToolBox();
     final Path TEST_ROOT = Paths.get(getClass().getSimpleName());
 
     // Generated sources that will test aspects of sjavac
@@ -53,7 +54,6 @@ public class SJavacTester {
 
     void initialCompile() throws Exception {
         System.out.println("\nInitial compile of gensrc.");
-        ToolBox tb = new ToolBox();
         tb.writeFile(GENSRC.resolve("alfa/omega/AINT.java"),
                      "package alfa.omega; public interface AINT { void aint(); }");
         tb.writeFile(GENSRC.resolve("alfa/omega/A.java"),
@@ -99,30 +99,6 @@ public class SJavacTester {
             Path p = dir.resolve(filename);
             Files.delete(p);
         }
-    }
-
-    void delete(final Path root) throws IOException {
-        if (!Files.exists(root)) return;
-        Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
-                 @Override
-                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException
-                 {
-                     Files.delete(file);
-                     return FileVisitResult.CONTINUE;
-                 }
-
-                 @Override
-                 public FileVisitResult postVisitDirectory(Path dir, IOException e) throws IOException
-                 {
-                     if (e == null) {
-                         if (!dir.equals(root)) Files.delete(dir);
-                         return FileVisitResult.CONTINUE;
-                     } else {
-                         // directory iteration failed
-                         throw e;
-                     }
-                 }
-            });
     }
 
     void compile(String... args) throws Exception {
@@ -263,12 +239,6 @@ public class SJavacTester {
             System.out.println("FROM---"+print(from));
             System.out.println("TO-----"+print(to));
             throw new Exception("The dir should not differ! But it does!");
-        }
-    }
-
-    void clean(Path... listOfDirs) throws Exception {
-        for (Path dir : listOfDirs) {
-            delete(dir);
         }
     }
 }
