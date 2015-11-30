@@ -984,7 +984,7 @@ const Type *PhiNode::Value( PhaseTransform *phase ) const {
 #ifdef ASSERT
   // The following logic has been moved into TypeOopPtr::filter.
   const Type* jt = t->join_speculative(_type);
-  if( jt->empty() ) {           // Emptied out???
+  if (jt->empty()) {           // Emptied out???
 
     // Check for evil case of 't' being a class and '_type' expecting an
     // interface.  This can happen because the bytecodes do not contain
@@ -995,14 +995,21 @@ const Type *PhiNode::Value( PhaseTransform *phase ) const {
     // be 'I' or 'j/l/O'.  Thus we'll pick 'j/l/O'.  If this then flows
     // into a Phi which "knows" it's an Interface type we'll have to
     // uplift the type.
-    if( !t->empty() && ttip && ttip->is_loaded() && ttip->klass()->is_interface() )
-      { assert(ft == _type, ""); } // Uplift to interface
-    else if( !t->empty() && ttkp && ttkp->is_loaded() && ttkp->klass()->is_interface() )
-      { assert(ft == _type, ""); } // Uplift to interface
-    // Otherwise it's something stupid like non-overlapping int ranges
-    // found on dying counted loops.
-    else
-      { assert(ft == Type::TOP, ""); } // Canonical empty value
+    if (!t->empty() && ttip && ttip->is_loaded() && ttip->klass()->is_interface()) {
+      assert(ft == _type, ""); // Uplift to interface
+    } else if (!t->empty() && ttkp && ttkp->is_loaded() && ttkp->klass()->is_interface()) {
+      assert(ft == _type, ""); // Uplift to interface
+    } else {
+      // We also have to handle 'evil cases' of interface- vs. class-arrays
+      Type::get_arrays_base_elements(jt, _type, NULL, &ttip);
+      if (!t->empty() && ttip != NULL && ttip->is_loaded() && ttip->klass()->is_interface()) {
+          assert(ft == _type, "");   // Uplift to array of interface
+      } else {
+        // Otherwise it's something stupid like non-overlapping int ranges
+        // found on dying counted loops.
+        assert(ft == Type::TOP, ""); // Canonical empty value
+      }
+    }
   }
 
   else {

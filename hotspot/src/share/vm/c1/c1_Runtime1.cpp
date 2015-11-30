@@ -210,7 +210,7 @@ void Runtime1::generate_blob_for(BufferBlob* buffer_blob, StubID id) {
     case fpu2long_stub_id:
     case unwind_exception_id:
     case counter_overflow_id:
-#if defined(SPARC) || defined(PPC)
+#if defined(SPARC) || defined(PPC32)
     case handle_exception_nofpu_id:  // Unused on sparc
 #endif
       break;
@@ -1097,7 +1097,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
           ShouldNotReachHere();
         }
 
-#if defined(SPARC) || defined(PPC)
+#if defined(SPARC) || defined(PPC32)
         if (load_klass_or_mirror_patch_id ||
             stub_id == Runtime1::load_appendix_patching_id) {
           // Update the location in the nmethod with the proper
@@ -1195,7 +1195,7 @@ JRT_ENTRY(void, Runtime1::patch_code(JavaThread* thread, Runtime1::StubID stub_i
             relocInfo::change_reloc_info_for_address(&iter2, (address) instr_pc2,
                                                      relocInfo::none, rtype);
 #endif
-#ifdef PPC
+#ifdef PPC32
           { address instr_pc2 = instr_pc + NativeMovConstReg::lo_offset;
             RelocIterator iter2(nm, instr_pc2, instr_pc2 + 1);
             relocInfo::change_reloc_info_for_address(&iter2, (address) instr_pc2,

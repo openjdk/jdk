@@ -56,7 +56,7 @@ class LogOutputList VALUE_OBJ_CLASS_SPEC {
   LogOutputNode*  _level_start[LogLevel::Count];
   volatile jint   _active_readers;
 
-  LogOutputNode* find(LogOutput* output);
+  LogOutputNode* find(const LogOutput* output) const;
   void remove_output(LogOutputNode* node);
   void add_output(LogOutput* output, LogLevelType level);
   void update_output_level(LogOutputNode* node, LogLevelType level);
@@ -69,8 +69,16 @@ class LogOutputList VALUE_OBJ_CLASS_SPEC {
   }
 
   // Test if the outputlist has an output for the given level.
-  bool is_level(LogLevelType level) {
+  bool is_level(LogLevelType level) const {
     return _level_start[level] != NULL;
+  }
+
+  LogLevelType level_for(const LogOutput* output) const {
+    LogOutputNode* node = this->find(output);
+    if (node == NULL) {
+      return LogLevel::Off;
+    }
+    return node->_level;
   }
 
   // Set (add/update/remove) the output to the specified level.

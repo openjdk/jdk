@@ -3768,7 +3768,7 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value,
 void os::print_statistics() {
 }
 
-int os::message_box(const char* title, const char* message) {
+bool os::message_box(const char* title, const char* message) {
   int i;
   fdStream err(defaultStream::error_fd());
   for (i = 0; i < 78; i++) err.print_raw("=");
@@ -4672,3 +4672,29 @@ void TestReserveMemorySpecial_test() {
   // No tests available for this platform
 }
 #endif
+
+bool os::start_debugging(char *buf, int buflen) {
+  int len = (int)strlen(buf);
+  char *p = &buf[len];
+
+  jio_snprintf(p, buflen-len,
+             "\n\n"
+             "Do you want to debug the problem?\n\n"
+             "To debug, run 'gdb /proc/%d/exe %d'; then switch to thread " INTX_FORMAT " (" INTPTR_FORMAT ")\n"
+             "Enter 'yes' to launch gdb automatically (PATH must include gdb)\n"
+             "Otherwise, press RETURN to abort...",
+             os::current_process_id(), os::current_process_id(),
+             os::current_thread_id(), os::current_thread_id());
+
+  bool yes = os::message_box("Unexpected Error", buf);
+
+  if (yes) {
+    // yes, user asked VM to launch debugger
+    jio_snprintf(buf, sizeof(buf), "gdb /proc/%d/exe %d",
+                     os::current_process_id(), os::current_process_id());
+
+    os::fork_and_exec(buf);
+    yes = false;
+  }
+  return yes;
+}

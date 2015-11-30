@@ -499,11 +499,14 @@ HeapWord* G1BlockOffsetArrayContigSpace::initialize_threshold() {
   return _next_offset_threshold;
 }
 
-void G1BlockOffsetArrayContigSpace::set_for_starts_humongous(HeapWord* obj_top) {
+void G1BlockOffsetArrayContigSpace::set_for_starts_humongous(HeapWord* obj_top, size_t fill_size) {
   // The first BOT entry should have offset 0.
   reset_bot();
   alloc_block(_bottom, obj_top);
- }
+  if (fill_size > 0) {
+    alloc_block(obj_top, fill_size);
+  }
+}
 
 #ifndef PRODUCT
 void G1BlockOffsetArrayContigSpace::print_on(outputStream* out) {

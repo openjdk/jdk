@@ -372,7 +372,7 @@ class G1BlockOffsetArrayContigSpace: public G1BlockOffsetArray {
   HeapWord* block_start_unsafe(const void* addr);
   HeapWord* block_start_unsafe_const(const void* addr) const;
 
-  void set_for_starts_humongous(HeapWord* obj_top);
+  void set_for_starts_humongous(HeapWord* obj_top, size_t fill_size);
 
   virtual void print_on(outputStream* out) PRODUCT_RETURN;
 };
