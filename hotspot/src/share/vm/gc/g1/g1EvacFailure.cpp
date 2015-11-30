@@ -259,3 +259,16 @@ void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
   HeapRegion* hr = _g1h->start_cset_region_for_worker(worker_id);
   _g1h->collection_set_iterate_from(hr, &rsfp_cl);
 }
+
+G1RestorePreservedMarksTask::G1RestorePreservedMarksTask(OopAndMarkOopStack* preserved_objs) :
+  AbstractGangTask("G1 Restore Preserved Marks"),
+  _preserved_objs(preserved_objs) {}
+
+void G1RestorePreservedMarksTask::work(uint worker_id) {
+  OopAndMarkOopStack& cur = _preserved_objs[worker_id];
+  while (!cur.is_empty()) {
+    OopAndMarkOop elem = cur.pop();
+    elem.set_mark();
+  }
+  cur.clear(true);
+}

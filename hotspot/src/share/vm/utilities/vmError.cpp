@@ -1349,3 +1349,11 @@ void VMError::report_java_out_of_memory(const char* message) {
     VMThread::execute(&op);
   }
 }
+
+void VMError::show_message_box(char *buf, int buflen) {
+  bool yes;
+  do {
+    error_string(buf, buflen);
+    yes = os::start_debugging(buf,buflen);
+  } while (yes);
+}

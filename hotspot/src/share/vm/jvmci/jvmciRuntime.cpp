@@ -59,7 +59,11 @@ bool JVMCIRuntime::_shutdown_called = false;
 static const char* OPTION_PREFIX = "jvmci.option.";
 static const size_t OPTION_PREFIX_LEN = strlen(OPTION_PREFIX);
 
-BasicType JVMCIRuntime::kindToBasicType(jchar ch) {
+BasicType JVMCIRuntime::kindToBasicType(Handle kind, TRAPS) {
+  if (kind.is_null()) {
+    THROW_(vmSymbols::java_lang_NullPointerException(), T_ILLEGAL);
+  }
+  jchar ch = JavaKind::typeChar(kind);
   switch(ch) {
     case 'z': return T_BOOLEAN;
     case 'b': return T_BYTE;
@@ -72,10 +76,8 @@ BasicType JVMCIRuntime::kindToBasicType(jchar ch) {
     case 'a': return T_OBJECT;
     case '-': return T_ILLEGAL;
     default:
-      fatal("unexpected Kind: %c", ch);
-      break;
+      JVMCI_ERROR_(T_ILLEGAL, "unexpected Kind: %c", ch);
   }
-  return T_ILLEGAL;
 }
 
 // Simple helper to see if the caller of a runtime stub which
@@ -718,7 +720,7 @@ void JVMCIRuntime::initialize_well_known_classes(TRAPS) {
   if (JVMCIRuntime::_well_known_classes_initialized == false) {
     SystemDictionary::WKID scan = SystemDictionary::FIRST_JVMCI_WKID;
     SystemDictionary::initialize_wk_klasses_through(SystemDictionary::LAST_JVMCI_WKID, scan, CHECK);
-    JVMCIJavaClasses::compute_offsets();
+    JVMCIJavaClasses::compute_offsets(CHECK);
     JVMCIRuntime::_well_known_classes_initialized = true;
   }
 }

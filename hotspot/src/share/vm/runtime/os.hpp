@@ -476,6 +476,7 @@ class os: AllStatic {
 
   static ExtendedPC get_thread_pc(Thread *thread);
   static void breakpoint();
+  static bool start_debugging(char *buf, int buflen);
 
   static address current_stack_pointer();
   static address current_stack_base();
@@ -483,7 +484,7 @@ class os: AllStatic {
 
   static void verify_stack_alignment() PRODUCT_RETURN;
 
-  static int message_box(const char* title, const char* message);
+  static bool message_box(const char* title, const char* message);
   static char* do_you_want_to_debug(const char* message);
 
   // run cmd in a separate process and return its exit code; or -1 on failures

@@ -46,15 +46,6 @@
 #
 #    make REMOTE="rsh -l me myotherlinuxbox"
 
-# Along with VM, Serviceability Agent (SA) is built for SA/JDI binding.
-# JDI binding on SA produces two binaries:
-#  1. sa-jdi.jar       - This is built before building libjvm.so
-#                        Please refer to ./makefiles/sa.make
-#  2. libsa.so         - Native library for SA - This is built after
-#                        libjsig.so (signal interposition library)
-#                        Please refer to ./makefiles/vm.make
-# If $(GAMMADIR)/agent dir is not present, SA components are not built.
-
 # No tests on Aix.
 TEST_IN_BUILD=false
 

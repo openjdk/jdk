@@ -66,12 +66,12 @@ int VM_Version::platform_features(int features) {
   features = generic_v9_m;
 
   if (detect_niagara()) {
-    NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Detected Linux on Niagara");)
+    if (PrintMiscellaneous && Verbose) { tty->print_cr("Detected Linux on Niagara"); }
     features = niagara1_m | T_family_m;
   }
 
   if (detect_M_family()) {
-    NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Detected Linux on M family");)
+    if (PrintMiscellaneous && Verbose) { tty->print_cr("Detected Linux on M family"); }
     features = sun4v_m | generic_v9_m | M_family_m | T_family_m;
   }
 

@@ -317,10 +317,18 @@ class vframeStreamCommon : StackObj {
   intptr_t* frame_id() const { return _frame.id(); }
   address frame_pc() const { return _frame.pc(); }
 
+  javaVFrame* java_frame() {
+    vframe* vf = vframe::new_vframe(&_frame, &_reg_map, _thread);
+    if (vf->is_java_frame()) {
+      return (javaVFrame*)vf;
+    }
+    return NULL;
+  }
+
   CodeBlob*          cb()         const { return _frame.cb();  }
   nmethod*           nm()         const {
-      assert( cb() != NULL && cb()->is_nmethod(), "usage");
-      return (nmethod*) cb();
+    assert( cb() != NULL && cb()->is_nmethod(), "usage");
+    return (nmethod*) cb();
   }
 
   // Frame type
