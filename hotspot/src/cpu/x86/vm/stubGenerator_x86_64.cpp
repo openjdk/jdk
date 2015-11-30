@@ -273,7 +273,7 @@ class StubGenerator: public StubCodeGenerator {
     if (UseAVX > 2) {
       last_reg = 31;
     }
-    if (VM_Version::supports_avx512novl()) {
+    if (VM_Version::supports_evex()) {
       for (int i = xmm_save_first; i <= last_reg; i++) {
         __ vextractf32x4h(xmm_save(i), as_XMMRegister(i), 0);
       }
@@ -391,7 +391,7 @@ class StubGenerator: public StubCodeGenerator {
     // restore regs belonging to calling function
 #ifdef _WIN64
     // emit the restores for xmm regs
-    if (VM_Version::supports_avx512novl()) {
+    if (VM_Version::supports_evex()) {
       for (int i = xmm_save_first; i <= last_reg; i++) {
         __ vinsertf32x4h(as_XMMRegister(i), xmm_save(i), 0);
       }
@@ -1439,8 +1439,8 @@ class StubGenerator: public StubCodeGenerator {
       // Copy 64-bytes per iteration
       __ BIND(L_loop);
       if (UseAVX > 2) {
-        __ evmovdqul(xmm0, Address(from, qword_count, Address::times_8, 32), Assembler::AVX_512bit);
-        __ evmovdqul(Address(dest, qword_count, Address::times_8, 32), xmm0, Assembler::AVX_512bit);
+        __ evmovdqul(xmm0, Address(from, qword_count, Address::times_8, 0), Assembler::AVX_512bit);
+        __ evmovdqul(Address(dest, qword_count, Address::times_8, 0), xmm0, Assembler::AVX_512bit);
       } else if (UseAVX == 2) {
         __ vmovdqu(xmm0, Address(from, qword_count, Address::times_8, 32));
         __ vmovdqu(Address(dest, qword_count, Address::times_8, 32), xmm0);

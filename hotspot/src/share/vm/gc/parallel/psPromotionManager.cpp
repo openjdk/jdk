@@ -430,7 +430,6 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markOop obj_mark) {
     obj = obj->forwardee();
   }
 
-#ifndef PRODUCT
   if (TraceScavenge) {
     gclog_or_tty->print_cr("{%s %s " PTR_FORMAT " (%d)}",
                            "promotion-failure",
@@ -438,7 +437,6 @@ oop PSPromotionManager::oop_promotion_failed(oop obj, markOop obj_mark) {
                            p2i(obj), obj->size());
 
   }
-#endif
 
   return obj;
 }
