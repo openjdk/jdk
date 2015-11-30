@@ -37,10 +37,14 @@
  * @summary Ensure relative sanity when zero core threads
  */
 
-import java.util.concurrent.*;
-import static java.util.concurrent.TimeUnit.*;
-import java.util.concurrent.locks.*;
-import java.lang.reflect.*;
+import static java.util.concurrent.TimeUnit.HOURS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.lang.reflect.Field;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class ZeroCoreThreads {
     static boolean hasWaiters(ReentrantLock lock, Condition condition) {
