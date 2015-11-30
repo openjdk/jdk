@@ -296,6 +296,10 @@ endef
 #   LD the linker to use, default is $(LD)
 #   OPTIMIZATION sets optimization level to NONE, LOW, HIGH, HIGHEST
 #   DISABLED_WARNINGS_<toolchain> Disable the given warnings for the specified toolchain
+#   DISABLED_WARNINGS_C_<toolchain> Disable the given warnings for the specified toolchain
+#       when compiling C code
+#   DISABLED_WARNINGS_CXX_<toolchain> Disable the given warnings for the specified
+#       toolchain when compiling C++ code
 #   STRIP_SYMBOLS Set to true to strip the final binary if the toolchain allows for it
 #   STRIPFLAGS Optionally change the flags given to the strip command
 SetupNativeCompilation = $(NamedParamsMacroTemplate)
@@ -539,8 +543,12 @@ define SetupNativeCompilationBody
 
   # Pick up disabled warnings, if possible on this platform.
   ifneq ($(DISABLE_WARNING_PREFIX),)
-    $1_EXTRA_CFLAGS += $$(addprefix $(DISABLE_WARNING_PREFIX), $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)))
-    $1_EXTRA_CXXFLAGS += $$(addprefix $(DISABLE_WARNING_PREFIX), $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)))
+    $1_EXTRA_CFLAGS += $$(addprefix $(DISABLE_WARNING_PREFIX), \
+        $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)) \
+        $$($1_DISABLED_WARNINGS_C_$(TOOLCHAIN_TYPE)))
+    $1_EXTRA_CXXFLAGS += $$(addprefix $(DISABLE_WARNING_PREFIX), \
+        $$($1_DISABLED_WARNINGS_$(TOOLCHAIN_TYPE)) \
+        $$($1_DISABLED_WARNINGS_CXX_$(TOOLCHAIN_TYPE)))
   endif
 
   # Check if warnings should be considered errors.

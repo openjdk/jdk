@@ -367,6 +367,29 @@ jdk.compiler_CLEAN_FILES := $(wildcard \
 
 ################################################################################
 
+jdk.hotspot.agent_SRC += \
+    $(SUPPORT_OUTPUTDIR)/gensrc/jdk.hotspot.agent \
+    $(HOTSPOT_TOPDIR)/agent/src/share/classes \
+    #
+jdk.hotspot.agent_ADD_JAVAC_FLAGS := $(DISABLE_WARNINGS),-overrides
+jdk.hotspot.agent_COPY := .png sa.js .properties
+
+ifeq ($(MODULE), jdk.hotspot.agent)
+  ### Copy gif files
+  # Special handling to copy gif files in images/toolbarButtonGraphics \
+  #   -> classes/toolbarButtonGraphics.
+  # These can't be handled by COPY to SetupJavaCompilation since they chop off
+  # one directory level.
+  $(eval $(call SetupCopyFiles, COPY_SA_IMAGES, \
+      SRC := $(HOTSPOT_TOPDIR)/agent/src/share/classes/images, \
+      DEST := $(JDK_OUTPUTDIR)/modules/$(MODULE), \
+      FILES := $(wildcard $(HOTSPOT_TOPDIR)/agent/src/share/classes/images/*/*/*.gif), \
+  ))
+  jdk.hotspot.agent: $(COPY_SA_IMAGES)
+endif
+
+################################################################################
+
 jdk.internal.le_COPY := .properties
 
 ################################################################################
@@ -528,24 +551,23 @@ DEPS := $(call FindDepsForModule, $(MODULE))
 
 CLASSPATH := $(foreach d, $(DEPS), $(if $($d_BIN), $($d_BIN), \
     $(JDK_OUTPUTDIR)/modules/$d))
-# When crypto classes are prebuilt, need to look for classes already in
-# output dir.
-ifneq ($(BUILD_CRYPTO), true)
+  # When crypto classes are prebuilt, need to look for classes already in
+  # output dir.
+  ifneq ($(BUILD_CRYPTO), true)
   CLASSPATH += $(JDK_OUTPUTDIR)/modules/$(MODULE)
-endif
+  endif
 JAVAC_FLAGS := -bootclasspath $(EMPTY_DIR) -extdirs $(EMPTY_DIR) \
     -endorseddirs $(EMPTY_DIR) $($(MODULE)_ADD_JAVAC_FLAGS)
 
 $(eval $(call SetupJavaCompilation, $(MODULE), \
     SETUP := $(if $($(MODULE)_SETUP), $($(MODULE)_SETUP), GENERATE_JDKBYTECODE), \
     SRC := $(if $($(MODULE)_SRC), $($(MODULE)_SRC), $(wildcard $(ALL_SRC_DIRS))), \
-    INCLUDES := $(JDK_USER_DEFINED_FILTER),\
+      INCLUDES := $(JDK_USER_DEFINED_FILTER),\
     BIN := $(if $($(MODULE)_BIN), $($(MODULE)_BIN), $(JDK_OUTPUTDIR)/modules/$(MODULE)), \
     HEADERS := $(SUPPORT_OUTPUTDIR)/headers/$(MODULE), \
     CLASSPATH := $(CLASSPATH), \
     ADD_JAVAC_FLAGS := $($(MODULE)_ADD_JAVAC_FLAGS) $(JAVAC_FLAGS) \
 ))
-
 TARGETS += $($(MODULE)) $($(MODULE)_COPY_EXTRA)
 
 # Declare dependencies between java compilations of different modules.
