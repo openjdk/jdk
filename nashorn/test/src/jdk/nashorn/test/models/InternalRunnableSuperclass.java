@@ -25,7 +25,7 @@
 
 package jdk.nashorn.test.models;
 
-import jdk.internal.dynalink.beans.StaticClass;
+import jdk.dynalink.beans.StaticClass;
 import jdk.nashorn.internal.test.models.InternalRunnable;
 
 /**

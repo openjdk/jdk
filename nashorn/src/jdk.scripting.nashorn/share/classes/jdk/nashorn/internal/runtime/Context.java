@@ -71,7 +71,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import javax.script.ScriptEngine;
-import jdk.internal.dynalink.DynamicLinker;
+import jdk.dynalink.DynamicLinker;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;

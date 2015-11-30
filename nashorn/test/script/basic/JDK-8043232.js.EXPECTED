@@ -1,16 +1,16 @@
 bcd
-[jdk.internal.dynalink.beans.SimpleDynamicMethod java.lang.String(char[],int,int)]
+[jdk.dynalink.beans.SimpleDynamicMethod java.lang.String(char[],int,int)]
 red
 TypeError: No such Java class: java.lang.NonExistent
 TypeError: No such Java constructor: Object(String)
 TypeError: Java constructor signature invalid: Object()xxxxx
 TypeError: Java constructor signature invalid: Object(
 TypeError: Java constructor signature invalid: Object)
-TypeError: Java method [jdk.internal.dynalink.beans.OverloadedDynamicMethod
+TypeError: Java method [jdk.dynalink.beans.OverloadedDynamicMethod
  String java.lang.System.getProperty(String,String)
  String java.lang.System.getProperty(String)
 ] cannot be used as a constructor.
-TypeError: Java method [jdk.internal.dynalink.beans.OverloadedDynamicMethod
+TypeError: Java method [jdk.dynalink.beans.OverloadedDynamicMethod
  void java.io.PrintStream.println()
  void java.io.PrintStream.println(boolean)
  void java.io.PrintStream.println(char)
@@ -22,7 +22,7 @@ TypeError: Java method [jdk.internal.dynalink.beans.OverloadedDynamicMethod
  void java.io.PrintStream.println(Object)
  void java.io.PrintStream.println(String)
 ] cannot be used as a constructor.
-TypeError: Constructor [jdk.internal.dynalink.beans.SimpleDynamicMethod java.lang.String(char[],int,int)] requires "new".
+TypeError: Constructor [jdk.dynalink.beans.SimpleDynamicMethod java.lang.String(char[],int,int)] requires "new".
 TypeError: No such Java constructor: Runnable()
 TypeError: No such Java constructor: Runnable(int)
 java.lang.InstantiationException: java.io.InputStream
