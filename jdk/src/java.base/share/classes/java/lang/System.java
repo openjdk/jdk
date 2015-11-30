@@ -1896,12 +1896,6 @@ public final class System {
             public void registerShutdownHook(int slot, boolean registerShutdownInProgress, Runnable hook) {
                 Shutdown.add(slot, registerShutdownInProgress, hook);
             }
-            public int getStackTraceDepth(Throwable t) {
-                return t.getStackTraceDepth();
-            }
-            public StackTraceElement getStackTraceElement(Throwable t, int i) {
-                return t.getStackTraceElement(i);
-            }
             public String newStringUnsafe(char[] chars) {
                 return new String(chars, true);
             }
