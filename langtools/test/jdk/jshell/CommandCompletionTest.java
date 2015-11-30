@@ -100,9 +100,9 @@ public class CommandCompletionTest extends ReplToolTesting {
 
     public void testSave() throws IOException {
         Compiler compiler = new Compiler();
-        assertCompletion("/s|", false, "/save ", "/savestart ", "/seteditor ", "/setstart ");
+        assertCompletion("/s|", false, "/save ", "/seteditor ", "/setstart ");
         List<String> p1 = listFiles(Paths.get(""));
-        Collections.addAll(p1, "all ", "history ");
+        Collections.addAll(p1, "all ", "history ", "start ");
         FileSystems.getDefault().getRootDirectories().forEach(s -> p1.add(s.toString()));
         Collections.sort(p1);
         assertCompletion("/save |", false, p1.toArray(new String[p1.size()]));
