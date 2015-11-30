@@ -39,12 +39,13 @@ $(eval $(call IncludeCustomExtension, , Images-pre.gmk))
 
 MAIN_MODULES += java.se java.smartcardio jdk.httpserver jdk.sctp \
                jdk.security.auth jdk.security.jgss jdk.pack200 jdk.xml.dom \
-               jdk.accessibility jdk.internal.le jdk.scripting.nashorn.shell \
+               jdk.accessibility jdk.internal.le jdk.dynalink \
+               jdk.scripting.nashorn jdk.scripting.nashorn.shell \
                jdk.vm.ci jdk.management
 
 # providers
-PROVIDER_MODULES += jdk.charsets jdk.crypto.ec jdk.crypto.pkcs11 jdk.jvmstat jdk.localedata \
-               jdk.naming.dns jdk.naming.rmi jdk.scripting.nashorn jdk.zipfs
+PROVIDER_MODULES += jdk.charsets jdk.crypto.ec jdk.crypto.pkcs11 jdk.jvmstat jdk.jvmstat.rmi \
+               jdk.localedata jdk.naming.dns jdk.naming.rmi jdk.zipfs
 
 # tools
 TOOLS_MODULES += jdk.attach jdk.compiler jdk.dev \
@@ -64,8 +65,8 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   MAIN_MODULES += jdk.deploy.osx
 endif
 
-JRE_MODULES := $(MAIN_MODULES) $(PROVIDER_MODULES)
-JDK_MODULES := $(JRE_MODULES) $(TOOLS_MODULES)
+JRE_MODULES := $(filter-out $(MODULES_FILTER), $(MAIN_MODULES) $(PROVIDER_MODULES))
+JDK_MODULES := $(filter-out $(MODULES_FILTER), $(JRE_MODULES) $(TOOLS_MODULES))
 
 # compact3 builds have additional modules
 JDK_COMPACT3_MODULES := java.compact3 java.smartcardio jdk.httpserver jdk.naming.dns \
@@ -508,7 +509,6 @@ $(JDK_TARGETS): $(TOOL_JDK_TARGETS)
 
 jimages: $(TOOL_JRE_TARGETS) $(TOOL_JDK_TARGETS) $(JRE_TARGETS) $(JDK_TARGETS) \
     $(SYMBOLS_TARGETS)
-
 
 $(JRE_COMPACT1_TARGETS): $(TOOL_JRE_COMPACT1_TARGETS)
 $(JRE_COMPACT2_TARGETS): $(TOOL_JRE_COMPACT2_TARGETS)
