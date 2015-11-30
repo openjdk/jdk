@@ -27,6 +27,7 @@ default: all
 
 include $(SPEC)
 include MakeBase.gmk
+include Modules.gmk
 
 TOOL_TARGETS :=
 JDK_TARGETS :=
