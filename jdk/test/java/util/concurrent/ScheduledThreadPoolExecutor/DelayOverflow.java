@@ -37,7 +37,10 @@
  * @summary Check for long overflow in task time comparison.
  */
 
-import java.util.concurrent.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class DelayOverflow {
     static void waitForNanoTimeTick() {

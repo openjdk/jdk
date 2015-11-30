@@ -730,7 +730,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
         count = fields.get("count", 0);
     }
 
-    protected synchronized void getBytes(byte dst[], int dstBegin, byte coder) {
+    synchronized void getBytes(byte dst[], int dstBegin, byte coder) {
         super.getBytes(dst, dstBegin, coder);
     }
 }

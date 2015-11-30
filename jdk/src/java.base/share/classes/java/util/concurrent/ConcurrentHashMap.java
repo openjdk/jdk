@@ -596,7 +596,16 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /** Number of CPUS, to place bounds on some sizings */
     static final int NCPU = Runtime.getRuntime().availableProcessors();
 
-    /** For serialization compatibility. */
+    /**
+     * Serialized pseudo-fields, provided only for jdk7 compatibility.
+     * @serialField segments Segment[]
+     *   The segments, each of which is a specialized hash table.
+     * @serialField segmentMask int
+     *   Mask value for indexing into segments. The upper bits of a
+     *   key's hash code are used to choose the segment.
+     * @serialField segmentShift int
+     *   Shift value for indexing within segments.
+     */
     private static final ObjectStreamField[] serialPersistentFields = {
         new ObjectStreamField("segments", Segment[].class),
         new ObjectStreamField("segmentMask", Integer.TYPE),
@@ -1382,8 +1391,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * @param s the stream
      * @throws java.io.IOException if an I/O error occurs
      * @serialData
-     * the key (Object) and value (Object)
-     * for each key-value mapping, followed by a null pair.
+     * the serialized fields, followed by the key (Object) and value
+     * (Object) for each key-value mapping, followed by a null pair.
      * The key-value mappings are emitted in no particular order.
      */
     private void writeObject(java.io.ObjectOutputStream s)
@@ -1419,7 +1428,6 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         }
         s.writeObject(null);
         s.writeObject(null);
-        segments = null; // throw away
     }
 
     /**

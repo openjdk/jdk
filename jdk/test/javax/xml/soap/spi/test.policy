@@ -1,0 +1,7 @@
+grant {
+      permission java.util.PropertyPermission "*", "read";
+      permission java.io.FilePermission "${test.classes}${/}-", "read, write, delete";
+
+      // unsafe; not running:
+      //permission java.io.FilePermission "${java.home}${/}-", "read, write, delete";
+};
