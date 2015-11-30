@@ -3487,18 +3487,18 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
     assert_different_registers(obj, pre_val, tmp);
 
   Address in_progress(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       PtrQueue::byte_offset_of_active()));
+                                       SATBMarkQueue::byte_offset_of_active()));
   Address index(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       PtrQueue::byte_offset_of_index()));
+                                       SATBMarkQueue::byte_offset_of_index()));
   Address buffer(thread, in_bytes(JavaThread::satb_mark_queue_offset() +
-                                       PtrQueue::byte_offset_of_buf()));
+                                       SATBMarkQueue::byte_offset_of_buf()));
 
 
   // Is marking active?
-  if (in_bytes(PtrQueue::byte_width_of_active()) == 4) {
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
     ldrw(tmp, in_progress);
   } else {
-    assert(in_bytes(PtrQueue::byte_width_of_active()) == 1, "Assumption");
+    assert(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
     ldrb(tmp, in_progress);
   }
   cbzw(tmp, done);
@@ -3566,9 +3566,9 @@ void MacroAssembler::g1_write_barrier_post(Register store_addr,
   assert(thread == rthread, "must be");
 
   Address queue_index(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                       PtrQueue::byte_offset_of_index()));
+                                       DirtyCardQueue::byte_offset_of_index()));
   Address buffer(thread, in_bytes(JavaThread::dirty_card_queue_offset() +
-                                       PtrQueue::byte_offset_of_buf()));
+                                       DirtyCardQueue::byte_offset_of_buf()));
 
   BarrierSet* bs = Universe::heap()->barrier_set();
   CardTableModRefBS* ct = (CardTableModRefBS*)bs;

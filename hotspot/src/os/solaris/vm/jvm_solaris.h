@@ -91,10 +91,6 @@
 #define SHUTDOWN1_SIGNAL SIGHUP            /* Shutdown Hooks support.    */
 #define SHUTDOWN2_SIGNAL SIGINT
 #define SHUTDOWN3_SIGNAL SIGTERM
-/* alternative signals used with -XX:+UseAltSigs (or for backward
-   compatibility with 1.2, -Xusealtsigs) flag. Chosen to be
-   unlikely to conflict with applications embedding the vm */
-#define ALT_ASYNC_SIGNAL     (SIGRTMIN + SIGRTMAX)/2  /* alternate async signal */
 
 /* With 1.4.1 libjsig added versioning: used in os_solaris.cpp and jsig.c */
 #define JSIG_VERSION_1_4_1   0x30140100
