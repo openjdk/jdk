@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.vm.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
