@@ -241,8 +241,6 @@ public class Analyzer {
                 }
                 for (Type t : inferredArgs) {
                     if (!types.isSameType(t, explicitArgs.head)) {
-                        log.warning(oldTree.clazz, "diamond.redundant.args.1",
-                                oldTree.clazz.type, newTree.clazz.type);
                         return;
                     }
                     explicitArgs = explicitArgs.tail;
