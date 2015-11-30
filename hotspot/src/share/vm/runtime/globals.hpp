@@ -1124,9 +1124,6 @@ public:
   diagnostic(bool, PrintNMethods, false,                                    \
           "Print assembly code for nmethods when generated")                \
                                                                             \
-  diagnostic(intx, PrintNMethodsAtLevel, -1,                                \
-          "Only print code for nmethods at the given compilation level")    \
-                                                                            \
   diagnostic(bool, PrintNativeNMethods, false,                              \
           "Print assembly code for native nmethods when generated")         \
                                                                             \
@@ -3549,7 +3546,7 @@ public:
                                                                             \
   product_pd(intx, CompilerThreadStackSize,                                 \
           "Compiler Thread Stack Size (in Kbytes)")                         \
-          range(0, max_intx)                                                \
+          range(0, max_intx /(1 * K))                                       \
                                                                             \
   develop_pd(size_t, JVMInvokeMethodSlack,                                  \
           "Stack space (bytes) required for JVM_InvokeMethod to complete")  \
@@ -4283,9 +4280,9 @@ public:
 #define DECLARE_MANAGEABLE_FLAG(type, name, value, doc)   extern "C" type name;
 #define DECLARE_PRODUCT_RW_FLAG(type, name, value, doc)   extern "C" type name;
 #ifdef PRODUCT
-#define DECLARE_DEVELOPER_FLAG(type, name, value, doc)    extern "C" type CONST_##name; const type name = value;
-#define DECLARE_PD_DEVELOPER_FLAG(type, name, doc)        extern "C" type CONST_##name; const type name = pd_##name;
-#define DECLARE_NOTPRODUCT_FLAG(type, name, value, doc)   extern "C" type CONST_##name;
+#define DECLARE_DEVELOPER_FLAG(type, name, value, doc)    const type name = value;
+#define DECLARE_PD_DEVELOPER_FLAG(type, name, doc)        const type name = pd_##name;
+#define DECLARE_NOTPRODUCT_FLAG(type, name, value, doc)   const type name = value;
 #else
 #define DECLARE_DEVELOPER_FLAG(type, name, value, doc)    extern "C" type name;
 #define DECLARE_PD_DEVELOPER_FLAG(type, name, doc)        extern "C" type name;
@@ -4306,9 +4303,9 @@ public:
 #define MATERIALIZE_MANAGEABLE_FLAG(type, name, value, doc)   type name = value;
 #define MATERIALIZE_PRODUCT_RW_FLAG(type, name, value, doc)   type name = value;
 #ifdef PRODUCT
-#define MATERIALIZE_DEVELOPER_FLAG(type, name, value, doc)    type CONST_##name = value;
-#define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, doc)        type CONST_##name = pd_##name;
-#define MATERIALIZE_NOTPRODUCT_FLAG(type, name, value, doc)   type CONST_##name = value;
+#define MATERIALIZE_DEVELOPER_FLAG(type, name, value, doc)
+#define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, doc)
+#define MATERIALIZE_NOTPRODUCT_FLAG(type, name, value, doc)
 #else
 #define MATERIALIZE_DEVELOPER_FLAG(type, name, value, doc)    type name = value;
 #define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, doc)        type name = pd_##name;

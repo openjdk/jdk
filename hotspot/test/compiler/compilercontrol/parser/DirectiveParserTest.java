@@ -25,8 +25,8 @@
  * @test
  * @bug 8137167
  * @summary Tests directive json parser
- * @library /testlibrary /../../test/lib ../share /
- * @run driver compiler.compilercontrol.parser.DirectiveParser
+ * @library /testlibrary /test/lib ../share /
+ * @run driver compiler.compilercontrol.parser.DirectiveParserTest
  */
 
 package compiler.compilercontrol.parser;
@@ -37,7 +37,7 @@ import jdk.test.lib.OutputAnalyzer;
 import jdk.test.lib.ProcessTools;
 import jdk.test.lib.Utils;
 
-public class DirectiveParser {
+public class DirectiveParserTest {
     private static final String ERROR_MSG = "VM should exit with error "
             + "on incorrect JSON file: ";
     private static final String EXPECTED_ERROR_STRING = "Parsing of compiler"
@@ -80,7 +80,7 @@ public class DirectiveParser {
                     .end(); // end object
             file.end();
         }
-        OutputAnalyzer output = execute(fileName);
+        OutputAnalyzer output = HugeDirectiveUtil.execute(fileName);
         output.shouldHaveExitValue(0);
         output.shouldNotContain(EXPECTED_ERROR_STRING);
     }
@@ -95,7 +95,7 @@ public class DirectiveParser {
                     .end();
             // don't write matching }
         }
-        OutputAnalyzer output = execute(fileName);
+        OutputAnalyzer output = HugeDirectiveUtil.execute(fileName);
         Asserts.assertNE(output.getExitValue(), 0, ERROR_MSG + "non matching "
                 + "brackets");
         output.shouldContain(EXPECTED_ERROR_STRING);
@@ -107,7 +107,7 @@ public class DirectiveParser {
             file.write(JSONFile.Element.ARRAY);
             file.end();
         }
-        OutputAnalyzer output = execute(fileName);
+        OutputAnalyzer output = HugeDirectiveUtil.execute(fileName);
         Asserts.assertNE(output.getExitValue(), 0, ERROR_MSG + "empty array");
     }
 
@@ -117,7 +117,7 @@ public class DirectiveParser {
             file.write(JSONFile.Element.OBJECT);
             file.end();
         }
-        OutputAnalyzer output = execute(fileName);
+        OutputAnalyzer output = HugeDirectiveUtil.execute(fileName);
         Asserts.assertNE(output.getExitValue(), 0, ERROR_MSG + "empty object "
                 + "without any match");
         output.shouldContain(EXPECTED_ERROR_STRING);
@@ -128,33 +128,20 @@ public class DirectiveParser {
         try (JSONFile file = new JSONFile(fileName)) {
             // empty
         }
-        OutputAnalyzer output = execute(fileName);
+        OutputAnalyzer output = HugeDirectiveUtil.execute(fileName);
         Asserts.assertNE(output.getExitValue(), 0, ERROR_MSG + "empty file");
         output.shouldContain(EXPECTED_ERROR_STRING);
     }
 
     private static void noFile() {
-        OutputAnalyzer output = execute("nonexistent.json");
+        OutputAnalyzer output = HugeDirectiveUtil.execute("nonexistent.json");
         Asserts.assertNE(output.getExitValue(), 0, ERROR_MSG + "non existing "
                 + "file");
     }
 
     private static void directory() {
-        OutputAnalyzer output = execute(Utils.TEST_SRC);
+        OutputAnalyzer output = HugeDirectiveUtil.execute(Utils.TEST_SRC);
         Asserts.assertNE(output.getExitValue(), 0, ERROR_MSG + "directory as "
                 + "a name");
-    }
-
-    private static OutputAnalyzer execute(String fileName) {
-        OutputAnalyzer output;
-        try {
-            output = ProcessTools.executeTestJvm(
-                    "-XX:+UnlockDiagnosticVMOptions",
-                    "-XX:CompilerDirectivesFile=" + fileName,
-                    "-version");
-        } catch (Throwable thr) {
-            throw new Error("Execution failed", thr);
-        }
-        return output;
     }
 }

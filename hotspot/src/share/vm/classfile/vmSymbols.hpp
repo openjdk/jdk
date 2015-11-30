@@ -110,6 +110,7 @@
   template(java_io_ByteArrayInputStream,              "java/io/ByteArrayInputStream")             \
   template(java_io_Serializable,                      "java/io/Serializable")                     \
   template(java_util_Arrays,                          "java/util/Arrays")                         \
+  template(java_util_Objects,                         "java/util/Objects")                         \
   template(java_util_Properties,                      "java/util/Properties")                     \
   template(java_util_Vector,                          "java/util/Vector")                         \
   template(java_util_AbstractList,                    "java/util/AbstractList")                   \
@@ -915,6 +916,9 @@
    do_signature(indexOfChar_signature,                           "([BIII)I")                                            \
   do_intrinsic(_equalsL,                  java_lang_StringLatin1,equals_name, equalsB_signature,                 F_S)   \
   do_intrinsic(_equalsU,                  java_lang_StringUTF16, equals_name, equalsB_signature,                 F_S)   \
+                                                                                                                        \
+  do_intrinsic(_Objects_checkIndex,       java_util_Objects,      checkIndex_name, Objects_checkIndex_signature, F_S)   \
+   do_signature(Objects_checkIndex_signature,                     "(IILjava/util/function/BiFunction;)I")               \
                                                                                                                         \
   do_class(java_nio_Buffer,               "java/nio/Buffer")                                                            \
   do_intrinsic(_checkIndex,               java_nio_Buffer,        checkIndex_name, int_int_signature,            F_R)   \

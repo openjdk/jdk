@@ -291,9 +291,7 @@ static int pre_call_resets_size() {
     size += 6; // fldcw
   }
   if (C->max_vector_size() > 16) {
-    if(UseAVX <= 2) {
-      size += 3; // vzeroupper
-    }
+    size += 3; // vzeroupper
   }
   return size;
 }
@@ -1915,7 +1913,7 @@ encode %{
       if (stub == NULL) {
         ciEnv::current()->record_failure("CodeCache is full");
         return;
-      } 
+      }
     }
   %}
 

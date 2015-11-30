@@ -24,37 +24,27 @@
 /*
  * @test
  * @bug 8031321
- * @library /testlibrary /test/lib /compiler/whitebox ..
+ * @library /testlibrary /test/lib /compiler/whitebox / ..
  * @modules java.base/sun.misc
  *          java.management
- * @build AddnTestI
+ * @build AndnTestL
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+UseBMI1Instructions AddnTestI
+ * @run main/bootclasspath -Xbatch -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *                         -XX:+IgnoreUnrecognizedVMOptions -XX:+UseBMI1Instructions AndnTestL
  */
 
 import java.lang.reflect.Method;
 
-public class AddnTestI extends BmiIntrinsicBase.BmiTestCase {
+public class AndnTestL extends AndnTestI {
 
-    protected AddnTestI(Method method) {
+    protected AndnTestL(Method method) {
         super(method);
-        // from intel manual VEX.NDS.LZ.0F38.W0 F2 /r, example c4e260f2c2
-        instrMask = new byte[]{
-                (byte) 0xFF,
-                (byte) 0x1F,
-                (byte) 0x00,
-                (byte) 0xFF};
-        instrPattern = new byte[]{
-                (byte) 0xC4, // prefix for 3-byte VEX instruction
-                (byte) 0x02, // 00010 implied 0F 38 leading opcode bytes
-                (byte) 0x00,
-                (byte) 0xF2};
+        isLongOperation = true;
     }
 
     public static void main(String[] args) throws Exception {
-        BmiIntrinsicBase.verifyTestCase(AddnTestI::new, TestAndnI.AndnIExpr.class.getDeclaredMethods());
-        BmiIntrinsicBase.verifyTestCase(AddnTestI::new, TestAndnI.AndnICommutativeExpr.class.getDeclaredMethods());
+        BmiIntrinsicBase.verifyTestCase(AndnTestL::new, TestAndnL.AndnLExpr.class.getDeclaredMethods());
+        BmiIntrinsicBase.verifyTestCase(AndnTestL::new, TestAndnL.AndnLCommutativeExpr.class.getDeclaredMethods());
     }
 }
