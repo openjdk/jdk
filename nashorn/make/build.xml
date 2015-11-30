@@ -52,6 +52,14 @@
     <available property="testng.already.present" file="${file.reference.testng.jar}"/>
     <antcall target="get-testng"/>
     <available property="testng.available" file="${file.reference.testng.jar}"/>
+
+    <!-- check if asmtools-6.0.jar is avaiable, and download it if it isn't -->
+    <!--
+    <available property="asmtools.already.present" file="${file.reference.asmtools.jar}"/>
+    <antcall target="get-asmtools"/>
+    <available property="asmtools.available" file="${file.reference.asmtools.jar}"/>
+    -->
+
     <!-- check if Jemmy ang testng.jar are avaiable -->
     <condition property="jemmy.jfx.testng.available" value="true">
       <and>
@@ -155,7 +163,7 @@
     <copy todir="${build.classes.dir}/jdk/nashorn/tools/resources">
        <fileset dir="${nashorn.module.src.dir}/jdk/nashorn/tools/resources/"/>
     </copy>
-    <copy file="${nashorn.module.src.dir}/jdk/internal/dynalink/support/messages.properties" todir="${build.classes.dir}/jdk/internal/dynalink/support"/>
+    <copy file="${dynalink.module.src.dir}/jdk/dynalink/support/messages.properties" todir="${build.classes.dir}/jdk/dynalink/support"/>
     <copy file="${nashorn.module.src.dir}/jdk/nashorn/internal/codegen/anchor.properties" todir="${build.classes.dir}/jdk/nashorn/internal/codegen"/>
 
     <echo message="full=${nashorn.fullversion}" file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties"/>
@@ -244,6 +252,7 @@
       <classpath>
         <pathelement location="${build.classes.dir}"/>
       </classpath>
+      <fileset dir="${dynalink.module.src.dir}" includes="**/*.java"/>
       <fileset dir="${nashorn.module.src.dir}" includes="**/*.java"/>
       <fileset dir="${nashorn.shell.module.src.dir}" includes="**/*.java"/>
       <link href="http://docs.oracle.com/javase/8/docs/api/"/>
@@ -263,6 +272,18 @@
     </javadoc>
   </target>
 
+  <!-- generate javadoc only for Dynalink API classes -->
+  <target name="dynalinkapi" depends="jar">
+    <javadoc destdir="${dist.javadoc.dir}" use="yes"
+        windowtitle="Dynalink"
+        additionalparam="-quiet" failonerror="true" useexternalfile="true">
+      <classpath>
+        <pathelement location="${build.classes.dir}"/>
+      </classpath>
+      <fileset dir="${dynalink.module.src.dir}" includes="**/*.java" excludes="jdk/dynalink/internal/*.java"/>
+      <link href="http://docs.oracle.com/javase/8/docs/api/"/>
+    </javadoc>
+  </target>
 
   <!-- generate shell.html for shell tool documentation -->
   <target name="shelldoc" depends="jar">
@@ -321,14 +342,20 @@
 
     <!-- tests that check nashorn internals and internal API -->
     <jar jarfile="${nashorn.internal.tests.jar}">
-      <fileset dir="${build.test.classes.dir}" excludes="**/api/**"/>
+      <fileset dir="${build.test.classes.dir}" includes="**/internal/**"/>
+      <fileset dir="${build.test.classes.dir}" includes="**/test/tools/**"/>
+      <fileset dir="${build.test.classes.dir}" includes="**/models/**"/>
+      <fileset dir="${build.test.classes.dir}" includes="**/jdk/dynalink/test/Trusted**"/>
+      <fileset dir="${build.test.classes.dir}" includes="**/META-INF/**"/>
     </jar>
 
-    <!-- tests that check nashorn script engine (jsr-223) API -->
+    <!-- tests that check nashorn script engine (jsr-223) API and dynalink API -->
     <jar jarfile="${nashorn.api.tests.jar}">
+      <fileset dir="${build.test.classes.dir}" includes="**/jdk/dynalink/**" excludes="**/jdk/dynalink/test/Trusted**"/>
       <fileset dir="${build.test.classes.dir}" includes="**/api/**"/>
       <fileset dir="${build.test.classes.dir}" includes="**/META-INF/**"/>
       <fileset dir="${build.test.classes.dir}" includes="**/resources/*.js"/>
+      <fileset dir="${build.test.classes.dir}" includes="**/UnnamedPackage**"/>
     </jar>
 
   </target>
@@ -432,6 +459,8 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   <!-- only to be invoked as dependency of "test" target -->
   <target name="-test-classes-all" depends="jar" unless="test.class">
       <fileset id="test.classes" dir="${build.test.classes.dir}">
+          <include name="**/dynalink/test/*Test.class"/>
+          <include name="**/dynalink/beans/test/*Test.class"/>
           <include name="**/api/javaaccess/test/*Test.class"/>
           <include name="**/api/scripting/test/*Test.class"/>
           <include name="**/api/tree/test/*Test.class"/>
@@ -603,7 +632,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
 
   <target name="test262-parallel" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
     <!-- use just build.test.classes.dir to avoid referring to TestNG -->
-    <java classname="${parallel.test.runner}" dir="${basedir}" fork="true">
+    <java classname="${parallel.test.runner}" dir="${basedir}" fork="true" failonerror="true">
       <jvmarg line="${boot.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs} -Dbuild.dir=${build.dir}"/>
       <!-- avoid too many typeinfo cache files. Each script is run only once anyway -->
@@ -771,6 +800,20 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     </unzip>
     <move file="${test.lib}${file.separator}testng-6.8${file.separator}testng-6.8.jar" tofile="${test.lib}${file.separator}testng.jar"/>
     <delete dir="${test.lib}${file.separator}testng-6.8"/>
+  </target>
+
+  <!-- download and install asmtools.jar -->
+  <target name="get-asmtools" unless="asmtools.already.present">
+    <get src="https://adopt-openjdk.ci.cloudbees.com/view/OpenJDK/job/asmtools/lastSuccessfulBuild/artifact/asmtools-6.0.tar.gz" dest="${test.lib}" skipexisting="true" ignoreerrors="true"/>
+    <untar src="${test.lib}${file.separator}asmtools-6.0.tar.gz" dest="${test.lib}" compression="gzip"/>
+    <!-- they are tar.gz'ing a .zip file! -->
+    <unzip src="${test.lib}${file.separator}asmtools-6.0.zip" dest="${test.lib}">
+      <patternset>
+        <include name="asmtools-6.0/lib/asmtools.jar"/>
+      </patternset>
+    </unzip>
+    <move file="${test.lib}${file.separator}asmtools-6.0${file.separator}lib${file.separator}asmtools.jar" tofile="${test.lib}${file.separator}asmtools.jar"/>
+    <delete dir="${test.lib}${file.separator}asmtools-6.0"/>
   </target>
 
   <!-- run all tests -->
