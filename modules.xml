@@ -1066,6 +1066,9 @@
       <name>javax.xml</name>
     </export>
     <export>
+      <name>javax.xml.catalog</name>
+    </export>
+    <export>
       <name>javax.xml.datatype</name>
     </export>
     <export>
