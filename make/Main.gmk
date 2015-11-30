@@ -53,8 +53,7 @@ ALL_TARGETS :=
 $(eval $(call IncludeCustomExtension, , Main.gmk))
 
 # All modules for the current target platform.
-# Manually add jdk.hotspot.agent for now.
-ALL_MODULES := $(call FindAllModules) jdk.hotspot.agent
+ALL_MODULES := $(call FindAllModules)
 
 ################################################################################
 ################################################################################
@@ -423,11 +422,6 @@ else
   # header file used by jdk.jdwp.agent-libs. The jdk.jdwp.agent-gensrc is a
   # virtual target.
   jdk.jdwp.agent-libs: jdk.jdwp.agent-gensrc
-
-  # Until the module system is in place, jdk.jdi-gensrc needs to combine service
-  # loader configuration with jdk.hotspot.agent so is dependent on importing
-  # hotspot.
-  jdk.jdi-gensrc-jdk: import-hotspot
 
   # The swing beans need to have java base properly generated to avoid errors
   # in javadoc.
