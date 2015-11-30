@@ -1334,10 +1334,6 @@ public:
           "Use signal-chaining to invoke signal handlers installed "        \
           "by the application (Solaris & Linux only)")                      \
                                                                             \
-  product(bool, UseAltSigs, false,                                          \
-          "Use alternate signals instead of SIGUSR1 & SIGUSR2 for VM "      \
-          "internal signals (Solaris only)")                                \
-                                                                            \
   product(bool, AllowJNIEnvProxy, false,                                    \
           "Allow JNIEnv proxies for jdbx")                                  \
                                                                             \
@@ -2522,9 +2518,6 @@ public:
                                                                             \
   develop(bool, TraceWorkGang, false,                                       \
           "Trace activities of work gangs")                                 \
-                                                                            \
-  product(bool, TraceParallelOldGCTasks, false,                             \
-          "Trace multithreaded GC activity")                                \
                                                                             \
   develop(bool, TraceBlockOffsetTable, false,                               \
           "Print BlockOffsetTable maps")                                    \

@@ -2831,8 +2831,12 @@ static int SR_initialize() {
   // Get signal number to use for suspend/resume
   if ((s = ::getenv("_JAVA_SR_SIGNUM")) != 0) {
     int sig = ::strtol(s, 0, 10);
-    if (sig > 0 || sig < NSIG) {
+    if (sig > MAX2(SIGSEGV, SIGBUS) &&  // See 4355769.
+        sig < NSIG) {                   // Must be legal signal and fit into sigflags[].
       SR_signum = sig;
+    } else {
+      warning("You set _JAVA_SR_SIGNUM=%d. It must be in range [%d, %d]. Using %d instead.",
+              sig, MAX2(SIGSEGV, SIGBUS)+1, NSIG-1, SR_signum);
     }
   }
 
@@ -2985,8 +2989,11 @@ void signalHandler(int sig, siginfo_t* info, void* uc) {
 bool os::Bsd::signal_handlers_are_installed = false;
 
 // For signal-chaining
-struct sigaction os::Bsd::sigact[MAXSIGNUM];
-unsigned int os::Bsd::sigs = 0;
+struct sigaction sigact[NSIG];
+uint32_t sigs = 0;
+#if (32 < NSIG-1)
+#error "Not all signals can be encoded in sigs. Adapt its type!"
+#endif
 bool os::Bsd::libjsig_is_loaded = false;
 typedef struct sigaction *(*get_signal_t)(int);
 get_signal_t os::Bsd::get_signal_action = NULL;
@@ -3064,29 +3071,31 @@ bool os::Bsd::chained_handler(int sig, siginfo_t* siginfo, void* context) {
 }
 
 struct sigaction* os::Bsd::get_preinstalled_handler(int sig) {
-  if ((((unsigned int)1 << sig) & sigs) != 0) {
+  if ((((uint32_t)1 << (sig-1)) & sigs) != 0) {
     return &sigact[sig];
   }
   return NULL;
 }
 
 void os::Bsd::save_preinstalled_handler(int sig, struct sigaction& oldAct) {
-  assert(sig > 0 && sig < MAXSIGNUM, "vm signal out of expected range");
+  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
   sigact[sig] = oldAct;
-  sigs |= (unsigned int)1 << sig;
+  sigs |= (uint32_t)1 << (sig-1);
 }
 
 // for diagnostic
-int os::Bsd::sigflags[MAXSIGNUM];
+int sigflags[NSIG];
 
 int os::Bsd::get_our_sigflags(int sig) {
-  assert(sig > 0 && sig < MAXSIGNUM, "vm signal out of expected range");
+  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
   return sigflags[sig];
 }
 
 void os::Bsd::set_our_sigflags(int sig, int flags) {
-  assert(sig > 0 && sig < MAXSIGNUM, "vm signal out of expected range");
-  sigflags[sig] = flags;
+  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
+  if (sig > 0 && sig < NSIG) {
+    sigflags[sig] = flags;
+  }
 }
 
 void os::Bsd::set_signal_handler(int sig, bool set_installed) {
@@ -3137,7 +3146,7 @@ void os::Bsd::set_signal_handler(int sig, bool set_installed) {
 #endif
 
   // Save flags, which are set by ours
-  assert(sig > 0 && sig < MAXSIGNUM, "vm signal out of expected range");
+  assert(sig > 0 && sig < NSIG, "vm signal out of expected range");
   sigflags[sig] = sigAct.sa_flags;
 
   int ret = sigaction(sig, &sigAct, &oldAct);
