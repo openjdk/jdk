@@ -219,8 +219,18 @@ protected:
 
   OopMap* create_oop_map(Handle debug_info, TRAPS);
 
-  void record_scope(jint pc_offset, Handle debug_info, TRAPS);
-  void record_scope(jint pc_offset, Handle code_pos, GrowableArray<ScopeValue*>* objects, TRAPS);
+  /**
+   * Specifies the level of detail to record for a scope.
+   */
+  enum ScopeMode {
+    // Only record a method and BCI
+    BytecodePosition,
+    // Record a method, bci and JVM frame state
+    FullFrame
+  };
+
+  void record_scope(jint pc_offset, Handle debug_info, ScopeMode scope_mode, TRAPS);
+  void record_scope(jint pc_offset, Handle position, ScopeMode scope_mode, GrowableArray<ScopeValue*>* objects, TRAPS);
   void record_object_value(ObjectValue* sv, Handle value, GrowableArray<ScopeValue*>* objects, TRAPS);
 
   GrowableArray<ScopeValue*>* record_virtual_objects(Handle debug_info, TRAPS);
