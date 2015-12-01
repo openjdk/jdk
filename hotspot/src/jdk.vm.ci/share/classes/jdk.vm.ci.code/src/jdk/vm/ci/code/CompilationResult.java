@@ -870,31 +870,11 @@ public class CompilationResult {
      * Records a custom infopoint in the code section.
      *
      * Compiler implementations can use this method to record non-standard infopoints, which are not
-     * handled by the dedicated methods like {@link #recordCall}.
+     * handled by dedicated methods like {@link #recordCall}.
      *
      * @param infopoint the infopoint to record, usually a derived class from {@link Infopoint}
      */
     public void addInfopoint(Infopoint infopoint) {
-        // The infopoints list must always be sorted
-        if (!infopoints.isEmpty()) {
-            Infopoint previousInfopoint = infopoints.get(infopoints.size() - 1);
-            if (previousInfopoint.pcOffset > infopoint.pcOffset) {
-                // This re-sorting should be very rare
-                Collections.sort(infopoints);
-                previousInfopoint = infopoints.get(infopoints.size() - 1);
-            }
-            if (previousInfopoint.pcOffset == infopoint.pcOffset) {
-                if (infopoint.reason.canBeOmitted()) {
-                    return;
-                }
-                if (previousInfopoint.reason.canBeOmitted()) {
-                    Infopoint removed = infopoints.remove(infopoints.size() - 1);
-                    assert removed == previousInfopoint;
-                } else {
-                    throw new RuntimeException("Infopoints that can not be omited should have distinct PCs");
-                }
-            }
-        }
         infopoints.add(infopoint);
     }
 
