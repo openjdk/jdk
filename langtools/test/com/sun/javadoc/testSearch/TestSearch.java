@@ -71,7 +71,8 @@ public class TestSearch extends JavadocTester {
 
     @Test
     void test3() {
-        javadoc("-d", "out-3", "-noindex", "-sourcepath", testSrc,
+        javadoc("-d", "out-3", "-noindex", "-Xdoclint:none",
+                "-sourcepath", testSrc,
                 "-use", "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchOutput(false);
@@ -86,7 +87,8 @@ public class TestSearch extends JavadocTester {
 
     @Test
     void test4() {
-        javadoc("-d", "out-4", "-html5", "-sourcepath", testSrc,
+        javadoc("-d", "out-4", "-html5", "-Xdoclint:none",
+                "-sourcepath", testSrc,
                 "-use", "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchOutput(true);
@@ -101,7 +103,8 @@ public class TestSearch extends JavadocTester {
 
     @Test
     void test5() {
-        javadoc("-d", "out-5", "-noindex", "-html5", "-sourcepath", testSrc,
+        javadoc("-d", "out-5", "-noindex", "-html5", "-Xdoclint:none",
+                "-sourcepath", testSrc,
                 "-use", "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchOutput(false);
@@ -116,7 +119,8 @@ public class TestSearch extends JavadocTester {
 
     @Test
     void test6() {
-        javadoc("-d", "out-6", "-nocomment", "-sourcepath", testSrc,
+        javadoc("-d", "out-6", "-nocomment", "-Xdoclint:none",
+                "-sourcepath", testSrc,
                 "-use", "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchOutput(true);
@@ -131,7 +135,8 @@ public class TestSearch extends JavadocTester {
 
     @Test
     void test7() {
-        javadoc("-d", "out-7", "-nodeprecated", "-sourcepath", testSrc,
+        javadoc("-d", "out-7", "-nodeprecated", "-Xdoclint:none",
+                "-sourcepath", testSrc,
                 "-use", "pkg", "pkg1", "pkg2", "pkg3");
         checkExit(Exit.OK);
         checkSearchOutput(true);
