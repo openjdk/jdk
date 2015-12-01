@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,6 +53,8 @@ import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import sun.reflect.ReflectionFactory;
 import sun.reflect.misc.ReflectUtil;
+
+import static java.io.ObjectStreamField.*;
 
 /**
  * Serialization's descriptor for classes.  It contains the name and
@@ -1519,60 +1521,13 @@ public class ObjectStreamClass implements Serializable {
      * if class names equal, false otherwise.
      */
     private static boolean classNamesEqual(String name1, String name2) {
-        name1 = name1.substring(name1.lastIndexOf('.') + 1);
-        name2 = name2.substring(name2.lastIndexOf('.') + 1);
-        return name1.equals(name2);
+        int idx1 = name1.lastIndexOf('.') + 1;
+        int idx2 = name2.lastIndexOf('.') + 1;
+        int len1 = name1.length() - idx1;
+        int len2 = name2.length() - idx2;
+        return len1 == len2 &&
+                name1.regionMatches(idx1, name2, idx2, len1);
     }
-
-    /**
-     * Returns JVM type signature for given primitive.
-     */
-    private static String getPrimitiveSignature(Class<?> cl) {
-        if (cl == Integer.TYPE)
-            return "I";
-        else if (cl == Byte.TYPE)
-            return "B";
-        else if (cl == Long.TYPE)
-            return "J";
-        else if (cl == Float.TYPE)
-            return "F";
-        else if (cl == Double.TYPE)
-            return "D";
-        else if (cl == Short.TYPE)
-            return "S";
-        else if (cl == Character.TYPE)
-            return "C";
-        else if (cl == Boolean.TYPE)
-            return "Z";
-        else if (cl == Void.TYPE)
-            return "V";
-        else
-            throw new InternalError();
-    }
-
-    /**
-     * Returns JVM type signature for given class.
-     */
-    static String getClassSignature(Class<?> cl) {
-        if (cl.isPrimitive())
-            return getPrimitiveSignature(cl);
-        else
-            return appendClassSignature(new StringBuilder(), cl).toString();
-    }
-
-    private static StringBuilder appendClassSignature(StringBuilder sbuf, Class<?> cl) {
-       while (cl.isArray()) {
-           sbuf.append('[');
-           cl = cl.getComponentType();
-       }
-
-       if (cl.isPrimitive())
-           sbuf.append(getPrimitiveSignature(cl));
-       else
-           sbuf.append('L').append(cl.getName().replace('.', '/')).append(';');
-
-       return sbuf;
-   }
 
     /**
      * Returns JVM type signature for given list of parameters and return type.
