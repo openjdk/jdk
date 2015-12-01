@@ -193,7 +193,17 @@ final class IDATOutputStream extends ImageOutputStreamImpl {
 
         // Return to end of chunk and flush to minimize buffering
         stream.seek(pos);
-        stream.flushBefore(pos);
+        try {
+            stream.flushBefore(pos);
+        } catch (IOException e) {
+            /*
+             * If flushBefore() fails we try to access startPos in finally
+             * block of write_IDAT(). We should update startPos to avoid
+             * IndexOutOfBoundException while seek() is happening.
+             */
+            this.startPos = stream.getStreamPosition();
+            throw e;
+        }
     }
 
     public int read() throws IOException {
