@@ -78,7 +78,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   if (DebugVtables) {
     Label L;
     // check offset vs vtable length
-    __ ld(G3_scratch, in_bytes(InstanceKlass::vtable_length_offset()), G5);
+    __ ld(G3_scratch, in_bytes(Klass::vtable_length_offset()), G5);
     __ cmp_and_br_short(G5, vtable_index*vtableEntry::size(), Assembler::greaterUnsigned, Assembler::pt, L);
     __ set(vtable_index, O2);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, bad_compiled_vtable_index), O0, O2);

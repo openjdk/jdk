@@ -1144,7 +1144,7 @@ Value *SharkTopLevelBlock::get_virtual_callee(SharkValue* receiver,
       klass,
       SharkType::Method_type(),
       vtableEntry::size_in_bytes(),
-      InstanceKlass::vtable_start_offset(),
+      Klass::vtable_start_offset(),
       LLVMValue::intptr_constant(vtable_index)),
     "callee");
 }
@@ -1166,12 +1166,12 @@ Value* SharkTopLevelBlock::get_interface_callee(SharkValue *receiver,
   Value *vtable_start = builder()->CreateAdd(
     builder()->CreatePtrToInt(object_klass, SharkType::intptr_type()),
     LLVMValue::intptr_constant(
-      in_bytes(InstanceKlass::vtable_start_offset())),
+      in_bytes(Klass::vtable_start_offset())),
     "vtable_start");
 
   Value *vtable_length = builder()->CreateValueOfStructEntry(
     object_klass,
-    InstanceKlass::vtable_length_offset(),
+    Klass::vtable_length_offset(),
     SharkType::jint_type(),
     "vtable_length");
   vtable_length =

@@ -597,7 +597,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
         }
         HotSpotVMConfig config = config();
         final int vtableIndex = getVtableIndex((HotSpotResolvedObjectTypeImpl) resolved);
-        return config.instanceKlassVtableStartOffset + vtableIndex * config.vtableEntrySize + config.vtableEntryMethodOffset;
+        return config.klassVtableStartOffset + vtableIndex * config.vtableEntrySize + config.vtableEntryMethodOffset;
     }
 
     @Override

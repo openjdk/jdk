@@ -121,8 +121,8 @@ extern uint64_t jvmciHotSpotVMAddressEntryValueOffset;
 extern uint64_t jvmciHotSpotVMAddressEntryArrayStride;
 }
 
-int CompilerToVM::Data::InstanceKlass_vtable_start_offset;
-int CompilerToVM::Data::InstanceKlass_vtable_length_offset;
+int CompilerToVM::Data::Klass_vtable_start_offset;
+int CompilerToVM::Data::Klass_vtable_length_offset;
 
 int CompilerToVM::Data::Method_extra_stack_entries;
 
@@ -151,8 +151,8 @@ jbyte* CompilerToVM::Data::cardtable_start_address;
 int CompilerToVM::Data::cardtable_shift;
 
 void CompilerToVM::Data::initialize() {
-  InstanceKlass_vtable_start_offset = in_bytes(InstanceKlass::vtable_start_offset());
-  InstanceKlass_vtable_length_offset = in_bytes(InstanceKlass::vtable_length_offset());
+  Klass_vtable_start_offset = in_bytes(Klass::vtable_start_offset());
+  Klass_vtable_length_offset = in_bytes(Klass::vtable_length_offset());
 
   Method_extra_stack_entries = Method::extra_stack_entries();
 

@@ -73,7 +73,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   if (DebugVtables) {
     Label L;
     // check offset vs vtable length
-    __ ldrw(rscratch1, Address(r19, InstanceKlass::vtable_length_offset()));
+    __ ldrw(rscratch1, Address(r19, Klass::vtable_length_offset()));
     __ cmpw(rscratch1, vtable_index * vtableEntry::size());
     __ br(Assembler::GT, L);
     __ enter();

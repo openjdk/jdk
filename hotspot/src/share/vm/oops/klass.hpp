@@ -131,13 +131,16 @@ class Klass : public Metadata {
   jint        _modifier_flags;  // Processed access flags, for use by Class.getModifiers.
   AccessFlags _access_flags;    // Access flags. The class/interface distinction is stored here.
 
+  TRACE_DEFINE_KLASS_TRACE_ID;
+
   // Biased locking implementation and statistics
   // (the 64-bit chunk goes first, to avoid some fragmentation)
   jlong    _last_biased_lock_bulk_revocation_time;
   markOop  _prototype_header;   // Used when biased locking is both enabled and disabled for this type
   jint     _biased_lock_revocation_count;
 
-  TRACE_DEFINE_KLASS_TRACE_ID;
+  // vtable length
+  int _vtable_len;
 
   // Remembered sets support for the oops in the klasses.
   jbyte _modified_oops;             // Card Table Equivalent (YC/CMS support)
@@ -375,7 +378,7 @@ protected:
 
   // vtables
   virtual klassVtable* vtable() const = 0;
-  virtual int vtable_length() const = 0;
+  int vtable_length() const { return _vtable_len; }
 
   // subclass check
   bool is_subclass_of(const Klass* k) const;
@@ -438,7 +441,14 @@ protected:
   virtual Klass* array_klass_impl(bool or_null, int rank, TRAPS);
   virtual Klass* array_klass_impl(bool or_null, TRAPS);
 
+  void set_vtable_length(int len) { _vtable_len= len; }
+
  public:
+  static ByteSize vtable_start_offset();
+  static ByteSize vtable_length_offset() {
+    return byte_offset_of(Klass, _vtable_len);
+  }
+
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
   virtual void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);

@@ -80,14 +80,14 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   __ load_klass(rcvr_klass, R3);
 
  // Set method (in case of interpreted method), and destination address.
-  int entry_offset = in_bytes(InstanceKlass::vtable_start_offset()) + vtable_index*vtableEntry::size_in_bytes();
+  int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index*vtableEntry::size_in_bytes();
 
 #ifndef PRODUCT
   if (DebugVtables) {
     Label L;
     // Check offset vs vtable length.
     const Register vtable_len = R12_scratch2;
-    __ lwz(vtable_len, in_bytes(InstanceKlass::vtable_length_offset()), rcvr_klass);
+    __ lwz(vtable_len, in_bytes(Klass::vtable_length_offset()), rcvr_klass);
     __ cmpwi(CCR0, vtable_len, vtable_index*vtableEntry::size());
     __ bge(CCR0, L);
     __ li(R12_scratch2, vtable_index);
@@ -163,13 +163,13 @@ VtableStub* VtableStubs::create_itable_stub(int vtable_index) {
   __ load_klass(rcvr_klass, R3_ARG1);
 
   BLOCK_COMMENT("Load start of itable entries into itable_entry.");
-  __ lwz(vtable_len, in_bytes(InstanceKlass::vtable_length_offset()), rcvr_klass);
+  __ lwz(vtable_len, in_bytes(Klass::vtable_length_offset()), rcvr_klass);
   __ slwi(vtable_len, vtable_len, exact_log2(vtableEntry::size_in_bytes()));
   __ add(itable_entry_addr, vtable_len, rcvr_klass);
 
   // Loop over all itable entries until desired interfaceOop(Rinterface) found.
   BLOCK_COMMENT("Increment itable_entry_addr in loop.");
-  const int vtable_base_offset = in_bytes(InstanceKlass::vtable_start_offset());
+  const int vtable_base_offset = in_bytes(Klass::vtable_start_offset());
   __ addi(itable_entry_addr, itable_entry_addr, vtable_base_offset + itableOffsetEntry::interface_offset_in_bytes());
 
   const int itable_offset_search_inc = itableOffsetEntry::size() * wordSize;

@@ -85,7 +85,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   if (DebugVtables) {
     Label L;
     // check offset vs vtable length
-    __ cmpl(Address(rax, InstanceKlass::vtable_length_offset()), vtable_index*vtableEntry::size());
+    __ cmpl(Address(rax, Klass::vtable_length_offset()), vtable_index*vtableEntry::size());
     __ jcc(Assembler::greater, L);
     __ movl(rbx, vtable_index);
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, bad_compiled_vtable_index), rcx, rbx);

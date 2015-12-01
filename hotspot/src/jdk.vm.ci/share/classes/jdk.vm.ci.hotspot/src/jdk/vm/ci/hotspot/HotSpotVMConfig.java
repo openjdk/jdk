@@ -1030,8 +1030,8 @@ public class HotSpotVMConfig {
     @HotSpotVMField(name = "InstanceKlass::_init_state", type = "u1", get = HotSpotVMField.Type.OFFSET) @Stable public int instanceKlassInitStateOffset;
     @HotSpotVMField(name = "InstanceKlass::_constants", type = "ConstantPool*", get = HotSpotVMField.Type.OFFSET) @Stable public int instanceKlassConstantsOffset;
     @HotSpotVMField(name = "InstanceKlass::_fields", type = "Array<u2>*", get = HotSpotVMField.Type.OFFSET) @Stable public int instanceKlassFieldsOffset;
-    @HotSpotVMField(name = "CompilerToVM::Data::InstanceKlass_vtable_start_offset", type = "int", get = HotSpotVMField.Type.VALUE) @Stable public int instanceKlassVtableStartOffset;
-    @HotSpotVMField(name = "CompilerToVM::Data::InstanceKlass_vtable_length_offset", type = "int", get = HotSpotVMField.Type.VALUE) @Stable public int instanceKlassVtableLengthOffset;
+    @HotSpotVMField(name = "CompilerToVM::Data::Klass_vtable_start_offset", type = "int", get = HotSpotVMField.Type.VALUE) @Stable public int klassVtableStartOffset;
+    @HotSpotVMField(name = "CompilerToVM::Data::Klass_vtable_length_offset", type = "int", get = HotSpotVMField.Type.VALUE) @Stable public int klassVtableLengthOffset;
 
     @HotSpotVMConstant(name = "InstanceKlass::linked") @Stable public int instanceKlassStateLinked;
     @HotSpotVMConstant(name = "InstanceKlass::fully_initialized") @Stable public int instanceKlassStateFullyInitialized;

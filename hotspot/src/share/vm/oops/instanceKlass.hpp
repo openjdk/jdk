@@ -178,6 +178,7 @@ class InstanceKlass: public Klass {
   u2              _java_fields_count;    // The number of declared Java fields
   int             _nonstatic_oop_map_size;// size in words of nonstatic oop map blocks
 
+  int             _itable_len;           // length of Java itable (in words)
   // _is_marked_dependent can be set concurrently, thus cannot be part of the
   // _misc_flags.
   bool            _is_marked_dependent;  // used for marking during flushing and deoptimization
@@ -211,8 +212,6 @@ class InstanceKlass: public Klass {
   u2              _minor_version;        // minor version number of class file
   u2              _major_version;        // major version number of class file
   Thread*         _init_thread;          // Pointer to current thread doing initialization (to handle recusive initialization)
-  int             _vtable_len;           // length of Java vtable (in words)
-  int             _itable_len;           // length of Java itable (in words)
   OopMapCache*    volatile _oop_map_cache;   // OopMapCache for all methods in the klass (allocated lazily)
   MemberNameTable* _member_names;        // Member names
   JNIid*          _jni_ids;              // First JNI identifier for static fields in this class
@@ -310,10 +309,6 @@ class InstanceKlass: public Klass {
 
   int static_oop_field_count() const       { return (int)_static_oop_field_count; }
   void set_static_oop_field_count(u2 size) { _static_oop_field_count = size; }
-
-  // Java vtable
-  int  vtable_length() const               { return _vtable_len; }
-  void set_vtable_length(int len)          { _vtable_len = len; }
 
   // Java itable
   int  itable_length() const               { return _itable_len; }
@@ -948,9 +943,6 @@ public:
 #if INCLUDE_SERVICES
   virtual void collect_statistics(KlassSizeStats *sz) const;
 #endif
-
-  static ByteSize vtable_start_offset()    { return in_ByteSize(header_size() * wordSize); }
-  static ByteSize vtable_length_offset()   { return byte_offset_of(InstanceKlass, _vtable_len); }
 
   intptr_t* start_of_vtable() const        { return (intptr_t*) ((address)this + in_bytes(vtable_start_offset())); }
   intptr_t* start_of_itable() const        { return start_of_vtable() + vtable_length(); }

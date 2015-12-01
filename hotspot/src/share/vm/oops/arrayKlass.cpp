@@ -81,10 +81,10 @@ Method* ArrayKlass::uncached_lookup_method(const Symbol* name,
 ArrayKlass::ArrayKlass(Symbol* name) :
   _dimension(1),
   _higher_dimension(NULL),
-  _lower_dimension(NULL),
-  // Arrays don't add any new methods, so their vtable is the same size as
-  // the vtable of klass Object.
-  _vtable_len(Universe::base_vtable_size()) {
+  _lower_dimension(NULL) {
+    // Arrays don't add any new methods, so their vtable is the same size as
+    // the vtable of klass Object.
+    set_vtable_length(Universe::base_vtable_size());
     set_name(name);
     set_super(Universe::is_bootstrapping() ? (Klass*)NULL : SystemDictionary::Object_klass());
     set_layout_helper(Klass::_lh_neutral_value);
