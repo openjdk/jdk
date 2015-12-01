@@ -736,19 +736,6 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
   obj.load_item();
   offset.load_nonconstant();
 
-  if (type == objectType) {
-    cmp.load_item_force(FrameMap::rax_oop_opr);
-    val.load_item();
-  } else if (type == intType) {
-    cmp.load_item_force(FrameMap::rax_opr);
-    val.load_item();
-  } else if (type == longType) {
-    cmp.load_item_force(FrameMap::long0_opr);
-    val.load_item_force(FrameMap::long1_opr);
-  } else {
-    ShouldNotReachHere();
-  }
-
   LIR_Opr addr = new_pointer_register();
   LIR_Address* a;
   if(offset.result()->is_constant()) {
@@ -783,6 +770,19 @@ void LIRGenerator::do_CompareAndSwap(Intrinsic* x, ValueType* type) {
     // Do the pre-write barrier, if any.
     pre_barrier(addr, LIR_OprFact::illegalOpr /* pre_val */,
                 true /* do_load */, false /* patch */, NULL);
+  }
+
+  if (type == objectType) {
+    cmp.load_item_force(FrameMap::rax_oop_opr);
+    val.load_item();
+  } else if (type == intType) {
+    cmp.load_item_force(FrameMap::rax_opr);
+    val.load_item();
+  } else if (type == longType) {
+    cmp.load_item_force(FrameMap::long0_opr);
+    val.load_item_force(FrameMap::long1_opr);
+  } else {
+    ShouldNotReachHere();
   }
 
   LIR_Opr ill = LIR_OprFact::illegalOpr;  // for convenience
