@@ -86,7 +86,9 @@ import jdk.jshell.JShell.Subscription;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
+import java.util.Locale;
 import java.util.MissingResourceException;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import static java.util.stream.Collectors.toList;
 
@@ -491,12 +493,14 @@ public class JShellTool {
     }
 
     private void processCommand(String cmd) {
-        try {
-            //handle "/[number]"
-            cmdUseHistoryEntry(Integer.parseInt(cmd.substring(1)));
-            return ;
-        } catch (NumberFormatException ex) {
-            //ignore
+        if (cmd.startsWith("/-")) {
+            try {
+                //handle "/-[number]"
+                cmdUseHistoryEntry(Integer.parseInt(cmd.substring(1)));
+                return ;
+            } catch (NumberFormatException ex) {
+                //ignore
+            }
         }
         String arg = "";
         int idx = cmd.indexOf(' ');
@@ -506,8 +510,10 @@ public class JShellTool {
         }
         Command[] candidates = findCommand(cmd, c -> c.kind != CommandKind.HELP_ONLY);
         if (candidates.length == 0) {
-            hard("No such command: %s", cmd);
-            fluff("Type /help for help.");
+            if (!rerunHistoryEntryById(cmd.substring(1))) {
+                hard("No such command or snippet id: %s", cmd);
+                fluff("Type /help for help.");
+            }
         } else if (candidates.length == 1) {
             candidates[0].run.accept(arg);
         } else {
@@ -728,7 +734,7 @@ public class JShellTool {
         registerCommand(new Command("/!", "", "re-run last snippet",
                                     arg -> cmdUseHistoryEntry(-1),
                                     EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/<n>", "", "re-run n-th snippet",
+        registerCommand(new Command("/<id>", "", "re-run snippet by id",
                                     arg -> { throw new IllegalStateException(); },
                                     EMPTY_COMPLETION_PROVIDER,
                                     CommandKind.HELP_ONLY));
@@ -1275,13 +1281,27 @@ public class JShellTool {
         else
             index--;
         if (index >= 0 && index < keys.size()) {
-            String source = keys.get(index).source();
-            cmdout.printf("%s\n", source);
-            input.replaceLastHistoryEntry(source);
-            processSourceCatchingReset(source);
+            rerunSnippet(keys.get(index));
         } else {
             hard("Cannot find snippet %d", index + 1);
         }
+    }
+
+    private boolean rerunHistoryEntryById(String id) {
+        Optional<Snippet> snippet = state.snippets().stream()
+            .filter(s -> s.id().equals(id))
+            .findFirst();
+        return snippet.map(s -> {
+            rerunSnippet(s);
+            return true;
+        }).orElse(false);
+    }
+
+    private void rerunSnippet(Snippet snippet) {
+        String source = snippet.source();
+        cmdout.printf("%s\n", source);
+        input.replaceLastHistoryEntry(source);
+        processSourceCatchingReset(source);
     }
 
     /**

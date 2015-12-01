@@ -41,7 +41,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
@@ -215,8 +217,8 @@ public class ToolBasicTest extends ReplToolTesting {
     @Test(enabled = false) // TODO 8130450
     public void testRerun() {
         test(false, new String[] {"-nostartup"},
-                (a) -> assertCommand(a, "/0", "|  Cannot find snippet 0\n"),
-                (a) -> assertCommand(a, "/5", "|  Cannot find snippet 5\n")
+                (a) -> assertCommand(a, "/0", "|  No such command or snippet id: /0\n|  Type /help for help.\n"),
+                (a) -> assertCommand(a, "/5", "|  No such command or snippet id: /5\n|  Type /help for help.\n")
         );
         String[] codes = new String[] {
                 "int a = 0;", // var
@@ -250,6 +252,35 @@ public class ToolBasicTest extends ReplToolTesting {
         tests.add((a) -> assertCommandCheckOutput(a, "/!", assertStartsWith("void g() { h(); }")));
         test(false, new String[]{"-nostartup"},
                 tests.toArray(new ReplTest[tests.size()]));
+    }
+
+    public void test8142447() {
+        Function<String, BiFunction<String, Integer, ReplTest>> assertRerun = cmd -> (code, assertionCount) ->
+                (a) -> assertCommandCheckOutput(a, cmd, s -> {
+                            String[] ss = s.split("\n");
+                            assertEquals(ss[0], code);
+                            loadVariable(a, "int", "assertionCount", Integer.toString(assertionCount), Integer.toString(assertionCount));
+                        });
+        ReplTest assertVariables = (a) -> assertCommandCheckOutput(a, "/v", assertVariables());
+
+        Compiler compiler = new Compiler();
+        Path startup = compiler.getPath("StartupFileOption/startup.txt");
+        compiler.writeToFile(startup, "int assertionCount = 0;\n" + // id: s1
+                "void add(int n) { assertionCount += n; }");
+        test(new String[]{"-startup", startup.toString()},
+                (a) -> assertCommand(a, "add(1)", ""), // id: 1
+                (a) -> assertCommandCheckOutput(a, "add(ONE)", s -> assertEquals(s.split("\n")[0], "|  Error:")), // id: e1
+                (a) -> assertVariable(a, "int", "ONE", "1", "1"),
+                assertRerun.apply("/1").apply("add(1)", 2), assertVariables,
+                assertRerun.apply("/e1").apply("add(ONE)", 3), assertVariables,
+                assertRerun.apply("/s1").apply("int assertionCount = 0;", 0), assertVariables
+        );
+
+        test(false, new String[] {"-nostartup"},
+                (a) -> assertCommand(a, "/s1", "|  No such command or snippet id: /s1\n|  Type /help for help.\n"),
+                (a) -> assertCommand(a, "/1", "|  No such command or snippet id: /1\n|  Type /help for help.\n"),
+                (a) -> assertCommand(a, "/e1", "|  No such command or snippet id: /e1\n|  Type /help for help.\n")
+        );
     }
 
     public void testRemaining() {
@@ -574,7 +605,7 @@ public class ToolBasicTest extends ReplToolTesting {
 
     public void testUnknownCommand() {
         test((a) -> assertCommand(a, "/unknown",
-                "|  No such command: /unknown\n" +
+                "|  No such command or snippet id: /unknown\n" +
                 "|  Type /help for help.\n"));
     }
 
