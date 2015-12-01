@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,6 +136,14 @@ public interface DocTreeVisitor<R,P> {
      * @return a result value
      */
     R visitIdentifier(IdentifierTree node, P p);
+
+    /**
+     * Visits an IndexTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
+    R visitIndex(IndexTree node, P p);
 
     /**
      * Visits an InheritDocTree node.
