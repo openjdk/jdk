@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -482,8 +482,8 @@ final class HotSpotResolvedObjectTypeImpl extends HotSpotResolvedJavaType implem
             /* Everything has the core vtable of java.lang.Object */
             return config.baseVtableLength();
         }
-        int result = UNSAFE.getInt(getMetaspaceKlass() + config.instanceKlassVtableLengthOffset) / (config.vtableEntrySize / config.heapWordSize);
-        assert result >= config.baseVtableLength() : UNSAFE.getInt(getMetaspaceKlass() + config.instanceKlassVtableLengthOffset) + " " + config.vtableEntrySize;
+        int result = UNSAFE.getInt(getMetaspaceKlass() + config.klassVtableLengthOffset) / (config.vtableEntrySize / config.heapWordSize);
+        assert result >= config.baseVtableLength() : UNSAFE.getInt(getMetaspaceKlass() + config.klassVtableLengthOffset) + " " + config.vtableEntrySize;
         return result;
     }
 

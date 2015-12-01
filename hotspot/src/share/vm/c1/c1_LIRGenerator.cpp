@@ -2972,7 +2972,7 @@ void LIRGenerator::do_Invoke(Invoke* x) {
                           SharedRuntime::get_resolve_virtual_call_stub(),
                           arg_list, info);
       } else {
-        int entry_offset = in_bytes(InstanceKlass::vtable_start_offset()) + x->vtable_index() * vtableEntry::size_in_bytes();
+        int entry_offset = in_bytes(Klass::vtable_start_offset()) + x->vtable_index() * vtableEntry::size_in_bytes();
         int vtable_offset = entry_offset + vtableEntry::method_offset_in_bytes();
         __ call_virtual(target, receiver, result_register, vtable_offset, arg_list, info);
       }

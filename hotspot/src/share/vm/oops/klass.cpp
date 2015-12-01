@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -657,6 +657,10 @@ void Klass::verify_on(outputStream* st) {
 void Klass::oop_verify_on(oop obj, outputStream* st) {
   guarantee(obj->is_oop(),  "should be oop");
   guarantee(obj->klass()->is_klass(), "klass field is not a klass");
+}
+
+ByteSize Klass::vtable_start_offset() {
+  return in_ByteSize(InstanceKlass::header_size() * wordSize);
 }
 
 #ifndef PRODUCT
