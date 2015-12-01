@@ -1415,8 +1415,8 @@ final class ServerHandshaker extends Handshaker {
                 }
             }
 
-            // need EC cert signed using EC
-            if (setupPrivateKeyAndChain("EC_EC") == false) {
+            // need EC cert
+            if (setupPrivateKeyAndChain("EC") == false) {
                 return false;
             }
             if (setupEphemeralECDHKeys() == false) {
@@ -1424,15 +1424,15 @@ final class ServerHandshaker extends Handshaker {
             }
             break;
         case K_ECDH_RSA:
-            // need EC cert signed using RSA
-            if (setupPrivateKeyAndChain("EC_RSA") == false) {
+            // need EC cert
+            if (setupPrivateKeyAndChain("EC") == false) {
                 return false;
             }
             setupStaticECDHKeys();
             break;
         case K_ECDH_ECDSA:
-            // need EC cert signed using EC
-            if (setupPrivateKeyAndChain("EC_EC") == false) {
+            // need EC cert
+            if (setupPrivateKeyAndChain("EC") == false) {
                 return false;
             }
             setupStaticECDHKeys();
