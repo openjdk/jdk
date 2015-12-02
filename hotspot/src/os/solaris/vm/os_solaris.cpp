@@ -4144,32 +4144,6 @@ void os::Solaris::install_signal_handlers() {
 void report_error(const char* file_name, int line_no, const char* title,
                   const char* format, ...);
 
-const char * signames[] = {
-  "SIG0",
-  "SIGHUP", "SIGINT", "SIGQUIT", "SIGILL", "SIGTRAP",
-  "SIGABRT", "SIGEMT", "SIGFPE", "SIGKILL", "SIGBUS",
-  "SIGSEGV", "SIGSYS", "SIGPIPE", "SIGALRM", "SIGTERM",
-  "SIGUSR1", "SIGUSR2", "SIGCLD", "SIGPWR", "SIGWINCH",
-  "SIGURG", "SIGPOLL", "SIGSTOP", "SIGTSTP", "SIGCONT",
-  "SIGTTIN", "SIGTTOU", "SIGVTALRM", "SIGPROF", "SIGXCPU",
-  "SIGXFSZ", "SIGWAITING", "SIGLWP", "SIGFREEZE", "SIGTHAW",
-  "SIGCANCEL", "SIGLOST"
-};
-
-const char* os::exception_name(int exception_code, char* buf, size_t size) {
-  if (0 < exception_code && exception_code <= SIGRTMAX) {
-    // signal
-    if (exception_code < sizeof(signames)/sizeof(const char*)) {
-      jio_snprintf(buf, size, "%s", signames[exception_code]);
-    } else {
-      jio_snprintf(buf, size, "SIG%d", exception_code);
-    }
-    return buf;
-  } else {
-    return NULL;
-  }
-}
-
 // (Static) wrapper for getisax(2) call.
 os::Solaris::getisax_func_t os::Solaris::_getisax = 0;
 
