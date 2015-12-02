@@ -25,6 +25,7 @@
 
 package java.io;
 
+import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
 import sun.nio.cs.StreamEncoder;
@@ -218,6 +219,28 @@ public class OutputStreamWriter extends Writer {
      */
     public void write(String str, int off, int len) throws IOException {
         se.write(str, off, len);
+    }
+
+    @Override
+    public Writer append(CharSequence csq, int start, int end) throws IOException {
+        if (csq == null) {
+            write("null".subSequence(start, end).toString());
+            return this;
+        } else {
+            return append(csq.subSequence(start, end));
+        }
+    }
+
+    @Override
+    public Writer append(CharSequence csq) throws IOException {
+        if (csq == null) {
+            se.write("null");
+        } else if (csq instanceof CharBuffer) {
+            se.write((CharBuffer) csq);
+        } else {
+            se.write(csq.toString());
+        }
+        return this;
     }
 
     /**
