@@ -92,33 +92,6 @@ import jdk.internal.misc.Unsafe;
                 TRACE_METHOD_LINKAGE);
     }
 
-    /*non-public*/ static String getNameString(MethodHandle target, MethodType type) {
-        if (type == null)
-            type = target.type();
-        MemberName name = null;
-        if (target != null)
-            name = target.internalMemberName();
-        if (name == null)
-            return "invoke" + type;
-        return name.getName() + type;
-    }
-
-    /*non-public*/ static String getNameString(MethodHandle target, MethodHandle typeHolder) {
-        return getNameString(target, typeHolder == null ? (MethodType) null : typeHolder.type());
-    }
-
-    /*non-public*/ static String getNameString(MethodHandle target) {
-        return getNameString(target, (MethodType) null);
-    }
-
-    /*non-public*/ static String addTypeString(Object obj, MethodHandle target) {
-        String str = String.valueOf(obj);
-        if (target == null)  return str;
-        int paren = str.indexOf('(');
-        if (paren >= 0) str = str.substring(0, paren);
-        return str + target.type();
-    }
-
     // handy shared exception makers (they simplify the common case code)
     /*non-public*/ static InternalError newInternalError(String message) {
         return new InternalError(message);
@@ -149,9 +122,6 @@ import jdk.internal.misc.Unsafe;
         if (ex instanceof Error)  throw (Error) ex;
         if (ex instanceof RuntimeException)  throw (RuntimeException) ex;
         throw newInternalError("uncaught exception", ex);
-    }
-    static Error NYI() {
-        throw new AssertionError("NYI");
     }
     private static String message(String message, Object obj) {
         if (obj != null)  message = message + ": " + obj;
