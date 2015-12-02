@@ -758,15 +758,15 @@ bool Deoptimization::realloc_objects(JavaThread* thread, frame* fr, GrowableArra
     KlassHandle k(java_lang_Class::as_Klass(sv->klass()->as_ConstantOopReadValue()->value()()));
     oop obj = NULL;
 
-    if (k->oop_is_instance()) {
+    if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k());
       obj = ik->allocate_instance(THREAD);
-    } else if (k->oop_is_typeArray()) {
+    } else if (k->is_typeArray_klass()) {
       TypeArrayKlass* ak = TypeArrayKlass::cast(k());
       assert(sv->field_size() % type2size[ak->element_type()] == 0, "non-integral array length");
       int len = sv->field_size() / type2size[ak->element_type()];
       obj = ak->allocate(len, THREAD);
-    } else if (k->oop_is_objArray()) {
+    } else if (k->is_objArray_klass()) {
       ObjArrayKlass* ak = ObjArrayKlass::cast(k());
       obj = ak->allocate(sv->field_size(), THREAD);
     }
@@ -1010,13 +1010,13 @@ void Deoptimization::reassign_fields(frame* fr, RegisterMap* reg_map, GrowableAr
       continue;
     }
 
-    if (k->oop_is_instance()) {
+    if (k->is_instance_klass()) {
       InstanceKlass* ik = InstanceKlass::cast(k());
       reassign_fields_by_klass(ik, fr, reg_map, sv, 0, obj(), skip_internal);
-    } else if (k->oop_is_typeArray()) {
+    } else if (k->is_typeArray_klass()) {
       TypeArrayKlass* ak = TypeArrayKlass::cast(k());
       reassign_type_array_elements(fr, reg_map, sv, (typeArrayOop) obj(), ak->element_type());
-    } else if (k->oop_is_objArray()) {
+    } else if (k->is_objArray_klass()) {
       reassign_object_array_elements(fr, reg_map, sv, (objArrayOop) obj());
     }
   }
@@ -1345,7 +1345,7 @@ Deoptimization::get_method_data(JavaThread* thread, methodHandle m,
 }
 
 #if defined(COMPILER2) || defined(SHARK) || INCLUDE_JVMCI
-void Deoptimization::load_class_by_index(constantPoolHandle constant_pool, int index, TRAPS) {
+void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool, int index, TRAPS) {
   // in case of an unresolved klass entry, load the class.
   if (constant_pool->tag_at(index).is_unresolved_klass()) {
     Klass* tk = constant_pool->klass_at_ignore_error(index, CHECK);
@@ -1376,7 +1376,7 @@ void Deoptimization::load_class_by_index(constantPoolHandle constant_pool, int i
 }
 
 
-void Deoptimization::load_class_by_index(constantPoolHandle constant_pool, int index) {
+void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool, int index) {
   EXCEPTION_MARK;
   load_class_by_index(constant_pool, index, THREAD);
   if (HAS_PENDING_EXCEPTION) {
@@ -1461,14 +1461,14 @@ JRT_ENTRY(void, Deoptimization::uncommon_trap_inner(JavaThread* thread, jint tra
         oop speculation_log = nm->speculation_log();
         if (speculation_log != NULL) {
           if (TraceDeoptimization || TraceUncollectedSpeculations) {
-            if (SpeculationLog::lastFailed(speculation_log) != NULL) {
+            if (HotSpotSpeculationLog::lastFailed(speculation_log) != NULL) {
               tty->print_cr("A speculation that was not collected by the compiler is being overwritten");
             }
           }
           if (TraceDeoptimization) {
             tty->print_cr("Saving speculation to speculation log");
           }
-          SpeculationLog::set_lastFailed(speculation_log, speculation);
+          HotSpotSpeculationLog::set_lastFailed(speculation_log, speculation);
         } else {
           if (TraceDeoptimization) {
             tty->print_cr("Speculation present but no speculation log");
@@ -2062,6 +2062,7 @@ int Deoptimization::trap_state_set_recompiled(int trap_state, bool z) {
 // This is used for debugging and diagnostics, including LogFile output.
 const char* Deoptimization::format_trap_state(char* buf, size_t buflen,
                                               int trap_state) {
+  assert(buflen > 0, "sanity");
   DeoptReason reason      = trap_state_reason(trap_state);
   bool        recomp_flag = trap_state_is_recompiled(trap_state);
   // Re-encode the state from its decoded components.
@@ -2082,8 +2083,6 @@ const char* Deoptimization::format_trap_state(char* buf, size_t buflen,
                        trap_reason_name(reason),
                        recomp_flag ? " recompiled" : "");
   }
-  if (len >= buflen)
-    buf[buflen-1] = '\0';
   return buf;
 }
 
@@ -2178,8 +2177,6 @@ const char* Deoptimization::format_trap_request(char* buf, size_t buflen,
 #endif
                        );
   }
-  if (len >= buflen)
-    buf[buflen-1] = '\0';
   return buf;
 }
 

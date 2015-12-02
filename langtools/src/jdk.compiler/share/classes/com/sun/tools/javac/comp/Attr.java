@@ -840,8 +840,10 @@ public class Attr extends JCTree.Visitor {
                    boolean classExpected,
                    boolean interfaceExpected,
                    boolean checkExtensible) {
+        final DiagnosticPosition pos = tree.hasTag(TYPEAPPLY) ?
+                (((JCTypeApply) tree).clazz).pos() : tree.pos();
         if (t.tsym.isAnonymous()) {
-            log.error(tree.pos(), "cant.inherit.from.anon");
+            log.error(pos, "cant.inherit.from.anon");
             return types.createErrorType(t);
         }
         if (t.isErroneous())
@@ -849,29 +851,29 @@ public class Attr extends JCTree.Visitor {
         if (t.hasTag(TYPEVAR) && !classExpected && !interfaceExpected) {
             // check that type variable is already visible
             if (t.getUpperBound() == null) {
-                log.error(tree.pos(), "illegal.forward.ref");
+                log.error(pos, "illegal.forward.ref");
                 return types.createErrorType(t);
             }
         } else {
-            t = chk.checkClassType(tree.pos(), t, checkExtensible);
+            t = chk.checkClassType(pos, t, checkExtensible);
         }
         if (interfaceExpected && (t.tsym.flags() & INTERFACE) == 0) {
-            log.error(tree.pos(), "intf.expected.here");
+            log.error(pos, "intf.expected.here");
             // return errType is necessary since otherwise there might
             // be undetected cycles which cause attribution to loop
             return types.createErrorType(t);
         } else if (checkExtensible &&
                    classExpected &&
                    (t.tsym.flags() & INTERFACE) != 0) {
-            log.error(tree.pos(), "no.intf.expected.here");
+            log.error(pos, "no.intf.expected.here");
             return types.createErrorType(t);
         }
         if (checkExtensible &&
             ((t.tsym.flags() & FINAL) != 0)) {
-            log.error(tree.pos(),
+            log.error(pos,
                       "cant.inherit.from.final", t.tsym);
         }
-        chk.checkNonCyclic(tree.pos(), t);
+        chk.checkNonCyclic(pos, t);
         return t;
     }
 
@@ -1890,7 +1892,8 @@ public class Attr extends JCTree.Visitor {
 
             // Check that value of resulting type is admissible in the
             // current context.  Also, capture the return type
-            result = check(tree, capture(restype), KindSelector.VAL, resultInfo);
+            Type capturedRes = resultInfo.checkContext.inferenceContext().cachedCapture(tree, restype, true);
+            result = check(tree, capturedRes, KindSelector.VAL, resultInfo);
         }
         chk.validate(tree.typeargs, localEnv);
     }

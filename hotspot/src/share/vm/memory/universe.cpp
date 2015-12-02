@@ -354,37 +354,6 @@ void Universe::genesis(TRAPS) {
   // Have already been initialized.
   _objectArrayKlassObj->append_to_sibling_list();
 
-  // Compute is_jdk version flags.
-  // Only 1.3 or later has the java.lang.Shutdown class.
-  // Only 1.4 or later has the java.lang.CharSequence interface.
-  // Only 1.5 or later has the java.lang.management.MemoryUsage class.
-  if (JDK_Version::is_partially_initialized()) {
-    uint8_t jdk_version;
-    Klass* k = SystemDictionary::resolve_or_null(
-        vmSymbols::java_lang_management_MemoryUsage(), THREAD);
-    CLEAR_PENDING_EXCEPTION; // ignore exceptions
-    if (k == NULL) {
-      k = SystemDictionary::resolve_or_null(
-          vmSymbols::java_lang_CharSequence(), THREAD);
-      CLEAR_PENDING_EXCEPTION; // ignore exceptions
-      if (k == NULL) {
-        k = SystemDictionary::resolve_or_null(
-            vmSymbols::java_lang_Shutdown(), THREAD);
-        CLEAR_PENDING_EXCEPTION; // ignore exceptions
-        if (k == NULL) {
-          jdk_version = 2;
-        } else {
-          jdk_version = 3;
-        }
-      } else {
-        jdk_version = 4;
-      }
-    } else {
-      jdk_version = 5;
-    }
-    JDK_Version::fully_initialize(jdk_version);
-  }
-
   #ifdef ASSERT
   if (FullGCALot) {
     // Allocate an array of dummy objects.
@@ -409,7 +378,7 @@ void Universe::genesis(TRAPS) {
     int i = 0;
     while (i < size) {
         // Allocate dummy in old generation
-      oop dummy = InstanceKlass::cast(SystemDictionary::Object_klass())->allocate_instance(CHECK);
+      oop dummy = SystemDictionary::Object_klass()->allocate_instance(CHECK);
       dummy_array->obj_at_put(i++, dummy);
     }
     {
@@ -484,8 +453,8 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
     _mirrors[T_LONG]    = _long_mirror;
     _mirrors[T_SHORT]   = _short_mirror;
     _mirrors[T_VOID]    = _void_mirror;
-  //_mirrors[T_OBJECT]  = InstanceKlass::cast(_object_klass)->java_mirror();
-  //_mirrors[T_ARRAY]   = InstanceKlass::cast(_object_klass)->java_mirror();
+  //_mirrors[T_OBJECT]  = _object_klass->java_mirror();
+  //_mirrors[T_ARRAY]   = _object_klass->java_mirror();
 }
 
 void Universe::fixup_mirrors(TRAPS) {
@@ -545,9 +514,8 @@ void Universe::reinitialize_vtable_of(KlassHandle k_h, TRAPS) {
   Klass* ko = k_h();
   klassVtable* vt = ko->vtable();
   if (vt) vt->initialize_vtable(false, CHECK);
-  if (ko->oop_is_instance()) {
-    InstanceKlass* ik = (InstanceKlass*)ko;
-    for (KlassHandle s_h(THREAD, ik->subklass());
+  if (ko->is_instance_klass()) {
+    for (KlassHandle s_h(THREAD, ko->subklass());
          s_h() != NULL;
          s_h = KlassHandle(THREAD, s_h()->next_sibling())) {
       reinitialize_vtable_of(s_h, CHECK);
@@ -998,8 +966,8 @@ bool universe_post_init() {
   // Setup static method for registering finalizers
   // The finalizer klass must be linked before looking up the method, in
   // case it needs to get rewritten.
-  InstanceKlass::cast(SystemDictionary::Finalizer_klass())->link_class(CHECK_false);
-  Method* m = InstanceKlass::cast(SystemDictionary::Finalizer_klass())->find_method(
+  SystemDictionary::Finalizer_klass()->link_class(CHECK_false);
+  Method* m = SystemDictionary::Finalizer_klass()->find_method(
                                   vmSymbols::register_method_name(),
                                   vmSymbols::register_method_signature());
   if (m == NULL || !m->is_static()) {
@@ -1009,8 +977,8 @@ bool universe_post_init() {
   Universe::_finalizer_register_cache->init(
     SystemDictionary::Finalizer_klass(), m);
 
-  InstanceKlass::cast(SystemDictionary::misc_Unsafe_klass())->link_class(CHECK_false);
-  m = InstanceKlass::cast(SystemDictionary::misc_Unsafe_klass())->find_method(
+  SystemDictionary::internal_Unsafe_klass()->link_class(CHECK_false);
+  m = SystemDictionary::internal_Unsafe_klass()->find_method(
                                   vmSymbols::throwIllegalAccessError_name(),
                                   vmSymbols::void_method_signature());
   if (m != NULL && !m->is_static()) {
@@ -1020,11 +988,11 @@ bool universe_post_init() {
     return false; // initialization failed (cannot throw exception yet)
   }
   Universe::_throw_illegal_access_error_cache->init(
-    SystemDictionary::misc_Unsafe_klass(), m);
+    SystemDictionary::internal_Unsafe_klass(), m);
 
   // Setup method for registering loaded classes in class loader vector
-  InstanceKlass::cast(SystemDictionary::ClassLoader_klass())->link_class(CHECK_false);
-  m = InstanceKlass::cast(SystemDictionary::ClassLoader_klass())->find_method(vmSymbols::addClass_name(), vmSymbols::class_void_signature());
+  SystemDictionary::ClassLoader_klass()->link_class(CHECK_false);
+  m = SystemDictionary::ClassLoader_klass()->find_method(vmSymbols::addClass_name(), vmSymbols::class_void_signature());
   if (m == NULL || m->is_static()) {
     tty->print_cr("Unable to link/verify ClassLoader.addClass method");
     return false; // initialization failed (cannot throw exception yet)
@@ -1033,8 +1001,8 @@ bool universe_post_init() {
     SystemDictionary::ClassLoader_klass(), m);
 
   // Setup method for checking protection domain
-  InstanceKlass::cast(SystemDictionary::ProtectionDomain_klass())->link_class(CHECK_false);
-  m = InstanceKlass::cast(SystemDictionary::ProtectionDomain_klass())->
+  SystemDictionary::ProtectionDomain_klass()->link_class(CHECK_false);
+  m = SystemDictionary::ProtectionDomain_klass()->
             find_method(vmSymbols::impliesCreateAccessControlContext_name(),
                         vmSymbols::void_boolean_signature());
   // Allow NULL which should only happen with bootstrapping.

@@ -351,7 +351,7 @@ class Dependencies: public ResourceObj {
 #if INCLUDE_JVMCI
  private:
   static void check_ctxk(Klass* ctxk) {
-    assert(ctxk->oop_is_instance(), "java types only");
+    assert(ctxk->is_instance_klass(), "java types only");
   }
   static void check_ctxk_abstract(Klass* ctxk) {
     check_ctxk(ctxk);

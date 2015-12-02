@@ -2148,11 +2148,8 @@ run:
         if (!constants->tag_at(index).is_unresolved_klass()) {
           // Make sure klass is initialized and doesn't have a finalizer
           Klass* entry = constants->slot_at(index).get_klass();
-          assert(entry->is_klass(), "Should be resolved klass");
-          Klass* k_entry = (Klass*) entry;
-          assert(k_entry->oop_is_instance(), "Should be InstanceKlass");
-          InstanceKlass* ik = (InstanceKlass*) k_entry;
-          if ( ik->is_initialized() && ik->can_be_fastpath_allocated() ) {
+          InstanceKlass* ik = InstanceKlass::cast(entry);
+          if (ik->is_initialized() && ik->can_be_fastpath_allocated() ) {
             size_t obj_size = ik->size_helper();
             oop result = NULL;
             // If the TLAB isn't pre-zeroed then we'll have to do it
@@ -2193,7 +2190,7 @@ run:
                 result->set_mark(markOopDesc::prototype());
               }
               result->set_klass_gap(0);
-              result->set_klass(k_entry);
+              result->set_klass(ik);
               // Must prevent reordering of stores for object initialization
               // with stores that publish the new object.
               OrderAccess::storestore();
@@ -2609,9 +2606,9 @@ run:
                   - klass: {other class}
 
                   but using InstanceKlass::cast(STACK_OBJECT(-parms)->klass()) causes in assertion failure
-                  because rcvr->klass()->oop_is_instance() == 0
+                  because rcvr->klass()->is_instance_klass() == 0
                   However it seems to have a vtable in the right location. Huh?
-
+                  Because vtables have the same offset for ArrayKlass and InstanceKlass.
               */
               callee = (Method*) rcvrKlass->start_of_vtable()[ cache->f2_as_index()];
               // Profile virtual call.

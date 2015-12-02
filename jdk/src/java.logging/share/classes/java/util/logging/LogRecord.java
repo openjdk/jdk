@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,6 +33,7 @@ import java.time.Clock;
 
 import jdk.internal.misc.JavaLangAccess;
 import jdk.internal.misc.SharedSecrets;
+import static jdk.internal.logger.SimpleConsoleLogger.skipLoggingFrame;
 
 /**
  * LogRecord objects are used to pass logging requests between
@@ -637,6 +638,27 @@ public class LogRecord implements java.io.Serializable {
     }
 
     // Private method to infer the caller's class and method names
+    //
+    // Note:
+    // For testing purposes - it is possible to customize the process
+    // by which LogRecord will infer the source class name and source method name
+    // when analyzing the call stack.
+    // <p>
+    // The system property {@code jdk.logger.packages} can define a comma separated
+    // list of strings corresponding to additional package name prefixes that
+    // should be ignored when trying to infer the source caller class name.
+    // Those stack frames whose {@linkplain StackTraceElement#getClassName()
+    // declaring class name} start with one such prefix will be ignored.
+    // <p>
+    // This is primarily useful when providing utility logging classes wrapping
+    // a logger instance, as it makes it possible to instruct LogRecord to skip
+    // those utility frames when inferring the caller source class name.
+    // <p>
+    // The {@code jdk.logger.packages} system property is consulted only once.
+    // <p>
+    // This property is not standard, implementation specific, and yet
+    // undocumented (and thus subject to changes without notice).
+    //
     private void inferCaller() {
         needToInferCaller = false;
         JavaLangAccess access = SharedSecrets.getJavaLangAccess();
@@ -658,8 +680,8 @@ public class LogRecord implements java.io.Serializable {
                 }
             } else {
                 if (!isLoggerImpl) {
-                    // skip reflection call
-                    if (!cname.startsWith("java.lang.reflect.") && !cname.startsWith("sun.reflect.")) {
+                    // skip logging/logger infrastructure and reflection calls
+                    if (!skipLoggingFrame(cname)) {
                        // We've found the relevant frame.
                        setSourceClassName(cname);
                        setSourceMethodName(frame.getMethodName());
@@ -675,7 +697,6 @@ public class LogRecord implements java.io.Serializable {
     private boolean isLoggerImplFrame(String cname) {
         // the log record could be created for a platform logger
         return (cname.equals("java.util.logging.Logger") ||
-                cname.startsWith("java.util.logging.LoggingProxyImpl") ||
-                cname.startsWith("sun.util.logging."));
+                cname.startsWith("sun.util.logging.PlatformLogger"));
     }
 }

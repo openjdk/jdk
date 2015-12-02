@@ -60,7 +60,7 @@ void NativeInstruction::verify_data64_sethi(address instaddr, intptr_t x) {
   masm.patchable_sethi(x, destreg);
   int len = buffer - masm.pc();
   for (int i = 0; i < len; i++) {
-    assert(instaddr[i] == buffer[i], "instructions must match");
+    guarantee(instaddr[i] == buffer[i], "instructions must match");
   }
 }
 
@@ -414,6 +414,67 @@ void NativeMovConstReg::test() {
 #endif
 }
 // End code for unit testing implementation of NativeMovConstReg class
+
+//-------------------------------------------------------------------
+
+void NativeMovConstReg32::verify() {
+  NativeInstruction::verify();
+  // make sure code pattern is actually a "set_metadata" synthetic instruction
+  // see MacroAssembler::set_oop()
+  int i0 = long_at(sethi_offset);
+  int i1 = long_at(add_offset);
+
+  // verify the pattern "sethi %hi22(imm), reg ;  add reg, %lo10(imm), reg"
+  Register rd = inv_rd(i0);
+  if (!is_op2(i0, Assembler::sethi_op2) && rd != G0 ) {
+    fatal("not a set_metadata");
+  }
+}
+
+
+void NativeMovConstReg32::print() {
+  tty->print_cr(INTPTR_FORMAT ": mov reg, " INTPTR_FORMAT, instruction_address(), data());
+}
+
+
+intptr_t NativeMovConstReg32::data() const {
+  return data32(long_at(sethi_offset), long_at(add_offset));
+}
+
+
+void NativeMovConstReg32::set_data(intptr_t x) {
+  set_long_at(sethi_offset, set_data32_sethi(  long_at(sethi_offset), x));
+  set_long_at(add_offset,   set_data32_simm13( long_at(add_offset),   x));
+
+  // also store the value into an oop_Relocation cell, if any
+  CodeBlob* cb = CodeCache::find_blob(instruction_address());
+  nmethod*  nm = cb ? cb->as_nmethod_or_null() : NULL;
+  if (nm != NULL) {
+    RelocIterator iter(nm, instruction_address(), next_instruction_address());
+    oop* oop_addr = NULL;
+    Metadata** metadata_addr = NULL;
+    while (iter.next()) {
+      if (iter.type() == relocInfo::oop_type) {
+        oop_Relocation *r = iter.oop_reloc();
+        if (oop_addr == NULL) {
+          oop_addr = r->oop_addr();
+          *oop_addr = cast_to_oop(x);
+        } else {
+          assert(oop_addr == r->oop_addr(), "must be only one set-oop here");
+        }
+      }
+      if (iter.type() == relocInfo::metadata_type) {
+        metadata_Relocation *r = iter.metadata_reloc();
+        if (metadata_addr == NULL) {
+          metadata_addr = r->metadata_addr();
+          *metadata_addr = (Metadata*)x;
+        } else {
+          assert(metadata_addr == r->metadata_addr(), "must be only one set-metadata here");
+        }
+      }
+    }
+  }
+}
 
 //-------------------------------------------------------------------
 

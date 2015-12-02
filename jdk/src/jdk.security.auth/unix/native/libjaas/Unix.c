@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #endif
 
 #include <jni.h>
+#include "jni_util.h"
 #include "com_sun_security_auth_module_UnixSystem.h"
 #include <stdio.h>
 #include <pwd.h>
@@ -35,6 +36,11 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <string.h>
+
+/*
+ * Declare library specific JNI_Onload entry if static build
+ */
+DEF_STATIC_JNI_OnLoad
 
 JNIEXPORT void JNICALL
 Java_com_sun_security_auth_module_UnixSystem_getUnixInfo

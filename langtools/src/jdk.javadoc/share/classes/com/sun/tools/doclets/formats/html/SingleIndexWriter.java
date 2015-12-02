@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
+import java.util.*;
 
 import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
@@ -46,6 +47,8 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
  * @author Bhavesh Patel (Modified)
  */
 public class SingleIndexWriter extends AbstractIndexWriter {
+
+    private List<Object> elements;
 
     /**
      * Construct the SingleIndexWriter with filename "index-all.html" and the
@@ -100,10 +103,20 @@ public class SingleIndexWriter extends AbstractIndexWriter {
         }
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
         divTree.addStyle(HtmlStyle.contentContainer);
+        Set<Object> keys = new TreeSet<>(Arrays.asList(indexbuilder.elements()));
+        keys.addAll(configuration.tagSearchIndexKeys);
+        elements = new ArrayList<>(keys);
         addLinksForIndexes(divTree);
-        for (int i = 0; i < indexbuilder.elements().length; i++) {
-            Character unicode = (Character)((indexbuilder.elements())[i]);
-            addContents(unicode, indexbuilder.getMemberList(unicode), divTree);
+        for (Object ch : elements) {
+            Character unicode = (Character) ch;
+            if (configuration.tagSearchIndexMap.get(unicode) == null) {
+                addContents(unicode, indexbuilder.getMemberList(unicode), divTree);
+            } else if (indexbuilder.getMemberList(unicode) == null) {
+                addSearchContents(unicode, configuration.tagSearchIndexMap.get(unicode), divTree);
+            } else {
+                addContents(unicode, indexbuilder.getMemberList(unicode),
+                        configuration.tagSearchIndexMap.get(unicode), divTree);
+            }
         }
         addLinksForIndexes(divTree);
         body.addContent((configuration.allowTag(HtmlTag.MAIN))
@@ -117,6 +130,7 @@ public class SingleIndexWriter extends AbstractIndexWriter {
         if (configuration.allowTag(HtmlTag.FOOTER)) {
             body.addContent(htmlTree);
         }
+        createSearchIndexFiles();
         printHtmlDocument(null, true, body);
     }
 
@@ -126,11 +140,11 @@ public class SingleIndexWriter extends AbstractIndexWriter {
      * @param contentTree the content tree to which the links for indexes will be added
      */
     protected void addLinksForIndexes(Content contentTree) {
-        for (int i = 0; i < indexbuilder.elements().length; i++) {
-            String unicode = (indexbuilder.elements())[i].toString();
+        for (Object ch : elements) {
+            String unicode = ch.toString();
             contentTree.addContent(
                     getHyperLink(getNameForIndex(unicode),
-                    new StringContent(unicode)));
+                            new StringContent(unicode)));
             contentTree.addContent(getSpace());
         }
     }

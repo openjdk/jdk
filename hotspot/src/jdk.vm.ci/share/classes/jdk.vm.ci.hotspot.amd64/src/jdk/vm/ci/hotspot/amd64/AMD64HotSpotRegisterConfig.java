@@ -22,16 +22,47 @@
  */
 package jdk.vm.ci.hotspot.amd64;
 
-import static jdk.vm.ci.amd64.AMD64.*;
+import static jdk.vm.ci.amd64.AMD64.r12;
+import static jdk.vm.ci.amd64.AMD64.r15;
+import static jdk.vm.ci.amd64.AMD64.r8;
+import static jdk.vm.ci.amd64.AMD64.r9;
+import static jdk.vm.ci.amd64.AMD64.rax;
+import static jdk.vm.ci.amd64.AMD64.rcx;
+import static jdk.vm.ci.amd64.AMD64.rdi;
+import static jdk.vm.ci.amd64.AMD64.rdx;
+import static jdk.vm.ci.amd64.AMD64.rsi;
+import static jdk.vm.ci.amd64.AMD64.rsp;
+import static jdk.vm.ci.amd64.AMD64.xmm0;
+import static jdk.vm.ci.amd64.AMD64.xmm1;
+import static jdk.vm.ci.amd64.AMD64.xmm2;
+import static jdk.vm.ci.amd64.AMD64.xmm3;
+import static jdk.vm.ci.amd64.AMD64.xmm4;
+import static jdk.vm.ci.amd64.AMD64.xmm5;
+import static jdk.vm.ci.amd64.AMD64.xmm6;
+import static jdk.vm.ci.amd64.AMD64.xmm7;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
-import jdk.vm.ci.amd64.*;
-import jdk.vm.ci.code.*;
-import jdk.vm.ci.code.CallingConvention.*;
-import jdk.vm.ci.common.*;
-import jdk.vm.ci.hotspot.*;
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.code.Architecture;
+import jdk.vm.ci.code.CallingConvention;
+import jdk.vm.ci.code.CallingConvention.Type;
+import jdk.vm.ci.code.Register;
+import jdk.vm.ci.code.RegisterAttributes;
+import jdk.vm.ci.code.RegisterConfig;
+import jdk.vm.ci.code.StackSlot;
+import jdk.vm.ci.code.TargetDescription;
+import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.hotspot.HotSpotVMConfig;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.LIRKind;
+import jdk.vm.ci.meta.PlatformKind;
+import jdk.vm.ci.meta.Value;
 
 public class AMD64HotSpotRegisterConfig implements RegisterConfig {
 
@@ -86,28 +117,30 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
      */
     private final boolean needsNativeStackHomeSpace;
 
-    private static Register[] initAllocatable(boolean reserveForHeapBase) {
-        Register[] registers = null;
-        // @formatter:off
-        if (reserveForHeapBase) {
-            registers = new Register[] {
-                        rax, rbx, rcx, rdx, /*rsp,*/ rbp, rsi, rdi, r8, r9,  r10, r11, /*r12,*/ r13, r14, /*r15, */
-                        xmm0, xmm1, xmm2,  xmm3,  xmm4,  xmm5,  xmm6,  xmm7,
-                        xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15
-                      };
-        } else {
-            registers = new Register[] {
-                        rax, rbx, rcx, rdx, /*rsp,*/ rbp, rsi, rdi, r8, r9,  r10, r11, r12, r13, r14, /*r15, */
-                        xmm0, xmm1, xmm2,  xmm3,  xmm4,  xmm5,  xmm6,  xmm7,
-                        xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15
-                      };
+    private static Register[] initAllocatable(Architecture arch, boolean reserveForHeapBase) {
+        Register[] allRegisters = arch.getAvailableValueRegisters();
+        Register[] registers = new Register[allRegisters.length - (reserveForHeapBase ? 3 : 2)];
+
+        int idx = 0;
+        for (Register reg : allRegisters) {
+            if (reg.equals(rsp) || reg.equals(r15)) {
+                // skip stack pointer and thread register
+                continue;
+            }
+            if (reserveForHeapBase && reg.equals(r12)) {
+                // skip heap base register
+                continue;
+            }
+
+            registers[idx++] = reg;
         }
-       // @formatter:on
+
+        assert idx == registers.length;
         return registers;
     }
 
     public AMD64HotSpotRegisterConfig(Architecture architecture, HotSpotVMConfig config) {
-        this(architecture, config, initAllocatable(config.useCompressedOops));
+        this(architecture, config, initAllocatable(architecture, config.useCompressedOops));
         assert callerSaved.length >= allocatable.length;
     }
 
@@ -125,7 +158,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
             this.needsNativeStackHomeSpace = false;
         }
 
-        this.allocatable = allocatable.clone();
+        this.allocatable = allocatable;
         Set<Register> callerSaveSet = new HashSet<>();
         Collections.addAll(callerSaveSet, allocatable);
         Collections.addAll(callerSaveSet, xmmParameterRegisters);
@@ -134,7 +167,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
         callerSaved = callerSaveSet.toArray(new Register[callerSaveSet.size()]);
 
         allAllocatableAreCallerSaved = true;
-        attributesMap = RegisterAttributes.createMap(this, AMD64.allRegisters);
+        attributesMap = RegisterAttributes.createMap(this, architecture.getRegisters());
     }
 
     @Override
@@ -221,7 +254,7 @@ public class AMD64HotSpotRegisterConfig implements RegisterConfig {
             if (locations[i] == null) {
                 LIRKind lirKind = target.getLIRKind(kind);
                 locations[i] = StackSlot.get(lirKind, currentStackOffset, !type.out);
-                currentStackOffset += Math.max(target.getSizeInBytes(lirKind.getPlatformKind()), target.wordSize);
+                currentStackOffset += Math.max(lirKind.getPlatformKind().getSizeInBytes(), target.wordSize);
             }
         }
 

@@ -26,13 +26,14 @@
  * @test
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
- * @library /testlibrary /../../test/lib /
- * @compile ../common/CompilerToVMHelper.java
+ * @library /testlibrary /test/lib /
+ * @compile ../common/CompilerToVMHelper.java ../common/PublicMetaspaceWrapperObject.java
  * @build sun.hotspot.WhiteBox
  *        compiler.jvmci.compilerToVM.GetConstantPoolTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  *                              jdk.vm.ci.hotspot.CompilerToVMHelper
+ *                              jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions
  *                   -XX:+EnableJVMCI compiler.jvmci.compilerToVM.GetConstantPoolTest
@@ -40,11 +41,11 @@
 package compiler.jvmci.compilerToVM;
 
 import java.lang.reflect.Field;
+import jdk.vm.ci.meta.ConstantPool;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotConstantPool;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl;
-import jdk.vm.ci.hotspot.MetaspaceWrapperObject;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
+import jdk.vm.ci.hotspot.PublicMetaspaceWrapperObject;
 import jdk.test.lib.Utils;
 import sun.hotspot.WhiteBox;
 import sun.misc.Unsafe;
@@ -56,25 +57,26 @@ public class GetConstantPoolTest {
     private static enum TestCase {
         NULL_BASE {
             @Override
-            HotSpotConstantPool getConstantPool() {
+            ConstantPool getConstantPool() {
                 return CompilerToVMHelper.getConstantPool(null,
                         getPtrToCpAddress());
             }
         },
         JAVA_METHOD_BASE {
             @Override
-            HotSpotConstantPool getConstantPool() {
-                HotSpotResolvedJavaMethodImpl methodInstance
+            ConstantPool getConstantPool() {
+                HotSpotResolvedJavaMethod methodInstance
                         = CompilerToVMHelper.getResolvedJavaMethodAtSlot(
                                 TEST_CLASS, 0);
                 Field field;
                 try {
-                    field = HotSpotResolvedJavaMethodImpl
-                            .class.getDeclaredField("metaspaceMethod");
+                    // jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl.metaspaceMethod
+                    field = methodInstance.getClass()
+                            .getDeclaredField("metaspaceMethod");
                     field.setAccessible(true);
                     field.set(methodInstance, getPtrToCpAddress());
                 } catch (ReflectiveOperationException e) {
-                    throw new Error("TESTBUG : " + e.getMessage(), e);
+                    throw new Error("TESTBUG : " + e, e);
                 }
 
                 return CompilerToVMHelper.getConstantPool(methodInstance, 0L);
@@ -82,12 +84,12 @@ public class GetConstantPoolTest {
         },
         CONSTANT_POOL_BASE {
             @Override
-            HotSpotConstantPool getConstantPool() {
-                HotSpotConstantPool cpInst;
+            ConstantPool getConstantPool() {
+                ConstantPool cpInst;
                 try {
                     cpInst = CompilerToVMHelper.getConstantPool(null,
                             getPtrToCpAddress());
-                    Field field = HotSpotConstantPool.class
+                    Field field = CompilerToVMHelper.HotSpotConstantPoolClass()
                             .getDeclaredField("metaspaceConstantPool");
                     field.setAccessible(true);
                     field.set(cpInst, getPtrToCpAddress());
@@ -99,12 +101,12 @@ public class GetConstantPoolTest {
         },
         CONSTANT_POOL_BASE_IN_TWO {
             @Override
-            HotSpotConstantPool getConstantPool() {
+            ConstantPool getConstantPool() {
                 long ptr = getPtrToCpAddress();
-                HotSpotConstantPool cpInst;
+                ConstantPool cpInst;
                 try {
                     cpInst = CompilerToVMHelper.getConstantPool(null, ptr);
-                    Field field = HotSpotConstantPool.class
+                    Field field = CompilerToVMHelper.HotSpotConstantPoolClass()
                             .getDeclaredField("metaspaceConstantPool");
                     field.setAccessible(true);
                     field.set(cpInst, ptr / 2L);
@@ -117,12 +119,12 @@ public class GetConstantPoolTest {
         },
         CONSTANT_POOL_BASE_ZERO {
             @Override
-            HotSpotConstantPool getConstantPool() {
+            ConstantPool getConstantPool() {
                 long ptr = getPtrToCpAddress();
-                HotSpotConstantPool cpInst;
+                ConstantPool cpInst;
                 try {
                     cpInst = CompilerToVMHelper.getConstantPool(null, ptr);
-                    Field field = HotSpotConstantPool.class
+                    Field field = CompilerToVMHelper.HotSpotConstantPoolClass()
                             .getDeclaredField("metaspaceConstantPool");
                     field.setAccessible(true);
                     field.set(cpInst, 0L);
@@ -134,9 +136,9 @@ public class GetConstantPoolTest {
         },
         OBJECT_TYPE_BASE {
             @Override
-            HotSpotConstantPool getConstantPool() {
-                HotSpotResolvedObjectTypeImpl type
-                        = HotSpotResolvedObjectTypeImpl.fromObjectClass(
+            ConstantPool getConstantPool() {
+                HotSpotResolvedObjectType type
+                        = HotSpotResolvedObjectType.fromObjectClass(
                                 OBJECT_TYPE_BASE.getClass());
                 long ptrToClass = UNSAFE.getKlassPointer(OBJECT_TYPE_BASE);
                 return CompilerToVMHelper.getConstantPool(type,
@@ -144,26 +146,28 @@ public class GetConstantPoolTest {
             }
         },
         ;
-        abstract HotSpotConstantPool getConstantPool();
+        abstract ConstantPool getConstantPool();
     }
 
     private static final WhiteBox WB = WhiteBox.getWhiteBox();
     private static final Unsafe UNSAFE = Utils.getUnsafe();
+
     private static final Class TEST_CLASS = GetConstantPoolTest.class;
     private static final long CP_ADDRESS
             = WB.getConstantPool(GetConstantPoolTest.class);
 
     public void test(TestCase testCase) {
         System.out.println(testCase.name());
-        HotSpotConstantPool cp = testCase.getConstantPool();
+        ConstantPool cp = testCase.getConstantPool();
         String cpStringRep = cp.toString();
-        if (!cpStringRep.contains(HotSpotConstantPool.class.getSimpleName())
+        String cpClassSimpleName
+                = CompilerToVMHelper.HotSpotConstantPoolClass().getSimpleName();
+        if (!cpStringRep.contains(cpClassSimpleName)
                 || !cpStringRep.contains(TEST_CLASS.getName())) {
             String msg = String.format("%s : "
                     + " Constant pool is not valid."
                     + " String representation should contain \"%s\" and \"%s\"",
-                    testCase.name(),
-                    HotSpotConstantPool.class.getSimpleName(),
+                    testCase.name(), cpClassSimpleName,
                     TEST_CLASS.getName());
             throw new AssertionError(msg);
         }
@@ -180,8 +184,7 @@ public class GetConstantPoolTest {
 
     private static void testObjectBase() {
         try {
-            HotSpotConstantPool cp
-                    = CompilerToVMHelper.getConstantPool(new Object(), 0L);
+            Object cp = CompilerToVMHelper.getConstantPool(new Object(), 0L);
             throw new AssertionError("Test OBJECT_BASE."
                 + " Expected IllegalArgumentException has not been caught");
         } catch (IllegalArgumentException iae) {
@@ -190,8 +193,8 @@ public class GetConstantPoolTest {
     }
     private static void testMetaspaceWrapperBase() {
         try {
-            HotSpotConstantPool cp = CompilerToVMHelper.getConstantPool(
-                    new MetaspaceWrapperObject() {
+            Object cp = CompilerToVMHelper.getConstantPool(
+                    new PublicMetaspaceWrapperObject() {
                         @Override
                         public long getMetaspacePointer() {
                             return getPtrToCpAddress();

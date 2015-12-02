@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.comp;
 
+import com.sun.tools.javac.code.Type.UndetVar.UndetVarListener;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
 import com.sun.tools.javac.tree.TreeInfo;
@@ -57,6 +58,8 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 
 import static com.sun.tools.javac.code.TypeTag.*;
 
@@ -182,20 +185,29 @@ public class Infer {
                     argtypes, mt.getParameterTypes(), warn);
 
             if (allowGraphInference && resultInfo != null && resultInfo.pt == anyPoly) {
+                doIncorporation(inferenceContext, warn);
                 //we are inside method attribution - just return a partially inferred type
                 return new PartiallyInferredMethodType(mt, inferenceContext, env, warn);
             } else if (allowGraphInference &&
                     resultInfo != null &&
                     !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
                 //inject return constraints earlier
-                checkWithinBounds(inferenceContext, warn); //propagation
+                doIncorporation(inferenceContext, warn); //propagation
+
+                boolean shouldPropagate = resultInfo.checkContext.inferenceContext().free(resultInfo.pt);
+
+                InferenceContext minContext = shouldPropagate ?
+                        inferenceContext.min(roots(mt, deferredAttrContext), true, warn) :
+                        inferenceContext;
+
                 Type newRestype = generateReturnConstraints(env.tree, resultInfo,  //B3
-                        mt, inferenceContext);
+                        mt, minContext);
                 mt = (MethodType)types.createMethodTypeWithReturn(mt, newRestype);
+
                 //propagate outwards if needed
-                if (resultInfo.checkContext.inferenceContext().free(resultInfo.pt)) {
+                if (shouldPropagate) {
                     //propagate inference context outwards and exit
-                    inferenceContext.dupTo(resultInfo.checkContext.inferenceContext());
+                    minContext.dupTo(resultInfo.checkContext.inferenceContext());
                     deferredAttrContext.complete();
                     return mt;
                 }
@@ -242,6 +254,19 @@ public class Infer {
             dumpGraphsIfNeeded(env.tree, msym, resolveContext);
         }
     }
+    //where
+        private List<Type> roots(MethodType mt, DeferredAttrContext deferredAttrContext) {
+            ListBuffer<Type> roots = new ListBuffer<>();
+            roots.add(mt.getReturnType());
+            if (deferredAttrContext != null && deferredAttrContext.mode == AttrMode.CHECK) {
+                roots.addAll(mt.getThrownTypes());
+                for (DeferredAttr.DeferredAttrNode n : deferredAttrContext.deferredAttrNodes) {
+                    roots.addAll(n.deferredStuckPolicy.stuckVars());
+                    roots.addAll(n.deferredStuckPolicy.depVars());
+                }
+            }
+            return roots.toList();
+        }
 
     /**
      * A partially infered method/constructor type; such a type can be checked multiple times
@@ -284,16 +309,21 @@ public class Infer {
                  */
                 saved_undet = inferenceContext.save();
                 if (allowGraphInference && !warn.hasNonSilentLint(Lint.LintCategory.UNCHECKED)) {
-                    //inject return constraints earlier
-                    checkWithinBounds(inferenceContext, noWarnings); //propagation
-                    Type res = generateReturnConstraints(env.tree, resultInfo,  //B3
-                        this, inferenceContext);
+                    boolean shouldPropagate = resultInfo.checkContext.inferenceContext().free(resultInfo.pt);
 
-                    if (resultInfo.checkContext.inferenceContext().free(resultInfo.pt)) {
+                    InferenceContext minContext = shouldPropagate ?
+                            inferenceContext.min(roots(asMethodType(), null), false, warn) :
+                            inferenceContext;
+
+                    MethodType other = (MethodType)minContext.update(asMethodType());
+                    Type newRestype = generateReturnConstraints(env.tree, resultInfo,  //B3
+                            other, minContext);
+
+                    if (shouldPropagate) {
                         //propagate inference context outwards and exit
-                        inferenceContext.dupTo(resultInfo.checkContext.inferenceContext(),
+                        minContext.dupTo(resultInfo.checkContext.inferenceContext(),
                                 resultInfo.checkContext.deferredAttrContext().insideOverloadPhase());
-                        return res;
+                        return newRestype;
                     }
                 }
                 inferenceContext.solve(noWarnings);
@@ -372,6 +402,9 @@ public class Infer {
                         resultInfo, inferenceContext);
                 }
             }
+        } else if (rsInfoInfContext.free(resultInfo.pt)) {
+            //propagation - cache captured vars
+            qtype = inferenceContext.asUndetVar(rsInfoInfContext.cachedCapture(tree, from, false));
         }
         Assert.check(allowGraphInference || !rsInfoInfContext.free(to),
                 "legacy inference engine cannot handle constraints on both sides of a subtyping assertion");
@@ -471,7 +504,7 @@ public class Infer {
         inferenceContext.solve(List.of(from.qtype), new Warner());
         inferenceContext.notifyChange();
         Type capturedType = resultInfo.checkContext.inferenceContext()
-                .cachedCapture(tree, from.inst, false);
+                .cachedCapture(tree, from.getInst(), false);
         if (types.isConvertible(capturedType,
                 resultInfo.checkContext.inferenceContext().asUndetVar(to))) {
             //effectively skip additional return-type constraint generation (compatibility)
@@ -493,22 +526,22 @@ public class Infer {
                 TypeSymbol fresh_tvar = new TypeVariableSymbol(Flags.SYNTHETIC, uv.qtype.tsym.name, null, uv.qtype.tsym.owner);
                 fresh_tvar.type = new TypeVar(fresh_tvar, types.makeIntersectionType(uv.getBounds(InferenceBound.UPPER)), null);
                 todo.append(uv);
-                uv.inst = fresh_tvar.type;
+                uv.setInst(fresh_tvar.type);
             } else if (upperBounds.nonEmpty()) {
-                uv.inst = types.glb(upperBounds);
+                uv.setInst(types.glb(upperBounds));
             } else {
-                uv.inst = syms.objectType;
+                uv.setInst(syms.objectType);
             }
         }
         //step 2 - replace fresh tvars in their bounds
         List<Type> formals = vars;
         for (Type t : todo) {
             UndetVar uv = (UndetVar)t;
-            TypeVar ct = (TypeVar)uv.inst;
+            TypeVar ct = (TypeVar)uv.getInst();
             ct.bound = types.glb(inferenceContext.asInstTypes(types.getBounds(ct)));
             if (ct.bound.isErroneous()) {
                 //report inference error if glb fails
-                reportBoundError(uv, BoundErrorKind.BAD_UPPER);
+                reportBoundError(uv, InferenceBound.UPPER);
             }
             formals = formals.tail;
         }
@@ -586,6 +619,18 @@ public class Infer {
             }
         }
 
+    TypeMapping<Void> fromTypeVarFun = new TypeMapping<Void>() {
+        @Override
+        public Type visitTypeVar(TypeVar tv, Void aVoid) {
+            return new UndetVar(tv, incorporationEngine(), types);
+        }
+
+        @Override
+        public Type visitCapturedType(CapturedType t, Void aVoid) {
+            return new CapturedUndetVar(t, incorporationEngine(), types);
+        }
+    };
+
     /**
       * This method is used to infer a suitable target SAM in case the original
       * SAM type contains one or more wildcards. An inference process is applied
@@ -629,8 +674,8 @@ public class Infer {
             List<Type> actualTypeargs = funcInterface.getTypeArguments();
             for (Type t : funcInterfaceContext.undetvars) {
                 UndetVar uv = (UndetVar)t;
-                if (uv.inst == null) {
-                    uv.inst = actualTypeargs.head;
+                if (uv.getInst() == null) {
+                    uv.setInst(actualTypeargs.head);
                 }
                 actualTypeargs = actualTypeargs.tail;
             }
@@ -648,88 +693,399 @@ public class Infer {
     }
     // </editor-fold>
 
-    // <editor-fold defaultstate="collapsed" desc="Bound checking">
+    // <editor-fold defaultstate="collapsed" desc="Incorporation">
+
     /**
-     * Check bounds and perform incorporation
+     * This class is the root of all incorporation actions.
      */
-    void checkWithinBounds(InferenceContext inferenceContext,
-                             Warner warn) throws InferenceException {
-        MultiUndetVarListener mlistener = new MultiUndetVarListener(inferenceContext.undetvars);
-        List<Type> saved_undet = inferenceContext.save();
-        try {
-            while (true) {
-                mlistener.reset();
-                if (!allowGraphInference) {
-                    //in legacy mode we lack of transitivity, so bound check
-                    //cannot be run in parallel with other incoprporation rounds
-                    for (Type t : inferenceContext.undetvars) {
-                        UndetVar uv = (UndetVar)t;
-                        IncorporationStep.CHECK_BOUNDS.apply(uv, inferenceContext, warn);
+    public abstract class IncorporationAction {
+        UndetVar uv;
+        Type t;
+
+        IncorporationAction(UndetVar uv, Type t) {
+            this.uv = uv;
+            this.t = t;
+        }
+
+        /**
+         * Incorporation action entry-point. Subclasses should define the logic associated with
+         * this incorporation action.
+         */
+        abstract void apply(InferenceContext ic, Warner warn);
+
+        /**
+         * Helper function: perform subtyping through incorporation cache.
+         */
+        boolean isSubtype(Type s, Type t, Warner warn) {
+            return doIncorporationOp(IncorporationBinaryOpKind.IS_SUBTYPE, s, t, warn);
+        }
+
+        /**
+         * Helper function: perform type-equivalence through incorporation cache.
+         */
+        boolean isSameType(Type s, Type t) {
+            return doIncorporationOp(IncorporationBinaryOpKind.IS_SAME_TYPE, s, t, null);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s[undet=%s,t=%s]", getClass().getSimpleName(), uv.qtype, t);
+        }
+    }
+
+    /**
+     * Bound-check incorporation action. A newly added bound is checked against existing bounds,
+     * to verify its compatibility; each bound is checked using either subtyping or type equivalence.
+     */
+    class CheckBounds extends IncorporationAction {
+
+        InferenceBound from;
+        BiFunction<InferenceContext, Type, Type> typeFunc;
+        BiPredicate<InferenceContext, Type> optFilter;
+
+        CheckBounds(UndetVar uv, Type t, InferenceBound from) {
+            this(uv, t, InferenceContext::asUndetVar, null, from);
+        }
+
+        CheckBounds(UndetVar uv, Type t, BiFunction<InferenceContext, Type, Type> typeFunc,
+                    BiPredicate<InferenceContext, Type> typeFilter, InferenceBound from) {
+            super(uv, t);
+            this.from = from;
+            this.typeFunc = typeFunc;
+            this.optFilter = typeFilter;
+        }
+
+        @Override
+        void apply(InferenceContext inferenceContext, Warner warn) {
+            t = typeFunc.apply(inferenceContext, t);
+            if (optFilter != null && optFilter.test(inferenceContext, t)) return;
+            for (InferenceBound to : boundsToCheck()) {
+                for (Type b : uv.getBounds(to)) {
+                    b = typeFunc.apply(inferenceContext, b);
+                    if (optFilter != null && optFilter.test(inferenceContext, b)) continue;
+                    boolean success = checkBound(t, b, from, to, warn);
+                    if (!success) {
+                        report(from, to);
                     }
                 }
-                for (Type t : inferenceContext.undetvars) {
-                    UndetVar uv = (UndetVar)t;
-                    //bound incorporation
-                    EnumSet<IncorporationStep> incorporationSteps = allowGraphInference ?
-                            incorporationStepsGraph : incorporationStepsLegacy;
-                    for (IncorporationStep is : incorporationSteps) {
-                        if (is.accepts(uv, inferenceContext)) {
-                            is.apply(uv, inferenceContext, warn);
-                        }
-                    }
-                }
-                if (!mlistener.changed || !allowGraphInference) break;
             }
         }
-        finally {
-            mlistener.detach();
-            if (incorporationCache.size() == MAX_INCORPORATION_STEPS) {
-                inferenceContext.rollback(saved_undet);
+
+        /**
+         * The list of bound kinds to be checked.
+         */
+        EnumSet<InferenceBound> boundsToCheck() {
+            return (from == InferenceBound.EQ) ?
+                            EnumSet.allOf(InferenceBound.class) :
+                            EnumSet.complementOf(EnumSet.of(from));
+        }
+
+        /**
+         * Is source type 's' compatible with target type 't' given source and target bound kinds?
+         */
+        boolean checkBound(Type s, Type t, InferenceBound ib_s, InferenceBound ib_t, Warner warn) {
+            if (ib_s.lessThan(ib_t)) {
+                return isSubtype(s, t, warn);
+            } else if (ib_t.lessThan(ib_s)) {
+                return isSubtype(t, s, warn);
+            } else {
+                return isSameType(s, t);
             }
+        }
+
+        /**
+         * Report a bound check error.
+         */
+        void report(InferenceBound from, InferenceBound to) {
+            //this is a workaround to preserve compatibility with existing messages
+            if (from == to) {
+                reportBoundError(uv, from);
+            } else if (from == InferenceBound.LOWER || to == InferenceBound.EQ) {
+                reportBoundError(uv, to, from);
+            } else {
+                reportBoundError(uv, from, to);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s[undet=%s,t=%s,bound=%s]", getClass().getSimpleName(), uv.qtype, t, from);
+        }
+    }
+
+    /**
+     * Custom check executed by the legacy incorporation engine. Newly added bounds are checked
+     * against existing eq bounds.
+     */
+    class EqCheckLegacy extends CheckBounds {
+        EqCheckLegacy(UndetVar uv, Type t, InferenceBound from) {
+            super(uv, t, InferenceContext::asInstType, InferenceContext::free, from);
+        }
+
+        @Override
+        EnumSet<InferenceBound> boundsToCheck() {
+            return (from == InferenceBound.EQ) ?
+                            EnumSet.allOf(InferenceBound.class) :
+                            EnumSet.of(InferenceBound.EQ);
+        }
+    }
+
+    /**
+     * Check that the inferred type conforms to all bounds.
+     */
+    class CheckInst extends CheckBounds {
+
+        EnumSet<InferenceBound> to;
+
+        CheckInst(UndetVar uv, InferenceBound ib, InferenceBound... rest) {
+            super(uv, uv.getInst(), InferenceBound.EQ);
+            this.to = EnumSet.of(ib, rest);
+        }
+
+        @Override
+        EnumSet<InferenceBound> boundsToCheck() {
+            return to;
+        }
+
+        @Override
+        void report(InferenceBound from, InferenceBound to) {
+            reportInstError(uv, to);
+        }
+    }
+
+    /**
+     * Replace undetvars in bounds and check that the inferred type conforms to all bounds.
+     */
+    class SubstBounds extends CheckInst {
+        SubstBounds(UndetVar uv) {
+            super(uv, InferenceBound.LOWER, InferenceBound.EQ, InferenceBound.UPPER);
+        }
+
+        @Override
+        void apply(InferenceContext inferenceContext, Warner warn) {
+            for (Type undet : inferenceContext.undetvars) {
+                //we could filter out variables not mentioning uv2...
+                UndetVar uv2 = (UndetVar)undet;
+                uv2.substBounds(List.of(uv.qtype), List.of(uv.getInst()), types);
+                checkCompatibleUpperBounds(uv2, inferenceContext);
+            }
+            super.apply(inferenceContext, warn);
+        }
+
+        /**
+         * Make sure that the upper bounds we got so far lead to a solvable inference
+         * variable by making sure that a glb exists.
+         */
+        void checkCompatibleUpperBounds(UndetVar uv, InferenceContext inferenceContext) {
+            List<Type> hibounds =
+                    Type.filter(uv.getBounds(InferenceBound.UPPER), new BoundFilter(inferenceContext));
+            final Type hb;
+            if (hibounds.isEmpty())
+                hb = syms.objectType;
+            else if (hibounds.tail.isEmpty())
+                hb = hibounds.head;
+            else
+                hb = types.glb(hibounds);
+            if (hb == null || hb.isErroneous())
+                reportBoundError(uv, InferenceBound.UPPER);
+        }
+    }
+
+    /**
+     * Perform pairwise comparison between common generic supertypes of two upper bounds.
+     */
+    class CheckUpperBounds extends IncorporationAction {
+
+        public CheckUpperBounds(UndetVar uv, Type t) {
+            super(uv, t);
+        }
+
+        @Override
+        void apply(InferenceContext inferenceContext, Warner warn) {
+            List<Type> boundList = uv.getBounds(InferenceBound.UPPER).stream()
+                    .collect(types.closureCollector(true, types::isSameType));
+            for (Type b2 : boundList) {
+                if (t == b2) continue;
+                    /* This wildcard check is temporary workaround. This code may need to be
+                     * revisited once spec bug JDK-7034922 is fixed.
+                     */
+                if (t != b2 && !t.hasTag(WILDCARD) && !b2.hasTag(WILDCARD)) {
+                    for (Pair<Type, Type> commonSupers : getParameterizedSupers(t, b2)) {
+                        List<Type> allParamsSuperBound1 = commonSupers.fst.allparams();
+                        List<Type> allParamsSuperBound2 = commonSupers.snd.allparams();
+                        while (allParamsSuperBound1.nonEmpty() && allParamsSuperBound2.nonEmpty()) {
+                            //traverse the list of all params comparing them
+                            if (!allParamsSuperBound1.head.hasTag(WILDCARD) &&
+                                    !allParamsSuperBound2.head.hasTag(WILDCARD)) {
+                                if (!isSameType(inferenceContext.asUndetVar(allParamsSuperBound1.head),
+                                        inferenceContext.asUndetVar(allParamsSuperBound2.head))) {
+                                    reportBoundError(uv, InferenceBound.UPPER);
+                                }
+                            }
+                            allParamsSuperBound1 = allParamsSuperBound1.tail;
+                            allParamsSuperBound2 = allParamsSuperBound2.tail;
+                        }
+                        Assert.check(allParamsSuperBound1.isEmpty() && allParamsSuperBound2.isEmpty());
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Perform propagation of bounds. Given a constraint of the kind {@code alpha <: T}, three
+     * kind of propagation occur:
+     *
+     * <li>T is copied into all matching bounds (i.e. lower/eq bounds) B of alpha such that B=beta (forward propagation)</li>
+     * <li>if T=beta, matching bounds (i.e. upper bounds) of beta are copied into alpha (backwards propagation)</li>
+     * <li>if T=beta, sets a symmetric bound on beta (i.e. beta :> alpha) (symmetric propagation) </li>
+     */
+    class PropagateBounds extends IncorporationAction {
+
+        InferenceBound ib;
+
+        public PropagateBounds(UndetVar uv, Type t, InferenceBound ib) {
+            super(uv, t);
+            this.ib = ib;
+        }
+
+        void apply(InferenceContext inferenceContext, Warner warner) {
+            Type undetT = inferenceContext.asUndetVar(t);
+            if (undetT.hasTag(UNDETVAR) && !((UndetVar)undetT).isCaptured()) {
+                UndetVar uv2 = (UndetVar)undetT;
+                //symmetric propagation
+                uv2.addBound(ib.complement(), uv, types);
+                //backwards propagation
+                for (InferenceBound ib2 : backwards()) {
+                    for (Type b : uv2.getBounds(ib2)) {
+                        uv.addBound(ib2, b, types);
+                    }
+                }
+            }
+            //forward propagation
+            for (InferenceBound ib2 : forward()) {
+                for (Type l : uv.getBounds(ib2)) {
+                    Type undet = inferenceContext.asUndetVar(l);
+                    if (undet.hasTag(TypeTag.UNDETVAR) && !((UndetVar)undet).isCaptured()) {
+                        UndetVar uv2 = (UndetVar)undet;
+                        uv2.addBound(ib, inferenceContext.asInstType(t), types);
+                    }
+                }
+            }
+        }
+
+        EnumSet<InferenceBound> forward() {
+            return (ib == InferenceBound.EQ) ?
+                    EnumSet.of(InferenceBound.EQ) : EnumSet.complementOf(EnumSet.of(ib));
+        }
+
+        EnumSet<InferenceBound> backwards() {
+            return (ib == InferenceBound.EQ) ?
+                    EnumSet.allOf(InferenceBound.class) : EnumSet.of(ib);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s[undet=%s,t=%s,bound=%s]", getClass().getSimpleName(), uv.qtype, t, ib);
+        }
+    }
+
+    /**
+     * This class models an incorporation engine. The engine is responsible for listening to
+     * changes in inference variables and register incorporation actions accordingly.
+     */
+    abstract class AbstractIncorporationEngine implements UndetVarListener {
+
+        @Override
+        public void varInstantiated(UndetVar uv) {
+            uv.incorporationActions.addFirst(new SubstBounds(uv));
+        }
+
+        @Override
+        public void varBoundChanged(UndetVar uv, InferenceBound ib, Type bound, boolean update) {
+            if (uv.isCaptured()) return;
+            uv.incorporationActions.addAll(getIncorporationActions(uv, ib, bound, update));
+        }
+
+        abstract List<IncorporationAction> getIncorporationActions(UndetVar uv, InferenceBound ib, Type t, boolean update);
+    }
+
+    /**
+     * A legacy incorporation engine. Used for source <= 7.
+     */
+    AbstractIncorporationEngine legacyEngine = new AbstractIncorporationEngine() {
+
+        List<IncorporationAction> getIncorporationActions(UndetVar uv, InferenceBound ib, Type t, boolean update) {
+            ListBuffer<IncorporationAction> actions = new ListBuffer<>();
+            Type inst = uv.getInst();
+            if (inst != null) {
+                actions.add(new CheckInst(uv, ib));
+            }
+            actions.add(new EqCheckLegacy(uv, t, ib));
+            return actions.toList();
+        }
+    };
+
+    /**
+     * The standard incorporation engine. Used for source >= 8.
+     */
+    AbstractIncorporationEngine graphEngine = new AbstractIncorporationEngine() {
+
+        @Override
+        List<IncorporationAction> getIncorporationActions(UndetVar uv, InferenceBound ib, Type t, boolean update) {
+            ListBuffer<IncorporationAction> actions = new ListBuffer<>();
+            Type inst = uv.getInst();
+            if (inst != null) {
+                actions.add(new CheckInst(uv, ib));
+            }
+            actions.add(new CheckBounds(uv, t, ib));
+
+            if (update) {
+                return actions.toList();
+            }
+
+            if (ib == InferenceBound.UPPER) {
+                actions.add(new CheckUpperBounds(uv, t));
+            }
+
+            actions.add(new PropagateBounds(uv, t, ib));
+
+            return actions.toList();
+        }
+    };
+
+    /**
+     * Get the incorporation engine to be used in this compilation.
+     */
+    AbstractIncorporationEngine incorporationEngine() {
+        return allowGraphInference ? graphEngine : legacyEngine;
+    }
+
+    /** max number of incorporation rounds. */
+    static final int MAX_INCORPORATION_STEPS = 10000;
+
+    /**
+     * Check bounds and perform incorporation.
+     */
+    void doIncorporation(InferenceContext inferenceContext, Warner warn) throws InferenceException {
+        try {
+            boolean progress = true;
+            int round = 0;
+            while (progress && round < MAX_INCORPORATION_STEPS) {
+                progress = false;
+                for (Type t : inferenceContext.undetvars) {
+                    UndetVar uv = (UndetVar)t;
+                    if (!uv.incorporationActions.isEmpty()) {
+                        progress = true;
+                        uv.incorporationActions.removeFirst().apply(inferenceContext, warn);
+                    }
+                }
+                round++;
+            }
+        } finally {
             incorporationCache.clear();
         }
     }
-    //where
-        /**
-         * This listener keeps track of changes on a group of inference variable
-         * bounds. Note: the listener must be detached (calling corresponding
-         * method) to make sure that the underlying inference variable is
-         * left in a clean state.
-         */
-        class MultiUndetVarListener implements UndetVar.UndetVarListener {
-
-            boolean changed;
-            List<Type> undetvars;
-
-            public MultiUndetVarListener(List<Type> undetvars) {
-                this.undetvars = undetvars;
-                for (Type t : undetvars) {
-                    UndetVar uv = (UndetVar)t;
-                    uv.listener = this;
-                }
-            }
-
-            public void varChanged(UndetVar uv, Set<InferenceBound> ibs) {
-                //avoid non-termination
-                if (incorporationCache.size() < MAX_INCORPORATION_STEPS) {
-                    changed = true;
-                }
-            }
-
-            void reset() {
-                changed = false;
-            }
-
-            void detach() {
-                for (Type t : undetvars) {
-                    UndetVar uv = (UndetVar)t;
-                    uv.listener = null;
-                }
-            }
-        }
-
-    /** max number of incorporation rounds */
-        static final int MAX_INCORPORATION_STEPS = 100;
 
     /* If for two types t and s there is a least upper bound that contains
      * parameterized types G1, G2 ... Gn, then there exists supertypes of 't' of the form
@@ -771,407 +1127,14 @@ public class Infer {
                     types.asSuper(t, sup.tsym);
         }
 
-    /**
-     * This enumeration defines an entry point for doing inference variable
-     * bound incorporation - it can be used to inject custom incorporation
-     * logic into the basic bound checking routine
-     */
-    enum IncorporationStep {
-        /**
-         * Performs basic bound checking - i.e. is the instantiated type for a given
-         * inference variable compatible with its bounds?
-         */
-        CHECK_BOUNDS() {
-            public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
-                Infer infer = inferenceContext.infer;
-                uv.substBounds(inferenceContext.inferenceVars(), inferenceContext.instTypes(), infer.types);
-                infer.checkCompatibleUpperBounds(uv, inferenceContext);
-                if (uv.inst != null) {
-                    Type inst = uv.inst;
-                    for (Type u : uv.getBounds(InferenceBound.UPPER)) {
-                        if (!isSubtype(inst, inferenceContext.asUndetVar(u), warn, infer)) {
-                            infer.reportBoundError(uv, BoundErrorKind.UPPER);
-                        }
-                    }
-                    for (Type l : uv.getBounds(InferenceBound.LOWER)) {
-                        if (!isSubtype(inferenceContext.asUndetVar(l), inst, warn, infer)) {
-                            infer.reportBoundError(uv, BoundErrorKind.LOWER);
-                        }
-                    }
-                    for (Type e : uv.getBounds(InferenceBound.EQ)) {
-                        if (!isSameType(inst, inferenceContext.asUndetVar(e), infer)) {
-                            infer.reportBoundError(uv, BoundErrorKind.EQ);
-                        }
-                    }
-                }
-            }
-
-            @Override
-            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
-                //applies to all undetvars
-                return true;
-            }
-        },
-        /**
-         * Check consistency of equality constraints. This is a slightly more aggressive
-         * inference routine that is designed as to maximize compatibility with JDK 7.
-         * Note: this is not used in graph mode.
-         */
-        EQ_CHECK_LEGACY() {
-            public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
-                Infer infer = inferenceContext.infer;
-                Type eq = null;
-                for (Type e : uv.getBounds(InferenceBound.EQ)) {
-                    Assert.check(!inferenceContext.free(e));
-                    if (eq != null && !isSameType(e, eq, infer)) {
-                        infer.reportBoundError(uv, BoundErrorKind.EQ);
-                    }
-                    eq = e;
-                    for (Type l : uv.getBounds(InferenceBound.LOWER)) {
-                        Assert.check(!inferenceContext.free(l));
-                        if (!isSubtype(l, e, warn, infer)) {
-                            infer.reportBoundError(uv, BoundErrorKind.BAD_EQ_LOWER);
-                        }
-                    }
-                    for (Type u : uv.getBounds(InferenceBound.UPPER)) {
-                        if (inferenceContext.free(u)) continue;
-                        if (!isSubtype(e, u, warn, infer)) {
-                            infer.reportBoundError(uv, BoundErrorKind.BAD_EQ_UPPER);
-                        }
-                    }
-                }
-            }
-
-            @Override
-            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
-                return !uv.isCaptured() && uv.getBounds(InferenceBound.EQ).nonEmpty();
-            }
-        },
-        /**
-         * Check consistency of equality constraints.
-         */
-        EQ_CHECK() {
-            @Override
-            public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
-                Infer infer = inferenceContext.infer;
-                for (Type e : uv.getBounds(InferenceBound.EQ)) {
-                    if (e.containsAny(inferenceContext.inferenceVars())) continue;
-                    for (Type u : uv.getBounds(InferenceBound.UPPER)) {
-                        if (!isSubtype(e, inferenceContext.asUndetVar(u), warn, infer)) {
-                            infer.reportBoundError(uv, BoundErrorKind.BAD_EQ_UPPER);
-                        }
-                    }
-                    for (Type l : uv.getBounds(InferenceBound.LOWER)) {
-                        if (!isSubtype(inferenceContext.asUndetVar(l), e, warn, infer)) {
-                            infer.reportBoundError(uv, BoundErrorKind.BAD_EQ_LOWER);
-                        }
-                    }
-                }
-            }
-
-            @Override
-            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
-                return !uv.isCaptured() && uv.getBounds(InferenceBound.EQ).nonEmpty();
-            }
-        },
-        /**
-         * Given a bound set containing {@code alpha <: T} and {@code alpha :> S}
-         * perform {@code S <: T} (which could lead to new bounds).
-         */
-        CROSS_UPPER_LOWER() {
-            public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
-                Infer infer = inferenceContext.infer;
-                for (Type b1 : uv.getBounds(InferenceBound.UPPER)) {
-                    for (Type b2 : uv.getBounds(InferenceBound.LOWER)) {
-                        if (!isSubtype(inferenceContext.asUndetVar(b2), inferenceContext.asUndetVar(b1), warn , infer)) {
-                            infer.reportBoundError(uv, BoundErrorKind.BAD_UPPER_LOWER);
-                        }
-                    }
-                }
-            }
-
-            @Override
-            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
-                return !uv.isCaptured() &&
-                        uv.getBounds(InferenceBound.UPPER).nonEmpty() &&
-                        uv.getBounds(InferenceBound.LOWER).nonEmpty();
-            }
-        },
-        /**
-         * Given a bound set containing {@code alpha <: T} and {@code alpha == S}
-         * perform {@code S <: T} (which could lead to new bounds).
-         */
-        CROSS_UPPER_EQ() {
-            public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
-                Infer infer = inferenceContext.infer;
-                for (Type b1 : uv.getBounds(InferenceBound.UPPER)) {
-                    for (Type b2 : uv.getBounds(InferenceBound.EQ)) {
-                        if (!isSubtype(inferenceContext.asUndetVar(b2), inferenceContext.asUndetVar(b1), warn, infer)) {
-                            infer.reportBoundError(uv, BoundErrorKind.BAD_UPPER_EQUAL);
-                        }
-                    }
-                }
-            }
-
-            @Override
-            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
-                return !uv.isCaptured() &&
-                        uv.getBounds(InferenceBound.EQ).nonEmpty() &&
-                        uv.getBounds(InferenceBound.UPPER).nonEmpty();
-            }
-        },
-        /**
-         * Given a bound set containing {@code alpha :> S} and {@code alpha == T}
-         * perform {@code S <: T} (which could lead to new bounds).
-         */
-        CROSS_EQ_LOWER() {
-            public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
-                Infer infer = inferenceContext.infer;
-                for (Type b1 : uv.getBounds(InferenceBound.EQ)) {
-                    for (Type b2 : uv.getBounds(InferenceBound.LOWER)) {
-                        if (!isSubtype(inferenceContext.asUndetVar(b2), inferenceContext.asUndetVar(b1), warn, infer)) {
-                            infer.reportBoundError(uv, BoundErrorKind.BAD_EQUAL_LOWER);
-                        }
-                    }
-                }
-            }
-
-            @Override
-            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
-                return !uv.isCaptured() &&
-                        uv.getBounds(InferenceBound.EQ).nonEmpty() &&
-                        uv.getBounds(InferenceBound.LOWER).nonEmpty();
-            }
-        },
-        /**
-         * Given a bound set containing {@code alpha <: P<T>} and
-         * {@code alpha <: P<S>} where P is a parameterized type,
-         * perform {@code T = S} (which could lead to new bounds).
-         */
-        CROSS_UPPER_UPPER() {
-            @Override
-            public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
-                Infer infer = inferenceContext.infer;
-                List<Type> boundList = uv.getBounds(InferenceBound.UPPER).stream()
-                        .collect(infer.types.closureCollector(true, infer.types::isSameType));
-                List<Type> boundListTail = boundList.tail;
-                while (boundList.nonEmpty()) {
-                    List<Type> tmpTail = boundListTail;
-                    while (tmpTail.nonEmpty()) {
-                        Type b1 = boundList.head;
-                        Type b2 = tmpTail.head;
-                        /* This wildcard check is temporary workaround. This code may need to be
-                         * revisited once spec bug JDK-7034922 is fixed.
-                         */
-                        if (b1 != b2 && !b1.hasTag(WILDCARD) && !b2.hasTag(WILDCARD)) {
-                            for (Pair<Type, Type> commonSupers : infer.getParameterizedSupers(b1, b2)) {
-                                List<Type> allParamsSuperBound1 = commonSupers.fst.allparams();
-                                List<Type> allParamsSuperBound2 = commonSupers.snd.allparams();
-                                while (allParamsSuperBound1.nonEmpty() && allParamsSuperBound2.nonEmpty()) {
-                                    //traverse the list of all params comparing them
-                                    if (!allParamsSuperBound1.head.hasTag(WILDCARD) &&
-                                        !allParamsSuperBound2.head.hasTag(WILDCARD)) {
-                                        if (!isSameType(inferenceContext.asUndetVar(allParamsSuperBound1.head),
-                                            inferenceContext.asUndetVar(allParamsSuperBound2.head), infer)) {
-                                            infer.reportBoundError(uv, BoundErrorKind.BAD_UPPER);
-                                        }
-                                    }
-                                    allParamsSuperBound1 = allParamsSuperBound1.tail;
-                                    allParamsSuperBound2 = allParamsSuperBound2.tail;
-                                }
-                                Assert.check(allParamsSuperBound1.isEmpty() && allParamsSuperBound2.isEmpty());
-                            }
-                        }
-                        tmpTail = tmpTail.tail;
-                    }
-                    boundList = boundList.tail;
-                    boundListTail = boundList.tail;
-                }
-            }
-
-            @Override
-            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
-                return !uv.isCaptured() &&
-                        uv.getBounds(InferenceBound.UPPER).nonEmpty();
-            }
-        },
-        /**
-         * Given a bound set containing {@code alpha == S} and {@code alpha == T}
-         * perform {@code S == T} (which could lead to new bounds).
-         */
-        CROSS_EQ_EQ() {
-            public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
-                Infer infer = inferenceContext.infer;
-                for (Type b1 : uv.getBounds(InferenceBound.EQ)) {
-                    for (Type b2 : uv.getBounds(InferenceBound.EQ)) {
-                        if (b1 != b2) {
-                            if (!isSameType(inferenceContext.asUndetVar(b2), inferenceContext.asUndetVar(b1), infer)) {
-                                infer.reportBoundError(uv, BoundErrorKind.BAD_EQ);
-                            }
-                        }
-                    }
-                }
-            }
-
-            @Override
-            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
-                return !uv.isCaptured() &&
-                        uv.getBounds(InferenceBound.EQ).nonEmpty();
-            }
-        },
-        /**
-         * Given a bound set containing {@code alpha <: beta} propagate lower bounds
-         * from alpha to beta; also propagate upper bounds from beta to alpha.
-         */
-        PROP_UPPER() {
-            public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
-                Infer infer = inferenceContext.infer;
-                for (Type b : uv.getBounds(InferenceBound.UPPER)) {
-                    if (inferenceContext.inferenceVars().contains(b)) {
-                        UndetVar uv2 = (UndetVar)inferenceContext.asUndetVar(b);
-                        if (uv2.isCaptured()) continue;
-                        //alpha <: beta
-                        //0. set beta :> alpha
-                        addBound(InferenceBound.LOWER, uv2, inferenceContext.asInstType(uv.qtype), infer);
-                        //1. copy alpha's lower to beta's
-                        for (Type l : uv.getBounds(InferenceBound.LOWER)) {
-                            addBound(InferenceBound.LOWER, uv2, inferenceContext.asInstType(l), infer);
-                        }
-                        //2. copy beta's upper to alpha's
-                        for (Type u : uv2.getBounds(InferenceBound.UPPER)) {
-                            addBound(InferenceBound.UPPER, uv, inferenceContext.asInstType(u), infer);
-                        }
-                    }
-                }
-            }
-
-            @Override
-            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
-                return !uv.isCaptured() &&
-                        uv.getBounds(InferenceBound.UPPER).nonEmpty();
-            }
-        },
-        /**
-         * Given a bound set containing {@code alpha :> beta} propagate lower bounds
-         * from beta to alpha; also propagate upper bounds from alpha to beta.
-         */
-        PROP_LOWER() {
-            public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
-                Infer infer = inferenceContext.infer;
-                for (Type b : uv.getBounds(InferenceBound.LOWER)) {
-                    if (inferenceContext.inferenceVars().contains(b)) {
-                        UndetVar uv2 = (UndetVar)inferenceContext.asUndetVar(b);
-                        if (uv2.isCaptured()) continue;
-                        //alpha :> beta
-                        //0. set beta <: alpha
-                        addBound(InferenceBound.UPPER, uv2, inferenceContext.asInstType(uv.qtype), infer);
-                        //1. copy alpha's upper to beta's
-                        for (Type u : uv.getBounds(InferenceBound.UPPER)) {
-                            addBound(InferenceBound.UPPER, uv2, inferenceContext.asInstType(u), infer);
-                        }
-                        //2. copy beta's lower to alpha's
-                        for (Type l : uv2.getBounds(InferenceBound.LOWER)) {
-                            addBound(InferenceBound.LOWER, uv, inferenceContext.asInstType(l), infer);
-                        }
-                    }
-                }
-            }
-
-            @Override
-            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
-                return !uv.isCaptured() &&
-                        uv.getBounds(InferenceBound.LOWER).nonEmpty();
-            }
-        },
-        /**
-         * Given a bound set containing {@code alpha == beta} propagate lower/upper
-         * bounds from alpha to beta and back.
-         */
-        PROP_EQ() {
-            public void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn) {
-                Infer infer = inferenceContext.infer;
-                for (Type b : uv.getBounds(InferenceBound.EQ)) {
-                    if (inferenceContext.inferenceVars().contains(b)) {
-                        UndetVar uv2 = (UndetVar)inferenceContext.asUndetVar(b);
-                        if (uv2.isCaptured()) continue;
-                        //alpha == beta
-                        //0. set beta == alpha
-                        addBound(InferenceBound.EQ, uv2, inferenceContext.asInstType(uv.qtype), infer);
-                        //1. copy all alpha's bounds to beta's
-                        for (InferenceBound ib : InferenceBound.values()) {
-                            for (Type b2 : uv.getBounds(ib)) {
-                                if (b2 != uv2) {
-                                    addBound(ib, uv2, inferenceContext.asInstType(b2), infer);
-                                }
-                            }
-                        }
-                        //2. copy all beta's bounds to alpha's
-                        for (InferenceBound ib : InferenceBound.values()) {
-                            for (Type b2 : uv2.getBounds(ib)) {
-                                if (b2 != uv) {
-                                    addBound(ib, uv, inferenceContext.asInstType(b2), infer);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            @Override
-            boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
-                return !uv.isCaptured() &&
-                        uv.getBounds(InferenceBound.EQ).nonEmpty();
-            }
-        };
-
-        abstract void apply(UndetVar uv, InferenceContext inferenceContext, Warner warn);
-
-        boolean accepts(UndetVar uv, InferenceContext inferenceContext) {
-            return !uv.isCaptured();
-        }
-
-        boolean isSubtype(Type s, Type t, Warner warn, Infer infer) {
-            return doIncorporationOp(IncorporationBinaryOpKind.IS_SUBTYPE, s, t, warn, infer);
-        }
-
-        boolean isSameType(Type s, Type t, Infer infer) {
-            return doIncorporationOp(IncorporationBinaryOpKind.IS_SAME_TYPE, s, t, null, infer);
-        }
-
-        void addBound(InferenceBound ib, UndetVar uv, Type b, Infer infer) {
-            doIncorporationOp(opFor(ib), uv, b, null, infer);
-        }
-
-        IncorporationBinaryOpKind opFor(InferenceBound boundKind) {
-            switch (boundKind) {
-                case EQ:
-                    return IncorporationBinaryOpKind.ADD_EQ_BOUND;
-                case LOWER:
-                    return IncorporationBinaryOpKind.ADD_LOWER_BOUND;
-                case UPPER:
-                    return IncorporationBinaryOpKind.ADD_UPPER_BOUND;
-                default:
-                    Assert.error("Can't get here!");
-                    return null;
-            }
-        }
-
-        boolean doIncorporationOp(IncorporationBinaryOpKind opKind, Type op1, Type op2, Warner warn, Infer infer) {
-            IncorporationBinaryOp newOp = infer.new IncorporationBinaryOp(opKind, op1, op2);
-            Boolean res = infer.incorporationCache.get(newOp);
+    boolean doIncorporationOp(IncorporationBinaryOpKind opKind, Type op1, Type op2, Warner warn) {
+            IncorporationBinaryOp newOp = new IncorporationBinaryOp(opKind, op1, op2);
+            Boolean res = incorporationCache.get(newOp);
             if (res == null) {
-                infer.incorporationCache.put(newOp, res = newOp.apply(warn));
+                incorporationCache.put(newOp, res = newOp.apply(warn));
             }
             return res;
         }
-    }
-
-    /** incorporation steps to be executed when running in legacy mode */
-    EnumSet<IncorporationStep> incorporationStepsLegacy = EnumSet.of(IncorporationStep.EQ_CHECK_LEGACY);
-
-    /** incorporation steps to be executed when running in graph mode */
-    EnumSet<IncorporationStep> incorporationStepsGraph =
-            EnumSet.complementOf(EnumSet.of(IncorporationStep.EQ_CHECK_LEGACY));
 
     /**
      * Three kinds of basic operation are supported as part of an incorporation step:
@@ -1189,30 +1152,6 @@ public class Infer {
             @Override
             boolean apply(Type op1, Type op2, Warner warn, Types types) {
                 return types.isSameType(op1, op2);
-            }
-        },
-        ADD_UPPER_BOUND() {
-            @Override
-            boolean apply(Type op1, Type op2, Warner warn, Types types) {
-                UndetVar uv = (UndetVar)op1;
-                uv.addBound(InferenceBound.UPPER, op2, types);
-                return true;
-            }
-        },
-        ADD_LOWER_BOUND() {
-            @Override
-            boolean apply(Type op1, Type op2, Warner warn, Types types) {
-                UndetVar uv = (UndetVar)op1;
-                uv.addBound(InferenceBound.LOWER, op2, types);
-                return true;
-            }
-        },
-        ADD_EQ_BOUND() {
-            @Override
-            boolean apply(Type op1, Type op2, Warner warn, Types types) {
-                UndetVar uv = (UndetVar)op1;
-                uv.addBound(InferenceBound.EQ, op2, types);
-                return true;
             }
         };
 
@@ -1254,9 +1193,9 @@ public class Infer {
         public int hashCode() {
             int result = opKind.hashCode();
             result *= 127;
-            result += types.hashCode(op1, true);
+            result += types.hashCode(op1);
             result *= 127;
-            result += types.hashCode(op2, true);
+            result += types.hashCode(op2);
             return result;
         }
 
@@ -1268,152 +1207,59 @@ public class Infer {
     /** an incorporation cache keeps track of all executed incorporation-related operations */
     Map<IncorporationBinaryOp, Boolean> incorporationCache = new HashMap<>();
 
-    /**
-     * Make sure that the upper bounds we got so far lead to a solvable inference
-     * variable by making sure that a glb exists.
-     */
-    void checkCompatibleUpperBounds(UndetVar uv, InferenceContext inferenceContext) {
-        List<Type> hibounds =
-                Type.filter(uv.getBounds(InferenceBound.UPPER), new BoundFilter(inferenceContext));
-        Type hb = null;
-        if (hibounds.isEmpty())
-            hb = syms.objectType;
-        else if (hibounds.tail.isEmpty())
-            hb = hibounds.head;
-        else
-            hb = types.glb(hibounds);
-        if (hb == null || hb.isErroneous())
-            reportBoundError(uv, BoundErrorKind.BAD_UPPER);
-    }
-    //where
-        protected static class BoundFilter implements Filter<Type> {
+    protected static class BoundFilter implements Filter<Type> {
 
-            InferenceContext inferenceContext;
+        InferenceContext inferenceContext;
 
-            public BoundFilter(InferenceContext inferenceContext) {
-                this.inferenceContext = inferenceContext;
-            }
-
-            @Override
-            public boolean accepts(Type t) {
-                return !t.isErroneous() && !inferenceContext.free(t) &&
-                        !t.hasTag(BOT);
-            }
+        public BoundFilter(InferenceContext inferenceContext) {
+            this.inferenceContext = inferenceContext;
         }
 
-    /**
-     * This enumeration defines all possible bound-checking related errors.
-     */
-    enum BoundErrorKind {
-        /**
-         * The (uninstantiated) inference variable has incompatible upper bounds.
-         */
-        BAD_UPPER() {
-            @Override
-            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
-                return ex.setMessage("incompatible.upper.bounds", uv.qtype,
-                        uv.getBounds(InferenceBound.UPPER));
-            }
-        },
-        /**
-         * The (uninstantiated) inference variable has incompatible equality constraints.
-         */
-        BAD_EQ() {
-            @Override
-            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
-                return ex.setMessage("incompatible.eq.bounds", uv.qtype,
-                        uv.getBounds(InferenceBound.EQ));
-            }
-        },
-        /**
-         * The (uninstantiated) inference variable has incompatible upper lower bounds.
-         */
-        BAD_UPPER_LOWER() {
-            @Override
-            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
-                return ex.setMessage("incompatible.upper.lower.bounds", uv.qtype,
-                        uv.getBounds(InferenceBound.UPPER), uv.getBounds(InferenceBound.LOWER));
-            }
-        },
-        /**
-         * The (uninstantiated) inference variable has incompatible upper equal bounds.
-         */
-        BAD_UPPER_EQUAL() {
-            @Override
-            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
-                return ex.setMessage("incompatible.upper.eq.bounds", uv.qtype,
-                        uv.getBounds(InferenceBound.UPPER), uv.getBounds(InferenceBound.EQ));
-            }
-        },
-        /**
-         * The (uninstantiated) inference variable has incompatible upper equal bounds.
-         */
-        BAD_EQUAL_LOWER() {
-            @Override
-            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
-                return ex.setMessage("incompatible.eq.lower.bounds", uv.qtype,
-                        uv.getBounds(InferenceBound.EQ), uv.getBounds(InferenceBound.LOWER));
-            }
-        },
-        /**
-         * An equality constraint is not compatible with an upper bound.
-         */
-        BAD_EQ_UPPER() {
-            @Override
-            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
-                return ex.setMessage("incompatible.eq.upper.bounds", uv.qtype,
-                        uv.getBounds(InferenceBound.EQ), uv.getBounds(InferenceBound.UPPER));
-            }
-        },
-        /**
-         * An equality constraint is not compatible with a lower bound.
-         */
-        BAD_EQ_LOWER() {
-            @Override
-            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
-                return ex.setMessage("incompatible.eq.lower.bounds", uv.qtype,
-                        uv.getBounds(InferenceBound.EQ), uv.getBounds(InferenceBound.LOWER));
-            }
-        },
-        /**
-         * Instantiated inference variable is not compatible with an upper bound.
-         */
-        UPPER() {
-            @Override
-            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
-                return ex.setMessage("inferred.do.not.conform.to.upper.bounds", uv.inst,
-                        uv.getBounds(InferenceBound.UPPER));
-            }
-        },
-        /**
-         * Instantiated inference variable is not compatible with a lower bound.
-         */
-        LOWER() {
-            @Override
-            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
-                return ex.setMessage("inferred.do.not.conform.to.lower.bounds", uv.inst,
-                        uv.getBounds(InferenceBound.LOWER));
-            }
-        },
-        /**
-         * Instantiated inference variable is not compatible with an equality constraint.
-         */
-        EQ() {
-            @Override
-            InapplicableMethodException setMessage(InferenceException ex, UndetVar uv) {
-                return ex.setMessage("inferred.do.not.conform.to.eq.bounds", uv.inst,
-                        uv.getBounds(InferenceBound.EQ));
-            }
-        };
-
-        abstract InapplicableMethodException setMessage(InferenceException ex, UndetVar uv);
+        @Override
+        public boolean accepts(Type t) {
+            return !t.isErroneous() && !inferenceContext.free(t) &&
+                    !t.hasTag(BOT);
+        }
     }
 
     /**
-     * Report a bound-checking error of given kind
+     * Incorporation error: mismatch between inferred type and given bound.
      */
-    void reportBoundError(UndetVar uv, BoundErrorKind bk) {
-        throw bk.setMessage(inferenceException, uv);
+    void reportInstError(UndetVar uv, InferenceBound ib) {
+        reportInferenceError(
+                String.format("inferred.do.not.conform.to.%s.bounds", StringUtils.toLowerCase(ib.name())),
+                uv.getInst(),
+                uv.getBounds(ib));
+    }
+
+    /**
+     * Incorporation error: mismatch between two (or more) bounds of same kind.
+     */
+    void reportBoundError(UndetVar uv, InferenceBound ib) {
+        reportInferenceError(
+                String.format("incompatible.%s.bounds", StringUtils.toLowerCase(ib.name())),
+                uv.qtype,
+                uv.getBounds(ib));
+    }
+
+    /**
+     * Incorporation error: mismatch between two (or more) bounds of different kinds.
+     */
+    void reportBoundError(UndetVar uv, InferenceBound ib1, InferenceBound ib2) {
+        reportInferenceError(
+                String.format("incompatible.%s.%s.bounds",
+                        StringUtils.toLowerCase(ib1.name()),
+                        StringUtils.toLowerCase(ib2.name())),
+                uv.qtype,
+                uv.getBounds(ib1),
+                uv.getBounds(ib2));
+    }
+
+    /**
+     * Helper method: reports an inference error.
+     */
+    void reportInferenceError(String key, Object... args) {
+        throw inferenceException.setMessage(key, args);
     }
     // </editor-fold>
 
@@ -1459,41 +1305,6 @@ public class Infer {
                 throw new NodeNotFoundException(g);
             }
             return g.nodes.get(0);
-        }
-
-        boolean isSubtype(Type s, Type t, Warner warn, Infer infer) {
-            return doIncorporationOp(IncorporationBinaryOpKind.IS_SUBTYPE, s, t, warn, infer);
-        }
-
-        boolean isSameType(Type s, Type t, Infer infer) {
-            return doIncorporationOp(IncorporationBinaryOpKind.IS_SAME_TYPE, s, t, null, infer);
-        }
-
-        void addBound(InferenceBound ib, UndetVar uv, Type b, Infer infer) {
-            doIncorporationOp(opFor(ib), uv, b, null, infer);
-        }
-
-        IncorporationBinaryOpKind opFor(InferenceBound boundKind) {
-            switch (boundKind) {
-                case EQ:
-                    return IncorporationBinaryOpKind.ADD_EQ_BOUND;
-                case LOWER:
-                    return IncorporationBinaryOpKind.ADD_LOWER_BOUND;
-                case UPPER:
-                    return IncorporationBinaryOpKind.ADD_UPPER_BOUND;
-                default:
-                    Assert.error("Can't get here!");
-                    return null;
-            }
-        }
-
-        boolean doIncorporationOp(IncorporationBinaryOpKind opKind, Type op1, Type op2, Warner warn, Infer infer) {
-            IncorporationBinaryOp newOp = infer.new IncorporationBinaryOp(opKind, op1, op2);
-            Boolean res = infer.incorporationCache.get(newOp);
-            if (res == null) {
-                infer.incorporationCache.put(newOp, res = newOp.apply(warn));
-            }
-            return res;
         }
     }
 
@@ -1814,7 +1625,7 @@ public class Infer {
          * depends on the selected solver strategy.
          */
         void solve(GraphStrategy sstrategy) {
-            checkWithinBounds(inferenceContext, warn); //initial propagation of bounds
+            doIncorporation(inferenceContext, warn); //initial propagation of bounds
             InferenceGraph inferenceGraph = new InferenceGraph(stuckDeps);
             while (!sstrategy.done()) {
                 if (dependenciesFolder != null) {
@@ -1829,8 +1640,8 @@ public class Infer {
                     outer: while (Type.containsAny(inferenceContext.restvars(), varsToSolve)) {
                         //for each inference phase
                         for (GraphInferenceSteps step : GraphInferenceSteps.values()) {
-                            if (inferenceContext.solveBasic(varsToSolve, step.steps)) {
-                                checkWithinBounds(inferenceContext, warn);
+                            if (inferenceContext.solveBasic(varsToSolve, step.steps).nonEmpty()) {
+                                doIncorporation(inferenceContext, warn);
                                 continue outer;
                             }
                         }
@@ -1842,7 +1653,7 @@ public class Infer {
                     //did we fail because of interdependent ivars?
                     inferenceContext.rollback(saved_undet);
                     instantiateAsUninferredVars(varsToSolve, inferenceContext);
-                    checkWithinBounds(inferenceContext, warn);
+                    doIncorporation(inferenceContext, warn);
                 }
                 inferenceGraph.deleteNode(nodeToSolve);
             }

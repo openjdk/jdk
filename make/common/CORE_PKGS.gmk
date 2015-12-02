@@ -225,6 +225,7 @@ CORE_PKGS = \
     javax.tools \
     javax.transaction \
     javax.transaction.xa \
+    javax.xml.catalog \
     javax.xml.parsers \
     javax.xml.bind \
     javax.xml.bind.annotation \

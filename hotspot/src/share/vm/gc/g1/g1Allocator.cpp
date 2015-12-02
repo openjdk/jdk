@@ -110,9 +110,6 @@ void G1DefaultAllocator::release_gc_alloc_regions(EvacuationInfo& evacuation_inf
   if (_retained_old_gc_alloc_region != NULL) {
     _retained_old_gc_alloc_region->record_retained_region();
   }
-
-  _g1h->alloc_buffer_stats(InCSetState::Young)->adjust_desired_plab_sz();
-  _g1h->alloc_buffer_stats(InCSetState::Old)->adjust_desired_plab_sz();
 }
 
 void G1DefaultAllocator::abandon_gc_alloc_regions() {

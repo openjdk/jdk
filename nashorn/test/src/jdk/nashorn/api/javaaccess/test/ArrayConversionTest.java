@@ -40,6 +40,10 @@ import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
+/**
+ * @test
+ * @run testng/othervm jdk.nashorn.api.javaaccess.test.ArrayConversionTest
+ */
 @SuppressWarnings("javadoc")
 public class ArrayConversionTest {
     private static ScriptEngine e = null;

@@ -116,7 +116,7 @@ static volatile intptr_t gInflationLocks[NINFLATIONLOCKS];
 // global list of blocks of monitors
 // gBlockList is really PaddedEnd<ObjectMonitor> *, but we don't
 // want to expose the PaddedEnd template more than necessary.
-ObjectMonitor * ObjectSynchronizer::gBlockList = NULL;
+ObjectMonitor * volatile ObjectSynchronizer::gBlockList = NULL;
 // global monitor free list
 ObjectMonitor * volatile ObjectSynchronizer::gFreeList  = NULL;
 // global monitor in-use list, for moribund threads,
@@ -890,21 +890,22 @@ JavaThread* ObjectSynchronizer::get_lock_owner(Handle h_obj, bool doLock) {
 
   return NULL;
 }
+
 // Visitors ...
 
 void ObjectSynchronizer::monitors_iterate(MonitorClosure* closure) {
-  PaddedEnd<ObjectMonitor> * block = (PaddedEnd<ObjectMonitor> *)gBlockList;
-  ObjectMonitor* mid;
-  while (block) {
+  PaddedEnd<ObjectMonitor> * block =
+    (PaddedEnd<ObjectMonitor> *)OrderAccess::load_ptr_acquire(&gBlockList);
+  while (block != NULL) {
     assert(block->object() == CHAINMARKER, "must be a block header");
     for (int i = _BLOCKSIZE - 1; i > 0; i--) {
-      mid = (ObjectMonitor *)(block + i);
-      oop object = (oop) mid->object();
+      ObjectMonitor* mid = (ObjectMonitor *)(block + i);
+      oop object = (oop)mid->object();
       if (object != NULL) {
         closure->do_monitor(mid);
       }
     }
-    block = (PaddedEnd<ObjectMonitor> *) block->FreeNext;
+    block = (PaddedEnd<ObjectMonitor> *)block->FreeNext;
   }
 }
 
@@ -919,9 +920,9 @@ static inline ObjectMonitor* next(ObjectMonitor* block) {
 
 void ObjectSynchronizer::oops_do(OopClosure* f) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint");
-  for (PaddedEnd<ObjectMonitor> * block =
-       (PaddedEnd<ObjectMonitor> *)gBlockList; block != NULL;
-       block = (PaddedEnd<ObjectMonitor> *)next(block)) {
+  PaddedEnd<ObjectMonitor> * block =
+    (PaddedEnd<ObjectMonitor> *)OrderAccess::load_ptr_acquire(&gBlockList);
+  for (; block != NULL; block = (PaddedEnd<ObjectMonitor> *)next(block)) {
     assert(block->object() == CHAINMARKER, "must be a block header");
     for (int i = 1; i < _BLOCKSIZE; i++) {
       ObjectMonitor* mid = (ObjectMonitor *)&block[i];
@@ -1139,7 +1140,9 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::omAlloc(Thread * Self) {
     // The very first objectMonitor in a block is reserved and dedicated.
     // It serves as blocklist "next" linkage.
     temp[0].FreeNext = gBlockList;
-    gBlockList = temp;
+    // There are lock-free uses of gBlockList so make sure that
+    // the previous stores happen before we update gBlockList.
+    OrderAccess::release_store_ptr(&gBlockList, temp);
 
     // Add the new string of objectMonitors to the global free list
     temp[_BLOCKSIZE - 1].FreeNext = gFreeList;
@@ -1621,31 +1624,33 @@ void ObjectSynchronizer::deflate_idle_monitors() {
       nInuse += gOmInUseCount;
     }
 
-  } else for (PaddedEnd<ObjectMonitor> * block =
-              (PaddedEnd<ObjectMonitor> *)gBlockList; block != NULL;
-              block = (PaddedEnd<ObjectMonitor> *)next(block)) {
-    // Iterate over all extant monitors - Scavenge all idle monitors.
-    assert(block->object() == CHAINMARKER, "must be a block header");
-    nInCirculation += _BLOCKSIZE;
-    for (int i = 1; i < _BLOCKSIZE; i++) {
-      ObjectMonitor* mid = (ObjectMonitor*)&block[i];
-      oop obj = (oop) mid->object();
+  } else {
+    PaddedEnd<ObjectMonitor> * block =
+      (PaddedEnd<ObjectMonitor> *)OrderAccess::load_ptr_acquire(&gBlockList);
+    for (; block != NULL; block = (PaddedEnd<ObjectMonitor> *)next(block)) {
+      // Iterate over all extant monitors - Scavenge all idle monitors.
+      assert(block->object() == CHAINMARKER, "must be a block header");
+      nInCirculation += _BLOCKSIZE;
+      for (int i = 1; i < _BLOCKSIZE; i++) {
+        ObjectMonitor* mid = (ObjectMonitor*)&block[i];
+        oop obj = (oop)mid->object();
 
-      if (obj == NULL) {
-        // The monitor is not associated with an object.
-        // The monitor should either be a thread-specific private
-        // free list or the global free list.
-        // obj == NULL IMPLIES mid->is_busy() == 0
-        guarantee(!mid->is_busy(), "invariant");
-        continue;
-      }
-      deflated = deflate_monitor(mid, obj, &freeHeadp, &freeTailp);
+        if (obj == NULL) {
+          // The monitor is not associated with an object.
+          // The monitor should either be a thread-specific private
+          // free list or the global free list.
+          // obj == NULL IMPLIES mid->is_busy() == 0
+          guarantee(!mid->is_busy(), "invariant");
+          continue;
+        }
+        deflated = deflate_monitor(mid, obj, &freeHeadp, &freeTailp);
 
-      if (deflated) {
-        mid->FreeNext = NULL;
-        nScavenged++;
-      } else {
-        nInuse++;
+        if (deflated) {
+          mid->FreeNext = NULL;
+          nScavenged++;
+        } else {
+          nInuse++;
+        }
       }
     }
   }
@@ -1789,18 +1794,18 @@ void ObjectSynchronizer::sanity_checks(const bool verbose,
 
 // Verify all monitors in the monitor cache, the verification is weak.
 void ObjectSynchronizer::verify() {
-  PaddedEnd<ObjectMonitor> * block = (PaddedEnd<ObjectMonitor> *)gBlockList;
-  ObjectMonitor* mid;
-  while (block) {
+  PaddedEnd<ObjectMonitor> * block =
+    (PaddedEnd<ObjectMonitor> *)OrderAccess::load_ptr_acquire(&gBlockList);
+  while (block != NULL) {
     assert(block->object() == CHAINMARKER, "must be a block header");
     for (int i = 1; i < _BLOCKSIZE; i++) {
-      mid = (ObjectMonitor *)(block + i);
-      oop object = (oop) mid->object();
+      ObjectMonitor* mid = (ObjectMonitor *)(block + i);
+      oop object = (oop)mid->object();
       if (object != NULL) {
         mid->verify();
       }
     }
-    block = (PaddedEnd<ObjectMonitor> *) block->FreeNext;
+    block = (PaddedEnd<ObjectMonitor> *)block->FreeNext;
   }
 }
 
@@ -1809,19 +1814,19 @@ void ObjectSynchronizer::verify() {
 // the list of extant blocks without taking a lock.
 
 int ObjectSynchronizer::verify_objmon_isinpool(ObjectMonitor *monitor) {
-  PaddedEnd<ObjectMonitor> * block = (PaddedEnd<ObjectMonitor> *)gBlockList;
-
-  while (block) {
+  PaddedEnd<ObjectMonitor> * block =
+    (PaddedEnd<ObjectMonitor> *)OrderAccess::load_ptr_acquire(&gBlockList);
+  while (block != NULL) {
     assert(block->object() == CHAINMARKER, "must be a block header");
     if (monitor > (ObjectMonitor *)&block[0] &&
         monitor < (ObjectMonitor *)&block[_BLOCKSIZE]) {
-      address mon = (address) monitor;
-      address blk = (address) block;
+      address mon = (address)monitor;
+      address blk = (address)block;
       size_t diff = mon - blk;
-      assert((diff % sizeof(PaddedEnd<ObjectMonitor>)) == 0, "check");
+      assert((diff % sizeof(PaddedEnd<ObjectMonitor>)) == 0, "must be aligned");
       return 1;
     }
-    block = (PaddedEnd<ObjectMonitor> *) block->FreeNext;
+    block = (PaddedEnd<ObjectMonitor> *)block->FreeNext;
   }
   return 0;
 }

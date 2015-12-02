@@ -26,19 +26,20 @@
 package com.sun.tools.javac.code;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
 import javax.lang.model.type.*;
 
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.TypeMetadata.Entry;
+import com.sun.tools.javac.comp.Infer.IncorporationAction;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.DefinedBy.Api;
+
 import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.Kind.*;
@@ -1826,17 +1827,15 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
          */
         public interface UndetVarListener {
             /** called when some inference variable bounds (of given kinds ibs) change */
-            void varChanged(UndetVar uv, Set<InferenceBound> ibs);
+            void varBoundChanged(UndetVar uv, InferenceBound ib, Type bound, boolean update);
+            /** called when the inferred type is set on some inference variable */
+            default void varInstantiated(UndetVar uv) { Assert.error(); }
         }
 
         /**
          * Inference variable bound kinds
          */
         public enum InferenceBound {
-            /** upper bounds */
-            UPPER {
-                public InferenceBound complement() { return LOWER; }
-            },
             /** lower bounds */
             LOWER {
                 public InferenceBound complement() { return UPPER; }
@@ -1844,16 +1843,38 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             /** equality constraints */
             EQ {
                 public InferenceBound complement() { return EQ; }
+            },
+            /** upper bounds */
+            UPPER {
+                public InferenceBound complement() { return LOWER; }
             };
 
             public abstract InferenceBound complement();
+
+            public boolean lessThan(InferenceBound that) {
+                if (that == this) {
+                    return false;
+                } else {
+                    switch (that) {
+                        case UPPER: return true;
+                        case LOWER: return false;
+                        case EQ: return (this != UPPER);
+                        default:
+                            Assert.error("Cannot get here!");
+                            return false;
+                    }
+                }
+            }
         }
+
+        /** list of incorporation actions (used by the incorporation engine). */
+        public ArrayDeque<IncorporationAction> incorporationActions = new ArrayDeque<>();
 
         /** inference variable bounds */
         protected Map<InferenceBound, List<Type>> bounds;
 
         /** inference variable's inferred type (set from Infer.java) */
-        public Type inst = null;
+        private Type inst = null;
 
         /** number of declared (upper) bounds */
         public int declaredCount;
@@ -1866,15 +1887,20 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return v.visitUndetVar(this, s);
         }
 
-        public UndetVar(TypeVar origin, Types types) {
+        public UndetVar(TypeVar origin, UndetVarListener listener, Types types) {
             // This is a synthesized internal type, so we cannot annotate it.
             super(UNDETVAR, origin);
+            this.listener = listener;
             bounds = new EnumMap<>(InferenceBound.class);
             List<Type> declaredBounds = types.getBounds(origin);
             declaredCount = declaredBounds.length();
-            bounds.put(InferenceBound.UPPER, declaredBounds);
-            bounds.put(InferenceBound.LOWER, List.<Type>nil());
-            bounds.put(InferenceBound.EQ, List.<Type>nil());
+            bounds.put(InferenceBound.UPPER, List.nil());
+            bounds.put(InferenceBound.LOWER, List.nil());
+            bounds.put(InferenceBound.EQ, List.nil());
+            for (Type t : declaredBounds.reverse()) {
+                //add bound works in reverse order
+                addBound(InferenceBound.UPPER, t, types, true);
+            }
         }
 
         @DefinedBy(Api.LANGUAGE_MODEL)
@@ -1904,6 +1930,32 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return result;
         }
 
+        /**
+         * Returns a new copy of this undet var.
+         */
+        public UndetVar dup(Types types) {
+            UndetVar uv2 = new UndetVar((TypeVar)qtype, listener, types);
+            dupTo(uv2, types);
+            return uv2;
+        }
+
+        /**
+         * Dumps the contents of this undet var on another undet var.
+         */
+        public void dupTo(UndetVar uv2, Types types) {
+            uv2.listener = null;
+            uv2.bounds.clear();
+            for (InferenceBound ib : InferenceBound.values()) {
+                uv2.bounds.put(ib, List.nil());
+                for (Type t : getBounds(ib)) {
+                    uv2.addBound(ib, t, types, true);
+                }
+            }
+            uv2.inst = inst;
+            uv2.listener = listener;
+            uv2.incorporationActions = new ArrayDeque<>(incorporationActions);
+        }
+
         @Override
         public UndetVar cloneWithMetadata(TypeMetadata md) {
             throw new AssertionError("Cannot add metadata to an UndetVar type");
@@ -1917,6 +1969,17 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         @Override
         public Type baseType() {
             return (inst == null) ? this : inst.baseType();
+        }
+
+        public Type getInst() {
+            return inst;
+        }
+
+        public void setInst(Type inst) {
+            this.inst = inst;
+            if (listener != null) {
+                listener.varInstantiated(this);
+            }
         }
 
         /** get all bounds of a given kind */
@@ -1952,13 +2015,14 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         protected void addBound(InferenceBound ib, Type bound, Types types, boolean update) {
             Type bound2 = bound.map(toTypeVarMap).baseType();
             List<Type> prevBounds = bounds.get(ib);
+            if (bound == qtype) return;
             for (Type b : prevBounds) {
                 //check for redundancy - use strict version of isSameType on tvars
                 //(as the standard version will lead to false positives w.r.t. clones ivars)
-                if (types.isSameType(b, bound2, true) || bound == qtype) return;
+                if (types.isSameType(b, bound2, true)) return;
             }
             bounds.put(ib, prevBounds.prepend(bound2));
-            notifyChange(EnumSet.of(ib));
+            notifyBoundChange(ib, bound2, false);
         }
         //where
             TypeMapping<Void> toTypeVarMap = new TypeMapping<Void>() {
@@ -1970,16 +2034,14 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         /** replace types in all bounds - this might trigger listener notification */
         public void substBounds(List<Type> from, List<Type> to, Types types) {
-            List<Type> instVars = from.diff(to);
-            //if set of instantiated ivars is empty, there's nothing to do!
-            if (instVars.isEmpty()) return;
-            final EnumSet<InferenceBound> boundsChanged = EnumSet.noneOf(InferenceBound.class);
+            final ListBuffer<Pair<InferenceBound, Type>>  boundsChanged = new ListBuffer<>();
             UndetVarListener prevListener = listener;
             try {
                 //setup new listener for keeping track of changed bounds
                 listener = new UndetVarListener() {
-                    public void varChanged(UndetVar uv, Set<InferenceBound> ibs) {
-                        boundsChanged.addAll(ibs);
+                    public void varBoundChanged(UndetVar uv, InferenceBound ib, Type t, boolean _ignored) {
+                        Assert.check(uv == UndetVar.this);
+                        boundsChanged.add(new Pair<>(ib, t));
                     }
                 };
                 for (Map.Entry<InferenceBound, List<Type>> _entry : bounds.entrySet()) {
@@ -1989,7 +2051,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                     ListBuffer<Type> deps = new ListBuffer<>();
                     //step 1 - re-add bounds that are not dependent on ivars
                     for (Type t : prevBounds) {
-                        if (!t.containsAny(instVars)) {
+                        if (!t.containsAny(from)) {
                             newBounds.append(t);
                         } else {
                             deps.append(t);
@@ -2004,15 +2066,15 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                 }
             } finally {
                 listener = prevListener;
-                if (!boundsChanged.isEmpty()) {
-                    notifyChange(boundsChanged);
+                for (Pair<InferenceBound, Type> boundUpdate : boundsChanged) {
+                    notifyBoundChange(boundUpdate.fst, boundUpdate.snd, true);
                 }
             }
         }
 
-        private void notifyChange(EnumSet<InferenceBound> ibs) {
+        private void notifyBoundChange(InferenceBound ib, Type bound, boolean update) {
             if (listener != null) {
-                listener.varChanged(this, ibs);
+                listener.varBoundChanged(this, ib, bound, update);
             }
         }
 
@@ -2029,10 +2091,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
      */
     public static class CapturedUndetVar extends UndetVar {
 
-        public CapturedUndetVar(CapturedType origin, Types types) {
-            super(origin, types);
+        public CapturedUndetVar(CapturedType origin, UndetVarListener listener, Types types) {
+            super(origin, listener, types);
             if (!origin.lower.hasTag(BOT)) {
-                bounds.put(InferenceBound.LOWER, List.of(origin.lower));
+                addBound(InferenceBound.LOWER, origin.lower, types, true);
             }
         }
 
@@ -2050,6 +2112,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         @Override
         public boolean isCaptured() {
             return true;
+        }
+
+        public UndetVar dup(Types types) {
+            UndetVar uv2 = new CapturedUndetVar((CapturedType)qtype, listener, types);
+            dupTo(uv2, types);
+            return uv2;
         }
     }
 

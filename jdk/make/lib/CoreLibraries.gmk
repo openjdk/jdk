@@ -119,15 +119,6 @@ LIBJAVA_CFLAGS := $(addprefix -I, $(LIBJAVA_SRC_DIRS)) \
     -I$(SUPPORT_OUTPUTDIR)/headers/java.base \
     -DARCHPROPNAME='"$(OPENJDK_TARGET_CPU_OSARCH)"'
 
-LIBJAVA_CFLAGS += -DJDK_MAJOR_VERSION='"$(JDK_MAJOR_VERSION)"' \
-    -DJDK_MINOR_VERSION='"$(JDK_MINOR_VERSION)"' \
-    -DJDK_MICRO_VERSION='"$(JDK_MICRO_VERSION)"' \
-     -DJDK_BUILD_NUMBER='"$(JDK_BUILD_NUMBER)"'
-
-ifneq (, $(JDK_UPDATE_VERSION))
-  LIBJAVA_CFLAGS += -DJDK_UPDATE_VERSION='"$(JDK_UPDATE_VERSION)"'
-endif
-
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   BUILD_LIBJAVA_java_props_md.c_CFLAGS := -x objective-c
   BUILD_LIBJAVA_java_props_macosx.c_CFLAGS := -x objective-c
@@ -152,6 +143,8 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBJAVA, \
     OPTIMIZATION := HIGH, \
     CFLAGS := $(CFLAGS_JDKLIB) \
         $(LIBJAVA_CFLAGS), \
+    System.c_CFLAGS := $(VERSION_CFLAGS), \
+    jdk_util.c_CFLAGS := $(VERSION_CFLAGS), \
     DISABLED_WARNINGS_solstudio := E_STATEMENT_NOT_REACHED, \
     MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjava/mapfile-vers, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -435,10 +428,14 @@ else ifeq ($(OPENJDK_TARGET_OS), macosx)
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static, \
       DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
 
-  $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static.a: $(BUILD_LIBJLI_STATIC)
+  ifeq ($(STATIC_BUILD), true)
+    TARGETS += $(BUILD_LIBJLI_STATIC)
+  else
+    $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static.a: $(BUILD_LIBJLI_STATIC)
 	$(call install-file)
 
-  TARGETS += $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static.a
+    TARGETS += $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static.a
+  endif
 
 else ifeq ($(OPENJDK_TARGET_OS), aix)
   # AIX also requires a static libjli because the compiler doesn't support '-rpath'

@@ -25,7 +25,7 @@
  * @test
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
- * @library / /testlibrary /../../test/lib
+ * @library / /testlibrary /test/lib
  * @compile ../common/CompilerToVMHelper.java
  * @build compiler.jvmci.compilerToVM.GetVtableIndexForInterfaceTest
  * @run main ClassFileInstaller
@@ -53,8 +53,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
@@ -125,10 +125,10 @@ public class GetVtableIndexForInterfaceTest {
     private void runTest(TestCase tcase) throws NoSuchMethodException {
         System.out.println(tcase);
         Method method = tcase.holder.getDeclaredMethod(tcase.methodName);
-        HotSpotResolvedObjectTypeImpl metaspaceKlass = CompilerToVMHelper
+        HotSpotResolvedObjectType metaspaceKlass = CompilerToVMHelper
                 .lookupType(Utils.toJVMTypeSignature(tcase.receiver),
                         getClass(), /* resolve = */ true);
-        HotSpotResolvedJavaMethodImpl metaspaceMethod = CTVMUtilities
+        HotSpotResolvedJavaMethod metaspaceMethod = CTVMUtilities
                 .getResolvedMethod(tcase.holder, method);
         int index = 0;
         try {

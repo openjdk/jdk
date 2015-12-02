@@ -27,7 +27,7 @@ package sun.awt.X11;
 
 import java.security.AccessController;
 
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import sun.security.action.GetPropertyAction;
 
 final class XlibWrapper {

@@ -108,7 +108,7 @@ Node *Parse::fetch_interpreter_state(int index,
 
   // Very similar to LoadNode::make, except we handle un-aligned longs and
   // doubles on Sparc.  Intel can handle them just fine directly.
-  Node *l;
+  Node *l = NULL;
   switch (bt) {                // Signature is flattened
   case T_INT:     l = new LoadINode(ctl, mem, adr, TypeRawPtr::BOTTOM, TypeInt::INT,        MemNode::unordered); break;
   case T_FLOAT:   l = new LoadFNode(ctl, mem, adr, TypeRawPtr::BOTTOM, Type::FLOAT,         MemNode::unordered); break;
@@ -1903,7 +1903,7 @@ PhiNode *Parse::ensure_phi(int idx, bool nocreate) {
   // Now use a Phi here for merging
   assert(!nocreate, "Cannot build a phi for a block already parsed.");
   const JVMState* jvms = map->jvms();
-  const Type* t;
+  const Type* t = NULL;
   if (jvms->is_loc(idx)) {
     t = block()->local_type_at(idx - jvms->locoff());
   } else if (jvms->is_stk(idx)) {

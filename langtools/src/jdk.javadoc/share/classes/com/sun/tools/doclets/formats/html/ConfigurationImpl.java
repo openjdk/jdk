@@ -201,6 +201,18 @@ public class ConfigurationImpl extends Configuration {
      */
     public ClassDoc currentcd = null;  // Set this classdoc in the ClassWriter.
 
+    protected List<SearchIndexItem> memberSearchIndex = new ArrayList<>();
+
+    protected List<SearchIndexItem> packageSearchIndex = new ArrayList<>();
+
+    protected List<SearchIndexItem> tagSearchIndex = new ArrayList<>();
+
+    protected List<SearchIndexItem> typeSearchIndex = new ArrayList<>();
+
+    protected Map<Character,List<SearchIndexItem>> tagSearchIndexMap = new HashMap<>();
+
+    protected Set<Character> tagSearchIndexKeys;
+
     /**
      * Constructor. Initializes resource for the
      * {@link com.sun.tools.doclets.internal.toolkit.util.MessageRetriever MessageRetriever}.
@@ -627,5 +639,22 @@ public class ConfigurationImpl extends Configuration {
     @Override
     public Content newContent() {
         return new ContentBuilder();
+    }
+
+    protected void buildSearchTagIndex() {
+        for (SearchIndexItem sii : tagSearchIndex) {
+            String tagLabel = sii.getLabel();
+            char ch = (tagLabel.length() == 0)
+                    ? '*'
+                    : Character.toUpperCase(tagLabel.charAt(0));
+            Character unicode = ch;
+            List<SearchIndexItem> list = tagSearchIndexMap.get(unicode);
+            if (list == null) {
+                list = new ArrayList<>();
+                tagSearchIndexMap.put(unicode, list);
+            }
+            list.add(sii);
+        }
+        tagSearchIndexKeys = tagSearchIndexMap.keySet();
     }
 }

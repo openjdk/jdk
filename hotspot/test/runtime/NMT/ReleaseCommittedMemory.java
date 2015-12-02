@@ -26,7 +26,7 @@
  * @bug 8013120
  * @summary Release committed memory and make sure NMT handles it correctly
  * @key nmt regression
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @build ReleaseCommittedMemory
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

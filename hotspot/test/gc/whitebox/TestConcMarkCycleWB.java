@@ -25,7 +25,7 @@
  * @test TestConMarkCycleWB
  * @bug 8065579
  * @requires vm.gc=="null" | vm.gc=="G1"
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.compiler
  *          java.management

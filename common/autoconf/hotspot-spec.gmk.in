@@ -49,8 +49,8 @@ ALT_CUPS_HEADERS_PATH:=$(patsubst -I%,%,$(filter -I%,@CUPS_CFLAGS@))
 
 # The HOSTCC/HOSTCXX is Hotspot terminology for the BUILD_CC/BUILD_CXX, i.e. the
 # compiler that produces code that can be run on the build platform.
-HOSTCC:=@FIXPATH@ @BUILD_CC@ $(BUILD_SYSROOT_CFLAGS)
-HOSTCXX:=@FIXPATH@ @BUILD_CXX@ $(BUILD_SYSROOT_CFLAGS)
+HOSTCC:=@FIXPATH@ @BUILD_ICECC@ @BUILD_CC@ $(BUILD_SYSROOT_CFLAGS)
+HOSTCXX:=@FIXPATH@ @BUILD_ICECC@ @BUILD_CXX@ $(BUILD_SYSROOT_CFLAGS)
 
 ####################################################
 #
@@ -105,7 +105,7 @@ USE_CLANG := @USE_CLANG@
 
 # For hotspot, override compiler/tools definition to not include FIXPATH prefix.
 # Hotspot has its own handling on the Windows path situation.
-CXX:=@CCACHE@ @HOTSPOT_CXX@
+CXX:=@CCACHE@ @ICECC@ @HOTSPOT_CXX@
 LD:=@HOTSPOT_LD@
 MT:=@HOTSPOT_MT@
 RC:=@HOTSPOT_RC@

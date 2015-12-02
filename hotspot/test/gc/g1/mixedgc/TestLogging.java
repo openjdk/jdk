@@ -25,7 +25,7 @@
  * @test TestLogging
  * @summary Check that a mixed GC is reflected in the gc logs
  * @requires vm.gc=="G1" | vm.gc=="null"
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @ignore 8138607
  * @modules java.management
  * @build sun.hotspot.WhiteBox gc.g1.mixedgc.TestLogging

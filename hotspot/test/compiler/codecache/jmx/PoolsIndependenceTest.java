@@ -37,7 +37,7 @@ import sun.hotspot.code.BlobType;
 
 /*
  * @test PoolsIndependenceTest
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @build PoolsIndependenceTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *     sun.hotspot.WhiteBox$WhiteBoxPermission

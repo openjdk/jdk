@@ -77,6 +77,87 @@ public class TagletWriterImpl extends TagletWriter {
         return result;
     }
 
+    protected Content indexTagOutput(Tag tag) {
+        String text = tag.text();
+        String tagText = "";
+        String desc = "";
+        if (text.isEmpty() || text.trim().isEmpty()) {
+            configuration.message.warning(tag.position(), "doclet.invalid_usage_of_tag", tag.name());
+        } else {
+            int len = text.length();
+            int tagTextEnd = 0;
+            int descstart = 0;
+            int start = 0;
+            Character term = ' ';
+            int cp = text.codePointAt(0);
+            if (cp == '"') {
+                term = '"';
+                start++;
+            }
+            for (int i = start; i < len; i += Character.charCount(cp)) {
+                cp = text.codePointAt(i);
+                if (cp == term) {
+                    tagTextEnd = i;
+                    break;
+                }
+            }
+            if (tagTextEnd < len - 1 && tagTextEnd != 0) {
+                descstart = tagTextEnd + 1;
+            }
+            String desctext = "";
+            if (descstart > 0) {
+                tagText = text.substring(start, tagTextEnd).trim();
+                desctext = text.substring(descstart, len).trim();
+                // strip off the white space which can be between tag description and the
+                // actual label.
+                for (int i = 0; i < desctext.length(); i++) {
+                    char ch2 = desctext.charAt(i);
+                    if (!(ch2 == ' ' || ch2 == '\t' || ch2 == '\n')) {
+                        desc = desctext.substring(i);
+                        break;
+                    }
+                }
+            } else {
+                if (term == '"') {
+                    if (tagTextEnd == 0) {
+                        // If unclosed quote, print out a warning and ignore the invalid tag text.
+                        configuration.message.warning(tag.position(), "doclet.invalid_usage_of_tag", tag.name());
+                        tagText = "";
+                    } else {
+                        tagText = text.substring(start, tagTextEnd).trim();
+                    }
+                } else {
+                    tagText = text.trim();
+                }
+                desc = "";
+            }
+        }
+        String anchorName = htmlWriter.getName(tagText);
+        Content result = HtmlTree.A_ID(anchorName, new StringContent(tagText));
+        if (configuration.createindex && !tagText.isEmpty()) {
+            SearchIndexItem si = new SearchIndexItem();
+            si.setLabel(tagText);
+            si.setDescription(desc);
+            if (tag.holder() instanceof ProgramElementDoc) {
+                if (tag.holder() instanceof MemberDoc) {
+                    si.setUrl(DocPath.forClass(((MemberDoc) tag.holder()).containingClass()).getPath()
+                            + "#" + anchorName);
+                    si.setHolder(((MemberDoc) tag.holder()).qualifiedName());
+                } else {
+                    si.setUrl(DocPath.forClass((ClassDoc) tag.holder()).getPath() + "#" + anchorName);
+                    si.setHolder(((ClassDoc) tag.holder()).qualifiedName());
+                }
+            } else if (tag.holder() instanceof PackageDoc) {
+                si.setUrl(DocPath.forPackage((PackageDoc) tag.holder()).getPath()
+                        + "/" + DocPaths.PACKAGE_SUMMARY.getPath() + "#" + anchorName);
+                si.setHolder(((PackageDoc) tag.holder()).name());
+            }
+            si.setCategory(configuration.getResource("doclet.SearchTags").toString());
+            configuration.tagSearchIndex.add(si);
+        }
+        return result;
+    }
+
     /**
      * {@inheritDoc}
      */

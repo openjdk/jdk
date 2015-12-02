@@ -26,7 +26,7 @@
  * @summary Test corner case that overflows malloc site hashtable bucket
  * @requires sun.arch.data.model == "32"
  * @key nmt jcmd stress
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @build MallocSiteHashOverflow
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail MallocSiteHashOverflow

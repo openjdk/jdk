@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,18 +110,18 @@ class JvmtiClassFileReconstituter : public JvmtiConstantPoolReconstituter {
   void write_class_file_format();
   void write_field_infos();
   void write_method_infos();
-  void write_method_info(methodHandle method);
-  void write_code_attribute(methodHandle method);
+  void write_method_info(const methodHandle& method);
+  void write_code_attribute(const methodHandle& method);
   void write_exceptions_attribute(ConstMethod* const_method);
   void write_synthetic_attribute();
   void write_class_attributes();
   void write_source_file_attribute();
   void write_source_debug_extension_attribute();
-  u2 line_number_table_entries(methodHandle method);
-  void write_line_number_table_attribute(methodHandle method, u2 num_entries);
-  void write_local_variable_table_attribute(methodHandle method, u2 num_entries);
-  void write_local_variable_type_table_attribute(methodHandle method, u2 num_entries);
-  void write_stackmap_table_attribute(methodHandle method, int stackmap_table_len);
+  u2 line_number_table_entries(const methodHandle& method);
+  void write_line_number_table_attribute(const methodHandle& method, u2 num_entries);
+  void write_local_variable_table_attribute(const methodHandle& method, u2 num_entries);
+  void write_local_variable_type_table_attribute(const methodHandle& method, u2 num_entries);
+  void write_stackmap_table_attribute(const methodHandle& method, int stackmap_table_len);
   u2 inner_classes_attribute_length();
   void write_inner_classes_attribute(int length);
   void write_signature_attribute(u2 generic_signaure_index);
@@ -150,7 +150,7 @@ class JvmtiClassFileReconstituter : public JvmtiConstantPoolReconstituter {
 
   u1* class_file_bytes()      { return _buffer; }
 
-  static void copy_bytecodes(methodHandle method, unsigned char* bytecodes);
+  static void copy_bytecodes(const methodHandle& method, unsigned char* bytecodes);
 };
 
 #endif // SHARE_VM_PRIMS_JVMTICLASSFILERECONSTITUTER_HPP
