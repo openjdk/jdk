@@ -63,7 +63,3 @@ checkClass("jdk.nashorn.internal.runtime.options.Option");
 checkClass("jdk.nashorn.internal.runtime.regexp.RegExp");
 checkClass("jdk.nashorn.internal.scripts.JO");
 checkClass("jdk.nashorn.tools.Shell");
-checkClass("jdk.internal.dynalink.CallSiteDescriptor");
-checkClass("jdk.internal.dynalink.beans.StaticClass");
-checkClass("jdk.internal.dynalink.linker.LinkRequest");
-checkClass("jdk.internal.dynalink.support.AbstractRelinkableCallSite");
