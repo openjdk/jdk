@@ -45,10 +45,16 @@ CXX_FLAGS=$(CXX_FLAGS) /D "COMPILER1" /D INCLUDE_JVMCI=0
 
 !if "$(Variant)" == "compiler2"
 CXX_FLAGS=$(CXX_FLAGS) /D "COMPILER2"
+!if "$(BUILDARCH)" == "i486"
+CXX_FLAGS=$(CXX_FLAGS) /D INCLUDE_JVMCI=0
+!endif
 !endif
 
 !if "$(Variant)" == "tiered"
 CXX_FLAGS=$(CXX_FLAGS) /D "COMPILER1" /D "COMPILER2"
+!if "$(BUILDARCH)" == "i486"
+CXX_FLAGS=$(CXX_FLAGS) /D INCLUDE_JVMCI=0
+!endif
 !endif
 
 !if "$(BUILDARCH)" == "i486"
