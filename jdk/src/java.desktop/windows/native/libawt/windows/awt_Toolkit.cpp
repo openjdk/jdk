@@ -2357,6 +2357,9 @@ Java_sun_awt_windows_WToolkit_getScreenWidth(JNIEnv *env, jobject self)
 
     int width = ::GetSystemMetrics(SM_CXSCREEN);
 
+    if (!Devices::GetInstance()) {
+        Devices::UpdateInstance(env);
+    }
     Devices::InstanceAccess devices;
     AwtWin32GraphicsDevice *device = devices->GetDevice(
                         AwtWin32GraphicsDevice::GetDefaultDeviceIndex());
@@ -2376,6 +2379,10 @@ Java_sun_awt_windows_WToolkit_getScreenHeight(JNIEnv *env, jobject self)
     TRY;
 
     int height = ::GetSystemMetrics(SM_CYSCREEN);
+
+    if (!Devices::GetInstance()) {
+        Devices::UpdateInstance(env);
+    }
     Devices::InstanceAccess devices;
     AwtWin32GraphicsDevice *device = devices->GetDevice(
                         AwtWin32GraphicsDevice::GetDefaultDeviceIndex());
