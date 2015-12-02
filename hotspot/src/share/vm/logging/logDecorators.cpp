@@ -25,6 +25,8 @@
 #include "logging/logDecorators.hpp"
 #include "runtime/os.inline.hpp"
 
+const LogDecorators LogDecorators::None = LogDecorators(0);
+
 const char* LogDecorators::_name[][2] = {
 #define DECORATOR(n, a) {#n, #a},
   DECORATOR_LIST

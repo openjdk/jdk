@@ -74,6 +74,7 @@ do {                                                                  \
   }                                                                   \
 } while(0)
 
+char*  Arguments::_jvm_flags_file               = NULL;
 char** Arguments::_jvm_flags_array              = NULL;
 int    Arguments::_num_jvm_flags                = 0;
 char** Arguments::_jvm_args_array               = NULL;
@@ -366,6 +367,7 @@ static SpecialFlag const special_jvm_flags[] = {
   { "StarvationMonitorInterval",     JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "PreInflateSpin",                JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "JNIDetachReleasesMonitors",     JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "UseAltSigs",                    JDK_Version::undefined(), JDK_Version::jdk(9), JDK_Version::jdk(10) },
 
 #ifdef TEST_VERIFY_SPECIAL_JVM_FLAGS
   { "dep > obs",                    JDK_Version::jdk(9), JDK_Version::jdk(8), JDK_Version::undefined() },
@@ -458,7 +460,7 @@ const char* Arguments::real_flag_name(const char *flag_name) {
   return flag_name;
 }
 
-#ifndef PRODUCT
+#ifdef ASSERT
 static bool lookup_special_flag(const char *flag_name, size_t skip_index) {
   for (size_t i = 0; special_jvm_flags[i].name != NULL; i++) {
     if ((i != skip_index) && (strcmp(special_jvm_flags[i].name, flag_name) == 0)) {
@@ -1467,24 +1469,6 @@ void Arguments::set_tiered_flags() {
   // Enable SegmentedCodeCache if TieredCompilation is enabled and ReservedCodeCacheSize >= 240M
   if (FLAG_IS_DEFAULT(SegmentedCodeCache) && ReservedCodeCacheSize >= 240*M) {
     FLAG_SET_ERGO(bool, SegmentedCodeCache, true);
-
-    if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
-      // Multiply sizes by 5 but fix NonNMethodCodeHeapSize (distribute among non-profiled and profiled code heap)
-      if (FLAG_IS_DEFAULT(ProfiledCodeHeapSize)) {
-        FLAG_SET_ERGO(uintx, ProfiledCodeHeapSize, ProfiledCodeHeapSize * 5 + NonNMethodCodeHeapSize * 2);
-      }
-      if (FLAG_IS_DEFAULT(NonProfiledCodeHeapSize)) {
-        FLAG_SET_ERGO(uintx, NonProfiledCodeHeapSize, NonProfiledCodeHeapSize * 5 + NonNMethodCodeHeapSize * 2);
-      }
-      // Check consistency of code heap sizes
-      if ((NonNMethodCodeHeapSize + NonProfiledCodeHeapSize + ProfiledCodeHeapSize) != ReservedCodeCacheSize) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Invalid code heap sizes: NonNMethodCodeHeapSize(%dK) + ProfiledCodeHeapSize(%dK) + NonProfiledCodeHeapSize(%dK) = %dK. Must be equal to ReservedCodeCacheSize = %uK.\n",
-                    NonNMethodCodeHeapSize/K, ProfiledCodeHeapSize/K, NonProfiledCodeHeapSize/K,
-                    (NonNMethodCodeHeapSize + ProfiledCodeHeapSize + NonProfiledCodeHeapSize)/K, ReservedCodeCacheSize/K);
-        vm_exit(1);
-      }
-    }
   }
   if (!UseInterpreter) { // -Xcomp
     Tier3InvokeNotifyFreqLog = 0;
@@ -2534,17 +2518,10 @@ bool Arguments::check_vm_args_consistency() {
                 "Invalid ReservedCodeCacheSize=%dM. Must be at most %uM.\n", ReservedCodeCacheSize/M,
                 CODE_CACHE_SIZE_LIMIT/M);
     status = false;
-  } else if (NonNMethodCodeHeapSize < min_code_cache_size){
+  } else if (NonNMethodCodeHeapSize < min_code_cache_size) {
     jio_fprintf(defaultStream::error_stream(),
                 "Invalid NonNMethodCodeHeapSize=%dK. Must be at least %uK.\n", NonNMethodCodeHeapSize/K,
                 min_code_cache_size/K);
-    status = false;
-  } else if ((!FLAG_IS_DEFAULT(NonNMethodCodeHeapSize) || !FLAG_IS_DEFAULT(ProfiledCodeHeapSize) || !FLAG_IS_DEFAULT(NonProfiledCodeHeapSize))
-             && (NonNMethodCodeHeapSize + NonProfiledCodeHeapSize + ProfiledCodeHeapSize) != ReservedCodeCacheSize) {
-    jio_fprintf(defaultStream::error_stream(),
-                "Invalid code heap sizes: NonNMethodCodeHeapSize(%dK) + ProfiledCodeHeapSize(%dK) + NonProfiledCodeHeapSize(%dK) = %dK. Must be equal to ReservedCodeCacheSize = %uK.\n",
-                NonNMethodCodeHeapSize/K, ProfiledCodeHeapSize/K, NonProfiledCodeHeapSize/K,
-                (NonNMethodCodeHeapSize + ProfiledCodeHeapSize + NonProfiledCodeHeapSize)/K, ReservedCodeCacheSize/K);
     status = false;
   }
 
@@ -2949,11 +2926,12 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
                        round_to((int)long_ThreadStackSize, K) / K) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
-    // -Xoss, -Xsqnopause, -Xoptimize, -Xboundthreads
+    // -Xoss, -Xsqnopause, -Xoptimize, -Xboundthreads, -Xusealtsigs
     } else if (match_option(option, "-Xoss", &tail) ||
                match_option(option, "-Xsqnopause") ||
                match_option(option, "-Xoptimize") ||
-               match_option(option, "-Xboundthreads")) {
+               match_option(option, "-Xboundthreads") ||
+               match_option(option, "-Xusealtsigs")) {
       // All these options are deprecated in JDK 9 and will be removed in a future release
       char version[256];
       JDK_Version::jdk(9).to_string(version, sizeof(version));
@@ -3034,11 +3012,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     } else if (match_option(option, "-Xrs")) {
           // Classic/EVM option, new functionality
       if (FLAG_SET_CMDLINE(bool, ReduceSignalUsage, true) != Flag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-    } else if (match_option(option, "-Xusealtsigs")) {
-          // change default internal VM signals used - lower case for back compat
-      if (FLAG_SET_CMDLINE(bool, UseAltSigs, true) != Flag::SUCCESS) {
         return JNI_EINVAL;
       }
     // -Xprof
@@ -3428,7 +3401,7 @@ void Arguments::fix_appclasspath() {
   }
 
   if (!PrintSharedArchiveAndExit) {
-    ClassLoader::trace_class_path("[classpath: ", _java_class_path->value());
+    ClassLoader::trace_class_path(tty, "[classpath: ", _java_class_path->value());
   }
 }
 
@@ -3933,7 +3906,6 @@ static bool use_vm_log() {
 #endif // PRODUCT
 
 jint Arguments::insert_vm_options_file(const JavaVMInitArgs* args,
-                                       char** flags_file,
                                        char** vm_options_file,
                                        const int vm_options_file_pos,
                                        ScopedVMInitArgs *vm_options_file_args,
@@ -3952,13 +3924,12 @@ jint Arguments::insert_vm_options_file(const JavaVMInitArgs* args,
 }
 
 jint Arguments::match_special_option_and_act(const JavaVMInitArgs* args,
-                                             char ** flags_file,
                                              char ** vm_options_file,
-                                             ScopedVMInitArgs* vm_options_file_args,
                                              ScopedVMInitArgs* args_out) {
   // Remaining part of option string
   const char* tail;
   int   vm_options_file_pos = -1;
+  ScopedVMInitArgs vm_options_file_args;
 
   for (int index = 0; index < args->nOptions; index++) {
     const JavaVMOption* option = args->options + index;
@@ -3966,12 +3937,7 @@ jint Arguments::match_special_option_and_act(const JavaVMInitArgs* args,
       continue;
     }
     if (match_option(option, "-XX:Flags=", &tail)) {
-      *flags_file = (char *) tail;
-      if (*flags_file == NULL) {
-        jio_fprintf(defaultStream::error_stream(),
-                    "Cannot copy flags_file name.\n");
-        return JNI_ENOMEM;
-      }
+      Arguments::set_jvm_flags_file(tail);
       continue;
     }
     if (match_option(option, "-XX:VMOptionsFile=", &tail)) {
@@ -3987,9 +3953,9 @@ jint Arguments::match_special_option_and_act(const JavaVMInitArgs* args,
         *vm_options_file = (char *) tail;
         vm_options_file_pos = index;  // save position of -XX:VMOptionsFile
         // If there's a VMOptionsFile, parse that (also can set flags_file)
-        jint code = insert_vm_options_file(args, flags_file, vm_options_file,
+        jint code = insert_vm_options_file(args, vm_options_file,
                                            vm_options_file_pos,
-                                           vm_options_file_args, args_out);
+                                           &vm_options_file_args, args_out);
         if (code != JNI_OK) {
           return code;
         }
@@ -4085,16 +4051,12 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 
   // If flag "-XX:Flags=flags-file" is used it will be the first option to be processed.
   const char* hotspotrc = ".hotspotrc";
-  char* flags_file = NULL;
   char* vm_options_file = NULL;
   bool settings_file_specified = false;
   bool needs_hotspotrc_warning = false;
   ScopedVMInitArgs java_tool_options_args;
   ScopedVMInitArgs java_options_args;
   ScopedVMInitArgs modified_cmd_line_args;
-  // Pass in vm_options_file_args to keep memory for flags_file from being
-  // deallocated if found in the vm options file.
-  ScopedVMInitArgs vm_options_file_args;
 
   jint code =
       parse_java_tool_options_environment_variable(&java_tool_options_args);
@@ -4108,13 +4070,12 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   }
 
   code = match_special_option_and_act(java_tool_options_args.get(),
-                                      &flags_file, NULL, NULL, NULL);
+                                      NULL, NULL);
   if (code != JNI_OK) {
     return code;
   }
 
-  code = match_special_option_and_act(args, &flags_file, &vm_options_file,
-                                      &vm_options_file_args,
+  code = match_special_option_and_act(args, &vm_options_file,
                                       &modified_cmd_line_args);
   if (code != JNI_OK) {
     return code;
@@ -4126,12 +4087,13 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     args = modified_cmd_line_args.get();
   }
 
-  code = match_special_option_and_act(java_options_args.get(), &flags_file,
-                                      NULL, NULL, NULL);
+  code = match_special_option_and_act(java_options_args.get(),
+                                      NULL, NULL);
   if (code != JNI_OK) {
     return code;
   }
 
+  const char * flags_file = Arguments::get_jvm_flags_file();
   settings_file_specified = (flags_file != NULL);
 
   if (IgnoreUnrecognizedVMOptions) {

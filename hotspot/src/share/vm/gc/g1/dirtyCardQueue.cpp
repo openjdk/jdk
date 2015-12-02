@@ -119,20 +119,6 @@ void DirtyCardQueueSet::handle_zero_index_for_thread(JavaThread* t) {
   t->dirty_card_queue().handle_zero_index();
 }
 
-void DirtyCardQueueSet::iterate_closure_all_threads(CardTableEntryClosure* cl,
-                                                    bool consume,
-                                                    uint worker_i) {
-  assert(SafepointSynchronize::is_at_safepoint(), "Must be at safepoint.");
-  for (JavaThread* t = Threads::first(); t; t = t->next()) {
-    bool b = t->dirty_card_queue().apply_closure(cl, consume);
-    guarantee(b, "Should not be interrupted.");
-  }
-  bool b = shared_dirty_card_queue()->apply_closure(cl,
-                                                    consume,
-                                                    worker_i);
-  guarantee(b, "Should not be interrupted.");
-}
-
 bool DirtyCardQueueSet::mut_process_buffer(void** buf) {
 
   // Used to determine if we had already claimed a par_id

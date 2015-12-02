@@ -107,8 +107,6 @@ BOOT_JAVA_HOME = $(JAVA_HOME)
 else
 
 # take from the PATH, if ALT_BOOTDIR, BOOTDIR and JAVA_HOME are not defined
-# note that this is to support hotspot build without SA. To build
-# SA along with hotspot, you need to define ALT_BOOTDIR, BOOTDIR or JAVA_HOME
 
 RUN.JAVA  = java
 RUN.JAVAP = javap

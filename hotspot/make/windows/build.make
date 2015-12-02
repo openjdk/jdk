@@ -30,14 +30,6 @@
 # Note: Running nmake or build.bat from the Windows command shell requires
 # that "sh" be accessible on the PATH. An MKS install does this.
 
-# SA components are built if BUILD_WIN_SA=1 is specified.
-# See notes in README. This produces files:
-#  1. sa-jdi.jar       - This is built before building jvm.dll
-#  2. sawindbg.dll     - Native library for SA - This is built after jvm.dll
-#                      - Also, .lib, .map, .pdb.
-#
-# Please refer to ./makefiles/sa.make
-
 # If we haven't set an ARCH yet use x86
 # create.bat and build.bat will set it, if used.
 !ifndef ARCH
@@ -169,30 +161,6 @@ OPENJDK=true
 !endif
 !endif
 
-# We don't support SA on ia64, and we can't
-# build it if we are using a version of Vis Studio
-# older than .Net 2003.
-# SA_INCLUDE and SA_LIB are hold-overs from a previous
-# implementation in which we could build SA using
-# Debugging Tools For Windows, in which the .h/.lib files
-# and the .dlls are in different places than
-# they are for Vis Studio .Net 2003.
-# If that code ever needs to be resurrected, these vars
-# can be set here.  They are used in makefiles/sa.make.
-
-checkSA::
-
-!if "$(BUILD_WIN_SA)" != "1"
-checkSA::
-	@echo     Not building SA:  BUILD_WIN_SA != 1
-
-!elseif "$(ARCH)" == "ia64"
-BUILD_WIN_SA = 0
-checkSA::
-	@echo     Not building SA:  ARCH = ia64
-
-!endif  # ! "$(BUILD_WIN_SA)" != "1"
-
 #########################################################################
 
 defaultTarget: product
@@ -249,10 +217,6 @@ $(variantDir)\local.make: checks
 	@ echo HS_COPYRIGHT=$(HOTSPOT_VM_COPYRIGHT)		>> $@
 	@ echo HS_NAME=$(PRODUCT_NAME) $(VERSION_SHORT)		>> $@
 	@ echo HOTSPOT_VERSION_STRING=$(HOTSPOT_VERSION_STRING)	>> $@
-	@ echo BUILD_WIN_SA=$(BUILD_WIN_SA)    			>> $@
-	@ echo SA_BUILD_VERSION=$(HOTSPOT_VERSION_STRING)       >> $@
-	@ echo SA_INCLUDE=$(SA_INCLUDE)      			>> $@
-	@ echo SA_LIB=$(SA_LIB)         			>> $@
 	@ echo JDK_VER=$(JDK_VER)				>> $@
 	@ echo JDK_DOTVER=$(JDK_DOTVER)				>> $@
 	@ echo VERSION_STRING=$(VERSION_STRING)			>> $@
@@ -271,7 +235,7 @@ $(variantDir)\local.make: checks
 	@ if "$(MV)" NEQ "" echo MV=$(MV)                       >> $@
 	@ if "$(ZIPEXE)" NEQ "" echo ZIPEXE=$(ZIPEXE)           >> $@
 
-checks: checkVariant checkWorkSpace checkSA
+checks: checkVariant checkWorkSpace
 
 checkVariant:
 	@ if "$(Variant)"=="" echo Need to specify "Variant=[tiered|compiler2|compiler1|core]" && false

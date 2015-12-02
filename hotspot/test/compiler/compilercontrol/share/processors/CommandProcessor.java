@@ -24,8 +24,10 @@
 package compiler.compilercontrol.share.processors;
 
 import compiler.compilercontrol.share.scenario.CompileCommand;
+import jdk.test.lib.Asserts;
 import jdk.test.lib.OutputAnalyzer;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -33,26 +35,56 @@ import java.util.function.Consumer;
  * Checks that output contains a string with commands and full method pattern
  */
 public class CommandProcessor implements Consumer<OutputAnalyzer> {
-    protected final List<CompileCommand> commands;
+    private static final String INVALID_COMMAND_MSG = "CompileCommand: "
+            + "\\b(unrecognized command|Bad pattern|"
+            + "An error occurred during parsing)\\b";
+    private final Iterator<CompileCommand> nonQuietedIterator;
+    private final Iterator<CompileCommand> quietedIterator;
 
-    public CommandProcessor(List<CompileCommand> commands) {
-        this.commands = commands;
+    public CommandProcessor(List<CompileCommand> nonQuieted,
+                            List<CompileCommand> quieted) {
+        this.nonQuietedIterator = nonQuieted.iterator();
+        this.quietedIterator = quieted.iterator();
     }
 
     @Override
     public void accept(OutputAnalyzer outputAnalyzer) {
-        for (CompileCommand command : commands) {
+        try {
+            outputAnalyzer.asLines().stream()
+                    .filter(s -> s.startsWith("CompileCommand:"))
+                    .forEachOrdered(this::check);
+        } catch (Exception e) {
+            System.err.println(outputAnalyzer.getOutput());
+            throw e;
+        }
+    }
+
+    private void check(String input) {
+        if (nonQuietedIterator.hasNext()) {
+            CompileCommand command = nonQuietedIterator.next();
             if (command.isValid()) {
-                outputAnalyzer.shouldContain("CompileCommand: "
-                        + command.command.name + " "
-                        + command.methodDescriptor.getCanonicalString());
-                outputAnalyzer.shouldNotContain("CompileCommand: An error "
-                        + "occurred during parsing");
+                Asserts.assertTrue(input.contains(getOutputString(command)),
+                        getOutputString(command) + "missing in output");
             } else {
-                outputAnalyzer.shouldMatch("(CompileCommand: )"
-                        + "(unrecognized command)|(Bad pattern)|"
-                        + "(An error occurred during parsing)");
+                Asserts.assertTrue(input.matches(INVALID_COMMAND_MSG),
+                        "Error message missing for: " + getOutputString(
+                                command));
+            }
+        } else if (quietedIterator.hasNext()) {
+            CompileCommand command = quietedIterator.next();
+            if (command.isValid()) {
+                Asserts.assertFalse(input.contains(getOutputString(command)));
+            } else {
+                Asserts.assertTrue(input.matches(INVALID_COMMAND_MSG),
+                        "Error message missing for: " + getOutputString(
+                                command));
             }
         }
+    }
+
+    private String getOutputString(CompileCommand command) {
+        return "CompileCommand: "
+                + command.command.name + " "
+                + command.methodDescriptor.getCanonicalString();
     }
 }
