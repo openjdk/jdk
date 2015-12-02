@@ -552,6 +552,8 @@ public class CompilationResult {
      */
     private final boolean isImmutablePIC;
 
+    private boolean closed;
+
     private int entryBCI = -1;
 
     private final DataSection dataSection = new DataSection();
@@ -666,6 +668,7 @@ public class CompilationResult {
      * @param entryBCI the entryBCI to set
      */
     public void setEntryBCI(int entryBCI) {
+        checkOpen();
         this.entryBCI = entryBCI;
     }
 
@@ -673,11 +676,14 @@ public class CompilationResult {
      * Sets the assumptions made during compilation.
      */
     public void setAssumptions(Assumption[] assumptions) {
+        checkOpen();
         this.assumptions = assumptions;
     }
 
     /**
      * Gets the assumptions made during compilation.
+     *
+     * The caller must not modify the contents of the returned array.
      */
     public Assumption[] getAssumptions() {
         return assumptions;
@@ -690,6 +696,7 @@ public class CompilationResult {
      * @param inlinedMethods the methods inlined during compilation
      */
     public void setMethods(ResolvedJavaMethod rootMethod, Collection<ResolvedJavaMethod> inlinedMethods) {
+        checkOpen();
         assert rootMethod != null;
         assert inlinedMethods != null;
         if (inlinedMethods.contains(rootMethod)) {
@@ -717,6 +724,8 @@ public class CompilationResult {
     /**
      * Gets the methods whose bytecodes were used as input to the compilation.
      *
+     * The caller must not modify the contents of the returned array.
+     *
      * @return {@code null} if the compilation did not record method dependencies otherwise the
      *         methods whose bytecodes were used as input to the compilation with the first element
      *         being the root method of the compilation
@@ -726,6 +735,7 @@ public class CompilationResult {
     }
 
     public void setBytecodeSize(int bytecodeSize) {
+        checkOpen();
         this.bytecodeSize = bytecodeSize;
     }
 
@@ -755,6 +765,7 @@ public class CompilationResult {
      * @param size the size of the frame in bytes
      */
     public void setTotalFrameSize(int size) {
+        checkOpen();
         totalFrameSize = size;
     }
 
@@ -765,6 +776,7 @@ public class CompilationResult {
      * @param size the size of the machine code
      */
     public void setTargetCode(byte[] code, int size) {
+        checkOpen();
         targetCode = code;
         targetCodeSize = size;
     }
@@ -778,6 +790,7 @@ public class CompilationResult {
      * @param ref The reference that should be inserted in the code.
      */
     public void recordDataPatch(int codePos, Reference ref) {
+        checkOpen();
         assert codePos >= 0 && ref != null;
         dataPatches.add(new DataPatch(codePos, ref));
     }
@@ -814,6 +827,7 @@ public class CompilationResult {
      * @param direct specifies if this is a {@linkplain Call#direct direct} call
      */
     public void recordCall(int codePos, int size, InvokeTarget target, DebugInfo debugInfo, boolean direct) {
+        checkOpen();
         final Call call = new Call(target, codePos, size, direct, debugInfo);
         addInfopoint(call);
     }
@@ -825,6 +839,7 @@ public class CompilationResult {
      * @param handlerPos the position of the handler
      */
     public void recordExceptionHandler(int codePos, int handlerPos) {
+        checkOpen();
         assert validateExceptionHandlerAdd(codePos, handlerPos) : String.format("Duplicate exception handler for pc 0x%x handlerPos 0x%x", codePos, handlerPos);
         exceptionHandlers.add(new ExceptionHandler(codePos, handlerPos));
     }
@@ -875,6 +890,7 @@ public class CompilationResult {
      * @param infopoint the infopoint to record, usually a derived class from {@link Infopoint}
      */
     public void addInfopoint(Infopoint infopoint) {
+        checkOpen();
         infopoints.add(infopoint);
     }
 
@@ -885,6 +901,7 @@ public class CompilationResult {
      * @param markId the identifier for this mark
      */
     public Mark recordMark(int codePos, Object markId) {
+        checkOpen();
         Mark mark = new Mark(codePos, markId);
         marks.add(mark);
         return mark;
@@ -904,6 +921,7 @@ public class CompilationResult {
      * @param offset
      */
     public void setCustomStackAreaOffset(int offset) {
+        checkOpen();
         customStackAreaOffset = offset;
     }
 
@@ -932,6 +950,7 @@ public class CompilationResult {
     }
 
     public void addAnnotation(CodeAnnotation annotation) {
+        checkOpen();
         assert annotation != null;
         if (annotations == null) {
             annotations = new ArrayList<>();
@@ -1014,6 +1033,7 @@ public class CompilationResult {
     }
 
     public void setHasUnsafeAccess(boolean hasUnsafeAccess) {
+        checkOpen();
         this.hasUnsafeAccess = hasUnsafeAccess;
     }
 
@@ -1021,8 +1041,14 @@ public class CompilationResult {
         return hasUnsafeAccess;
     }
 
-    public void reset() {
-        hasUnsafeAccess = false;
+    /**
+     * Clears the information in this object pertaining to generating code. That is, the
+     * {@linkplain #getMarks() marks}, {@linkplain #getInfopoints() infopoints},
+     * {@linkplain #getExceptionHandlers() exception handlers}, {@linkplain #getDataPatches() data
+     * patches} and {@linkplain #getAnnotations() annotations} recorded in this object are cleared.
+     */
+    public void resetForEmittingCode() {
+        checkOpen();
         infopoints.clear();
         dataPatches.clear();
         exceptionHandlers.clear();
@@ -1031,5 +1057,22 @@ public class CompilationResult {
         if (annotations != null) {
             annotations.clear();
         }
+    }
+
+    private void checkOpen() {
+        if (closed) {
+            throw new IllegalStateException();
+        }
+    }
+
+    /**
+     * Closes this compilation result to future updates.
+     */
+    public void close() {
+        if (closed) {
+            throw new IllegalStateException("Cannot re-close compilation result " + this);
+        }
+        dataSection.close();
+        closed = true;
     }
 }
