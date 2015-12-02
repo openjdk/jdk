@@ -115,6 +115,7 @@ LatestMethodCache* Universe::_finalizer_register_cache = NULL;
 LatestMethodCache* Universe::_loader_addClass_cache    = NULL;
 LatestMethodCache* Universe::_pd_implies_cache         = NULL;
 LatestMethodCache* Universe::_throw_illegal_access_error_cache = NULL;
+LatestMethodCache* Universe::_do_stack_walk_cache     = NULL;
 oop Universe::_out_of_memory_error_java_heap          = NULL;
 oop Universe::_out_of_memory_error_metaspace          = NULL;
 oop Universe::_out_of_memory_error_class_metaspace    = NULL;
@@ -240,6 +241,7 @@ void Universe::serialize(SerializeClosure* f, bool do_all) {
   _loader_addClass_cache->serialize(f);
   _pd_implies_cache->serialize(f);
   _throw_illegal_access_error_cache->serialize(f);
+  _do_stack_walk_cache->serialize(f);
 }
 
 void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
@@ -643,6 +645,7 @@ jint universe_init() {
   Universe::_loader_addClass_cache    = new LatestMethodCache();
   Universe::_pd_implies_cache         = new LatestMethodCache();
   Universe::_throw_illegal_access_error_cache = new LatestMethodCache();
+  Universe::_do_stack_walk_cache = new LatestMethodCache();
 
   if (UseSharedSpaces) {
     // Read the data structures supporting the shared spaces (shared
@@ -1015,6 +1018,17 @@ bool universe_post_init() {
     }
     Universe::_pd_implies_cache->init(
       SystemDictionary::ProtectionDomain_klass(), m);
+  }
+
+  // Setup method for stack walking
+  InstanceKlass::cast(SystemDictionary::AbstractStackWalker_klass())->link_class(CHECK_false);
+  m = InstanceKlass::cast(SystemDictionary::AbstractStackWalker_klass())->
+            find_method(vmSymbols::doStackWalk_name(),
+                        vmSymbols::doStackWalk_signature());
+  // Allow NULL which should only happen with bootstrapping.
+  if (m != NULL) {
+    Universe::_do_stack_walk_cache->init(
+      SystemDictionary::AbstractStackWalker_klass(), m);
   }
 
   // This needs to be done before the first scavenge/gc, since

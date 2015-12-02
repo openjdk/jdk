@@ -229,35 +229,35 @@ void VM_Version::initialize() {
 
   // SPARC T4 and above should have support for AES instructions
   if (has_aes()) {
-    if (UseVIS > 2) { // AES intrinsics use MOVxTOd/MOVdTOx which are VIS3
-      if (FLAG_IS_DEFAULT(UseAES)) {
-        FLAG_SET_DEFAULT(UseAES, true);
+    if (FLAG_IS_DEFAULT(UseAES)) {
+      FLAG_SET_DEFAULT(UseAES, true);
+    }
+    if (!UseAES) {
+      if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+        warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
       }
-      if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-        FLAG_SET_DEFAULT(UseAESIntrinsics, true);
-      }
-      // we disable both the AES flags if either of them is disabled on the command line
-      if (!UseAES || !UseAESIntrinsics) {
-        FLAG_SET_DEFAULT(UseAES, false);
+      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+    } else {
+      // The AES intrinsic stubs require AES instruction support (of course)
+      // but also require VIS3 mode or higher for instructions it use.
+      if (UseVIS > 2) {
+        if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+          FLAG_SET_DEFAULT(UseAESIntrinsics, true);
+        }
+      } else {
+        if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+          warning("SPARC AES intrinsics require VIS3 instructions. Intrinsics will be disabled.");
+        }
         FLAG_SET_DEFAULT(UseAESIntrinsics, false);
       }
-    } else {
-        if (UseAES || UseAESIntrinsics) {
-          warning("SPARC AES intrinsics require VIS3 instruction support. Intrinsics will be disabled.");
-          if (UseAES) {
-            FLAG_SET_DEFAULT(UseAES, false);
-          }
-          if (UseAESIntrinsics) {
-            FLAG_SET_DEFAULT(UseAESIntrinsics, false);
-          }
-        }
     }
   } else if (UseAES || UseAESIntrinsics) {
-    warning("AES instructions are not available on this CPU");
-    if (UseAES) {
+    if (UseAES && !FLAG_IS_DEFAULT(UseAES)) {
+      warning("AES instructions are not available on this CPU");
       FLAG_SET_DEFAULT(UseAES, false);
     }
-    if (UseAESIntrinsics) {
+    if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+      warning("AES intrinsics are not available on this CPU");
       FLAG_SET_DEFAULT(UseAESIntrinsics, false);
     }
   }
@@ -347,6 +347,15 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseAdler32Intrinsics, false);
   }
 
+  if (UseVIS > 2) {
+    if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
+      FLAG_SET_DEFAULT(UseCRC32Intrinsics, true);
+    }
+  } else if (UseCRC32Intrinsics) {
+    warning("SPARC CRC32 intrinsics require VIS3 insructions support. Intriniscs will be disabled");
+    FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
+  }
+
   if (FLAG_IS_DEFAULT(ContendedPaddingWidth) &&
     (cache_line_size > ContendedPaddingWidth))
     ContendedPaddingWidth = cache_line_size;
@@ -358,7 +367,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseUnalignedAccesses, false);
   }
 
-#ifndef PRODUCT
   if (PrintMiscellaneous && Verbose) {
     tty->print_cr("L1 data cache line size: %u", L1_data_cache_line_size());
     tty->print_cr("L2 data cache line size: %u", L2_data_cache_line_size());
@@ -391,7 +399,6 @@ void VM_Version::initialize() {
       tty->print_cr("ContendedPaddingWidth %d", (int) ContendedPaddingWidth);
     }
   }
-#endif // PRODUCT
 }
 
 void VM_Version::print_features() {
@@ -400,7 +407,7 @@ void VM_Version::print_features() {
 
 int VM_Version::determine_features() {
   if (UseV8InstrsOnly) {
-    NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Version is Forced-V8");)
+    if (PrintMiscellaneous && Verbose) { tty->print_cr("Version is Forced-V8"); }
     return generic_v8_m;
   }
 
@@ -416,12 +423,12 @@ int VM_Version::determine_features() {
     if (is_T_family(features)) {
       // Happy to accomodate...
     } else {
-      NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Version is Forced-Niagara");)
+      if (PrintMiscellaneous && Verbose) { tty->print_cr("Version is Forced-Niagara"); }
       features |= T_family_m;
     }
   } else {
     if (is_T_family(features) && !FLAG_IS_DEFAULT(UseNiagaraInstrs)) {
-      NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Version is Forced-Not-Niagara");)
+      if (PrintMiscellaneous && Verbose) { tty->print_cr("Version is Forced-Not-Niagara"); }
       features &= ~(T_family_m | T1_model_m);
     } else {
       // Happy to accomodate...

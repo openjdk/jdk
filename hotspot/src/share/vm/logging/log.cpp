@@ -37,10 +37,10 @@ void Test_log_length() {
 
   // Write long message to output file
   MutexLocker ml(LogConfiguration_lock);
-  LogConfiguration::parse_log_arguments("loglengthoutput.txt", "logging=develop",
+  LogConfiguration::parse_log_arguments("loglengthoutput.txt", "logging=trace",
     NULL, NULL, NULL);
   ResourceMark rm;
-  outputStream* logstream = LogHandle(logging)::develop_stream();
+  outputStream* logstream = LogHandle(logging)::trace_stream();
   logstream->print_cr("01:1234567890-"
                       "02:1234567890-"
                       "03:1234567890-"

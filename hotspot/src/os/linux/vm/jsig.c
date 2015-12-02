@@ -35,16 +35,19 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 #define bool int
 #define true 1
 #define false 0
 
-#define MAXSIGNUM 32
-#define MASK(sig) ((unsigned int)1 << sig)
-
-static struct sigaction sact[MAXSIGNUM]; /* saved signal handlers */
-static unsigned int jvmsigs = 0; /* signals used by jvm */
+#define MASK(sig) ((uint64_t)1 << (sig-1))  // 0 is not a signal.
+// Check whether all signals fit into jvmsigs. -1 as MASK shifts by -1.
+#if (64 < NSIG-1)
+#error "Not all signals can be encoded in jvmsigs. Adapt its type!"
+#endif
+static struct sigaction sact[NSIG]; /* saved signal handlers */
+static uint64_t jvmsigs = 0; /* signals used by jvm */
 
 /* used to synchronize the installation of signal handlers */
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -107,7 +110,7 @@ static sa_handler_t set_signal(int sig, sa_handler_t disp, bool is_sigset) {
 
   signal_lock();
 
-  sigused = (sig < MAXSIGNUM) && ((MASK(sig) & jvmsigs) != 0);
+  sigused = (sig < NSIG) && ((MASK(sig) & jvmsigs) != 0);
   if (jvm_signal_installed && sigused) {
     /* jvm has installed its signal handler for this signal. */
     /* Save the handler. Don't really install it. */
@@ -116,7 +119,7 @@ static sa_handler_t set_signal(int sig, sa_handler_t disp, bool is_sigset) {
 
     signal_unlock();
     return oldhandler;
-  } else if (sig < MAXSIGNUM && jvm_signal_installing) {
+  } else if (sig < NSIG && jvm_signal_installing) {
     /* jvm is installing its signal handlers. Install the new
      * handlers and save the old ones. jvm uses sigaction().
      * Leave the piece here just in case. */
@@ -165,7 +168,7 @@ int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
 
   signal_lock();
 
-  sigused = (sig < MAXSIGNUM) && ((MASK(sig) & jvmsigs) != 0);
+  sigused = (sig < NSIG) && ((MASK(sig) & jvmsigs) != 0);
   if (jvm_signal_installed && sigused) {
     /* jvm has installed its signal handler for this signal. */
     /* Save the handler. Don't really install it. */
@@ -178,7 +181,7 @@ int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
 
     signal_unlock();
     return 0;
-  } else if (sig < MAXSIGNUM && jvm_signal_installing) {
+  } else if (sig < NSIG && jvm_signal_installing) {
     /* jvm is installing its signal handlers. Install the new
      * handlers and save the old ones. */
     res = call_os_sigaction(sig, act, &oldAct);

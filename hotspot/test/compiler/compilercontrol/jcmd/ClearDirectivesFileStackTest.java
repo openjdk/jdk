@@ -26,7 +26,7 @@
  * @bug 8137167
  * @ignore 8140405
  * @summary Tests jcmd to be able to clear directives added via options
- * @library /testlibrary /../../test/lib /compiler/testlibrary ../share /
+ * @library /testlibrary /test/lib /compiler/testlibrary ../share /
  * @build ClearDirectivesFileStackTest pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
  *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
@@ -73,9 +73,6 @@ public class ClearDirectivesFileStackTest extends AbstractTestBase {
             compileCommand.print();
             builder.add(compileCommand);
         }
-        // print all directives before
-        builder.add(new JcmdCommand(Command.NONEXISTENT, null, null,
-                Scenario.Type.JCMD, Scenario.JcmdType.PRINT));
         // clear the stack
         builder.add(new JcmdCommand(Command.NONEXISTENT, null, null,
                 Scenario.Type.JCMD, Scenario.JcmdType.CLEAR));

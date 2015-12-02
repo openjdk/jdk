@@ -53,6 +53,7 @@ private:
   DictionaryEntry* get_entry(int index, unsigned int hash,
                              Symbol* name, ClassLoaderData* loader_data);
 
+protected:
   DictionaryEntry* bucket(int i) {
     return (DictionaryEntry*)Hashtable<Klass*, mtClass>::bucket(i);
   }
@@ -66,6 +67,7 @@ private:
     Hashtable<Klass*, mtClass>::add_entry(index, (HashtableEntry<Klass*, mtClass>*)new_entry);
   }
 
+  static size_t entry_size();
 public:
   Dictionary(int table_size);
   Dictionary(int table_size, HashtableBucket<mtClass>* t, int number_of_entries);
