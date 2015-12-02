@@ -33,8 +33,8 @@ import javax.net.ssl.*;
 /**
  * This file contains all the classes relevant to TLS Extensions for the
  * ClientHello and ServerHello messages. The extension mechanism and
- * several extensions are defined in RFC 3546. Additional extensions are
- * defined in the ECC RFC 4492.
+ * several extensions are defined in RFC 6066. Additional extensions are
+ * defined in the ECC RFC 4492 and the ALPN extension is defined in RFC 7301.
  *
  * Currently, only the two ECC extensions are fully supported.
  *
@@ -52,6 +52,7 @@ import javax.net.ssl.*;
  *  . SupportedEllipticCurvesExtension: the ECC supported curves extension.
  *  . SupportedEllipticPointFormatsExtension: the ECC supported point formats
  *      (compressed/uncompressed) extension.
+ *  . ALPNExtension: the application_layer_protocol_negotiation extension.
  *
  * @since   1.6
  * @author  Andreas Sterbenz
@@ -85,6 +86,8 @@ final class HelloExtensions {
                         new SupportedEllipticPointFormatsExtension(s, extlen);
             } else if (extType == ExtensionType.EXT_RENEGOTIATION_INFO) {
                 extension = new RenegotiationInfoExtension(s, extlen);
+            } else if (extType == ExtensionType.EXT_ALPN) {
+                extension = new ALPNExtension(s, extlen);
             } else if (extType == ExtensionType.EXT_MAX_FRAGMENT_LENGTH) {
                 extension = new MaxFragmentLengthExtension(s, extlen);
             } else if (extType == ExtensionType.EXT_STATUS_REQUEST) {

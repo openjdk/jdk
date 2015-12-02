@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,9 @@ class SSLServerSocketImpl extends SSLServerSocket
     // The server name indication
     Collection<SNIMatcher>      sniMatchers =
                                     Collections.<SNIMatcher>emptyList();
+
+    // Configured application protocol values
+    String[] applicationProtocols = new String[0];
 
     /*
      * Whether local cipher suites preference in server side should be
@@ -311,7 +314,7 @@ class SSLServerSocketImpl extends SSLServerSocket
         params.setAlgorithmConstraints(algorithmConstraints);
         params.setSNIMatchers(sniMatchers);
         params.setUseCipherSuitesOrder(preferLocalCipherSuites);
-
+        params.setApplicationProtocols(applicationProtocols);
 
         return params;
     }
@@ -331,6 +334,7 @@ class SSLServerSocketImpl extends SSLServerSocket
         if (matchers != null) {
             sniMatchers = params.getSNIMatchers();
         }
+        applicationProtocols = params.getApplicationProtocols();
     }
 
     /**

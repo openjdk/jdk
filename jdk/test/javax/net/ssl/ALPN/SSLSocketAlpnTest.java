@@ -26,16 +26,23 @@
 
 /*
  * @test
- * @bug 1234567
- * @summary Use this template to help speed your client/server tests.
- * @run main/othervm SSLSocketTemplate
+ * @bug 8051498
+ * @summary JEP 244: TLS Application-Layer Protocol Negotiation Extension
+ * @run main/othervm SSLSocketAlpnTest h2          h2          h2
+ * @run main/othervm SSLSocketAlpnTest h2          h2,http/1.1 h2
+ * @run main/othervm SSLSocketAlpnTest h2,http/1.1 h2,http/1.1 h2
+ * @run main/othervm SSLSocketAlpnTest http/1.1,h2 h2,http/1.1 http/1.1
+ * @run main/othervm SSLSocketAlpnTest h4,h3,h2    h1,h2       h2
+ * @run main/othervm SSLSocketAlpnTest EMPTY       h2,http/1.1 NONE
+ * @run main/othervm SSLSocketAlpnTest h2          EMPTY       NONE
+ * @run main/othervm SSLSocketAlpnTest H2          h2          ERROR
+ * @run main/othervm SSLSocketAlpnTest h2          http/1.1    ERROR
  * @author Brad Wetmore
  */
-
 import java.io.*;
 import javax.net.ssl.*;
 
-public class SSLSocketTemplate {
+public class SSLSocketAlpnTest {
 
     /*
      * =============================================================
@@ -68,6 +75,10 @@ public class SSLSocketTemplate {
      */
     static boolean debug = false;
 
+    static String[] serverAPs;
+    static String[] clientAPs;
+    static String expectedAP;
+
     /*
      * If the client or server is doing some kind of object creation
      * that the other side depends on, and that thread prematurely
@@ -84,10 +95,10 @@ public class SSLSocketTemplate {
      * to avoid infinite hangs.
      */
     void doServerSide() throws Exception {
-        SSLServerSocketFactory sslssf =
-            (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
-        SSLServerSocket sslServerSocket =
-            (SSLServerSocket) sslssf.createServerSocket(serverPort);
+        SSLServerSocketFactory sslssf
+                = (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+        SSLServerSocket sslServerSocket
+                = (SSLServerSocket) sslssf.createServerSocket(serverPort);
 
         serverPort = sslServerSocket.getLocalPort();
 
@@ -97,6 +108,43 @@ public class SSLSocketTemplate {
         serverReady = true;
 
         SSLSocket sslSocket = (SSLSocket) sslServerSocket.accept();
+
+        SSLParameters sslp = sslSocket.getSSLParameters();
+
+        /*
+         * The default ciphersuite ordering from the SSLContext may not
+         * reflect "h2" ciphersuites as being preferred, additionally the
+         * client may not send them in an appropriate order. We could resort
+         * the suite list if so desired.
+         */
+        String[] suites = sslp.getCipherSuites();
+        sslp.setCipherSuites(suites);
+        sslp.setUseCipherSuitesOrder(true);  // Set server side order
+
+        // Set the ALPN selection.
+        sslp.setApplicationProtocols(serverAPs);
+        sslSocket.setSSLParameters(sslp);
+
+        sslSocket.startHandshake();
+
+        String ap = sslSocket.getApplicationProtocol();
+        System.out.println("Application Protocol: \"" + ap + "\"");
+
+        if (ap == null) {
+            throw new Exception(
+                "Handshake was completed but null was received");
+        }
+        if (expectedAP.equals("NONE")) {
+            if (!ap.isEmpty()) {
+                throw new Exception("Expected no ALPN value");
+            } else {
+                System.out.println("No ALPN value negotiated, as expected");
+            }
+        } else if (!expectedAP.equals(ap)) {
+            throw new Exception(expectedAP +
+                " ALPN value not available on negotiated connection");
+        }
+
         InputStream sslIS = sslSocket.getInputStream();
         OutputStream sslOS = sslSocket.getOutputStream();
 
@@ -122,10 +170,54 @@ public class SSLSocketTemplate {
             Thread.sleep(50);
         }
 
-        SSLSocketFactory sslsf =
-            (SSLSocketFactory) SSLSocketFactory.getDefault();
-        SSLSocket sslSocket = (SSLSocket)
-            sslsf.createSocket("localhost", serverPort);
+        SSLSocketFactory sslsf
+                = (SSLSocketFactory) SSLSocketFactory.getDefault();
+        SSLSocket sslSocket
+                = (SSLSocket) sslsf.createSocket("localhost", serverPort);
+
+        SSLParameters sslp = sslSocket.getSSLParameters();
+
+        /*
+         * The default ciphersuite ordering from the SSLContext may not
+         * reflect "h2" ciphersuites as being preferred, additionally the
+         * client may not send them in an appropriate order. We could resort
+         * the suite list if so desired.
+         */
+        String[] suites = sslp.getCipherSuites();
+        sslp.setCipherSuites(suites);
+        sslp.setUseCipherSuitesOrder(true);  // Set server side order
+
+        // Set the ALPN selection.
+        sslp.setApplicationProtocols(clientAPs);
+        sslSocket.setSSLParameters(sslp);
+
+        sslSocket.startHandshake();
+
+        /*
+         * Check that the resulting connection meets our defined ALPN
+         * criteria.  If we were connecting to a non-JSSE implementation,
+         * the server might have negotiated something we shouldn't accept.
+         *
+         * We were expecting H2 from server, let's make sure the
+         * conditions match.
+         */
+        String ap = sslSocket.getApplicationProtocol();
+        System.out.println("Application Protocol: \"" + ap + "\"");
+
+        if (ap == null) {
+            throw new Exception(
+                "Handshake was completed but null was received");
+        }
+        if (expectedAP.equals("NONE")) {
+            if (!ap.isEmpty()) {
+                throw new Exception("Expected no ALPN value");
+            } else {
+                System.out.println("No ALPN value negotiated, as expected");
+            }
+        } else if (!expectedAP.equals(ap)) {
+            throw new Exception(expectedAP +
+                " ALPN value not available on negotiated connection");
+        }
 
         InputStream sslIS = sslSocket.getInputStream();
         OutputStream sslOS = sslSocket.getOutputStream();
@@ -141,7 +233,6 @@ public class SSLSocketTemplate {
      * =============================================================
      * The remainder is just support stuff
      */
-
     // use any free port by default
     volatile int serverPort = 0;
 
@@ -149,12 +240,12 @@ public class SSLSocketTemplate {
     volatile Exception clientException = null;
 
     public static void main(String[] args) throws Exception {
-        String keyFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + keyStoreFile;
-        String trustFilename =
-            System.getProperty("test.src", ".") + "/" + pathToStores +
-                "/" + trustStoreFile;
+        String keyFilename
+                = System.getProperty("test.src", ".") + "/" + pathToStores
+                + "/" + keyStoreFile;
+        String trustFilename
+                = System.getProperty("test.src", ".") + "/" + pathToStores
+                + "/" + trustStoreFile;
 
         System.setProperty("javax.net.ssl.keyStore", keyFilename);
         System.setProperty("javax.net.ssl.keyStorePassword", passwd);
@@ -165,10 +256,47 @@ public class SSLSocketTemplate {
             System.setProperty("javax.net.debug", "all");
         }
 
+        // Validate parameters
+        if (args.length != 3) {
+            throw new Exception("Invalid number of test parameters");
+        }
+        serverAPs = convert(args[0]);
+        clientAPs = convert(args[1]);
+        expectedAP = args[2];
+
         /*
          * Start the tests.
          */
-        new SSLSocketTemplate();
+        try {
+            new SSLSocketAlpnTest();
+        } catch (SSLHandshakeException she) {
+            if (args[2].equals("ERROR")) {
+                System.out.println("Caught the expected exception: " + she);
+            } else {
+                throw she;
+            }
+        }
+
+        System.out.println("Test Passed.");
+    }
+
+    /*
+     * Convert a comma-separated list into an array of strings.
+     */
+    private static String[] convert(String list) {
+        String[] strings;
+
+        if (list.equals("EMPTY")) {
+            return new String[0];
+        }
+
+        if (list.indexOf(',') > 0) {
+            strings = list.split(",");
+        } else {
+            strings = new String[]{ list };
+        }
+
+        return strings;
     }
 
     Thread clientThread = null;
@@ -179,7 +307,7 @@ public class SSLSocketTemplate {
      *
      * Fork off the other side, then do your work.
      */
-    SSLSocketTemplate() throws Exception {
+    SSLSocketAlpnTest() throws Exception {
         Exception startException = null;
         try {
             if (separateServerThread) {
