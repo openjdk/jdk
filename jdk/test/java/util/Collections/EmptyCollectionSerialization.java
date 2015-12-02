@@ -58,7 +58,7 @@ public class EmptyCollectionSerialization {
             Object singleton = o.get();
             assertSame(o.get(), singleton, description + ": broken Supplier not returning singleton");
             Object copy = patheticDeepCopy(singleton);
-            assertSame( copy, singleton, description + ": " +
+            assertSame(copy, singleton, description + ": " +
                 copy.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(copy)) +
                 " is not the singleton " +
                 singleton.getClass().getName() + "@" + Integer.toHexString(System.identityHashCode(singleton)));
@@ -73,27 +73,28 @@ public class EmptyCollectionSerialization {
     }
 
     public static Collection<Object[]> makeSingletons() {
-        return Arrays.asList(
-            new Object[]{"Collections.EMPTY_LIST",
-                (Supplier) () -> {return Collections.EMPTY_LIST;}},
-            new Object[]{"Collections.EMPTY_MAP",
-                (Supplier) () -> {return Collections.EMPTY_MAP;}},
-            new Object[]{"Collections.EMPTY_SET",
-                (Supplier) () -> {return Collections.EMPTY_SET;}},
-            new Object[]{"Collections.singletonMap()",
-                (Supplier) () -> {return Collections.emptyList();}},
-            new Object[]{"Collections.emptyMap()",
-                (Supplier) () -> {return Collections.emptyMap();}},
-            new Object[]{"Collections.emptySet()",
-                (Supplier) () -> {return Collections.emptySet();}},
-            new Object[]{"Collections.emptySortedSet()",
-                (Supplier) () -> {return Collections.emptySortedSet();}},
-            new Object[]{"Collections.emptySortedMap()",
-                (Supplier) () -> {return Collections.emptySortedMap();}},
-            new Object[]{"Collections.emptyNavigableSet()",
-                (Supplier) () -> {return Collections.emptyNavigableSet();}},
-            new Object[]{"Collections.emptyNavigableMap()",
-                (Supplier) () -> {return Collections.emptyNavigableMap();}}
-            );
+        Object[][] params = {
+            {"Collections.EMPTY_LIST",
+             (Supplier) () -> Collections.EMPTY_LIST},
+            {"Collections.EMPTY_MAP",
+             (Supplier) () -> Collections.EMPTY_MAP},
+            {"Collections.EMPTY_SET",
+             (Supplier) () -> Collections.EMPTY_SET},
+            {"Collections.emptyList()",
+             (Supplier) () -> Collections.emptyList()},
+            {"Collections.emptyMap()",
+             (Supplier) () -> Collections.emptyMap()},
+            {"Collections.emptySet()",
+             (Supplier) () -> Collections.emptySet()},
+            {"Collections.emptySortedSet()",
+             (Supplier) () -> Collections.emptySortedSet()},
+            {"Collections.emptySortedMap()",
+             (Supplier) () -> Collections.emptySortedMap()},
+            {"Collections.emptyNavigableSet()",
+             (Supplier) () -> Collections.emptyNavigableSet()},
+            {"Collections.emptyNavigableMap()",
+             (Supplier) () -> Collections.emptyNavigableMap()},
+        };
+        return Arrays.asList(params);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,11 @@
  * questions.
  */
 
+//
+// SunJSSE does not support dynamic system properties, no way to re-use
+// system properties in samevm/agentvm mode.
+//
+
 /*
  * @test
  * @bug 4811482 4700777 4905410
@@ -28,9 +33,6 @@
  *     HttpsURLConnection; HTTP client: Connect and read timeouts;
  *     Https needs to support new tiger features that went into http
  * @run main/othervm ReadTimeout
- *
- *     SunJSSE does not support dynamic system properties, no way to re-use
- *     system properties in samevm/agentvm mode.
  */
 
 import java.io.*;
@@ -101,31 +103,32 @@ public class ReadTimeout {
          * Signal Client, we're ready for his connect.
          */
         serverReady = true;
-        SSLSocket sslSocket = null;
         try {
-            sslSocket = (SSLSocket) sslServerSocket.accept();
-            InputStream sslIS = sslSocket.getInputStream();
-            BufferedReader br = new BufferedReader(new InputStreamReader(sslIS));
-            br.readLine();
-            while (!finished())  {
-                Thread.sleep (2000);
+            try (SSLSocket sslSocket = (SSLSocket)sslServerSocket.accept()) {
+                InputStream sslIS = sslSocket.getInputStream();
+                BufferedReader br =
+                        new BufferedReader(new InputStreamReader(sslIS));
+                br.readLine();
+                while (!finished())  {
+                    Thread.sleep(2000);
+                }
             }
-            sslSocket.close();
 
             reset();
             // doing second test
-            sslSocket = (SSLSocket) sslServerSocket.accept();
-            sslIS = sslSocket.getInputStream();
-            br = new BufferedReader(new InputStreamReader(sslIS));
-            br.readLine();
-            while (!finished())  {
-                Thread.sleep (2000);
+            try (SSLSocket sslSocket = (SSLSocket)sslServerSocket.accept()) {
+                InputStream sslIS = sslSocket.getInputStream();
+                BufferedReader br =
+                        new BufferedReader(new InputStreamReader(sslIS));
+                br.readLine();
+                while (!finished())  {
+                    Thread.sleep(2000);
+                }
             }
-            sslSocket.close();
         } catch (Exception e) {
+            System.out.println("Should be an expected exception: " + e);
         } finally {
-            if (sslServerSocket != null)
-                sslServerSocket.close();
+            sslServerSocket.close();
         }
     }
 
@@ -160,7 +163,7 @@ public class ReadTimeout {
             }
             HttpsURLConnection http = null;
             try {
-                URL url = new URL("https://localhost:"+serverPort);
+                URL url = new URL("https://localhost:" + serverPort);
 
                 // set read timeout through system property
                 System.setProperty("sun.net.client.defaultReadTimeout", "2000");
@@ -168,14 +171,20 @@ public class ReadTimeout {
                                           new NameVerifier());
                 http = (HttpsURLConnection)url.openConnection();
 
-                InputStream is = http.getInputStream ();
+                InputStream is = http.getInputStream();
+
+                throw new Exception(
+                        "system property timeout configuration does not work");
             } catch (SocketTimeoutException stex) {
+                System.out.println("Got expected timeout exception for " +
+                        "system property timeout configuration: " + stex);
+            } finally {
                 done();
                 http.disconnect();
             }
 
             try {
-                URL url = new URL("https://localhost:"+serverPort);
+                URL url = new URL("https://localhost:" + serverPort);
 
                 HttpsURLConnection.setDefaultHostnameVerifier(
                                           new NameVerifier());
@@ -183,8 +192,14 @@ public class ReadTimeout {
                 // set read timeout through API
                 http.setReadTimeout(2000);
 
-                InputStream is = http.getInputStream ();
+                InputStream is = http.getInputStream();
+
+                throw new Exception(
+                        "HttpsURLConnection.setReadTimeout() does not work");
             } catch (SocketTimeoutException stex) {
+                System.out.println("Got expected timeout exception for " +
+                        "HttpsURLConnection.setReadTimeout(): " + stex);
+            } finally {
                 done();
                 http.disconnect();
             }

@@ -44,7 +44,7 @@ import sun.reflect.Reflection;
  */
 
 public class Runtime {
-    private static Runtime currentRuntime = new Runtime();
+    private static final Runtime currentRuntime = new Runtime();
 
     /**
      * Returns the runtime object associated with the current Java application.

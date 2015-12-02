@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,6 +83,9 @@ final class Alerts {
     static final byte           alert_bad_certificate_status_response = 113;
     static final byte           alert_bad_certificate_hash_value = 114;
 
+    // from RFC 7301 (TLS ALPN Extension)
+    static final byte           alert_no_application_protocol = 120;
+
     static String alertDescription(byte code) {
         switch (code) {
 
@@ -144,6 +147,8 @@ final class Alerts {
             return "bad_certificate_status_response";
         case alert_bad_certificate_hash_value:
             return "bad_certificate_hash_value";
+        case alert_no_application_protocol:
+            return "no_application_protocol";
 
         default:
             return "<UNKNOWN ALERT: " + (code & 0x0ff) + ">";
@@ -189,6 +194,7 @@ final class Alerts {
         case alert_unrecognized_name:
         case alert_bad_certificate_status_response:
         case alert_bad_certificate_hash_value:
+        case alert_no_application_protocol:
             e = new SSLHandshakeException(reason);
             break;
 

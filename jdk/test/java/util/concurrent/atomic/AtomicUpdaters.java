@@ -31,9 +31,20 @@
  *          accessible fields in different locations with/without a security
  *          manager
  */
-import java.util.concurrent.atomic.*;
-import java.lang.reflect.*;
-import java.security.*;
+
+import java.lang.reflect.Field;
+import java.security.AccessControlException;
+import java.security.CodeSource;
+import java.security.Permission;
+import java.security.PermissionCollection;
+import java.security.Policy;
+import java.security.ProtectionDomain;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 public class  AtomicUpdaters {
     enum TYPE { INT, LONG, REF }
@@ -76,9 +87,9 @@ public class  AtomicUpdaters {
 
             // Would like to test a public volatile in a class in another
             // package - but of course there aren't any
-            new Config(java.util.concurrent.atomic.AtomicInteger.class, "value", "private", hasSM ? false : true, false, "private int field of class in different package", TYPE.INT),
-            new Config(java.util.concurrent.atomic.AtomicLong.class, "value", "private", hasSM ? false : true, false, "private long field of class in different package", TYPE.LONG),
-            new Config(java.util.concurrent.atomic.AtomicReference.class, "value", "private", hasSM ? false : true, false, "private reference field of class in different package", TYPE.REF),
+            new Config(AtomicInteger.class, "value", "private", hasSM ? false : true, false, "private int field of class in different package", TYPE.INT),
+            new Config(AtomicLong.class, "value", "private", hasSM ? false : true, false, "private long field of class in different package", TYPE.LONG),
+            new Config(AtomicReference.class, "value", "private", hasSM ? false : true, false, "private reference field of class in different package", TYPE.REF),
         };
     }
 
