@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,9 +21,26 @@
  * questions.
  */
 
-// key: compiler.warn.diamond.redundant.args.1
-// options: -XDfind=diamond
+/*
+ * @test
+ * @bug 8143647
+ * @summary Javac compiles method reference that allows results in an IllegalAccessError
+ * @run main MethodReference75
+ */
 
-class DiamondRedundantArgs1<X> {
-   DiamondRedundantArgs1<?> fs = new DiamondRedundantArgs1<String>();
+import pkg.PublicDerived8143647;
+
+public class MethodReference75 {
+    public static void main(String[] args) {
+        if (java.util.Arrays
+                .asList(new PublicDerived8143647())
+                .stream()
+                .map(PublicDerived8143647::getX)
+                .findFirst()
+                .get()
+                .equals("PackagePrivateBase"))
+            System.out.println("OK");
+        else
+            throw new AssertionError("Unexpected output");
+    }
 }
