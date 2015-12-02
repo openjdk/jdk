@@ -1857,8 +1857,8 @@ public final class Main {
                 } else {
                     // Print the digest of the user cert only
                     out.println
-                        (rb.getString("Certificate.fingerprint.SHA1.") +
-                        getCertFingerPrint("SHA1", chain[0]));
+                        (rb.getString("Certificate.fingerprint.SHA.256.") +
+                        getCertFingerPrint("SHA-256", chain[0]));
                 }
             }
         } else if (keyStore.entryInstanceOf(alias,
@@ -1878,8 +1878,8 @@ public final class Main {
                 out.println(cert.toString());
             } else {
                 out.println("trustedCertEntry, ");
-                out.println(rb.getString("Certificate.fingerprint.SHA1.")
-                            + getCertFingerPrint("SHA1", cert));
+                out.println(rb.getString("Certificate.fingerprint.SHA.256.")
+                            + getCertFingerPrint("SHA-256", cert));
             }
         } else {
             out.println(rb.getString("Unknown.Entry.Type"));
@@ -2907,23 +2907,6 @@ public final class Main {
     private void printX509Cert(X509Certificate cert, PrintStream out)
         throws Exception
     {
-        /*
-        out.println("Owner: "
-                    + cert.getSubjectDN().toString()
-                    + "\n"
-                    + "Issuer: "
-                    + cert.getIssuerDN().toString()
-                    + "\n"
-                    + "Serial number: " + cert.getSerialNumber().toString(16)
-                    + "\n"
-                    + "Valid from: " + cert.getNotBefore().toString()
-                    + " until: " + cert.getNotAfter().toString()
-                    + "\n"
-                    + "Certificate fingerprints:\n"
-                    + "\t MD5:  " + getCertFingerPrint("MD5", cert)
-                    + "\n"
-                    + "\t SHA1: " + getCertFingerPrint("SHA1", cert));
-        */
 
         MessageFormat form = new MessageFormat
                 (rb.getString(".PATTERN.printX509Cert"));
@@ -2933,8 +2916,7 @@ public final class Main {
                         cert.getSerialNumber().toString(16),
                         cert.getNotBefore().toString(),
                         cert.getNotAfter().toString(),
-                        getCertFingerPrint("MD5", cert),
-                        getCertFingerPrint("SHA1", cert),
+                        getCertFingerPrint("SHA-1", cert),
                         getCertFingerPrint("SHA-256", cert),
                         cert.getSigAlgName(),
                         pkey.getAlgorithm(),
