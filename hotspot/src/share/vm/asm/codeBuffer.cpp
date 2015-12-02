@@ -509,7 +509,7 @@ static void append_oop_references(GrowableArray<oop>* oops, Klass* k) {
   }
 }
 
-void CodeBuffer::finalize_oop_references(methodHandle mh) {
+void CodeBuffer::finalize_oop_references(const methodHandle& mh) {
   No_Safepoint_Verifier nsv;
 
   GrowableArray<oop> oops;
@@ -873,6 +873,7 @@ void CodeBuffer::expand(CodeSection* which_cs, csize_t amount) {
 
   // Figure new capacity for each section.
   csize_t new_capacity[SECT_LIMIT];
+  memset(new_capacity, 0, sizeof(csize_t) * SECT_LIMIT);
   csize_t new_total_cap
     = figure_expanded_capacities(which_cs, amount, new_capacity);
 

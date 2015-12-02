@@ -30,7 +30,7 @@ import sun.hotspot.code.BlobType;
  * @test
  * @bug 8015774
  * @summary Verify SegmentedCodeCache option's processing
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.compiler
  *          java.management

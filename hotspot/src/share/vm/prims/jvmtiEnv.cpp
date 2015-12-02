@@ -966,7 +966,7 @@ JvmtiEnv::GetThreadInfo(jthread thread, jvmtiThreadInfo* info_ptr) {
     if (name() != NULL) {
       n = java_lang_String::as_utf8_string(name());
     } else {
-      n = UNICODE::as_utf8(NULL, 0);
+      n = UNICODE::as_utf8((jchar*) NULL, 0);
     }
 
     info_ptr->name = (char *) jvmtiMalloc(strlen(n)+1);
@@ -1187,15 +1187,14 @@ JvmtiEnv::GetThreadGroupInfo(jthreadGroup group, jvmtiThreadGroupInfo* info_ptr)
   Handle group_obj (current_thread, JNIHandles::resolve_external_guard(group));
   NULL_CHECK(group_obj(), JVMTI_ERROR_INVALID_THREAD_GROUP);
 
-  typeArrayHandle name;
+  const char* name;
   Handle parent_group;
   bool is_daemon;
   ThreadPriority max_priority;
 
   { MutexLocker mu(Threads_lock);
 
-    name         = typeArrayHandle(current_thread,
-                                   java_lang_ThreadGroup::name(group_obj()));
+    name         = java_lang_ThreadGroup::name(group_obj());
     parent_group = Handle(current_thread, java_lang_ThreadGroup::parent(group_obj()));
     is_daemon    = java_lang_ThreadGroup::is_daemon(group_obj());
     max_priority = java_lang_ThreadGroup::maxPriority(group_obj());
@@ -1205,11 +1204,10 @@ JvmtiEnv::GetThreadGroupInfo(jthreadGroup group, jvmtiThreadGroupInfo* info_ptr)
   info_ptr->max_priority = max_priority;
   info_ptr->parent       = jni_reference(parent_group);
 
-  if (name() != NULL) {
-    const char* n = UNICODE::as_utf8((jchar*) name->base(T_CHAR), name->length());
-    info_ptr->name = (char *)jvmtiMalloc(strlen(n)+1);
+  if (name != NULL) {
+    info_ptr->name = (char*)jvmtiMalloc(strlen(name)+1);
     NULL_CHECK(info_ptr->name, JVMTI_ERROR_OUT_OF_MEMORY);
-    strcpy(info_ptr->name, n);
+    strcpy(info_ptr->name, name);
   } else {
     info_ptr->name = NULL;
   }
@@ -2139,7 +2137,7 @@ JvmtiEnv::GetClassSignature(oop k_mirror, char** signature_ptr, char** generic_p
   }
   if (generic_ptr != NULL) {
     *generic_ptr = NULL;
-    if (!isPrimitive && k->oop_is_instance()) {
+    if (!isPrimitive && k->is_instance_klass()) {
       Symbol* soo = InstanceKlass::cast(k)->generic_signature();
       if (soo != NULL) {
         const char *gen_sig = soo->as_C_string();
@@ -2188,7 +2186,7 @@ JvmtiEnv::GetSourceFileName(oop k_mirror, char** source_name_ptr) {
   Klass* k_klass = java_lang_Class::as_Klass(k_mirror);
   NULL_CHECK(k_klass, JVMTI_ERROR_INVALID_CLASS);
 
-  if (!k_klass->oop_is_instance()) {
+  if (!k_klass->is_instance_klass()) {
     return JVMTI_ERROR_ABSENT_INFORMATION;
   }
 
@@ -2256,7 +2254,7 @@ JvmtiEnv::GetClassMethods(oop k_mirror, jint* method_count_ptr, jmethodID** meth
     return JVMTI_ERROR_CLASS_NOT_PREPARED;
   }
 
-  if (!k->oop_is_instance()) {
+  if (!k->is_instance_klass()) {
     *method_count_ptr = 0;
     *methods_ptr = (jmethodID*) jvmtiMalloc(0 * sizeof(jmethodID));
     return JVMTI_ERROR_NONE;
@@ -2340,7 +2338,7 @@ JvmtiEnv::GetClassFields(oop k_mirror, jint* field_count_ptr, jfieldID** fields_
     return JVMTI_ERROR_CLASS_NOT_PREPARED;
   }
 
-  if (!k->oop_is_instance()) {
+  if (!k->is_instance_klass()) {
     *field_count_ptr = 0;
     *fields_ptr = (jfieldID*) jvmtiMalloc(0 * sizeof(jfieldID));
     return JVMTI_ERROR_NONE;
@@ -2394,7 +2392,7 @@ JvmtiEnv::GetImplementedInterfaces(oop k_mirror, jint* interface_count_ptr, jcla
     if (!(k->jvmti_class_status() & (JVMTI_CLASS_STATUS_PREPARED|JVMTI_CLASS_STATUS_ARRAY) ))
       return JVMTI_ERROR_CLASS_NOT_PREPARED;
 
-    if (!k->oop_is_instance()) {
+    if (!k->is_instance_klass()) {
       *interface_count_ptr = 0;
       *interfaces_ptr = (jclass*) jvmtiMalloc(0 * sizeof(jclass));
       return JVMTI_ERROR_NONE;
@@ -2528,7 +2526,7 @@ JvmtiEnv::IsArrayClass(oop k_mirror, jboolean* is_array_class_ptr) {
     bool result = false;
     if (!java_lang_Class::is_primitive(k_mirror)) {
       Klass* k = java_lang_Class::as_Klass(k_mirror);
-      if (k != NULL && k->oop_is_array()) {
+      if (k != NULL && k->is_array_klass()) {
         result = true;
       }
     }
@@ -2576,7 +2574,7 @@ JvmtiEnv::GetSourceDebugExtension(oop k_mirror, char** source_debug_extension_pt
     }
     Klass* k = java_lang_Class::as_Klass(k_mirror);
     NULL_CHECK(k, JVMTI_ERROR_INVALID_CLASS);
-    if (!k->oop_is_instance()) {
+    if (!k->is_instance_klass()) {
       return JVMTI_ERROR_ABSENT_INFORMATION;
     }
     char* sde = InstanceKlass::cast(k)->source_debug_extension();
@@ -3064,7 +3062,7 @@ JvmtiEnv::RawMonitorEnter(JvmtiRawMonitor * rmonitor) {
     // in thread.cpp.
     JvmtiPendingMonitors::enter(rmonitor);
   } else {
-    int r;
+    int r = 0;
     Thread* thread = Thread::current();
 
     if (thread->is_Java_thread()) {
@@ -3127,7 +3125,7 @@ JvmtiEnv::RawMonitorExit(JvmtiRawMonitor * rmonitor) {
       err = JVMTI_ERROR_NOT_MONITOR_OWNER;
     }
   } else {
-    int r;
+    int r = 0;
     Thread* thread = Thread::current();
 
     if (thread->is_Java_thread()) {
@@ -3161,7 +3159,7 @@ JvmtiEnv::RawMonitorExit(JvmtiRawMonitor * rmonitor) {
 // rmonitor - pre-checked for validity
 jvmtiError
 JvmtiEnv::RawMonitorWait(JvmtiRawMonitor * rmonitor, jlong millis) {
-  int r;
+  int r = 0;
   Thread* thread = Thread::current();
 
   if (thread->is_Java_thread()) {
@@ -3220,7 +3218,7 @@ JvmtiEnv::RawMonitorWait(JvmtiRawMonitor * rmonitor, jlong millis) {
 // rmonitor - pre-checked for validity
 jvmtiError
 JvmtiEnv::RawMonitorNotify(JvmtiRawMonitor * rmonitor) {
-  int r;
+  int r = 0;
   Thread* thread = Thread::current();
 
   if (thread->is_Java_thread()) {
@@ -3251,7 +3249,7 @@ JvmtiEnv::RawMonitorNotify(JvmtiRawMonitor * rmonitor) {
 // rmonitor - pre-checked for validity
 jvmtiError
 JvmtiEnv::RawMonitorNotifyAll(JvmtiRawMonitor * rmonitor) {
-  int r;
+  int r = 0;
   Thread* thread = Thread::current();
 
   if (thread->is_Java_thread()) {

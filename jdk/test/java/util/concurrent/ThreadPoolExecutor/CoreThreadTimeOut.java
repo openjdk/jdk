@@ -28,7 +28,12 @@
  * @author Martin Buchholz
  */
 
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class CoreThreadTimeOut {
 
@@ -84,7 +89,7 @@ public class CoreThreadTimeOut {
         equal(countExecutorThreads(), 0);
         tpe.shutdown();
         check(tpe.allowsCoreThreadTimeOut());
-        check(tpe.awaitTermination(10, TimeUnit.SECONDS));
+        check(tpe.awaitTermination(10L, TimeUnit.SECONDS));
 
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new Exception("Some tests failed");

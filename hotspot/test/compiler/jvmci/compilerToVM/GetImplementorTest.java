@@ -25,7 +25,7 @@
  * @test
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
- * @library / /testlibrary /../../test/lib/
+ * @library / /testlibrary /test/lib/
  * @compile ../common/CompilerToVMHelper.java
  * @build compiler.jvmci.compilerToVM.GetImplementorTest
  * @run main ClassFileInstaller
@@ -51,7 +51,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
@@ -98,12 +98,12 @@ public class GetImplementorTest {
 
     private void runTest(TestCase tcase) {
         System.out.println(tcase);
-        HotSpotResolvedObjectTypeImpl resolvedIface = CompilerToVMHelper
+        HotSpotResolvedObjectType resolvedIface = CompilerToVMHelper
                 .lookupType(Utils.toJVMTypeSignature(tcase.anInterface),
                         getClass(), /* resolve = */ true);
-        HotSpotResolvedObjectTypeImpl resolvedImplementer = CompilerToVMHelper
+        HotSpotResolvedObjectType resolvedImplementer = CompilerToVMHelper
                 .getImplementor(resolvedIface);
-        HotSpotResolvedObjectTypeImpl resolvedExpected = null;
+        HotSpotResolvedObjectType resolvedExpected = null;
         if (tcase.expectedImplementer != null) {
             resolvedExpected = CompilerToVMHelper.lookupType(Utils
                     .toJVMTypeSignature(tcase.expectedImplementer),

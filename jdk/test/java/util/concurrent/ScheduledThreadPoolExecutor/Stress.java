@@ -21,7 +21,7 @@
  * questions.
  */
 
-import java.util.concurrent.*;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 /**
  * This is not a regression test, but a stress benchmark test for

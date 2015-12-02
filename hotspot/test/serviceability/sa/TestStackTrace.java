@@ -32,7 +32,7 @@ import jdk.test.lib.apps.LingeredApp;
 
 /*
  * @test
- * @library /../../test/lib/share/classes
+ * @library /test/lib/share/classes
  * @library /testlibrary
  * @build jdk.test.lib.*
  * @build jdk.test.lib.apps.*

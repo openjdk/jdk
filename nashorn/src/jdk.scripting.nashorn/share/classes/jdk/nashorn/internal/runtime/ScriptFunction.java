@@ -51,6 +51,7 @@ import jdk.internal.dynalink.linker.support.Guards;
 import jdk.nashorn.internal.codegen.ApplySpecialization;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
+import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.objects.NativeFunction;
 import jdk.nashorn.internal.objects.annotations.SpecializedFunction.LinkLogic;
@@ -469,6 +470,15 @@ public class ScriptFunction extends ScriptObject {
      */
     public final boolean isStrict() {
         return data.isStrict();
+    }
+
+    /**
+     * Is this is a function with all variables in scope?
+     * @return true if function has all
+     */
+    public boolean hasAllVarsInScope() {
+        return data instanceof RecompilableScriptFunctionData &&
+                (((RecompilableScriptFunctionData) data).getFunctionFlags() & FunctionNode.HAS_ALL_VARS_IN_SCOPE) != 0;
     }
 
     /**

@@ -29,9 +29,9 @@
 
 inline void HeapRegionSetBase::add(HeapRegion* hr) {
   check_mt_safety();
-  assert(hr->containing_set() == NULL, "%s", hrs_ext_msg(this, "should not already have a containing set %u").buffer());
-  assert(hr->next() == NULL, "%s", hrs_ext_msg(this, "should not already be linked").buffer());
-  assert(hr->prev() == NULL, "%s", hrs_ext_msg(this, "should not already be linked").buffer());
+  assert_heap_region_set(hr->containing_set() == NULL, "should not already have a containing set");
+  assert_heap_region_set(hr->next() == NULL, "should not already be linked");
+  assert_heap_region_set(hr->prev() == NULL, "should not already be linked");
 
   _count.increment(1u, hr->capacity());
   hr->set_containing_set(this);
@@ -41,18 +41,18 @@ inline void HeapRegionSetBase::add(HeapRegion* hr) {
 inline void HeapRegionSetBase::remove(HeapRegion* hr) {
   check_mt_safety();
   verify_region(hr);
-  assert(hr->next() == NULL, "%s", hrs_ext_msg(this, "should already be unlinked").buffer());
-  assert(hr->prev() == NULL, "%s", hrs_ext_msg(this, "should already be unlinked").buffer());
+  assert_heap_region_set(hr->next() == NULL, "should already be unlinked");
+  assert_heap_region_set(hr->prev() == NULL, "should already be unlinked");
 
   hr->set_containing_set(NULL);
-  assert(_count.length() > 0, "%s", hrs_ext_msg(this, "pre-condition").buffer());
+  assert_heap_region_set(_count.length() > 0, "pre-condition");
   _count.decrement(1u, hr->capacity());
 }
 
 inline void FreeRegionList::add_ordered(HeapRegion* hr) {
-  assert((length() == 0 && _head == NULL && _tail == NULL && _last == NULL) ||
-         (length() >  0 && _head != NULL && _tail != NULL),
-         "%s", hrs_ext_msg(this, "invariant").buffer());
+  assert_free_region_list((length() == 0 && _head == NULL && _tail == NULL && _last == NULL) ||
+                          (length() >  0 && _head != NULL && _tail != NULL),
+                          "invariant");
   // add() will verify the region and check mt safety.
   add(hr);
 
@@ -128,8 +128,7 @@ inline HeapRegion* FreeRegionList::remove_region(bool from_head) {
   if (is_empty()) {
     return NULL;
   }
-  assert(length() > 0 && _head != NULL && _tail != NULL,
-         "%s", hrs_ext_msg(this, "invariant").buffer());
+  assert_free_region_list(length() > 0 && _head != NULL && _tail != NULL, "invariant");
 
   HeapRegion* hr;
 

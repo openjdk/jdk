@@ -412,6 +412,11 @@ static final class ClientHello extends HandshakeMessage {
         extensions.add(new CertStatusReqListV2Extension(itemList));
     }
 
+    // add application_layer_protocol_negotiation extension
+    void addALPNExtension(String[] applicationProtocols) throws SSLException {
+        extensions.add(new ALPNExtension(applicationProtocols));
+    }
+
     @Override
     int messageType() { return ht_client_hello; }
 

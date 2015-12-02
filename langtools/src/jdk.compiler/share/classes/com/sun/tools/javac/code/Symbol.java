@@ -180,6 +180,14 @@ public abstract class Symbol extends AnnoConstruct implements Element {
                 : metadata.getInitTypeAttributes();
     }
 
+    public void setInitTypeAttributes(List<Attribute.TypeCompound> l) {
+        initedMetadata().setInitTypeAttributes(l);
+    }
+
+    public void setClassInitTypeAttributes(List<Attribute.TypeCompound> l) {
+        initedMetadata().setClassInitTypeAttributes(l);
+    }
+
     public List<Attribute.Compound> getDeclarationAttributes() {
         return (metadata == null)
                 ? List.<Attribute.Compound>nil()

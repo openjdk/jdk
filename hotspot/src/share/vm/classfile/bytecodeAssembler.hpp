@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ class BytecodeConstantPool : ResourceObj {
   BytecodeCPEntry const& at(u2 index) const { return _entries.at(index); }
 
   InstanceKlass* pool_holder() const {
-    return InstanceKlass::cast(_orig->pool_holder());
+    return _orig->pool_holder();
   }
 
   u2 utf8(Symbol* sym) {

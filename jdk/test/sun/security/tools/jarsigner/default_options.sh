@@ -31,19 +31,21 @@ if [ "${TESTJAVA}" = "" ] ; then
   TESTJAVA=`dirname $JAVAC_CMD`/..
 fi
 
+PASS=changeit
+export PASS
+
 KS=ks
-KEYTOOL="$TESTJAVA/bin/keytool ${TESTTOOLVMOPTS}"
+KEYTOOL="$TESTJAVA/bin/keytool ${TESTTOOLVMOPTS} -storepass:env PASS -keypass:env PASS -keystore $KS"
 JAR="$TESTJAVA/bin/jar ${TESTTOOLVMOPTS}"
 JARSIGNER="$TESTJAVA/bin/jarsigner ${TESTTOOLVMOPTS}"
 
 rm $KS 2> /dev/null
 
-PASS=changeit
-export PASS
-
-$KEYTOOL -genkeypair -dname CN=A -alias a \
-         -storepass:env PASS -keypass:env PASS -keystore $KS \
-         -keyalg rsa || exit 1
+$KEYTOOL -genkeypair -dname CN=A -alias a -keyalg rsa || exit 1
+$KEYTOOL -genkeypair -dname CN=CA -alias ca -keyalg rsa || exit 2
+$KEYTOOL -alias a -certreq |
+    $KEYTOOL -alias ca -gencert |
+    $KEYTOOL -alias a -import || exit 3
 
 cat <<EOF > js.conf
 jarsigner.all = -keystore \${user.dir}/$KS -storepass:env PASS -debug -strict

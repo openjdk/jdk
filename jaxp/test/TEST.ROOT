@@ -18,4 +18,4 @@ othervm.dirs=javax/xml/jaxp
 groups=TEST.groups 
 
 # Minimum jtreg version
-requiredVersion=4.1 b11
+requiredVersion=4.1 b12

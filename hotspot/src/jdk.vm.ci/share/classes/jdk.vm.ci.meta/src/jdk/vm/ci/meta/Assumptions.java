@@ -22,8 +22,12 @@
  */
 package jdk.vm.ci.meta;
 
-import java.lang.invoke.*;
-import java.util.*;
+import java.lang.invoke.CallSite;
+import java.lang.invoke.MethodHandle;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 /**
  * Class for recording assumptions made during compilation.

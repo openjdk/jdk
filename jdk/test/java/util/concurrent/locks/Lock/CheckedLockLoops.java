@@ -34,104 +34,72 @@
 /*
  * @test
  * @bug 4486658
- * @run main/timeout=7200 CheckedLockLoops
  * @summary basic safety and liveness of ReentrantLocks, and other locks based on them
  */
 
-import java.util.concurrent.*;
-import java.util.concurrent.locks.*;
-import java.util.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.util.SplittableRandom;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public final class CheckedLockLoops {
-    static final ExecutorService pool = Executors.newCachedThreadPool();
-    static final LoopHelpers.SimpleRandom rng = new LoopHelpers.SimpleRandom();
-    static boolean print = false;
-    static boolean doBuiltin = false;
+    static ExecutorService pool;
+    static final SplittableRandom rnd = new SplittableRandom();
 
     public static void main(String[] args) throws Exception {
-        int maxThreads = 5;
-        int iters = 100000;
+        final int maxThreads = (args.length > 0)
+            ? Integer.parseInt(args[0])
+            : 5;
+        int iters = 3000;
 
-        if (args.length > 0)
-            maxThreads = Integer.parseInt(args[0]);
-
-        rng.setSeed(3122688L);
-
-        print = false;
-        System.out.println("Warmup...");
-        oneTest(3, 10000);
-        Thread.sleep(1000);
-        oneTest(2, 10000);
-        Thread.sleep(100);
-        oneTest(1, 100000);
-        Thread.sleep(100);
-        oneTest(1, 100000);
-        Thread.sleep(1000);
-        print = true;
-
+        pool = Executors.newCachedThreadPool();
         for (int i = 1; i <= maxThreads; i += (i+1) >>> 1) {
-            System.out.println("Threads:" + i);
             oneTest(i, iters / i);
-            Thread.sleep(100);
         }
         pool.shutdown();
-        if (! pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS))
+        if (! pool.awaitTermination(10L, SECONDS))
             throw new Error();
+        pool = null;
     }
 
     static void oneTest(int nthreads, int iters) throws Exception {
-        int v = rng.next();
-        if (doBuiltin) {
-            if (print)
-                System.out.print("builtin lock          ");
-            new BuiltinLockLoop().test(v, nthreads, iters);
-            Thread.sleep(10);
-        }
+        System.out.println("Threads: " + nthreads);
+        int v = rnd.nextInt();
+        System.out.print("builtin lock          ");
+        new BuiltinLockLoop().test(v, nthreads, iters);
 
-        if (print)
-            System.out.print("ReentrantLock         ");
+        System.out.print("ReentrantLock         ");
         new ReentrantLockLoop().test(v, nthreads, iters);
-        Thread.sleep(10);
 
-        if (print)
-            System.out.print("Mutex                 ");
+        System.out.print("Mutex                 ");
         new MutexLoop().test(v, nthreads, iters);
-        Thread.sleep(10);
 
-        if (print)
-            System.out.print("ReentrantWriteLock    ");
+        System.out.print("ReentrantWriteLock    ");
         new ReentrantWriteLockLoop().test(v, nthreads, iters);
-        Thread.sleep(10);
 
-        if (print)
-            System.out.print("ReentrantReadWriteLock");
+        System.out.print("ReentrantReadWriteLock");
         new ReentrantReadWriteLockLoop().test(v, nthreads, iters);
-        Thread.sleep(10);
 
-        if (print)
-            System.out.print("Semaphore             ");
+        System.out.print("Semaphore             ");
         new SemaphoreLoop().test(v, nthreads, iters);
-        Thread.sleep(10);
 
-        if (print)
-            System.out.print("fair Semaphore        ");
+        System.out.print("fair Semaphore        ");
         new FairSemaphoreLoop().test(v, nthreads, iters);
-        Thread.sleep(10);
 
-        if (print)
-            System.out.print("FairReentrantLock     ");
+        System.out.print("FairReentrantLock     ");
         new FairReentrantLockLoop().test(v, nthreads, iters);
-        Thread.sleep(10);
 
-        if (print)
-            System.out.print("FairRWriteLock         ");
+        System.out.print("FairRWriteLock         ");
         new FairReentrantWriteLockLoop().test(v, nthreads, iters);
-        Thread.sleep(10);
 
-        if (print)
-            System.out.print("FairRReadWriteLock     ");
+        System.out.print("FairRReadWriteLock     ");
         new FairReentrantReadWriteLockLoop().test(v, nthreads, iters);
-        Thread.sleep(10);
     }
 
     abstract static class LockLoop implements Runnable {
@@ -164,13 +132,11 @@ public final class CheckedLockLoops {
             barrier.await();
             barrier.await();
             long time = timer.getTime();
-            if (print) {
-                long tpi = time / (iters * nthreads);
-                System.out.print("\t" + LoopHelpers.rightJustify(tpi) + " ns per update");
-                //                double secs = (double)(time) / 1000000000.0;
-                //                System.out.print("\t " + secs + "s run time");
-                System.out.println();
-            }
+            long tpi = time / (iters * nthreads);
+            System.out.print("\t" + LoopHelpers.rightJustify(tpi) + " ns per update");
+            //                double secs = (double)(time) / 1000000000.0;
+            //                System.out.print("\t " + secs + "s run time");
+            System.out.println();
 
             if (result == 0) // avoid overoptimization
                 System.out.println("useless result: " + result);
@@ -322,6 +288,7 @@ public final class CheckedLockLoops {
             return sum;
         }
     }
+
     private static class FairSemaphoreLoop extends LockLoop {
         private final Semaphore sem = new Semaphore(1, true);
         final int loop(int n) {
@@ -373,7 +340,6 @@ public final class CheckedLockLoops {
             }
             return sum;
         }
-
     }
 
     private static class FairReentrantReadWriteLockLoop extends LockLoop {
@@ -407,6 +373,5 @@ public final class CheckedLockLoops {
             }
             return sum;
         }
-
     }
 }

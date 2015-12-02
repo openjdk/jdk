@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,52 +22,60 @@
  *
  */
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.FactoryConfigurationError;
 import javax.xml.parsers.ParserConfigurationException;
-
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
-import org.w3c.dom.Document;
-import org.w3c.dom.DOMException;
-// For write operation
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.transform.stream.StreamResult;
 
-import java.io.*;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.w3c.dom.Document;
+import org.w3c.dom.DOMException;
 
 public class jvmtiGen
 {
+    private static final int EXIT_FAILURE_ERROR = 1;
+    private static final int EXIT_FAILURE_BADARGUMENTS = 2;
+
+    private static boolean verbose = false;
+
     /**
      * Write out usage and exit.
      */
     private static void showUsage() {
         System.err.println("usage:");
         System.err.println("  java jvmtiGen " +
+                           "[-verbose] " +
                            "-IN <input XML file name> " +
                            "-XSL <XSL file> " +
                            "-OUT <output file name> " +
                            "[-PARAM <name> <expression> ...]");
-        System.exit(0);         // There is no returning from showUsage()
+        System.exit(EXIT_FAILURE_BADARGUMENTS); // There is no returning from showUsage()
     }
 
-    // Global value so it can be ref'd by the tree-adapter
-    static Document document;
-
-    public static void main (String argv [])
-    {
-        String inFileName=null;
-        String xslFileName=null;
-        String outFileName=null;
-        java.util.Vector<String> params=new java.util.Vector<String>();
+    public static void main (String argv []) {
+        String inFileName = null;
+        String xslFileName = null;
+        String outFileName = null;
+        final List<String> params = new ArrayList<String>();
         for (int ii = 0; ii < argv.length; ii++) {
-            if (argv[ii].equals("-IN")) {
+            if (argv[ii].equals("-verbose")) {
+                verbose = true;
+            } else if (argv[ii].equals("-IN")) {
                 inFileName = argv[++ii];
             } else if (argv[ii].equals("-XSL")) {
                 xslFileName = argv[++ii];
@@ -75,10 +83,10 @@ public class jvmtiGen
                 outFileName = argv[++ii];
             } else if (argv[ii].equals("-PARAM")) {
                 if (ii + 2 < argv.length) {
-                    String name = argv[++ii];
-                    params.addElement(name);
-                    String expression = argv[++ii];
-                    params.addElement(expression);
+                    final String name = argv[++ii];
+                    params.add(name);
+                    final String expression = argv[++ii];
+                    params.add(expression);
                 } else {
                     showUsage();
                 }
@@ -86,109 +94,54 @@ public class jvmtiGen
                 showUsage();
             }
         }
-        if (inFileName==null || xslFileName==null || outFileName==null){
+        if (inFileName == null || xslFileName == null || outFileName == null) {
             showUsage();
         }
 
-        /*
-         * Due to JAXP breakage in some intermediate Tiger builds, the
-         * com.sun.org.apache..... parser may throw an exception:
-         *   com.sun.org.apache.xml.internal.utils.WrappedRuntimeException:
-         *     org.apache.xalan.serialize.SerializerToText
-         *
-         * To work around the problem, this program uses the
-         * org.apache.xalan....  version if it is available.  It is
-         * available in J2SE 1.4.x and early builds of 1.5 (Tiger).
-         * It was removed at the same time the thrown exception issue
-         * above was fixed, so if the class is not found we can proceed
-         * and use the default parser.
-         */
-        final String parserProperty =
-            "javax.xml.transform.TransformerFactory";
-        final String workaroundParser =
-            "org.apache.xalan.processor.TransformerFactoryImpl";
-
-        try {
-            java.lang.Class cls = java.lang.Class.forName(workaroundParser);
-            /*
-             * If we get here, we found the class.  Use it.
-             */
-            System.setProperty(parserProperty, workaroundParser);
-            System.out.println("Info: jvmtiGen using " + parserProperty +
-                               " = " + workaroundParser);
-        } catch (ClassNotFoundException cnfex) {
-            /*
-             * We didn't find workaroundParser.  Ignore the
-             * exception and proceed with default settings.
-             */
-        }
-
-        DocumentBuilderFactory factory =
-            DocumentBuilderFactory.newInstance();
+        final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 
         factory.setNamespaceAware(true);
         factory.setValidating(true);
         factory.setXIncludeAware(true);
 
-        try {
-            File datafile   = new File(inFileName);
-            File stylesheet = new File(xslFileName);
+        final File datafile   = new File(inFileName);
+        final File stylesheet = new File(xslFileName);
 
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            document = builder.parse(datafile);
-
+        try (
+            final OutputStream os = new BufferedOutputStream(new FileOutputStream(outFileName));
+        ) {
+            final StreamSource stylesource = new StreamSource(stylesheet);
             // Use a Transformer for output
-            TransformerFactory tFactory =
-                TransformerFactory.newInstance();
-            StreamSource stylesource = new StreamSource(stylesheet);
-            Transformer transformer = tFactory.newTransformer(stylesource);
-            for (int ii = 0; ii < params.size(); ii += 2){
-                transformer.setParameter((String) params.elementAt(ii),
-                                         (String) params.elementAt(ii + 1));
+            final Transformer transformer =
+                TransformerFactory.newInstance().newTransformer(stylesource);
+            for (int ii = 0; ii < params.size(); ii += 2) {
+                transformer.setParameter(params.get(ii), params.get(ii + 1));
             }
-            DOMSource source = new DOMSource(document);
-
-            PrintStream ps = new PrintStream( new FileOutputStream(outFileName));
-            StreamResult result = new StreamResult(ps);
+            final DocumentBuilder builder = factory.newDocumentBuilder();
+            builder.setErrorHandler(new ErrorHandler() {
+                    public void fatalError(SAXParseException exn) throws SAXException {
+                        throw new SAXException(exn);
+                    }
+                    public void error(SAXParseException exn) throws SAXException {
+                        fatalError(exn);
+                    }
+                    public void warning(SAXParseException exn) throws SAXException {
+                        if (verbose) {
+                            System.err.println("jvmtiGen warning: " + exn.getMessage());
+                        }
+                    }
+                });
+            final Document document = builder.parse(datafile);
+            final DOMSource source = new DOMSource(document);
+            final StreamResult result = new StreamResult(os);
             transformer.transform(source, result);
-
-        } catch (TransformerConfigurationException tce) {
-           // Error generated by the parser
-           System.out.println ("\n** Transformer Factory error");
-           System.out.println("   " + tce.getMessage() );
-
-           // Use the contained exception, if any
-           Throwable x = tce;
-           if (tce.getException() != null)
-               x = tce.getException();
-           x.printStackTrace();
-
-        } catch (TransformerException te) {
-           // Error generated by the parser
-           System.out.println ("\n** Transformation error");
-           System.out.println("   " + te.getMessage() );
-
-           // Use the contained exception, if any
-           Throwable x = te;
-           if (te.getException() != null)
-               x = te.getException();
-           x.printStackTrace();
-
-         } catch (SAXException sxe) {
-           // Error generated by this application
-           // (or a parser-initialization error)
-           Exception  x = sxe;
-           if (sxe.getException() != null)
-               x = sxe.getException();
-           x.printStackTrace();
-
-        } catch (ParserConfigurationException pce) {
-            // Parser with specified options can't be built
-            pce.printStackTrace();
-
-        } catch (IOException ioe) {
-           // I/O error
-           ioe.printStackTrace();
+        } catch (IOException
+            | ParserConfigurationException
+            | SAXException
+            | TransformerException exn) {
+            System.err.print("jvmtiGen error: " + exn.getMessage());
+            exn.printStackTrace(System.err);
+            System.exit(EXIT_FAILURE_ERROR);
         }
     } // main
 }

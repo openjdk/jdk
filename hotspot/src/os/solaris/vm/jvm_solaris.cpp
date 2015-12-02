@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,11 +71,6 @@ JVM_ENTRY_NO_ENV(void*, JVM_RegisterSignal(jint sig, void* handler))
     case SHUTDOWN3_SIGNAL:
       if (ReduceSignalUsage) return (void*)-1;
       if (os::Solaris::is_sig_ignored(sig)) return (void*)1;
-  }
-
-  /* Check parameterized signals. Don't allow sharing of our interrupt signal */
-  if (sig == os::Solaris::SIGinterrupt()) {
-      return (void *)-1;
   }
 
   void* oldHandler = os::signal(sig, newHandler);

@@ -40,6 +40,7 @@
 #include "loadlib_aix.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
+#include "misc_aix.hpp"
 #include "mutex_aix.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_aix.inline.hpp"
@@ -159,23 +160,10 @@ typedef stackslot_t* stackptr_t;
 #define PV_8_Compat 0x308000   /* Power PC 8 */
 #endif
 
-#define trcVerbose(fmt, ...) { /* PPC port */  \
-  if (Verbose) { \
-    fprintf(stderr, fmt, ##__VA_ARGS__); \
-    fputc('\n', stderr); fflush(stderr); \
-  } \
-}
-#define trc(fmt, ...)        /* PPC port */
-
-#define ERRBYE(s) { \
-    trcVerbose(s); \
-    return -1; \
-}
-
 // Query dimensions of the stack of the calling thread.
 static bool query_stack_dimensions(address* p_stack_base, size_t* p_stack_size);
 
-// function to check a given stack pointer against given stack limits
+// Function to check a given stack pointer against given stack limits.
 inline bool is_valid_stackpointer(stackptr_t sp, stackptr_t stack_base, size_t stack_size) {
   if (((uintptr_t)sp) & 0x7) {
     return false;
@@ -189,7 +177,7 @@ inline bool is_valid_stackpointer(stackptr_t sp, stackptr_t stack_base, size_t s
   return true;
 }
 
-// returns true if function is a valid codepointer
+// Returns true if function is a valid codepointer.
 inline bool is_valid_codepointer(codeptr_t p) {
   if (!p) {
     return false;
@@ -197,7 +185,7 @@ inline bool is_valid_codepointer(codeptr_t p) {
   if (((uintptr_t)p) & 0x3) {
     return false;
   }
-  if (LoadedLibraries::find_for_text_address((address)p) == NULL) {
+  if (!LoadedLibraries::find_for_text_address(p, NULL)) {
     return false;
   }
   return true;
@@ -1387,26 +1375,15 @@ bool os::address_is_in_vm(address addr) {
 
   // Input could be a real pc or a function pointer literal. The latter
   // would be a function descriptor residing in the data segment of a module.
-
-  const LoadedLibraryModule* lib = LoadedLibraries::find_for_text_address(addr);
-  if (lib) {
-    if (strcmp(lib->get_shortname(), "libjvm.so") == 0) {
-      return true;
-    } else {
-      return false;
-    }
+  loaded_module_t lm;
+  if (LoadedLibraries::find_for_text_address(addr, &lm) != NULL) {
+    return lm.is_in_vm;
+  } else if (LoadedLibraries::find_for_data_address(addr, &lm) != NULL) {
+    return lm.is_in_vm;
   } else {
-    lib = LoadedLibraries::find_for_data_address(addr);
-    if (lib) {
-      if (strcmp(lib->get_shortname(), "libjvm.so") == 0) {
-        return true;
-      } else {
-        return false;
-      }
-    } else {
-      return false;
-    }
+    return false;
   }
+
 }
 
 // Resolve an AIX function descriptor literal to a code pointer.
@@ -1418,21 +1395,18 @@ bool os::address_is_in_vm(address addr) {
 //   NULL is returned.
 static address resolve_function_descriptor_to_code_pointer(address p) {
 
-  const LoadedLibraryModule* lib = LoadedLibraries::find_for_text_address(p);
-  if (lib) {
-    // its a real code pointer
+  if (LoadedLibraries::find_for_text_address(p, NULL) != NULL) {
+    // It is a real code pointer.
     return p;
-  } else {
-    lib = LoadedLibraries::find_for_data_address(p);
-    if (lib) {
-      // pointer to data segment, potential function descriptor
-      address code_entry = (address)(((FunctionDescriptor*)p)->entry());
-      if (LoadedLibraries::find_for_text_address(code_entry)) {
-        // Its a function descriptor
-        return code_entry;
-      }
+  } else if (LoadedLibraries::find_for_data_address(p, NULL) != NULL) {
+    // Pointer to data segment, potential function descriptor.
+    address code_entry = (address)(((FunctionDescriptor*)p)->entry());
+    if (LoadedLibraries::find_for_text_address(code_entry, NULL) != NULL) {
+      // It is a function descriptor.
+      return code_entry;
     }
   }
+
   return NULL;
 }
 
@@ -1461,7 +1435,6 @@ static int getModuleName(codeptr_t pc,                    // [in] program counte
                          char* p_errmsg, size_t errmsglen // [out] optional: user provided buffer for error messages
                          ) {
 
-  // initialize output parameters
   if (p_name && namelen > 0) {
     *p_name = '\0';
   }
@@ -1469,15 +1442,14 @@ static int getModuleName(codeptr_t pc,                    // [in] program counte
     *p_errmsg = '\0';
   }
 
-  const LoadedLibraryModule* const lib = LoadedLibraries::find_for_text_address((address)pc);
-  if (lib) {
-    if (p_name && namelen > 0) {
-      sprintf(p_name, "%.*s", namelen, lib->get_shortname());
+  if (p_name && namelen > 0) {
+    loaded_module_t lm;
+    if (LoadedLibraries::find_for_text_address(pc, &lm) != NULL) {
+      strncpy(p_name, lm.shortname, namelen);
+      p_name[namelen - 1] = '\0';
     }
     return 0;
   }
-
-  trcVerbose("pc outside any module");
 
   return -1;
 }
@@ -1690,7 +1662,6 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
   print_signal_handler(st, SIGPIPE, buf, buflen);
   print_signal_handler(st, SIGXFSZ, buf, buflen);
   print_signal_handler(st, SIGILL , buf, buflen);
-  print_signal_handler(st, INTERRUPT_SIGNAL, buf, buflen);
   print_signal_handler(st, SR_signum, buf, buflen);
   print_signal_handler(st, SHUTDOWN1_SIGNAL, buf, buflen);
   print_signal_handler(st, SHUTDOWN2_SIGNAL , buf, buflen);
@@ -3309,7 +3280,6 @@ void os::run_periodic_checks() {
   }
 
   DO_SIGNAL_CHECK(SR_signum);
-  DO_SIGNAL_CHECK(INTERRUPT_SIGNAL);
 }
 
 typedef int (*os_sigaction_t)(int, const struct sigaction *, struct sigaction *);
@@ -3349,10 +3319,6 @@ void os::Aix::check_signal_handler(int sig) {
   case SHUTDOWN3_SIGNAL:
   case BREAK_SIGNAL:
     jvmHandler = (address)user_handler();
-    break;
-
-  case INTERRUPT_SIGNAL:
-    jvmHandler = CAST_FROM_FN_PTR(address, SIG_DFL);
     break;
 
   default:
@@ -3787,18 +3753,11 @@ bool os::find(address addr, outputStream* st) {
 
   st->print(PTR_FORMAT ": ", addr);
 
-  const LoadedLibraryModule* lib = LoadedLibraries::find_for_text_address(addr);
-  if (lib) {
-    lib->print(st);
+  loaded_module_t lm;
+  if (LoadedLibraries::find_for_text_address(addr, &lm) != NULL ||
+      LoadedLibraries::find_for_data_address(addr, &lm) != NULL) {
+    st->print("%s", lm.path);
     return true;
-  } else {
-    lib = LoadedLibraries::find_for_data_address(addr);
-    if (lib) {
-      lib->print(st);
-      return true;
-    } else {
-      st->print_cr("(outside any module)");
-    }
   }
 
   return false;
@@ -3811,7 +3770,7 @@ bool os::find(address addr, outputStream* st) {
 // able to use structured exception handling (thread-local exception filters)
 // on, e.g., Win32.
 void
-os::os_exception_wrapper(java_call_t f, JavaValue* value, methodHandle* method,
+os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method,
                          JavaCallArguments* args, Thread* thread) {
   f(value, method, args, thread);
 }
@@ -3965,9 +3924,6 @@ int os::available(int fd, jlong *bytes) {
   if (::fstat64(fd, &buf64) >= 0) {
     mode = buf64.st_mode;
     if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-      // XXX: is the following call interruptible? If so, this might
-      // need to go through the INTERRUPT_IO() wrapper as for other
-      // blocking, interruptible calls in this file.
       int n;
       if (::ioctl(fd, FIONREAD, &n) >= 0) {
         *bytes = n;

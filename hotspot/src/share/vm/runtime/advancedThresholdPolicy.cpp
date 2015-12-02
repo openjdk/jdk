@@ -467,14 +467,14 @@ CompLevel AdvancedThresholdPolicy::loop_event(Method* method, CompLevel cur_leve
 }
 
 // Update the rate and submit compile
-void AdvancedThresholdPolicy::submit_compile(methodHandle mh, int bci, CompLevel level, JavaThread* thread) {
+void AdvancedThresholdPolicy::submit_compile(const methodHandle& mh, int bci, CompLevel level, JavaThread* thread) {
   int hot_count = (bci == InvocationEntryBci) ? mh->invocation_count() : mh->backedge_count();
   update_rate(os::javaTimeMillis(), mh());
   CompileBroker::compile_method(mh, bci, level, mh, hot_count, "tiered", thread);
 }
 
 // Handle the invocation event.
-void AdvancedThresholdPolicy::method_invocation_event(methodHandle mh, methodHandle imh,
+void AdvancedThresholdPolicy::method_invocation_event(const methodHandle& mh, const methodHandle& imh,
                                                       CompLevel level, nmethod* nm, JavaThread* thread) {
   if (should_create_mdo(mh(), level)) {
     create_mdo(mh, thread);
@@ -489,7 +489,7 @@ void AdvancedThresholdPolicy::method_invocation_event(methodHandle mh, methodHan
 
 // Handle the back branch event. Notice that we can compile the method
 // with a regular entry from here.
-void AdvancedThresholdPolicy::method_back_branch_event(methodHandle mh, methodHandle imh,
+void AdvancedThresholdPolicy::method_back_branch_event(const methodHandle& mh, const methodHandle& imh,
                                                        int bci, CompLevel level, nmethod* nm, JavaThread* thread) {
   if (should_create_mdo(mh(), level)) {
     create_mdo(mh, thread);

@@ -75,7 +75,7 @@ define SetupCompilePropertiesBody
 
   # Convert .../src/<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN.properties
   # to .../support/gensrc/<module>/com/sun/tools/javac/resources/javac_zh_CN.java
-  # Strip away prefix and suffix, leaving for example only:
+  # Strip away prefix and suffix, leaving for example only: 
   # "<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN"
   $1_JAVAS := $$(patsubst $$($1_MODULE_PATH_ROOT)/%, \
       $(SUPPORT_OUTPUTDIR)/gensrc/%, \

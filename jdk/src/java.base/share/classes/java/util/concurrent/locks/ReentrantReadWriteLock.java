@@ -188,9 +188,9 @@ import java.util.concurrent.TimeUnit;
  *     try { return m.get(key); }
  *     finally { r.unlock(); }
  *   }
- *   public String[] allKeys() {
+ *   public List<String> allKeys() {
  *     r.lock();
- *     try { return m.keySet().toArray(); }
+ *     try { return new ArrayList<>(m.keySet()); }
  *     finally { r.unlock(); }
  *   }
  *   public Data put(String key, Data value) {

@@ -42,6 +42,17 @@ a[name]:hover {
     text-decoration:none;
     color:#353833;
 }
+a[name]:before, a[name]:target {
+    content:"";
+    display:block;
+    height:120px;
+    margin:-120px 0 0;
+}
+a[id]:before, a[id]:target {
+    padding-top:129px;
+    margin-top:-129px;
+    color:red;
+}
 pre {
     font-family:'DejaVu Sans Mono', monospace;
     font-size:14px;
@@ -132,6 +143,12 @@ Navigation bar styles
     font-size:11px;
     margin:0;
 }
+.fixedNav {
+    position:fixed;
+    width:100%;
+    z-index:999;
+    background-color:#ffffff;
+}
 .topNav {
     background-color:#4D7A97;
     color:#FFFFFF;
@@ -181,7 +198,22 @@ ul.navList li{
     padding: 5px 6px;
     text-transform:uppercase;
 }
-ul.subNavList li{
+ul.navListSearch {
+    float:right;
+    margin:0 0 0 0;
+    padding:0;
+}
+ul.navListSearch li {
+    list-style:none;
+    float:right;
+    padding: 5px 6px;
+    text-transform:uppercase;
+}
+ul.navListSearch li span {
+    position:relative;
+    right:-16px;
+}
+ul.subNavList li {
     list-style:none;
     float:left;
 }
@@ -233,6 +265,7 @@ Page header and footer styles
 .title {
     color:#2c4557;
     margin:10px 0;
+    padding-top:5.4em;
 }
 .subTitle {
     margin:5px 0 0 0;
@@ -578,7 +611,7 @@ h1.hidden {
 }
 .deprecatedLabel, .descfrmTypeLabel, .memberNameLabel, .memberNameLink,
 .overrideSpecifyLabel, .packageHierarchyLabel, .paramLabel, .returnLabel,
-.seeLabel, .simpleTagLabel, .throwsLabel, .typeNameLabel, .typeNameLink {
+.seeLabel, .simpleTagLabel, .throwsLabel, .typeNameLabel, .typeNameLink, .searchTagLink {
     font-weight:bold;
 }
 .deprecationComment, .emphasizedPhrase, .interfaceName {
@@ -653,4 +686,66 @@ HTML5 specific styles
 */
 main, nav, header, footer, section {
     display:block;
+}
+.ui-autocomplete-category {
+    font-weight:bold;
+    font-size:15px;
+    padding:7px 0 7px 3px;
+    background-color:#4D7A97;
+    color:#FFFFFF;
+}
+.resultItem {
+    font-size:13px;
+}
+.ui-autocomplete {
+    max-height:85%;
+    max-width:65%;
+    overflow-y:scroll;
+    overflow-x:scroll;
+    white-space:nowrap;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+}
+ul.ui-autocomplete {
+    position:fixed;
+    z-index:999999;
+}
+ul.ui-autocomplete  li {
+    float:left;
+    clear:both;
+    width:100%;
+}
+.resultHighlight {
+    font-weight:bold;
+}
+#search {
+    background-image:url('resources/glass.png');
+    background-size:13px;
+    background-repeat:no-repeat;
+    background-position:2px 3px;
+    padding-left:20px;
+    position:relative;
+    right:-18px;
+}
+#reset {
+    background-color: rgb(255,255,255);
+    border:0 none;
+    width:16px;
+    height:17px;
+    position:relative;
+    left:-2px;
+    background-image:url('resources/x.png');
+    background-repeat:no-repeat;
+    background-size:12px;
+    background-position:center;
+}
+.watermark {
+    color:#888;
+}
+.searchTagDescResult {
+    font-style:italic;
+    font-size:11px;
+}
+.searchTagHolderResult {
+    font-style:italic;
+    font-size:12px;
 }

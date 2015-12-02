@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,75 +35,131 @@
 // hit (cache is checked with exposed code in gen_subtype_check()).  Return
 // not zero for a miss or zero for a hit.
 class PartialSubtypeCheckNode : public Node {
-  public:
+ public:
   PartialSubtypeCheckNode(Node* c, Node* sub, Node* super) : Node(c,sub,super) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeRawPtr::BOTTOM; }
+  virtual const Type* bottom_type() const { return TypeRawPtr::BOTTOM; }
   virtual uint ideal_reg() const { return Op_RegP; }
 };
 
 //------------------------------StrIntrinsic-------------------------------
-// Base class for Ideal nodes used in String instrinsic code.
+// Base class for Ideal nodes used in String intrinsic code.
 class StrIntrinsicNode: public Node {
-  public:
+ public:
+  // Possible encodings of the two parameters passed to the string intrinsic.
+  // 'L' stands for Latin1 and 'U' stands for UTF16. For example, 'LU' means that
+  // the first string is Latin1 encoded and the second string is UTF16 encoded.
+  typedef enum ArgEncoding { LL, LU, UL, UU, none } ArgEnc;
+
+ protected:
+  // Encoding of strings. Used to select the right version of the intrinsic.
+  const ArgEncoding _encoding;
+  virtual uint size_of() const;
+
+ public:
   StrIntrinsicNode(Node* control, Node* char_array_mem,
-                   Node* s1, Node* c1, Node* s2, Node* c2):
-  Node(control, char_array_mem, s1, c1, s2, c2) {
+                   Node* s1, Node* c1, Node* s2, Node* c2, ArgEncoding encoding):
+  Node(control, char_array_mem, s1, c1, s2, c2), _encoding(encoding) {
   }
 
   StrIntrinsicNode(Node* control, Node* char_array_mem,
-                   Node* s1, Node* s2, Node* c):
-  Node(control, char_array_mem, s1, s2, c) {
+                   Node* s1, Node* s2, Node* c, ArgEncoding encoding):
+  Node(control, char_array_mem, s1, s2, c), _encoding(encoding) {
   }
 
   StrIntrinsicNode(Node* control, Node* char_array_mem,
-                   Node* s1, Node* s2):
-  Node(control, char_array_mem, s1, s2) {
+                   Node* s1, Node* s2, ArgEncoding encoding):
+  Node(control, char_array_mem, s1, s2), _encoding(encoding) {
   }
 
   virtual bool depends_only_on_test() const { return false; }
-  virtual const TypePtr* adr_type() const { return TypeAryPtr::CHARS; }
+  virtual const TypePtr* adr_type() const { return TypeAryPtr::BYTES; }
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *Value(PhaseTransform *phase) const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual const Type* Value(PhaseTransform* phase) const;
+  ArgEncoding encoding() const { return _encoding; }
 };
 
 //------------------------------StrComp-------------------------------------
 class StrCompNode: public StrIntrinsicNode {
-  public:
+ public:
   StrCompNode(Node* control, Node* char_array_mem,
-              Node* s1, Node* c1, Node* s2, Node* c2):
-  StrIntrinsicNode(control, char_array_mem, s1, c1, s2, c2) {};
+              Node* s1, Node* c1, Node* s2, Node* c2, ArgEncoding encoding):
+  StrIntrinsicNode(control, char_array_mem, s1, c1, s2, c2, encoding) {};
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeInt::INT; }
 };
 
 //------------------------------StrEquals-------------------------------------
 class StrEqualsNode: public StrIntrinsicNode {
-  public:
+ public:
   StrEqualsNode(Node* control, Node* char_array_mem,
-                Node* s1, Node* s2, Node* c):
-  StrIntrinsicNode(control, char_array_mem, s1, s2, c) {};
+                Node* s1, Node* s2, Node* c, ArgEncoding encoding):
+  StrIntrinsicNode(control, char_array_mem, s1, s2, c, encoding) {};
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
 };
 
 //------------------------------StrIndexOf-------------------------------------
 class StrIndexOfNode: public StrIntrinsicNode {
-  public:
+ public:
   StrIndexOfNode(Node* control, Node* char_array_mem,
-                 Node* s1, Node* c1, Node* s2, Node* c2):
-  StrIntrinsicNode(control, char_array_mem, s1, c1, s2, c2) {};
+                 Node* s1, Node* c1, Node* s2, Node* c2, ArgEncoding encoding):
+  StrIntrinsicNode(control, char_array_mem, s1, c1, s2, c2, encoding) {};
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeInt::INT; }
 };
 
+//------------------------------StrIndexOfChar-------------------------------------
+class StrIndexOfCharNode: public StrIntrinsicNode {
+ public:
+  StrIndexOfCharNode(Node* control, Node* char_array_mem,
+                     Node* s1, Node* c1, Node* c, ArgEncoding encoding):
+  StrIntrinsicNode(control, char_array_mem, s1, c1, c, encoding) {};
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
+};
+
+//--------------------------StrCompressedCopy-------------------------------
+class StrCompressedCopyNode: public StrIntrinsicNode {
+ public:
+  StrCompressedCopyNode(Node* control, Node* arymem,
+                        Node* s1, Node* s2, Node* c):
+  StrIntrinsicNode(control, arymem, s1, s2, c, none) {};
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::INT; }
+  virtual const TypePtr* adr_type() const { return TypePtr::BOTTOM; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
+//--------------------------StrInflatedCopy---------------------------------
+class StrInflatedCopyNode: public StrIntrinsicNode {
+ public:
+  StrInflatedCopyNode(Node* control, Node* arymem,
+                      Node* s1, Node* s2, Node* c):
+  StrIntrinsicNode(control, arymem, s1, s2, c, none) {};
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return Type::MEMORY; }
+  virtual const TypePtr* adr_type() const { return TypePtr::BOTTOM; }
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+};
+
 //------------------------------AryEq---------------------------------------
 class AryEqNode: public StrIntrinsicNode {
-  public:
-  AryEqNode(Node* control, Node* char_array_mem, Node* s1, Node* s2):
-  StrIntrinsicNode(control, char_array_mem, s1, s2) {};
+ public:
+  AryEqNode(Node* control, Node* char_array_mem,
+            Node* s1, Node* s2, ArgEncoding encoding):
+  StrIntrinsicNode(control, char_array_mem, s1, s2, encoding) {};
+  virtual int Opcode() const;
+  virtual const Type* bottom_type() const { return TypeInt::BOOL; }
+};
+
+//------------------------------HasNegatives---------------------------------
+class HasNegativesNode: public StrIntrinsicNode {
+ public:
+  HasNegativesNode(Node* control, Node* char_array_mem, Node* s1, Node* c1):
+  StrIntrinsicNode(control, char_array_mem, s1, c1, none) {};
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return TypeInt::BOOL; }
 };
@@ -112,16 +168,16 @@ class AryEqNode: public StrIntrinsicNode {
 //------------------------------EncodeISOArray--------------------------------
 // encode char[] to byte[] in ISO_8859_1
 class EncodeISOArrayNode: public Node {
-  public:
-  EncodeISOArrayNode(Node *control, Node* arymem, Node* s1, Node* s2, Node* c): Node(control, arymem, s1, s2, c) {};
+ public:
+  EncodeISOArrayNode(Node* control, Node* arymem, Node* s1, Node* s2, Node* c): Node(control, arymem, s1, s2, c) {};
   virtual int Opcode() const;
   virtual bool depends_only_on_test() const { return false; }
   virtual const Type* bottom_type() const { return TypeInt::INT; }
   virtual const TypePtr* adr_type() const { return TypePtr::BOTTOM; }
   virtual uint match_edge(uint idx) const;
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  virtual const Type *Value(PhaseTransform *phase) const;
+  virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
+  virtual const Type* Value(PhaseTransform* phase) const;
 };
 
 #endif // SHARE_VM_OPTO_INTRINSICNODE_HPP

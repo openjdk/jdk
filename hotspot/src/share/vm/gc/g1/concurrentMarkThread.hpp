@@ -27,11 +27,11 @@
 
 #include "gc/shared/concurrentGCThread.hpp"
 
-// The Concurrent Mark GC Thread (could be several in the future).
-// This is copied from the Concurrent Mark Sweep GC Thread
-// Still under construction.
+// The Concurrent Mark GC Thread triggers the parallel CMConcurrentMarkingTasks
+// as well as handling various marking cleanup.
 
 class ConcurrentMark;
+class G1CollectorPolicy;
 
 class ConcurrentMarkThread: public ConcurrentGCThread {
   friend class VMStructs;
@@ -57,6 +57,10 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   volatile State _state;
 
   void sleepBeforeNextCycle();
+  void delay_to_keep_mmu(G1CollectorPolicy* g1_policy, bool remark);
+
+  void run_service();
+  void stop_service();
 
   static SurrogateLockerThread*         _slt;
 
@@ -67,9 +71,9 @@ class ConcurrentMarkThread: public ConcurrentGCThread {
   static void makeSurrogateLockerThread(TRAPS);
   static SurrogateLockerThread* slt() { return _slt; }
 
-  // Total virtual time so far.
+  // Total virtual time so far for this thread and concurrent marking tasks.
   double vtime_accum();
-  // Marking virtual time so far
+  // Marking virtual time so far this thread and concurrent marking tasks.
   double vtime_mark_accum();
 
   ConcurrentMark* cm()     { return _cm; }

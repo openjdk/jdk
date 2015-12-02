@@ -56,7 +56,6 @@ class InvokerBytecodeGenerator {
     private static final String OBJ     = "java/lang/Object";
     private static final String OBJARY  = "[Ljava/lang/Object;";
 
-    private static final String MH_SIG  = "L" + MH + ";";
     private static final String LF_SIG  = "L" + LF + ";";
     private static final String LFN_SIG = "L" + LFN + ";";
     private static final String LL_SIG  = "(L" + OBJ + ";)L" + OBJ + ";";
@@ -77,7 +76,6 @@ class InvokerBytecodeGenerator {
 
     /** Info about local variables in compiled lambda form */
     private final int[]       localsMap;    // index
-    private final BasicType[] localTypes;   // basic type
     private final Class<?>[]  localClasses; // type
 
     /** ASM bytecode generation. */
@@ -105,7 +103,6 @@ class InvokerBytecodeGenerator {
         this.invokerType = invokerType;
         this.localsMap = new int[localsMapSize+1];
         // last entry of localsMap is count of allocated local slots
-        this.localTypes = new BasicType[localsMapSize+1];
         this.localClasses = new Class<?>[localsMapSize+1];
     }
 
@@ -114,11 +111,8 @@ class InvokerBytecodeGenerator {
         this(null, invokerType.parameterCount(),
              className, invokerName, invokerType);
         // Create an array to map name indexes to locals indexes.
-        localTypes[localTypes.length - 1] = V_TYPE;
         for (int i = 0; i < localsMap.length; i++) {
             localsMap[i] = invokerType.parameterSlotCount() - invokerType.parameterSlotDepth(i);
-            if (i < invokerType.parameterCount())
-                localTypes[i] = basicType(invokerType.parameterType(i));
         }
     }
 
@@ -133,7 +127,6 @@ class InvokerBytecodeGenerator {
             if (i < names.length) {
                 BasicType type = names[i].type();
                 index += type.basicTypeSlots();
-                localTypes[i] = type;
             }
         }
     }
@@ -459,31 +452,6 @@ class InvokerBytecodeGenerator {
             default:      throw new InternalError();
         }
         return xas - Opcodes.AASTORE + aaop;
-    }
-
-
-    private void freeFrameLocal(int oldFrameLocal) {
-        int i = indexForFrameLocal(oldFrameLocal);
-        if (i < 0)  return;
-        BasicType type = localTypes[i];
-        int newFrameLocal = makeLocalTemp(type);
-        mv.visitVarInsn(loadInsnOpcode(type), oldFrameLocal);
-        mv.visitVarInsn(storeInsnOpcode(type), newFrameLocal);
-        assert(localsMap[i] == oldFrameLocal);
-        localsMap[i] = newFrameLocal;
-        assert(indexForFrameLocal(oldFrameLocal) < 0);
-    }
-    private int indexForFrameLocal(int frameLocal) {
-        for (int i = 0; i < localsMap.length; i++) {
-            if (localsMap[i] == frameLocal && localTypes[i] != V_TYPE)
-                return i;
-        }
-        return -1;
-    }
-    private int makeLocalTemp(BasicType type) {
-        int frameLocal = localsMap[localsMap.length - 1];
-        localsMap[localsMap.length - 1] = frameLocal + type.basicTypeSlots();
-        return frameLocal;
     }
 
     /**

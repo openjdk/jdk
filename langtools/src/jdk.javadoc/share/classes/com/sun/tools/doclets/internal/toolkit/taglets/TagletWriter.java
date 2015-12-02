@@ -66,6 +66,14 @@ public abstract class TagletWriter {
     protected abstract Content codeTagOutput(Tag tag);
 
     /**
+     * Return the output for a {@index...} tag.
+     *
+     * @param tag the tag.
+     * @return the output of the taglet.
+     */
+    protected abstract Content indexTagOutput(Tag tag);
+
+    /**
      * Returns the output for the DocRoot inline tag.
      * @return the output for the DocRoot inline tag.
      */

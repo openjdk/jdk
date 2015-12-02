@@ -27,8 +27,11 @@
  * @summary Reasonable things should happen if mutating while iterating.
  */
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 public class ConcurrentModification {
     static volatile int passed = 0, failed = 0;
