@@ -21,8 +21,11 @@
  * questions.
  */
 
-import java.util.concurrent.*;
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
 
 /**
  * This is not a regression test, but a stress benchmark test for

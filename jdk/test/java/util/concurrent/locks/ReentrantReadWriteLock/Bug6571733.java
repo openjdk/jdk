@@ -27,8 +27,9 @@
  * @summary Check that regaining a read lock succeeds after a write
  *          lock attempt times out
  */
-import java.util.concurrent.locks.*;
-import java.util.concurrent.*;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class Bug6571733 {
 

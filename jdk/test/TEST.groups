@@ -173,6 +173,7 @@ jdk_security3 = \
     com/sun/security \
     -com/sun/security/jgss \
     com/sun/org/apache/xml/internal/security \
+    jdk/security \
     sun/security \
     -sun/security/krb5 \
     -sun/security/jgss \
@@ -453,6 +454,7 @@ needs_jdk = \
   :jdk_jdi \
   com/sun/tools \
   demo \
+  jdk/security/jarsigner \
   sun/security/tools/jarsigner \
   sun/security/tools/policytool \
   sun/rmi/rmic \

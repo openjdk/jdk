@@ -1180,8 +1180,11 @@ public class LocaleEnhanceTest extends LocaleTestFmwk {
             dataDir = new File(dataDirName);
         }
 
-        if (dataDir == null || !dataDir.isDirectory()) {
-            errln("Could not locate the serialized test case data location");
+        if (dataDir == null) {
+            errln("'dataDir' is null. serialized.data.dir Property value is "+dataDirName);
+            return;
+        } else if (!dataDir.isDirectory()) {
+            errln("'dataDir' is not a directory. dataDir: "+dataDir.toString());
             return;
         }
 

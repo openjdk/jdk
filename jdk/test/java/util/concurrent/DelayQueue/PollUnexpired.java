@@ -28,7 +28,9 @@
  * @author Martin Buchholz
  */
 
-import java.util.concurrent.*;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
 
 public class PollUnexpired {
     private static class Godot implements Delayed {

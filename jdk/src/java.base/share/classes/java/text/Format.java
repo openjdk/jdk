@@ -225,7 +225,7 @@ public abstract class Format implements Serializable, Cloneable {
      *            index information as described above.
      * @return An <code>Object</code> parsed from the string. In case of
      *         error, returns null.
-     * @exception NullPointerException if <code>pos</code> is null.
+     * @throws NullPointerException if {@code source} or {@code pos} is null.
      */
     public abstract Object parseObject (String source, ParsePosition pos);
 
@@ -237,6 +237,7 @@ public abstract class Format implements Serializable, Cloneable {
      * @return An <code>Object</code> parsed from the string.
      * @exception ParseException if the beginning of the specified string
      *            cannot be parsed.
+     * @throws NullPointerException if {@code source} is null.
      */
     public Object parseObject(String source) throws ParseException {
         ParsePosition pos = new ParsePosition(0);
