@@ -47,9 +47,7 @@ public class CompileExcludingDependency extends SJavacTester {
 
     // Verify that excluding classes from compilation but not from linking works
     void test() throws Exception {
-        clean(TEST_ROOT);
         Files.createDirectories(BIN);
-        clean(GENSRC,BIN);
         Map<String,Long> previous_bin_state = collectState(BIN);
         ToolBox tb = new ToolBox();
         tb.writeFile(GENSRC.resolve("alfa/omega/A.java"),
@@ -69,6 +67,5 @@ public class CompileExcludingDependency extends SJavacTester {
         verifyThatFilesHaveBeenAdded(previous_bin_state, new_bin_state,
                                      BIN + "/alfa/omega/A.class",
                                      BIN + "/javac_state");
-        clean(GENSRC, BIN);
     }
 }

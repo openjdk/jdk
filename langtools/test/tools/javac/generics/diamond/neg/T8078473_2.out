@@ -1,3 +1,0 @@
-T8078473_2.java:17:13: compiler.warn.diamond.redundant.args.1: java.util.stream.T8078473_2.C<Q,Q>, java.util.stream.T8078473_2.C<java.lang.Object,java.lang.Object>
-T8078473_2.java:18:13: compiler.warn.diamond.redundant.args.1: java.util.stream.T8078473_2.C<Q,Q>, java.util.stream.T8078473_2.C<java.lang.Object,java.lang.Object>
-2 warnings
