@@ -642,6 +642,9 @@ class os: AllStatic {
   // returns NULL if exception_code is not an OS exception/signal.
   static const char* exception_name(int exception_code, char* buf, size_t buflen);
 
+  // Returns the signal number (e.g. 11) for a given signal name (SIGSEGV).
+  static int get_signal_number(const char* signal_name);
+
   // Returns native Java library, loads if necessary
   static void*    native_java_library();
 

@@ -3362,20 +3362,6 @@ void os::Aix::check_signal_handler(int sig) {
   }
 }
 
-extern bool signal_name(int signo, char* buf, size_t len);
-
-const char* os::exception_name(int exception_code, char* buf, size_t size) {
-  if (0 < exception_code && exception_code <= SIGRTMAX) {
-    // signal
-    if (!signal_name(exception_code, buf, size)) {
-      jio_snprintf(buf, size, "SIG%d", exception_code);
-    }
-    return buf;
-  } else {
-    return NULL;
-  }
-}
-
 // To install functions for atexit system call
 extern "C" {
   static void perfMemory_exit_helper() {
