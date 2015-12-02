@@ -4640,7 +4640,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1448463381
+DATE_WHEN_GENERATED=1449049746
 
 ###############################################################################
 #
@@ -56337,14 +56337,6 @@ $as_echo_n "checking for appropriate number of jobs to run in parallel... " >&6;
       JOBS="$memory_gb"
     else
       JOBS="$NUM_CORES"
-      # On bigger machines, leave some room for other processes to run
-      if test "$JOBS" -gt "4"; then
-        JOBS=`expr $JOBS '*' 90 / 100`
-      fi
-    fi
-    # Cap number of jobs to 16
-    if test "$JOBS" -gt "16"; then
-      JOBS=16
     fi
     if test "$JOBS" -eq "0"; then
       JOBS=1
