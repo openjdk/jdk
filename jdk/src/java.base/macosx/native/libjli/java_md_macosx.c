@@ -245,6 +245,8 @@ static InvocationFunctions *GetExportedJNIFunctions() {
     return sExportedJNIFunctions = fxns;
 }
 
+#ifndef STATIC_BUILD
+
 JNIEXPORT jint JNICALL
 JNI_GetDefaultJavaVMInitArgs(void *args) {
     InvocationFunctions *ifn = GetExportedJNIFunctions();
@@ -265,6 +267,7 @@ JNI_GetCreatedJavaVMs(JavaVM **vmBuf, jsize bufLen, jsize *nVMs) {
     if (ifn == NULL) return JNI_ERR;
     return ifn->GetCreatedJavaVMs(vmBuf, bufLen, nVMs);
 }
+#endif
 
 /*
  * Allow JLI-aware launchers to specify a client/server preference
@@ -303,7 +306,12 @@ static void *apple_main (void *arg)
     objc_registerThreadWithCollector();
 
     if (main_fptr == NULL) {
+#ifdef STATIC_BUILD
+        extern int main(int argc, char **argv);
+        main_fptr = &main;
+#else
         main_fptr = (int (*)())dlsym(RTLD_DEFAULT, "main");
+#endif
         if (main_fptr == NULL) {
             JLI_ReportErrorMessageSys("error locating main entrypoint\n");
             exit(1);
@@ -588,6 +596,9 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
 
     JLI_TraceLauncher("Does `%s' exist ... ", jvmpath);
 
+#ifdef STATIC_BUILD
+    return JNI_TRUE;
+#else
     if (stat(jvmpath, &s) == 0) {
         JLI_TraceLauncher("yes.\n");
         return JNI_TRUE;
@@ -595,6 +606,7 @@ GetJVMPath(const char *jrepath, const char *jvmtype,
         JLI_TraceLauncher("no.\n");
         return JNI_FALSE;
     }
+#endif
 }
 
 /*
@@ -607,10 +619,18 @@ GetJREPath(char *path, jint pathsize, const char * arch, jboolean speculative)
 
     if (GetApplicationHome(path, pathsize)) {
         /* Is JRE co-located with the application? */
+#ifdef STATIC_BUILD
+        char jvm_cfg[MAXPATHLEN];
+        JLI_Snprintf(jvm_cfg, sizeof(jvm_cfg), "%s/lib/jvm.cfg", path);
+        if (access(jvm_cfg, F_OK) == 0) {
+            return JNI_TRUE;
+        }
+#else
         JLI_Snprintf(libjava, sizeof(libjava), "%s/lib/" JAVA_DLL, path);
         if (access(libjava, F_OK) == 0) {
             return JNI_TRUE;
         }
+#endif
         /* ensure storage for path + /jre + NULL */
         if ((JLI_StrLen(path) + 4 + 1) > (size_t) pathsize) {
             JLI_TraceLauncher("Insufficient space to store JRE path\n");
@@ -628,6 +648,24 @@ GetJREPath(char *path, jint pathsize, const char * arch, jboolean speculative)
     /* try to find ourselves instead */
     Dl_info selfInfo;
     dladdr(&GetJREPath, &selfInfo);
+
+#ifdef STATIC_BUILD
+    char jvm_cfg[MAXPATHLEN];
+    char *p = NULL;
+    strncpy(jvm_cfg, selfInfo.dli_fname, MAXPATHLEN);
+    p = strrchr(jvm_cfg, '/'); *p = '\0';
+    p = strrchr(jvm_cfg, '/');
+    if (strcmp(p, "/.") == 0) {
+      *p = '\0';
+      p = strrchr(jvm_cfg, '/'); *p = '\0';
+    }
+    else *p = '\0';
+    strncpy(path, jvm_cfg, pathsize);
+    strncat(jvm_cfg, "/lib/jvm.cfg", MAXPATHLEN);
+    if (access(jvm_cfg, F_OK) == 0) {
+      return JNI_TRUE;
+    }
+#endif
 
     char *realPathToSelf = realpath(selfInfo.dli_fname, path);
     if (realPathToSelf != path) {
@@ -664,7 +702,11 @@ LoadJavaVM(const char *jvmpath, InvocationFunctions *ifn)
 
     JLI_TraceLauncher("JVM path is %s\n", jvmpath);
 
+#ifndef STATIC_BUILD
     libjvm = dlopen(jvmpath, RTLD_NOW + RTLD_GLOBAL);
+#else
+    libjvm = dlopen(NULL, RTLD_FIRST);
+#endif
     if (libjvm == NULL) {
         JLI_ReportErrorMessage(DLL_ERROR1, __LINE__);
         JLI_ReportErrorMessage(DLL_ERROR2, jvmpath, dlerror());
@@ -714,9 +756,14 @@ SetExecname(char **argv)
     char* exec_path = NULL;
     {
         Dl_info dlinfo;
-        int (*fptr)();
 
+#ifdef STATIC_BUILD
+        void *fptr;
+        fptr = (void *)&SetExecname;
+#else
+        int (*fptr)();
         fptr = (int (*)())dlsym(RTLD_DEFAULT, "main");
+#endif
         if (fptr == NULL) {
             JLI_ReportErrorMessage(DLL_ERROR3, dlerror());
             return JNI_FALSE;

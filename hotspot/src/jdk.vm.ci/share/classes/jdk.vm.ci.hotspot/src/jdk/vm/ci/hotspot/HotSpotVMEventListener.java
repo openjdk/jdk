@@ -22,8 +22,10 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.code.*;
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.code.CompilationResult;
+import jdk.vm.ci.code.InstalledCode;
+import jdk.vm.ci.meta.JVMCIMetaAccessContext;
+import jdk.vm.ci.meta.ResolvedJavaType;
 
 public interface HotSpotVMEventListener {
 
@@ -34,21 +36,13 @@ public interface HotSpotVMEventListener {
     }
 
     /**
-     * Notify on successful install into the CodeCache.
+     * Notify on successful install into the code cache.
      *
      * @param hotSpotCodeCacheProvider
      * @param installedCode
      * @param compResult
      */
     default void notifyInstall(HotSpotCodeCacheProvider hotSpotCodeCacheProvider, InstalledCode installedCode, CompilationResult compResult) {
-    }
-
-    /**
-     * Perform any extra initialization required.
-     *
-     * @param runtime
-     */
-    default void completeInitialization(HotSpotJVMCIRuntime runtime) {
     }
 
     /**

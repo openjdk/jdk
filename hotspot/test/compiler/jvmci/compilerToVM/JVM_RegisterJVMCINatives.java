@@ -22,7 +22,7 @@
  *
  */
 
-/**
+/*
  * @test
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
@@ -40,7 +40,6 @@
 
 package compiler.jvmci.compilerToVM;
 
-import jdk.vm.ci.hotspot.CompilerToVM;
 import jdk.vm.ci.runtime.JVMCI;
 import jdk.test.lib.Asserts;
 
@@ -88,9 +87,12 @@ public class JVM_RegisterJVMCINatives {
     private JVM_RegisterJVMCINatives() {
         Method method;
         try {
-            method = CompilerToVM.class.getDeclaredMethod("registerNatives");
+            method = Class.forName("jdk.vm.ci.hotspot.CompilerToVM",
+                    /* initialize = */ false,
+                    this.getClass().getClassLoader())
+                    .getDeclaredMethod("registerNatives");
             method.setAccessible(true);
-        } catch (NoSuchMethodException e) {
+        } catch (ReflectiveOperationException e) {
             throw new Error("can't find CompilerToVM::registerNatives", e);
         }
         registerNatives = method;

@@ -94,10 +94,15 @@ volatile int StringTable::_parallel_claimed_idx = 0;
 CompactHashtable<oop, char> StringTable::_shared_table;
 
 // Pick hashing algorithm
-unsigned int StringTable::hash_string(const jchar* s, int len) {
+template<typename T>
+unsigned int StringTable::hash_string(const T* s, int len) {
   return use_alternate_hashcode() ? AltHashing::murmur3_32(seed(), s, len) :
                                     java_lang_String::hash_code(s, len);
 }
+
+// Explicit instantiation for all supported types.
+template unsigned int StringTable::hash_string<jchar>(const jchar* s, int len);
+template unsigned int StringTable::hash_string<jbyte>(const jbyte* s, int len);
 
 oop StringTable::lookup_shared(jchar* name, int len) {
   // java_lang_String::hash_code() was used to compute hash values in the shared table. Don't
@@ -409,17 +414,25 @@ void StringTable::dump(outputStream* st, bool verbose) {
       for ( ; p != NULL; p = p->next()) {
         oop s = p->literal();
         typeArrayOop value  = java_lang_String::value(s);
-        int          offset = java_lang_String::offset(s);
         int          length = java_lang_String::length(s);
+        bool      is_latin1 = java_lang_String::is_latin1(s);
 
         if (length <= 0) {
           st->print("%d: ", length);
         } else {
           ResourceMark rm(THREAD);
-          jchar* chars = (jchar*)value->char_at_addr(offset);
-          int utf8_length = UNICODE::utf8_length(chars, length);
-          char* utf8_string = NEW_RESOURCE_ARRAY(char, utf8_length + 1);
-          UNICODE::convert_to_utf8(chars, length, utf8_string);
+          int utf8_length;
+          char* utf8_string;
+
+          if (!is_latin1) {
+            jchar* chars = value->char_at_addr(0);
+            utf8_length = UNICODE::utf8_length(chars, length);
+            utf8_string = UNICODE::as_utf8(chars, length);
+          } else {
+            jbyte* bytes = value->byte_at_addr(0);
+            utf8_length = UNICODE::utf8_length(bytes, length);
+            utf8_string = UNICODE::as_utf8(bytes, length);
+          }
 
           st->print("%d: ", utf8_length);
           HashtableTextDump::put_utf8(st, utf8_string, utf8_length);

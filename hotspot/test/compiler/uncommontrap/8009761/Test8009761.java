@@ -27,7 +27,7 @@ import java.lang.reflect.Method;
 /*
  * @test
  * @bug 8009761
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @summary Deoptimization on sparc doesn't set Llast_SP correctly in the interpreter frames it creates
  * @build Test8009761
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

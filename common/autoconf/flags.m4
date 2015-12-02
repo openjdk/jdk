@@ -191,13 +191,13 @@ AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
     # The \$ are escaped to the shell, and the $(...) variables
     # are evaluated by make.
     RC_FLAGS="$RC_FLAGS \
-        -D\"JDK_BUILD_ID=\$(FULL_VERSION)\" \
+        -D\"JDK_VERSION_STRING=\$(VERSION_STRING)\" \
         -D\"JDK_COMPANY=\$(COMPANY_NAME)\" \
         -D\"JDK_COMPONENT=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) binary\" \
-        -D\"JDK_VER=\$(JDK_MINOR_VERSION).\$(JDK_MICRO_VERSION).\$(if \$(JDK_UPDATE_VERSION),\$(JDK_UPDATE_VERSION),0).\$(COOKED_BUILD_NUMBER)\" \
+        -D\"JDK_VER=\$(VERSION_NUMBER)\" \
         -D\"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\" \
-        -D\"JDK_NAME=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) \$(JDK_MINOR_VERSION) \$(JDK_UPDATE_META_TAG)\" \
-        -D\"JDK_FVER=\$(JDK_MINOR_VERSION),\$(JDK_MICRO_VERSION),\$(if \$(JDK_UPDATE_VERSION),\$(JDK_UPDATE_VERSION),0),\$(COOKED_BUILD_NUMBER)\""
+        -D\"JDK_NAME=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) \$(VERSION_MAJOR)\" \
+        -D\"JDK_FVER=\$(subst .,\$(COMMA),\$(VERSION_NUMBER_FOUR_POSITIONS))\""
   fi
   AC_SUBST(RC_FLAGS)
 
@@ -666,10 +666,6 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DDEBUG"
   fi
 
-  # Setup release name
-  COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DRELEASE='\"\$(RELEASE)\"'"
-
-
   # Set some additional per-OS defines.
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
@@ -980,6 +976,19 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
         DISABLE_WARNING_PREFIX=
       fi
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
+      # Repeate the check for the BUILD_CC
+      CC_OLD="$CC"
+      CC="$BUILD_CC"
+      FLAGS_COMPILER_CHECK_ARGUMENTS([-Wno-this-is-a-warning-that-do-not-exist],
+          [BUILD_CC_CAN_DISABLE_WARNINGS=true],
+          [BUILD_CC_CAN_DISABLE_WARNINGS=false]
+      )
+      if test "x$BUILD_CC_CAN_DISABLE_WARNINGS" = "xtrue"; then
+        BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"
+      else
+        BUILD_CC_DISABLE_WARNING_PREFIX=
+      fi
+      CC="$CC_OLD"
       ;;
     clang)
       DISABLE_WARNING_PREFIX="-Wno-"

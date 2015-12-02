@@ -325,23 +325,6 @@ public abstract class KeyboardFocusManager
     };
 
     /**
-     * The default strokes for initializing the default focus traversal keys.
-     */
-    private static final AWTKeyStroke[][] defaultFocusTraversalKeyStrokes = {
-        {
-            AWTKeyStroke.getAWTKeyStroke(KeyEvent.VK_TAB, 0, false),
-            AWTKeyStroke.getAWTKeyStroke(KeyEvent.VK_TAB, InputEvent.CTRL_DOWN_MASK | InputEvent.CTRL_MASK, false),
-        },
-        {
-            AWTKeyStroke.getAWTKeyStroke(KeyEvent.VK_TAB, InputEvent.SHIFT_DOWN_MASK | InputEvent.SHIFT_MASK, false),
-            AWTKeyStroke.getAWTKeyStroke(KeyEvent.VK_TAB,
-                                         InputEvent.SHIFT_DOWN_MASK | InputEvent.SHIFT_MASK | InputEvent.CTRL_DOWN_MASK | InputEvent.CTRL_MASK,
-                                         false),
-        },
-        {},
-        {},
-      };
-    /**
      * The default focus traversal keys. Each array of traversal keys will be
      * in effect on all Windows that have no such array of their own explicitly
      * set. Each array will also be inherited, recursively, by any child
@@ -431,6 +414,27 @@ public abstract class KeyboardFocusManager
      * Initializes a KeyboardFocusManager.
      */
     public KeyboardFocusManager() {
+        AWTKeyStroke[][] defaultFocusTraversalKeyStrokes = {
+                {
+                        AWTKeyStroke.getAWTKeyStroke(KeyEvent.VK_TAB, 0, false),
+                        AWTKeyStroke.getAWTKeyStroke(KeyEvent.VK_TAB,
+                                InputEvent.CTRL_DOWN_MASK |
+                                        InputEvent.CTRL_MASK, false),
+                },
+                {
+                        AWTKeyStroke.getAWTKeyStroke(KeyEvent.VK_TAB,
+                                InputEvent.SHIFT_DOWN_MASK |
+                                        InputEvent.SHIFT_MASK, false),
+                        AWTKeyStroke.getAWTKeyStroke(KeyEvent.VK_TAB,
+                                InputEvent.SHIFT_DOWN_MASK |
+                                        InputEvent.SHIFT_MASK |
+                                        InputEvent.CTRL_DOWN_MASK |
+                                        InputEvent.CTRL_MASK,
+                                false),
+                },
+                {},
+                {},
+        };
         for (int i = 0; i < TRAVERSAL_KEY_LENGTH; i++) {
             Set<AWTKeyStroke> work_set = new HashSet<>();
             for (int j = 0; j < defaultFocusTraversalKeyStrokes[i].length; j++) {

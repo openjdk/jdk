@@ -139,7 +139,13 @@ public class ToolBasicTest extends ReplToolTesting {
                     (a) -> assertCommand(a, "class A {}\u0003", ""),
                     (a) -> assertCommandCheckOutput(a, "/c", assertClasses()),
                     (a) -> assertClass(a, "interface A {}", "interface", "A"),
-                    (a) -> assertCommandCheckOutput(a, "/c", assertClasses())
+                    (a) -> assertCommandCheckOutput(a, "/c", assertClasses()),
+                    (a) -> assertCommand(a, "import java.util.stream." + s, ""),
+                    interrupt,
+                    (a) -> assertCommand(a, "import java.util.stream.\u0003", ""),
+                    (a) -> assertCommandCheckOutput(a, "/i", assertImports()),
+                    (a) -> assertImport(a, "import java.util.stream.Stream", "", "java.util.stream.Stream"),
+                    (a) -> assertCommandCheckOutput(a, "/i", assertImports())
             );
         }
     }
@@ -364,6 +370,35 @@ public class ToolBasicTest extends ReplToolTesting {
         );
     }
 
+    public void defineImports() {
+        test(
+                (a) -> assertCommandCheckOutput(a, "/l", assertList()),
+                (a) -> assertCommandCheckOutput(a, "/list", assertList()),
+                (a) -> assertCommandCheckOutput(a, "/i", assertImports()),
+                (a) -> assertCommandCheckOutput(a, "/imports", assertImports()),
+                (a) -> assertImport(a, "import java.util.stream.Stream;", "", "java.util.stream.Stream"),
+                (a) -> assertCommandCheckOutput(a, "/l", assertList()),
+                (a) -> assertCommandCheckOutput(a, "/list", assertList()),
+                (a) -> assertCommandCheckOutput(a, "/i", assertImports()),
+                (a) -> assertCommandCheckOutput(a, "/imports", assertImports()),
+                (a) -> assertImport(a, "import java.util.stream.*;", "", "java.util.stream.*"),
+                (a) -> assertCommandCheckOutput(a, "/l", assertList()),
+                (a) -> assertCommandCheckOutput(a, "/list", assertList()),
+                (a) -> assertCommandCheckOutput(a, "/i", assertImports()),
+                (a) -> assertCommandCheckOutput(a, "/imports", assertImports()),
+                (a) -> assertImport(a, "import static java.lang.Math.PI;", "static", "java.lang.Math.PI"),
+                (a) -> assertCommandCheckOutput(a, "/l", assertList()),
+                (a) -> assertCommandCheckOutput(a, "/list", assertList()),
+                (a) -> assertCommandCheckOutput(a, "/i", assertImports()),
+                (a) -> assertCommandCheckOutput(a, "/imports", assertImports()),
+                (a) -> assertImport(a, "import static java.lang.Math.*;", "static", "java.lang.Math.*"),
+                (a) -> assertCommandCheckOutput(a, "/l", assertList()),
+                (a) -> assertCommandCheckOutput(a, "/list", assertList()),
+                (a) -> assertCommandCheckOutput(a, "/i", assertImports()),
+                (a) -> assertCommandCheckOutput(a, "/imports", assertImports())
+        );
+    }
+
     public void testClasspathDirectory() {
         Compiler compiler = new Compiler();
         Path outDir = Paths.get("testClasspathDirectory");
@@ -443,10 +478,13 @@ public class ToolBasicTest extends ReplToolTesting {
                 (a) -> assertCommandCheckOutput(a, "/m", assertMethods()),
                 (a) -> assertClass(a, "class A { }", "class", "A"),
                 (a) -> assertCommandCheckOutput(a, "/c", assertClasses()),
+                (a) -> assertImport(a, "import java.util.stream.*;", "", "java.util.stream.*"),
+                (a) -> assertCommandCheckOutput(a, "/i", assertImports()),
                 (a) -> assertReset(a, "/reset"),
                 (a) -> assertCommandCheckOutput(a, "/v", assertVariables()),
                 (a) -> assertCommandCheckOutput(a, "/m", assertMethods()),
-                (a) -> assertCommandCheckOutput(a, "/c", assertClasses())
+                (a) -> assertCommandCheckOutput(a, "/c", assertClasses()),
+                (a) -> assertCommandCheckOutput(a, "/i", assertImports())
         );
     }
 
@@ -455,22 +493,26 @@ public class ToolBasicTest extends ReplToolTesting {
         Path path = compiler.getPath("testOpen.repl");
         compiler.writeToFile(path,
                 "int a = 10;\ndouble x = 20;\ndouble a = 10;\n" +
-                        "class A { public String toString() { return \"A\"; } }");
+                        "class A { public String toString() { return \"A\"; } }\nimport java.util.stream.*;");
         for (String s : new String[]{"/o", "/open"}) {
             test(
                     (a) -> assertCommand(a, s + " " + path.toString(), ""),
                     (a) -> assertCommand(a, "a", "|  Variable a of type double has value 10.0\n"),
                     (a) -> evaluateExpression(a, "A", "new A();", "\"A\""),
+                    (a) -> evaluateExpression(a, "long", "Stream.of(\"A\").count();", "1"),
                     (a) -> {
                         loadVariable(a, "double", "x", "20.0", "20.0");
                         loadVariable(a, "double", "a", "10.0", "10.0");
-                        loadVariable(a, "A", "$6", "new A();", "A");
+                        loadVariable(a, "A", "$7", "new A();", "A");
+                        loadVariable(a, "long", "$8", "Stream.of(\"A\").count();", "1");
                         loadClass(a, "class A { public String toString() { return \"A\"; } }",
                                 "class", "A");
+                        loadImport(a, "import java.util.stream.*;", "", "java.util.stream.*");
                         assertCommandCheckOutput(a, "/c", assertClasses());
                     },
                     (a) -> assertCommandCheckOutput(a, "/m", assertMethods()),
-                    (a) -> assertCommandCheckOutput(a, "/v", assertVariables())
+                    (a) -> assertCommandCheckOutput(a, "/v", assertVariables()),
+                    (a) -> assertCommandCheckOutput(a, "/i", assertImports())
             );
             Path unknown = compiler.getPath("UNKNOWN.repl");
             test(
@@ -536,6 +578,7 @@ public class ToolBasicTest extends ReplToolTesting {
                     (a) -> assertVariable(a, "int", "a"),
                     (a) -> assertVariable(a, "double", "b", "10", "10.0"),
                     (a) -> assertMethod(a, "void f() {}", "()V", "f"),
+                    (a) -> assertImport(a, "import java.util.stream.*;", "", "java.util.stream.*"),
                     (a) -> assertCommand(a, "/s " + startUpFile.toString(), null),
                     (a) -> assertCommand(a, "/setstart " + startUpFile.toString(), null)
             );
@@ -549,10 +592,12 @@ public class ToolBasicTest extends ReplToolTesting {
                         loadVariable(a, "int", "a");
                         loadVariable(a, "double", "b", "10.0", "10.0");
                         loadMethod(a, "void f() {}", "()void", "f");
+                        loadImport(a, "import java.util.stream.*;", "", "java.util.stream.*");
                         assertCommandCheckOutput(a, "/c", assertClasses());
                     },
                     (a) -> assertCommandCheckOutput(a, "/v", assertVariables()),
-                    (a) -> assertCommandCheckOutput(a, "/m", assertMethods())
+                    (a) -> assertCommandCheckOutput(a, "/m", assertMethods()),
+                    (a) -> assertCommandCheckOutput(a, "/i", assertImports())
             );
         } finally {
             removeStartup();
@@ -768,9 +813,12 @@ public class ToolBasicTest extends ReplToolTesting {
                     a -> dropMethod(a, drop + " 2", "b ()I"),
                     a -> assertClass(a, "class A {}", "class", "A"),
                     a -> dropClass(a, drop + " 3", "class A"),
+                    a -> assertImport(a, "import java.util.stream.*;", "", "java.util.stream.*"),
+                    a -> dropImport(a, drop + " 4", "import java.util.stream.*"),
                     a -> assertCommandCheckOutput(a, "/v", assertVariables()),
                     a -> assertCommandCheckOutput(a, "/m", assertMethods()),
-                    a -> assertCommandCheckOutput(a, "/c", assertClasses())
+                    a -> assertCommandCheckOutput(a, "/c", assertClasses()),
+                    a -> assertCommandCheckOutput(a, "/i", assertImports())
             );
             test(false, new String[]{"-nostartup"},
                     a -> assertVariable(a, "int", "a"),
@@ -781,7 +829,8 @@ public class ToolBasicTest extends ReplToolTesting {
                     a -> dropClass(a, drop + " A", "class A"),
                     a -> assertCommandCheckOutput(a, "/v", assertVariables()),
                     a -> assertCommandCheckOutput(a, "/m", assertMethods()),
-                    a -> assertCommandCheckOutput(a, "/c", assertClasses())
+                    a -> assertCommandCheckOutput(a, "/c", assertClasses()),
+                    a -> assertCommandCheckOutput(a, "/i", assertImports())
             );
         }
     }
@@ -814,7 +863,8 @@ public class ToolBasicTest extends ReplToolTesting {
                     a -> assertCommandCheckOutput(a, drop + " a", check),
                     a -> assertCommandCheckOutput(a, "/v", assertVariables()),
                     a -> assertCommandCheckOutput(a, "/m", assertMethods()),
-                    a -> assertCommandCheckOutput(a, "/c", assertClasses())
+                    a -> assertCommandCheckOutput(a, "/c", assertClasses()),
+                    a -> assertCommandCheckOutput(a, "/i", assertImports())
             );
             test(
                     a -> assertMethod(a, "int a() { return 0; }", "()int", "a"),

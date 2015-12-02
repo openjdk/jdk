@@ -510,7 +510,7 @@ public class ConcurrentSkipListSet<E>
         U.putObjectVolatile(this, MAP, map);
     }
 
-    private static final sun.misc.Unsafe U = sun.misc.Unsafe.getUnsafe();
+    private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
     private static final long MAP;
     static {
         try {

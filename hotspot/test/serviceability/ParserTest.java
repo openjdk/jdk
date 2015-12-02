@@ -24,7 +24,7 @@
 /*
  * @test
  * @summary Test that the diagnostic command arguemnt parser works
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @build ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.parser.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

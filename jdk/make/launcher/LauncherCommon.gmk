@@ -122,8 +122,23 @@ define SetupBuildLauncherBody
     endif
 
     $1_CFLAGS += -DPACKAGE_PATH='"$(PACKAGE_PATH)"'
-    $1_LDFLAGS += -Wl,-all_load $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a \
+    $1_LDFLAGS += -Wl,-all_load \
         -sectcreate __TEXT __info_plist $(MACOSX_PLIST_DIR)/$$($1_PLIST_FILE)
+    ifeq ($(STATIC_BUILD), true)
+      $1_LDFLAGS += -exported_symbols_list \
+              $(SUPPORT_OUTPUTDIR)/build-static/exported.symbols
+      $1_LIBS += \
+          $(shell $(FIND) $(SUPPORT_OUTPUTDIR)/modules_libs/java.base -name "*.a") \
+          $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libdt_socket.a \
+          $(SUPPORT_OUTPUTDIR)/modules_libs/jdk.jdwp.agent/libjdwp.a \
+          $(SUPPORT_OUTPUTDIR)/native/java.base/$(LIBRARY_PREFIX)fdlibm$(STATIC_LIBRARY_SUFFIX) \
+          -framework CoreFoundation \
+          -framework Foundation \
+          -framework SystemConfiguration \
+          -lstdc++ -liconv
+    else
+      $1_LIBS += $(SUPPORT_OUTPUTDIR)/native/java.base/libjli_static.a
+    endif
     $1_LIBS += -framework Cocoa -framework Security \
         -framework ApplicationServices
   endif
@@ -168,9 +183,7 @@ define SetupBuildLauncherBody
       OPTIMIZATION := $$($1_OPTIMIZATION), \
       CFLAGS := $$($1_CFLAGS) \
           $(LAUNCHER_CFLAGS) \
-          -DFULL_VERSION='"$(FULL_VERSION)"' \
-          -DJDK_MAJOR_VERSION='"$(JDK_MAJOR_VERSION)"' \
-          -DJDK_MINOR_VERSION='"$(JDK_MINOR_VERSION)"' \
+          $(VERSION_CFLAGS) \
           -DLAUNCHER_NAME='"$(LAUNCHER_NAME)"' \
           -DPROGNAME='"$1"' \
           $$($1_CFLAGS), \
@@ -206,7 +219,7 @@ define SetupBuildLauncherBody
           -D "JDK_FTYPE=0x1L" \
           $$($1_RC_FLAGS), \
       MANIFEST := $(JAVA_MANIFEST), \
-      MANIFEST_VERSION := $(JDK_VERSION_FOR_MANIFEST), \
+      MANIFEST_VERSION := $(VERSION_NUMBER_FOUR_POSITIONS), \
       CODESIGN := $$($1_CODESIGN), \
   ))
 

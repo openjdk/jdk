@@ -1,3 +1,2 @@
 TargetType68.java:61:32: compiler.err.cant.inherit.from.final: TargetType68.XYChart.Series
-TargetType68.java:61:39: compiler.err.cant.inherit.from.final: TargetType68.XYChart.Series
-2 errors
+1 error

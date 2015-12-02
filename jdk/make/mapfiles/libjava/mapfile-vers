@@ -211,6 +211,7 @@ SUNWprivate_1.1 {
 		Java_java_lang_SecurityManager_getClassContext;
 		Java_java_lang_Shutdown_halt0;
 		Java_java_lang_String_intern;
+		Java_java_lang_StringUTF16_isBigEndian;
 		Java_java_lang_System_identityHashCode;
 		Java_java_lang_System_initProperties;
 		Java_java_lang_System_mapLibraryName;
@@ -267,9 +268,7 @@ SUNWprivate_1.1 {
 		Java_sun_reflect_Reflection_getCallerClass__I;
 		Java_sun_reflect_Reflection_getClassAccessFlags;
                 Java_sun_misc_Version_getJdkVersionInfo;
-                Java_sun_misc_Version_getJdkSpecialVersion;
                 Java_sun_misc_Version_getJvmVersionInfo;
-                Java_sun_misc_Version_getJvmSpecialVersion;
 		Java_sun_misc_VM_latestUserDefinedLoader;
                 Java_sun_misc_VM_getuid;
                 Java_sun_misc_VM_geteuid;

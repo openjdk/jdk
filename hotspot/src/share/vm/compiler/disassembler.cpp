@@ -86,6 +86,12 @@ bool Disassembler::load_library() {
   os::jvm_path(buf, sizeof(buf));
   int jvm_offset = -1;
   int lib_offset = -1;
+#ifdef STATIC_BUILD
+  char* p = strrchr(buf, '/');
+  *p = '\0';
+  strcat(p, "/lib/");
+  lib_offset = jvm_offset = strlen(buf);
+#else
   {
     // Match "jvm[^/]*" in jvm_path.
     const char* base = buf;
@@ -94,6 +100,7 @@ bool Disassembler::load_library() {
     p = strstr(p ? p : base, "jvm");
     if (p != NULL)  jvm_offset = p - base;
   }
+#endif
   // Find the disassembler shared library.
   // Search for several paths derived from libjvm, in this order:
   // 1. <home>/jre/lib/<arch>/<vm>/libhsdis-<arch>.so  (for compatibility)

@@ -73,12 +73,14 @@ else
 endif
 
 # The following variables are defined in the generated flags.make file.
-JDK_VER_DEFS  = -DJDK_MAJOR_VERSION="\"$(JDK_MAJOR_VERSION)\"" \
-		-DJDK_MINOR_VERSION="\"$(JDK_MINOR_VERSION)\"" \
-		-DJDK_MICRO_VERSION="\"$(JDK_MICRO_VERSION)\"" \
-		-DJDK_BUILD_NUMBER="\"$(JDK_BUILD_NUMBER)\""
-VM_VER_DEFS   = -DHOTSPOT_RELEASE_VERSION="\"$(HS_BUILD_VER)\"" \
-		-DJRE_RELEASE_VERSION="\"$(JRE_RELEASE_VER)\""  \
+JDK_VER_DEFS  = -DVERSION_MAJOR=$(VERSION_MAJOR) \
+		-DVERSION_MINOR=$(VERSION_MINOR) \
+		-DVERSION_SECURITY=$(VERSION_SECURITY) \
+	        -DVERSION_PATCH=$(VERSION_PATCH) \
+		-DVERSION_BUILD=$(VERSION_BUILD)
+VM_VER_DEFS   = -DHOTSPOT_VERSION_STRING="\"$(HOTSPOT_VERSION_STRING)\"" \
+		-DVERSION_STRING="\"$(VERSION_STRING)\""  \
+	        -DDEBUG_LEVEL="\"$(DEBUG_LEVEL)\"" \
 		$(JDK_VER_DEFS)
 HS_LIB_ARCH   = -DHOTSPOT_LIB_ARCH=\"$(LIBARCH)\"
 BUILD_USER    = -DHOTSPOT_BUILD_USER="\"$(HOTSPOT_BUILD_USER)\""
@@ -142,10 +144,10 @@ include $(MAKEFILES_DIR)/dtrace.make
 
 JVM    = jvm
 ifeq ($(OS_VENDOR), Darwin)
-  LIBJVM   = lib$(JVM).dylib
+  LIBJVM   = lib$(JVM).$(LIBRARY_SUFFIX)
   CFLAGS  += -D_XOPEN_SOURCE -D_DARWIN_C_SOURCE
 
-  LIBJVM_DEBUGINFO   = lib$(JVM).dylib.dSYM
+  LIBJVM_DEBUGINFO   = lib$(JVM).$(LIBRARY_SUFFIX).dSYM
   LIBJVM_DIZ         = lib$(JVM).diz
 else
   LIBJVM   = lib$(JVM).so
@@ -261,6 +263,16 @@ mapfile : $(MAPFILE) mapfile_extra vm.def
                  { print $$0 }				\
              }' > $@ < $(MAPFILE)
 
+ifeq ($(STATIC_BUILD),true)
+EXPORTED_SYMBOLS = libjvm.symbols
+
+libjvm.symbols : mapfile
+	$(CP) mapfile libjvm.symbols
+
+else
+EXPORTED_SYMBOLS =
+endif
+
 mapfile_reorder : mapfile $(REORDERFILE)
 	rm -f $@
 	cat $^ > $@
@@ -288,9 +300,11 @@ else
   LFLAGS_VM                += $(SONAMEFLAG:SONAME=$(LIBJVM))
 
   ifeq ($(OS_VENDOR), Darwin)
-    LFLAGS_VM += -Xlinker -rpath -Xlinker @loader_path/.
-    LFLAGS_VM += -Xlinker -rpath -Xlinker @loader_path/..
-    LFLAGS_VM += -Xlinker -install_name -Xlinker @rpath/$(@F)
+    ifneq ($(STATIC_BUILD),true)
+      LFLAGS_VM += -Xlinker -rpath -Xlinker @loader_path/.
+      LFLAGS_VM += -Xlinker -rpath -Xlinker @loader_path/..
+      LFLAGS_VM += -Xlinker -install_name -Xlinker @rpath/$(@F)
+    endif
   else
     LFLAGS_VM                += -Wl,-z,defs
   endif
@@ -345,6 +359,10 @@ LD_SCRIPT_FLAG = -Wl,-T,$(LD_SCRIPT)
 endif
 
 $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
+ifeq ($(STATIC_BUILD),true)
+	echo Linking static vm...;
+	$(LINK_LIB.CC) $@ $(LIBJVM.o)
+else
 	$(QUIETLY) {                                                    \
 	    echo $(LOG_INFO) Linking vm...;                                         \
 	    $(LINK_LIB.CXX/PRE_HOOK)                                     \
@@ -353,6 +371,8 @@ $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 	    $(LINK_LIB.CXX/POST_HOOK)                                    \
 	    rm -f $@.1; ln -s $@ $@.1;                                  \
 	}
+
+endif
 
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   ifeq ($(OS_VENDOR), Darwin)
@@ -410,10 +430,10 @@ include $(MAKEFILES_DIR)/saproc.make
 
 ifeq ($(OS_VENDOR), Darwin)
 # no libjvm_db for macosx
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(BUILDLIBSAPROC) dtraceCheck
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(BUILDLIBSAPROC) dtraceCheck $(EXPORTED_SYMBOLS)
 	echo "Doing vm.make build:"
 else
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC)
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC) $(EXPORTED_SYMBOLS)
 endif
 
 install: install_jvm install_jsig install_saproc

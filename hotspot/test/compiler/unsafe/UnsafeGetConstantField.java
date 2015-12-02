@@ -26,7 +26,7 @@
 /*
  * @test
  * @summary tests on constant folding of unsafe get operations
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @run main/bootclasspath -XX:+UnlockDiagnosticVMOptions
  *                   -Xbatch -XX:-TieredCompilation
  *                   -XX:+FoldStableValues
@@ -43,13 +43,13 @@ package java.lang.invoke;
 import jdk.internal.org.objectweb.asm.*;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
-import sun.misc.Unsafe;
+import jdk.internal.misc.Unsafe;
 import static jdk.internal.org.objectweb.asm.Opcodes.*;
 
 public class UnsafeGetConstantField {
     static final Class<?> THIS_CLASS = UnsafeGetConstantField.class;
 
-    static final Unsafe U = Utils.getUnsafe();
+    static final Unsafe U = Unsafe.getUnsafe();
 
     public static void main(String[] args) {
         testUnsafeGetAddress();

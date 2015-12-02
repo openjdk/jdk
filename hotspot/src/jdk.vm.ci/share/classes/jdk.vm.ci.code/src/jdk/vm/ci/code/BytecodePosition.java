@@ -22,9 +22,9 @@
  */
 package jdk.vm.ci.code;
 
-import java.util.*;
+import java.util.Objects;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
 
 /**
  * Represents a code position, that is, a chain of inlined methods with bytecode locations, that is

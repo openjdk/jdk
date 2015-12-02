@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,12 +38,13 @@ public class Test6981737 {
      */
     public static void main(String[] args) throws Exception {
 
-        String version = verifyProperty("java.version", "[0-9]+\\.[0-9]+\\..*");
-        String major_version_spec = version.split("\\.")[1];
+        String version = verifyProperty("java.version", "[0-9]+[\\\\.[0-9]+]*\\-.*");
+        String version_tokens[] = version.split("-|\\.");
+        String major_version_spec = version_tokens[0];
         int major_version = new Integer(major_version_spec).intValue();
 
         String vendor_re = "Oracle Corporation";
-        String vm_spec_version_re = "1\\." + major_version_spec;
+        String vm_spec_version_re = major_version_spec;
         if (major_version < 7) {
             vendor_re = "Sun Microsystems Inc\\.";
             vm_spec_version_re = "1\\.0";

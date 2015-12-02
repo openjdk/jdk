@@ -25,7 +25,7 @@
  * @test
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
- * @library / /testlibrary /../../test/lib
+ * @library / /testlibrary /test/lib
  * @compile ../common/CompilerToVMHelper.java
  * @build compiler.jvmci.compilerToVM.GetSymbolTest
  * @run main ClassFileInstaller jdk.vm.ci.hotspot.CompilerToVMHelper
@@ -52,7 +52,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.meta.ConstantPool;
 import jdk.test.lib.Utils;
 
@@ -76,7 +76,7 @@ public class GetSymbolTest {
         } catch (NoSuchMethodException e) {
             throw new Error("TEST BUG: can't find test method", e);
         }
-        HotSpotResolvedJavaMethodImpl resolvedMethod
+        HotSpotResolvedJavaMethod resolvedMethod
                 = CTVMUtilities.getResolvedMethod(aClass, method);
         List<String> symbols;
         try {
@@ -101,7 +101,7 @@ public class GetSymbolTest {
         }
     }
 
-    private List<String> getSymbols(HotSpotResolvedJavaMethodImpl
+    private List<String> getSymbols(HotSpotResolvedJavaMethod
             metaspaceMethod) throws ReflectiveOperationException {
         List<String> symbols = new ArrayList<>();
         ConstantPool pool = metaspaceMethod.getConstantPool();

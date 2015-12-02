@@ -57,7 +57,7 @@ import com.sun.corba.se.impl.orbutil.ORBUtility;
  */
 class SelectorImpl
     extends
-        ManagedLocalsThread
+        sun.misc.ManagedLocalsThread
     implements
         com.sun.corba.se.pept.transport.Selector
 {

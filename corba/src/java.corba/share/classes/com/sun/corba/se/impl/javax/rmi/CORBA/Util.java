@@ -112,7 +112,6 @@ import com.sun.corba.se.impl.util.JDKBridge;
 import com.sun.corba.se.impl.logging.UtilSystemException;
 import com.sun.corba.se.spi.logging.CORBALogDomains;
 import sun.corba.SharedSecrets;
-import com.sun.corba.se.impl.transport.ManagedLocalsThread;
 
 
 /**
@@ -752,7 +751,7 @@ public class Util implements javax.rmi.CORBA.UtilDelegate
     }
 }
 
-class KeepAlive extends ManagedLocalsThread
+class KeepAlive extends sun.misc.ManagedLocalsThread
 {
     boolean quit = false;
 

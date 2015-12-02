@@ -22,7 +22,8 @@
  */
 package jdk.vm.ci.meta;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class LocalVariableTableImpl implements LocalVariableTable {
 

@@ -694,8 +694,11 @@ import java.util.Objects;
 
     @Override
     public int hashCode() {
-        return Objects.hash(clazz, getReferenceKind(), name, getType());
+        // Avoid autoboxing getReferenceKind(), since this is used early and will force
+        // early initialization of Byte$ByteCache
+        return Objects.hash(clazz, new Byte(getReferenceKind()), name, getType());
     }
+
     @Override
     public boolean equals(Object that) {
         return (that instanceof MemberName && this.equals((MemberName)that));

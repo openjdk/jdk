@@ -1076,10 +1076,7 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   void assert_correct_size_change_locking();
 
  public:
-  ConcurrentMarkSweepGeneration(ReservedSpace rs, size_t initial_byte_size,
-                                CardTableRS* ct,
-                                bool use_adaptive_freelists,
-                                FreeBlockDictionary<FreeChunk>::DictionaryChoice);
+  ConcurrentMarkSweepGeneration(ReservedSpace rs, size_t initial_byte_size, CardTableRS* ct);
 
   // Accessors
   CMSCollector* collector() const { return _collector; }
@@ -1120,12 +1117,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
 
   // over-rides
   MemRegion used_region_at_save_marks() const;
-
-  // Does a "full" (forced) collection invoked on this generation collect
-  // the young generation as well?
-  virtual bool full_collects_young_generation() const {
-    return !ScavengeBeforeFullGC;
-  }
 
   // Adjust quantities in the generation affected by
   // the compaction.

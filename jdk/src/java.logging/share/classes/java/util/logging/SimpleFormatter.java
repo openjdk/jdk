@@ -27,10 +27,9 @@
 package java.util.logging;
 
 import java.io.*;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import sun.util.logging.LoggingSupport;
+import jdk.internal.logger.SimpleConsoleLogger;
 
 /**
  * Print a brief summary of the {@code LogRecord} in a human readable
@@ -60,8 +59,12 @@ import sun.util.logging.LoggingSupport;
 public class SimpleFormatter extends Formatter {
 
     // format string for printing the log record
-    private final String format = LoggingSupport.getSimpleFormat();
-    private final ZoneId zoneId = ZoneId.systemDefault();
+    static String getLoggingProperty(String name) {
+        return LogManager.getLogManager().getProperty(name);
+    }
+
+    private final String format =
+        SimpleConsoleLogger.getSimpleFormat(SimpleFormatter::getLoggingProperty);
 
     /**
      * Format the given LogRecord.
@@ -152,7 +155,7 @@ public class SimpleFormatter extends Formatter {
     @Override
     public synchronized String format(LogRecord record) {
         ZonedDateTime zdt = ZonedDateTime.ofInstant(
-                record.getInstant(), zoneId);
+                record.getInstant(), ZoneId.systemDefault());
         String source;
         if (record.getSourceClassName() != null) {
             source = record.getSourceClassName();
