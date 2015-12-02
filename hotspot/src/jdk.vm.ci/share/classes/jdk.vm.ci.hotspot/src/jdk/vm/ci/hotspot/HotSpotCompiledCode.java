@@ -123,7 +123,6 @@ public class HotSpotCompiledCode {
         targetCodeSize = compResult.getTargetCodeSize();
 
         DataSection data = compResult.getDataSection();
-        data.finalizeLayout();
         dataSection = new byte[data.getSectionSize()];
 
         ByteBuffer buffer = ByteBuffer.wrap(dataSection).order(ByteOrder.nativeOrder());
