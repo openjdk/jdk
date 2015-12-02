@@ -158,9 +158,9 @@
     <copy file="${nashorn.module.src.dir}/jdk/internal/dynalink/support/messages.properties" todir="${build.classes.dir}/jdk/internal/dynalink/support"/>
     <copy file="${nashorn.module.src.dir}/jdk/nashorn/internal/codegen/anchor.properties" todir="${build.classes.dir}/jdk/nashorn/internal/codegen"/>
 
-    <echo message="full=${nashorn.fullversion}" file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties"/>
+    <echo message="version_string=${nashorn.fullversion}" file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties"/>
     <echo file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true">${line.separator}</echo>
-    <echo message="release=${nashorn.version}" file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true"/>
+    <echo message="version_short=${nashorn.version}" file="${build.classes.dir}/jdk/nashorn/internal/runtime/resources/version.properties" append="true"/>
   </target>
 
   <target name="jar" depends="compile, run-nasgen, generate-cc-template" description="Creates nashorn.jar" unless="compile.suppress.jar">

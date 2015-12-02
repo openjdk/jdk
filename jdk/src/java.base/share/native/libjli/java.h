@@ -169,7 +169,6 @@ enum ergo_policy {
 };
 
 const char* GetProgramName();
-const char* GetDotVersion();
 const char* GetFullVersion();
 jboolean IsJavaArgs();
 jboolean IsJavaw();
