@@ -528,6 +528,36 @@ final class ServerHandshaker extends Handshaker {
             }
         }
 
+        // check the ALPN extension
+        ALPNExtension clientHelloALPN = (ALPNExtension)
+            mesg.extensions.get(ExtensionType.EXT_ALPN);
+
+        if ((clientHelloALPN != null) && (localApl.length > 0)) {
+
+            // Intersect the requested and the locally supported,
+            // and save for later.
+            String negotiatedValue = null;
+            List<String> protocols = clientHelloALPN.getPeerAPs();
+
+            // Use server preference order
+            for (String ap : localApl) {
+                if (protocols.contains(ap)) {
+                    negotiatedValue = ap;
+                    break;
+                }
+            }
+
+            if (negotiatedValue == null) {
+                fatalSE(Alerts.alert_no_application_protocol,
+                    new SSLHandshakeException(
+                        "No matching ALPN values"));
+            }
+            applicationProtocol = negotiatedValue;
+
+        } else {
+            applicationProtocol = "";
+        }
+
         // cookie exchange
         if (isDTLS) {
              HelloCookieManager hcMgr = sslContext.getHelloCookieManager();
@@ -919,6 +949,11 @@ final class ServerHandshaker extends Handshaker {
                     }
                 }
             }
+        }
+
+        // Prepare the ALPN response
+        if (applicationProtocol != null && !applicationProtocol.isEmpty()) {
+            m1.extensions.add(new ALPNExtension(applicationProtocol));
         }
 
         if (debug != null && Debug.isOn("handshake")) {
