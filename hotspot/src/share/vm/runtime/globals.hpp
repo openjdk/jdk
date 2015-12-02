@@ -1463,9 +1463,6 @@ public:
   develop(bool, TraceBytecodes, false,                                      \
           "Trace bytecode execution")                                       \
                                                                             \
-  develop(bool, TraceClassInitialization, false,                            \
-          "Trace class initialization")                                     \
-                                                                            \
   product(bool, TraceExceptions, false,                                     \
           "Trace exceptions")                                               \
                                                                             \
