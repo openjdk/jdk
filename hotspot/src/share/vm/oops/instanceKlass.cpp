@@ -62,6 +62,7 @@
 #include "services/threadService.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
+#include "logging/log.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Compiler.hpp"
 #endif
@@ -492,9 +493,9 @@ void InstanceKlass::eager_initialize_impl(instanceKlassHandle this_k) {
     this_k->set_init_state (fully_initialized);
     this_k->fence_and_clear_init_lock();
     // trace
-    if (TraceClassInitialization) {
+    if (log_is_enabled(Info, classinit)) {
       ResourceMark rm(THREAD);
-      tty->print_cr("[Initialized %s without side effects]", this_k->external_name());
+      log_info(classinit)("[Initialized %s without side effects]", this_k->external_name());
     }
   }
 }
@@ -1127,10 +1128,12 @@ void InstanceKlass::call_class_initializer_impl(instanceKlassHandle this_k, TRAP
 
   methodHandle h_method(THREAD, this_k->class_initializer());
   assert(!this_k->is_initialized(), "we cannot initialize twice");
-  if (TraceClassInitialization) {
-    tty->print("%d Initializing ", call_class_initializer_impl_counter++);
-    this_k->name()->print_value();
-    tty->print_cr("%s (" INTPTR_FORMAT ")", h_method() == NULL ? "(no method)" : "", p2i(this_k()));
+  if (log_is_enabled(Info, classinit)) {
+    ResourceMark rm;
+    outputStream* log = LogHandle(classinit)::info_stream();
+    log->print("%d Initializing ", call_class_initializer_impl_counter++);
+    this_k->name()->print_value_on(log);
+    log->print_cr("%s (" INTPTR_FORMAT ")", h_method() == NULL ? "(no method)" : "", p2i(this_k()));
   }
   if (h_method() != NULL) {
     JavaCallArguments args; // No arguments

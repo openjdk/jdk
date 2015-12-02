@@ -31,6 +31,7 @@
 // (The tags 'all', 'disable' and 'help' are special tags that can
 // not be used in log calls, and should not be listed below.)
 #define LOG_TAG_LIST \
+  LOG_TAG(classinit) \
   LOG_TAG(defaultmethods) \
   LOG_TAG(logging) \
   LOG_TAG(safepoint)
