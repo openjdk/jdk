@@ -26,7 +26,7 @@
  * @test
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
- * @library /testlibrary /../../test/lib /
+ * @library /testlibrary /test/lib /
  * @compile ../common/CompilerToVMHelper.java
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller
@@ -46,7 +46,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.vm.ci.meta.ProfilingInfo;
 import jdk.test.lib.Asserts;
@@ -78,7 +78,7 @@ public class ReprofileTest {
     }
 
     private static void runSanityTest(Method aMethod) {
-        HotSpotResolvedJavaMethodImpl method = CTVMUtilities
+        HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
         ProfilingInfo startProfile = method.getProfilingInfo();
         Asserts.assertFalse(startProfile.isMature(), aMethod

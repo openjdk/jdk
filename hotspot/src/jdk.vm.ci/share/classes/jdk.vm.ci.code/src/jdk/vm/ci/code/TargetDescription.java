@@ -22,9 +22,10 @@
  */
 package jdk.vm.ci.code;
 
-import static jdk.vm.ci.meta.MetaUtil.*;
-
-import jdk.vm.ci.meta.*;
+import static jdk.vm.ci.meta.MetaUtil.identityHashCodeString;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.LIRKind;
+import jdk.vm.ci.meta.PlatformKind;
 
 /**
  * Represents the target machine for a compiler, including the CPU architecture, the size of
@@ -50,9 +51,9 @@ public class TargetDescription {
     public final int wordSize;
 
     /**
-     * The kind to be used for representing raw pointers and CPU registers.
+     * The {@link JavaKind} to be used for representing raw pointers and CPU registers in Java code.
      */
-    public final JavaKind wordKind;
+    public final JavaKind wordJavaKind;
 
     /**
      * The stack alignment requirement of the platform. For example, from Appendix D of <a
@@ -78,10 +79,12 @@ public class TargetDescription {
         this.arch = arch;
         this.isMP = isMP;
         this.wordSize = arch.getWordSize();
-        this.wordKind = JavaKind.fromWordSize(wordSize);
+        this.wordJavaKind = JavaKind.fromWordSize(wordSize);
         this.stackAlignment = stackAlignment;
         this.implicitNullCheckLimit = implicitNullCheckLimit;
         this.inlineObjects = inlineObjects;
+
+        assert arch.getPlatformKind(wordJavaKind).equals(arch.getWordKind());
     }
 
     @Override
@@ -101,7 +104,7 @@ public class TargetDescription {
                 this.inlineObjects == that.inlineObjects &&
                 this.isMP == that.isMP &&
                 this.stackAlignment == that.stackAlignment &&
-                this.wordKind.equals(that.wordKind) &&
+                this.wordJavaKind.equals(that.wordJavaKind) &&
                 this.wordSize == that.wordSize &&
                 this.arch.equals(that.arch)) {
                 return true;
@@ -114,10 +117,6 @@ public class TargetDescription {
     @Override
     public String toString() {
         return identityHashCodeString(this);
-    }
-
-    public int getSizeInBytes(PlatformKind kind) {
-        return kind.getSizeInBytes();
     }
 
     public LIRKind getLIRKind(JavaKind javaKind) {

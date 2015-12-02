@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@ package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
 import java.util.*;
+import java.nio.file.*;
+import java.util.zip.*;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.*;
@@ -85,43 +87,106 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * Add the member information for the unicode character along with the
      * list of the members.
      *
-     * @param unicode Unicode for which member list information to be generated
+     * @param uc Unicode for which member list information to be generated
      * @param memberlist List of members for the unicode character
      * @param contentTree the content tree to which the information will be added
      */
     protected void addContents(Character uc, List<? extends Doc> memberlist,
             Content contentTree) {
+        addHeading(uc, contentTree);
+        int memberListSize = memberlist.size();
+        // Display the list only if there are elements to be displayed.
+        if (memberListSize > 0) {
+            Content dl = new HtmlTree(HtmlTag.DL);
+            for (Doc element : memberlist) {
+                addDescription(dl, element);
+            }
+            contentTree.addContent(dl);
+        }
+    }
+
+    protected void addSearchContents(Character uc, List<SearchIndexItem> searchList,
+            Content contentTree) {
+        addHeading(uc, contentTree);
+        // Display the list only if there are elements to be displayed.
+        if (!searchList.isEmpty()) {
+            Content dl = new HtmlTree(HtmlTag.DL);
+            for (SearchIndexItem sii : searchList) {
+                addDescription(sii, dl);
+            }
+            contentTree.addContent(dl);
+        }
+    }
+
+    protected void addContents(Character uc, List<? extends Doc> memberlist, List<SearchIndexItem> searchList,
+            Content contentTree) {
+        addHeading(uc, contentTree);
+        int memberListSize = memberlist.size();
+        int searchListSize = searchList.size();
+        int i = 0;
+        int j = 0;
+        Content dl = new HtmlTree(HtmlTag.DL);
+        while (i < memberListSize && j < searchListSize) {
+            if (memberlist.get(i).name().compareTo(searchList.get(j).getLabel()) < 0) {
+                addDescription(dl, memberlist.get(i));
+                i++;
+            } else if (memberlist.get(i).name().compareTo(searchList.get(j).getLabel()) > 0) {
+                addDescription(searchList.get(j), dl);
+                j++;
+            } else {
+                addDescription(dl, memberlist.get(i));
+                addDescription(searchList.get(j), dl);
+                j++;
+                i++;
+            }
+        }
+        if (i >= memberListSize) {
+            while (j < searchListSize) {
+                addDescription(searchList.get(j), dl);
+                j++;
+            }
+        }
+        if (j >= searchListSize) {
+            while (i < memberListSize) {
+                addDescription(dl, memberlist.get(i));
+                i++;
+            }
+        }
+        contentTree.addContent(dl);
+    }
+
+    protected void addHeading(Character uc, Content contentTree) {
         String unicode = uc.toString();
         contentTree.addContent(getMarkerAnchorForIndex(unicode));
         Content headContent = new StringContent(unicode);
         Content heading = HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING, false,
                 HtmlStyle.title, headContent);
         contentTree.addContent(heading);
-        int memberListSize = memberlist.size();
-        // Display the list only if there are elements to be displayed.
-        if (memberListSize > 0) {
-            Content dl = new HtmlTree(HtmlTag.DL);
-            for (Doc element : memberlist) {
-                if (element instanceof MemberDoc) {
-                    addDescription((MemberDoc) element, dl);
-                } else if (element instanceof ClassDoc) {
-                    addDescription((ClassDoc) element, dl);
-                } else if (element instanceof PackageDoc) {
-                    addDescription((PackageDoc) element, dl);
-                }
-            }
-            contentTree.addContent(dl);
-        }
     }
 
+    protected void addDescription(Content dl, Doc element) {
+        SearchIndexItem si = new SearchIndexItem();
+        if (element instanceof MemberDoc) {
+            addDescription((MemberDoc) element, dl, si);
+            configuration.memberSearchIndex.add(si);
+        } else if (element instanceof ClassDoc) {
+            addDescription((ClassDoc) element, dl, si);
+            configuration.typeSearchIndex.add(si);
+        } else if (element instanceof PackageDoc) {
+            addDescription((PackageDoc) element, dl, si);
+            configuration.packageSearchIndex.add(si);
+        }
+    }
     /**
      * Add one line summary comment for the package.
      *
      * @param pkg the package to be documented
      * @param dlTree the content tree to which the description will be added
      */
-    protected void addDescription(PackageDoc pkg, Content dlTree) {
+    protected void addDescription(PackageDoc pkg, Content dlTree, SearchIndexItem si) {
         Content link = getPackageLink(pkg, new StringContent(utils.getPackageName(pkg)));
+        si.setLabel(utils.getPackageName(pkg));
+        si.setCategory(getResource("doclet.Packages").toString());
         Content dt = HtmlTree.DT(link);
         dt.addContent(" - ");
         dt.addContent(getResource("doclet.package"));
@@ -138,9 +203,12 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @param cd the class being documented
      * @param dlTree the content tree to which the description will be added
      */
-    protected void addDescription(ClassDoc cd, Content dlTree) {
+    protected void addDescription(ClassDoc cd, Content dlTree, SearchIndexItem si) {
         Content link = getLink(new LinkInfoImpl(configuration,
                         LinkInfoImpl.Kind.INDEX, cd).strong(true));
+        si.setContainingPackage(utils.getPackageName(cd.containingPackage()));
+        si.setLabel(cd.typeName());
+        si.setCategory(getResource("doclet.Types").toString());
         Content dt = HtmlTree.DT(link);
         dt.addContent(" - ");
         addClassInfo(cd, dt);
@@ -171,10 +239,22 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @param member MemberDoc for the member of the Class Kind
      * @param dlTree the content tree to which the description will be added
      */
-    protected void addDescription(MemberDoc member, Content dlTree) {
+    protected void addDescription(MemberDoc member, Content dlTree, SearchIndexItem si) {
         String name = (member instanceof ExecutableMemberDoc)?
             member.name() + ((ExecutableMemberDoc)member).flatSignature() :
             member.name();
+        si.setContainingPackage(utils.getPackageName((member.containingClass()).containingPackage()));
+        si.setContainingClass((member.containingClass()).typeName());
+        if (member instanceof ExecutableMemberDoc) {
+            ExecutableMemberDoc emd = (ExecutableMemberDoc)member;
+            si.setLabel(member.name() + emd.flatSignature());
+            if (!((emd.signature()).equals(emd.flatSignature()))) {
+                si.setUrl(getName(getAnchor((ExecutableMemberDoc) member)));
+            }
+        } else {
+            si.setLabel(member.name());
+        }
+        si.setCategory(getResource("doclet.Members").toString());
         Content span = HtmlTree.SPAN(HtmlStyle.memberNameLink,
                 getDocLink(LinkInfoImpl.Kind.INDEX, member, name));
         Content dt = HtmlTree.DT(span);
@@ -183,6 +263,23 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         dlTree.addContent(dt);
         Content dd = new HtmlTree(HtmlTag.DD);
         addComment(member, dd);
+        dlTree.addContent(dd);
+    }
+
+    protected void addDescription(SearchIndexItem sii, Content dlTree) {
+        String path = pathToRoot.isEmpty() ? "" : pathToRoot.getPath() + "/";
+        path += sii.getUrl();
+        HtmlTree labelLink = HtmlTree.A(path, new StringContent(sii.getLabel()));
+        Content dt = HtmlTree.DT(HtmlTree.SPAN(HtmlStyle.searchTagLink, labelLink));
+        dt.addContent(" - ");
+        dt.addContent(getResource("doclet.Search_tag_in", sii.getHolder()));
+        dlTree.addContent(dt);
+        Content dd = new HtmlTree(HtmlTag.DD);
+        if (sii.getDescription().isEmpty()) {
+            dd.addContent(getSpace());
+        } else {
+            dd.addContent(sii.getDescription());
+        }
         dlTree.addContent(dd);
     }
 
@@ -272,5 +369,67 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      */
     public String getNameForIndex(String unicode) {
         return "I:" + getName(unicode);
+    }
+
+    protected void createSearchIndexFiles() {
+        createSearchIndexFile(DocPaths.PACKAGE_SEARCH_INDEX_JSON, DocPaths.PACKAGE_SEARCH_INDEX_ZIP,
+                configuration.packageSearchIndex);
+        createSearchIndexFile(DocPaths.TYPE_SEARCH_INDEX_JSON, DocPaths.TYPE_SEARCH_INDEX_ZIP,
+                configuration.typeSearchIndex);
+        createSearchIndexFile(DocPaths.MEMBER_SEARCH_INDEX_JSON, DocPaths.MEMBER_SEARCH_INDEX_ZIP,
+                configuration.memberSearchIndex);
+        createSearchIndexFile(DocPaths.TAG_SEARCH_INDEX_JSON, DocPaths.TAG_SEARCH_INDEX_ZIP,
+                configuration.tagSearchIndex);
+    }
+
+    protected void createSearchIndexFile(DocPath searchIndexFile, DocPath searchIndexZip,
+            List<SearchIndexItem> searchIndex) {
+        if (!searchIndex.isEmpty()) {
+            try {
+                StringBuilder searchVar = new StringBuilder("[");
+                boolean first = true;
+                DocFile searchFile = DocFile.createFileForOutput(configuration, searchIndexFile);
+                Path p = Paths.get(searchFile.getPath());
+                for (SearchIndexItem item : searchIndex) {
+                    if (first) {
+                        searchVar.append(item.toString());
+                        first = false;
+                    } else {
+                        searchVar.append(",").append(item.toString());
+                    }
+                }
+                searchVar.append("]");
+                Files.write(p, searchVar.toString().getBytes());
+                DocFile zipFile = DocFile.createFileForOutput(configuration, searchIndexZip);
+                try (FileOutputStream fos = new FileOutputStream(zipFile.getPath());
+                        ZipOutputStream zos = new ZipOutputStream(fos)) {
+                    zipFile(searchFile.getPath(), searchIndexFile, zos);
+                }
+                Files.delete(p);
+            } catch (IOException ie) {
+                throw new DocletAbortException(ie);
+            }
+        }
+    }
+
+    protected void zipFile(String inputFile, DocPath file, ZipOutputStream zos) {
+        try {
+            try {
+                ZipEntry ze = new ZipEntry(file.getPath());
+                zos.putNextEntry(ze);
+                try (FileInputStream fis = new FileInputStream(new File(inputFile))) {
+                    byte[] buf = new byte[2048];
+                    int len = fis.read(buf);
+                    while (len > 0) {
+                        zos.write(buf, 0, len);
+                        len = fis.read(buf);
+                    }
+                }
+            } finally {
+                zos.closeEntry();
+            }
+        } catch (IOException e) {
+            throw new DocletAbortException(e);
+        }
     }
 }

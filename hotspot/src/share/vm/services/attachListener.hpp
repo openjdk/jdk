@@ -29,6 +29,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/globalDefinitions.hpp"
 
 // The AttachListener thread services a queue of operations that are enqueued
 // by client tools. Each operation is identified by a name and has up to 3
@@ -121,8 +122,9 @@ class AttachOperation: public CHeapObj<mtInternal> {
 
   // set the operation name
   void set_name(char* name) {
-    assert(strlen(name) <= name_length_max, "exceeds maximum name length");
-    strcpy(_name, name);
+    size_t len = strlen(name);
+    assert(len <= name_length_max, "exceeds maximum name length");
+    memcpy(_name, name, MIN2(len + 1, (size_t)name_length_max));
   }
 
   // get an argument value
@@ -137,8 +139,9 @@ class AttachOperation: public CHeapObj<mtInternal> {
     if (arg == NULL) {
       _arg[i][0] = '\0';
     } else {
-      assert(strlen(arg) <= arg_length_max, "exceeds maximum argument length");
-      strcpy(_arg[i], arg);
+      size_t len = strlen(arg);
+      assert(len <= arg_length_max, "exceeds maximum argument length");
+      memcpy(_arg[i], arg, MIN2(len + 1, (size_t)arg_length_max));
     }
   }
 

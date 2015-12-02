@@ -361,7 +361,7 @@ class SharedRuntime: AllStatic {
   // return value is the maximum number of VMReg stack slots the convention will use.
   static int java_calling_convention(const BasicType* sig_bt, VMRegPair* regs, int total_args_passed, int is_outgoing);
 
-  static void check_member_name_argument_is_last_argument(methodHandle method,
+  static void check_member_name_argument_is_last_argument(const methodHandle& method,
                                                           const BasicType* sig_bt,
                                                           const VMRegPair* regs) NOT_DEBUG_RETURN;
 
@@ -472,7 +472,7 @@ class SharedRuntime: AllStatic {
   // is a JNI critical method, or a compiled method handle adapter,
   // such as _invokeBasic, _linkToVirtual, etc.
   static nmethod* generate_native_wrapper(MacroAssembler* masm,
-                                          methodHandle method,
+                                          const methodHandle& method,
                                           int compile_id,
                                           BasicType* sig_bt,
                                           VMRegPair* regs,
@@ -680,8 +680,8 @@ class AdapterHandlerLibrary: public AllStatic {
 
   static AdapterHandlerEntry* new_entry(AdapterFingerPrint* fingerprint,
                                         address i2c_entry, address c2i_entry, address c2i_unverified_entry);
-  static void create_native_wrapper(methodHandle method);
-  static AdapterHandlerEntry* get_adapter(methodHandle method);
+  static void create_native_wrapper(const methodHandle& method);
+  static AdapterHandlerEntry* get_adapter(const methodHandle& method);
 
   static void print_handler(const CodeBlob* b) { print_handler_on(tty, b); }
   static void print_handler_on(outputStream* st, const CodeBlob* b);

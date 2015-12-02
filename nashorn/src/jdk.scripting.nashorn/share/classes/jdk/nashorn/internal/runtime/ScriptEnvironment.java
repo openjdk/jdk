@@ -81,6 +81,9 @@ public final class ScriptEnvironment {
     /** Generate line number table in class files */
     public final boolean _debug_lines;
 
+    /** Put all variables in scopes to make them debuggable */
+    public final boolean _debug_scopes;
+
     /** Directory in which source files and generated class files are dumped */
     public final String  _dest_dir;
 
@@ -104,6 +107,12 @@ public final class ScriptEnvironment {
 
     /** Enable experimental ECMAScript 6 features. */
     public final boolean _es6;
+
+
+    /** Number of times a dynamic call site has to be relinked before it is
+     * considered unstable (and thus should be linked as if it were megamorphic).
+     */
+    public final int _unstable_relink_threshold;
 
     /** Argument passed to compile only if optimistic compilation should take place */
     public static final String COMPILE_ONLY_OPTIMISTIC_ARG = "optimistic";
@@ -240,6 +249,7 @@ public final class ScriptEnvironment {
         _compile_only         = options.getBoolean("compile.only");
         _const_as_var         = options.getBoolean("const.as.var");
         _debug_lines          = options.getBoolean("debug.lines");
+        _debug_scopes         = options.getBoolean("debug.scopes");
         _dest_dir             = options.getString("d");
         _dump_on_error        = options.getBoolean("doe");
         _early_lvalue_error   = options.getBoolean("early.lvalue.error");
@@ -286,6 +296,25 @@ public final class ScriptEnvironment {
         _strict               = options.getBoolean("strict");
         _version              = options.getBoolean("version");
         _verify_code          = options.getBoolean("verify.code");
+
+        final int configuredUrt = options.getInteger("unstable.relink.threshold");
+        // The default for this property is -1, so we can easily detect when
+        // it is not specified on command line.
+        if (configuredUrt < 0) {
+            // In this case, use a default of 8, or 16 for optimistic types.
+            // Optimistic types come with dual fields, and in order to get
+            // performance on benchmarks with a lot of object instantiation and
+            // then field reassignment, it can take slightly more relinks to
+            // become stable with type changes swapping out an entire property
+            // map and making a map guard fail. Also, honor the "nashorn.*"
+            // system property for now. It was documented in DEVELOPER_README
+            // so we should recognize it for the time being.
+            _unstable_relink_threshold = Options.getIntProperty(
+                    "nashorn.unstable.relink.threshold",
+                    _optimistic_types ? 16 : 8);
+        } else {
+            _unstable_relink_threshold = configuredUrt;
+        }
 
         final String anonClasses = options.getString("anonymous.classes");
         if (anonClasses == null || anonClasses.equals("auto")) {

@@ -25,7 +25,7 @@
  * @test
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
- * @library / /testlibrary /../../test/lib
+ * @library / /testlibrary /test/lib
  * @compile ../common/CompilerToVMHelper.java
  * @build compiler.jvmci.compilerToVM.FindUniqueConcreteMethodTest
  * @run main ClassFileInstaller
@@ -45,8 +45,8 @@ import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 
@@ -97,26 +97,26 @@ public class FindUniqueConcreteMethodTest {
     private void runTest(TestCase tcase) throws NoSuchMethodException {
         System.out.println(tcase);
         Method method = tcase.holder.getDeclaredMethod(tcase.methodName);
-        HotSpotResolvedJavaMethodImpl testMethod = CTVMUtilities
-                .getResolvedMethod(tcase.reciever, method);
-        HotSpotResolvedObjectTypeImpl resolvedType = CompilerToVMHelper
-                .lookupType(Utils.toJVMTypeSignature(tcase.reciever), getClass(),
+        HotSpotResolvedJavaMethod testMethod = CTVMUtilities
+                .getResolvedMethod(tcase.receiver, method);
+        HotSpotResolvedObjectType resolvedType = CompilerToVMHelper
+                .lookupType(Utils.toJVMTypeSignature(tcase.receiver), getClass(),
                 /* resolve = */ true);
-        HotSpotResolvedJavaMethodImpl concreteMethod = CompilerToVMHelper
+        HotSpotResolvedJavaMethod concreteMethod = CompilerToVMHelper
                 .findUniqueConcreteMethod(resolvedType, testMethod);
         Asserts.assertEQ(concreteMethod, tcase.isPositive ? testMethod : null,
                 "Unexpected concrete method for " + tcase.methodName);
     }
 
     private static class TestCase {
-        public final Class<?> reciever;
+        public final Class<?> receiver;
         public final Class<?> holder;
         public final String methodName;
         public final boolean isPositive;
 
         public TestCase(boolean isPositive, Class<?> clazz, Class<?> holder,
                 String methodName) {
-            this.reciever = clazz;
+            this.receiver = clazz;
             this.methodName = methodName;
             this.isPositive = isPositive;
             this.holder = holder;
@@ -124,8 +124,8 @@ public class FindUniqueConcreteMethodTest {
 
         @Override
         public String toString() {
-            return String.format("CASE: reciever=%s, holder=%s, method=%s,"
-                    + " isPositive=%s", reciever.getName(),
+            return String.format("CASE: receiver=%s, holder=%s, method=%s,"
+                    + " isPositive=%s", receiver.getName(),
                     holder.getName(), methodName, isPositive);
         }
     }

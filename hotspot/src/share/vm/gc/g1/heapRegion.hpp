@@ -43,6 +43,15 @@
 // The solution is to remove this method from the definition
 // of a Space.
 
+// Each heap region is self contained. top() and end() can never
+// be set beyond the end of the region. For humongous objects,
+// the first region is a StartsHumongous region. If the humongous
+// object is larger than a heap region, the following regions will
+// be of type ContinuesHumongous. In this case the top() of the
+// StartHumongous region and all ContinuesHumongous regions except
+// the last will point to their own end. For the last ContinuesHumongous
+// region, top() will equal the object's top.
+
 class G1CollectedHeap;
 class HeapRegionRemSet;
 class HeapRegionRemSetIterator;
@@ -389,8 +398,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   size_t garbage_bytes() {
     size_t used_at_mark_start_bytes =
       (prev_top_at_mark_start() - bottom()) * HeapWordSize;
-    assert(used_at_mark_start_bytes >= marked_bytes(),
-           "Can't mark more than we have.");
     return used_at_mark_start_bytes - marked_bytes();
   }
 
@@ -409,7 +416,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   void add_to_marked_bytes(size_t incr_bytes) {
     _next_marked_bytes = _next_marked_bytes + incr_bytes;
-    assert(_next_marked_bytes <= used(), "invariant" );
   }
 
   void zero_marked_bytes()      {
@@ -445,57 +451,13 @@ class HeapRegion: public G1OffsetTableContigSpace {
     return _humongous_start_region;
   }
 
-  // Return the number of distinct regions that are covered by this region:
-  // 1 if the region is not humongous, >= 1 if the region is humongous.
-  uint region_num() const {
-    if (!is_humongous()) {
-      return 1U;
-    } else {
-      assert(is_starts_humongous(), "doesn't make sense on HC regions");
-      assert(capacity() % HeapRegion::GrainBytes == 0, "sanity");
-      return (uint) (capacity() >> HeapRegion::LogOfHRGrainBytes);
-    }
-  }
-
-  // Return the index + 1 of the last HC regions that's associated
-  // with this HS region.
-  uint last_hc_index() const {
-    assert(is_starts_humongous(), "don't call this otherwise");
-    return hrm_index() + region_num();
-  }
-
-  // Same as Space::is_in_reserved, but will use the original size of the region.
-  // The original size is different only for start humongous regions. They get
-  // their _end set up to be the end of the last continues region of the
-  // corresponding humongous object.
-  bool is_in_reserved_raw(const void* p) const {
-    return _bottom <= p && p < orig_end();
-  }
-
   // Makes the current region be a "starts humongous" region, i.e.,
   // the first region in a series of one or more contiguous regions
-  // that will contain a single "humongous" object. The two parameters
-  // are as follows:
+  // that will contain a single "humongous" object.
   //
-  // new_top : The new value of the top field of this region which
-  // points to the end of the humongous object that's being
-  // allocated. If there is more than one region in the series, top
-  // will lie beyond this region's original end field and on the last
-  // region in the series.
-  //
-  // new_end : The new value of the end field of this region which
-  // points to the end of the last region in the series. If there is
-  // one region in the series (namely: this one) end will be the same
-  // as the original end of this region.
-  //
-  // Updating top and end as described above makes this region look as
-  // if it spans the entire space taken up by all the regions in the
-  // series and an single allocation moved its top to new_top. This
-  // ensures that the space (capacity / allocated) taken up by all
-  // humongous regions can be calculated by just looking at the
-  // "starts humongous" regions and by ignoring the "continues
-  // humongous" regions.
-  void set_starts_humongous(HeapWord* new_top, HeapWord* new_end);
+  // obj_top : points to the end of the humongous object that's being
+  // allocated.
+  void set_starts_humongous(HeapWord* obj_top);
 
   // Makes the current region be a "continues humongous'
   // region. first_hr is the "start humongous" region of the series
@@ -566,9 +528,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void set_next_dirty_cards_region(HeapRegion* hr) { _next_dirty_cards_region = hr; }
   bool is_on_dirty_cards_region_list() const { return get_next_dirty_cards_region() != NULL; }
 
-  // For the start region of a humongous sequence, it's original end().
-  HeapWord* orig_end() const { return _bottom + GrainWords; }
-
   // Reset HR stuff to default values.
   void hr_clear(bool par, bool clear_space, bool locked = false);
   void par_clear();
@@ -614,8 +573,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
   bool is_marked() { return _prev_top_at_mark_start != bottom(); }
 
   void reset_during_compaction() {
-    assert(is_starts_humongous(),
-           "should only be called for starts humongous regions");
+    assert(is_humongous(),
+           "should only be called for humongous regions");
 
     zero_marked_bytes();
     init_top_at_mark_start();

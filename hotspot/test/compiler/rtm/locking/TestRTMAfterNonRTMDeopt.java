@@ -29,7 +29,7 @@
  *          caused by reason other then rtm_state_change will reset
  *          method's RTM state. And if we don't use RTMDeopt, then
  *          RTM state remain the same after such deoptimization.
- * @library /testlibrary /../../test/lib /compiler/testlibrary
+ * @library /testlibrary /test/lib /compiler/testlibrary
  * @modules java.base/sun.misc
  *          java.management
  * @build TestRTMAfterNonRTMDeopt

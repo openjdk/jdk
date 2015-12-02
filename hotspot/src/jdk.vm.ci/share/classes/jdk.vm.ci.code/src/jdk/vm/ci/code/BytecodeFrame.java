@@ -22,9 +22,12 @@
  */
 package jdk.vm.ci.code;
 
-import java.util.*;
+import java.util.Arrays;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaValue;
+import jdk.vm.ci.meta.ResolvedJavaMethod;
+import jdk.vm.ci.meta.Value;
 
 /**
  * Represents the Java bytecode frame state(s) at a given position including {@link Value locations}

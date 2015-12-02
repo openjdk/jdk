@@ -111,7 +111,7 @@ public class BasicJMapTest {
                 launcher.addToolArg(toolArg);
             }
         }
-        launcher.addToolArg(Integer.toString(ProcessTools.getProcessId()));
+        launcher.addToolArg(Long.toString(ProcessTools.getProcessId()));
 
         processBuilder.command(launcher.getCommand());
         System.out.println(Arrays.toString(processBuilder.command().toArray()).replace(",", ""));

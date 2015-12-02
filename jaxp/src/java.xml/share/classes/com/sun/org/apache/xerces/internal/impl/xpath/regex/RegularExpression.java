@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2002,2004,2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -1041,9 +1041,10 @@ public class RegularExpression implements java.io.Serializable {
     /**
      * @return -1 when not match; offset of the end of matched string when match.
      */
+    @SuppressWarnings("fallthrough")
     private int match(Context con, Op op, int offset, int dx, int opts) {
         final ExpressionTarget target = con.target;
-        final Stack opStack = new Stack();
+        final Stack<Op> opStack = new Stack<>();
         final IntStack dataStack = new IntStack();
         final boolean isSetIgnoreCase = isSet(opts, IGNORE_CASE);
         int retValue = -1;
@@ -1322,7 +1323,7 @@ public class RegularExpression implements java.io.Serializable {
                     return retValue;
                 }
 
-                op = (Op) opStack.pop();
+                op = opStack.pop();
                 offset = dataStack.pop();
 
                 switch (op.type) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -662,4 +662,55 @@ public abstract class SSLSocket extends Socket
         }
     }
 
+    /**
+     * Returns the most recent application protocol value negotiated for this
+     * connection.
+     * <p>
+     * If supported by the underlying SSL/TLS/DTLS implementation,
+     * application name negotiation mechanisms such as <a
+     * href="http://www.ietf.org/rfc/rfc7301.txt"> RFC 7301 </a>, the
+     * Application-Layer Protocol Negotiation (ALPN), can negotiate
+     * application-level values between peers.
+     * <p>
+     * @implSpec
+     * The implementation in this class throws
+     * {@code UnsupportedOperationException} and performs no other action.
+     *
+     * @return null if it has not yet been determined if application
+     *         protocols might be used for this connection, an empty
+     *         {@code String} if application protocols values will not
+     *         be used, or a non-empty application protocol {@code String}
+     *         if a value was successfully negotiated.
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation.
+     * @since 9
+     */
+    public String getApplicationProtocol() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Returns the application protocol value negotiated on a SSL/TLS
+     * handshake currently in progress.
+     * <p>
+     * Like {@link #getHandshakeSession()},
+     * a connection may be in the middle of a handshake. The
+     * application protocol may or may not yet be available.
+     * <p>
+     * @implSpec
+     * The implementation in this class throws
+     * {@code UnsupportedOperationException} and performs no other action.
+     *
+     * @return null if it has not yet been determined if application
+     *         protocols might be used for this handshake, an empty
+     *         {@code String} if application protocols values will not
+     *         be used, or a non-empty application protocol {@code String}
+     *         if a value was successfully negotiated.
+     * @throws UnsupportedOperationException if the underlying provider
+     *         does not implement the operation.
+     * @since 9
+     */
+    public String getHandshakeApplicationProtocol() {
+        throw new UnsupportedOperationException();
+    }
 }

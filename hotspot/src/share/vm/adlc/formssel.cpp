@@ -607,6 +607,8 @@ bool InstructForm::needs_anti_dependence_check(FormDict &globals) const {
       ( strcmp(_matrule->_rChild->_opType,"StrComp"    )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrEquals"  )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOf" )==0 ||
+        strcmp(_matrule->_rChild->_opType,"StrIndexOfChar" )==0 ||
+        strcmp(_matrule->_rChild->_opType,"HasNegatives" )==0 ||
         strcmp(_matrule->_rChild->_opType,"AryEq"      )==0 ))
     return true;
 
@@ -887,11 +889,16 @@ uint InstructForm::oper_input_base(FormDict &globals) {
       ( strcmp(_matrule->_rChild->_opType,"AryEq"     )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrComp"   )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrEquals" )==0 ||
+        strcmp(_matrule->_rChild->_opType,"StrInflatedCopy"   )==0 ||
+        strcmp(_matrule->_rChild->_opType,"StrCompressedCopy" )==0 ||
         strcmp(_matrule->_rChild->_opType,"StrIndexOf")==0 ||
+        strcmp(_matrule->_rChild->_opType,"StrIndexOfChar")==0 ||
+        strcmp(_matrule->_rChild->_opType,"HasNegatives")==0 ||
         strcmp(_matrule->_rChild->_opType,"EncodeISOArray")==0)) {
         // String.(compareTo/equals/indexOf) and Arrays.equals
         // and sun.nio.cs.iso8859_1$Encoder.EncodeISOArray
         // take 1 control and 1 memory edges.
+        // Also String.(compressedCopy/inflatedCopy).
     return 2;
   }
 

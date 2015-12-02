@@ -96,7 +96,7 @@ enum ThreadPriority {        // JLS 20.20.1-3
 const bool ExecMem = true;
 
 // Typedef for structured exception handling support
-typedef void (*java_call_t)(JavaValue* value, methodHandle* method, JavaCallArguments* args, Thread* thread);
+typedef void (*java_call_t)(JavaValue* value, const methodHandle& method, JavaCallArguments* args, Thread* thread);
 
 class MallocTracker;
 
@@ -263,7 +263,7 @@ class os: AllStatic {
   static bool uses_stack_guard_pages();
   static bool allocate_stack_guard_pages();
   static void bang_stack_shadow_pages();
-  static bool stack_shadow_pages_available(Thread *thread, methodHandle method);
+  static bool stack_shadow_pages_available(Thread *thread, const methodHandle& method);
 
   // OS interface to Virtual Memory
 
@@ -589,6 +589,9 @@ class os: AllStatic {
   static void *find_agent_function(AgentLibrary *agent_lib, bool check_lib,
                                    const char *syms[], size_t syms_len);
 
+  // Write to stream
+  static int log_vsnprintf(char* buf, size_t len, const char* fmt, va_list args) ATTRIBUTE_PRINTF(3, 0);
+
   // Print out system information; they are called by fatal error handler.
   // Output format may be different on different platforms.
   static void print_os_info(outputStream* st);
@@ -722,7 +725,7 @@ class os: AllStatic {
   static void init_random(long initval);   // initialize random sequence
 
   // Structured OS Exception support
-  static void os_exception_wrapper(java_call_t f, JavaValue* value, methodHandle* method, JavaCallArguments* args, Thread* thread);
+  static void os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& method, JavaCallArguments* args, Thread* thread);
 
   // On Posix compatible OS it will simply check core dump limits while on Windows
   // it will check if dump file can be created. Check or prepare a core dump to be

@@ -84,7 +84,7 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
     inst &= ~Assembler::simm(    -1, 13);
     inst |=  Assembler::simm(simm13, 13);
     if (verify_only) {
-      assert(ip->long_at(0) == inst, "instructions must match");
+      guarantee(ip->long_at(0) == inst, "instructions must match");
     } else {
       ip->set_long_at(0, inst);
     }
@@ -102,15 +102,15 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
       inst &= ~Assembler::hi22(-1);
       inst |=  Assembler::hi22((intptr_t)np);
       if (verify_only) {
-        assert(ip->long_at(0) == inst, "instructions must match");
+        guarantee(ip->long_at(0) == inst, "instructions must match");
       } else {
         ip->set_long_at(0, inst);
       }
       inst2 = ip->long_at( NativeInstruction::nop_instruction_size );
       guarantee(Assembler::inv_op(inst2)==Assembler::arith_op, "arith op");
       if (verify_only) {
-        assert(ip->long_at(NativeInstruction::nop_instruction_size) == NativeInstruction::set_data32_simm13( inst2, (intptr_t)np),
-               "instructions must match");
+        guarantee(ip->long_at(NativeInstruction::nop_instruction_size) == NativeInstruction::set_data32_simm13( inst2, (intptr_t)np),
+                  "instructions must match");
       } else {
         ip->set_long_at(NativeInstruction::nop_instruction_size, NativeInstruction::set_data32_simm13( inst2, (intptr_t)np));
       }
@@ -127,7 +127,7 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
     inst |=  Assembler::hi22((intptr_t)x);
     // (ignore offset; it doesn't play into the sethi)
     if (verify_only) {
-      assert(ip->long_at(0) == inst, "instructions must match");
+      guarantee(ip->long_at(0) == inst, "instructions must match");
     } else {
       ip->set_long_at(0, inst);
     }

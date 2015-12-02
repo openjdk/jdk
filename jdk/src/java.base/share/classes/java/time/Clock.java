@@ -223,6 +223,7 @@ public abstract class Clock {
      *
      * @param zone  the time-zone to use to convert the instant to date-time, not null
      * @return a clock that ticks in whole milliseconds using the specified zone, not null
+     * @since 9
      */
     public static Clock tickMillis(ZoneId zone) {
         return new TickClock(system(zone), NANOS_PER_MILLI);

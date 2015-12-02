@@ -40,7 +40,12 @@
  * number of aborted timed waits occur without a signal.
  */
 
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 
 public class PollMemoryLeak {
     public static void main(String[] args) throws InterruptedException {

@@ -28,10 +28,20 @@
  * @author Martin Buchholz
  */
 
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.locks.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.Random;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 // I am the Cownt, and I lahve to cownt.
 public class Count {
@@ -92,7 +102,7 @@ public class Count {
                     barrier.await();
                 } catch (Throwable t) { unexpected(t); }}});}
         es.shutdown();
-        check(es.awaitTermination(10, TimeUnit.SECONDS));
+        check(es.awaitTermination(10L, TimeUnit.SECONDS));
     }
 
     void testReentrantLocks(final boolean fair,

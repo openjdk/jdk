@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,13 +83,13 @@ public:
                              bool require_local);
 
   // Constant pool access.
-  static KlassHandle   get_klass_by_index(constantPoolHandle& cpool,
+  static KlassHandle   get_klass_by_index(const constantPoolHandle& cpool,
                                 int klass_index,
                                 bool& is_accessible,
                                 KlassHandle& loading_klass);
   static void   get_field_by_index(instanceKlassHandle& loading_klass, fieldDescriptor& fd,
                                 int field_index);
-  static methodHandle  get_method_by_index(constantPoolHandle& cpool,
+  static methodHandle  get_method_by_index(const constantPoolHandle& cpool,
                                  int method_index, Bytecodes::Code bc,
                                  instanceKlassHandle& loading_klass);
 
@@ -106,16 +106,16 @@ private:
 
   // Implementation methods for loading and constant pool access.
   static KlassHandle get_klass_by_name_impl(KlassHandle& accessing_klass,
-                                  constantPoolHandle& cpool,
+                                  const constantPoolHandle& cpool,
                                   Symbol* klass_name,
                                   bool require_local);
-  static KlassHandle   get_klass_by_index_impl(constantPoolHandle& cpool,
+  static KlassHandle   get_klass_by_index_impl(const constantPoolHandle& cpool,
                                      int klass_index,
                                      bool& is_accessible,
                                      KlassHandle& loading_klass);
   static void   get_field_by_index_impl(instanceKlassHandle& loading_klass, fieldDescriptor& fd,
                                      int field_index);
-  static methodHandle  get_method_by_index_impl(constantPoolHandle& cpool,
+  static methodHandle  get_method_by_index_impl(const constantPoolHandle& cpool,
                                       int method_index, Bytecodes::Code bc,
                                       instanceKlassHandle& loading_klass);
 

@@ -52,7 +52,7 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
     private static final Wrapper[] FROM_WRAPPER_NAME = new Wrapper[16];
 
     // Table of wrappers for primitives, indexed by ASM type sorts
-    private static final Wrapper[] FROM_TYPE_SORT = new Wrapper[16];
+    private static final Wrapper[] FROM_TYPE_SORT = new Wrapper[12];
 
     static {
         for (Wrapper w : Wrapper.values()) {
@@ -63,11 +63,8 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
             }
         }
 
-        for (int i = 0; i < NUM_WRAPPERS; i++) {
-            for (int j = 0; j < NUM_WRAPPERS; j++) {
-                wideningOpcodes[i][j] = Opcodes.NOP;
-            }
-        }
+        // wideningOpcodes[][] will be NOP-initialized by default
+        assert(Opcodes.NOP == 0);
 
         initWidening(LONG,   Opcodes.I2L, BYTE, SHORT, INT, CHAR);
         initWidening(LONG,   Opcodes.F2L, FLOAT);
@@ -190,10 +187,6 @@ class TypeConvertingMethodAdapter extends MethodVisitor {
         if (!nt.equals(ns) && !nt.equals(NAME_OBJECT)) {
             visitTypeInsn(Opcodes.CHECKCAST, nt);
         }
-    }
-
-    private boolean isPrimitive(Wrapper w) {
-        return w != OBJECT;
     }
 
     private Wrapper toWrapper(String desc) {

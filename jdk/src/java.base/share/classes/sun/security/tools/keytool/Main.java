@@ -1297,7 +1297,7 @@ public final class Main {
         for (Certificate ca: keyStore.getCertificateChain(alias)) {
             if (ca instanceof X509Certificate) {
                 X509Certificate xca = (X509Certificate)ca;
-                if (!isSelfSigned(xca)) {
+                if (!KeyStoreUtil.isSelfSigned(xca)) {
                     dumpCert(xca, out);
                 }
             }
@@ -1857,8 +1857,8 @@ public final class Main {
                 } else {
                     // Print the digest of the user cert only
                     out.println
-                        (rb.getString("Certificate.fingerprint.SHA1.") +
-                        getCertFingerPrint("SHA1", chain[0]));
+                        (rb.getString("Certificate.fingerprint.SHA.256.") +
+                        getCertFingerPrint("SHA-256", chain[0]));
                 }
             }
         } else if (keyStore.entryInstanceOf(alias,
@@ -1878,8 +1878,8 @@ public final class Main {
                 out.println(cert.toString());
             } else {
                 out.println("trustedCertEntry, ");
-                out.println(rb.getString("Certificate.fingerprint.SHA1.")
-                            + getCertFingerPrint("SHA1", cert));
+                out.println(rb.getString("Certificate.fingerprint.SHA.256.")
+                            + getCertFingerPrint("SHA-256", cert));
             }
         } else {
             out.println(rb.getString("Unknown.Entry.Type"));
@@ -2705,7 +2705,7 @@ public final class Main {
 
         // if certificate is self-signed, make sure it verifies
         boolean selfSigned = false;
-        if (isSelfSigned(cert)) {
+        if (KeyStoreUtil.isSelfSigned(cert)) {
             cert.verify(cert.getPublicKey());
             selfSigned = true;
         }
@@ -2907,23 +2907,6 @@ public final class Main {
     private void printX509Cert(X509Certificate cert, PrintStream out)
         throws Exception
     {
-        /*
-        out.println("Owner: "
-                    + cert.getSubjectDN().toString()
-                    + "\n"
-                    + "Issuer: "
-                    + cert.getIssuerDN().toString()
-                    + "\n"
-                    + "Serial number: " + cert.getSerialNumber().toString(16)
-                    + "\n"
-                    + "Valid from: " + cert.getNotBefore().toString()
-                    + " until: " + cert.getNotAfter().toString()
-                    + "\n"
-                    + "Certificate fingerprints:\n"
-                    + "\t MD5:  " + getCertFingerPrint("MD5", cert)
-                    + "\n"
-                    + "\t SHA1: " + getCertFingerPrint("SHA1", cert));
-        */
 
         MessageFormat form = new MessageFormat
                 (rb.getString(".PATTERN.printX509Cert"));
@@ -2933,8 +2916,7 @@ public final class Main {
                         cert.getSerialNumber().toString(16),
                         cert.getNotBefore().toString(),
                         cert.getNotAfter().toString(),
-                        getCertFingerPrint("MD5", cert),
-                        getCertFingerPrint("SHA1", cert),
+                        getCertFingerPrint("SHA-1", cert),
                         getCertFingerPrint("SHA-256", cert),
                         cert.getSigAlgName(),
                         pkey.getAlgorithm(),
@@ -2979,25 +2961,6 @@ public final class Main {
                 }
             }
             out.println();
-        }
-    }
-
-    /**
-     * Returns true if the certificate is self-signed, false otherwise.
-     */
-    private boolean isSelfSigned(X509Certificate cert) {
-        return signedBy(cert, cert);
-    }
-
-    private boolean signedBy(X509Certificate end, X509Certificate ca) {
-        if (!ca.getSubjectDN().equals(end.getIssuerDN())) {
-            return false;
-        }
-        try {
-            end.verify(ca.getPublicKey());
-            return true;
-        } catch (Exception e) {
-            return false;
         }
     }
 
@@ -3338,7 +3301,7 @@ public final class Main {
             // find a cert in the reply who signs thisCert
             int j;
             for (j=i; j<replyCerts.length; j++) {
-                if (signedBy(thisCert, (X509Certificate)replyCerts[j])) {
+                if (KeyStoreUtil.signedBy(thisCert, (X509Certificate)replyCerts[j])) {
                     tmpCert = replyCerts[i];
                     replyCerts[i] = replyCerts[j];
                     replyCerts[j] = tmpCert;
@@ -3469,7 +3432,7 @@ public final class Main {
                         Vector<Certificate> chain,
                         Hashtable<Principal, Vector<Certificate>> certs) {
         Principal issuer = certToVerify.getIssuerDN();
-        if (isSelfSigned(certToVerify)) {
+        if (KeyStoreUtil.isSelfSigned(certToVerify)) {
             // reached self-signed root cert;
             // no verification needed because it's trusted.
             chain.addElement(certToVerify);

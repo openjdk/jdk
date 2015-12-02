@@ -37,5 +37,9 @@ void VM_Version::initialize() {
     warning("Unaligned memory access is not available on this CPU");
     FLAG_SET_DEFAULT(UseUnalignedAccesses, false);
   }
+  // Disable prefetching for Zero
+  if (! FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
+    warning("Prefetching is not available for a Zero VM");
+  }
   FLAG_SET_DEFAULT(AllocatePrefetchDistance, 0);
 }

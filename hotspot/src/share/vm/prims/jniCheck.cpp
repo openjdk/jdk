@@ -514,7 +514,7 @@ void jniCheck::validate_throwable_klass(JavaThread* thr, Klass* klass) {
   ASSERT_OOPS_ALLOWED;
   assert(klass != NULL, "klass argument must have a value");
 
-  if (!klass->oop_is_instance() ||
+  if (!klass->is_instance_klass() ||
       !InstanceKlass::cast(klass)->is_subclass_of(SystemDictionary::Throwable_klass())) {
     ReportJNIFatalError(thr, fatal_class_not_a_throwable_class);
   }

@@ -24,7 +24,7 @@
 /*
  * @test StringTest
  * @bug 8028756
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.management/sun.management
  * @build StringTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

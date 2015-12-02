@@ -92,6 +92,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_string_dedup_fixup_time_ms;
 
   double _cur_clear_ct_time_ms;
+  double _cur_expand_heap_time_ms;
   double _cur_ref_proc_time_ms;
   double _cur_ref_enq_time_ms;
 
@@ -120,10 +121,11 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   void print_stats(int level, const char* str, size_t value);
   void print_stats(int level, const char* str, double value, uint workers);
 
+  void note_gc_end();
+
  public:
   G1GCPhaseTimes(uint max_gc_threads);
-  void note_gc_start(uint active_gc_threads, bool mark_in_progress);
-  void note_gc_end();
+  void note_gc_start(uint active_gc_threads);
   void print(double pause_time_sec);
 
   // record the time a phase took in seconds
@@ -153,6 +155,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_clear_ct_time(double ms) {
     _cur_clear_ct_time_ms = ms;
+  }
+
+  void record_expand_heap_time(double ms) {
+    _cur_expand_heap_time_ms = ms;
   }
 
   void record_par_time(double ms) {
@@ -250,6 +256,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double cur_clear_ct_time_ms() {
     return _cur_clear_ct_time_ms;
+  }
+
+  double cur_expand_heap_time_ms() {
+    return _cur_expand_heap_time_ms;
   }
 
   double root_region_scan_wait_time_ms() {

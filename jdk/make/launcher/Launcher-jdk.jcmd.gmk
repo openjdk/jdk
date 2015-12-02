@@ -30,7 +30,6 @@ $(eval $(call SetupBuildLauncher, jinfo, \
     JAVA_ARGS := \
         -Dsun.jvm.hotspot.debugger.useProcDebugger \
         -Dsun.jvm.hotspot.debugger.useWindbgDebugger, \
-    APP_CLASSPATH := /lib/tools.jar /lib/sa-jdi.jar /classes, \
     MACOSX_SIGNED := true, \
 ))
 
@@ -39,7 +38,6 @@ $(eval $(call SetupBuildLauncher, jmap, \
     JAVA_ARGS := \
         -Dsun.jvm.hotspot.debugger.useProcDebugger \
         -Dsun.jvm.hotspot.debugger.useWindbgDebugger, \
-    APP_CLASSPATH := /lib/tools.jar /lib/sa-jdi.jar /classes, \
     MACOSX_SIGNED := true, \
 ))
 
@@ -52,7 +50,6 @@ $(eval $(call SetupBuildLauncher, jstack, \
     JAVA_ARGS := \
         -Dsun.jvm.hotspot.debugger.useProcDebugger \
         -Dsun.jvm.hotspot.debugger.useWindbgDebugger, \
-    APP_CLASSPATH := /lib/tools.jar /lib/sa-jdi.jar /classes, \
     MACOSX_SIGNED := true, \
 ))
 

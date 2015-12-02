@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package jdk.vm.ci.hotspot;
  * It would preferable if this were the base class containing the pointer but that would require
  * mixins since most of the wrapper types have complex supertype hierarchies.
  */
-public interface MetaspaceWrapperObject {
+interface MetaspaceWrapperObject {
 
     long getMetaspacePointer();
 }

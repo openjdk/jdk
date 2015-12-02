@@ -27,6 +27,7 @@
 
 #include "gc/g1/collectionSetChooser.hpp"
 #include "gc/g1/g1CollectorState.hpp"
+#include "gc/g1/g1GCPhaseTimes.hpp"
 #include "gc/g1/g1InCSetState.hpp"
 #include "gc/g1/g1MMUTracker.hpp"
 #include "gc/g1/g1Predictions.hpp"
@@ -39,7 +40,6 @@
 
 class HeapRegion;
 class CollectionSetChooser;
-class G1GCPhaseTimes;
 
 // TraceYoungGenTime collects data on _both_ young and mixed evacuation pauses
 // (the latter may contain non-young regions - i.e. regions that are
@@ -378,6 +378,14 @@ public:
 
   double accum_yg_surv_rate_pred(int age) const;
 
+protected:
+  virtual double average_time_ms(G1GCPhaseTimes::GCParPhases phase) const;
+  virtual double other_time_ms(double pause_time_ms) const;
+
+  double young_other_time_ms() const;
+  double non_young_other_time_ms() const;
+  double constant_other_time_ms(double pause_time_ms) const;
+
 private:
   // Statistics kept per GC stoppage, pause or full.
   TruncatedSeq* _recent_prev_end_times_for_all_gcs_sec;
@@ -465,12 +473,16 @@ private:
   double _mark_remark_start_sec;
   double _mark_cleanup_start_sec;
 
+  void update_young_list_max_and_target_length();
+  void update_young_list_max_and_target_length(size_t rs_lengths);
+
   // Update the young list target length either by setting it to the
   // desired fixed value or by calculating it using G1's pause
   // prediction model. If no rs_lengths parameter is passed, predict
   // the RS lengths using the prediction model, otherwise use the
   // given rs_lengths as the prediction.
-  void update_young_list_target_length(size_t rs_lengths = (size_t) -1);
+  void update_young_list_target_length();
+  void update_young_list_target_length(size_t rs_lengths);
 
   // Calculate and return the minimum desired young list target
   // length. This is the minimum desired young list length according
@@ -492,6 +504,11 @@ private:
                                           uint base_min_length,
                                           uint desired_min_length,
                                           uint desired_max_length) const;
+
+  uint bounded_young_list_target_length(size_t rs_lengths) const;
+
+  void update_rs_lengths_prediction();
+  void update_rs_lengths_prediction(size_t prediction);
 
   // Calculate and return chunk size (in number of regions) for parallel
   // concurrent mark cleanup.
@@ -517,6 +534,8 @@ private:
   // as a percentage of the current heap capacity.
   double reclaimable_bytes_perc(size_t reclaimable_bytes) const;
 
+  // Sets up marking if proper conditions are met.
+  void maybe_start_marking();
 public:
 
   G1CollectorPolicy();
@@ -537,6 +556,8 @@ public:
 
   void init();
 
+  virtual void note_gc_start(uint num_active_workers);
+
   // Create jstat counters for the policy.
   virtual void initialize_gc_policy_counters();
 
@@ -550,6 +571,8 @@ public:
                                               bool is_tlab);
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
+
+  bool about_to_start_mixed_phase() const;
 
   // Record the start and end of an evacuation pause.
   void record_collection_pause_start(double start_time_sec);
@@ -580,6 +603,8 @@ public:
   void print_heap_transition(size_t bytes_before) const;
   void print_heap_transition() const;
   void print_detailed_heap_transition(bool full = false) const;
+
+  virtual void print_phases(double pause_time_sec);
 
   void record_stop_world_start();
   void record_concurrent_pause();
