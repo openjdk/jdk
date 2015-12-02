@@ -1,4 +1,4 @@
-#// Usage: jjs -scripting dom_linker_gutenberg.js
+#// Usage: jjs -cp dom_linker.jar -scripting dom_linker_gutenberg.js
 
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
@@ -30,6 +30,9 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+// This script depends on DOM Element dynalink linker!
+// Without that linker, this script will fail to run!
 
 // Simple example that demonstrates reading XML Rss feed
 // to generate a HTML file from script and show it by browser.
