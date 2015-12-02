@@ -64,9 +64,7 @@ final class NashornPrimitiveLinker implements TypeBasedGuardingDynamicLinker, Gu
     public GuardedInvocation getGuardedInvocation(final LinkRequest request, final LinkerServices linkerServices)
             throws Exception {
         final Object self = request.getReceiver();
-        final NashornCallSiteDescriptor desc = (NashornCallSiteDescriptor) request.getCallSiteDescriptor();
-
-        return Bootstrap.asTypeSafeReturn(Global.primitiveLookup(request, self), linkerServices, desc);
+        return Bootstrap.asTypeSafeReturn(Global.primitiveLookup(request, self), linkerServices, request.getCallSiteDescriptor());
     }
 
     /**

@@ -32,6 +32,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
+import jdk.dynalink.CallSiteDescriptor;
 import jdk.dynalink.linker.GuardedInvocation;
 import jdk.dynalink.linker.LinkRequest;
 import jdk.dynalink.linker.support.Guards;
@@ -95,14 +96,11 @@ public final class PrimitiveLookup {
     public static GuardedInvocation lookupPrimitive(final LinkRequest request, final MethodHandle guard,
                                                     final ScriptObject wrappedReceiver, final MethodHandle wrapFilter,
                                                     final MethodHandle protoFilter) {
-        // lookupPrimitive is only ever invoked from NashornPrimitiveLinker,
-        // which is a linker private to Nashorn, therefore the call site
-        // descriptor class will always be NashornCallSiteDescriptor.
-        final NashornCallSiteDescriptor desc = (NashornCallSiteDescriptor)request.getCallSiteDescriptor();
-        final String name = desc.getOperand();
+        final CallSiteDescriptor desc = request.getCallSiteDescriptor();
+        final String name = NashornCallSiteDescriptor.getOperand(desc);
         final FindProperty find = name != null ? wrappedReceiver.findProperty(name, true) : null;
 
-        switch (desc.getFirstOperation()) {
+        switch (NashornCallSiteDescriptor.getFirstStandardOperation(desc)) {
         case GET_PROPERTY:
         case GET_ELEMENT:
         case GET_METHOD:
