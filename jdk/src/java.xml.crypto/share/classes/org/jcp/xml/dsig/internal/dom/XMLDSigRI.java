@@ -28,7 +28,7 @@
  * ===========================================================================
  */
 /*
- * Copyright (c) 2005, 2015 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: XMLDSigRI.java 1400021 2012-10-19 10:16:04Z coheigea $
@@ -129,7 +129,7 @@ public final class XMLDSigRI extends Provider {
 
     public XMLDSigRI() {
         /* We are the XMLDSig provider */
-        super("XMLDSig", 1.9d, INFO);
+        super("XMLDSig", 9.0d, INFO);
 
         final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {

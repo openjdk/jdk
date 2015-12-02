@@ -202,6 +202,7 @@ AC_DEFUN_ONCE([HELP_PRINT_SUMMARY_AND_WARNINGS],
   printf "* JDK variant:    $JDK_VARIANT\n"
   printf "* JVM variants:   $with_jvm_variants\n"
   printf "* OpenJDK target: OS: $OPENJDK_TARGET_OS, CPU architecture: $OPENJDK_TARGET_CPU_ARCH, address length: $OPENJDK_TARGET_CPU_BITS\n"
+  printf "* Version string: $VERSION_STRING ($VERSION_SHORT)\n"
 
   printf "\n"
   printf "Tools summary:\n"

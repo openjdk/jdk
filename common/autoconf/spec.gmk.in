@@ -130,13 +130,53 @@ HOTSPOT_TOPDIR:=@HOTSPOT_TOPDIR@
 NASHORN_TOPDIR:=@NASHORN_TOPDIR@
 COPYRIGHT_YEAR:=@COPYRIGHT_YEAR@
 
-# Information gathered from the version.numbers file.
-JDK_MAJOR_VERSION:=@JDK_MAJOR_VERSION@
-JDK_MINOR_VERSION:=@JDK_MINOR_VERSION@
-JDK_MICRO_VERSION:=@JDK_MICRO_VERSION@
-JDK_UPDATE_VERSION:=@JDK_UPDATE_VERSION@
-JDK_BUILD_NUMBER:=@JDK_BUILD_NUMBER@
-MILESTONE:=@MILESTONE@
+# New (JEP-223) version information
+
+## Building blocks of the version string
+# First three version numbers, with well-specified meanings (numerical)
+VERSION_MAJOR := @VERSION_MAJOR@
+VERSION_MINOR := @VERSION_MINOR@
+VERSION_SECURITY := @VERSION_SECURITY@
+# Optional fourth element for use by OpenJDK consumers (numerical)
+VERSION_PATCH := @VERSION_PATCH@
+# The pre-release identifier (string)
+VERSION_PRE := @VERSION_PRE@
+# The build number (numerical)
+VERSION_BUILD := @VERSION_BUILD@
+# Optional build information (string)
+VERSION_OPT := @VERSION_OPT@
+
+## Composite variables
+# The version number as a dot separated sequence of numbers, e.g. 9.0.1
+VERSION_NUMBER := @VERSION_NUMBER@
+# VERSION_NUMBER but always with exactly 4 positions, with 0 for empty positions.
+VERSION_NUMBER_FOUR_POSITIONS := @VERSION_NUMBER_FOUR_POSITIONS@
+# The complete version string, with additional build information
+VERSION_STRING := @VERSION_STRING@
+# The short version string, without trailing zeroes and just PRE, if present.
+VERSION_SHORT := @VERSION_SHORT@
+# The Java specification version. It should be equal to version number.
+VERSION_SPECIFICATION := @VERSION_NUMBER@
+# A GA version is defined by the PRE string being empty. Rather than testing for
+# that, this variable defines it with true/false.
+VERSION_IS_GA := @VERSION_IS_GA@
+
+# Convenience CFLAGS settings for passing version information into native programs.
+VERSION_CFLAGS := \
+    -DVERSION_MAJOR=$(VERSION_MAJOR) \
+    -DVERSION_MINOR=$(VERSION_MINOR) \
+    -DVERSION_SECURITY=$(VERSION_SECURITY) \
+    -DVERSION_PATCH=$(VERSION_PATCH) \
+    -DVERSION_PRE='"$(VERSION_PRE)"' \
+    -DVERSION_BUILD=$(VERSION_BUILD) \
+    -DVERSION_OPT='"$(VERSION_OPT)"' \
+    -DVERSION_NUMBER='"$(VERSION_NUMBER)"' \
+    -DVERSION_STRING='"$(VERSION_STRING)"' \
+    -DVERSION_SHORT='"$(VERSION_SHORT)"' \
+    -DVERSION_SPECIFICATION='"$(VERSION_SPECIFICATION)"' \
+    #
+
+# Platform naming variables
 LAUNCHER_NAME:=@LAUNCHER_NAME@
 PRODUCT_NAME:=@PRODUCT_NAME@
 PRODUCT_SUFFIX:=@PRODUCT_SUFFIX@
@@ -144,27 +184,9 @@ JDK_RC_PLATFORM_NAME:=@JDK_RC_PLATFORM_NAME@
 COMPANY_NAME:=@COMPANY_NAME@
 MACOSX_BUNDLE_NAME_BASE=@MACOSX_BUNDLE_NAME_BASE@
 MACOSX_BUNDLE_ID_BASE=@MACOSX_BUNDLE_ID_BASE@
-USER_RELEASE_SUFFIX=@USER_RELEASE_SUFFIX@
 
-# Different version strings generated from the above information.
-JDK_VERSION:=@JDK_VERSION@
+# Different naming strings generated from the above information.
 RUNTIME_NAME=$(PRODUCT_NAME) $(PRODUCT_SUFFIX)
-COOKED_BUILD_NUMBER:=@COOKED_BUILD_NUMBER@
-# These variables need to be generated here so that MILESTONE and
-# JDK_BUILD_NUMBER can be overridden on the make command line.
-ifeq ($(MILESTONE), fcs)
-  RELEASE=$(JDK_VERSION)$(BUILD_VARIANT_RELEASE)
-else
-  RELEASE=$(JDK_VERSION)-$(MILESTONE)$(BUILD_VARIANT_RELEASE)
-endif
-
-ifneq ($(USER_RELEASE_SUFFIX), )
-  FULL_VERSION=$(RELEASE)-$(USER_RELEASE_SUFFIX)-$(JDK_BUILD_NUMBER)
-else
-  FULL_VERSION=$(RELEASE)-$(JDK_BUILD_NUMBER)
-endif
-JRE_RELEASE_VERSION:=$(FULL_VERSION)
-JDK_VERSION_FOR_MANIFEST := $(JDK_MINOR_VERSION).$(JDK_MICRO_VERSION).$(if $(JDK_UPDATE_VERSION),$(JDK_UPDATE_VERSION),0).$(COOKED_BUILD_NUMBER)
 
 # How to compile the code: release, fastdebug or slowdebug
 DEBUG_LEVEL:=@DEBUG_LEVEL@
@@ -641,8 +663,8 @@ SYMBOLS_IMAGE_SUBDIR:=symbols
 SYMBOLS_IMAGE_DIR=$(IMAGES_OUTPUTDIR)/$(SYMBOLS_IMAGE_SUBDIR)
 
 # Macosx bundles directory definitions
-JDK_MACOSX_BUNDLE_SUBDIR=jdk-bundle/jdk$(JDK_VERSION).jdk/Contents
-JRE_MACOSX_BUNDLE_SUBDIR=jre-bundle/jre$(JDK_VERSION).jre/Contents
+JDK_MACOSX_BUNDLE_SUBDIR=jdk-bundle/jdk-$(VERSION_NUMBER).jdk/Contents
+JRE_MACOSX_BUNDLE_SUBDIR=jre-bundle/jre-$(VERSION_NUMBER).jre/Contents
 JDK_MACOSX_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JDK_MACOSX_BUNDLE_SUBDIR)
 JRE_MACOSX_BUNDLE_DIR=$(IMAGES_OUTPUTDIR)/$(JRE_MACOSX_BUNDLE_SUBDIR)
 
