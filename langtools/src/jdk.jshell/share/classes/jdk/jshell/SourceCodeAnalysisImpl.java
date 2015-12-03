@@ -75,8 +75,14 @@ import javax.lang.model.type.TypeMirror;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_COMPA;
 
 import java.io.IOException;
+import java.net.URI;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
@@ -92,6 +98,7 @@ import static java.util.stream.Collectors.toSet;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.QualifiedNameable;
@@ -100,10 +107,8 @@ import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.ElementFilter;
-import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.JavaFileManager.Location;
-import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
 import static jdk.jshell.Util.REPL_DOESNOTMATTER_CLASS_NAME;
@@ -584,42 +589,114 @@ class SourceCodeAnalysisImpl extends SourceCodeAnalysis {
                 .collect(toList());
     }
 
-    private Set<PackageElement> listPackages(AnalyzeTask at, String enclosingPackage) {
-        Set<PackageElement> packs = new HashSet<>();
-        listPackages(at, StandardLocation.PLATFORM_CLASS_PATH, enclosingPackage, packs);
-        listPackages(at, StandardLocation.CLASS_PATH, enclosingPackage, packs);
-        listPackages(at, StandardLocation.SOURCE_PATH, enclosingPackage, packs);
-        return packs;
+    private Set<String> emptyContextPackages = null;
+
+    void classpathChanged() {
+        emptyContextPackages = null;
     }
 
-    private void listPackages(AnalyzeTask at, Location loc, String currentPackage, Set<PackageElement> packs) {
-        try {
-            MemoryFileManager fm = proc.taskFactory.fileManager();
-            for (JavaFileObject file : fm.list(loc, currentPackage, fileKinds, true)) {
-                String binaryName = fm.inferBinaryName(loc, file);
-                if (!currentPackage.isEmpty() && !binaryName.startsWith(currentPackage + "."))
-                    continue;
-                int nextDot = binaryName.indexOf('.', !currentPackage.isEmpty() ? currentPackage.length() + 1 : 0);
-                if (nextDot == (-1))
-                    continue;
-                Elements elements = at.getElements();
-                PackageElement pack =
-                        elements.getPackageElement(binaryName.substring(0, nextDot));
-                if (pack == null) {
-                    //if no types in the package have ever been seen, the package will be unknown
-                    //try to load a type, and then try to recognize the package again:
-                    elements.getTypeElement(binaryName);
-                    pack = elements.getPackageElement(binaryName.substring(0, nextDot));
-                }
-                if (pack != null)
-                    packs.add(pack);
+    private Set<PackageElement> listPackages(AnalyzeTask at, String enclosingPackage) {
+        Set<String> packs;
+
+        if (enclosingPackage.isEmpty() && emptyContextPackages != null) {
+            packs = emptyContextPackages;
+        } else {
+            packs = new HashSet<>();
+
+            listPackages(StandardLocation.PLATFORM_CLASS_PATH, enclosingPackage, packs);
+            listPackages(StandardLocation.CLASS_PATH, enclosingPackage, packs);
+            listPackages(StandardLocation.SOURCE_PATH, enclosingPackage, packs);
+
+            if (enclosingPackage.isEmpty()) {
+                emptyContextPackages = packs;
             }
-        } catch (IOException ex) {
-            //TODO: should log?
+        }
+
+        return packs.stream()
+                    .map(pkg -> createPackageElement(at, pkg))
+                    .collect(Collectors.toSet());
+    }
+
+    private PackageElement createPackageElement(AnalyzeTask at, String packageName) {
+        Names names = Names.instance(at.getContext());
+        Symtab syms = Symtab.instance(at.getContext());
+        PackageElement existing = syms.enterPackage(names.fromString(packageName));
+
+        return existing;
+    }
+
+    private void listPackages(Location loc, String enclosing, Set<String> packs) {
+        Iterable<? extends Path> paths = proc.taskFactory.fileManager().getLocationAsPaths(loc);
+
+        if (paths == null)
+            return ;
+
+        for (Path p : paths) {
+            listPackages(p, enclosing, packs);
         }
     }
-    //where:
-        private final Set<JavaFileObject.Kind> fileKinds = EnumSet.of(JavaFileObject.Kind.CLASS);
+
+    private void listPackages(Path path, String enclosing, Set<String> packages) {
+        try {
+            if (path.equals(Paths.get("JRT_MARKER_FILE"))) {
+                FileSystem jrtfs = FileSystems.getFileSystem(URI.create("jrt:/"));
+                Path modules = jrtfs.getPath("modules");
+                try (DirectoryStream<Path> stream = Files.newDirectoryStream(modules)) {
+                    for (Path c : stream) {
+                        listDirectory(c, enclosing, packages);
+                    }
+                }
+            } else if (!Files.isDirectory(path)) {
+                if (Files.exists(path)) {
+                    ClassLoader cl = SourceCodeAnalysisImpl.class.getClassLoader();
+
+                    try (FileSystem zip = FileSystems.newFileSystem(path, cl)) {
+                        listDirectory(zip.getRootDirectories().iterator().next(), enclosing, packages);
+                    }
+                }
+            } else {
+                listDirectory(path, enclosing, packages);
+            }
+        } catch (IOException ex) {
+            proc.debug(ex, "SourceCodeAnalysisImpl.listPackages(" + path.toString() + ", " + enclosing + ", " + packages + ")");
+        }
+    }
+
+    private void listDirectory(Path path, String enclosing, Set<String> packages) throws IOException {
+        String separator = path.getFileSystem().getSeparator();
+        Path resolved = path.resolve(enclosing.replace(".", separator));
+
+        if (Files.isDirectory(resolved)) {
+            try (DirectoryStream<Path> ds = Files.newDirectoryStream(resolved)) {
+                for (Path entry : ds) {
+                    String name = pathName(entry);
+
+                    if (SourceVersion.isIdentifier(name) &&
+                        Files.isDirectory(entry) &&
+                        validPackageCandidate(entry)) {
+                        packages.add(enclosing + (enclosing.isEmpty() ? "" : ".") + name);
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean validPackageCandidate(Path p) throws IOException {
+        try (Stream<Path> dir = Files.list(p)) {
+            return dir.anyMatch(e -> Files.isDirectory(e) && SourceVersion.isIdentifier(pathName(e)) ||
+                                e.getFileName().toString().endsWith(".class"));
+        }
+    }
+
+    private String pathName(Path p) {
+        String separator = p.getFileSystem().getSeparator();
+        String name = p.getFileName().toString();
+
+        if (name.endsWith(separator)) //jars have '/' appended
+            name = name.substring(0, name.length() - separator.length());
+
+        return name;
+    }
 
     private Element createArrayLengthSymbol(AnalyzeTask at, TypeMirror site) {
         Name length = Names.instance(at.getContext()).length;

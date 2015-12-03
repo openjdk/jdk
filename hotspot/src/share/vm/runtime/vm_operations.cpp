@@ -29,6 +29,7 @@
 #include "code/codeCacheExtensions.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
+#include "logging/log.hpp"
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/symbol.hpp"
@@ -55,13 +56,19 @@ void VM_Operation::set_calling_thread(Thread* thread, ThreadPriority priority) {
 
 void VM_Operation::evaluate() {
   ResourceMark rm;
-  if (TraceVMOperation) {
-    tty->print("[");
-    NOT_PRODUCT(print();)
+  outputStream* debugstream;
+  bool enabled = log_is_enabled(Debug, vmoperation);
+  if (enabled) {
+    debugstream = LogHandle(vmoperation)::debug_stream();
+    debugstream->print("begin ");
+    print_on_error(debugstream);
+    debugstream->cr();
   }
   doit();
-  if (TraceVMOperation) {
-    tty->print_cr("]");
+  if (enabled) {
+    debugstream->print("end ");
+    print_on_error(debugstream);
+    debugstream->cr();
   }
 }
 

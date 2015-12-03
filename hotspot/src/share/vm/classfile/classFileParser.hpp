@@ -131,7 +131,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
       _method_LambdaForm_Compiled,
       _method_LambdaForm_Hidden,
       _method_HotSpotIntrinsicCandidate,
-      _sun_misc_Contended,
+      _jdk_internal_vm_annotation_Contended,
       _field_Stable,
       _annotation_LIMIT
     };
@@ -164,7 +164,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
     void set_contended_group(u2 group) { _contended_group = group; }
     u2 contended_group() const { return _contended_group; }
 
-    bool is_contended() const { return has_annotation(_sun_misc_Contended); }
+    bool is_contended() const { return has_annotation(_jdk_internal_vm_annotation_Contended); }
 
     void set_stable(bool stable) { set_annotation(_field_Stable); }
     bool is_stable() const { return has_annotation(_field_Stable); }

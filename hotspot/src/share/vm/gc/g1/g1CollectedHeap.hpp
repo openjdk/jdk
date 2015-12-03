@@ -33,6 +33,7 @@
 #include "gc/g1/g1HRPrinter.hpp"
 #include "gc/g1/g1InCSetState.hpp"
 #include "gc/g1/g1MonitoringSupport.hpp"
+#include "gc/g1/g1EvacFailure.hpp"
 #include "gc/g1/g1EvacStats.hpp"
 #include "gc/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc/g1/g1YCTypes.hpp"
@@ -244,9 +245,11 @@ private:
   // instead of doing a STW GC. Currently, a concurrent cycle is
   // explicitly started if:
   // (a) cause == _gc_locker and +GCLockerInvokesConcurrent, or
-  // (b) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent.
-  // (c) cause == _dcmd_gc_run and +ExplicitGCInvokesConcurrent.
-  // (d) cause == _g1_humongous_allocation
+  // (b) cause == _g1_humongous_allocation
+  // (c) cause == _java_lang_system_gc and +ExplicitGCInvokesConcurrent.
+  // (d) cause == _dcmd_gc_run and +ExplicitGCInvokesConcurrent.
+  // (e) cause == _update_allocation_context_stats_inc
+  // (f) cause == _wb_conc_mark
   bool should_do_concurrent_full_gc(GCCause::Cause cause);
 
   // indicates whether we are in young or mixed GC mode
@@ -291,6 +294,8 @@ private:
   void log_gc_footer(double pause_time_sec);
 
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
+
+  void process_weak_jni_handles();
 
   // These are macros so that, if the assert fires, we get the correct
   // line number, file, etc.
@@ -471,26 +476,20 @@ protected:
   void retire_gc_alloc_region(HeapRegion* alloc_region,
                               size_t allocated_bytes, InCSetState dest);
 
-  // - if explicit_gc is true, the GC is for a System.gc() or a heap
-  //   inspection request and should collect the entire heap
+  // - if explicit_gc is true, the GC is for a System.gc() etc,
+  //   otherwise it's for a failed allocation.
   // - if clear_all_soft_refs is true, all soft references should be
-  //   cleared during the GC
-  // - if explicit_gc is false, word_size describes the allocation that
-  //   the GC should attempt (at least) to satisfy
+  //   cleared during the GC.
   // - it returns false if it is unable to do the collection due to the
-  //   GC locker being active, true otherwise
-  bool do_collection(bool explicit_gc,
-                     bool clear_all_soft_refs,
-                     size_t word_size);
+  //   GC locker being active, true otherwise.
+  bool do_full_collection(bool explicit_gc,
+                          bool clear_all_soft_refs);
 
-  // Callback from VM_G1CollectFull operation.
-  // Perform a full collection.
+  // Callback from VM_G1CollectFull operation, or collect_as_vm_thread.
   virtual void do_full_collection(bool clear_all_soft_refs);
 
-  // Resize the heap if necessary after a full collection.  If this is
-  // after a collect-for allocation, "word_size" is the allocation size,
-  // and will be considered part of the used portion of the heap.
-  void resize_if_necessary_after_full_collection(size_t word_size);
+  // Resize the heap if necessary after a full collection.
+  void resize_if_necessary_after_full_collection();
 
   // Callback from VM_G1CollectForAllocation operation.
   // This function does everything necessary/possible to satisfy a
@@ -581,6 +580,8 @@ public:
   void clear_cset_fast_test() {
     _in_cset_fast_test.clear();
   }
+
+  bool is_user_requested_concurrent_full_gc(GCCause::Cause cause);
 
   // This is called at the start of either a concurrent cycle or a Full
   // GC to update the number of old marking cycles started.
@@ -784,20 +785,13 @@ protected:
   // forwarding pointers to themselves.  Reset them.
   void remove_self_forwarding_pointers();
 
-  struct OopAndMarkOop {
-   private:
-    oop _o;
-    markOop _m;
-   public:
-    OopAndMarkOop(oop obj, markOop m) : _o(obj), _m(m) {
-    }
+  // Restore the preserved mark words for objects with self-forwarding pointers.
+  void restore_preserved_marks();
 
-    void set_mark() {
-      _o->set_mark(_m);
-    }
-  };
+  // Restore the objects in the regions in the collection set after an
+  // evacuation failure.
+  void restore_after_evac_failure();
 
-  typedef Stack<OopAndMarkOop,mtGC> OopAndMarkOopStack;
   // Stores marks with the corresponding oop that we need to preserve during evacuation
   // failure.
   OopAndMarkOopStack*  _preserved_objs;
@@ -1150,9 +1144,6 @@ public:
   // "CollectedHeap" supports.
   virtual void collect(GCCause::Cause cause);
 
-  // The same as above but assume that the caller holds the Heap_lock.
-  void collect_locked(GCCause::Cause cause);
-
   virtual bool copy_allocation_context_stats(const jint* contexts,
                                              jlong* totals,
                                              jbyte* accuracy,
@@ -1352,13 +1343,9 @@ public:
     return (region_size / 2);
   }
 
-  // Update mod union table with the set of dirty cards.
-  void updateModUnion();
-
-  // Set the mod union bits corresponding to the given memRegion.  Note
-  // that this is always a safe operation, since it doesn't clear any
-  // bits.
-  void markModUnionRange(MemRegion mr);
+  // Returns the number of regions the humongous object of the given word size
+  // requires.
+  static size_t humongous_obj_size_in_regions(size_t word_size);
 
   // Print the maximum heap capacity.
   virtual size_t max_capacity() const;
@@ -1533,6 +1520,42 @@ public:
 
 protected:
   size_t _max_heap_capacity;
+};
+
+class G1ParEvacuateFollowersClosure : public VoidClosure {
+private:
+  double _start_term;
+  double _term_time;
+  size_t _term_attempts;
+
+  void start_term_time() { _term_attempts++; _start_term = os::elapsedTime(); }
+  void end_term_time() { _term_time += os::elapsedTime() - _start_term; }
+protected:
+  G1CollectedHeap*              _g1h;
+  G1ParScanThreadState*         _par_scan_state;
+  RefToScanQueueSet*            _queues;
+  ParallelTaskTerminator*       _terminator;
+
+  G1ParScanThreadState*   par_scan_state() { return _par_scan_state; }
+  RefToScanQueueSet*      queues()         { return _queues; }
+  ParallelTaskTerminator* terminator()     { return _terminator; }
+
+public:
+  G1ParEvacuateFollowersClosure(G1CollectedHeap* g1h,
+                                G1ParScanThreadState* par_scan_state,
+                                RefToScanQueueSet* queues,
+                                ParallelTaskTerminator* terminator)
+    : _g1h(g1h), _par_scan_state(par_scan_state),
+      _queues(queues), _terminator(terminator),
+      _start_term(0.0), _term_time(0.0), _term_attempts(0) {}
+
+  void do_void();
+
+  double term_time() const { return _term_time; }
+  size_t term_attempts() const { return _term_attempts; }
+
+private:
+  inline bool offer_termination();
 };
 
 #endif // SHARE_VM_GC_G1_G1COLLECTEDHEAP_HPP

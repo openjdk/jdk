@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_RUNTIME_COMMANDLINEFLAGRANGELIST_HPP
 #define SHARE_VM_RUNTIME_COMMANDLINEFLAGRANGELIST_HPP
 
+#include "memory/metaspaceShared.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/growableArray.hpp"
 

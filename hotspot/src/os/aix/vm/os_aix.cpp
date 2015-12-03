@@ -2263,8 +2263,12 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
 
 bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
 
-  assert0(is_aligned_to(addr, os::vm_page_size()));
-  assert0(is_aligned_to(size, os::vm_page_size()));
+  assert(is_aligned_to(addr, os::vm_page_size()),
+    "addr " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
+    p2i(addr), os::vm_page_size());
+  assert(is_aligned_to(size, os::vm_page_size()),
+    "size " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
+    size, os::vm_page_size());
 
   vmembk_t* const vmi = vmembk_find(addr);
   assert0(vmi);
@@ -2287,8 +2291,12 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size,
 }
 
 bool os::pd_uncommit_memory(char* addr, size_t size) {
-  assert0(is_aligned_to(addr, os::vm_page_size()));
-  assert0(is_aligned_to(size, os::vm_page_size()));
+  assert(is_aligned_to(addr, os::vm_page_size()),
+    "addr " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
+    p2i(addr), os::vm_page_size());
+  assert(is_aligned_to(size, os::vm_page_size()),
+    "size " PTR_FORMAT " not aligned to vm_page_size (" PTR_FORMAT ")",
+    size, os::vm_page_size());
 
   // Dynamically do different things for mmap/shmat.
   const vmembk_t* const vmi = vmembk_find(addr);
@@ -3362,20 +3370,6 @@ void os::Aix::check_signal_handler(int sig) {
   }
 }
 
-extern bool signal_name(int signo, char* buf, size_t len);
-
-const char* os::exception_name(int exception_code, char* buf, size_t size) {
-  if (0 < exception_code && exception_code <= SIGRTMAX) {
-    // signal
-    if (!signal_name(exception_code, buf, size)) {
-      jio_snprintf(buf, size, "SIG%d", exception_code);
-    }
-    return buf;
-  } else {
-    return NULL;
-  }
-}
-
 // To install functions for atexit system call
 extern "C" {
   static void perfMemory_exit_helper() {
@@ -3785,7 +3779,7 @@ os::os_exception_wrapper(java_call_t f, JavaValue* value, const methodHandle& me
 void os::print_statistics() {
 }
 
-int os::message_box(const char* title, const char* message) {
+bool os::message_box(const char* title, const char* message) {
   int i;
   fdStream err(defaultStream::error_fd());
   for (i = 0; i < 78; i++) err.print_raw("=");
@@ -4313,7 +4307,7 @@ static bool query_stack_dimensions(address* p_stack_base, size_t* p_stack_size) 
 
   pthread_t tid = pthread_self();
   struct __pthrdsinfo pinfo;
-  char dummy[1]; // We only need this to satisfy the api and to not get E.
+  char dummy[1]; // Just needed to satisfy pthread_getthrds_np.
   int dummy_size = sizeof(dummy);
 
   memset(&pinfo, 0, sizeof(pinfo));
@@ -4334,38 +4328,39 @@ static bool query_stack_dimensions(address* p_stack_base, size_t* p_stack_size) 
   // Not sure what to do here - I feel inclined to forbid this use case completely.
   guarantee0(pinfo.__pi_stacksize);
 
-  // Note: the pthread stack on AIX seems to look like this:
+  // Note: we get three values from pthread_getthrds_np:
+  //       __pi_stackaddr, __pi_stacksize, __pi_stackend
   //
-  // ---------------------   real base ? at page border ?
+  // high addr    ---------------------
   //
-  //     pthread internal data, like ~2K, see also
-  //     http://publib.boulder.ibm.com/infocenter/pseries/v5r3/index.jsp?topic=/com.ibm.aix.prftungd/doc/prftungd/thread_supp_tun_params.htm
+  //    |         pthread internal data, like ~2K
+  //    |
+  //    |         ---------------------   __pi_stackend   (usually not page aligned, (xxxxF890))
+  //    |
+  //    |
+  //    |
+  //    |
+  //    |
+  //    |
+  //    |          ---------------------   (__pi_stackend - __pi_stacksize)
+  //    |
+  //    |          padding to align the following AIX guard pages, if enabled.
+  //    |
+  //    V          ---------------------   __pi_stackaddr
   //
-  // ---------------------   __pi_stackend - not page aligned, (xxxxF890)
-  //
-  //     stack
-  //      ....
-  //
-  //     stack
-  //
-  // ---------------------   __pi_stackend  - __pi_stacksize
-  //
-  //     padding due to AIX guard pages (?) see AIXTHREAD_GUARDPAGES
-  // ---------------------   __pi_stackaddr  (page aligned if AIXTHREAD_GUARDPAGES > 0)
-  //
-  //   AIX guard pages (?)
+  // low addr      AIX guard pages, if enabled (AIXTHREAD_GUARDPAGES > 0)
   //
 
-  // So, the safe thing to do is to use the area from __pi_stackend to __pi_stackaddr;
-  // __pi_stackend however is almost never page aligned.
-  //
+  address stack_base = (address)(pinfo.__pi_stackend);
+  address stack_low_addr = (address)align_ptr_up(pinfo.__pi_stackaddr,  os::vm_page_size());
+  size_t stack_size = stack_base - stack_low_addr;
 
   if (p_stack_base) {
-    (*p_stack_base) = (address) (pinfo.__pi_stackend);
+    *p_stack_base = stack_base;
   }
 
   if (p_stack_size) {
-    (*p_stack_size) = pinfo.__pi_stackend - pinfo.__pi_stackaddr;
+    *p_stack_size = stack_size;
   }
 
   return true;
@@ -4914,3 +4909,28 @@ void TestReserveMemorySpecial_test() {
   // No tests available for this platform
 }
 #endif
+
+bool os::start_debugging(char *buf, int buflen) {
+  int len = (int)strlen(buf);
+  char *p = &buf[len];
+
+  jio_snprintf(p, buflen -len,
+                 "\n\n"
+                 "Do you want to debug the problem?\n\n"
+                 "To debug, run 'dbx -a %d'; then switch to thread tid " INTX_FORMAT ", k-tid " INTX_FORMAT "\n"
+                 "Enter 'yes' to launch dbx automatically (PATH must include dbx)\n"
+                 "Otherwise, press RETURN to abort...",
+                 os::current_process_id(),
+                 os::current_thread_id(), thread_self());
+
+  bool yes = os::message_box("Unexpected Error", buf);
+
+  if (yes) {
+    // yes, user asked VM to launch debugger
+    jio_snprintf(buf, buflen, "dbx -a %d", os::current_process_id());
+
+    os::fork_and_exec(buf);
+    yes = false;
+  }
+  return yes;
+}

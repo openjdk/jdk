@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,12 +22,17 @@
  */
 
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.List;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.net.*;
+import java.io.*;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.FileSystemNotFoundException;
+import java.nio.file.ProviderNotFoundException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.function.Predicate;
 
 abstract class Task<T> implements Runnable {
     private transient boolean working = true;
@@ -74,26 +79,74 @@ abstract class Task<T> implements Runnable {
     }
 
     static List<Class<?>> getClasses(int count) throws Exception {
-        String resource = ClassLoader.getSystemClassLoader().getResource("java/lang/Object.class").toString();
-
-        Pattern pattern = Pattern.compile("jar:file:(.*)!.*");
-        Matcher matcher = pattern.matcher(resource);
-        matcher.matches();
-        resource = matcher.group(1);
-
         List<Class<?>> classes = new ArrayList<>();
-        try (JarFile jarFile = new JarFile(resource)) {
-            Enumeration<JarEntry> entries = jarFile.entries();
-            while (entries.hasMoreElements()) {
-                String name = entries.nextElement().getName();
-                if (name.startsWith("java") && name.endsWith(".class")) {
-                    classes.add(Class.forName(name.substring(0, name.indexOf(".")).replace('/', '.')));
-                    if (count == classes.size()) {
-                        break;
-                    }
-                }
+        FileSystem fs = null;
+
+        try {
+            fs = FileSystems.getFileSystem(URI.create("jrt:/"));
+        } catch (ProviderNotFoundException | FileSystemNotFoundException e) {
+            throw new RuntimeException("FAIL - JRT Filesystem not found");
+        }
+
+        List<String> fileNames;
+        Path modules = fs.getPath("/modules");
+
+        Predicate<String> startsWithJavaBase          = path -> path.toString().startsWith("java.base/java");
+        Predicate<String> startsWithJavaDesktop       = path -> path.toString().startsWith("java.desktop/java");
+        Predicate<String> startsWithJavaDataTransfer  = path -> path.toString().startsWith("java.datatransfer/java");
+        Predicate<String> startsWithJavaRMI           = path -> path.toString().startsWith("java.rmi/java");
+        Predicate<String> startsWithJavaSmartCardIO   = path -> path.toString().startsWith("java.smartcardio/java");
+        Predicate<String> startsWithJavaManagement    = path -> path.toString().startsWith("java.management/java");
+        Predicate<String> startsWithJavaXML           = path -> path.toString().startsWith("java.xml/java");
+        Predicate<String> startsWithJavaXMLBind       = path -> path.toString().startsWith("java.xml.bind/java");
+        Predicate<String> startsWithJavaScripting     = path -> path.toString().startsWith("java.scripting/java");
+        Predicate<String> startsWithJavaNaming        = path -> path.toString().startsWith("java.naming/java");
+        Predicate<String> startsWithJavaSQL           = path -> path.toString().startsWith("java.sql/java");
+        Predicate<String> startsWithJavaActivation    = path -> path.toString().startsWith("java.activation/java");
+        Predicate<String> startsWithJavaCompiler      = path -> path.toString().startsWith("java.compiler/java");
+        Predicate<String> startsWithJavaAnnotations   = path -> path.toString().startsWith("java.annotations/java");
+        Predicate<String> startsWithJavaTransaction   = path -> path.toString().startsWith("java.transaction/java");
+        Predicate<String> startsWithJavaLogging       = path -> path.toString().startsWith("java.logging/java");
+        Predicate<String> startsWithJavaCorba         = path -> path.toString().startsWith("java.corba/java");
+        Predicate<String> startsWithJavaPrefs         = path -> path.toString().startsWith("java.prefs/java");
+
+        fileNames = Files.walk(modules)
+                .map(Path::toString)
+                .filter(path -> path.toString().contains("java"))
+                .map(s -> s.substring(9))  // remove /modules/ from beginning
+                .filter(startsWithJavaBase
+                    .or(startsWithJavaDesktop)
+                    .or(startsWithJavaDataTransfer)
+                    .or(startsWithJavaRMI)
+                    .or(startsWithJavaSmartCardIO)
+                    .or(startsWithJavaManagement)
+                    .or(startsWithJavaXML)
+                    .or(startsWithJavaXMLBind)
+                    .or(startsWithJavaScripting)
+                    .or(startsWithJavaNaming)
+                    .or(startsWithJavaSQL)
+                    .or(startsWithJavaActivation)
+                    .or(startsWithJavaCompiler)
+                    .or(startsWithJavaAnnotations)
+                    .or(startsWithJavaTransaction)
+                    .or(startsWithJavaLogging)
+                    .or(startsWithJavaCorba)
+                    .or(startsWithJavaPrefs))
+                .map(s -> s.replace('/', '.'))
+                .filter(path -> path.toString().endsWith(".class"))
+                .map(s -> s.substring(0, s.length() - 6))  // drop .class
+                .map(s -> s.substring(s.indexOf(".")))
+                .filter(path -> path.toString().contains("java"))
+                .map(s -> s.substring(s.indexOf("java")))
+                .collect(Collectors.toList());
+
+        for (String name : fileNames) {
+            classes.add(Class.forName(name));
+            if (count == classes.size()) {
+                break;
             }
         }
+
         return classes;
     }
 }

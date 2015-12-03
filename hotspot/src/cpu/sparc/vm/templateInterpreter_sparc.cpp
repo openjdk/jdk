@@ -803,6 +803,106 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
   return NULL;
 }
 
+/**
+ * Method entry for static native methods:
+ *   int java.util.zip.CRC32.update(int crc, int b)
+ */
+address InterpreterGenerator::generate_CRC32_update_entry() {
+
+  if (UseCRC32Intrinsics) {
+    address entry = __ pc();
+
+    Label L_slow_path;
+    // If we need a safepoint check, generate full interpreter entry.
+    ExternalAddress state(SafepointSynchronize::address_of_state());
+    __ set(ExternalAddress(SafepointSynchronize::address_of_state()), O2);
+    __ set(SafepointSynchronize::_not_synchronized, O3);
+    __ cmp_and_br_short(O2, O3, Assembler::notEqual, Assembler::pt, L_slow_path);
+
+    // Load parameters
+    const Register crc   = O0; // initial crc
+    const Register val   = O1; // byte to update with
+    const Register table = O2; // address of 256-entry lookup table
+
+    __ ldub(Gargs, 3, val);
+    __ lduw(Gargs, 8, crc);
+
+    __ set(ExternalAddress(StubRoutines::crc_table_addr()), table);
+
+    __ not1(crc); // ~crc
+    __ clruwu(crc);
+    __ update_byte_crc32(crc, val, table);
+    __ not1(crc); // ~crc
+
+    // result in O0
+    __ retl();
+    __ delayed()->nop();
+
+    // generate a vanilla native entry as the slow path
+    __ bind(L_slow_path);
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+    return entry;
+  }
+  return NULL;
+}
+
+/**
+ * Method entry for static native methods:
+ *   int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
+ *   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
+ */
+address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
+
+  if (UseCRC32Intrinsics) {
+    address entry = __ pc();
+
+    Label L_slow_path;
+    // If we need a safepoint check, generate full interpreter entry.
+    ExternalAddress state(SafepointSynchronize::address_of_state());
+    __ set(ExternalAddress(SafepointSynchronize::address_of_state()), O2);
+    __ set(SafepointSynchronize::_not_synchronized, O3);
+    __ cmp_and_br_short(O2, O3, Assembler::notEqual, Assembler::pt, L_slow_path);
+
+    // Load parameters from the stack
+    const Register crc    = O0; // initial crc
+    const Register buf    = O1; // source java byte array address
+    const Register len    = O2; // len
+    const Register offset = O3; // offset
+
+    // Arguments are reversed on java expression stack
+    // Calculate address of start element
+    if (kind == Interpreter::java_util_zip_CRC32_updateByteBuffer) {
+      __ lduw(Gargs, 0,  len);
+      __ lduw(Gargs, 8,  offset);
+      __ ldx( Gargs, 16, buf);
+      __ lduw(Gargs, 32, crc);
+      __ add(buf, offset, buf);
+    } else {
+      __ lduw(Gargs, 0,  len);
+      __ lduw(Gargs, 8,  offset);
+      __ ldx( Gargs, 16, buf);
+      __ lduw(Gargs, 24, crc);
+      __ add(buf, arrayOopDesc::base_offset_in_bytes(T_BYTE), buf); // account for the header size
+      __ add(buf ,offset, buf);
+    }
+
+    // Call the crc32 kernel
+    __ MacroAssembler::save_thread(L7_thread_cache);
+    __ kernel_crc32(crc, buf, len, O3);
+    __ MacroAssembler::restore_thread(L7_thread_cache);
+
+    // result in O0
+    __ retl();
+    __ delayed()->nop();
+
+    // generate a vanilla native entry as the slow path
+    __ bind(L_slow_path);
+    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
+    return entry;
+  }
+  return NULL;
+}
+
 //
 // Interpreter stub for calling a native method. (asm interpreter)
 // This sets up a somewhat different looking stack for calling the native method

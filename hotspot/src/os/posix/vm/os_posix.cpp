@@ -493,166 +493,171 @@ bool os::is_interrupted(Thread* thread, bool clear_interrupted) {
   return interrupted;
 }
 
-// Returned string is a constant. For unknown signals "UNKNOWN" is returned.
-const char* os::Posix::get_signal_name(int sig, char* out, size_t outlen) {
 
-  static const struct {
-    int sig; const char* name;
-  }
-  info[] =
+
+static const struct {
+  int sig; const char* name;
+}
+ g_signal_info[] =
   {
-    {  SIGABRT,     "SIGABRT" },
+  {  SIGABRT,     "SIGABRT" },
 #ifdef SIGAIO
-    {  SIGAIO,      "SIGAIO" },
+  {  SIGAIO,      "SIGAIO" },
 #endif
-    {  SIGALRM,     "SIGALRM" },
+  {  SIGALRM,     "SIGALRM" },
 #ifdef SIGALRM1
-    {  SIGALRM1,    "SIGALRM1" },
+  {  SIGALRM1,    "SIGALRM1" },
 #endif
-    {  SIGBUS,      "SIGBUS" },
+  {  SIGBUS,      "SIGBUS" },
 #ifdef SIGCANCEL
-    {  SIGCANCEL,   "SIGCANCEL" },
+  {  SIGCANCEL,   "SIGCANCEL" },
 #endif
-    {  SIGCHLD,     "SIGCHLD" },
+  {  SIGCHLD,     "SIGCHLD" },
 #ifdef SIGCLD
-    {  SIGCLD,      "SIGCLD" },
+  {  SIGCLD,      "SIGCLD" },
 #endif
-    {  SIGCONT,     "SIGCONT" },
+  {  SIGCONT,     "SIGCONT" },
 #ifdef SIGCPUFAIL
-    {  SIGCPUFAIL,  "SIGCPUFAIL" },
+  {  SIGCPUFAIL,  "SIGCPUFAIL" },
 #endif
 #ifdef SIGDANGER
-    {  SIGDANGER,   "SIGDANGER" },
+  {  SIGDANGER,   "SIGDANGER" },
 #endif
 #ifdef SIGDIL
-    {  SIGDIL,      "SIGDIL" },
+  {  SIGDIL,      "SIGDIL" },
 #endif
 #ifdef SIGEMT
-    {  SIGEMT,      "SIGEMT" },
+  {  SIGEMT,      "SIGEMT" },
 #endif
-    {  SIGFPE,      "SIGFPE" },
+  {  SIGFPE,      "SIGFPE" },
 #ifdef SIGFREEZE
-    {  SIGFREEZE,   "SIGFREEZE" },
+  {  SIGFREEZE,   "SIGFREEZE" },
 #endif
 #ifdef SIGGFAULT
-    {  SIGGFAULT,   "SIGGFAULT" },
+  {  SIGGFAULT,   "SIGGFAULT" },
 #endif
 #ifdef SIGGRANT
-    {  SIGGRANT,    "SIGGRANT" },
+  {  SIGGRANT,    "SIGGRANT" },
 #endif
-    {  SIGHUP,      "SIGHUP" },
-    {  SIGILL,      "SIGILL" },
-    {  SIGINT,      "SIGINT" },
+  {  SIGHUP,      "SIGHUP" },
+  {  SIGILL,      "SIGILL" },
+  {  SIGINT,      "SIGINT" },
 #ifdef SIGIO
-    {  SIGIO,       "SIGIO" },
+  {  SIGIO,       "SIGIO" },
 #endif
 #ifdef SIGIOINT
-    {  SIGIOINT,    "SIGIOINT" },
+  {  SIGIOINT,    "SIGIOINT" },
 #endif
 #ifdef SIGIOT
-  // SIGIOT is there for BSD compatibility, but on most Unices just a
-  // synonym for SIGABRT. The result should be "SIGABRT", not
-  // "SIGIOT".
-  #if (SIGIOT != SIGABRT )
-    {  SIGIOT,      "SIGIOT" },
-  #endif
+// SIGIOT is there for BSD compatibility, but on most Unices just a
+// synonym for SIGABRT. The result should be "SIGABRT", not
+// "SIGIOT".
+#if (SIGIOT != SIGABRT )
+  {  SIGIOT,      "SIGIOT" },
+#endif
 #endif
 #ifdef SIGKAP
-    {  SIGKAP,      "SIGKAP" },
+  {  SIGKAP,      "SIGKAP" },
 #endif
-    {  SIGKILL,     "SIGKILL" },
+  {  SIGKILL,     "SIGKILL" },
 #ifdef SIGLOST
-    {  SIGLOST,     "SIGLOST" },
+  {  SIGLOST,     "SIGLOST" },
 #endif
 #ifdef SIGLWP
-    {  SIGLWP,      "SIGLWP" },
+  {  SIGLWP,      "SIGLWP" },
 #endif
 #ifdef SIGLWPTIMER
-    {  SIGLWPTIMER, "SIGLWPTIMER" },
+  {  SIGLWPTIMER, "SIGLWPTIMER" },
 #endif
 #ifdef SIGMIGRATE
-    {  SIGMIGRATE,  "SIGMIGRATE" },
+  {  SIGMIGRATE,  "SIGMIGRATE" },
 #endif
 #ifdef SIGMSG
-    {  SIGMSG,      "SIGMSG" },
+  {  SIGMSG,      "SIGMSG" },
 #endif
-    {  SIGPIPE,     "SIGPIPE" },
+  {  SIGPIPE,     "SIGPIPE" },
 #ifdef SIGPOLL
-    {  SIGPOLL,     "SIGPOLL" },
+  {  SIGPOLL,     "SIGPOLL" },
 #endif
 #ifdef SIGPRE
-    {  SIGPRE,      "SIGPRE" },
+  {  SIGPRE,      "SIGPRE" },
 #endif
-    {  SIGPROF,     "SIGPROF" },
+  {  SIGPROF,     "SIGPROF" },
 #ifdef SIGPTY
-    {  SIGPTY,      "SIGPTY" },
+  {  SIGPTY,      "SIGPTY" },
 #endif
 #ifdef SIGPWR
-    {  SIGPWR,      "SIGPWR" },
+  {  SIGPWR,      "SIGPWR" },
 #endif
-    {  SIGQUIT,     "SIGQUIT" },
+  {  SIGQUIT,     "SIGQUIT" },
 #ifdef SIGRECONFIG
-    {  SIGRECONFIG, "SIGRECONFIG" },
+  {  SIGRECONFIG, "SIGRECONFIG" },
 #endif
 #ifdef SIGRECOVERY
-    {  SIGRECOVERY, "SIGRECOVERY" },
+  {  SIGRECOVERY, "SIGRECOVERY" },
 #endif
 #ifdef SIGRESERVE
-    {  SIGRESERVE,  "SIGRESERVE" },
+  {  SIGRESERVE,  "SIGRESERVE" },
 #endif
 #ifdef SIGRETRACT
-    {  SIGRETRACT,  "SIGRETRACT" },
+  {  SIGRETRACT,  "SIGRETRACT" },
 #endif
 #ifdef SIGSAK
-    {  SIGSAK,      "SIGSAK" },
+  {  SIGSAK,      "SIGSAK" },
 #endif
-    {  SIGSEGV,     "SIGSEGV" },
+  {  SIGSEGV,     "SIGSEGV" },
 #ifdef SIGSOUND
-    {  SIGSOUND,    "SIGSOUND" },
+  {  SIGSOUND,    "SIGSOUND" },
 #endif
-    {  SIGSTOP,     "SIGSTOP" },
-    {  SIGSYS,      "SIGSYS" },
+#ifdef SIGSTKFLT
+  {  SIGSTKFLT,    "SIGSTKFLT" },
+#endif
+  {  SIGSTOP,     "SIGSTOP" },
+  {  SIGSYS,      "SIGSYS" },
 #ifdef SIGSYSERROR
-    {  SIGSYSERROR, "SIGSYSERROR" },
+  {  SIGSYSERROR, "SIGSYSERROR" },
 #endif
 #ifdef SIGTALRM
-    {  SIGTALRM,    "SIGTALRM" },
+  {  SIGTALRM,    "SIGTALRM" },
 #endif
-    {  SIGTERM,     "SIGTERM" },
+  {  SIGTERM,     "SIGTERM" },
 #ifdef SIGTHAW
-    {  SIGTHAW,     "SIGTHAW" },
+  {  SIGTHAW,     "SIGTHAW" },
 #endif
-    {  SIGTRAP,     "SIGTRAP" },
+  {  SIGTRAP,     "SIGTRAP" },
 #ifdef SIGTSTP
-    {  SIGTSTP,     "SIGTSTP" },
+  {  SIGTSTP,     "SIGTSTP" },
 #endif
-    {  SIGTTIN,     "SIGTTIN" },
-    {  SIGTTOU,     "SIGTTOU" },
+  {  SIGTTIN,     "SIGTTIN" },
+  {  SIGTTOU,     "SIGTTOU" },
 #ifdef SIGURG
-    {  SIGURG,      "SIGURG" },
+  {  SIGURG,      "SIGURG" },
 #endif
-    {  SIGUSR1,     "SIGUSR1" },
-    {  SIGUSR2,     "SIGUSR2" },
+  {  SIGUSR1,     "SIGUSR1" },
+  {  SIGUSR2,     "SIGUSR2" },
 #ifdef SIGVIRT
-    {  SIGVIRT,     "SIGVIRT" },
+  {  SIGVIRT,     "SIGVIRT" },
 #endif
-    {  SIGVTALRM,   "SIGVTALRM" },
+  {  SIGVTALRM,   "SIGVTALRM" },
 #ifdef SIGWAITING
-    {  SIGWAITING,  "SIGWAITING" },
+  {  SIGWAITING,  "SIGWAITING" },
 #endif
 #ifdef SIGWINCH
-    {  SIGWINCH,    "SIGWINCH" },
+  {  SIGWINCH,    "SIGWINCH" },
 #endif
 #ifdef SIGWINDOW
-    {  SIGWINDOW,   "SIGWINDOW" },
+  {  SIGWINDOW,   "SIGWINDOW" },
 #endif
-    {  SIGXCPU,     "SIGXCPU" },
-    {  SIGXFSZ,     "SIGXFSZ" },
+  {  SIGXCPU,     "SIGXCPU" },
+  {  SIGXFSZ,     "SIGXFSZ" },
 #ifdef SIGXRES
-    {  SIGXRES,     "SIGXRES" },
+  {  SIGXRES,     "SIGXRES" },
 #endif
-    { -1, NULL }
-  };
+  { -1, NULL }
+};
+
+// Returned string is a constant. For unknown signals "UNKNOWN" is returned.
+const char* os::Posix::get_signal_name(int sig, char* out, size_t outlen) {
 
   const char* ret = NULL;
 
@@ -670,9 +675,9 @@ const char* os::Posix::get_signal_name(int sig, char* out, size_t outlen) {
 #endif
 
   if (sig > 0) {
-    for (int idx = 0; info[idx].sig != -1; idx ++) {
-      if (info[idx].sig == sig) {
-        ret = info[idx].name;
+    for (int idx = 0; g_signal_info[idx].sig != -1; idx ++) {
+      if (g_signal_info[idx].sig == sig) {
+        ret = g_signal_info[idx].name;
         break;
       }
     }
@@ -693,6 +698,25 @@ const char* os::Posix::get_signal_name(int sig, char* out, size_t outlen) {
   return out;
 }
 
+int os::Posix::get_signal_number(const char* signal_name) {
+  char tmp[30];
+  const char* s = signal_name;
+  if (s[0] != 'S' || s[1] != 'I' || s[2] != 'G') {
+    jio_snprintf(tmp, sizeof(tmp), "SIG%s", signal_name);
+    s = tmp;
+  }
+  for (int idx = 0; g_signal_info[idx].sig != -1; idx ++) {
+    if (strcmp(g_signal_info[idx].name, s) == 0) {
+      return g_signal_info[idx].sig;
+    }
+  }
+  return -1;
+}
+
+int os::get_signal_number(const char* signal_name) {
+  return os::Posix::get_signal_number(signal_name);
+}
+
 // Returns true if signal number is valid.
 bool os::Posix::is_valid_signal(int sig) {
   // MacOS not really POSIX compliant: sigaddset does not return
@@ -709,6 +733,21 @@ bool os::Posix::is_valid_signal(int sig) {
   }
   return true;
 #endif
+}
+
+// Returns:
+// "invalid (<num>)" for an invalid signal number
+// "SIG<num>" for a valid but unknown signal number
+// signal name otherwise.
+const char* os::exception_name(int sig, char* buf, size_t size) {
+  if (!os::Posix::is_valid_signal(sig)) {
+    jio_snprintf(buf, size, "invalid (%d)", sig);
+  }
+  const char* const name = os::Posix::get_signal_name(sig, buf, size);
+  if (strcmp(name, "UNKNOWN") == 0) {
+    jio_snprintf(buf, size, "SIG%d", sig);
+  }
+  return buf;
 }
 
 #define NUM_IMPORTANT_SIGS 32
@@ -837,6 +876,21 @@ static bool get_signal_code_description(const siginfo_t* si, enum_sigcode_desc_t
 #if defined(IA64) && !defined(AIX)
     { SIGSEGV, SEGV_PSTKOVF, "SEGV_PSTKOVF", "Paragraph stack overflow" },
 #endif
+#if defined(__sparc) && defined(SOLARIS)
+// define Solaris Sparc M7 ADI SEGV signals
+#if !defined(SEGV_ACCADI)
+#define SEGV_ACCADI 3
+#endif
+    { SIGSEGV, SEGV_ACCADI,  "SEGV_ACCADI",  "ADI not enabled for mapped object." },
+#if !defined(SEGV_ACCDERR)
+#define SEGV_ACCDERR 4
+#endif
+    { SIGSEGV, SEGV_ACCDERR, "SEGV_ACCDERR", "ADI disrupting exception." },
+#if !defined(SEGV_ACCPERR)
+#define SEGV_ACCPERR 5
+#endif
+    { SIGSEGV, SEGV_ACCPERR, "SEGV_ACCPERR", "ADI precise exception." },
+#endif // defined(__sparc) && defined(SOLARIS)
     { SIGBUS,  BUS_ADRALN,   "BUS_ADRALN",   "Invalid address alignment." },
     { SIGBUS,  BUS_ADRERR,   "BUS_ADRERR",   "Nonexistent physical address." },
     { SIGBUS,  BUS_OBJERR,   "BUS_OBJERR",   "Object-specific hardware error." },
@@ -972,6 +1026,39 @@ void os::Posix::print_siginfo_brief(outputStream* os, const siginfo_t* si) {
     os->print_cr(", si_pid: %d, si_uid: %d, si_status: %d", (int) si->si_pid, si->si_uid, si->si_status);
   }
 }
+
+int os::Posix::unblock_thread_signal_mask(const sigset_t *set) {
+  return pthread_sigmask(SIG_UNBLOCK, set, NULL);
+}
+
+address os::Posix::ucontext_get_pc(ucontext_t* ctx) {
+#ifdef TARGET_OS_FAMILY_linux
+   return Linux::ucontext_get_pc(ctx);
+#elif defined(TARGET_OS_FAMILY_solaris)
+   return Solaris::ucontext_get_pc(ctx);
+#elif defined(TARGET_OS_FAMILY_aix)
+   return Aix::ucontext_get_pc(ctx);
+#elif defined(TARGET_OS_FAMILY_bsd)
+   return Bsd::ucontext_get_pc(ctx);
+#else
+   VMError::report_and_die("unimplemented ucontext_get_pc");
+#endif
+}
+
+void os::Posix::ucontext_set_pc(ucontext_t* ctx, address pc) {
+#ifdef TARGET_OS_FAMILY_linux
+   Linux::ucontext_set_pc(ctx, pc);
+#elif defined(TARGET_OS_FAMILY_solaris)
+   Solaris::ucontext_set_pc(ctx, pc);
+#elif defined(TARGET_OS_FAMILY_aix)
+   Aix::ucontext_set_pc(ctx, pc);
+#elif defined(TARGET_OS_FAMILY_bsd)
+   Bsd::ucontext_set_pc(ctx, pc);
+#else
+   VMError::report_and_die("unimplemented ucontext_get_pc");
+#endif
+}
+
 
 os::WatcherThreadCrashProtection::WatcherThreadCrashProtection() {
   assert(Thread::current()->is_Watcher_thread(), "Must be WatcherThread");

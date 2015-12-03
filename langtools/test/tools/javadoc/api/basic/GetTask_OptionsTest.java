@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 6493690
+ * @bug 6493690 8141492
  * @summary javadoc should have a javax.tools.Tool service provider
  * @modules java.compiler
  *          jdk.compiler
@@ -64,8 +64,7 @@ public class GetTask_OptionsTest extends APITest {
             DocumentationTask t = tool.getTask(null, fm, null, null, options, files);
             if (t.call()) {
                 System.err.println("task succeeded");
-                Set<String> expectFiles = new TreeSet<String>(standardExpectFiles);
-                expectFiles.remove("index-all.html");
+                Set<String> expectFiles = new TreeSet<String>(noIndexFiles);
                 checkFiles(outDir, expectFiles);
             } else {
                 error("task failed");

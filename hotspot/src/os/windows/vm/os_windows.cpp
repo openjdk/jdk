@@ -4005,7 +4005,7 @@ void os::wait_for_keypress_at_exit(void) {
 }
 
 
-int os::message_box(const char* title, const char* message) {
+bool os::message_box(const char* title, const char* message) {
   int result = MessageBox(NULL, message, title,
                           MB_YESNO | MB_ICONERROR | MB_SYSTEMMODAL | MB_DEFAULT_DESKTOP_ONLY);
   return result == IDYES;
@@ -5254,7 +5254,13 @@ bool os::check_heap(bool force) {
     // Note: HeapValidate executes two hardware breakpoints when it finds something
     // wrong; at these points, eax contains the address of the offending block (I think).
     // To get to the exlicit error message(s) below, just continue twice.
-    HANDLE heap = GetProcessHeap();
+    //
+    // Note:  we want to check the CRT heap, which is not necessarily located in the
+    // process default heap.
+    HANDLE heap = (HANDLE) _get_heap_handle();
+    if (!heap) {
+      return true;
+    }
 
     // If we fail to lock the heap, then gflags.exe has been used
     // or some other special heap flag has been set that prevents
@@ -5267,11 +5273,13 @@ bool os::check_heap(bool force) {
             !HeapValidate(heap, 0, phe.lpData)) {
           tty->print_cr("C heap has been corrupted (time: %d allocations)", mallocDebugCounter);
           tty->print_cr("corrupted block near address %#x, length %d", phe.lpData, phe.cbData);
+          HeapUnlock(heap);
           fatal("corrupted C heap");
         }
       }
       DWORD err = GetLastError();
       if (err != ERROR_NO_MORE_ITEMS && err != ERROR_CALL_NOT_IMPLEMENTED) {
+        HeapUnlock(heap);
         fatal("heap walk aborted with error %d", err);
       }
       HeapUnlock(heap);
@@ -5505,7 +5513,31 @@ void os::Kernel32Dll::initializeCommon() {
   }
 }
 
+bool os::start_debugging(char *buf, int buflen) {
+  int len = (int)strlen(buf);
+  char *p = &buf[len];
 
+  jio_snprintf(p, buflen-len,
+             "\n\n"
+             "Do you want to debug the problem?\n\n"
+             "To debug, attach Visual Studio to process %d; then switch to thread 0x%x\n"
+             "Select 'Yes' to launch Visual Studio automatically (PATH must include msdev)\n"
+             "Otherwise, select 'No' to abort...",
+             os::current_process_id(), os::current_thread_id());
+
+  bool yes = os::message_box("Unexpected Error", buf);
+
+  if (yes) {
+    // os::breakpoint() calls DebugBreak(), which causes a breakpoint
+    // exception. If VM is running inside a debugger, the debugger will
+    // catch the exception. Otherwise, the breakpoint exception will reach
+    // the default windows exception handler, which can spawn a debugger and
+    // automatically attach to the dying VM.
+    os::breakpoint();
+    yes = false;
+  }
+  return yes;
+}
 
 #ifndef JDK6_OR_EARLIER
 
@@ -6001,3 +6033,36 @@ void TestReserveMemorySpecial_test() {
   UseNUMAInterleaving = old_use_numa_interleaving;
 }
 #endif // PRODUCT
+
+/*
+  All the defined signal names for Windows.
+
+  NOTE that not all of these names are accepted by FindSignal!
+
+  For various reasons some of these may be rejected at runtime.
+
+  Here are the names currently accepted by a user of sun.misc.Signal with
+  1.4.1 (ignoring potential interaction with use of chaining, etc):
+
+     (LIST TBD)
+
+*/
+int os::get_signal_number(const char* name) {
+  static const struct {
+    char* name;
+    int   number;
+  } siglabels [] =
+    // derived from version 6.0 VC98/include/signal.h
+  {"ABRT",      SIGABRT,        // abnormal termination triggered by abort cl
+  "FPE",        SIGFPE,         // floating point exception
+  "SEGV",       SIGSEGV,        // segment violation
+  "INT",        SIGINT,         // interrupt
+  "TERM",       SIGTERM,        // software term signal from kill
+  "BREAK",      SIGBREAK,       // Ctrl-Break sequence
+  "ILL",        SIGILL};        // illegal instruction
+  for(int i=0;i<sizeof(siglabels)/sizeof(struct siglabel);i++)
+    if(!strcmp(name, siglabels[i].name))
+      return siglabels[i].number;
+  return -1;
+}
+

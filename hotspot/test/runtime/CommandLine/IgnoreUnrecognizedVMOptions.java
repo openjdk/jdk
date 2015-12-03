@@ -131,47 +131,41 @@ public class IgnoreUnrecognizedVMOptions {
 
     /*
       #1.7 locked flag:
-                                      diagnostic & locked             experimental & locked             commercial & locked
-                                      -XX:-UnlockDiagnosticVMOptions  -XX:-UnlockExperimentalVMOptions  -XX:-UnlockCommercialFeatures
-                                      -XX:+PrintInlining              -XX:+AlwaysSafeConstructors       -XX:+FlightRecorder
-      -IgnoreUnrecognizedVMOptions               ERR                           ERR                                 ERR
-      +IgnoreUnrecognizedVMOptions               ERR                           ERR                                 ERR
+                                      diagnostic & locked             experimental & locked
+                                      -XX:-UnlockDiagnosticVMOptions  -XX:-UnlockExperimentalVMOptions
+                                      -XX:+PrintInlining              -XX:+AlwaysSafeConstructors
+      -IgnoreUnrecognizedVMOptions               ERR                           ERR
+      +IgnoreUnrecognizedVMOptions               ERR                           ERR
     */
     runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:-UnlockDiagnosticVMOptions", "-XX:+PrintInlining", "-version");
     runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:-UnlockExperimentalVMOptions", "-XX:+AlwaysSafeConstructors", "-version");
-    runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:-UnlockCommercialFeatures", "-XX:+FlightRecorder", "-version");
     runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UnlockDiagnosticVMOptions", "-XX:+PrintInlining", "-version");
     runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UnlockExperimentalVMOptions", "-XX:+AlwaysSafeConstructors", "-version");
-    runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UnlockCommercialFeatures", "-XX:+FlightRecorder", "-version");
 
     /*
       #1.8 malformed locked flag:
-                                    diagnostic & locked             experimental & locked             commercial & locked
-                                    -XX:-UnlockDiagnosticVMOptions  -XX:-UnlockExperimentalVMOptions  -XX:-UnlockCommercialFeatures
-                                    -XX:PrintInlining               -XX:AlwaysSafeConstructors        -XX:FlightRecorder
-      -IgnoreUnrecognizedVMOptions               ERR                           ERR                                 ERR
-      +IgnoreUnrecognizedVMOptions               ERR                           ERR                                 ERR
+                                    diagnostic & locked             experimental & locked
+                                    -XX:-UnlockDiagnosticVMOptions  -XX:-UnlockExperimentalVMOptions
+                                    -XX:PrintInlining               -XX:AlwaysSafeConstructors
+      -IgnoreUnrecognizedVMOptions               ERR                           ERR
+      +IgnoreUnrecognizedVMOptions               ERR                           ERR
     */
     runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:-UnlockDiagnosticVMOptions", "-XX:PrintInlining", "-version");
     runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:-UnlockExperimentalVMOptions", "-XX:AlwaysSafeConstructors", "-version");
-    runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:-UnlockCommercialFeatures", "-XX:FlightRecorder", "-version");
     runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UnlockDiagnosticVMOptions", "-XX:PrintInlining", "-version");
     runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UnlockExperimentalVMOptions", "-XX:AlwaysSafeConstructors", "-version");
-    runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UnlockCommercialFeatures", "-XX:FlightRecorder", "-version");
 
     /*
       #1.9 malformed unlocked flag:
-                                    diagnostic & locked             experimental & locked             commercial & locked
-                                    -XX:+UnlockDiagnosticVMOptions  -XX:+UnlockExperimentalVMOptions  -XX:+UnlockCommercialFeatures
-                                    -XX:PrintInlining               -XX:AlwaysSafeConstructors        -XX:FlightRecorder
-      -IgnoreUnrecognizedVMOptions               ERR                           ERR                                 ERR
-      +IgnoreUnrecognizedVMOptions               ERR                           ERR                                 ERR
+                                    diagnostic & locked             experimental & locked
+                                    -XX:+UnlockDiagnosticVMOptions  -XX:+UnlockExperimentalVMOptions
+                                    -XX:PrintInlining               -XX:AlwaysSafeConstructors
+      -IgnoreUnrecognizedVMOptions               ERR                           ERR
+      +IgnoreUnrecognizedVMOptions               ERR                           ERR
     */
-    runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:-UnlockDiagnosticVMOptions", "-XX:PrintInlining", "-version");
-    runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:-UnlockExperimentalVMOptions", "-XX:AlwaysSafeConstructors", "-version");
-    runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:-UnlockCommercialFeatures", "-XX:FlightRecorder", "-version");
-    runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UnlockDiagnosticVMOptions", "-XX:PrintInlining", "-version");
-    runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UnlockExperimentalVMOptions", "-XX:AlwaysSafeConstructors", "-version");
-    runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UnlockCommercialFeatures", "-XX:FlightRecorder", "-version");
+    runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:+UnlockDiagnosticVMOptions", "-XX:PrintInlining", "-version");
+    runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:+UnlockExperimentalVMOptions", "-XX:AlwaysSafeConstructors", "-version");
+    runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UnlockDiagnosticVMOptions", "-XX:PrintInlining", "-version");
+    runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UnlockExperimentalVMOptions", "-XX:AlwaysSafeConstructors", "-version");
   }
 }

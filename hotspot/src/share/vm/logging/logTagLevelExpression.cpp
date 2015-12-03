@@ -29,10 +29,6 @@
 
 const char* LogTagLevelExpression::DefaultExpressionString = "all";
 
-LogTagLevelExpression::~LogTagLevelExpression() {
-  os::free(_string);
-}
-
 void LogTagLevelExpression::clear() {
   _ntags = 0;
   _ncombinations = 0;
@@ -43,8 +39,6 @@ void LogTagLevelExpression::clear() {
       _tags[combination][tag] = LogTag::__NO_TAG;
     }
   }
-  os::free(_string);
-  _string = NULL;
 }
 
 bool LogTagLevelExpression::parse(const char* str, outputStream* errstream) {
@@ -131,15 +125,13 @@ bool LogTagLevelExpression::parse(const char* str, outputStream* errstream) {
     new_combination();
   }
 
-  // Save the (unmodified) string for printing purposes.
-  _string = copy;
-  strcpy(_string, str);
-
+  os::free(copy);
   return success;
 }
 
 LogLevelType LogTagLevelExpression::level_for(const LogTagSet& ts) const {
-  LogLevelType level = LogLevel::Off;
+  // Return NotMentioned if the given tagset isn't covered by this expression.
+  LogLevelType level = LogLevel::NotMentioned;
   for (size_t combination = 0; combination < _ncombinations; combination++) {
     bool contains_all = true;
     size_t tag_idx;

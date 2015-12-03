@@ -75,8 +75,8 @@ public class PaintText extends Component implements Printable {
         f.show();
 
         /* Non-jtreg execution will display the dialog */
-        if (System.getProperty("test.java") == null) {
-             if (!pjob.printDialog()) {
+        if (System.getProperty("test.jdk") == null) {
+            if (!pjob.printDialog()) {
                 return;
             }
         }
@@ -84,6 +84,8 @@ public class PaintText extends Component implements Printable {
             pjob.print();
         } catch (PrinterException e) {
             throw new RuntimeException(e.getMessage());
+        } finally {
+            f.dispose();
         }
     }
 

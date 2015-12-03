@@ -47,8 +47,9 @@ public:
   virtual void do_oop(      oop* p) { do_oop_work(p); }
   template <class T> void do_oop_work(T* p) {
     assert(_from->is_in_reserved(p), "paranoia");
-    if (!_from->is_in_reserved(oopDesc::load_decode_heap_oop(p)) &&
-        !_from->is_survivor()) {
+    assert(!_from->is_survivor(), "Unexpected evac failure in survivor region");
+
+    if (!_from->is_in_reserved(oopDesc::load_decode_heap_oop(p))) {
       size_t card_index = _ct_bs->index_for(p);
       if (_ct_bs->mark_card_deferred(card_index)) {
         _dcq->enqueue((jbyte*)_ct_bs->byte_for_index(card_index));
@@ -258,4 +259,17 @@ void G1ParRemoveSelfForwardPtrsTask::work(uint worker_id) {
 
   HeapRegion* hr = _g1h->start_cset_region_for_worker(worker_id);
   _g1h->collection_set_iterate_from(hr, &rsfp_cl);
+}
+
+G1RestorePreservedMarksTask::G1RestorePreservedMarksTask(OopAndMarkOopStack* preserved_objs) :
+  AbstractGangTask("G1 Restore Preserved Marks"),
+  _preserved_objs(preserved_objs) {}
+
+void G1RestorePreservedMarksTask::work(uint worker_id) {
+  OopAndMarkOopStack& cur = _preserved_objs[worker_id];
+  while (!cur.is_empty()) {
+    OopAndMarkOop elem = cur.pop();
+    elem.set_mark();
+  }
+  cur.clear(true);
 }

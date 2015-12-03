@@ -23,62 +23,7 @@
  */
 
 #include "precompiled.hpp"
-
-#include "gc/g1/bufferingOopClosure.hpp"
-#include "gc/g1/g1CodeBlobClosure.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1OopClosures.inline.hpp"
-#include "gc/g1/g1RootClosures.hpp"
-
-class G1ParScanThreadState;
-
-// Simple holder object for a complete set of closures used by the G1 evacuation code.
-template <G1Mark Mark>
-class G1SharedClosures VALUE_OBJ_CLASS_SPEC {
-public:
-  G1ParCopyClosure<G1BarrierNone,  Mark> _oops;
-  G1ParCopyClosure<G1BarrierKlass, Mark> _oop_in_klass;
-  G1KlassScanClosure                     _klass_in_cld_closure;
-  CLDToKlassAndOopClosure                _clds;
-  G1CodeBlobClosure                      _codeblobs;
-  BufferingOopClosure                    _buffered_oops;
-
-  G1SharedClosures(G1CollectedHeap* g1h, G1ParScanThreadState* pss, bool process_only_dirty_klasses, bool must_claim_cld) :
-    _oops(g1h, pss),
-    _oop_in_klass(g1h, pss),
-    _klass_in_cld_closure(&_oop_in_klass, process_only_dirty_klasses),
-    _clds(&_klass_in_cld_closure, &_oops, must_claim_cld),
-    _codeblobs(&_oops),
-    _buffered_oops(&_oops) {}
-};
-
-class G1EvacuationClosures : public G1EvacuationRootClosures {
-  G1SharedClosures<G1MarkNone> _closures;
-
-public:
-  G1EvacuationClosures(G1CollectedHeap* g1h,
-                       G1ParScanThreadState* pss,
-                       bool gcs_are_young) :
-      _closures(g1h, pss, gcs_are_young, /* must_claim_cld */ false) {}
-
-  OopClosure* weak_oops()   { return &_closures._buffered_oops; }
-  OopClosure* strong_oops() { return &_closures._buffered_oops; }
-
-  CLDClosure* weak_clds()             { return &_closures._clds; }
-  CLDClosure* strong_clds()           { return &_closures._clds; }
-  CLDClosure* thread_root_clds()      { return NULL; }
-  CLDClosure* second_pass_weak_clds() { return NULL; }
-
-  CodeBlobClosure* strong_codeblobs()      { return &_closures._codeblobs; }
-  CodeBlobClosure* weak_codeblobs()        { return &_closures._codeblobs; }
-
-  void flush()                 { _closures._buffered_oops.done(); }
-  double closure_app_seconds() { return _closures._buffered_oops.closure_app_seconds(); }
-
-  OopClosure* raw_strong_oops() { return &_closures._oops; }
-
-  bool trace_metadata()         { return false; }
-};
+#include "gc/g1/g1RootClosures.inline.hpp"
 
 // Closures used during initial mark.
 // The treatment of "weak" roots is selectable through the template parameter,
@@ -137,13 +82,19 @@ public:
 };
 
 G1EvacuationRootClosures* G1EvacuationRootClosures::create_root_closures(G1ParScanThreadState* pss, G1CollectedHeap* g1h) {
+  G1EvacuationRootClosures* res = create_root_closures_ext(pss, g1h);
+  if (res != NULL) {
+    return res;
+  }
+
   if (g1h->collector_state()->during_initial_mark_pause()) {
     if (ClassUnloadingWithConcurrentMark) {
-      return new G1InitalMarkClosures<G1MarkPromotedFromRoot>(g1h, pss);
+      res = new G1InitalMarkClosures<G1MarkPromotedFromRoot>(g1h, pss);
     } else {
-      return new G1InitalMarkClosures<G1MarkFromRoot>(g1h, pss);
+      res = new G1InitalMarkClosures<G1MarkFromRoot>(g1h, pss);
     }
   } else {
-    return new G1EvacuationClosures(g1h, pss, g1h->collector_state()->gcs_are_young());
+    res = new G1EvacuationClosures(g1h, pss, g1h->collector_state()->gcs_are_young());
   }
+  return res;
 }

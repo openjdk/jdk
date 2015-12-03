@@ -100,7 +100,11 @@ class CodeHeap : public CHeapObj<mtCode> {
 
   const char*  _name;                            // Name of the CodeHeap
   const int    _code_blob_type;                  // CodeBlobType it contains
-  bool         _was_full;                        // True if the code heap was full
+  int          _blob_count;                      // Number of CodeBlobs
+  int          _nmethod_count;                   // Number of nmethods
+  int          _adapter_count;                   // Number of adapters
+  int          _full_count;                      // Number of times the code heap was full
+
 
   enum { free_sentinel = 0xFF };
 
@@ -179,8 +183,13 @@ class CodeHeap : public CHeapObj<mtCode> {
 
   // Debugging / Profiling
   const char* name() const                       { return _name; }
-  bool was_full()                                { return _was_full; }
-  void report_full()                             { _was_full = true; }
+  int         blob_count()                       { return _blob_count; }
+  int         nmethod_count()                    { return _nmethod_count; }
+  void    set_nmethod_count(int count)           {        _nmethod_count = count; }
+  int         adapter_count()                    { return _adapter_count; }
+  void    set_adapter_count(int count)           {        _adapter_count = count; }
+  int         full_count()                       { return _full_count; }
+  void        report_full()                      {        _full_count++; }
 
 private:
   size_t heap_unallocated_capacity() const;

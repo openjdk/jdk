@@ -140,19 +140,27 @@ public:
   }
 
   // To support compiler.
+
+protected:
+  template<typename Derived>
   static ByteSize byte_offset_of_index() {
-    return byte_offset_of(PtrQueue, _index);
+    return byte_offset_of(Derived, _index);
   }
+
   static ByteSize byte_width_of_index() { return in_ByteSize(sizeof(size_t)); }
 
+  template<typename Derived>
   static ByteSize byte_offset_of_buf() {
-    return byte_offset_of(PtrQueue, _buf);
+    return byte_offset_of(Derived, _buf);
   }
+
   static ByteSize byte_width_of_buf() { return in_ByteSize(sizeof(void*)); }
 
+  template<typename Derived>
   static ByteSize byte_offset_of_active() {
-    return byte_offset_of(PtrQueue, _active);
+    return byte_offset_of(Derived, _active);
   }
+
   static ByteSize byte_width_of_active() { return in_ByteSize(sizeof(bool)); }
 
 };

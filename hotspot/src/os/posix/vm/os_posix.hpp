@@ -51,11 +51,20 @@ public:
   // Returned string is a constant. For unknown signals "UNKNOWN" is returned.
   static const char* get_signal_name(int sig, char* out, size_t outlen);
 
+  // Helper function, returns a signal number for a given signal name, e.g. 11
+  // for "SIGSEGV". Name can be given with or without "SIG" prefix, so both
+  // "SEGV" or "SIGSEGV" work. Name must be uppercase.
+  // Returns -1 for an unknown signal name.
+  static int get_signal_number(const char* signal_name);
+
   // Returns one-line short description of a signal set in a user provided buffer.
   static const char* describe_signal_set_short(const sigset_t* set, char* buffer, size_t size);
 
   // Prints a short one-line description of a signal set.
   static void print_signal_set_short(outputStream* st, const sigset_t* set);
+
+  // unblocks the signal masks for current thread
+  static int unblock_thread_signal_mask(const sigset_t *set);
 
   // Writes a one-line description of a combination of sigaction.sa_flags
   // into a user provided buffer. Returns that buffer.
@@ -67,6 +76,9 @@ public:
   // A POSIX conform, platform-independend siginfo print routine.
   static void print_siginfo_brief(outputStream* os, const siginfo_t* si);
 
+  static address ucontext_get_pc(ucontext_t* ctx);
+  // Set PC into context. Needed for continuation after signal.
+  static void ucontext_set_pc(ucontext_t* ctx, address pc);
 };
 
 /*

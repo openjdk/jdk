@@ -30,10 +30,20 @@ import static jdk.nashorn.internal.parser.TokenKind.LITERAL;
 import jdk.nashorn.internal.runtime.Source;
 
 /**
- * Basic parse/lex unit.
- *
+ * A token is a 64 bit long value that represents a basic parse/lex unit.
+ * This class provides static methods to manipulate lexer tokens.
  */
 public class Token {
+
+    /**
+     * We use 28 bits for the position and 28 bits for the length of the token.
+     * This limits the maximal length of code we can handle to 2 ^ 28 - 1 bytes.
+     */
+    public final static int LENGTH_MASK = 0xfffffff;
+
+    // The first 8 bits are used for the token type, followed by length and position
+    private final static int LENGTH_SHIFT = 8;
+    private final static int POSITION_SHIFT  = 36;
 
     private Token() {
     }
@@ -46,8 +56,9 @@ public class Token {
      * @return Token descriptor.
      */
     public static long toDesc(final TokenType type, final int position, final int length) {
-        return (long)position << 32 |
-               (long)length   << 8  |
+        assert position <= LENGTH_MASK && length <= LENGTH_MASK;
+        return (long)position << POSITION_SHIFT |
+               (long)length   << LENGTH_SHIFT  |
                type.ordinal();
     }
 
@@ -57,7 +68,7 @@ public class Token {
      * @return Start position of the token in the source.
      */
     public static int descPosition(final long token) {
-        return (int)(token >>> 32);
+        return (int)(token >>> POSITION_SHIFT);
     }
 
     /**
@@ -98,7 +109,7 @@ public class Token {
      * @return Length of the token.
      */
     public static int descLength(final long token) {
-        return (int)token >>> 8;
+        return (int)((token >>> LENGTH_SHIFT) & LENGTH_MASK);
     }
 
     /**

@@ -219,11 +219,3 @@ ifeq ($(JVM_VARIANT_CLIENT),true)
 #    endif
 #  endif
 endif
-
-# Serviceability Binaries
-# No SA Support for PPC or zero
-ADD_SA_BINARIES/ppc   =
-ADD_SA_BINARIES/ppc64 =
-ADD_SA_BINARIES/zero  =
-
-EXPORT_LIST += $(ADD_SA_BINARIES/$(HS_ARCH))

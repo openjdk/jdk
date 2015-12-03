@@ -3611,7 +3611,7 @@ void os::Solaris::SR_handler(Thread* thread, ucontext_t* uc) {
 void os::print_statistics() {
 }
 
-int os::message_box(const char* title, const char* message) {
+bool os::message_box(const char* title, const char* message) {
   int i;
   fdStream err(defaultStream::error_fd());
   for (i = 0; i < 78; i++) err.print_raw("=");
@@ -4143,32 +4143,6 @@ void os::Solaris::install_signal_handlers() {
 
 void report_error(const char* file_name, int line_no, const char* title,
                   const char* format, ...);
-
-const char * signames[] = {
-  "SIG0",
-  "SIGHUP", "SIGINT", "SIGQUIT", "SIGILL", "SIGTRAP",
-  "SIGABRT", "SIGEMT", "SIGFPE", "SIGKILL", "SIGBUS",
-  "SIGSEGV", "SIGSYS", "SIGPIPE", "SIGALRM", "SIGTERM",
-  "SIGUSR1", "SIGUSR2", "SIGCLD", "SIGPWR", "SIGWINCH",
-  "SIGURG", "SIGPOLL", "SIGSTOP", "SIGTSTP", "SIGCONT",
-  "SIGTTIN", "SIGTTOU", "SIGVTALRM", "SIGPROF", "SIGXCPU",
-  "SIGXFSZ", "SIGWAITING", "SIGLWP", "SIGFREEZE", "SIGTHAW",
-  "SIGCANCEL", "SIGLOST"
-};
-
-const char* os::exception_name(int exception_code, char* buf, size_t size) {
-  if (0 < exception_code && exception_code <= SIGRTMAX) {
-    // signal
-    if (exception_code < sizeof(signames)/sizeof(const char*)) {
-      jio_snprintf(buf, size, "%s", signames[exception_code]);
-    } else {
-      jio_snprintf(buf, size, "SIG%d", exception_code);
-    }
-    return buf;
-  } else {
-    return NULL;
-  }
-}
 
 // (Static) wrapper for getisax(2) call.
 os::Solaris::getisax_func_t os::Solaris::_getisax = 0;
@@ -5804,3 +5778,27 @@ void TestReserveMemorySpecial_test() {
   // No tests available for this platform
 }
 #endif
+
+bool os::start_debugging(char *buf, int buflen) {
+  int len = (int)strlen(buf);
+  char *p = &buf[len];
+
+  jio_snprintf(p, buflen-len,
+               "\n\n"
+               "Do you want to debug the problem?\n\n"
+               "To debug, run 'dbx - %d'; then switch to thread " INTX_FORMAT "\n"
+               "Enter 'yes' to launch dbx automatically (PATH must include dbx)\n"
+               "Otherwise, press RETURN to abort...",
+               os::current_process_id(), os::current_thread_id());
+
+  bool yes = os::message_box("Unexpected Error", buf);
+
+  if (yes) {
+    // yes, user asked VM to launch debugger
+    jio_snprintf(buf, sizeof(buf), "dbx - %d", os::current_process_id());
+
+    os::fork_and_exec(buf);
+    yes = false;
+  }
+  return yes;
+}

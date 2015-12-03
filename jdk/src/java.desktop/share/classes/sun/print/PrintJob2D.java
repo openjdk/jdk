@@ -631,7 +631,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
 
         String printerName = jobAttributes.getPrinter();
         if (printerName != null && printerName != ""
-            && !printerName.equals(pServ.getName())) {
+            && pServ != null && !printerName.equals(pServ.getName())) {
 
             // Search for the given printerName in the list of PrintServices
             PrintService []services = PrinterJob.lookupPrintServices();
@@ -648,7 +648,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
         }
 
         DestinationType dest = jobAttributes.getDestination();
-        if (dest == DestinationType.FILE &&
+        if (dest == DestinationType.FILE && pServ != null &&
             pServ.isAttributeCategorySupported(Destination.class)) {
 
             String fileName = jobAttributes.getFileName();

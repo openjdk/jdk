@@ -1304,7 +1304,7 @@ public class DPrinter {
             for (UndetVar.InferenceBound ib: UndetVar.InferenceBound.values())
                 printList("bounds." + ib, type.getBounds(ib));
             printInt("declaredCount", type.declaredCount);
-            printType("inst", type.inst, Details.SUMMARY);
+            printType("inst", type.getInst(), Details.SUMMARY);
             return visitDelegatedType(type);
         }
 

@@ -2633,11 +2633,11 @@ void MacroAssembler::g1_write_barrier_pre(Register Robj, RegisterOrConstant offs
   Label runtime, filtered;
 
   // Is marking active?
-  if (in_bytes(PtrQueue::byte_width_of_active()) == 4) {
-    lwz(Rtmp1, in_bytes(JavaThread::satb_mark_queue_offset() + PtrQueue::byte_offset_of_active()), R16_thread);
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
+    lwz(Rtmp1, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), R16_thread);
   } else {
-    guarantee(in_bytes(PtrQueue::byte_width_of_active()) == 1, "Assumption");
-    lbz(Rtmp1, in_bytes(JavaThread::satb_mark_queue_offset() + PtrQueue::byte_offset_of_active()), R16_thread);
+    guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1, "Assumption");
+    lbz(Rtmp1, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active()), R16_thread);
   }
   cmpdi(CCR0, Rtmp1, 0);
   beq(CCR0, filtered);
@@ -2672,13 +2672,13 @@ void MacroAssembler::g1_write_barrier_pre(Register Robj, RegisterOrConstant offs
   // (The index field is typed as size_t.)
   const Register Rbuffer = Rtmp1, Rindex = Rtmp2;
 
-  ld(Rindex, in_bytes(JavaThread::satb_mark_queue_offset() + PtrQueue::byte_offset_of_index()), R16_thread);
+  ld(Rindex, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index()), R16_thread);
   cmpdi(CCR0, Rindex, 0);
   beq(CCR0, runtime); // If index == 0, goto runtime.
-  ld(Rbuffer, in_bytes(JavaThread::satb_mark_queue_offset() + PtrQueue::byte_offset_of_buf()), R16_thread);
+  ld(Rbuffer, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_buf()), R16_thread);
 
   addi(Rindex, Rindex, -wordSize); // Decrement index.
-  std(Rindex, in_bytes(JavaThread::satb_mark_queue_offset() + PtrQueue::byte_offset_of_index()), R16_thread);
+  std(Rindex, in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_index()), R16_thread);
 
   // Record the previous value.
   stdx(Rpre_val, Rbuffer, Rindex);
@@ -2757,13 +2757,13 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr, Register Rnew_v
 
   const Register Rqueue_index = Rtmp2,
                  Rqueue_buf   = Rtmp3;
-  ld(Rqueue_index, in_bytes(JavaThread::dirty_card_queue_offset() + PtrQueue::byte_offset_of_index()), R16_thread);
+  ld(Rqueue_index, in_bytes(JavaThread::dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_index()), R16_thread);
   cmpdi(CCR0, Rqueue_index, 0);
   beq(CCR0, runtime); // index == 0 then jump to runtime
-  ld(Rqueue_buf, in_bytes(JavaThread::dirty_card_queue_offset() + PtrQueue::byte_offset_of_buf()), R16_thread);
+  ld(Rqueue_buf, in_bytes(JavaThread::dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_buf()), R16_thread);
 
   addi(Rqueue_index, Rqueue_index, -wordSize); // decrement index
-  std(Rqueue_index, in_bytes(JavaThread::dirty_card_queue_offset() + PtrQueue::byte_offset_of_index()), R16_thread);
+  std(Rqueue_index, in_bytes(JavaThread::dirty_card_queue_offset() + DirtyCardQueue::byte_offset_of_index()), R16_thread);
 
   stdx(Rcard_addr, Rqueue_buf, Rqueue_index); // store card
   b(filtered);

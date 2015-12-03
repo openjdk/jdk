@@ -50,12 +50,12 @@ public class $NAME_CLZ$ extends Charset
 
     public CharsetDecoder newDecoder() {
         initb2c();
-        return new  DoubleByte.Decoder$DECTYPE$(this, b2c, b2cSB, $B2MIN$, $B2MAX$);
+        return new  DoubleByte.Decoder$DECTYPE$(this, b2c, b2cSB, $B2MIN$, $B2MAX$, $ASCIICOMPATIBLE$);
     }
 
     public CharsetEncoder newEncoder() {
         initc2b();
-        return new DoubleByte.Encoder$ENCTYPE$(this, $ENC_REPLACEMENT$ c2b, c2bIndex); 
+        return new DoubleByte.Encoder$ENCTYPE$(this, $ENC_REPLACEMENT$ c2b, c2bIndex, $ASCIICOMPATIBLE$);
     }
 
     $B2C$
