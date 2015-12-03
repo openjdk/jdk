@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,7 @@ public final class SunJCE extends Provider {
 
     public SunJCE() {
         /* We are the "SunJCE" provider */
-        super("SunJCE", 1.9d, info);
+        super("SunJCE", 9.0d, info);
 
         final String BLOCK_MODES = "ECB|CBC|PCBC|CTR|CTS|CFB|OFB" +
             "|CFB8|CFB16|CFB24|CFB32|CFB40|CFB48|CFB56|CFB64" +

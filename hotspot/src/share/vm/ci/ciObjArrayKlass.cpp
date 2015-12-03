@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@
 //
 // Constructor for loaded object array klasses.
 ciObjArrayKlass::ciObjArrayKlass(KlassHandle h_k) : ciArrayKlass(h_k) {
-  assert(get_Klass()->oop_is_objArray(), "wrong type");
+  assert(get_Klass()->is_objArray_klass(), "wrong type");
   Klass* element_Klass = get_ObjArrayKlass()->bottom_klass();
   _base_element_klass = CURRENT_ENV->get_klass(element_Klass);
   assert(_base_element_klass->is_instance_klass() ||

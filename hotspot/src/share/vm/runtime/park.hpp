@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,22 +121,13 @@ class ParkEvent : public os::PlatformEvent {
 
     // Current association
     Thread * AssociatedWith ;
-    intptr_t RawThreadIdentity ;        // LWPID etc
-    volatile int Incarnation ;
-
-    // diagnostic : keep track of last thread to wake this thread.
-    // this is useful for construction of dependency graphs.
-    void * LastWaker ;
 
   public:
     // MCS-CLH list linkage and Native Mutex/Monitor
     ParkEvent * volatile ListNext ;
-    ParkEvent * volatile ListPrev ;
     volatile intptr_t OnList ;
     volatile int TState ;
     volatile int Notified ;             // for native monitor construct
-    volatile int IsWaiting ;            // Enqueued on WaitSet
-
 
   private:
     static ParkEvent * volatile FreeList ;
@@ -155,11 +146,9 @@ class ParkEvent : public os::PlatformEvent {
        AssociatedWith = NULL ;
        FreeNext       = NULL ;
        ListNext       = NULL ;
-       ListPrev       = NULL ;
        OnList         = 0 ;
        TState         = 0 ;
        Notified       = 0 ;
-       IsWaiting      = 0 ;
     }
 
     // We use placement-new to force ParkEvent instances to be

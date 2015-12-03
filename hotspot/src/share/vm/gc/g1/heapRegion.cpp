@@ -67,7 +67,7 @@ void HeapRegionDCTOC::walk_mem_region(MemRegion mr,
   // not considered dead, either because it is marked (in the mark bitmap)
   // or it was allocated after marking finished, then we add it. Otherwise
   // we can safely ignore the object.
-  if (!g1h->is_obj_dead(oop(cur), _hr)) {
+  if (!g1h->is_obj_dead(oop(cur))) {
     oop_size = oop(cur)->oop_iterate_size(_rs_scan, mr);
   } else {
     oop_size = _hr->block_size(cur);
@@ -81,7 +81,7 @@ void HeapRegionDCTOC::walk_mem_region(MemRegion mr,
     HeapWord* next_obj = cur + oop_size;
     while (next_obj < top) {
       // Keep filtering the remembered set.
-      if (!g1h->is_obj_dead(cur_oop, _hr)) {
+      if (!g1h->is_obj_dead(cur_oop)) {
         // Bottom lies entirely below top, so we can call the
         // non-memRegion version of oop_iterate below.
         cur_oop->oop_iterate(_rs_scan);
@@ -93,7 +93,7 @@ void HeapRegionDCTOC::walk_mem_region(MemRegion mr,
     }
 
     // Last object. Need to do dead-obj filtering here too.
-    if (!g1h->is_obj_dead(oop(cur), _hr)) {
+    if (!g1h->is_obj_dead(oop(cur))) {
       oop(cur)->oop_iterate(_rs_scan, mr);
     }
   }
@@ -162,8 +162,6 @@ void HeapRegion::reset_after_compaction() {
 void HeapRegion::hr_clear(bool par, bool clear_space, bool locked) {
   assert(_humongous_start_region == NULL,
          "we should have already filtered out humongous regions");
-  assert(_end == orig_end(),
-         "we should have already filtered out humongous regions");
   assert(!in_collection_set(),
          "Should not clear heap region %u in the collection set", hrm_index());
 
@@ -213,24 +211,18 @@ void HeapRegion::calc_gc_efficiency() {
   _gc_efficiency = (double) reclaimable_bytes() / region_elapsed_time_ms;
 }
 
-void HeapRegion::set_starts_humongous(HeapWord* new_top, HeapWord* new_end) {
+void HeapRegion::set_starts_humongous(HeapWord* obj_top) {
   assert(!is_humongous(), "sanity / pre-condition");
-  assert(end() == orig_end(),
-         "Should be normal before the humongous object allocation");
   assert(top() == bottom(), "should be empty");
-  assert(bottom() <= new_top && new_top <= new_end, "pre-condition");
 
   _type.set_starts_humongous();
   _humongous_start_region = this;
 
-  set_end(new_end);
-  _offsets.set_for_starts_humongous(new_top);
+  _offsets.set_for_starts_humongous(obj_top);
 }
 
 void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
   assert(!is_humongous(), "sanity / pre-condition");
-  assert(end() == orig_end(),
-         "Should be normal before the humongous object allocation");
   assert(top() == bottom(), "should be empty");
   assert(first_hr->is_starts_humongous(), "pre-condition");
 
@@ -240,18 +232,6 @@ void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
 
 void HeapRegion::clear_humongous() {
   assert(is_humongous(), "pre-condition");
-
-  if (is_starts_humongous()) {
-    assert(top() <= end(), "pre-condition");
-    set_end(orig_end());
-    if (top() > end()) {
-      // at least one "continues humongous" region after it
-      set_top(end());
-    }
-  } else {
-    // continues humongous
-    assert(end() == orig_end(), "sanity");
-  }
 
   assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
   _humongous_start_region = NULL;
@@ -290,11 +270,6 @@ void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
   hr_clear(false /*par*/, false /*clear_space*/);
   set_top(bottom());
   record_timestamp();
-
-  assert(mr.end() == orig_end(),
-         "Given region end address " PTR_FORMAT " should match exactly "
-         "bottom plus one region size, i.e. " PTR_FORMAT,
-         p2i(mr.end()), p2i(orig_end()));
 }
 
 CompactibleSpace* HeapRegion::next_compaction_space() const {
@@ -660,7 +635,7 @@ public:
   void print_object(outputStream* out, oop obj) {
 #ifdef PRODUCT
     Klass* k = obj->klass();
-    const char* class_name = InstanceKlass::cast(k)->external_name();
+    const char* class_name = k->external_name();
     out->print_cr("class name %s", class_name);
 #else // PRODUCT
     obj->print_on(out);
@@ -832,7 +807,14 @@ void HeapRegion::verify(VerifyOption vo,
     _offsets.verify();
   }
 
-  if (p != top()) {
+  if (is_region_humongous) {
+    oop obj = oop(this->humongous_start_region()->bottom());
+    if ((HeapWord*)obj > bottom() || (HeapWord*)obj + obj->size() < bottom()) {
+      gclog_or_tty->print_cr("this humongous region is not part of its' humongous object " PTR_FORMAT, p2i(obj));
+    }
+  }
+
+  if (!is_region_humongous && p != top()) {
     gclog_or_tty->print_cr("end of last object " PTR_FORMAT " "
                            "does not match top " PTR_FORMAT, p2i(p), p2i(top()));
     *failures = true;
@@ -840,7 +822,6 @@ void HeapRegion::verify(VerifyOption vo,
   }
 
   HeapWord* the_end = end();
-  assert(p == top(), "it should still hold");
   // Do some extra BOT consistency checking for addresses in the
   // range [top, end). BOT look-ups in this range should yield
   // top. No point in doing that if top == end (there's nothing there).
@@ -931,6 +912,7 @@ void G1OffsetTableContigSpace::set_bottom(HeapWord* new_bottom) {
 }
 
 void G1OffsetTableContigSpace::set_end(HeapWord* new_end) {
+  assert(new_end == _bottom + HeapRegion::GrainWords, "set_end should only ever be set to _bottom + HeapRegion::GrainWords");
   Space::set_end(new_end);
   _offsets.resize(new_end - bottom());
 }

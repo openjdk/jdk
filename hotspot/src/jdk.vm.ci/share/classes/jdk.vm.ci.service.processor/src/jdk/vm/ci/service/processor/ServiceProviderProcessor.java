@@ -22,18 +22,25 @@
  */
 package jdk.vm.ci.service.processor;
 
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.util.HashSet;
+import java.util.Set;
 
-import javax.annotation.processing.*;
-import javax.lang.model.*;
-import javax.lang.model.element.*;
-import javax.lang.model.type.*;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.MirroredTypeException;
+import javax.lang.model.type.TypeMirror;
 import javax.tools.Diagnostic.Kind;
+import javax.tools.FileObject;
+import javax.tools.StandardLocation;
 
-import jdk.vm.ci.service.*;
-
-import javax.tools.*;
+import jdk.vm.ci.service.ServiceProvider;
 
 @SupportedAnnotationTypes("jdk.vm.ci.service.ServiceProvider")
 public class ServiceProviderProcessor extends AbstractProcessor {

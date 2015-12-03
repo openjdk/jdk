@@ -22,7 +22,9 @@
  */
 package jdk.vm.ci.code;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.LIRKind;
 
 /**
  * Denotes a register that stores a value of a fixed kind. There is exactly one (canonical) instance

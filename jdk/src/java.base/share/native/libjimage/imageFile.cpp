@@ -291,13 +291,10 @@ void ImageFileReaderTable::add(ImageFileReader* image) {
 
 // Remove an image entry from the table.
 void ImageFileReaderTable::remove(ImageFileReader* image) {
-    s4 last = _count - 1;
-    for (s4 i = 0; _count; i++) {
+    for (u4 i = 0; i < _count; i++) {
         if (_table[i] == image) {
-            if (i != last) {
-                _table[i] = _table[last];
-                _count = last;
-            }
+            // Swap the last element into the found slot
+            _table[i] = _table[--_count];
             break;
         }
     }
@@ -310,7 +307,7 @@ void ImageFileReaderTable::remove(ImageFileReader* image) {
 
 // Determine if image entry is in table.
 bool ImageFileReaderTable::contains(ImageFileReader* image) {
-    for (s4 i = 0; _count; i++) {
+    for (u4 i = 0; i < _count; i++) {
         if (_table[i] == image) {
             return true;
         }

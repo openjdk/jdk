@@ -25,7 +25,7 @@
  * @test
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
- * @library /testlibrary /../../test/lib /
+ * @library /testlibrary /test/lib /
  * @compile ../common/CompilerToVMHelper.java
  * @build sun.hotspot.WhiteBox
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
@@ -34,6 +34,7 @@
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xbootclasspath/a:.
  *      -XX:-BackgroundCompilation
+        -XX:+LogCompilation
  *      compiler.jvmci.compilerToVM.AllocateCompileIdTest
  */
 
@@ -51,7 +52,7 @@ import java.util.HashSet;
 
 import compiler.jvmci.common.testcases.TestCase;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Pair;
 import jdk.test.lib.Utils;
@@ -74,8 +75,9 @@ public class AllocateCompileIdTest {
         try {
             Class<?> aClass = DummyClass.class;
             Method method = aClass.getMethod("withLoop");
-            result.add(new CompileCodeTestCase(method, 17));
-            result.add(new CompileCodeTestCase(method, -1));
+            Object receiver = new DummyClass();
+            result.add(new CompileCodeTestCase(receiver, method, 17));
+            result.add(new CompileCodeTestCase(receiver, method, -1));
         } catch (NoSuchMethodException e) {
             throw new Error("TEST BUG : " + e, e);
         }
@@ -90,16 +92,19 @@ public class AllocateCompileIdTest {
 
         try {
             Class<?> aClass = DummyClass.class;
+            Object receiver = new DummyClass();
             Method method = aClass.getMethod("dummyInstanceFunction");
             // greater than bytecode.length
             int[] bcis = new int[] {30, 50, 200};
             for (int bci : bcis) {
-                result.add(new Pair<>(new CompileCodeTestCase(method, bci),
+                result.add(new Pair<>(
+                        new CompileCodeTestCase(receiver, method, bci),
                         IllegalArgumentException.class));
             }
             bcis = new int[] {-4, -50, -200};
             for (int bci : bcis) {
-                result.add(new Pair<>(new CompileCodeTestCase(method, bci),
+                result.add(new Pair<>(
+                        new CompileCodeTestCase(receiver, method, bci),
                         IllegalArgumentException.class));
             }
         } catch (NoSuchMethodException e) {
@@ -111,8 +116,10 @@ public class AllocateCompileIdTest {
     private void runSanityCorrectTest(CompileCodeTestCase testCase) {
         System.out.println(testCase);
         Executable aMethod = testCase.executable;
+        // to generate ciTypeFlow
+        System.out.println(testCase.invoke(Utils.getNullValues(aMethod.getParameterTypes())));
         int bci = testCase.bci;
-        HotSpotResolvedJavaMethodImpl method = CTVMUtilities
+        HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
         int wbCompileID = getWBCompileID(testCase);
         int id = CompilerToVMHelper.allocateCompileId(method, bci);
@@ -140,7 +147,7 @@ public class AllocateCompileIdTest {
         Class<? extends Throwable> exception = testCase.second;
         Executable aMethod = testCase.first.executable;
         int bci = testCase.first.bci;
-        HotSpotResolvedJavaMethodImpl method = CTVMUtilities
+        HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
         Utils.runAndCheckException(
                 () -> CompilerToVMHelper.allocateCompileId(method, bci),

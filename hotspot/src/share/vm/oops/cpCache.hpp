@@ -246,17 +246,17 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
 
   void set_itable_call(
     Bytecodes::Code invoke_code,                 // the bytecode used; must be invokeinterface
-    methodHandle method,                         // the resolved interface method
+    const methodHandle& method,                  // the resolved interface method
     int itable_index                             // index into itable for the method
   );
 
   void set_method_handle(
-    constantPoolHandle cpool,                    // holding constant pool (required for locking)
+    const constantPoolHandle& cpool,             // holding constant pool (required for locking)
     const CallInfo &call_info                    // Call link information
   );
 
   void set_dynamic_call(
-    constantPoolHandle cpool,                    // holding constant pool (required for locking)
+    const constantPoolHandle& cpool,             // holding constant pool (required for locking)
     const CallInfo &call_info                    // Call link information
   );
 
@@ -276,7 +276,7 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
   // resolution logic needs to make slightly different assessments about the
   // number and types of arguments.
   void set_method_handle_common(
-    constantPoolHandle cpool,                    // holding constant pool (required for locking)
+    const constantPoolHandle& cpool,                    // holding constant pool (required for locking)
     Bytecodes::Code invoke_code,                 // _invokehandle or _invokedynamic
     const CallInfo &call_info                    // Call link information
   );
@@ -291,9 +291,9 @@ class ConstantPoolCacheEntry VALUE_OBJ_CLASS_SPEC {
     _indy_resolved_references_entries
   };
 
-  Method*      method_if_resolved(constantPoolHandle cpool);
-  oop        appendix_if_resolved(constantPoolHandle cpool);
-  oop     method_type_if_resolved(constantPoolHandle cpool);
+  Method*      method_if_resolved(const constantPoolHandle& cpool);
+  oop        appendix_if_resolved(const constantPoolHandle& cpool);
+  oop     method_type_if_resolved(const constantPoolHandle& cpool);
 
   void set_parameter_size(int value);
 

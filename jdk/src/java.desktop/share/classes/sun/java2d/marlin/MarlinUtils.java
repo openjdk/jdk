@@ -25,8 +25,6 @@
 
 package sun.java2d.marlin;
 
-import jdk.internal.misc.JavaLangAccess;
-import jdk.internal.misc.SharedSecrets;
 
 public final class MarlinUtils {
     // TODO: use sun.util.logging.PlatformLogger once in JDK9
@@ -69,31 +67,6 @@ public final class MarlinUtils {
     static String getCallerInfo(String className) {
         String sourceClassName = null;
         String sourceMethodName = null;
-
-        JavaLangAccess access = SharedSecrets.getJavaLangAccess();
-        Throwable throwable = new Throwable();
-        int depth = access.getStackTraceDepth(throwable);
-
-        boolean lookingForClassName = true;
-        for (int ix = 0; ix < depth; ix++) {
-            // Calling getStackTraceElement directly prevents the VM
-            // from paying the cost of building the entire stack frame.
-            StackTraceElement frame = access.getStackTraceElement(throwable, ix);
-            String cname = frame.getClassName();
-            if (lookingForClassName) {
-                // Skip all frames until we have found the first frame having the class name.
-                if (cname.equals(className)) {
-                    lookingForClassName = false;
-                }
-            } else {
-                if (!cname.equals(className)) {
-                    // We've found the relevant frame.
-                    sourceClassName = cname;
-                    sourceMethodName = frame.getMethodName();
-                    break;
-                }
-            }
-        }
 
         if (sourceClassName != null) {
             return sourceClassName + " " + sourceMethodName;

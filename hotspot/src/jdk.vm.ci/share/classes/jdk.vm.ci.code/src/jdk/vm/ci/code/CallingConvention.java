@@ -22,9 +22,10 @@
  */
 package jdk.vm.ci.code;
 
-import static jdk.vm.ci.code.ValueUtil.*;
-
-import jdk.vm.ci.meta.*;
+import static jdk.vm.ci.code.ValueUtil.isAllocatableValue;
+import static jdk.vm.ci.code.ValueUtil.isStackSlot;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.Value;
 
 /**
  * A calling convention describes the locations in which the arguments for a call are placed and the

@@ -179,12 +179,13 @@ void VersionDCmd::execute(DCmdSource source, TRAPS) {
   output()->print_cr("%s version %s", Abstract_VM_Version::vm_name(),
           Abstract_VM_Version::vm_release());
   JDK_Version jdk_version = JDK_Version::current();
-  if (jdk_version.update_version() > 0) {
-    output()->print_cr("JDK %d.%d_%02d", jdk_version.major_version(),
-            jdk_version.minor_version(), jdk_version.update_version());
+  if (jdk_version.patch_version() > 0) {
+    output()->print_cr("JDK %d.%d.%d.%d", jdk_version.major_version(),
+            jdk_version.minor_version(), jdk_version.security_version(),
+            jdk_version.patch_version());
   } else {
-    output()->print_cr("JDK %d.%d", jdk_version.major_version(),
-            jdk_version.minor_version());
+    output()->print_cr("JDK %d.%d.%d", jdk_version.major_version(),
+            jdk_version.minor_version(), jdk_version.security_version());
   }
 }
 

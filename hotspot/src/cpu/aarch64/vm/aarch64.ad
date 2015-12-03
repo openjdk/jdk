@@ -14150,6 +14150,7 @@ instruct partialSubtypeCheckVsZero(iRegP_R4 sub, iRegP_R0 super, iRegP_R2 temp, 
 instruct string_compare(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cnt2,
                         iRegI_R0 result, iRegP_R10 tmp1, rFlagsReg cr)
 %{
+  predicate(!CompactStrings);
   match(Set result (StrComp (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(KILL tmp1, USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2, KILL cr);
 
@@ -14165,6 +14166,7 @@ instruct string_compare(iRegP_R1 str1, iRegI_R2 cnt1, iRegP_R3 str2, iRegI_R4 cn
 instruct string_indexof(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2, iRegI_R2 cnt2,
        iRegI_R0 result, iRegI tmp1, iRegI tmp2, iRegI tmp3, iRegI tmp4, rFlagsReg cr)
 %{
+  predicate(!CompactStrings);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1, USE_KILL cnt2,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
@@ -14184,6 +14186,7 @@ instruct string_indexof_con(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
                  immI_le_4 int_cnt2, iRegI_R0 result, iRegI tmp1, iRegI tmp2,
                  iRegI tmp3, iRegI tmp4, rFlagsReg cr)
 %{
+  predicate(!CompactStrings);
   match(Set result (StrIndexOf (Binary str1 cnt1) (Binary str2 int_cnt2)));
   effect(USE_KILL str1, USE_KILL str2, USE_KILL cnt1,
          TEMP tmp1, TEMP tmp2, TEMP tmp3, TEMP tmp4, KILL cr);
@@ -14203,6 +14206,7 @@ instruct string_indexof_con(iRegP_R1 str1, iRegI_R4 cnt1, iRegP_R3 str2,
 instruct string_equals(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
                         iRegI_R0 result, iRegP_R10 tmp, rFlagsReg cr)
 %{
+  predicate(!CompactStrings);
   match(Set result (StrEquals (Binary str1 str2) cnt));
   effect(KILL tmp, USE_KILL str1, USE_KILL str2, USE_KILL cnt, KILL cr);
 
@@ -14218,6 +14222,7 @@ instruct string_equals(iRegP_R1 str1, iRegP_R3 str2, iRegI_R4 cnt,
 instruct array_equals(iRegP_R1 ary1, iRegP_R2 ary2, iRegI_R0 result,
                       iRegP_R10 tmp, rFlagsReg cr)
 %{
+  predicate(((AryEqNode*)n)->encoding() == StrIntrinsicNode::UU);
   match(Set result (AryEq ary1 ary2));
   effect(KILL tmp, USE_KILL ary1, USE_KILL ary2, KILL cr);
 

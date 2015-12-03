@@ -25,7 +25,7 @@
  * @test
  * @summary Test consistency of NMT by leaking a few select allocations of the Test type and then verify visibility with jcmd
  * @key nmt jcmd
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build MallocTestType

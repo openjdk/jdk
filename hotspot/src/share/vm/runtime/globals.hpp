@@ -282,6 +282,14 @@ struct Flag {
     ERR_OTHER
   };
 
+  enum MsgType {
+    NONE = 0,
+    DIAGNOSTIC_FLAG_BUT_LOCKED,
+    EXPERIMENTAL_FLAG_BUT_LOCKED,
+    DEVELOPER_FLAG_BUT_PRODUCT_BUILD,
+    NOTPRODUCT_FLAG_BUT_PRODUCT_BUILD
+  };
+
   const char* _type;
   const char* _name;
   void* _addr;
@@ -367,7 +375,7 @@ struct Flag {
 
   void unlock_diagnostic();
 
-  void get_locked_message(char*, int) const;
+  Flag::MsgType get_locked_message(char*, int) const;
   void get_locked_message_ext(char*, int) const;
 
   // printRanges will print out flags type, name and range values as expected by -XX:+PrintFlagsRanges
@@ -444,41 +452,49 @@ class CommandLineFlags {
 public:
   static Flag::Error boolAt(const char* name, size_t len, bool* value, bool allow_locked = false, bool return_flag = false);
   static Flag::Error boolAt(const char* name, bool* value, bool allow_locked = false, bool return_flag = false)      { return boolAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error boolAtPut(Flag* flag, bool* value, Flag::Flags origin);
   static Flag::Error boolAtPut(const char* name, size_t len, bool* value, Flag::Flags origin);
   static Flag::Error boolAtPut(const char* name, bool* value, Flag::Flags origin)   { return boolAtPut(name, strlen(name), value, origin); }
 
   static Flag::Error intAt(const char* name, size_t len, int* value, bool allow_locked = false, bool return_flag = false);
   static Flag::Error intAt(const char* name, int* value, bool allow_locked = false, bool return_flag = false)      { return intAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error intAtPut(Flag* flag, int* value, Flag::Flags origin);
   static Flag::Error intAtPut(const char* name, size_t len, int* value, Flag::Flags origin);
   static Flag::Error intAtPut(const char* name, int* value, Flag::Flags origin)   { return intAtPut(name, strlen(name), value, origin); }
 
   static Flag::Error uintAt(const char* name, size_t len, uint* value, bool allow_locked = false, bool return_flag = false);
   static Flag::Error uintAt(const char* name, uint* value, bool allow_locked = false, bool return_flag = false)      { return uintAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error uintAtPut(Flag* flag, uint* value, Flag::Flags origin);
   static Flag::Error uintAtPut(const char* name, size_t len, uint* value, Flag::Flags origin);
   static Flag::Error uintAtPut(const char* name, uint* value, Flag::Flags origin)   { return uintAtPut(name, strlen(name), value, origin); }
 
   static Flag::Error intxAt(const char* name, size_t len, intx* value, bool allow_locked = false, bool return_flag = false);
   static Flag::Error intxAt(const char* name, intx* value, bool allow_locked = false, bool return_flag = false)      { return intxAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error intxAtPut(Flag* flag, intx* value, Flag::Flags origin);
   static Flag::Error intxAtPut(const char* name, size_t len, intx* value, Flag::Flags origin);
   static Flag::Error intxAtPut(const char* name, intx* value, Flag::Flags origin)   { return intxAtPut(name, strlen(name), value, origin); }
 
   static Flag::Error uintxAt(const char* name, size_t len, uintx* value, bool allow_locked = false, bool return_flag = false);
   static Flag::Error uintxAt(const char* name, uintx* value, bool allow_locked = false, bool return_flag = false)    { return uintxAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error uintxAtPut(Flag* flag, uintx* value, Flag::Flags origin);
   static Flag::Error uintxAtPut(const char* name, size_t len, uintx* value, Flag::Flags origin);
   static Flag::Error uintxAtPut(const char* name, uintx* value, Flag::Flags origin) { return uintxAtPut(name, strlen(name), value, origin); }
 
   static Flag::Error size_tAt(const char* name, size_t len, size_t* value, bool allow_locked = false, bool return_flag = false);
   static Flag::Error size_tAt(const char* name, size_t* value, bool allow_locked = false, bool return_flag = false)    { return size_tAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error size_tAtPut(Flag* flag, size_t* value, Flag::Flags origin);
   static Flag::Error size_tAtPut(const char* name, size_t len, size_t* value, Flag::Flags origin);
   static Flag::Error size_tAtPut(const char* name, size_t* value, Flag::Flags origin) { return size_tAtPut(name, strlen(name), value, origin); }
 
   static Flag::Error uint64_tAt(const char* name, size_t len, uint64_t* value, bool allow_locked = false, bool return_flag = false);
   static Flag::Error uint64_tAt(const char* name, uint64_t* value, bool allow_locked = false, bool return_flag = false) { return uint64_tAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error uint64_tAtPut(Flag* flag, uint64_t* value, Flag::Flags origin);
   static Flag::Error uint64_tAtPut(const char* name, size_t len, uint64_t* value, Flag::Flags origin);
   static Flag::Error uint64_tAtPut(const char* name, uint64_t* value, Flag::Flags origin) { return uint64_tAtPut(name, strlen(name), value, origin); }
 
   static Flag::Error doubleAt(const char* name, size_t len, double* value, bool allow_locked = false, bool return_flag = false);
   static Flag::Error doubleAt(const char* name, double* value, bool allow_locked = false, bool return_flag = false)    { return doubleAt(name, strlen(name), value, allow_locked, return_flag); }
+  static Flag::Error doubleAtPut(Flag* flag, double* value, Flag::Flags origin);
   static Flag::Error doubleAtPut(const char* name, size_t len, double* value, Flag::Flags origin);
   static Flag::Error doubleAtPut(const char* name, double* value, Flag::Flags origin) { return doubleAtPut(name, strlen(name), value, origin); }
 
@@ -804,7 +820,7 @@ public:
           "Inline Thread.currentThread, etc")                               \
                                                                             \
   develop(bool, InlineUnsafeOps, true,                                      \
-          "Inline memory ops (native methods) from sun.misc.Unsafe")        \
+          "Inline memory ops (native methods) from Unsafe")                 \
                                                                             \
   product(bool, CriticalJNINatives, true,                                   \
           "Check for critical JNI entry points")                            \
@@ -1325,9 +1341,6 @@ public:
   product(bool, AllowJNIEnvProxy, false,                                    \
           "Allow JNIEnv proxies for jdbx")                                  \
                                                                             \
-  product(bool, JNIDetachReleasesMonitors, true,                            \
-          "JNI DetachCurrentThread releases monitors owned by thread")      \
-                                                                            \
   product(bool, RestoreMXCSROnJNICalls, false,                              \
           "Restore MXCSR when returning from JNI calls")                    \
                                                                             \
@@ -1493,9 +1506,6 @@ public:
   develop(bool, TraceOopMapRewrites, false,                                 \
           "Trace rewriting of method oops during oop map generation")       \
                                                                             \
-  develop(bool, TraceSafepoint, false,                                      \
-          "Trace safepoint operations")                                     \
-                                                                            \
   develop(bool, TraceICBuffer, false,                                       \
           "Trace usage of IC buffer")                                       \
                                                                             \
@@ -1621,12 +1631,6 @@ public:
   diagnostic(uintx, GCLockerRetryAllocationCount, 2,                        \
           "Number of times to retry allocations when "                      \
           "blocked by the GC locker")                                       \
-                                                                            \
-  develop(bool, UseCMSAdaptiveFreeLists, true,                              \
-          "Use adaptive free lists in the CMS generation")                  \
-                                                                            \
-  develop(bool, UseAsyncConcMarkSweepGC, true,                              \
-          "Use Asynchronous Concurrent Mark-Sweep GC in the old generation")\
                                                                             \
   product(bool, UseCMSBestFit, true,                                        \
           "Use CMS best fit allocation strategy")                           \
@@ -1822,10 +1826,6 @@ public:
           "When CMS class unloading is enabled, the maximum CMS cycle "     \
           "count for which classes may not be unloaded")                    \
                                                                             \
-  develop(intx, CMSDictionaryChoice, 0,                                     \
-          "Use BinaryTreeDictionary as default in the CMS generation")      \
-          range(0, 2)                                                       \
-                                                                            \
   product(uintx, CMSIndexedFreeListReplenish, 4,                            \
           "Replenish an indexed free list with this number of chunks")      \
           range(1, max_uintx)                                               \
@@ -1839,9 +1839,6 @@ public:
                                                                             \
   product(bool, CMSLoopWarn, false,                                         \
           "Warn in case of excessive CMS looping")                          \
-                                                                            \
-  develop(bool, CMSOverflowEarlyRestoration, false,                         \
-          "Restore preserved marks early")                                  \
                                                                             \
   /* where does the range max value of (max_jint - 1) come from? */         \
   product(size_t, MarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),         \
@@ -2889,6 +2886,9 @@ public:
   product(bool, AggressiveOpts, false,                                      \
           "Enable aggressive optimizations - see arguments.cpp")            \
                                                                             \
+  product_pd(bool, CompactStrings,                                          \
+          "Enable Strings to use single byte chars in backing store")       \
+                                                                            \
   product_pd(uintx, TypeProfileLevel,                                       \
           "=XYZ, with Z: Type profiling of arguments at call; "             \
                      "Y: Type profiling of return value at call; "          \
@@ -3097,6 +3097,7 @@ public:
                                                                             \
   product(intx,  AllocatePrefetchStepSize, 16,                              \
           "Step size in bytes of sequential prefetch instructions")         \
+          range(1, max_jint)                                                \
           constraint(AllocatePrefetchStepSizeConstraintFunc,AfterMemoryInit)\
                                                                             \
   product(intx,  AllocatePrefetchInstr, 0,                                  \
@@ -3580,6 +3581,7 @@ public:
                                                                             \
   product_pd(intx, OptoLoopAlignment,                                       \
           "Align inner loops to zero relative to this modulus")             \
+          range(1, 16)                                                      \
           constraint(OptoLoopAlignmentConstraintFunc, AfterErgo)            \
                                                                             \
   product_pd(uintx, InitialCodeCacheSize,                                   \
@@ -3744,6 +3746,7 @@ public:
   product(intx, CompilerThreadPriority, -1,                                 \
           "The native priority at which compiler threads should run "       \
           "(-1 means no change)")                                           \
+          range(min_jint, max_jint)                                         \
           constraint(CompilerThreadPriorityConstraintFunc, AfterErgo)       \
                                                                             \
   product(intx, VMThreadPriority, -1,                                       \
@@ -4209,9 +4212,6 @@ public:
   diagnostic(bool, StringDeduplicationRehashALot, false,                    \
           "Force table rehash every time the table is scanned")             \
                                                                             \
-  develop(bool, TraceDefaultMethods, false,                                 \
-          "Trace the default method processing steps")                      \
-                                                                            \
   diagnostic(bool, WhiteBoxAPI, false,                                      \
           "Enable internal testing APIs")                                   \
                                                                             \
@@ -4253,7 +4253,7 @@ public:
           "Use locked-tracing when doing event-based tracing")              \
                                                                             \
   diagnostic(bool, UseUnalignedAccesses, false,                             \
-          "Use unaligned memory accesses in sun.misc.Unsafe")               \
+          "Use unaligned memory accesses in Unsafe")                        \
                                                                             \
   product_pd(bool, PreserveFramePointer,                                    \
              "Use the FP register for holding the frame pointer "           \

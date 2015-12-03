@@ -26,6 +26,7 @@
 package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
+import java.util.*;
 
 import com.sun.tools.doclets.formats.html.markup.*;
 import com.sun.tools.doclets.internal.toolkit.*;
@@ -57,6 +58,8 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      */
     protected int next;
 
+    private List<Object> indexElements;
+
     /**
      * Construct the SplitIndexWriter. Uses path to this file and relative path
      * from this file.
@@ -66,9 +69,10 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      */
     public SplitIndexWriter(ConfigurationImpl configuration,
                             DocPath path,
-                            IndexBuilder indexbuilder,
+                            IndexBuilder indexbuilder, List<Object> elements,
                             int prev, int next) throws IOException {
         super(configuration, path, indexbuilder);
+        this.indexElements = elements;
         this.prev = prev;
         this.next = next;
     }
@@ -86,16 +90,20 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         DocPath filename = DocPath.empty;
         DocPath path = DocPaths.INDEX_FILES;
         try {
-            for (int i = 0; i < indexbuilder.elements().length; i++) {
-                int j = i + 1;
-                int prev = (j == 1)? -1: i;
-                int next = (j == indexbuilder.elements().length)? -1: j + 1;
-                filename = DocPaths.indexN(j);
+            Set<Object> keys = new TreeSet<>(Arrays.asList(indexbuilder.elements()));
+            keys.addAll(configuration.tagSearchIndexKeys);
+            List<Object> elements = new ArrayList<>(keys);
+            ListIterator<Object> li = elements.listIterator();
+            while (li.hasNext()) {
+                Object ch = li.next();
+                filename = DocPaths.indexN(li.nextIndex());
                 indexgen = new SplitIndexWriter(configuration,
-                                                path.resolve(filename),
-                                                indexbuilder, prev, next);
-                indexgen.generateIndexFile((Character)indexbuilder.
-                                                                 elements()[i]);
+                        path.resolve(filename),
+                        indexbuilder, elements, li.previousIndex(), li.nextIndex());
+                indexgen.generateIndexFile((Character) ch);
+                if (!li.hasNext()) {
+                    indexgen.createSearchIndexFiles();
+                }
                 indexgen.close();
             }
         } catch (IOException exc) {
@@ -128,7 +136,14 @@ public class SplitIndexWriter extends AbstractIndexWriter {
         HtmlTree divTree = new HtmlTree(HtmlTag.DIV);
         divTree.addStyle(HtmlStyle.contentContainer);
         addLinksForIndexes(divTree);
-        addContents(unicode, indexbuilder.getMemberList(unicode), divTree);
+        if (configuration.tagSearchIndexMap.get(unicode) == null) {
+            addContents(unicode, indexbuilder.getMemberList(unicode), divTree);
+        } else if (indexbuilder.getMemberList(unicode) == null) {
+            addSearchContents(unicode, configuration.tagSearchIndexMap.get(unicode), divTree);
+        } else {
+            addContents(unicode, indexbuilder.getMemberList(unicode),
+                    configuration.tagSearchIndexMap.get(unicode), divTree);
+        }
         addLinksForIndexes(divTree);
         body.addContent((configuration.allowTag(HtmlTag.MAIN)) ? HtmlTree.MAIN(divTree) : divTree);
         if (configuration.allowTag(HtmlTag.FOOTER)) {
@@ -148,11 +163,10 @@ public class SplitIndexWriter extends AbstractIndexWriter {
      * @param contentTree the content tree to which the links for indexes will be added
      */
     protected void addLinksForIndexes(Content contentTree) {
-        Object[] unicodeChars = indexbuilder.elements();
-        for (int i = 0; i < unicodeChars.length; i++) {
+        for (int i = 0; i < indexElements.size(); i++) {
             int j = i + 1;
             contentTree.addContent(getHyperLink(DocPaths.indexN(j),
-                    new StringContent(unicodeChars[i].toString())));
+                    new StringContent(indexElements.get(i).toString())));
             contentTree.addContent(getSpace());
         }
     }

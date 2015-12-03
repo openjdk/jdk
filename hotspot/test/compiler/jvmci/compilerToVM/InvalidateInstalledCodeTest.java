@@ -26,7 +26,7 @@
  * @test
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
- * @library /testlibrary /../../test/lib /
+ * @library /testlibrary /test/lib /
  * @ignore 8139700
  * @compile ../common/CompilerToVMHelper.java
  * @build sun.hotspot.WhiteBox
@@ -41,14 +41,25 @@
 
 package compiler.jvmci.compilerToVM;
 
+import compiler.jvmci.common.CTVMUtilities;
 import jdk.vm.ci.code.InstalledCode;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
+import jdk.test.lib.Utils;
 import sun.hotspot.code.NMethod;
 
 import java.util.List;
+import jdk.vm.ci.code.CodeCacheProvider;
+import jdk.vm.ci.code.CompilationResult;
+import jdk.vm.ci.hotspot.HotSpotCompilationRequest;
+import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 
 public class InvalidateInstalledCodeTest {
+    private static final CodeCacheProvider CACHE_PROVIDER
+            = HotSpotJVMCIRuntime.runtime().getHostJVMCIBackend()
+                    .getCodeCache();
+
     public static void main(String[] args) {
         InvalidateInstalledCodeTest test
                 = new InvalidateInstalledCodeTest();
@@ -60,26 +71,37 @@ public class InvalidateInstalledCodeTest {
     }
 
     private void checkNull() {
-        InstalledCode installedCode = new InstalledCode("<null>");
-        installedCode.setAddress(0);
-        CompilerToVMHelper.invalidateInstalledCode(installedCode);
+        Utils.runAndCheckException(
+                () -> CompilerToVMHelper.invalidateInstalledCode(null),
+                NullPointerException.class);
     }
 
     private void check(CompileCodeTestCase testCase) {
         System.out.println(testCase);
-        // to have a clean state
-        NMethod beforeInvalidation = testCase.deoptimizeAndCompile();
-        if (beforeInvalidation == null) {
-            throw new Error("method is not compiled, testCase " + testCase);
-        }
+        HotSpotResolvedJavaMethod javaMethod
+                = CTVMUtilities.getResolvedMethod(testCase.executable);
+        HotSpotCompilationRequest compRequest = new HotSpotCompilationRequest(
+                javaMethod, testCase.bci, /* jvmciEnv = */ 0L);
+        String name = testCase.executable.getName();
+        CompilationResult compResult = new CompilationResult(name);
+        // to pass sanity check of default -1
+        compResult.setTotalFrameSize(0);
+        InstalledCode installedCode = CACHE_PROVIDER.installCode(
+                compRequest, compResult,
+                new InstalledCode(name), /* speculationLog = */ null,
+                /* isDefault = */ false);
+        Asserts.assertTrue(installedCode.isValid(), testCase
+                + " : code is invalid even before invalidation");
 
+        NMethod beforeInvalidation = testCase.toNMethod();
+        if (beforeInvalidation != null) {
+            throw new Error("TESTBUG : " + testCase + " : nmethod isn't found");
+        }
         // run twice to verify how it works if method is already invalidated
         for (int i = 0; i < 2; ++i) {
-            InstalledCode installedCode = new InstalledCode(
-                    testCase.executable.getName());
-            installedCode.setAddress(beforeInvalidation.address);
-
             CompilerToVMHelper.invalidateInstalledCode(installedCode);
+            Asserts.assertFalse(installedCode.isValid(), testCase
+                            + " : code is valid after invalidation, i = " + i);
             NMethod afterInvalidation = testCase.toNMethod();
             if (afterInvalidation != null) {
                 System.err.println("before: " + beforeInvalidation);
@@ -87,8 +109,6 @@ public class InvalidateInstalledCodeTest {
                 throw new AssertionError(testCase
                         + " : method hasn't been invalidated, i = " + i);
             }
-            Asserts.assertFalse(installedCode.isValid(), testCase
-                            + " : code is valid after invalidation, i = " + i);
         }
     }
 }

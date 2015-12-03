@@ -69,7 +69,7 @@ public final class JdkLDAP extends Provider {
     }
 
     public JdkLDAP() {
-        super("JdkLDAP", 1.9d, "JdkLDAP Provider (implements LDAP CertStore)");
+        super("JdkLDAP", 9.0d, "JdkLDAP Provider (implements LDAP CertStore)");
 
         final Provider p = this;
         AccessController.doPrivileged(new PrivilegedAction<Void>() {

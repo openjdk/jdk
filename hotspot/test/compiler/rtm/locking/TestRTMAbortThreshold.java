@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify that RTMAbortThreshold option affects
  *          amount of aborts after which abort ratio is calculated.
- * @library /testlibrary /../../test/lib /compiler/testlibrary
+ * @library /testlibrary /test/lib /compiler/testlibrary
  * @modules java.base/sun.misc
  *          java.management
  * @build TestRTMAbortThreshold

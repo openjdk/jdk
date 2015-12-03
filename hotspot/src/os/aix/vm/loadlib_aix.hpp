@@ -26,73 +26,47 @@
 // Loadlib_aix.cpp contains support code for analysing the memory
 // layout of loaded binaries in ones own process space.
 //
-// It is needed, among other things, to provide a  dladdr() emulation, because
-// that one is not provided by AIX
+// It is needed, among other things, to provide dladdr(3), which is
+// missing on AIX.
 
 #ifndef OS_AIX_VM_LOADLIB_AIX_HPP
 #define OS_AIX_VM_LOADLIB_AIX_HPP
 
+#include <stddef.h>
+
 class outputStream;
 
-// This class holds information about a single loaded library module.
+// Struct holds information about a single loaded library module.
 // Note that on AIX, a single library can be spread over multiple
-// uintptr_t range on a module base, eg.
+// uintptr_t ranges on a module base, eg.
 // libC.a(shr3_64.o) or libC.a(shrcore_64.o).
-class LoadedLibraryModule {
 
-    friend class LoadedLibraries;
+// Note: all pointers to strings (path, member) point to strings which are immortal.
+struct loaded_module_t {
 
-    char fullpath[512];  // eg /usr/lib/libC.a
-    char shortname[30];  // eg libC.a
-    char membername[30]; // eg shrcore_64.o
-    const unsigned char* text_from;
-    const unsigned char* text_to;
-    const unsigned char* data_from;
-    const unsigned char* data_to;
+  // Points to the full path of the lodaed module, e.g.
+  // "/usr/lib/libC.a".
+  const char* path;
 
-  public:
+  // Host library name without path
+  const char* shortname;
 
-    const char* get_fullpath() const {
-      return fullpath;
-    }
-    const char* get_shortname() const {
-      return shortname;
-    }
-    const char* get_membername() const {
-      return membername;
-    }
+  // Points to the object file (AIX specific stuff)
+  // e.g "shrcore_64.o".
+  const char* member;
 
-    // text_from, text_to: returns the range of the text (code)
-    // segment for that module
-    const unsigned char* get_text_from() const {
-      return text_from;
-    }
-    const unsigned char* get_text_to() const {
-      return text_to;
-    }
+  // Text area from, to
+  const void* text;
+  size_t text_len;
 
-    // data_from/data_to: returns the range of the data
-    // segment for that module
-    const unsigned char* get_data_from() const {
-      return data_from;
-    }
-    const unsigned char* get_data_to() const {
-      return data_to;
-    }
+  // Data area from, to
+  const void* data;
+  size_t data_len;
 
-    // returns true if the
-    bool is_in_text(const unsigned char* p) const {
-      return p >= text_from && p < text_to ? true : false;
-    }
+  // True if this module is part of the vm.
+  bool is_in_vm;
 
-    bool is_in_data(const unsigned char* p) const {
-      return p >= data_from && p < data_to ? true : false;
-    }
-
-    // output debug info
-    void print(outputStream* os) const;
-
-}; // end LoadedLibraryModule
+};
 
 // This class is a singleton holding a map of all loaded binaries
 // in the AIX process space.
@@ -100,29 +74,31 @@ class LoadedLibraries
 // : AllStatic (including allocation.hpp just for AllStatic is overkill.)
 {
 
-  private:
-
-    enum {MAX_MODULES = 100};
-    static LoadedLibraryModule tab[MAX_MODULES];
-    static int num_loaded;
-
   public:
 
-    // rebuild the internal table of LoadedLibraryModule objects
-    static void reload();
+    // Rebuild the internal module table. If an error occurs, internal module
+    // table remains untouched.
+    static bool reload();
 
-    // checks whether the address p points to any of the loaded code segments.
-    // If it does, returns the LoadedLibraryModule entry. If not, returns NULL.
-    static const LoadedLibraryModule* find_for_text_address(const  unsigned char* p);
+    // Check whether the given address points into the text segment of a
+    // loaded module. Return true if this is the case.
+    // Optionally, information about the module is returned (info)
+    static bool find_for_text_address (
+      const void* p,
+      loaded_module_t* info // Optional, leave NULL if not needed.
+    );
 
-    // checks whether the address p points to any of the loaded data segments.
-    // If it does, returns the LoadedLibraryModule entry. If not, returns NULL.
-    static const LoadedLibraryModule* find_for_data_address(const  unsigned char* p);
+    // Check whether the given address points into the data segment of a
+    // loaded module. Return true if this is the case.
+    // Optionally, information about the module is returned (info)
+    static bool find_for_data_address (
+      const void* p,
+      loaded_module_t* info // Optional, leave NULL if not needed.
+    );
 
-    // output debug info
+    // Output debug info
     static void print(outputStream* os);
 
-}; // end LoadedLibraries
-
+};
 
 #endif // OS_AIX_VM_LOADLIB_AIX_HPP

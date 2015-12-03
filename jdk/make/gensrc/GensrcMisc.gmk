@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -26,28 +26,18 @@
 ##########################################################################################
 # Install the launcher name, release version string, full version
 # string and the runtime name into the Version.java file.
-# To be printed by java -version
 
-# These dependencies should ideally be added to prerequesites for Version.java
-# but skip for now until we have better incremental build for java.
-#    $(call DependOnVariable, LAUNCHER_NAME) \
-#    $(call DependOnVariable, RELEASE) \
-#    $(call DependOnVariable, FULL_VERSION) \
-#    $(call DependOnVariable, RUNTIME_VERSION)
+$(eval $(call SetupTextFileProcessing, BUILD_VERSION_JAVA, \
+    SOURCE_FILES := $(JDK_TOPDIR)/src/java.base/share/classes/sun/misc/Version.java.template, \
+    OUTPUT_FILE := $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/misc/Version.java, \
+    REPLACEMENTS := \
+        @@LAUNCHER_NAME@@ => $(LAUNCHER_NAME) ; \
+        @@RUNTIME_NAME@@ => $(RUNTIME_NAME) ; \
+        @@VERSION_SHORT@@ => $(VERSION_SHORT) ; \
+        @@VERSION_STRING@@ => $(VERSION_STRING), \
+))
 
-$(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/misc/Version.java: \
-    $(JDK_TOPDIR)/src/java.base/share/classes/sun/misc/Version.java.template
-	$(MKDIR) -p $(@D)
-	$(RM) $@ $@.tmp
-	$(ECHO) Generating sun/misc/Version.java
-	$(SED) -e 's/@@launcher_name@@/$(LAUNCHER_NAME)/g' \
-	    -e 's/@@java_version@@/$(RELEASE)/g' \
-	    -e 's/@@java_runtime_version@@/$(FULL_VERSION)/g' \
-	    -e 's/@@java_runtime_name@@/$(RUNTIME_NAME)/g' \
-	    $< > $@.tmp
-	$(MV) $@.tmp $@
-
-GENSRC_JAVA_BASE += $(SUPPORT_OUTPUTDIR)/gensrc/java.base/sun/misc/Version.java
+GENSRC_JAVA_BASE += $(BUILD_VERSION_JAVA)
 
 ##########################################################################################
 
@@ -100,7 +90,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       SRC := $(GENSRC_UC_SRC), \
       INCLUDE_FILES := $(GENSRC_UC_SRC_FILE), \
       TOOLCHAIN := TOOLCHAIN_BUILD, \
-      CFLAGS := $(filter -D%, $(CFLAGS_JDKEXE)), \
       OBJECT_DIR := $(GENSRC_UC_BIN), \
       OUTPUT_DIR := $(GENSRC_UC_BIN), \
       PROGRAM := genUnixConstants))

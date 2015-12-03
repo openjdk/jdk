@@ -191,13 +191,13 @@ AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
     # The \$ are escaped to the shell, and the $(...) variables
     # are evaluated by make.
     RC_FLAGS="$RC_FLAGS \
-        -D\"JDK_BUILD_ID=\$(FULL_VERSION)\" \
+        -D\"JDK_VERSION_STRING=\$(VERSION_STRING)\" \
         -D\"JDK_COMPANY=\$(COMPANY_NAME)\" \
         -D\"JDK_COMPONENT=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) binary\" \
-        -D\"JDK_VER=\$(JDK_MINOR_VERSION).\$(JDK_MICRO_VERSION).\$(if \$(JDK_UPDATE_VERSION),\$(JDK_UPDATE_VERSION),0).\$(COOKED_BUILD_NUMBER)\" \
+        -D\"JDK_VER=\$(VERSION_NUMBER)\" \
         -D\"JDK_COPYRIGHT=Copyright \xA9 $COPYRIGHT_YEAR\" \
-        -D\"JDK_NAME=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) \$(JDK_MINOR_VERSION) \$(JDK_UPDATE_META_TAG)\" \
-        -D\"JDK_FVER=\$(JDK_MINOR_VERSION),\$(JDK_MICRO_VERSION),\$(if \$(JDK_UPDATE_VERSION),\$(JDK_UPDATE_VERSION),0),\$(COOKED_BUILD_NUMBER)\""
+        -D\"JDK_NAME=\$(PRODUCT_NAME) \$(JDK_RC_PLATFORM_NAME) \$(VERSION_MAJOR)\" \
+        -D\"JDK_FVER=\$(subst .,\$(COMMA),\$(VERSION_NUMBER_FOUR_POSITIONS))\""
   fi
   AC_SUBST(RC_FLAGS)
 
@@ -221,7 +221,11 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_LIBS],
 
     if test "x$OPENJDK_TARGET_OS" = xmacosx; then
       # Linking is different on MacOSX
-      SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
+      if test "x$STATIC_BUILD" = xtrue; then
+        SHARED_LIBRARY_FLAGS ='-undefined dynamic_lookup'
+      else
+        SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
+      fi
       SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker @loader_path/.'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
       SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/[$]1'
@@ -662,10 +666,6 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DDEBUG"
   fi
 
-  # Setup release name
-  COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DRELEASE='\"\$(RELEASE)\"'"
-
-
   # Set some additional per-OS defines.
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
@@ -696,7 +696,9 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
       -I${JDK_TOPDIR}/src/java.base/share/native/include \
       -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS/native/include \
-      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/include"
+      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/include \
+      -I${JDK_TOPDIR}/src/java.base/share/native/libjava \ 
+      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_TYPE/native/libjava"
 
   # The shared libraries are compiled using the picflag.
   CFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK $CFLAGS_JDK $PICFLAG $CFLAGS_JDKLIB_EXTRA"

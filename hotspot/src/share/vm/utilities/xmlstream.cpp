@@ -340,18 +340,22 @@ void xmlStream::done_raw(const char* kind) {
   print_raw_cr(">");
 }
 
+// If you remove the PRAGMA, this fails to compile with clang-503.0.40.
 PRAGMA_DIAG_PUSH
 PRAGMA_FORMAT_NONLITERAL_IGNORED
 // ------------------------------------------------------------------
 void xmlStream::va_done(const char* format, va_list ap) {
   char buffer[200];
-  guarantee(strlen(format) + 10 < sizeof(buffer), "bigger format buffer");
+  size_t format_len = strlen(format);
+  guarantee(format_len + 10 < sizeof(buffer), "bigger format buffer");
   const char* kind = format;
   const char* kind_end = strchr(kind, ' ');
-  size_t kind_len = (kind_end != NULL) ? (kind_end - kind) : strlen(kind);
+  size_t kind_len = (kind_end != NULL) ? (kind_end - kind) : format_len;
   strncpy(buffer, kind, kind_len);
   strcpy(buffer + kind_len, "_done");
-  strcat(buffer, format + kind_len);
+  if (kind_end != NULL) {
+    strncat(buffer, format + kind_len, sizeof(buffer) - (kind_len + 5 /* _done */) - 1);
+  }
   // Output the trailing event with the timestamp.
   va_begin_elem(buffer, ap);
   stamp();

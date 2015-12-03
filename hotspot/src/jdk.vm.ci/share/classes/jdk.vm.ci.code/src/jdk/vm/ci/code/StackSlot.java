@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,14 @@
  */
 package jdk.vm.ci.code;
 
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.AllocatableValue;
+import jdk.vm.ci.meta.LIRKind;
 
 /**
  * Represents a compiler spill slot or an outgoing stack-based argument in a method's frame or an
  * incoming stack-based argument in a method's {@linkplain #isInCallerFrame() caller's frame}.
  */
-public final class StackSlot extends StackSlotValue {
+public final class StackSlot extends AllocatableValue {
 
     private final int offset;
     private final boolean addFrameSize;
