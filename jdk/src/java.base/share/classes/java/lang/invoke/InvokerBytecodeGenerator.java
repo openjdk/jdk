@@ -1276,10 +1276,10 @@ class InvokerBytecodeGenerator {
     /**
      * Generate bytecode for a LambdaForm.vmentry which calls interpretWithArguments.
      */
-    static MemberName generateLambdaFormInterpreterEntryPoint(String sig) {
-        assert(isValidSignature(sig));
-        String name = "interpret_"+signatureReturn(sig).basicTypeChar();
-        MethodType type = signatureType(sig);  // sig includes leading argument
+    static MemberName generateLambdaFormInterpreterEntryPoint(MethodType mt) {
+        assert(isValidSignature(basicTypeSignature(mt)));
+        String name = "interpret_"+basicTypeChar(mt.returnType());
+        MethodType type = mt;  // includes leading argument
         type = type.changeParameterType(0, MethodHandle.class);
         InvokerBytecodeGenerator g = new InvokerBytecodeGenerator("LFI", name, type);
         return g.loadMethod(g.generateLambdaFormInterpreterEntryPointBytes());

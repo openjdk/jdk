@@ -622,9 +622,8 @@ endif
 ifneq ($(OPENJDK_TARGET_OS), macosx)
   LIBFONTMANAGER_EXCLUDE_FILES += harfbuzz/hb-coretext.cc
 endif
-ifndef OPENJDK
-  LIBFONTMANAGER_EXCLUDE_FILES += harfbuzz/hb-ft.cc
-endif
+# hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
+LIBFONTMANAGER_EXCLUDE_FILES += harfbuzz/hb-ft.cc
 
 LIBFONTMANAGER_CFLAGS += $(HARFBUZZ_CFLAGS)
 

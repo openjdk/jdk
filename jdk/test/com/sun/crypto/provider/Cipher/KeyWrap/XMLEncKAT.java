@@ -26,16 +26,14 @@
  * @bug 5008159 5008156
  * @summary Verify that the two key wrap ciphers, i.e. "DESedeWrap"
  * and "AESWrap", work as expected.
- * @modules java.base/sun.misc
  * @run main XMLEncKAT
  * @author Valerie Peng
  */
+import java.util.Base64;
 import java.security.Key;
 import java.security.AlgorithmParameters;
 import javax.crypto.*;
 import javax.crypto.spec.*;
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
 import java.io.UnsupportedEncodingException;
 import java.io.IOException;
 
@@ -50,8 +48,8 @@ public class XMLEncKAT {
     private static byte[] aes192Key_2;
     private static byte[] aes256Key_2;
 
-    private static BASE64Decoder base64D = new BASE64Decoder();
-    private static BASE64Encoder base64E = new BASE64Encoder();
+    private static Base64.Decoder base64D = Base64.getDecoder();
+    private static Base64.Encoder base64E = Base64.getEncoder();
 
     static {
         try {
@@ -62,18 +60,16 @@ public class XMLEncKAT {
         } catch (UnsupportedEncodingException uee) {
             // should never happen
         }
-        try {
-            desEdeKey_2 = base64D.decodeBuffer
-                ("yI+J1f3puYAERjIcT6vfg6RitmKX8nD0");
-            aes128Key_2 = base64D.decodeBuffer
-                ("01+yuQ2huPS1+Qv0LH+zaQ==");
-            aes192Key_2 = base64D.decodeBuffer
-                ("IlfuS40LvStVU0Mj8ePrrGHVhAb48y++");
-            aes256Key_2 = base64D.decodeBuffer
-                ("ZhZ4v3RlwTlCEOpIrHfLKVyJOBDtEJOOQDat/4xR1bA=");
-        } catch (IOException ioe) {
-            // should never happen
-        }
+
+        desEdeKey_2 = base64D.decode
+            ("yI+J1f3puYAERjIcT6vfg6RitmKX8nD0");
+        aes128Key_2 = base64D.decode
+            ("01+yuQ2huPS1+Qv0LH+zaQ==");
+        aes192Key_2 = base64D.decode
+            ("IlfuS40LvStVU0Mj8ePrrGHVhAb48y++");
+        aes256Key_2 = base64D.decode
+            ("ZhZ4v3RlwTlCEOpIrHfLKVyJOBDtEJOOQDat/4xR1bA=");
+
     }
     private static String[] desEdeWrappedKey_1 = {
         "ZyJbVsjRM4MEsswwwHz57aUz1eMqZHuEIoEPGS47CcmLvhuCtlzWZ9S/WcVJZIpz",
@@ -123,7 +119,7 @@ public class XMLEncKAT {
             new IvParameterSpec[base64Wrapped.length];
         // first test UNWRAP with known values
         for (int i = 0; i < base64Wrapped.length; i++) {
-            byte[] wrappedKey = base64D.decodeBuffer(base64Wrapped[i]);
+            byte[] wrappedKey = base64D.decode(base64Wrapped[i]);
             key[i] = c.unwrap(wrappedKey, "AES", Cipher.SECRET_KEY);
             if (c.getIV() != null) {
                 params[i] = new IvParameterSpec(c.getIV());
@@ -133,7 +129,7 @@ public class XMLEncKAT {
         for (int i = 0; i < key.length; i++) {
             c.init(Cipher.WRAP_MODE, cKey, params[i]);
             byte[] wrapped2 = c.wrap(key[i]);
-            String out = base64E.encode(wrapped2);
+            String out = base64E.encodeToString(wrapped2);
             if (!out.equalsIgnoreCase(base64Wrapped[i])) {
                 throw new Exception("Wrap failed; got " + out + ", expect " +
                                    base64Wrapped[i]);
