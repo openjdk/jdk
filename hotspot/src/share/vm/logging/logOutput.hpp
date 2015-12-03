@@ -75,6 +75,14 @@ class LogOutput : public CHeapObj<mtLogging> {
   virtual const char* name() const = 0;
   virtual bool initialize(const char* options) = 0;
   virtual int write(const LogDecorations &decorations, const char* msg) = 0;
+
+  virtual bool is_rotatable() {
+    return false;
+  }
+
+  virtual void rotate(bool force) {
+    // Do nothing by default.
+  }
 };
 
 #endif // SHARE_VM_LOGGING_LOGOUTPUT_HPP
