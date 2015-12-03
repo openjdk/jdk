@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,32 +288,28 @@ class LambdaForm {
         return names;
     }
 
-    private LambdaForm(String sig) {
+    private LambdaForm(MethodType mt) {
         // Make a blank lambda form, which returns a constant zero or null.
         // It is used as a template for managing the invocation of similar forms that are non-empty.
         // Called only from getPreparedForm.
-        assert(isValidSignature(sig));
-        this.arity = signatureArity(sig);
-        this.result = (signatureReturn(sig) == V_TYPE ? -1 : arity);
-        this.names = buildEmptyNames(arity, sig);
+        this.arity = mt.parameterCount();
+        this.result = (mt.returnType() == void.class || mt.returnType() == Void.class) ? -1 : arity;
+        this.names = buildEmptyNames(arity, mt, result == -1);
         this.debugName = "LF.zero";
         this.forceInline = true;
         this.customized = null;
         assert(nameRefsAreLegal());
         assert(isEmpty());
+        String sig = null;
+        assert(isValidSignature(sig = basicTypeSignature()));
         assert(sig.equals(basicTypeSignature())) : sig + " != " + basicTypeSignature();
     }
 
-    private static Name[] buildEmptyNames(int arity, String basicTypeSignature) {
-        assert(isValidSignature(basicTypeSignature));
-        int resultPos = arity + 1;  // skip '_'
-        if (arity < 0 || basicTypeSignature.length() != resultPos+1)
-            throw new IllegalArgumentException("bad arity for "+basicTypeSignature);
-        int numRes = (basicType(basicTypeSignature.charAt(resultPos)) == V_TYPE ? 0 : 1);
-        Name[] names = arguments(numRes, basicTypeSignature.substring(0, arity));
-        for (int i = 0; i < numRes; i++) {
-            Name zero = new Name(constantZero(basicType(basicTypeSignature.charAt(resultPos + i))));
-            names[arity + i] = zero.newIndex(arity + i);
+    private static Name[] buildEmptyNames(int arity, MethodType mt, boolean isVoid) {
+        Name[] names = arguments(isVoid ? 0 : 1, mt);
+        if (!isVoid) {
+            Name zero = new Name(constantZero(basicType(mt.returnType())));
+            names[arity] = zero.newIndex(arity);
         }
         return names;
     }
@@ -520,8 +516,13 @@ class LambdaForm {
 
     /** Return the method type corresponding to my basic type signature. */
     MethodType methodType() {
-        return signatureType(basicTypeSignature());
+        Class<?>[] ptypes = new Class<?>[arity];
+        for (int i = 0; i < arity; ++i) {
+            ptypes[i] = parameterType(i).btClass;
+        }
+        return MethodType.methodType(returnType().btClass, ptypes);
     }
+
     /** Return ABC_Z, where the ABC are parameter type characters, and Z is the return type character. */
     final String basicTypeSignature() {
         StringBuilder buf = new StringBuilder(arity() + 3);
@@ -633,7 +634,14 @@ class LambdaForm {
             // already prepared (e.g., a primitive DMH invoker form)
             return;
         }
-        LambdaForm prep = getPreparedForm(basicTypeSignature());
+        MethodType mtype = methodType();
+        LambdaForm prep = mtype.form().cachedLambdaForm(MethodTypeForm.LF_INTERPRET);
+        if (prep == null) {
+            assert (isValidSignature(basicTypeSignature()));
+            prep = new LambdaForm(mtype);
+            prep.vmentry = InvokerBytecodeGenerator.generateLambdaFormInterpreterEntryPoint(mtype);
+            prep = mtype.form().setCachedLambdaForm(MethodTypeForm.LF_INTERPRET, prep);
+        }
         this.vmentry = prep.vmentry;
         // TO DO: Maybe add invokeGeneric, invokeWithArguments
     }
@@ -664,9 +672,10 @@ class LambdaForm {
             if (mt.parameterCount() > 0 &&
                 mt.parameterType(0) == MethodHandle.class &&
                 m.getName().startsWith("interpret_")) {
-                String sig = basicTypeSignature(mt);
-                assert(m.getName().equals("interpret" + sig.substring(sig.indexOf('_'))));
-                LambdaForm form = new LambdaForm(sig);
+                String sig = null;
+                assert((sig = basicTypeSignature(mt)) != null &&
+                        m.getName().equals("interpret" + sig.substring(sig.indexOf('_'))));
+                LambdaForm form = new LambdaForm(mt);
                 form.vmentry = m;
                 form = mt.form().setCachedLambdaForm(MethodTypeForm.LF_INTERPRET, form);
             }
@@ -701,15 +710,6 @@ class LambdaForm {
         Object res = mh.form.interpretWithArguments(av);
         assert(returnTypesMatch(sig, av, res));
         return res;
-    }
-    private static LambdaForm getPreparedForm(String sig) {
-        MethodType mtype = signatureType(sig);
-        LambdaForm prep =  mtype.form().cachedLambdaForm(MethodTypeForm.LF_INTERPRET);
-        if (prep != null)  return prep;
-        assert(isValidSignature(sig));
-        prep = new LambdaForm(sig);
-        prep.vmentry = InvokerBytecodeGenerator.generateLambdaFormInterpreterEntryPoint(sig);
-        return mtype.form().setCachedLambdaForm(MethodTypeForm.LF_INTERPRET, prep);
     }
 
     // The next few routines are called only from assert expressions
@@ -1557,13 +1557,6 @@ class LambdaForm {
         assert(n.index < INTERNED_ARGUMENT_LIMIT);
         if (n.constraint != null)  return n;
         return argument(n.index, n.type);
-    }
-    static Name[] arguments(int extra, String types) {
-        int length = types.length();
-        Name[] names = new Name[length + extra];
-        for (int i = 0; i < length; i++)
-            names[i] = argument(i, basicType(types.charAt(i)));
-        return names;
     }
     static Name[] arguments(int extra, MethodType types) {
         int length = types.parameterCount();
