@@ -210,6 +210,14 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
     Collection<SNIMatcher>      sniMatchers =
                                     Collections.<SNIMatcher>emptyList();
 
+    // Configured application protocol values
+    String[] applicationProtocols = new String[0];
+
+    // Negotiated application protocol value.
+    //
+    // The value under negotiation will be obtained from handshaker.
+    String applicationProtocol = null;
+
     /*
      * READ ME * READ ME * READ ME * READ ME * READ ME * READ ME *
      * IMPORTANT STUFF TO UNDERSTANDING THE SYNCHRONIZATION ISSUES.
@@ -1116,6 +1124,9 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
                                     handshaker.isSecureRenegotiation();
                     clientVerifyData = handshaker.getClientVerifyData();
                     serverVerifyData = handshaker.getServerVerifyData();
+                    // set connection ALPN value
+                    applicationProtocol =
+                        handshaker.getHandshakeApplicationProtocol();
 
                     sess = handshaker.getSession();
                     handshakeSession = null;
@@ -1314,6 +1325,7 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
         } else { // cs_DATA
             connectionState = cs_RENEGOTIATE;
         }
+
         if (roleIsServer) {
             handshaker = new ServerHandshaker(this, sslContext,
                     enabledProtocols, doClientAuth,
@@ -1331,6 +1343,7 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
         handshaker.setMaximumPacketSize(maximumPacketSize);
         handshaker.setEnabledCipherSuites(enabledCipherSuites);
         handshaker.setEnableSessionCreation(enableSessionCreation);
+        handshaker.setApplicationProtocols(applicationProtocols);
     }
 
     /**
@@ -2511,6 +2524,7 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
         params.setServerNames(serverNames);
         params.setUseCipherSuitesOrder(preferLocalCipherSuites);
         params.setMaximumPacketSize(maximumPacketSize);
+        params.setApplicationProtocols(applicationProtocols);
 
         // DTLS handshake retransmissions parameter does not apply here.
 
@@ -2549,10 +2563,13 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
             sniMatchers = matchers;
         }
 
+        applicationProtocols = params.getApplicationProtocols();
+
         if ((handshaker != null) && !handshaker.started()) {
             handshaker.setIdentificationProtocol(identificationProtocol);
             handshaker.setAlgorithmConstraints(algorithmConstraints);
             handshaker.setMaximumPacketSize(maximumPacketSize);
+            handshaker.setApplicationProtocols(applicationProtocols);
             if (roleIsServer) {
                 handshaker.setSNIMatchers(sniMatchers);
                 handshaker.setUseCipherSuitesOrder(preferLocalCipherSuites);
@@ -2560,6 +2577,19 @@ public final class SSLSocketImpl extends BaseSSLSocketImpl {
                 handshaker.setSNIServerNames(serverNames);
             }
         }
+    }
+
+    @Override
+    public synchronized String getApplicationProtocol() {
+        return applicationProtocol;
+    }
+
+    @Override
+    public synchronized String getHandshakeApplicationProtocol() {
+        if ((handshaker != null) && !handshaker.started()) {
+            return handshaker.getHandshakeApplicationProtocol();
+        }
+        return null;
     }
 
     //

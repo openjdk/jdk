@@ -65,7 +65,7 @@ bool SharkIntrinsics::is_intrinsic(ciMethod *target) {
   case vmIntrinsics::_currentThread:
     return true;
 
-    // sun.misc.Unsafe
+    // Unsafe
   case vmIntrinsics::_compareAndSwapInt:
     return true;
 
@@ -139,7 +139,7 @@ void SharkIntrinsics::do_intrinsic() {
     do_Thread_currentThread();
     break;
 
-    // sun.misc.Unsafe
+    // Unsafe
   case vmIntrinsics::_compareAndSwapInt:
     do_Unsafe_compareAndSwapInt();
     break;

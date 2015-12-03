@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,7 +179,7 @@ class Bytecode_member_ref: public Bytecode {
  protected:
   const methodHandle _method;                          // method containing the bytecode
 
-  Bytecode_member_ref(methodHandle method, int bci)  : Bytecode(method(), method()->bcp_from(bci)), _method(method) {}
+  Bytecode_member_ref(const methodHandle& method, int bci)  : Bytecode(method(), method()->bcp_from(bci)), _method(method) {}
 
   methodHandle method() const                    { return _method; }
   ConstantPool* constants() const              { return _method->constants(); }
@@ -201,10 +201,10 @@ class Bytecode_member_ref: public Bytecode {
 class Bytecode_invoke: public Bytecode_member_ref {
  protected:
   // Constructor that skips verification
-  Bytecode_invoke(methodHandle method, int bci, bool unused)  : Bytecode_member_ref(method, bci) {}
+  Bytecode_invoke(const methodHandle& method, int bci, bool unused)  : Bytecode_member_ref(method, bci) {}
 
  public:
-  Bytecode_invoke(methodHandle method, int bci)  : Bytecode_member_ref(method, bci) { verify(); }
+  Bytecode_invoke(const methodHandle& method, int bci)  : Bytecode_member_ref(method, bci) { verify(); }
   void verify() const;
 
   // Attributes
@@ -232,10 +232,10 @@ class Bytecode_invoke: public Bytecode_member_ref {
 
  private:
   // Helper to skip verification.   Used is_valid() to check if the result is really an invoke
-  inline friend Bytecode_invoke Bytecode_invoke_check(methodHandle method, int bci);
+  inline friend Bytecode_invoke Bytecode_invoke_check(const methodHandle& method, int bci);
 };
 
-inline Bytecode_invoke Bytecode_invoke_check(methodHandle method, int bci) {
+inline Bytecode_invoke Bytecode_invoke_check(const methodHandle& method, int bci) {
   return Bytecode_invoke(method, bci, false);
 }
 
@@ -243,7 +243,7 @@ inline Bytecode_invoke Bytecode_invoke_check(methodHandle method, int bci) {
 // Abstraction for all field accesses (put/get field/static)
 class Bytecode_field: public Bytecode_member_ref {
  public:
-  Bytecode_field(methodHandle method, int bci)  : Bytecode_member_ref(method, bci) { verify(); }
+  Bytecode_field(const methodHandle& method, int bci)  : Bytecode_member_ref(method, bci) { verify(); }
 
   // Testers
   bool is_getfield() const                       { return java_code() == Bytecodes::_getfield; }
@@ -316,7 +316,7 @@ class Bytecode_loadconstant: public Bytecode {
   int raw_index() const;
 
  public:
-  Bytecode_loadconstant(methodHandle method, int bci): Bytecode(method(), method->bcp_from(bci)), _method(method) { verify(); }
+  Bytecode_loadconstant(const methodHandle& method, int bci): Bytecode(method(), method->bcp_from(bci)), _method(method) { verify(); }
 
   void verify() const {
     assert(_method.not_null(), "must supply method");

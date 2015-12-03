@@ -25,7 +25,7 @@
  * @test TestMinAndInitialSurvivorRatioFlags
  * @key gc
  * @summary Verify that MinSurvivorRatio and InitialSurvivorRatio flags work
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build TestMinAndInitialSurvivorRatioFlags

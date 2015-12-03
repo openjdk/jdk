@@ -38,10 +38,13 @@
  * @author Chris Hegarty
  */
 
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+
 import java.util.Iterator;
 import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
-import static java.util.concurrent.TimeUnit.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -287,12 +290,34 @@ public class Basic {
             public void remove() {throw new UnsupportedOperationException();}};
     }
 
-    private static void realMain(String[] args) throws Throwable {
+    static class SimpleTimer {
+        long startTime = System.nanoTime();
+        long elapsedMillis() {
+            long now = System.nanoTime();
+            long elapsed = NANOSECONDS.toMillis(now - startTime);
+            startTime = now;
+            return elapsed;
+        }
+        void printElapsed() { System.out.println(elapsedMillis() + " ms"); }
+    }
 
-        Thread.currentThread().setName("mainThread");
+    static void waitForThreadToBlock(Thread thread) {
+        for (long startTime = 0;;) {
+            Thread.State state = thread.getState();
+            if (state == Thread.State.WAITING ||
+                state == Thread.State.TIMED_WAITING)
+                break;
+            if (startTime == 0) startTime = System.nanoTime();
+            else if (System.nanoTime() - startTime > 10L * 1000L * 1000L * 1000L)
+                throw new AssertionError("timed out waiting for thread to block");
+        }
+    }
+
+    private static void realMain(String[] args) throws Throwable {
+        SimpleTimer timer = new SimpleTimer();
 
         //----------------------------------------------------------------
-        // Some basic sanity
+        System.out.print("Some basic sanity: ");
         //----------------------------------------------------------------
         try {
             final StampedLock sl = new StampedLock();
@@ -309,10 +334,10 @@ public class Basic {
                 check(!sl.isReadLocked());
                 check(sl.isWriteLocked());
                 check(sl.tryReadLock() == 0L);
-                check(sl.tryReadLock(100, MILLISECONDS) == 0L);
+                check(sl.tryReadLock(1, MILLISECONDS) == 0L);
                 check(sl.tryOptimisticRead() == 0L);
                 check(sl.tryWriteLock() == 0L);
-                check(sl.tryWriteLock(100, MILLISECONDS) == 0L);
+                check(sl.tryWriteLock(1, MILLISECONDS) == 0L);
                 check(!sl.tryUnlockRead());
                 check(sl.tryConvertToWriteLock(stamp) == stamp);
                 try {
@@ -334,7 +359,7 @@ public class Basic {
                 check(!sl.isWriteLocked());
                 check(sl.tryOptimisticRead() != 0L);
                 check(sl.tryWriteLock() == 0L);
-                check(sl.tryWriteLock(100, MILLISECONDS) == 0L);
+                check(sl.tryWriteLock(1, MILLISECONDS) == 0L);
                 check(!sl.tryUnlockWrite());
                 check(sl.tryConvertToReadLock(stamp) == stamp);
                 try {
@@ -349,105 +374,136 @@ public class Basic {
             }
             check(!sl.isReadLocked());
 
-            stamp = sl.tryReadLock(100, MILLISECONDS);
+            stamp = sl.tryReadLock(1, MILLISECONDS);
             try {
                 check(stamp != 0L);
             } finally {
                 sl.unlockRead(stamp);
             }
         } catch (Throwable t) { unexpected(t); }
+        timer.printElapsed();
 
         //----------------------------------------------------------------
-        // Multiple writers single reader
+        System.out.print("Multiple writers single reader: ");
         //----------------------------------------------------------------
         try {
             StampedLock sl = new StampedLock();
-            Phaser gate = new Phaser(102);
+            int nThreads = 10;
+            Phaser gate = new Phaser(nThreads + 2);
             Iterator<Writer> writers = writerIterator(sl, gate);
             Iterator<Reader> readers = readerIterator(sl, gate);
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 2; i++) {
                 check(!sl.isReadLocked());
                 check(!sl.isWriteLocked());
                 check(!sl.tryUnlockRead());
                 check(!sl.tryUnlockWrite());
                 check(sl.tryOptimisticRead() != 0L);
-                Locker[] wThreads = new Locker[100];
-                for (int j=0; j<100; j++)
+                Locker[] wThreads = new Locker[nThreads];
+                for (int j=0; j<nThreads; j++)
                     wThreads[j] = writers.next();
-                for (int j=0; j<100; j++)
+                for (int j=0; j<nThreads; j++)
                     wThreads[j].start();
                 Reader reader = readers.next(); reader.start();
                 toTheStartingGate(gate);
                 reader.join();
-                for (int j=0; j<100; j++)
+                for (int j=0; j<nThreads; j++)
                     wThreads[j].join();
-                for (int j=0; j<100; j++)
+                for (int j=0; j<nThreads; j++)
                     checkResult(wThreads[j], null);
                 checkResult(reader, null);
             }
         } catch (Throwable t) { unexpected(t); }
+        timer.printElapsed();
 
         //----------------------------------------------------------------
-        // Multiple readers single writer
+        System.out.print("Multiple readers single writer: ");
         //----------------------------------------------------------------
         try {
             StampedLock sl = new StampedLock();
-            Phaser gate = new Phaser(102);
+            int nThreads = 10;
+            Phaser gate = new Phaser(nThreads + 2);
             Iterator<Writer> writers = writerIterator(sl, gate);
             Iterator<Reader> readers = readerIterator(sl, gate);
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 2; i++) {
                 check(!sl.isReadLocked());
                 check(!sl.isWriteLocked());
                 check(!sl.tryUnlockRead());
                 check(!sl.tryUnlockWrite());
                 check(sl.tryOptimisticRead() != 0L);
-                Locker[] rThreads = new Locker[100];
-                for (int j=0; j<100; j++)
+                Locker[] rThreads = new Locker[nThreads];
+                for (int j=0; j<nThreads; j++)
                     rThreads[j] = readers.next();
-                for (int j=0; j<100; j++)
+                for (int j=0; j<nThreads; j++)
                     rThreads[j].start();
                 Writer writer = writers.next(); writer.start();
                 toTheStartingGate(gate);
                 writer.join();
-                for (int j=0; j<100; j++)
+                for (int j=0; j<nThreads; j++)
                     rThreads[j].join();
-                for (int j=0; j<100; j++)
+                for (int j=0; j<nThreads; j++)
                     checkResult(rThreads[j], null);
                 checkResult(writer, null);
             }
         } catch (Throwable t) { unexpected(t); }
+        timer.printElapsed();
 
         //----------------------------------------------------------------
-        // thread interrupted
+        System.out.print("thread interrupted: ");
         //----------------------------------------------------------------
         try {
+            // We test interrupting both before and after trying to acquire
             boolean view = false;
             StampedLock sl = new StampedLock();
             for (long timeout : new long[] { -1L, 30L, -1L, 30L }) {
-                long stamp = sl.writeLock();
+                long stamp;
+                Thread.State state;
+
+                stamp = sl.writeLock();
                 try {
                     Reader r = interruptibleReader(sl, timeout, SECONDS, null, view);
                     r.start();
-                    // allow r to block
-                    Thread.sleep(2000);
                     r.interrupt();
                     r.join();
                     checkResult(r, InterruptedException.class);
                 } finally {
                     sl.unlockWrite(stamp);
                 }
+
+                stamp = sl.writeLock();
+                try {
+                    Reader r = interruptibleReader(sl, timeout, SECONDS, null, view);
+                    r.start();
+                    waitForThreadToBlock(r);
+                    r.interrupt();
+                    r.join();
+                    checkResult(r, InterruptedException.class);
+                } finally {
+                    sl.unlockWrite(stamp);
+                }
+
                 stamp = sl.readLock();
                 try {
                     Writer w = interruptibleWriter(sl, timeout, SECONDS, null, view);
                     w.start();
-                    // allow w to block
-                    Thread.sleep(2000);
                     w.interrupt();
                     w.join();
                     checkResult(w, InterruptedException.class);
                 } finally {
                     sl.unlockRead(stamp);
                 }
+
+                stamp = sl.readLock();
+                try {
+                    Writer w = interruptibleWriter(sl, timeout, SECONDS, null, view);
+                    w.start();
+                    waitForThreadToBlock(w);
+                    w.interrupt();
+                    w.join();
+                    checkResult(w, InterruptedException.class);
+                } finally {
+                    sl.unlockRead(stamp);
+                }
+
                 check(!sl.isReadLocked());
                 check(!sl.isWriteLocked());
                 check(!sl.tryUnlockRead());
@@ -457,22 +513,23 @@ public class Basic {
                     view = true;
             }
         } catch (Throwable t) { unexpected(t); }
+        timer.printElapsed();
 
         //----------------------------------------------------------------
-        // timeout
+        System.out.print("timeout: ");
         //----------------------------------------------------------------
         try {
             StampedLock sl = new StampedLock();
             for (long timeout : new long[] { 0L, 5L }) {
                 long stamp = sl.writeLock();
                 try {
-                    check(sl.tryReadLock(timeout, SECONDS) == 0L);
+                    check(sl.tryReadLock(timeout, MILLISECONDS) == 0L);
                 } finally {
                     sl.unlockWrite(stamp);
                 }
                 stamp = sl.readLock();
                 try {
-                    check(sl.tryWriteLock(timeout, SECONDS) == 0L);
+                    check(sl.tryWriteLock(timeout, MILLISECONDS) == 0L);
                 } finally {
                     sl.unlockRead(stamp);
                 }
@@ -483,9 +540,10 @@ public class Basic {
                 check(sl.tryOptimisticRead() != 0L);
             }
         } catch (Throwable t) { unexpected(t); }
+        timer.printElapsed();
 
         //----------------------------------------------------------------
-        // optimistic read
+        System.out.print("optimistic read: ");
         //----------------------------------------------------------------
         try {
             StampedLock sl = new StampedLock();
@@ -510,9 +568,10 @@ public class Basic {
                 check(sl.validate(stamp) == false);
             }
         } catch (Throwable t) { unexpected(t); }
+        timer.printElapsed();
 
         //----------------------------------------------------------------
-        // convert
+        System.out.print("convert: ");
         //----------------------------------------------------------------
         try {
             StampedLock sl = new StampedLock();
@@ -527,12 +586,12 @@ public class Basic {
                 check(sl.validate(stamp));
                 check(sl.isReadLocked());
                 check(sl.tryWriteLock() == 0L);
-                check(sl.tryWriteLock(1L, SECONDS) == 0L);
+                check(sl.tryWriteLock(1L, MILLISECONDS) == 0L);
                 check((stamp = sl.tryConvertToWriteLock(stamp)) != 0L);
                 check(sl.validate(stamp));
                 check(!sl.isReadLocked());
                 check(sl.isWriteLocked());
-                check(sl.tryReadLock(1L, SECONDS) == 0L);
+                check(sl.tryReadLock(1L, MILLISECONDS) == 0L);
                 if (i != 0) {
                     sl.unlockWrite(stamp);
                     continue;
@@ -543,7 +602,7 @@ public class Basic {
                 check(sl.isReadLocked());
                 check(!sl.isWriteLocked());
                 check(sl.tryWriteLock() == 0L);
-                check(sl.tryWriteLock(1L, SECONDS) == 0L);
+                check(sl.tryWriteLock(1L, MILLISECONDS) == 0L);
                 check((stamp = sl.tryConvertToOptimisticRead(stamp)) != 0L);
                 check(sl.validate(stamp));
                 check(!sl.isReadLocked());
@@ -551,9 +610,10 @@ public class Basic {
                 check(sl.validate(stamp));
             }
         } catch (Throwable t) { unexpected(t); }
+        timer.printElapsed();
 
         //----------------------------------------------------------------
-        // views
+        System.out.print("views: ");
         //----------------------------------------------------------------
         try {
             StampedLock sl = new StampedLock();
@@ -566,7 +626,7 @@ public class Basic {
                     check(sl.isReadLocked());
                     check(!sl.isWriteLocked());
                     check(sl.tryWriteLock() == 0L);
-                    check(sl.tryWriteLock(1L, SECONDS) == 0L);
+                    check(sl.tryWriteLock(1L, MILLISECONDS) == 0L);
                 } finally {
                     rl.unlock();
                 }
@@ -578,7 +638,7 @@ public class Basic {
                     check(!sl.isReadLocked());
                     check(sl.isWriteLocked());
                     check(sl.tryWriteLock() == 0L);
-                    check(sl.tryWriteLock(1L, SECONDS) == 0L);
+                    check(sl.tryWriteLock(1L, MILLISECONDS) == 0L);
                 } finally {
                     wl.unlock();
                 }
@@ -590,6 +650,7 @@ public class Basic {
                 wl = rwl.writeLock();
             }
         } catch (Throwable t) { unexpected(t); }
+        timer.printElapsed();
     }
 
     //--------------------- Infrastructure ---------------------------

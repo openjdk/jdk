@@ -563,7 +563,7 @@ JNI_ENTRY(jclass, jni_GetSuperclass(JNIEnv *env, jclass sub))
   // return mirror for superclass
   Klass* super = k->java_super();
   // super2 is the value computed by the compiler's getSuperClass intrinsic:
-  debug_only(Klass* super2 = ( k->oop_is_array()
+  debug_only(Klass* super2 = ( k->is_array_klass()
                                  ? SystemDictionary::Object_klass()
                                  : k->super() ) );
   assert(super == super2,
@@ -1344,14 +1344,14 @@ static jmethodID get_method_id(JNIEnv *env, jclass clazz, const char *name_str,
   if (name == vmSymbols::object_initializer_name() ||
       name == vmSymbols::class_initializer_name()) {
     // Never search superclasses for constructors
-    if (klass->oop_is_instance()) {
+    if (klass->is_instance_klass()) {
       m = InstanceKlass::cast(klass())->find_method(name, signature);
     } else {
       m = NULL;
     }
   } else {
     m = klass->lookup_method(name, signature);
-    if (m == NULL &&  klass->oop_is_instance()) {
+    if (m == NULL &&  klass->is_instance_klass()) {
       m = InstanceKlass::cast(klass())->lookup_method_in_ordered_interfaces(name, signature);
     }
   }
@@ -2038,7 +2038,7 @@ JNI_ENTRY(jfieldID, jni_GetFieldID(JNIEnv *env, jclass clazz,
   k()->initialize(CHECK_NULL);
 
   fieldDescriptor fd;
-  if (!k()->oop_is_instance() ||
+  if (!k()->is_instance_klass() ||
       !InstanceKlass::cast(k())->find_field(fieldname, signame, false, &fd)) {
     THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
@@ -2292,7 +2292,7 @@ JNI_ENTRY(jfieldID, jni_GetStaticFieldID(JNIEnv *env, jclass clazz,
   k()->initialize(CHECK_NULL);
 
   fieldDescriptor fd;
-  if (!k()->oop_is_instance() ||
+  if (!k()->is_instance_klass() ||
       !InstanceKlass::cast(k())->find_field(fieldname, signame, true, &fd)) {
     THROW_MSG_0(vmSymbols::java_lang_NoSuchFieldError(), (char*) name);
   }
@@ -2474,12 +2474,18 @@ JNI_QUICK_ENTRY(const jchar*, jni_GetStringChars(
   typeArrayOop s_value = java_lang_String::value(s);
   if (s_value != NULL) {
     int s_len = java_lang_String::length(s);
-    int s_offset = java_lang_String::offset(s);
+    bool is_latin1 = java_lang_String::is_latin1(s);
     buf = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtInternal);  // add one for zero termination
     /* JNI Specification states return NULL on OOM */
     if (buf != NULL) {
       if (s_len > 0) {
-        memcpy(buf, s_value->char_at_addr(s_offset), sizeof(jchar)*s_len);
+        if (!is_latin1) {
+          memcpy(buf, s_value->char_at_addr(0), sizeof(jchar)*s_len);
+        } else {
+          for (int i = 0; i < s_len; i++) {
+            buf[i] = ((jchar) s_value->byte_at(i)) & 0xff;
+          }
+        }
       }
       buf[s_len] = 0;
       //%note jni_5
@@ -3045,7 +3051,7 @@ JNI_ENTRY(jint, jni_UnregisterNatives(JNIEnv *env, jclass clazz))
  HOTSPOT_JNI_UNREGISTERNATIVES_ENTRY(env, clazz);
   Klass* k   = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(clazz));
   //%note jni_2
-  if (k->oop_is_instance()) {
+  if (k->is_instance_klass()) {
     for (int index = 0; index < InstanceKlass::cast(k)->methods()->length(); index++) {
       Method* m = InstanceKlass::cast(k)->methods()->at(index);
       if (m->is_native()) {
@@ -3118,9 +3124,15 @@ JNI_ENTRY(void, jni_GetStringRegion(JNIEnv *env, jstring string, jsize start, js
     THROW(vmSymbols::java_lang_StringIndexOutOfBoundsException());
   } else {
     if (len > 0) {
-      int s_offset = java_lang_String::offset(s);
       typeArrayOop s_value = java_lang_String::value(s);
-      memcpy(buf, s_value->char_at_addr(s_offset+start), sizeof(jchar)*len);
+      bool is_latin1 = java_lang_String::is_latin1(s);
+      if (!is_latin1) {
+        memcpy(buf, s_value->char_at_addr(start), sizeof(jchar)*len);
+      } else {
+        for (int i = 0; i < len; i++) {
+          buf[i] = ((jchar) s_value->byte_at(i + start)) & 0xff;
+        }
+      }
     }
   }
 JNI_END
@@ -3186,18 +3198,23 @@ JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jbool
   JNIWrapper("GetStringCritical");
   HOTSPOT_JNI_GETSTRINGCRITICAL_ENTRY(env, string, (uintptr_t *) isCopy);
   GC_locker::lock_critical(thread);
-  if (isCopy != NULL) {
-    *isCopy = JNI_FALSE;
-  }
   oop s = JNIHandles::resolve_non_null(string);
-  int s_len = java_lang_String::length(s);
   typeArrayOop s_value = java_lang_String::value(s);
-  int s_offset = java_lang_String::offset(s);
+  bool is_latin1 = java_lang_String::is_latin1(s);
+  if (isCopy != NULL) {
+    *isCopy = is_latin1 ? JNI_TRUE : JNI_FALSE;
+  }
   const jchar* ret;
-  if (s_len > 0) {
-    ret = s_value->char_at_addr(s_offset);
+  if (!is_latin1) {
+    ret = s_value->char_at_addr(0);
   } else {
-    ret = (jchar*) s_value->base(T_CHAR);
+    // Inflate latin1 encoded string to UTF16
+    int s_len = java_lang_String::length(s);
+    jchar* buf = NEW_C_HEAP_ARRAY(jchar, s_len, mtInternal);
+    for (int i = 0; i < s_len; i++) {
+      buf[i] = ((jchar) s_value->byte_at(i)) & 0xff;
+    }
+    ret = &buf[0];
   }
  HOTSPOT_JNI_GETSTRINGCRITICAL_RETURN((uint16_t *) ret);
   return ret;
@@ -3207,7 +3224,14 @@ JNI_END
 JNI_ENTRY(void, jni_ReleaseStringCritical(JNIEnv *env, jstring str, const jchar *chars))
   JNIWrapper("ReleaseStringCritical");
   HOTSPOT_JNI_RELEASESTRINGCRITICAL_ENTRY(env, str, (uint16_t *) chars);
-  // The str and chars arguments are ignored
+  // The str and chars arguments are ignored for UTF16 strings
+  oop s = JNIHandles::resolve_non_null(str);
+  bool is_latin1 = java_lang_String::is_latin1(s);
+  if (is_latin1) {
+    // For latin1 string, free jchar array allocated by earlier call to GetStringCritical.
+    // This assumes that ReleaseStringCritical bookends GetStringCritical.
+    FREE_C_HEAP_ARRAY(jchar, chars);
+  }
   GC_locker::unlock_critical(thread);
 HOTSPOT_JNI_RELEASESTRINGCRITICAL_RETURN();
 JNI_END
@@ -3854,6 +3878,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
   unit_test_function_call
 
 // Forward declaration
+void TestNmethodBucket_test();
 void test_semaphore();
 void TestOS_test();
 void TestReservedSpace_test();
@@ -3868,7 +3893,9 @@ void TestKlass_test();
 void TestBitMap_test();
 void TestAsUtf8();
 void Test_linked_list();
+void TestResourcehash_test();
 void TestChunkedList_test();
+void Test_log_length();
 #if INCLUDE_ALL_GCS
 void TestOldFreeSpaceCalculation_test();
 void TestG1BiasedArray_test();
@@ -3877,11 +3904,13 @@ void TestCodeCacheRemSet_test();
 void FreeRegionList_test();
 void test_memset_with_concurrent_readers();
 void TestPredictions_test();
+void WorkerDataArray_test();
 #endif
 
 void execute_internal_vm_tests() {
   if (ExecuteInternalVMTests) {
     tty->print_cr("Running internal VM tests");
+    run_unit_test(TestNmethodBucket_test());
     run_unit_test(test_semaphore());
     run_unit_test(TestOS_test());
     run_unit_test(TestReservedSpace_test());
@@ -3903,10 +3932,12 @@ void execute_internal_vm_tests() {
     run_unit_test(TestKlass_test());
     run_unit_test(TestBitMap_test());
     run_unit_test(TestAsUtf8());
+    run_unit_test(TestResourcehash_test());
     run_unit_test(ObjectMonitor::sanity_checks());
     run_unit_test(Test_linked_list());
     run_unit_test(TestChunkedList_test());
     run_unit_test(JSONTest::test());
+    run_unit_test(Test_log_length());
     run_unit_test(DirectivesParser::test());
 #if INCLUDE_VM_STRUCTS
     run_unit_test(VMStructs::test());
@@ -3922,6 +3953,7 @@ void execute_internal_vm_tests() {
     }
     run_unit_test(test_memset_with_concurrent_readers());
     run_unit_test(TestPredictions_test());
+    run_unit_test(WorkerDataArray_test());
 #endif
     tty->print_cr("All internal VM tests passed");
   }
@@ -4062,6 +4094,10 @@ static jint JNI_CreateJavaVM_inner(JavaVM **vm, void **penv, void *args) {
     // control both compiler and architectural-based reordering.
     OrderAccess::release_store(&vm_created, 0);
   }
+
+  // Flush stdout and stderr before exit.
+  fflush(stdout);
+  fflush(stderr);
 
   return result;
 

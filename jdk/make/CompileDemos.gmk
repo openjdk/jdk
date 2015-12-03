@@ -58,7 +58,8 @@ $(eval $(call SetupTextFileProcessing, BUILD_JAVA_MANIFEST, \
   SOURCE_FILES := $(JDK_TOPDIR)/make/data/mainmanifest/manifest.mf, \
   OUTPUT_FILE := $(DEMO_MANIFEST), \
   REPLACEMENTS := \
-      @@RELEASE@@ => $(RELEASE) ; \
+      @@VERSION_SPECIFICATION@@ => $(VERSION_SPECIFICATION) ; \
+      @@VERSION_SHORT@@ => $(VERSION_SHORT) ; \
       @@COMPANY_NAME@@ => $(COMPANY_NAME) , \
 ))
 

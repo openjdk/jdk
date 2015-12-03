@@ -518,6 +518,46 @@ class NativeFarCall: public NativeInstruction {
 
 #endif // _LP64
 
+// An interface for accessing/manipulating 32 bit native set_metadata imm, reg instructions
+// (used to manipulate inlined data references, etc.)
+//      set_metadata imm, reg
+//      == sethi %hi22(imm), reg ;  add reg, %lo10(imm), reg
+class NativeMovConstReg32;
+inline NativeMovConstReg32* nativeMovConstReg32_at(address address);
+class NativeMovConstReg32: public NativeInstruction {
+ public:
+  enum Sparc_specific_constants {
+    sethi_offset           = 0,
+    add_offset             = 4,
+    instruction_size       = 8
+  };
+
+  address instruction_address() const       { return addr_at(0); }
+  address next_instruction_address() const  { return addr_at(instruction_size); }
+
+  // (The [set_]data accessor respects oop_type relocs also.)
+  intptr_t data() const;
+  void set_data(intptr_t x);
+
+  // report the destination register
+  Register destination() { return inv_rd(long_at(sethi_offset)); }
+
+  void  verify();
+  void  print();
+
+  // unit test stuff
+  static void test();
+
+  // Creation
+  friend inline NativeMovConstReg32* nativeMovConstReg32_at(address address) {
+    NativeMovConstReg32* test = (NativeMovConstReg32*)address;
+    #ifdef ASSERT
+      test->verify();
+    #endif
+    return test;
+  }
+};
+
 // An interface for accessing/manipulating native set_metadata imm, reg instructions.
 // (used to manipulate inlined data references, etc.)
 //      set_metadata imm, reg

@@ -34,7 +34,7 @@ import jdk.test.lib.Asserts;
 /*
  * @test OverflowCodeCacheTest
  * @bug 8059550
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.management
  * @build OverflowCodeCacheTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

@@ -24,7 +24,7 @@
 /*
  * @test BlobSanityTest
  * @bug 8132980
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.management/sun.management
  * @build BlobSanityTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox

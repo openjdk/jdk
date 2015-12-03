@@ -22,15 +22,18 @@
  */
 package jdk.vm.ci.amd64;
 
-import static jdk.vm.ci.code.MemoryBarriers.*;
-import static jdk.vm.ci.code.Register.*;
+import static jdk.vm.ci.code.MemoryBarriers.LOAD_STORE;
+import static jdk.vm.ci.code.MemoryBarriers.STORE_STORE;
+import static jdk.vm.ci.code.Register.SPECIAL;
 
-import java.nio.*;
-import java.util.*;
+import java.nio.ByteOrder;
+import java.util.EnumSet;
 
-import jdk.vm.ci.code.*;
+import jdk.vm.ci.code.Architecture;
+import jdk.vm.ci.code.Register;
 import jdk.vm.ci.code.Register.RegisterCategory;
-import jdk.vm.ci.meta.*;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.PlatformKind;
 
 /**
  * Represents the AMD64 architecture.
@@ -65,9 +68,7 @@ public class AMD64 extends Architecture {
         r8, r9, r10, r11, r12, r13, r14, r15
     };
 
-    private static final int XMM_REFERENCE_MAP_SHIFT = 2;
-
-    public static final RegisterCategory XMM = new RegisterCategory("XMM", cpuRegisters.length, XMM_REFERENCE_MAP_SHIFT);
+    public static final RegisterCategory XMM = new RegisterCategory("XMM");
 
     // XMM registers
     public static final Register xmm0 = new Register(16, 0, "xmm0", XMM);
@@ -79,8 +80,8 @@ public class AMD64 extends Architecture {
     public static final Register xmm6 = new Register(22, 6, "xmm6", XMM);
     public static final Register xmm7 = new Register(23, 7, "xmm7", XMM);
 
-    public static final Register xmm8 =  new Register(24,  8, "xmm8",  XMM);
-    public static final Register xmm9 =  new Register(25,  9, "xmm9",  XMM);
+    public static final Register xmm8  = new Register(24,  8, "xmm8",  XMM);
+    public static final Register xmm9  = new Register(25,  9, "xmm9",  XMM);
     public static final Register xmm10 = new Register(26, 10, "xmm10", XMM);
     public static final Register xmm11 = new Register(27, 11, "xmm11", XMM);
     public static final Register xmm12 = new Register(28, 12, "xmm12", XMM);
@@ -88,28 +89,77 @@ public class AMD64 extends Architecture {
     public static final Register xmm14 = new Register(30, 14, "xmm14", XMM);
     public static final Register xmm15 = new Register(31, 15, "xmm15", XMM);
 
-    public static final Register[] xmmRegisters = {
+    public static final Register xmm16 = new Register(32, 16, "xmm16", XMM);
+    public static final Register xmm17 = new Register(33, 17, "xmm17", XMM);
+    public static final Register xmm18 = new Register(34, 18, "xmm18", XMM);
+    public static final Register xmm19 = new Register(35, 19, "xmm19", XMM);
+    public static final Register xmm20 = new Register(36, 20, "xmm20", XMM);
+    public static final Register xmm21 = new Register(37, 21, "xmm21", XMM);
+    public static final Register xmm22 = new Register(38, 22, "xmm22", XMM);
+    public static final Register xmm23 = new Register(39, 23, "xmm23", XMM);
+
+    public static final Register xmm24 = new Register(40, 24, "xmm24", XMM);
+    public static final Register xmm25 = new Register(41, 25, "xmm25", XMM);
+    public static final Register xmm26 = new Register(42, 26, "xmm26", XMM);
+    public static final Register xmm27 = new Register(43, 27, "xmm27", XMM);
+    public static final Register xmm28 = new Register(44, 28, "xmm28", XMM);
+    public static final Register xmm29 = new Register(45, 29, "xmm29", XMM);
+    public static final Register xmm30 = new Register(46, 30, "xmm30", XMM);
+    public static final Register xmm31 = new Register(47, 31, "xmm31", XMM);
+
+    public static final Register[] xmmRegistersSSE = {
         xmm0, xmm1, xmm2,  xmm3,  xmm4,  xmm5,  xmm6,  xmm7,
         xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15
     };
 
-    public static final Register[] cpuxmmRegisters = {
+    public static final Register[] xmmRegistersAVX512 = {
+        xmm0, xmm1, xmm2,  xmm3,  xmm4,  xmm5,  xmm6,  xmm7,
+        xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15,
+        xmm16, xmm17, xmm18, xmm19, xmm20, xmm21, xmm22, xmm23,
+        xmm24, xmm25, xmm26, xmm27, xmm28, xmm29, xmm30, xmm31
+    };
+
+    public static final RegisterCategory MASK = new RegisterCategory("MASK", false);
+
+    public static final Register k0 = new Register(48, 0, "k0", MASK);
+    public static final Register k1 = new Register(49, 1, "k1", MASK);
+    public static final Register k2 = new Register(50, 2, "k2", MASK);
+    public static final Register k3 = new Register(51, 3, "k3", MASK);
+    public static final Register k4 = new Register(52, 4, "k4", MASK);
+    public static final Register k5 = new Register(53, 5, "k5", MASK);
+    public static final Register k6 = new Register(54, 6, "k6", MASK);
+    public static final Register k7 = new Register(55, 7, "k7", MASK);
+
+    public static final Register[] valueRegistersSSE = {
         rax,  rcx,  rdx,   rbx,   rsp,   rbp,   rsi,   rdi,
         r8,   r9,   r10,   r11,   r12,   r13,   r14,   r15,
         xmm0, xmm1, xmm2,  xmm3,  xmm4,  xmm5,  xmm6,  xmm7,
         xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15
     };
 
+    public static final Register[] valueRegistersAVX512 = {
+        rax,  rcx,  rdx,   rbx,   rsp,   rbp,   rsi,   rdi,
+        r8,   r9,   r10,   r11,   r12,   r13,   r14,   r15,
+        xmm0, xmm1, xmm2,  xmm3,  xmm4,  xmm5,  xmm6,  xmm7,
+        xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15,
+        xmm16, xmm17, xmm18, xmm19, xmm20, xmm21, xmm22, xmm23,
+        xmm24, xmm25, xmm26, xmm27, xmm28, xmm29, xmm30, xmm31,
+        k0, k1, k2, k3, k4, k5, k6, k7
+    };
+
     /**
      * Register used to construct an instruction-relative address.
      */
-    public static final Register rip = new Register(32, -1, "rip", SPECIAL);
+    public static final Register rip = new Register(56, -1, "rip", SPECIAL);
 
     public static final Register[] allRegisters = {
         rax,  rcx,  rdx,   rbx,   rsp,   rbp,   rsi,   rdi,
         r8,   r9,   r10,   r11,   r12,   r13,   r14,   r15,
         xmm0, xmm1, xmm2,  xmm3,  xmm4,  xmm5,  xmm6,  xmm7,
         xmm8, xmm9, xmm10, xmm11, xmm12, xmm13, xmm14, xmm15,
+        xmm16, xmm17, xmm18, xmm19, xmm20, xmm21, xmm22, xmm23,
+        xmm24, xmm25, xmm26, xmm27, xmm28, xmm29, xmm30, xmm31,
+        k0, k1, k2, k3, k4, k5, k6, k7,
         rip
     };
 
@@ -151,7 +201,8 @@ public class AMD64 extends Architecture {
         AVX512PF,
         AVX512ER,
         AVX512CD,
-        AVX512BW
+        AVX512BW,
+        AVX512VL
     }
 
     private final EnumSet<CPUFeature> features;
@@ -166,11 +217,21 @@ public class AMD64 extends Architecture {
 
     private final EnumSet<Flag> flags;
 
+    private final AMD64Kind largestKind;
+
     public AMD64(EnumSet<CPUFeature> features, EnumSet<Flag> flags) {
-        super("AMD64", JavaKind.Long, ByteOrder.LITTLE_ENDIAN, true, allRegisters, LOAD_STORE | STORE_STORE, 1, cpuRegisters.length + (xmmRegisters.length << XMM_REFERENCE_MAP_SHIFT), 8);
+        super("AMD64", AMD64Kind.QWORD, ByteOrder.LITTLE_ENDIAN, true, allRegisters, LOAD_STORE | STORE_STORE, 1, 8);
         this.features = features;
         this.flags = flags;
         assert features.contains(CPUFeature.SSE2) : "minimum config for x64";
+
+        if (features.contains(CPUFeature.AVX512F)) {
+            largestKind = AMD64Kind.V512_QWORD;
+        } else if (features.contains(CPUFeature.AVX)) {
+            largestKind = AMD64Kind.V256_QWORD;
+        } else {
+            largestKind = AMD64Kind.V128_QWORD;
+        }
     }
 
     public EnumSet<CPUFeature> getFeatures() {
@@ -182,50 +243,60 @@ public class AMD64 extends Architecture {
     }
 
     @Override
-    public PlatformKind getPlatformKind(JavaKind javaKind) {
-        if (javaKind.isObject()) {
-            return getWordKind();
+    public Register[] getAvailableValueRegisters() {
+        if (features.contains(CPUFeature.AVX512F)) {
+            return valueRegistersAVX512;
         } else {
-            return javaKind;
+            return valueRegistersSSE;
+        }
+    }
+
+    @Override
+    public PlatformKind getPlatformKind(JavaKind javaKind) {
+        switch (javaKind) {
+            case Boolean:
+            case Byte:
+                return AMD64Kind.BYTE;
+            case Short:
+            case Char:
+                return AMD64Kind.WORD;
+            case Int:
+                return AMD64Kind.DWORD;
+            case Long:
+            case Object:
+                return AMD64Kind.QWORD;
+            case Float:
+                return AMD64Kind.SINGLE;
+            case Double:
+                return AMD64Kind.DOUBLE;
+            default:
+                return null;
         }
     }
 
     @Override
     public boolean canStoreValue(RegisterCategory category, PlatformKind platformKind) {
-        if (!(platformKind instanceof JavaKind)) {
-            return false;
+        AMD64Kind kind = (AMD64Kind) platformKind;
+        if (kind.isInteger()) {
+            return category.equals(CPU);
+        } else if (kind.isXMM()) {
+            return category.equals(XMM);
+        } else {
+            assert kind.isMask();
+            return category.equals(MASK);
         }
-
-        JavaKind kind = (JavaKind) platformKind;
-        if (category.equals(CPU)) {
-            switch (kind) {
-                case Boolean:
-                case Byte:
-                case Char:
-                case Short:
-                case Int:
-                case Long:
-                    return true;
-            }
-        } else if (category.equals(XMM)) {
-            switch (kind) {
-                case Float:
-                case Double:
-                    return true;
-            }
-        }
-
-        return false;
     }
 
     @Override
-    public PlatformKind getLargestStorableKind(RegisterCategory category) {
+    public AMD64Kind getLargestStorableKind(RegisterCategory category) {
         if (category.equals(CPU)) {
-            return JavaKind.Long;
+            return AMD64Kind.QWORD;
         } else if (category.equals(XMM)) {
-            return JavaKind.Double;
+            return largestKind;
+        } else if (category.equals(MASK)) {
+            return AMD64Kind.MASK64;
         } else {
-            return JavaKind.Illegal;
+            return null;
         }
     }
 }

@@ -27,7 +27,7 @@
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
  * @summary Testing compiler.jvmci.CompilerToVM.resolveTypeInPool method
- * @library /testlibrary /../../test/lib /
+ * @library /testlibrary /test/lib /
  * @compile ../common/CompilerToVMHelper.java
  * @build compiler.jvmci.common.testcases.MultipleImplementersInterface
  *        compiler.jvmci.common.testcases.MultipleImplementer2
@@ -44,8 +44,7 @@ package compiler.jvmci.compilerToVM;
 import java.util.HashMap;
 import java.util.Map;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
-import jdk.vm.ci.hotspot.HotSpotConstantPool;
-import jdk.vm.ci.hotspot.HotSpotResolvedObjectTypeImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedObjectType;
 import sun.reflect.ConstantPool;
 
 /**
@@ -62,10 +61,11 @@ public class ResolveTypeInPoolTest {
         testCase.test();
     }
 
-    public static void validate(HotSpotConstantPool constantPoolCTVM,
+    public static void validate(
+            jdk.vm.ci.meta.ConstantPool constantPoolCTVM,
             ConstantPool constantPoolSS,
             ConstantPoolTestsHelper.DummyClasses dummyClass, int i) {
-        HotSpotResolvedObjectTypeImpl typeToVerify = CompilerToVMHelper
+        HotSpotResolvedObjectType typeToVerify = CompilerToVMHelper
                 .resolveTypeInPool(constantPoolCTVM, i);
         int classNameIndex = (int) dummyClass.cp.get(i).value;
         String classNameToRefer = constantPoolSS.getUTF8At(classNameIndex);

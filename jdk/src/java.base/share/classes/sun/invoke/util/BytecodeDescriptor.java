@@ -113,7 +113,7 @@ public class BytecodeDescriptor {
     }
 
     public static String unparse(MethodType type) {
-        return unparseMethod(type.returnType(), type.parameterList());
+        return unparseMethod(type.returnType(), type.parameterArray());
     }
 
     public static String unparse(Object type) {
@@ -125,6 +125,16 @@ public class BytecodeDescriptor {
     }
 
     public static String unparseMethod(Class<?> rtype, List<Class<?>> ptypes) {
+        StringBuilder sb = new StringBuilder();
+        sb.append('(');
+        for (Class<?> pt : ptypes)
+            unparseSig(pt, sb);
+        sb.append(')');
+        unparseSig(rtype, sb);
+        return sb.toString();
+    }
+
+    public static String unparseMethod(Class<?> rtype, Class<?>[] ptypes) {
         StringBuilder sb = new StringBuilder();
         sb.append('(');
         for (Class<?> pt : ptypes)

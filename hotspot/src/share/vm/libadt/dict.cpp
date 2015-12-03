@@ -126,37 +126,37 @@ void Dict::Clear() {
 void Dict::doubhash(void) {
   uint oldsize = _size;
   _size <<= 1;                  // Double in size
-  _bin = (bucket*)_arena->Arealloc( _bin, sizeof(bucket)*oldsize, sizeof(bucket)*_size );
-  memset( &_bin[oldsize], 0, oldsize*sizeof(bucket) );
+  _bin = (bucket*)_arena->Arealloc(_bin, sizeof(bucket) * oldsize, sizeof(bucket) * _size);
+  memset(&_bin[oldsize], 0, oldsize * sizeof(bucket));
   // Rehash things to spread into new table
-  for( uint i=0; i < oldsize; i++) { // For complete OLD table do
-    bucket *b = &_bin[i];       // Handy shortcut for _bin[i]
-    if( !b->_keyvals ) continue;        // Skip empties fast
+  for (uint i = 0; i < oldsize; i++) { // For complete OLD table do
+    bucket *b = &_bin[i];              // Handy shortcut for _bin[i]
+    if (!b->_keyvals) continue;        // Skip empties fast
 
-    bucket *nb = &_bin[i+oldsize];  // New bucket shortcut
-    uint j = b->_max;               // Trim new bucket to nearest power of 2
-    while( j > b->_cnt ) j >>= 1;   // above old bucket _cnt
-    if( !j ) j = 1;             // Handle zero-sized buckets
-    nb->_max = j<<1;
+    bucket *nb = &_bin[i+oldsize];     // New bucket shortcut
+    uint j = b->_max;                  // Trim new bucket to nearest power of 2
+    while (j > b->_cnt) { j >>= 1; }   // above old bucket _cnt
+    if (!j) { j = 1; }                 // Handle zero-sized buckets
+    nb->_max = j << 1;
     // Allocate worst case space for key-value pairs
-    nb->_keyvals = (void**)_arena->Amalloc_4( sizeof(void *)*nb->_max*2 );
+    nb->_keyvals = (void**)_arena->Amalloc_4(sizeof(void *) * nb->_max * 2);
     uint nbcnt = 0;
 
-    for( j=0; j<b->_cnt; j++ ) {  // Rehash all keys in this bucket
-      void *key = b->_keyvals[j+j];
-      if( (_hash( key ) & (_size-1)) != i ) { // Moving to hi bucket?
-        nb->_keyvals[nbcnt+nbcnt] = key;
-        nb->_keyvals[nbcnt+nbcnt+1] = b->_keyvals[j+j+1];
-        nb->_cnt = nbcnt = nbcnt+1;
-        b->_cnt--;              // Remove key/value from lo bucket
-        b->_keyvals[j+j  ] = b->_keyvals[b->_cnt+b->_cnt  ];
-        b->_keyvals[j+j+1] = b->_keyvals[b->_cnt+b->_cnt+1];
-        j--;                    // Hash compacted element also
+    for (j = 0; j < b->_cnt; ) {           // Rehash all keys in this bucket
+      void *key = b->_keyvals[j + j];
+      if ((_hash(key) & (_size-1)) != i) { // Moving to hi bucket?
+        nb->_keyvals[nbcnt + nbcnt] = key;
+        nb->_keyvals[nbcnt + nbcnt + 1] = b->_keyvals[j + j + 1];
+        nb->_cnt = nbcnt = nbcnt + 1;
+        b->_cnt--;                         // Remove key/value from lo bucket
+        b->_keyvals[j + j] = b->_keyvals[b->_cnt + b->_cnt];
+        b->_keyvals[j + j + 1] = b->_keyvals[b->_cnt + b->_cnt + 1];
+        // Don't increment j, hash compacted element also.
+      } else {
+        j++; // Iterate.
       }
     } // End of for all key-value pairs in bucket
   } // End of for all buckets
-
-
 }
 
 //------------------------------Dict-----------------------------------------

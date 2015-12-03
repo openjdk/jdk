@@ -33,8 +33,10 @@
 // add a call to Thread.yield() before the call to t.start()
 // in ThreadPoolExecutor.addWorker.
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class ShutdownNowExecuteRace {
     static volatile boolean quit = false;

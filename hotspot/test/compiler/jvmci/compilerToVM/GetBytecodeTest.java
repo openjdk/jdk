@@ -26,7 +26,7 @@
  * @test
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
- * @library /testlibrary /../../test/lib /
+ * @library /testlibrary /test/lib /
  * @compile ../common/CompilerToVMHelper.java
  * @run main ClassFileInstaller jdk.vm.ci.hotspot.CompilerToVMHelper
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
@@ -40,7 +40,7 @@ import compiler.jvmci.common.CTVMUtilities;
 import compiler.jvmci.common.testcases.TestCase;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Modifier;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.test.lib.Asserts;
@@ -53,7 +53,7 @@ public class GetBytecodeTest {
     }
 
     private static void runSanityTest(Executable aMethod) {
-        HotSpotResolvedJavaMethodImpl method = CTVMUtilities
+        HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
         byte[] bytecode = CompilerToVMHelper.getBytecode(method);
 

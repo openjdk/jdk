@@ -28,9 +28,11 @@
  * @author Martin Buchholz
  */
 
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.concurrent.DelayQueue;
+import java.util.concurrent.Delayed;
+import java.util.concurrent.TimeUnit;
 
 public class Iterate {
     private static class Godot implements Delayed {

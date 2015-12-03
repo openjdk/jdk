@@ -26,7 +26,7 @@
  * @test
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
- * @library /testlibrary /../../test/lib /
+ * @library /testlibrary /test/lib /
  * @compile ../common/CompilerToVMHelper.java
  * @run main ClassFileInstaller jdk.vm.ci.hotspot.CompilerToVMHelper
  * @run main/othervm -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
@@ -42,7 +42,7 @@ import java.lang.reflect.Executable;
 import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
 
@@ -76,7 +76,7 @@ public class GetExceptionTableTest {
 
     private static void runSanityTest(Executable aMethod,
                                       Integer expectedTableLength) {
-        HotSpotResolvedJavaMethodImpl method = CTVMUtilities
+        HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
         int tableLength = CompilerToVMHelper.getExceptionTableLength(method);
         Asserts.assertEQ(tableLength, expectedTableLength, aMethod

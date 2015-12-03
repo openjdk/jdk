@@ -217,9 +217,6 @@ java/rmi/activation/Activatable/extLoadedImpl/ext.sh            generic-all
 
 # jdk_security
 
-# 8143377
-sun/security/pkcs/pkcs8/PKCS8Test.java                          solaris-all
-
 # 7157786
 sun/security/pkcs11/ec/TestKeyFactory.java                      generic-all
 

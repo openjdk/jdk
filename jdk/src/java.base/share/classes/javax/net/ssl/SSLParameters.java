@@ -56,6 +56,17 @@ import java.util.LinkedHashMap;
  * {@link SSLSocket#setSSLParameters SSLSocket.setSSLParameters()} and
  * {@link SSLServerSocket#setSSLParameters SSLServerSocket.setSSLParameters()}
  * and {@link SSLEngine#setSSLParameters SSLEngine.setSSLParameters()}.
+ * <p>
+ * For example:
+ *
+ * <blockquote><pre>
+ *     SSLParameters p = sslSocket.getSSLParameters();
+ *     p.setProtocols(new String[] { "TLSv1.2" });
+ *     p.setCipherSuites(
+ *         new String[] { "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256", ... });
+ *     p.setApplicationProtocols(new String[] {"h2", "http/1.1"});
+ *     sslSocket.setSSLParameters(p);
+ * </pre></blockquote>
  *
  * @see SSLSocket
  * @see SSLEngine
@@ -76,6 +87,7 @@ public class SSLParameters {
     private boolean preferLocalCipherSuites;
     private boolean enableRetransmissions = true;
     private int maximumPacketSize = 0;
+    private String[] applicationProtocols = new String[0];
 
     /**
      * Constructs SSLParameters.
@@ -480,7 +492,7 @@ public class SSLParameters {
      *
      * @see     #getEnableRetransmissions()
      *
-     * @since 1.9
+     * @since 9
      */
     public void setEnableRetransmissions(boolean enableRetransmissions) {
         this.enableRetransmissions = enableRetransmissions;
@@ -495,7 +507,7 @@ public class SSLParameters {
      *
      * @see     #setEnableRetransmissions(boolean)
      *
-     * @since 1.9
+     * @since 9
      */
     public boolean getEnableRetransmissions() {
         return enableRetransmissions;
@@ -523,7 +535,7 @@ public class SSLParameters {
      *
      * @see     #getMaximumPacketSize()
      *
-     * @since 1.9
+     * @since 9
      */
     public void setMaximumPacketSize(int maximumPacketSize) {
         if (maximumPacketSize < 0) {
@@ -563,11 +575,80 @@ public class SSLParameters {
      *
      * @see      #setMaximumPacketSize(int)
      *
-     * @since 1.9
+     * @since 9
      */
     public int getMaximumPacketSize() {
         return maximumPacketSize;
     }
 
+    /**
+     * Returns a prioritized array of application-layer protocol names that
+     * can be negotiated over the SSL/TLS/DTLS protocols.
+     * <p>
+     * The array could be empty (zero-length), in which case protocol
+     * indications will not be used.
+     * <p>
+     * This method will return a new array each time it is invoked.
+     *
+     * @return a non-null, possibly zero-length array of application protocol
+     *         {@code String}s.  The array is ordered based on protocol
+     *         preference, with {@code protocols[0]} being the most preferred.
+     * @see #setApplicationProtocols
+     * @since 9
+     */
+    public String[] getApplicationProtocols() {
+        return applicationProtocols.clone();
+    }
+
+    /**
+     * Sets the prioritized array of application-layer protocol names that
+     * can be negotiated over the SSL/TLS/DTLS protocols.
+     * <p>
+     * If application-layer protocols are supported by the underlying
+     * SSL/TLS implementation, this method configures which values can
+     * be negotiated by protocols such as <a
+     * href="http://www.ietf.org/rfc/rfc7301.txt"> RFC 7301 </a>, the
+     * Application Layer Protocol Negotiation (ALPN).
+     * <p>
+     * If this end of the connection is expected to offer application protocol
+     * values, all protocols configured by this method will be sent to the
+     * peer.
+     * <p>
+     * If this end of the connection is expected to select the application
+     * protocol value, the {@code protocols} configured by this method are
+     * compared with those sent by the peer.  The first matched value becomes
+     * the negotiated value.  If none of the {@code protocols} were actually
+     * requested by the peer, the underlying protocol will determine what
+     * action to take.  (For example, ALPN will send a
+     * {@code "no_application_protocol"} alert and terminate the connection.)
+     * <p>
+     * @implSpec
+     * This method will make a copy of the {@code protocols} array.
+     *
+     * @param protocols   an ordered array of application protocols,
+     *                    with {@code protocols[0]} being the most preferred.
+     *                    If the array is empty (zero-length), protocol
+     *                    indications will not be used.
+     * @throws IllegalArgumentException if protocols is null, or if
+     *                    any element in a non-empty array is null or an
+     *                    empty (zero-length) string
+     * @see #getApplicationProtocols
+     * @since 9
+     */
+    public void setApplicationProtocols(String[] protocols) {
+        if (protocols == null) {
+            throw new IllegalArgumentException("protocols was null");
+        }
+
+        String[] tempProtocols = protocols.clone();
+
+        for (String p : tempProtocols) {
+            if (p == null || p.equals("")) {
+                throw new IllegalArgumentException(
+                    "An element of protocols was null/empty");
+            }
+        }
+        applicationProtocols = tempProtocols;
+    }
 }
 

@@ -52,6 +52,8 @@ bool JVMCIRuntime::_well_known_classes_initialized = false;
 const char* JVMCIRuntime::_compiler = NULL;
 int JVMCIRuntime::_options_count = 0;
 SystemProperty** JVMCIRuntime::_options = NULL;
+int JVMCIRuntime::_trivial_prefixes_count = 0;
+char** JVMCIRuntime::_trivial_prefixes = NULL;
 bool JVMCIRuntime::_shutdown_called = false;
 
 static const char* OPTION_PREFIX = "jvmci.option.";
@@ -124,7 +126,7 @@ JRT_BLOCK_ENTRY(void, JVMCIRuntime::new_array(JavaThread* thread, Klass* array_k
   //       (This may have to change if this code changes!)
   assert(array_klass->is_klass(), "not a class");
   oop obj;
-  if (array_klass->oop_is_typeArray()) {
+  if (array_klass->is_typeArray_klass()) {
     BasicType elt_type = TypeArrayKlass::cast(array_klass)->element_type();
     obj = oopFactory::new_typeArray(elt_type, length, CHECK);
   } else {
@@ -433,12 +435,13 @@ JRT_LEAF(void, JVMCIRuntime::monitorexit(JavaThread* thread, oopDesc* obj, Basic
   }
 JRT_END
 
-JRT_LEAF(void, JVMCIRuntime::log_object(JavaThread* thread, oopDesc* obj, jint flags))
-  bool string =  mask_bits_are_true(flags, LOG_OBJECT_STRING);
-  bool addr = mask_bits_are_true(flags, LOG_OBJECT_ADDRESS);
-  bool newline = mask_bits_are_true(flags, LOG_OBJECT_NEWLINE);
-  if (!string) {
-    if (!addr && obj->is_oop_or_null(true)) {
+JRT_LEAF(void, JVMCIRuntime::log_object(JavaThread* thread, oopDesc* obj, bool as_string, bool newline))
+  ttyLocker ttyl;
+
+  if (obj == NULL) {
+    tty->print("NULL");
+  } else if (obj->is_oop_or_null(true) && (!as_string || !java_lang_String::is_instance(obj))) {
+    if (obj->is_oop_or_null(true)) {
       char buf[O_BUFLEN];
       tty->print("%s@" INTPTR_FORMAT, obj->klass()->name()->as_C_string(buf, O_BUFLEN), p2i(obj));
     } else {
@@ -628,10 +631,10 @@ Handle JVMCIRuntime::callStatic(const char* className, const char* methodName, c
 
 static bool jvmci_options_file_exists() {
   const char* home = Arguments::get_java_home();
-  size_t path_len = strlen(home) + strlen("/lib/jvmci/options") + 1;
+  size_t path_len = strlen(home) + strlen("/lib/jvmci.options") + 1;
   char path[JVM_MAXPATHLEN];
   char sep = os::file_separator()[0];
-  jio_snprintf(path, JVM_MAXPATHLEN, "%s%clib%cjvmci%coptions", home, sep, sep, sep);
+  jio_snprintf(path, JVM_MAXPATHLEN, "%s%clib%cjvmci.options", home, sep, sep);
   struct stat st;
   return os::stat(path, &st) == 0;
 }
@@ -656,7 +659,8 @@ void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(TRAPS) {
         for (int i = 0; i < _options_count; i++) {
           SystemProperty* prop = _options[i];
           oop name = java_lang_String::create_oop_from_str(prop->key() + OPTION_PREFIX_LEN, CHECK);
-          oop value = java_lang_String::create_oop_from_str(prop->value(), CHECK);
+          const char* prop_value = prop->value() != NULL ? prop->value() : "";
+          oop value = java_lang_String::create_oop_from_str(prop_value, CHECK);
           options->obj_at_put(i * 2, name);
           options->obj_at_put((i * 2) + 1, value);
         }
@@ -682,6 +686,20 @@ void JVMCIRuntime::initialize_HotSpotJVMCIRuntime(TRAPS) {
     Handle result = callStatic("jdk/vm/ci/hotspot/HotSpotJVMCIRuntime",
                                "runtime",
                                "()Ljdk/vm/ci/hotspot/HotSpotJVMCIRuntime;", NULL, CHECK);
+    objArrayOop trivial_prefixes = HotSpotJVMCIRuntime::trivialPrefixes(result);
+    if (trivial_prefixes != NULL) {
+      char** prefixes = NEW_C_HEAP_ARRAY(char*, trivial_prefixes->length(), mtCompiler);
+      for (int i = 0; i < trivial_prefixes->length(); i++) {
+        oop str = trivial_prefixes->obj_at(i);
+        if (str == NULL) {
+          THROW(vmSymbols::java_lang_NullPointerException());
+        } else {
+          prefixes[i] = strdup(java_lang_String::as_utf8_string(str));
+        }
+      }
+      _trivial_prefixes = prefixes;
+      _trivial_prefixes_count = trivial_prefixes->length();
+    }
     _HotSpotJVMCIRuntime_initialized = true;
     _HotSpotJVMCIRuntime_instance = JNIHandles::make_global(result());
   }
@@ -877,15 +895,27 @@ void JVMCIRuntime::save_compiler(const char* compiler) {
   _compiler = compiler;
 }
 
-jint JVMCIRuntime::save_options(SystemProperty* props) {
+void JVMCIRuntime::maybe_print_flags(TRAPS) {
+  if (_options != NULL) {
+    for (int i = 0; i < _options_count; i++) {
+      SystemProperty* p = _options[i];
+      const char* name = p->key() + OPTION_PREFIX_LEN;
+      if (strcmp(name, "PrintFlags") == 0 || strcmp(name, "ShowFlags") == 0) {
+        JVMCIRuntime::initialize_well_known_classes(CHECK);
+        HandleMark hm;
+        ResourceMark rm;
+        JVMCIRuntime::get_HotSpotJVMCIRuntime(CHECK);
+        return;
+      }
+    }
+  }
+}
+
+void JVMCIRuntime::save_options(SystemProperty* props) {
   int count = 0;
   SystemProperty* first = NULL;
   for (SystemProperty* p = props; p != NULL; p = p->next()) {
     if (strncmp(p->key(), OPTION_PREFIX, OPTION_PREFIX_LEN) == 0) {
-      if (p->value() == NULL || strlen(p->value()) == 0) {
-        jio_fprintf(defaultStream::output_stream(), "JVMCI option %s must have non-zero length value\n", p->key());
-        return JNI_ERR;
-      }
       if (first == NULL) {
         first = p;
       }
@@ -905,7 +935,6 @@ jint JVMCIRuntime::save_options(SystemProperty* props) {
     }
     assert (insert_pos - _options == count, "must be");
   }
-  return JNI_OK;
 }
 
 void JVMCIRuntime::shutdown() {
@@ -919,6 +948,20 @@ void JVMCIRuntime::shutdown() {
     args.push_oop(receiver);
     JavaCalls::call_special(&result, receiver->klass(), vmSymbols::shutdown_method_name(), vmSymbols::void_method_signature(), &args, CHECK_ABORT);
   }
+}
+
+bool JVMCIRuntime::treat_as_trivial(Method* method) {
+  if (_HotSpotJVMCIRuntime_initialized) {
+    oop loader = method->method_holder()->class_loader();
+    if (loader == NULL) {
+      for (int i = 0; i < _trivial_prefixes_count; i++) {
+        if (method->method_holder()->name()->starts_with(_trivial_prefixes[i])) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
 }
 
 void JVMCIRuntime::call_printStackTrace(Handle exception, Thread* thread) {
@@ -949,18 +992,18 @@ void JVMCIRuntime::abort_on_pending_exception(Handle exception, const char* mess
 
 void JVMCIRuntime::parse_lines(char* path, ParseClosure* closure, bool warnStatFailure) {
   struct stat st;
-  if (os::stat(path, &st) == 0 && (st.st_mode & S_IFREG) == S_IFREG) { // exists & is regular file
-    int file_handle = os::open(path, 0, 0);
+  if (::stat(path, &st) == 0 && (st.st_mode & S_IFREG) == S_IFREG) { // exists & is regular file
+    int file_handle = ::open(path, os::default_file_open_flags(), 0);
     if (file_handle != -1) {
       char* buffer = NEW_C_HEAP_ARRAY(char, st.st_size + 1, mtInternal);
       int num_read;
-      num_read = (int) os::read(file_handle, (char*) buffer, st.st_size);
+      num_read = (int) ::read(file_handle, (char*) buffer, st.st_size);
       if (num_read == -1) {
         warning("Error reading file %s due to %s", path, strerror(errno));
       } else if (num_read != st.st_size) {
         warning("Only read %d of " SIZE_FORMAT " bytes from %s", num_read, (size_t) st.st_size, path);
       }
-      os::close(file_handle);
+      ::close(file_handle);
       closure->set_filename(path);
       if (num_read == st.st_size) {
         buffer[num_read] = '\0';

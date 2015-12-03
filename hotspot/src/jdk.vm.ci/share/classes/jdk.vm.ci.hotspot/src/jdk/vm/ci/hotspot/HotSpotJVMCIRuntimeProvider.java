@@ -22,11 +22,15 @@
  */
 package jdk.vm.ci.hotspot;
 
-import jdk.vm.ci.common.*;
-import jdk.vm.ci.compiler.Compiler;
-import jdk.vm.ci.meta.*;
-import jdk.vm.ci.runtime.*;
-import sun.misc.*;
+import java.io.OutputStream;
+
+import jdk.vm.ci.common.JVMCIError;
+import jdk.vm.ci.meta.JVMCIMetaAccessContext;
+import jdk.vm.ci.meta.JavaKind;
+import jdk.vm.ci.meta.JavaType;
+import jdk.vm.ci.meta.ResolvedJavaType;
+import jdk.vm.ci.runtime.JVMCIRuntime;
+import sun.misc.Unsafe;
 
 //JaCoCo Exclude
 
@@ -39,7 +43,10 @@ public interface HotSpotJVMCIRuntimeProvider extends JVMCIRuntime {
 
     CompilerToVM getCompilerToVM();
 
-    Compiler getCompiler();
+    /**
+     * Gets an output stream that writes to the HotSpot's {@code tty} stream.
+     */
+    OutputStream getLogStream();
 
     /**
      * Converts a name to a Java type. This method attempts to resolve {@code name} to a
@@ -70,7 +77,7 @@ public interface HotSpotJVMCIRuntimeProvider extends JVMCIRuntime {
      *
      * @return the offset in bytes
      */
-    default int getArrayBaseOffset(JavaKind kind) {
+    static int getArrayBaseOffset(JavaKind kind) {
         switch (kind) {
             case Boolean:
                 return Unsafe.ARRAY_BOOLEAN_BASE_OFFSET;
@@ -100,7 +107,7 @@ public interface HotSpotJVMCIRuntimeProvider extends JVMCIRuntime {
      *
      * @return the scale in order to convert the index into a byte offset
      */
-    default int getArrayIndexScale(JavaKind kind) {
+    static int getArrayIndexScale(JavaKind kind) {
         switch (kind) {
             case Boolean:
                 return Unsafe.ARRAY_BOOLEAN_INDEX_SCALE;

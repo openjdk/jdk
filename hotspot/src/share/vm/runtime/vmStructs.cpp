@@ -278,6 +278,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 
 #define VM_STRUCTS(nonstatic_field, \
                    static_field, \
+                   static_ptr_volatile_field, \
                    unchecked_nonstatic_field, \
                    volatile_nonstatic_field, \
                    nonproduct_nonstatic_field, \
@@ -681,42 +682,42 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(SystemDictionary,            _shared_dictionary,                            Dictionary*)                           \
      static_field(SystemDictionary,            _system_loader_lock_obj,                       oop)                                   \
      static_field(SystemDictionary,            _loader_constraints,                           LoaderConstraintTable*)                \
-     static_field(SystemDictionary,            WK_KLASS(Object_klass),                        Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(String_klass),                        Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(Class_klass),                         Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(Cloneable_klass),                     Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(ClassLoader_klass),                   Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(Serializable_klass),                  Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(System_klass),                        Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(Throwable_klass),                     Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(ThreadDeath_klass),                   Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(Error_klass),                         Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(Exception_klass),                     Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(RuntimeException_klass),              Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(ClassNotFoundException_klass),        Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(NoClassDefFoundError_klass),          Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(LinkageError_klass),                  Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(ClassCastException_klass),            Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(ArrayStoreException_klass),           Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(VirtualMachineError_klass),           Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(OutOfMemoryError_klass),              Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(StackOverflowError_klass),            Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(ProtectionDomain_klass),              Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(AccessControlContext_klass),          Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(SecureClassLoader_klass),             Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(Reference_klass),                     Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(SoftReference_klass),                 Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(WeakReference_klass),                 Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(FinalReference_klass),                Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(PhantomReference_klass),              Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(Cleaner_klass),                       Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(Finalizer_klass),                     Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(Thread_klass),                        Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(ThreadGroup_klass),                   Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(Properties_klass),                    Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(StringBuffer_klass),                  Klass*)                                \
-     static_field(SystemDictionary,            WK_KLASS(MethodHandle_klass),                  Klass*)                                \
-     static_field(SystemDictionary,            _box_klasses[0],                               Klass*)                                \
+     static_field(SystemDictionary,            WK_KLASS(Object_klass),                        InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(String_klass),                        InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(Class_klass),                         InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(Cloneable_klass),                     InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(ClassLoader_klass),                   InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(Serializable_klass),                  InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(System_klass),                        InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(Throwable_klass),                     InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(ThreadDeath_klass),                   InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(Error_klass),                         InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(Exception_klass),                     InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(RuntimeException_klass),              InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(ClassNotFoundException_klass),        InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(NoClassDefFoundError_klass),          InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(LinkageError_klass),                  InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(ClassCastException_klass),            InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(ArrayStoreException_klass),           InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(VirtualMachineError_klass),           InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(OutOfMemoryError_klass),              InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(StackOverflowError_klass),            InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(ProtectionDomain_klass),              InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(AccessControlContext_klass),          InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(SecureClassLoader_klass),             InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(Reference_klass),                     InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(SoftReference_klass),                 InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(WeakReference_klass),                 InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(FinalReference_klass),                InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(PhantomReference_klass),              InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(Cleaner_klass),                       InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(Finalizer_klass),                     InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(Thread_klass),                        InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(ThreadGroup_klass),                   InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(Properties_klass),                    InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(StringBuffer_klass),                  InstanceKlass*)                        \
+     static_field(SystemDictionary,            WK_KLASS(MethodHandle_klass),                  InstanceKlass*)                        \
+     static_field(SystemDictionary,            _box_klasses[0],                               InstanceKlass*)                        \
      static_field(SystemDictionary,            _java_system_loader,                           oop)                                   \
                                                                                                                                      \
   /*************/                                                                                                                    \
@@ -1024,7 +1025,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   nonstatic_field(JavaThread,                  _stack_size,                                   size_t)                                \
   nonstatic_field(JavaThread,                  _vframe_array_head,                            vframeArray*)                          \
   nonstatic_field(JavaThread,                  _vframe_array_last,                            vframeArray*)                          \
-  nonstatic_field(JavaThread,                  _satb_mark_queue,                              ObjPtrQueue)                           \
+  nonstatic_field(JavaThread,                  _satb_mark_queue,                              SATBMarkQueue)                         \
   nonstatic_field(JavaThread,                  _dirty_card_queue,                             DirtyCardQueue)                        \
   nonstatic_field(Thread,                      _resource_area,                                ResourceArea*)                         \
   nonstatic_field(CompilerThread,              _env,                                          ciEnv*)                                \
@@ -1178,7 +1179,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   volatile_nonstatic_field(BasicLock,          _displaced_header,                             markOop)                               \
   nonstatic_field(BasicObjectLock,             _lock,                                         BasicLock)                             \
   nonstatic_field(BasicObjectLock,             _obj,                                          oop)                                   \
-     static_field(ObjectSynchronizer,          gBlockList,                                    ObjectMonitor*)                        \
+  static_ptr_volatile_field(ObjectSynchronizer, gBlockList,                                   ObjectMonitor*)                        \
                                                                                                                                      \
   /*********************/                                                                                                            \
   /* Matcher (C2 only) */                                                                                                            \
@@ -1312,12 +1313,11 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
      static_field(Abstract_VM_Version,         _s_internal_vm_info_string,                    const char*)                           \
      static_field(Abstract_VM_Version,         _vm_major_version,                             int)                                   \
      static_field(Abstract_VM_Version,         _vm_minor_version,                             int)                                   \
-     static_field(Abstract_VM_Version,         _vm_micro_version,                             int)                                   \
+     static_field(Abstract_VM_Version,         _vm_security_version,                          int)                                   \
      static_field(Abstract_VM_Version,         _vm_build_number,                              int)                                   \
      static_field(Abstract_VM_Version,         _reserve_for_allocation_prefetch,              int)                                   \
                                                                                                                                      \
      static_field(JDK_Version,                 _current,                                      JDK_Version)                           \
-  nonstatic_field(JDK_Version,                 _partially_initialized,                        bool)                                  \
   nonstatic_field(JDK_Version,                 _major,                                        unsigned char)                         \
                                                                                                                                      \
   /*************************/                                                                                                        \
@@ -1616,7 +1616,7 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
   declare_toplevel_type(MemRegion)                                        \
   declare_toplevel_type(ThreadLocalAllocBuffer)                           \
   declare_toplevel_type(VirtualSpace)                                     \
-  declare_toplevel_type(ObjPtrQueue)                                      \
+  declare_toplevel_type(SATBMarkQueue)                                    \
   declare_toplevel_type(DirtyCardQueue)                                   \
                                                                           \
   /* Pointers to Garbage Collection types */                              \
@@ -2897,6 +2897,11 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 #define GENERATE_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                 \
  { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 1, 0, &typeName::fieldName },
 
+// This macro generates a VMStructEntry line for a static pointer volatile field,
+// e.g.: "static ObjectMonitor * volatile gBlockList;"
+#define GENERATE_STATIC_PTR_VOLATILE_VM_STRUCT_ENTRY(typeName, fieldName, type)    \
+ { QUOTE(typeName), QUOTE(fieldName), QUOTE(type), 1, 0, (void *)&typeName::fieldName },
+
 // This macro generates a VMStructEntry line for an unchecked
 // nonstatic field, in which the size of the type is also specified.
 // The type string is given as NULL, indicating an "opaque" type.
@@ -2922,9 +2927,14 @@ typedef CompactHashtable<Symbol*, char>       SymbolCompactHashTable;
 #define CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)        \
  {typedef type dummyvtype; typeName *dummyObj = NULL; volatile dummyvtype* dummy = &dummyObj->fieldName; }
 
-// This macro checks the type of a VMStructEntry by comparing pointer types
+// This macro checks the type of a static VMStructEntry by comparing pointer types
 #define CHECK_STATIC_VM_STRUCT_ENTRY(typeName, fieldName, type)                    \
  {type* dummy = &typeName::fieldName; }
+
+// This macro checks the type of a static pointer volatile VMStructEntry by comparing pointer types,
+// e.g.: "static ObjectMonitor * volatile gBlockList;"
+#define CHECK_STATIC_PTR_VOLATILE_VM_STRUCT_ENTRY(typeName, fieldName, type)       \
+ {type volatile * dummy = &typeName::fieldName; }
 
 // This macro ensures the type of a field and its containing type are
 // present in the type table. The assertion string is shorter than
@@ -3136,6 +3146,7 @@ VMStructEntry VMStructs::localHotSpotVMStructs[] = {
 
   VM_STRUCTS(GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
              GENERATE_STATIC_VM_STRUCT_ENTRY,
+             GENERATE_STATIC_PTR_VOLATILE_VM_STRUCT_ENTRY,
              GENERATE_UNCHECKED_NONSTATIC_VM_STRUCT_ENTRY,
              GENERATE_NONSTATIC_VM_STRUCT_ENTRY,
              GENERATE_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
@@ -3365,6 +3376,7 @@ void
 VMStructs::init() {
   VM_STRUCTS(CHECK_NONSTATIC_VM_STRUCT_ENTRY,
              CHECK_STATIC_VM_STRUCT_ENTRY,
+             CHECK_STATIC_PTR_VOLATILE_VM_STRUCT_ENTRY,
              CHECK_NO_OP,
              CHECK_VOLATILE_NONSTATIC_VM_STRUCT_ENTRY,
              CHECK_NONPRODUCT_NONSTATIC_VM_STRUCT_ENTRY,
@@ -3486,8 +3498,10 @@ VMStructs::init() {
                         CHECK_NO_OP,
                         CHECK_NO_OP,
                         CHECK_NO_OP,
+                        CHECK_NO_OP,
                         CHECK_NO_OP));
   debug_only(VM_STRUCTS(CHECK_NO_OP,
+                        ENSURE_FIELD_TYPE_PRESENT,
                         ENSURE_FIELD_TYPE_PRESENT,
                         CHECK_NO_OP,
                         ENSURE_FIELD_TYPE_PRESENT,

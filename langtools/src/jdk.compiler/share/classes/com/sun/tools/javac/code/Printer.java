@@ -175,8 +175,8 @@ public abstract class Printer implements Type.Visitor<String, Locale>, Symbol.Vi
 
     @Override
     public String visitUndetVar(UndetVar t, Locale locale) {
-        if (t.inst != null) {
-            return printAnnotations(t) + visit(t.inst, locale);
+        if (t.getInst() != null) {
+            return printAnnotations(t) + visit(t.getInst(), locale);
         } else {
             return printAnnotations(t) + visit(t.qtype, locale) + "?";
         }

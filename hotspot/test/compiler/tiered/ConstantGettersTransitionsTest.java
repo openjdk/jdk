@@ -26,7 +26,7 @@ import java.util.concurrent.Callable;
 
 /**
  * @test ConstantGettersTransitionsTest
- * @library /testlibrary /../../test/lib /compiler/whitebox
+ * @library /testlibrary /test/lib /compiler/whitebox
  * @modules java.base/sun.misc
  *          java.management
  * @build TransitionsTestExecutor ConstantGettersTransitionsTest

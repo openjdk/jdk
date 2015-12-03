@@ -440,6 +440,10 @@ void os::init_system_properties_values() {
     if (pslash != NULL) {
       *pslash = '\0';            // Get rid of /{client|server|hotspot}.
     }
+#ifdef STATIC_BUILD
+    strcat(buf, "/lib");
+#endif
+
     Arguments::set_dll_dir(buf);
 
     if (pslash != NULL) {
@@ -1388,6 +1392,9 @@ bool os::dll_address_to_library_name(address addr, char* buf,
 
 #ifdef __APPLE__
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
+#ifdef STATIC_BUILD
+  return os::get_default_process_handle();
+#else
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
     // Successful loading
@@ -1399,9 +1406,13 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   ebuf[ebuflen-1]='\0';
 
   return NULL;
+#endif // STATIC_BUILD
 }
 #else
 void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
+#ifdef STATIC_BUILD
+  return os::get_default_process_handle();
+#else
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
     // Successful loading
@@ -1574,6 +1585,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   }
 
   return NULL;
+#endif // STATIC_BUILD
 }
 #endif // !__APPLE__
 
@@ -1765,7 +1777,6 @@ void os::print_signal_handlers(outputStream* st, char* buf, size_t buflen) {
   print_signal_handler(st, SIGPIPE, buf, buflen);
   print_signal_handler(st, SIGXFSZ, buf, buflen);
   print_signal_handler(st, SIGILL , buf, buflen);
-  print_signal_handler(st, INTERRUPT_SIGNAL, buf, buflen);
   print_signal_handler(st, SR_signum, buf, buflen);
   print_signal_handler(st, SHUTDOWN1_SIGNAL, buf, buflen);
   print_signal_handler(st, SHUTDOWN2_SIGNAL , buf, buflen);
@@ -3333,7 +3344,6 @@ void os::run_periodic_checks() {
   }
 
   DO_SIGNAL_CHECK(SR_signum);
-  DO_SIGNAL_CHECK(INTERRUPT_SIGNAL);
 }
 
 typedef int (*os_sigaction_t)(int, const struct sigaction *, struct sigaction *);
@@ -3377,10 +3387,6 @@ void os::Bsd::check_signal_handler(int sig) {
   case SHUTDOWN3_SIGNAL:
   case BREAK_SIGNAL:
     jvmHandler = (address)user_handler();
-    break;
-
-  case INTERRUPT_SIGNAL:
-    jvmHandler = CAST_FROM_FN_PTR(address, SIG_DFL);
     break;
 
   default:
@@ -3745,7 +3751,7 @@ bool os::find(address addr, outputStream* st) {
 // able to use structured exception handling (thread-local exception filters)
 // on, e.g., Win32.
 void os::os_exception_wrapper(java_call_t f, JavaValue* value,
-                              methodHandle* method, JavaCallArguments* args,
+                              const methodHandle& method, JavaCallArguments* args,
                               Thread* thread) {
   f(value, method, args, thread);
 }
@@ -3901,9 +3907,6 @@ int os::available(int fd, jlong *bytes) {
   if (::fstat(fd, &buf) >= 0) {
     mode = buf.st_mode;
     if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-      // XXX: is the following call interruptible? If so, this might
-      // need to go through the INTERRUPT_IO() wrapper as for other
-      // blocking, interruptible calls in this file.
       int n;
       if (::ioctl(fd, FIONREAD, &n) >= 0) {
         *bytes = n;

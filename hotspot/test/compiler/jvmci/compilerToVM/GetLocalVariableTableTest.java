@@ -26,7 +26,7 @@
  * @test
  * @bug 8136421
  * @requires (os.simpleArch == "x64" | os.simpleArch == "sparcv9") & os.arch != "aarch64"
- * @library /testlibrary /../../test/lib /
+ * @library /testlibrary /test/lib /
  * @clean compiler.jvmci.compilerToVM.*
  * @compile -g DummyInterface.java
  * @compile -g DummyAbstractClass.java
@@ -42,7 +42,7 @@
 package compiler.jvmci.compilerToVM;
 
 import compiler.jvmci.common.CTVMUtilities;
-import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethodImpl;
+import jdk.vm.ci.hotspot.HotSpotResolvedJavaMethod;
 import jdk.vm.ci.hotspot.CompilerToVMHelper;
 import jdk.test.lib.Asserts;
 
@@ -100,7 +100,7 @@ public class GetLocalVariableTableTest {
 
     private static void runSanityTest(Executable aMethod,
                                       Integer expectedTableLength) {
-        HotSpotResolvedJavaMethodImpl method = CTVMUtilities
+        HotSpotResolvedJavaMethod method = CTVMUtilities
                 .getResolvedMethod(aMethod);
 
         int tblLength = CompilerToVMHelper.getLocalVariableTableLength(method);

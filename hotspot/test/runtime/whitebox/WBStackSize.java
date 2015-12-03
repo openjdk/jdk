@@ -24,7 +24,7 @@
 /*
  * @test WBStackSize
  * @summary verify that whitebox functions getThreadFullStackSize() and getThreadRemainingStackSize are working
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @build WBStackSize
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission

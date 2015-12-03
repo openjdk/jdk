@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # If a SPEC is not set already, then use these defaults.
@@ -39,7 +39,7 @@ ifeq ($(SPEC),)
   STRIP	= /usr/ccs/bin/strip
 endif
 
-# Check for the versions of C++ and C compilers ($CXX and $CC) used. 
+# Check for the versions of C++ and C compilers ($CXX and $CC) used.
 
 # Get the last thing on the line that looks like x.x+ (x is a digit).
 COMPILER_REV := \
@@ -48,15 +48,9 @@ CC_COMPILER_REV := \
 $(shell $(CC) -V 2>&1 | sed -n 's/^.*[ ,\t]C[ ,\t]\([1-9]\.[0-9][0-9]*\).*/\1/p')
 
 # Pick which compiler is validated
-ifeq ($(JRE_RELEASE_VER),1.6.0)
-  # Validated compiler for JDK6 is SS11 (5.8)
-  VALIDATED_COMPILER_REVS   := 5.8
-  VALIDATED_CC_COMPILER_REVS := 5.8
-else
-  # Validated compiler for JDK9 is SS12.3 (5.12)
-  VALIDATED_COMPILER_REVS   := 5.12
-  VALIDATED_CC_COMPILER_REVS := 5.12
-endif
+# Validated compiler for JDK9 is SS12.3 (5.12)
+VALIDATED_COMPILER_REVS   := 5.12
+VALIDATED_CC_COMPILER_REVS := 5.12
 
 # Warning messages about not using the above validated versions
 ENFORCE_COMPILER_REV${ENFORCE_COMPILER_REV} := $(strip ${VALIDATED_COMPILER_REVS})
@@ -237,7 +231,7 @@ CFLAGS += $(GAMMADIR)/src/os_cpu/solaris_${Platform_arch}/vm/solaris_${Platform_
 CFLAGS/NOEX=-features=no%except
 
 
-# avoid compilation problems arising from fact that C++ compiler tries 
+# avoid compilation problems arising from fact that C++ compiler tries
 # to search for external template definition by just compiling additional
 # source files in th same context
 CFLAGS +=  -template=no%extdef
@@ -245,7 +239,7 @@ CFLAGS +=  -template=no%extdef
 # Reduce code bloat by reverting back to 5.0 behavior for static initializers
 CFLAGS += -features=no%split_init
 
-# Use -D_Crun_inline_placement so we don't get references to 
+# Use -D_Crun_inline_placement so we don't get references to
 #    __1c2n6FIpv_0_ or   void*operator new(unsigned,void*)
 #  This avoids the hard requirement of the newer Solaris C++ runtime patches.
 #  NOTE: This is an undocumented feature of the SS10 compiler. See 6306698.
@@ -549,19 +543,6 @@ LINK_INTO = LIBJVM
 else
 #LINK_INTO = LIBJVM
 endif
-
-# Solaris platforms collect lots of redundant file-ident lines,
-# to the point of wasting a significant percentage of file space.
-# (The text is stored in ELF .comment sections, contributed by
-# all "#pragma ident" directives in header and source files.)
-# This command "compresses" the .comment sections simply by
-# removing repeated lines.  The data can be extracted from
-# binaries in the field by using "mcs -p libjvm.so" or the older
-# command "what libjvm.so".
-LINK_LIB.CXX/POST_HOOK += $(MCS) -c $@ || exit 1;
-# (The exit 1 is necessary to cause a build failure if the command fails and
-# multiple commands are strung together, and the final semicolon is necessary
-# since the hook must terminate itself as a valid command.)
 
 # Also, strip debug and line number information (worth about 1.7Mb).
 # If we can create .debuginfo files, then the VM is stripped in vm.make

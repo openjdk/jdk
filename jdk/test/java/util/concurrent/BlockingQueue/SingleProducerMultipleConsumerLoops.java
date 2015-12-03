@@ -34,135 +34,126 @@
 /*
  * @test
  * @bug 4486658
- * @run main/timeout=600 SingleProducerMultipleConsumerLoops
  * @summary  check ordering for blocking queues with 1 producer and multiple consumers
  */
 
-import java.util.concurrent.*;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 
 public class SingleProducerMultipleConsumerLoops {
-    static final int CAPACITY =      100;
-
-    static final ExecutorService pool = Executors.newCachedThreadPool();
-    static boolean print = false;
+    static ExecutorService pool;
 
     public static void main(String[] args) throws Exception {
-        int maxConsumers = 5;
-        int iters = 10000;
+        final int maxConsumers = (args.length > 0)
+            ? Integer.parseInt(args[0])
+            : 5;
 
-        if (args.length > 0)
-            maxConsumers = Integer.parseInt(args[0]);
-
-        print = false;
-        System.out.println("Warmup...");
-        oneTest(1, 10000);
-        Thread.sleep(100);
-        oneTest(2, 10000);
-        Thread.sleep(100);
-        print = true;
-
+        pool = Executors.newCachedThreadPool();
         for (int i = 1; i <= maxConsumers; i += (i+1) >>> 1) {
-            System.out.println("----------------------------------------");
-            System.out.println("Consumers: " + i);
-            oneTest(i, iters);
-            Thread.sleep(100);
+            // Adjust iterations to limit typical single runs to <= 10 ms;
+            // Notably, fair queues get fewer iters.
+            // Unbounded queues can legitimately OOME if iterations
+            // high enough, but we have a sufficiently low limit here.
+            run(new ArrayBlockingQueue<Integer>(100), i, 1000);
+            run(new LinkedBlockingQueue<Integer>(100), i, 1000);
+            run(new LinkedBlockingDeque<Integer>(100), i, 1000);
+            run(new LinkedTransferQueue<Integer>(), i, 700);
+            run(new PriorityBlockingQueue<Integer>(), i, 1000);
+            run(new SynchronousQueue<Integer>(), i, 300);
+            run(new SynchronousQueue<Integer>(true), i, 200);
+            run(new ArrayBlockingQueue<Integer>(100, true), i, 100);
         }
         pool.shutdown();
-        if (! pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS))
+        if (! pool.awaitTermination(60L, SECONDS))
             throw new Error();
+        pool = null;
    }
 
-    static void oneTest(int consumers, int iters) throws Exception {
-        oneRun(new ArrayBlockingQueue<Integer>(CAPACITY), consumers, iters);
-        oneRun(new LinkedBlockingQueue<Integer>(CAPACITY), consumers, iters);
-        oneRun(new LinkedBlockingDeque<Integer>(CAPACITY), consumers, iters);
-        oneRun(new LinkedTransferQueue<Integer>(), consumers, iters);
-        oneRun(new PriorityBlockingQueue<Integer>(), consumers, iters);
-        oneRun(new SynchronousQueue<Integer>(), consumers, iters);
-        if (print)
-            System.out.println("fair implementations:");
-        oneRun(new SynchronousQueue<Integer>(true), consumers, iters);
-        oneRun(new ArrayBlockingQueue<Integer>(CAPACITY, true), consumers, iters);
+    static void run(BlockingQueue<Integer> queue, int consumers, int iters) throws Exception {
+        new SingleProducerMultipleConsumerLoops(queue, consumers, iters).run();
     }
 
-    abstract static class Stage implements Runnable {
-        final int iters;
-        final BlockingQueue<Integer> queue;
-        final CyclicBarrier barrier;
+    final BlockingQueue<Integer> queue;
+    final int consumers;
+    final int iters;
+    final LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();
+    final CyclicBarrier barrier;
+    Throwable fail;
+
+    SingleProducerMultipleConsumerLoops(BlockingQueue<Integer> queue, int consumers, int iters) {
+        this.queue = queue;
+        this.consumers = consumers;
+        this.iters = iters;
+        this.barrier = new CyclicBarrier(consumers + 2, timer);
+    }
+
+    void run() throws Exception {
+        pool.execute(new Producer());
+        for (int i = 0; i < consumers; i++) {
+            pool.execute(new Consumer());
+        }
+        barrier.await();
+        barrier.await();
+        System.out.printf("%s, consumers=%d: %d ms%n",
+                          queue.getClass().getSimpleName(), consumers,
+                          NANOSECONDS.toMillis(timer.getTime()));
+        if (fail != null) throw new AssertionError(fail);
+    }
+
+    abstract class CheckedRunnable implements Runnable {
+        abstract void realRun() throws Throwable;
+        public final void run() {
+            try {
+                realRun();
+            } catch (Throwable t) {
+                fail = t;
+                t.printStackTrace();
+                throw new AssertionError(t);
+            }
+        }
+    }
+
+    class Producer extends CheckedRunnable {
         volatile int result;
-        Stage(BlockingQueue<Integer> q, CyclicBarrier b, int iters) {
-            queue = q;
-            barrier = b;
-            this.iters = iters;
+        void realRun() throws Throwable {
+            barrier.await();
+            for (int i = 0; i < iters * consumers; i++) {
+                queue.put(new Integer(i));
+            }
+            barrier.await();
+            result = 432;
         }
     }
 
-    static class Producer extends Stage {
-        Producer(BlockingQueue<Integer> q, CyclicBarrier b, int iters) {
-            super(q, b, iters);
-        }
-
-        public void run() {
-            try {
-                barrier.await();
-                for (int i = 0; i < iters; ++i) {
-                    queue.put(new Integer(i));
-                }
-                barrier.await();
-                result = 432;
+    class Consumer extends CheckedRunnable {
+        volatile int result;
+        void realRun() throws Throwable {
+            barrier.await();
+            int l = 0;
+            int s = 0;
+            int last = -1;
+            for (int i = 0; i < iters; i++) {
+                Integer item = queue.take();
+                int v = item.intValue();
+                if (v < last)
+                    throw new Error("Out-of-Order transfer");
+                last = v;
+                l = LoopHelpers.compute1(v);
+                s += l;
             }
-            catch (Exception ie) {
-                ie.printStackTrace();
-                return;
-            }
+            barrier.await();
+            result = s;
         }
     }
-
-    static class Consumer extends Stage {
-        Consumer(BlockingQueue<Integer> q, CyclicBarrier b, int iters) {
-            super(q, b, iters);
-        }
-
-        public void run() {
-            try {
-                barrier.await();
-                int l = 0;
-                int s = 0;
-                int last = -1;
-                for (int i = 0; i < iters; ++i) {
-                    Integer item = queue.take();
-                    int v = item.intValue();
-                    if (v < last)
-                        throw new Error("Out-of-Order transfer");
-                    last = v;
-                    l = LoopHelpers.compute1(v);
-                    s += l;
-                }
-                barrier.await();
-                result = s;
-            }
-            catch (Exception ie) {
-                ie.printStackTrace();
-                return;
-            }
-        }
-
-    }
-
-    static void oneRun(BlockingQueue<Integer> q, int nconsumers, int iters) throws Exception {
-        if (print)
-            System.out.printf("%-18s", q.getClass().getSimpleName());
-        LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();
-        CyclicBarrier barrier = new CyclicBarrier(nconsumers + 2, timer);
-        pool.execute(new Producer(q, barrier, iters * nconsumers));
-        for (int i = 0; i < nconsumers; ++i) {
-            pool.execute(new Consumer(q, barrier, iters));
-        }
-        barrier.await();
-        barrier.await();
-        long time = timer.getTime();
-        if (print)
-            System.out.println("\t: " + LoopHelpers.rightJustify(time / (iters * nconsumers)) + " ns per transfer");
-    }
-
 }

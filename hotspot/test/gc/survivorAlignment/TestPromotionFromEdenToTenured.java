@@ -26,7 +26,7 @@
  * @bug 8031323
  * @summary Verify that objects promoted from eden space to tenured space during
  *          full GC are not aligned to SurvivorAlignmentInBytes value.
- * @library /testlibrary /../../test/lib
+ * @library /testlibrary /test/lib
  * @modules java.base/sun.misc
  *          java.management
  * @build TestPromotionFromEdenToTenured SurvivorAlignmentTestMain

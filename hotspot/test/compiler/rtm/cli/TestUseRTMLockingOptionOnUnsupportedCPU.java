@@ -27,7 +27,7 @@
  * @bug 8031320
  * @summary Verify UseRTMLocking option processing on CPU without
  *          rtm support.
- * @library /testlibrary /../../test/lib /compiler/testlibrary
+ * @library /testlibrary /test/lib /compiler/testlibrary
  * @modules java.base/sun.misc
  *          java.management
  * @build TestUseRTMLockingOptionOnUnsupportedCPU
