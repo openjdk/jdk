@@ -260,6 +260,9 @@ endif
 
 OPT_CFLAGS = $(OPT_CFLAGS/$(OPT_CFLAGS_DEFAULT)) $(OPT_EXTRAS)
 
+# Variable tracking size limit exceeded for VMStructs::init() 
+OPT_CFLAGS/vmStructs.o += -fno-var-tracking-assignments
+
 # The gcc compiler segv's on ia64 when compiling bytecodeInterpreter.cpp
 # if we use expensive-optimizations
 ifeq ($(BUILDARCH), ia64)
