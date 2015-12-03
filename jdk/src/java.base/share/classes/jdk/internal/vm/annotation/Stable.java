@@ -23,7 +23,7 @@
  * questions.
  */
 
-package java.lang.invoke;
+package jdk.internal.vm.annotation;
 
 import java.lang.annotation.*;
 
@@ -57,17 +57,34 @@ import java.lang.annotation.*;
  * <p>
  * Fields which are declared {@code final} may also be annotated as stable.
  * Since final fields already behave as stable values, such an annotation
- * indicates no additional information, unless the type of the field is
- * an array type.
+ * conveys no additional information regarding change of the field's value, but
+ * still conveys information regarding change of additional components values if
+ * the type of the field is an array type (as described above).
+ * <p>
+ * The HotSpot VM relies on this annotation to promote a non-null (resp.,
+ * non-zero) component value to a constant, thereby enabling superior
+ * optimizations of code depending on such a value (such as constant folding).
+ * More specifically, the HotSpot VM will process non-null stable fields (final
+ * or otherwise) in a similar manner to static final fields with respect to
+ * promoting the field's value to a constant.  Thus, placing aside the
+ * differences for null/non-null values and arrays, a final stable field is
+ * treated as if it is really final from both the Java language and the HotSpot
+ * VM.
  * <p>
  * It is (currently) undefined what happens if a field annotated as stable
- * is given a third value.  In practice, if the JVM relies on this annotation
- * to promote a field reference to a constant, it may be that the Java memory
- * model would appear to be broken, if such a constant (the second value of the field)
- * is used as the value of the field even after the field value has changed.
+ * is given a third value (by explicitly updating a stable field, a component of
+ * a stable array, or a final stable field via reflection or other means).
+ * Since the HotSpot VM promotes a non-null component value to constant, it may
+ * be that the Java memory model would appear to be broken, if such a constant
+ * (the second value of the field) is used as the value of the field even after
+ * the field value has changed (to a third value).
+ *
+ * @implNote
+ * This annotation only takes effect for fields of classes loaded by the boot
+ * loader.  Annoations on fields of classes loaded outside of the boot loader
+ * are ignored.
  */
-/* package-private */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-@interface Stable {
+public @interface Stable {
 }

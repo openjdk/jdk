@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 import java.lang.ref.WeakReference;
 import java.lang.ref.Reference;

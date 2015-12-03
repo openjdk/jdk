@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.Wrapper;
 import java.lang.ref.SoftReference;
 import static java.lang.invoke.MethodHandleStatics.*;
