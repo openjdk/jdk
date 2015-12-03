@@ -32,7 +32,6 @@
  * @test
  * @bug 7030966
  * @summary Support AEAD CipherSuites
- * @modules java.base/sun.misc
  * @run main/othervm ShortRSAKeyGCM PKIX TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
  * @run main/othervm ShortRSAKeyGCM PKIX TLS_RSA_WITH_AES_128_GCM_SHA256
  * @run main/othervm ShortRSAKeyGCM PKIX TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
@@ -69,7 +68,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.spec.*;
 import java.security.interfaces.*;
-import sun.misc.BASE64Decoder;
 
 
 public class ShortRSAKeyGCM {
@@ -252,7 +250,7 @@ public class ShortRSAKeyGCM {
         if (keyCertStr != null) {
             // generate the private key.
             PKCS8EncodedKeySpec priKeySpec = new PKCS8EncodedKeySpec(
-                                new BASE64Decoder().decodeBuffer(keySpecStr));
+                                Base64.getMimeDecoder().decode(keySpecStr));
             KeyFactory kf = KeyFactory.getInstance("RSA");
             RSAPrivateKey priKey =
                     (RSAPrivateKey)kf.generatePrivate(priKeySpec);
