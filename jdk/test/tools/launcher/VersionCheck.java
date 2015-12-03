@@ -187,7 +187,7 @@ public class VersionCheck extends TestHelper {
 
     static boolean compareInternalStrings() {
         int failcount = 0;
-        String bStr = refVersion.substring(refVersion.lastIndexOf("build") +
+        String bStr = refVersion.substring(refVersion.indexOf("build") +
                                            "build".length() + 1,
                                            refVersion.lastIndexOf(")"));
 
