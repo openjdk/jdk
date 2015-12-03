@@ -26,19 +26,23 @@
 package java.lang.invoke;
 
 import jdk.internal.misc.Unsafe;
-import java.lang.reflect.Method;
-import java.util.Arrays;
-import sun.invoke.util.VerifyAccess;
-import static java.lang.invoke.MethodHandleNatives.Constants.*;
-import static java.lang.invoke.LambdaForm.*;
-import static java.lang.invoke.MethodTypeForm.*;
-import static java.lang.invoke.MethodHandleStatics.*;
-import java.lang.ref.WeakReference;
-import java.lang.reflect.Field;
-import java.util.Objects;
+import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.ValueConversions;
+import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
+
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Objects;
+
+import static java.lang.invoke.LambdaForm.*;
+import static java.lang.invoke.MethodHandleNatives.Constants.*;
+import static java.lang.invoke.MethodHandleStatics.UNSAFE;
+import static java.lang.invoke.MethodHandleStatics.newInternalError;
+import static java.lang.invoke.MethodTypeForm.*;
 
 /**
  * The flavor of method handle which implements a constant reference
