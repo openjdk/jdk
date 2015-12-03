@@ -289,6 +289,8 @@ public class DataFlavor implements Externalizable, Cloneable {
      *     representationClass = String
      *     mimeType           = "text/html"
      * </pre>
+     *
+     * @since 1.8
      */
     public static DataFlavor selectionHtmlFlavor = initHtmlDataFlavor("selection");
 
@@ -301,6 +303,8 @@ public class DataFlavor implements Externalizable, Cloneable {
      *     representationClass = String
      *     mimeType           = "text/html"
      * </pre>
+     *
+     * @since 1.8
      */
     public static DataFlavor fragmentHtmlFlavor = initHtmlDataFlavor("fragment");
 
@@ -314,6 +318,8 @@ public class DataFlavor implements Externalizable, Cloneable {
      *     representationClass = String
      *     mimeType           = "text/html"
      * </pre>
+     *
+     * @since 1.8
      */
     public static  DataFlavor allHtmlFlavor = initHtmlDataFlavor("all");
 
