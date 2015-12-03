@@ -44,6 +44,7 @@ import sun.hotspot.WhiteBox;
 import sun.misc.Unsafe;
 
 import jdk.internal.org.objectweb.asm.*;
+import jdk.internal.vm.annotation.DontInline;
 
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.Instrumentation;
@@ -73,7 +74,7 @@ public class RedefineTest {
         cw.visit(52, ACC_PUBLIC | ACC_SUPER, NAME, null, "java/lang/Object", null);
         {
             mv = cw.visitMethod(ACC_PUBLIC | ACC_STATIC, "f", "()I", null, null);
-            mv.visitAnnotation("Ljava/lang/invoke/DontInline;", true);
+            mv.visitAnnotation("Ljdk/internal/vm/annotation/DontInline;", true);
             mv.visitCode();
             mv.visitLdcInsn(r);
             mv.visitInsn(IRETURN);

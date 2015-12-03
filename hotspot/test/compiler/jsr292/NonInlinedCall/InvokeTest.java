@@ -43,6 +43,9 @@
 package java.lang.invoke;
 
 import sun.hotspot.WhiteBox;
+
+import jdk.internal.vm.annotation.DontInline;
+
 import static jdk.test.lib.Asserts.*;
 
 public class InvokeTest {
