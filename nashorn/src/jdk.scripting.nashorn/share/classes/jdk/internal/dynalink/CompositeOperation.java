@@ -139,7 +139,7 @@ import java.util.Objects;
  * {@code SET_ELEMENT}; other standard operations should not be combined. The
  * constructor will allow any combination of operations, though.
  */
-public class CompositeOperation implements Operation {
+public final class CompositeOperation implements Operation {
     private final Operation[] operations;
 
     /**
@@ -228,10 +228,10 @@ public class CompositeOperation implements Operation {
      */
     @Override
     public boolean equals(final Object obj) {
-        if (obj == null || obj.getClass() != CompositeOperation.class) {
-            return false;
+        if (obj instanceof CompositeOperation) {
+            return Arrays.equals(operations, ((CompositeOperation)obj).operations);
         }
-        return Arrays.equals(operations, ((CompositeOperation)obj).operations);
+        return false;
     }
 
     /**

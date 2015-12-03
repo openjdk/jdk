@@ -177,7 +177,7 @@ public interface Chronology extends Comparable<Chronology> {
     static Chronology from(TemporalAccessor temporal) {
         Objects.requireNonNull(temporal, "temporal");
         Chronology obj = temporal.query(TemporalQueries.chronology());
-        return (obj != null ? obj : IsoChronology.INSTANCE);
+        return Objects.requireNonNullElse(obj, IsoChronology.INSTANCE);
     }
 
     //-----------------------------------------------------------------------

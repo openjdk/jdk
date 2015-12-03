@@ -1031,9 +1031,10 @@ public:
   product(bool, CreateCoredumpOnCrash, true,                                \
           "Create core/mini dump on VM fatal error")                        \
                                                                             \
-  product(uintx, ErrorLogTimeout, 2 * 60,                                   \
+  product(uint64_t, ErrorLogTimeout, 2 * 60,                                \
           "Timeout, in seconds, to limit the time spent on writing an "     \
           "error log in case of a crash.")                                  \
+          range(0, (uint64_t)max_jlong/1000)                                \
                                                                             \
   product_pd(bool, UseOSErrorReporting,                                     \
           "Let VM fatal error propagate to the OS (ie. WER on Windows)")    \
@@ -1071,9 +1072,6 @@ public:
                                                                             \
   develop(bool, BreakAtWarning, false,                                      \
           "Execute breakpoint upon encountering VM warning")                \
-                                                                            \
-  develop(bool, TraceVMOperation, false,                                    \
-          "Trace VM operations")                                            \
                                                                             \
   develop(bool, UseFakeTimers, false,                                       \
           "Tell whether the VM should use system time or a fake timer")     \
@@ -1125,9 +1123,6 @@ public:
                                                                             \
   diagnostic(bool, PrintNMethods, false,                                    \
           "Print assembly code for nmethods when generated")                \
-                                                                            \
-  diagnostic(intx, PrintNMethodsAtLevel, -1,                                \
-          "Only print code for nmethods at the given compilation level")    \
                                                                             \
   diagnostic(bool, PrintNativeNMethods, false,                              \
           "Print assembly code for native nmethods when generated")         \
@@ -1428,17 +1423,8 @@ public:
                                                                             \
   /* tracing */                                                             \
                                                                             \
-  notproduct(bool, TraceRuntimeCalls, false,                                \
-          "Trace run-time calls")                                           \
-                                                                            \
-  develop(bool, TraceJNICalls, false,                                       \
-          "Trace JNI calls")                                                \
-                                                                            \
   develop(bool, StressRewriter, false,                                      \
           "Stress linktime bytecode rewriting")                             \
-                                                                            \
-  notproduct(bool, TraceJVMCalls, false,                                    \
-          "Trace JVM calls")                                                \
                                                                             \
   product(ccstr, TraceJVMTI, NULL,                                          \
           "Trace flags for JVMTI functions and events")                     \
@@ -3114,6 +3100,12 @@ public:
           "exceptions (0 means all)")                                       \
           range(0, max_jint/2)                                              \
                                                                             \
+  develop(bool, TraceStackWalk, false,                                      \
+          "Trace stack walking")                                            \
+                                                                            \
+  product(bool, MemberNameInStackFrame, true,                               \
+          "Use MemberName in StackFrame")                                   \
+                                                                            \
   /* notice: the max range value here is max_jint, not max_intx  */         \
   /* because of overflow issue                                   */         \
   NOT_EMBEDDED(diagnostic(intx, GuaranteedSafepointInterval, 1000,          \
@@ -3551,7 +3543,7 @@ public:
                                                                             \
   product_pd(intx, CompilerThreadStackSize,                                 \
           "Compiler Thread Stack Size (in Kbytes)")                         \
-          range(0, max_intx)                                                \
+          range(0, max_intx /(1 * K))                                       \
                                                                             \
   develop_pd(size_t, JVMInvokeMethodSlack,                                  \
           "Stack space (bytes) required for JVM_InvokeMethod to complete")  \
@@ -4106,21 +4098,26 @@ public:
           "If PrintSharedArchiveAndExit is true, also print the shared "    \
           "dictionary")                                                     \
                                                                             \
-  product(size_t, SharedReadWriteSize, NOT_LP64(12*M) LP64_ONLY(16*M),      \
+  product(size_t, SharedReadWriteSize, DEFAULT_SHARED_READ_WRITE_SIZE,      \
           "Size of read-write space for metadata (in bytes)")               \
+          range(MIN_SHARED_READ_WRITE_SIZE, MAX_SHARED_READ_WRITE_SIZE)     \
                                                                             \
-  product(size_t, SharedReadOnlySize, NOT_LP64(12*M) LP64_ONLY(16*M),       \
+  product(size_t, SharedReadOnlySize, DEFAULT_SHARED_READ_ONLY_SIZE,        \
           "Size of read-only space for metadata (in bytes)")                \
+          range(MIN_SHARED_READ_ONLY_SIZE, MAX_SHARED_READ_ONLY_SIZE)       \
                                                                             \
-  product(uintx, SharedMiscDataSize,    NOT_LP64(2*M) LP64_ONLY(4*M),       \
+  product(size_t, SharedMiscDataSize, DEFAULT_SHARED_MISC_DATA_SIZE,        \
           "Size of the shared miscellaneous data area (in bytes)")          \
+          range(MIN_SHARED_MISC_DATA_SIZE, MAX_SHARED_MISC_DATA_SIZE)       \
                                                                             \
-  product(uintx, SharedMiscCodeSize,    120*K,                              \
+  product(size_t, SharedMiscCodeSize, DEFAULT_SHARED_MISC_CODE_SIZE,        \
           "Size of the shared miscellaneous code area (in bytes)")          \
+          range(MIN_SHARED_MISC_CODE_SIZE, MAX_SHARED_MISC_CODE_SIZE)       \
                                                                             \
-  product(uintx, SharedBaseAddress, LP64_ONLY(32*G)                         \
+  product(size_t, SharedBaseAddress, LP64_ONLY(32*G)                        \
           NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
           "Address to allocate shared memory region for class data")        \
+          range(0, SIZE_MAX)                                                \
                                                                             \
   product(uintx, SharedSymbolTableBucketSize, 4,                            \
           "Average number of symbols per bucket in shared table")           \
@@ -4280,9 +4277,9 @@ public:
 #define DECLARE_MANAGEABLE_FLAG(type, name, value, doc)   extern "C" type name;
 #define DECLARE_PRODUCT_RW_FLAG(type, name, value, doc)   extern "C" type name;
 #ifdef PRODUCT
-#define DECLARE_DEVELOPER_FLAG(type, name, value, doc)    extern "C" type CONST_##name; const type name = value;
-#define DECLARE_PD_DEVELOPER_FLAG(type, name, doc)        extern "C" type CONST_##name; const type name = pd_##name;
-#define DECLARE_NOTPRODUCT_FLAG(type, name, value, doc)   extern "C" type CONST_##name;
+#define DECLARE_DEVELOPER_FLAG(type, name, value, doc)    const type name = value;
+#define DECLARE_PD_DEVELOPER_FLAG(type, name, doc)        const type name = pd_##name;
+#define DECLARE_NOTPRODUCT_FLAG(type, name, value, doc)   const type name = value;
 #else
 #define DECLARE_DEVELOPER_FLAG(type, name, value, doc)    extern "C" type name;
 #define DECLARE_PD_DEVELOPER_FLAG(type, name, doc)        extern "C" type name;
@@ -4303,9 +4300,9 @@ public:
 #define MATERIALIZE_MANAGEABLE_FLAG(type, name, value, doc)   type name = value;
 #define MATERIALIZE_PRODUCT_RW_FLAG(type, name, value, doc)   type name = value;
 #ifdef PRODUCT
-#define MATERIALIZE_DEVELOPER_FLAG(type, name, value, doc)    type CONST_##name = value;
-#define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, doc)        type CONST_##name = pd_##name;
-#define MATERIALIZE_NOTPRODUCT_FLAG(type, name, value, doc)   type CONST_##name = value;
+#define MATERIALIZE_DEVELOPER_FLAG(type, name, value, doc)
+#define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, doc)
+#define MATERIALIZE_NOTPRODUCT_FLAG(type, name, value, doc)
 #else
 #define MATERIALIZE_DEVELOPER_FLAG(type, name, value, doc)    type name = value;
 #define MATERIALIZE_PD_DEVELOPER_FLAG(type, name, doc)        type name = pd_##name;

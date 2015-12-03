@@ -1588,6 +1588,7 @@ ciTypeFlow::Block::Block(ciTypeFlow* outer,
   _exceptions = NULL;
   _exc_klasses = NULL;
   _successors = NULL;
+  _predecessors = new (outer->arena()) GrowableArray<Block*>(outer->arena(), 1, 0, NULL);
   _state = new (outer->arena()) StateVector(outer);
   JsrSet* new_jsrs =
     new (outer->arena()) JsrSet(outer->arena(), jsrs->size());
@@ -1771,6 +1772,12 @@ ciTypeFlow::Block::successors(ciBytecodeStream* str,
         break;
       }
     }
+
+    // Set predecessor information
+    for (int i = 0; i < _successors->length(); i++) {
+      Block* block = _successors->at(i);
+      block->predecessors()->append(this);
+    }
   }
   return _successors;
 }
@@ -1813,7 +1820,9 @@ void ciTypeFlow::Block::compute_exceptions() {
     } else {
       klass = handler->catch_klass();
     }
-    _exceptions->append(analyzer->block_at(bci, _jsrs));
+    Block* block = analyzer->block_at(bci, _jsrs);
+    _exceptions->append(block);
+    block->predecessors()->append(this);
     _exc_klasses->append(klass);
   }
 }
@@ -1906,6 +1915,18 @@ void ciTypeFlow::Block::print_on(outputStream* st) const {
       Block* successor = _successors->at(i);
       st->print("    ");
       successor->print_value_on(st);
+      st->cr();
+    }
+  }
+  if (_predecessors == NULL) {
+    st->print_cr("  No predecessor information");
+  } else {
+    int num_predecessors = _predecessors->length();
+    st->print_cr("  Predecessors : %d", num_predecessors);
+    for (int i = 0; i < num_predecessors; i++) {
+      Block* predecessor = _predecessors->at(i);
+      st->print("    ");
+      predecessor->print_value_on(st);
       st->cr();
     }
   }
@@ -2270,6 +2291,9 @@ ciTypeFlow::Block* ciTypeFlow::clone_loop_head(Loop* lp, StateVector* temp_vecto
   for (SuccIter iter(tail); !iter.done(); iter.next()) {
     if (iter.succ() == head) {
       iter.set_succ(clone);
+      // Update predecessor information
+      head->predecessors()->remove(tail);
+      clone->predecessors()->append(tail);
     }
   }
   flow_block(tail, temp_vector, temp_set);
@@ -2279,6 +2303,9 @@ ciTypeFlow::Block* ciTypeFlow::clone_loop_head(Loop* lp, StateVector* temp_vecto
     for (SuccIter iter(clone); !iter.done(); iter.next()) {
       if (iter.succ() == head) {
         iter.set_succ(clone);
+        // Update predecessor information
+        head->predecessors()->remove(clone);
+        clone->predecessors()->append(clone);
         break;
       }
     }
@@ -2881,6 +2908,69 @@ void ciTypeFlow::do_flow() {
   if (CIPrintTypeFlow || CITraceTypeFlow) {
     rpo_print_on(tty);
   }
+}
+
+// ------------------------------------------------------------------
+// ciTypeFlow::is_dominated_by
+//
+// Determine if the instruction at bci is dominated by the instruction at dom_bci.
+bool ciTypeFlow::is_dominated_by(int bci, int dom_bci) {
+  assert(!method()->has_jsrs(), "jsrs are not supported");
+
+  ResourceMark rm;
+  JsrSet* jsrs = new ciTypeFlow::JsrSet(NULL);
+  int        index = _methodBlocks->block_containing(bci)->index();
+  int    dom_index = _methodBlocks->block_containing(dom_bci)->index();
+  Block*     block = get_block_for(index, jsrs, ciTypeFlow::no_create);
+  Block* dom_block = get_block_for(dom_index, jsrs, ciTypeFlow::no_create);
+
+  // Start block dominates all other blocks
+  if (start_block()->rpo() == dom_block->rpo()) {
+    return true;
+  }
+
+  // Dominated[i] is true if block i is dominated by dom_block
+  int num_blocks = _methodBlocks->num_blocks();
+  bool* dominated = NEW_RESOURCE_ARRAY(bool, num_blocks);
+  for (int i = 0; i < num_blocks; ++i) {
+    dominated[i] = true;
+  }
+  dominated[start_block()->rpo()] = false;
+
+  // Iterative dominator algorithm
+  bool changed = true;
+  while (changed) {
+    changed = false;
+    // Use reverse postorder iteration
+    for (Block* blk = _rpo_list; blk != NULL; blk = blk->rpo_next()) {
+      if (blk->is_start()) {
+        // Ignore start block
+        continue;
+      }
+      // The block is dominated if it is the dominating block
+      // itself or if all predecessors are dominated.
+      int index = blk->rpo();
+      bool dom = (index == dom_block->rpo());
+      if (!dom) {
+        // Check if all predecessors are dominated
+        dom = true;
+        for (int i = 0; i < blk->predecessors()->length(); ++i) {
+          Block* pred = blk->predecessors()->at(i);
+          if (!dominated[pred->rpo()]) {
+            dom = false;
+            break;
+          }
+        }
+      }
+      // Update dominator information
+      if (dominated[index] != dom) {
+        changed = true;
+        dominated[index] = dom;
+      }
+    }
+  }
+  // block dominated by dom_block?
+  return dominated[block->rpo()];
 }
 
 // ------------------------------------------------------------------

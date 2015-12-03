@@ -91,7 +91,7 @@ inline void G1ParScanClosure::do_oop_nv(T* p) {
       if (state.is_humongous()) {
         _g1->set_humongous_is_live(obj);
       }
-      _par_scan_state->update_rs(_from, p);
+      _par_scan_state->update_rs(_from, p, obj);
     }
   }
 }
@@ -251,7 +251,7 @@ void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
 
 template <G1Barrier barrier, G1Mark do_mark_object>
 template <class T>
-void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
+void G1ParCopyClosure<barrier, do_mark_object>::do_oop_nv(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
 
   if (oopDesc::is_null(heap_oop)) {

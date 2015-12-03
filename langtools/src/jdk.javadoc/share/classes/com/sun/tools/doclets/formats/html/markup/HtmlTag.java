@@ -66,6 +66,7 @@ public enum HtmlTag {
     I(BlockType.INLINE, EndTag.END),
     IFRAME(BlockType.OTHER, EndTag.END),
     IMG(BlockType.INLINE, EndTag.NOEND),
+    INPUT(BlockType.BLOCK, EndTag.NOEND),
     LI,
     LISTING,
     LINK(BlockType.OTHER, EndTag.NOEND),

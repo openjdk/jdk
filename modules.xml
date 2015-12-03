@@ -229,8 +229,11 @@
       <to>java.logging</to>
       <to>java.management</to>
       <to>java.naming</to>
+      <to>java.security.jgss</to>
       <to>java.sql</to>
+      <to>java.xml</to>
       <to>jdk.management.resource</to>
+      <to>jdk.scripting.nashorn</to>
     </export>
     <export>
       <name>jdk.internal.org.objectweb.asm</name>
@@ -454,6 +457,10 @@
       <name>sun.util.locale.provider</name>
       <to>java.desktop</to>
       <to>jdk.localedata</to>
+    </export>
+    <export>
+      <name>jdk.internal.logger</name>
+      <to>java.logging</to>
     </export>
     <export>
       <name>sun.util.logging</name>
@@ -1703,6 +1710,9 @@
     <depend>java.base</depend>
     <export>
       <name>com.sun.jarsigner</name>
+    </export>
+    <export>
+      <name>jdk.security.jarsigner</name>
     </export>
   </module>
   <module>

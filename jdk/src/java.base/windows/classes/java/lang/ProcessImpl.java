@@ -110,38 +110,63 @@ final class ProcessImpl extends Process {
             } else {
                 stdHandles = new long[3];
 
-                if (redirects[0] == Redirect.PIPE)
+                if (redirects[0] == Redirect.PIPE) {
                     stdHandles[0] = -1L;
-                else if (redirects[0] == Redirect.INHERIT)
+                } else if (redirects[0] == Redirect.INHERIT) {
                     stdHandles[0] = fdAccess.getHandle(FileDescriptor.in);
-                else {
+                } else if (redirects[0] instanceof ProcessBuilder.RedirectPipeImpl) {
+                    stdHandles[0] = fdAccess.getHandle(((ProcessBuilder.RedirectPipeImpl) redirects[0]).getFd());
+                } else {
                     f0 = new FileInputStream(redirects[0].file());
                     stdHandles[0] = fdAccess.getHandle(f0.getFD());
                 }
 
-                if (redirects[1] == Redirect.PIPE)
+                if (redirects[1] == Redirect.PIPE) {
                     stdHandles[1] = -1L;
-                else if (redirects[1] == Redirect.INHERIT)
+                } else if (redirects[1] == Redirect.INHERIT) {
                     stdHandles[1] = fdAccess.getHandle(FileDescriptor.out);
-                else {
+                } else if (redirects[1] instanceof ProcessBuilder.RedirectPipeImpl) {
+                    stdHandles[1] = fdAccess.getHandle(((ProcessBuilder.RedirectPipeImpl) redirects[1]).getFd());
+                } else {
                     f1 = newFileOutputStream(redirects[1].file(),
                                              redirects[1].append());
                     stdHandles[1] = fdAccess.getHandle(f1.getFD());
                 }
 
-                if (redirects[2] == Redirect.PIPE)
+                if (redirects[2] == Redirect.PIPE) {
                     stdHandles[2] = -1L;
-                else if (redirects[2] == Redirect.INHERIT)
+                } else if (redirects[2] == Redirect.INHERIT) {
                     stdHandles[2] = fdAccess.getHandle(FileDescriptor.err);
-                else {
+                } else if (redirects[2] instanceof ProcessBuilder.RedirectPipeImpl) {
+                    stdHandles[2] = fdAccess.getHandle(((ProcessBuilder.RedirectPipeImpl) redirects[2]).getFd());
+                } else {
                     f2 = newFileOutputStream(redirects[2].file(),
                                              redirects[2].append());
                     stdHandles[2] = fdAccess.getHandle(f2.getFD());
                 }
             }
 
-            return new ProcessImpl(cmdarray, envblock, dir,
+            Process p = new ProcessImpl(cmdarray, envblock, dir,
                                    stdHandles, redirectErrorStream);
+            if (redirects != null) {
+                // Copy the handles's if they are to be redirected to another process
+                if (stdHandles[0] >= 0
+                        && redirects[0] instanceof ProcessBuilder.RedirectPipeImpl) {
+                    fdAccess.setHandle(((ProcessBuilder.RedirectPipeImpl) redirects[0]).getFd(),
+                            stdHandles[0]);
+                }
+                if (stdHandles[1] >= 0
+                        && redirects[1] instanceof ProcessBuilder.RedirectPipeImpl) {
+                    fdAccess.setHandle(((ProcessBuilder.RedirectPipeImpl) redirects[1]).getFd(),
+                            stdHandles[1]);
+                }
+                if (stdHandles[2] >= 0
+                        && redirects[2] instanceof ProcessBuilder.RedirectPipeImpl) {
+                    fdAccess.setHandle(((ProcessBuilder.RedirectPipeImpl) redirects[2]).getFd(),
+                            stdHandles[2]);
+                }
+            }
+            return p;
         } finally {
             // In theory, close() can throw IOException
             // (although it is rather unlikely to happen here)

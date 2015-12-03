@@ -977,4 +977,69 @@ public class AlgorithmId implements Serializable, DerEncoder {
         }
         return null;
     }
+
+    /**
+     * Checks if a signature algorithm matches a key algorithm, i.e. a
+     * signature can be initialized with a key.
+     *
+     * @param kAlg must not be null
+     * @param sAlg must not be null
+     * @throws IllegalArgumentException if they do not match
+     */
+    public static void checkKeyAndSigAlgMatch(String kAlg, String sAlg) {
+        String sAlgUp = sAlg.toUpperCase(Locale.US);
+        if ((sAlgUp.endsWith("WITHRSA") && !kAlg.equalsIgnoreCase("RSA")) ||
+                (sAlgUp.endsWith("WITHECDSA") && !kAlg.equalsIgnoreCase("EC")) ||
+                (sAlgUp.endsWith("WITHDSA") && !kAlg.equalsIgnoreCase("DSA"))) {
+            throw new IllegalArgumentException(
+                    "key algorithm not compatible with signature algorithm");
+        }
+    }
+
+    /**
+     * Returns the default signature algorithm for a private key. The digest
+     * part might evolve with time. Remember to update the spec of
+     * {@link jdk.security.jarsigner.JarSigner.Builder#getDefaultSignatureAlgorithm(PrivateKey)}
+     * if updated.
+     *
+     * @param k cannot be null
+     * @return the default alg, might be null if unsupported
+     */
+    public static String getDefaultSigAlgForKey(PrivateKey k) {
+        switch (k.getAlgorithm().toUpperCase()) {
+            case "EC":
+                return ecStrength(KeyUtil.getKeySize(k))
+                    + "withECDSA";
+            case "DSA":
+                return ifcFfcStrength(KeyUtil.getKeySize(k))
+                    + "withDSA";
+            case "RSA":
+                return ifcFfcStrength(KeyUtil.getKeySize(k))
+                    + "withRSA";
+            default:
+                return null;
+        }
+    }
+
+    // Values from SP800-57 part 1 rev 3 tables 2 and three
+    private static String ecStrength (int bitLength) {
+        if (bitLength >= 512) { // 256 bits of strength
+            return "SHA512";
+        } else if (bitLength >= 384) {  // 192 bits of strength
+            return "SHA384";
+        } else { // 128 bits of strength and less
+            return "SHA256";
+        }
+    }
+
+    // same values for RSA and DSA
+    private static String ifcFfcStrength (int bitLength) {
+        if (bitLength > 7680) { // 256 bits
+            return "SHA512";
+        } else if (bitLength > 3072) {  // 192 bits
+            return "SHA384";
+        } else  { // 128 bits and less
+            return "SHA256";
+        }
+    }
 }

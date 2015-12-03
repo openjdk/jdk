@@ -124,6 +124,7 @@ public class HtmlDoclet extends AbstractDoclet {
             TreeWriter.generate(configuration, classtree);
         }
         if (configuration.createindex) {
+            configuration.buildSearchTagIndex();
             if (configuration.splitindex) {
                 SplitIndexWriter.generate(configuration, indexbuilder);
             } else {
@@ -156,6 +157,52 @@ public class HtmlDoclet extends AbstractDoclet {
         }
         f = DocFile.createFileForOutput(configuration, DocPaths.JAVASCRIPT);
         f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.JAVASCRIPT), true, true);
+        if (configuration.createindex) {
+            f = DocFile.createFileForOutput(configuration, DocPaths.SEARCH_JS);
+            f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.SEARCH_JS), true, true);
+            f = DocFile.createFileForOutput(configuration, DocPaths.RESOURCES.resolve(DocPaths.GLASS_IMG));
+            f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.GLASS_IMG), true, false);
+            f = DocFile.createFileForOutput(configuration, DocPaths.RESOURCES.resolve(DocPaths.X_IMG));
+            f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.X_IMG), true, false);
+            copyJqueryFiles();
+        }
+    }
+
+    protected void copyJqueryFiles() {
+        List<String> files = Arrays.asList(
+                "jquery-1.10.2.js",
+                "jquery-ui.js",
+                "jquery-ui.css",
+                "jquery-ui.min.js",
+                "jquery-ui.min.css",
+                "jquery-ui.structure.min.css",
+                "jquery-ui.structure.css",
+                "external/jquery/jquery.js",
+                "jszip/dist/jszip.js",
+                "jszip/dist/jszip.min.js",
+                "jszip-utils/dist/jszip-utils.js",
+                "jszip-utils/dist/jszip-utils.min.js",
+                "jszip-utils/dist/jszip-utils-ie.js",
+                "jszip-utils/dist/jszip-utils-ie.min.js",
+                "images/ui-bg_flat_0_aaaaaa_40x100.png",
+                "images/ui-icons_454545_256x240.png",
+                "images/ui-bg_glass_95_fef1ec_1x400.png",
+                "images/ui-bg_glass_75_dadada_1x400.png",
+                "images/ui-bg_highlight-soft_75_cccccc_1x100.png",
+                "images/ui-icons_888888_256x240.png",
+                "images/ui-icons_2e83ff_256x240.png",
+                "images/ui-bg_glass_65_ffffff_1x400.png",
+                "images/ui-icons_cd0a0a_256x240.png",
+                "images/ui-bg_glass_55_fbf9ee_1x400.png",
+                "images/ui-icons_222222_256x240.png",
+                "images/ui-bg_glass_75_e6e6e6_1x400.png",
+                "images/ui-bg_flat_75_ffffff_40x100.png");
+        DocFile f;
+        for (String file : files) {
+            DocPath filePath = DocPaths.JQUERY_FILES.resolve(file);
+            f = DocFile.createFileForOutput(configuration, filePath);
+            f.copyResource(DocPaths.RESOURCES.resolve(filePath), true, false);
+        }
     }
 
     /**

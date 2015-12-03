@@ -46,6 +46,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/nativeLookup.hpp"
 #include "prims/privilegedStack.hpp"
+#include "prims/stackwalk.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -223,19 +224,6 @@ void trace_class_resolution(Klass* to_class) {
 // Wrapper to trace JVM functions
 
 #ifdef ASSERT
-  class JVMTraceWrapper : public StackObj {
-   public:
-    JVMTraceWrapper(const char* format, ...) ATTRIBUTE_PRINTF(2, 3) {
-      if (TraceJVMCalls) {
-        va_list ap;
-        va_start(ap, format);
-        tty->print("JVM ");
-        tty->vprint_cr(format, ap);
-        va_end(ap);
-      }
-    }
-  };
-
   Histogram* JVMHistogram;
   volatile jint JVMHistogram_lock = 0;
 
@@ -269,15 +257,9 @@ void trace_class_resolution(Klass* to_class) {
       static JVMHistogramElement* e = new JVMHistogramElement(arg); \
       if (e != NULL) e->increment_count();  // Due to bug in VC++, we need a NULL check here eventhough it should never happen!
 
-  #define JVMWrapper(arg1)                    JVMCountWrapper(arg1); JVMTraceWrapper(arg1)
-  #define JVMWrapper2(arg1, arg2)             JVMCountWrapper(arg1); JVMTraceWrapper(arg1, arg2)
-  #define JVMWrapper3(arg1, arg2, arg3)       JVMCountWrapper(arg1); JVMTraceWrapper(arg1, arg2, arg3)
-  #define JVMWrapper4(arg1, arg2, arg3, arg4) JVMCountWrapper(arg1); JVMTraceWrapper(arg1, arg2, arg3, arg4)
+  #define JVMWrapper(arg) JVMCountWrapper(arg);
 #else
-  #define JVMWrapper(arg1)
-  #define JVMWrapper2(arg1, arg2)
-  #define JVMWrapper3(arg1, arg2, arg3)
-  #define JVMWrapper4(arg1, arg2, arg3, arg4)
+  #define JVMWrapper(arg)
 #endif
 
 
@@ -547,6 +529,94 @@ JVM_ENTRY(jobject, JVM_GetStackTraceElement(JNIEnv *env, jobject throwable, jint
 JVM_END
 
 
+// java.lang.StackWalker //////////////////////////////////////////////////////
+
+
+JVM_ENTRY(jobject, JVM_CallStackWalk(JNIEnv *env, jobject stackStream, jlong mode,
+                                     jint skip_frames, jint frame_count, jint start_index,
+                                     jobjectArray classes,
+                                     jobjectArray frames))
+  JVMWrapper("JVM_CallStackWalk");
+  JavaThread* jt = (JavaThread*) THREAD;
+  if (!jt->is_Java_thread() || !jt->has_last_Java_frame()) {
+    THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: no stack trace", NULL);
+  }
+
+  Handle stackStream_h(THREAD, JNIHandles::resolve_non_null(stackStream));
+  objArrayOop ca = objArrayOop(JNIHandles::resolve_non_null(classes));
+  objArrayHandle classes_array_h(THREAD, ca);
+
+  // frames array is null when only getting caller reference
+  objArrayOop fa = objArrayOop(JNIHandles::resolve(frames));
+  objArrayHandle frames_array_h(THREAD, fa);
+
+  int limit = start_index + frame_count;
+  if (classes_array_h->length() < limit) {
+    THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(), "not enough space in buffers", NULL);
+  }
+
+  Handle result = StackWalk::walk(stackStream_h, mode, skip_frames, frame_count,
+                                  start_index, classes_array_h,
+                                  frames_array_h, CHECK_NULL);
+  return JNIHandles::make_local(env, result());
+JVM_END
+
+
+JVM_ENTRY(jint, JVM_MoreStackWalk(JNIEnv *env, jobject stackStream, jlong mode, jlong anchor,
+                                  jint frame_count, jint start_index,
+                                  jobjectArray classes,
+                                  jobjectArray frames))
+  JVMWrapper("JVM_MoreStackWalk");
+  JavaThread* jt = (JavaThread*) THREAD;
+  objArrayOop ca = objArrayOop(JNIHandles::resolve_non_null(classes));
+  objArrayHandle classes_array_h(THREAD, ca);
+
+  // frames array is null when only getting caller reference
+  objArrayOop fa = objArrayOop(JNIHandles::resolve(frames));
+  objArrayHandle frames_array_h(THREAD, fa);
+
+  int limit = start_index+frame_count;
+  if (classes_array_h->length() < limit) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "not enough space in buffers");
+  }
+
+  Handle stackStream_h(THREAD, JNIHandles::resolve_non_null(stackStream));
+  return StackWalk::moreFrames(stackStream_h, mode, anchor, frame_count,
+                               start_index, classes_array_h,
+                               frames_array_h, THREAD);
+JVM_END
+
+JVM_ENTRY(void, JVM_FillStackFrames(JNIEnv *env, jclass stackStream,
+                                    jint start_index,
+                                    jobjectArray frames,
+                                    jint from_index, jint to_index))
+  JVMWrapper("JVM_FillStackFrames");
+  if (TraceStackWalk) {
+    tty->print("JVM_FillStackFrames() start_index=%d from_index=%d to_index=%d\n",
+               start_index, from_index, to_index);
+  }
+
+  JavaThread* jt = (JavaThread*) THREAD;
+
+  objArrayOop fa = objArrayOop(JNIHandles::resolve_non_null(frames));
+  objArrayHandle frames_array_h(THREAD, fa);
+
+  if (frames_array_h->length() < to_index) {
+    THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "array length not matched");
+  }
+
+  for (int i = from_index; i < to_index; i++) {
+    Handle stackFrame(THREAD, frames_array_h->obj_at(i));
+    java_lang_StackFrameInfo::fill_methodInfo(stackFrame, CHECK);
+  }
+JVM_END
+
+JVM_ENTRY(void, JVM_SetMethodInfo(JNIEnv *env, jobject frame))
+  JVMWrapper("JVM_SetMethodInfo");
+  Handle stackFrame(THREAD, JNIHandles::resolve(frame));
+  java_lang_StackFrameInfo::fill_methodInfo(stackFrame, THREAD);
+JVM_END
+
 // java.lang.Object ///////////////////////////////////////////////
 
 
@@ -672,7 +742,7 @@ JVM_END
 // java.io.File ///////////////////////////////////////////////////////////////
 
 JVM_LEAF(char*, JVM_NativePath(char* path))
-  JVMWrapper2("JVM_NativePath (%s)", path);
+  JVMWrapper("JVM_NativePath");
   return os::native_path(path);
 JVM_END
 
@@ -749,7 +819,7 @@ JVM_END
 // FindClassFromBootLoader is exported to the launcher for windows.
 JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env,
                                               const char* name))
-  JVMWrapper2("JVM_FindClassFromBootLoader %s", name);
+  JVMWrapper("JVM_FindClassFromBootLoader");
 
   // Java libraries should ensure that name is never null...
   if (name == NULL || (int)strlen(name) > Symbol::max_length()) {
@@ -774,7 +844,7 @@ JVM_END
 JVM_ENTRY(jclass, JVM_FindClassFromCaller(JNIEnv* env, const char* name,
                                           jboolean init, jobject loader,
                                           jclass caller))
-  JVMWrapper2("JVM_FindClassFromCaller %s throws ClassNotFoundException", name);
+  JVMWrapper("JVM_FindClassFromCaller throws ClassNotFoundException");
   // Java libraries should ensure that name is never null...
   if (name == NULL || (int)strlen(name) > Symbol::max_length()) {
     // It's impossible to create this class;  the name cannot fit
@@ -809,7 +879,7 @@ JVM_END
 
 JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
                                          jboolean init, jclass from))
-  JVMWrapper2("JVM_FindClassFromClass %s", name);
+  JVMWrapper("JVM_FindClassFromClass");
   if (name == NULL || (int)strlen(name) > Symbol::max_length()) {
     // It's impossible to create this class;  the name cannot fit
     // into the constant pool.
@@ -861,11 +931,10 @@ static void is_lock_held_by_thread(Handle loader, PerfCounter* counter, TRAPS) {
 }
 
 // common code for JVM_DefineClass() and JVM_DefineClassWithSource()
-// and JVM_DefineClassWithSourceCond()
 static jclass jvm_define_class_common(JNIEnv *env, const char *name,
                                       jobject loader, const jbyte *buf,
                                       jsize len, jobject pd, const char *source,
-                                      jboolean verify, TRAPS) {
+                                      TRAPS) {
   if (source == NULL)  source = "__JVM_DefineClass__";
 
   assert(THREAD->is_Java_thread(), "must be a JavaThread");
@@ -906,8 +975,7 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name,
   Handle protection_domain (THREAD, JNIHandles::resolve(pd));
   Klass* k = SystemDictionary::resolve_from_stream(class_name, class_loader,
                                                      protection_domain, &st,
-                                                     verify != 0,
-                                                     CHECK_NULL);
+                                                     true, CHECK_NULL);
 
   if (TraceClassResolution && k != NULL) {
     trace_class_resolution(k);
@@ -918,25 +986,16 @@ static jclass jvm_define_class_common(JNIEnv *env, const char *name,
 
 
 JVM_ENTRY(jclass, JVM_DefineClass(JNIEnv *env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd))
-  JVMWrapper2("JVM_DefineClass %s", name);
+  JVMWrapper("JVM_DefineClass");
 
-  return jvm_define_class_common(env, name, loader, buf, len, pd, NULL, true, THREAD);
+  return jvm_define_class_common(env, name, loader, buf, len, pd, NULL, THREAD);
 JVM_END
 
 
 JVM_ENTRY(jclass, JVM_DefineClassWithSource(JNIEnv *env, const char *name, jobject loader, const jbyte *buf, jsize len, jobject pd, const char *source))
-  JVMWrapper2("JVM_DefineClassWithSource %s", name);
+  JVMWrapper("JVM_DefineClassWithSource");
 
-  return jvm_define_class_common(env, name, loader, buf, len, pd, source, true, THREAD);
-JVM_END
-
-JVM_ENTRY(jclass, JVM_DefineClassWithSourceCond(JNIEnv *env, const char *name,
-                                                jobject loader, const jbyte *buf,
-                                                jsize len, jobject pd,
-                                                const char *source, jboolean verify))
-  JVMWrapper2("JVM_DefineClassWithSourceCond %s", name);
-
-  return jvm_define_class_common(env, name, loader, buf, len, pd, source, verify, THREAD);
+  return jvm_define_class_common(env, name, loader, buf, len, pd, source, THREAD);
 JVM_END
 
 JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name))
@@ -3361,7 +3420,7 @@ JVM_END
 
 JVM_ENTRY_NO_ENV(void*, JVM_LoadLibrary(const char* name))
   //%note jvm_ct
-  JVMWrapper2("JVM_LoadLibrary (%s)", name);
+  JVMWrapper("JVM_LoadLibrary");
   char ebuf[1024];
   void *load_result;
   {
@@ -3393,7 +3452,7 @@ JVM_END
 
 
 JVM_LEAF(void*, JVM_FindLibraryEntry(void* handle, const char* name))
-  JVMWrapper2("JVM_FindLibraryEntry (%s)", name);
+  JVMWrapper("JVM_FindLibraryEntry");
   return os::dll_lookup(handle, name);
 JVM_END
 
@@ -3401,7 +3460,7 @@ JVM_END
 // JNI version ///////////////////////////////////////////////////////////////////////////////
 
 JVM_LEAF(jboolean, JVM_IsSupportedJNIVersion(jint version))
-  JVMWrapper2("JVM_IsSupportedJNIVersion (%d)", version);
+  JVMWrapper("JVM_IsSupportedJNIVersion");
   return Threads::is_supported_jni_version_including_1_1(version);
 JVM_END
 
@@ -3661,3 +3720,8 @@ JVM_ENTRY(void, JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t i
   info->is_attachable = AttachListener::is_attach_supported();
 }
 JVM_END
+
+JVM_ENTRY_NO_ENV(jint, JVM_FindSignal(const char *name))
+  return os::get_signal_number(name);
+JVM_END
+

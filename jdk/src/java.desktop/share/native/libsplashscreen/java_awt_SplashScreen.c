@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@
 #include <sizecalc.h>
 
 JNIEXPORT jint JNICALL
-JNI_OnLoad(JavaVM * vm, void *reserved)
+DEF_JNI_OnLoad(JavaVM * vm, void *reserved)
 {
     return JNI_VERSION_1_2;
 }

@@ -108,14 +108,11 @@ inline void ParScanClosure::do_oop_work(T* p,
       if (m->is_marked()) { // Contains forwarding pointer.
         new_obj = ParNewGeneration::real_forwardee(obj);
         oopDesc::encode_store_heap_oop_not_null(p, new_obj);
-#ifndef PRODUCT
         if (TraceScavenge) {
           gclog_or_tty->print_cr("{%s %s ( " PTR_FORMAT " ) " PTR_FORMAT " -> " PTR_FORMAT " (%d)}",
              "forwarded ",
              new_obj->klass()->internal_name(), p2i(p), p2i((void *)obj), p2i((void *)new_obj), new_obj->size());
         }
-#endif
-
       } else {
         size_t obj_sz = obj->size_given_klass(objK);
         new_obj = _g->copy_to_survivor_space(_par_scan_state, obj, obj_sz, m);

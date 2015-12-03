@@ -42,8 +42,10 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
 
     private static final PlatformLogger focusLog = PlatformLogger.getLogger("sun.awt.focus.KeyboardFocusManagerPeerImpl");
 
-    private static AWTAccessor.KeyboardFocusManagerAccessor kfmAccessor =
-        AWTAccessor.getKeyboardFocusManagerAccessor();
+    private static class KfmAccessor {
+        private static AWTAccessor.KeyboardFocusManagerAccessor instance =
+                AWTAccessor.getKeyboardFocusManagerAccessor();
+    }
 
     // The constants are copied from java.awt.KeyboardFocusManager
     public static final int SNFH_FAILURE         = 0;
@@ -152,12 +154,13 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
                                                      long time,
                                                      CausedFocusEvent.Cause cause)
     {
-        return kfmAccessor.shouldNativelyFocusHeavyweight(
-            heavyweight, descendant, temporary, focusedWindowChangeAllowed, time, cause);
+        return KfmAccessor.instance.shouldNativelyFocusHeavyweight(
+            heavyweight, descendant, temporary, focusedWindowChangeAllowed,
+                time, cause);
     }
 
     public static void removeLastFocusRequest(Component heavyweight) {
-        kfmAccessor.removeLastFocusRequest(heavyweight);
+        KfmAccessor.instance.removeLastFocusRequest(heavyweight);
     }
 
     // WARNING: Don't call it on the Toolkit thread.
@@ -167,7 +170,8 @@ public abstract class KeyboardFocusManagerPeerImpl implements KeyboardFocusManag
                                                                 boolean focusedWindowChangeAllowed,
                                                                 long time)
     {
-        return kfmAccessor.processSynchronousLightweightTransfer(
-            heavyweight, descendant, temporary, focusedWindowChangeAllowed, time);
+        return KfmAccessor.instance.processSynchronousLightweightTransfer(
+            heavyweight, descendant, temporary, focusedWindowChangeAllowed,
+                time);
     }
 }

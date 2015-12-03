@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,11 @@
  */
 
 #include "jni.h"
+#include "jni_util.h"
 #include "jvm.h"
 
 JNIEXPORT jint JNICALL
-JNI_OnLoad(JavaVM *vm, void *reserved)
+DEF_JNI_OnLoad(JavaVM *vm, void *reserved)
 {
     jint vm_version = JVM_GetInterfaceVersion();
     if (vm_version != JVM_INTERFACE_VERSION) {

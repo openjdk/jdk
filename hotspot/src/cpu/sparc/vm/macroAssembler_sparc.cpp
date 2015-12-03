@@ -3632,19 +3632,19 @@ static void generate_satb_log_enqueue(bool with_frame) {
 
   int satb_q_index_byte_offset =
     in_bytes(JavaThread::satb_mark_queue_offset() +
-             PtrQueue::byte_offset_of_index());
+             SATBMarkQueue::byte_offset_of_index());
 
   int satb_q_buf_byte_offset =
     in_bytes(JavaThread::satb_mark_queue_offset() +
-             PtrQueue::byte_offset_of_buf());
+             SATBMarkQueue::byte_offset_of_buf());
 
-  assert(in_bytes(PtrQueue::byte_width_of_index()) == sizeof(intptr_t) &&
-         in_bytes(PtrQueue::byte_width_of_buf()) == sizeof(intptr_t),
+  assert(in_bytes(SATBMarkQueue::byte_width_of_index()) == sizeof(intptr_t) &&
+         in_bytes(SATBMarkQueue::byte_width_of_buf()) == sizeof(intptr_t),
          "check sizes in assembly below");
 
   __ bind(restart);
 
-  // Load the index into the SATB buffer. PtrQueue::_index is a size_t
+  // Load the index into the SATB buffer. SATBMarkQueue::_index is a size_t
   // so ld_ptr is appropriate.
   __ ld_ptr(G2_thread, satb_q_index_byte_offset, L0);
 
@@ -3736,17 +3736,17 @@ void MacroAssembler::g1_write_barrier_pre(Register obj,
   }
 
   // Is marking active?
-  if (in_bytes(PtrQueue::byte_width_of_active()) == 4) {
+  if (in_bytes(SATBMarkQueue::byte_width_of_active()) == 4) {
     ld(G2,
        in_bytes(JavaThread::satb_mark_queue_offset() +
-                PtrQueue::byte_offset_of_active()),
+                SATBMarkQueue::byte_offset_of_active()),
        tmp);
   } else {
-    guarantee(in_bytes(PtrQueue::byte_width_of_active()) == 1,
+    guarantee(in_bytes(SATBMarkQueue::byte_width_of_active()) == 1,
               "Assumption");
     ldsb(G2,
          in_bytes(JavaThread::satb_mark_queue_offset() +
-                  PtrQueue::byte_offset_of_active()),
+                  SATBMarkQueue::byte_offset_of_active()),
          tmp);
   }
 
@@ -3847,13 +3847,13 @@ static void generate_dirty_card_log_enqueue(jbyte* byte_map_base) {
 
   int dirty_card_q_index_byte_offset =
     in_bytes(JavaThread::dirty_card_queue_offset() +
-             PtrQueue::byte_offset_of_index());
+             DirtyCardQueue::byte_offset_of_index());
   int dirty_card_q_buf_byte_offset =
     in_bytes(JavaThread::dirty_card_queue_offset() +
-             PtrQueue::byte_offset_of_buf());
+             DirtyCardQueue::byte_offset_of_buf());
   __ bind(restart);
 
-  // Load the index into the update buffer. PtrQueue::_index is
+  // Load the index into the update buffer. DirtyCardQueue::_index is
   // a size_t so ld_ptr is appropriate here.
   __ ld_ptr(G2_thread, dirty_card_q_index_byte_offset, L0);
 
@@ -4771,3 +4771,243 @@ void MacroAssembler::movftoi_revbytes(FloatRegister src, Register dst, Register 
   movdtox(src, tmp1);
   reverse_bytes_32(tmp1, dst, tmp2);
 }
+
+void MacroAssembler::fold_128bit_crc32(Register xcrc_hi, Register xcrc_lo, Register xK_hi, Register xK_lo, Register xtmp_hi, Register xtmp_lo, Register buf, int offset) {
+  xmulx(xcrc_hi, xK_hi, xtmp_lo);
+  xmulxhi(xcrc_hi, xK_hi, xtmp_hi);
+  xmulxhi(xcrc_lo, xK_lo, xcrc_hi);
+  xmulx(xcrc_lo, xK_lo, xcrc_lo);
+  xor3(xcrc_lo, xtmp_lo, xcrc_lo);
+  xor3(xcrc_hi, xtmp_hi, xcrc_hi);
+  ldxl(buf, G0, xtmp_lo);
+  inc(buf, 8);
+  ldxl(buf, G0, xtmp_hi);
+  inc(buf, 8);
+  xor3(xcrc_lo, xtmp_lo, xcrc_lo);
+  xor3(xcrc_hi, xtmp_hi, xcrc_hi);
+}
+
+void MacroAssembler::fold_128bit_crc32(Register xcrc_hi, Register xcrc_lo, Register xK_hi, Register xK_lo, Register xtmp_hi, Register xtmp_lo, Register xbuf_hi, Register xbuf_lo) {
+  mov(xcrc_lo, xtmp_lo);
+  mov(xcrc_hi, xtmp_hi);
+  xmulx(xtmp_hi, xK_hi, xtmp_lo);
+  xmulxhi(xtmp_hi, xK_hi, xtmp_hi);
+  xmulxhi(xcrc_lo, xK_lo, xcrc_hi);
+  xmulx(xcrc_lo, xK_lo, xcrc_lo);
+  xor3(xcrc_lo, xbuf_lo, xcrc_lo);
+  xor3(xcrc_hi, xbuf_hi, xcrc_hi);
+  xor3(xcrc_lo, xtmp_lo, xcrc_lo);
+  xor3(xcrc_hi, xtmp_hi, xcrc_hi);
+}
+
+void MacroAssembler::fold_8bit_crc32(Register xcrc, Register table, Register xtmp, Register tmp) {
+  and3(xcrc, 0xFF, tmp);
+  sllx(tmp, 2, tmp);
+  lduw(table, tmp, xtmp);
+  srlx(xcrc, 8, xcrc);
+  xor3(xtmp, xcrc, xcrc);
+}
+
+void MacroAssembler::fold_8bit_crc32(Register crc, Register table, Register tmp) {
+  and3(crc, 0xFF, tmp);
+  srlx(crc, 8, crc);
+  sllx(tmp, 2, tmp);
+  lduw(table, tmp, tmp);
+  xor3(tmp, crc, crc);
+}
+
+#define CRC32_TMP_REG_NUM 18
+
+#define CRC32_CONST_64  0x163cd6124
+#define CRC32_CONST_96  0x0ccaa009e
+#define CRC32_CONST_160 0x1751997d0
+#define CRC32_CONST_480 0x1c6e41596
+#define CRC32_CONST_544 0x154442bd4
+
+void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Register table) {
+
+  Label L_cleanup_loop, L_cleanup_check, L_align_loop, L_align_check;
+  Label L_main_loop_prologue;
+  Label L_fold_512b, L_fold_512b_loop, L_fold_128b;
+  Label L_fold_tail, L_fold_tail_loop;
+  Label L_8byte_fold_loop, L_8byte_fold_check;
+
+  const Register tmp[CRC32_TMP_REG_NUM] = {L0, L1, L2, L3, L4, L5, L6, G1, I0, I1, I2, I3, I4, I5, I7, O4, O5, G3};
+
+  Register const_64  = tmp[CRC32_TMP_REG_NUM-1];
+  Register const_96  = tmp[CRC32_TMP_REG_NUM-1];
+  Register const_160 = tmp[CRC32_TMP_REG_NUM-2];
+  Register const_480 = tmp[CRC32_TMP_REG_NUM-1];
+  Register const_544 = tmp[CRC32_TMP_REG_NUM-2];
+
+  set(ExternalAddress(StubRoutines::crc_table_addr()), table);
+
+  not1(crc); // ~c
+  clruwu(crc); // clear upper 32 bits of crc
+
+  // Check if below cutoff, proceed directly to cleanup code
+  mov(31, G4);
+  cmp_and_br_short(len, G4, Assembler::lessEqualUnsigned, Assembler::pt, L_cleanup_check);
+
+  // Align buffer to 8 byte boundry
+  mov(8, O5);
+  and3(buf, 0x7, O4);
+  sub(O5, O4, O5);
+  and3(O5, 0x7, O5);
+  sub(len, O5, len);
+  ba(L_align_check);
+  delayed()->nop();
+
+  // Alignment loop, table look up method for up to 7 bytes
+  bind(L_align_loop);
+  ldub(buf, 0, O4);
+  inc(buf);
+  dec(O5);
+  xor3(O4, crc, O4);
+  and3(O4, 0xFF, O4);
+  sllx(O4, 2, O4);
+  lduw(table, O4, O4);
+  srlx(crc, 8, crc);
+  xor3(O4, crc, crc);
+  bind(L_align_check);
+  nop();
+  cmp_and_br_short(O5, 0, Assembler::notEqual, Assembler::pt, L_align_loop);
+
+  // Aligned on 64-bit (8-byte) boundry at this point
+  // Check if still above cutoff (31-bytes)
+  mov(31, G4);
+  cmp_and_br_short(len, G4, Assembler::lessEqualUnsigned, Assembler::pt, L_cleanup_check);
+  // At least 32 bytes left to process
+
+  // Free up registers by storing them to FP registers
+  for (int i = 0; i < CRC32_TMP_REG_NUM; i++) {
+    movxtod(tmp[i], as_FloatRegister(2*i));
+  }
+
+  // Determine which loop to enter
+  // Shared prologue
+  ldxl(buf, G0, tmp[0]);
+  inc(buf, 8);
+  ldxl(buf, G0, tmp[1]);
+  inc(buf, 8);
+  xor3(tmp[0], crc, tmp[0]); // Fold CRC into first few bytes
+  and3(crc, 0, crc); // Clear out the crc register
+  // Main loop needs 128-bytes at least
+  mov(128, G4);
+  mov(64, tmp[2]);
+  cmp_and_br_short(len, G4, Assembler::greaterEqualUnsigned, Assembler::pt, L_main_loop_prologue);
+  // Less than 64 bytes
+  nop();
+  cmp_and_br_short(len, tmp[2], Assembler::lessUnsigned, Assembler::pt, L_fold_tail);
+  // Between 64 and 127 bytes
+  set64(CRC32_CONST_96,  const_96,  tmp[8]);
+  set64(CRC32_CONST_160, const_160, tmp[9]);
+  fold_128bit_crc32(tmp[1], tmp[0], const_96, const_160, tmp[2], tmp[3], buf, 0);
+  fold_128bit_crc32(tmp[1], tmp[0], const_96, const_160, tmp[4], tmp[5], buf, 16);
+  fold_128bit_crc32(tmp[1], tmp[0], const_96, const_160, tmp[6], tmp[7], buf, 32);
+  dec(len, 48);
+  ba(L_fold_tail);
+  delayed()->nop();
+
+  bind(L_main_loop_prologue);
+  for (int i = 2; i < 8; i++) {
+    ldxl(buf, G0, tmp[i]);
+    inc(buf, 8);
+  }
+
+  // Fold total 512 bits of polynomial on each iteration,
+  // 128 bits per each of 4 parallel streams
+  set64(CRC32_CONST_480, const_480, tmp[8]);
+  set64(CRC32_CONST_544, const_544, tmp[9]);
+
+  mov(128, G4);
+  bind(L_fold_512b_loop);
+  fold_128bit_crc32(tmp[1], tmp[0], const_480, const_544, tmp[9],  tmp[8],  buf,  0);
+  fold_128bit_crc32(tmp[3], tmp[2], const_480, const_544, tmp[11], tmp[10], buf, 16);
+  fold_128bit_crc32(tmp[5], tmp[4], const_480, const_544, tmp[13], tmp[12], buf, 32);
+  fold_128bit_crc32(tmp[7], tmp[6], const_480, const_544, tmp[15], tmp[14], buf, 64);
+  dec(len, 64);
+  cmp_and_br_short(len, G4, Assembler::greaterEqualUnsigned, Assembler::pt, L_fold_512b_loop);
+
+  // Fold 512 bits to 128 bits
+  bind(L_fold_512b);
+  set64(CRC32_CONST_96,  const_96,  tmp[8]);
+  set64(CRC32_CONST_160, const_160, tmp[9]);
+
+  fold_128bit_crc32(tmp[1], tmp[0], const_96, const_160, tmp[8], tmp[9], tmp[3], tmp[2]);
+  fold_128bit_crc32(tmp[1], tmp[0], const_96, const_160, tmp[8], tmp[9], tmp[5], tmp[4]);
+  fold_128bit_crc32(tmp[1], tmp[0], const_96, const_160, tmp[8], tmp[9], tmp[7], tmp[6]);
+  dec(len, 48);
+
+  // Fold the rest of 128 bits data chunks
+  bind(L_fold_tail);
+  mov(32, G4);
+  cmp_and_br_short(len, G4, Assembler::lessEqualUnsigned, Assembler::pt, L_fold_128b);
+
+  set64(CRC32_CONST_96,  const_96,  tmp[8]);
+  set64(CRC32_CONST_160, const_160, tmp[9]);
+
+  bind(L_fold_tail_loop);
+  fold_128bit_crc32(tmp[1], tmp[0], const_96, const_160, tmp[2], tmp[3], buf, 0);
+  sub(len, 16, len);
+  cmp_and_br_short(len, G4, Assembler::greaterEqualUnsigned, Assembler::pt, L_fold_tail_loop);
+
+  // Fold the 128 bits in tmps 0 - 1 into tmp 1
+  bind(L_fold_128b);
+
+  set64(CRC32_CONST_64, const_64, tmp[4]);
+
+  xmulx(const_64, tmp[0], tmp[2]);
+  xmulxhi(const_64, tmp[0], tmp[3]);
+
+  srl(tmp[2], G0, tmp[4]);
+  xmulx(const_64, tmp[4], tmp[4]);
+
+  srlx(tmp[2], 32, tmp[2]);
+  sllx(tmp[3], 32, tmp[3]);
+  or3(tmp[2], tmp[3], tmp[2]);
+
+  xor3(tmp[4], tmp[1], tmp[4]);
+  xor3(tmp[4], tmp[2], tmp[1]);
+  dec(len, 8);
+
+  // Use table lookup for the 8 bytes left in tmp[1]
+  dec(len, 8);
+
+  // 8 8-bit folds to compute 32-bit CRC.
+  for (int j = 0; j < 4; j++) {
+    fold_8bit_crc32(tmp[1], table, tmp[2], tmp[3]);
+  }
+  srl(tmp[1], G0, crc); // move 32 bits to general register
+  for (int j = 0; j < 4; j++) {
+    fold_8bit_crc32(crc, table, tmp[3]);
+  }
+
+  bind(L_8byte_fold_check);
+
+  // Restore int registers saved in FP registers
+  for (int i = 0; i < CRC32_TMP_REG_NUM; i++) {
+    movdtox(as_FloatRegister(2*i), tmp[i]);
+  }
+
+  ba(L_cleanup_check);
+  delayed()->nop();
+
+  // Table look-up method for the remaining few bytes
+  bind(L_cleanup_loop);
+  ldub(buf, 0, O4);
+  inc(buf);
+  dec(len);
+  xor3(O4, crc, O4);
+  and3(O4, 0xFF, O4);
+  sllx(O4, 2, O4);
+  lduw(table, O4, O4);
+  srlx(crc, 8, crc);
+  xor3(O4, crc, crc);
+  bind(L_cleanup_check);
+  nop();
+  cmp_and_br_short(len, 0, Assembler::greaterUnsigned, Assembler::pt, L_cleanup_loop);
+
+  not1(crc);
+}
+

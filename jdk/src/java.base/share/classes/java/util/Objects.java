@@ -295,7 +295,7 @@ public final class Objects {
      *        {@code defaultObj} is {@code null}
      * @since 9
      */
-    public static <T> T nonNullElse(T obj, T defaultObj) {
+    public static <T> T requireNonNullElse(T obj, T defaultObj) {
         return (obj != null) ? obj : requireNonNull(defaultObj, "defaultObj");
     }
 
@@ -314,8 +314,9 @@ public final class Objects {
      *        the {@code supplier.get()} value is {@code null}
      * @since 9
      */
-    public static <T> T nonNullElseGet(T obj, Supplier<? extends T> supplier) {
-        return (obj != null) ? obj : requireNonNull(requireNonNull(supplier, "supplier").get(), "supplier.get()");
+    public static <T> T requireNonNullElseGet(T obj, Supplier<? extends T> supplier) {
+        return (obj != null) ? obj
+                : requireNonNull(requireNonNull(supplier, "supplier").get(), "supplier.get()");
     }
 
     /**
@@ -351,15 +352,16 @@ public final class Objects {
      * @param b the second out of bound value
      * @param oobe the exception mapping function that when applied with out of
      *        bounds arguments returns a runtime exception.  If {@code null}
-     *        then, it's as if an exception mapping function was supplied that
+     *        then, it is as if an exception mapping function was supplied that
      *        returns {@link IndexOutOfBoundsException} for any given arguments.
      * @return the runtime exception
      */
     private static RuntimeException outOfBounds(
             int a, int b, BiFunction<Integer, Integer, ? extends RuntimeException> oobe) {
-        return oobe == null
-               ? new IndexOutOfBoundsException(a, b)
-               : oobe.apply(a, b);
+        RuntimeException e = oobe == null
+                             ? null : oobe.apply(a, b);
+        return e == null
+               ? new IndexOutOfBoundsException(a, b) : e;
     }
 
     /**
@@ -407,8 +409,10 @@ public final class Objects {
      * @param length the upper-bound (exclusive) of the range
      * @param oobe the exception mapping function that when applied with out
      *        of bounds arguments returns a runtime exception.  If {@code null}
-     *        then, it's as if an exception mapping function was supplied that
-     *        returns {@link IndexOutOfBoundsException} for any given arguments.
+     *        or returns {@code null} then, it is as if an exception mapping
+     *        function was supplied that returns
+     *        {@link IndexOutOfBoundsException} for any given arguments.
+     *        Exceptions thrown by the function are relayed to the caller.
      * @return {@code index} if it is within bounds of the range
      * @throws T if the {@code index} is out of bounds, then a runtime exception
      *         is thrown that is the result of applying the out of bounds
@@ -483,8 +487,10 @@ public final class Objects {
      * @param length the upper-bound (exclusive) the range
      * @param oobe the exception mapping function that when applied with out
      *        of bounds arguments returns a runtime exception.  If {@code null}
-     *        then, it's as if an exception mapping function was supplied that
-     *        returns {@link IndexOutOfBoundsException} for any given arguments.
+     *        or returns {@code null} then, it is as if an exception mapping
+     *        function was supplied that returns
+     *        {@link IndexOutOfBoundsException} for any given arguments.
+     *        Exceptions thrown by the function are relayed to the caller.
      * @return {@code fromIndex} if the sub-range within bounds of the range
      * @throws T if the sub-range is out of bounds, then a runtime exception is
      *         thrown that is the result of applying the out of bounds arguments
@@ -552,8 +558,10 @@ public final class Objects {
      * @param length the upper-bound (exclusive) of the range
      * @param oobe the exception mapping function that when applied with out
      *        of bounds arguments returns a runtime exception.  If {@code null}
-     *        then, it's as if an exception mapping function was supplied that
-     *        returns {@link IndexOutOfBoundsException} for any given arguments.
+     *        or returns {@code null} then, it is as if an exception mapping
+     *        function was supplied that returns
+     *        {@link IndexOutOfBoundsException} for any given arguments.
+     *        Exceptions thrown by the function are relayed to the caller.
      * @return {@code fromIndex} if the sub-range within bounds of the range
      * @throws T if the sub-range is out of bounds, then a runtime exception is
      *         thrown that is the result of applying the out of bounds arguments

@@ -476,6 +476,7 @@ class os: AllStatic {
 
   static ExtendedPC get_thread_pc(Thread *thread);
   static void breakpoint();
+  static bool start_debugging(char *buf, int buflen);
 
   static address current_stack_pointer();
   static address current_stack_base();
@@ -483,7 +484,7 @@ class os: AllStatic {
 
   static void verify_stack_alignment() PRODUCT_RETURN;
 
-  static int message_box(const char* title, const char* message);
+  static bool message_box(const char* title, const char* message);
   static char* do_you_want_to_debug(const char* message);
 
   // run cmd in a separate process and return its exit code; or -1 on failures
@@ -640,6 +641,9 @@ class os: AllStatic {
   // returns a string to describe the exception/signal;
   // returns NULL if exception_code is not an OS exception/signal.
   static const char* exception_name(int exception_code, char* buf, size_t buflen);
+
+  // Returns the signal number (e.g. 11) for a given signal name (SIGSEGV).
+  static int get_signal_number(const char* signal_name);
 
   // Returns native Java library, loads if necessary
   static void*    native_java_library();

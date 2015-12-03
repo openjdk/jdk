@@ -43,6 +43,7 @@ public enum HtmlAttr {
     CLEAR,
     COLS,
     CONTENT,
+    DISABLED,
     HREF,
     HTTP_EQUIV("http-equiv"),
     ID,
@@ -59,6 +60,7 @@ public enum HtmlAttr {
     TARGET,
     TITLE,
     TYPE,
+    VALUE,
     WIDTH;
 
     private final String value;

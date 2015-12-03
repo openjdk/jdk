@@ -73,8 +73,9 @@ ifeq ($(INCLUDE_CDS), false)
       CXXFLAGS += -DINCLUDE_CDS=0
       CFLAGS += -DINCLUDE_CDS=0
 
-      Src_Files_EXCLUDE += filemap.cpp metaspaceShared*.cpp sharedPathsMiscInfo.cpp \
-        systemDictionaryShared.cpp classLoaderExt.cpp sharedClassUtil.cpp
+      Src_Files_EXCLUDE += classListParser.cpp classLoaderExt.cpp \
+        filemap.cpp metaspaceShared*.cpp sharedClassUtil.cpp sharedPathsMiscInfo.cpp \
+        systemDictionaryShared.cpp
 endif
 
 ifeq ($(INCLUDE_ALL_GCS), false)

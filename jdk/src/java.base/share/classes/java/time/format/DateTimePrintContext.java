@@ -146,7 +146,7 @@ final class DateTimePrintContext {
         if (overrideZone != null) {
             // if have zone and instant, calculation is simple, defaulting chrono if necessary
             if (temporal.isSupported(INSTANT_SECONDS)) {
-                Chronology chrono = (effectiveChrono != null ? effectiveChrono : IsoChronology.INSTANCE);
+                Chronology chrono = Objects.requireNonNullElse(effectiveChrono, IsoChronology.INSTANCE);
                 return chrono.zonedDateTime(Instant.from(temporal), overrideZone);
             }
             // block changing zone on OffsetTime, and similar problem cases

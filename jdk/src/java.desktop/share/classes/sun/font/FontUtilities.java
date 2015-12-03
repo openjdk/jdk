@@ -72,6 +72,8 @@ public final class FontUtilities {
     static {
 
         AccessController.doPrivileged(new PrivilegedAction<Object>() {
+            @SuppressWarnings("deprecation") // PlatformLogger.setLevel is deprecated.
+            @Override
             public Object run() {
                 String osName = System.getProperty("os.name", "unknownOS");
                 isSolaris = osName.startsWith("SunOS");

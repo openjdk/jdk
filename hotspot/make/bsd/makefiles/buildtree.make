@@ -49,7 +49,6 @@
 # adlc.make	-
 # trace.make	- generate tracing event and type definitions
 # jvmti.make	- generate JVMTI bindings from the spec (JSR-163)
-# sa.make	- generate SA jar file and natives
 #
 # The makefiles are split this way so that "make foo" will run faster by not
 # having to read the dependency files for the vm.
@@ -130,7 +129,7 @@ SUBMAKE_DIRS = $(addprefix $(PLATFORM_DIR)/,$(TARGETS))
 BUILDTREE_MAKE	= $(GAMMADIR)/make/$(OS_FAMILY)/makefiles/buildtree.make
 
 # dtrace.make is used on BSD versions that implement Dtrace (like MacOS X)
-BUILDTREE_TARGETS = Makefile flags.make flags_vm.make vm.make adlc.make jvmti.make trace.make sa.make dtrace.make
+BUILDTREE_TARGETS = Makefile flags.make flags_vm.make vm.make adlc.make jvmti.make trace.make dtrace.make
 
 BUILDTREE_VARS	= GAMMADIR=$(GAMMADIR) OS_FAMILY=$(OS_FAMILY) \
 	SRCARCH=$(SRCARCH) BUILDARCH=$(BUILDARCH) LIBARCH=$(LIBARCH) VARIANT=$(VARIANT)
@@ -218,7 +217,6 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	echo "TARGET = $(TARGET)"; \
 	echo "HS_BUILD_VER = $(HS_BUILD_VER)"; \
 	echo "JRE_RELEASE_VER = $(JRE_RELEASE_VERSION)"; \
-	echo "SA_BUILD_VERSION = $(HS_BUILD_VER)"; \
 	echo "HOTSPOT_BUILD_USER = $(HOTSPOT_BUILD_USER)"; \
 	echo "HOTSPOT_VM_DISTRO = $(HOTSPOT_VM_DISTRO)"; \
 	echo "OPENJDK = $(OPENJDK)"; \
@@ -351,16 +349,6 @@ jvmti.make: $(BUILDTREE_MAKE)
 	) > $@
 
 trace.make: $(BUILDTREE_MAKE)
-	@echo $(LOG_INFO) Creating $@ ...
-	$(QUIETLY) ( \
-	$(BUILDTREE_COMMENT); \
-	echo; \
-	echo include flags.make; \
-	echo; \
-	echo "include \$$(GAMMADIR)/make/$(OS_FAMILY)/makefiles/$(@F)"; \
-	) > $@
-
-sa.make: $(BUILDTREE_MAKE)
 	@echo $(LOG_INFO) Creating $@ ...
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \
