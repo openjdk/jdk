@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -23,20 +23,10 @@
  *
  */
 
-#ifndef CPU_PPC_VM_GLOBALDEFINITIONS_PPC_HPP
-#define CPU_PPC_VM_GLOBALDEFINITIONS_PPC_HPP
+#ifndef CPU_PPC_VM_C1_FPUSTACKSIM_PPC_HPP
+#define CPU_PPC_VM_C1_FPUSTACKSIM_PPC_HPP
 
-// Size of PPC Instructions
-const int BytesPerInstWord = 4;
+// No FPU stack on PPC.
+class FpuStackSim;
 
-const int StackAlignmentInBytes = 16;
-
-#define SUPPORTS_NATIVE_CX8
-
-// The PPC CPUs are NOT multiple-copy-atomic.
-#define CPU_NOT_MULTIPLE_COPY_ATOMIC
-
-// The expected size in bytes of a cache line, used to pad data structures.
-#define DEFAULT_CACHE_LINE_SIZE 128
-
-#endif // CPU_PPC_VM_GLOBALDEFINITIONS_PPC_HPP
+#endif // CPU_PPC_VM_C1_FPUSTACKSIM_PPC_HPP

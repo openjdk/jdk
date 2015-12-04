@@ -37,5 +37,3 @@
   const static int InterpreterCodeSize = 230*K;
 
 #endif // CPU_PPC_VM_TEMPLATEINTERPRETER_PPC_HPP
-
-

@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2014 SAP AG. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -270,39 +270,6 @@ void frame::describe_pd(FrameValues& values, int frame_no) {
   }
 }
 #endif
-
-void frame::adjust_unextended_sp() {
-  // If we are returning to a compiled MethodHandle call site, the
-  // saved_fp will in fact be a saved value of the unextended SP. The
-  // simplest way to tell whether we are returning to such a call site
-  // is as follows:
-
-  if (is_compiled_frame() && false /*is_at_mh_callsite()*/) {  // TODO PPC port
-    // If the sender PC is a deoptimization point, get the original
-    // PC. For MethodHandle call site the unextended_sp is stored in
-    // saved_fp.
-    _unextended_sp = _fp - _cb->frame_size();
-
-#ifdef ASSERT
-    nmethod *sender_nm = _cb->as_nmethod_or_null();
-    assert(sender_nm && *_sp == *_unextended_sp, "backlink changed");
-
-    intptr_t* sp = _unextended_sp;  // check if stack can be walked from here
-    for (int x = 0; x < 5; ++x) {   // check up to a couple of backlinks
-      intptr_t* prev_sp = *(intptr_t**)sp;
-      if (prev_sp == 0) break;      // end of stack
-      assert(prev_sp>sp, "broken stack");
-      sp = prev_sp;
-    }
-
-    if (sender_nm->is_deopt_mh_entry(_pc)) { // checks for deoptimization
-      address original_pc = sender_nm->get_original_pc(this);
-      assert(sender_nm->insts_contains(original_pc), "original PC must be in nmethod");
-      assert(sender_nm->is_method_handle_return(original_pc), "must be");
-    }
-#endif
-  }
-}
 
 intptr_t *frame::initial_deoptimization_info() {
   // unused... but returns fp() to minimize changes introduced by 7087445

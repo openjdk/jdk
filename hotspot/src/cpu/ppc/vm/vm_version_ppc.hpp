@@ -65,7 +65,6 @@ protected:
     all_features_m        = -1
   };
   static int  _features;
-  static int  _measured_cache_line_size;
   static const char* _features_str;
   static bool _is_determine_features_test_running;
 
@@ -98,8 +97,6 @@ public:
   static bool has_tcheck()  { return (_features & tcheck_m) != 0; }
 
   static const char* cpu_features() { return _features_str; }
-
-  static int get_cache_line_size()  { return _measured_cache_line_size; }
 
   // Assembler testing
   static void allow_all();

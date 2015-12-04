@@ -203,7 +203,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void restore_interpreter_state(Register scratch, bool bcp_and_mdx_only = false);
 
   void increment_backedge_counter(const Register Rcounters, Register Rtmp, Register Rtmp2, Register Rscratch);
-  void test_backedge_count_for_osr(Register backedge_count, Register branch_bcp, Register Rtmp);
+  void test_backedge_count_for_osr(Register backedge_count, Register method_counters, Register target_bcp, Register disp, Register Rtmp);
 
   void record_static_call_in_profile(Register Rentry, Register Rtmp);
   void record_receiver_call_in_profile(Register Rklass, Register Rentry, Register Rtmp);
@@ -222,7 +222,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void set_method_data_pointer_for_bcp();
   void test_method_data_pointer(Label& zero_continue);
   void verify_method_data_pointer();
-  void test_invocation_counter_for_mdp(Register invocation_count, Register Rscratch, Label &profile_continue);
+  void test_invocation_counter_for_mdp(Register invocation_count, Register method_counters, Register Rscratch, Label &profile_continue);
 
   void set_mdp_data_at(int constant, Register value);
 

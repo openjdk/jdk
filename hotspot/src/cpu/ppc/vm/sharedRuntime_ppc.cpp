@@ -62,7 +62,7 @@ class RegisterSaver {
   // Support different return pc locations.
   enum ReturnPCLocation {
     return_pc_is_lr,
-    return_pc_is_r4,
+    return_pc_is_pre_saved,
     return_pc_is_thread_saved_exception_pc
   };
 
@@ -241,16 +241,17 @@ OopMap* RegisterSaver::push_frame_reg_args_and_save_live_registers(MacroAssemble
   __ mfcr(R31);
   __ std(R31, _abi(cr), R1_SP);
   switch (return_pc_location) {
-    case return_pc_is_lr:    __ mflr(R31);           break;
-    case return_pc_is_r4:    __ mr(R31, R4);     break;
-    case return_pc_is_thread_saved_exception_pc:
-                             __ ld(R31, thread_(saved_exception_pc)); break;
+    case return_pc_is_lr: __ mflr(R31); break;
+    case return_pc_is_pre_saved: assert(return_pc_adjustment == 0, "unsupported"); break;
+    case return_pc_is_thread_saved_exception_pc: __ ld(R31, thread_(saved_exception_pc)); break;
     default: ShouldNotReachHere();
   }
-  if (return_pc_adjustment != 0) {
-    __ addi(R31, R31, return_pc_adjustment);
+  if (return_pc_location != return_pc_is_pre_saved) {
+    if (return_pc_adjustment != 0) {
+      __ addi(R31, R31, return_pc_adjustment);
+    }
+    __ std(R31, _abi(lr), R1_SP);
   }
-  __ std(R31, _abi(lr), R1_SP);
 
   // push a new frame
   __ push_frame(frame_size_in_bytes, R31);
@@ -646,7 +647,7 @@ int SharedRuntime::java_calling_convention(const BasicType *sig_bt,
   return round_to(stk, 2);
 }
 
-#ifdef COMPILER2
+#if defined(COMPILER1) || defined(COMPILER2)
 // Calling convention for calling C code.
 int SharedRuntime::c_calling_convention(const BasicType *sig_bt,
                                         VMRegPair *regs,
@@ -2576,7 +2577,7 @@ uint SharedRuntime::out_preserve_stack_slots() {
 #endif
 }
 
-#ifdef COMPILER2
+#if defined(COMPILER1) || defined(COMPILER2)
 // Frame generation for deopt and uncommon trap blobs.
 static void push_skeleton_frame(MacroAssembler* masm, bool deopt,
                                 /* Read */
@@ -2734,7 +2735,7 @@ void SharedRuntime::generate_deopt_blob() {
 
   const address start = __ pc();
 
-#ifdef COMPILER2
+#if defined(COMPILER1) || defined(COMPILER2)
   // --------------------------------------------------------------------------
   // Prolog for non exception case!
 
@@ -2783,27 +2784,42 @@ void SharedRuntime::generate_deopt_blob() {
 
   BLOCK_COMMENT("Prolog for exception case");
 
-  // The RegisterSaves doesn't need to adjust the return pc for this situation.
-  const int return_pc_adjustment_exception = 0;
-
-  // Push the "unpack frame".
-  // Save everything in sight.
-  assert(R4 == R4_ARG2, "exception pc must be in r4");
-  RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
-                                                             &first_frame_size_in_bytes,
-                                                             /*generate_oop_map=*/ false,
-                                                             return_pc_adjustment_exception,
-                                                             RegisterSaver::return_pc_is_r4);
-
-  // Deopt during an exception. Save exec mode for unpack_frames.
-  __ li(exec_mode_reg, Deoptimization::Unpack_exception);
-
   // Store exception oop and pc in thread (location known to GC).
   // This is needed since the call to "fetch_unroll_info()" may safepoint.
   __ std(R3_ARG1, in_bytes(JavaThread::exception_oop_offset()), R16_thread);
   __ std(R4_ARG2, in_bytes(JavaThread::exception_pc_offset()),  R16_thread);
+  __ std(R4_ARG2, _abi(lr), R1_SP);
+
+  // Vanilla deoptimization with an exception pending in exception_oop.
+  int exception_in_tls_offset = __ pc() - start;
+
+  // Push the "unpack frame".
+  // Save everything in sight.
+  RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
+                                                             &first_frame_size_in_bytes,
+                                                             /*generate_oop_map=*/ false,
+                                                             /*return_pc_adjustment_exception=*/ 0,
+                                                             RegisterSaver::return_pc_is_pre_saved);
+
+  // Deopt during an exception. Save exec mode for unpack_frames.
+  __ li(exec_mode_reg, Deoptimization::Unpack_exception);
 
   // fall through
+
+  int reexecute_offset = 0;
+#ifdef COMPILER1
+  __ b(exec_mode_initialized);
+
+  // Reexecute entry, similar to c2 uncommon trap
+  reexecute_offset = __ pc() - start;
+
+  RegisterSaver::push_frame_reg_args_and_save_live_registers(masm,
+                                                             &first_frame_size_in_bytes,
+                                                             /*generate_oop_map=*/ false,
+                                                             /*return_pc_adjustment_reexecute=*/ 0,
+                                                             RegisterSaver::return_pc_is_pre_saved);
+  __ li(exec_mode_reg, Deoptimization::Unpack_reexecute);
+#endif
 
   // --------------------------------------------------------------------------
   __ BIND(exec_mode_initialized);
@@ -2918,7 +2934,9 @@ void SharedRuntime::generate_deopt_blob() {
   int exception_offset = __ pc() - start;
 #endif // COMPILER2
 
-  _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset, 0, first_frame_size_in_bytes / wordSize);
+  _deopt_blob = DeoptimizationBlob::create(&buffer, oop_maps, 0, exception_offset,
+                                           reexecute_offset, first_frame_size_in_bytes / wordSize);
+  _deopt_blob->set_unpack_with_exception_in_tls_offset(exception_in_tls_offset);
 }
 
 #ifdef COMPILER2

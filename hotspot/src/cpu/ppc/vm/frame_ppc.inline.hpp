@@ -39,9 +39,6 @@ inline void frame::find_codeblob_and_set_pc_and_deopt_state(address pc) {
   _pc = pc;   // Must be set for get_deopt_original_pc()
 
   _fp = (intptr_t*)own_abi()->callers_sp;
-  // Use _fp - frame_size, needs to be done between _cb and _pc initialization
-  // and get_deopt_original_pc.
-  adjust_unextended_sp();
 
   address original_pc = nmethod::get_deopt_original_pc(this);
   if (original_pc != NULL) {
