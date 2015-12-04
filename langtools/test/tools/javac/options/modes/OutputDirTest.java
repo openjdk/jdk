@@ -58,7 +58,7 @@ public class OutputDirTest extends Tester {
         String[] files = { "src/C.java" };
 
         runMain(opts, files)
-                .checkResult(Main.Result.CMDERR.exitCode);
+                .checkResult(Main.Result.OK.exitCode);
 
 // The API tests are disabled (for now) because Args.validate does
 // not have an easy way to access/validate file manager options,
