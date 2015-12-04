@@ -33,9 +33,11 @@
 
 #define G1_FLAGS(develop, develop_pd, product, product_pd, diagnostic, experimental, notproduct, manageable, product_rw, range, constraint) \
                                                                             \
-  product(bool, G1UseAdaptiveIHOP, false,                                   \
-          "Adaptively adjust InitiatingHeapOccupancyPercent from the "      \
-          "initial value.")                                                 \
+  product(bool, G1UseAdaptiveIHOP, true,                                    \
+          "Adaptively adjust the initiating heap occupancy from the "       \
+          "initial value of InitiatingHeapOccupancyPercent. The policy "    \
+          "attempts to start marking in time based on application "         \
+          "behavior.")                                                      \
                                                                             \
   experimental(size_t, G1AdaptiveIHOPNumInitialSamples, 3,                  \
           "How many completed time periods from initial mark to first "     \
