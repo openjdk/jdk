@@ -674,7 +674,7 @@ static void *java_start(Thread *thread) {
   int pid = os::current_process_id();
   alloca(((pid ^ counter++) & 7) * 128);
 
-  ThreadLocalStorage::set_thread(thread);
+  thread->initialize_thread_current();
 
   OSThread* osthread = thread->osthread();
   Monitor* sync = osthread->startThread_lock();
@@ -881,44 +881,6 @@ void os::free_thread(OSThread* osthread) {
 
   delete osthread;
 }
-
-//////////////////////////////////////////////////////////////////////////////
-// thread local storage
-
-// Restore the thread pointer if the destructor is called. This is in case
-// someone from JNI code sets up a destructor with pthread_key_create to run
-// detachCurrentThread on thread death. Unless we restore the thread pointer we
-// will hang or crash. When detachCurrentThread is called the key will be set
-// to null and we will not be called again. If detachCurrentThread is never
-// called we could loop forever depending on the pthread implementation.
-static void restore_thread_pointer(void* p) {
-  Thread* thread = (Thread*) p;
-  os::thread_local_storage_at_put(ThreadLocalStorage::thread_index(), thread);
-}
-
-int os::allocate_thread_local_storage() {
-  pthread_key_t key;
-  int rslt = pthread_key_create(&key, restore_thread_pointer);
-  assert(rslt == 0, "cannot allocate thread local storage");
-  return (int)key;
-}
-
-// Note: This is currently not used by VM, as we don't destroy TLS key
-// on VM exit.
-void os::free_thread_local_storage(int index) {
-  int rslt = pthread_key_delete((pthread_key_t)index);
-  assert(rslt == 0, "invalid index");
-}
-
-void os::thread_local_storage_at_put(int index, void* value) {
-  int rslt = pthread_setspecific((pthread_key_t)index, value);
-  assert(rslt == 0, "pthread_setspecific failed");
-}
-
-extern "C" Thread* get_thread() {
-  return ThreadLocalStorage::thread();
-}
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // time support

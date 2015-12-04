@@ -419,6 +419,8 @@ static unsigned __stdcall java_start(Thread* thread) {
   int pid = os::current_process_id();
   _alloca(((pid ^ counter++) & 7) * 128);
 
+  thread->initialize_thread_current();
+
   OSThread* osthr = thread->osthread();
   assert(osthr->get_state() == RUNNABLE, "invalid os thread state");
 
@@ -2146,7 +2148,7 @@ int os::signal_wait() {
 
 LONG Handle_Exception(struct _EXCEPTION_POINTERS* exceptionInfo,
                       address handler) {
-  JavaThread* thread = JavaThread::current();
+    JavaThread* thread = (JavaThread*) Thread::current_or_null();
   // Save pc in thread
 #ifdef _M_IA64
   // Do not blow up if no thread info available.
@@ -2384,7 +2386,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   address pc = (address) exceptionInfo->ContextRecord->Eip;
   #endif
 #endif
-  Thread* t = ThreadLocalStorage::get_thread_slow();          // slow & steady
+  Thread* t = Thread::current_or_null_safe();
 
   // Handle SafeFetch32 and SafeFetchN exceptions.
   if (StubRoutines::is_safefetch_fault(pc)) {
@@ -4011,27 +4013,6 @@ bool os::message_box(const char* title, const char* message) {
   return result == IDYES;
 }
 
-int os::allocate_thread_local_storage() {
-  return TlsAlloc();
-}
-
-
-void os::free_thread_local_storage(int index) {
-  TlsFree(index);
-}
-
-
-void os::thread_local_storage_at_put(int index, void* value) {
-  TlsSetValue(index, value);
-  assert(thread_local_storage_at(index) == value, "Just checking");
-}
-
-
-void* os::thread_local_storage_at(int index) {
-  return TlsGetValue(index);
-}
-
-
 #ifndef PRODUCT
 #ifndef _WIN64
 // Helpers to check whether NX protection is enabled
@@ -4079,6 +4060,9 @@ void os::init(void) {
     fatal("DuplicateHandle failed\n");
   }
   main_thread_id = (int) GetCurrentThreadId();
+
+  // initialize fast thread access - only used for 32-bit
+  win32::initialize_thread_ptr_offset();
 }
 
 // To install functions for atexit processing
@@ -5177,9 +5161,7 @@ void Parker::park(bool isAbsolute, jlong time) {
     }
   }
 
-  JavaThread* thread = (JavaThread*)(Thread::current());
-  assert(thread->is_Java_thread(), "Must be JavaThread");
-  JavaThread *jt = (JavaThread *)thread;
+  JavaThread* thread = JavaThread::current();
 
   // Don't wait if interrupted or already triggered
   if (Thread::is_interrupted(thread, false) ||
@@ -5187,16 +5169,16 @@ void Parker::park(bool isAbsolute, jlong time) {
     ResetEvent(_ParkEvent);
     return;
   } else {
-    ThreadBlockInVM tbivm(jt);
+    ThreadBlockInVM tbivm(thread);
     OSThreadWaitState osts(thread->osthread(), false /* not Object.wait() */);
-    jt->set_suspend_equivalent();
+    thread->set_suspend_equivalent();
 
     WaitForSingleObject(_ParkEvent, time);
     ResetEvent(_ParkEvent);
 
     // If externally suspended while waiting, re-suspend
-    if (jt->handle_special_suspend_equivalent_condition()) {
-      jt->java_suspend_self();
+    if (thread->handle_special_suspend_equivalent_condition()) {
+      thread->java_suspend_self();
     }
   }
 }
@@ -5299,7 +5281,7 @@ LONG WINAPI os::win32::serialize_fault_filter(struct _EXCEPTION_POINTERS* e) {
   DWORD exception_code = e->ExceptionRecord->ExceptionCode;
 
   if (exception_code == EXCEPTION_ACCESS_VIOLATION) {
-    JavaThread* thread = (JavaThread*)ThreadLocalStorage::get_thread_slow();
+    JavaThread* thread = JavaThread::current();
     PEXCEPTION_RECORD exceptionRecord = e->ExceptionRecord;
     address addr = (address) exceptionRecord->ExceptionInformation[1];
 
@@ -6066,3 +6048,15 @@ int os::get_signal_number(const char* name) {
   return -1;
 }
 
+// Fast current thread access
+
+int os::win32::_thread_ptr_offset = 0;
+
+static void call_wrapper_dummy() {}
+
+// We need to call the os_exception_wrapper once so that it sets
+// up the offset from FS of the thread pointer.
+void os::win32::initialize_thread_ptr_offset() {
+  os::os_exception_wrapper((java_call_t)call_wrapper_dummy,
+                           NULL, NULL, NULL, NULL);
+}

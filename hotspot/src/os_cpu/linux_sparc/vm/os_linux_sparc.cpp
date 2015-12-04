@@ -541,7 +541,7 @@ JVM_handle_linux_signal(int sig,
   ucontext_t* ucFake = (ucontext_t*) ucVoid;
   sigcontext* uc = (sigcontext*)ucVoid;
 
-  Thread* t = ThreadLocalStorage::get_thread_slow();
+  Thread* t = Thread::current_or_null_safe();
 
   // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
   // (no destructors can be run)

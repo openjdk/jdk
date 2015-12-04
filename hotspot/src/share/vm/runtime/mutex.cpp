@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1035,10 +1035,10 @@ void Monitor::jvm_raw_lock() {
  Exeunt:
     assert(ILocked(), "invariant");
     assert(_owner == NULL, "invariant");
-    // This can potentially be called by non-java Threads. Thus, the ThreadLocalStorage
+    // This can potentially be called by non-java Threads. Thus, the Thread::current_or_null()
     // might return NULL. Don't call set_owner since it will break on an NULL owner
     // Consider installing a non-null "ANON" distinguished value instead of just NULL.
-    _owner = ThreadLocalStorage::thread();
+    _owner = Thread::current_or_null();
     return;
   }
 
