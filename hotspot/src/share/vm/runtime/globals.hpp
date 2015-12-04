@@ -25,7 +25,6 @@
 #ifndef SHARE_VM_RUNTIME_GLOBALS_HPP
 #define SHARE_VM_RUNTIME_GLOBALS_HPP
 
-#include <float.h>
 #include "utilities/debug.hpp"
 #include <float.h> // for DBL_MAX
 
@@ -625,9 +624,6 @@ public:
   notproduct(bool, CheckCompressedOops, true,                               \
           "Generate checks in encoding/decoding code in debug VM")          \
                                                                             \
-  product_pd(size_t, HeapBaseMinAddress,                                    \
-          "OS specific low limit for heap base address")                    \
-                                                                            \
   product(uintx, HeapSearchSteps, 3 PPC64_ONLY(+17),                        \
           "Heap allocation steps through preferred address regions to find" \
           " where it can allocate the heap. Number of steps to take per "   \
@@ -692,6 +688,8 @@ public:
                                                                             \
   product(size_t, NUMAInterleaveGranularity, 2*M,                           \
           "Granularity to use for NUMA interleaving on Windows OS")         \
+          range(os::vm_allocation_granularity(), max_uintx)                 \
+          constraint(NUMAInterleaveGranularityConstraintFunc,AfterErgo)     \
                                                                             \
   product(bool, ForceNUMA, false,                                           \
           "Force NUMA optimizations on single-node/UMA systems")            \
@@ -704,6 +702,7 @@ public:
                                                                             \
   product(size_t, NUMASpaceResizeRate, 1*G,                                 \
           "Do not reallocate more than this amount per collection")         \
+          range(0, max_uintx)                                               \
                                                                             \
   product(bool, UseAdaptiveNUMAChunkSizing, true,                           \
           "Enable adaptive chunk sizing for NUMA")                          \
@@ -713,6 +712,7 @@ public:
                                                                             \
   product(uintx, NUMAPageScanRate, 256,                                     \
           "Maximum number of pages to include in the page scan procedure")  \
+          range(0, max_uintx)                                               \
                                                                             \
   product_pd(bool, NeedsDeoptSuspend,                                       \
           "True for register window machines (sparc/ia64)")                 \
@@ -733,9 +733,11 @@ public:
                                                                             \
   product(size_t, LargePageSizeInBytes, 0,                                  \
           "Large page size (0 to let VM choose the page size)")             \
+          range(0, max_uintx)                                               \
                                                                             \
   product(size_t, LargePageHeapSizeThreshold, 128*M,                        \
           "Use large pages if maximum heap is at least this big")           \
+          range(0, max_uintx)                                               \
                                                                             \
   product(bool, ForceTimeHighResolution, false,                             \
           "Using high time resolution (for Win32 only)")                    \
@@ -1526,9 +1528,11 @@ public:
   product(uintx, HeapMaximumCompactionInterval, 20,                         \
           "How often should we maximally compact the heap (not allowing "   \
           "any dead space)")                                                \
+          range(0, max_uintx)                                               \
                                                                             \
   product(uintx, HeapFirstMaximumCompactionCount, 3,                        \
           "The collection count for the first maximum compaction")          \
+          range(0, max_uintx)                                               \
                                                                             \
   product(bool, UseMaximumCompactionOnSystemGC, true,                       \
           "Use maximum compaction in the Parallel Old garbage collector "   \
@@ -1610,6 +1614,7 @@ public:
   diagnostic(uintx, GCLockerRetryAllocationCount, 2,                        \
           "Number of times to retry allocations when "                      \
           "blocked by the GC locker")                                       \
+          range(0, max_uintx)                                               \
                                                                             \
   product(bool, UseCMSBestFit, true,                                        \
           "Use CMS best fit allocation strategy")                           \
@@ -1664,6 +1669,7 @@ public:
                                                                             \
   product(uintx, ParGCDesiredObjsFromOverflowList, 20,                      \
           "The desired number of objects to claim from the overflow list")  \
+          range(0, max_uintx)                                               \
                                                                             \
   diagnostic(uintx, ParGCStridesPerThread, 2,                               \
           "The number of strides per worker thread that we divide up the "  \
@@ -1717,6 +1723,7 @@ public:
   product(uintx, CMSOldPLABReactivityFactor, 2,                             \
           "The gain in the feedback loop for on-the-fly PLAB resizing "     \
           "during a scavenge")                                              \
+          range(1, max_uintx)                                               \
                                                                             \
   product(bool, AlwaysPreTouch, false,                                      \
           "Force all freshly committed pages to be pre-touched")            \
@@ -1745,6 +1752,7 @@ public:
   product(uintx, CMS_FLSPadding, 1,                                         \
           "The multiple of deviation from mean to use for buffering "       \
           "against volatility in free list demand")                         \
+          range(0, max_juint)                                               \
                                                                             \
   product(uintx, FLSCoalescePolicy, 2,                                      \
           "CMS: aggressiveness level for coalescing, increasing "           \
@@ -1793,10 +1801,12 @@ public:
   product(uintx, CMS_SweepPadding, 1,                                       \
           "The multiple of deviation from mean to use for buffering "       \
           "against volatility in inter-sweep duration")                     \
+          range(0, max_juint)                                               \
                                                                             \
   product(uintx, CMS_SweepTimerThresholdMillis, 10,                         \
           "Skip block flux-rate sampling for an epoch unless inter-sweep "  \
           "duration exceeds this threshold in milliseconds")                \
+          range(0, max_uintx)                                               \
                                                                             \
   product(bool, CMSClassUnloadingEnabled, true,                             \
           "Whether class unloading enabled when using CMS GC")              \
@@ -1804,6 +1814,7 @@ public:
   product(uintx, CMSClassUnloadingMaxInterval, 0,                           \
           "When CMS class unloading is enabled, the maximum CMS cycle "     \
           "count for which classes may not be unloaded")                    \
+          range(0, max_uintx)                                               \
                                                                             \
   product(uintx, CMSIndexedFreeListReplenish, 4,                            \
           "Replenish an indexed free list with this number of chunks")      \
@@ -1837,6 +1848,7 @@ public:
                                                                             \
   product(uintx, CMSMaxAbortablePrecleanLoops, 0,                           \
           "Maximum number of abortable preclean iterations, if > 0")        \
+          range(0, max_uintx)                                               \
                                                                             \
   product(intx, CMSMaxAbortablePrecleanTime, 5000,                          \
           "Maximum time in abortable preclean (in milliseconds)")           \
@@ -1844,6 +1856,7 @@ public:
                                                                             \
   product(uintx, CMSAbortablePrecleanMinWorkPerIteration, 100,              \
           "Nominal minimum work per abortable preclean iteration")          \
+          range(0, max_uintx)                                               \
                                                                             \
   manageable(intx, CMSAbortablePrecleanWaitMillis, 100,                     \
           "Time that we sleep between iterations when not given "           \
@@ -1931,6 +1944,7 @@ public:
                                                                             \
   product(size_t, CMSScheduleRemarkEdenSizeThreshold, 2*M,                  \
           "If Eden size is below this, do not try to schedule remark")      \
+          range(0, max_uintx)                                               \
                                                                             \
   product(uintx, CMSScheduleRemarkEdenPenetration, 50,                      \
           "The Eden occupancy percentage (0-100) at which "                 \
@@ -1960,6 +1974,7 @@ public:
                                                                             \
   manageable(intx, CMSWaitDuration, 2000,                                   \
           "Time in milliseconds that CMS thread waits for young GC")        \
+          range(min_jint, max_jint)                                         \
                                                                             \
   develop(uintx, CMSCheckInterval, 1000,                                    \
           "Interval in milliseconds that CMS thread checks if it "          \
@@ -2161,6 +2176,7 @@ public:
   product(size_t, ErgoHeapSizeLimit, 0,                                     \
           "Maximum ergonomically set heap size (in bytes); zero means use " \
           "MaxRAM / MaxRAMFraction")                                        \
+          range(0, max_uintx)                                               \
                                                                             \
   product(uintx, MaxRAMFraction, 4,                                         \
           "Maximum fraction (1/n) of real memory used for maximum heap "    \
@@ -2185,6 +2201,7 @@ public:
                                                                             \
   product(uintx, AutoGCSelectPauseMillis, 5000,                             \
           "Automatic GC selection pause threshold in milliseconds")         \
+          range(0, max_uintx)                                               \
                                                                             \
   product(bool, UseAdaptiveSizePolicy, true,                                \
           "Use adaptive generation sizing policies")                        \
@@ -2217,12 +2234,14 @@ public:
                                                                             \
   product(uintx, AdaptiveSizePolicyInitializingSteps, 20,                   \
           "Number of steps where heuristics is used before data is used")   \
+          range(0, max_uintx)                                               \
                                                                             \
   develop(uintx, AdaptiveSizePolicyReadyThreshold, 5,                       \
           "Number of collections before the adaptive sizing is started")    \
                                                                             \
   product(uintx, AdaptiveSizePolicyOutputInterval, 0,                       \
           "Collection interval for printing information; zero means never") \
+          range(0, max_uintx)                                               \
                                                                             \
   product(bool, UseAdaptiveSizePolicyFootprintGoal, true,                   \
           "Use adaptive minimum footprint as a goal")                       \
@@ -2237,12 +2256,15 @@ public:
                                                                             \
   product(uintx, PausePadding, 1,                                           \
           "How much buffer to keep for pause time")                         \
+          range(0, max_juint)                                               \
                                                                             \
   product(uintx, PromotedPadding, 3,                                        \
           "How much buffer to keep for promotion failure")                  \
+          range(0, max_juint)                                               \
                                                                             \
   product(uintx, SurvivorPadding, 3,                                        \
           "How much buffer to keep for survivor overflow")                  \
+          range(0, max_juint)                                               \
                                                                             \
   product(uintx, ThresholdTolerance, 10,                                    \
           "Allowed collection cost difference between generations")         \
@@ -2251,6 +2273,7 @@ public:
   product(uintx, AdaptiveSizePolicyCollectionCostMargin, 50,                \
           "If collection costs are within margin, reduce both by full "     \
           "delta")                                                          \
+          range(0, 100)                                                     \
                                                                             \
   product(uintx, YoungGenerationSizeIncrement, 20,                          \
           "Adaptive size percentage change in young generation")            \
@@ -2289,9 +2312,11 @@ public:
   product(uintx, MaxGCMinorPauseMillis, max_uintx,                          \
           "Adaptive size policy maximum GC minor pause time goal "          \
           "in millisecond")                                                 \
+          range(0, max_uintx)                                               \
                                                                             \
   product(uintx, GCTimeRatio, 99,                                           \
           "Adaptive size policy application time to GC time ratio")         \
+          range(0, max_juint)                                               \
                                                                             \
   product(uintx, AdaptiveSizeDecrementScaleFactor, 4,                       \
           "Adaptive size scale down factor for shrinking")                  \
@@ -2302,6 +2327,7 @@ public:
                                                                             \
   product(uintx, AdaptiveSizeMajorGCDecayTimeScale, 10,                     \
           "Time scale over which major costs decay")                        \
+          range(0, max_uintx)                                               \
                                                                             \
   product(uintx, MinSurvivorRatio, 3,                                       \
           "Minimum ratio of young generation/survivor space size")          \
@@ -2309,9 +2335,11 @@ public:
                                                                             \
   product(uintx, InitialSurvivorRatio, 8,                                   \
           "Initial ratio of young generation/survivor space size")          \
+          range(0, max_uintx)                                               \
                                                                             \
   product(size_t, BaseFootPrintEstimate, 256*M,                             \
           "Estimate of footprint other than Java Heap")                     \
+          range(0, max_uintx)                                               \
                                                                             \
   product(bool, UseGCOverheadLimit, true,                                   \
           "Use policy to limit of proportion of time spent in GC "          \
@@ -2336,12 +2364,15 @@ public:
                                                                             \
   product(intx, PrefetchCopyIntervalInBytes, -1,                            \
           "How far ahead to prefetch destination area (<= 0 means off)")    \
+          range(-1, max_jint)                                               \
                                                                             \
   product(intx, PrefetchScanIntervalInBytes, -1,                            \
           "How far ahead to prefetch scan area (<= 0 means off)")           \
+          range(-1, max_jint)                                               \
                                                                             \
   product(intx, PrefetchFieldsAhead, -1,                                    \
           "How many fields ahead to prefetch in oop scan (<= 0 means off)") \
+          range(-1, max_jint)                                               \
                                                                             \
   diagnostic(bool, VerifySilently, false,                                   \
           "Do not print the verification progress")                         \
@@ -2389,6 +2420,7 @@ public:
                                                                             \
   diagnostic(uintx, CPUForCMSThread, 0,                                     \
           "When BindCMSThreadToCPU is true, the CPU to bind CMS thread to") \
+          range(0, max_juint)                                               \
                                                                             \
   product(bool, BindGCTaskThreadsToCPUs, false,                             \
           "Bind GCTaskThreads to CPUs if possible")                         \
@@ -2398,14 +2430,17 @@ public:
                                                                             \
   product(uintx, ProcessDistributionStride, 4,                              \
           "Stride through processors when distributing processes")          \
+          range(0, max_juint)                                               \
                                                                             \
   product(uintx, CMSCoordinatorYieldSleepCount, 10,                         \
           "Number of times the coordinator GC thread will sleep while "     \
           "yielding before giving up and resuming GC")                      \
+          range(0, max_juint)                                               \
                                                                             \
   product(uintx, CMSYieldSleepCount, 0,                                     \
           "Number of times a GC thread (minus the coordinator) "            \
           "will sleep while yielding before giving up and resuming GC")     \
+          range(0, max_juint)                                               \
                                                                             \
   /* gc tracing */                                                          \
   manageable(bool, PrintGC, false,                                          \
@@ -2554,10 +2589,12 @@ public:
   product(uintx, NumberOfGCLogFiles, 0,                                     \
           "Number of gclog files in rotation "                              \
           "(default: 0, no rotation)")                                      \
+          range(0, max_uintx)                                               \
                                                                             \
   product(size_t, GCLogFileSize, 8*K,                                       \
           "GC log file size, requires UseGCLogFileRotation. "               \
           "Set to 0 to only trigger rotation via jcmd")                     \
+          range(0, max_uintx)                                               \
                                                                             \
   /* JVMTI heap profiling */                                                \
                                                                             \
@@ -3325,6 +3362,7 @@ public:
                                                                             \
   product(size_t, OldSize, ScaleForWordSize(4*M),                           \
           "Initial tenured generation size (in bytes)")                     \
+          range(0, max_uintx)                                               \
                                                                             \
   product(size_t, NewSize, ScaleForWordSize(1*M),                           \
           "Initial new generation size (in bytes)")                         \
@@ -3333,10 +3371,16 @@ public:
   product(size_t, MaxNewSize, max_uintx,                                    \
           "Maximum new generation size (in bytes), max_uintx means set "    \
           "ergonomically")                                                  \
+          range(0, max_uintx)                                               \
+                                                                            \
+  product_pd(size_t, HeapBaseMinAddress,                                    \
+          "OS specific low limit for heap base address")                    \
+          constraint(HeapBaseMinAddressConstraintFunc,AfterErgo)            \
                                                                             \
   product(size_t, PretenureSizeThreshold, 0,                                \
           "Maximum size in bytes of objects allocated in DefNew "           \
           "generation; zero means no maximum")                              \
+          range(0, max_uintx)                                               \
                                                                             \
   product(size_t, MinTLABSize, 2*K,                                         \
           "Minimum allowed TLAB size (in bytes)")                           \
@@ -3368,10 +3412,12 @@ public:
                                                                             \
   product(uintx, TLABRefillWasteFraction,    64,                            \
           "Maximum TLAB waste at a refill (internal fragmentation)")        \
-          range(1, max_uintx)                                               \
+          range(1, max_juint)                                               \
                                                                             \
   product(uintx, TLABWasteIncrement,    4,                                  \
           "Increment allowed waste at slow allocation")                     \
+          range(0, max_jint)                                                \
+          constraint(TLABWasteIncrementConstraintFunc,AfterMemoryInit)      \
                                                                             \
   product(uintx, SurvivorRatio, 8,                                          \
           "Ratio of eden/survivor space size")                              \
@@ -3385,6 +3431,7 @@ public:
   product_pd(size_t, NewSizeThreadIncrease,                                 \
           "Additional size added to desired new generation size per "       \
           "non-daemon thread (in bytes)")                                   \
+          range(0, max_uintx)                                               \
                                                                             \
   product_pd(size_t, MetaspaceSize,                                         \
           "Initial size of Metaspaces (in bytes)")                          \
@@ -3420,9 +3467,11 @@ public:
                                                                             \
   product(size_t, MinHeapDeltaBytes, ScaleForWordSize(128*K),               \
           "The minimum change in heap space due to GC (in bytes)")          \
+          range(0, max_uintx)                                               \
                                                                             \
   product(size_t, MinMetaspaceExpansion, ScaleForWordSize(256*K),           \
           "The minimum expansion of Metaspace (in bytes)")                  \
+          range(0, max_uintx)                                               \
                                                                             \
   product(uintx, MaxMetaspaceFreeRatio,    70,                              \
           "The maximum percentage of Metaspace free after GC to avoid "     \
@@ -3438,13 +3487,16 @@ public:
                                                                             \
   product(size_t, MaxMetaspaceExpansion, ScaleForWordSize(4*M),             \
           "The maximum expansion of Metaspace without full GC (in bytes)")  \
+          range(0, max_uintx)                                               \
                                                                             \
   product(uintx, QueuedAllocationWarningCount, 0,                           \
           "Number of times an allocation that queues behind a GC "          \
           "will retry before printing a warning")                           \
+          range(0, max_uintx)                                               \
                                                                             \
   diagnostic(uintx, VerifyGCStartAt,   0,                                   \
           "GC invoke count where +VerifyBefore/AfterGC kicks in")           \
+          range(0, max_uintx)                                               \
                                                                             \
   diagnostic(intx, VerifyGCLevel,     0,                                    \
           "Generation level at which to start +VerifyBefore/AfterGC")       \
@@ -3482,15 +3534,18 @@ public:
                                                                             \
   product(intx, PrintCMSStatistics, 0,                                      \
           "Statistics for CMS")                                             \
+          range(0, 2)                                                       \
                                                                             \
   product(bool, PrintCMSInitiationStatistics, false,                        \
           "Statistics for initiating a CMS collection")                     \
                                                                             \
   product(intx, PrintFLSStatistics, 0,                                      \
           "Statistics for CMS' FreeListSpace")                              \
+          range(0, 2)                                                       \
                                                                             \
   product(intx, PrintFLSCensus, 0,                                          \
           "Census for CMS' FreeListSpace")                                  \
+          range(0, 1)                                                       \
                                                                             \
   develop(uintx, GCExpandToAllocateDelayMillis, 0,                          \
           "Delay between expansion and allocation (in milliseconds)")       \
@@ -3517,6 +3572,7 @@ public:
   product(uintx, GCDrainStackTargetSize, 64,                                \
           "Number of entries we will try to leave on the stack "            \
           "during parallel gc")                                             \
+          range(0, max_juint)                                               \
                                                                             \
   /* stack parameters */                                                    \
   product_pd(intx, StackYellowPages,                                        \
