@@ -5498,36 +5498,36 @@ class G1CheckCSetFastTableClosure : public HeapRegionClosure {
         return true;
       }
       if (cset_state.is_in_cset()) {
-        gclog_or_tty->print_cr("\n## inconsistent cset state %d for humongous region %u", cset_state.value(), i);
+        gclog_or_tty->print_cr("\n## inconsistent cset state " CSETSTATE_FORMAT " for humongous region %u", cset_state.value(), i);
         _failures = true;
         return true;
       }
       if (hr->is_continues_humongous() && cset_state.is_humongous()) {
-        gclog_or_tty->print_cr("\n## inconsistent cset state %d for continues humongous region %u", cset_state.value(), i);
+        gclog_or_tty->print_cr("\n## inconsistent cset state " CSETSTATE_FORMAT " for continues humongous region %u", cset_state.value(), i);
         _failures = true;
         return true;
       }
     } else {
       if (cset_state.is_humongous()) {
-        gclog_or_tty->print_cr("\n## inconsistent cset state %d for non-humongous region %u", cset_state.value(), i);
+        gclog_or_tty->print_cr("\n## inconsistent cset state " CSETSTATE_FORMAT " for non-humongous region %u", cset_state.value(), i);
         _failures = true;
         return true;
       }
       if (hr->in_collection_set() != cset_state.is_in_cset()) {
-        gclog_or_tty->print_cr("\n## in CSet %d / cset state %d inconsistency for region %u",
+        gclog_or_tty->print_cr("\n## in CSet %d / cset state " CSETSTATE_FORMAT " inconsistency for region %u",
                                hr->in_collection_set(), cset_state.value(), i);
         _failures = true;
         return true;
       }
       if (cset_state.is_in_cset()) {
         if (hr->is_young() != (cset_state.is_young())) {
-          gclog_or_tty->print_cr("\n## is_young %d / cset state %d inconsistency for region %u",
+          gclog_or_tty->print_cr("\n## is_young %d / cset state " CSETSTATE_FORMAT " inconsistency for region %u",
                                  hr->is_young(), cset_state.value(), i);
           _failures = true;
           return true;
         }
         if (hr->is_old() != (cset_state.is_old())) {
-          gclog_or_tty->print_cr("\n## is_old %d / cset state %d inconsistency for region %u",
+          gclog_or_tty->print_cr("\n## is_old %d / cset state " CSETSTATE_FORMAT " inconsistency for region %u",
                                  hr->is_old(), cset_state.value(), i);
           _failures = true;
           return true;
