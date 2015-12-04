@@ -93,9 +93,9 @@ void InterpreterMacroAssembler::dispatch_prolog(TosState state, int bcp_incr) {
 // own dispatch. The dispatch address in R24_dispatch_addr is used for the
 // dispatch.
 void InterpreterMacroAssembler::dispatch_epilog(TosState state, int bcp_incr) {
+  if (bcp_incr) { addi(R14_bcp, R14_bcp, bcp_incr); }
   mtctr(R24_dispatch_addr);
-  addi(R14_bcp, R14_bcp, bcp_incr);
-  bctr();
+  bcctr(bcondAlways, 0, bhintbhBCCTRisNotPredictable);
 }
 
 void InterpreterMacroAssembler::check_and_handle_popframe(Register scratch_reg) {
@@ -212,9 +212,6 @@ void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, Register byt
     unimplemented("dispatch_Lbyte_code: verify"); // See Sparc Implementation to implement this
   }
 
-#ifdef FAST_DISPATCH
-  unimplemented("dispatch_Lbyte_code FAST_DISPATCH");
-#else
   assert_different_registers(bytecode, R11_scratch1);
 
   // Calc dispatch table address.
@@ -225,8 +222,7 @@ void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, Register byt
 
   // Jump off!
   mtctr(R11_scratch1);
-  bctr();
-#endif
+  bcctr(bcondAlways, 0, bhintbhBCCTRisNotPredictable);
 }
 
 void InterpreterMacroAssembler::load_receiver(Register Rparam_count, Register Rrecv_dst) {
@@ -546,8 +542,8 @@ void InterpreterMacroAssembler::index_check_without_pop(Register Rarray, Registe
   sldi(RsxtIndex, RsxtIndex, index_shift);
   blt(CCR0, LnotOOR);
   // Index should be in R17_tos, array should be in R4_ARG2.
-  mr(R17_tos, Rindex);
-  mr(R4_ARG2, Rarray);
+  mr_if_needed(R17_tos, Rindex);
+  mr_if_needed(R4_ARG2, Rarray);
   load_dispatch_table(Rtmp, (address*)Interpreter::_throw_ArrayIndexOutOfBoundsException_entry);
   mtctr(Rtmp);
   bctr();
@@ -842,7 +838,6 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
     // Must fence, otherwise, preceding store(s) may float below cmpxchg.
     // CmpxchgX sets CCR0 to cmpX(current, displaced).
-    fence(); // TODO: replace by MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq ?
     cmpxchgd(/*flag=*/CCR0,
              /*current_value=*/current_header,
              /*compare_value=*/displaced_header, /*exchange_value=*/monitor,
@@ -850,7 +845,8 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
              MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
              MacroAssembler::cmpxchgx_hint_acquire_lock(),
              noreg,
-             &cas_failed);
+             &cas_failed,
+             /*check without membar and ldarx first*/true);
 
     // If the compare-and-exchange succeeded, then we found an unlocked
     // object and we have now locked it.
@@ -868,9 +864,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     sub(current_header, current_header, R1_SP);
 
     assert(os::vm_page_size() > 0xfff, "page size too small - change the constant");
-    load_const_optimized(tmp,
-                         (address) (~(os::vm_page_size()-1) |
-                                    markOopDesc::lock_mask_in_place));
+    load_const_optimized(tmp, ~(os::vm_page_size()-1) | markOopDesc::lock_mask_in_place);
 
     and_(R0/*==0?*/, current_header, tmp);
     // If condition is true we are done and hence we can store 0 in the displaced
@@ -1107,6 +1101,7 @@ void InterpreterMacroAssembler::verify_method_data_pointer() {
 }
 
 void InterpreterMacroAssembler::test_invocation_counter_for_mdp(Register invocation_count,
+                                                                Register method_counters,
                                                                 Register Rscratch,
                                                                 Label &profile_continue) {
   assert(ProfileInterpreter, "must be profiling interpreter");
@@ -1115,12 +1110,11 @@ void InterpreterMacroAssembler::test_invocation_counter_for_mdp(Register invocat
   Label done;
 
   // If no method data exists, and the counter is high enough, make one.
-  int ipl_offs = load_const_optimized(Rscratch, &InvocationCounter::InterpreterProfileLimit, R0, true);
-  lwz(Rscratch, ipl_offs, Rscratch);
+  lwz(Rscratch, in_bytes(MethodCounters::interpreter_profile_limit_offset()), method_counters);
 
   cmpdi(CCR0, R28_mdx, 0);
   // Test to see if we should create a method data oop.
-  cmpd(CCR1, Rscratch /* InterpreterProfileLimit */, invocation_count);
+  cmpd(CCR1, Rscratch, invocation_count);
   bne(CCR0, done);
   bge(CCR1, profile_continue);
 
@@ -1133,15 +1127,15 @@ void InterpreterMacroAssembler::test_invocation_counter_for_mdp(Register invocat
   bind(done);
 }
 
-void InterpreterMacroAssembler::test_backedge_count_for_osr(Register backedge_count, Register branch_bcp, Register Rtmp) {
-  assert_different_registers(backedge_count, Rtmp, branch_bcp);
+void InterpreterMacroAssembler::test_backedge_count_for_osr(Register backedge_count, Register method_counters,
+                                                            Register target_bcp, Register disp, Register Rtmp) {
+  assert_different_registers(backedge_count, target_bcp, disp, Rtmp, R4_ARG2);
   assert(UseOnStackReplacement,"Must UseOnStackReplacement to test_backedge_count_for_osr");
 
   Label did_not_overflow;
   Label overflow_with_error;
 
-  int ibbl_offs = load_const_optimized(Rtmp, &InvocationCounter::InterpreterBackwardBranchLimit, R0, true);
-  lwz(Rtmp, ibbl_offs, Rtmp);
+  lwz(Rtmp, in_bytes(MethodCounters::interpreter_backward_branch_limit_offset()), method_counters);
   cmpw(CCR0, backedge_count, Rtmp);
 
   blt(CCR0, did_not_overflow);
@@ -1153,17 +1147,15 @@ void InterpreterMacroAssembler::test_backedge_count_for_osr(Register backedge_co
   // the overflow function is called only once every overflow_frequency.
   if (ProfileInterpreter) {
     const int overflow_frequency = 1024;
-    li(Rtmp, overflow_frequency-1);
-    andr(Rtmp, Rtmp, backedge_count);
-    cmpwi(CCR0, Rtmp, 0);
+    andi_(Rtmp, backedge_count, overflow_frequency-1);
     bne(CCR0, did_not_overflow);
   }
 
   // Overflow in loop, pass branch bytecode.
-  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), branch_bcp, true);
+  subf(R4_ARG2, disp, target_bcp); // Compute branch bytecode (previous bcp).
+  call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), R4_ARG2, true);
 
   // Was an OSR adapter generated?
-  // O0 = osr nmethod
   cmpdi(CCR0, R3_RET, 0);
   beq(CCR0, overflow_with_error);
 
@@ -1324,7 +1316,7 @@ void InterpreterMacroAssembler::increment_backedge_counter(const Register Rcount
   assert_different_registers(Rdst, Rtmp1);
   const Register invocation_counter = Rtmp1;
   const Register counter = Rdst;
-  // TODO ppc port assert(4 == InvocationCounter::sz_counter(), "unexpected field size.");
+  // TODO: PPC port: assert(4 == InvocationCounter::sz_counter(), "unexpected field size.");
 
   // Load backedge counter.
   lwz(counter, in_bytes(MethodCounters::backedge_counter_offset()) +
@@ -1337,8 +1329,7 @@ void InterpreterMacroAssembler::increment_backedge_counter(const Register Rcount
   addi(counter, counter, InvocationCounter::count_increment);
 
   // Mask the invocation counter.
-  li(Rscratch, InvocationCounter::count_mask_value);
-  andr(invocation_counter, invocation_counter, Rscratch);
+  andi(invocation_counter, invocation_counter, InvocationCounter::count_mask_value);
 
   // Store new counter value.
   stw(counter, in_bytes(MethodCounters::backedge_counter_offset()) +
@@ -1817,15 +1808,13 @@ void InterpreterMacroAssembler::profile_return_type(Register ret, Register tmp1,
     test_method_data_pointer(profile_continue);
 
     if (MethodData::profile_return_jsr292_only()) {
-      assert(Method::intrinsic_id_size_in_bytes() == 2, "assuming Method::_intrinsic_id is u2");
-
       // If we don't profile all invoke bytecodes we must make sure
       // it's a bytecode we indeed profile. We can't go back to the
       // begining of the ProfileData we intend to update to check its
       // type because we're right after it and we don't known its
       // length.
       lbz(tmp1, 0, R14_bcp);
-      lhz(tmp2, Method::intrinsic_id_offset_in_bytes(), R19_method);
+      lbz(tmp2, Method::intrinsic_id_offset_in_bytes(), R19_method);
       cmpwi(CCR0, tmp1, Bytecodes::_invokedynamic);
       cmpwi(CCR1, tmp1, Bytecodes::_invokehandle);
       cror(CCR0, Assembler::equal, CCR1, Assembler::equal);
@@ -2207,9 +2196,7 @@ void InterpreterMacroAssembler::increment_invocation_counter(Register Rcounters,
   // Load the backedge counter.
   lwz(backedge_count, be_counter_offset, Rcounters); // is unsigned int
   // Mask the backedge counter.
-  Register tmp = invocation_count;
-  li(tmp, InvocationCounter::count_mask_value);
-  andr(backedge_count, tmp, backedge_count); // Cannot use andi, need sign extension of count_mask_value.
+  andi(backedge_count, backedge_count, InvocationCounter::count_mask_value);
 
   // Load the invocation counter.
   lwz(invocation_count, inv_counter_offset, Rcounters); // is unsigned int
@@ -2266,7 +2253,7 @@ void InterpreterMacroAssembler::verify_oop_or_return_address(Register reg, Regis
   bne(CCR0, test);
 
   address fd = CAST_FROM_FN_PTR(address, verify_return_address);
-  const int nbytes_save = 11*8; // volatile gprs except R0
+  const int nbytes_save = MacroAssembler::num_volatile_regs * 8;
   save_volatile_gprs(R1_SP, -nbytes_save); // except R0
   save_LR_CR(Rtmp); // Save in old frame.
   push_frame_reg_args(nbytes_save, Rtmp);

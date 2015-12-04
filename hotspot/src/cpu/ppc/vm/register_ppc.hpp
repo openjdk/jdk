@@ -627,6 +627,9 @@ REGISTER_DECLARATION(Register, R27_constPoolCache,    R27);
 REGISTER_DECLARATION(Register, R28_mdx,               R28);
 #endif // CC_INTERP
 
+REGISTER_DECLARATION(Register, R19_inline_cache_reg, R19);
+REGISTER_DECLARATION(Register, R29_TOC, R29);
+
 #ifndef DONT_USE_REGISTER_DEFINES
 #define R21_tmp1         AS_REGISTER(Register, R21)
 #define R22_tmp2         AS_REGISTER(Register, R22)
@@ -647,6 +650,9 @@ REGISTER_DECLARATION(Register, R28_mdx,               R28);
 #define R27_constPoolCache    AS_REGISTER(Register, R27)
 #define R28_mdx               AS_REGISTER(Register, R28)
 #endif
+
+#define R19_inline_cache_reg AS_REGISTER(Register, R19)
+#define R29_TOC AS_REGISTER(Register, R29)
 
 #define CCR4_is_synced AS_REGISTER(ConditionRegister, CCR4)
 #endif

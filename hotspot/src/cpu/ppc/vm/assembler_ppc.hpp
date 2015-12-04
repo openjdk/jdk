@@ -31,10 +31,37 @@
 // Address is an abstraction used to represent a memory location
 // as used in assembler instructions.
 // PPC instructions grok either baseReg + indexReg or baseReg + disp.
-// So far we do not use this as simplification by this class is low
-// on PPC with its simple addressing mode. Use RegisterOrConstant to
-// represent an offset.
 class Address VALUE_OBJ_CLASS_SPEC {
+ private:
+  Register _base;         // Base register.
+  Register _index;        // Index register.
+  intptr_t _disp;         // Displacement.
+
+ public:
+  Address(Register b, Register i, address d = 0)
+    : _base(b), _index(i), _disp((intptr_t)d) {
+    assert(i == noreg || d == 0, "can't have both");
+  }
+
+  Address(Register b, address d = 0)
+    : _base(b), _index(noreg), _disp((intptr_t)d) {}
+
+  Address(Register b, intptr_t d)
+    : _base(b), _index(noreg), _disp(d) {}
+
+  Address(Register b, RegisterOrConstant roc)
+    : _base(b), _index(noreg), _disp(0) {
+    if (roc.is_constant()) _disp = roc.as_constant(); else _index = roc.as_register();
+  }
+
+  Address()
+    : _base(noreg), _index(noreg), _disp(0) {}
+
+  // accessors
+  Register base()  const { return _base; }
+  Register index() const { return _index; }
+  int      disp()  const { return (int)_disp; }
+  bool     is_const() const { return _base == noreg && _index == noreg; }
 };
 
 class AddressLiteral VALUE_OBJ_CLASS_SPEC {
@@ -164,10 +191,14 @@ struct FunctionDescriptor VALUE_OBJ_CLASS_SPEC {
 };
 #endif
 
+
+// The PPC Assembler: Pure assembler doing NO optimizations on the
+// instruction level; i.e., what you write is what you get. The
+// Assembler is generating code into a CodeBuffer.
+
 class Assembler : public AbstractAssembler {
  protected:
   // Displacement routines
-  static void print_instruction(int inst);
   static int  patched_branch(int dest_pos, int inst, int inst_pos);
   static int  branch_destination(int inst, int pos);
 
@@ -839,11 +870,8 @@ class Assembler : public AbstractAssembler {
 
   enum Predict { pt = 1, pn = 0 }; // pt = predict taken
 
-  // instruction must start at passed address
+  // Instruction must start at passed address.
   static int instr_len(unsigned char *instr) { return BytesPerInstWord; }
-
-  // instruction must be left-justified in argument
-  static int instr_len(unsigned long instr)  { return BytesPerInstWord; }
 
   // longest instructions
   static int instr_maxlen() { return BytesPerInstWord; }
@@ -851,29 +879,29 @@ class Assembler : public AbstractAssembler {
   // Test if x is within signed immediate range for nbits.
   static bool is_simm(int x, unsigned int nbits) {
     assert(0 < nbits && nbits < 32, "out of bounds");
-    const int   min      = -( ((int)1) << nbits-1 );
-    const int   maxplus1 =  ( ((int)1) << nbits-1 );
+    const int   min      = -(((int)1) << nbits-1);
+    const int   maxplus1 =  (((int)1) << nbits-1);
     return min <= x && x < maxplus1;
   }
 
   static bool is_simm(jlong x, unsigned int nbits) {
     assert(0 < nbits && nbits < 64, "out of bounds");
-    const jlong min      = -( ((jlong)1) << nbits-1 );
-    const jlong maxplus1 =  ( ((jlong)1) << nbits-1 );
+    const jlong min      = -(((jlong)1) << nbits-1);
+    const jlong maxplus1 =  (((jlong)1) << nbits-1);
     return min <= x && x < maxplus1;
   }
 
-  // Test if x is within unsigned immediate range for nbits
+  // Test if x is within unsigned immediate range for nbits.
   static bool is_uimm(int x, unsigned int nbits) {
     assert(0 < nbits && nbits < 32, "out of bounds");
-    const int   maxplus1 = ( ((int)1) << nbits );
-    return 0 <= x && x < maxplus1;
+    const unsigned int maxplus1 = (((unsigned int)1) << nbits);
+    return (unsigned int)x < maxplus1;
   }
 
   static bool is_uimm(jlong x, unsigned int nbits) {
     assert(0 < nbits && nbits < 64, "out of bounds");
-    const jlong maxplus1 =  ( ((jlong)1) << nbits );
-    return 0 <= x && x < maxplus1;
+    const julong maxplus1 = (((julong)1) << nbits);
+    return (julong)x < maxplus1;
   }
 
  protected:
@@ -1376,8 +1404,11 @@ class Assembler : public AbstractAssembler {
   inline void orc(    Register a, Register s, Register b);
   inline void orc_(   Register a, Register s, Register b);
   inline void extsb(  Register a, Register s);
+  inline void extsb_( Register a, Register s);
   inline void extsh(  Register a, Register s);
+  inline void extsh_( Register a, Register s);
   inline void extsw(  Register a, Register s);
+  inline void extsw_( Register a, Register s);
 
   // extended mnemonics
   inline void nop();
@@ -1767,6 +1798,8 @@ class Assembler : public AbstractAssembler {
   inline void smt_yield();
   inline void smt_mdoio();
   inline void smt_mdoom();
+  // >= Power8
+  inline void smt_miso();
 
   // trap instructions
   inline void twi_0(Register a); // for load with acquire semantics use load+twi_0+isync (trap can't occur)
@@ -2168,6 +2201,7 @@ class Assembler : public AbstractAssembler {
   inline void load_const(Register d, void* a,           Register tmp = noreg);
   inline void load_const(Register d, Label& L,          Register tmp = noreg);
   inline void load_const(Register d, AddressLiteral& a, Register tmp = noreg);
+  inline void load_const32(Register d, int i); // load signed int (patchable)
 
   // Load a 64 bit constant, optimized, not identifyable.
   // Tmp can be used to increase ILP. Set return_simm16_rest = true to get a
