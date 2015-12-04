@@ -729,7 +729,11 @@ class MacroAssembler : public Assembler {
   // Check if the call target is out of wdisp30 range (relative to the code cache)
   static inline bool is_far_target(address d);
   inline void call( address d,  relocInfo::relocType rt = relocInfo::runtime_call_type );
+  inline void call( address d,  RelocationHolder const& rspec);
+
   inline void call( Label& L,   relocInfo::relocType rt = relocInfo::runtime_call_type );
+  inline void call( Label& L,  RelocationHolder const& rspec);
+
   inline void callr( Register s1, Register s2 );
   inline void callr( Register s1, int simm13a, RelocationHolder const& rspec = RelocationHolder() );
 
@@ -1146,7 +1150,7 @@ public:
   void set_vm_result(Register oop_result);
 
   // Emit the CompiledIC call idiom
-  void ic_call(address entry, bool emit_delay = true);
+  void ic_call(address entry, bool emit_delay = true, jint method_index = 0);
 
   // if call_VM_base was called with check_exceptions=false, then call
   // check_and_forward_exception to handle exceptions when it is safe

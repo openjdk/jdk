@@ -983,7 +983,7 @@ public:
   }
 
   // Emit the CompiledIC call idiom
-  address ic_call(address entry);
+  address ic_call(address entry, jint method_index = 0);
 
 public:
 

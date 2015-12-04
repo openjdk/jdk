@@ -49,7 +49,7 @@ class CallGenerator : public ResourceObj {
 
  public:
   // Accessors
-  ciMethod*         method() const              { return _method; }
+  ciMethod*          method() const             { return _method; }
 
   // is_inline: At least some code implementing the method is copied here.
   virtual bool      is_inline() const           { return false; }
@@ -123,7 +123,6 @@ class CallGenerator : public ResourceObj {
   // How to generate vanilla out-of-line call sites:
   static CallGenerator* for_direct_call(ciMethod* m, bool separate_io_projs = false);   // static, special
   static CallGenerator* for_virtual_call(ciMethod* m, int vtable_index);  // virtual, interface
-  static CallGenerator* for_dynamic_call(ciMethod* m);   // invokedynamic
 
   static CallGenerator* for_method_handle_call(  JVMState* jvms, ciMethod* caller, ciMethod* callee, bool delayed_forbidden);
   static CallGenerator* for_method_handle_inline(JVMState* jvms, ciMethod* caller, ciMethod* callee, bool& input_not_const);
@@ -170,6 +169,8 @@ class CallGenerator : public ResourceObj {
       C->print_inlining(callee, inline_level, bci, msg);
     }
   }
+
+  static bool is_inlined_mh_linker(JVMState* jvms, ciMethod* m);
 };
 
 

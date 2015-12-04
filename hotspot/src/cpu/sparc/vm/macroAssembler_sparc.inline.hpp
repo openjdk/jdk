@@ -298,6 +298,10 @@ inline bool MacroAssembler::is_far_target(address d) {
 // expense of relocation and if we overflow the displacement
 // of the quick call instruction.
 inline void MacroAssembler::call( address d, relocInfo::relocType rt ) {
+  MacroAssembler::call(d, Relocation::spec_simple(rt));
+}
+
+inline void MacroAssembler::call( address d, RelocationHolder const& rspec ) {
 #ifdef _LP64
   intptr_t disp;
   // NULL is ok because it will be relocated later.
@@ -309,14 +313,14 @@ inline void MacroAssembler::call( address d, relocInfo::relocType rt ) {
   // Is this address within range of the call instruction?
   // If not, use the expensive instruction sequence
   if (is_far_target(d)) {
-    relocate(rt);
+    relocate(rspec);
     AddressLiteral dest(d);
     jumpl_to(dest, O7, O7);
   } else {
-    Assembler::call(d, rt);
+    Assembler::call(d, rspec);
   }
 #else
-  Assembler::call( d, rt );
+  Assembler::call( d, rspec );
 #endif
 }
 

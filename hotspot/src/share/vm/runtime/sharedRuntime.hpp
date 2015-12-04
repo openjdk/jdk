@@ -343,6 +343,8 @@ class SharedRuntime: AllStatic {
                                         Bytecodes::Code& bc,
                                         CallInfo& callinfo, TRAPS);
 
+  static methodHandle extract_attached_method(vframeStream& vfst);
+
   static address clean_virtual_call_entry();
   static address clean_opt_virtual_call_entry();
   static address clean_static_call_entry();

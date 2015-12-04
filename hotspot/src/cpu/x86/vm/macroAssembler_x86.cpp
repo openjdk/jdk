@@ -2260,8 +2260,8 @@ void MacroAssembler::call(AddressLiteral entry) {
   }
 }
 
-void MacroAssembler::ic_call(address entry) {
-  RelocationHolder rh = virtual_call_Relocation::spec(pc());
+void MacroAssembler::ic_call(address entry, jint method_index) {
+  RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
   movptr(rax, (intptr_t)Universe::non_oop_word());
   call(AddressLiteral(entry, rh));
 }

@@ -707,7 +707,8 @@ const RegMask &MachCallNode::in_RegMask(uint idx) const {
 uint MachCallJavaNode::size_of() const { return sizeof(*this); }
 uint MachCallJavaNode::cmp( const Node &n ) const {
   MachCallJavaNode &call = (MachCallJavaNode&)n;
-  return MachCallNode::cmp(call) && _method->equals(call._method);
+  return MachCallNode::cmp(call) && _method->equals(call._method) &&
+         _override_symbolic_info == call._override_symbolic_info;
 }
 #ifndef PRODUCT
 void MachCallJavaNode::dump_spec(outputStream *st) const {

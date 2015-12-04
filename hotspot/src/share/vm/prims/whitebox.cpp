@@ -1290,6 +1290,11 @@ WB_ENTRY(jlong, WB_GetConstantPool(JNIEnv* env, jobject wb, jclass klass))
   return (jlong) ikh->constants();
 WB_END
 
+WB_ENTRY(void, WB_ClearInlineCaches(JNIEnv* env, jobject wb))
+  VM_ClearICs clear_ics;
+  VMThread::execute(&clear_ics);
+WB_END
+
 template <typename T>
 static bool GetMethodOption(JavaThread* thread, JNIEnv* env, jobject method, jstring name, T* value) {
   assert(value != NULL, "sanity");
@@ -1615,6 +1620,7 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_GetMethodStringOption},
   {CC"isShared",           CC"(Ljava/lang/Object;)Z", (void*)&WB_IsShared },
   {CC"areSharedStringsIgnored",           CC"()Z",    (void*)&WB_AreSharedStringsIgnored },
+  {CC"clearInlineCaches",  CC"()V",                   (void*)&WB_ClearInlineCaches },
 };
 
 #undef CC

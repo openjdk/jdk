@@ -1054,6 +1054,11 @@
    do_name(     isCompileConstant_name,                          "isCompileConstant")                                   \
    do_alias(    isCompileConstant_signature,                      object_boolean_signature)                             \
                                                                                                                         \
+  do_class(sun_hotspot_WhiteBox,                                 "sun/hotspot/WhiteBox")                                \
+  do_intrinsic(_deoptimize,          sun_hotspot_WhiteBox,        deoptimize_name, deoptimize_signature, F_R)           \
+   do_name(     deoptimize_name,                                 "deoptimize")                                          \
+   do_alias(    deoptimize_signature,                             void_method_signature)                                \
+                                                                                                                        \
   /* unsafe memory references (there are a lot of them...) */                                                           \
   do_signature(getObject_signature,       "(Ljava/lang/Object;J)Ljava/lang/Object;")                                    \
   do_signature(putObject_signature,       "(Ljava/lang/Object;JLjava/lang/Object;)V")                                   \

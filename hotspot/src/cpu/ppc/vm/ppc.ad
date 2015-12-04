@@ -3396,11 +3396,13 @@ encode %{
         }
         const int     entry_point_toc_offset = __ offset_to_method_toc(entry_point_toc_addr);
 
+
         // Emit the trampoline stub which will be related to the branch-and-link below.
         CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, start_offset);
         if (ciEnv::current()->failing()) { return; } // Code cache may be full.
-        __ relocate(_optimized_virtual ?
-                    relocInfo::opt_virtual_call_type : relocInfo::static_call_type);
+        int method_index = resolved_method_index(cbuf);
+        __ relocate(_optimized_virtual ? opt_virtual_call_Relocate::spec(method_index)
+                                       : static_call_Relocate::spec(method_index));
       }
 
       // The real call.
@@ -3450,8 +3452,8 @@ encode %{
       const address virtual_call_oop_addr = __ addr_at(virtual_call_oop_addr_offset);
       assert(MacroAssembler::is_load_const_from_method_toc_at(virtual_call_oop_addr),
              "should be load from TOC");
-
-      __ relocate(virtual_call_Relocation::spec(virtual_call_oop_addr));
+      int method_index = resolved_method_index(cbuf);
+      __ relocate(virtual_call_Relocation::spec(virtual_call_oop_addr, method_index));
     }
 
     // At this point I do not have the address of the trampoline stub,

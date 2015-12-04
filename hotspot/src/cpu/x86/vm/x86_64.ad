@@ -2120,22 +2120,15 @@ encode %{
     $$$emit8$primary;
 
     if (!_method) {
-      emit_d32_reloc(cbuf,
-                     (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
+      emit_d32_reloc(cbuf, (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
                      runtime_call_Relocation::spec(),
                      RELOC_DISP32);
-    } else if (_optimized_virtual) {
-      emit_d32_reloc(cbuf,
-                     (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
-                     opt_virtual_call_Relocation::spec(),
-                     RELOC_DISP32);
     } else {
-      emit_d32_reloc(cbuf,
-                     (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
-                     static_call_Relocation::spec(),
-                     RELOC_DISP32);
-    }
-    if (_method) {
+      int method_index = resolved_method_index(cbuf);
+      RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
+                                                  : static_call_Relocation::spec(method_index);
+      emit_d32_reloc(cbuf, (int) ($meth$$method - ((intptr_t) cbuf.insts_end()) - 4),
+                     rspec, RELOC_DISP32);
       // Emit stubs for static call.
       address mark = cbuf.insts_mark();
       address stub = CompiledStaticCall::emit_to_interp_stub(cbuf, mark);
@@ -2148,7 +2141,7 @@ encode %{
 
   enc_class Java_Dynamic_Call(method meth) %{
     MacroAssembler _masm(&cbuf);
-    __ ic_call((address)$meth$$method);
+    __ ic_call((address)$meth$$method, resolved_method_index(cbuf));
   %}
 
   enc_class Java_Compiled_Call(method meth)
