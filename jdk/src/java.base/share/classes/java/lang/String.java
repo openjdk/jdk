@@ -1720,7 +1720,6 @@ public final class String
      */
     static int indexOf(byte[] src, byte srcCoder, int srcCount,
                        String tgtStr, int fromIndex) {
-
         byte[] tgt    = tgtStr.value;
         byte tgtCoder = tgtStr.coder();
         int tgtCount  = tgtStr.length();
@@ -3103,7 +3102,7 @@ public final class String
      *          If {@code offset} is negative, {@code count} is negative,
      *          or {@code offset} is greater than {@code length - count}
      */
-    private static void checkBoundsOffCount(int offset, int count, int length) {
+    static void checkBoundsOffCount(int offset, int count, int length) {
         if (offset < 0 || count < 0 || offset > length - count) {
             throw new StringIndexOutOfBoundsException(
                 "offset " + offset + ", count " + count + ", length " + length);
