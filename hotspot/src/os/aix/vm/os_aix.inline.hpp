@@ -36,10 +36,6 @@
 #include <sys/ioctl.h>
 #include <netdb.h>
 
-inline void* os::thread_local_storage_at(int index) {
-  return pthread_getspecific((pthread_key_t)index);
-}
-
 // File names are case-sensitive on windows only.
 inline int os::file_name_strcmp(const char* s1, const char* s2) {
   return strcmp(s1, s2);

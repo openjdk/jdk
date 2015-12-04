@@ -670,12 +670,6 @@ class os: AllStatic {
   static jlong current_file_offset(int fd);
   static jlong seek_to_file_offset(int fd, jlong offset);
 
-  // Thread Local Storage
-  static int   allocate_thread_local_storage();
-  static void  thread_local_storage_at_put(int index, void* value);
-  static void* thread_local_storage_at(int index);
-  static void  free_thread_local_storage(int index);
-
   // Retrieve native stack frames.
   // Parameter:
   //   stack:  an array to storage stack pointers.

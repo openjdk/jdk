@@ -728,6 +728,9 @@ extern "C" void* java_start(void* thread_addr) {
 
   int prio;
   Thread* thread = (Thread*)thread_addr;
+
+  thread->initialize_thread_current();
+
   OSThread* osthr = thread->osthread();
 
   osthr->set_lwp_id(_lwp_self());  // Store lwp in case we are bound
@@ -5579,7 +5582,7 @@ int os::fork_and_exec(char* cmd) {
 
   // fork is async-safe, fork1 is not so can't use in signal handler
   pid_t pid;
-  Thread* t = ThreadLocalStorage::get_thread_slow();
+  Thread* t = Thread::current_or_null_safe();
   if (t != NULL && t->is_inside_signal_handler()) {
     pid = fork();
   } else {
