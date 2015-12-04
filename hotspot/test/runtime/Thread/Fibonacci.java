@@ -29,7 +29,7 @@
  *     make this test inherently unstable on Windows with 32-bit VM data model.
  * @requires !(os.family == "windows" & sun.arch.data.model == "32")
  * @library /testlibrary
- * @run main Fibonacci 15
+ * @run main/othervm Fibonacci 15
  */
 
 import jdk.test.lib.Asserts;
