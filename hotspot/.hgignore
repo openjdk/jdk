@@ -11,7 +11,12 @@
 ^.hgtip
 .DS_Store
 \.class$
-^\.?mx.jvmci/
+^\.mx.jvmci/env
+^\.mx.jvmci/.*\.pyc
+^\.mx.jvmci/eclipse-launches/.*
+^\.mx.jvmci/hotspot/eclipse/.*
+^\.idea/
+^workingsets.xml
 ^src/jdk.vm.ci/share/classes/\w[\w\.]*/.*\.xml
 ^src/jdk.vm.ci/share/classes/\w[\w\.]*/.*\.iml
 ^src/jdk.vm.ci/share/classes/\w[\w\.]*/nbproject

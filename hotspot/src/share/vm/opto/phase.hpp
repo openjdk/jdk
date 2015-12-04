@@ -42,22 +42,23 @@ class PhaseGVN;
 class Phase : public StackObj {
 public:
   enum PhaseNumber {
-    Compiler,                   // Top-level compiler phase
-    Parser,                     // Parse bytecodes
-    Remove_Useless,             // Remove useless nodes
-    Optimistic,                 // Optimistic analysis phase
-    GVN,                        // Pessimistic global value numbering phase
-    Ins_Select,                 // Instruction selection phase
-    CFG,                        // Build a CFG
-    BlockLayout,                // Linear ordering of blocks
-    Register_Allocation,        // Register allocation, duh
-    LIVE,                       // Dragon-book LIVE range problem
-    StringOpts,                 // StringBuilder related optimizations
-    Interference_Graph,         // Building the IFG
-    Coalesce,                   // Coalescing copies
-    Ideal_Loop,                 // Find idealized trip-counted loops
-    Macro_Expand,               // Expand macro nodes
-    Peephole,                   // Apply peephole optimizations
+    Compiler,                         // Top-level compiler phase
+    Parser,                           // Parse bytecodes
+    Remove_Useless,                   // Remove useless nodes
+    Remove_Useless_And_Renumber_Live, // First, remove useless nodes from the graph. Then, renumber live nodes.
+    Optimistic,                       // Optimistic analysis phase
+    GVN,                              // Pessimistic global value numbering phase
+    Ins_Select,                       // Instruction selection phase
+    CFG,                              // Build a CFG
+    BlockLayout,                      // Linear ordering of blocks
+    Register_Allocation,              // Register allocation, duh
+    LIVE,                             // Dragon-book LIVE range problem
+    StringOpts,                       // StringBuilder related optimizations
+    Interference_Graph,               // Building the IFG
+    Coalesce,                         // Coalescing copies
+    Ideal_Loop,                       // Find idealized trip-counted loops
+    Macro_Expand,                     // Expand macro nodes
+    Peephole,                         // Apply peephole optimizations
     last_phase
   };
 
@@ -73,6 +74,7 @@ public:
         _t_incrInline_igvn,
         _t_incrInline_pru,
         _t_incrInline_inline,
+      _t_renumberLive,
       _t_idealLoop,
       _t_idealLoopVerify,
       _t_ccp,

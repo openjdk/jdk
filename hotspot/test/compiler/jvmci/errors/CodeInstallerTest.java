@@ -68,6 +68,7 @@ public class CodeInstallerTest {
     }
 
     protected void installCode(CompilationResult result) {
+        result.close();
         codeCache.addCode(dummyMethod, result, null, null);
     }
 
