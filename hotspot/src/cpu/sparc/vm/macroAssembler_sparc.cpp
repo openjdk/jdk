@@ -181,19 +181,6 @@ void MacroAssembler::null_check(Register reg, int offset) {
 
 // Ring buffer jumps
 
-#ifndef PRODUCT
-void MacroAssembler::ret(  bool trace )   { if (trace) {
-                                                    mov(I7, O7); // traceable register
-                                                    JMP(O7, 2 * BytesPerInstWord);
-                                                  } else {
-                                                    jmpl( I7, 2 * BytesPerInstWord, G0 );
-                                                  }
-                                                }
-
-void MacroAssembler::retl( bool trace )  { if (trace) JMP(O7, 2 * BytesPerInstWord);
-                                                 else jmpl( O7, 2 * BytesPerInstWord, G0 ); }
-#endif /* PRODUCT */
-
 
 void MacroAssembler::jmp2(Register r1, Register r2, const char* file, int line ) {
   assert_not_delayed();
