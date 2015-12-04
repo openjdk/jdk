@@ -978,18 +978,22 @@ void nmethod::print_nmethod(bool printmethod) {
       oop_maps()->print();
     }
   }
-  if (PrintDebugInfo || CompilerOracle::has_option_string(_method, "PrintDebugInfo")) {
+  if (printmethod || PrintDebugInfo || CompilerOracle::has_option_string(_method, "PrintDebugInfo")) {
     print_scopes();
   }
-  if (PrintRelocations || CompilerOracle::has_option_string(_method, "PrintRelocations")) {
+  if (printmethod || PrintRelocations || CompilerOracle::has_option_string(_method, "PrintRelocations")) {
     print_relocations();
   }
-  if (PrintDependencies || CompilerOracle::has_option_string(_method, "PrintDependencies")) {
+  if (printmethod || PrintDependencies || CompilerOracle::has_option_string(_method, "PrintDependencies")) {
     print_dependencies();
   }
-  if (PrintExceptionHandlers) {
+  if (printmethod || PrintExceptionHandlers) {
     print_handler_table();
     print_nul_chk_table();
+  }
+  if (printmethod) {
+    print_recorded_oops();
+    print_recorded_metadata();
   }
   if (xtty != NULL) {
     xtty->tail("print_nmethod");
@@ -3013,6 +3017,26 @@ void nmethod::print_pcs() {
   }
 }
 
+void nmethod::print_recorded_oops() {
+  tty->print_cr("Recorded oops:");
+  for (int i = 0; i < oops_count(); i++) {
+    oop o = oop_at(i);
+    tty->print("#%3d: " INTPTR_FORMAT " ", i, p2i(o));
+    o->print_value();
+    tty->cr();
+  }
+}
+
+void nmethod::print_recorded_metadata() {
+  tty->print_cr("Recorded metadata:");
+  for (int i = 0; i < metadata_count(); i++) {
+    Metadata* m = metadata_at(i);
+    tty->print("#%3d: " INTPTR_FORMAT " ", i, p2i(m));
+    m->print_value_on_maybe_null(tty);
+    tty->cr();
+  }
+}
+
 #endif // PRODUCT
 
 const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
@@ -3053,9 +3077,39 @@ const char* nmethod::reloc_string_for(u_char* begin, u_char* end) {
           }
           return st.as_string();
         }
-        case relocInfo::virtual_call_type:     return "virtual_call";
-        case relocInfo::opt_virtual_call_type: return "optimized virtual_call";
-        case relocInfo::static_call_type:      return "static_call";
+        case relocInfo::virtual_call_type: {
+          stringStream st;
+          st.print_raw("virtual_call");
+          virtual_call_Relocation* r = iter.virtual_call_reloc();
+          Method* m = r->method_value();
+          if (m != NULL) {
+            assert(m->is_method(), "");
+            m->print_short_name(&st);
+          }
+          return st.as_string();
+        }
+        case relocInfo::opt_virtual_call_type: {
+          stringStream st;
+          st.print_raw("optimized virtual_call");
+          opt_virtual_call_Relocation* r = iter.opt_virtual_call_reloc();
+          Method* m = r->method_value();
+          if (m != NULL) {
+            assert(m->is_method(), "");
+            m->print_short_name(&st);
+          }
+          return st.as_string();
+        }
+        case relocInfo::static_call_type: {
+          stringStream st;
+          st.print_raw("static_call");
+          static_call_Relocation* r = iter.static_call_reloc();
+          Method* m = r->method_value();
+          if (m != NULL) {
+            assert(m->is_method(), "");
+            m->print_short_name(&st);
+          }
+          return st.as_string();
+        }
         case relocInfo::static_stub_type:      return "static_stub";
         case relocInfo::external_word_type:    return "external_word";
         case relocInfo::internal_word_type:    return "internal_word";
@@ -3393,3 +3447,19 @@ char* nmethod::jvmci_installed_code_name(char* buf, size_t buflen) {
   return buf;
 }
 #endif
+
+Method* nmethod::attached_method(address call_instr) {
+  assert(code_contains(call_instr), "not part of the nmethod");
+  RelocIterator iter(this, call_instr, call_instr + 1);
+  while (iter.next()) {
+    if (iter.addr() == call_instr) {
+      switch(iter.type()) {
+        case relocInfo::static_call_type:      return iter.static_call_reloc()->method_value();
+        case relocInfo::opt_virtual_call_type: return iter.opt_virtual_call_reloc()->method_value();
+        case relocInfo::virtual_call_type:     return iter.virtual_call_reloc()->method_value();
+      }
+    }
+  }
+  return NULL; // not found
+}
+

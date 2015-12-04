@@ -732,8 +732,8 @@ address MacroAssembler::emit_trampoline_stub(int insts_call_instruction_offset,
   return stub;
 }
 
-address MacroAssembler::ic_call(address entry) {
-  RelocationHolder rh = virtual_call_Relocation::spec(pc());
+address MacroAssembler::ic_call(address entry, jint method_index) {
+  RelocationHolder rh = virtual_call_Relocation::spec(pc(), method_index);
   // address const_ptr = long_constant((jlong)Universe::non_oop_word());
   // unsigned long offset;
   // ldr_constant(rscratch2, const_ptr);

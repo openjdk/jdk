@@ -1044,26 +1044,30 @@ class virtual_call_Relocation : public CallRelocation {
   // "cached_value" points to the first associated set-oop.
   // The oop_limit helps find the last associated set-oop.
   // (See comments at the top of this file.)
-  static RelocationHolder spec(address cached_value) {
+  static RelocationHolder spec(address cached_value, jint method_index = 0) {
     RelocationHolder rh = newHolder();
-    new(rh) virtual_call_Relocation(cached_value);
+    new(rh) virtual_call_Relocation(cached_value, method_index);
     return rh;
   }
 
-  virtual_call_Relocation(address cached_value) {
+ private:
+  address _cached_value; // location of set-value instruction
+  jint    _method_index; // resolved method for a Java call
+
+  virtual_call_Relocation(address cached_value, int method_index) {
     _cached_value = cached_value;
+    _method_index = method_index;
     assert(cached_value != NULL, "first oop address must be specified");
   }
-
- private:
-  address _cached_value;               // location of set-value instruction
 
   friend class RelocIterator;
   virtual_call_Relocation() { }
 
-
  public:
   address cached_value();
+
+  int     method_index() { return _method_index; }
+  Method* method_value();
 
   // data is packed as scaled offsets in "2_ints" format:  [f l] or [Ff Ll]
   // oop_limit is set to 0 if the limit falls somewhere within the call.
@@ -1080,17 +1084,29 @@ class opt_virtual_call_Relocation : public CallRelocation {
   relocInfo::relocType type() { return relocInfo::opt_virtual_call_type; }
 
  public:
-  static RelocationHolder spec() {
+  static RelocationHolder spec(int method_index = 0) {
     RelocationHolder rh = newHolder();
-    new(rh) opt_virtual_call_Relocation();
+    new(rh) opt_virtual_call_Relocation(method_index);
     return rh;
   }
 
  private:
+  jint _method_index; // resolved method for a Java call
+
+  opt_virtual_call_Relocation(int method_index) {
+    _method_index = method_index;
+  }
+
   friend class RelocIterator;
-  opt_virtual_call_Relocation() { }
+  opt_virtual_call_Relocation() {}
 
  public:
+  int     method_index() { return _method_index; }
+  Method* method_value();
+
+  void pack_data_to(CodeSection* dest);
+  void unpack_data();
+
   void clear_inline_cache();
 
   // find the matching static_stub
@@ -1102,17 +1118,29 @@ class static_call_Relocation : public CallRelocation {
   relocInfo::relocType type() { return relocInfo::static_call_type; }
 
  public:
-  static RelocationHolder spec() {
+  static RelocationHolder spec(int method_index = 0) {
     RelocationHolder rh = newHolder();
-    new(rh) static_call_Relocation();
+    new(rh) static_call_Relocation(method_index);
     return rh;
   }
 
  private:
+  jint _method_index; // resolved method for a Java call
+
+  static_call_Relocation(int method_index) {
+    _method_index = method_index;
+  }
+
   friend class RelocIterator;
-  static_call_Relocation() { }
+  static_call_Relocation() {}
 
  public:
+  int     method_index() { return _method_index; }
+  Method* method_value();
+
+  void pack_data_to(CodeSection* dest);
+  void unpack_data();
+
   void clear_inline_cache();
 
   // find the matching static_stub

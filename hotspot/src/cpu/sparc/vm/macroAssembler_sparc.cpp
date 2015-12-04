@@ -770,8 +770,8 @@ void MacroAssembler::set_vm_result(Register oop_result) {
 }
 
 
-void MacroAssembler::ic_call(address entry, bool emit_delay) {
-  RelocationHolder rspec = virtual_call_Relocation::spec(pc());
+void MacroAssembler::ic_call(address entry, bool emit_delay, jint method_index) {
+  RelocationHolder rspec = virtual_call_Relocation::spec(pc(), method_index);
   patchable_set((intptr_t)Universe::non_oop_word(), G5_inline_cache_reg);
   relocate(rspec);
   call(entry, relocInfo::none);
@@ -779,7 +779,6 @@ void MacroAssembler::ic_call(address entry, bool emit_delay) {
     delayed()->nop();
   }
 }
-
 
 void MacroAssembler::card_table_write(jbyte* byte_map_base,
                                       Register tmp, Register obj) {

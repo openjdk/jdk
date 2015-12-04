@@ -850,7 +850,7 @@ class MacroAssembler: public Assembler {
   void call(AddressLiteral entry);
 
   // Emit the CompiledIC call idiom
-  void ic_call(address entry);
+  void ic_call(address entry, jint method_index = 0);
 
   // Jumps
 

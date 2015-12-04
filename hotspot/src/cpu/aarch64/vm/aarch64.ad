@@ -4667,17 +4667,12 @@ encode %{
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
       call = __ trampoline_call(Address(addr, relocInfo::runtime_call_type), &cbuf);
-    } else if (_optimized_virtual) {
-      call = __ trampoline_call(Address(addr, relocInfo::opt_virtual_call_type), &cbuf);
     } else {
-      call = __ trampoline_call(Address(addr, relocInfo::static_call_type), &cbuf);
-    }
-    if (call == NULL) {
-      ciEnv::current()->record_failure("CodeCache is full");
-      return;
-    }
+      int method_index = resolved_method_index(cbuf);
+      RelocationHolder rspec = _optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
+                                                  : static_call_Relocation::spec(method_index);
+      call = __ trampoline_call(Address(addr, rspec), &cbuf);
 
-    if (_method) {
       // Emit stub for static call
       address stub = CompiledStaticCall::emit_to_interp_stub(cbuf);
       if (stub == NULL) {
@@ -4685,11 +4680,16 @@ encode %{
         return;
       }
     }
+    if (call == NULL) {
+      ciEnv::current()->record_failure("CodeCache is full");
+      return;
+    }
   %}
 
   enc_class aarch64_enc_java_dynamic_call(method meth) %{
     MacroAssembler _masm(&cbuf);
-    address call = __ ic_call((address)$meth$$method);
+    int method_index = resolved_method_index(cbuf);
+    address call = __ ic_call((address)$meth$$method, method_index);
     if (call == NULL) {
       ciEnv::current()->record_failure("CodeCache is full");
       return;

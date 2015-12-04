@@ -1070,6 +1070,21 @@ Handle SharedRuntime::find_callee_info(JavaThread* thread, Bytecodes::Code& bc, 
   return find_callee_info_helper(thread, vfst, bc, callinfo, THREAD);
 }
 
+methodHandle SharedRuntime::extract_attached_method(vframeStream& vfst) {
+  nmethod* caller_nm = vfst.nm();
+
+  nmethodLocker caller_lock(caller_nm);
+
+  address pc = vfst.frame_pc();
+  { // Get call instruction under lock because another thread may be busy patching it.
+    MutexLockerEx ml_patch(Patching_lock, Mutex::_no_safepoint_check_flag);
+    if (NativeCall::is_call_before(pc)) {
+      NativeCall* ncall = nativeCall_before(pc);
+      return caller_nm->attached_method(ncall->instruction_address());
+    }
+  }
+  return NULL;
+}
 
 // Finds receiver, CallInfo (i.e. receiver method), and calling bytecode
 // for a call current in progress, i.e., arguments has been pushed on stack
@@ -1087,15 +1102,37 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
   methodHandle caller(THREAD, vfst.method());
   int          bci   = vfst.bci();
 
-  // Find bytecode
   Bytecode_invoke bytecode(caller, bci);
-  bc = bytecode.invoke_code();
   int bytecode_index = bytecode.index();
 
+  methodHandle attached_method = extract_attached_method(vfst);
+  if (attached_method.not_null()) {
+    methodHandle callee = bytecode.static_target(CHECK_NH);
+    vmIntrinsics::ID id = callee->intrinsic_id();
+    // When VM replaces MH.invokeBasic/linkTo* call with a direct/virtual call,
+    // it attaches statically resolved method to the call site.
+    if (MethodHandles::is_signature_polymorphic(id) &&
+        MethodHandles::is_signature_polymorphic_intrinsic(id)) {
+      bc = MethodHandles::signature_polymorphic_intrinsic_bytecode(id);
+
+      // Need to adjust invokehandle since inlining through signature-polymorphic
+      // method happened.
+      if (bc == Bytecodes::_invokehandle &&
+          !MethodHandles::is_signature_polymorphic_method(attached_method())) {
+        bc = attached_method->is_static() ? Bytecodes::_invokestatic
+                                          : Bytecodes::_invokevirtual;
+      }
+    }
+  } else {
+    bc = bytecode.invoke_code();
+  }
+
+  bool has_receiver = bc != Bytecodes::_invokestatic &&
+                      bc != Bytecodes::_invokedynamic &&
+                      bc != Bytecodes::_invokehandle;
+
   // Find receiver for non-static call
-  if (bc != Bytecodes::_invokestatic &&
-      bc != Bytecodes::_invokedynamic &&
-      bc != Bytecodes::_invokehandle) {
+  if (has_receiver) {
     // This register map must be update since we need to find the receiver for
     // compiled frames. The receiver might be in a register.
     RegisterMap reg_map2(thread);
@@ -1103,10 +1140,13 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
     // Caller-frame is a compiled frame
     frame callerFrame = stubFrame.sender(&reg_map2);
 
-    methodHandle callee = bytecode.static_target(CHECK_(nullHandle));
-    if (callee.is_null()) {
-      THROW_(vmSymbols::java_lang_NoSuchMethodException(), nullHandle);
+    if (attached_method.is_null()) {
+      methodHandle callee = bytecode.static_target(CHECK_NH);
+      if (callee.is_null()) {
+        THROW_(vmSymbols::java_lang_NoSuchMethodException(), nullHandle);
+      }
     }
+
     // Retrieve from a compiled argument list
     receiver = Handle(THREAD, callerFrame.retrieve_receiver(&reg_map2));
 
@@ -1115,26 +1155,35 @@ Handle SharedRuntime::find_callee_info_helper(JavaThread* thread,
     }
   }
 
-  // Resolve method. This is parameterized by bytecode.
-  constantPoolHandle constants(THREAD, caller->constants());
   assert(receiver.is_null() || receiver->is_oop(), "wrong receiver");
-  LinkResolver::resolve_invoke(callinfo, receiver, constants, bytecode_index, bc, CHECK_(nullHandle));
+
+  // Resolve method
+  if (attached_method.not_null()) {
+    // Parameterized by attached method.
+    LinkResolver::resolve_invoke(callinfo, receiver, attached_method, bc, CHECK_NH);
+  } else {
+    // Parameterized by bytecode.
+    constantPoolHandle constants(THREAD, caller->constants());
+    LinkResolver::resolve_invoke(callinfo, receiver, constants, bytecode_index, bc, CHECK_NH);
+  }
 
 #ifdef ASSERT
   // Check that the receiver klass is of the right subtype and that it is initialized for virtual calls
-  if (bc != Bytecodes::_invokestatic && bc != Bytecodes::_invokedynamic && bc != Bytecodes::_invokehandle) {
+  if (has_receiver) {
     assert(receiver.not_null(), "should have thrown exception");
     KlassHandle receiver_klass(THREAD, receiver->klass());
-    Klass* rk = constants->klass_ref_at(bytecode_index, CHECK_(nullHandle));
-                            // klass is already loaded
+    Klass* rk = NULL;
+    if (attached_method.not_null()) {
+      // In case there's resolved method attached, use its holder during the check.
+      rk = attached_method->method_holder();
+    } else {
+      // Klass is already loaded.
+      constantPoolHandle constants(THREAD, caller->constants());
+      rk = constants->klass_ref_at(bytecode_index, CHECK_NH);
+    }
     KlassHandle static_receiver_klass(THREAD, rk);
-    // Method handle invokes might have been optimized to a direct call
-    // so don't check for the receiver class.
-    // FIXME this weakens the assert too much
     methodHandle callee = callinfo.selected_method();
-    assert(receiver_klass->is_subtype_of(static_receiver_klass()) ||
-           callee->is_method_handle_intrinsic() ||
-           callee->is_compiled_lambda_form(),
+    assert(receiver_klass->is_subtype_of(static_receiver_klass()),
            "actual receiver must be subclass of static receiver klass");
     if (receiver_klass->is_instance_klass()) {
       if (InstanceKlass::cast(receiver_klass())->is_not_initialized()) {
@@ -1670,7 +1719,6 @@ methodHandle SharedRuntime::reresolve_call_site(JavaThread *thread, TRAPS) {
         inline_cache->set_to_clean();
       }
     }
-
   }
 
   methodHandle callee_method = find_callee_method(thread, CHECK_(methodHandle()));

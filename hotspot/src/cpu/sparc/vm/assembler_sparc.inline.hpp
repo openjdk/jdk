@@ -76,6 +76,8 @@ inline void Assembler::cbcond(Condition c, CC cc, Register s1, int simm5, Label&
 inline void Assembler::call( address d,  relocInfo::relocType rt ) { insert_nop_after_cbcond(); cti();  emit_data( op(call_op) | wdisp(intptr_t(d), intptr_t(pc()), 30), rt);  has_delay_slot(); assert(rt != relocInfo::virtual_call_type, "must use virtual_call_Relocation::spec"); }
 inline void Assembler::call( Label& L,   relocInfo::relocType rt ) { insert_nop_after_cbcond(); call( target(L), rt); }
 
+inline void Assembler::call( address d,  RelocationHolder const& rspec ) { insert_nop_after_cbcond(); cti();  emit_data( op(call_op) | wdisp(intptr_t(d), intptr_t(pc()), 30), rspec);  has_delay_slot(); assert(rspec.type() != relocInfo::virtual_call_type, "must use virtual_call_Relocation::spec"); }
+
 inline void Assembler::flush( Register s1, Register s2) { emit_int32( op(arith_op) | op3(flush_op3) | rs1(s1) | rs2(s2)); }
 inline void Assembler::flush( Register s1, int simm13a) { emit_data( op(arith_op) | op3(flush_op3) | rs1(s1) | immed(true) | simm(simm13a, 13)); }
 

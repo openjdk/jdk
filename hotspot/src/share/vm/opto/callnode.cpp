@@ -959,7 +959,8 @@ bool CallNode::is_call_to_arraycopystub() const {
 uint CallJavaNode::size_of() const { return sizeof(*this); }
 uint CallJavaNode::cmp( const Node &n ) const {
   CallJavaNode &call = (CallJavaNode&)n;
-  return CallNode::cmp(call) && _method == call._method;
+  return CallNode::cmp(call) && _method == call._method &&
+         _override_symbolic_info == call._override_symbolic_info;
 }
 #ifndef PRODUCT
 void CallJavaNode::dump_spec(outputStream *st) const {

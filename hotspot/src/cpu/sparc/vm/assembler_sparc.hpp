@@ -816,6 +816,8 @@ public:
   inline void call( address d,  relocInfo::relocType rt = relocInfo::runtime_call_type );
   inline void call( Label& L,   relocInfo::relocType rt = relocInfo::runtime_call_type );
 
+  inline void call( address d,  RelocationHolder const& rspec );
+
  public:
 
   // pp 150
