@@ -219,13 +219,6 @@ public class TestInvalidCompilationResult extends CodeInstallerTest {
     }
 
     @Test(expected = JVMCIError.class)
-    public void testUnknownInfopointReason() {
-        CompilationResult result = createEmptyCompilationResult();
-        result.addInfopoint(new Infopoint(0, null, InfopointReason.UNKNOWN));
-        installCode(result);
-    }
-
-    @Test(expected = JVMCIError.class)
     public void testInfopointMissingDebugInfo() {
         CompilationResult result = createEmptyCompilationResult();
         result.addInfopoint(new Infopoint(0, null, InfopointReason.METHOD_START));

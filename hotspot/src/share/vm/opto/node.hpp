@@ -293,10 +293,16 @@ protected:
 
  public:
   // Each Node is assigned a unique small/dense number.  This number is used
-  // to index into auxiliary arrays of data and bitvectors.
-  // It is declared const to defend against inadvertant assignment,
-  // since it is used by clients as a naked field.
+  // to index into auxiliary arrays of data and bit vectors.
+  // The field _idx is declared constant to defend against inadvertent assignments,
+  // since it is used by clients as a naked field. However, the field's value can be
+  // changed using the set_idx() method.
+  //
+  // The PhaseRenumberLive phase renumbers nodes based on liveness information.
+  // Therefore, it updates the value of the _idx field. The parse-time _idx is
+  // preserved in _parse_idx.
   const node_idx_t _idx;
+  DEBUG_ONLY(const node_idx_t _parse_idx;)
 
   // Get the (read-only) number of input edges
   uint req() const { return _cnt; }
