@@ -84,24 +84,6 @@ oop CompilerToVM::get_jvmci_type(KlassHandle klass, TRAPS) {
   return NULL;
 }
 
-void CompilerToVM::invalidate_installed_code(Handle installedCode, TRAPS) {
-  if (installedCode() == NULL) {
-    THROW(vmSymbols::java_lang_NullPointerException());
-  }
-  jlong nativeMethod = InstalledCode::address(installedCode);
-  nmethod* nm = (nmethod*)nativeMethod;
-  assert(nm == NULL || nm->jvmci_installed_code() == installedCode(), "sanity check");
-  if (nm != NULL && nm->is_alive()) {
-    // The nmethod state machinery maintains the link between the
-    // HotSpotInstalledCode and nmethod* so as long as the nmethod appears to be
-    // alive assume there is work to do and deoptimize the nmethod.
-    nm->mark_for_deoptimization();
-    VM_Deoptimize op;
-    VMThread::execute(&op);
-  }
-  InstalledCode::set_address(installedCode, 0);
-}
-
 extern "C" {
 extern VMStructEntry* gHotSpotVMStructs;
 extern uint64_t gHotSpotVMStructEntryTypeNameOffset;
@@ -688,18 +670,22 @@ C2V_VMENTRY(jint, installCode, (JNIEnv *jniEnv, jobject, jobject target, jobject
   } else {
     if (!installed_code_handle.is_null()) {
       assert(installed_code_handle->is_a(InstalledCode::klass()), "wrong type");
-      CompilerToVM::invalidate_installed_code(installed_code_handle, CHECK_0);
-      InstalledCode::set_address(installed_code_handle, (jlong) cb);
-      InstalledCode::set_version(installed_code_handle, InstalledCode::version(installed_code_handle) + 1);
-      if (cb->is_nmethod()) {
-        InstalledCode::set_entryPoint(installed_code_handle, (jlong) cb->as_nmethod_or_null()->verified_entry_point());
-      } else {
-        InstalledCode::set_entryPoint(installed_code_handle, (jlong) cb->code_begin());
-      }
-      if (installed_code_handle->is_a(HotSpotInstalledCode::klass())) {
-        HotSpotInstalledCode::set_size(installed_code_handle, cb->size());
-        HotSpotInstalledCode::set_codeStart(installed_code_handle, (jlong) cb->code_begin());
-        HotSpotInstalledCode::set_codeSize(installed_code_handle, cb->code_size());
+      nmethod::invalidate_installed_code(installed_code_handle, CHECK_0);
+      {
+        // Ensure that all updates to the InstalledCode fields are consistent.
+        MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+        InstalledCode::set_address(installed_code_handle, (jlong) cb);
+        InstalledCode::set_version(installed_code_handle, InstalledCode::version(installed_code_handle) + 1);
+        if (cb->is_nmethod()) {
+          InstalledCode::set_entryPoint(installed_code_handle, (jlong) cb->as_nmethod_or_null()->verified_entry_point());
+        } else {
+          InstalledCode::set_entryPoint(installed_code_handle, (jlong) cb->code_begin());
+        }
+        if (installed_code_handle->is_a(HotSpotInstalledCode::klass())) {
+          HotSpotInstalledCode::set_size(installed_code_handle, cb->size());
+          HotSpotInstalledCode::set_codeStart(installed_code_handle, (jlong) cb->code_begin());
+          HotSpotInstalledCode::set_codeSize(installed_code_handle, cb->code_size());
+        }
       }
       nmethod* nm = cb->as_nmethod_or_null();
       if (nm != NULL && installed_code_handle->is_scavengable()) {
@@ -971,7 +957,7 @@ C2V_END
 
 C2V_VMENTRY(void, invalidateInstalledCode, (JNIEnv*, jobject, jobject installed_code))
   Handle installed_code_handle = JNIHandles::resolve(installed_code);
-  CompilerToVM::invalidate_installed_code(installed_code_handle, CHECK);
+  nmethod::invalidate_installed_code(installed_code_handle, CHECK);
 C2V_END
 
 C2V_VMENTRY(jobject, readUncompressedOop, (JNIEnv*, jobject, jlong addr))
