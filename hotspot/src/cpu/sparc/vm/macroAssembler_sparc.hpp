@@ -720,8 +720,8 @@ class MacroAssembler : public Assembler {
   inline int get_pc( Register d );
 
   // Sparc shorthands(pp 85, V8 manual, pp 289 V9 manual)
-  inline void cmp(  Register s1, Register s2 ) { subcc( s1, s2, G0 ); }
-  inline void cmp(  Register s1, int simm13a ) { subcc( s1, simm13a, G0 ); }
+  inline void cmp(  Register s1, Register s2 );
+  inline void cmp(  Register s1, int simm13a );
 
   inline void jmp( Register s1, Register s2 );
   inline void jmp( Register s1, int simm13a, RelocationHolder const& rspec = RelocationHolder() );
@@ -741,23 +741,10 @@ class MacroAssembler : public Assembler {
   inline void iprefetch( address d, relocInfo::relocType rt = relocInfo::none );
   inline void iprefetch( Label& L);
 
-  inline void tst( Register s ) { orcc( G0, s, G0 ); }
+  inline void tst( Register s );
 
-#ifdef PRODUCT
-  inline void ret(  bool trace = TraceJumps )   { if (trace) {
-                                                    mov(I7, O7); // traceable register
-                                                    JMP(O7, 2 * BytesPerInstWord);
-                                                  } else {
-                                                    jmpl( I7, 2 * BytesPerInstWord, G0 );
-                                                  }
-                                                }
-
-  inline void retl( bool trace = TraceJumps )  { if (trace) JMP(O7, 2 * BytesPerInstWord);
-                                                 else jmpl( O7, 2 * BytesPerInstWord, G0 ); }
-#else
-  void ret(  bool trace = TraceJumps );
-  void retl( bool trace = TraceJumps );
-#endif /* PRODUCT */
+  inline void ret(  bool trace = TraceJumps );
+  inline void retl( bool trace = TraceJumps );
 
   // Required platform-specific helpers for Label::patch_instructions.
   // They _shadow_ the declarations in AbstractAssembler, which are undefined.
@@ -790,26 +777,20 @@ public:
   static int insts_for_set64(jlong value);
 
   // sign-extend 32 to 64
-  inline void signx( Register s, Register d ) { sra( s, G0, d); }
-  inline void signx( Register d )             { sra( d, G0, d); }
+  inline void signx( Register s, Register d );
+  inline void signx( Register d );
 
-  inline void not1( Register s, Register d ) { xnor( s, G0, d ); }
-  inline void not1( Register d )             { xnor( d, G0, d ); }
+  inline void not1( Register s, Register d );
+  inline void not1( Register d );
 
-  inline void neg( Register s, Register d ) { sub( G0, s, d ); }
-  inline void neg( Register d )             { sub( G0, d, d ); }
+  inline void neg( Register s, Register d );
+  inline void neg( Register d );
 
-  inline void cas(  Register s1, Register s2, Register d) { casa( s1, s2, d, ASI_PRIMARY); }
-  inline void casx( Register s1, Register s2, Register d) { casxa(s1, s2, d, ASI_PRIMARY); }
+  inline void cas(  Register s1, Register s2, Register d);
+  inline void casx( Register s1, Register s2, Register d);
   // Functions for isolating 64 bit atomic swaps for LP64
   // cas_ptr will perform cas for 32 bit VM's and casx for 64 bit VM's
-  inline void cas_ptr(  Register s1, Register s2, Register d) {
-#ifdef _LP64
-    casx( s1, s2, d );
-#else
-    cas( s1, s2, d );
-#endif
-  }
+  inline void cas_ptr(  Register s1, Register s2, Register d);
 
   // Functions for isolating 64 bit shifts for LP64
   inline void sll_ptr( Register s1, Register s2, Register d );
@@ -819,14 +800,14 @@ public:
   inline void srl_ptr( Register s1, int imm6a,   Register d );
 
   // little-endian
-  inline void casl(  Register s1, Register s2, Register d) { casa( s1, s2, d, ASI_PRIMARY_LITTLE); }
-  inline void casxl( Register s1, Register s2, Register d) { casxa(s1, s2, d, ASI_PRIMARY_LITTLE); }
+  inline void casl(  Register s1, Register s2, Register d);
+  inline void casxl( Register s1, Register s2, Register d);
 
-  inline void inc(   Register d,  int const13 = 1 ) { add(   d, const13, d); }
-  inline void inccc( Register d,  int const13 = 1 ) { addcc( d, const13, d); }
+  inline void inc(   Register d,  int const13 = 1 );
+  inline void inccc( Register d,  int const13 = 1 );
 
-  inline void dec(   Register d,  int const13 = 1 ) { sub(   d, const13, d); }
-  inline void deccc( Register d,  int const13 = 1 ) { subcc( d, const13, d); }
+  inline void dec(   Register d,  int const13 = 1 );
+  inline void deccc( Register d,  int const13 = 1 );
 
   using Assembler::add;
   inline void add(Register s1, int simm13a, Register d, relocInfo::relocType rtype);
@@ -837,19 +818,19 @@ public:
   using Assembler::andn;
   inline void andn(  Register s1, RegisterOrConstant s2, Register d);
 
-  inline void btst( Register s1,  Register s2 ) { andcc( s1, s2, G0 ); }
-  inline void btst( int simm13a,  Register s )  { andcc( s,  simm13a, G0 ); }
+  inline void btst( Register s1,  Register s2 );
+  inline void btst( int simm13a,  Register s );
 
-  inline void bset( Register s1,  Register s2 ) { or3( s1, s2, s2 ); }
-  inline void bset( int simm13a,  Register s )  { or3( s,  simm13a, s ); }
+  inline void bset( Register s1,  Register s2 );
+  inline void bset( int simm13a,  Register s );
 
-  inline void bclr( Register s1,  Register s2 ) { andn( s1, s2, s2 ); }
-  inline void bclr( int simm13a,  Register s )  { andn( s,  simm13a, s ); }
+  inline void bclr( Register s1,  Register s2 );
+  inline void bclr( int simm13a,  Register s );
 
-  inline void btog( Register s1,  Register s2 ) { xor3( s1, s2, s2 ); }
-  inline void btog( int simm13a,  Register s )  { xor3( s,  simm13a, s ); }
+  inline void btog( Register s1,  Register s2 );
+  inline void btog( int simm13a,  Register s );
 
-  inline void clr( Register d ) { or3( G0, G0, d ); }
+  inline void clr( Register d );
 
   inline void clrb( Register s1, Register s2);
   inline void clrh( Register s1, Register s2);
@@ -862,9 +843,9 @@ public:
   inline void clrx( Register s1, int simm13a);
 
   // copy & clear upper word
-  inline void clruw( Register s, Register d ) { srl( s, G0, d); }
+  inline void clruw( Register s, Register d );
   // clear upper word
-  inline void clruwu( Register d ) { srl( d, G0, d); }
+  inline void clruwu( Register d );
 
   using Assembler::ldsb;
   using Assembler::ldsh;
@@ -908,10 +889,10 @@ public:
   inline void ldf(FloatRegisterImpl::Width w, const Address& a, FloatRegister d, int offset = 0);
 
   // little-endian
-  inline void lduwl(Register s1, Register s2, Register d) { lduwa(s1, s2, ASI_PRIMARY_LITTLE, d); }
-  inline void ldswl(Register s1, Register s2, Register d) { ldswa(s1, s2, ASI_PRIMARY_LITTLE, d);}
-  inline void ldxl( Register s1, Register s2, Register d) { ldxa(s1, s2, ASI_PRIMARY_LITTLE, d); }
-  inline void ldfl(FloatRegisterImpl::Width w, Register s1, Register s2, FloatRegister d) { ldfa(w, s1, s2, ASI_PRIMARY_LITTLE, d); }
+  inline void lduwl(Register s1, Register s2, Register d);
+  inline void ldswl(Register s1, Register s2, Register d);
+  inline void ldxl( Register s1, Register s2, Register d);
+  inline void ldfl(FloatRegisterImpl::Width w, Register s1, Register s2, FloatRegister d);
 
   // membar psuedo instruction.  takes into account target memory model.
   inline void membar( Assembler::Membar_mask_bits const7a );
@@ -920,17 +901,11 @@ public:
   inline bool membar_has_effect( Assembler::Membar_mask_bits const7a );
 
   // mov pseudo instructions
-  inline void mov( Register s,  Register d) {
-    if ( s != d )    or3( G0, s, d);
-    else             assert_not_delayed();  // Put something useful in the delay slot!
-  }
+  inline void mov( Register s,  Register d);
 
-  inline void mov_or_nop( Register s,  Register d) {
-    if ( s != d )    or3( G0, s, d);
-    else             nop();
-  }
+  inline void mov_or_nop( Register s,  Register d);
 
-  inline void mov( int simm13a, Register d) { or3( G0, simm13a, d); }
+  inline void mov( int simm13a, Register d);
 
   using Assembler::prefetch;
   inline void prefetch(const Address& a, PrefetchFcn F, int offset = 0);
@@ -1005,11 +980,7 @@ public:
 
   // handy macros:
 
-  inline void round_to( Register r, int modulus ) {
-    assert_not_delayed();
-    inc( r, modulus - 1 );
-    and3( r, -modulus, r );
-  }
+  inline void round_to( Register r, int modulus );
 
   // --------------------------------------------------
 
@@ -1077,9 +1048,9 @@ public:
   // These are idioms to flag the need for care with accessing bools but on
   // this platform we assume byte size
 
-  inline void stbool(Register d, const Address& a) { stb(d, a); }
-  inline void ldbool(const Address& a, Register d) { ldub(a, d); }
-  inline void movbool( bool boolconst, Register d) { mov( (int) boolconst, d); }
+  inline void stbool(Register d, const Address& a);
+  inline void ldbool(const Address& a, Register d);
+  inline void movbool( bool boolconst, Register d);
 
   // klass oop manipulations if compressed
   void load_klass(Register src_oop, Register klass);
@@ -1415,12 +1386,7 @@ public:
   // Stack overflow checking
 
   // Note: this clobbers G3_scratch
-  void bang_stack_with_offset(int offset) {
-    // stack grows down, caller passes positive offset
-    assert(offset > 0, "must bang with negative offset");
-    set((-offset)+STACK_BIAS, G3_scratch);
-    st(G0, SP, G3_scratch);
-  }
+  inline void bang_stack_with_offset(int offset);
 
   // Writes to stack successive pages until offset reached to check for
   // stack overflow + shadow pages.  Clobbers tsp and scratch registers.
