@@ -1801,24 +1801,32 @@ void os::print_memory_info(outputStream* st) {
 void os::print_siginfo(outputStream *st, void *siginfo) {
   EXCEPTION_RECORD* er = (EXCEPTION_RECORD*)siginfo;
   st->print("siginfo:");
-  st->print(" ExceptionCode=0x%x", er->ExceptionCode);
 
-  if (er->ExceptionCode == EXCEPTION_ACCESS_VIOLATION &&
-      er->NumberParameters >= 2) {
+  char tmp[64];
+  if (os::exception_name(er->ExceptionCode, tmp, sizeof(tmp)) == NULL) {
+    strcpy(tmp, "EXCEPTION_??");
+  }
+  st->print(" %s (0x%x)", tmp, er->ExceptionCode);
+
+  if ((er->ExceptionCode == EXCEPTION_ACCESS_VIOLATION ||
+       er->ExceptionCode == EXCEPTION_IN_PAGE_ERROR) &&
+       er->NumberParameters >= 2) {
     switch (er->ExceptionInformation[0]) {
     case 0: st->print(", reading address"); break;
     case 1: st->print(", writing address"); break;
+    case 8: st->print(", data execution prevention violation at address"); break;
     default: st->print(", ExceptionInformation=" INTPTR_FORMAT,
                        er->ExceptionInformation[0]);
     }
     st->print(" " INTPTR_FORMAT, er->ExceptionInformation[1]);
-  } else if (er->ExceptionCode == EXCEPTION_IN_PAGE_ERROR &&
-             er->NumberParameters >= 2 && UseSharedSpaces) {
-    FileMapInfo* mapinfo = FileMapInfo::current_info();
-    if (mapinfo->is_in_shared_space((void*)er->ExceptionInformation[1])) {
-      st->print("\n\nError accessing class data sharing archive."       \
-                " Mapped file inaccessible during execution, "          \
-                " possible disk/network problem.");
+
+    if (er->ExceptionCode == EXCEPTION_IN_PAGE_ERROR && UseSharedSpaces) {
+      FileMapInfo* mapinfo = FileMapInfo::current_info();
+      if (mapinfo->is_in_shared_space((void*)er->ExceptionInformation[1])) {
+        st->print("\n\nError accessing class data sharing archive."       \
+                  " Mapped file inaccessible during execution, "          \
+                  " possible disk/network problem.");
+      }
     }
   } else {
     int num = er->NumberParameters;
