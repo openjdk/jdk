@@ -607,10 +607,20 @@ public:
 #if INCLUDE_JVMCI
   oop jvmci_installed_code() { return _jvmci_installed_code ; }
   char* jvmci_installed_code_name(char* buf, size_t buflen);
-  void clear_jvmci_installed_code();
+
+  // Update the state of any InstalledCode instance associated with
+  // this nmethod based on the current value of _state.
   void maybe_invalidate_installed_code();
+
+  // Helper function to invalidate InstalledCode instances
+  static void invalidate_installed_code(Handle installed_code, TRAPS);
+
   oop speculation_log() { return _speculation_log ; }
-  void set_speculation_log(oop speculation_log) { _speculation_log = speculation_log;  }
+
+ private:
+  void clear_jvmci_installed_code();
+
+ public:
 #endif
 
   // GC support
