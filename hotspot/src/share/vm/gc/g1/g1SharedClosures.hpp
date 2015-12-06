@@ -24,9 +24,11 @@
 
 #include "gc/g1/bufferingOopClosure.hpp"
 #include "gc/g1/g1CodeBlobClosure.hpp"
-#include "gc/g1/g1CollectedHeap.hpp"
-#include "gc/g1/g1OopClosures.inline.hpp"
-#include "gc/g1/g1RootClosures.hpp"
+#include "gc/g1/g1OopClosures.hpp"
+#include "memory/iterator.hpp"
+
+class G1CollectedHeap;
+class G1ParScanThreadState;
 
 // Simple holder object for a complete set of closures used by the G1 evacuation code.
 template <G1Mark Mark>
@@ -46,32 +48,4 @@ public:
     _clds(&_klass_in_cld_closure, &_oops, must_claim_cld),
     _codeblobs(&_oops),
     _buffered_oops(&_oops) {}
-};
-
-class G1EvacuationClosures : public G1EvacuationRootClosures {
-  G1SharedClosures<G1MarkNone> _closures;
-
-public:
-  G1EvacuationClosures(G1CollectedHeap* g1h,
-                       G1ParScanThreadState* pss,
-                       bool gcs_are_young) :
-      _closures(g1h, pss, gcs_are_young, /* must_claim_cld */ false) {}
-
-  OopClosure* weak_oops()   { return &_closures._buffered_oops; }
-  OopClosure* strong_oops() { return &_closures._buffered_oops; }
-
-  CLDClosure* weak_clds()             { return &_closures._clds; }
-  CLDClosure* strong_clds()           { return &_closures._clds; }
-  CLDClosure* thread_root_clds()      { return NULL; }
-  CLDClosure* second_pass_weak_clds() { return NULL; }
-
-  CodeBlobClosure* strong_codeblobs()      { return &_closures._codeblobs; }
-  CodeBlobClosure* weak_codeblobs()        { return &_closures._codeblobs; }
-
-  void flush()                 { _closures._buffered_oops.done(); }
-  double closure_app_seconds() { return _closures._buffered_oops.closure_app_seconds(); }
-
-  OopClosure* raw_strong_oops() { return &_closures._oops; }
-
-  bool trace_metadata()         { return false; }
 };
