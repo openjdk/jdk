@@ -27,7 +27,7 @@
 #define OS_AIX_VM_OSTHREAD_AIX_HPP
 
  public:
-  typedef pid_t thread_id_t;
+  typedef pthread_t thread_id_t;
 
  private:
   int _thread_type;
@@ -43,9 +43,13 @@
 
  private:
 
-  // _pthread_id is the pthread id, which is used by library calls
-  // (e.g. pthread_kill).
-  pthread_t _pthread_id;
+  // On AIX, we use the pthread id as OSThread::thread_id and keep the kernel thread id
+  // separately for diagnostic purposes.
+  //
+  // Note: this kernel thread id is saved at thread start. Depending on the
+  // AIX scheduling mode, this may not be the current thread id (usually not
+  // a problem though as we run with AIXTHREAD_SCOPE=S).
+  tid_t _kernel_thread_id;
 
   sigset_t _caller_sigmask; // Caller's signal mask
 
@@ -66,11 +70,16 @@
     return false;
   }
 #endif // ASSERT
-  pthread_t pthread_id() const {
-    return _pthread_id;
+  tid_t kernel_thread_id() const {
+    return _kernel_thread_id;
   }
-  void set_pthread_id(pthread_t tid) {
-    _pthread_id = tid;
+  void set_kernel_thread_id(tid_t tid) {
+    _kernel_thread_id = tid;
+  }
+
+  pthread_t pthread_id() const {
+    // Here: same as OSThread::thread_id()
+    return _thread_id;
   }
 
   // ***************************************************************

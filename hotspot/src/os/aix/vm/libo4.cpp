@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,46 +19,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package jdk.test.lib;
+// This is only a stub. Will flesh out later when/if we add further support
+// for PASE.
 
-/**
- * @deprecated This class is deprecated. Use the one from
- *             {@code <root>/test/lib/share/classes/jdk/test/lib/process}
- */
-@Deprecated
-public class OutputBuffer {
-  private final String stdout;
-  private final String stderr;
+#include "libo4.hpp"
 
-  /**
-   * Create an OutputBuffer, a class for storing and managing stdout and stderr
-   * results separately
-   *
-   * @param stdout stdout result
-   * @param stderr stderr result
-   */
-  public OutputBuffer(String stdout, String stderr) {
-    this.stdout = stdout;
-    this.stderr = stderr;
-  }
-
-  /**
-   * Returns the stdout result
-   *
-   * @return stdout result
-   */
-  public String getStdout() {
-    return stdout;
-  }
-
-  /**
-   * Returns the stderr result
-   *
-   * @return stderr result
-   */
-  public String getStderr() {
-    return stderr;
-  }
+bool libo4::init() { return false; }
+void libo4::cleanup() {}
+bool libo4::get_memory_info (unsigned long long* p_virt_total, unsigned long long* p_real_total,
+  unsigned long long* p_real_free, unsigned long long* p_pgsp_total, unsigned long long* p_pgsp_free) {
+  return false;
 }
+bool libo4::get_load_avg (double* p_avg1, double* p_avg5, double* p_avg15) { return false; }
+bool libo4::realpath (const char* file_name, char* resolved_name, int resolved_name_len) { return false; }
+
