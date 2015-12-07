@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2009, 2015, Red Hat, Inc.
+ * Copyright (c) 2015. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,16 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef CPU_ZERO_VM_GLOBALDEFINITIONS_ZERO_HPP
-#define CPU_ZERO_VM_GLOBALDEFINITIONS_ZERO_HPP
+#include <jni.h>
 
-#include <ffi.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-// Indicates whether the C calling conventions require that
-// 32-bit integer argument values are extended to 64 bits.
-const bool CCallingConventionRequiresIntsAsLongs = false;
+JNIEXPORT jfloat JNICALL Java_Test15FloatJNIArgs_add15floats
+  (JNIEnv *env, jclass cls,
+   jfloat  f1, jfloat  f2, jfloat  f3, jfloat  f4,
+   jfloat  f5, jfloat  f6, jfloat  f7, jfloat  f8,
+   jfloat  f9, jfloat f10, jfloat f11, jfloat f12,
+   jfloat f13, jfloat f14, jfloat f15) {
+  return f1 + f2 + f3 + f4 + f5 + f6 + f7 + f8 + f9 + f10 + f11 + f12 + f13 + f14 + f15;
+}
 
-#endif // CPU_ZERO_VM_GLOBALDEFINITIONS_ZERO_HPP
+#ifdef __cplusplus
+}
+#endif
