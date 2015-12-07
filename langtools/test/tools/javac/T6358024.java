@@ -53,7 +53,7 @@ public class T6358024 extends AbstractProcessor {
         String testSrc = System.getProperty("test.src");
 
         fm = new JavacFileManager(new Context(), false, null);
-        JavaFileObject f = fm.getFileForInput(testSrc + File.separatorChar + self + ".java");
+        JavaFileObject f = fm.getJavaFileObject(testSrc + File.separatorChar + self + ".java");
 
         test(fm, f,
              new Option[] { new Option("-d", ".")},
