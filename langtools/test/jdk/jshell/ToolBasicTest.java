@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8143037
+ * @bug 8143037 8142447
  * @summary Tests for Basic tests for REPL tool
  * @ignore 8139873
  * @library /tools/lib
