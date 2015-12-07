@@ -3401,8 +3401,8 @@ encode %{
         CallStubImpl::emit_trampoline_stub(_masm, entry_point_toc_offset, start_offset);
         if (ciEnv::current()->failing()) { return; } // Code cache may be full.
         int method_index = resolved_method_index(cbuf);
-        __ relocate(_optimized_virtual ? opt_virtual_call_Relocate::spec(method_index)
-                                       : static_call_Relocate::spec(method_index));
+        __ relocate(_optimized_virtual ? opt_virtual_call_Relocation::spec(method_index)
+                                       : static_call_Relocation::spec(method_index));
       }
 
       // The real call.
