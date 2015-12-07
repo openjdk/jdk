@@ -29,7 +29,7 @@
  *          java.management
  *          jdk.attach
  *          jdk.management/sun.tools.attach
- * @run main/othervm/timeout=780 TestOptionsWithRanges
+ * @run main/othervm/timeout=900 TestOptionsWithRanges
  */
 
 import java.util.ArrayList;
@@ -116,11 +116,20 @@ public class TestOptionsWithRanges {
          * Exclude below options as their maximum value would consume too much memory
          * and would affect other tests that run in parallel.
          */
+        excludeTestMaxRange("ConcGCThreads");
         excludeTestMaxRange("G1ConcRefinementThreads");
         excludeTestMaxRange("G1RSetRegionEntries");
         excludeTestMaxRange("G1RSetSparseRegionEntries");
         excludeTestMaxRange("G1UpdateBufferSize");
         excludeTestMaxRange("InitialBootClassLoaderMetaspaceSize");
+        excludeTestMaxRange("InitialHeapSize");
+        excludeTestMaxRange("MaxHeapSize");
+        excludeTestMaxRange("MaxRAM");
+        excludeTestMaxRange("NewSize");
+        excludeTestMaxRange("OldSize");
+        excludeTestMaxRange("ParallelGCThreads");
+
+        excludeTestMaxRange("VMThreadStackSize");
 
         /*
          * Remove parameters controlling the code cache. As these
