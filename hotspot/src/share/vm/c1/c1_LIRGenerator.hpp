@@ -157,8 +157,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
  private:
   void* operator new(size_t size) throw();
   void* operator new[](size_t size) throw();
-  void operator delete(void* p);
-  void operator delete[](void* p);
+  void operator delete(void* p) { ShouldNotReachHere(); }
+  void operator delete[](void* p) { ShouldNotReachHere(); }
 
   Compilation*  _compilation;
   ciMethod*     _method;    // method that we are compiling
