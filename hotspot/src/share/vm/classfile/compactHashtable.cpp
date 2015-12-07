@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/compactHashtable.inline.hpp"
 #include "classfile/javaClasses.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "prims/jvm.h"
