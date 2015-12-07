@@ -424,6 +424,9 @@ public abstract class Symbol extends AnnoConstruct implements Element {
     }
 
     /** The closest enclosing class of this symbol's declaration.
+     *  Warning: this (misnamed) method returns the receiver itself
+     *  when the receiver is a class (as opposed to its enclosing
+     *  class as one may be misled to believe.)
      */
     public ClassSymbol enclClass() {
         Symbol c = this;

@@ -3365,7 +3365,7 @@ public class Resolve {
         if (env1 != null) {
             while (env1 != null && env1.outer != null) {
                 if (isStatic(env1)) staticOnly = true;
-                if (env1.enclClass.sym.isSubClass(member.owner, types)) {
+                if (env1.enclClass.sym.isSubClass(member.owner.enclClass(), types)) {
                     Symbol sym = env1.info.scope.findFirst(name);
                     if (sym != null) {
                         if (staticOnly) sym = new StaticError(sym);
