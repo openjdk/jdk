@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,26 +49,29 @@
 
 #define __ _masm->
 
-
 #ifndef CC_INTERP
+
+// Global Register Names
+static const Register rbcp     = LP64_ONLY(r13) NOT_LP64(rsi);
+static const Register rlocals  = LP64_ONLY(r14) NOT_LP64(rdi);
+
 const int method_offset = frame::interpreter_frame_method_offset * wordSize;
 const int bcp_offset    = frame::interpreter_frame_bcp_offset    * wordSize;
 const int locals_offset = frame::interpreter_frame_locals_offset * wordSize;
 
-//------------------------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
   address entry = __ pc();
 
-  // Note: There should be a minimal interpreter frame set up when stack
-  // overflow occurs since we check explicitly for it now.
-  //
 #ifdef ASSERT
-  { Label L;
+  {
+    Label L;
     __ lea(rax, Address(rbp,
-                frame::interpreter_frame_monitor_block_top_offset * wordSize));
-    __ cmpptr(rax, rsp);  // rax, = maximal rsp for current rbp,
-                        //  (stack grows negative)
+                        frame::interpreter_frame_monitor_block_top_offset *
+                        wordSize));
+    __ cmpptr(rax, rsp); // rax = maximal rsp for current rbp (stack
+                         // grows negative)
     __ jcc(Assembler::aboveEqual, L); // check if frame is complete
     __ stop ("interpreter frame not set up");
     __ bind(L);
@@ -78,63 +81,86 @@ address TemplateInterpreterGenerator::generate_StackOverflowError_handler() {
   // interpreted
   __ restore_bcp();
 
-  // expression stack must be empty before entering the VM if an exception
-  // happened
+  // expression stack must be empty before entering the VM if an
+  // exception happened
   __ empty_expression_stack();
-  __ empty_FPU_stack();
   // throw exception
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_StackOverflowError));
+  __ call_VM(noreg,
+             CAST_FROM_FN_PTR(address,
+                              InterpreterRuntime::throw_StackOverflowError));
   return entry;
 }
 
-address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler(const char* name) {
+address TemplateInterpreterGenerator::generate_ArrayIndexOutOfBounds_handler(
+        const char* name) {
   address entry = __ pc();
-  // expression stack must be empty before entering the VM if an exception happened
+  // expression stack must be empty before entering the VM if an
+  // exception happened
   __ empty_expression_stack();
-  __ empty_FPU_stack();
   // setup parameters
-  // ??? convention: expect aberrant index in register rbx,
-  __ lea(rax, ExternalAddress((address)name));
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_ArrayIndexOutOfBoundsException), rax, rbx);
+  // ??? convention: expect aberrant index in register ebx
+  Register rarg = NOT_LP64(rax) LP64_ONLY(c_rarg1);
+  __ lea(rarg, ExternalAddress((address)name));
+  __ call_VM(noreg,
+             CAST_FROM_FN_PTR(address,
+                              InterpreterRuntime::
+                              throw_ArrayIndexOutOfBoundsException),
+             rarg, rbx);
   return entry;
 }
 
 address TemplateInterpreterGenerator::generate_ClassCastException_handler() {
   address entry = __ pc();
+
   // object is at TOS
-  __ pop(rax);
-  // expression stack must be empty before entering the VM if an exception
-  // happened
+  Register rarg = NOT_LP64(rax) LP64_ONLY(c_rarg1);
+  __ pop(rarg);
+
+  // expression stack must be empty before entering the VM if an
+  // exception happened
   __ empty_expression_stack();
-  __ empty_FPU_stack();
+
   __ call_VM(noreg,
              CAST_FROM_FN_PTR(address,
-                              InterpreterRuntime::throw_ClassCastException),
-             rax);
+                              InterpreterRuntime::
+                              throw_ClassCastException),
+             rarg);
   return entry;
 }
 
-address TemplateInterpreterGenerator::generate_exception_handler_common(const char* name, const char* message, bool pass_oop) {
+address TemplateInterpreterGenerator::generate_exception_handler_common(
+        const char* name, const char* message, bool pass_oop) {
   assert(!pass_oop || message == NULL, "either oop or message but not both");
   address entry = __ pc();
+
+  Register rarg = NOT_LP64(rax) LP64_ONLY(c_rarg1);
+  Register rarg2 = NOT_LP64(rbx) LP64_ONLY(c_rarg2);
+
   if (pass_oop) {
     // object is at TOS
-    __ pop(rbx);
+    __ pop(rarg2);
   }
-  // expression stack must be empty before entering the VM if an exception happened
+  // expression stack must be empty before entering the VM if an
+  // exception happened
   __ empty_expression_stack();
-  __ empty_FPU_stack();
   // setup parameters
-  __ lea(rax, ExternalAddress((address)name));
+  __ lea(rarg, ExternalAddress((address)name));
   if (pass_oop) {
-    __ call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::create_klass_exception), rax, rbx);
+    __ call_VM(rax, CAST_FROM_FN_PTR(address,
+                                     InterpreterRuntime::
+                                     create_klass_exception),
+               rarg, rarg2);
   } else {
+    // kind of lame ExternalAddress can't take NULL because
+    // external_word_Relocation will assert.
     if (message != NULL) {
-      __ lea(rbx, ExternalAddress((address)message));
+      __ lea(rarg2, ExternalAddress((address)message));
     } else {
-      __ movptr(rbx, NULL_WORD);
+      __ movptr(rarg2, NULL_WORD);
     }
-    __ call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::create_exception), rax, rbx);
+    __ call_VM(rax,
+               CAST_FROM_FN_PTR(address, InterpreterRuntime::create_exception),
+               rarg, rarg2);
   }
   // throw exception
   __ jump(ExternalAddress(Interpreter::throw_exception_entry()));
@@ -145,7 +171,7 @@ address TemplateInterpreterGenerator::generate_exception_handler_common(const ch
 address TemplateInterpreterGenerator::generate_continuation_for(TosState state) {
   address entry = __ pc();
   // NULL last_sp until next java call
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
   __ dispatch_next(state);
   return entry;
 }
@@ -154,6 +180,7 @@ address TemplateInterpreterGenerator::generate_continuation_for(TosState state) 
 address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, int step, size_t index_size) {
   address entry = __ pc();
 
+#ifndef _LP64
 #ifdef COMPILER2
   // The FPU stack is clean if UseSSE >= 2 but must be cleaned in other cases
   if ((state == ftos && UseSSE < 1) || (state == dtos && UseSSE < 2)) {
@@ -163,7 +190,7 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   } else if (UseSSE < 2) {
     __ empty_FPU_stack();
   }
-#endif
+#endif // COMPILER2
   if ((state == ftos && UseSSE < 1) || (state == dtos && UseSSE < 2)) {
     __ MacroAssembler::verify_FPU(1, "generate_return_entry_for compiled");
   } else {
@@ -175,11 +202,12 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   } else if (state == dtos) {
     __ MacroAssembler::verify_FPU(UseSSE >= 2 ? 0 : 1, "generate_return_entry_for in interpreter");
   }
+#endif // _LP64
 
   // Restore stack bottom in case i2c adjusted stack
   __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
-  // and NULL it as marker that rsp is now tos until next java call
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
+  // and NULL it as marker that esp is now tos until next java call
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
 
   __ restore_bcp();
   __ restore_locals();
@@ -207,24 +235,43 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step) {
   address entry = __ pc();
 
+#ifndef _LP64
   if (state == ftos) {
     __ MacroAssembler::verify_FPU(UseSSE >= 1 ? 0 : 1, "generate_deopt_entry_for in interpreter");
   } else if (state == dtos) {
     __ MacroAssembler::verify_FPU(UseSSE >= 2 ? 0 : 1, "generate_deopt_entry_for in interpreter");
   }
+#endif // _LP64
 
-  // The stack is not extended by deopt but we must NULL last_sp as this
-  // entry is like a "return".
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
+  // NULL last_sp until next java call
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
   __ restore_bcp();
   __ restore_locals();
-  // handle exceptions
-  { Label L;
-    const Register thread = rcx;
-    __ get_thread(thread);
-    __ cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+  const Register thread = NOT_LP64(rcx) LP64_ONLY(r15_thread);
+  NOT_LP64(__ get_thread(thread));
+#if INCLUDE_JVMCI
+  // Check if we need to take lock at entry of synchronized method.
+  if (UseJVMCICompiler) {
+    Label L;
+    __ cmpb(Address(thread, JavaThread::pending_monitorenter_offset()), 0);
     __ jcc(Assembler::zero, L);
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_pending_exception));
+    // Clear flag.
+    __ movb(Address(thread, JavaThread::pending_monitorenter_offset()), 0);
+    // Satisfy calling convention for lock_method().
+    __ get_method(rbx);
+    // Take lock.
+    lock_method();
+    __ bind(L);
+  }
+#endif
+  // handle exceptions
+  {
+    Label L;
+    __ cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t) NULL_WORD);
+    __ jcc(Assembler::zero, L);
+    __ call_VM(noreg,
+               CAST_FROM_FN_PTR(address,
+                                InterpreterRuntime::throw_pending_exception));
     __ should_not_reach_here();
     __ bind(L);
   }
@@ -232,76 +279,67 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   return entry;
 }
 
-
-int AbstractInterpreter::BasicType_as_index(BasicType type) {
-  int i = 0;
-  switch (type) {
-    case T_BOOLEAN: i = 0; break;
-    case T_CHAR   : i = 1; break;
-    case T_BYTE   : i = 2; break;
-    case T_SHORT  : i = 3; break;
-    case T_INT    : // fall through
-    case T_LONG   : // fall through
-    case T_VOID   : i = 4; break;
-    case T_FLOAT  : i = 5; break;  // have to treat float and double separately for SSE
-    case T_DOUBLE : i = 6; break;
-    case T_OBJECT : // fall through
-    case T_ARRAY  : i = 7; break;
-    default       : ShouldNotReachHere();
-  }
-  assert(0 <= i && i < AbstractInterpreter::number_of_result_handlers, "index out of bounds");
-  return i;
-}
-
-
-address TemplateInterpreterGenerator::generate_result_handler_for(BasicType type) {
+address TemplateInterpreterGenerator::generate_result_handler_for(
+        BasicType type) {
   address entry = __ pc();
   switch (type) {
-    case T_BOOLEAN: __ c2bool(rax);            break;
-    case T_CHAR   : __ andptr(rax, 0xFFFF);    break;
-    case T_BYTE   : __ sign_extend_byte (rax); break;
-    case T_SHORT  : __ sign_extend_short(rax); break;
-    case T_INT    : /* nothing to do */        break;
-    case T_LONG   : /* nothing to do */        break;
-    case T_VOID   : /* nothing to do */        break;
-    case T_DOUBLE :
-    case T_FLOAT  :
-      { const Register t = InterpreterRuntime::SignatureHandlerGenerator::temp();
-        __ pop(t);                            // remove return address first
-        // Must return a result for interpreter or compiler. In SSE
-        // mode, results are returned in xmm0 and the FPU stack must
-        // be empty.
-        if (type == T_FLOAT && UseSSE >= 1) {
-          // Load ST0
-          __ fld_d(Address(rsp, 0));
-          // Store as float and empty fpu stack
-          __ fstp_s(Address(rsp, 0));
-          // and reload
-          __ movflt(xmm0, Address(rsp, 0));
-        } else if (type == T_DOUBLE && UseSSE >= 2 ) {
-          __ movdbl(xmm0, Address(rsp, 0));
-        } else {
-          // restore ST0
-          __ fld_d(Address(rsp, 0));
-        }
-        // and pop the temp
-        __ addptr(rsp, 2 * wordSize);
-        __ push(t);                           // restore return address
+  case T_BOOLEAN: __ c2bool(rax);            break;
+#ifndef _LP64
+  case T_CHAR   : __ andptr(rax, 0xFFFF);    break;
+#else
+  case T_CHAR   : __ movzwl(rax, rax);       break;
+#endif // _LP64
+  case T_BYTE   : __ sign_extend_byte(rax);  break;
+  case T_SHORT  : __ sign_extend_short(rax); break;
+  case T_INT    : /* nothing to do */        break;
+  case T_LONG   : /* nothing to do */        break;
+  case T_VOID   : /* nothing to do */        break;
+#ifndef _LP64
+  case T_DOUBLE :
+  case T_FLOAT  :
+    { const Register t = InterpreterRuntime::SignatureHandlerGenerator::temp();
+      __ pop(t);                            // remove return address first
+      // Must return a result for interpreter or compiler. In SSE
+      // mode, results are returned in xmm0 and the FPU stack must
+      // be empty.
+      if (type == T_FLOAT && UseSSE >= 1) {
+        // Load ST0
+        __ fld_d(Address(rsp, 0));
+        // Store as float and empty fpu stack
+        __ fstp_s(Address(rsp, 0));
+        // and reload
+        __ movflt(xmm0, Address(rsp, 0));
+      } else if (type == T_DOUBLE && UseSSE >= 2 ) {
+        __ movdbl(xmm0, Address(rsp, 0));
+      } else {
+        // restore ST0
+        __ fld_d(Address(rsp, 0));
       }
-      break;
-    case T_OBJECT :
-      // retrieve result from frame
-      __ movptr(rax, Address(rbp, frame::interpreter_frame_oop_temp_offset*wordSize));
-      // and verify it
-      __ verify_oop(rax);
-      break;
-    default       : ShouldNotReachHere();
+      // and pop the temp
+      __ addptr(rsp, 2 * wordSize);
+      __ push(t);                           // restore return address
+    }
+    break;
+#else
+  case T_FLOAT  : /* nothing to do */        break;
+  case T_DOUBLE : /* nothing to do */        break;
+#endif // _LP64
+
+  case T_OBJECT :
+    // retrieve result from frame
+    __ movptr(rax, Address(rbp, frame::interpreter_frame_oop_temp_offset*wordSize));
+    // and verify it
+    __ verify_oop(rax);
+    break;
+  default       : ShouldNotReachHere();
   }
   __ ret(0);                                   // return from result handler
   return entry;
 }
 
-address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, address runtime_entry) {
+address TemplateInterpreterGenerator::generate_safept_entry_for(
+        TosState state,
+        address runtime_entry) {
   address entry = __ pc();
   __ push(state);
   __ call_VM(noreg, runtime_entry);
@@ -310,21 +348,25 @@ address TemplateInterpreterGenerator::generate_safept_entry_for(TosState state, 
 }
 
 
+
 // Helpers for commoning out cases in the various type of method entries.
 //
+
 
 // increment invocation count & check for overflow
 //
 // Note: checking for negative value instead of overflow
 //       so we have a 'sticky' overflow test
 //
-// rbx,: method
+// rbx: method
 // rcx: invocation counter
 //
-void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile_method, Label* profile_method_continue) {
+void InterpreterGenerator::generate_counter_incr(
+        Label* overflow,
+        Label* profile_method,
+        Label* profile_method_continue) {
   Label done;
-  // Note: In tiered we increment either counters in MethodCounters* or in MDO
-  // depending if we're profiling or not.
+  // Note: In tiered we increment either counters in Method* or in MDO depending if we're profiling or not.
   if (TieredCompilation) {
     int increment = InvocationCounter::count_increment;
     Label no_mdo;
@@ -345,11 +387,10 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
     const Address invocation_counter(rax,
                   MethodCounters::invocation_counter_offset() +
                   InvocationCounter::counter_offset());
-
     __ get_method_counters(rbx, rax, done);
     const Address mask(rax, in_bytes(MethodCounters::invoke_mask_offset()));
-    __ increment_mask_and_jump(invocation_counter, increment, mask,
-                               rcx, false, Assembler::zero, overflow);
+    __ increment_mask_and_jump(invocation_counter, increment, mask, rcx,
+                               false, Assembler::zero, overflow);
     __ bind(done);
   } else { // not TieredCompilation
     const Address backedge_counter(rax,
@@ -365,20 +406,18 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
       __ incrementl(Address(rax,
               MethodCounters::interpreter_invocation_counter_offset()));
     }
-
     // Update standard invocation counters
     __ movl(rcx, invocation_counter);
     __ incrementl(rcx, InvocationCounter::count_increment);
-    __ movl(invocation_counter, rcx);             // save invocation count
+    __ movl(invocation_counter, rcx); // save invocation count
 
-    __ movl(rax, backedge_counter);               // load backedge counter
-    __ andl(rax, InvocationCounter::count_mask_value);  // mask out the status bits
+    __ movl(rax, backedge_counter);   // load backedge counter
+    __ andl(rax, InvocationCounter::count_mask_value); // mask out the status bits
 
-    __ addl(rcx, rax);                            // add both counters
+    __ addl(rcx, rax);                // add both counters
 
     // profile_method is non-null only for interpreted method so
     // profile_method != NULL == !native_call
-    // BytecodeInterpreter only calls for native so code is elided.
 
     if (ProfileInterpreter && profile_method != NULL) {
       // Test to see if we should create a method data oop
@@ -400,65 +439,60 @@ void InterpreterGenerator::generate_counter_incr(Label* overflow, Label* profile
 void InterpreterGenerator::generate_counter_overflow(Label* do_continue) {
 
   // Asm interpreter on entry
-  // rdi - locals
-  // rsi - bcp
-  // rbx, - method
-  // rdx - cpool
-  // rbp, - interpreter frame
-
-  // C++ interpreter on entry
-  // rsi - new interpreter state pointer
-  // rbp - interpreter frame pointer
+  // r14/rdi - locals
+  // r13/rsi - bcp
   // rbx - method
+  // rdx - cpool --- DOES NOT APPEAR TO BE TRUE
+  // rbp - interpreter frame
 
   // On return (i.e. jump to entry_point) [ back to invocation of interpreter ]
-  // rbx, - method
-  // rcx - rcvr (assuming there is one)
-  // top of stack return address of interpreter caller
-  // rsp - sender_sp
+  // Everything as it was on entry
+  // rdx is not restored. Doesn't appear to really be set.
 
-  // C++ interpreter only
-  // rsi - previous interpreter state pointer
-
-  // InterpreterRuntime::frequency_counter_overflow takes one argument
-  // indicating if the counter overflow occurs at a backwards branch (non-NULL bcp).
-  // The call returns the address of the verified entry point for the method or NULL
-  // if the compilation did not complete (either went background or bailed out).
-  __ movptr(rax, (intptr_t)false);
-  __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), rax);
+  // InterpreterRuntime::frequency_counter_overflow takes two
+  // arguments, the first (thread) is passed by call_VM, the second
+  // indicates if the counter overflow occurs at a backwards branch
+  // (NULL bcp).  We pass zero for it.  The call returns the address
+  // of the verified entry point for the method or NULL if the
+  // compilation did not complete (either went background or bailed
+  // out).
+  Register rarg = NOT_LP64(rax) LP64_ONLY(c_rarg1);
+  __ movl(rarg, 0);
+  __ call_VM(noreg,
+             CAST_FROM_FN_PTR(address,
+                              InterpreterRuntime::frequency_counter_overflow),
+             rarg);
 
   __ movptr(rbx, Address(rbp, method_offset));   // restore Method*
-
-  // Preserve invariant that rsi/rdi contain bcp/locals of sender frame
+  // Preserve invariant that r13/r14 contain bcp/locals of sender frame
   // and jump to the interpreted entry.
   __ jmp(*do_continue, relocInfo::none);
-
 }
 
+// See if we've got enough room on the stack for locals plus overhead.
+// The expression stack grows down incrementally, so the normal guard
+// page mechanism will work for that.
+//
+// NOTE: Since the additional locals are also always pushed (wasn't
+// obvious in generate_fixed_frame) so the guard should work for them
+// too.
+//
+// Args:
+//      rdx: number of additional locals this frame needs (what we must check)
+//      rbx: Method*
+//
+// Kills:
+//      rax
 void InterpreterGenerator::generate_stack_overflow_check(void) {
-  // see if we've got enough room on the stack for locals plus overhead.
-  // the expression stack grows down incrementally, so the normal guard
-  // page mechanism will work for that.
-  //
-  // Registers live on entry:
-  //
-  // Asm interpreter
-  // rdx: number of additional locals this frame needs (what we must check)
-  // rbx,: Method*
-
-  // destroyed on exit
-  // rax,
-
-  // NOTE:  since the additional locals are also always pushed (wasn't obvious in
-  // generate_fixed_frame) so the guard should work for them too.
-  //
 
   // monitor entry size: see picture of stack in frame_x86.hpp
-  const int entry_size    = frame::interpreter_frame_monitor_size() * wordSize;
+  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
 
-  // total overhead size: entry_size + (saved rbp, thru expr stack bottom).
-  // be sure to change this if you add/subtract anything to/from the overhead area
-  const int overhead_size = -(frame::interpreter_frame_initial_sp_offset*wordSize) + entry_size;
+  // total overhead size: entry_size + (saved rbp through expr stack
+  // bottom).  be sure to change this if you add/subtract anything
+  // to/from the overhead area
+  const int overhead_size =
+    -(frame::interpreter_frame_initial_sp_offset * wordSize) + entry_size;
 
   const int page_size = os::vm_page_size();
 
@@ -467,25 +501,26 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   // see if the frame is greater than one page in size. If so,
   // then we need to verify there is enough stack space remaining
   // for the additional locals.
-  __ cmpl(rdx, (page_size - overhead_size)/Interpreter::stackElementSize);
+  __ cmpl(rdx, (page_size - overhead_size) / Interpreter::stackElementSize);
   __ jcc(Assembler::belowEqual, after_frame_check);
 
   // compute rsp as if this were going to be the last frame on
   // the stack before the red zone
 
   Label after_frame_check_pop;
-
-  __ push(rsi);
-
-  const Register thread = rsi;
-
+  const Register thread = NOT_LP64(rsi) LP64_ONLY(r15_thread);
+#ifndef _LP64
+  __ push(thread);
   __ get_thread(thread);
+#endif
 
   const Address stack_base(thread, Thread::stack_base_offset());
   const Address stack_size(thread, Thread::stack_size_offset());
 
   // locals + overhead, in bytes
-  __ lea(rax, Address(noreg, rdx, Interpreter::stackElementScale(), overhead_size));
+  __ mov(rax, rdx);
+  __ shlptr(rax, Interpreter::logStackElementSize);  // 2 slots per parameter.
+  __ addptr(rax, overhead_size);
 
 #ifdef ASSERT
   Label stack_base_okay, stack_size_okay;
@@ -508,20 +543,22 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   // Use the maximum number of pages we might bang.
   const int max_pages = StackShadowPages > (StackRedPages+StackYellowPages) ? StackShadowPages :
                                                                               (StackRedPages+StackYellowPages);
+
+  // add in the red and yellow zone sizes
   __ addptr(rax, max_pages * page_size);
 
   // check against the current stack bottom
   __ cmpptr(rsp, rax);
-  __ jcc(Assembler::above, after_frame_check_pop);
 
-  __ pop(rsi);  // get saved bcp / (c++ prev state ).
+  __ jcc(Assembler::above, after_frame_check_pop);
+  NOT_LP64(__ pop(rsi));  // get saved bcp
 
   // Restore sender's sp as SP. This is necessary if the sender's
   // frame is an extended compiled frame (see gen_c2i_adapter())
   // and safer anyway in case of JSR292 adaptations.
 
   __ pop(rax); // return address must be moved if SP is changed
-  __ mov(rsp, rsi);
+  __ mov(rsp, rbcp);
   __ push(rax);
 
   // Note: the restored frame is not necessarily interpreted.
@@ -530,65 +567,97 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   __ jump(ExternalAddress(StubRoutines::throw_StackOverflowError_entry()));
   // all done with frame size check
   __ bind(after_frame_check_pop);
-  __ pop(rsi);
+  NOT_LP64(__ pop(rsi));
 
+  // all done with frame size check
   __ bind(after_frame_check);
 }
 
 // Allocate monitor and lock method (asm interpreter)
-// rbx, - Method*
 //
+// Args:
+//      rbx: Method*
+//      r14/rdi: locals
+//
+// Kills:
+//      rax
+//      c_rarg0, c_rarg1, c_rarg2, c_rarg3, ...(param regs)
+//      rscratch1, rscratch2 (scratch regs)
 void TemplateInterpreterGenerator::lock_method() {
   // synchronize method
-  const Address access_flags      (rbx, Method::access_flags_offset());
-  const Address monitor_block_top (rbp, frame::interpreter_frame_monitor_block_top_offset * wordSize);
-  const int entry_size            = frame::interpreter_frame_monitor_size() * wordSize;
+  const Address access_flags(rbx, Method::access_flags_offset());
+  const Address monitor_block_top(
+        rbp,
+        frame::interpreter_frame_monitor_block_top_offset * wordSize);
+  const int entry_size = frame::interpreter_frame_monitor_size() * wordSize;
 
-  #ifdef ASSERT
-    { Label L;
-      __ movl(rax, access_flags);
-      __ testl(rax, JVM_ACC_SYNCHRONIZED);
-      __ jcc(Assembler::notZero, L);
-      __ stop("method doesn't need synchronization");
-      __ bind(L);
-    }
-  #endif // ASSERT
+#ifdef ASSERT
+  {
+    Label L;
+    __ movl(rax, access_flags);
+    __ testl(rax, JVM_ACC_SYNCHRONIZED);
+    __ jcc(Assembler::notZero, L);
+    __ stop("method doesn't need synchronization");
+    __ bind(L);
+  }
+#endif // ASSERT
+
   // get synchronization object
-  { Label done;
+  {
     const int mirror_offset = in_bytes(Klass::java_mirror_offset());
+    Label done;
     __ movl(rax, access_flags);
     __ testl(rax, JVM_ACC_STATIC);
-    __ movptr(rax, Address(rdi, Interpreter::local_offset_in_bytes(0)));  // get receiver (assume this is frequent case)
+    // get receiver (assume this is frequent case)
+    __ movptr(rax, Address(rlocals, Interpreter::local_offset_in_bytes(0)));
     __ jcc(Assembler::zero, done);
     __ movptr(rax, Address(rbx, Method::const_offset()));
     __ movptr(rax, Address(rax, ConstMethod::constants_offset()));
-    __ movptr(rax, Address(rax, ConstantPool::pool_holder_offset_in_bytes()));
+    __ movptr(rax, Address(rax,
+                           ConstantPool::pool_holder_offset_in_bytes()));
     __ movptr(rax, Address(rax, mirror_offset));
+
+#ifdef ASSERT
+    {
+      Label L;
+      __ testptr(rax, rax);
+      __ jcc(Assembler::notZero, L);
+      __ stop("synchronization object is NULL");
+      __ bind(L);
+    }
+#endif // ASSERT
+
     __ bind(done);
   }
+
   // add space for monitor & lock
-  __ subptr(rsp, entry_size);                                           // add space for a monitor entry
-  __ movptr(monitor_block_top, rsp);                                    // set new monitor block top
-  __ movptr(Address(rsp, BasicObjectLock::obj_offset_in_bytes()), rax); // store object
-  __ mov(rdx, rsp);                                                    // object address
-  __ lock_object(rdx);
+  __ subptr(rsp, entry_size); // add space for a monitor entry
+  __ movptr(monitor_block_top, rsp);  // set new monitor block top
+  // store object
+  __ movptr(Address(rsp, BasicObjectLock::obj_offset_in_bytes()), rax);
+  const Register lockreg = NOT_LP64(rdx) LP64_ONLY(c_rarg1);
+  __ movptr(lockreg, rsp); // object address
+  __ lock_object(lockreg);
 }
 
+// Generate a fixed interpreter frame. This is identical setup for
+// interpreted methods and for native methods hence the shared code.
 //
-// Generate a fixed interpreter frame. This is identical setup for interpreted methods
-// and for native methods hence the shared code.
-
+// Args:
+//      rax: return address
+//      rbx: Method*
+//      r14/rdi: pointer to locals
+//      r13/rsi: sender sp
+//      rdx: cp cache
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   // initialize fixed part of activation frame
-  __ push(rax);                                       // save return address
-  __ enter();                                         // save old & set new rbp,
-
-
-  __ push(rsi);                                       // set sender sp
-  __ push((int32_t)NULL_WORD);                        // leave last_sp as null
-  __ movptr(rsi, Address(rbx,Method::const_offset())); // get ConstMethod*
-  __ lea(rsi, Address(rsi,ConstMethod::codes_offset())); // get codebase
-  __ push(rbx);                                      // save Method*
+  __ push(rax);        // save return address
+  __ enter();          // save old & set new rbp
+  __ push(rbcp);        // set sender sp
+  __ push((int)NULL_WORD); // leave last_sp as null
+  __ movptr(rbcp, Address(rbx, Method::const_offset()));      // get ConstMethod*
+  __ lea(rbcp, Address(rbcp, ConstMethod::codes_offset())); // get codebase
+  __ push(rbx);        // save Method*
   if (ProfileInterpreter) {
     Label method_data_continue;
     __ movptr(rdx, Address(rbx, in_bytes(Method::method_data_offset())));
@@ -596,7 +665,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
     __ jcc(Assembler::zero, method_data_continue);
     __ addptr(rdx, in_bytes(MethodData::data_offset()));
     __ bind(method_data_continue);
-    __ push(rdx);                                       // set the mdp (method data pointer)
+    __ push(rdx);      // set the mdp (method data pointer)
   } else {
     __ push(0);
   }
@@ -604,17 +673,18 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ movptr(rdx, Address(rbx, Method::const_offset()));
   __ movptr(rdx, Address(rdx, ConstMethod::constants_offset()));
   __ movptr(rdx, Address(rdx, ConstantPool::cache_offset_in_bytes()));
-  __ push(rdx);                                       // set constant pool cache
-  __ push(rdi);                                       // set locals pointer
+  __ push(rdx); // set constant pool cache
+  __ push(rlocals); // set locals pointer
   if (native_call) {
-    __ push(0);                                       // no bcp
+    __ push(0); // no bcp
   } else {
-    __ push(rsi);                                     // set bcp
-    }
-  __ push(0);                                         // reserve word for pointer to expression stack bottom
-  __ movptr(Address(rsp, 0), rsp);                    // set expression stack bottom
+    __ push(rbcp); // set bcp
+  }
+  __ push(0); // reserve word for pointer to expression stack bottom
+  __ movptr(Address(rsp, 0), rsp); // set expression stack bottom
 }
 
+// End of helpers
 
 // Method entry for java.lang.ref.Reference.get.
 address InterpreterGenerator::generate_Reference_get_entry(void) {
@@ -636,18 +706,15 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
   //   G1 pre-barrier code is executed when the current method is
   //   Reference.get() then going through the normal method entry
   //   will be fine.
-  // * The G1 code below can, however, check the receiver object (the instance
+  // * The G1 code can, however, check the receiver object (the instance
   //   of java.lang.Reference) and jump to the slow path if null. If the
   //   Reference object is null then we obviously cannot fetch the referent
   //   and so we don't need to call the G1 pre-barrier. Thus we can use the
   //   regular method entry code to generate the NPE.
   //
-  // This code is based on generate_accessor_enty.
+  // rbx: Method*
 
-  // rbx,: Method*
-  // rcx: receiver (preserve for slow entry into asm interpreter)
-
-  // rsi: senderSP must preserved for slow path, set SP to it on fast path
+  // r13: senderSP must preserve for slow path, set SP to it on fast path
 
   address entry = __ pc();
 
@@ -656,46 +723,52 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
   if (UseG1GC) {
     Label slow_path;
+    // rbx: method
 
     // Check if local 0 != NULL
     // If the receiver is null then it is OK to jump to the slow path.
     __ movptr(rax, Address(rsp, wordSize));
+
     __ testptr(rax, rax);
     __ jcc(Assembler::zero, slow_path);
 
-    // rax: local 0 (must be preserved across the G1 barrier call)
-    //
-    // rbx: method (at this point it's scratch)
-    // rcx: receiver (at this point it's scratch)
+    // rax: local 0
+    // rbx: method (but can be used as scratch now)
     // rdx: scratch
     // rdi: scratch
-    //
-    // rsi: sender sp
 
     // Preserve the sender sp in case the pre-barrier
     // calls the runtime
-    __ push(rsi);
-
-    // Load the value of the referent field.
-    const Address field_address(rax, referent_offset);
-    __ movptr(rax, field_address);
+    NOT_LP64(__ push(rsi));
 
     // Generate the G1 pre-barrier code to log the value of
     // the referent field in an SATB buffer.
-    __ get_thread(rcx);
+
+    // Load the value of the referent field.
+    const Address field_address(rax, referent_offset);
+    __ load_heap_oop(rax, field_address);
+
+    const Register sender_sp = NOT_LP64(rsi) LP64_ONLY(r13);
+    const Register thread = NOT_LP64(rcx) LP64_ONLY(r15_thread);
+    NOT_LP64(__ get_thread(thread));
+
+    // Generate the G1 pre-barrier code to log the value of
+    // the referent field in an SATB buffer.
     __ g1_write_barrier_pre(noreg /* obj */,
                             rax /* pre_val */,
-                            rcx /* thread */,
+                            thread /* thread */,
                             rbx /* tmp */,
-                            true /* tosca_save */,
+                            true /* tosca_live */,
                             true /* expand_call */);
 
     // _areturn
-    __ pop(rsi);                // get sender sp
+    NOT_LP64(__ pop(rsi));      // get sender sp
     __ pop(rdi);                // get return address
-    __ mov(rsp, rsi);           // set sp to sender sp
+    __ mov(rsp, sender_sp);     // set sp to sender sp
     __ jmp(rdi);
+    __ ret(0);
 
+    // generate a vanilla interpreter entry as the slow path
     __ bind(slow_path);
     __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals));
     return entry;
@@ -707,319 +780,48 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
   return NULL;
 }
 
-/**
- * Method entry for static native methods:
- *   int java.util.zip.CRC32.update(int crc, int b)
- */
-address InterpreterGenerator::generate_CRC32_update_entry() {
-  if (UseCRC32Intrinsics) {
-    address entry = __ pc();
-
-    // rbx: Method*
-    // rsi: senderSP must preserved for slow path, set SP to it on fast path
-    // rdx: scratch
-    // rdi: scratch
-
-    Label slow_path;
-    // If we need a safepoint check, generate full interpreter entry.
-    ExternalAddress state(SafepointSynchronize::address_of_state());
-    __ cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
-             SafepointSynchronize::_not_synchronized);
-    __ jcc(Assembler::notEqual, slow_path);
-
-    // We don't generate local frame and don't align stack because
-    // we call stub code and there is no safepoint on this path.
-
-    // Load parameters
-    const Register crc = rax;  // crc
-    const Register val = rdx;  // source java byte value
-    const Register tbl = rdi;  // scratch
-
-    // Arguments are reversed on java expression stack
-    __ movl(val, Address(rsp,   wordSize)); // byte value
-    __ movl(crc, Address(rsp, 2*wordSize)); // Initial CRC
-
-    __ lea(tbl, ExternalAddress(StubRoutines::crc_table_addr()));
-    __ notl(crc); // ~crc
-    __ update_byte_crc32(crc, val, tbl);
-    __ notl(crc); // ~crc
-    // result in rax
-
-    // _areturn
-    __ pop(rdi);                // get return address
-    __ mov(rsp, rsi);           // set sp to sender sp
-    __ jmp(rdi);
-
-    // generate a vanilla native entry as the slow path
-    __ bind(slow_path);
-    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
-    return entry;
-  }
-  return NULL;
-}
-
-/**
- * Method entry for static native methods:
- *   int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
- *   int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
- */
-address InterpreterGenerator::generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
-  if (UseCRC32Intrinsics) {
-    address entry = __ pc();
-
-    // rbx,: Method*
-    // rsi: senderSP must preserved for slow path, set SP to it on fast path
-    // rdx: scratch
-    // rdi: scratch
-
-    Label slow_path;
-    // If we need a safepoint check, generate full interpreter entry.
-    ExternalAddress state(SafepointSynchronize::address_of_state());
-    __ cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
-             SafepointSynchronize::_not_synchronized);
-    __ jcc(Assembler::notEqual, slow_path);
-
-    // We don't generate local frame and don't align stack because
-    // we call stub code and there is no safepoint on this path.
-
-    // Load parameters
-    const Register crc = rax;  // crc
-    const Register buf = rdx;  // source java byte array address
-    const Register len = rdi;  // length
-
-    // value              x86_32
-    // interp. arg ptr    ESP + 4
-    // int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int len)
-    //                                         3           2      1        0
-    // int java.util.zip.CRC32.updateByteBuffer(int crc, long buf, int off, int len)
-    //                                              4         2,3      1        0
-
-    // Arguments are reversed on java expression stack
-    __ movl(len,   Address(rsp,   4 + 0)); // Length
-    // Calculate address of start element
-    if (kind == Interpreter::java_util_zip_CRC32_updateByteBuffer) {
-      __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // long buf
-      __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
-      __ movl(crc,   Address(rsp, 4 + 4 * wordSize)); // Initial CRC
-    } else {
-      __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // byte[] array
-      __ addptr(buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
-      __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
-      __ movl(crc,   Address(rsp, 4 + 3 * wordSize)); // Initial CRC
-    }
-
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, StubRoutines::updateBytesCRC32()), crc, buf, len);
-    // result in rax
-
-    // _areturn
-    __ pop(rdi);                // get return address
-    __ mov(rsp, rsi);           // set sp to sender sp
-    __ jmp(rdi);
-
-    // generate a vanilla native entry as the slow path
-    __ bind(slow_path);
-    __ jump_to_entry(Interpreter::entry_for_kind(Interpreter::native));
-    return entry;
-  }
-  return NULL;
-}
-
-/**
-* Method entry for static native methods:
-*   int java.util.zip.CRC32C.updateBytes(int crc, byte[] b, int off, int end)
-*   int java.util.zip.CRC32C.updateByteBuffer(int crc, long address, int off, int end)
-*/
-address InterpreterGenerator::generate_CRC32C_updateBytes_entry(AbstractInterpreter::MethodKind kind) {
-  if (UseCRC32CIntrinsics) {
-    address entry = __ pc();
-    // Load parameters
-    const Register crc = rax;  // crc
-    const Register buf = rcx;  // source java byte array address
-    const Register len = rdx;  // length
-    const Register end = len;
-
-    // value              x86_32
-    // interp. arg ptr    ESP + 4
-    // int java.util.zip.CRC32.updateBytes(int crc, byte[] b, int off, int end)
-    //                                         3           2      1        0
-    // int java.util.zip.CRC32.updateByteBuffer(int crc, long address, int off, int end)
-    //                                              4         2,3          1        0
-
-    // Arguments are reversed on java expression stack
-    __ movl(end, Address(rsp, 4 + 0)); // end
-    __ subl(len, Address(rsp, 4 + 1 * wordSize));  // end - offset == length
-    // Calculate address of start element
-    if (kind == Interpreter::java_util_zip_CRC32C_updateDirectByteBuffer) {
-      __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // long address
-      __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
-      __ movl(crc, Address(rsp, 4 + 4 * wordSize)); // Initial CRC
-    } else {
-      __ movptr(buf, Address(rsp, 4 + 2 * wordSize)); // byte[] array
-      __ addptr(buf, arrayOopDesc::base_offset_in_bytes(T_BYTE)); // + header size
-      __ addptr(buf, Address(rsp, 4 + 1 * wordSize)); // + offset
-      __ movl(crc, Address(rsp, 4 + 3 * wordSize)); // Initial CRC
-    }
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, StubRoutines::updateBytesCRC32C()), crc, buf, len);
-    // result in rax
-    // _areturn
-    __ pop(rdi);                // get return address
-    __ mov(rsp, rsi);           // set sp to sender sp
-    __ jmp(rdi);
-
-    return entry;
-  }
-  return NULL;
-}
-
-/**
- * Method entry for static native method:
- *    java.lang.Float.intBitsToFloat(int bits)
- */
-address InterpreterGenerator::generate_Float_intBitsToFloat_entry() {
-  if (UseSSE >= 1) {
-    address entry = __ pc();
-
-    // rsi: the sender's SP
-
-    // Skip safepoint check (compiler intrinsic versions of this method
-    // do not perform safepoint checks either).
-
-    // Load 'bits' into xmm0 (interpreter returns results in xmm0)
-    __ movflt(xmm0, Address(rsp, wordSize));
-
-    // Return
-    __ pop(rdi); // get return address
-    __ mov(rsp, rsi); // set rsp to the sender's SP
-    __ jmp(rdi);
-    return entry;
-  }
-
-  return NULL;
-}
-
-/**
- * Method entry for static native method:
- *    java.lang.Float.floatToRawIntBits(float value)
- */
-address InterpreterGenerator::generate_Float_floatToRawIntBits_entry() {
-  if (UseSSE >= 1) {
-    address entry = __ pc();
-
-    // rsi: the sender's SP
-
-    // Skip safepoint check (compiler intrinsic versions of this method
-    // do not perform safepoint checks either).
-
-    // Load the parameter (a floating-point value) into rax.
-    __ movl(rax, Address(rsp, wordSize));
-
-    // Return
-    __ pop(rdi); // get return address
-    __ mov(rsp, rsi); // set rsp to the sender's SP
-    __ jmp(rdi);
-    return entry;
-  }
-
-  return NULL;
-}
-
-
-/**
- * Method entry for static native method:
- *    java.lang.Double.longBitsToDouble(long bits)
- */
-address InterpreterGenerator::generate_Double_longBitsToDouble_entry() {
-   if (UseSSE >= 2) {
-     address entry = __ pc();
-
-     // rsi: the sender's SP
-
-     // Skip safepoint check (compiler intrinsic versions of this method
-     // do not perform safepoint checks either).
-
-     // Load 'bits' into xmm0 (interpreter returns results in xmm0)
-     __ movdbl(xmm0, Address(rsp, wordSize));
-
-     // Return
-     __ pop(rdi); // get return address
-     __ mov(rsp, rsi); // set rsp to the sender's SP
-     __ jmp(rdi);
-     return entry;
-   }
-
-   return NULL;
-}
-
-/**
- * Method entry for static native method:
- *    java.lang.Double.doubleToRawLongBits(double value)
- */
-address InterpreterGenerator::generate_Double_doubleToRawLongBits_entry() {
-  if (UseSSE >= 2) {
-    address entry = __ pc();
-
-    // rsi: the sender's SP
-
-    // Skip safepoint check (compiler intrinsic versions of this method
-    // do not perform safepoint checks either).
-
-    // Load the parameter (a floating-point value) into rax.
-    __ movl(rdx, Address(rsp, 2*wordSize));
-    __ movl(rax, Address(rsp, wordSize));
-
-    // Return
-    __ pop(rdi); // get return address
-    __ mov(rsp, rsi); // set rsp to the sender's SP
-    __ jmp(rdi);
-    return entry;
-  }
-
-  return NULL;
-}
-
-//
 // Interpreter stub for calling a native method. (asm interpreter)
-// This sets up a somewhat different looking stack for calling the native method
-// than the typical interpreter frame setup.
-//
-
+// This sets up a somewhat different looking stack for calling the
+// native method than the typical interpreter frame setup.
 address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // determine code generation flags
   bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
 
-  // rbx,: Method*
-  // rsi: sender sp
-  // rsi: previous interpreter state (C++ interpreter) must preserve
+  // rbx: Method*
+  // rbcp: sender sp
+
   address entry_point = __ pc();
 
   const Address constMethod       (rbx, Method::const_offset());
   const Address access_flags      (rbx, Method::access_flags_offset());
-  const Address size_of_parameters(rcx, ConstMethod::size_of_parameters_offset());
+  const Address size_of_parameters(rcx, ConstMethod::
+                                        size_of_parameters_offset());
+
 
   // get parameter size (always needed)
   __ movptr(rcx, constMethod);
   __ load_unsigned_short(rcx, size_of_parameters);
 
-  // native calls don't need the stack size check since they have no expression stack
-  // and the arguments are already on the stack and we only add a handful of words
-  // to the stack
+  // native calls don't need the stack size check since they have no
+  // expression stack and the arguments are already on the stack and
+  // we only add a handful of words to the stack
 
-  // rbx,: Method*
+  // rbx: Method*
   // rcx: size of parameters
-  // rsi: sender sp
-
+  // rbcp: sender sp
   __ pop(rax);                                       // get return address
+
   // for natives the size of locals is zero
 
-  // compute beginning of parameters (rdi)
-  __ lea(rdi, Address(rsp, rcx, Interpreter::stackElementScale(), -wordSize));
-
+  // compute beginning of parameters
+  __ lea(rlocals, Address(rsp, rcx, Interpreter::stackElementScale(), -wordSize));
 
   // add 2 zero-initialized slots for native calls
-  // NULL result handler
-  __ push((int32_t)NULL_WORD);
-  // NULL oop temp (mirror or jni oop result)
-  __ push((int32_t)NULL_WORD);
+  // initialize result_handler slot
+  __ push((int) NULL_WORD);
+  // slot for oop temp
+  // (static native method holder mirror/jni oop result)
+  __ push((int) NULL_WORD);
 
   // initialize fixed part of activation frame
   generate_fixed_frame(true);
@@ -1034,7 +836,8 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ stop("tried to execute non-native method as native");
     __ bind(L);
   }
-  { Label L;
+  {
+    Label L;
     __ testl(rax, JVM_ACC_ABSTRACT);
     __ jcc(Assembler::zero, L);
     __ stop("tried to execute abstract method in interpreter");
@@ -1048,8 +851,9 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   // _do_not_unlock_if_synchronized to true. The remove_activation will
   // check this flag.
 
-  __ get_thread(rax);
-  const Address do_not_unlock_if_synchronized(rax,
+  const Register thread1 = NOT_LP64(rax) LP64_ONLY(r15_thread);
+  NOT_LP64(__ get_thread(thread1));
+  const Address do_not_unlock_if_synchronized(thread1,
         in_bytes(JavaThread::do_not_unlock_if_synchronized_offset()));
   __ movbool(do_not_unlock_if_synchronized, true);
 
@@ -1065,32 +869,33 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   bang_stack_shadow_pages(true);
 
   // reset the _do_not_unlock_if_synchronized flag
-  __ get_thread(rax);
+  NOT_LP64(__ get_thread(thread1));
   __ movbool(do_not_unlock_if_synchronized, false);
 
   // check for synchronized methods
   // Must happen AFTER invocation_counter check and stack overflow check,
   // so method is not locked if overflows.
-  //
   if (synchronized) {
     lock_method();
   } else {
     // no synchronization necessary
 #ifdef ASSERT
-      { Label L;
-        __ movl(rax, access_flags);
-        __ testl(rax, JVM_ACC_SYNCHRONIZED);
-        __ jcc(Assembler::zero, L);
-        __ stop("method needs synchronization");
-        __ bind(L);
-      }
+    {
+      Label L;
+      __ movl(rax, access_flags);
+      __ testl(rax, JVM_ACC_SYNCHRONIZED);
+      __ jcc(Assembler::zero, L);
+      __ stop("method needs synchronization");
+      __ bind(L);
+    }
 #endif
   }
 
   // start execution
 #ifdef ASSERT
-  { Label L;
-    const Address monitor_block_top (rbp,
+  {
+    Label L;
+    const Address monitor_block_top(rbp,
                  frame::interpreter_frame_monitor_block_top_offset * wordSize);
     __ movptr(rax, monitor_block_top);
     __ cmpptr(rax, rsp);
@@ -1100,94 +905,133 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   }
 #endif
 
-  // jvmti/dtrace support
+  // jvmti support
   __ notify_method_entry();
 
   // work registers
   const Register method = rbx;
-  const Register thread = rdi;
-  const Register t      = rcx;
+  const Register thread = NOT_LP64(rdi) LP64_ONLY(r15_thread);
+  const Register t      = NOT_LP64(rcx) LP64_ONLY(r11);
 
   // allocate space for parameters
   __ get_method(method);
   __ movptr(t, Address(method, Method::const_offset()));
   __ load_unsigned_short(t, Address(t, ConstMethod::size_of_parameters_offset()));
 
+#ifndef _LP64
   __ shlptr(t, Interpreter::logStackElementSize);
   __ addptr(t, 2*wordSize);     // allocate two more slots for JNIEnv and possible mirror
   __ subptr(rsp, t);
   __ andptr(rsp, -(StackAlignmentInBytes)); // gcc needs 16 byte aligned stacks to do XMM intrinsics
+#else
+  __ shll(t, Interpreter::logStackElementSize);
+
+  __ subptr(rsp, t);
+  __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
+  __ andptr(rsp, -16); // must be 16 byte boundary (see amd64 ABI)
+#endif // _LP64
 
   // get signature handler
-  { Label L;
+  {
+    Label L;
     __ movptr(t, Address(method, Method::signature_handler_offset()));
     __ testptr(t, t);
     __ jcc(Assembler::notZero, L);
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::prepare_native_call), method);
+    __ call_VM(noreg,
+               CAST_FROM_FN_PTR(address,
+                                InterpreterRuntime::prepare_native_call),
+               method);
     __ get_method(method);
     __ movptr(t, Address(method, Method::signature_handler_offset()));
     __ bind(L);
   }
 
   // call signature handler
-  assert(InterpreterRuntime::SignatureHandlerGenerator::from() == rdi, "adjust this code");
-  assert(InterpreterRuntime::SignatureHandlerGenerator::to  () == rsp, "adjust this code");
-  assert(InterpreterRuntime::SignatureHandlerGenerator::temp() == t  , "adjust this code");
+  assert(InterpreterRuntime::SignatureHandlerGenerator::from() == rlocals,
+         "adjust this code");
+  assert(InterpreterRuntime::SignatureHandlerGenerator::to() == rsp,
+         "adjust this code");
+  assert(InterpreterRuntime::SignatureHandlerGenerator::temp() == NOT_LP64(t) LP64_ONLY(rscratch1),
+         "adjust this code");
+
   // The generated handlers do not touch RBX (the method oop).
   // However, large signatures cannot be cached and are generated
-  // each time here.  The slow-path generator will blow RBX
-  // sometime, so we must reload it after the call.
+  // each time here.  The slow-path generator can do a GC on return,
+  // so we must reload it after the call.
   __ call(t);
-  __ get_method(method);        // slow path call blows RBX on DevStudio 5.0
+  __ get_method(method);        // slow path can do a GC, reload RBX
 
-  // result handler is in rax,
+
+  // result handler is in rax
   // set result handler
-  __ movptr(Address(rbp, frame::interpreter_frame_result_handler_offset*wordSize), rax);
+  __ movptr(Address(rbp,
+                    (frame::interpreter_frame_result_handler_offset) * wordSize),
+            rax);
 
   // pass mirror handle if static call
-  { Label L;
+  {
+    Label L;
     const int mirror_offset = in_bytes(Klass::java_mirror_offset());
     __ movl(t, Address(method, Method::access_flags_offset()));
     __ testl(t, JVM_ACC_STATIC);
     __ jcc(Assembler::zero, L);
     // get mirror
-    __ movptr(t, Address(method, Method:: const_offset()));
+    __ movptr(t, Address(method, Method::const_offset()));
     __ movptr(t, Address(t, ConstMethod::constants_offset()));
     __ movptr(t, Address(t, ConstantPool::pool_holder_offset_in_bytes()));
     __ movptr(t, Address(t, mirror_offset));
     // copy mirror into activation frame
-    __ movptr(Address(rbp, frame::interpreter_frame_oop_temp_offset * wordSize), t);
+    __ movptr(Address(rbp, frame::interpreter_frame_oop_temp_offset * wordSize),
+            t);
     // pass handle to mirror
+#ifndef _LP64
     __ lea(t, Address(rbp, frame::interpreter_frame_oop_temp_offset * wordSize));
     __ movptr(Address(rsp, wordSize), t);
+#else
+    __ lea(c_rarg1,
+           Address(rbp, frame::interpreter_frame_oop_temp_offset * wordSize));
+#endif // _LP64
     __ bind(L);
   }
 
   // get native function entry point
-  { Label L;
+  {
+    Label L;
     __ movptr(rax, Address(method, Method::native_function_offset()));
     ExternalAddress unsatisfied(SharedRuntime::native_method_throw_unsatisfied_link_error_entry());
     __ cmpptr(rax, unsatisfied.addr());
     __ jcc(Assembler::notEqual, L);
-    __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::prepare_native_call), method);
+    __ call_VM(noreg,
+               CAST_FROM_FN_PTR(address,
+                                InterpreterRuntime::prepare_native_call),
+               method);
     __ get_method(method);
     __ movptr(rax, Address(method, Method::native_function_offset()));
     __ bind(L);
   }
 
   // pass JNIEnv
-  __ get_thread(thread);
-  __ lea(t, Address(thread, JavaThread::jni_environment_offset()));
-  __ movptr(Address(rsp, 0), t);
+#ifndef _LP64
+   __ get_thread(thread);
+   __ lea(t, Address(thread, JavaThread::jni_environment_offset()));
+   __ movptr(Address(rsp, 0), t);
 
-  // set_last_Java_frame_before_call
-  // It is enough that the pc()
-  // points into the right code segment. It does not have to be the correct return pc.
-  __ set_last_Java_frame(thread, noreg, rbp, __ pc());
+   // set_last_Java_frame_before_call
+   // It is enough that the pc()
+   // points into the right code segment. It does not have to be the correct return pc.
+   __ set_last_Java_frame(thread, noreg, rbp, __ pc());
+#else
+   __ lea(c_rarg0, Address(r15_thread, JavaThread::jni_environment_offset()));
+
+   // It is enough that the pc() points into the right code
+   // segment. It does not have to be the correct return pc.
+   __ set_last_Java_frame(rsp, rbp, (address) __ pc());
+#endif // _LP64
 
   // change thread state
 #ifdef ASSERT
-  { Label L;
+  {
+    Label L;
     __ movl(t, Address(thread, JavaThread::thread_state_offset()));
     __ cmpl(t, _thread_in_Java);
     __ jcc(Assembler::equal, L);
@@ -1197,14 +1041,24 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 #endif
 
   // Change state to native
-  __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_native);
-  __ call(rax);
 
-  // result potentially in rdx:rax or ST0
+  __ movl(Address(thread, JavaThread::thread_state_offset()),
+          _thread_in_native);
+
+  // Call the native method.
+  __ call(rax);
+  // 32: result potentially in rdx:rax or ST0
+  // 64: result potentially in rax or xmm0
 
   // Verify or restore cpu control state after JNI call
   __ restore_cpu_control_state_after_jni();
 
+  // NOTE: The order of these pushes is known to frame::interpreter_frame_result
+  // in order to extract the result of a method call. If the order of these
+  // pushes change or anything else is added to the stack then the code in
+  // interpreter_frame_result must also change.
+
+#ifndef _LP64
   // save potential result in ST(0) & rdx:rax
   // (if result handler is the T_FLOAT or T_DOUBLE handler, result must be in ST0 -
   // the check is necessary to avoid potential Intel FPU overflow problems by saving/restoring 'empty' FPU registers)
@@ -1229,12 +1083,18 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ push_d(); // FP values are returned using the FPU, so push FPU contents (even if UseSSE > 0).
     __ bind(L);
   }
+#else
+  __ push(dtos);
+#endif // _LP64
+
   __ push(ltos);
 
   // change thread state
-  __ get_thread(thread);
-  __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_native_trans);
-  if(os::is_MP()) {
+  NOT_LP64(__ get_thread(thread));
+  __ movl(Address(thread, JavaThread::thread_state_offset()),
+          _thread_in_native_trans);
+
+  if (os::is_MP()) {
     if (UseMembar) {
       // Force this write out before the read below
       __ membar(Assembler::Membar_mask_bits(
@@ -1249,14 +1109,16 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     }
   }
 
+#ifndef _LP64
   if (AlwaysRestoreFPU) {
     //  Make sure the control word is correct.
     __ fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
   }
+#endif // _LP64
 
   // check for safepoint operation in progress and/or pending suspend requests
-  { Label Continue;
-
+  {
+    Label Continue;
     __ cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
              SafepointSynchronize::_not_synchronized);
 
@@ -1266,122 +1128,170 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
     __ jcc(Assembler::equal, Continue);
     __ bind(L);
 
-    // Don't use call_VM as it will see a possible pending exception and forward it
-    // and never return here preventing us from clearing _last_native_pc down below.
-    // Also can't use call_VM_leaf either as it will check to see if rsi & rdi are
-    // preserved and correspond to the bcp/locals pointers. So we do a runtime call
-    // by hand.
+    // Don't use call_VM as it will see a possible pending exception
+    // and forward it and never return here preventing us from
+    // clearing _last_native_pc down below.  Also can't use
+    // call_VM_leaf either as it will check to see if r13 & r14 are
+    // preserved and correspond to the bcp/locals pointers. So we do a
+    // runtime call by hand.
     //
+#ifndef _LP64
     __ push(thread);
     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address,
                                             JavaThread::check_special_condition_for_native_trans)));
     __ increment(rsp, wordSize);
     __ get_thread(thread);
-
+#else
+    __ mov(c_rarg0, r15_thread);
+    __ mov(r12, rsp); // remember sp (can only use r12 if not using call_VM)
+    __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
+    __ andptr(rsp, -16); // align stack as required by ABI
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans)));
+    __ mov(rsp, r12); // restore sp
+    __ reinit_heapbase();
+#endif // _LP64
     __ bind(Continue);
   }
 
   // change thread state
   __ movl(Address(thread, JavaThread::thread_state_offset()), _thread_in_Java);
 
+  // reset_last_Java_frame
   __ reset_last_Java_frame(thread, true, true);
 
   // reset handle block
   __ movptr(t, Address(thread, JavaThread::active_handles_offset()));
-  __ movl(Address(t, JNIHandleBlock::top_offset_in_bytes()), NULL_WORD);
+  __ movl(Address(t, JNIHandleBlock::top_offset_in_bytes()), (int32_t)NULL_WORD);
 
-  // If result was an oop then unbox and save it in the frame
-  { Label L;
+  // If result is an oop unbox and store it in frame where gc will see it
+  // and result handler will pick it up
+
+  {
     Label no_oop, store_result;
-    ExternalAddress handler(AbstractInterpreter::result_handler(T_OBJECT));
-    __ cmpptr(Address(rbp, frame::interpreter_frame_result_handler_offset*wordSize),
-              handler.addr());
+    __ lea(t, ExternalAddress(AbstractInterpreter::result_handler(T_OBJECT)));
+    __ cmpptr(t, Address(rbp, frame::interpreter_frame_result_handler_offset*wordSize));
     __ jcc(Assembler::notEqual, no_oop);
-    __ cmpptr(Address(rsp, 0), (int32_t)NULL_WORD);
+    // retrieve result
     __ pop(ltos);
     __ testptr(rax, rax);
     __ jcc(Assembler::zero, store_result);
-    // unbox
     __ movptr(rax, Address(rax, 0));
     __ bind(store_result);
-    __ movptr(Address(rbp, (frame::interpreter_frame_oop_temp_offset)*wordSize), rax);
+    __ movptr(Address(rbp, frame::interpreter_frame_oop_temp_offset*wordSize), rax);
     // keep stack depth as expected by pushing oop which will eventually be discarded
     __ push(ltos);
     __ bind(no_oop);
   }
 
+
   {
-     Label no_reguard;
-     __ cmpl(Address(thread, JavaThread::stack_guard_state_offset()), JavaThread::stack_guard_yellow_disabled);
-     __ jcc(Assembler::notEqual, no_reguard);
+    Label no_reguard;
+    __ cmpl(Address(thread, JavaThread::stack_guard_state_offset()),
+            JavaThread::stack_guard_yellow_disabled);
+    __ jcc(Assembler::notEqual, no_reguard);
 
-     __ pusha();
-     __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages)));
-     __ popa();
+    __ pusha(); // XXX only save smashed registers
+#ifndef _LP64
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages)));
+    __ popa();
+#else
+    __ mov(r12, rsp); // remember sp (can only use r12 if not using call_VM)
+    __ subptr(rsp, frame::arg_reg_save_area_bytes); // windows
+    __ andptr(rsp, -16); // align stack as required by ABI
+    __ call(RuntimeAddress(CAST_FROM_FN_PTR(address, SharedRuntime::reguard_yellow_pages)));
+    __ mov(rsp, r12); // restore sp
+    __ popa(); // XXX only restore smashed registers
+    __ reinit_heapbase();
+#endif // _LP64
 
-     __ bind(no_reguard);
-   }
+    __ bind(no_reguard);
+  }
 
-  // restore rsi to have legal interpreter frame,
-  // i.e., bci == 0 <=> rsi == code_base()
-  // Can't call_VM until bcp is within reasonable.
-  __ get_method(method);      // method is junk from thread_in_native to now.
-  __ movptr(rsi, Address(method,Method::const_offset()));   // get ConstMethod*
-  __ lea(rsi, Address(rsi,ConstMethod::codes_offset()));    // get codebase
+
+  // The method register is junk from after the thread_in_native transition
+  // until here.  Also can't call_VM until the bcp has been
+  // restored.  Need bcp for throwing exception below so get it now.
+  __ get_method(method);
+
+  // restore to have legal interpreter frame, i.e., bci == 0 <=> code_base()
+  __ movptr(rbcp, Address(method, Method::const_offset()));   // get ConstMethod*
+  __ lea(rbcp, Address(rbcp, ConstMethod::codes_offset()));    // get codebase
 
   // handle exceptions (exception handling will handle unlocking!)
-  { Label L;
-    __ cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t)NULL_WORD);
+  {
+    Label L;
+    __ cmpptr(Address(thread, Thread::pending_exception_offset()), (int32_t) NULL_WORD);
     __ jcc(Assembler::zero, L);
-    // Note: At some point we may want to unify this with the code used in call_VM_base();
-    //       i.e., we should use the StubRoutines::forward_exception code. For now this
-    //       doesn't work here because the rsp is not correctly set at this point.
-    __ MacroAssembler::call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_pending_exception));
+    // Note: At some point we may want to unify this with the code
+    // used in call_VM_base(); i.e., we should use the
+    // StubRoutines::forward_exception code. For now this doesn't work
+    // here because the rsp is not correctly set at this point.
+    __ MacroAssembler::call_VM(noreg,
+                               CAST_FROM_FN_PTR(address,
+                               InterpreterRuntime::throw_pending_exception));
     __ should_not_reach_here();
     __ bind(L);
   }
 
   // do unlocking if necessary
-  { Label L;
+  {
+    Label L;
     __ movl(t, Address(method, Method::access_flags_offset()));
     __ testl(t, JVM_ACC_SYNCHRONIZED);
     __ jcc(Assembler::zero, L);
-    // the code below should be shared with interpreter macro assembler implementation
-    { Label unlock;
-      // BasicObjectLock will be first in list, since this is a synchronized method. However, need
-      // to check that the object has not been unlocked by an explicit monitorexit bytecode.
-      const Address monitor(rbp, frame::interpreter_frame_initial_sp_offset * wordSize - (int)sizeof(BasicObjectLock));
+    // the code below should be shared with interpreter macro
+    // assembler implementation
+    {
+      Label unlock;
+      // BasicObjectLock will be first in list, since this is a
+      // synchronized method. However, need to check that the object
+      // has not been unlocked by an explicit monitorexit bytecode.
+      const Address monitor(rbp,
+                            (intptr_t)(frame::interpreter_frame_initial_sp_offset *
+                                       wordSize - (int)sizeof(BasicObjectLock)));
 
-      __ lea(rdx, monitor);                   // address of first monitor
+      const Register regmon = NOT_LP64(rdx) LP64_ONLY(c_rarg1);
 
-      __ movptr(t, Address(rdx, BasicObjectLock::obj_offset_in_bytes()));
+      // monitor expect in c_rarg1 for slow unlock path
+      __ lea(regmon, monitor); // address of first monitor
+
+      __ movptr(t, Address(regmon, BasicObjectLock::obj_offset_in_bytes()));
       __ testptr(t, t);
       __ jcc(Assembler::notZero, unlock);
 
       // Entry already unlocked, need to throw exception
-      __ MacroAssembler::call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_illegal_monitor_state_exception));
+      __ MacroAssembler::call_VM(noreg,
+                                 CAST_FROM_FN_PTR(address,
+                   InterpreterRuntime::throw_illegal_monitor_state_exception));
       __ should_not_reach_here();
 
       __ bind(unlock);
-      __ unlock_object(rdx);
+      __ unlock_object(regmon);
     }
     __ bind(L);
   }
 
-  // jvmti/dtrace support
+  // jvmti support
   // Note: This must happen _after_ handling/throwing any exceptions since
   //       the exception handler code notifies the runtime of method exits
   //       too. If this happens before, method entry/exit notifications are
   //       not properly paired (was bug - gri 11/22/99).
   __ notify_method_exit(vtos, InterpreterMacroAssembler::NotifyJVMTI);
 
-  // restore potential result in rdx:rax, call result handler to restore potential result in ST0 & handle result
+  // restore potential result in edx:eax, call result handler to
+  // restore potential result in ST0 & handle result
+
   __ pop(ltos);
-  __ movptr(t, Address(rbp, frame::interpreter_frame_result_handler_offset*wordSize));
+  LP64_ONLY( __ pop(dtos));
+
+  __ movptr(t, Address(rbp,
+                       (frame::interpreter_frame_result_handler_offset) * wordSize));
   __ call(t);
 
   // remove activation
-  __ movptr(t, Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize)); // get sender sp
+  __ movptr(t, Address(rbp,
+                       frame::interpreter_frame_sender_sp_offset *
+                       wordSize)); // get sender sp
   __ leave();                                // remove frame anchor
   __ pop(rdi);                               // get return address
   __ mov(rsp, t);                            // set sp to sender sp
@@ -1403,26 +1313,31 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   // determine code generation flags
   bool inc_counter  = UseCompiler || CountCompiledCalls || LogTouchedMethods;
 
-  // rbx,: Method*
-  // rsi: sender sp
+  // ebx: Method*
+  // rbcp: sender sp
   address entry_point = __ pc();
 
-  const Address constMethod       (rbx, Method::const_offset());
-  const Address access_flags      (rbx, Method::access_flags_offset());
-  const Address size_of_parameters(rdx, ConstMethod::size_of_parameters_offset());
-  const Address size_of_locals    (rdx, ConstMethod::size_of_locals_offset());
+  const Address constMethod(rbx, Method::const_offset());
+  const Address access_flags(rbx, Method::access_flags_offset());
+  const Address size_of_parameters(rdx,
+                                   ConstMethod::size_of_parameters_offset());
+  const Address size_of_locals(rdx, ConstMethod::size_of_locals_offset());
+
 
   // get parameter size (always needed)
   __ movptr(rdx, constMethod);
   __ load_unsigned_short(rcx, size_of_parameters);
 
-  // rbx,: Method*
+  // rbx: Method*
   // rcx: size of parameters
+  // rbcp: sender_sp (could differ from sp+wordSize if we were called via c2i )
 
-  // rsi: sender_sp (could differ from sp+wordSize if we were called via c2i )
+  __ load_unsigned_short(rdx, size_of_locals); // get size of locals in words
+  __ subl(rdx, rcx); // rdx = no. of additional locals
 
-  __ load_unsigned_short(rdx, size_of_locals);       // get size of locals in words
-  __ subl(rdx, rcx);                                // rdx = no. of additional locals
+  // YYY
+//   __ incrementl(rdx);
+//   __ andl(rdx, -2);
 
   // see if we've got enough room on the stack for locals plus overhead.
   generate_stack_overflow_check();
@@ -1430,8 +1345,8 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   // get return address
   __ pop(rax);
 
-  // compute beginning of parameters (rdi)
-  __ lea(rdi, Address(rsp, rcx, Interpreter::stackElementScale(), -wordSize));
+  // compute beginning of parameters
+  __ lea(rlocals, Address(rsp, rcx, Interpreter::stackElementScale(), -wordSize));
 
   // rdx - # of additional locals
   // allocate space for locals
@@ -1439,10 +1354,10 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   {
     Label exit, loop;
     __ testl(rdx, rdx);
-    __ jcc(Assembler::lessEqual, exit);               // do nothing if rdx <= 0
+    __ jcc(Assembler::lessEqual, exit); // do nothing if rdx <= 0
     __ bind(loop);
-    __ push((int32_t)NULL_WORD);                      // initialize local variables
-    __ decrement(rdx);                                // until everything initialized
+    __ push((int) NULL_WORD); // initialize local variables
+    __ decrementl(rdx); // until everything initialized
     __ jcc(Assembler::greater, loop);
     __ bind(exit);
   }
@@ -1460,7 +1375,8 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
     __ stop("tried to execute native method as non-native");
     __ bind(L);
   }
-  { Label L;
+  {
+    Label L;
     __ testl(rax, JVM_ACC_ABSTRACT);
     __ jcc(Assembler::zero, L);
     __ stop("tried to execute abstract method in interpreter");
@@ -1468,14 +1384,15 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   }
 #endif
 
-  // Since at this point in the method invocation the exception handler
-  // would try to exit the monitor of synchronized methods which hasn't
-  // been entered yet, we set the thread local variable
-  // _do_not_unlock_if_synchronized to true. The remove_activation will
-  // check this flag.
+  // Since at this point in the method invocation the exception
+  // handler would try to exit the monitor of synchronized methods
+  // which hasn't been entered yet, we set the thread local variable
+  // _do_not_unlock_if_synchronized to true. The remove_activation
+  // will check this flag.
 
-  __ get_thread(rax);
-  const Address do_not_unlock_if_synchronized(rax,
+  const Register thread = NOT_LP64(rax) LP64_ONLY(r15_thread);
+  NOT_LP64(__ get_thread(thread));
+  const Address do_not_unlock_if_synchronized(thread,
         in_bytes(JavaThread::do_not_unlock_if_synchronized_offset()));
   __ movbool(do_not_unlock_if_synchronized, true);
 
@@ -1485,43 +1402,48 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   Label profile_method;
   Label profile_method_continue;
   if (inc_counter) {
-    generate_counter_incr(&invocation_counter_overflow, &profile_method, &profile_method_continue);
+    generate_counter_incr(&invocation_counter_overflow,
+                          &profile_method,
+                          &profile_method_continue);
     if (ProfileInterpreter) {
       __ bind(profile_method_continue);
     }
   }
+
   Label continue_after_compile;
   __ bind(continue_after_compile);
 
+  // check for synchronized interpreted methods
   bang_stack_shadow_pages(false);
 
   // reset the _do_not_unlock_if_synchronized flag
-  __ get_thread(rax);
+  NOT_LP64(__ get_thread(thread));
   __ movbool(do_not_unlock_if_synchronized, false);
 
   // check for synchronized methods
   // Must happen AFTER invocation_counter check and stack overflow check,
   // so method is not locked if overflows.
-  //
   if (synchronized) {
     // Allocate monitor and lock method
     lock_method();
   } else {
     // no synchronization necessary
 #ifdef ASSERT
-      { Label L;
-        __ movl(rax, access_flags);
-        __ testl(rax, JVM_ACC_SYNCHRONIZED);
-        __ jcc(Assembler::zero, L);
-        __ stop("method needs synchronization");
-        __ bind(L);
-      }
+    {
+      Label L;
+      __ movl(rax, access_flags);
+      __ testl(rax, JVM_ACC_SYNCHRONIZED);
+      __ jcc(Assembler::zero, L);
+      __ stop("method needs synchronization");
+      __ bind(L);
+    }
 #endif
   }
 
   // start execution
 #ifdef ASSERT
-  { Label L;
+  {
+    Label L;
      const Address monitor_block_top (rbp,
                  frame::interpreter_frame_monitor_block_top_offset * wordSize);
     __ movptr(rax, monitor_block_top);
@@ -1555,100 +1477,69 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   return entry_point;
 }
 
-
-// These should never be compiled since the interpreter will prefer
-// the compiled version to the intrinsic version.
-bool AbstractInterpreter::can_be_compiled(methodHandle m) {
-  switch (method_kind(m)) {
-    case Interpreter::java_lang_math_sin     : // fall thru
-    case Interpreter::java_lang_math_cos     : // fall thru
-    case Interpreter::java_lang_math_tan     : // fall thru
-    case Interpreter::java_lang_math_abs     : // fall thru
-    case Interpreter::java_lang_math_log     : // fall thru
-    case Interpreter::java_lang_math_log10   : // fall thru
-    case Interpreter::java_lang_math_sqrt    : // fall thru
-    case Interpreter::java_lang_math_pow     : // fall thru
-    case Interpreter::java_lang_math_exp     :
-      return false;
-    default:
-      return true;
-  }
-}
-
-// How much stack a method activation needs in words.
-int AbstractInterpreter::size_top_interpreter_activation(Method* method) {
-
-  const int stub_code = 4;  // see generate_call_stub
-  // Save space for one monitor to get into the interpreted method in case
-  // the method is synchronized
-  int monitor_size    = method->is_synchronized() ?
-                                1*frame::interpreter_frame_monitor_size() : 0;
-
-  // total overhead size: entry_size + (saved rbp, thru expr stack bottom).
-  // be sure to change this if you add/subtract anything to/from the overhead area
-  const int overhead_size = -frame::interpreter_frame_initial_sp_offset;
-
-  const int method_stack = (method->max_locals() + method->max_stack()) *
-                           Interpreter::stackElementWords;
-  return overhead_size + method_stack + stub_code;
-}
-
-//------------------------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Exceptions
 
 void TemplateInterpreterGenerator::generate_throw_exception() {
-  // Entry point in previous activation (i.e., if the caller was interpreted)
+  // Entry point in previous activation (i.e., if the caller was
+  // interpreted)
   Interpreter::_rethrow_exception_entry = __ pc();
-  const Register thread = rcx;
-
   // Restore sp to interpreter_frame_last_sp even though we are going
   // to empty the expression stack for the exception processing.
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
-  // rax,: exception
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
+  // rax: exception
   // rdx: return address/pc that threw exception
-  __ restore_bcp();                              // rsi points to call/send
+  __ restore_bcp();    // r13/rsi points to call/send
   __ restore_locals();
-
+  LP64_ONLY(__ reinit_heapbase());  // restore r12 as heapbase.
   // Entry point for exceptions thrown within interpreter code
   Interpreter::_throw_exception_entry = __ pc();
   // expression stack is undefined here
-  // rax,: exception
-  // rsi: exception bcp
+  // rax: exception
+  // r13/rsi: exception bcp
   __ verify_oop(rax);
+  Register rarg = NOT_LP64(rax) LP64_ONLY(c_rarg1);
+  LP64_ONLY(__ mov(c_rarg1, rax));
 
-  // expression stack must be empty before entering the VM in case of an exception
+  // expression stack must be empty before entering the VM in case of
+  // an exception
   __ empty_expression_stack();
-  __ empty_FPU_stack();
   // find exception handler address and preserve exception oop
-  __ call_VM(rdx, CAST_FROM_FN_PTR(address, InterpreterRuntime::exception_handler_for_exception), rax);
-  // rax,: exception handler entry point
+  __ call_VM(rdx,
+             CAST_FROM_FN_PTR(address,
+                          InterpreterRuntime::exception_handler_for_exception),
+             rarg);
+  // rax: exception handler entry point
   // rdx: preserved exception oop
-  // rsi: bcp for exception handler
-  __ push_ptr(rdx);                              // push exception which is now the only value on the stack
-  __ jmp(rax);                                   // jump to exception handler (may be _remove_activation_entry!)
+  // r13/rsi: bcp for exception handler
+  __ push_ptr(rdx); // push exception which is now the only value on the stack
+  __ jmp(rax); // jump to exception handler (may be _remove_activation_entry!)
 
-  // If the exception is not handled in the current frame the frame is removed and
-  // the exception is rethrown (i.e. exception continuation is _rethrow_exception).
+  // If the exception is not handled in the current frame the frame is
+  // removed and the exception is rethrown (i.e. exception
+  // continuation is _rethrow_exception).
   //
-  // Note: At this point the bci is still the bxi for the instruction which caused
-  //       the exception and the expression stack is empty. Thus, for any VM calls
-  //       at this point, GC will find a legal oop map (with empty expression stack).
+  // Note: At this point the bci is still the bxi for the instruction
+  // which caused the exception and the expression stack is
+  // empty. Thus, for any VM calls at this point, GC will find a legal
+  // oop map (with empty expression stack).
 
   // In current activation
   // tos: exception
-  // rsi: exception bcp
+  // esi: exception bcp
 
   //
   // JVMTI PopFrame support
   //
 
-   Interpreter::_remove_activation_preserving_args_entry = __ pc();
+  Interpreter::_remove_activation_preserving_args_entry = __ pc();
   __ empty_expression_stack();
-  __ empty_FPU_stack();
-  // Set the popframe_processing bit in pending_popframe_condition indicating that we are
-  // currently handling popframe, so that call_VMs that may happen later do not trigger new
-  // popframe handling cycles.
-  __ get_thread(thread);
+  // Set the popframe_processing bit in pending_popframe_condition
+  // indicating that we are currently handling popframe, so that
+  // call_VMs that may happen later do not trigger new popframe
+  // handling cycles.
+  const Register thread = NOT_LP64(rcx) LP64_ONLY(r15_thread);
+  NOT_LP64(__ get_thread(thread));
   __ movl(rdx, Address(thread, JavaThread::popframe_condition_offset()));
   __ orl(rdx, JavaThread::popframe_processing_bit);
   __ movl(Address(thread, JavaThread::popframe_condition_offset()), rdx);
@@ -1665,31 +1556,40 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     // deoptimization blob's unpack entry because of the presence of
     // adapter frames in C2.
     Label caller_not_deoptimized;
-    __ movptr(rdx, Address(rbp, frame::return_addr_offset * wordSize));
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::interpreter_contains), rdx);
+    Register rarg = NOT_LP64(rdx) LP64_ONLY(c_rarg1);
+    __ movptr(rarg, Address(rbp, frame::return_addr_offset * wordSize));
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address,
+                               InterpreterRuntime::interpreter_contains), rarg);
     __ testl(rax, rax);
     __ jcc(Assembler::notZero, caller_not_deoptimized);
 
-    // Compute size of arguments for saving when returning to deoptimized caller
+    // Compute size of arguments for saving when returning to
+    // deoptimized caller
     __ get_method(rax);
     __ movptr(rax, Address(rax, Method::const_offset()));
-    __ load_unsigned_short(rax, Address(rax, ConstMethod::size_of_parameters_offset()));
-    __ shlptr(rax, Interpreter::logStackElementSize);
+    __ load_unsigned_short(rax, Address(rax, in_bytes(ConstMethod::
+                                                size_of_parameters_offset())));
+    __ shll(rax, Interpreter::logStackElementSize);
     __ restore_locals();
-    __ subptr(rdi, rax);
-    __ addptr(rdi, wordSize);
+    __ subptr(rlocals, rax);
+    __ addptr(rlocals, wordSize);
     // Save these arguments
-    __ get_thread(thread);
-    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, Deoptimization::popframe_preserve_args), thread, rax, rdi);
+    NOT_LP64(__ get_thread(thread));
+    __ super_call_VM_leaf(CAST_FROM_FN_PTR(address,
+                                           Deoptimization::
+                                           popframe_preserve_args),
+                          thread, rax, rlocals);
 
     __ remove_activation(vtos, rdx,
                          /* throw_monitor_exception */ false,
                          /* install_monitor_exception */ false,
                          /* notify_jvmdi */ false);
 
-    // Inform deoptimization that it is responsible for restoring these arguments
-    __ get_thread(thread);
-    __ movl(Address(thread, JavaThread::popframe_condition_offset()), JavaThread::popframe_force_deopt_reexecution_bit);
+    // Inform deoptimization that it is responsible for restoring
+    // these arguments
+    NOT_LP64(__ get_thread(thread));
+    __ movl(Address(thread, JavaThread::popframe_condition_offset()),
+            JavaThread::popframe_force_deopt_reexecution_bit);
 
     // Continue in deoptimization handler
     __ jmp(rdx);
@@ -1697,7 +1597,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ bind(caller_not_deoptimized);
   }
 
-  __ remove_activation(vtos, rdx,
+  __ remove_activation(vtos, rdx, /* rdx result (retaddr) is not used */
                        /* throw_monitor_exception */ false,
                        /* install_monitor_exception */ false,
                        /* notify_jvmdi */ false);
@@ -1713,6 +1613,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   // maintain this kind of invariant all the time we call a small
   // fixup routine to move the mutated arguments onto the top of our
   // expression stack if necessary.
+#ifndef _LP64
   __ mov(rax, rsp);
   __ movptr(rbx, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
   __ get_thread(thread);
@@ -1720,10 +1621,18 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ set_last_Java_frame(thread, noreg, rbp, __ pc());
   __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::popframe_move_outgoing_args), thread, rax, rbx);
   __ get_thread(thread);
+#else
+  __ mov(c_rarg1, rsp);
+  __ movptr(c_rarg2, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
+  // PC must point into interpreter here
+  __ set_last_Java_frame(noreg, rbp, __ pc());
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::popframe_move_outgoing_args), r15_thread, c_rarg1, c_rarg2);
+#endif
   __ reset_last_Java_frame(thread, true, true);
+
   // Restore the last_sp and null it out
   __ movptr(rsp, Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize));
-  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), NULL_WORD);
+  __ movptr(Address(rbp, frame::interpreter_frame_last_sp_offset * wordSize), (int32_t)NULL_WORD);
 
   __ restore_bcp();
   __ restore_locals();
@@ -1734,15 +1643,16 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   }
 
   // Clear the popframe condition flag
-  __ get_thread(thread);
-  __ movl(Address(thread, JavaThread::popframe_condition_offset()), JavaThread::popframe_inactive);
+  NOT_LP64(__ get_thread(thread));
+  __ movl(Address(thread, JavaThread::popframe_condition_offset()),
+          JavaThread::popframe_inactive);
 
 #if INCLUDE_JVMTI
   {
     Label L_done;
-    const Register local0 = rdi;
+    const Register local0 = rlocals;
 
-    __ cmpb(Address(rsi, 0), Bytecodes::_invokestatic);
+    __ cmpb(Address(rbcp, 0), Bytecodes::_invokestatic);
     __ jcc(Assembler::notEqual, L_done);
 
     // The member name argument must be restored if _invokestatic is re-executed after a PopFrame call.
@@ -1750,7 +1660,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
     __ get_method(rdx);
     __ movptr(rax, Address(local0, 0));
-    __ call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::member_name_arg_or_null), rax, rdx, rsi);
+    __ call_VM(rax, CAST_FROM_FN_PTR(address, InterpreterRuntime::member_name_arg_or_null), rax, rdx, rbcp);
 
     __ testptr(rax, rax);
     __ jcc(Assembler::zero, L_done);
@@ -1767,30 +1677,33 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 
   // preserve exception over this code sequence
   __ pop_ptr(rax);
-  __ get_thread(thread);
+  NOT_LP64(__ get_thread(thread));
   __ movptr(Address(thread, JavaThread::vm_result_offset()), rax);
   // remove the activation (without doing throws on illegalMonitorExceptions)
   __ remove_activation(vtos, rdx, false, true, false);
   // restore exception
-  __ get_thread(thread);
+  NOT_LP64(__ get_thread(thread));
   __ get_vm_result(rax, thread);
 
-  // Inbetween activations - previous activation type unknown yet
-  // compute continuation point - the continuation point expects
-  // the following registers set up:
+  // In between activations - previous activation type unknown yet
+  // compute continuation point - the continuation point expects the
+  // following registers set up:
   //
   // rax: exception
   // rdx: return address/pc that threw exception
   // rsp: expression stack of caller
-  // rbp: rbp, of caller
+  // rbp: ebp of caller
   __ push(rax);                                  // save exception
   __ push(rdx);                                  // save return address
-  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::exception_handler_for_return_address), thread, rdx);
+  __ super_call_VM_leaf(CAST_FROM_FN_PTR(address,
+                          SharedRuntime::exception_handler_for_return_address),
+                        thread, rdx);
   __ mov(rbx, rax);                              // save exception handler
   __ pop(rdx);                                   // restore return address
   __ pop(rax);                                   // restore exception
   // Note that an "issuing PC" is actually the next PC after the call
-  __ jmp(rbx);                                   // jump to exception handler of caller
+  __ jmp(rbx);                                   // jump to exception
+                                                 // handler of caller
 }
 
 
@@ -1799,17 +1712,16 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
 //
 address TemplateInterpreterGenerator::generate_earlyret_entry_for(TosState state) {
   address entry = __ pc();
-  const Register thread = rcx;
 
   __ restore_bcp();
   __ restore_locals();
   __ empty_expression_stack();
-  __ empty_FPU_stack();
-  __ load_earlyret_value(state);
+  __ load_earlyret_value(state);  // 32 bits returns value in rdx, so don't reuse
 
-  __ get_thread(thread);
+  const Register thread = NOT_LP64(rcx) LP64_ONLY(r15_thread);
+  NOT_LP64(__ get_thread(thread));
   __ movptr(rcx, Address(thread, JavaThread::jvmti_thread_state_offset()));
-  const Address cond_addr(rcx, JvmtiThreadState::earlyret_state_offset());
+  Address cond_addr(rcx, JvmtiThreadState::earlyret_state_offset());
 
   // Clear the earlyret state
   __ movl(cond_addr, JvmtiThreadState::earlyret_inactive);
@@ -1819,45 +1731,63 @@ address TemplateInterpreterGenerator::generate_earlyret_entry_for(TosState state
                        false, /* install_monitor_exception */
                        true); /* notify_jvmdi */
   __ jmp(rsi);
+
   return entry;
 } // end of ForceEarlyReturn support
 
 
-//------------------------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 // Helper for vtos entry point generation
 
-void TemplateInterpreterGenerator::set_vtos_entry_points (Template* t, address& bep, address& cep, address& sep, address& aep, address& iep, address& lep, address& fep, address& dep, address& vep) {
+void TemplateInterpreterGenerator::set_vtos_entry_points(Template* t,
+                                                         address& bep,
+                                                         address& cep,
+                                                         address& sep,
+                                                         address& aep,
+                                                         address& iep,
+                                                         address& lep,
+                                                         address& fep,
+                                                         address& dep,
+                                                         address& vep) {
   assert(t->is_valid() && t->tos_in() == vtos, "illegal template");
   Label L;
+  aep = __ pc();  __ push_ptr();   __ jmp(L);
+#ifndef _LP64
   fep = __ pc(); __ push(ftos); __ jmp(L);
   dep = __ pc(); __ push(dtos); __ jmp(L);
-  lep = __ pc(); __ push(ltos); __ jmp(L);
-  aep = __ pc(); __ push(atos); __ jmp(L);
-  bep = cep = sep =             // fall through
-  iep = __ pc(); __ push(itos); // fall through
-  vep = __ pc(); __ bind(L);    // fall through
+#else
+  fep = __ pc();  __ push_f(xmm0); __ jmp(L);
+  dep = __ pc();  __ push_d(xmm0); __ jmp(L);
+#endif // _LP64
+  lep = __ pc();  __ push_l();     __ jmp(L);
+  bep = cep = sep =
+  iep = __ pc();  __ push_i();
+  vep = __ pc();
+  __ bind(L);
   generate_and_dispatch(t);
 }
 
-//------------------------------------------------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // Generation of individual instructions
 
 // helpers for generate_and_dispatch
 
 
-
 InterpreterGenerator::InterpreterGenerator(StubQueue* code)
- : TemplateInterpreterGenerator(code) {
+  : TemplateInterpreterGenerator(code) {
    generate_all(); // down here so it can be "virtual"
 }
 
-//------------------------------------------------------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
 // Non-product code
 #ifndef PRODUCT
+
 address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
   address entry = __ pc();
 
+#ifndef _LP64
   // prepare expression stack
   __ pop(rcx);          // pop return address so expression stack is 'pure'
   __ push(state);       // save tosca
@@ -1869,28 +1799,47 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
 
   // return
   __ jmp(rcx);
+#else
+  __ push(state);
+  __ push(c_rarg0);
+  __ push(c_rarg1);
+  __ push(c_rarg2);
+  __ push(c_rarg3);
+  __ mov(c_rarg2, rax);  // Pass itos
+#ifdef _WIN64
+  __ movflt(xmm3, xmm0); // Pass ftos
+#endif
+  __ call_VM(noreg,
+             CAST_FROM_FN_PTR(address, SharedRuntime::trace_bytecode),
+             c_rarg1, c_rarg2, c_rarg3);
+  __ pop(c_rarg3);
+  __ pop(c_rarg2);
+  __ pop(c_rarg1);
+  __ pop(c_rarg0);
+  __ pop(state);
+  __ ret(0);                                   // return from result handler
+#endif // _LP64
 
   return entry;
 }
-
 
 void TemplateInterpreterGenerator::count_bytecode() {
   __ incrementl(ExternalAddress((address) &BytecodeCounter::_counter_value));
 }
 
-
 void TemplateInterpreterGenerator::histogram_bytecode(Template* t) {
   __ incrementl(ExternalAddress((address) &BytecodeHistogram::_counters[t->bytecode()]));
 }
 
-
 void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
-  __ mov32(ExternalAddress((address) &BytecodePairHistogram::_index), rbx);
+  __ mov32(rbx, ExternalAddress((address) &BytecodePairHistogram::_index));
   __ shrl(rbx, BytecodePairHistogram::log2_number_of_codes);
-  __ orl(rbx, ((int)t->bytecode()) << BytecodePairHistogram::log2_number_of_codes);
-  ExternalAddress table((address) BytecodePairHistogram::_counters);
-  Address index(noreg, rbx, Address::times_4);
-  __ incrementl(ArrayAddress(table, index));
+  __ orl(rbx,
+         ((int) t->bytecode()) <<
+         BytecodePairHistogram::log2_number_of_codes);
+  __ mov32(ExternalAddress((address) &BytecodePairHistogram::_index), rbx);
+  __ lea(rscratch1, ExternalAddress((address) BytecodePairHistogram::_counters));
+  __ incrementl(Address(rscratch1, rbx, Address::times_4));
 }
 
 
@@ -1898,9 +1847,18 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
   // Call a little run-time stub to avoid blow-up for each bytecode.
   // The run-time runtime saves the right registers, depending on
   // the tosca in-state for the given template.
+
   assert(Interpreter::trace_code(t->tos_in()) != NULL,
          "entry must have been generated");
+#ifndef _LP64
   __ call(RuntimeAddress(Interpreter::trace_code(t->tos_in())));
+#else
+  __ mov(r12, rsp); // remember sp (can only use r12 if not using call_VM)
+  __ andptr(rsp, -16); // align stack as required by ABI
+  __ call(RuntimeAddress(Interpreter::trace_code(t->tos_in())));
+  __ mov(rsp, r12); // restore sp
+  __ reinit_heapbase();
+#endif // _LP64
 }
 
 
@@ -1913,4 +1871,4 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
   __ bind(L);
 }
 #endif // !PRODUCT
-#endif // CC_INTERP
+#endif // ! CC_INTERP

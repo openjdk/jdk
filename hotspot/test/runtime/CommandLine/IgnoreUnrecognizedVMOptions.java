@@ -163,9 +163,9 @@ public class IgnoreUnrecognizedVMOptions {
       -IgnoreUnrecognizedVMOptions               ERR                           ERR
       +IgnoreUnrecognizedVMOptions               ERR                           ERR
     */
-    runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:-UnlockDiagnosticVMOptions", "-XX:PrintInlining", "-version");
-    runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:-UnlockExperimentalVMOptions", "-XX:AlwaysSafeConstructors", "-version");
-    runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UnlockDiagnosticVMOptions", "-XX:PrintInlining", "-version");
-    runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:-UnlockExperimentalVMOptions", "-XX:AlwaysSafeConstructors", "-version");
+    runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:+UnlockDiagnosticVMOptions", "-XX:PrintInlining", "-version");
+    runJavaAndCheckExitValue(false, "-XX:-IgnoreUnrecognizedVMOptions", "-XX:+UnlockExperimentalVMOptions", "-XX:AlwaysSafeConstructors", "-version");
+    runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UnlockDiagnosticVMOptions", "-XX:PrintInlining", "-version");
+    runJavaAndCheckExitValue(false, "-XX:+IgnoreUnrecognizedVMOptions", "-XX:+UnlockExperimentalVMOptions", "-XX:AlwaysSafeConstructors", "-version");
   }
 }

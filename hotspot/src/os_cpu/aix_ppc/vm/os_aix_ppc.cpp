@@ -167,7 +167,7 @@ JVM_handle_aix_signal(int sig, siginfo_t* info, void* ucVoid, int abort_if_unrec
 
   ucontext_t* uc = (ucontext_t*) ucVoid;
 
-  Thread* t = ThreadLocalStorage::get_thread_slow();   // slow & steady
+  Thread* t = Thread::current_or_null_safe();
 
   SignalHandlerMark shm(t);
 

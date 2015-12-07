@@ -3933,7 +3933,6 @@ void execute_internal_vm_tests() {
 #if INCLUDE_ALL_GCS
     run_unit_test(TestOldFreeSpaceCalculation_test());
     run_unit_test(TestG1BiasedArray_test());
-    run_unit_test(HeapRegionRemSet::test_prt());
     run_unit_test(TestBufferingOopClosure_test());
     run_unit_test(TestCodeCacheRemSet_test());
     if (UseG1GC) {
@@ -4175,7 +4174,7 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   }
   */
 
-  Thread* t = ThreadLocalStorage::get_thread_slow();
+  Thread* t = Thread::current_or_null();
   if (t != NULL) {
     // If the thread has been attached this operation is a no-op
     *(JNIEnv**)penv = ((JavaThread*) t)->jni_environment();
@@ -4190,10 +4189,8 @@ static jint attach_current_thread(JavaVM *vm, void **penv, void *_args, bool dae
   // initializing the Java level thread object. Hence, the correct state must
   // be set in order for the Safepoint code to deal with it correctly.
   thread->set_thread_state(_thread_in_vm);
-  // Must do this before initialize_thread_local_storage
   thread->record_stack_base_and_size();
-
-  thread->initialize_thread_local_storage();
+  thread->initialize_thread_current();
 
   if (!os::create_attached_thread(thread)) {
     delete thread;
@@ -4300,8 +4297,8 @@ jint JNICALL jni_DetachCurrentThread(JavaVM *vm)  {
 
   JNIWrapper("DetachCurrentThread");
 
-  // If the thread has been deattacted the operations is a no-op
-  if (ThreadLocalStorage::thread() == NULL) {
+  // If the thread has already been detached the operation is a no-op
+  if (Thread::current_or_null() == NULL) {
   HOTSPOT_JNI_DETACHCURRENTTHREAD_RETURN(JNI_OK);
     return JNI_OK;
   }
@@ -4358,7 +4355,7 @@ jint JNICALL jni_GetEnv(JavaVM *vm, void **penv, jint version) {
 #define JVMPI_VERSION_1_2 ((jint)0x10000003)
 #endif // !JVMPI_VERSION_1
 
-  Thread* thread = ThreadLocalStorage::thread();
+  Thread* thread = Thread::current_or_null();
   if (thread != NULL && thread->is_Java_thread()) {
     if (Threads::is_supported_jni_version_including_1_1(version)) {
       *(JNIEnv**)penv = ((JavaThread*) thread)->jni_environment();

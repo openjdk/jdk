@@ -78,7 +78,6 @@
 #include "runtime/task.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
-#include "runtime/threadLocalStorage.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
@@ -142,6 +141,10 @@
 
 #endif // ndef DTRACE_ENABLED
 
+#ifndef USE_LIBRARY_BASED_TLS_ONLY
+// Current thread is maintained as a thread-local variable
+THREAD_LOCAL_DECL Thread* Thread::_thr_current = NULL;
+#endif
 
 // Class hierarchy
 // - Thread
@@ -281,22 +284,22 @@ Thread::Thread() {
 #endif // ASSERT
 }
 
-// Non-inlined version to be used where thread.inline.hpp shouldn't be included.
-Thread* Thread::current_noinline() {
-  return Thread::current();
+void Thread::initialize_thread_current() {
+#ifndef USE_LIBRARY_BASED_TLS_ONLY
+  assert(_thr_current == NULL, "Thread::current already initialized");
+  _thr_current = this;
+#endif
+  assert(ThreadLocalStorage::thread() == NULL, "ThreadLocalStorage::thread already initialized");
+  ThreadLocalStorage::set_thread(this);
+  assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
 }
 
-void Thread::initialize_thread_local_storage() {
-  // Note: Make sure this method only calls
-  // non-blocking operations. Otherwise, it might not work
-  // with the thread-startup/safepoint interaction.
-
-  // During Java thread startup, safepoint code should allow this
-  // method to complete because it may need to allocate memory to
-  // store information for the new thread.
-
-  // initialize structure dependent on thread local storage
-  ThreadLocalStorage::set_thread(this);
+void Thread::clear_thread_current() {
+  assert(Thread::current() == ThreadLocalStorage::thread(), "TLS mismatch!");
+#ifndef USE_LIBRARY_BASED_TLS_ONLY
+  _thr_current = NULL;
+#endif
+  ThreadLocalStorage::set_thread(NULL);
 }
 
 void Thread::record_stack_base_and_size() {
@@ -364,15 +367,12 @@ Thread::~Thread() {
 
   delete _SR_lock;
 
-  // clear thread local storage if the Thread is deleting itself
+  // clear Thread::current if thread is deleting itself.
+  // Needed to ensure JNI correctly detects non-attached threads.
   if (this == Thread::current()) {
-    ThreadLocalStorage::set_thread(NULL);
-  } else {
-    // In the case where we're not the current thread, invalidate all the
-    // caches in case some code tries to get the current thread or the
-    // thread that was destroyed, and gets stale information.
-    ThreadLocalStorage::invalidate_all();
+    clear_thread_current();
   }
+
   CHECK_UNHANDLED_OOPS_ONLY(if (CheckUnhandledOops) delete unhandled_oops();)
 }
 
@@ -1273,7 +1273,6 @@ void WatcherThread::run() {
   assert(this == watcher_thread(), "just checking");
 
   this->record_stack_base_and_size();
-  this->initialize_thread_local_storage();
   this->set_native_thread_name(this->name());
   this->set_active_handles(JNIHandleBlock::allocate_block());
   while (true) {
@@ -1326,9 +1325,6 @@ void WatcherThread::run() {
     _watcher_thread = NULL;
     Terminator_lock->notify();
   }
-
-  // Thread destructor usually does this..
-  ThreadLocalStorage::set_thread(NULL);
 }
 
 void WatcherThread::start() {
@@ -1663,9 +1659,6 @@ void JavaThread::run() {
   // Record real stack base and size.
   this->record_stack_base_and_size();
 
-  // Initialize thread local storage; set before calling MutexLocker
-  this->initialize_thread_local_storage();
-
   this->create_stack_guard_pages();
 
   this->cache_global_variables();
@@ -1997,8 +1990,7 @@ void JavaThread::cleanup_failed_attach_current_thread() {
 
 
 JavaThread* JavaThread::active() {
-  Thread* thread = ThreadLocalStorage::thread();
-  assert(thread != NULL, "just checking");
+  Thread* thread = Thread::current();
   if (thread->is_Java_thread()) {
     return (JavaThread*) thread;
   } else {
@@ -3407,7 +3399,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   jint adjust_after_os_result = Arguments::adjust_after_os();
   if (adjust_after_os_result != JNI_OK) return adjust_after_os_result;
 
-  // initialize TLS
+  // Initialize library-based TLS
   ThreadLocalStorage::init();
 
   // Initialize output stream logging
@@ -3444,14 +3436,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Attach the main thread to this os thread
   JavaThread* main_thread = new JavaThread();
   main_thread->set_thread_state(_thread_in_vm);
-  // must do this before set_active_handles and initialize_thread_local_storage
-  // Note: on solaris initialize_thread_local_storage() will (indirectly)
-  // change the stack size recorded here to one based on the java thread
-  // stacksize. This adjusted size is what is used to figure the placement
-  // of the guard pages.
+  main_thread->initialize_thread_current();
+  // must do this before set_active_handles
   main_thread->record_stack_base_and_size();
-  main_thread->initialize_thread_local_storage();
-
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
 
   if (!main_thread->set_as_starting_thread()) {

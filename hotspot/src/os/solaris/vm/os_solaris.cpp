@@ -728,6 +728,9 @@ extern "C" void* java_start(void* thread_addr) {
 
   int prio;
   Thread* thread = (Thread*)thread_addr;
+
+  thread->initialize_thread_current();
+
   OSThread* osthr = thread->osthread();
 
   osthr->set_lwp_id(_lwp_self());  // Store lwp in case we are bound
@@ -4144,32 +4147,6 @@ void os::Solaris::install_signal_handlers() {
 void report_error(const char* file_name, int line_no, const char* title,
                   const char* format, ...);
 
-const char * signames[] = {
-  "SIG0",
-  "SIGHUP", "SIGINT", "SIGQUIT", "SIGILL", "SIGTRAP",
-  "SIGABRT", "SIGEMT", "SIGFPE", "SIGKILL", "SIGBUS",
-  "SIGSEGV", "SIGSYS", "SIGPIPE", "SIGALRM", "SIGTERM",
-  "SIGUSR1", "SIGUSR2", "SIGCLD", "SIGPWR", "SIGWINCH",
-  "SIGURG", "SIGPOLL", "SIGSTOP", "SIGTSTP", "SIGCONT",
-  "SIGTTIN", "SIGTTOU", "SIGVTALRM", "SIGPROF", "SIGXCPU",
-  "SIGXFSZ", "SIGWAITING", "SIGLWP", "SIGFREEZE", "SIGTHAW",
-  "SIGCANCEL", "SIGLOST"
-};
-
-const char* os::exception_name(int exception_code, char* buf, size_t size) {
-  if (0 < exception_code && exception_code <= SIGRTMAX) {
-    // signal
-    if (exception_code < sizeof(signames)/sizeof(const char*)) {
-      jio_snprintf(buf, size, "%s", signames[exception_code]);
-    } else {
-      jio_snprintf(buf, size, "SIG%d", exception_code);
-    }
-    return buf;
-  } else {
-    return NULL;
-  }
-}
-
 // (Static) wrapper for getisax(2) call.
 os::Solaris::getisax_func_t os::Solaris::_getisax = 0;
 
@@ -5605,7 +5582,7 @@ int os::fork_and_exec(char* cmd) {
 
   // fork is async-safe, fork1 is not so can't use in signal handler
   pid_t pid;
-  Thread* t = ThreadLocalStorage::get_thread_slow();
+  Thread* t = Thread::current_or_null_safe();
   if (t != NULL && t->is_inside_signal_handler()) {
     pid = fork();
   } else {

@@ -420,28 +420,6 @@ void* os::native_java_library() {
     }
 #endif
   }
-  static jboolean onLoaded = JNI_FALSE;
-  if (onLoaded) {
-    // We may have to wait to fire OnLoad until TLS is initialized.
-    if (ThreadLocalStorage::is_initialized()) {
-      // The JNI_OnLoad handling is normally done by method load in
-      // java.lang.ClassLoader$NativeLibrary, but the VM loads the base library
-      // explicitly so we have to check for JNI_OnLoad as well
-      const char *onLoadSymbols[] = JNI_ONLOAD_SYMBOLS;
-      JNI_OnLoad_t JNI_OnLoad = CAST_TO_FN_PTR(
-          JNI_OnLoad_t, dll_lookup(_native_java_library, onLoadSymbols[0]));
-      if (JNI_OnLoad != NULL) {
-        JavaThread* thread = JavaThread::current();
-        ThreadToNativeFromVM ttn(thread);
-        HandleMark hm(thread);
-        jint ver = (*JNI_OnLoad)(&main_vm, NULL);
-        onLoaded = JNI_TRUE;
-        if (!Threads::is_supported_jni_version_including_1_1(ver)) {
-          vm_exit_during_initialization("Unsupported JNI version");
-        }
-      }
-    }
-  }
   return _native_java_library;
 }
 
@@ -574,7 +552,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   // exists and has crash protection.
   WatcherThread *wt = WatcherThread::watcher_thread();
   if (wt != NULL && wt->has_crash_protection()) {
-    Thread* thread = ThreadLocalStorage::get_thread_slow();
+    Thread* thread = Thread::current_or_null();
     if (thread == wt) {
       assert(!wt->has_crash_protection(),
           "Can't malloc with crash protection from WatcherThread");
