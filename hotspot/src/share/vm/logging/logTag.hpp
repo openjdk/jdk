@@ -38,7 +38,7 @@
   LOG_TAG(safepoint) \
   LOG_TAG(vmoperation)
 
-#define PREFIX_LOG_TAG(T) (LogTag::T)
+#define PREFIX_LOG_TAG(T) (LogTag::_##T)
 
 // Expand a set of log tags to their prefixed names.
 // For error detection purposes, the macro passes one more tag than what is supported.
@@ -47,7 +47,7 @@
                                                         PREFIX_LOG_TAG(T3), PREFIX_LOG_TAG(T4), PREFIX_LOG_TAG(T5)
 // The EXPAND_VARARGS macro is required for MSVC, or it will resolve the LOG_TAGS_EXPANDED macro incorrectly.
 #define EXPAND_VARARGS(x) x
-#define LOG_TAGS(...) EXPAND_VARARGS(LOG_TAGS_EXPANDED(__VA_ARGS__, __NO_TAG, __NO_TAG, __NO_TAG, __NO_TAG, __NO_TAG, __NO_TAG))
+#define LOG_TAGS(...) EXPAND_VARARGS(LOG_TAGS_EXPANDED(__VA_ARGS__, _NO_TAG, _NO_TAG, _NO_TAG, _NO_TAG, _NO_TAG, _NO_TAG))
 
 // Log tags are used to classify log messages.
 // Each log message can be assigned between 1 to LogTag::MaxTags number of tags.
@@ -63,7 +63,7 @@ class LogTag : public AllStatic {
 
   enum type {
     __NO_TAG,
-#define LOG_TAG(name) name,
+#define LOG_TAG(name) _##name,
     LOG_TAG_LIST
 #undef LOG_TAG
     Count
