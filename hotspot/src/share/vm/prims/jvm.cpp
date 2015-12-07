@@ -3719,3 +3719,8 @@ JVM_ENTRY(void, JVM_GetVersionInfo(JNIEnv* env, jvm_version_info* info, size_t i
   info->is_attachable = AttachListener::is_attach_supported();
 }
 JVM_END
+
+JVM_ENTRY_NO_ENV(jint, JVM_FindSignal(const char *name))
+  return os::get_signal_number(name);
+JVM_END
+

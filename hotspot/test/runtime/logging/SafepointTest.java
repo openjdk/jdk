@@ -26,24 +26,44 @@
  * @bug 8140348
  * @summary safepoint=trace should have output from each log statement in the code
  * @library /testlibrary
- * @compile SafepointTestMain.java
  * @modules java.base/sun.misc
  *          java.management
- * @build SafepointTest
- * @run main SafepointTest
+ * @run driver SafepointTest
  */
 
 import jdk.test.lib.*;
+import java.lang.ref.WeakReference;
 
 public class SafepointTest {
     public static void main(String[] args) throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-            "-Xlog:safepoint=trace", "SafepointTestMain");
+            "-Xlog:safepoint=trace", InnerClass.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("Safepoint synchronization initiated. (");
         output.shouldContain("Entering safepoint region: ");
         output.shouldContain("Leaving safepoint region");
         output.shouldContain("_at_poll_safepoint");
         output.shouldHaveExitValue(0);
+    }
+
+    public static class InnerClass {
+        public static byte[] garbage;
+        public static volatile WeakReference<Object> weakref;
+
+        public static void createweakref() {
+            Object o = new Object();
+            weakref = new WeakReference<>(o);
+        }
+
+        public static void main(String[] args) throws Exception {
+            // Cause several safepoints to run GC to see safepoint messages
+            for (int i = 0; i < 2; i++) {
+                createweakref();
+                while(weakref.get() != null) {
+                    garbage = new byte[8192];
+                    System.gc();
+                }
+            }
+        }
     }
 }

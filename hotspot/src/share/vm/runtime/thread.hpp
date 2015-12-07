@@ -102,6 +102,12 @@ class WorkerThread;
 class Thread: public ThreadShadow {
   friend class VMStructs;
  private:
+
+#ifndef USE_LIBRARY_BASED_TLS_ONLY
+  // Current thread is maintained as a thread-local variable
+  static THREAD_LOCAL_DECL Thread* _thr_current;
+#endif
+
   // Exception handling
   // (Note: _pending_exception and friends are in ThreadShadow)
   //oop       _pending_exception;                // pending exception for current thread
@@ -260,7 +266,6 @@ class Thread: public ThreadShadow {
   friend class No_Alloc_Verifier;
   friend class No_Safepoint_Verifier;
   friend class Pause_No_Safepoint_Verifier;
-  friend class ThreadLocalStorage;
   friend class GC_locker;
 
   ThreadLocalAllocBuffer _tlab;                 // Thread-local eden
@@ -307,9 +312,12 @@ class Thread: public ThreadShadow {
   Thread();
   virtual ~Thread();
 
-  // initializtion
-  void initialize_thread_local_storage();
+  // Manage Thread::current()
+  void initialize_thread_current();
+  private:
+  void clear_thread_current(); // needed for detaching JNI threads
 
+  public:
   // thread entry point
   virtual void run();
 
@@ -337,10 +345,13 @@ class Thread: public ThreadShadow {
 
   virtual char* name() const { return (char*)"Unknown thread"; }
 
-  // Returns the current thread
+  // Returns the current thread (ASSERTS if NULL)
   static inline Thread* current();
-  // ... without having to include thread.inline.hpp.
-  static Thread* current_noinline();
+  // Returns the current thread, or NULL if not attached
+  static inline Thread* current_or_null();
+  // Returns the current thread, or NULL if not attached, and is
+  // safe for use from signal-handlers
+  static inline Thread* current_or_null_safe();
 
   // Common thread operations
   static void set_priority(Thread* thread, ThreadPriority priority);
@@ -649,25 +660,22 @@ protected:
 };
 
 // Inline implementation of Thread::current()
-// Thread::current is "hot" it's called > 128K times in the 1st 500 msecs of
-// startup.
-// ThreadLocalStorage::thread is warm -- it's called > 16K times in the same
-// period.   This is inlined in thread_<os_family>.inline.hpp.
-
 inline Thread* Thread::current() {
-#ifdef ASSERT
-  // This function is very high traffic. Define PARANOID to enable expensive
-  // asserts.
-#ifdef PARANOID
-  // Signal handler should call ThreadLocalStorage::get_thread_slow()
-  Thread* t = ThreadLocalStorage::get_thread_slow();
-  assert(t != NULL && !t->is_inside_signal_handler(),
-         "Don't use Thread::current() inside signal handler");
+  Thread* current = current_or_null();
+  assert(current != NULL, "Thread::current() called on detached thread");
+  return current;
+}
+
+inline Thread* Thread::current_or_null() {
+#ifndef USE_LIBRARY_BASED_TLS_ONLY
+  return _thr_current;
+#else
+  return ThreadLocalStorage::thread();
 #endif
-#endif
-  Thread* thread = ThreadLocalStorage::thread();
-  assert(thread != NULL, "just checking");
-  return thread;
+}
+
+inline Thread* Thread::current_or_null_safe() {
+  return ThreadLocalStorage::thread();
 }
 
 // Name support for threads.  non-JavaThread subclasses with multiple
@@ -1842,8 +1850,8 @@ class JavaThread: public Thread {
 
 // Inline implementation of JavaThread::current
 inline JavaThread* JavaThread::current() {
-  Thread* thread = ThreadLocalStorage::thread();
-  assert(thread != NULL && thread->is_Java_thread(), "just checking");
+  Thread* thread = Thread::current();
+  assert(thread->is_Java_thread(), "just checking");
   return (JavaThread*)thread;
 }
 
