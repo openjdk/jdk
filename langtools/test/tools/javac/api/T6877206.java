@@ -62,15 +62,12 @@ public class T6877206 {
 
         test(createFileManager(), createDir("dir", entries), "p", entries.length);
         test(createFileManager(), createDir("a b/dir", entries), "p", entries.length);
-
-        for (boolean useOptimizedZip: new boolean[] { false, true }) {
-            test(createFileManager(useOptimizedZip), createJar("jar", entries), "p", entries.length);
-            test(createFileManager(useOptimizedZip), createJar("jar jar", entries), "p", entries.length);
-        }
+        test(createFileManager(), createJar("jar", entries), "p", entries.length);
+        test(createFileManager(), createJar("jar jar", entries), "p", entries.length);
 
         // Verify that we hit the files we intended
         checkCoverage("classes", foundClasses,
-                "RegularFileObject", "ZipFileIndexFileObject", "ZipFileObject");
+                "DirectoryFileObject", "JarFileObject");
 
         // Verify that we hit the jar files we intended
         checkCoverage("jar files", foundJars, "jar", "jar jar");
@@ -153,17 +150,12 @@ public class T6877206 {
     }
 
     JavacFileManager createFileManager() {
-        return createFileManager(false, false);
+        return createFileManager(false);
     }
 
-    JavacFileManager createFileManager(boolean useOptimizedZip) {
-        return createFileManager(useOptimizedZip, false);
-    }
-
-    JavacFileManager createFileManager(boolean useOptimizedZip, boolean useSymbolFile) {
+    JavacFileManager createFileManager(boolean useSymbolFile) {
         Context ctx = new Context();
         Options options = Options.instance(ctx);
-        options.put("useOptimizedZip", Boolean.toString(useOptimizedZip));
         if (!useSymbolFile) {
             options.put("ignore.symbol.file", "true");
         }

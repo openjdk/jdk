@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -103,10 +103,14 @@ public class SourcePositionImpl implements SourcePosition {
         String fn = filename.getName();
         if (fn.endsWith(")")) {
             int paren = fn.lastIndexOf("(");
-            if (paren != -1)
+            if (paren != -1) {
+                int i = paren+1;
+                if (fn.charAt(i) == '/')
+                    i++;
                 fn = fn.substring(0, paren)
                         + File.separatorChar
-                        + fn.substring(paren + 1, fn.length() - 1);
+                        + fn.substring(i, fn.length() - 1);
+            }
         }
 
         if (position == Position.NOPOS)
