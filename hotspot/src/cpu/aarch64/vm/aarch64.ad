@@ -15318,6 +15318,124 @@ instruct vmul2D(vecX dst, vecX src1, vecX src2)
   ins_pipe(pipe_class_default);
 %}
 
+// --------------------------------- MLA --------------------------------------
+
+instruct vmla4S(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);
+  match(Set dst (AddVS dst (MulVS src1 src2)));
+  ins_cost(INSN_COST);
+  format %{ "mlav  $dst,$src1,$src2\t# vector (4H)" %}
+  ins_encode %{
+    __ mlav(as_FloatRegister($dst$$reg), __ T4H,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmla8S(vecX dst, vecX src1, vecX src2)
+%{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (AddVS dst (MulVS src1 src2)));
+  ins_cost(INSN_COST);
+  format %{ "mlav  $dst,$src1,$src2\t# vector (8H)" %}
+  ins_encode %{
+    __ mlav(as_FloatRegister($dst$$reg), __ T8H,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmla2I(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (AddVI dst (MulVI src1 src2)));
+  ins_cost(INSN_COST);
+  format %{ "mlav  $dst,$src1,$src2\t# vector (2S)" %}
+  ins_encode %{
+    __ mlav(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmla4I(vecX dst, vecX src1, vecX src2)
+%{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (AddVI dst (MulVI src1 src2)));
+  ins_cost(INSN_COST);
+  format %{ "mlav  $dst,$src1,$src2\t# vector (4S)" %}
+  ins_encode %{
+    __ mlav(as_FloatRegister($dst$$reg), __ T4S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+// --------------------------------- MLS --------------------------------------
+
+instruct vmls4S(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2 ||
+            n->as_Vector()->length() == 4);
+  match(Set dst (SubVS dst (MulVS src1 src2)));
+  ins_cost(INSN_COST);
+  format %{ "mlsv  $dst,$src1,$src2\t# vector (4H)" %}
+  ins_encode %{
+    __ mlsv(as_FloatRegister($dst$$reg), __ T4H,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmls8S(vecX dst, vecX src1, vecX src2)
+%{
+  predicate(n->as_Vector()->length() == 8);
+  match(Set dst (SubVS dst (MulVS src1 src2)));
+  ins_cost(INSN_COST);
+  format %{ "mlsv  $dst,$src1,$src2\t# vector (8H)" %}
+  ins_encode %{
+    __ mlsv(as_FloatRegister($dst$$reg), __ T8H,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmls2I(vecD dst, vecD src1, vecD src2)
+%{
+  predicate(n->as_Vector()->length() == 2);
+  match(Set dst (SubVI dst (MulVI src1 src2)));
+  ins_cost(INSN_COST);
+  format %{ "mlsv  $dst,$src1,$src2\t# vector (2S)" %}
+  ins_encode %{
+    __ mlsv(as_FloatRegister($dst$$reg), __ T2S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
+instruct vmls4I(vecX dst, vecX src1, vecX src2)
+%{
+  predicate(n->as_Vector()->length() == 4);
+  match(Set dst (SubVI dst (MulVI src1 src2)));
+  ins_cost(INSN_COST);
+  format %{ "mlsv  $dst,$src1,$src2\t# vector (4S)" %}
+  ins_encode %{
+    __ mlsv(as_FloatRegister($dst$$reg), __ T4S,
+            as_FloatRegister($src1$$reg),
+            as_FloatRegister($src2$$reg));
+  %}
+  ins_pipe(pipe_class_default);
+%}
+
 // --------------------------------- DIV --------------------------------------
 
 instruct vdiv2F(vecD dst, vecD src1, vecD src2)
