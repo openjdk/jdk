@@ -23,21 +23,21 @@
 
 /*
  @test
- @bug 8040322 8060137
+ @bug 8060137
  @library ../../regtesthelpers
  @build Util
- @summary Test TextArea APIs replaceRange, insert, append & setText
- @run main TextAreaEditing
+ @summary Test TextField setText API
+ @run main TextFieldEditing
  */
 
 import java.awt.Frame;
 import java.awt.Robot;
-import java.awt.TextArea;
+import java.awt.TextField;
 import java.awt.AWTException;
 import java.awt.event.KeyEvent;
 import test.java.awt.regtesthelpers.Util;
 
-public class TextAreaEditing {
+public class TextFieldEditing {
 
     final static Robot robot = Util.createRobot();
     private int testFailCount;
@@ -45,15 +45,15 @@ public class TextAreaEditing {
     private StringBuilder testFailMessage;
 
     private Frame mainFrame;
-    private TextArea textArea;
+    private TextField textField;
 
-    private TextAreaEditing() {
+    private TextFieldEditing() {
         testFailMessage = new StringBuilder();
         mainFrame = new Frame();
         mainFrame.setSize(200, 200);
 
-        textArea = new TextArea();
-        mainFrame.add(textArea);
+        textField = new TextField();
+        mainFrame.add(textField);
         mainFrame.setVisible(true);
     }
 
@@ -64,94 +64,36 @@ public class TextAreaEditing {
     }
 
     public static void main(String[] s) {
-        TextAreaEditing textArea = new TextAreaEditing();
-        textArea.testReplaceRange();
-        textArea.testInsert();
-        textArea.testAppend();
-        textArea.testSetText();
-        textArea.checkFailures();
-        textArea.dispose();
-    }
-
-    private void testReplaceRange() {
-        textArea.setText(null);
-        textArea.replaceRange("Replace", 0, 0);
-        textArea.setText(null);
-        checkTest("");
-
-        textArea.setText("SetText");
-        textArea.replaceRange("Replace", 0, 3);
-        checkTest("ReplaceText");
-
-        textArea.replaceRange("String", textArea.getText().length(),
-                textArea.getText().length());
-        checkTest("ReplaceTextString");
-
-        textArea.replaceRange("String", 0, 0);
-        checkTest("StringReplaceTextString");
-
-        textArea.replaceRange("replaceRange", 0, textArea.getText().length());
-        checkTest("replaceRange");
-    }
-
-    private void testInsert() {
-        textArea.setText(null);
-        textArea.insert("Insert", 0);
-        textArea.setText("");
-        checkTest("");
-
-        textArea.setText("SetText");
-        textArea.insert("Insert", 3);
-        checkTest("SetInsertText");
-
-        textArea.insert("Insert", 0);
-        checkTest("InsertSetInsertText");
-
-        textArea.insert("Insert", textArea.getText().length());
-        checkTest("InsertSetInsertTextInsert");
-    }
-
-    private void testAppend() {
-        textArea.setText(null);
-        textArea.append("Append");
-        textArea.setText(null);
-        checkTest("");
-
-        textArea.setText("SetText");
-        textArea.append("Append");
-        checkTest("SetTextAppend");
-
-        textArea.append("");
-        checkTest("SetTextAppend");
-        textArea.setText("");
-        checkTest("");
+        TextFieldEditing textField = new TextFieldEditing();
+        textField.testSetText();
+        textField.checkFailures();
+        textField.dispose();
     }
 
     private void testSetText() {
-        textArea.setText(null);
-        textArea.requestFocus();
-        Util.clickOnComp(textArea, robot);
+        textField.setText(null);
+        textField.requestFocus();
+        Util.clickOnComp(textField, robot);
         Util.waitForIdle(robot);
         robot.keyPress(KeyEvent.VK_A);
         robot.delay(5);
         robot.keyRelease(KeyEvent.VK_A);
         Util.waitForIdle(robot);
-        textArea.setText(null);
+        textField.setText(null);
         checkTest("");
-        textArea.setText("CaseSensitive");
+        textField.setText("CaseSensitive");
         checkTest("CaseSensitive");
-        textArea.setText("caseSensitive");
+        textField.setText("caseSensitive");
         checkTest("caseSensitive");
-
     }
 
     private void checkTest(String str) {
-        if (str != null && !str.equals(textArea.getText())) {
+        if (str != null && !str.equals(textField.getText())) {
             testFailMessage.append("TestFail line : ");
             testFailMessage.append(Thread.currentThread().getStackTrace()[2].
                     getLineNumber());
-            testFailMessage.append(" TextArea string : \"");
-            testFailMessage.append(textArea.getText());
+            testFailMessage.append(" TextField string : \"");
+            testFailMessage.append(textField.getText());
             testFailMessage.append("\" does not match expected string : \"");
             testFailMessage.append(str).append("\"");
             testFailMessage.append(System.getProperty("line.separator"));
