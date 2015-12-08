@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classFileParser.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verifier.hpp"
@@ -114,47 +115,57 @@
 
 volatile int InstanceKlass::_total_instanceKlass_count = 0;
 
-InstanceKlass* InstanceKlass::allocate_instance_klass(
-                                              ClassLoaderData* loader_data,
-                                              int vtable_len,
-                                              int itable_len,
-                                              int static_field_size,
-                                              int nonstatic_oop_map_size,
-                                              ReferenceType rt,
-                                              AccessFlags access_flags,
-                                              Symbol* name,
-                                              Klass* super_klass,
-                                              bool is_anonymous,
-                                              TRAPS) {
+static inline bool is_class_loader(const Symbol* class_name,
+                                   const ClassFileParser& parser) {
+  assert(class_name != NULL, "invariant");
 
-  int size = InstanceKlass::size(vtable_len, itable_len, nonstatic_oop_map_size,
-                                 access_flags.is_interface(), is_anonymous);
+  if (class_name == vmSymbols::java_lang_ClassLoader()) {
+    return true;
+  }
+
+  if (SystemDictionary::ClassLoader_klass_loaded()) {
+    const Klass* const super_klass = parser.super_klass();
+    if (super_klass != NULL) {
+      if (super_klass->is_subtype_of(SystemDictionary::ClassLoader_klass())) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+InstanceKlass* InstanceKlass::allocate_instance_klass(const ClassFileParser& parser, TRAPS) {
+  const int size = InstanceKlass::size(parser.vtable_size(),
+                                       parser.itable_size(),
+                                       nonstatic_oop_map_size(parser.total_oop_map_count()),
+                                       parser.is_interface(),
+                                       parser.is_anonymous());
+
+  const Symbol* const class_name = parser.class_name();
+  assert(class_name != NULL, "invariant");
+  ClassLoaderData* loader_data = parser.loader_data();
+  assert(loader_data != NULL, "invariant");
+
+  InstanceKlass* ik;
 
   // Allocation
-  InstanceKlass* ik;
-  if (rt == REF_NONE) {
-    if (name == vmSymbols::java_lang_Class()) {
-      ik = new (loader_data, size, THREAD) InstanceMirrorKlass(
-        vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt,
-        access_flags, is_anonymous);
-    } else if (name == vmSymbols::java_lang_ClassLoader() ||
-          (SystemDictionary::ClassLoader_klass_loaded() &&
-          super_klass != NULL &&
-          super_klass->is_subtype_of(SystemDictionary::ClassLoader_klass()))) {
-      ik = new (loader_data, size, THREAD) InstanceClassLoaderKlass(
-        vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt,
-        access_flags, is_anonymous);
-    } else {
-      // normal class
-      ik = new (loader_data, size, THREAD) InstanceKlass(
-        vtable_len, itable_len, static_field_size, nonstatic_oop_map_size,
-        InstanceKlass::_misc_kind_other, rt, access_flags, is_anonymous);
+  if (REF_NONE == parser.reference_type()) {
+    if (class_name == vmSymbols::java_lang_Class()) {
+      // mirror
+      ik = new (loader_data, size, THREAD) InstanceMirrorKlass(parser);
     }
-  } else {
-    // reference klass
-    ik = new (loader_data, size, THREAD) InstanceRefKlass(
-        vtable_len, itable_len, static_field_size, nonstatic_oop_map_size, rt,
-        access_flags, is_anonymous);
+    else if (is_class_loader(class_name, parser)) {
+      // class loader
+      ik = new (loader_data, size, THREAD) InstanceClassLoaderKlass(parser);
+    }
+    else {
+      // normal
+      ik = new (loader_data, size, THREAD) InstanceKlass(parser, InstanceKlass::_misc_kind_other);
+    }
+  }
+  else {
+    // reference
+    ik = new (loader_data, size, THREAD) InstanceRefKlass(parser);
   }
 
   // Check for pending exception before adding to the loader data and incrementing
@@ -163,17 +174,21 @@ InstanceKlass* InstanceKlass::allocate_instance_klass(
     return NULL;
   }
 
+  assert(ik != NULL, "invariant");
+
+  const bool publicize = !parser.is_internal();
+
   // Add all classes to our internal class loader list here,
   // including classes in the bootstrap (NULL) class loader.
-  loader_data->add_class(ik);
-
+  loader_data->add_class(ik, publicize);
   Atomic::inc(&_total_instanceKlass_count);
+
   return ik;
 }
 
 
 // copy method ordering from resource area to Metaspace
-void InstanceKlass::copy_method_ordering(intArray* m, TRAPS) {
+void InstanceKlass::copy_method_ordering(const intArray* m, TRAPS) {
   if (m != NULL) {
     // allocate a new array and copy contents (memcpy?)
     _method_ordering = MetadataFactory::new_array<int>(class_loader_data(), m->length(), CHECK);
@@ -193,78 +208,22 @@ Array<int>* InstanceKlass::create_new_default_vtable_indices(int len, TRAPS) {
   return vtable_indices;
 }
 
-InstanceKlass::InstanceKlass(int vtable_len,
-                             int itable_len,
-                             int static_field_size,
-                             int nonstatic_oop_map_size,
-                             unsigned kind,
-                             ReferenceType rt,
-                             AccessFlags access_flags,
-                             bool is_anonymous) {
-  No_Safepoint_Verifier no_safepoint; // until k becomes parsable
+InstanceKlass::InstanceKlass(const ClassFileParser& parser, unsigned kind) :
+  _static_field_size(parser.static_field_size()),
+  _nonstatic_oop_map_size(nonstatic_oop_map_size(parser.total_oop_map_count())),
+  _vtable_len(parser.vtable_size()),
+  _itable_len(parser.itable_size()),
+  _reference_type(parser.reference_type()) {
+    set_kind(kind);
+    set_access_flags(parser.access_flags());
+    set_is_anonymous(parser.is_anonymous());
+    set_layout_helper(Klass::instance_layout_helper(parser.layout_size(),
+                                                    false));
 
-  int iksize = InstanceKlass::size(vtable_len, itable_len, nonstatic_oop_map_size,
-                                   access_flags.is_interface(), is_anonymous);
-  set_vtable_length(vtable_len);
-  set_itable_length(itable_len);
-  set_static_field_size(static_field_size);
-  set_nonstatic_oop_map_size(nonstatic_oop_map_size);
-  set_access_flags(access_flags);
-  _misc_flags = 0;  // initialize to zero
-  set_kind(kind);
-  set_is_anonymous(is_anonymous);
-  assert(size() == iksize, "wrong size for object");
-
-  set_array_klasses(NULL);
-  set_methods(NULL);
-  set_method_ordering(NULL);
-  set_default_methods(NULL);
-  set_default_vtable_indices(NULL);
-  set_local_interfaces(NULL);
-  set_transitive_interfaces(NULL);
-  init_implementor();
-  set_fields(NULL, 0);
-  set_constants(NULL);
-  set_class_loader_data(NULL);
-  set_source_file_name_index(0);
-  set_source_debug_extension(NULL, 0);
-  set_array_name(NULL);
-  set_inner_classes(NULL);
-  set_static_oop_field_count(0);
-  set_nonstatic_field_size(0);
-  set_is_marked_dependent(false);
-  _dep_context = DependencyContext::EMPTY;
-  set_init_state(InstanceKlass::allocated);
-  set_init_thread(NULL);
-  set_reference_type(rt);
-  set_oop_map_cache(NULL);
-  set_jni_ids(NULL);
-  set_osr_nmethods_head(NULL);
-  set_breakpoints(NULL);
-  init_previous_versions();
-  set_generic_signature_index(0);
-  release_set_methods_jmethod_ids(NULL);
-  set_annotations(NULL);
-  set_jvmti_cached_class_field_map(NULL);
-  set_initial_method_idnum(0);
-  set_jvmti_cached_class_field_map(NULL);
-  set_cached_class_file(NULL);
-  set_initial_method_idnum(0);
-  set_minor_version(0);
-  set_major_version(0);
-  NOT_PRODUCT(_verify_count = 0;)
-
-  // initialize the non-header words to zero
-  intptr_t* p = (intptr_t*)this;
-  for (int index = InstanceKlass::header_size(); index < iksize; index++) {
-    p[index] = NULL_WORD;
-  }
-
-  // Set temporary value until parseClassFile updates it with the real instance
-  // size.
-  set_layout_helper(Klass::instance_layout_helper(0, true));
+    assert(NULL == _methods, "underlying memory not zeroed?");
+    assert(is_instance_klass(), "is layout incorrect?");
+    assert(size_helper() == parser.layout_size(), "incorrect size_helper?");
 }
-
 
 void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
                                        Array<Method*>* methods) {
@@ -283,7 +242,7 @@ void InstanceKlass::deallocate_methods(ClassLoaderData* loader_data,
 }
 
 void InstanceKlass::deallocate_interfaces(ClassLoaderData* loader_data,
-                                          Klass* super_klass,
+                                          const Klass* super_klass,
                                           Array<Klass*>* local_interfaces,
                                           Array<Klass*>* transitive_interfaces) {
   // Only deallocate transitive interfaces if not empty, same as super class
@@ -1349,10 +1308,12 @@ void InstanceKlass::array_klasses_do(void f(Klass* k)) {
 }
 
 #ifdef ASSERT
-static int linear_search(Array<Method*>* methods, Symbol* name, Symbol* signature) {
-  int len = methods->length();
+static int linear_search(const Array<Method*>* methods,
+                         const Symbol* name,
+                         const Symbol* signature) {
+  const int len = methods->length();
   for (int index = 0; index < len; index++) {
-    Method* m = methods->at(index);
+    const Method* const m = methods->at(index);
     assert(m->is_method(), "must be method");
     if (m->signature() == signature && m->name() == name) {
        return index;
@@ -1362,7 +1323,7 @@ static int linear_search(Array<Method*>* methods, Symbol* name, Symbol* signatur
 }
 #endif
 
-static int binary_search(Array<Method*>* methods, Symbol* name) {
+static int binary_search(const Array<Method*>* methods, const Symbol* name) {
   int len = methods->length();
   // methods are sorted, so do binary search
   int l = 0;
@@ -1384,31 +1345,44 @@ static int binary_search(Array<Method*>* methods, Symbol* name) {
 }
 
 // find_method looks up the name/signature in the local methods array
-Method* InstanceKlass::find_method(Symbol* name, Symbol* signature) const {
+Method* InstanceKlass::find_method(const Symbol* name,
+                                   const Symbol* signature) const {
   return find_method_impl(name, signature, find_overpass, find_static, find_private);
 }
 
-Method* InstanceKlass::find_method_impl(Symbol* name, Symbol* signature,
+Method* InstanceKlass::find_method_impl(const Symbol* name,
+                                        const Symbol* signature,
                                         OverpassLookupMode overpass_mode,
                                         StaticLookupMode static_mode,
                                         PrivateLookupMode private_mode) const {
-  return InstanceKlass::find_method_impl(methods(), name, signature, overpass_mode, static_mode, private_mode);
+  return InstanceKlass::find_method_impl(methods(),
+                                         name,
+                                         signature,
+                                         overpass_mode,
+                                         static_mode,
+                                         private_mode);
 }
 
 // find_instance_method looks up the name/signature in the local methods array
 // and skips over static methods
-Method* InstanceKlass::find_instance_method(
-    Array<Method*>* methods, Symbol* name, Symbol* signature) {
-  Method* meth = InstanceKlass::find_method_impl(methods, name, signature,
-                                                 find_overpass, skip_static, find_private);
-  assert(((meth == NULL) || !meth->is_static()), "find_instance_method should have skipped statics");
+Method* InstanceKlass::find_instance_method(const Array<Method*>* methods,
+                                            const Symbol* name,
+                                            const Symbol* signature) {
+  Method* const meth = InstanceKlass::find_method_impl(methods,
+                                                 name,
+                                                 signature,
+                                                 find_overpass,
+                                                 skip_static,
+                                                 find_private);
+  assert(((meth == NULL) || !meth->is_static()),
+    "find_instance_method should have skipped statics");
   return meth;
 }
 
 // find_instance_method looks up the name/signature in the local methods array
 // and skips over static methods
-Method* InstanceKlass::find_instance_method(Symbol* name, Symbol* signature) {
-    return InstanceKlass::find_instance_method(methods(), name, signature);
+Method* InstanceKlass::find_instance_method(const Symbol* name, const Symbol* signature) const {
+  return InstanceKlass::find_instance_method(methods(), name, signature);
 }
 
 // Find looks up the name/signature in the local methods array
@@ -1416,11 +1390,17 @@ Method* InstanceKlass::find_instance_method(Symbol* name, Symbol* signature) {
 // This returns the first one found
 // note that the local methods array can have up to one overpass, one static
 // and one instance (private or not) with the same name/signature
-Method* InstanceKlass::find_local_method(Symbol* name, Symbol* signature,
-                                        OverpassLookupMode overpass_mode,
-                                        StaticLookupMode static_mode,
-                                        PrivateLookupMode private_mode) const {
-  return InstanceKlass::find_method_impl(methods(), name, signature, overpass_mode, static_mode, private_mode);
+Method* InstanceKlass::find_local_method(const Symbol* name,
+                                         const Symbol* signature,
+                                         OverpassLookupMode overpass_mode,
+                                         StaticLookupMode static_mode,
+                                         PrivateLookupMode private_mode) const {
+  return InstanceKlass::find_method_impl(methods(),
+                                         name,
+                                         signature,
+                                         overpass_mode,
+                                         static_mode,
+                                         private_mode);
 }
 
 // Find looks up the name/signature in the local methods array
@@ -1428,34 +1408,51 @@ Method* InstanceKlass::find_local_method(Symbol* name, Symbol* signature,
 // This returns the first one found
 // note that the local methods array can have up to one overpass, one static
 // and one instance (private or not) with the same name/signature
-Method* InstanceKlass::find_local_method(Array<Method*>* methods,
-                                        Symbol* name, Symbol* signature,
+Method* InstanceKlass::find_local_method(const Array<Method*>* methods,
+                                         const Symbol* name,
+                                         const Symbol* signature,
+                                         OverpassLookupMode overpass_mode,
+                                         StaticLookupMode static_mode,
+                                         PrivateLookupMode private_mode) {
+  return InstanceKlass::find_method_impl(methods,
+                                         name,
+                                         signature,
+                                         overpass_mode,
+                                         static_mode,
+                                         private_mode);
+}
+
+Method* InstanceKlass::find_method(const Array<Method*>* methods,
+                                   const Symbol* name,
+                                   const Symbol* signature) {
+  return InstanceKlass::find_method_impl(methods,
+                                         name,
+                                         signature,
+                                         find_overpass,
+                                         find_static,
+                                         find_private);
+}
+
+Method* InstanceKlass::find_method_impl(const Array<Method*>* methods,
+                                        const Symbol* name,
+                                        const Symbol* signature,
                                         OverpassLookupMode overpass_mode,
                                         StaticLookupMode static_mode,
                                         PrivateLookupMode private_mode) {
-  return InstanceKlass::find_method_impl(methods, name, signature, overpass_mode, static_mode, private_mode);
-}
-
-
-// find_method looks up the name/signature in the local methods array
-Method* InstanceKlass::find_method(
-    Array<Method*>* methods, Symbol* name, Symbol* signature) {
-  return InstanceKlass::find_method_impl(methods, name, signature, find_overpass, find_static, find_private);
-}
-
-Method* InstanceKlass::find_method_impl(
-    Array<Method*>* methods, Symbol* name, Symbol* signature,
-    OverpassLookupMode overpass_mode, StaticLookupMode static_mode,
-    PrivateLookupMode private_mode) {
   int hit = find_method_index(methods, name, signature, overpass_mode, static_mode, private_mode);
   return hit >= 0 ? methods->at(hit): NULL;
 }
 
-bool InstanceKlass::method_matches(Method* m, Symbol* signature, bool skipping_overpass, bool skipping_static, bool skipping_private) {
-    return  ((m->signature() == signature) &&
-            (!skipping_overpass || !m->is_overpass()) &&
-            (!skipping_static || !m->is_static()) &&
-            (!skipping_private || !m->is_private()));
+// true if method matches signature and conforms to skipping_X conditions.
+static bool method_matches(const Method* m,
+                           const Symbol* signature,
+                           bool skipping_overpass,
+                           bool skipping_static,
+                           bool skipping_private) {
+  return ((m->signature() == signature) &&
+    (!skipping_overpass || !m->is_overpass()) &&
+    (!skipping_static || !m->is_static()) &&
+    (!skipping_private || !m->is_private()));
 }
 
 // Used directly for default_methods to find the index into the
@@ -1470,50 +1467,65 @@ bool InstanceKlass::method_matches(Method* m, Symbol* signature, bool skipping_o
 // To correctly catch a given method, the search criteria may need
 // to explicitly skip the other two. For local instance methods, it
 // is often necessary to skip private methods
-int InstanceKlass::find_method_index(
-    Array<Method*>* methods, Symbol* name, Symbol* signature,
-    OverpassLookupMode overpass_mode, StaticLookupMode static_mode,
-    PrivateLookupMode private_mode) {
-  bool skipping_overpass = (overpass_mode == skip_overpass);
-  bool skipping_static = (static_mode == skip_static);
-  bool skipping_private = (private_mode == skip_private);
-  int hit = binary_search(methods, name);
+int InstanceKlass::find_method_index(const Array<Method*>* methods,
+                                     const Symbol* name,
+                                     const Symbol* signature,
+                                     OverpassLookupMode overpass_mode,
+                                     StaticLookupMode static_mode,
+                                     PrivateLookupMode private_mode) {
+  const bool skipping_overpass = (overpass_mode == skip_overpass);
+  const bool skipping_static = (static_mode == skip_static);
+  const bool skipping_private = (private_mode == skip_private);
+  const int hit = binary_search(methods, name);
   if (hit != -1) {
-    Method* m = methods->at(hit);
+    const Method* const m = methods->at(hit);
 
     // Do linear search to find matching signature.  First, quick check
     // for common case, ignoring overpasses if requested.
-    if (method_matches(m, signature, skipping_overpass, skipping_static, skipping_private)) return hit;
+    if (method_matches(m, signature, skipping_overpass, skipping_static, skipping_private)) {
+          return hit;
+    }
 
     // search downwards through overloaded methods
     int i;
     for (i = hit - 1; i >= 0; --i) {
-        Method* m = methods->at(i);
+        const Method* const m = methods->at(i);
         assert(m->is_method(), "must be method");
-        if (m->name() != name) break;
-        if (method_matches(m, signature, skipping_overpass, skipping_static, skipping_private)) return i;
+        if (m->name() != name) {
+          break;
+        }
+        if (method_matches(m, signature, skipping_overpass, skipping_static, skipping_private)) {
+          return i;
+        }
     }
     // search upwards
     for (i = hit + 1; i < methods->length(); ++i) {
-        Method* m = methods->at(i);
+        const Method* const m = methods->at(i);
         assert(m->is_method(), "must be method");
-        if (m->name() != name) break;
-        if (method_matches(m, signature, skipping_overpass, skipping_static, skipping_private)) return i;
+        if (m->name() != name) {
+          break;
+        }
+        if (method_matches(m, signature, skipping_overpass, skipping_static, skipping_private)) {
+          return i;
+        }
     }
     // not found
 #ifdef ASSERT
-    int index = (skipping_overpass || skipping_static || skipping_private) ? -1 : linear_search(methods, name, signature);
-    assert(index == -1, "binary search should have found entry %d", index);
+    const int index = (skipping_overpass || skipping_static || skipping_private) ? -1 :
+      linear_search(methods, name, signature);
+    assert(-1 == index, "binary search should have found entry %d", index);
 #endif
   }
   return -1;
 }
-int InstanceKlass::find_method_by_name(Symbol* name, int* end) {
+
+int InstanceKlass::find_method_by_name(const Symbol* name, int* end) const {
   return find_method_by_name(methods(), name, end);
 }
 
-int InstanceKlass::find_method_by_name(
-    Array<Method*>* methods, Symbol* name, int* end_ptr) {
+int InstanceKlass::find_method_by_name(const Array<Method*>* methods,
+                                       const Symbol* name,
+                                       int* end_ptr) {
   assert(end_ptr != NULL, "just checking");
   int start = binary_search(methods, name);
   int end = start + 1;
@@ -1528,11 +1540,17 @@ int InstanceKlass::find_method_by_name(
 
 // uncached_lookup_method searches both the local class methods array and all
 // superclasses methods arrays, skipping any overpass methods in superclasses.
-Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature, OverpassLookupMode overpass_mode) const {
+Method* InstanceKlass::uncached_lookup_method(const Symbol* name,
+                                              const Symbol* signature,
+                                              OverpassLookupMode overpass_mode) const {
   OverpassLookupMode overpass_local_mode = overpass_mode;
-  Klass* klass = const_cast<InstanceKlass*>(this);
+  const Klass* klass = this;
   while (klass != NULL) {
-    Method* method = InstanceKlass::cast(klass)->find_method_impl(name, signature, overpass_local_mode, find_static, find_private);
+    Method* const method = InstanceKlass::cast(klass)->find_method_impl(name,
+                                                                        signature,
+                                                                        overpass_local_mode,
+                                                                        find_static,
+                                                                        find_private);
     if (method != NULL) {
       return method;
     }
@@ -1545,8 +1563,8 @@ Method* InstanceKlass::uncached_lookup_method(Symbol* name, Symbol* signature, O
 #ifdef ASSERT
 // search through class hierarchy and return true if this class or
 // one of the superclasses was redefined
-bool InstanceKlass::has_redefined_this_or_super() {
-  Klass* klass = this;
+bool InstanceKlass::has_redefined_this_or_super() const {
+  const Klass* klass = this;
   while (klass != NULL) {
     if (InstanceKlass::cast(klass)->has_been_redefined()) {
       return true;
@@ -1615,19 +1633,18 @@ JNIid* InstanceKlass::jni_id_for(int offset) {
   return probe;
 }
 
-u2 InstanceKlass::enclosing_method_data(int offset) {
-  Array<jushort>* inner_class_list = inner_classes();
+u2 InstanceKlass::enclosing_method_data(int offset) const {
+  const Array<jushort>* const inner_class_list = inner_classes();
   if (inner_class_list == NULL) {
     return 0;
   }
-  int length = inner_class_list->length();
+  const int length = inner_class_list->length();
   if (length % inner_class_next_offset == 0) {
     return 0;
-  } else {
-    int index = length - enclosing_method_attribute_size;
-    assert(offset < enclosing_method_attribute_size, "invalid offset");
-    return inner_class_list->at(index + offset);
   }
+  const int index = length - enclosing_method_attribute_size;
+  assert(offset < enclosing_method_attribute_size, "invalid offset");
+  return inner_class_list->at(index + offset);
 }
 
 void InstanceKlass::set_enclosing_method_indices(u2 class_index,
@@ -2103,7 +2120,7 @@ void InstanceKlass::release_C_heap_structures() {
   Atomic::dec(&_total_instanceKlass_count);
 }
 
-void InstanceKlass::set_source_debug_extension(char* array, int length) {
+void InstanceKlass::set_source_debug_extension(const char* array, int length) {
   if (array == NULL) {
     _source_debug_extension = NULL;
   } else {
@@ -2164,26 +2181,42 @@ const char* InstanceKlass::signature_name() const {
 }
 
 // different verisons of is_same_class_package
-bool InstanceKlass::is_same_class_package(Klass* class2) {
+bool InstanceKlass::is_same_class_package(const Klass* class2) const {
+  const Klass* const class1 = (const Klass* const)this;
+  oop classloader1 = InstanceKlass::cast(class1)->class_loader();
+  const Symbol* const classname1 = class1->name();
+
   if (class2->is_objArray_klass()) {
     class2 = ObjArrayKlass::cast(class2)->bottom_klass();
   }
-  oop classloader2 = class2->class_loader();
-  Symbol* classname2 = class2->name();
+  oop classloader2;
+  if (class2->is_instance_klass()) {
+    classloader2 = InstanceKlass::cast(class2)->class_loader();
+  } else {
+    assert(class2->is_typeArray_klass(), "should be type array");
+    classloader2 = NULL;
+  }
+  const Symbol* classname2 = class2->name();
 
-  return InstanceKlass::is_same_class_package(class_loader(), name(),
+  return InstanceKlass::is_same_class_package(classloader1, classname1,
                                               classloader2, classname2);
 }
 
-bool InstanceKlass::is_same_class_package(oop classloader2, Symbol* classname2) {
-  return InstanceKlass::is_same_class_package(class_loader(), name(),
-                                              classloader2, classname2);
+bool InstanceKlass::is_same_class_package(oop other_class_loader,
+                                          const Symbol* other_class_name) const {
+  oop this_class_loader = class_loader();
+  const Symbol* const this_class_name = name();
+
+  return InstanceKlass::is_same_class_package(this_class_loader,
+                                             this_class_name,
+                                             other_class_loader,
+                                             other_class_name);
 }
 
 // return true if two classes are in the same package, classloader
 // and classname information is enough to determine a class's package
-bool InstanceKlass::is_same_class_package(oop class_loader1, Symbol* class_name1,
-                                          oop class_loader2, Symbol* class_name2) {
+bool InstanceKlass::is_same_class_package(oop class_loader1, const Symbol* class_name1,
+                                          oop class_loader2, const Symbol* class_name2) {
   if (class_loader1 != class_loader2) {
     return false;
   } else if (class_name1 == class_name2) {
@@ -2262,11 +2295,11 @@ Klass* InstanceKlass::compute_enclosing_class_impl(instanceKlassHandle self,
 */
 
 // tell if two classes have the same enclosing class (at package level)
-bool InstanceKlass::is_same_package_member_impl(instanceKlassHandle class1,
-                                                Klass* class2_oop, TRAPS) {
-  if (class2_oop == class1())                       return true;
-  if (!class2_oop->is_instance_klass())  return false;
-  instanceKlassHandle class2(THREAD, class2_oop);
+bool InstanceKlass::is_same_package_member_impl(const InstanceKlass* class1,
+                                                const Klass* class2,
+                                                TRAPS) {
+  if (class2 == class1) return true;
+  if (!class2->is_instance_klass())  return false;
 
   // must be in same package before we try anything else
   if (!class1->is_same_class_package(class2->class_loader(), class2->name()))
@@ -2274,30 +2307,30 @@ bool InstanceKlass::is_same_package_member_impl(instanceKlassHandle class1,
 
   // As long as there is an outer1.getEnclosingClass,
   // shift the search outward.
-  instanceKlassHandle outer1 = class1;
+  const InstanceKlass* outer1 = class1;
   for (;;) {
     // As we walk along, look for equalities between outer1 and class2.
     // Eventually, the walks will terminate as outer1 stops
     // at the top-level class around the original class.
     bool ignore_inner_is_member;
-    Klass* next = outer1->compute_enclosing_class(&ignore_inner_is_member,
-                                                    CHECK_false);
+    const Klass* next = outer1->compute_enclosing_class(&ignore_inner_is_member,
+                                                  CHECK_false);
     if (next == NULL)  break;
-    if (next == class2())  return true;
-    outer1 = instanceKlassHandle(THREAD, next);
+    if (next == class2)  return true;
+    outer1 = InstanceKlass::cast(next);
   }
 
   // Now do the same for class2.
-  instanceKlassHandle outer2 = class2;
+  const InstanceKlass* outer2 = InstanceKlass::cast(class2);
   for (;;) {
     bool ignore_inner_is_member;
     Klass* next = outer2->compute_enclosing_class(&ignore_inner_is_member,
                                                     CHECK_false);
     if (next == NULL)  break;
     // Might as well check the new outer against all available values.
-    if (next == class1())  return true;
-    if (next == outer1())  return true;
-    outer2 = instanceKlassHandle(THREAD, next);
+    if (next == class1)  return true;
+    if (next == outer1)  return true;
+    outer2 = InstanceKlass::cast(next);
   }
 
   // If by this point we have not found an equality between the
@@ -2325,36 +2358,38 @@ bool InstanceKlass::find_inner_classes_attr(instanceKlassHandle k, int* ooff, in
   return false;
 }
 
-Klass* InstanceKlass::compute_enclosing_class_impl(instanceKlassHandle k, bool* inner_is_member, TRAPS) {
-  instanceKlassHandle outer_klass;
+InstanceKlass* InstanceKlass::compute_enclosing_class_impl(const InstanceKlass* k,
+                                                           bool* inner_is_member,
+                                                           TRAPS) {
+  InstanceKlass* outer_klass = NULL;
   *inner_is_member = false;
   int ooff = 0, noff = 0;
   if (find_inner_classes_attr(k, &ooff, &noff, THREAD)) {
     constantPoolHandle i_cp(THREAD, k->constants());
     if (ooff != 0) {
       Klass* ok = i_cp->klass_at(ooff, CHECK_NULL);
-      outer_klass = instanceKlassHandle(THREAD, ok);
+      outer_klass = InstanceKlass::cast(ok);
       *inner_is_member = true;
     }
-    if (outer_klass.is_null()) {
+    if (NULL == outer_klass) {
       // It may be anonymous; try for that.
       int encl_method_class_idx = k->enclosing_method_class_index();
       if (encl_method_class_idx != 0) {
         Klass* ok = i_cp->klass_at(encl_method_class_idx, CHECK_NULL);
-        outer_klass = instanceKlassHandle(THREAD, ok);
+        outer_klass = InstanceKlass::cast(ok);
         *inner_is_member = false;
       }
     }
   }
 
   // If no inner class attribute found for this class.
-  if (outer_klass.is_null())  return NULL;
+  if (NULL == outer_klass) return NULL;
 
   // Throws an exception if outer klass has not declared k as an inner klass
   // We need evidence that each klass knows about the other, or else
   // the system could allow a spoof of an inner class to gain access rights.
   Reflection::check_for_inner_class(outer_klass, k, *inner_is_member, CHECK_NULL);
-  return outer_klass();
+  return outer_klass;
 }
 
 jint InstanceKlass::compute_modifier_flags(TRAPS) const {
