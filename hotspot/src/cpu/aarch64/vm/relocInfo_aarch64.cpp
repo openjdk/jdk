@@ -59,7 +59,7 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
 
 address Relocation::pd_call_destination(address orig_addr) {
   assert(is_call(), "should be a call here");
-  if (is_call()) {
+  if (NativeCall::is_call_at(addr())) {
     address trampoline = nativeCall_at(addr())->get_trampoline();
     if (trampoline) {
       return nativeCallTrampolineStub_at(trampoline)->destination();
