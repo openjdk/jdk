@@ -43,16 +43,6 @@
 class FieldStream;
 
 class Reflection: public AllStatic {
- private:
-  // Conversion
-  static Klass* basic_type_mirror_to_arrayklass(oop basic_type_mirror, TRAPS);
-  static oop      basic_type_arrayklass_to_mirror(Klass* basic_type_arrayklass, TRAPS);
-
-  static objArrayHandle get_parameter_types(const methodHandle& method, int parameter_count, oop* return_type, TRAPS);
-  static objArrayHandle get_exception_types(const methodHandle& method, TRAPS);
-  // Creating new java.lang.reflect.xxx wrappers
-  static Handle new_type(Symbol* signature, KlassHandle k, TRAPS);
-
  public:
   // Constants defined by java reflection api classes
   enum SomeConstants {
@@ -83,27 +73,27 @@ class Reflection: public AllStatic {
   static arrayOop reflect_new_multi_array(oop element_mirror, typeArrayOop dimensions, TRAPS);
 
   // Verification
-  static bool     verify_class_access(Klass* current_class, Klass* new_class, bool classloader_only);
+  static bool     verify_class_access(const Klass* current_class,
+                                      const Klass* new_class,
+                                      bool classloader_only);
 
-  static bool     verify_field_access(Klass* current_class,
-                                      Klass* resolved_class,
-                                      Klass* field_class,
+  static bool     verify_field_access(const Klass* current_class,
+                                      const Klass* resolved_class,
+                                      const Klass* field_class,
                                       AccessFlags access,
                                       bool classloader_only,
                                       bool protected_restriction = false);
-  static bool     is_same_class_package(Klass* class1, Klass* class2);
-  static bool     is_same_package_member(Klass* class1, Klass* class2, TRAPS);
-
-  static bool can_relax_access_check_for(
-    Klass* accessor, Klass* accesee, bool classloader_only);
+  static bool     is_same_class_package(const Klass* class1, const Klass* class2);
 
   // inner class reflection
   // raise an ICCE unless the required relationship can be proven to hold
   // If inner_is_member, require the inner to be a member of the outer.
   // If !inner_is_member, require the inner to be anonymous (a non-member).
   // Caller is responsible for figuring out in advance which case must be true.
-  static void check_for_inner_class(instanceKlassHandle outer, instanceKlassHandle inner,
-                                    bool inner_is_member, TRAPS);
+  static void check_for_inner_class(instanceKlassHandle outer,
+                                    instanceKlassHandle inner,
+                                    bool inner_is_member,
+                                    TRAPS);
 
   //
   // Support for reflection based on dynamic bytecode generation (JDK 1.4)
@@ -119,31 +109,11 @@ class Reflection: public AllStatic {
   // MethodParameterElement
   static oop new_parameter(Handle method, int index, Symbol* sym,
                            int flags, TRAPS);
-
-private:
-  // method resolution for invoke
-  static methodHandle resolve_interface_call(instanceKlassHandle klass, const methodHandle& method, KlassHandle recv_klass, Handle receiver, TRAPS);
-  // Method call (shared by invoke_method and invoke_constructor)
-  static oop  invoke(instanceKlassHandle klass,
-                     const methodHandle& method,
-                     Handle receiver,
-                     bool override,
-                     objArrayHandle ptypes,
-                     BasicType rtype,
-                     objArrayHandle args,
-                     bool is_method_invoke, TRAPS);
-
-  // Narrowing of basic types. Used to create correct jvalues for
-  // boolean, byte, char and short return return values from interpreter
-  // which are returned as ints. Throws IllegalArgumentException.
-  static void narrow(jvalue* value, BasicType narrow_type, TRAPS);
-
-  // Conversion
-  static BasicType basic_type_mirror_to_basic_type(oop basic_type_mirror, TRAPS);
-
-public:
   // Method invocation through java.lang.reflect.Method
-  static oop      invoke_method(oop method_mirror, Handle receiver, objArrayHandle args, TRAPS);
+  static oop      invoke_method(oop method_mirror,
+                               Handle receiver,
+                               objArrayHandle args,
+                               TRAPS);
   // Method invocation through java.lang.reflect.Constructor
   static oop      invoke_constructor(oop method_mirror, objArrayHandle args, TRAPS);
 
