@@ -436,109 +436,13 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
 
   ###############################################################################
   #
-  # Enable or disable the elliptic curve crypto implementation
-  #
-  AC_DEFUN_ONCE([JDKOPT_DETECT_INTREE_EC],
-  [
-    AC_MSG_CHECKING([if elliptic curve crypto implementation is present])
-
-    if test -d "${SRC_ROOT}/jdk/src/jdk.crypto.ec/share/native/libsunec/impl"; then
-      ENABLE_INTREE_EC=yes
-      AC_MSG_RESULT([yes])
-    else
-      ENABLE_INTREE_EC=no
-      AC_MSG_RESULT([no])
-    fi
-
-    AC_SUBST(ENABLE_INTREE_EC)
-  ])
-
-  ###############################################################################
-  #
   # Compress jars
   #
   COMPRESS_JARS=false
 
   AC_SUBST(COMPRESS_JARS)
-])
 
-###############################################################################
-#
-# Setup version numbers
-#
-AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VERSION_NUMBERS],
-[
-  # Source the version numbers
-  . $AUTOCONF_DIR/version-numbers
-
-  # Get the settings from parameters
-  AC_ARG_WITH(milestone, [AS_HELP_STRING([--with-milestone],
-      [Set milestone value for build @<:@internal@:>@])])
-  if test "x$with_milestone" = xyes; then
-    AC_MSG_ERROR([Milestone must have a value])
-  elif test "x$with_milestone" != x; then
-    MILESTONE="$with_milestone"
-  fi
-  if test "x$MILESTONE" = x; then
-    MILESTONE=internal
-  fi
-
-  AC_ARG_WITH(update-version, [AS_HELP_STRING([--with-update-version],
-      [Set update version value for build @<:@b00@:>@])])
-  if test "x$with_update_version" = xyes; then
-    AC_MSG_ERROR([Update version must have a value])
-  elif test "x$with_update_version" != x; then
-    JDK_UPDATE_VERSION="$with_update_version"
-    # On macosx 10.7, it's not possible to set --with-update-version=0X due
-    # to a bug in expr (which reduces it to just X). To work around this, we
-    # always add a 0 to one digit update versions.
-    if test "${#JDK_UPDATE_VERSION}" = "1"; then
-      JDK_UPDATE_VERSION="0${JDK_UPDATE_VERSION}"
-    fi
-  fi
-
-  AC_ARG_WITH(user-release-suffix, [AS_HELP_STRING([--with-user-release-suffix],
-      [Add a custom string to the version string if build number is not set.@<:@username_builddateb00@:>@])])
-  if test "x$with_user_release_suffix" = xyes; then
-    AC_MSG_ERROR([Release suffix must have a value])
-  elif test "x$with_user_release_suffix" != x; then
-    USER_RELEASE_SUFFIX="$with_user_release_suffix"
-  fi
-
-  AC_ARG_WITH(build-number, [AS_HELP_STRING([--with-build-number],
-      [Set build number value for build @<:@b00@:>@])])
-  if test "x$with_build_number" = xyes; then
-    AC_MSG_ERROR([Build number must have a value])
-  elif test "x$with_build_number" != x; then
-    JDK_BUILD_NUMBER="$with_build_number"
-  fi
-  # Define default USER_RELEASE_SUFFIX if BUILD_NUMBER and USER_RELEASE_SUFFIX are not set
-  if test "x$JDK_BUILD_NUMBER" = x; then
-    JDK_BUILD_NUMBER=b00
-    if test "x$USER_RELEASE_SUFFIX" = x; then
-      BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
-      # Avoid [:alnum:] since it depends on the locale.
-      CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'`
-      USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
-    fi
-  fi
-
-  # Now set the JDK version, milestone, build number etc.
-  AC_SUBST(USER_RELEASE_SUFFIX)
-  AC_SUBST(JDK_MAJOR_VERSION)
-  AC_SUBST(JDK_MINOR_VERSION)
-  AC_SUBST(JDK_MICRO_VERSION)
-  AC_SUBST(JDK_UPDATE_VERSION)
-  AC_SUBST(JDK_BUILD_NUMBER)
-  AC_SUBST(MILESTONE)
-  AC_SUBST(LAUNCHER_NAME)
-  AC_SUBST(PRODUCT_NAME)
-  AC_SUBST(PRODUCT_SUFFIX)
-  AC_SUBST(JDK_RC_PLATFORM_NAME)
-  AC_SUBST(COMPANY_NAME)
-  AC_SUBST(MACOSX_BUNDLE_NAME_BASE)
-  AC_SUBST(MACOSX_BUNDLE_ID_BASE)
-
+  # Setup default copyright year. Mostly overridden when building close to a new year.
   AC_ARG_WITH(copyright-year, [AS_HELP_STRING([--with-copyright-year],
       [Set copyright year value for build @<:@current year@:>@])])
   if test "x$with_copyright_year" = xyes; then
@@ -549,16 +453,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_VERSION_NUMBERS],
     COPYRIGHT_YEAR=`date +'%Y'`
   fi
   AC_SUBST(COPYRIGHT_YEAR)
-
-  if test "x$JDK_UPDATE_VERSION" != x; then
-    JDK_VERSION="${JDK_MAJOR_VERSION}.${JDK_MINOR_VERSION}.${JDK_MICRO_VERSION}_${JDK_UPDATE_VERSION}"
-  else
-    JDK_VERSION="${JDK_MAJOR_VERSION}.${JDK_MINOR_VERSION}.${JDK_MICRO_VERSION}"
-  fi
-  AC_SUBST(JDK_VERSION)
-
-  COOKED_BUILD_NUMBER=`$ECHO $JDK_BUILD_NUMBER | $SED -e 's/^b//' -e 's/^0//'`
-  AC_SUBST(COOKED_BUILD_NUMBER)
 ])
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_BUILD_TWEAKS],
@@ -573,6 +467,26 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_BUILD_TWEAKS],
   fi
   AC_SUBST(SALIB_NAME)
 ])
+
+###############################################################################
+#
+# Enable or disable the elliptic curve crypto implementation
+#
+AC_DEFUN_ONCE([JDKOPT_DETECT_INTREE_EC],
+[
+  AC_MSG_CHECKING([if elliptic curve crypto implementation is present])
+
+  if test -d "${SRC_ROOT}/jdk/src/jdk.crypto.ec/share/native/libsunec/impl"; then
+    ENABLE_INTREE_EC=yes
+    AC_MSG_RESULT([yes])
+  else
+    ENABLE_INTREE_EC=no
+    AC_MSG_RESULT([no])
+  fi
+
+  AC_SUBST(ENABLE_INTREE_EC)
+])
+
 
 AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
 [
