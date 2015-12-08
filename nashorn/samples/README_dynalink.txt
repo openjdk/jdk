@@ -1,0 +1,52 @@
+In addition to samples for Nashorn javascript engine, this directory contains
+samples for Dynalink API (http://openjdk.java.net/jeps/276) as well. Dynalink
+linker samples require a jar file to be built and such jars be placed in the
+classpath of the jjs tool. Linker samples are named with the naming pattern
+"xyz_linker.js". These scripts build dynalink linker jar from java code and exec
+another jjs process with appropriate classpath set.
+
+Note: you need to build jdk9 forest and put "images/jdk/bin" in your PATH to use
+these scripts. This is because these scripts use javac to build dynalink jar and
+exec another jjs with classpath set! Alternatively, you can also manually build
+dynalink linker jars and invoke sample scripts by putting linker jar in jjs tool's
+classpath as well.
+
+Dynalink samples:
+
+* array_stream_linker.js
+
+This sample builds ArrayStreamLinkerExporter.java and uses it in a sample script
+called "array_stream.js". This linker adds "stream" property to Java array
+objects. The "stream" property returns appropriate Stream type for the given
+Java array (IntStream, DoubleStream ...).
+
+* buffer_indexing_linker.js
+
+This sample builds BufferIndexingLinkerExporter.java and uses it in a sample script
+called "buffer_index.js". This linker adds array-like indexed access, indexed assignment
+and "length" property to Java NIO Buffer objects. Script can treat NIO Buffer objects
+as if those are just array objects.
+
+* dom_linker.js
+
+This sample builds DOMLinkerExporter.java and uses it in a sample script
+called "dom_linker_gutenberg.js". This linker handles DOM Element objects to add
+properties to access child elements of a given element by child element tag name.
+This simplifies script access of parsed XML DOM Documents.
+
+* missing_method_linker.js
+
+This sample builds MissingMethodLinkerExporter.java and uses it in a sample script
+called "missing_method.js". This linker supports Smalltalk-style "doesNotUnderstand"
+calls on Java objects. i.e., A Java class can implement MissingMethodHandler interface
+with one method named "doesNotUnderstand". When script accesses a method on such
+object and if that method does not exist in the Java class (or any of it's supertypes),
+then "doesNotUnderstand" method is invoked.
+
+* underscore_linker.js
+
+This sample builds UnderscoreNameLinkerExporter.java and uses it in a sample script
+called "underscore.js". This linker converts underscore separated names to Camel Case
+names (as used in Java APIs). You can call Java APIs using Ruby-like naming convention
+and this linker converts method names to CamelCase!
+

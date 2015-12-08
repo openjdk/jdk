@@ -1,3 +1,5 @@
+# Usage: jjs -cp buffer_indexing_linker.jar buffer_index.js
+
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  *
@@ -29,25 +31,35 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import java.util.ArrayList;
+// This script depends on buffer indexing dynalink linker. Without that
+// linker in classpath, this script will fail to run properly.
 
-// This is an example class that implements MissingMethodHandler
-// to receive "doesNotUnderstand" calls on 'missing methods'
-public class MissingMethodExample extends ArrayList
-        implements MissingMethodHandler {
-
-    @Override
-    public Object doesNotUnderstand(String name, Object... args) {
-        // This simple doesNotUnderstand just prints method name and args.
-        // You can put useful method routing logic here.
-        System.out.println("you called " + name);
-        if (args.length != 0) {
-            System.out.println("arguments are: ");
-            for (Object arg : args) {
-                System.out.println("    " + arg);
-            }
-        }
-        return this;
-    }
+function str(buf) {
+    var s = ''
+    for (var i = 0; i < buf.length; i++)
+        s += buf[i] + ","
+    return s
 }
 
+var ByteBuffer = Java.type("java.nio.ByteBuffer")
+var bb = ByteBuffer.allocate(10)
+for (var i = 0; i < bb.length; i++)
+    bb[i] = i*i
+print(str(bb))
+
+var CharBuffer = Java.type("java.nio.CharBuffer")
+var cb = CharBuffer.wrap("hello world")
+print(str(cb))
+
+var RandomAccessFile = Java.type("java.io.RandomAccessFile")
+var raf = new RandomAccessFile("buffer_index.js", "r")
+var chan = raf.getChannel()
+var fileSize = chan.size()
+var buf = ByteBuffer.allocate(fileSize)
+chan.read(buf)
+chan.close()
+
+var str = ''
+for (var i = 0; i < buf.length; i++)
+    str += String.fromCharCode(buf[i])
+print(str)
