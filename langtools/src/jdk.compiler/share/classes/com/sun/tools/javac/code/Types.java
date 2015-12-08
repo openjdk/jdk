@@ -1056,7 +1056,7 @@ public class Types {
     }
 
     /**
-    * A polymorphic signature method (JLS SE 7, 8.4.1) is a method that
+    * A polymorphic signature method (JLS 15.12.3) is a method that
     * (i) is declared in the java.lang.invoke.MethodHandle class, (ii) takes
     * a single variable arity parameter (iii) whose declared type is Object[],
     * (iv) has a return type of Object and (v) is native.
