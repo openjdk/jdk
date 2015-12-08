@@ -4054,6 +4054,54 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
+  /**
+  *  Arguments:
+  *
+  *  Input:
+  *    c_rarg0   - obja     address
+  *    c_rarg1   - objb     address
+  *    c_rarg3   - length   length
+  *    c_rarg4   - scale    log2_array_indxscale
+  */
+  address generate_vectorizedMismatch() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "vectorizedMismatch");
+    address start = __ pc();
+
+    BLOCK_COMMENT("Entry:");
+    __ enter();
+
+#ifdef _WIN64  // Win64: rcx, rdx, r8, r9 (c_rarg0, c_rarg1, ...)
+    const Register scale = c_rarg0;  //rcx, will exchange with r9
+    const Register objb = c_rarg1;   //rdx
+    const Register length = c_rarg2; //r8
+    const Register obja = c_rarg3;   //r9
+    __ xchgq(obja, scale);  //now obja and scale contains the correct contents
+
+    const Register tmp1 = r10;
+    const Register tmp2 = r11;
+#endif
+#ifndef _WIN64 // Unix:  rdi, rsi, rdx, rcx, r8, r9 (c_rarg0, c_rarg1, ...)
+    const Register obja = c_rarg0;   //U:rdi
+    const Register objb = c_rarg1;   //U:rsi
+    const Register length = c_rarg2; //U:rdx
+    const Register scale = c_rarg3;  //U:rcx
+    const Register tmp1 = r8;
+    const Register tmp2 = r9;
+#endif
+    const Register result = rax; //return value
+    const XMMRegister vec0 = xmm0;
+    const XMMRegister vec1 = xmm1;
+    const XMMRegister vec2 = xmm2;
+
+    __ vectorized_mismatch(obja, objb, length, scale, result, tmp1, tmp2, vec0, vec1, vec2);
+
+    __ leave();
+    __ ret(0);
+
+    return start;
+  }
+
 /**
    *  Arguments:
    *
@@ -4505,7 +4553,9 @@ class StubGenerator: public StubCodeGenerator {
     if (UseMulAddIntrinsic) {
       StubRoutines::_mulAdd = generate_mulAdd();
     }
-
+    if (UseVectorizedMismatchIntrinsic) {
+      StubRoutines::_vectorizedMismatch = generate_vectorizedMismatch();
+    }
 #ifndef _WINDOWS
     if (UseMontgomeryMultiplyIntrinsic) {
       StubRoutines::_montgomeryMultiply

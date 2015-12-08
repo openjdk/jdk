@@ -1041,6 +1041,25 @@ void VM_Version::get_processor_features() {
     }
   }
 
+#ifdef _LP64
+  if (UseSSE42Intrinsics) {
+    if (FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
+      UseVectorizedMismatchIntrinsic = true;
+    }
+  } else if (UseVectorizedMismatchIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic))
+      warning("vectorizedMismatch intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+#else
+  if (UseVectorizedMismatchIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseVectorizedMismatchIntrinsic)) {
+      warning("vectorizedMismatch intrinsic is not available in 32-bit VM");
+    }
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+#endif // _LP64
+
   // Use count leading zeros count instruction if available.
   if (supports_lzcnt()) {
     if (FLAG_IS_DEFAULT(UseCountLeadingZerosInstruction)) {

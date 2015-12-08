@@ -182,6 +182,11 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseAdler32Intrinsics, true);
   }
 
+  if (UseVectorizedMismatchIntrinsic) {
+    warning("UseVectorizedMismatchIntrinsic specified, but not available on this CPU.");
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+
   if (auxv & HWCAP_AES) {
     UseAES = UseAES || FLAG_IS_DEFAULT(UseAES);
     UseAESIntrinsics =

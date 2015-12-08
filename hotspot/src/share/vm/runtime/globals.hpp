@@ -855,6 +855,9 @@ public:
   product(bool, UseAdler32Intrinsics, false,                                \
           "use intrinsics for java.util.zip.Adler32")                       \
                                                                             \
+  product(bool, UseVectorizedMismatchIntrinsic, false,                      \
+          "Enables intrinsification of ArraysSupport.vectorizedMismatch()") \
+                                                                            \
   diagnostic(ccstrlist, DisableIntrinsic, "",                               \
          "do not expand intrinsics whose (internal) names appear here")     \
                                                                             \
