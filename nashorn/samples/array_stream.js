@@ -1,3 +1,5 @@
+# Usage: jjs -cp array_stream_linker.jar array_stream.js
+
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  *
@@ -29,25 +31,24 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import java.util.ArrayList;
+// This script depends on array stream dynalink linker
+// to work as expected. Without that linker in jjs classpath,
+// this script will fail to run.
 
-// This is an example class that implements MissingMethodHandler
-// to receive "doesNotUnderstand" calls on 'missing methods'
-public class MissingMethodExample extends ArrayList
-        implements MissingMethodHandler {
+// Object[] and then Stream
+var s = Java.to(["hello", "world"]).stream
+s.map(function(s) s.toUpperCase()).forEach(print)
 
-    @Override
-    public Object doesNotUnderstand(String name, Object... args) {
-        // This simple doesNotUnderstand just prints method name and args.
-        // You can put useful method routing logic here.
-        System.out.println("you called " + name);
-        if (args.length != 0) {
-            System.out.println("arguments are: ");
-            for (Object arg : args) {
-                System.out.println("    " + arg);
-            }
-        }
-        return this;
-    }
-}
+// IntStream
+var is = Java.to([3, 56, 4, 23], "int[]").stream
+print(is.map(function(x) x*x).sum())
+
+// DoubleStream
+var arr = [];
+for (var i = 0; i < 100; i++)
+    arr.push(Math.random())
+
+var ds = Java.to(arr, "double[]").stream
+print(ds.summaryStatistics())
+
 

@@ -1,3 +1,5 @@
 DOMLinkerExporter
 UnderscoreNameLinkerExporter
 MissingMethodLinkerExporter
+ArrayStreamLinkerExporter
+BufferIndexingLinkerExporter
