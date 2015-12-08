@@ -84,7 +84,7 @@ class Method : public Metadata {
     _running_emcp         = 1 << 6,
     _intrinsic_candidate  = 1 << 7
   };
-  u1 _flags;
+  mutable u1 _flags;
 
 #ifndef PRODUCT
   int               _compiled_invocation_count;  // Number of nmethod invocations so far (for perf. debugging)
@@ -784,12 +784,12 @@ class Method : public Metadata {
 
   // Helper routines for intrinsic_id() and vmIntrinsics::method().
   void init_intrinsic_id();     // updates from _none if a match
-  static vmSymbols::SID klass_id_for_intrinsics(Klass* holder);
+  static vmSymbols::SID klass_id_for_intrinsics(const Klass* holder);
 
-  bool jfr_towrite() {
+  bool jfr_towrite() const {
     return (_flags & _jfr_towrite) != 0;
   }
-  void set_jfr_towrite(bool x) {
+  void set_jfr_towrite(bool x) const {
     _flags = x ? (_flags | _jfr_towrite) : (_flags & ~_jfr_towrite);
   }
 

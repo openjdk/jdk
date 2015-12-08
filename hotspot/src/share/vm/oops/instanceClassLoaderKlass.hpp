@@ -29,6 +29,8 @@
 #include "oops/instanceKlass.hpp"
 #include "utilities/macros.hpp"
 
+class ClassFileParser;
+
 // An InstanceClassLoaderKlass is a specialization of the InstanceKlass. It does
 // not add any field.  It is added to walk the dependencies for the class loader
 // key that this class loader points to.  This is how the loader_data graph is
@@ -38,11 +40,8 @@
 class InstanceClassLoaderKlass: public InstanceKlass {
   friend class VMStructs;
   friend class InstanceKlass;
-
-  // Constructor
-  InstanceClassLoaderKlass(int vtable_len, int itable_len, int static_field_size, int nonstatic_oop_map_size, ReferenceType rt, AccessFlags access_flags, bool is_anonymous)
-    : InstanceKlass(vtable_len, itable_len, static_field_size, nonstatic_oop_map_size,
-                    InstanceKlass::_misc_kind_class_loader, rt, access_flags, is_anonymous) {}
+ private:
+  InstanceClassLoaderKlass(const ClassFileParser& parser) : InstanceKlass(parser, InstanceKlass::_misc_kind_class_loader) {}
 
 public:
   InstanceClassLoaderKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
