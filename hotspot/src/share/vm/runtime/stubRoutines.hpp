@@ -207,6 +207,8 @@ class StubRoutines: AllStatic {
   static address _montgomeryMultiply;
   static address _montgomerySquare;
 
+  static address _vectorizedMismatch;
+
   static address _dexp;
   static address _dlog;
 
@@ -375,6 +377,8 @@ class StubRoutines: AllStatic {
   static address mulAdd()              {return _mulAdd; }
   static address montgomeryMultiply()  { return _montgomeryMultiply; }
   static address montgomerySquare()    { return _montgomerySquare; }
+
+  static address vectorizedMismatch()  { return _vectorizedMismatch; }
 
   static address dexp()                { return _dexp; }
   static address dlog()                { return _dlog; }

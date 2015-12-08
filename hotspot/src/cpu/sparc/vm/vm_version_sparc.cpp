@@ -356,6 +356,11 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
+  if (UseVectorizedMismatchIntrinsic) {
+    warning("UseVectorizedMismatchIntrinsic specified, but not available on this CPU.");
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+
   if (FLAG_IS_DEFAULT(ContendedPaddingWidth) &&
     (cache_line_size > ContendedPaddingWidth))
     ContendedPaddingWidth = cache_line_size;

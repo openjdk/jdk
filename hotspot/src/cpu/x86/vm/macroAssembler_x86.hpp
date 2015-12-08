@@ -1346,7 +1346,6 @@ public:
                                Register carry2);
   void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register zlen,
                        Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5);
-
   void square_rshift(Register x, Register len, Register z, Register tmp1, Register tmp3,
                      Register tmp4, Register tmp5, Register rdxReg, Register raxReg);
   void multiply_add_64_bmi2(Register sum, Register op1, Register op2, Register carry,
@@ -1365,6 +1364,9 @@ public:
   void mul_add(Register out, Register in, Register offset, Register len, Register k, Register tmp1,
                Register tmp2, Register tmp3, Register tmp4, Register tmp5, Register rdxReg,
                Register raxReg);
+  void vectorized_mismatch(Register obja, Register objb, Register length, Register log2_array_indxscale,
+                           Register result, Register tmp1, Register tmp2,
+                           XMMRegister vec1, XMMRegister vec2, XMMRegister vec3);
 #endif
 
   // CRC32 code for java.util.zip.CRC32::updateBytes() intrinsic.
