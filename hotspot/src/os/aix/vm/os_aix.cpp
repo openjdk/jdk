@@ -1647,11 +1647,6 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   st->cr();
 }
 
-void os::print_siginfo(outputStream* st, void* siginfo) {
-  os::Posix::print_siginfo_brief(st, (const siginfo_t*) siginfo);
-  st->cr();
-}
-
 static void print_signal_handler(outputStream* st, int sig,
                                  char* buf, size_t buflen);
 

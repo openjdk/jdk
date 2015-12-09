@@ -1798,8 +1798,8 @@ void os::print_memory_info(outputStream* st) {
   st->cr();
 }
 
-void os::print_siginfo(outputStream *st, void *siginfo) {
-  EXCEPTION_RECORD* er = (EXCEPTION_RECORD*)siginfo;
+void os::print_siginfo(outputStream *st, const void* siginfo) {
+  const EXCEPTION_RECORD* const er = (EXCEPTION_RECORD*)siginfo;
   st->print("siginfo:");
 
   char tmp[64];
@@ -1819,15 +1819,6 @@ void os::print_siginfo(outputStream *st, void *siginfo) {
                        er->ExceptionInformation[0]);
     }
     st->print(" " INTPTR_FORMAT, er->ExceptionInformation[1]);
-
-    if (er->ExceptionCode == EXCEPTION_IN_PAGE_ERROR && UseSharedSpaces) {
-      FileMapInfo* mapinfo = FileMapInfo::current_info();
-      if (mapinfo->is_in_shared_space((void*)er->ExceptionInformation[1])) {
-        st->print("\n\nError accessing class data sharing archive."       \
-                  " Mapped file inaccessible during execution, "          \
-                  " possible disk/network problem.");
-      }
-    }
   } else {
     int num = er->NumberParameters;
     if (num > 0) {

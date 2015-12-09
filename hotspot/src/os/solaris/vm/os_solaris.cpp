@@ -1906,23 +1906,6 @@ void os::print_memory_info(outputStream* st) {
   (void) check_addr0(st);
 }
 
-void os::print_siginfo(outputStream* st, void* siginfo) {
-  const siginfo_t* si = (const siginfo_t*)siginfo;
-
-  os::Posix::print_siginfo_brief(st, si);
-
-  if (si && (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) &&
-      UseSharedSpaces) {
-    FileMapInfo* mapinfo = FileMapInfo::current_info();
-    if (mapinfo->is_in_shared_space(si->si_addr)) {
-      st->print("\n\nError accessing class data sharing archive."   \
-                " Mapped file inaccessible during execution, "      \
-                " possible disk/network problem.");
-    }
-  }
-  st->cr();
-}
-
 // Moved from whole group, because we need them here for diagnostic
 // prints.
 #define OLDMAXSIGNUM 32

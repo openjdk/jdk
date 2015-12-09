@@ -2237,25 +2237,6 @@ void os::get_summary_cpu_info(char* cpuinfo, size_t length) {
 #endif
 }
 
-void os::print_siginfo(outputStream* st, void* siginfo) {
-  const siginfo_t* si = (const siginfo_t*)siginfo;
-
-  os::Posix::print_siginfo_brief(st, si);
-#if INCLUDE_CDS
-  if (si && (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) &&
-      UseSharedSpaces) {
-    FileMapInfo* mapinfo = FileMapInfo::current_info();
-    if (mapinfo->is_in_shared_space(si->si_addr)) {
-      st->print("\n\nError accessing class data sharing archive."   \
-                " Mapped file inaccessible during execution, "      \
-                " possible disk/network problem.");
-    }
-  }
-#endif
-  st->cr();
-}
-
-
 static void print_signal_handler(outputStream* st, int sig,
                                  char* buf, size_t buflen);
 

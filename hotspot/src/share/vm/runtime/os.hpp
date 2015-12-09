@@ -606,7 +606,7 @@ class os: AllStatic {
   static void print_environment_variables(outputStream* st, const char** env_list);
   static void print_context(outputStream* st, const void* context);
   static void print_register_info(outputStream* st, const void* context);
-  static void print_siginfo(outputStream* st, void* siginfo);
+  static void print_siginfo(outputStream* st, const void* siginfo);
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
 
