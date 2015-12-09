@@ -1227,8 +1227,76 @@ UNSAFE_END
     {CC "put" #Byte,         CC "(" ADR#B ")V",       FN_PTR(Unsafe_SetNative##Byte)}
 
 
+static JNINativeMethod sun_misc_Unsafe_methods[] = {
+    {CC "getObject",        CC "(" OBJ "J)" OBJ "",   FN_PTR(Unsafe_GetObject)},
+    {CC "putObject",        CC "(" OBJ "J" OBJ ")V",  FN_PTR(Unsafe_SetObject)},
+    {CC "getObjectVolatile",CC "(" OBJ "J)" OBJ "",   FN_PTR(Unsafe_GetObjectVolatile)},
+    {CC "putObjectVolatile",CC "(" OBJ "J" OBJ ")V",  FN_PTR(Unsafe_SetObjectVolatile)},
 
-static JNINativeMethod methods[] = {
+    {CC "getUncompressedObject", CC "(" ADR ")" OBJ,  FN_PTR(Unsafe_GetUncompressedObject)},
+    {CC "getJavaMirror",         CC "(" ADR ")" CLS,  FN_PTR(Unsafe_GetJavaMirror)},
+    {CC "getKlassPointer",       CC "(" OBJ ")" ADR,  FN_PTR(Unsafe_GetKlassPointer)},
+
+    DECLARE_GETPUTOOP(Boolean, Z),
+    DECLARE_GETPUTOOP(Byte, B),
+    DECLARE_GETPUTOOP(Short, S),
+    DECLARE_GETPUTOOP(Char, C),
+    DECLARE_GETPUTOOP(Int, I),
+    DECLARE_GETPUTOOP(Long, J),
+    DECLARE_GETPUTOOP(Float, F),
+    DECLARE_GETPUTOOP(Double, D),
+
+    DECLARE_GETPUTNATIVE(Byte, B),
+    DECLARE_GETPUTNATIVE(Short, S),
+    DECLARE_GETPUTNATIVE(Char, C),
+    DECLARE_GETPUTNATIVE(Int, I),
+    DECLARE_GETPUTNATIVE(Long, J),
+    DECLARE_GETPUTNATIVE(Float, F),
+    DECLARE_GETPUTNATIVE(Double, D),
+
+    {CC "getAddress",         CC "(" ADR ")" ADR,        FN_PTR(Unsafe_GetNativeAddress)},
+    {CC "putAddress",         CC "(" ADR "" ADR ")V",    FN_PTR(Unsafe_SetNativeAddress)},
+
+    {CC "allocateMemory",     CC "(J)" ADR,              FN_PTR(Unsafe_AllocateMemory)},
+    {CC "reallocateMemory",   CC "(" ADR "J)" ADR,       FN_PTR(Unsafe_ReallocateMemory)},
+    {CC "freeMemory",         CC "(" ADR ")V",           FN_PTR(Unsafe_FreeMemory)},
+
+    {CC "objectFieldOffset",  CC "(" FLD ")J",           FN_PTR(Unsafe_ObjectFieldOffset)},
+    {CC "staticFieldOffset",  CC "(" FLD ")J",           FN_PTR(Unsafe_StaticFieldOffset)},
+    {CC "staticFieldBase",    CC "(" FLD ")" OBJ,        FN_PTR(Unsafe_StaticFieldBaseFromField)},
+    {CC "ensureClassInitialized",CC "(" CLS ")V",        FN_PTR(Unsafe_EnsureClassInitialized)},
+    {CC "arrayBaseOffset",    CC "(" CLS ")I",           FN_PTR(Unsafe_ArrayBaseOffset)},
+    {CC "arrayIndexScale",    CC "(" CLS ")I",           FN_PTR(Unsafe_ArrayIndexScale)},
+    {CC "addressSize",        CC "()I",                  FN_PTR(Unsafe_AddressSize)},
+    {CC "pageSize",           CC "()I",                  FN_PTR(Unsafe_PageSize)},
+
+    {CC "defineClass",        CC "(" DC_Args ")" CLS,    FN_PTR(Unsafe_DefineClass)},
+    {CC "allocateInstance",   CC "(" CLS ")" OBJ,        FN_PTR(Unsafe_AllocateInstance)},
+    {CC "throwException",     CC "(" THR ")V",           FN_PTR(Unsafe_ThrowException)},
+    {CC "compareAndSwapObject", CC "(" OBJ "J" OBJ "" OBJ ")Z", FN_PTR(Unsafe_CompareAndSwapObject)},
+    {CC "compareAndSwapInt",  CC "(" OBJ "J""I""I"")Z",  FN_PTR(Unsafe_CompareAndSwapInt)},
+    {CC "compareAndSwapLong", CC "(" OBJ "J""J""J"")Z",  FN_PTR(Unsafe_CompareAndSwapLong)},
+    {CC "putOrderedObject",   CC "(" OBJ "J" OBJ ")V",   FN_PTR(Unsafe_SetOrderedObject)},
+    {CC "putOrderedInt",      CC "(" OBJ "JI)V",         FN_PTR(Unsafe_SetOrderedInt)},
+    {CC "putOrderedLong",     CC "(" OBJ "JJ)V",         FN_PTR(Unsafe_SetOrderedLong)},
+    {CC "park",               CC "(ZJ)V",                FN_PTR(Unsafe_Park)},
+    {CC "unpark",             CC "(" OBJ ")V",           FN_PTR(Unsafe_Unpark)},
+
+    {CC "getLoadAverage",     CC "([DI)I",               FN_PTR(Unsafe_Loadavg)},
+
+    {CC "copyMemory",         CC "(" OBJ "J" OBJ "JJ)V", FN_PTR(Unsafe_CopyMemory)},
+    {CC "setMemory",          CC "(" OBJ "JJB)V",        FN_PTR(Unsafe_SetMemory)},
+
+    {CC "defineAnonymousClass", CC "(" DAC_Args ")" CLS, FN_PTR(Unsafe_DefineAnonymousClass)},
+
+    {CC "shouldBeInitialized",CC "(" CLS ")Z",           FN_PTR(Unsafe_ShouldBeInitialized)},
+
+    {CC "loadFence",          CC "()V",                  FN_PTR(Unsafe_LoadFence)},
+    {CC "storeFence",         CC "()V",                  FN_PTR(Unsafe_StoreFence)},
+    {CC "fullFence",          CC "()V",                  FN_PTR(Unsafe_FullFence)},
+};
+
+static JNINativeMethod jdk_internal_misc_Unsafe_methods[] = {
     {CC "getObject",        CC "(" OBJ "J)" OBJ "",   FN_PTR(Unsafe_GetObject)},
     {CC "putObject",        CC "(" OBJ "J" OBJ ")V",  FN_PTR(Unsafe_SetObject)},
     {CC "getObjectVolatile",CC "(" OBJ "J)" OBJ "",   FN_PTR(Unsafe_GetObjectVolatile)},
@@ -1316,17 +1384,27 @@ static JNINativeMethod methods[] = {
 #undef DECLARE_GETPUTNATIVE
 
 
-// This one function is exported, used by NativeLookup.
+// These two functions are exported, used by NativeLookup.
 // The Unsafe_xxx functions above are called only from the interpreter.
 // The optimizer looks at names and signatures to recognize
 // individual functions.
 
-JVM_ENTRY(void, JVM_RegisterUnsafeMethods(JNIEnv *env, jclass unsafeclass))
-  UnsafeWrapper("JVM_RegisterUnsafeMethods");
+JVM_ENTRY(void, JVM_RegisterSunMiscUnsafeMethods(JNIEnv *env, jclass unsafeclass))
+  UnsafeWrapper("JVM_RegisterSunMiscUnsafeMethods");
   {
     ThreadToNativeFromVM ttnfv(thread);
 
-    int ok = env->RegisterNatives(unsafeclass, methods, sizeof(methods)/sizeof(JNINativeMethod));
-    guarantee(ok == 0, "register unsafe natives");
+    int ok = env->RegisterNatives(unsafeclass, sun_misc_Unsafe_methods, sizeof(sun_misc_Unsafe_methods)/sizeof(JNINativeMethod));
+    guarantee(ok == 0, "register sun.misc.Unsafe natives");
+  }
+JVM_END
+
+JVM_ENTRY(void, JVM_RegisterJDKInternalMiscUnsafeMethods(JNIEnv *env, jclass unsafeclass))
+  UnsafeWrapper("JVM_RegisterJDKInternalMiscUnsafeMethods");
+  {
+    ThreadToNativeFromVM ttnfv(thread);
+
+    int ok = env->RegisterNatives(unsafeclass, jdk_internal_misc_Unsafe_methods, sizeof(jdk_internal_misc_Unsafe_methods)/sizeof(JNINativeMethod));
+    guarantee(ok == 0, "register jdk.internal.misc.Unsafe natives");
   }
 JVM_END
