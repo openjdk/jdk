@@ -1423,6 +1423,13 @@ public:
           range(500, max_intx)                                              \
           constraint(BiasedLockingDecayTimeFunc,AfterErgo)                  \
                                                                             \
+  product(bool, ExitOnOutOfMemoryError, false,                              \
+          "JVM exits on the first occurrence of an out-of-memory error")    \
+                                                                            \
+  product(bool, CrashOnOutOfMemoryError, false,                             \
+          "JVM aborts, producing an error log and core/mini dump, on the "  \
+          "first occurrence of an out-of-memory error")                     \
+                                                                            \
   /* tracing */                                                             \
                                                                             \
   develop(bool, StressRewriter, false,                                      \
