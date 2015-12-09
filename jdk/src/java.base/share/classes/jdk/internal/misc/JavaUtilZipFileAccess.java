@@ -29,6 +29,5 @@ import java.util.zip.ZipFile;
 
 public interface JavaUtilZipFileAccess {
     public boolean startsWithLocHeader(ZipFile zip);
-    public String[] getMetaInfEntryNames(ZipFile zip);
 }
 
