@@ -3266,11 +3266,11 @@ void G1CollectedHeap::print_extended_on(outputStream* st) const {
 
   // Print the per-region information.
   st->cr();
-  st->print_cr("Heap Regions: (E=young(eden), S=young(survivor), O=old, "
+  st->print_cr("Heap Regions: E=young(eden), S=young(survivor), O=old, "
                "HS=humongous(starts), HC=humongous(continues), "
                "CS=collection set, F=free, A=archive, TS=gc time stamp, "
-               "PTAMS=previous top-at-mark-start, "
-               "NTAMS=next top-at-mark-start)");
+               "AC=allocation context, "
+               "TAMS=top-at-mark-start (previous, next)");
   PrintRegionClosure blk(st);
   heap_region_iterate(&blk);
 }
