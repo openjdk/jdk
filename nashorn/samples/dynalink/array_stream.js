@@ -1,4 +1,4 @@
-#! array stream linker example
+# Usage: jjs -cp array_stream_linker.jar array_stream.js
 
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
@@ -31,19 +31,24 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// This script assumes you've built jdk9 or using latest
-// jdk9 image and put the 'bin' directory in the PATH
+// This script depends on array stream dynalink linker
+// to work as expected. Without that linker in jjs classpath,
+// this script will fail to run.
 
-$EXEC.throwOnError=true
+// Object[] and then Stream
+var s = Java.to(["hello", "world"]).stream
+s.map(function(s) s.toUpperCase()).forEach(print)
 
-// compile ArrayStreamLinkerExporter
-`javac -cp ../dist/nashorn.jar ArrayStreamLinkerExporter.java`
+// IntStream
+var is = Java.to([3, 56, 4, 23], "int[]").stream
+print(is.map(function(x) x*x).sum())
 
-// make a jar file out of pluggable linker
-`jar cvf array_stream_linker.jar ArrayStreamLinkerExporter*.class META-INF/`
+// DoubleStream
+var DoubleArray = Java.type("double[]")
+var arr = new DoubleArray(100)
+for (var i = 0; i < arr.length; i++)
+    arr[i] = Math.random()
 
-// run a sample script that uses pluggable linker
-// but make sure classpath points to the pluggable linker jar!
+print(arr.stream.summaryStatistics())
 
-`jjs -cp array_stream_linker.jar array_stream.js`
-print($OUT)
+

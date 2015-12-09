@@ -1,4 +1,4 @@
-# Usage: jjs -cp array_stream_linker.jar array_stream.js
+#! simple dom linker example
 
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
@@ -31,24 +31,18 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-// This script depends on array stream dynalink linker
-// to work as expected. Without that linker in jjs classpath,
-// this script will fail to run.
+// This script assumes you've built jdk9 or using latest
+// jdk9 image and put the 'bin' directory in the PATH
 
-// Object[] and then Stream
-var s = Java.to(["hello", "world"]).stream
-s.map(function(s) s.toUpperCase()).forEach(print)
+$EXEC.throwOnError=true
 
-// IntStream
-var is = Java.to([3, 56, 4, 23], "int[]").stream
-print(is.map(function(x) x*x).sum())
+// compile DOMLinkerExporter
+`javac -cp ../../dist/nashorn.jar DOMLinkerExporter.java`
 
-// DoubleStream
-var arr = [];
-for (var i = 0; i < 100; i++)
-    arr.push(Math.random())
+// make a jar file out of pluggable linker
+`jar cvf dom_linker.jar DOMLinkerExporter*.class META-INF/`
 
-var ds = Java.to(arr, "double[]").stream
-print(ds.summaryStatistics())
+// run a sample script that uses pluggable linker
+// but make sure classpath points to the pluggable linker jar!
 
-
+`jjs -cp dom_linker.jar dom_linker_gutenberg.js`

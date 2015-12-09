@@ -1,4 +1,4 @@
-# underscore name translator dynalink linker example
+# buffer indexing linker example
 
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
@@ -36,15 +36,14 @@
 
 $EXEC.throwOnError=true
 
-// compile UnderscoreNameLinkerExporter
-`javac -cp ../dist/nashorn.jar UnderscoreNameLinkerExporter.java`
+// compile BufferIndexingLinkerExporter
+`javac -cp ../../dist/nashorn.jar BufferIndexingLinkerExporter.java`
 
 // make a jar file out of pluggable linker
-`jar cvf underscore_linker.jar UnderscoreNameLinkerExporter*.class META-INF/`
+`jar cvf buffer_indexing_linker.jar BufferIndexingLinkerExporter*.class META-INF/`
 
 // run a sample script that uses pluggable linker
 // but make sure classpath points to the pluggable linker jar!
 
-`jjs -cp underscore_linker.jar underscore.js`
+`jjs -cp buffer_indexing_linker.jar buffer_index.js`
 print($OUT)
-

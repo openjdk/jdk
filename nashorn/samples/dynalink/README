@@ -1,6 +1,5 @@
-In addition to samples for Nashorn javascript engine, this directory contains
-samples for Dynalink API (http://openjdk.java.net/jeps/276) as well. Dynalink
-linker samples require a jar file to be built and such jars be placed in the
+This directory contains samples for Dynalink API (http://openjdk.java.net/jeps/276).
+These samples require a jar file to be built and such jars be placed in the
 classpath of the jjs tool. Linker samples are named with the naming pattern
 "xyz_linker.js". These scripts build dynalink linker jar from java code and exec
 another jjs process with appropriate classpath set.

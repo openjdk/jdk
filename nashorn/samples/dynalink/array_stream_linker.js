@@ -1,4 +1,4 @@
-#! missing method linker example
+#! array stream linker example
 
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
@@ -36,14 +36,14 @@
 
 $EXEC.throwOnError=true
 
-// compile MissingMethodLinkerExporter
-`javac -cp ../dist/nashorn.jar MissingMethodLinkerExporter.java MissingMethodHandler.java MissingMethodExample.java`
+// compile ArrayStreamLinkerExporter
+`javac -cp ../../dist/nashorn.jar ArrayStreamLinkerExporter.java`
 
 // make a jar file out of pluggable linker
-`jar cvf missing_method_linker.jar MissingMethod*.class META-INF/`
+`jar cvf array_stream_linker.jar ArrayStreamLinkerExporter*.class META-INF/`
 
 // run a sample script that uses pluggable linker
 // but make sure classpath points to the pluggable linker jar!
 
-`jjs -cp missing_method_linker.jar missing_method.js`
+`jjs -cp array_stream_linker.jar array_stream.js`
 print($OUT)

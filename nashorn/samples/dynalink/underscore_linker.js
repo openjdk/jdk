@@ -1,4 +1,4 @@
-#! simple dom linker example
+# underscore name translator dynalink linker example
 
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
@@ -36,13 +36,15 @@
 
 $EXEC.throwOnError=true
 
-// compile DOMLinkerExporter
-`javac -cp ../dist/nashorn.jar DOMLinkerExporter.java`
+// compile UnderscoreNameLinkerExporter
+`javac -cp ../../dist/nashorn.jar UnderscoreNameLinkerExporter.java`
 
 // make a jar file out of pluggable linker
-`jar cvf dom_linker.jar DOMLinkerExporter*.class META-INF/`
+`jar cvf underscore_linker.jar UnderscoreNameLinkerExporter*.class META-INF/`
 
 // run a sample script that uses pluggable linker
 // but make sure classpath points to the pluggable linker jar!
 
-`jjs -cp dom_linker.jar dom_linker_gutenberg.js`
+`jjs -cp underscore_linker.jar underscore.js`
+print($OUT)
+

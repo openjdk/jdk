@@ -1,4 +1,4 @@
-# buffer indexing linker example
+#! missing method linker example
 
 /*
  * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
@@ -36,14 +36,14 @@
 
 $EXEC.throwOnError=true
 
-// compile BufferIndexingLinkerExporter
-`javac -cp ../dist/nashorn.jar BufferIndexingLinkerExporter.java`
+// compile MissingMethodLinkerExporter
+`javac -cp ../../dist/nashorn.jar MissingMethodLinkerExporter.java MissingMethodHandler.java MissingMethodExample.java`
 
 // make a jar file out of pluggable linker
-`jar cvf buffer_indexing_linker.jar BufferIndexingLinkerExporter*.class META-INF/`
+`jar cvf missing_method_linker.jar MissingMethod*.class META-INF/`
 
 // run a sample script that uses pluggable linker
 // but make sure classpath points to the pluggable linker jar!
 
-`jjs -cp buffer_indexing_linker.jar buffer_index.js`
+`jjs -cp missing_method_linker.jar missing_method.js`
 print($OUT)
