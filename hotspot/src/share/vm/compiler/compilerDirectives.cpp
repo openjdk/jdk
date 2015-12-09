@@ -313,7 +313,7 @@ CompilerDirectives* DirectiveSet::directive() {
 
 bool DirectiveSet::matches_inline(methodHandle method, int inline_action) {
   if (_inlinematchers != NULL) {
-    if (_inlinematchers->match(method, InlineMatcher::force_inline)) {
+    if (_inlinematchers->match(method, inline_action)) {
       return true;
     }
   }
@@ -325,11 +325,11 @@ bool DirectiveSet::should_inline(ciMethod* inlinee) {
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, inlinee->get_Method());
 
-  if (matches_inline(mh, InlineMatcher::force_inline)) {
-    return true;
+  if (_inlinematchers != NULL) {
+    return matches_inline(mh, InlineMatcher::force_inline);
   }
-  if (!CompilerDirectivesIgnoreCompileCommandsOption && CompilerOracle::should_inline(mh)) {
-    return true;
+  if (!CompilerDirectivesIgnoreCompileCommandsOption) {
+    return CompilerOracle::should_inline(mh);
   }
   return false;
 }
@@ -339,11 +339,11 @@ bool DirectiveSet::should_not_inline(ciMethod* inlinee) {
   VM_ENTRY_MARK;
   methodHandle mh(THREAD, inlinee->get_Method());
 
-  if (matches_inline(mh, InlineMatcher::dont_inline)) {
-    return true;
+  if (_inlinematchers != NULL) {
+    return matches_inline(mh, InlineMatcher::dont_inline);
   }
-  if (!CompilerDirectivesIgnoreCompileCommandsOption && CompilerOracle::should_not_inline(mh)) {
-    return true;
+  if (!CompilerDirectivesIgnoreCompileCommandsOption) {
+    return CompilerOracle::should_not_inline(mh);
   }
   return false;
 }
