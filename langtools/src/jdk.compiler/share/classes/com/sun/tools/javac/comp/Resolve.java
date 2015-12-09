@@ -2784,8 +2784,6 @@ public class Resolve {
                             .map(c -> StaticKind.from(c.sym))
                             .reduce(StaticKind::reduce)
                             .orElse(StaticKind.UNDEFINED);
-                case HIDDEN:
-                    return StaticKind.from(((AccessError)sym).sym);
                 default:
                     return StaticKind.UNDEFINED;
             }
