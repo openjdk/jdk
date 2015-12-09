@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 SUNWprivate_1.1 {
 	global:
+		Java_java_util_jar_JarFile_getMetaInfEntryNames;
 		Java_java_util_zip_Adler32_update;
 		Java_java_util_zip_Adler32_updateBytes;
 		Java_java_util_zip_Adler32_updateByteBuffer;
@@ -47,6 +48,25 @@ SUNWprivate_1.1 {
 		Java_java_util_zip_Inflater_initIDs;
 		Java_java_util_zip_Inflater_reset;
 		Java_java_util_zip_Inflater_setDictionary;
+		Java_java_util_zip_ZipFile_close;
+		Java_java_util_zip_ZipFile_getCommentBytes;
+		Java_java_util_zip_ZipFile_freeEntry;
+		Java_java_util_zip_ZipFile_getEntry;
+		Java_java_util_zip_ZipFile_getEntryBytes;
+		Java_java_util_zip_ZipFile_getEntryCrc;
+		Java_java_util_zip_ZipFile_getEntryCSize;
+		Java_java_util_zip_ZipFile_getEntryFlag;
+		Java_java_util_zip_ZipFile_getEntryMethod;
+		Java_java_util_zip_ZipFile_getEntrySize;
+		Java_java_util_zip_ZipFile_getEntryTime;
+		Java_java_util_zip_ZipFile_getNextEntry;
+		Java_java_util_zip_ZipFile_getZipMessage;
+		Java_java_util_zip_ZipFile_getTotal;
+		Java_java_util_zip_ZipFile_initIDs;
+		Java_java_util_zip_ZipFile_open;
+		Java_java_util_zip_ZipFile_read;
+		Java_java_util_zip_ZipFile_startsWithLOC;
+
 		ZIP_Close;
 		ZIP_CRC32;
 		ZIP_FindEntry;
