@@ -132,6 +132,12 @@ public class TestOptionsWithRanges {
         excludeTestMaxRange("VMThreadStackSize");
 
         /*
+         * JDK-8145027
+         * Temporarily exclude as current range/constraint is not enough for some option combinations.
+         */
+        excludeTestRange("NUMAInterleaveGranularity");
+
+        /*
          * Remove parameters controlling the code cache. As these
          * parameters have implications on the physical memory
          * reserved by the VM, setting them to large values may hang
