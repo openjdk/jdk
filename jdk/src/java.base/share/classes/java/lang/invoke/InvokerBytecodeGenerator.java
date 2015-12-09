@@ -324,27 +324,54 @@ class InvokerBytecodeGenerator {
             emitIconstInsn((int) con);
             return;
         }
+        if (con instanceof Byte) {
+            emitIconstInsn((byte)con);
+            return;
+        }
+        if (con instanceof Short) {
+            emitIconstInsn((short)con);
+            return;
+        }
+        if (con instanceof Character) {
+            emitIconstInsn((char)con);
+            return;
+        }
         if (con instanceof Long) {
             long x = (long) con;
-            if (x == (short) x) {
-                emitIconstInsn((int) x);
-                mv.visitInsn(Opcodes.I2L);
+            short sx = (short)x;
+            if (x == sx) {
+                if (sx >= 0 && sx <= 1) {
+                    mv.visitInsn(Opcodes.LCONST_0 + (int) sx);
+                } else {
+                    emitIconstInsn((int) x);
+                    mv.visitInsn(Opcodes.I2L);
+                }
                 return;
             }
         }
         if (con instanceof Float) {
             float x = (float) con;
-            if (x == (short) x) {
-                emitIconstInsn((int) x);
-                mv.visitInsn(Opcodes.I2F);
+            short sx = (short)x;
+            if (x == sx) {
+                if (sx >= 0 && sx <= 2) {
+                    mv.visitInsn(Opcodes.FCONST_0 + (int) sx);
+                } else {
+                    emitIconstInsn((int) x);
+                    mv.visitInsn(Opcodes.I2F);
+                }
                 return;
             }
         }
         if (con instanceof Double) {
             double x = (double) con;
-            if (x == (short) x) {
-                emitIconstInsn((int) x);
-                mv.visitInsn(Opcodes.I2D);
+            short sx = (short)x;
+            if (x == sx) {
+                if (sx >= 0 && sx <= 1) {
+                    mv.visitInsn(Opcodes.DCONST_0 + (int) sx);
+                } else {
+                    emitIconstInsn((int) x);
+                    mv.visitInsn(Opcodes.I2D);
+                }
                 return;
             }
         }
@@ -356,26 +383,16 @@ class InvokerBytecodeGenerator {
         mv.visitLdcInsn(con);
     }
 
-    private void emitIconstInsn(int i) {
-        int opcode;
-        switch (i) {
-        case 0:  opcode = Opcodes.ICONST_0;  break;
-        case 1:  opcode = Opcodes.ICONST_1;  break;
-        case 2:  opcode = Opcodes.ICONST_2;  break;
-        case 3:  opcode = Opcodes.ICONST_3;  break;
-        case 4:  opcode = Opcodes.ICONST_4;  break;
-        case 5:  opcode = Opcodes.ICONST_5;  break;
-        default:
-            if (i == (byte) i) {
-                mv.visitIntInsn(Opcodes.BIPUSH, i & 0xFF);
-            } else if (i == (short) i) {
-                mv.visitIntInsn(Opcodes.SIPUSH, (char) i);
-            } else {
-                mv.visitLdcInsn(i);
-            }
-            return;
+    private void emitIconstInsn(final int cst) {
+        if (cst >= -1 && cst <= 5) {
+            mv.visitInsn(Opcodes.ICONST_0 + cst);
+        } else if (cst >= Byte.MIN_VALUE && cst <= Byte.MAX_VALUE) {
+            mv.visitIntInsn(Opcodes.BIPUSH, cst);
+        } else if (cst >= Short.MIN_VALUE && cst <= Short.MAX_VALUE) {
+            mv.visitIntInsn(Opcodes.SIPUSH, cst);
+        } else {
+            mv.visitLdcInsn(cst);
         }
-        mv.visitInsn(opcode);
     }
 
     /*
