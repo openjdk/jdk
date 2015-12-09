@@ -473,23 +473,21 @@ void VM_Version::get_processor_features() {
   // i486 internal cache is both I&D and has a 16-byte line size
   _L1_data_cache_line_size = 16;
 
-  if (!Use486InstrsOnly) {
-    // Get raw processor info
+  // Get raw processor info
 
-    get_cpu_info_stub(&_cpuid_info);
+  get_cpu_info_stub(&_cpuid_info);
 
-    assert_is_initialized();
-    _cpu = extended_cpu_family();
-    _model = extended_cpu_model();
-    _stepping = cpu_stepping();
+  assert_is_initialized();
+  _cpu = extended_cpu_family();
+  _model = extended_cpu_model();
+  _stepping = cpu_stepping();
 
-    if (cpu_family() > 4) { // it supports CPUID
-      _cpuFeatures = feature_flags();
-      // Logical processors are only available on P4s and above,
-      // and only if hyperthreading is available.
-      _logical_processors_per_package = logical_processor_count();
-      _L1_data_cache_line_size = L1_line_size();
-    }
+  if (cpu_family() > 4) { // it supports CPUID
+    _cpuFeatures = feature_flags();
+    // Logical processors are only available on P4s and above,
+    // and only if hyperthreading is available.
+    _logical_processors_per_package = logical_processor_count();
+    _L1_data_cache_line_size = L1_line_size();
   }
 
   _supports_cx8 = supports_cmpxchg8();
