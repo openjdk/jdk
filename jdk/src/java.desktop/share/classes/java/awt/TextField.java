@@ -309,6 +309,9 @@ public class TextField extends TextComponent {
      * @return      Returns text after replacing EOL characters.
      */
     private static String replaceEOL(String text) {
+        if (text == null) {
+            return text;
+        }
         String[] strEOLs = {System.lineSeparator(), "\n"};
         for (String eol : strEOLs) {
             if (text.contains(eol)) {
