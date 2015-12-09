@@ -99,7 +99,13 @@ AC_DEFUN([BASIC_FIXUP_PATH],
         AC_MSG_ERROR([The path of $1, which resolves as "$path", is not found.])
       fi
 
-      $1="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        $1="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        $1="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 ])
@@ -1070,6 +1076,26 @@ AC_DEFUN_ONCE([BASIC_CHECK_BASH_OPTIONS],
   fi
 
   AC_SUBST(BASH_ARGS)
+])
+
+################################################################################
+#
+# Default make target
+#
+AC_DEFUN_ONCE([BASIC_SETUP_DEFAULT_MAKE_TARGET],
+[
+  AC_ARG_WITH(default-make-target, [AS_HELP_STRING([--with-default-make-target],
+      [set the default make target @<:@exploded-image@:>@])])
+  if test "x$with_default_make_target" = "x" \
+      || test "x$with_default_make_target" = "xyes"; then
+    DEFAULT_MAKE_TARGET="exploded-image"
+  elif test "x$with_default_make_target" = "xno"; then
+    AC_MSG_ERROR([--without-default-make-target is not a valid option])
+  else
+    DEFAULT_MAKE_TARGET="$with_default_make_target"
+  fi
+
+  AC_SUBST(DEFAULT_MAKE_TARGET)
 ])
 
 # Code to run after AC_OUTPUT

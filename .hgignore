@@ -4,6 +4,7 @@ nbproject/private/
 ^webrev
 ^.hgtip
 ^.bridge2
+^.jab/
 .DS_Store
 .metadata/
 .recommenders/
