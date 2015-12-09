@@ -225,29 +225,6 @@ class DeadServerTimeoutTest extends DeadServerTest {
     }
 }
 
-class DeadServerTimeoutSSLTest extends DeadServerTest {
-
-    public DeadServerTimeoutSSLTest(Hashtable env) throws IOException {
-        super(env);
-    }
-
-    public void handleNamingException(NamingException e, long start, long end) {
-        if (e.getCause() instanceof SocketTimeoutException) {
-            // SSL connect will timeout via readReply using
-            // SocketTimeoutException
-            e.printStackTrace();
-            pass();
-        } else if (e.getCause() instanceof SSLHandshakeException
-                && e.getCause().getCause() instanceof EOFException) {
-            // test seems to be failing intermittently on some
-            // platforms.
-            pass();
-        } else {
-            fail(e);
-        }
-    }
-}
-
 
 class ReadServerNoTimeoutTest extends ReadServerTest {
 
@@ -453,21 +430,6 @@ public class LdapTimeoutTest {
                         testFailed = true;
                 }
             }
-
-            //
-            // Running this test serially as it seems to tickle a problem
-            // on older kernels
-            //
-            // run the DeadServerTest with connect / read timeouts set
-            // and ssl enabled
-            // this should exit with a SocketTimeoutException as the root cause
-            // it should also use the connect timeout instead of the read timeout
-            System.out.println("Running connect timeout test with 10ms connect timeout, 3000ms read timeout & SSL");
-            Hashtable sslenv = createEnv();
-            sslenv.put("com.sun.jndi.ldap.connect.timeout", "10");
-            sslenv.put("com.sun.jndi.ldap.read.timeout", "3000");
-            sslenv.put(Context.SECURITY_PROTOCOL, "ssl");
-            testFailed = (new DeadServerTimeoutSSLTest(sslenv).call()) ? false : true;
 
             if (testFailed) {
                 throw new AssertionError("some tests failed");
