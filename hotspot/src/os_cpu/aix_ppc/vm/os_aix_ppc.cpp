@@ -546,7 +546,21 @@ void os::print_context(outputStream *st, void *context) {
 
 void os::print_register_info(outputStream *st, void *context) {
   if (context == NULL) return;
-  st->print("Not ported - print_register_info\n");
+
+  ucontext_t *uc = (ucontext_t*)context;
+
+  st->print_cr("Register to memory mapping:");
+  st->cr();
+
+  st->print("pc ="); print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.iar);
+  st->print("lr ="); print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.lr);
+  st->print("sp ="); print_location(st, (intptr_t)os::Aix::ucontext_get_sp(uc));
+  for (int i = 0; i < 32; i++) {
+    st->print("r%-2d=", i);
+    print_location(st, (intptr_t)uc->uc_mcontext.jmp_context.gpr[i]);
+  }
+
+  st->cr();
 }
 
 extern "C" {
@@ -565,3 +579,4 @@ int os::extra_bang_size_in_bytes() {
   // PPC does not require the additional stack bang.
   return 0;
 }
+
