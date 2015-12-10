@@ -1308,18 +1308,20 @@ bool Arguments::add_property(const char* prop) {
     PropertyList_unique_add(&_system_properties, key, value, true);
   } else {
     if (strcmp(key, "sun.java.command") == 0) {
-      if (_java_command != NULL) {
-        os::free(_java_command);
-      }
+      char *old_java_command = _java_command;
       _java_command = os::strdup_check_oom(value, mtInternal);
-    } else if (strcmp(key, "java.vendor.url.bug") == 0) {
-      if (_java_vendor_url_bug != DEFAULT_VENDOR_URL_BUG) {
-        assert(_java_vendor_url_bug != NULL, "_java_vendor_url_bug is NULL");
-        os::free((void *)_java_vendor_url_bug);
+      if (old_java_command != NULL) {
+        os::free(old_java_command);
       }
+    } else if (strcmp(key, "java.vendor.url.bug") == 0) {
+      const char* old_java_vendor_url_bug = _java_vendor_url_bug;
       // save it in _java_vendor_url_bug, so JVM fatal error handler can access
       // its value without going through the property list or making a Java call.
       _java_vendor_url_bug = os::strdup_check_oom(value, mtInternal);
+      if (old_java_vendor_url_bug != DEFAULT_VENDOR_URL_BUG) {
+        assert(old_java_vendor_url_bug != NULL, "_java_vendor_url_bug is NULL");
+        os::free((void *)old_java_vendor_url_bug);
+      }
     }
 
     // Create new property and add at the end of the list
