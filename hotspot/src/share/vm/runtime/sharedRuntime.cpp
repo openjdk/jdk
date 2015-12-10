@@ -254,8 +254,10 @@ JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
        ((ybits.i & float_sign_mask) == float_infinity) ) {
     return x;
   }
-#endif
+  return ((jfloat)fmod_winx64((double)x, (double)y));
+#else
   return ((jfloat)fmod((double)x,(double)y));
+#endif
 JRT_END
 
 
@@ -269,8 +271,10 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
        ((ybits.l & double_sign_mask) == double_infinity) ) {
     return x;
   }
-#endif
+  return ((jdouble)fmod_winx64((double)x, (double)y));
+#else
   return ((jdouble)fmod((double)x,(double)y));
+#endif
 JRT_END
 
 #ifdef __SOFTFP__
