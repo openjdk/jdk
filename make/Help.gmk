@@ -75,6 +75,7 @@ help:
 	$(info $(_) CONF=                  # Build all configurations (note, assignment is empty))
 	$(info $(_) CONF=<substring>       # Build the configuration(s) with a name matching)
 	$(info $(_)                        # <substring>)
+	$(info $(_) CONF_NAME=<string>     # Build the configuration with exactly the <string>)
 	$(info $(_) SPEC=<spec file>       # Build the configuration given by the spec file)
 	$(info $(_) LOG=<loglevel>         # Change the log level from warn to <loglevel>)
 	$(info $(_)                        # Available log levels are:)

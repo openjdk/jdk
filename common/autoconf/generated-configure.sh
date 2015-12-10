@@ -862,6 +862,7 @@ TEST_IN_BUILD
 BUILD_HEADLESS
 SUPPORT_HEADFUL
 SUPPORT_HEADLESS
+DEFAULT_MAKE_TARGET
 OS_VERSION_MICRO
 OS_VERSION_MINOR
 OS_VERSION_MAJOR
@@ -1067,6 +1068,7 @@ with_extra_path
 with_sdk_name
 with_conf_name
 with_output_sync
+with_default_make_target
 enable_headful
 enable_hotspot_test_in_build
 with_cacerts_file
@@ -1933,6 +1935,8 @@ Optional Packages:
                           from important configuration options]
   --with-output-sync      set make output sync type if supported by make.
                           [recurse]
+  --with-default-make-target
+                          set the default make target [exploded-image]
   --with-cacerts-file     specify alternative cacerts file
   --with-copyright-year   Set copyright year value for build [current year]
   --with-milestone        Deprecated. Option is kept for backwards
@@ -3563,6 +3567,12 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # Check for support for specific options in bash
 
 
+################################################################################
+#
+# Default make target
+#
+
+
 # Code to run after AC_OUTPUT
 
 
@@ -4052,6 +4062,15 @@ pkgadd_help() {
 #
 
 
+################################################################################
+#
+# Static build support.  When enabled will generate static
+# libraries instead of shared libraries for all JDK libs.
+#
+
+
+
+
 #
 # Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -4087,15 +4106,6 @@ pkgadd_help() {
 
 # Argument 1: the variable to assign to
 # Argument 2: the value given by the user
-
-
-
-
-################################################################################
-#
-# Static build support.  When enabled will generate static
-# libraries instead of shared libraries for all JDK libs.
-#
 
 
 
@@ -4709,7 +4719,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1449049746
+DATE_WHEN_GENERATED=1449605339
 
 ###############################################################################
 #
@@ -15326,7 +15336,13 @@ $as_echo "$as_me: The path of CURDIR, which resolves as \"$path\", is invalid." 
         as_fn_error $? "The path of CURDIR, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      CURDIR="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        CURDIR="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        CURDIR="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -15452,7 +15468,13 @@ $as_echo "$as_me: The path of TOPDIR, which resolves as \"$path\", is invalid." 
         as_fn_error $? "The path of TOPDIR, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      TOPDIR="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        TOPDIR="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        TOPDIR="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -16022,7 +16044,13 @@ $as_echo "$as_me: The path of with_devkit, which resolves as \"$path\", is inval
         as_fn_error $? "The path of with_devkit, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      with_devkit="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        with_devkit="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        with_devkit="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -16554,7 +16582,13 @@ $as_echo "$as_me: The path of OUTPUT_ROOT, which resolves as \"$path\", is inval
         as_fn_error $? "The path of OUTPUT_ROOT, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      OUTPUT_ROOT="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        OUTPUT_ROOT="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        OUTPUT_ROOT="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -23051,6 +23085,26 @@ fi
 
 
 
+# Misc basic settings
+
+
+# Check whether --with-default-make-target was given.
+if test "${with_default_make_target+set}" = set; then :
+  withval=$with_default_make_target;
+fi
+
+  if test "x$with_default_make_target" = "x" \
+      || test "x$with_default_make_target" = "xyes"; then
+    DEFAULT_MAKE_TARGET="exploded-image"
+  elif test "x$with_default_make_target" = "xno"; then
+    as_fn_error $? "--without-default-make-target is not a valid option" "$LINENO" 5
+  else
+    DEFAULT_MAKE_TARGET="$with_default_make_target"
+  fi
+
+
+
+
 ###############################################################################
 #
 # Determine OpenJDK variants, options and version numbers.
@@ -23792,7 +23846,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -23988,7 +24048,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -24172,7 +24238,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -24355,7 +24427,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -24538,7 +24616,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -24712,7 +24796,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -24861,7 +24951,13 @@ $as_echo "$as_me: The path of JAVA_HOME_PROCESSED, which resolves as \"$path\", 
         as_fn_error $? "The path of JAVA_HOME_PROCESSED, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      JAVA_HOME_PROCESSED="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        JAVA_HOME_PROCESSED="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        JAVA_HOME_PROCESSED="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -25031,7 +25127,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -25356,7 +25458,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -25568,7 +25676,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -25745,7 +25859,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -25950,7 +26070,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -26127,7 +26253,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -26332,7 +26464,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -26509,7 +26647,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -26714,7 +26858,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -26891,7 +27041,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -27083,7 +27239,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -27258,7 +27420,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -27451,7 +27619,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -27626,7 +27800,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -27818,7 +27998,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -27993,7 +28179,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -28186,7 +28378,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -28361,7 +28559,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -28535,7 +28739,13 @@ $as_echo "$as_me: The path of BOOT_JDK, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of BOOT_JDK, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        BOOT_JDK="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        BOOT_JDK="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -31014,7 +31224,13 @@ $as_echo "$as_me: The path of ipath, which resolves as \"$path\", is invalid." >
         as_fn_error $? "The path of ipath, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      ipath="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        ipath="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        ipath="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -31164,7 +31380,13 @@ $as_echo "$as_me: The path of libpath, which resolves as \"$path\", is invalid."
         as_fn_error $? "The path of libpath, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      libpath="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        libpath="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        libpath="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -42918,7 +43140,13 @@ $as_echo "$as_me: The path of with_build_devkit, which resolves as \"$path\", is
         as_fn_error $? "The path of with_build_devkit, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      with_build_devkit="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        with_build_devkit="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        with_build_devkit="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -45433,7 +45661,13 @@ $as_echo "$as_me: The path of JT_HOME, which resolves as \"$path\", is invalid."
         as_fn_error $? "The path of JT_HOME, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      JT_HOME="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        JT_HOME="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        JT_HOME="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -47947,7 +48181,13 @@ $as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        MSVC_DLL="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -48121,7 +48361,13 @@ $as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        MSVC_DLL="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -48319,7 +48565,13 @@ $as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        MSVC_DLL="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -48494,7 +48746,13 @@ $as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        MSVC_DLL="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -48679,7 +48937,13 @@ $as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        MSVC_DLL="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -48871,7 +49135,13 @@ $as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        MSVC_DLL="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -49060,7 +49330,13 @@ $as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        MSVC_DLL="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -49254,7 +49530,13 @@ $as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        MSVC_DLL="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -49428,7 +49710,13 @@ $as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        MSVC_DLL="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -49626,7 +49914,13 @@ $as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        MSVC_DLL="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -49801,7 +50095,13 @@ $as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        MSVC_DLL="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -49986,7 +50286,13 @@ $as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        MSVC_DLL="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -50178,7 +50484,13 @@ $as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        MSVC_DLL="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -50367,7 +50679,13 @@ $as_echo "$as_me: The path of MSVC_DLL, which resolves as \"$path\", is invalid.
         as_fn_error $? "The path of MSVC_DLL, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        MSVC_DLL="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        MSVC_DLL="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -51746,7 +52064,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
         as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -51872,7 +52196,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
         as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -52107,7 +52437,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
         as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -52233,7 +52569,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
         as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -52567,7 +52909,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
         as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -52693,7 +53041,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
         as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -52903,7 +53257,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
         as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -53029,7 +53389,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
         as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -53230,7 +53596,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
         as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -53356,7 +53728,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
         as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -53557,7 +53935,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
         as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -53683,7 +54067,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
         as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -53885,7 +54275,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
         as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -54011,7 +54407,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
         as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -54214,7 +54616,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
         as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -54340,7 +54748,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
         as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -54539,7 +54953,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
         as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -54665,7 +55085,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
         as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -54864,7 +55290,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as
         as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -54990,7 +55422,13 @@ $as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$
         as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -55172,7 +55610,13 @@ $as_echo "$as_me: The path of FREETYPE_INCLUDE_PATH, which resolves as \"$path\"
         as_fn_error $? "The path of FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        FREETYPE_INCLUDE_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
@@ -55306,7 +55750,13 @@ $as_echo "$as_me: The path of FREETYPE_LIB_PATH, which resolves as \"$path\", is
         as_fn_error $? "The path of FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
       fi
 
-      FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      if test -d "$path"; then
+        FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        FREETYPE_LIB_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
     fi
   fi
 
