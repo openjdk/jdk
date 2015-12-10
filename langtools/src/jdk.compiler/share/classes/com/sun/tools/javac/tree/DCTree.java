@@ -408,6 +408,36 @@ public abstract class DCTree implements DocTree {
         }
     }
 
+    public static class DCIndex extends DCInlineTag implements IndexTree {
+        public final DCTree term;
+        public final List<DCTree> description;
+
+        DCIndex(DCTree term, List<DCTree> description) {
+            this.term = term;
+            this.description = description;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public Kind getKind() {
+            return Kind.INDEX;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
+            return v.visitIndex(this, d);
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public DocTree getSearchTerm() {
+            return term;
+        }
+
+        @Override @DefinedBy(Api.COMPILER_TREE)
+        public java.util.List<? extends DocTree> getDescription() {
+            return description;
+        }
+    }
+
     public static class DCInheritDoc extends DCInlineTag implements InheritDocTree {
         @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {

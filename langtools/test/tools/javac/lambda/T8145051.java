@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,21 @@
 
 /*
  * @test
- * @bug 7032633
- * @summary javac -Xlint:all warns about flush() within try on an auto-closeable resource
- * @compile -Xlint:try -Werror T7032633.java
+ * @bug 8145051
+ * @summary Wrong parameter name in synthetic lambda method leads to verifier error
+ * @compile pkg/T8145051.java
+ * @run main/othervm -Xverify:all T8145051
  */
 
-import java.io.IOException;
-import java.io.OutputStream;
+public class T8145051 {
 
-public class T7032633 {
-    void test() throws IOException {
-        // declared resource
-        try (OutputStream out = System.out) {
-            out.flush();
-        }
-
-        // resource as variable
-        OutputStream out = System.out;
-        try (out) {
-            out.flush();
-        }
+    public static void main(String [] args) {
+        pkg.T8145051 t8145051 = new pkg.T8145051();
+        t8145051.new Sub();
+        if (!t8145051.s.equals("Executed lambda"))
+            throw new AssertionError("Unexpected data");
+        else
+            System.out.println("OK");
     }
+
 }

@@ -8,6 +8,7 @@ public class TwrForVariable2 implements AutoCloseable {
     public static void main(String... args) {
         TwrForVariable2 v = new TwrForVariable2();
         TwrForVariable3[] v2 = new TwrForVariable3[1];
+        TwrForVariable3[][] v3 = new TwrForVariable3[1][1];
 
         try (final v) {
             fail("no modifiers before variables");
@@ -24,8 +25,14 @@ public class TwrForVariable2 implements AutoCloseable {
         try (v2[0]) {
             fail("array access not allowed");
         }
+        try (v3[0][0]) {
+            fail("array access not allowed");
+        }
         try (args.length == 0 ? v : v) {
             fail("general expressions not allowed");
+        }
+        try ((TwrForVariable2)null) {
+            fail("null as variable is not allowed");
         }
     }
 

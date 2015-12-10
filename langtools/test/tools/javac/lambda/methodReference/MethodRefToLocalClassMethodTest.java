@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,32 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 7032633
- * @summary javac -Xlint:all warns about flush() within try on an auto-closeable resource
- * @compile -Xlint:try -Werror T7032633.java
+ * @bug 8144673
+ * @summary Suspect message regarding suitable enclosing instance not being in scope
+ * @run main MethodRefToLocalClassMethodTest
  */
 
-import java.io.IOException;
-import java.io.OutputStream;
 
-public class T7032633 {
-    void test() throws IOException {
-        // declared resource
-        try (OutputStream out = System.out) {
-            out.flush();
-        }
+import java.util.ArrayList;
+import java.util.List;
 
-        // resource as variable
-        OutputStream out = System.out;
-        try (out) {
-            out.flush();
+public class MethodRefToLocalClassMethodTest {
+
+    public static void main(String[] args) {
+        new MethodRefToLocalClassMethodTest().foo();
+    }
+
+    public void foo() {
+        class LocalFoo {
+            LocalFoo(String in) {
+                if (!in.equals("Hello"))
+                    throw new AssertionError("Unexpected data: " + in);
+            }
         }
+        List<String> ls = new ArrayList<>();
+        ls.add("Hello");
+        ls.stream().map(LocalFoo::new).forEach(x->{});
     }
 }

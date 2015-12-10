@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -88,7 +88,7 @@ public class Processor extends AbstractProcessor {
         if (!testFile.canRead()) throw new IllegalStateException("Cannot read the test source");
         JavacTool compiler = JavacTool.create();
         JavacFileManager fm = compiler.getStandardFileManager(null, null, null);
-        testContent = fm.getRegularFile(testFile.toPath()).getCharContent(true).toString();
+        testContent = fm.getJavaFileObject(testFile.toPath()).getCharContent(true).toString();
         JavaFileObject testFileObject = new TestFO(new URI("mem://" + args[0]), testContent);
         TestFM testFileManager = new TestFM(fm);
         JavacTask task = compiler.getTask(null,
