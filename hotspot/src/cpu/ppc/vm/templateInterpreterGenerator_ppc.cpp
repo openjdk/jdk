@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#ifndef CC_INTERP
 #include "asm/macroAssembler.inline.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
@@ -1799,4 +1798,3 @@ void TemplateInterpreterGenerator::stop_interpreter_at() {
 }
 
 #endif // !PRODUCT
-#endif // !CC_INTERP

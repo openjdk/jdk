@@ -39,12 +39,10 @@
     return stackElementWords * i;
   }
 
-#ifndef CC_INTERP
   // The offset in bytes to access a expression stack slot
   // relative to the esp pointer.
   static int expr_offset_in_bytes(int slot) {
     return stackElementSize * slot + wordSize;
   }
-#endif
 
 #endif // CPU_PPC_VM_INTERPRETER_PPC_HPP
