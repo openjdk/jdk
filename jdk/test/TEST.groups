@@ -32,6 +32,7 @@ tier1 = \
     :jdk_util \
     -java/util/WeakHashMap/GCDuringIteration.java \
     -java/util/concurrent/Phaser/Basic.java \
+    -java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java
     sun/nio/cs/ISO8859x.java \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
@@ -42,6 +43,7 @@ tier2 = \
     java/util/zip/TestLocalTime.java \
     java/util/concurrent/Phaser/Basic.java \
     java/util/WeakHashMap/GCDuringIteration.java \
+    java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
     :jdk_io \
     :jdk_nio \
     -sun/nio/cs/ISO8859x.java \
