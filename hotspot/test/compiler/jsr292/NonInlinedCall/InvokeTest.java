@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8072008
- * @library /testlibrary /../../test/lib
- * @build InvokeTest NonInlinedReinvoker
+ * @library /testlibrary /test/lib
+ * @compile InvokeTest.java NonInlinedReinvoker.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  *                              java.lang.invoke.InvokeTest
@@ -43,9 +43,7 @@
 package java.lang.invoke;
 
 import sun.hotspot.WhiteBox;
-
 import jdk.internal.vm.annotation.DontInline;
-
 import static jdk.test.lib.Asserts.*;
 
 public class InvokeTest {
