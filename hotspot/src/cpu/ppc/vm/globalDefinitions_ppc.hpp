@@ -36,4 +36,9 @@ const int StackAlignmentInBytes = 16;
 // The PPC CPUs are NOT multiple-copy-atomic.
 #define CPU_NOT_MULTIPLE_COPY_ATOMIC
 
+#if defined(COMPILER2) && defined(AIX)
+// Include Transactional Memory lock eliding optimization
+#define INCLUDE_RTM_OPT 1
+#endif
+
 #endif // CPU_PPC_VM_GLOBALDEFINITIONS_PPC_HPP
