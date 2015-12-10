@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,27 +21,23 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 7032633
- * @summary javac -Xlint:all warns about flush() within try on an auto-closeable resource
- * @compile -Xlint:try -Werror T7032633.java
- */
+package pkg;
 
-import java.io.IOException;
-import java.io.OutputStream;
+public class T8145051 {
 
-public class T7032633 {
-    void test() throws IOException {
-        // declared resource
-        try (OutputStream out = System.out) {
-            out.flush();
+    public String s;
+
+    public static class Sup {
+        Sup(Runnable r) {
+            r.run();
         }
+    }
 
-        // resource as variable
-        OutputStream out = System.out;
-        try (out) {
-            out.flush();
+    public class Sub extends Sup {
+        public Sub() {
+            super(() -> {
+                s = "Executed lambda";
+            });
         }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,25 +23,22 @@
 
 /*
  * @test
- * @bug 7032633
- * @summary javac -Xlint:all warns about flush() within try on an auto-closeable resource
- * @compile -Xlint:try -Werror T7032633.java
+ * @bug 8136809
+ * @summary Javac fails compiling Collectors.reducing with method reference combiner
+ * @compile MethodReferenceStaticNotAccessibleTest.java
  */
 
-import java.io.IOException;
-import java.io.OutputStream;
+import java.util.function.BinaryOperator;
 
-public class T7032633 {
-    void test() throws IOException {
-        // declared resource
-        try (OutputStream out = System.out) {
-            out.flush();
-        }
+class MethodReferenceStaticNotAccessibleTest_Foo {
+    MethodReferenceStaticNotAccessibleTest_Foo m(MethodReferenceStaticNotAccessibleTest_Foo foo) { return null; }
+    private static void m(MethodReferenceStaticNotAccessibleTest_Foo foo1, MethodReferenceStaticNotAccessibleTest_Foo foo2) {}
+}
 
-        // resource as variable
-        OutputStream out = System.out;
-        try (out) {
-            out.flush();
-        }
+public class MethodReferenceStaticNotAccessibleTest {
+    <T> void m(T t, BinaryOperator<T> binop) {}
+
+    void test(MethodReferenceStaticNotAccessibleTest_Foo foo) {
+        m(foo, MethodReferenceStaticNotAccessibleTest_Foo::m);
     }
 }

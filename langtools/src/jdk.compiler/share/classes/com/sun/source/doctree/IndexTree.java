@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,27 +23,29 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 7032633
- * @summary javac -Xlint:all warns about flush() within try on an auto-closeable resource
- * @compile -Xlint:try -Werror T7032633.java
+package com.sun.source.doctree;
+
+import java.util.List;
+
+/**
+ * A tree node for an @index or &#064;index inline tag.
+ *
+ * <p>
+ * {&#064;index keyword optional description} <br>
+ *
+ * @since 1.9
  */
+@jdk.Exported
+public interface IndexTree extends InlineTagTree {
+    /**
+     * Returns the specified search term.
+     * @return the search term
+     */
+    DocTree getSearchTerm();
 
-import java.io.IOException;
-import java.io.OutputStream;
-
-public class T7032633 {
-    void test() throws IOException {
-        // declared resource
-        try (OutputStream out = System.out) {
-            out.flush();
-        }
-
-        // resource as variable
-        OutputStream out = System.out;
-        try (out) {
-            out.flush();
-        }
-    }
+    /**
+     * Returns the description, if any.
+     * @return the description
+     */
+    List<? extends DocTree> getDescription();
 }
