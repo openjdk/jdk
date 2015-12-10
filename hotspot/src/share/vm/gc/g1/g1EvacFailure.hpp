@@ -32,6 +32,20 @@
 
 class G1CollectedHeap;
 
+class OopAndMarkOop {
+  oop _o;
+  markOop _m;
+ public:
+  OopAndMarkOop(oop obj, markOop m) : _o(obj), _m(m) {
+  }
+
+  void set_mark() {
+    _o->set_mark(_m);
+  }
+};
+
+typedef Stack<OopAndMarkOop,mtGC> OopAndMarkOopStack;
+
 // Task to fixup self-forwarding pointers
 // installed as a result of an evacuation failure.
 class G1ParRemoveSelfForwardPtrsTask: public AbstractGangTask {
@@ -41,6 +55,14 @@ protected:
 
 public:
   G1ParRemoveSelfForwardPtrsTask();
+
+  void work(uint worker_id);
+};
+
+class G1RestorePreservedMarksTask : public AbstractGangTask {
+  OopAndMarkOopStack* _preserved_objs;
+ public:
+  G1RestorePreservedMarksTask(OopAndMarkOopStack* preserved_objs);
 
   void work(uint worker_id);
 };

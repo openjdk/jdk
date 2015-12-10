@@ -277,13 +277,3 @@ ifeq ($(JVM_VARIANT_CLIENT),true)
     endif
   endif
 endif
-
-EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX)
-ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
-  ifeq ($(ZIP_DEBUGINFO_FILES),1)
-    EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libsaproc.diz
-  else
-    EXPORT_LIST += $(EXPORT_LIB_ARCH_DIR)/libsaproc.debuginfo
-  endif
-endif
-EXPORT_LIST += $(EXPORT_LIB_DIR)/sa-jdi.jar

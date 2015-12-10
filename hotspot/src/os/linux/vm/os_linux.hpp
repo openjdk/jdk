@@ -34,11 +34,6 @@ class Linux {
   friend class os;
   friend class TestReserveMemorySpecial;
 
-  // For signal-chaining
-#define MAXSIGNUM 32
-  static struct sigaction sigact[MAXSIGNUM]; // saved preinstalled sigactions
-  static unsigned int sigs;             // mask of signals that have
-                                        // preinstalled signal handlers
   static bool libjsig_is_loaded;        // libjsig that interposes sigaction(),
                                         // __sigaction(), signal() is loaded
   static struct sigaction *(*get_signal_action)(int);
@@ -46,9 +41,6 @@ class Linux {
   static void save_preinstalled_handler(int, struct sigaction&);
 
   static void check_signal_handler(int sig);
-
-  // For signal flags diagnostics
-  static int sigflags[MAXSIGNUM];
 
   static int (*_clock_gettime)(clockid_t, struct timespec *);
   static int (*_pthread_getcpuclockid)(pthread_t, clockid_t *);

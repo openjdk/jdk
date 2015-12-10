@@ -74,9 +74,7 @@ HeapWord* CMBitMapRO::getNextMarkedWordAddress(const HeapWord* addr,
   addr = (HeapWord*)align_size_up((intptr_t)addr,
                                   HeapWordSize << _shifter);
   size_t addrOffset = heapWordToOffset(addr);
-  if (limit == NULL) {
-    limit = _bmStartWord + _bmWordSize;
-  }
+  assert(limit != NULL, "limit must not be NULL");
   size_t limitOffset = heapWordToOffset(limit);
   size_t nextOffset = _bm.get_next_one_offset(addrOffset, limitOffset);
   HeapWord* nextAddr = offsetToHeapWord(nextOffset);
@@ -84,26 +82,6 @@ HeapWord* CMBitMapRO::getNextMarkedWordAddress(const HeapWord* addr,
   assert(nextAddr == limit || isMarked(nextAddr),
          "get_next_one postcondition");
   return nextAddr;
-}
-
-HeapWord* CMBitMapRO::getNextUnmarkedWordAddress(const HeapWord* addr,
-                                                 const HeapWord* limit) const {
-  size_t addrOffset = heapWordToOffset(addr);
-  if (limit == NULL) {
-    limit = _bmStartWord + _bmWordSize;
-  }
-  size_t limitOffset = heapWordToOffset(limit);
-  size_t nextOffset = _bm.get_next_zero_offset(addrOffset, limitOffset);
-  HeapWord* nextAddr = offsetToHeapWord(nextOffset);
-  assert(nextAddr >= addr, "get_next_one postcondition");
-  assert(nextAddr == limit || !isMarked(nextAddr),
-         "get_next_one postcondition");
-  return nextAddr;
-}
-
-int CMBitMapRO::heapWordDiffToOffsetDiff(size_t diff) const {
-  assert((diff & ((1 << _shifter) - 1)) == 0, "argument check");
-  return (int) (diff >> _shifter);
 }
 
 #ifndef PRODUCT
@@ -211,37 +189,12 @@ void CMBitMap::clearAll() {
   return;
 }
 
-void CMBitMap::markRange(MemRegion mr) {
-  mr.intersection(MemRegion(_bmStartWord, _bmWordSize));
-  assert(!mr.is_empty(), "unexpected empty region");
-  assert((offsetToHeapWord(heapWordToOffset(mr.end())) ==
-          ((HeapWord *) mr.end())),
-         "markRange memory region end is not card aligned");
-  // convert address range into offset range
-  _bm.at_put_range(heapWordToOffset(mr.start()),
-                   heapWordToOffset(mr.end()), true);
-}
-
 void CMBitMap::clearRange(MemRegion mr) {
   mr.intersection(MemRegion(_bmStartWord, _bmWordSize));
   assert(!mr.is_empty(), "unexpected empty region");
   // convert address range into offset range
   _bm.at_put_range(heapWordToOffset(mr.start()),
                    heapWordToOffset(mr.end()), false);
-}
-
-MemRegion CMBitMap::getAndClearMarkedRegion(HeapWord* addr,
-                                            HeapWord* end_addr) {
-  HeapWord* start = getNextMarkedWordAddress(addr);
-  start = MIN2(start, end_addr);
-  HeapWord* end   = getNextUnmarkedWordAddress(start);
-  end = MIN2(end, end_addr);
-  assert(start <= end, "Consistency check");
-  MemRegion mr(start, end);
-  if (!mr.is_empty()) {
-    clearRange(mr);
-  }
-  return mr;
 }
 
 CMMarkStack::CMMarkStack(ConcurrentMark* cm) :
@@ -466,8 +419,6 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
   _max_parallel_marking_threads(0),
   _sleep_factor(0.0),
   _marking_task_overhead(1.0),
-  _cleanup_sleep_factor(0.0),
-  _cleanup_task_overhead(1.0),
   _cleanup_list("Cleanup List"),
   _region_bm((BitMap::idx_t)(g1h->max_regions()), false /* in_resource_area*/),
   _card_bm((g1h->reserved_region().byte_size() + CardTableModRefBS::card_size - 1) >>
@@ -567,22 +518,6 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
   assert(ConcGCThreads > 0, "Should have been set");
   _parallel_marking_threads = ConcGCThreads;
   _max_parallel_marking_threads = _parallel_marking_threads;
-
-  if (parallel_marking_threads() > 1) {
-    _cleanup_task_overhead = 1.0;
-  } else {
-    _cleanup_task_overhead = marking_task_overhead();
-  }
-  _cleanup_sleep_factor =
-                   (1.0 - cleanup_task_overhead()) / cleanup_task_overhead();
-
-#if 0
-  gclog_or_tty->print_cr("Marking Threads          %d", parallel_marking_threads());
-  gclog_or_tty->print_cr("CM Marking Task Overhead %1.4lf", marking_task_overhead());
-  gclog_or_tty->print_cr("CM Sleep Factor          %1.4lf", sleep_factor());
-  gclog_or_tty->print_cr("CL Marking Task Overhead %1.4lf", cleanup_task_overhead());
-  gclog_or_tty->print_cr("CL Sleep Factor          %1.4lf", cleanup_sleep_factor());
-#endif
 
   _parallel_workers = new WorkGang("G1 Marker",
        _max_parallel_marking_threads, false, true);
@@ -840,14 +775,6 @@ void ConcurrentMark::checkpointRootsInitialPre() {
 void ConcurrentMark::checkpointRootsInitialPost() {
   G1CollectedHeap*   g1h = G1CollectedHeap::heap();
 
-  // If we force an overflow during remark, the remark operation will
-  // actually abort and we'll restart concurrent marking. If we always
-  // force an overflow during remark we'll never actually complete the
-  // marking phase. So, we initialize this here, at the start of the
-  // cycle, so that at the remaining overflow number will decrease at
-  // every remark and we'll eventually not need to cause one.
-  force_overflow_stw()->init();
-
   // Start Concurrent Marking weak-reference discovery.
   ReferenceProcessor* rp = g1h->ref_processor_cm();
   // enable ("weak") refs discovery
@@ -920,7 +847,6 @@ void ConcurrentMark::enter_first_sync_barrier(uint worker_id) {
       // we exit this method to abort the pause and restart concurrent
       // marking.
       reset_marking_state(true /* clear_overflow */);
-      force_overflow()->update();
 
       if (G1Log::fine()) {
         gclog_or_tty->gclog_stamp();
@@ -939,32 +865,6 @@ void ConcurrentMark::enter_second_sync_barrier(uint worker_id) {
 
   // at this point everything should be re-initialized and ready to go
 }
-
-#ifndef PRODUCT
-void ForceOverflowSettings::init() {
-  _num_remaining = G1ConcMarkForceOverflow;
-  _force = false;
-  update();
-}
-
-void ForceOverflowSettings::update() {
-  if (_num_remaining > 0) {
-    _num_remaining -= 1;
-    _force = true;
-  } else {
-    _force = false;
-  }
-}
-
-bool ForceOverflowSettings::should_force() {
-  if (_force) {
-    _force = false;
-    return true;
-  } else {
-    return false;
-  }
-}
-#endif // !PRODUCT
 
 class CMConcurrentMarkingTask: public AbstractGangTask {
 private:
@@ -1131,7 +1031,6 @@ void ConcurrentMark::markFromRoots() {
   // stop-the-world GC happens even as we mark in this generation.
 
   _restart_for_overflow = false;
-  force_overflow_conc()->init();
 
   // _g1h has _n_par_threads
   _parallel_marking_threads = calc_parallel_marking_threads();
@@ -2440,10 +2339,6 @@ void ConcurrentMark::clearRangePrevBitmap(MemRegion mr) {
   ((CMBitMap*)_prevMarkBitMap)->clearRange(mr);
 }
 
-void ConcurrentMark::clearRangeNextBitmap(MemRegion mr) {
-  _nextMarkBitMap->clearRange(mr);
-}
-
 HeapRegion*
 ConcurrentMark::claim_region(uint worker_id) {
   // "checkpoint" the finger
@@ -3532,15 +3427,6 @@ void CMTask::do_marking_step(double time_target_ms,
       } else {
         break;
       }
-    }
-  }
-
-  // If we are about to wrap up and go into termination, check if we
-  // should raise the overflow flag.
-  if (do_termination && !has_aborted()) {
-    if (_cm->force_overflow()->should_force()) {
-      _cm->set_has_overflown();
-      regular_clock_call();
     }
   }
 

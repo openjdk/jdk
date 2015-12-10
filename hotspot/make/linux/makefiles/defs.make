@@ -276,24 +276,4 @@ ifeq ($(JVM_VARIANT_MINIMAL1),true)
   endif
 endif
 
-# Serviceability Binaries
-
-ADD_SA_BINARIES/DEFAULT = $(EXPORT_LIB_ARCH_DIR)/libsaproc.$(LIBRARY_SUFFIX) \
-                          $(EXPORT_LIB_DIR)/sa-jdi.jar
-
-ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
-  ifeq ($(ZIP_DEBUGINFO_FILES),1)
-    ADD_SA_BINARIES/DEFAULT += $(EXPORT_LIB_ARCH_DIR)/libsaproc.diz
-  else
-    ADD_SA_BINARIES/DEFAULT += $(EXPORT_LIB_ARCH_DIR)/libsaproc.debuginfo
-  endif
-endif
-
-ADD_SA_BINARIES/$(HS_ARCH) = $(ADD_SA_BINARIES/DEFAULT)
-
-# No SA Support for zero
-ADD_SA_BINARIES/zero  =
-
 -include $(HS_ALT_MAKE)/linux/makefiles/defs.make
-
-EXPORT_LIST += $(ADD_SA_BINARIES/$(HS_ARCH))

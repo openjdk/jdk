@@ -29,12 +29,12 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
-import jdk.internal.dynalink.CallSiteDescriptor;
-import jdk.internal.dynalink.StandardOperation;
-import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.linker.LinkRequest;
-import jdk.internal.dynalink.linker.LinkerServices;
-import jdk.internal.dynalink.linker.TypeBasedGuardingDynamicLinker;
+import jdk.dynalink.CallSiteDescriptor;
+import jdk.dynalink.StandardOperation;
+import jdk.dynalink.linker.GuardedInvocation;
+import jdk.dynalink.linker.LinkRequest;
+import jdk.dynalink.linker.LinkerServices;
+import jdk.dynalink.linker.TypeBasedGuardingDynamicLinker;
 import jdk.nashorn.api.scripting.ClassFilter;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Context;

@@ -213,6 +213,23 @@ public:
   virtual void execute(DCmdSource source, TRAPS);
 };
 
+class VMInfoDCmd : public DCmd {
+public:
+  VMInfoDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }
+  static const char* name() { return "VM.info"; }
+  static const char* description() {
+    return "Print information about JVM environment and status.";
+  }
+  static const char* impact() { return "Low"; }
+  static const JavaPermission permission() {
+    JavaPermission p = {"java.lang.management.ManagementPermission",
+                        "monitor", NULL};
+    return p;
+  }
+  static int num_arguments() { return 0; }
+  virtual void execute(DCmdSource source, TRAPS);
+};
+
 class SystemGCDCmd : public DCmd {
 public:
   SystemGCDCmd(outputStream* output, bool heap) : DCmd(output, heap) { }

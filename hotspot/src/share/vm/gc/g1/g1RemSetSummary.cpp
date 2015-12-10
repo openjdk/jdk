@@ -125,14 +125,6 @@ void G1RemSetSummary::subtract_from(G1RemSetSummary* other) {
   _sampling_thread_vtime = other->sampling_thread_vtime() - _sampling_thread_vtime;
 }
 
-static double percent_of(size_t numerator, size_t denominator) {
-  if (denominator != 0) {
-    return (double)numerator / denominator * 100.0f;
-  } else {
-    return 0.0f;
-  }
-}
-
 static size_t round_to_K(size_t value) {
   return value / K;
 }

@@ -295,6 +295,7 @@ ping4(JNIEnv *env,
     char SendData[32] = {0};
     LPVOID ReplyBuffer = NULL;
     DWORD ReplySize = 0;
+    jboolean ret = JNI_FALSE;
 
     hIcmpFile = IcmpCreateFile();
     if (hIcmpFile == INVALID_HANDLE_VALUE) {
@@ -318,7 +319,11 @@ ping4(JNIEnv *env,
                                 NULL,       // PIP_OPTION_INFORMATION RequestOptions,
                                 ReplyBuffer,// LPVOID ReplyBuffer,
                                 ReplySize,  // DWORD ReplySize,
-                                timeout);   // DWORD Timeout
+                                // Note: IcmpSendEcho and its derivatives
+                                // seem to have an undocumented minimum
+                                // timeout of 1000ms below which the
+                                // api behaves inconsistently.
+                                (timeout < 1000) ? 1000 : timeout);   // DWORD Timeout
     } else {
         dwRetVal = IcmpSendEcho2Ex(hIcmpFile,  // HANDLE IcmpHandle,
                                    NULL,       // HANDLE Event
@@ -331,17 +336,19 @@ ping4(JNIEnv *env,
                                    NULL,       // PIP_OPTION_INFORMATION RequestOptions,
                                    ReplyBuffer,// LPVOID ReplyBuffer,
                                    ReplySize,  // DWORD ReplySize,
-                                   timeout);   // DWORD Timeout
+                                   (timeout < 1000) ? 1000 : timeout);   // DWORD Timeout
+    }
+
+    if (dwRetVal != 0) {
+        PICMP_ECHO_REPLY pEchoReply = (PICMP_ECHO_REPLY)ReplyBuffer;
+        if ((int)pEchoReply->RoundTripTime <= timeout)
+            ret = JNI_TRUE;
     }
 
     free(ReplyBuffer);
     IcmpCloseHandle(hIcmpFile);
 
-    if (dwRetVal != 0) {
-        return JNI_TRUE;
-    } else {
-        return JNI_FALSE;
-    }
+    return ret;
 }
 
 /*

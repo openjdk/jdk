@@ -976,6 +976,19 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
         DISABLE_WARNING_PREFIX=
       fi
       CFLAGS_WARNINGS_ARE_ERRORS="-Werror"
+      # Repeate the check for the BUILD_CC
+      CC_OLD="$CC"
+      CC="$BUILD_CC"
+      FLAGS_COMPILER_CHECK_ARGUMENTS([-Wno-this-is-a-warning-that-do-not-exist],
+          [BUILD_CC_CAN_DISABLE_WARNINGS=true],
+          [BUILD_CC_CAN_DISABLE_WARNINGS=false]
+      )
+      if test "x$BUILD_CC_CAN_DISABLE_WARNINGS" = "xtrue"; then
+        BUILD_CC_DISABLE_WARNING_PREFIX="-Wno-"
+      else
+        BUILD_CC_DISABLE_WARNING_PREFIX=
+      fi
+      CC="$CC_OLD"
       ;;
     clang)
       DISABLE_WARNING_PREFIX="-Wno-"

@@ -201,7 +201,7 @@ void VMError::print_stack_trace(outputStream* st, JavaThread* jt,
 #endif // ZERO
 }
 
-void VMError::print_oom_reasons(outputStream* st) {
+static void print_oom_reasons(outputStream* st) {
   st->print_cr("# Possible reasons:");
   st->print_cr("#   The system is out of physical RAM or swap space");
   st->print_cr("#   In 32 bit mode, the process size limit was hit");
@@ -217,12 +217,39 @@ void VMError::print_oom_reasons(outputStream* st) {
   st->print_cr("# This output file may be truncated or incomplete.");
 }
 
-const char* VMError::gc_mode() {
+static const char* gc_mode() {
   if (UseG1GC)            return "g1 gc";
   if (UseParallelGC)      return "parallel gc";
   if (UseConcMarkSweepGC) return "concurrent mark sweep gc";
   if (UseSerialGC)        return "serial gc";
   return "ERROR in GC mode";
+}
+
+static void report_vm_version(outputStream* st, char* buf, int buflen) {
+   // VM version
+   st->print_cr("#");
+   JDK_Version::current().to_string(buf, buflen);
+   const char* runtime_name = JDK_Version::runtime_name() != NULL ?
+                                JDK_Version::runtime_name() : "";
+   const char* runtime_version = JDK_Version::runtime_version() != NULL ?
+                                JDK_Version::runtime_version() : "";
+   st->print_cr("# JRE version: %s (%s) (build %s)", runtime_name, buf, runtime_version);
+   // This is the long version with some default settings added
+   st->print_cr("# Java VM: %s (%s, %s%s%s%s%s, %s, %s)",
+                 Abstract_VM_Version::vm_name(),
+                 Abstract_VM_Version::vm_release(),
+                 Abstract_VM_Version::vm_info_string(),
+                 TieredCompilation ? ", tiered" : "",
+#if INCLUDE_JVMCI
+                 EnableJVMCI ? ", jvmci" : "",
+                 UseJVMCICompiler ? ", jvmci compiler" : "",
+#else
+                 "", "",
+#endif
+                 UseCompressedOops ? ", compressed oops" : "",
+                 gc_mode(),
+                 Abstract_VM_Version::vm_platform_string()
+               );
 }
 
 // This is the main function to report a fatal error. Only one thread can
@@ -401,30 +428,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP(90, "(printing Java version string)")
 
-     // VM version
-     st->print_cr("#");
-     JDK_Version::current().to_string(buf, sizeof(buf));
-     const char* runtime_name = JDK_Version::runtime_name() != NULL ?
-                                  JDK_Version::runtime_name() : "";
-     const char* runtime_version = JDK_Version::runtime_version() != NULL ?
-                                  JDK_Version::runtime_version() : "";
-     st->print_cr("# JRE version: %s (%s) (build %s)", runtime_name, buf, runtime_version);
-     // This is the long version with some default settings added
-     st->print_cr("# Java VM: %s (%s, %s%s%s%s%s, %s, %s)",
-                   Abstract_VM_Version::vm_name(),
-                   Abstract_VM_Version::vm_release(),
-                   Abstract_VM_Version::vm_info_string(),
-                   TieredCompilation ? ", tiered" : "",
-#if INCLUDE_JVMCI
-                   EnableJVMCI ? ", jvmci" : "",
-                   UseJVMCICompiler ? ", jvmci compiler" : "",
-#else
-                   "", "",
-#endif
-                   UseCompressedOops ? ", compressed oops" : "",
-                   gc_mode(),
-                   Abstract_VM_Version::vm_platform_string()
-                 );
+     report_vm_version(st, buf, sizeof(buf));
 
   STEP(100, "(printing problematic frame)")
 
@@ -715,7 +719,6 @@ void VMError::report(outputStream* st, bool _verbose) {
      if (_verbose && Universe::is_fully_initialized()) {
        Universe::heap()->print_on_error(st);
        st->cr();
-
        st->print_cr("Polling page: " INTPTR_FORMAT, p2i(os::get_polling_page()));
        st->cr();
      }
@@ -824,6 +827,147 @@ void VMError::report(outputStream* st, bool _verbose) {
 # undef BEGIN
 # undef STEP
 # undef END
+}
+
+// Report for the vm_info_cmd. This prints out the information above omitting
+// crash and thread specific information.  If output is added above, it should be added
+// here also, if it is safe to call during a running process.
+void VMError::print_vm_info(outputStream* st) {
+
+  char buf[O_BUFLEN];
+  report_vm_version(st, buf, sizeof(buf));
+
+  // STEP("(printing summary)")
+
+  st->cr();
+  st->print_cr("---------------  S U M M A R Y ------------");
+  st->cr();
+
+  // STEP("(printing VM option summary)")
+
+  // VM options
+  Arguments::print_summary_on(st);
+  st->cr();
+
+  // STEP("(printing summary machine and OS info)")
+
+  os::print_summary_info(st, buf, sizeof(buf));
+
+  // STEP("(printing date and time)")
+
+  os::print_date_and_time(st, buf, sizeof(buf));
+
+  // Skip: STEP("(printing thread)")
+
+  // STEP("(printing process)")
+
+  st->cr();
+  st->print_cr("---------------  P R O C E S S  ---------------");
+  st->cr();
+
+  // STEP("(printing number of OutOfMemoryError and StackOverflow exceptions)")
+
+  if (Exceptions::has_exception_counts()) {
+    st->print_cr("OutOfMemory and StackOverflow Exception counts:");
+    Exceptions::print_exception_counts_on_error(st);
+    st->cr();
+  }
+
+  // STEP("(printing compressed oops mode")
+
+  if (UseCompressedOops) {
+    Universe::print_compressed_oops_mode(st);
+    if (UseCompressedClassPointers) {
+      Metaspace::print_compressed_class_space(st);
+    }
+    st->cr();
+  }
+
+  // STEP("(printing heap information)")
+
+  if (Universe::is_fully_initialized()) {
+    Universe::heap()->print_on_error(st);
+    st->cr();
+    st->print_cr("Polling page: " INTPTR_FORMAT, p2i(os::get_polling_page()));
+    st->cr();
+  }
+
+  // STEP("(printing code cache information)")
+
+  if (Universe::is_fully_initialized()) {
+    // print code cache information before vm abort
+    CodeCache::print_summary(st);
+    st->cr();
+  }
+
+  // STEP("(printing ring buffers)")
+
+  Events::print_all(st);
+  st->cr();
+
+  // STEP("(printing dynamic libraries)")
+
+  // dynamic libraries, or memory map
+  os::print_dll_info(st);
+  st->cr();
+
+  // STEP("(printing VM options)")
+
+  // VM options
+  Arguments::print_on(st);
+  st->cr();
+
+  // STEP("(printing warning if internal testing API used)")
+
+  if (WhiteBox::used()) {
+    st->print_cr("Unsupported internal testing APIs have been used.");
+    st->cr();
+  }
+
+  // STEP("(printing all environment variables)")
+
+  os::print_environment_variables(st, env_list);
+  st->cr();
+
+  // STEP("(printing signal handlers)")
+
+  os::print_signal_handlers(st, buf, sizeof(buf));
+  st->cr();
+
+  // STEP("(Native Memory Tracking)")
+
+  MemTracker::error_report(st);
+
+  // STEP("(printing system)")
+
+  st->cr();
+  st->print_cr("---------------  S Y S T E M  ---------------");
+  st->cr();
+
+  // STEP("(printing OS information)")
+
+  os::print_os_info(st);
+  st->cr();
+
+  // STEP("(printing CPU info)")
+
+  os::print_cpu_info(st, buf, sizeof(buf));
+  st->cr();
+
+  // STEP("(printing memory info)")
+
+  os::print_memory_info(st);
+  st->cr();
+
+  // STEP("(printing internal vm info)")
+
+  st->print_cr("vm_info: %s", Abstract_VM_Version::internal_vm_info_string());
+  st->cr();
+
+  // print a defined marker to show that error handling finished correctly.
+  // STEP("(printing end marker)")
+
+  st->print_cr("END.");
 }
 
 volatile intptr_t VMError::first_error_tid = -1;
@@ -1204,4 +1348,12 @@ void VMError::report_java_out_of_memory(const char* message) {
     VM_ReportJavaOutOfMemory op(message);
     VMThread::execute(&op);
   }
+}
+
+void VMError::show_message_box(char *buf, int buflen) {
+  bool yes;
+  do {
+    error_string(buf, buflen);
+    yes = os::start_debugging(buf,buflen);
+  } while (yes);
 }
