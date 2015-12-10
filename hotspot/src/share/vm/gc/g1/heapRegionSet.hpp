@@ -250,8 +250,6 @@ public:
   void remove_starting_at(HeapRegion* first, uint num_regions);
 
   virtual void verify();
-
-  virtual void print_on(outputStream* out, bool print_contents = false);
 };
 
 // Iterator class that provides a convenient way to iterate over the

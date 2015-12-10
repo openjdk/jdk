@@ -64,6 +64,7 @@ class GC_locker: public AllStatic {
     return _jni_lock_count > 0;
   }
 
+  static void log_debug_jni(const char* msg);
  public:
   // Accessors
   static bool is_active() {

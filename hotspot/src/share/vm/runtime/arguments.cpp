@@ -32,6 +32,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/taskqueue.hpp"
+#include "logging/log.hpp"
 #include "logging/logConfiguration.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/universe.inline.hpp"
@@ -81,7 +82,6 @@ char** Arguments::_jvm_args_array               = NULL;
 int    Arguments::_num_jvm_args                 = 0;
 char*  Arguments::_java_command                 = NULL;
 SystemProperty* Arguments::_system_properties   = NULL;
-const char*  Arguments::_gc_log_filename        = NULL;
 bool   Arguments::_has_profile                  = false;
 size_t Arguments::_conservative_max_heap_alignment = 0;
 size_t Arguments::_min_heap_size                = 0;
@@ -1602,19 +1602,11 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     } else {
       FLAG_SET_ERGO(size_t, MaxNewSize, preferred_max_new_size);
     }
-    if (PrintGCDetails && Verbose) {
-      // Too early to use gclog_or_tty
-      tty->print_cr("CMS ergo set MaxNewSize: " SIZE_FORMAT, MaxNewSize);
-    }
+    log_trace(gc, heap)("CMS ergo set MaxNewSize: " SIZE_FORMAT, MaxNewSize);
 
     // Code along this path potentially sets NewSize and OldSize
-    if (PrintGCDetails && Verbose) {
-      // Too early to use gclog_or_tty
-      tty->print_cr("CMS set min_heap_size: " SIZE_FORMAT
-           " initial_heap_size:  " SIZE_FORMAT
-           " max_heap: " SIZE_FORMAT,
-           min_heap_size(), InitialHeapSize, max_heap);
-    }
+    log_trace(gc, heap)("CMS set min_heap_size: " SIZE_FORMAT " initial_heap_size:  " SIZE_FORMAT " max_heap: " SIZE_FORMAT,
+                        min_heap_size(), InitialHeapSize, max_heap);
     size_t min_new = preferred_max_new_size;
     if (FLAG_IS_CMDLINE(NewSize)) {
       min_new = NewSize;
@@ -1625,20 +1617,14 @@ void Arguments::set_cms_and_parnew_gc_flags() {
       if (FLAG_IS_DEFAULT(NewSize)) {
         FLAG_SET_ERGO(size_t, NewSize, MAX2(NewSize, min_new));
         FLAG_SET_ERGO(size_t, NewSize, MIN2(preferred_max_new_size, NewSize));
-        if (PrintGCDetails && Verbose) {
-          // Too early to use gclog_or_tty
-          tty->print_cr("CMS ergo set NewSize: " SIZE_FORMAT, NewSize);
-        }
+        log_trace(gc, heap)("CMS ergo set NewSize: " SIZE_FORMAT, NewSize);
       }
       // Unless explicitly requested otherwise, size old gen
       // so it's NewRatio x of NewSize.
       if (FLAG_IS_DEFAULT(OldSize)) {
         if (max_heap > NewSize) {
           FLAG_SET_ERGO(size_t, OldSize, MIN2(NewRatio*NewSize, max_heap - NewSize));
-          if (PrintGCDetails && Verbose) {
-            // Too early to use gclog_or_tty
-            tty->print_cr("CMS ergo set OldSize: " SIZE_FORMAT, OldSize);
-          }
+          log_trace(gc, heap)("CMS ergo set OldSize: " SIZE_FORMAT, OldSize);
         }
       }
     }
@@ -1682,11 +1668,8 @@ void Arguments::set_cms_and_parnew_gc_flags() {
     FLAG_SET_CMDLINE(bool, ExplicitGCInvokesConcurrentAndUnloadsClasses, false);
   }
 
-  if (PrintGCDetails && Verbose) {
-    tty->print_cr("MarkStackSize: %uk  MarkStackSizeMax: %uk",
-      (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
-    tty->print_cr("ConcGCThreads: %u", ConcGCThreads);
-  }
+  log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
+  log_trace(gc)("ConcGCThreads: %u", ConcGCThreads);
 }
 #endif // INCLUDE_ALL_GCS
 
@@ -1733,11 +1716,7 @@ bool Arguments::should_auto_select_low_pause_collector() {
   if (UseAutoGCSelectPolicy &&
       !FLAG_IS_DEFAULT(MaxGCPauseMillis) &&
       (MaxGCPauseMillis <= AutoGCSelectPauseMillis)) {
-    if (PrintGCDetails) {
-      // Cannot use gclog_or_tty yet.
-      tty->print_cr("Automatic selection of the low pause collector"
-       " based on pause goal of %d (ms)", (int) MaxGCPauseMillis);
-    }
+    log_trace(gc)("Automatic selection of the low pause collector based on pause goal of %d (ms)", (int) MaxGCPauseMillis);
     return true;
   }
   return false;
@@ -1956,11 +1935,8 @@ void Arguments::set_g1_gc_flags() {
     FLAG_SET_DEFAULT(GCTimeRatio, 12);
   }
 
-  if (PrintGCDetails && Verbose) {
-    tty->print_cr("MarkStackSize: %uk  MarkStackSizeMax: %uk",
-      (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
-    tty->print_cr("ConcGCThreads: %u", ConcGCThreads);
-  }
+  log_trace(gc)("MarkStackSize: %uk  MarkStackSizeMax: %uk", (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
+  log_trace(gc)("ConcGCThreads: %u", ConcGCThreads);
 }
 
 #if !INCLUDE_ALL_GCS
@@ -2072,10 +2048,7 @@ void Arguments::set_heap_size() {
       reasonable_max = MAX2(reasonable_max, (julong)InitialHeapSize);
     }
 
-    if (PrintGCDetails && Verbose) {
-      // Cannot use gclog_or_tty yet.
-      tty->print_cr("  Maximum heap size " SIZE_FORMAT, (size_t) reasonable_max);
-    }
+    log_trace(gc, heap)("  Maximum heap size " SIZE_FORMAT, (size_t) reasonable_max);
     FLAG_SET_ERGO(size_t, MaxHeapSize, (size_t)reasonable_max);
   }
 
@@ -2096,20 +2069,14 @@ void Arguments::set_heap_size() {
 
       reasonable_initial = limit_by_allocatable_memory(reasonable_initial);
 
-      if (PrintGCDetails && Verbose) {
-        // Cannot use gclog_or_tty yet.
-        tty->print_cr("  Initial heap size " SIZE_FORMAT, (size_t)reasonable_initial);
-      }
+      log_trace(gc, heap)("  Initial heap size " SIZE_FORMAT, (size_t)reasonable_initial);
       FLAG_SET_ERGO(size_t, InitialHeapSize, (size_t)reasonable_initial);
     }
     // If the minimum heap size has not been set (via -Xms),
     // synchronize with InitialHeapSize to avoid errors with the default value.
     if (min_heap_size() == 0) {
       set_min_heap_size(MIN2((size_t)reasonable_minimum, InitialHeapSize));
-      if (PrintGCDetails && Verbose) {
-        // Cannot use gclog_or_tty yet.
-        tty->print_cr("  Minimum heap size " SIZE_FORMAT, min_heap_size());
-      }
+      log_trace(gc, heap)("  Minimum heap size " SIZE_FORMAT, min_heap_size());
     }
   }
 }
@@ -2312,77 +2279,8 @@ bool Arguments::sun_java_launcher_is_altjvm() {
 //===========================================================================================================
 // Parsing of main arguments
 
-// check if do gclog rotation
-// +UseGCLogFileRotation is a must,
-// no gc log rotation when log file not supplied or
-// NumberOfGCLogFiles is 0
-void check_gclog_consistency() {
-  if (UseGCLogFileRotation) {
-    if ((Arguments::gc_log_filename() == NULL) || (NumberOfGCLogFiles == 0)) {
-      jio_fprintf(defaultStream::output_stream(),
-                  "To enable GC log rotation, use -Xloggc:<filename> -XX:+UseGCLogFileRotation -XX:NumberOfGCLogFiles=<num_of_files>\n"
-                  "where num_of_file > 0\n"
-                  "GC log rotation is turned off\n");
-      UseGCLogFileRotation = false;
-    }
-  }
-
-  if (UseGCLogFileRotation && (GCLogFileSize != 0) && (GCLogFileSize < 8*K)) {
-    if (FLAG_SET_CMDLINE(size_t, GCLogFileSize, 8*K) == Flag::SUCCESS) {
-      jio_fprintf(defaultStream::output_stream(),
-                "GCLogFileSize changed to minimum 8K\n");
-    }
-  }
-}
-
-// This function is called for -Xloggc:<filename>, it can be used
-// to check if a given file name(or string) conforms to the following
-// specification:
-// A valid string only contains "[A-Z][a-z][0-9].-_%[p|t]"
-// %p and %t only allowed once. We only limit usage of filename not path
-bool is_filename_valid(const char *file_name) {
-  const char* p = file_name;
-  char file_sep = os::file_separator()[0];
-  const char* cp;
-  // skip prefix path
-  for (cp = file_name; *cp != '\0'; cp++) {
-    if (*cp == '/' || *cp == file_sep) {
-      p = cp + 1;
-    }
-  }
-
-  int count_p = 0;
-  int count_t = 0;
-  while (*p != '\0') {
-    if ((*p >= '0' && *p <= '9') ||
-        (*p >= 'A' && *p <= 'Z') ||
-        (*p >= 'a' && *p <= 'z') ||
-         *p == '-'               ||
-         *p == '_'               ||
-         *p == '.') {
-       p++;
-       continue;
-    }
-    if (*p == '%') {
-      if(*(p + 1) == 'p') {
-        p += 2;
-        count_p ++;
-        continue;
-      }
-      if (*(p + 1) == 't') {
-        p += 2;
-        count_t ++;
-        continue;
-      }
-    }
-    return false;
-  }
-  return count_p < 2 && count_t < 2;
-}
-
 // Check consistency of GC selection
 bool Arguments::check_gc_consistency() {
-  check_gclog_consistency();
   // Ensure that the user has not selected conflicting sets
   // of collectors.
   uint i = 0;
@@ -2725,7 +2623,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
           return JNI_EINVAL;
         }
       } else if (!strcmp(tail, ":gc")) {
-        if (FLAG_SET_CMDLINE(bool, PrintGC, true) != Flag::SUCCESS) {
+        // LogConfiguration_lock is not set up yet, but this code is executed by a single thread
+        bool ret = LogConfiguration::parse_log_arguments("stdout", "gc", NULL, NULL, NULL);
+        if (!ret) {
           return JNI_EINVAL;
         }
       } else if (!strcmp(tail, ":jni")) {
@@ -3158,24 +3058,6 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     // -Xnoagent
     } else if (match_option(option, "-Xnoagent")) {
       // For compatibility with classic. HotSpot refuses to load the old style agent.dll.
-    } else if (match_option(option, "-Xloggc:", &tail)) {
-      // Redirect GC output to the file. -Xloggc:<filename>
-      // ostream_init_log(), when called will use this filename
-      // to initialize a fileStream.
-      _gc_log_filename = os::strdup_check_oom(tail);
-     if (!is_filename_valid(_gc_log_filename)) {
-       jio_fprintf(defaultStream::output_stream(),
-                  "Invalid file name for use with -Xloggc: Filename can only contain the "
-                  "characters [A-Z][a-z][0-9]-_.%%[p|t] but it has been %s\n"
-                  "Note %%p or %%t can only be used once\n", _gc_log_filename);
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(bool, PrintGC, true) != Flag::SUCCESS) {
-        return JNI_EINVAL;
-      }
-      if (FLAG_SET_CMDLINE(bool, PrintGCTimeStamps, true) != Flag::SUCCESS) {
-        return JNI_EINVAL;
-      }
     } else if (match_option(option, "-Xlog", &tail)) {
       bool ret = false;
       if (strcmp(tail, ":help") == 0) {
@@ -4178,11 +4060,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       warning("Forcing ScavengeRootsInCode non-zero");
     }
     ScavengeRootsInCode = 1;
-  }
-
-  if (PrintGCDetails) {
-    // Turn on -verbose:gc options as well
-    PrintGC = true;
   }
 
   // Set object alignment values.

@@ -119,9 +119,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _cur_verify_after_time_ms;
 
   // Helper methods for detailed logging
-  void print_stats(int level, const char* str, double value);
-  void print_stats(int level, const char* str, size_t value);
-  void print_stats(int level, const char* str, double value, uint workers);
+  void print_stats(const char*, const char* str, double value);
 
   void note_gc_end();
 

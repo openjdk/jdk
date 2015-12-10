@@ -43,7 +43,7 @@ private:
   G1StringDedupThread();
   ~G1StringDedupThread();
 
-  void print(outputStream* st, const G1StringDedupStat& last_stat, const G1StringDedupStat& total_stat);
+  void print(const G1StringDedupStat& last_stat, const G1StringDedupStat& total_stat);
 
 public:
   static void create();

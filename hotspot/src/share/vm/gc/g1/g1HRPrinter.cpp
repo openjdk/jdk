@@ -60,18 +60,6 @@ const char* G1HRPrinter::region_type_name(RegionType type) {
   return NULL;
 }
 
-const char* G1HRPrinter::phase_name(PhaseType phase) {
-  switch (phase) {
-    case StartGC:     return "StartGC";
-    case EndGC:       return "EndGC";
-    case StartFullGC: return "StartFullGC";
-    case EndFullGC:   return "EndFullGC";
-    default:          ShouldNotReachHere();
-  }
-  // trying to keep the Windows compiler happy
-  return NULL;
-}
-
 #define G1HR_PREFIX     " G1HR"
 
 void G1HRPrinter::print(ActionType action, RegionType type,
@@ -82,19 +70,19 @@ void G1HRPrinter::print(ActionType action, RegionType type,
 
   if (type_str != NULL) {
     if (top != NULL) {
-      gclog_or_tty->print_cr(G1HR_PREFIX " %s(%s) " PTR_FORMAT " " PTR_FORMAT,
-                             action_str, type_str, p2i(bottom), p2i(top));
+      log_trace(gc, region)(G1HR_PREFIX " %s(%s) " PTR_FORMAT " " PTR_FORMAT,
+                            action_str, type_str, p2i(bottom), p2i(top));
     } else {
-      gclog_or_tty->print_cr(G1HR_PREFIX " %s(%s) " PTR_FORMAT,
-                             action_str, type_str, p2i(bottom));
+      log_trace(gc, region)(G1HR_PREFIX " %s(%s) " PTR_FORMAT,
+                            action_str, type_str, p2i(bottom));
     }
   } else {
     if (top != NULL) {
-      gclog_or_tty->print_cr(G1HR_PREFIX " %s " PTR_FORMAT " " PTR_FORMAT,
-                             action_str, p2i(bottom), p2i(top));
+      log_trace(gc, region)(G1HR_PREFIX " %s " PTR_FORMAT " " PTR_FORMAT,
+                            action_str, p2i(bottom), p2i(top));
     } else {
-      gclog_or_tty->print_cr(G1HR_PREFIX " %s " PTR_FORMAT,
-                             action_str, p2i(bottom));
+      log_trace(gc, region)(G1HR_PREFIX " %s " PTR_FORMAT,
+                            action_str, p2i(bottom));
     }
   }
 }
@@ -102,11 +90,6 @@ void G1HRPrinter::print(ActionType action, RegionType type,
 void G1HRPrinter::print(ActionType action, HeapWord* bottom, HeapWord* end) {
   const char* action_str = action_name(action);
 
-  gclog_or_tty->print_cr(G1HR_PREFIX " %s [" PTR_FORMAT "," PTR_FORMAT "]",
-                         action_str, p2i(bottom), p2i(end));
-}
-
-void G1HRPrinter::print(PhaseType phase, size_t phase_num) {
-  const char* phase_str = phase_name(phase);
-  gclog_or_tty->print_cr(G1HR_PREFIX " #%s " SIZE_FORMAT, phase_str, phase_num);
+  log_trace(gc, region)(G1HR_PREFIX " %s [" PTR_FORMAT "," PTR_FORMAT "]",
+                        action_str, p2i(bottom), p2i(end));
 }

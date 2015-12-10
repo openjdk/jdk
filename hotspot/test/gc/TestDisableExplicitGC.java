@@ -26,9 +26,9 @@
  * @requires vm.opt.DisableExplicitGC == null
  * @summary Verify GC behavior with DisableExplicitGC flag.
  * @library /testlibrary
- * @run main/othervm                             -XX:+PrintGCDetails TestDisableExplicitGC
- * @run main/othervm/fail -XX:+DisableExplicitGC -XX:+PrintGCDetails TestDisableExplicitGC
- * @run main/othervm      -XX:-DisableExplicitGC -XX:+PrintGCDetails TestDisableExplicitGC
+ * @run main/othervm                             -Xlog:gc=debug TestDisableExplicitGC
+ * @run main/othervm/fail -XX:+DisableExplicitGC -Xlog:gc=debug TestDisableExplicitGC
+ * @run main/othervm      -XX:-DisableExplicitGC -Xlog:gc=debug TestDisableExplicitGC
  */
 import java.lang.management.GarbageCollectorMXBean;
 import java.util.List;
