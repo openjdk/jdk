@@ -39,8 +39,6 @@
 #include "runtime/synchronizer.hpp"
 #include "utilities/macros.hpp"
 
-#ifndef CC_INTERP
-
 #undef __
 #define __ _masm->
 
@@ -4145,4 +4143,3 @@ void TemplateTable::wide() {
   __ bctr();
   // Note: the bcp increment step is part of the individual wide bytecode implementations.
 }
-#endif // !CC_INTERP
