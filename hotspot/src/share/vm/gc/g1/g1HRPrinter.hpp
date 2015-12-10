@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_G1_G1HRPRINTER_HPP
 
 #include "gc/g1/heapRegion.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 
 #define SKIP_RETIRED_FULL_REGIONS 1
@@ -55,19 +56,9 @@ public:
     Archive
   } RegionType;
 
-  typedef enum {
-    StartGC,
-    EndGC,
-    StartFullGC,
-    EndFullGC
-  } PhaseType;
-
 private:
-  bool _active;
-
   static const char* action_name(ActionType action);
   static const char* region_type_name(RegionType type);
-  static const char* phase_name(PhaseType phase);
 
   // Print an action event. This version is used in most scenarios and
   // only prints the region's bottom. The parameters type and top are
@@ -79,18 +70,11 @@ private:
   // bottom and end. Used for Commit / Uncommit events.
   static void print(ActionType action, HeapWord* bottom, HeapWord* end);
 
-  // Print a phase event.
-  static void print(PhaseType phase, size_t phase_num);
-
 public:
   // In some places we iterate over a list in order to generate output
   // for the list's elements. By exposing this we can avoid this
   // iteration if the printer is not active.
-  const bool is_active() { return _active; }
-
-  // Have to set this explicitly as we have to do this during the
-  // heap's initialize() method, not in the constructor.
-  void set_active(bool active) { _active = active; }
+  const bool is_active() { return log_is_enabled(Trace, gc, region); }
 
   // The methods below are convenient wrappers for the print() methods.
 
@@ -155,28 +139,6 @@ public:
       print(Uncommit, bottom, end);
     }
   }
-
-  void start_gc(bool full, size_t gc_num) {
-    if (is_active()) {
-      if (!full) {
-        print(StartGC, gc_num);
-      } else {
-        print(StartFullGC, gc_num);
-      }
-    }
-  }
-
-  void end_gc(bool full, size_t gc_num) {
-    if (is_active()) {
-      if (!full) {
-        print(EndGC, gc_num);
-      } else {
-        print(EndFullGC, gc_num);
-      }
-    }
-  }
-
-  G1HRPrinter() : _active(false) { }
 };
 
 #endif // SHARE_VM_GC_G1_G1HRPRINTER_HPP

@@ -290,8 +290,7 @@ private:
   void verify_before_gc();
   void verify_after_gc();
 
-  void log_gc_header();
-  void log_gc_footer(double pause_time_sec);
+  void log_gc_footer(double pause_time_counter);
 
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
@@ -704,8 +703,8 @@ protected:
   void shrink_helper(size_t expand_bytes);
 
   #if TASKQUEUE_STATS
-  static void print_taskqueue_stats_hdr(outputStream* const st = gclog_or_tty);
-  void print_taskqueue_stats(outputStream* const st = gclog_or_tty) const;
+  static void print_taskqueue_stats_hdr(outputStream* const st);
+  void print_taskqueue_stats() const;
   void reset_taskqueue_stats();
   #endif // TASKQUEUE_STATS
 
@@ -738,10 +737,9 @@ protected:
   void post_evacuate_collection_set(EvacuationInfo& evacuation_info, G1ParScanThreadStateSet* pss);
 
   // Print the header for the per-thread termination statistics.
-  static void print_termination_stats_hdr(outputStream* const st);
+  static void print_termination_stats_hdr();
   // Print actual per-thread termination statistics.
-  void print_termination_stats(outputStream* const st,
-                               uint worker_id,
+  void print_termination_stats(uint worker_id,
                                double elapsed_ms,
                                double strong_roots_ms,
                                double term_ms,
@@ -966,6 +964,10 @@ public:
 
   virtual Name kind() const {
     return CollectedHeap::G1CollectedHeap;
+  }
+
+  virtual const char* name() const {
+    return "G1";
   }
 
   const G1CollectorState* collector_state() const { return &_collector_state; }
@@ -1365,6 +1367,10 @@ public:
 
   YoungList* young_list() const { return _young_list; }
 
+  uint old_regions_count() const { return _old_set.length(); }
+
+  uint humongous_regions_count() const { return _humongous_set.length(); }
+
   // debugging
   bool check_young_list_well_formed() {
     return _young_list->check_list_well_formed();
@@ -1482,10 +1488,7 @@ public:
   // Currently there is only one place where this is called with
   // vo == UseMarkWord, which is to verify the marking during a
   // full GC.
-  void verify(bool silent, VerifyOption vo);
-
-  // Override; it uses the "prev" marking information
-  virtual void verify(bool silent);
+  void verify(VerifyOption vo);
 
   // The methods below are here for convenience and dispatch the
   // appropriate method depending on value of the given VerifyOption

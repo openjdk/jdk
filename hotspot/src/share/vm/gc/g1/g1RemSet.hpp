@@ -33,6 +33,7 @@
 class G1CollectedHeap;
 class ConcurrentG1Refine;
 class G1ParPushHeapRSClosure;
+class outputStream;
 
 // A G1RemSet in which each heap region has a rem set that records the
 // external heap references into it.  Uses a mod ref bs to track updates,
@@ -63,8 +64,6 @@ protected:
   // references into the collection set.
   G1ParPushHeapRSClosure** _cset_rs_update_cl;
 
-  // Print the given summary info
-  virtual void print_summary_info(G1RemSetSummary * summary, const char * header = NULL);
 public:
   // This is called to reset dual hash tables after the gc pause
   // is finished and the initial hash table is no longer being
@@ -135,7 +134,7 @@ public:
   virtual void print_summary_info();
 
   // Print accumulated summary info from the last time called.
-  virtual void print_periodic_summary_info(const char* header);
+  virtual void print_periodic_summary_info(const char* header, uint period_count);
 
   // Prepare remembered set for verification.
   virtual void prepare_for_verify();

@@ -159,6 +159,7 @@ public:
   uint max_desired_young_length() {
     return _max_desired_young_length;
   }
+
   bool adaptive_young_list_length() const {
     return _adaptive_size;
   }
@@ -658,9 +659,7 @@ public:
 
   // Print heap sizing transition (with less and more detail).
 
-  void print_heap_transition(size_t bytes_before) const;
-  void print_heap_transition() const;
-  void print_detailed_heap_transition(bool full = false) const;
+  void print_detailed_heap_transition() const;
 
   virtual void print_phases(double pause_time_sec);
 
@@ -827,6 +826,8 @@ private:
 
   size_t _eden_used_bytes_before_gc;         // Eden occupancy before GC
   size_t _survivor_used_bytes_before_gc;     // Survivor occupancy before GC
+  size_t _old_used_bytes_before_gc;          // Old occupancy before GC
+  size_t _humongous_used_bytes_before_gc;    // Humongous occupancy before GC
   size_t _heap_used_bytes_before_gc;         // Heap occupancy before GC
   size_t _metaspace_used_bytes_before_gc;    // Metaspace occupancy before GC
 

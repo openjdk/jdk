@@ -5719,7 +5719,7 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
 void TestReserveMemorySpecial_test() {
   if (!UseLargePages) {
     if (VerboseInternalVMTests) {
-      gclog_or_tty->print("Skipping test because large pages are disabled");
+      tty->print("Skipping test because large pages are disabled");
     }
     return;
   }
@@ -5735,7 +5735,7 @@ void TestReserveMemorySpecial_test() {
   char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), NULL, false);
   if (result == NULL) {
     if (VerboseInternalVMTests) {
-      gclog_or_tty->print("Failed to allocate control block with size " SIZE_FORMAT ". Skipping remainder of test.",
+      tty->print("Failed to allocate control block with size " SIZE_FORMAT ". Skipping remainder of test.",
                           large_allocation_size);
     }
   } else {
@@ -5748,7 +5748,7 @@ void TestReserveMemorySpecial_test() {
     char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), expected_location, false);
     if (actual_location == NULL) {
       if (VerboseInternalVMTests) {
-        gclog_or_tty->print("Failed to allocate any memory at " PTR_FORMAT " size " SIZE_FORMAT ". Skipping remainder of test.",
+        tty->print("Failed to allocate any memory at " PTR_FORMAT " size " SIZE_FORMAT ". Skipping remainder of test.",
                             expected_location, large_allocation_size);
       }
     } else {

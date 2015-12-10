@@ -36,8 +36,10 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generation.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/space.hpp"
 #include "interpreter/interpreter.hpp"
+#include "logging/log.hpp"
 #include "memory/filemap.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
@@ -72,6 +74,7 @@
 #include "utilities/events.hpp"
 #include "utilities/hashtable.inline.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 #include "utilities/preserveException.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/cms/cmsCollectorPolicy.hpp"
@@ -489,7 +492,7 @@ void Universe::run_finalizers_on_exit() {
   has_run_finalizers_on_exit = true;
 
   // Called on VM exit. This ought to be run in a separate thread.
-  if (TraceReferenceGC) tty->print_cr("Callback to run finalizers on exit");
+  log_trace(ref)("Callback to run finalizers on exit");
   {
     PRESERVE_EXCEPTION_MARK;
     KlassHandle finalizer_klass(THREAD, SystemDictionary::Finalizer_klass());
@@ -713,6 +716,7 @@ jint Universe::initialize_heap() {
   if (status != JNI_OK) {
     return status;
   }
+  log_info(gc)("Using %s", _collectedHeap->name());
 
   ThreadLocalAllocBuffer::set_max_size(Universe::heap()->max_tlab_size());
 
@@ -1059,18 +1063,9 @@ void Universe::compute_base_vtable_size() {
   _base_vtable_size = ClassLoader::compute_Object_vtable();
 }
 
-
-void Universe::print() {
-  print_on(gclog_or_tty);
-}
-
-void Universe::print_on(outputStream* st, bool extended) {
+void Universe::print_on(outputStream* st) {
   st->print_cr("Heap");
-  if (!extended) {
-    heap()->print_on(st);
-  } else {
-    heap()->print_extended_on(st);
-  }
+  heap()->print_on(st);
 }
 
 void Universe::print_heap_at_SIGBREAK() {
@@ -1082,30 +1077,25 @@ void Universe::print_heap_at_SIGBREAK() {
   }
 }
 
-void Universe::print_heap_before_gc(outputStream* st, bool ignore_extended) {
-  st->print_cr("{Heap before GC invocations=%u (full %u):",
-               heap()->total_collections(),
-               heap()->total_full_collections());
-  if (!PrintHeapAtGCExtended || ignore_extended) {
-    heap()->print_on(st);
-  } else {
-    heap()->print_extended_on(st);
+void Universe::print_heap_before_gc() {
+  LogHandle(gc, heap) log;
+  if (log.is_trace()) {
+    log.trace("Heap before GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
+    ResourceMark rm;
+    heap()->print_on(log.trace_stream());
   }
 }
 
-void Universe::print_heap_after_gc(outputStream* st, bool ignore_extended) {
-  st->print_cr("Heap after GC invocations=%u (full %u):",
-               heap()->total_collections(),
-               heap()->total_full_collections());
-  if (!PrintHeapAtGCExtended || ignore_extended) {
-    heap()->print_on(st);
-  } else {
-    heap()->print_extended_on(st);
+void Universe::print_heap_after_gc() {
+  LogHandle(gc, heap) log;
+  if (log.is_trace()) {
+    log.trace("Heap after GC invocations=%u (full %u):", heap()->total_collections(), heap()->total_full_collections());
+    ResourceMark rm;
+    heap()->print_on(log.trace_stream());
   }
-  st->print_cr("}");
 }
 
-void Universe::verify(VerifyOption option, const char* prefix, bool silent) {
+void Universe::verify(VerifyOption option, const char* prefix) {
   // The use of _verify_in_progress is a temporary work around for
   // 6320749.  Don't bother with a creating a class to set and clear
   // it since it is only used in this method and the control flow is
@@ -1122,36 +1112,35 @@ void Universe::verify(VerifyOption option, const char* prefix, bool silent) {
   HandleMark hm;  // Handles created during verification can be zapped
   _verify_count++;
 
-  if (!silent) gclog_or_tty->print("%s", prefix);
-  if (!silent) gclog_or_tty->print("[Verifying ");
-  if (!silent) gclog_or_tty->print("threads ");
+  FormatBuffer<> title("Verifying %s", prefix);
+  GCTraceTime(Info, gc, verify) tm(title.buffer());
+  log_debug(gc, verify)("Threads");
   Threads::verify();
-  if (!silent) gclog_or_tty->print("heap ");
-  heap()->verify(silent, option);
-  if (!silent) gclog_or_tty->print("syms ");
+  log_debug(gc, verify)("Heap");
+  heap()->verify(option);
+  log_debug(gc, verify)("SymbolTable");
   SymbolTable::verify();
-  if (!silent) gclog_or_tty->print("strs ");
+  log_debug(gc, verify)("StringTable");
   StringTable::verify();
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-    if (!silent) gclog_or_tty->print("zone ");
+    log_debug(gc, verify)("CodeCache");
     CodeCache::verify();
   }
-  if (!silent) gclog_or_tty->print("dict ");
+  log_debug(gc, verify)("SystemDictionary");
   SystemDictionary::verify();
 #ifndef PRODUCT
-  if (!silent) gclog_or_tty->print("cldg ");
+  log_debug(gc, verify)("ClassLoaderDataGraph");
   ClassLoaderDataGraph::verify();
 #endif
-  if (!silent) gclog_or_tty->print("metaspace chunks ");
+  log_debug(gc, verify)("MetaspaceAux");
   MetaspaceAux::verify_free_chunks();
-  if (!silent) gclog_or_tty->print("hand ");
+  log_debug(gc, verify)("JNIHandles");
   JNIHandles::verify();
-  if (!silent) gclog_or_tty->print("C-heap ");
+  log_debug(gc, verify)("C-heap");
   os::check_heap();
-  if (!silent) gclog_or_tty->print("code cache ");
+  log_debug(gc, verify)("CodeCache Oops");
   CodeCache::verify_oops();
-  if (!silent) gclog_or_tty->print_cr("]");
 
   _verify_in_progress = false;
 }

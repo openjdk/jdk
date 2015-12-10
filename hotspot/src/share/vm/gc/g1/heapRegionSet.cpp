@@ -261,24 +261,6 @@ void FreeRegionList::clear() {
   _last = NULL;
 }
 
-void FreeRegionList::print_on(outputStream* out, bool print_contents) {
-  HeapRegionSetBase::print_on(out, print_contents);
-  out->print_cr("  Linking");
-  out->print_cr("    head              : " PTR_FORMAT, p2i(_head));
-  out->print_cr("    tail              : " PTR_FORMAT, p2i(_tail));
-
-  if (print_contents) {
-    out->print_cr("  Contents");
-    FreeRegionListIterator iter(this);
-    while (iter.more_available()) {
-      HeapRegion* hr = iter.get_next();
-      hr->print_on(out);
-    }
-  }
-
-  out->cr();
-}
-
 void FreeRegionList::verify_list() {
   HeapRegion* curr = _head;
   HeapRegion* prev1 = NULL;

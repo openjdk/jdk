@@ -22,14 +22,14 @@
  */
 
 /*
- * @test TestSummarizeRSetStatsPerRegion.java
+ * @test TestRemsetLoggingPerRegion.java
  * @bug 8014078 8129977
  * @library /testlibrary
  * @modules java.base/sun.misc
  *          java.management/sun.management
- * @build TestSummarizeRSetStatsTools TestSummarizeRSetStatsPerRegion
- * @summary Verify output of -XX:+G1SummarizeRSetStats in regards to per-region type output
- * @run main TestSummarizeRSetStatsPerRegion
+ * @build TestRemsetLoggingTools TestRemsetLoggingPerRegion
+ * @summary Verify output of -Xlog:gc+remset*=trace in regards to per-region type output
+ * @run main TestRemsetLoggingPerRegion
  */
 
 import jdk.test.lib.*;
@@ -37,21 +37,21 @@ import java.lang.Thread;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class TestSummarizeRSetStatsPerRegion {
+public class TestRemsetLoggingPerRegion {
 
     public static void main(String[] args) throws Exception {
         String result;
 
-        if (!TestSummarizeRSetStatsTools.testingG1GC()) {
+        if (!TestRemsetLoggingTools.testingG1GC()) {
             return;
         }
 
         // single remembered set summary output at the end
-        result = TestSummarizeRSetStatsTools.runTest(new String[] { "-XX:+G1SummarizeRSetStats" }, 0);
-        TestSummarizeRSetStatsTools.expectPerRegionRSetSummaries(result, 1, 0);
+        result = TestRemsetLoggingTools.runTest(new String[] { "-Xlog:gc+remset*=trace" }, 0);
+        TestRemsetLoggingTools.expectPerRegionRSetSummaries(result, 1, 0);
 
         // two times remembered set summary output
-        result = TestSummarizeRSetStatsTools.runTest(new String[] { "-XX:+G1SummarizeRSetStats", "-XX:G1SummarizeRSetStatsPeriod=1" }, 1);
-        TestSummarizeRSetStatsTools.expectPerRegionRSetSummaries(result, 1, 2);
+        result = TestRemsetLoggingTools.runTest(new String[] { "-Xlog:gc+remset*=trace", "-XX:G1SummarizeRSetStatsPeriod=1" }, 1);
+        TestRemsetLoggingTools.expectPerRegionRSetSummaries(result, 1, 2);
     }
 }

@@ -30,6 +30,7 @@
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1StringDedupTable.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "logging/log.hpp"
 #include "memory/padded.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.hpp"
@@ -568,19 +569,16 @@ void G1StringDedupTable::trim_entry_cache() {
   _entry_cache->trim(max_cache_size);
 }
 
-void G1StringDedupTable::print_statistics(outputStream* st) {
-  st->print_cr(
-    "   [Table]\n"
-    "      [Memory Usage: " G1_STRDEDUP_BYTES_FORMAT_NS "]\n"
-    "      [Size: " SIZE_FORMAT ", Min: " SIZE_FORMAT ", Max: " SIZE_FORMAT "]\n"
-    "      [Entries: " UINTX_FORMAT ", Load: " G1_STRDEDUP_PERCENT_FORMAT_NS ", Cached: " UINTX_FORMAT ", Added: " UINTX_FORMAT ", Removed: " UINTX_FORMAT "]\n"
-    "      [Resize Count: " UINTX_FORMAT ", Shrink Threshold: " UINTX_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT_NS "), Grow Threshold: " UINTX_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT_NS ")]\n"
-    "      [Rehash Count: " UINTX_FORMAT ", Rehash Threshold: " UINTX_FORMAT ", Hash Seed: 0x%x]\n"
-    "      [Age Threshold: " UINTX_FORMAT "]",
-    G1_STRDEDUP_BYTES_PARAM(_table->_size * sizeof(G1StringDedupEntry*) + (_table->_entries + _entry_cache->size()) * sizeof(G1StringDedupEntry)),
-    _table->_size, _min_size, _max_size,
-    _table->_entries, (double)_table->_entries / (double)_table->_size * 100.0, _entry_cache->size(), _entries_added, _entries_removed,
-    _resize_count, _table->_shrink_threshold, _shrink_load_factor * 100.0, _table->_grow_threshold, _grow_load_factor * 100.0,
-    _rehash_count, _rehash_threshold, _table->_hash_seed,
-    StringDeduplicationAgeThreshold);
+void G1StringDedupTable::print_statistics() {
+  LogHandle(gc, stringdedup) log;
+  log.debug("   [Table]");
+  log.debug("      [Memory Usage: " G1_STRDEDUP_BYTES_FORMAT_NS "]",
+            G1_STRDEDUP_BYTES_PARAM(_table->_size * sizeof(G1StringDedupEntry*) + (_table->_entries + _entry_cache->size()) * sizeof(G1StringDedupEntry)));
+  log.debug("      [Size: " SIZE_FORMAT ", Min: " SIZE_FORMAT ", Max: " SIZE_FORMAT "]", _table->_size, _min_size, _max_size);
+  log.debug("      [Entries: " UINTX_FORMAT ", Load: " G1_STRDEDUP_PERCENT_FORMAT_NS ", Cached: " UINTX_FORMAT ", Added: " UINTX_FORMAT ", Removed: " UINTX_FORMAT "]",
+            _table->_entries, (double)_table->_entries / (double)_table->_size * 100.0, _entry_cache->size(), _entries_added, _entries_removed);
+  log.debug("      [Resize Count: " UINTX_FORMAT ", Shrink Threshold: " UINTX_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT_NS "), Grow Threshold: " UINTX_FORMAT "(" G1_STRDEDUP_PERCENT_FORMAT_NS ")]",
+            _resize_count, _table->_shrink_threshold, _shrink_load_factor * 100.0, _table->_grow_threshold, _grow_load_factor * 100.0);
+  log.debug("      [Rehash Count: " UINTX_FORMAT ", Rehash Threshold: " UINTX_FORMAT ", Hash Seed: 0x%x]", _rehash_count, _rehash_threshold, _table->_hash_seed);
+  log.debug("      [Age Threshold: " UINTX_FORMAT "]", StringDeduplicationAgeThreshold);
 }
