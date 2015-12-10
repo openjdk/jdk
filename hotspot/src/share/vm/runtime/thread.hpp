@@ -272,7 +272,7 @@ class Thread: public ThreadShadow {
   jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
                                                 // the Java heap
 
-  TRACE_DATA _trace_data;                       // Thread-local data for tracing
+  mutable TRACE_DATA _trace_data;               // Thread-local data for tracing
 
   ThreadExt _ext;
 

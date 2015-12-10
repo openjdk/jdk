@@ -157,6 +157,7 @@
           "Each time the rset update queue increases by this amount "       \
           "activate the next refinement thread if available. "              \
           "Will be selected ergonomically by default.")                     \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \
@@ -300,6 +301,7 @@
                                                                             \
   product(uintx, G1MixedGCCountTarget, 8,                                   \
           "The target number of mixed GCs after a marking cycle.")          \
+          range(0, max_uintx)                                               \
                                                                             \
   experimental(bool, G1EagerReclaimHumongousObjects, true,                  \
           "Try to reclaim dead large objects at every young GC.")           \

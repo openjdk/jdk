@@ -120,10 +120,13 @@ class TypeArrayKlass : public ArrayKlass {
   virtual Klass* array_klass_impl(bool or_null, TRAPS);
 
  public:
-  // Casting from Klass*
   static TypeArrayKlass* cast(Klass* k) {
+    return const_cast<TypeArrayKlass*>(cast(const_cast<const Klass*>(k)));
+  }
+
+  static const TypeArrayKlass* cast(const Klass* k) {
     assert(k->is_typeArray_klass(), "cast to TypeArrayKlass");
-    return static_cast<TypeArrayKlass*>(k);
+    return static_cast<const TypeArrayKlass*>(k);
   }
 
   // Naming

@@ -551,6 +551,7 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
   VMError::report_and_die(t, sig, pc, info, ucVoid);
 
   ShouldNotReachHere();
+  return false;
 }
 
 void os::print_context(outputStream *st, void *context) {

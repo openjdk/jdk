@@ -573,6 +573,9 @@ public:
   void register_old_region_with_cset(HeapRegion* r) {
     _in_cset_fast_test.set_in_old(r->hrm_index());
   }
+  inline void register_ext_region_with_cset(HeapRegion* r) {
+    _in_cset_fast_test.set_ext(r->hrm_index());
+  }
   void clear_in_cset(const HeapRegion* hr) {
     _in_cset_fast_test.clear(hr);
   }

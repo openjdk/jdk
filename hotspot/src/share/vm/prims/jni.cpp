@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
+#include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
@@ -326,7 +327,7 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
     class_name = SymbolTable::new_symbol(name, CHECK_NULL);
   }
   ResourceMark rm(THREAD);
-  ClassFileStream st((u1*) buf, bufLen, NULL);
+  ClassFileStream st((u1*)buf, bufLen, NULL, ClassFileStream::verify);
   Handle class_loader (THREAD, JNIHandles::resolve(loaderRef));
 
   if (UsePerfData && !class_loader.is_null()) {
@@ -338,9 +339,11 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
       ClassLoader::sync_JNIDefineClassLockFreeCounter()->inc();
     }
   }
-  Klass* k = SystemDictionary::resolve_from_stream(class_name, class_loader,
-                                                     Handle(), &st, true,
-                                                     CHECK_NULL);
+  Klass* k = SystemDictionary::resolve_from_stream(class_name,
+                                                   class_loader,
+                                                   Handle(),
+                                                   &st,
+                                                   CHECK_NULL);
 
   if (TraceClassResolution && k != NULL) {
     trace_class_resolution(k);

@@ -261,7 +261,11 @@ endif
 OPT_CFLAGS = $(OPT_CFLAGS/$(OPT_CFLAGS_DEFAULT)) $(OPT_EXTRAS)
 
 # Variable tracking size limit exceeded for VMStructs::init() 
-OPT_CFLAGS/vmStructs.o += -fno-var-tracking-assignments
+ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 3 \) \))" "1"
+  # GCC >= 4.3
+  # Gcc 4.1.2 does not support this flag, nor does it have problems compiling the file.
+  OPT_CFLAGS/vmStructs.o += -fno-var-tracking-assignments
+endif
 
 # The gcc compiler segv's on ia64 when compiling bytecodeInterpreter.cpp
 # if we use expensive-optimizations
