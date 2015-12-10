@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8072008
- * @library /testlibrary /../../test/lib
- * @build RedefineTest Agent
+ * @library /testlibrary /test/lib
+ * @compile -XDignore.symbol.file RedefineTest.java Agent.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  *                              java.lang.invoke.RedefineTest
@@ -42,10 +42,8 @@ package java.lang.invoke;
 
 import sun.hotspot.WhiteBox;
 import sun.misc.Unsafe;
-
 import jdk.internal.org.objectweb.asm.*;
 import jdk.internal.vm.annotation.DontInline;
-
 import java.lang.instrument.ClassDefinition;
 import java.lang.instrument.Instrumentation;
 
