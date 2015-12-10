@@ -902,7 +902,6 @@ void G1CollectorPolicy::record_concurrent_mark_init_end(double
   collector_state()->set_during_marking(true);
   assert(!collector_state()->initiate_conc_mark_if_possible(), "we should have cleared it by now");
   collector_state()->set_during_initial_mark_pause(false);
-  _cur_mark_stop_world_time_ms = mark_init_elapsed_time_ms;
 }
 
 void G1CollectorPolicy::record_concurrent_mark_remark_start() {
@@ -914,7 +913,6 @@ void G1CollectorPolicy::record_concurrent_mark_remark_end() {
   double end_time_sec = os::elapsedTime();
   double elapsed_time_ms = (end_time_sec - _mark_remark_start_sec)*1000.0;
   _concurrent_mark_remark_times_ms->add(elapsed_time_ms);
-  _cur_mark_stop_world_time_ms += elapsed_time_ms;
   _prev_collection_pause_end_ms += elapsed_time_ms;
 
   record_pause(Remark, _mark_remark_start_sec, end_time_sec);
@@ -1925,7 +1923,6 @@ void G1CollectorPolicy::record_concurrent_mark_cleanup_end() {
   double end_sec = os::elapsedTime();
   double elapsed_time_ms = (end_sec - _mark_cleanup_start_sec) * 1000.0;
   _concurrent_mark_cleanup_times_ms->add(elapsed_time_ms);
-  _cur_mark_stop_world_time_ms += elapsed_time_ms;
   _prev_collection_pause_end_ms += elapsed_time_ms;
 
   record_pause(Cleanup, _mark_cleanup_start_sec, end_sec);

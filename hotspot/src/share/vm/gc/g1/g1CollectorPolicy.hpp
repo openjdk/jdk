@@ -503,7 +503,6 @@ private:
 
   // This set of variables tracks the collector efficiency, in order to
   // determine whether we should initiate a new marking.
-  double _cur_mark_stop_world_time_ms;
   double _mark_remark_start_sec;
   double _mark_cleanup_start_sec;
 
