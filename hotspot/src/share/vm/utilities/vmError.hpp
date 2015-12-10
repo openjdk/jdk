@@ -88,9 +88,6 @@ class VMError : public AllStatic {
   static void print_stack_trace(outputStream* st, JavaThread* jt,
                                 char* buf, int buflen, bool verbose = false);
 
-  static const char* gc_mode();
-  static void print_oom_reasons(outputStream* st);
-
   static bool should_report_bug(unsigned int id) {
     return (id != OOM_MALLOC_ERROR) && (id != OOM_MMAP_ERROR);
   }
@@ -109,6 +106,9 @@ public:
 
   // Record status of core/minidump
   static void record_coredump_status(const char* message, bool status);
+
+  // support for VM.info diagnostic command
+  static void print_vm_info(outputStream* st);
 
   // main error reporting function
   static void report_and_die(int id, const char* message, const char* detail_fmt, va_list detail_args,

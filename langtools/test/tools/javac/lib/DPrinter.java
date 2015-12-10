@@ -1281,6 +1281,7 @@ public class DPrinter {
             printList("argtypes", type.argtypes);
             printType("restype", type.restype, Details.FULL);
             printList("thrown", type.thrown);
+            printType("recvtype", type.recvtype, Details.FULL);
             return visitType(type, null);
         }
 

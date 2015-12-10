@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -417,6 +417,9 @@ public class Arguments {
         if (!checkDirectory(Option.S)) {
             return false;
         }
+        if (!checkDirectory(Option.H)) {
+            return false;
+        }
 
         String sourceString = options.get(Option.SOURCE);
         Source source = (sourceString != null)
@@ -580,11 +583,7 @@ public class Arguments {
             return true;
         }
         File file = new File(value);
-        if (!file.exists()) {
-            error("err.dir.not.found", value);
-            return false;
-        }
-        if (!file.isDirectory()) {
+        if (file.exists() && !file.isDirectory()) {
             error("err.file.not.directory", value);
             return false;
         }

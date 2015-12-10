@@ -468,12 +468,11 @@ public class LogRecord implements java.io.Serializable {
      * @implSpec This is equivalent to calling
      *      {@link #getInstant() getInstant().toEpochMilli()}.
      *
-     * @deprecated To get the full nanosecond resolution event time,
+     * @apiNote To get the full nanosecond resolution event time,
      *             use {@link #getInstant()}.
      *
      * @see #getInstant()
      */
-    @Deprecated
     public long getMillis() {
         return instant.toEpochMilli();
     }
@@ -487,8 +486,10 @@ public class LogRecord implements java.io.Serializable {
      *      {@link #setInstant(java.time.Instant)
      *      setInstant(Instant.ofEpochMilli(millis))}.
      *
-     * @deprecated To set event time with nanosecond resolution,
-     *             use {@link #setInstant(java.time.Instant)}.
+     * @deprecated LogRecord maintains timestamps with nanosecond resolution,
+     *             using {@link Instant} values. For this reason,
+     *             {@link #setInstant(java.time.Instant) setInstant()}
+     *             should be used in preference to {@code setMillis()}.
      *
      * @see #setInstant(java.time.Instant)
      */
@@ -510,14 +511,23 @@ public class LogRecord implements java.io.Serializable {
 
     /**
      * Sets the instant that the event occurred.
+     * <p>
+     * If the given {@code instant} represents a point on the time-line too
+     * far in the future or past to fit in a {@code long} milliseconds and
+     * nanoseconds adjustment, then an {@code ArithmeticException} will be
+     * thrown.
      *
      * @param instant the instant that the event occurred.
      *
      * @throws NullPointerException if {@code instant} is null.
+     * @throws ArithmeticException if numeric overflow would occur while
+     *         calling {@link Instant#toEpochMilli() instant.toEpochMilli()}.
+     *
      * @since 1.9
      */
     public void setInstant(Instant instant) {
-        this.instant = Objects.requireNonNull(instant);
+        instant.toEpochMilli();
+        this.instant = instant;
     }
 
     /**

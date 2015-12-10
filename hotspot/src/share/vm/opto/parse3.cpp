@@ -213,11 +213,9 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
     // not need to mention the class index, since the class will
     // already have been loaded if we ever see a non-null value.)
     // uncommon_trap(iter().get_field_signature_index());
-#ifndef PRODUCT
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name(); tty->print_cr(" asserting nullness of field at bci: %d", bci());
     }
-#endif
     if (C->log() != NULL) {
       C->log()->elem("assert_null reason='field' klass='%d'",
                      C->log()->identify(field->type()));
@@ -313,9 +311,8 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
 
     // Preserve allocation ptr to create precedent edge to it in membar
     // generated on exit from constructor.
-    if (C->eliminate_boxing() &&
-        adr_type->isa_oopptr() && adr_type->is_oopptr()->is_ptr_to_boxed_value() &&
-        AllocateNode::Ideal_allocation(obj, &_gvn) != NULL) {
+    // Can't bind stable with its allocation, only record allocation for final field.
+    if (field->is_final() && AllocateNode::Ideal_allocation(obj, &_gvn) != NULL) {
       set_alloc_with_final(obj);
     }
   }

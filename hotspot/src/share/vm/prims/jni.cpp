@@ -261,19 +261,6 @@ void jfieldIDWorkaround::verify_instance_jfieldID(Klass* k, jfieldID id) {
   Histogram* JNIHistogram;
   static volatile jint JNIHistogram_lock = 0;
 
-  class JNITraceWrapper : public StackObj {
-   public:
-    JNITraceWrapper(const char* format, ...) ATTRIBUTE_PRINTF(2, 3) {
-      if (TraceJNICalls) {
-        va_list ap;
-        va_start(ap, format);
-        tty->print("JNI ");
-        tty->vprint_cr(format, ap);
-        va_end(ap);
-      }
-    }
-  };
-
   class JNIHistogramElement : public HistogramElement {
     public:
      JNIHistogramElement(const char* name);
@@ -305,7 +292,7 @@ void jfieldIDWorkaround::verify_instance_jfieldID(Klass* k, jfieldID id) {
      static JNIHistogramElement* e = new JNIHistogramElement(arg); \
       /* There is a MT-race condition in VC++. So we need to make sure that that e has been initialized */ \
      if (e != NULL) e->increment_count()
-  #define JNIWrapper(arg) JNICountWrapper(arg); JNITraceWrapper(arg)
+  #define JNIWrapper(arg) JNICountWrapper(arg);
 #else
   #define JNIWrapper(arg)
 #endif
@@ -3759,7 +3746,7 @@ void copy_jni_function_table(const struct JNINativeInterface_ *new_jni_NativeInt
 void quicken_jni_functions() {
   // Replace Get<Primitive>Field with fast versions
   if (UseFastJNIAccessors && !JvmtiExport::can_post_field_access()
-      && !VerifyJNIFields && !TraceJNICalls && !CountJNICalls && !CheckJNICalls
+      && !VerifyJNIFields && !CountJNICalls && !CheckJNICalls
 #if defined(_WINDOWS) && defined(IA32) && defined(COMPILER2)
       // windows x86 currently needs SEH wrapper and the gain of the fast
       // versions currently isn't certain for server vm on uniprocessor.
@@ -3878,7 +3865,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
   unit_test_function_call
 
 // Forward declaration
-void TestNmethodBucket_test();
+void TestDependencyContext_test();
 void test_semaphore();
 void TestOS_test();
 void TestReservedSpace_test();
@@ -3902,7 +3889,8 @@ void TestG1BiasedArray_test();
 void TestBufferingOopClosure_test();
 void TestCodeCacheRemSet_test();
 void FreeRegionList_test();
-void test_memset_with_concurrent_readers();
+void IHOP_test();
+void test_memset_with_concurrent_readers() NOT_DEBUG_RETURN;
 void TestPredictions_test();
 void WorkerDataArray_test();
 #endif
@@ -3910,7 +3898,7 @@ void WorkerDataArray_test();
 void execute_internal_vm_tests() {
   if (ExecuteInternalVMTests) {
     tty->print_cr("Running internal VM tests");
-    run_unit_test(TestNmethodBucket_test());
+    run_unit_test(TestDependencyContext_test());
     run_unit_test(test_semaphore());
     run_unit_test(TestOS_test());
     run_unit_test(TestReservedSpace_test());
@@ -3950,6 +3938,7 @@ void execute_internal_vm_tests() {
     run_unit_test(TestCodeCacheRemSet_test());
     if (UseG1GC) {
       run_unit_test(FreeRegionList_test());
+      run_unit_test(IHOP_test());
     }
     run_unit_test(test_memset_with_concurrent_readers());
     run_unit_test(TestPredictions_test());

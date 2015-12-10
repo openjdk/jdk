@@ -46,8 +46,6 @@ public class CompileWithAtFile extends SJavacTester {
     }
 
     void test() throws Exception {
-        clean(TEST_ROOT);
-        ToolBox tb = new ToolBox();
         tb.writeFile(GENSRC.resolve("list.txt"),
                      "-if */alfa/omega/A.java\n" +
                      "-if */beta/B.java\n" +
@@ -55,11 +53,11 @@ public class CompileWithAtFile extends SJavacTester {
                      "-d " + BIN + "\n" +
                      "--state-dir=" + BIN + "\n");
         tb.writeFile(GENSRC.resolve("alfa/omega/A.java"),
-                 "package alfa.omega; import beta.B; public class A { B b; }");
+                     "package alfa.omega; import beta.B; public class A { B b; }");
         tb.writeFile(GENSRC.resolve("beta/B.java"),
-                 "package beta; public class B { }");
+                     "package beta; public class B { }");
         tb.writeFile(GENSRC.resolve("beta/C.java"),
-                 "broken");
+                     "broken");
 
         Files.createDirectory(BIN);
         Map<String,Long> previous_bin_state = collectState(BIN);
@@ -71,6 +69,5 @@ public class CompileWithAtFile extends SJavacTester {
                          BIN + "/javac_state",
                          BIN + "/alfa/omega/A.class",
                          BIN + "/beta/B.class");
-        clean(GENSRC, BIN);
     }
 }

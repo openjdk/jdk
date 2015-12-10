@@ -123,16 +123,13 @@ enum G1Mark {
 
 template <G1Barrier barrier, G1Mark do_mark_object>
 class G1ParCopyClosure : public G1ParCopyHelper {
-private:
-  template <class T> void do_oop_work(T* p);
-
 public:
   G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
       G1ParCopyHelper(g1, par_scan_state) {
     assert(ref_processor() == NULL, "sanity");
   }
 
-  template <class T> void do_oop_nv(T* p) { do_oop_work(p); }
+  template <class T> void do_oop_nv(T* p);
   virtual void do_oop(oop* p)       { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
 };

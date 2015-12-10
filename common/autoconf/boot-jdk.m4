@@ -375,6 +375,9 @@ AC_DEFUN_ONCE([BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS],
   JAVA_FLAGS_BIG=$boot_jdk_jvmargs_big
   AC_SUBST(JAVA_FLAGS_BIG)
 
+  # By default, the main javac compilations use big
+  JAVA_FLAGS_JAVAC="$JAVA_FLAGS_BIG"
+  AC_SUBST(JAVA_FLAGS_JAVAC)
 
   AC_MSG_CHECKING([flags for boot jdk java command for small workloads])
 

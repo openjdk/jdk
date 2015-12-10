@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classListParser.hpp"
+#include "classfile/classLoaderExt.hpp"
 #include "classfile/dictionary.hpp"
 #include "classfile/loaderConstraints.hpp"
 #include "classfile/placeholders.hpp"
@@ -42,6 +44,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_operations.hpp"
+#include "utilities/defaultStream.hpp"
 #include "utilities/hashtable.inline.hpp"
 
 int MetaspaceShared::_max_alignment = 0;
@@ -95,6 +98,10 @@ static void collect_classes(Klass* k) {
     InstanceKlass* ik = InstanceKlass::cast(k);
     ik->array_klasses_do(collect_classes);
   }
+}
+
+static void collect_classes2(Klass* k, ClassLoaderData* class_data) {
+  collect_classes(k);
 }
 
 static void remove_unshareable_in_classes() {
@@ -422,12 +429,15 @@ private:
   VirtualSpace _mc_vs;
   CompactHashtableWriter* _string_cht;
   GrowableArray<MemRegion> *_string_regions;
+  char* _md_alloc_low;
+  char* _md_alloc_top;
+  char* _md_alloc_max;
+  static VM_PopulateDumpSharedSpace* _instance;
 
 public:
   VM_PopulateDumpSharedSpace(ClassLoaderData* loader_data,
                              GrowableArray<Klass*> *class_promote_order) :
     _loader_data(loader_data) {
-
     // Split up and initialize the misc code and data spaces
     ReservedSpace* shared_rs = MetaspaceShared::shared_rs();
     size_t metadata_size = SharedReadOnlySize + SharedReadWriteSize;
@@ -440,10 +450,42 @@ public:
     _md_vs.initialize(md_rs, SharedMiscDataSize);
     _mc_vs.initialize(mc_rs, SharedMiscCodeSize);
     _class_promote_order = class_promote_order;
+
+    _md_alloc_low = _md_vs.low();
+    _md_alloc_top = _md_alloc_low + sizeof(char*);
+    _md_alloc_max = _md_vs.low() + SharedMiscDataSize;
+
+    assert(_instance == NULL, "must be singleton");
+    _instance = this;
+  }
+
+  ~VM_PopulateDumpSharedSpace() {
+    assert(_instance == this, "must be singleton");
+    _instance = NULL;
+  }
+
+  static VM_PopulateDumpSharedSpace* instance() {
+    assert(_instance != NULL, "sanity");
+    return _instance;
   }
 
   VMOp_Type type() const { return VMOp_PopulateDumpSharedSpace; }
   void doit();   // outline because gdb sucks
+
+  char* misc_data_space_alloc(size_t num_bytes) {
+    size_t alignment = sizeof(char*);
+    num_bytes = align_size_up(num_bytes, alignment);
+    _md_alloc_top = (char*)align_ptr_up(_md_alloc_top, alignment);
+    if (_md_alloc_top + num_bytes > _md_alloc_max) {
+      report_out_of_shared_space(SharedMiscData);
+    }
+
+    char* p = _md_alloc_top;
+    _md_alloc_top += num_bytes;
+
+    memset(p, 0, num_bytes);
+    return p;
+  }
 
 private:
   void handle_misc_data_space_failure(bool success) {
@@ -453,6 +495,7 @@ private:
   }
 }; // class VM_PopulateDumpSharedSpace
 
+VM_PopulateDumpSharedSpace* VM_PopulateDumpSharedSpace::_instance;
 
 void VM_PopulateDumpSharedSpace::doit() {
   Thread* THREAD = VMThread::vm_thread();
@@ -475,7 +518,11 @@ void VM_PopulateDumpSharedSpace::doit() {
   // that so we don't have to walk the SystemDictionary again.
   _global_klass_objects = new GrowableArray<Klass*>(1000);
   Universe::basic_type_classes_do(collect_classes);
-  SystemDictionary::classes_do(collect_classes);
+
+  // Need to call SystemDictionary::classes_do(void f(Klass*, ClassLoaderData*))
+  // as we may have some classes with NULL ClassLoaderData* in the dictionary. Other
+  // variants of SystemDictionary::classes_do will skip those classes.
+  SystemDictionary::classes_do(collect_classes2);
 
   tty->print_cr("Number of classes %d", _global_klass_objects->length());
   {
@@ -514,6 +561,10 @@ void VM_PopulateDumpSharedSpace::doit() {
   char* mc_low = _mc_vs.low();
   char* mc_top = mc_low;
   char* mc_end = _mc_vs.high();
+
+  assert(_md_alloc_top != NULL, "sanity");
+  *(char**)_md_alloc_low = _md_alloc_top;
+  md_top = _md_alloc_top;
 
   // Reserve space for the list of Klass*s whose vtables are used
   // for patching others as needed.
@@ -735,6 +786,7 @@ void MetaspaceShared::prepare_for_dumping() {
 void MetaspaceShared::preload_and_dump(TRAPS) {
   TraceTime timer("Dump Shared Spaces", TraceStartupTime);
   ResourceMark rm;
+  char class_list_path_str[JVM_MAXPATHLEN];
 
   tty->print_cr("Allocated shared space: " SIZE_FORMAT " bytes at " PTR_FORMAT,
                 MetaspaceShared::shared_rs()->size(),
@@ -747,7 +799,6 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
     // Construct the path to the class list (in jre/lib)
     // Walk up two directories from the location of the VM and
     // optionally tack on "lib" (depending on platform)
-    char class_list_path_str[JVM_MAXPATHLEN];
     os::jvm_path(class_list_path_str, sizeof(class_list_path_str));
     for (int i = 0; i < 3; i++) {
       char *end = strrchr(class_list_path_str, *os::file_separator());
@@ -785,6 +836,11 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
   static const char map_entry_array_sig[] = "[Ljava/util/Map$Entry;";
   SymbolTable::new_permanent_symbol(map_entry_array_sig, THREAD);
 
+  // Need to allocate the op here:
+  // op.misc_data_space_alloc() will be called during preload_and_dump().
+  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
+  VM_PopulateDumpSharedSpace op(loader_data, class_promote_order);
+
   tty->print_cr("Loading classes to share ...");
   _has_error_classes = false;
   class_count += preload_and_dump(class_list_path, class_promote_order,
@@ -809,44 +865,27 @@ void MetaspaceShared::preload_and_dump(TRAPS) {
   link_and_cleanup_shared_classes(CATCH);
   tty->print_cr("Rewriting and linking classes: done");
 
-  // Create and dump the shared spaces.   Everything so far is loaded
-  // with the null class loader.
-  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
-  VM_PopulateDumpSharedSpace op(loader_data, class_promote_order);
   VMThread::execute(&op);
-
   // Since various initialization steps have been undone by this process,
   // it is not reasonable to continue running a java process.
   exit(0);
 }
 
-int MetaspaceShared::preload_and_dump(const char * class_list_path,
+
+int MetaspaceShared::preload_and_dump(const char* class_list_path,
                                       GrowableArray<Klass*>* class_promote_order,
                                       TRAPS) {
-  FILE* file = fopen(class_list_path, "r");
-  char class_name[256];
+  ClassListParser parser(class_list_path);
   int class_count = 0;
 
-  if (file != NULL) {
-    while ((fgets(class_name, sizeof class_name, file)) != NULL) {
-      if (*class_name == '#') { // comment
-        continue;
-      }
-      // Remove trailing newline
-      size_t name_len = strlen(class_name);
-      if (class_name[name_len-1] == '\n') {
-        class_name[name_len-1] = '\0';
-      }
+    while (parser.parse_one_line()) {
+      Klass* klass = ClassLoaderExt::load_one_class(&parser, THREAD);
 
-      // Got a class name - load it.
-      TempNewSymbol class_name_symbol = SymbolTable::new_permanent_symbol(class_name, THREAD);
-      guarantee(!HAS_PENDING_EXCEPTION, "Exception creating a symbol.");
-      Klass* klass = SystemDictionary::resolve_or_null(class_name_symbol,
-                                                         THREAD);
       CLEAR_PENDING_EXCEPTION;
       if (klass != NULL) {
         if (PrintSharedSpaces && Verbose && WizardMode) {
-          tty->print_cr("Shared spaces preloaded: %s", class_name);
+          ResourceMark rm;
+          tty->print_cr("Shared spaces preloaded: %s", klass->external_name());
         }
 
         InstanceKlass* ik = InstanceKlass::cast(klass);
@@ -862,17 +901,8 @@ int MetaspaceShared::preload_and_dump(const char * class_list_path,
         guarantee(!HAS_PENDING_EXCEPTION, "exception in link_class");
 
         class_count++;
-      } else {
-        //tty->print_cr("Preload failed: %s", class_name);
       }
     }
-    fclose(file);
-  } else {
-    char errmsg[JVM_MAXPATHLEN];
-    os::lasterror(errmsg, JVM_MAXPATHLEN);
-    tty->print_cr("Loading classlist failed: %s", errmsg);
-    exit(1);
-  }
 
   return class_count;
 }
@@ -906,6 +936,11 @@ bool MetaspaceShared::try_link_class(InstanceKlass* ik, TRAPS) {
   } else {
     return false;
   }
+}
+
+// Allocate misc data blocks during dumping.
+char* MetaspaceShared::misc_data_space_alloc(size_t num_bytes) {
+  return VM_PopulateDumpSharedSpace::instance()->misc_data_space_alloc(num_bytes);
 }
 
 // Closure for serializing initialization data in from a data area
@@ -1032,6 +1067,8 @@ void MetaspaceShared::initialize_shared_spaces() {
   FileMapInfo *mapinfo = FileMapInfo::current_info();
 
   char* buffer = mapinfo->header()->region_addr(md);
+
+  buffer = *((char**)buffer); // skip over the md_alloc'ed blocks
 
   // Skip over (reserve space for) a list of addresses of C++ vtables
   // for Klass objects.  They get filled in later.

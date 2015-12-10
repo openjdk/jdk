@@ -39,3 +39,7 @@ print(obj.length);
 print(obj.length === -0);
 print(1/obj.length);
 
+var mzl = -(0x7fffffffffffffff - 0x7fffffffffffffff);
+print(mzl);
+print(mzl === -0);
+print(1/mzl);

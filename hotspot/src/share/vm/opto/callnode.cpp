@@ -778,7 +778,7 @@ bool CallNode::may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) {
     }
     if (is_CallJava() && as_CallJava()->method() != NULL) {
       ciMethod* meth = as_CallJava()->method();
-      if (meth->is_accessor()) {
+      if (meth->is_getter()) {
         return false;
       }
       // May modify (by reflection) if an boxing object is passed

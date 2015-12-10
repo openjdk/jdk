@@ -97,7 +97,7 @@ int SymbolTable::_symbols_removed = 0;
 int SymbolTable::_symbols_counted = 0;
 volatile int SymbolTable::_parallel_claimed_idx = 0;
 
-void SymbolTable::buckets_unlink(int start_idx, int end_idx, int* processed, int* removed, size_t* memory_total) {
+void SymbolTable::buckets_unlink(int start_idx, int end_idx, int* processed, int* removed) {
   for (int i = start_idx; i < end_idx; ++i) {
     HashtableEntry<Symbol*, mtSymbol>** p = the_table()->bucket_addr(i);
     HashtableEntry<Symbol*, mtSymbol>* entry = the_table()->bucket(i);
@@ -110,7 +110,6 @@ void SymbolTable::buckets_unlink(int start_idx, int end_idx, int* processed, int
         break;
       }
       Symbol* s = entry->literal();
-      (*memory_total) += s->size();
       (*processed)++;
       assert(s != NULL, "just checking");
       // If reference count is zero, remove.
@@ -133,15 +132,9 @@ void SymbolTable::buckets_unlink(int start_idx, int end_idx, int* processed, int
 // This is done late during GC.
 void SymbolTable::unlink(int* processed, int* removed) {
   size_t memory_total = 0;
-  buckets_unlink(0, the_table()->table_size(), processed, removed, &memory_total);
+  buckets_unlink(0, the_table()->table_size(), processed, removed);
   _symbols_removed += *removed;
   _symbols_counted += *processed;
-  // Exclude printing for normal PrintGCDetails because people parse
-  // this output.
-  if (PrintGCDetails && Verbose && WizardMode) {
-    gclog_or_tty->print(" [Symbols=%d size=" SIZE_FORMAT "K] ", *processed,
-                        (memory_total*HeapWordSize)/1024);
-  }
 }
 
 void SymbolTable::possibly_parallel_unlink(int* processed, int* removed) {
@@ -158,16 +151,10 @@ void SymbolTable::possibly_parallel_unlink(int* processed, int* removed) {
     }
 
     int end_idx = MIN2(limit, start_idx + ClaimChunkSize);
-    buckets_unlink(start_idx, end_idx, processed, removed, &memory_total);
+    buckets_unlink(start_idx, end_idx, processed, removed);
   }
   Atomic::add(*processed, &_symbols_counted);
   Atomic::add(*removed, &_symbols_removed);
-  // Exclude printing for normal PrintGCDetails because people parse
-  // this output.
-  if (PrintGCDetails && Verbose && WizardMode) {
-    gclog_or_tty->print(" [Symbols: scanned=%d removed=%d size=" SIZE_FORMAT "K] ", *processed, *removed,
-                        (memory_total*HeapWordSize)/1024);
-  }
 }
 
 // Create a new table and using alternate hash code, populate the new table
