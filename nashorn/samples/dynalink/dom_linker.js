@@ -37,7 +37,7 @@
 $EXEC.throwOnError=true
 
 // compile DOMLinkerExporter
-`javac -cp ../dist/nashorn.jar DOMLinkerExporter.java`
+`javac -cp ../../dist/nashorn.jar DOMLinkerExporter.java`
 
 // make a jar file out of pluggable linker
 `jar cvf dom_linker.jar DOMLinkerExporter*.class META-INF/`
