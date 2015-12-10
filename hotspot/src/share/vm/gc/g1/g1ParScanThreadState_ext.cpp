@@ -29,3 +29,10 @@
 G1ParScanThreadState* G1ParScanThreadStateSet::new_par_scan_state(uint worker_id, size_t young_cset_length) {
   return new G1ParScanThreadState(_g1h, worker_id, young_cset_length);
 }
+
+template <typename T>
+void G1ParScanThreadState::do_oop_ext(T* ref) {
+}
+
+template void G1ParScanThreadState::do_oop_ext<oop>(oop* ref);
+template void G1ParScanThreadState::do_oop_ext<narrowOop>(narrowOop* ref);

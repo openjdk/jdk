@@ -315,6 +315,10 @@ void os::init_before_ergo() {
   // We need to initialize large page support here because ergonomics takes some
   // decisions depending on large page support and the calculated large page size.
   large_page_init();
+
+  // VM version initialization identifies some characteristics of the
+  // the platform that are used during ergonomic decisions.
+  VM_Version::init_before_ergo();
 }
 
 void os::signal_init() {
