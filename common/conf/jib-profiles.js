@@ -24,7 +24,7 @@
  */
 
 /*
- * This file defines build profiles for the JAB tool and others.
+ * This file defines build profiles for the JIB tool and others.
  *
  * A build profile defines a set of configuration options and external
  * dependencies that we for some reason or other care about specifically.
@@ -34,7 +34,7 @@
  * Contract against this file from the tools that use it, is to provide
  * a function on the form:
  *
- * getJabProfiles(input)
+ * getJibProfiles(input)
  *
  * which returns an object graph describing the profiles and their
  * dependencies. The name of the function is based on the name of this
@@ -84,7 +84,7 @@
  *   // Identifies the version of this format to the tool reading it
  *   format_version: "1.0",
  *
- *   // Name of base outputdir. JAB assumes the actual output dir is formed
+ *   // Name of base outputdir. JIB assumes the actual output dir is formed
  *   // by adding the configuration name: <output_basedir>/<config-name>
  *   output_basedir: "build",
  *   // Configure argument to use to specify configuration name
@@ -177,7 +177,7 @@
  * @param input External data to use for generating the configuration
  * @returns {{}} Profile configuration
  */
-var getJabProfiles = function (input) {
+var getJibProfiles = function (input) {
 
     var data = {};
 
@@ -187,7 +187,7 @@ var getJabProfiles = function (input) {
     // Organization is used when uploading/publishing build results
     data.organization = "com.oracle.jpg.jdk";
 
-    // The base directory for the build output. JAB will assume that the
+    // The base directory for the build output. JIB will assume that the
     // actual build directory will be <output_basedir>/<configuration>
     data.output_basedir = "build";
     // The configure argument to use to specify the name of the configuration
@@ -196,11 +196,11 @@ var getJabProfiles = function (input) {
     data.configuration_make_arg = "CONF_NAME=";
 
     // Define some common values
-    var common = getJabProfilesCommon(input);
+    var common = getJibProfilesCommon(input);
     // Generate the profiles part of the configuration
-    data.profiles = getJabProfilesProfiles(input, common);
+    data.profiles = getJibProfilesProfiles(input, common);
     // Generate the dependencies part of the configuration
-    data.dependencies = getJabProfilesDependencies(input, common);
+    data.dependencies = getJibProfilesDependencies(input, common);
 
     return data;
 };
@@ -211,7 +211,7 @@ var getJabProfiles = function (input) {
  * @param input External data to use for generating the configuration
  * @returns Common values
  */
-var getJabProfilesCommon = function (input) {
+var getJibProfilesCommon = function (input) {
     var common = {
         dependencies: ["boot_jdk", "gnumake", "jtreg"],
         configure_args: ["--with-default-make-target=all"],
@@ -230,7 +230,7 @@ var getJabProfilesCommon = function (input) {
  * @param common The common values
  * @returns {{}} Profiles part of the configuration
  */
-var getJabProfilesProfiles = function (input, common) {
+var getJibProfilesProfiles = function (input, common) {
     var profiles = {};
 
     // Main SE profiles
@@ -349,7 +349,7 @@ var getJabProfilesProfiles = function (input, common) {
  * @param common The common values
  * @returns {{}} Dependencies part of configuration
  */
-var getJabProfilesDependencies = function (input, common) {
+var getJibProfilesDependencies = function (input, common) {
 
     var boot_jdk_platform = input.build_os + "-"
         + (input.build_cpu == "x86" ? "i586" : input.build_cpu);
