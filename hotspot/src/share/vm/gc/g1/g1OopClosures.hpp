@@ -201,40 +201,40 @@ public:
 // during an evacuation pause) to record cards containing
 // pointers into the collection set.
 
-class G1Mux2Closure : public ExtendedOopClosure {
+class G1Mux2Closure : public OopClosure {
   OopClosure* _c1;
   OopClosure* _c2;
 public:
   G1Mux2Closure(OopClosure *c1, OopClosure *c2);
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(oop* p)        { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
+  template <class T> void do_oop_work(T* p);
+  virtual void do_oop(oop* p)        { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
 };
 
 // A closure that returns true if it is actually applied
 // to a reference
 
-class G1TriggerClosure : public ExtendedOopClosure {
+class G1TriggerClosure : public OopClosure {
   bool _triggered;
 public:
   G1TriggerClosure();
   bool triggered() const { return _triggered; }
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(oop* p)        { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
+  template <class T> void do_oop_work(T* p);
+  virtual void do_oop(oop* p)        { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
 };
 
 // A closure which uses a triggering closure to determine
 // whether to apply an oop closure.
 
-class G1InvokeIfNotTriggeredClosure: public ExtendedOopClosure {
+class G1InvokeIfNotTriggeredClosure: public OopClosure {
   G1TriggerClosure* _trigger_cl;
   OopClosure* _oop_cl;
 public:
   G1InvokeIfNotTriggeredClosure(G1TriggerClosure* t, OopClosure* oc);
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(oop* p)        { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
+  template <class T> void do_oop_work(T* p);
+  virtual void do_oop(oop* p)        { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
 };
 
 class G1UpdateRSOrPushRefOopClosure: public OopClosure {
