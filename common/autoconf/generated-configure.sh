@@ -690,6 +690,9 @@ FIXPATH
 GCOV_ENABLED
 ZIP_DEBUGINFO_FILES
 ENABLE_DEBUG_SYMBOLS
+STRIP_POLICY
+DEBUG_BINARIES
+NATIVE_DEBUG_SYMBOLS
 CFLAGS_WARNINGS_ARE_ERRORS
 DISABLE_WARNING_PREFIX
 HOTSPOT_SET_WARNINGS_AS_ERRORS
@@ -1107,6 +1110,7 @@ with_toolchain_version
 with_build_devkit
 with_jtreg
 enable_warnings_as_errors
+with_native_debug_symbols
 enable_debug_symbols
 enable_zip_debug_info
 enable_native_coverage
@@ -1887,9 +1891,10 @@ Optional Features:
   --disable-warnings-as-errors
                           do not consider native warnings to be an error
                           [enabled]
-  --disable-debug-symbols disable generation of debug symbols [enabled]
-  --disable-zip-debug-info
-                          disable zipping of debug-info files [enabled]
+  --enable-debug-symbols  Deprecated. Option is kept for backwards
+                          compatibility and is ignored
+  --enable-zip-debug-info Deprecated. Option is kept for backwards
+                          compatibility and is ignored
   --enable-native-coverage
                           enable native compilation with code coverage
                           data[disabled]
@@ -2001,6 +2006,9 @@ Optional Packages:
                           dependent]
   --with-build-devkit     Devkit to use for the build platform toolchain
   --with-jtreg            Regression Test Harness [probed]
+  --with-native-debug-symbols
+                          set the native debug symbol configuration (none,
+                          internal, external, zipped) [zipped]
   --with-stdc++lib=<static>,<dynamic>,<default>
                           force linking of the C++ runtime on Linux to either
                           static or dynamic, default is static with dynamic as
@@ -3481,6 +3489,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # Register a --enable argument but mark it as deprecated
 # $1: The name of the with argument to deprecate, not including --enable-
 # $2: The name of the argument to deprecate, in shell variable style (i.e. with _ instead of -)
+# $3: Messages to user.
 
 
 
@@ -4719,7 +4728,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1449605339
+DATE_WHEN_GENERATED=1449838377
 
 ###############################################################################
 #
@@ -47639,63 +47648,104 @@ $as_echo "$supports" >&6; }
 # Setup debug symbols (need objcopy from the toolchain for that)
 
   #
-  # ENABLE_DEBUG_SYMBOLS
+  # NATIVE_DEBUG_SYMBOLS
   # This must be done after the toolchain is setup, since we're looking at objcopy.
   #
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking what type of native debug symbols to use" >&5
+$as_echo_n "checking what type of native debug symbols to use... " >&6; }
+
+# Check whether --with-native-debug-symbols was given.
+if test "${with_native_debug_symbols+set}" = set; then :
+  withval=$with_native_debug_symbols;
+else
+  with_native_debug_symbols="zipped"
+fi
+
+  NATIVE_DEBUG_SYMBOLS=$with_native_debug_symbols
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $NATIVE_DEBUG_SYMBOLS" >&5
+$as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
+
+  if test "x$NATIVE_DEBUG_SYMBOLS" = xzipped; then
+
+    if test "x$OBJCOPY" = x; then
+      # explicit enabling of enable-debug-symbols and can't find objcopy
+      # this is an error
+      as_fn_error $? "Unable to find objcopy, cannot enable native debug symbols" "$LINENO" 5
+    fi
+
+    ENABLE_DEBUG_SYMBOLS=true
+    ZIP_DEBUGINFO_FILES=true
+    DEBUG_BINARIES=true
+    STRIP_POLICY=min_strip
+  elif test "x$NATIVE_DEBUG_SYMBOLS" = xnone; then
+    ENABLE_DEBUG_SYMBOLS=false
+    ZIP_DEBUGINFO_FILES=false
+    DEBUG_BINARIES=false
+    STRIP_POLICY=no_strip
+  elif test "x$NATIVE_DEBUG_SYMBOLS" = xinternal; then
+    ENABLE_DEBUG_SYMBOLS=false  # -g option only
+    ZIP_DEBUGINFO_FILES=false
+    DEBUG_BINARIES=true
+    STRIP_POLICY=no_strip
+    STRIP=""
+  elif test "x$NATIVE_DEBUG_SYMBOLS" = xexternal; then
+
+    if test "x$OBJCOPY" = x; then
+      # explicit enabling of enable-debug-symbols and can't find objcopy
+      # this is an error
+      as_fn_error $? "Unable to find objcopy, cannot enable native debug symbols" "$LINENO" 5
+    fi
+
+    ENABLE_DEBUG_SYMBOLS=true
+    ZIP_DEBUGINFO_FILES=false
+    DEBUG_BINARIES=true
+    STRIP_POLICY=min_strip
+  else
+    as_fn_error $? "Allowed native debug symbols are: none, internal, external, zipped" "$LINENO" 5
+  fi
+
+  # --enable-debug-symbols is deprecated.
+  # Please use --with-native-debug-symbols=[internal,external,zipped] .
+
   # Check whether --enable-debug-symbols was given.
 if test "${enable_debug_symbols+set}" = set; then :
   enableval=$enable_debug_symbols;
 fi
 
+  if test "x$enable_debug_symbols" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --enable-debug-symbols is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --enable-debug-symbols is deprecated and will be ignored." >&2;}
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we should generate debug symbols" >&5
-$as_echo_n "checking if we should generate debug symbols... " >&6; }
-
-  if test "x$enable_debug_symbols" = "xyes" && test "x$OBJCOPY" = x; then
-    # explicit enabling of enable-debug-symbols and can't find objcopy
-    #   this is an error
-    as_fn_error $? "Unable to find objcopy, cannot enable debug-symbols" "$LINENO" 5
-  fi
-
-  if test "x$enable_debug_symbols" = "xyes"; then
-    ENABLE_DEBUG_SYMBOLS=true
-  elif test "x$enable_debug_symbols" = "xno"; then
-    ENABLE_DEBUG_SYMBOLS=false
-  else
-    # Default is on if objcopy is found
-    if test "x$OBJCOPY" != x; then
-      ENABLE_DEBUG_SYMBOLS=true
-    # MacOS X and Windows don't use objcopy but default is on for those OSes
-    elif test "x$OPENJDK_TARGET_OS" = xmacosx || test "x$OPENJDK_TARGET_OS" = xwindows; then
-      ENABLE_DEBUG_SYMBOLS=true
-    else
-      ENABLE_DEBUG_SYMBOLS=false
+    if test "xPlease use --with-native-debug-symbols=[internal,external,zipped] ." != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Please use --with-native-debug-symbols=[internal,external,zipped] ." >&5
+$as_echo "$as_me: WARNING: Please use --with-native-debug-symbols=[internal,external,zipped] ." >&2;}
     fi
+
   fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ENABLE_DEBUG_SYMBOLS" >&5
-$as_echo "$ENABLE_DEBUG_SYMBOLS" >&6; }
 
-  #
-  # ZIP_DEBUGINFO_FILES
-  #
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we should zip debug-info files" >&5
-$as_echo_n "checking if we should zip debug-info files... " >&6; }
+  # --enable-zip-debug-info is deprecated.
+  # Please use --with-native-debug-symbols=zipped .
+
   # Check whether --enable-zip-debug-info was given.
 if test "${enable_zip_debug_info+set}" = set; then :
-  enableval=$enable_zip_debug_info; enable_zip_debug_info="${enableval}"
-else
-  enable_zip_debug_info="yes"
+  enableval=$enable_zip_debug_info;
 fi
 
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${enable_zip_debug_info}" >&5
-$as_echo "${enable_zip_debug_info}" >&6; }
+  if test "x$enable_zip_debug_info" != x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --enable-zip-debug-info is deprecated and will be ignored." >&5
+$as_echo "$as_me: WARNING: Option --enable-zip-debug-info is deprecated and will be ignored." >&2;}
 
-  if test "x${enable_zip_debug_info}" = "xno"; then
-    ZIP_DEBUGINFO_FILES=false
-  else
-    ZIP_DEBUGINFO_FILES=true
+    if test "xPlease use --with-native-debug-symbols=zipped ." != x; then
+      { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Please use --with-native-debug-symbols=zipped ." >&5
+$as_echo "$as_me: WARNING: Please use --with-native-debug-symbols=zipped ." >&2;}
+    fi
+
   fi
+
+
+
+
 
 
 
