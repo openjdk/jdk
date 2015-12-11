@@ -256,7 +256,7 @@ void G1ParCopyHelper::mark_forwarded_object(oop from_obj, oop to_obj) {
 
 template <G1Barrier barrier, G1Mark do_mark_object, bool use_ext>
 template <class T>
-void G1ParCopyClosure<barrier, do_mark_object, use_ext>::do_oop_nv(T* p) {
+void G1ParCopyClosure<barrier, do_mark_object, use_ext>::do_oop_work(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
 
   if (oopDesc::is_null(heap_oop)) {

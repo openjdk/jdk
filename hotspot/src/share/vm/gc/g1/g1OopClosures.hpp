@@ -86,8 +86,10 @@ public:
 };
 
 // Add back base class for metadata
-class G1ParCopyHelper : public G1ParClosureSuper {
+class G1ParCopyHelper : public OopClosure {
 protected:
+  G1CollectedHeap* _g1;
+  G1ParScanThreadState* _par_scan_state;
   uint _worker_id;              // Cache value from par_scan_state.
   Klass* _scanned_klass;
   ConcurrentMark* _cm;
@@ -125,13 +127,11 @@ template <G1Barrier barrier, G1Mark do_mark_object, bool use_ext>
 class G1ParCopyClosure : public G1ParCopyHelper {
 public:
   G1ParCopyClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
-      G1ParCopyHelper(g1, par_scan_state) {
-    assert(ref_processor() == NULL, "sanity");
-  }
+      G1ParCopyHelper(g1, par_scan_state) { }
 
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(oop* p)       { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
+  template <class T> void do_oop_work(T* p);
+  virtual void do_oop(oop* p)       { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
 };
 
 class G1KlassScanClosure : public KlassClosure {
