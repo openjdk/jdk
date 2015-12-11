@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @bug 8144095
  * @summary Test Command Completion
  * @library /tools/lib
  * @build ReplToolTesting TestingInputStream Compiler ToolBox
@@ -56,15 +57,20 @@ public class CommandCompletionTest extends ReplToolTesting {
     }
 
     public void testList() {
-        assertCompletion("/l|", false, "/list ");
-        assertCompletion("/list |", false, "all");
-        assertCompletion("/list q|", false);
+        test(false, new String[] {"-nostartup"},
+                a -> assertCompletion(a, "/l|", false, "/list "),
+                a -> assertCompletion(a, "/list |", false, "all ", "history ", "start "),
+                a -> assertCompletion(a, "/list h|", false, "history "),
+                a -> assertCompletion(a, "/list q|", false),
+                a -> assertVariable(a, "int", "xray"),
+                a -> assertCompletion(a, "/list |", false, "1", "all ", "history ", "start ", "xray"),
+                a -> assertCompletion(a, "/list x|", false, "xray")
+        );
     }
 
     public void testDrop() {
-        assertCompletion("/d|", false, "/drop ");
-
         test(false, new String[] {"-nostartup"},
+                a -> assertCompletion(a, "/d|", false, "/drop "),
                 a -> assertClass(a, "class cTest {}", "class", "cTest"),
                 a -> assertMethod(a, "int mTest() { return 0; }", "()I", "mTest"),
                 a -> assertVariable(a, "int", "fTest"),
@@ -74,10 +80,9 @@ public class CommandCompletionTest extends ReplToolTesting {
     }
 
     public void testEdit() {
-        assertCompletion("/e|", false, "/edit ", "/exit ");
-        assertCompletion("/ed|", false, "/edit ");
-
         test(false, new String[]{"-nostartup"},
+                a -> assertCompletion(a, "/e|", false, "/edit ", "/exit "),
+                a -> assertCompletion(a, "/ed|", false, "/edit "),
                 a -> assertClass(a, "class cTest {}", "class", "cTest"),
                 a -> assertMethod(a, "int mTest() { return 0; }", "()I", "mTest"),
                 a -> assertVariable(a, "int", "fTest"),

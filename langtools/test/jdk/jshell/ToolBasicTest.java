@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 8143037 8142447
+ * @bug 8143037 8142447 8144095 8140265
  * @summary Tests for Basic tests for REPL tool
- * @ignore 8139873
  * @library /tools/lib
+ * @ignore 8139873
  * @build KullaTesting TestingInputStream ToolBox Compiler
  * @run testng ToolBasicTest
  */
@@ -529,6 +529,7 @@ public class ToolBasicTest extends ReplToolTesting {
         );
         test(
                 (a) -> assertVariable(a, "int", "a"),
+                (a) -> assertCommand(a, "()", null, null, null, "", ""),
                 (a) -> assertClass(a, "class A { public String toString() { return \"A\"; } }", "class", "A"),
                 (a) -> assertCommand(a, "/save " + path.toString(), "")
         );
@@ -537,6 +538,7 @@ public class ToolBasicTest extends ReplToolTesting {
             List<String> output = new ArrayList<>();
             test(
                     (a) -> assertCommand(a, "int a;", null),
+                    (a) -> assertCommand(a, "()", null, null, null, "", ""),
                     (a) -> assertClass(a, "class A { public String toString() { return \"A\"; } }", "class", "A"),
                     (a) -> assertCommandCheckOutput(a, "/list all", (out) ->
                             output.addAll(Stream.of(out.split("\n"))
@@ -551,6 +553,7 @@ public class ToolBasicTest extends ReplToolTesting {
         List<String> output = new ArrayList<>();
         test(
                 (a) -> assertVariable(a, "int", "a"),
+                (a) -> assertCommand(a, "()", null, null, null, "", ""),
                 (a) -> assertClass(a, "class A { public String toString() { return \"A\"; } }", "class", "A"),
                 (a) -> assertCommandCheckOutput(a, "/history", (out) ->
                         output.addAll(Stream.of(out.split("\n"))
@@ -632,15 +635,7 @@ public class ToolBasicTest extends ReplToolTesting {
         List<String> lines = Files.lines(startSave)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.toList());
-        assertEquals(lines, Arrays.asList(
-                "import java.util.*;",
-                "import java.io.*;",
-                "import java.math.*;",
-                "import java.net.*;",
-                "import java.util.concurrent.*;",
-                "import java.util.prefs.*;",
-                "import java.util.regex.*;",
-                "void printf(String format, Object... args) { System.out.printf(format, args); }"));
+        assertEquals(lines, START_UP);
     }
 
     public void testConstrainedUpdates() {
@@ -665,15 +660,35 @@ public class ToolBasicTest extends ReplToolTesting {
         );
     }
 
+    // Check that each line of output contains the corresponding string from the list
+    private void checkLineToList(String in, List<String> match) {
+        String[] res = in.trim().split("\n");
+        assertEquals(res.length, match.size(), "Got: " + Arrays.asList(res));
+        for (int i = 0; i < match.size(); ++i) {
+            assertTrue(res[i].contains(match.get(i)));
+        }
+    }
+
     public void testListArgs() {
-        Consumer<String> assertList = s -> assertTrue(s.split("\n").length >= 4, s);
         String arg = "qqqq";
-        Consumer<String> assertError = s -> assertEquals(s, "|  Invalid /list argument: " + arg + "\n");
+        List<String> startVarList = new ArrayList<>(START_UP);
+        startVarList.add("int aardvark");
         test(
-                a -> assertCommandCheckOutput(a, "/list all", assertList),
-                a -> assertCommandCheckOutput(a, "/list " + arg, assertError),
-                a -> assertVariable(a, "int", "a"),
-                a -> assertCommandCheckOutput(a, "/list history", assertList)
+                a -> assertCommandCheckOutput(a, "/list all",
+                        s -> checkLineToList(s, START_UP)),
+                a -> assertCommandCheckOutput(a, "/list " + arg,
+                        s -> assertEquals(s, "|  No definition or id named " + arg +
+                                " found.  There are no active definitions.\n")),
+                a -> assertVariable(a, "int", "aardvark"),
+                a -> assertCommandCheckOutput(a, "/list aardvark",
+                        s -> assertTrue(s.contains("aardvark"))),
+                a -> assertCommandCheckOutput(a, "/list all",
+                        s -> checkLineToList(s, startVarList)),
+                a -> assertCommandCheckOutput(a, "/list history",
+                        s -> assertTrue(s.split("\n").length >= 4, s)),
+                a -> assertCommandCheckOutput(a, "/list " + arg,
+                        s -> assertEquals(s, "|  No definition or id named " + arg +
+                                " found.  Try /list without arguments.\n"))
         );
     }
 
@@ -806,13 +821,13 @@ public class ToolBasicTest extends ReplToolTesting {
 
     public void testDropNegative() {
         test(false, new String[]{"-nostartup"},
-                a -> assertCommand(a, "/drop 0", "|  No definition or id named 0 found.  See /classes /methods /vars or /list\n"),
-                a -> assertCommand(a, "/drop a", "|  No definition or id named a found.  See /classes /methods /vars or /list\n"),
+                a -> assertCommand(a, "/drop 0", "|  No definition or id named 0 found.  See /classes, /methods, /vars, or /list\n"),
+                a -> assertCommand(a, "/drop a", "|  No definition or id named a found.  See /classes, /methods, /vars, or /list\n"),
                 a -> assertCommandCheckOutput(a, "/drop",
                         assertStartsWith("|  In the /drop argument, please specify an import, variable, method, or class to drop.")),
                 a -> assertVariable(a, "int", "a"),
                 a -> assertCommand(a, "a", "|  Variable a of type int has value 0\n"),
-                a -> assertCommand(a, "/drop 2", "|  The argument did not specify an import, variable, method, or class to drop.\n")
+                a -> assertCommand(a, "/drop 2", "|  The argument did not specify an active import, variable, method, or class to drop.\n")
         );
     }
 
