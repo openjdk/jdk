@@ -136,6 +136,8 @@ class Linux {
   static ExtendedPC fetch_frame_from_ucontext(Thread* thread, ucontext_t* uc,
                                               intptr_t** ret_sp, intptr_t** ret_fp);
 
+  static bool get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr);
+
   // This boolean allows users to forward their own non-matching signals
   // to JVM_handle_linux_signal, harmlessly.
   static bool signal_handlers_are_installed;

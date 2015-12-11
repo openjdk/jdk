@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -640,6 +640,9 @@ class MacroAssembler: public Assembler {
   // Writes to stack successive pages until offset reached to check for
   // stack overflow + shadow pages.  Also, clobbers tmp
   void bang_stack_size(Register size, Register tmp);
+
+  // Check for reserved stack access in method being exited (for JIT)
+  void reserved_stack_check();
 
   virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr,
                                                 Register tmp,

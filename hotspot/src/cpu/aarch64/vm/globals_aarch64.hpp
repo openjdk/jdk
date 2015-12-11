@@ -58,14 +58,17 @@ define_pd_global(intx, InlineFrequencyCount,     100);
 #define DEFAULT_STACK_YELLOW_PAGES (2)
 #define DEFAULT_STACK_RED_PAGES (1)
 #define DEFAULT_STACK_SHADOW_PAGES (4 DEBUG_ONLY(+5))
+#define DEFAULT_STACK_RESERVED_PAGES (0)
 
 #define MIN_STACK_YELLOW_PAGES 1
 #define MIN_STACK_RED_PAGES    1
 #define MIN_STACK_SHADOW_PAGES 1
+#define MIN_STACK_RESERVED_PAGES (0)
 
 define_pd_global(intx, StackYellowPages, DEFAULT_STACK_YELLOW_PAGES);
 define_pd_global(intx, StackRedPages, DEFAULT_STACK_RED_PAGES);
 define_pd_global(intx, StackShadowPages, DEFAULT_STACK_SHADOW_PAGES);
+define_pd_global(intx, StackReservedPages, DEFAULT_STACK_RESERVED_PAGES);
 
 define_pd_global(bool, RewriteBytecodes,     true);
 define_pd_global(bool, RewriteFrequentPairs, true);

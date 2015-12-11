@@ -4382,6 +4382,7 @@ void os::init(void) {
   if (vm_page_size() > 8*K) {
     StackYellowPages = 1;
     StackRedPages = 1;
+    StackReservedPages = 1;
     StackShadowPages = round_to((StackShadowPages*8*K), vm_page_size()) / vm_page_size();
   }
 }
@@ -4438,7 +4439,7 @@ jint os::init_2(void) {
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Solaris::min_stack_allowed = MAX2(os::Solaris::min_stack_allowed,
-                                        (size_t)(StackYellowPages+StackRedPages+StackShadowPages+
+                                        (size_t)(StackReservedPages+StackYellowPages+StackRedPages+StackShadowPages+
                                         2*BytesPerWord COMPILER2_PRESENT(+1)) * page_size);
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
