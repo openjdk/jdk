@@ -4728,7 +4728,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1449838377
+DATE_WHEN_GENERATED=1449850507
 
 ###############################################################################
 #
@@ -47667,10 +47667,12 @@ $as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
 
   if test "x$NATIVE_DEBUG_SYMBOLS" = xzipped; then
 
-    if test "x$OBJCOPY" = x; then
-      # explicit enabling of enable-debug-symbols and can't find objcopy
-      # this is an error
-      as_fn_error $? "Unable to find objcopy, cannot enable native debug symbols" "$LINENO" 5
+    if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
+      if test "x$OBJCOPY" = x; then
+        # enabling of enable-debug-symbols and can't find objcopy
+        # this is an error
+        as_fn_error $? "Unable to find objcopy, cannot enable native debug symbols" "$LINENO" 5
+      fi
     fi
 
     ENABLE_DEBUG_SYMBOLS=true
@@ -47690,10 +47692,12 @@ $as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
     STRIP=""
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xexternal; then
 
-    if test "x$OBJCOPY" = x; then
-      # explicit enabling of enable-debug-symbols and can't find objcopy
-      # this is an error
-      as_fn_error $? "Unable to find objcopy, cannot enable native debug symbols" "$LINENO" 5
+    if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
+      if test "x$OBJCOPY" = x; then
+        # enabling of enable-debug-symbols and can't find objcopy
+        # this is an error
+        as_fn_error $? "Unable to find objcopy, cannot enable native debug symbols" "$LINENO" 5
+      fi
     fi
 
     ENABLE_DEBUG_SYMBOLS=true
