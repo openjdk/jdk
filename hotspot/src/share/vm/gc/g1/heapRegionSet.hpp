@@ -27,22 +27,22 @@
 
 #include "gc/g1/heapRegion.hpp"
 
-#define assert_heap_region_set(p, message)                        \
-  do {                                                            \
-    assert((p), "[%s] %s ln: %u cy: " SIZE_FORMAT,                \
-           name(), message, length(), total_capacity_bytes());    \
+#define assert_heap_region_set(p, message) \
+  do {                                     \
+    assert((p), "[%s] %s ln: %u",          \
+           name(), message, length());     \
   } while (0)
 
-#define guarantee_heap_region_set(p, message)                     \
-  do {                                                            \
-    guarantee((p), "[%s] %s ln: %u cy: " SIZE_FORMAT,             \
-              name(), message, length(), total_capacity_bytes()); \
+#define guarantee_heap_region_set(p, message) \
+  do {                                        \
+    guarantee((p), "[%s] %s ln: %u",          \
+              name(), message, length());     \
   } while (0)
 
-#define assert_free_region_list(p, message)                                              \
-  do {                                                                                   \
-    assert((p), "[%s] %s ln: %u cy: " SIZE_FORMAT " hd: " PTR_FORMAT " tl: " PTR_FORMAT, \
-           name(), message, length(), total_capacity_bytes(), p2i(_head), p2i(_tail));   \
+#define assert_free_region_list(p, message)                          \
+  do {                                                               \
+    assert((p), "[%s] %s ln: %u hd: " PTR_FORMAT " tl: " PTR_FORMAT, \
+           name(), message, length(), p2i(_head), p2i(_tail));       \
   } while (0)
 
 
@@ -63,28 +63,6 @@ class SecondaryFreeRegionListMtSafeChecker : public HRSMtSafeChecker { public: v
 class HumongousRegionSetMtSafeChecker      : public HRSMtSafeChecker { public: void check(); };
 class OldRegionSetMtSafeChecker            : public HRSMtSafeChecker { public: void check(); };
 
-class HeapRegionSetCount VALUE_OBJ_CLASS_SPEC {
-  friend class VMStructs;
-  uint   _length;
-  size_t _capacity;
-
-public:
-  HeapRegionSetCount() : _length(0), _capacity(0) { }
-
-  const uint   length()   const { return _length;   }
-  const size_t capacity() const { return _capacity; }
-
-  void increment(uint length_to_add, size_t capacity_to_add) {
-    _length += length_to_add;
-    _capacity += capacity_to_add;
-  }
-
-  void decrement(const uint length_to_remove, const size_t capacity_to_remove) {
-    _length -= length_to_remove;
-    _capacity -= capacity_to_remove;
-  }
-};
-
 // Base class for all the classes that represent heap region sets. It
 // contains the basic attributes that each set needs to maintain
 // (e.g., length, region num, used bytes sum) plus any shared
@@ -98,10 +76,8 @@ private:
   HRSMtSafeChecker* _mt_safety_checker;
 
 protected:
-  // The number of regions added to the set. If the set contains
-  // only humongous regions, this reflects only 'starts humongous'
-  // regions and does not include 'continues humongous' ones.
-  HeapRegionSetCount _count;
+  // The number of regions in to the set.
+  uint _length;
 
   const char* _name;
 
@@ -130,13 +106,9 @@ protected:
 public:
   const char* name() { return _name; }
 
-  uint length() const { return _count.length(); }
+  uint length() const { return _length; }
 
-  bool is_empty() { return _count.length() == 0; }
-
-  size_t total_capacity_bytes() {
-    return _count.capacity();
-  }
+  bool is_empty() { return _length == 0; }
 
   // It updates the fields of the set to reflect hr being added to
   // the set and tags the region appropriately.
@@ -181,8 +153,8 @@ public:
   HeapRegionSet(const char* name, bool humongous, HRSMtSafeChecker* mt_safety_checker):
     HeapRegionSetBase(name, humongous, false /* free */, mt_safety_checker) { }
 
-  void bulk_remove(const HeapRegionSetCount& removed) {
-    _count.decrement(removed.length(), removed.capacity());
+  void bulk_remove(const uint removed) {
+    _length -= removed;
   }
 };
 

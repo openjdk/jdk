@@ -41,7 +41,8 @@ import sun.jvm.hotspot.types.TypeDataBase;
 
 public class HeapRegionSetBase extends VMObject {
 
-    static private long countField;
+    // uint _length
+    static private CIntegerField lengthField;
 
     static {
         VM.registerVMInitializedObserver(new Observer() {
@@ -54,13 +55,11 @@ public class HeapRegionSetBase extends VMObject {
     static private synchronized void initialize(TypeDataBase db) {
         Type type = db.lookupType("HeapRegionSetBase");
 
-        countField = type.getField("_count").getOffset();
+        lengthField = type.getCIntegerField("_length");
     }
 
-
-    public HeapRegionSetCount count() {
-        Address countFieldAddr = addr.addOffsetTo(countField);
-        return (HeapRegionSetCount) VMObjectFactory.newObject(HeapRegionSetCount.class, countFieldAddr);
+    public long length() {
+        return lengthField.getValue(addr);
     }
 
     public HeapRegionSetBase(Address addr) {

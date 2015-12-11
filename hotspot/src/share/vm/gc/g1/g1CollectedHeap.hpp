@@ -1132,7 +1132,7 @@ public:
   inline void old_set_remove(HeapRegion* hr);
 
   size_t non_young_capacity_bytes() {
-    return _old_set.total_capacity_bytes() + _humongous_set.total_capacity_bytes();
+    return (_old_set.length() + _humongous_set.length()) * HeapRegion::GrainBytes;
   }
 
   void set_free_regions_coming();
@@ -1157,7 +1157,7 @@ public:
   // True iff an evacuation has failed in the most-recent collection.
   bool evacuation_failed() { return _evacuation_failed; }
 
-  void remove_from_old_sets(const HeapRegionSetCount& old_regions_removed, const HeapRegionSetCount& humongous_regions_removed);
+  void remove_from_old_sets(const uint old_regions_removed, const uint humongous_regions_removed);
   void prepend_to_freelist(FreeRegionList* list);
   void decrement_summary_bytes(size_t bytes);
 
