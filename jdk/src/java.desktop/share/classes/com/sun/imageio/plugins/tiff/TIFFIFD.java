@@ -475,9 +475,10 @@ public class TIFFIFD extends TIFFDirectory {
             int sizeOfType;
             try {
                 sizeOfType = TIFFTag.getSizeOfType(type);
-            } catch (IllegalArgumentException e) {
-                throw new IIOException("Illegal type " + type
-                    + " for tag number " + tagNumber, e);
+            } catch (IllegalArgumentException ignored) {
+                // Continue with the next IFD entry.
+                stream.skipBytes(4);
+                continue;
             }
             int count = (int)stream.readUnsignedInt();
 
@@ -524,7 +525,7 @@ public class TIFFIFD extends TIFFDirectory {
 
                 // Check whether the the field value is within the stream.
                 if (haveStreamLength && offset + size > streamLength) {
-                    throw new IIOException("Field data is past end-of-stream");
+                    continue;
                 }
 
                 // Add a TIFFIFDEntry as a placeholder. This avoids a mark,
