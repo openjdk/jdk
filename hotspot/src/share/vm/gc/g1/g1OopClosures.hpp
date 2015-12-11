@@ -144,20 +144,15 @@ class G1KlassScanClosure : public KlassClosure {
   void do_klass(Klass* klass);
 };
 
-class FilterIntoCSClosure: public ExtendedOopClosure {
+class FilterIntoCSClosure: public OopClosure {
   G1CollectedHeap* _g1;
   OopClosure* _oc;
-  DirtyCardToOopClosure* _dcto_cl;
 public:
-  FilterIntoCSClosure(  DirtyCardToOopClosure* dcto_cl,
-                        G1CollectedHeap* g1,
-                        OopClosure* oc) :
-    _dcto_cl(dcto_cl), _g1(g1), _oc(oc) { }
+  FilterIntoCSClosure(G1CollectedHeap* g1, OopClosure* oc) : _g1(g1), _oc(oc) { }
 
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(oop* p)        { do_oop_nv(p); }
-  virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
-  bool apply_to_weak_ref_discovered_field() { return true; }
+  template <class T> void do_oop_work(T* p);
+  virtual void do_oop(oop* p)        { do_oop_work(p); }
+  virtual void do_oop(narrowOop* p)  { do_oop_work(p); }
 };
 
 class FilterOutOfRegionClosure: public ExtendedOopClosure {

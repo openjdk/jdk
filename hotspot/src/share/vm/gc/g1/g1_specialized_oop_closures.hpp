@@ -35,7 +35,6 @@
 class G1ParScanClosure;
 class G1ParPushHeapRSClosure;
 
-class FilterIntoCSClosure;
 class FilterOutOfRegionClosure;
 class G1CMOopClosure;
 class G1RootRegionScanClosure;
@@ -48,7 +47,6 @@ class G1InvokeIfNotTriggeredClosure;
 #define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1(f) \
       f(G1ParScanClosure,_nv)                      \
       f(G1ParPushHeapRSClosure,_nv)                \
-      f(FilterIntoCSClosure,_nv)                   \
       f(FilterOutOfRegionClosure,_nv)              \
       f(G1CMOopClosure,_nv)                        \
       f(G1RootRegionScanClosure,_nv)               \
