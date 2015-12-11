@@ -242,7 +242,7 @@ public:
   virtual void do_oop(narrowOop* p)  { do_oop_nv(p); }
 };
 
-class G1UpdateRSOrPushRefOopClosure: public ExtendedOopClosure {
+class G1UpdateRSOrPushRefOopClosure: public OopClosure {
   G1CollectedHeap* _g1;
   G1RemSet* _g1_rem_set;
   HeapRegion* _from;
@@ -268,11 +268,9 @@ public:
     return result;
   }
 
-  bool apply_to_weak_ref_discovered_field() { return true; }
-
-  template <class T> void do_oop_nv(T* p);
-  virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
-  virtual void do_oop(oop* p)       { do_oop_nv(p); }
+  template <class T> void do_oop_work(T* p);
+  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
+  virtual void do_oop(oop* p)       { do_oop_work(p); }
 };
 
 #endif // SHARE_VM_GC_G1_G1OOPCLOSURES_HPP
