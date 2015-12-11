@@ -1506,9 +1506,6 @@ public:
   product(bool, TraceBiasedLocking, false,                                  \
           "Trace biased locking in JVM")                                    \
                                                                             \
-  product(bool, TraceMonitorInflation, false,                               \
-          "Trace monitor inflation in JVM")                                 \
-                                                                            \
   /* gc */                                                                  \
                                                                             \
   product(bool, UseSerialGC, false,                                         \
