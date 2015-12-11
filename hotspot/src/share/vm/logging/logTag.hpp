@@ -55,6 +55,7 @@
   LOG_TAG(logging) \
   LOG_TAG(marking) \
   LOG_TAG(metaspace) \
+  LOG_TAG(monitorinflation) \
   LOG_TAG(phases) \
   LOG_TAG(plab) \
   LOG_TAG(promotion) \
