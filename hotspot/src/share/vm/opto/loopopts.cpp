@@ -26,6 +26,7 @@
 #include "memory/allocation.inline.hpp"
 #include "opto/addnode.hpp"
 #include "opto/connode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/divnode.hpp"
 #include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
@@ -899,6 +900,14 @@ Node *PhaseIdealLoop::split_if_with_blocks_pre( Node *n ) {
   // Attempt to remix address expressions for loop invariants
   Node *m = remix_address_expressions( n );
   if( m ) return m;
+
+  if (n->is_ConstraintCast()) {
+    Node* dom_cast = n->as_ConstraintCast()->dominating_cast(this);
+    if (dom_cast != NULL) {
+      _igvn.replace_node(n, dom_cast);
+      return dom_cast;
+    }
+  }
 
   // Determine if the Node has inputs from some local Phi.
   // Returns the block to clone thru.

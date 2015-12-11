@@ -32,8 +32,15 @@
 //------------------------------ConstraintCastNode-----------------------------
 // cast to a different range
 class ConstraintCastNode: public TypeNode {
+  protected:
+  // Can this node be removed post CCP or does it carry a required dependency?
+  const bool _carry_dependency;
+  virtual uint cmp( const Node &n ) const;
+  virtual uint size_of() const;
+
   public:
-  ConstraintCastNode (Node *n, const Type *t ): TypeNode(t,2) {
+  ConstraintCastNode(Node *n, const Type *t, bool carry_dependency)
+    : TypeNode(t,2), _carry_dependency(carry_dependency) {
     init_class_id(Class_ConstraintCast);
     init_req(1, n);
   }
@@ -42,53 +49,50 @@ class ConstraintCastNode: public TypeNode {
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual int Opcode() const;
   virtual uint ideal_reg() const = 0;
+  virtual bool depends_only_on_test() const { return !_carry_dependency; }
+  bool carry_dependency() const { return _carry_dependency; }
+  TypeNode* dominating_cast(PhaseTransform *phase) const;
+  static Node* make_cast(int opcode,  Node* c, Node *n, const Type *t, bool carry_dependency);
+
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream *st) const;
+#endif
 };
 
 //------------------------------CastIINode-------------------------------------
 // cast integer to integer (different range)
 class CastIINode: public ConstraintCastNode {
-  private:
-  // Can this node be removed post CCP or does it carry a required dependency?
-  const bool _carry_dependency;
-
-  protected:
-  virtual uint cmp( const Node &n ) const;
-  virtual uint size_of() const;
-
   public:
   CastIINode(Node *n, const Type *t, bool carry_dependency = false)
-    : ConstraintCastNode(n,t), _carry_dependency(carry_dependency) {}
+    : ConstraintCastNode(n, t, carry_dependency) {}
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegI; }
-  virtual Node *Identity( PhaseTransform *phase );
   virtual const Type *Value( PhaseTransform *phase ) const;
-#ifndef PRODUCT
-  virtual void dump_spec(outputStream *st) const;
-#endif
 };
 
 //------------------------------CastPPNode-------------------------------------
 // cast pointer to pointer (different type)
 class CastPPNode: public ConstraintCastNode {
   public:
-  CastPPNode (Node *n, const Type *t ): ConstraintCastNode(n, t) {}
+  CastPPNode (Node *n, const Type *t, bool carry_dependency = false)
+    : ConstraintCastNode(n, t, carry_dependency) {
+  }
   virtual int Opcode() const;
   virtual uint ideal_reg() const { return Op_RegP; }
 };
 
 //------------------------------CheckCastPPNode--------------------------------
 // for _checkcast, cast pointer to pointer (different type), without JOIN,
-class CheckCastPPNode: public TypeNode {
+class CheckCastPPNode: public ConstraintCastNode {
   public:
-  CheckCastPPNode( Node *c, Node *n, const Type *t ) : TypeNode(t,2) {
+  CheckCastPPNode(Node *c, Node *n, const Type *t, bool carry_dependency = false)
+    : ConstraintCastNode(n, t, carry_dependency) {
     init_class_id(Class_CheckCastPP);
     init_req(0, c);
-    init_req(1, n);
   }
 
-  virtual Node *Identity( PhaseTransform *phase );
-  virtual const Type *Value( PhaseTransform *phase ) const;
-  virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
+  virtual Node *Identity(PhaseTransform *phase);
+  virtual const Type *Value(PhaseTransform *phase) const;
   virtual int   Opcode() const;
   virtual uint  ideal_reg() const { return Op_RegP; }
 };
