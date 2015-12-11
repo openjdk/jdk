@@ -27,6 +27,11 @@ include $(SPEC)
 include MakeBase.gmk
 include NativeCompilation.gmk
 
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, jdk, lib/LibCommon.gmk))
+
+################################################################################
+
 GLOBAL_VERSION_INFO_RESOURCE := $(JDK_TOPDIR)/src/java.base/windows/native/common/version.rc
 
 # Absolute paths to lib files on windows for use in LDFLAGS. Should figure out a more
@@ -50,7 +55,7 @@ endif
 # Find the default set of src dirs for a native library.
 # Param 1 - module name
 # Param 2 - library name
-FindSrcDirsForLib = \
+FindSrcDirsForLib += \
   $(call uniq, $(wildcard \
       $(JDK_TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS)/native/lib$(strip $2) \
       $(JDK_TOPDIR)/src/$(strip $1)/$(OPENJDK_TARGET_OS_TYPE)/native/lib$(strip $2) \

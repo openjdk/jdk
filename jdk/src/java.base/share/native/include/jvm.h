@@ -208,6 +208,9 @@ JVM_FillStackFrames(JNIEnv* env, jclass cls,
 JNIEXPORT void JNICALL
 JVM_SetMethodInfo(JNIEnv* env, jobject frame);
 
+JNIEXPORT jobjectArray JNICALL
+JVM_GetVmArguments(JNIEnv *env);
+
 /*
  * java.lang.Thread
  */
