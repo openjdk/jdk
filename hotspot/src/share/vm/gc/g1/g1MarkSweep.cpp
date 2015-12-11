@@ -329,7 +329,7 @@ void G1PrepareCompactClosure::free_humongous_region(HeapRegion* hr) {
   FreeRegionList dummy_free_list("Dummy Free List for G1MarkSweep");
 
   hr->set_containing_set(NULL);
-  _humongous_regions_removed.increment(1u, hr->capacity());
+  _humongous_regions_removed++;
 
   _g1h->free_humongous_region(hr, &dummy_free_list, false /* par */);
   prepare_for_compaction(hr, end);
@@ -358,8 +358,7 @@ void G1PrepareCompactClosure::prepare_for_compaction_work(CompactPoint* cp,
 void G1PrepareCompactClosure::update_sets() {
   // We'll recalculate total used bytes and recreate the free list
   // at the end of the GC, so no point in updating those values here.
-  HeapRegionSetCount empty_set;
-  _g1h->remove_from_old_sets(empty_set, _humongous_regions_removed);
+  _g1h->remove_from_old_sets(0, _humongous_regions_removed);
 }
 
 bool G1PrepareCompactClosure::doHeapRegion(HeapRegion* hr) {

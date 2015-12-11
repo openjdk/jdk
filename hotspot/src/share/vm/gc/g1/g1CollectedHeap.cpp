@@ -5195,9 +5195,9 @@ void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
   free_region(hr, free_list, par);
 }
 
-void G1CollectedHeap::remove_from_old_sets(const HeapRegionSetCount& old_regions_removed,
-                                           const HeapRegionSetCount& humongous_regions_removed) {
-  if (old_regions_removed.length() > 0 || humongous_regions_removed.length() > 0) {
+void G1CollectedHeap::remove_from_old_sets(const uint old_regions_removed,
+                                           const uint humongous_regions_removed) {
+  if (old_regions_removed > 0 || humongous_regions_removed > 0) {
     MutexLockerEx x(OldSets_lock, Mutex::_no_safepoint_check_flag);
     _old_set.bulk_remove(old_regions_removed);
     _humongous_set.bulk_remove(humongous_regions_removed);
@@ -5582,12 +5582,12 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
  private:
   FreeRegionList* _free_region_list;
   HeapRegionSet* _proxy_set;
-  HeapRegionSetCount _humongous_regions_removed;
+  uint _humongous_regions_removed;
   size_t _freed_bytes;
  public:
 
   G1FreeHumongousRegionClosure(FreeRegionList* free_region_list) :
-    _free_region_list(free_region_list), _humongous_regions_removed(), _freed_bytes(0) {
+    _free_region_list(free_region_list), _humongous_regions_removed(0), _freed_bytes(0) {
   }
 
   virtual bool doHeapRegion(HeapRegion* r) {
@@ -5667,7 +5667,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
       HeapRegion* next = g1h->next_region_in_humongous(r);
       _freed_bytes += r->used();
       r->set_containing_set(NULL);
-      _humongous_regions_removed.increment(1u, r->capacity());
+      _humongous_regions_removed++;
       g1h->free_humongous_region(r, _free_region_list, false);
       r = next;
     } while (r != NULL);
@@ -5675,16 +5675,12 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
     return false;
   }
 
-  HeapRegionSetCount& humongous_free_count() {
+  uint humongous_free_count() {
     return _humongous_regions_removed;
   }
 
   size_t bytes_freed() const {
     return _freed_bytes;
-  }
-
-  size_t humongous_reclaimed() const {
-    return _humongous_regions_removed.length();
   }
 };
 
@@ -5704,8 +5700,7 @@ void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
   G1FreeHumongousRegionClosure cl(&local_cleanup_list);
   heap_region_iterate(&cl);
 
-  HeapRegionSetCount empty_set;
-  remove_from_old_sets(empty_set, cl.humongous_free_count());
+  remove_from_old_sets(0, cl.humongous_free_count());
 
   G1HRPrinter* hrp = hr_printer();
   if (hrp->is_active()) {
@@ -5720,7 +5715,7 @@ void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
   decrement_summary_bytes(cl.bytes_freed());
 
   g1_policy()->phase_times()->record_fast_reclaim_humongous_time_ms((os::elapsedTime() - start_time) * 1000.0,
-                                                                    cl.humongous_reclaimed());
+                                                                    cl.humongous_free_count());
 }
 
 // This routine is similar to the above but does not record
@@ -6066,9 +6061,9 @@ private:
   HeapRegionManager*   _hrm;
 
 public:
-  HeapRegionSetCount _old_count;
-  HeapRegionSetCount _humongous_count;
-  HeapRegionSetCount _free_count;
+  uint _old_count;
+  uint _humongous_count;
+  uint _free_count;
 
   VerifyRegionListsClosure(HeapRegionSet* old_set,
                            HeapRegionSet* humongous_set,
@@ -6081,13 +6076,13 @@ public:
       // TODO
     } else if (hr->is_humongous()) {
       assert(hr->containing_set() == _humongous_set, "Heap region %u is humongous but not in humongous set.", hr->hrm_index());
-      _humongous_count.increment(1u, hr->capacity());
+      _humongous_count++;
     } else if (hr->is_empty()) {
       assert(_hrm->is_free(hr), "Heap region %u is empty but not on the free list.", hr->hrm_index());
-      _free_count.increment(1u, hr->capacity());
+      _free_count++;
     } else if (hr->is_old()) {
       assert(hr->containing_set() == _old_set, "Heap region %u is old but not in the old set.", hr->hrm_index());
-      _old_count.increment(1u, hr->capacity());
+      _old_count++;
     } else {
       // There are no other valid region types. Check for one invalid
       // one we can identify: pinned without old or humongous set.
@@ -6098,17 +6093,9 @@ public:
   }
 
   void verify_counts(HeapRegionSet* old_set, HeapRegionSet* humongous_set, HeapRegionManager* free_list) {
-    guarantee(old_set->length() == _old_count.length(), "Old set count mismatch. Expected %u, actual %u.", old_set->length(), _old_count.length());
-    guarantee(old_set->total_capacity_bytes() == _old_count.capacity(), "Old set capacity mismatch. Expected " SIZE_FORMAT ", actual " SIZE_FORMAT,
-              old_set->total_capacity_bytes(), _old_count.capacity());
-
-    guarantee(humongous_set->length() == _humongous_count.length(), "Hum set count mismatch. Expected %u, actual %u.", humongous_set->length(), _humongous_count.length());
-    guarantee(humongous_set->total_capacity_bytes() == _humongous_count.capacity(), "Hum set capacity mismatch. Expected " SIZE_FORMAT ", actual " SIZE_FORMAT,
-              humongous_set->total_capacity_bytes(), _humongous_count.capacity());
-
-    guarantee(free_list->num_free_regions() == _free_count.length(), "Free list count mismatch. Expected %u, actual %u.", free_list->num_free_regions(), _free_count.length());
-    guarantee(free_list->total_capacity_bytes() == _free_count.capacity(), "Free list capacity mismatch. Expected " SIZE_FORMAT ", actual " SIZE_FORMAT,
-              free_list->total_capacity_bytes(), _free_count.capacity());
+    guarantee(old_set->length() == _old_count, "Old set count mismatch. Expected %u, actual %u.", old_set->length(), _old_count);
+    guarantee(humongous_set->length() == _humongous_count, "Hum set count mismatch. Expected %u, actual %u.", humongous_set->length(), _humongous_count);
+    guarantee(free_list->num_free_regions() == _free_count, "Free list count mismatch. Expected %u, actual %u.", free_list->num_free_regions(), _free_count);
   }
 };
 
