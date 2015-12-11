@@ -110,6 +110,10 @@ class win32 {
   // Default stack size for the current process.
   static size_t default_stack_size() { return _default_stack_size; }
 
+  static bool get_frame_at_stack_banging_point(JavaThread* thread,
+                          struct _EXCEPTION_POINTERS* exceptionInfo,
+                          address pc, frame* fr);
+
 #ifndef _WIN64
   // A wrapper to install a structured exception handler for fast JNI accesors.
   static address fast_jni_accessor_wrapper(BasicType);

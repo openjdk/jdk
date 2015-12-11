@@ -1861,8 +1861,8 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
     JavaThread *jt = Threads::first();
 
     while (jt) {
-      if (!jt->stack_guard_zone_unused() &&        // Stack not yet fully initialized
-          jt->stack_yellow_zone_enabled()) {       // No pending stack overflow exceptions
+      if (!jt->stack_guard_zone_unused() &&     // Stack not yet fully initialized
+          jt->stack_guards_enabled()) {         // No pending stack overflow exceptions
         if (!os::guard_memory((char *) jt->stack_red_zone_base() - jt->stack_red_zone_size(),
                               jt->stack_yellow_zone_size() + jt->stack_red_zone_size())) {
           warning("Attempt to reguard stack yellow zone failed.");
@@ -4603,6 +4603,11 @@ void os::init(void) {
   if (vm_page_size() > (int)Linux::vm_default_page_size()) {
     StackYellowPages = 1;
     StackRedPages = 1;
+#if defined(IA32) || defined(IA64)
+    StackReservedPages = 1;
+#else
+    StackReservedPages = 0;
+#endif
     StackShadowPages = round_to((StackShadowPages*Linux::vm_default_page_size()), vm_page_size()) / vm_page_size();
   }
 
@@ -4664,7 +4669,7 @@ jint os::init_2(void) {
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Linux::min_stack_allowed = MAX2(os::Linux::min_stack_allowed,
-                                      (size_t)(StackYellowPages+StackRedPages+StackShadowPages) * Linux::page_size() +
+                                      (size_t)(StackReservedPages+StackYellowPages+StackRedPages+StackShadowPages) * Linux::page_size() +
                                       (2*BytesPerWord COMPILER2_PRESENT(+1)) * Linux::vm_default_page_size());
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;

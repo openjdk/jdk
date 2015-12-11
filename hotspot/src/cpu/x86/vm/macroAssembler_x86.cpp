@@ -1067,6 +1067,22 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
   }
 }
 
+void MacroAssembler::reserved_stack_check() {
+    // testing if reserved zone needs to be enabled
+    Label no_reserved_zone_enabling;
+    Register thread = NOT_LP64(rsi) LP64_ONLY(r15_thread);
+    NOT_LP64(get_thread(rsi);)
+
+    cmpptr(rsp, Address(thread, JavaThread::reserved_stack_activation_offset()));
+    jcc(Assembler::below, no_reserved_zone_enabling);
+
+    call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), thread);
+    jump(RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry()));
+    should_not_reach_here();
+
+    bind(no_reserved_zone_enabling);
+}
+
 int MacroAssembler::biased_locking_enter(Register lock_reg,
                                          Register obj_reg,
                                          Register swap_reg,

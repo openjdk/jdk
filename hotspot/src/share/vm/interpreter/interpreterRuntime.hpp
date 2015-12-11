@@ -91,10 +91,13 @@ class InterpreterRuntime: AllStatic {
   // Quicken instance-of and check-cast bytecodes
   static void    quicken_io_cc(JavaThread* thread);
 
+  static address check_ReservedStackAccess_annotated_methods(JavaThread* thread);
+
   // Exceptions thrown by the interpreter
   static void    throw_AbstractMethodError(JavaThread* thread);
   static void    throw_IncompatibleClassChangeError(JavaThread* thread);
   static void    throw_StackOverflowError(JavaThread* thread);
+  static void    throw_delayed_StackOverflowError(JavaThread* thread);
   static void    throw_ArrayIndexOutOfBoundsException(JavaThread* thread, char* name, jint index);
   static void    throw_ClassCastException(JavaThread* thread, oopDesc* obj);
   static void    create_exception(JavaThread* thread, char* name, char* message);
