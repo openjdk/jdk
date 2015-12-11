@@ -44,7 +44,6 @@ class G1RootRegionScanClosure;
 class G1Mux2Closure;
 class G1TriggerClosure;
 class G1InvokeIfNotTriggeredClosure;
-class G1UpdateRSOrPushRefOopClosure;
 
 #define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1(f) \
       f(G1ParScanClosure,_nv)                      \
@@ -55,7 +54,6 @@ class G1UpdateRSOrPushRefOopClosure;
       f(G1RootRegionScanClosure,_nv)               \
       f(G1Mux2Closure,_nv)                         \
       f(G1TriggerClosure,_nv)                      \
-      f(G1InvokeIfNotTriggeredClosure,_nv)         \
-      f(G1UpdateRSOrPushRefOopClosure,_nv)
+      f(G1InvokeIfNotTriggeredClosure,_nv)
 
 #endif // SHARE_VM_GC_G1_G1_SPECIALIZED_OOP_CLOSURES_HPP
