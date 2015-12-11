@@ -198,10 +198,6 @@ public:
 
   virtual void do_oop(narrowOop* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_work(p); }
-
-  // Override: this closure is idempotent.
-  //  bool idempotent() { return true; }
-  bool apply_to_weak_ref_discovered_field() { return true; }
 };
 
 #endif // SHARE_VM_GC_G1_G1REMSET_HPP
