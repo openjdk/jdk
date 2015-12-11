@@ -448,7 +448,7 @@ bool G1RemSet::refine_card(jbyte* card_ptr, uint worker_i,
   update_rs_oop_cl.set_from(r);
 
   G1TriggerClosure trigger_cl;
-  FilterIntoCSClosure into_cs_cl(NULL, _g1, &trigger_cl);
+  FilterIntoCSClosure into_cs_cl(_g1, &trigger_cl);
   G1InvokeIfNotTriggeredClosure invoke_cl(&trigger_cl, &into_cs_cl);
   G1Mux2Closure mux(&invoke_cl, &update_rs_oop_cl);
 

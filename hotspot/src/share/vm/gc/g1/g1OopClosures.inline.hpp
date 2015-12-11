@@ -42,7 +42,7 @@
  */
 
 template <class T>
-inline void FilterIntoCSClosure::do_oop_nv(T* p) {
+inline void FilterIntoCSClosure::do_oop_work(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
   if (!oopDesc::is_null(heap_oop) &&
       _g1->is_in_cset_or_humongous(oopDesc::decode_heap_oop_not_null(heap_oop))) {
