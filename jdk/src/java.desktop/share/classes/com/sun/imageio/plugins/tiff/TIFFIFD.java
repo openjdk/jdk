@@ -472,6 +472,13 @@ public class TIFFIFD extends TIFFDirectory {
             // Read tag number, value type, and value count.
             int tagNumber = stream.readUnsignedShort();
             int type = stream.readUnsignedShort();
+            int sizeOfType;
+            try {
+                sizeOfType = TIFFTag.getSizeOfType(type);
+            } catch (IllegalArgumentException e) {
+                throw new IIOException("Illegal type " + type
+                    + " for tag number " + tagNumber, e);
+            }
             int count = (int)stream.readUnsignedInt();
 
             // Get the associated TIFFTag.
@@ -510,7 +517,7 @@ public class TIFFIFD extends TIFFDirectory {
                 }
             }
 
-            int size = count*TIFFTag.getSizeOfType(type);
+            int size = count*sizeOfType;
             if (size > 4 || tag.isIFDPointer()) {
                 // The IFD entry value is a pointer to the actual field value.
                 long offset = stream.readUnsignedInt();
