@@ -505,10 +505,12 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
 
   if test "x$NATIVE_DEBUG_SYMBOLS" = xzipped; then
 
-    if test "x$OBJCOPY" = x; then
-      # explicit enabling of enable-debug-symbols and can't find objcopy
-      # this is an error
-      AC_MSG_ERROR([Unable to find objcopy, cannot enable native debug symbols])
+    if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
+      if test "x$OBJCOPY" = x; then
+        # enabling of enable-debug-symbols and can't find objcopy
+        # this is an error
+        AC_MSG_ERROR([Unable to find objcopy, cannot enable native debug symbols])
+      fi
     fi
 
     ENABLE_DEBUG_SYMBOLS=true
@@ -528,10 +530,12 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
     STRIP=""
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xexternal; then
 
-    if test "x$OBJCOPY" = x; then
-      # explicit enabling of enable-debug-symbols and can't find objcopy
-      # this is an error
-      AC_MSG_ERROR([Unable to find objcopy, cannot enable native debug symbols])
+    if test "x$OPENJDK_TARGET_OS" = xsolaris || test "x$OPENJDK_TARGET_OS" = xlinux; then
+      if test "x$OBJCOPY" = x; then
+        # enabling of enable-debug-symbols and can't find objcopy
+        # this is an error
+        AC_MSG_ERROR([Unable to find objcopy, cannot enable native debug symbols])
+      fi
     fi
 
     ENABLE_DEBUG_SYMBOLS=true
