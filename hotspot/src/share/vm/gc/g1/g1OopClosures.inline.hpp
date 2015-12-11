@@ -136,20 +136,20 @@ inline void G1RootRegionScanClosure::do_oop_nv(T* p) {
 }
 
 template <class T>
-inline void G1Mux2Closure::do_oop_nv(T* p) {
+inline void G1Mux2Closure::do_oop_work(T* p) {
   // Apply first closure; then apply the second.
   _c1->do_oop(p);
   _c2->do_oop(p);
 }
 
 template <class T>
-inline void G1TriggerClosure::do_oop_nv(T* p) {
+inline void G1TriggerClosure::do_oop_work(T* p) {
   // Record that this closure was actually applied (triggered).
   _triggered = true;
 }
 
 template <class T>
-inline void G1InvokeIfNotTriggeredClosure::do_oop_nv(T* p) {
+inline void G1InvokeIfNotTriggeredClosure::do_oop_work(T* p) {
   if (!_trigger_cl->triggered()) {
     _oop_cl->do_oop(p);
   }

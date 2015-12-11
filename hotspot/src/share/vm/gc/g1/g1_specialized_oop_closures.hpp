@@ -39,19 +39,11 @@ class FilterOutOfRegionClosure;
 class G1CMOopClosure;
 class G1RootRegionScanClosure;
 
-// Specialized oop closures from g1RemSet.cpp
-class G1Mux2Closure;
-class G1TriggerClosure;
-class G1InvokeIfNotTriggeredClosure;
-
 #define SPECIALIZED_OOP_OOP_ITERATE_CLOSURES_G1(f) \
       f(G1ParScanClosure,_nv)                      \
       f(G1ParPushHeapRSClosure,_nv)                \
       f(FilterOutOfRegionClosure,_nv)              \
       f(G1CMOopClosure,_nv)                        \
-      f(G1RootRegionScanClosure,_nv)               \
-      f(G1Mux2Closure,_nv)                         \
-      f(G1TriggerClosure,_nv)                      \
-      f(G1InvokeIfNotTriggeredClosure,_nv)
+      f(G1RootRegionScanClosure,_nv)
 
 #endif // SHARE_VM_GC_G1_G1_SPECIALIZED_OOP_CLOSURES_HPP
