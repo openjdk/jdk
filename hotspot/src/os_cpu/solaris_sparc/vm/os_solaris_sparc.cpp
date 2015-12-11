@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,6 +213,7 @@ address os::Solaris::ucontext_get_pc(ucontext_t *uc) {
 //
 // The difference between this and os::fetch_frame_from_context() is that
 // here we try to skip nested signal frames.
+// This method is also used for stack overflow signal handling.
 ExtendedPC os::Solaris::fetch_frame_from_ucontext(Thread* thread,
   ucontext_t* uc, intptr_t** ret_sp, intptr_t** ret_fp) {
 
@@ -250,6 +251,41 @@ frame os::fetch_frame_from_context(void* ucVoid) {
   intptr_t* fp;
   ExtendedPC epc = fetch_frame_from_context(ucVoid, &sp, &fp);
   return frame(sp, frame::unpatchable, epc.pc());
+}
+
+frame os::fetch_frame_from_ucontext(Thread* thread, void* ucVoid) {
+  intptr_t* sp;
+  ExtendedPC epc = os::Solaris::fetch_frame_from_ucontext(thread, (ucontext_t*)ucVoid, &sp, NULL);
+  return frame(sp, frame::unpatchable, epc.pc());
+}
+
+bool os::Solaris::get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr) {
+  address pc = (address) os::Solaris::ucontext_get_pc(uc);
+  if (Interpreter::contains(pc)) {
+    *fr = os::fetch_frame_from_ucontext(thread, uc);
+    if (!fr->is_first_java_frame()) {
+      assert(fr->safe_for_sender(thread), "Safety check");
+      *fr = fr->java_sender();
+    }
+  } else {
+    // more complex code with compiled code
+    assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
+    CodeBlob* cb = CodeCache::find_blob(pc);
+    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
+      // Not sure where the pc points to, fallback to default
+      // stack overflow handling
+      return false;
+    } else {
+      *fr = os::fetch_frame_from_ucontext(thread, uc);
+      *fr = frame(fr->sender_sp(), frame::unpatchable, fr->sender_pc());
+      if (!fr->is_java_frame()) {
+        assert(fr->safe_for_sender(thread), "Safety check");
+        *fr = fr->java_sender();
+      }
+    }
+  }
+  assert(fr->is_java_frame(), "Safety check");
+  return true;
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
@@ -367,17 +403,32 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
     if (sig == SIGSEGV && info->si_code == SEGV_ACCERR) {
       address addr = (address) info->si_addr;
       if (thread->in_stack_yellow_zone(addr)) {
-        thread->disable_stack_yellow_zone();
         // Sometimes the register windows are not properly flushed.
         if(uc->uc_mcontext.gwins != NULL) {
           ::handle_unflushed_register_windows(uc->uc_mcontext.gwins);
         }
         if (thread->thread_state() == _thread_in_Java) {
+          if (thread->in_stack_reserved_zone(addr)) {
+            frame fr;
+            if (os::Solaris::get_frame_at_stack_banging_point(thread, uc, &fr)) {
+              assert(fr.is_java_frame(), "Must be a Java frame");
+              frame activation = SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
+              if (activation.sp() != NULL) {
+                thread->disable_stack_reserved_zone();
+                RegisterMap map(thread);
+                int frame_size = activation.frame_size(&map);
+                thread->set_reserved_stack_activation((address)(((address)activation.sp()) - STACK_BIAS));
+                return true;
+              }
+            }
+          }
           // Throw a stack overflow exception.  Guard pages will be reenabled
           // while unwinding the stack.
+          thread->disable_stack_yellow_zone();
           stub = SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW);
         } else {
           // Thread was in the vm or native code.  Return and try to finish.
+          thread->disable_stack_yellow_zone();
           return true;
         }
       } else if (thread->in_stack_red_zone(addr)) {

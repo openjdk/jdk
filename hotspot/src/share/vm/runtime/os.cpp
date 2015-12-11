@@ -1386,8 +1386,9 @@ bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method
   // respectively.
   const int framesize_in_bytes =
     Interpreter::size_top_interpreter_activation(method()) * wordSize;
-  int reserved_area = ((StackShadowPages + StackRedPages + StackYellowPages)
-                      * vm_page_size()) + framesize_in_bytes;
+  int reserved_area = ((StackShadowPages + StackRedPages + StackYellowPages
+                      + StackReservedPages) * vm_page_size())
+                      + framesize_in_bytes;
   // The very lower end of the stack
   address stack_limit = thread->stack_base() - thread->stack_size();
   return (sp > (stack_limit + reserved_area));

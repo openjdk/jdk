@@ -307,6 +307,7 @@ void Thread::record_stack_base_and_size() {
   set_stack_size(os::current_stack_size());
   if (is_Java_thread()) {
     ((JavaThread*) this)->set_stack_overflow_limit();
+    ((JavaThread*) this)->set_reserved_stack_activation(stack_base());
   }
   // CR 7190089: on Solaris, primordial thread's stack is adjusted
   // in initialize_thread(). Without the adjustment, stack size is
@@ -908,7 +909,7 @@ bool Thread::is_in_stack(address adr) const {
 
 
 bool Thread::is_in_usable_stack(address adr) const {
-  size_t stack_guard_size = os::uses_stack_guard_pages() ? (StackYellowPages + StackRedPages) * os::vm_page_size() : 0;
+  size_t stack_guard_size = os::uses_stack_guard_pages() ? (StackReservedPages + StackYellowPages + StackRedPages) * os::vm_page_size() : 0;
   size_t usable_stack_size = _stack_size - stack_guard_size;
 
   return ((adr < stack_base()) && (adr >= stack_base() - usable_stack_size));
@@ -1460,6 +1461,7 @@ void JavaThread::initialize() {
     _jvmci_counters = NULL;
   }
 #endif // INCLUDE_JVMCI
+  _reserved_stack_activation = NULL;  // stack base not known yet
   (void)const_cast<oop&>(_exception_oop = oop(NULL));
   _exception_pc  = 0;
   _exception_handler_pc = 0;
@@ -1532,7 +1534,8 @@ JavaThread::JavaThread(bool is_attaching_via_jni) :
 }
 
 bool JavaThread::reguard_stack(address cur_sp) {
-  if (_stack_guard_state != stack_guard_yellow_disabled) {
+  if (_stack_guard_state != stack_guard_yellow_disabled
+      && _stack_guard_state != stack_guard_reserved_disabled) {
     return true; // Stack already guarded or guard pages not needed.
   }
 
@@ -1549,8 +1552,15 @@ bool JavaThread::reguard_stack(address cur_sp) {
   // some exception code in c1, c2 or the interpreter isn't unwinding
   // when it should.
   guarantee(cur_sp > stack_yellow_zone_base(), "not enough space to reguard - increase StackShadowPages");
-
-  enable_stack_yellow_zone();
+  if (_stack_guard_state == stack_guard_yellow_disabled) {
+    enable_stack_yellow_zone();
+    if (reserved_stack_activation() != stack_base()) {
+      set_reserved_stack_activation(stack_base());
+    }
+  } else if (_stack_guard_state == stack_guard_reserved_disabled) {
+    set_reserved_stack_activation(stack_base());
+    enable_stack_reserved_zone();
+  }
   return true;
 }
 
@@ -2473,7 +2483,7 @@ void JavaThread::java_resume() {
 void JavaThread::create_stack_guard_pages() {
   if (! os::uses_stack_guard_pages() || _stack_guard_state != stack_guard_unused) return;
   address low_addr = stack_base() - stack_size();
-  size_t len = (StackYellowPages + StackRedPages) * os::vm_page_size();
+  size_t len = (StackReservedPages + StackYellowPages + StackRedPages) * os::vm_page_size();
 
   int allocate = os::allocate_stack_guard_pages();
   // warning("Guarding at " PTR_FORMAT " for len " SIZE_FORMAT "\n", low_addr, len);
@@ -2497,7 +2507,7 @@ void JavaThread::remove_stack_guard_pages() {
   assert(Thread::current() == this, "from different thread");
   if (_stack_guard_state == stack_guard_unused) return;
   address low_addr = stack_base() - stack_size();
-  size_t len = (StackYellowPages + StackRedPages) * os::vm_page_size();
+  size_t len = (StackReservedPages + StackYellowPages + StackRedPages) * os::vm_page_size();
 
   if (os::allocate_stack_guard_pages()) {
     if (os::remove_stack_guard_pages((char *) low_addr, len)) {
@@ -2513,6 +2523,44 @@ void JavaThread::remove_stack_guard_pages() {
       warning("Attempt to unprotect stack guard pages failed.");
     }
   }
+}
+
+void JavaThread::enable_stack_reserved_zone() {
+  assert(_stack_guard_state != stack_guard_unused, "must be using guard pages.");
+  assert(_stack_guard_state != stack_guard_enabled, "already enabled");
+
+  // The base notation is from the stack's point of view, growing downward.
+  // We need to adjust it to work correctly with guard_memory()
+  address base = stack_reserved_zone_base() - stack_reserved_zone_size();
+
+  guarantee(base < stack_base(),"Error calculating stack reserved zone");
+  guarantee(base < os::current_stack_pointer(),"Error calculating stack reserved zone");
+
+  if (os::guard_memory((char *) base, stack_reserved_zone_size())) {
+    _stack_guard_state = stack_guard_enabled;
+  } else {
+    warning("Attempt to guard stack reserved zone failed.");
+  }
+  enable_register_stack_guard();
+}
+
+void JavaThread::disable_stack_reserved_zone() {
+  assert(_stack_guard_state != stack_guard_unused, "must be using guard pages.");
+  assert(_stack_guard_state != stack_guard_reserved_disabled, "already disabled");
+
+  // Simply return if called for a thread that does not use guard pages.
+  if (_stack_guard_state == stack_guard_unused) return;
+
+  // The base notation is from the stack's point of view, growing downward.
+  // We need to adjust it to work correctly with guard_memory()
+  address base = stack_reserved_zone_base() - stack_reserved_zone_size();
+
+  if (os::unguard_memory((char *)base, stack_reserved_zone_size())) {
+    _stack_guard_state = stack_guard_reserved_disabled;
+  } else {
+    warning("Attempt to unguard stack reserved zone failed.");
+  }
+  disable_register_stack_guard();
 }
 
 void JavaThread::enable_stack_yellow_zone() {

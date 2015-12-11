@@ -2374,6 +2374,39 @@ static inline void report_error(Thread* t, DWORD exception_code,
   // somewhere where we can find it in the minidump.
 }
 
+bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
+        struct _EXCEPTION_POINTERS* exceptionInfo, address pc, frame* fr) {
+  PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
+  address addr = (address) exceptionRecord->ExceptionInformation[1];
+  if (Interpreter::contains(pc)) {
+    *fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
+    if (!fr->is_first_java_frame()) {
+      assert(fr->safe_for_sender(thread), "Safety check");
+      *fr = fr->java_sender();
+    }
+  } else {
+    // more complex code with compiled code
+    assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
+    CodeBlob* cb = CodeCache::find_blob(pc);
+    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
+      // Not sure where the pc points to, fallback to default
+      // stack overflow handling
+      return false;
+    } else {
+      *fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
+      // in compiled code, the stack banging is performed just after the return pc
+      // has been pushed on the stack
+      *fr = frame(fr->sp() + 1, fr->fp(), (address)*(fr->sp()));
+      if (!fr->is_java_frame()) {
+        assert(fr->safe_for_sender(thread), "Safety check");
+        *fr = fr->java_sender();
+      }
+    }
+  }
+  assert(fr->is_java_frame(), "Safety check");
+  return true;
+}
+
 //-----------------------------------------------------------------------------
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   if (InterceptOSException) return EXCEPTION_CONTINUE_SEARCH;
@@ -2550,7 +2583,16 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
                                   SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW));
         }
 #endif
-        if (thread->stack_yellow_zone_enabled()) {
+        if (thread->stack_guards_enabled()) {
+          if (_thread_in_Java) {
+            frame fr;
+            PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
+            address addr = (address) exceptionRecord->ExceptionInformation[1];
+            if (os::win32::get_frame_at_stack_banging_point(thread, exceptionInfo, pc, &fr)) {
+              assert(fr.is_java_frame(), "Must be a Java frame");
+              SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
+            }
+          }
           // Yellow zone violation.  The o/s has unprotected the first yellow
           // zone page for us.  Note:  must call disable_stack_yellow_zone to
           // update the enabled status, even if the zone contains only one page.

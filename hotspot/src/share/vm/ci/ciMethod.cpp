@@ -91,6 +91,7 @@ ciMethod::ciMethod(methodHandle h_m, ciInstanceKlass* holder) :
   _balanced_monitors  = !_uses_monitors || h_m()->access_flags().is_monitor_matching();
   _is_c1_compilable   = !h_m()->is_not_c1_compilable();
   _is_c2_compilable   = !h_m()->is_not_c2_compilable();
+  _has_reserved_stack_access = h_m()->has_reserved_stack_access();
   // Lazy fields, filled in on demand.  Require allocation.
   _code               = NULL;
   _exception_handlers = NULL;
