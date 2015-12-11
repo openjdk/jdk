@@ -27,6 +27,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "opto/addnode.hpp"
+#include "opto/castnode.hpp"
 #include "opto/cfgnode.hpp"
 #include "opto/connode.hpp"
 #include "opto/convertnode.hpp"
@@ -1148,7 +1149,7 @@ Node *PhiNode::Identity( PhaseTransform *phase ) {
   // It would check for a tributary phi on the backedge that the main phi
   // trivially, perhaps with a single cast.  The unique_input method
   // does all this and more, by reducing such tributaries to 'this'.)
-  Node* uin = unique_input(phase);
+  Node* uin = unique_input(phase, false);
   if (uin != NULL) {
     return uin;
   }
@@ -1165,8 +1166,9 @@ Node *PhiNode::Identity( PhaseTransform *phase ) {
 //-----------------------------unique_input------------------------------------
 // Find the unique value, discounting top, self-loops, and casts.
 // Return top if there are no inputs, and self if there are multiple.
-Node* PhiNode::unique_input(PhaseTransform* phase) {
-  //  1) One unique direct input, or
+Node* PhiNode::unique_input(PhaseTransform* phase, bool uncast) {
+  //  1) One unique direct input,
+  // or if uncast is true:
   //  2) some of the inputs have an intervening ConstraintCast and
   //     the type of input is the same or sharper (more specific)
   //     than the phi's type.
@@ -1180,8 +1182,7 @@ Node* PhiNode::unique_input(PhaseTransform* phase) {
 
   Node* r = in(0);                      // RegionNode
   if (r == NULL)  return in(1);         // Already degraded to a Copy
-  Node* uncasted_input = NULL; // The unique uncasted input (ConstraintCasts removed)
-  Node* direct_input   = NULL; // The unique direct input
+  Node* input = NULL; // The unique direct input (maybe uncasted = ConstraintCasts removed)
 
   for (uint i = 1, cnt = req(); i < cnt; ++i) {
     Node* rc = r->in(i);
@@ -1190,34 +1191,23 @@ Node* PhiNode::unique_input(PhaseTransform* phase) {
     Node* n = in(i);
     if (n == NULL)
       continue;
-    Node* un = n->uncast();
+    Node* un = uncast ? n->uncast() : n;
     if (un == NULL || un == this || phase->type(un) == Type::TOP) {
       continue; // ignore if top, or in(i) and "this" are in a data cycle
     }
-    // Check for a unique uncasted input
-    if (uncasted_input == NULL) {
-      uncasted_input = un;
-    } else if (uncasted_input != un) {
-      uncasted_input = NodeSentinel; // no unique uncasted input
-    }
-    // Check for a unique direct input
-    if (direct_input == NULL) {
-      direct_input = n;
-    } else if (direct_input != n) {
-      direct_input = NodeSentinel; // no unique direct input
+    // Check for a unique input (maybe uncasted)
+    if (input == NULL) {
+      input = un;
+    } else if (input != un) {
+      input = NodeSentinel; // no unique input
     }
   }
-  if (direct_input == NULL) {
+  if (input == NULL) {
     return phase->C->top();        // no inputs
   }
-  assert(uncasted_input != NULL,"");
 
-  if (direct_input != NodeSentinel) {
-    return direct_input;           // one unique direct input
-  }
-  if (uncasted_input != NodeSentinel &&
-      phase->type(uncasted_input)->higher_equal(type())) {
-    return uncasted_input;         // one unique uncasted input
+  if (input != NodeSentinel) {
+    return input;           // one unique direct input
   }
 
   // Nothing.
@@ -1650,7 +1640,12 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return top;
   }
 
-  Node* uin = unique_input(phase);
+  bool uncasted = false;
+  Node* uin = unique_input(phase, false);
+  if (uin == NULL) {
+    uncasted = true;
+    uin = unique_input(phase, true);
+  }
   if (uin == top) {             // Simplest case: no alive inputs.
     if (can_reshape)            // IGVN transformation
       return top;
@@ -1683,6 +1678,31 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       }
     }
 
+    if (uncasted) {
+      const Type* phi_type = bottom_type();
+      assert(phi_type->isa_int() || phi_type->isa_ptr(), "bad phi type");
+      int opcode;
+      if (phi_type->isa_int()) {
+        opcode = Op_CastII;
+      } else {
+        const Type* uin_type = phase->type(uin);
+        if (phi_type->join(TypePtr::NOTNULL) == uin_type->join(TypePtr::NOTNULL)) {
+          opcode = Op_CastPP;
+        } else {
+          opcode = Op_CheckCastPP;
+        }
+      }
+      // Add a cast to carry the control dependency of the Phi that is
+      // going away
+      Node* cast = ConstraintCastNode::make_cast(opcode, r, uin, phi_type, true);
+      cast = phase->transform(cast);
+      // set all inputs to the new cast so the Phi is removed by Identity
+      for (uint i = 1; i < req(); i++) {
+        set_req(i, cast);
+      }
+      uin = cast;
+    }
+
     // One unique input.
     debug_only(Node* ident = Identity(phase));
     // The unique input must eventually be detected by the Identity call.
@@ -1698,7 +1718,6 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     assert(ident == uin || ident->is_top(), "Identity must clean this up");
     return NULL;
   }
-
 
   Node* opt = NULL;
   int true_path = is_diamond_phi();

@@ -175,7 +175,14 @@ public:
 
   // Determine a unique non-trivial input, if any.
   // Ignore casts if it helps.  Return NULL on failure.
-  Node* unique_input(PhaseTransform *phase);
+  Node* unique_input(PhaseTransform *phase, bool uncast);
+  Node* unique_input(PhaseTransform *phase) {
+    Node* uin = unique_input(phase, false);
+    if (uin == NULL) {
+      uin = unique_input(phase, true);
+    }
+    return uin;
+  }
 
   // Check for a simple dead loop.
   enum LoopSafety { Safe = 0, Unsafe, UnsafeLoop };
