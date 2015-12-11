@@ -3438,6 +3438,13 @@ public:
           "Number of red zone (unrecoverable overflows) pages")             \
           range(MIN_STACK_RED_PAGES, (DEFAULT_STACK_RED_PAGES+2))           \
                                                                             \
+  product_pd(intx, StackReservedPages,                                      \
+          "Number of reserved zone (reserved to annotated methods) pages")  \
+          range(MIN_STACK_RESERVED_PAGES, (DEFAULT_STACK_RESERVED_PAGES+10))\
+                                                                            \
+  product(bool, RestrictReservedStack, true,                                \
+          "Restrict @ReservedStackAccess to trusted classes")               \
+                                                                            \
   /* greater stack shadow pages can't generate instruction to bang stack */ \
   product_pd(intx, StackShadowPages,                                        \
           "Number of shadow zone (for overflow checking) pages "            \

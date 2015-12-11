@@ -473,6 +473,7 @@ class os: AllStatic {
 
   static ExtendedPC fetch_frame_from_context(void* ucVoid, intptr_t** sp, intptr_t** fp);
   static frame      fetch_frame_from_context(void* ucVoid);
+  static frame      fetch_frame_from_ucontext(Thread* thread, void* ucVoid);
 
   static ExtendedPC get_thread_pc(Thread *thread);
   static void breakpoint();

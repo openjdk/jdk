@@ -2426,6 +2426,12 @@ bool Arguments::check_vm_args_consistency() {
     warning("The VM option CICompilerCountPerCPU overrides CICompilerCount.");
   }
 
+#ifndef SUPPORT_RESERVED_STACK_AREA
+  if (StackReservedPages != 0) {
+    FLAG_SET_CMDLINE(intx, StackReservedPages, 0);
+    warning("Reserved Stack Area not supported on this platform");
+  }
+#endif
   return status;
 }
 

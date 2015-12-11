@@ -3601,6 +3601,24 @@ void MacroAssembler::bang_stack_size(Register Rsize, Register Rtsp,
   }
 }
 
+void MacroAssembler::reserved_stack_check() {
+  // testing if reserved zone needs to be enabled
+  Label no_reserved_zone_enabling;
+
+  ld_ptr(G2_thread, JavaThread::reserved_stack_activation_offset(), G4_scratch);
+  cmp_and_brx_short(SP, G4_scratch, Assembler::lessUnsigned, Assembler::pt, no_reserved_zone_enabling);
+
+  call_VM_leaf(L0, CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), G2_thread);
+
+  AddressLiteral stub(StubRoutines::throw_delayed_StackOverflowError_entry());
+  jump_to(stub, G4_scratch);
+  delayed()->restore();
+
+  should_not_reach_here();
+
+  bind(no_reserved_zone_enabling);
+}
+
 ///////////////////////////////////////////////////////////////////////////////////
 #if INCLUDE_ALL_GCS
 

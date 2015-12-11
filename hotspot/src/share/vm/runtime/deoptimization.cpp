@@ -1431,7 +1431,7 @@ void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool
     // stack bang causes a stack overflow we crash.
     assert(THREAD->is_Java_thread(), "only a java thread can be here");
     JavaThread* thread = (JavaThread*)THREAD;
-    bool guard_pages_enabled = thread->stack_yellow_zone_enabled();
+    bool guard_pages_enabled = thread->stack_guards_enabled();
     if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
     assert(guard_pages_enabled, "stack banging in uncommon trap blob may cause crash");
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,6 +149,8 @@ class Solaris {
   // provides extensions to the os class and not the Solaris class.
   static ExtendedPC fetch_frame_from_ucontext(Thread* thread, ucontext_t* uc,
                                               intptr_t** ret_sp, intptr_t** ret_fp);
+
+  static bool get_frame_at_stack_banging_point(JavaThread* thread, ucontext_t* uc, frame* fr);
 
   static void hotspot_sigmask(Thread* thread);
 
