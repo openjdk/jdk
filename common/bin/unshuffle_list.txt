@@ -378,6 +378,7 @@ jdk/src/java.base/unix/conf/arm/jvm.cfg : jdk/src/solaris/bin/arm/jvm.cfg
 jdk/src/java.base/unix/conf/i586/jvm.cfg : jdk/src/solaris/bin/i586/jvm.cfg
 jdk/src/java.base/unix/conf/ia64/jvm.cfg : jdk/src/solaris/bin/ia64/jvm.cfg
 jdk/src/java.base/unix/conf/ppc64/jvm.cfg : jdk/src/solaris/bin/ppc64/jvm.cfg
+jdk/src/java.base/unix/conf/ppc64le/jvm.cfg : jdk/src/solaris/bin/ppc64le/jvm.cfg
 jdk/src/java.base/unix/conf/ppc/jvm.cfg : jdk/src/solaris/bin/ppc/jvm.cfg
 jdk/src/java.base/unix/conf/sdp/sdp.conf.template : jdk/src/solaris/lib/sdp/sdp.conf.template
 jdk/src/java.base/unix/conf/sparc/jvm.cfg : jdk/src/solaris/bin/sparc/jvm.cfg
