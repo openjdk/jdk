@@ -1483,8 +1483,8 @@ class G1NoteEndOfConcMarkClosure : public HeapRegionClosure {
   G1CollectedHeap* _g1;
   size_t _freed_bytes;
   FreeRegionList* _local_cleanup_list;
-  HeapRegionSetCount _old_regions_removed;
-  HeapRegionSetCount _humongous_regions_removed;
+  uint _old_regions_removed;
+  uint _humongous_regions_removed;
   HRRSCleanupTask* _hrrs_cleanup_task;
 
 public:
@@ -1494,13 +1494,13 @@ public:
     _g1(g1),
     _freed_bytes(0),
     _local_cleanup_list(local_cleanup_list),
-    _old_regions_removed(),
-    _humongous_regions_removed(),
+    _old_regions_removed(0),
+    _humongous_regions_removed(0),
     _hrrs_cleanup_task(hrrs_cleanup_task) { }
 
   size_t freed_bytes() { return _freed_bytes; }
-  const HeapRegionSetCount& old_regions_removed() { return _old_regions_removed; }
-  const HeapRegionSetCount& humongous_regions_removed() { return _humongous_regions_removed; }
+  const uint old_regions_removed() { return _old_regions_removed; }
+  const uint humongous_regions_removed() { return _humongous_regions_removed; }
 
   bool doHeapRegion(HeapRegion *hr) {
     if (hr->is_archive()) {
@@ -1515,10 +1515,10 @@ public:
       _freed_bytes += hr->used();
       hr->set_containing_set(NULL);
       if (hr->is_humongous()) {
-        _humongous_regions_removed.increment(1u, hr->capacity());
+        _humongous_regions_removed++;
         _g1->free_humongous_region(hr, _local_cleanup_list, true);
       } else {
-        _old_regions_removed.increment(1u, hr->capacity());
+        _old_regions_removed++;
         _g1->free_region(hr, _local_cleanup_list, true);
       }
     } else {
