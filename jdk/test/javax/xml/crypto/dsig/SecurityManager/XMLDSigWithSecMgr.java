@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,8 +33,6 @@ import java.io.*;
 import java.net.*;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.Policy;
-import java.security.URIParameter;
 import java.util.ArrayList;
 import java.util.Collections;
 import javax.xml.crypto.dsig.*;
@@ -115,10 +113,8 @@ public class XMLDSigWithSecMgr implements Runnable {
 
         // the policy only grants this test SocketPermission to accept, resolve
         // and connect to localhost so that it can dereference 2nd reference
-        URI policyURI =
-            new File(System.getProperty("test.src", "."), "policy").toURI();
-        Policy.setPolicy
-            (Policy.getInstance("JavaPolicy", new URIParameter(policyURI)));
+        System.setProperty("java.security.policy",
+                System.getProperty("test.src", ".") + File.separator + "policy");
         System.setSecurityManager(new SecurityManager());
 
         try {
