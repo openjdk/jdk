@@ -28,6 +28,11 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+/**
+ * @deprecated This class is deprecated. Use the one from
+ *             {@code <root>/test/lib/share/classes/jdk/test/lib/process}
+ */
+@Deprecated
 class OutputBuffer {
     private static class OutputBufferException extends RuntimeException {
         private static final long serialVersionUID = 8528687792643129571L;
