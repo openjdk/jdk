@@ -351,6 +351,15 @@ class HeapRegion: public G1OffsetTableContigSpace {
                                       ~((1 << (size_t) LogOfHRGrainBytes) - 1);
   }
 
+
+  // Returns whether a field is in the same region as the obj it points to.
+  template <typename T>
+  static bool is_in_same_region(T* p, oop obj) {
+    assert(p != NULL, "p can't be NULL");
+    assert(obj != NULL, "obj can't be NULL");
+    return (((uintptr_t) p ^ cast_from_oop<uintptr_t>(obj)) >> LogOfHRGrainBytes) == 0;
+  }
+
   static size_t max_region_size();
   static size_t min_region_size_in_words();
 

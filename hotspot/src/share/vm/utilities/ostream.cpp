@@ -738,7 +738,7 @@ void gcLogFileStream::rotate_log(bool force, outputStream* out) {
   }
 
 #ifdef ASSERT
-  Thread *thread = Thread::current();
+  Thread *thread = Thread::current_or_null();
   assert(thread == NULL ||
          (thread->is_VM_thread() && SafepointSynchronize::is_at_safepoint()),
          "Must be VMThread at safepoint");
@@ -1058,8 +1058,8 @@ intx defaultStream::hold(intx writer_id) {
       // bootstrap problem
       tty_lock == NULL ||
 
-      // can't grab a lock or call Thread::current() if TLS isn't initialized
-      ThreadLocalStorage::thread() == NULL ||
+      // can't grab a lock if current Thread isn't set
+      Thread::current_or_null() == NULL ||
 
       // developer hook
       !SerializeVMOutput ||

@@ -27,6 +27,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
@@ -347,9 +348,9 @@ address os::Linux::ucontext_get_pc(ucontext_t* uc) {
 }
 
 void os::Linux::ucontext_set_pc(ucontext_t* uc, address pc) {
-  sigcontext_t* ctx = (sigcontext_t*) uc;
-  SIG_PC(ctx)  = (intptr_t)addr;
-  SIG_NPC(ctx) = (intptr_t)(addr+4);
+  sigcontext* ctx = (sigcontext*) uc;
+  SIG_PC(ctx)  = (intptr_t)pc;
+  SIG_NPC(ctx) = (intptr_t)(pc+4);
 }
 
 intptr_t* os::Linux::ucontext_get_sp(ucontext_t *uc) {
@@ -541,7 +542,7 @@ JVM_handle_linux_signal(int sig,
   ucontext_t* ucFake = (ucontext_t*) ucVoid;
   sigcontext* uc = (sigcontext*)ucVoid;
 
-  Thread* t = ThreadLocalStorage::get_thread_slow();
+  Thread* t = Thread::current_or_null_safe();
 
   // Must do this before SignalHandlerMark, if crash protection installed we will longjmp away
   // (no destructors can be run)
@@ -695,6 +696,7 @@ JVM_handle_linux_signal(int sig,
   VMError::report_and_die(t, sig, pc, info, ucVoid);
 
   ShouldNotReachHere();
+  return false;
 }
 
 void os::Linux::init_thread_fpu_state(void) {

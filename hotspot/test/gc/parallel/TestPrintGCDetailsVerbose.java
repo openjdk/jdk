@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,17 +19,33 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef OS_CPU_BSD_ZERO_VM_THREADLS_BSD_ZERO_HPP
-#define OS_CPU_BSD_ZERO_VM_THREADLS_BSD_ZERO_HPP
+/*
+ * @test TestPrintGCDetailsVerbose
+ * @bug 8016740
+ * @summary Tests that jvm with PrintGCDetails and Verbose flags do not crash when ParOldGC has no memory
+ * @key gc
+ * @requires java.version ~= ".*fastdebug"
+ * @requires vm.gc=="Parallel" | vm.gc=="null"
+ * @library /testlibrary
+ * @run main/othervm -Xmx50m -XX:+UseParallelOldGC -XX:+PrintGCDetails -XX:+Verbose TestPrintGCDetailsVerbose
+ */
+public class TestPrintGCDetailsVerbose {
 
-// Processor dependent parts of ThreadLocalStorage
+    public static void main(String[] args) {
+        for (int t = 0; t <= 10; t++) {
+            byte a[][] = new byte[100000][];
+            try {
+                for (int i = 0; i < a.length; i++) {
+                    a[i] = new byte[100000];
+                }
+            } catch (OutOfMemoryError oome) {
+                a = null;
+                System.out.println("OOM!");
+                continue;
+            }
+        }
+    }
+}
 
- public:
-  static Thread* thread() {
-    return (Thread*) os::thread_local_storage_at(thread_index());
-  }
-
-#endif // OS_CPU_BSD_ZERO_VM_THREADLS_BSD_ZERO_HPP

@@ -416,7 +416,7 @@ public class JavaThread extends Thread {
     } else {
       tty.println("No Java frames present");
     }
-    tty.println("Base of Stack: " + getBaseOfStackPointer());
+    tty.println("Base of Stack: " + getStackBase());
     tty.println("Last_Java_SP: " + getLastJavaSP());
     tty.println("Last_Java_FP: " + getLastJavaFP());
     tty.println("Last_Java_PC: " + getLastJavaPC());

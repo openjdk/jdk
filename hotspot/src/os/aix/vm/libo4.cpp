@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright 2012, 2015 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +22,17 @@
  *
  */
 
-#ifndef OS_AIX_VM_THREAD_AIX_INLINE_HPP
-#define OS_AIX_VM_THREAD_AIX_INLINE_HPP
+// This is only a stub. Will flesh out later when/if we add further support
+// for PASE.
 
-#include "runtime/thread.hpp"
-#include "runtime/threadLocalStorage.hpp"
+#include "libo4.hpp"
 
-// Contains inlined functions for class Thread and ThreadLocalStorage
+bool libo4::init() { return false; }
+void libo4::cleanup() {}
+bool libo4::get_memory_info (unsigned long long* p_virt_total, unsigned long long* p_real_total,
+  unsigned long long* p_real_free, unsigned long long* p_pgsp_total, unsigned long long* p_pgsp_free) {
+  return false;
+}
+bool libo4::get_load_avg (double* p_avg1, double* p_avg5, double* p_avg15) { return false; }
+bool libo4::realpath (const char* file_name, char* resolved_name, int resolved_name_len) { return false; }
 
-inline void ThreadLocalStorage::pd_invalidate_all() {} // nothing to do
-
-#endif // OS_AIX_VM_THREAD_AIX_INLINE_HPP
