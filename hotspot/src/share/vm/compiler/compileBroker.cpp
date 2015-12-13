@@ -56,6 +56,7 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciCompiler.hpp"
 #include "jvmci/jvmciRuntime.hpp"
+#include "jvmci/jvmciJavaClasses.hpp"
 #include "runtime/vframe.hpp"
 #endif
 #ifdef COMPILER2
@@ -498,7 +499,7 @@ CompilerCounters::CompilerCounters() {
 // CompileBroker::compilation_init
 //
 // Initialize the Compilation object
-void CompileBroker::compilation_init() {
+void CompileBroker::compilation_init(TRAPS) {
   _last_method_compiled[0] = '\0';
 
   // No need to initialize compilation system if we do not use it.
@@ -528,6 +529,17 @@ void CompileBroker::compilation_init() {
       if (FLAG_IS_DEFAULT(JVMCIHostThreads)) {
       } else {
         c1_count = JVMCIHostThreads;
+      }
+
+      if (!UseInterpreter) {
+        // Force initialization of JVMCI compiler otherwise JVMCI
+        // compilations will not block until JVMCI is initialized
+        ResourceMark rm;
+        TempNewSymbol getCompiler = SymbolTable::new_symbol("getCompiler", CHECK);
+        TempNewSymbol sig = SymbolTable::new_symbol("()Ljdk/vm/ci/runtime/JVMCICompiler;", CHECK);
+        Handle jvmciRuntime = JVMCIRuntime::get_HotSpotJVMCIRuntime(CHECK);
+        JavaValue result(T_OBJECT);
+        JavaCalls::call_virtual(&result, jvmciRuntime, HotSpotJVMCIRuntime::klass(), getCompiler, sig, CHECK);
       }
     }
   }
