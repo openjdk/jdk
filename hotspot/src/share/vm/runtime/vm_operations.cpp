@@ -189,7 +189,7 @@ void VM_UnlinkSymbols::doit() {
 
 void VM_Verify::doit() {
   Universe::heap()->prepare_for_verify();
-  Universe::verify(_silent);
+  Universe::verify();
 }
 
 bool VM_PrintThreads::doit_prologue() {

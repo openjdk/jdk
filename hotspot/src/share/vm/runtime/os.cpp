@@ -262,7 +262,7 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
         VMThread::execute(&op1);
         Universe::print_heap_at_SIGBREAK();
         if (PrintClassHistogram) {
-          VM_GC_HeapInspection op1(gclog_or_tty, true /* force full GC before heap inspection */);
+          VM_GC_HeapInspection op1(tty, true /* force full GC before heap inspection */);
           VMThread::execute(&op1);
         }
         if (JvmtiExport::should_post_data_dump()) {
@@ -315,6 +315,10 @@ void os::init_before_ergo() {
   // We need to initialize large page support here because ergonomics takes some
   // decisions depending on large page support and the calculated large page size.
   large_page_init();
+
+  // VM version initialization identifies some characteristics of the
+  // the platform that are used during ergonomic decisions.
+  VM_Version::init_before_ergo();
 }
 
 void os::signal_init() {
@@ -1382,8 +1386,9 @@ bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method
   // respectively.
   const int framesize_in_bytes =
     Interpreter::size_top_interpreter_activation(method()) * wordSize;
-  int reserved_area = ((StackShadowPages + StackRedPages + StackYellowPages)
-                      * vm_page_size()) + framesize_in_bytes;
+  int reserved_area = ((StackShadowPages + StackRedPages + StackYellowPages
+                      + StackReservedPages) * vm_page_size())
+                      + framesize_in_bytes;
   // The very lower end of the stack
   address stack_limit = thread->stack_base() - thread->stack_size();
   return (sp > (stack_limit + reserved_area));

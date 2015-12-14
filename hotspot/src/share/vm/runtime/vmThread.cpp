@@ -285,7 +285,7 @@ void VMThread::run() {
     os::check_heap();
     // Silent verification so as not to pollute normal output,
     // unless we really asked for it.
-    Universe::verify(!(PrintGCDetails || Verbose) || VerifySilently);
+    Universe::verify();
   }
 
   CompileBroker::set_should_block();

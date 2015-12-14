@@ -518,6 +518,10 @@ void LIR_Assembler::return_op(LIR_Opr result) {
   // Pop the stack before the safepoint code
   __ remove_frame(initial_frame_size_in_bytes());
 
+  if (StackReservedPages > 0 && compilation()->has_reserved_stack_access()) {
+    __ reserved_stack_check();
+  }
+
   bool result_is_oop = result->is_valid() ? result->is_oop() : false;
 
   // Note: we do not need to round double result; float result has the right precision

@@ -35,6 +35,7 @@
 #include "jvmci/jvmciCompiler.hpp"
 #include "jvmci/jvmciRuntime.hpp"
 #endif
+#include "logging/log.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/constantPool.hpp"
@@ -453,13 +454,15 @@ void before_exit(JavaThread * thread) {
   Universe::heap()->stop();
 
   // Print GC/heap related information.
-  if (PrintGCDetails) {
-    Universe::print();
-    AdaptiveSizePolicyOutput(0);
-    if (Verbose) {
-      ClassLoaderDataGraph::dump_on(gclog_or_tty);
+  LogHandle(gc, heap, exit) log;
+  if (log.is_info()) {
+    ResourceMark rm;
+    Universe::print_on(log.info_stream());
+    if (log.is_trace()) {
+      ClassLoaderDataGraph::dump_on(log.trace_stream());
     }
   }
+  AdaptiveSizePolicyOutput::print();
 
   if (PrintBytecodeHistogram) {
     BytecodeHistogram::print();

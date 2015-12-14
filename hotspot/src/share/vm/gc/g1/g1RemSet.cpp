@@ -52,7 +52,7 @@ G1RemSet::G1RemSet(G1CollectedHeap* g1, CardTableModRefBS* ct_bs)
   for (uint i = 0; i < n_workers(); i++) {
     _cset_rs_update_cl[i] = NULL;
   }
-  if (G1SummarizeRSetStats) {
+  if (log_is_enabled(Trace, gc, remset)) {
     _prev_period_summary.initialize(this);
   }
   // Initialize the card queue set used to hold cards containing
@@ -109,17 +109,6 @@ void ScanRSClosure::scanCard(size_t index, HeapRegion *r) {
   }
 }
 
-void ScanRSClosure::printCard(HeapRegion* card_region, size_t card_index,
-    HeapWord* card_start) {
-  gclog_or_tty->print_cr("T %u Region [" PTR_FORMAT ", " PTR_FORMAT ") "
-      "RS names card " SIZE_FORMAT_HEX ": "
-      "[" PTR_FORMAT ", " PTR_FORMAT ")",
-      _worker_i,
-      p2i(card_region->bottom()), p2i(card_region->end()),
-      card_index,
-      p2i(card_start), p2i(card_start + G1BlockOffsetSharedArray::N_words));
-}
-
 void ScanRSClosure::scan_strong_code_roots(HeapRegion* r) {
   double scan_start = os::elapsedTime();
   r->strong_code_roots_do(_code_root_cl);
@@ -152,10 +141,6 @@ bool ScanRSClosure::doHeapRegion(HeapRegion* r) {
     }
     if (current_card < jump_to_card) continue;
     HeapWord* card_start = _g1h->bot_shared()->address_for_index(card_index);
-#if 0
-    gclog_or_tty->print("Rem set iteration yielded card [" PTR_FORMAT ", " PTR_FORMAT ").\n",
-        card_start, card_start + CardTableModRefBS::card_size_in_words);
-#endif
 
     HeapRegion* card_region = _g1h->heap_region_containing(card_start);
     _cards++;
@@ -463,7 +448,7 @@ bool G1RemSet::refine_card(jbyte* card_ptr, uint worker_i,
   update_rs_oop_cl.set_from(r);
 
   G1TriggerClosure trigger_cl;
-  FilterIntoCSClosure into_cs_cl(NULL, _g1, &trigger_cl);
+  FilterIntoCSClosure into_cs_cl(_g1, &trigger_cl);
   G1InvokeIfNotTriggeredClosure invoke_cl(&trigger_cl, &into_cs_cl);
   G1Mux2Closure mux(&invoke_cl, &update_rs_oop_cl);
 
@@ -526,31 +511,36 @@ bool G1RemSet::refine_card(jbyte* card_ptr, uint worker_i,
   return has_refs_into_cset;
 }
 
-void G1RemSet::print_periodic_summary_info(const char* header) {
-  G1RemSetSummary current;
-  current.initialize(this);
+void G1RemSet::print_periodic_summary_info(const char* header, uint period_count) {
+  if ((G1SummarizeRSetStatsPeriod > 0) && log_is_enabled(Trace, gc, remset) &&
+      (period_count % G1SummarizeRSetStatsPeriod == 0)) {
 
-  _prev_period_summary.subtract_from(&current);
-  print_summary_info(&_prev_period_summary, header);
+    if (!_prev_period_summary.initialized()) {
+      _prev_period_summary.initialize(this);
+    }
 
-  _prev_period_summary.set(&current);
+    G1RemSetSummary current;
+    current.initialize(this);
+    _prev_period_summary.subtract_from(&current);
+
+    LogHandle(gc, remset) log;
+    log.trace("%s", header);
+    ResourceMark rm;
+    _prev_period_summary.print_on(log.trace_stream());
+
+    _prev_period_summary.set(&current);
+  }
 }
 
 void G1RemSet::print_summary_info() {
-  G1RemSetSummary current;
-  current.initialize(this);
-
-  print_summary_info(&current, " Cumulative RS summary");
-}
-
-void G1RemSet::print_summary_info(G1RemSetSummary * summary, const char * header) {
-  assert(summary != NULL, "just checking");
-
-  if (header != NULL) {
-    gclog_or_tty->print_cr("%s", header);
+  LogHandle(gc, remset, exit) log;
+  if (log.is_trace()) {
+    log.trace(" Cumulative RS summary");
+    G1RemSetSummary current;
+    current.initialize(this);
+    ResourceMark rm;
+    current.print_on(log.trace_stream());
   }
-
-  summary->print_on(gclog_or_tty);
 }
 
 void G1RemSet::prepare_for_verify() {

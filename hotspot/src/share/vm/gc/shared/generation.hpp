@@ -536,11 +536,8 @@ class Generation: public CHeapObj<mtGC> {
   // the block is an object.
   virtual bool block_is_obj(const HeapWord* addr) const;
 
-
-  // PrintGC, PrintGCDetails support
   void print_heap_change(size_t prev_used) const;
 
-  // PrintHeapAtGC support
   virtual void print() const;
   virtual void print_on(outputStream* st) const;
 
