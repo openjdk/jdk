@@ -3486,6 +3486,7 @@ encode %{
     call->_jvmadj            = _jvmadj;
     call->_in_rms            = _in_rms;
     call->_nesting           = _nesting;
+    call->_override_symbolic_info = _override_symbolic_info;
 
     // New call needs all inputs of old call.
     // Req...
