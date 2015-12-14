@@ -74,7 +74,7 @@ public class Settings extends TestHelper {
 
     static void runTestOptionDefault() throws IOException {
         String stackSize = "256"; // in kb
-        if (getArch().equals("ppc64")) {
+        if (getArch().equals("ppc64") || getArch().equals("ppc64le")) {
             stackSize = "800";
         }
         TestResult tr = null;
