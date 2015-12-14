@@ -239,7 +239,7 @@ final class TypeEvaluator {
                             // currently deoptimize all the way to Object.
                             return Type.OBJECT;
                         }
-                        assert returnType == Type.INT || returnType == Type.LONG || returnType == Type.NUMBER || returnType == Type.OBJECT;
+                        assert returnType == Type.INT || returnType == Type.NUMBER || returnType == Type.OBJECT;
                         return returnType;
                     }
                 }
