@@ -45,6 +45,16 @@ class LocalClassTest {
         }
         new LocalClassTest().foo();
     }
+
+    void test(final int i) {
+        class CapturingLocal {
+            CapturingLocal(final int j) {
+               this(new Object() { void test() { int x = i; } });
+            }
+            CapturingLocal(Object o) { }
+        }
+        new CapturingLocal(i) { };
+    }
 }
 
 

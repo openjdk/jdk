@@ -164,6 +164,17 @@ public class ReflectionVisitor extends Tester.Visitor {
                 }
             }
 
+            if (p.isSynthetic() && !p.isImplicit() && !allowSynthetic) {
+                //patch treatment for local captures
+                if (isAnon || ((isLocal || isAnon) & !isStatic)) {
+                    expect = "val\\$.*";
+                    allowSynthetic = true;
+                    if (isFinal) {
+                        expect = "final val\\$.*";
+                    }
+                }
+            }
+
             // Check expected flags
             if (p.isSynthetic() && p.isImplicit()) {
                 error(prefix + "param[" + i + "]='" + pname +
