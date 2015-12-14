@@ -2517,7 +2517,11 @@ void CFLS_LAB::get_from_global_pool(size_t word_sz, AdaptiveFreeList<FreeChunk>*
   // Lacking sufficient experience, CMSOldPLABResizeQuicker is disabled by
   // default.
   if (ResizeOldPLAB && CMSOldPLABResizeQuicker) {
-    size_t multiple = _num_blocks[word_sz]/(CMSOldPLABToleranceFactor*CMSOldPLABNumRefills*n_blks);
+    //
+    // On a 32-bit VM, the denominator can become zero because of integer overflow,
+    // which is why there is a cast to double.
+    //
+    size_t multiple = (size_t) (_num_blocks[word_sz]/(((double)CMSOldPLABToleranceFactor)*CMSOldPLABNumRefills*n_blks));
     n_blks +=  CMSOldPLABReactivityFactor*multiple*n_blks;
     n_blks = MIN2(n_blks, CMSOldPLABMax);
   }
