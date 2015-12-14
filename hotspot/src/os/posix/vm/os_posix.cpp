@@ -1031,7 +1031,7 @@ int os::Posix::unblock_thread_signal_mask(const sigset_t *set) {
   return pthread_sigmask(SIG_UNBLOCK, set, NULL);
 }
 
-address os::Posix::ucontext_get_pc(ucontext_t* ctx) {
+address os::Posix::ucontext_get_pc(const ucontext_t* ctx) {
 #ifdef TARGET_OS_FAMILY_linux
    return Linux::ucontext_get_pc(ctx);
 #elif defined(TARGET_OS_FAMILY_solaris)

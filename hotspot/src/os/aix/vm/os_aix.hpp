@@ -123,8 +123,8 @@ class Aix {
   static int vm_default_page_size(void ) { return 8*K; }
 
   static address   ucontext_get_pc(const ucontext_t* uc);
-  static intptr_t* ucontext_get_sp(ucontext_t* uc);
-  static intptr_t* ucontext_get_fp(ucontext_t* uc);
+  static intptr_t* ucontext_get_sp(const ucontext_t* uc);
+  static intptr_t* ucontext_get_fp(const ucontext_t* uc);
   // Set PC into context. Needed for continuation after signal.
   static void ucontext_set_pc(ucontext_t* uc, address pc);
 

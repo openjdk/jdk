@@ -98,12 +98,12 @@ address os::Aix::ucontext_get_pc(const ucontext_t * uc) {
   return (address)uc->uc_mcontext.jmp_context.iar;
 }
 
-intptr_t* os::Aix::ucontext_get_sp(ucontext_t * uc) {
+intptr_t* os::Aix::ucontext_get_sp(const ucontext_t * uc) {
   // gpr1 holds the stack pointer on aix
   return (intptr_t*)uc->uc_mcontext.jmp_context.gpr[1/*REG_SP*/];
 }
 
-intptr_t* os::Aix::ucontext_get_fp(ucontext_t * uc) {
+intptr_t* os::Aix::ucontext_get_fp(const ucontext_t * uc) {
   return NULL;
 }
 
@@ -111,11 +111,11 @@ void os::Aix::ucontext_set_pc(ucontext_t* uc, address new_pc) {
   uc->uc_mcontext.jmp_context.iar = (uint64_t) new_pc;
 }
 
-ExtendedPC os::fetch_frame_from_context(void* ucVoid,
+ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
                                         intptr_t** ret_sp, intptr_t** ret_fp) {
 
   ExtendedPC  epc;
-  ucontext_t* uc = (ucontext_t*)ucVoid;
+  const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
   if (uc != NULL) {
     epc = ExtendedPC(os::Aix::ucontext_get_pc(uc));
@@ -131,7 +131,7 @@ ExtendedPC os::fetch_frame_from_context(void* ucVoid,
   return epc;
 }
 
-frame os::fetch_frame_from_context(void* ucVoid) {
+frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   ExtendedPC epc = fetch_frame_from_context(ucVoid, &sp, &fp);
@@ -507,10 +507,10 @@ size_t os::Aix::default_guard_size(os::ThreadType thr_type) {
 /////////////////////////////////////////////////////////////////////////////
 // helper functions for fatal error handler
 
-void os::print_context(outputStream *st, void *context) {
+void os::print_context(outputStream *st, const void *context) {
   if (context == NULL) return;
 
-  ucontext_t* uc = (ucontext_t*)context;
+  const ucontext_t* uc = (const ucontext_t*)context;
 
   st->print_cr("Registers:");
   st->print("pc =" INTPTR_FORMAT "  ", uc->uc_mcontext.jmp_context.iar);
@@ -544,7 +544,7 @@ void os::print_context(outputStream *st, void *context) {
   st->cr();
 }
 
-void os::print_register_info(outputStream *st, void *context) {
+void os::print_register_info(outputStream *st, const void *context) {
   if (context == NULL) return;
 
   ucontext_t *uc = (ucontext_t*)context;
