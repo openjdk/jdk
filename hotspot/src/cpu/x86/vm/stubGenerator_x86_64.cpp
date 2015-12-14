@@ -266,7 +266,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movptr(r15_save, r15);
     if (UseAVX > 2) {
       __ movl(rbx, 0xffff);
-      __ kmovql(k1, rbx);
+      __ kmovwl(k1, rbx);
     }
 #ifdef _WIN64
     int last_reg = 15;
@@ -1350,7 +1350,7 @@ class StubGenerator: public StubCodeGenerator {
       Label L_end;
       if (UseAVX > 2) {
         __ movl(to, 0xffff);
-        __ kmovql(k1, to);
+        __ kmovwl(k1, to);
       }
       // Copy 64-bytes per iteration
       __ BIND(L_loop);
@@ -1434,7 +1434,7 @@ class StubGenerator: public StubCodeGenerator {
       Label L_end;
       if (UseAVX > 2) {
         __ movl(to, 0xffff);
-        __ kmovql(k1, to);
+        __ kmovwl(k1, to);
       }
       // Copy 64-bytes per iteration
       __ BIND(L_loop);
