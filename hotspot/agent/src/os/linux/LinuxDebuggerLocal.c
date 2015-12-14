@@ -49,7 +49,7 @@
 #include "sun_jvm_hotspot_debugger_sparc_SPARCThreadContext.h"
 #endif
 
-#ifdef ppc64
+#if defined(ppc64) || defined(ppc64le)
 #include "sun_jvm_hotspot_debugger_ppc64_PPC64ThreadContext.h"
 #endif
 
@@ -352,7 +352,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
   return (err == PS_OK)? array : 0;
 }
 
-#if defined(i386) || defined(amd64) || defined(sparc) || defined(sparcv9) | defined(ppc64) || defined(aarch64)
+#if defined(i386) || defined(amd64) || defined(sparc) || defined(sparcv9) | defined(ppc64) || defined(ppc64le) || defined(aarch64)
 JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_getThreadIntegerRegisterSet0
   (JNIEnv *env, jobject this_obj, jint lwp_id) {
 
@@ -380,7 +380,7 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
 #if defined(sparc) || defined(sparcv9)
 #define NPRGREG sun_jvm_hotspot_debugger_sparc_SPARCThreadContext_NPRGREG
 #endif
-#ifdef ppc64
+#if defined(ppc64) || defined(ppc64le)
 #define NPRGREG sun_jvm_hotspot_debugger_ppc64_PPC64ThreadContext_NPRGREG
 #endif
 
@@ -489,7 +489,7 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
   }
 #endif /* aarch64 */
 
-#ifdef ppc64
+#if defined(ppc64) || defined(ppc64le)
 #define REG_INDEX(reg) sun_jvm_hotspot_debugger_ppc64_PPC64ThreadContext_##reg
 
   regs[REG_INDEX(LR)] = gregs.link;

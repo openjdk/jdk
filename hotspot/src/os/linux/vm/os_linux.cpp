@@ -1733,7 +1733,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 #if defined(VM_LITTLE_ENDIAN)
     {EM_PPC64,       EM_PPC64,   ELFCLASS64, ELFDATA2LSB, (char*)"Power PC 64"},
 #else
-    {EM_PPC64,       EM_PPC64,   ELFCLASS64, ELFDATA2MSB, (char*)"Power PC 64"},
+    {EM_PPC64,       EM_PPC64,   ELFCLASS64, ELFDATA2MSB, (char*)"Power PC 64 LE"},
 #endif
     {EM_ARM,         EM_ARM,     ELFCLASS32,   ELFDATA2LSB, (char*)"ARM"},
     {EM_S390,        EM_S390,    ELFCLASSNONE, ELFDATA2MSB, (char*)"IBM System/390"},
@@ -2176,6 +2176,8 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 #if defined(AMD64) || defined(IA32) || defined(X32)
 const char* search_string = "model name";
 #elif defined(SPARC)
+const char* search_string = "cpu";
+#elif defined(PPC64)
 const char* search_string = "cpu";
 #else
 const char* search_string = "Processor";
