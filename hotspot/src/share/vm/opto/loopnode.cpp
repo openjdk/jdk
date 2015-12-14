@@ -1818,10 +1818,9 @@ void PhaseIdealLoop::replace_parallel_iv(IdealLoopTree *loop) {
 }
 
 void IdealLoopTree::remove_safepoints(PhaseIdealLoop* phase, bool keep_one) {
-  // Look for a safepoint on the idom-path.
   Node* keep = NULL;
   if (keep_one) {
-    // Keep one if possible
+    // Look for a safepoint on the idom-path.
     for (Node* i = tail(); i != _head; i = phase->idom(i)) {
       if (i->Opcode() == Op_SafePoint && phase->get_loop(i) == this) {
         keep = i;
@@ -1830,9 +1829,14 @@ void IdealLoopTree::remove_safepoints(PhaseIdealLoop* phase, bool keep_one) {
     }
   }
 
+  // Don't remove any safepoints if it is requested to keep a single safepoint and
+  // no safepoint was found on idom-path. It is not safe to remove any safepoint
+  // in this case since there's no safepoint dominating all paths in the loop body.
+  bool prune = !keep_one || keep != NULL;
+
   // Delete other safepoints in this loop.
   Node_List* sfpts = _safepts;
-  if (sfpts != NULL) {
+  if (prune && sfpts != NULL) {
     assert(keep == NULL || keep->Opcode() == Op_SafePoint, "not safepoint");
     for (uint i = 0; i < sfpts->size(); i++) {
       Node* n = sfpts->at(i);
@@ -1924,6 +1928,15 @@ void IdealLoopTree::dump_head( ) const {
     if (cl->is_pre_loop ()) tty->print(" pre" );
     if (cl->is_main_loop()) tty->print(" main");
     if (cl->is_post_loop()) tty->print(" post");
+  }
+  if (_has_call) tty->print(" has_call");
+  if (_has_sfpt) tty->print(" has_sfpt");
+  if (_rce_candidate) tty->print(" rce");
+  if (_safepts != NULL && _safepts->size() > 0) {
+    tty->print(" sfpts={"); _safepts->dump_simple(); tty->print(" }");
+  }
+  if (_required_safept != NULL && _required_safept->size() > 0) {
+    tty->print(" req={"); _required_safept->dump_simple(); tty->print(" }");
   }
   tty->cr();
 }

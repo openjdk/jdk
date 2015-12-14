@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8072008
- * @library /testlibrary /../../test/lib
- * @build GCTest NonInlinedReinvoker
+ * @library /testlibrary /test/lib
+ * @compile GCTest.java NonInlinedReinvoker.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  *                              java.lang.invoke.GCTest
@@ -40,7 +40,8 @@
 package java.lang.invoke;
 
 import sun.hotspot.WhiteBox;
-
+import jdk.internal.vm.annotation.DontInline;
+import jdk.internal.vm.annotation.Stable;
 import java.lang.ref.*;
 import static jdk.test.lib.Asserts.*;
 

@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 8072008
- * @library /testlibrary /../../test/lib
- * @build InvokeTest NonInlinedReinvoker
+ * @library /testlibrary /test/lib
+ * @compile InvokeTest.java NonInlinedReinvoker.java
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  *                              java.lang.invoke.InvokeTest
@@ -43,6 +43,7 @@
 package java.lang.invoke;
 
 import sun.hotspot.WhiteBox;
+import jdk.internal.vm.annotation.DontInline;
 import static jdk.test.lib.Asserts.*;
 
 public class InvokeTest {
@@ -73,23 +74,23 @@ public class InvokeTest {
     }
 
     static class T implements I {
-        @DontInline public        Class<?> f1() { if (doDeopt) WB.deoptimize(); return T.class; }
-        @DontInline public static Class<?> f2() { if (doDeopt) WB.deoptimize(); return T.class; }
-        @DontInline private       Class<?> f4() { if (doDeopt) WB.deoptimize(); return T.class; }
+        @DontInline public        Class<?> f1() { if (doDeopt) WB.deoptimizeAll(); return T.class; }
+        @DontInline public static Class<?> f2() { if (doDeopt) WB.deoptimizeAll(); return T.class; }
+        @DontInline private       Class<?> f4() { if (doDeopt) WB.deoptimizeAll(); return T.class; }
     }
 
     static class P1 extends T {
-        @DontInline public Class<?> f1() { if (doDeopt) WB.deoptimize(); return P1.class; }
-        @DontInline public Class<?> f3() { if (doDeopt) WB.deoptimize(); return P1.class; }
+        @DontInline public Class<?> f1() { if (doDeopt) WB.deoptimizeAll(); return P1.class; }
+        @DontInline public Class<?> f3() { if (doDeopt) WB.deoptimizeAll(); return P1.class; }
     }
 
     static class P2 extends T {
-        @DontInline public Class<?> f1() { if (doDeopt) WB.deoptimize(); return P2.class; }
-        @DontInline public Class<?> f3() { if (doDeopt) WB.deoptimize(); return P2.class; }
+        @DontInline public Class<?> f1() { if (doDeopt) WB.deoptimizeAll(); return P2.class; }
+        @DontInline public Class<?> f3() { if (doDeopt) WB.deoptimizeAll(); return P2.class; }
     }
 
     static interface I {
-        @DontInline default Class<?> f3() { if (doDeopt) WB.deoptimize(); return I.class; }
+        @DontInline default Class<?> f3() { if (doDeopt) WB.deoptimizeAll(); return I.class; }
     }
 
     @DontInline

@@ -1078,10 +1078,7 @@ methodHandle SharedRuntime::extract_attached_method(vframeStream& vfst) {
   address pc = vfst.frame_pc();
   { // Get call instruction under lock because another thread may be busy patching it.
     MutexLockerEx ml_patch(Patching_lock, Mutex::_no_safepoint_check_flag);
-    if (NativeCall::is_call_before(pc)) {
-      NativeCall* ncall = nativeCall_before(pc);
-      return caller_nm->attached_method(ncall->instruction_address());
-    }
+    return caller_nm->attached_method_before_pc(pc);
   }
   return NULL;
 }

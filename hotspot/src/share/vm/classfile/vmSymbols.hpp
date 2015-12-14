@@ -268,6 +268,9 @@
                                                                                                   \
   /* Intrinsic Annotation (JDK 9 and above) */                                                    \
   template(jdk_internal_HotSpotIntrinsicCandidate_signature, "Ljdk/internal/HotSpotIntrinsicCandidate;") \
+  template(jdk_internal_vm_annotation_ForceInline_signature, "Ljdk/internal/vm/annotation/ForceInline;") \
+  template(jdk_internal_vm_annotation_DontInline_signature,  "Ljdk/internal/vm/annotation/DontInline;")  \
+  template(jdk_internal_vm_annotation_Stable_signature,      "Ljdk/internal/vm/annotation/Stable;")      \
                                                                                                   \
   /* Support for JSR 292 & invokedynamic (JDK 1.7 and above) */                                   \
   template(java_lang_invoke_CallSite,                 "java/lang/invoke/CallSite")                \
@@ -286,10 +289,7 @@
   template(java_lang_invoke_MethodHandleNatives,      "java/lang/invoke/MethodHandleNatives")     \
   template(java_lang_invoke_MethodHandleNatives_CallSiteContext, "java/lang/invoke/MethodHandleNatives$CallSiteContext") \
   template(java_lang_invoke_LambdaForm,               "java/lang/invoke/LambdaForm")              \
-  template(java_lang_invoke_ForceInline_signature,    "Ljava/lang/invoke/ForceInline;")           \
-  template(java_lang_invoke_DontInline_signature,     "Ljava/lang/invoke/DontInline;")            \
   template(java_lang_invoke_InjectedProfile_signature, "Ljava/lang/invoke/InjectedProfile;")      \
-  template(java_lang_invoke_Stable_signature,         "Ljava/lang/invoke/Stable;")                \
   template(java_lang_invoke_LambdaForm_Compiled_signature, "Ljava/lang/invoke/LambdaForm$Compiled;") \
   template(java_lang_invoke_LambdaForm_Hidden_signature, "Ljava/lang/invoke/LambdaForm$Hidden;")  \
   template(java_lang_invoke_MethodHandleNatives_CallSiteContext_signature, "Ljava/lang/invoke/MethodHandleNatives$CallSiteContext;") \

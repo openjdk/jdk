@@ -19,28 +19,23 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
 /*
  * @test
- * @bug 8137167
- * @summary Tests CompileCommand=exclude
- * @library /testlibrary /../../test/lib /compiler/testlibrary ../share /
- * @build ExcludeTest pool.sub.* pool.subpack.* sun.hotspot.WhiteBox
- *        compiler.testlibrary.CompilerUtils compiler.compilercontrol.share.actions.*
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm compiler.compilercontrol.commandfile.ExcludeTest
+ * @bug 8134883
+ * @summary C1's range check elimination breaks with a non-natural loop that an exception handler as one entry
+ * @compile TestRangeCheckExceptionHandlerLoop.jasm
+ * @run main/othervm -XX:-BackgroundCompilation -XX:-UseOnStackReplacement TestRangeCheckExceptionHandlerLoopMain
  */
 
-package compiler.compilercontrol.commandfile;
-
-import compiler.compilercontrol.share.SingleCommand;
-import compiler.compilercontrol.share.scenario.Command;
-import compiler.compilercontrol.share.scenario.Scenario;
-
-public class ExcludeTest {
-    public static void main(String[] args) {
-        new SingleCommand(Command.EXCLUDE, Scenario.Type.FILE).test();
+public class TestRangeCheckExceptionHandlerLoopMain {
+    public static void main(String[] args) throws Exception {
+        Exception exception = new Exception();
+        int[] array = new int[10];
+        for (int i = 0; i < 20000; i++) {
+            TestRangeCheckExceptionHandlerLoop.test(false, array, exception);
+        }
     }
 }
