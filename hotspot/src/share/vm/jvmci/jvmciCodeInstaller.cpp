@@ -727,10 +727,9 @@ JVMCIEnv::CodeInstallResult CodeInstaller::initialize_buffer(CodeBuffer& buffer,
       if (InfopointReason::SAFEPOINT() == reason || InfopointReason::CALL() == reason || InfopointReason::IMPLICIT_EXCEPTION() == reason) {
         TRACE_jvmci_4("safepoint at %i", pc_offset);
         site_Safepoint(buffer, pc_offset, site, CHECK_OK);
-      } else if (InfopointReason::METHOD_START() == reason || InfopointReason::METHOD_END() == reason || InfopointReason::LINE_NUMBER() == reason) {
-        site_Infopoint(buffer, pc_offset, site, CHECK_OK);
       } else {
-        JVMCI_ERROR_OK("unknown infopoint reason at %i", pc_offset);
+        TRACE_jvmci_4("infopoint at %i", pc_offset);
+        site_Infopoint(buffer, pc_offset, site, CHECK_OK);
       }
     } else if (site->is_a(CompilationResult_DataPatch::klass())) {
       TRACE_jvmci_4("datapatch at %i", pc_offset);
@@ -868,25 +867,33 @@ GrowableArray<ScopeValue*>* CodeInstaller::record_virtual_objects(Handle debug_i
   return objects;
 }
 
-void CodeInstaller::record_scope(jint pc_offset, Handle debug_info, TRAPS) {
+void CodeInstaller::record_scope(jint pc_offset, Handle debug_info, ScopeMode scope_mode, TRAPS) {
   Handle position = DebugInfo::bytecodePosition(debug_info);
   if (position.is_null()) {
     // Stubs do not record scope info, just oop maps
     return;
   }
 
-  GrowableArray<ScopeValue*>* objectMapping = record_virtual_objects(debug_info, CHECK);
-  record_scope(pc_offset, position, objectMapping, CHECK);
+  GrowableArray<ScopeValue*>* objectMapping;
+  if (scope_mode == CodeInstaller::FullFrame) {
+    objectMapping = record_virtual_objects(debug_info, CHECK);
+  } else {
+    objectMapping = NULL;
+  }
+  record_scope(pc_offset, position, scope_mode, objectMapping, CHECK);
 }
 
-void CodeInstaller::record_scope(jint pc_offset, Handle position, GrowableArray<ScopeValue*>* objects, TRAPS) {
+void CodeInstaller::record_scope(jint pc_offset, Handle position, ScopeMode scope_mode, GrowableArray<ScopeValue*>* objects, TRAPS) {
   Handle frame;
-  if (position->is_a(BytecodeFrame::klass())) {
+  if (scope_mode == CodeInstaller::FullFrame) {
+    if (!position->is_a(BytecodeFrame::klass())) {
+      JVMCI_ERROR("Full frame expected for debug info at %i", pc_offset);
+    }
     frame = position;
   }
   Handle caller_frame = BytecodePosition::caller(position);
   if (caller_frame.not_null()) {
-    record_scope(pc_offset, caller_frame, objects, CHECK);
+    record_scope(pc_offset, caller_frame, scope_mode, objects, CHECK);
   }
 
   Handle hotspot_method = BytecodePosition::method(position);
@@ -990,7 +997,7 @@ void CodeInstaller::site_Safepoint(CodeBuffer& buffer, jint pc_offset, Handle si
   // jint next_pc_offset = Assembler::locate_next_instruction(instruction) - _instructions->start();
   OopMap *map = create_oop_map(debug_info, CHECK);
   _debug_recorder->add_safepoint(pc_offset, map);
-  record_scope(pc_offset, debug_info, CHECK);
+  record_scope(pc_offset, debug_info, CodeInstaller::FullFrame, CHECK);
   _debug_recorder->end_safepoint(pc_offset);
 }
 
@@ -1000,8 +1007,12 @@ void CodeInstaller::site_Infopoint(CodeBuffer& buffer, jint pc_offset, Handle si
     JVMCI_ERROR("debug info expected at infopoint at %i", pc_offset);
   }
 
+  // We'd like to check that pc_offset is greater than the
+  // last pc recorded with _debug_recorder (raising an exception if not)
+  // but DebugInformationRecorder doesn't have sufficient public API.
+
   _debug_recorder->add_non_safepoint(pc_offset);
-  record_scope(pc_offset, debug_info, CHECK);
+  record_scope(pc_offset, debug_info, CodeInstaller::BytecodePosition, CHECK);
   _debug_recorder->end_non_safepoint(pc_offset);
 }
 
@@ -1028,7 +1039,7 @@ void CodeInstaller::site_Call(CodeBuffer& buffer, jint pc_offset, Handle site, T
   if (debug_info.not_null()) {
     OopMap *map = create_oop_map(debug_info, CHECK);
     _debug_recorder->add_safepoint(next_pc_offset, map);
-    record_scope(next_pc_offset, debug_info, CHECK);
+    record_scope(next_pc_offset, debug_info, CodeInstaller::FullFrame, CHECK);
   }
 
   if (foreign_call.not_null()) {

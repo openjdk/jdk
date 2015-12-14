@@ -119,6 +119,31 @@ typedef unsigned int hb_atomic_int_impl_t;
 #define hb_atomic_ptr_impl_cmpexch(P,O,N)       ( ({__machine_rw_barrier ();}), atomic_cas_ptr ((void **) (P), (void *) (O), (void *) (N)) == (void *) (O) ? true : false)
 
 
+#elif !defined(HB_NO_MT) && defined(_AIX) && defined(__IBMCPP__)
+
+#include <builtins.h>
+
+
+static inline int hb_fetch_and_add(volatile int* AI, unsigned int V) {
+  __lwsync();
+  int result = __fetch_and_add(AI, V);
+  __isync();
+  return result;
+}
+static inline int hb_compare_and_swaplp(volatile long* P, long O, long N) {
+  __sync();
+  int result = __compare_and_swaplp (P, &O, N);
+  __sync();
+  return result;
+}
+
+typedef int hb_atomic_int_impl_t;
+#define HB_ATOMIC_INT_IMPL_INIT(V) (V)
+#define hb_atomic_int_impl_add(AI, V)           hb_fetch_and_add (&(AI), (V))
+
+#define hb_atomic_ptr_impl_get(P)               (__sync(), (void *) *(P))
+#define hb_atomic_ptr_impl_cmpexch(P,O,N)       hb_compare_and_swaplp ((long*)(P), (long)(O), (long)(N))
+
 #elif !defined(HB_NO_MT)
 
 #define HB_ATOMIC_INT_NIL 1 /* Warn that fallback implementation is in use. */
