@@ -32,43 +32,14 @@
 #define SKIP_RETIRED_FULL_REGIONS 1
 
 class G1HRPrinter VALUE_OBJ_CLASS_SPEC {
-public:
-  typedef enum {
-    Alloc,
-    AllocForce,
-    Retire,
-    Reuse,
-    CSet,
-    EvacFailure,
-    Cleanup,
-    PostCompaction,
-    Commit,
-    Uncommit
-  } ActionType;
-
-  typedef enum {
-    Unset,
-    Eden,
-    Survivor,
-    Old,
-    StartsHumongous,
-    ContinuesHumongous,
-    Archive
-  } RegionType;
 
 private:
-  static const char* action_name(ActionType action);
-  static const char* region_type_name(RegionType type);
 
-  // Print an action event. This version is used in most scenarios and
-  // only prints the region's bottom. The parameters type and top are
-  // optional (the "not set" values are Unset and NULL).
-  static void print(ActionType action, RegionType type,
-                    HeapRegion* hr, HeapWord* top);
-
-  // Print an action event. This version prints both the region's
-  // bottom and end. Used for Commit / Uncommit events.
-  static void print(ActionType action, HeapWord* bottom, HeapWord* end);
+  // Print an action event.
+  static void print(const char* action, HeapRegion* hr) {
+    log_trace(gc, region)("G1HR %s(%s) [" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT "]",
+                          action, hr->get_type_str(), p2i(hr->bottom()), p2i(hr->top()), p2i(hr->end()));
+  }
 
 public:
   // In some places we iterate over a list in order to generate output
@@ -76,67 +47,61 @@ public:
   // iteration if the printer is not active.
   const bool is_active() { return log_is_enabled(Trace, gc, region); }
 
-  // The methods below are convenient wrappers for the print() methods.
+  // The methods below are convenient wrappers for the print() method.
 
-  void alloc(HeapRegion* hr, RegionType type, bool force = false) {
+  void alloc(HeapRegion* hr, bool force = false) {
     if (is_active()) {
-      print((!force) ? Alloc : AllocForce, type, hr, NULL);
-    }
-  }
-
-  void alloc(RegionType type, HeapRegion* hr, HeapWord* top) {
-    if (is_active()) {
-      print(Alloc, type, hr, top);
+      print((force) ? "ALLOC-FORCE" : "ALLOC", hr);
     }
   }
 
   void retire(HeapRegion* hr) {
     if (is_active()) {
       if (!SKIP_RETIRED_FULL_REGIONS || hr->top() < hr->end()) {
-        print(Retire, Unset, hr, hr->top());
+        print("RETIRE", hr);
       }
     }
   }
 
   void reuse(HeapRegion* hr) {
     if (is_active()) {
-      print(Reuse, Unset, hr, NULL);
+      print("REUSE", hr);
     }
   }
 
   void cset(HeapRegion* hr) {
     if (is_active()) {
-      print(CSet, Unset, hr, NULL);
+      print("CSET", hr);
     }
   }
 
   void evac_failure(HeapRegion* hr) {
     if (is_active()) {
-      print(EvacFailure, Unset, hr, NULL);
+      print("EVAC-FAILURE", hr);
     }
   }
 
   void cleanup(HeapRegion* hr) {
     if (is_active()) {
-      print(Cleanup, Unset, hr, NULL);
+      print("CLEANUP", hr);
     }
   }
 
-  void post_compaction(HeapRegion* hr, RegionType type) {
+  void post_compaction(HeapRegion* hr) {
     if (is_active()) {
-      print(PostCompaction, type, hr, hr->top());
+      print("POST-COMPACTION", hr);
     }
   }
 
-  void commit(HeapWord* bottom, HeapWord* end) {
+  void commit(HeapRegion* hr) {
     if (is_active()) {
-      print(Commit, bottom, end);
+      print("COMMIT", hr);
     }
   }
 
-  void uncommit(HeapWord* bottom, HeapWord* end) {
+  void uncommit(HeapRegion* hr) {
     if (is_active()) {
-      print(Uncommit, bottom, end);
+      print("UNCOMMIT", hr);
     }
   }
 };
