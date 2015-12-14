@@ -109,13 +109,6 @@ abstract class ArrayFilter extends ArrayData {
     }
 
     @Override
-    public ArrayData set(final int index, final long value, final boolean strict) {
-        underlying = underlying.set(index, value, strict);
-        setLength(underlying.length());
-        return this;
-    }
-
-    @Override
     public ArrayData set(final int index, final double value, final boolean strict) {
         underlying = underlying.set(index, value, strict);
         setLength(underlying.length());
@@ -147,16 +140,6 @@ abstract class ArrayFilter extends ArrayData {
     @Override
     public int getIntOptimistic(final int index, final int programPoint) {
         return underlying.getIntOptimistic(index, programPoint);
-    }
-
-    @Override
-    public long getLong(final int index) {
-        return underlying.getLong(index);
-    }
-
-    @Override
-    public long getLongOptimistic(final int index, final int programPoint) {
-        return underlying.getLongOptimistic(index, programPoint);
     }
 
     @Override
