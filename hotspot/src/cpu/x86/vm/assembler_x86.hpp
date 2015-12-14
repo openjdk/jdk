@@ -655,12 +655,6 @@ private:
   int simd_prefix_and_encode(XMMRegister dst, XMMRegister nds, XMMRegister src, VexSimdPrefix pre,
                              VexOpcode opc, InstructionAttr *attributes);
 
-  int kreg_prefix_and_encode(KRegister dst, KRegister nds, KRegister src, VexSimdPrefix pre,
-                             VexOpcode opc, InstructionAttr *attributes);
-
-  int kreg_prefix_and_encode(KRegister dst, KRegister nds, Register src, VexSimdPrefix pre,
-                             VexOpcode opc, InstructionAttr *attributes);
-
   // Helper functions for groups of instructions
   void emit_arith_b(int op1, int op2, Register dst, int imm8);
 
@@ -1331,12 +1325,17 @@ private:
 
   void movddup(XMMRegister dst, XMMRegister src);
 
+  void kmovbl(KRegister dst, Register src);
+  void kmovbl(Register dst, KRegister src);
   void kmovwl(KRegister dst, Register src);
+  void kmovwl(Register dst, KRegister src);
   void kmovdl(KRegister dst, Register src);
+  void kmovdl(Register dst, KRegister src);
   void kmovql(KRegister dst, KRegister src);
-  void kmovql(KRegister dst, Register src);
   void kmovql(Address dst, KRegister src);
   void kmovql(KRegister dst, Address src);
+  void kmovql(KRegister dst, Register src);
+  void kmovql(Register dst, KRegister src);
 
   void kortestbl(KRegister dst, KRegister src);
   void kortestwl(KRegister dst, KRegister src);
@@ -1521,14 +1520,17 @@ private:
   void pcmpeqb(XMMRegister dst, XMMRegister src);
   void vpcmpeqb(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqb(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpcmpeqb(KRegister kdst, XMMRegister nds, Address src, int vector_len);
 
   void pcmpeqw(XMMRegister dst, XMMRegister src);
   void vpcmpeqw(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqw(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpcmpeqw(KRegister kdst, XMMRegister nds, Address src, int vector_len);
 
   void pcmpeqd(XMMRegister dst, XMMRegister src);
   void vpcmpeqd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
   void evpcmpeqd(KRegister kdst, XMMRegister nds, XMMRegister src, int vector_len);
+  void evpcmpeqd(KRegister kdst, XMMRegister nds, Address src, int vector_len);
 
   void pcmpeqq(XMMRegister dst, XMMRegister src);
   void vpcmpeqq(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len);
