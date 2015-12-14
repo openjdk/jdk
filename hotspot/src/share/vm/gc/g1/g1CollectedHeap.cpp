@@ -410,11 +410,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
   for (uint i = first; i <= last; ++i) {
     hr = region_at(i);
     _humongous_set.add(hr);
-    if (i == first) {
-      _hr_printer.alloc(G1HRPrinter::StartsHumongous, hr, hr->top());
-    } else {
-      _hr_printer.alloc(G1HRPrinter::ContinuesHumongous, hr, hr->top());
-    }
+    _hr_printer.alloc(hr);
   }
 
   return new_obj;
@@ -807,9 +803,9 @@ bool G1CollectedHeap::alloc_archive_regions(MemRegion* ranges, size_t count) {
     while (curr_region != NULL) {
       assert(curr_region->is_empty() && !curr_region->is_pinned(),
              "Region already in use (index %u)", curr_region->hrm_index());
-      _hr_printer.alloc(curr_region, G1HRPrinter::Archive);
       curr_region->set_allocation_context(AllocationContext::system());
       curr_region->set_archive();
+      _hr_printer.alloc(curr_region);
       _old_set.add(curr_region);
       if (curr_region != last_region) {
         curr_region->set_top(curr_region->end());
@@ -1195,19 +1191,7 @@ private:
 public:
   bool doHeapRegion(HeapRegion* hr) {
     assert(!hr->is_young(), "not expecting to find young regions");
-    if (hr->is_free()) {
-      // We only generate output for non-empty regions.
-    } else if (hr->is_starts_humongous()) {
-      _hr_printer->post_compaction(hr, G1HRPrinter::StartsHumongous);
-    } else if (hr->is_continues_humongous()) {
-      _hr_printer->post_compaction(hr, G1HRPrinter::ContinuesHumongous);
-    } else if (hr->is_archive()) {
-      _hr_printer->post_compaction(hr, G1HRPrinter::Archive);
-    } else if (hr->is_old()) {
-      _hr_printer->post_compaction(hr, G1HRPrinter::Old);
-    } else {
-      ShouldNotReachHere();
-    }
+    _hr_printer->post_compaction(hr);
     return false;
   }
 
@@ -5967,7 +5951,7 @@ HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
                                               false /* do_expand */);
     if (new_alloc_region != NULL) {
       set_region_short_lived_locked(new_alloc_region);
-      _hr_printer.alloc(new_alloc_region, G1HRPrinter::Eden, young_list_full);
+      _hr_printer.alloc(new_alloc_region, young_list_full);
       check_bitmaps("Mutator Region Allocation", new_alloc_region);
       return new_alloc_region;
     }
@@ -6008,13 +5992,12 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size,
       new_alloc_region->record_timestamp();
       if (is_survivor) {
         new_alloc_region->set_survivor();
-        _hr_printer.alloc(new_alloc_region, G1HRPrinter::Survivor);
         check_bitmaps("Survivor Region Allocation", new_alloc_region);
       } else {
         new_alloc_region->set_old();
-        _hr_printer.alloc(new_alloc_region, G1HRPrinter::Old);
         check_bitmaps("Old Region Allocation", new_alloc_region);
       }
+      _hr_printer.alloc(new_alloc_region);
       bool during_im = collector_state()->during_initial_mark_pause();
       new_alloc_region->note_start_of_copying(during_im);
       return new_alloc_region;
