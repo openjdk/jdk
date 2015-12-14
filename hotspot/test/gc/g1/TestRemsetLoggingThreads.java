@@ -22,7 +22,7 @@
  */
 
 /*
- * @test TestSummarizeRSetStatsThreads
+ * @test TestRemsetLoggingThreads
  * @bug 8025441
  * @summary Ensure that various values of worker threads/concurrent
  * refinement threads do not crash the VM.
@@ -38,29 +38,23 @@ import java.util.regex.Pattern;
 import jdk.test.lib.ProcessTools;
 import jdk.test.lib.OutputAnalyzer;
 
-public class TestSummarizeRSetStatsThreads {
+public class TestRemsetLoggingThreads {
 
   private static void runTest(int refinementThreads, int workerThreads) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseG1GC",
                                                               "-XX:+UnlockDiagnosticVMOptions",
-                                                              "-XX:+G1SummarizeRSetStats",
+                                                              "-Xlog:gc+remset+exit=trace",
                                                               "-XX:G1ConcRefinementThreads=" + refinementThreads,
                                                               "-XX:ParallelGCThreads=" + workerThreads,
                                                               "-version");
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
-    // check output to contain the string "Concurrent RS threads times (s)" followed by
-    // the correct number of values in the next line.
-
     // a zero in refinement thread numbers indicates that the value in ParallelGCThreads should be used.
     // Additionally use at least one thread.
     int expectedNumRefinementThreads = refinementThreads;
 
-    // create the pattern made up of n copies of a floating point number pattern
-    String numberPattern = String.format("%0" + expectedNumRefinementThreads + "d", 0)
-      .replace("0", "\\s+\\d+\\.\\d+");
-    String pattern = "Concurrent RS threads times \\(s\\)$" + numberPattern + "$";
+    String pattern = "Concurrent RS threads times \\(s\\)$";
     Matcher m = Pattern.compile(pattern, Pattern.MULTILINE).matcher(output.getStdout());
 
     if (!m.find()) {
@@ -71,7 +65,7 @@ public class TestSummarizeRSetStatsThreads {
   }
 
   public static void main(String[] args) throws Exception {
-    if (!TestSummarizeRSetStatsTools.testingG1GC()) {
+    if (!TestRemsetLoggingTools.testingG1GC()) {
       return;
     }
     // different valid combinations of number of refinement and gc worker threads

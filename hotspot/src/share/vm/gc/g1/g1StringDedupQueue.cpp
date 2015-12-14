@@ -28,6 +28,7 @@
 #include "gc/g1/g1StringDedup.hpp"
 #include "gc/g1/g1StringDedupQueue.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -152,10 +153,9 @@ void G1StringDedupQueue::unlink_or_oops_do(G1StringDedupUnlinkOrOopsDoClosure* c
   }
 }
 
-void G1StringDedupQueue::print_statistics(outputStream* st) {
-  st->print_cr(
-    "   [Queue]\n"
-    "      [Dropped: " UINTX_FORMAT "]", _queue->_dropped);
+void G1StringDedupQueue::print_statistics() {
+  log_debug(gc, stringdedup)("   [Queue]");
+  log_debug(gc, stringdedup)("      [Dropped: " UINTX_FORMAT "]", _queue->_dropped);
 }
 
 void G1StringDedupQueue::verify() {

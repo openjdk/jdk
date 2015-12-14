@@ -56,6 +56,12 @@ class Abstract_VM_Version: AllStatic {
                                                   unsigned int dem,
                                                   unsigned int switch_pt);
  public:
+  // Called as part of the runtime services initialization which is
+  // called from the management module initialization (via init_globals())
+  // after argument parsing and attaching of the main thread has
+  // occurred.  Examines a variety of the hardware capabilities of
+  // the platform to determine which features can be used to execute the
+  // program.
   static void initialize();
 
   // This allows for early initialization of VM_Version information
@@ -64,6 +70,11 @@ class Abstract_VM_Version: AllStatic {
   // other part of the VM being initialized when called. Platforms that
   // need to specialize this define VM_Version::early_initialize().
   static void early_initialize() { }
+
+  // Called to initialize VM variables needing initialization
+  // after command line parsing. Platforms that need to specialize
+  // this should define VM_Version::init_before_ergo().
+  static void init_before_ergo() {}
 
   // Name
   static const char* vm_name();

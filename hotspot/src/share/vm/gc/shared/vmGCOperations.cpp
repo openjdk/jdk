@@ -29,6 +29,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/vmGCOperations.hpp"
 #include "memory/oopFactory.hpp"
+#include "logging/log.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceRefKlass.hpp"
 #include "runtime/handles.inline.hpp"
@@ -216,16 +217,6 @@ bool VM_CollectForMetadataAllocation::initiate_concurrent_GC() {
   return false;
 }
 
-static void log_metaspace_alloc_failure_for_concurrent_GC() {
-  if (Verbose && PrintGCDetails) {
-    if (UseConcMarkSweepGC) {
-      gclog_or_tty->print_cr("\nCMS full GC for Metaspace");
-    } else if (UseG1GC) {
-      gclog_or_tty->print_cr("\nG1 full GC for Metaspace");
-    }
-  }
-}
-
 void VM_CollectForMetadataAllocation::doit() {
   SvcGCMarker sgcm(SvcGCMarker::FULL);
 
@@ -249,7 +240,7 @@ void VM_CollectForMetadataAllocation::doit() {
       return;
     }
 
-    log_metaspace_alloc_failure_for_concurrent_GC();
+    log_debug(gc)("%s full GC for Metaspace", UseConcMarkSweepGC ? "CMS" : "G1");
   }
 
   // Don't clear the soft refs yet.
@@ -282,10 +273,7 @@ void VM_CollectForMetadataAllocation::doit() {
     return;
   }
 
-  if (Verbose && PrintGCDetails) {
-    gclog_or_tty->print_cr("\nAfter Metaspace GC failed to allocate size "
-                           SIZE_FORMAT, _size);
-  }
+  log_debug(gc)("After Metaspace GC failed to allocate size " SIZE_FORMAT, _size);
 
   if (GC_locker::is_active_and_needs_gc()) {
     set_gc_locked();

@@ -28,6 +28,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1CollectorPolicy.hpp"
 #include "gc/g1/suspendibleThreadSet.hpp"
+#include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
@@ -88,11 +89,8 @@ bool ConcurrentG1RefineThread::is_active() {
 void ConcurrentG1RefineThread::activate() {
   MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
   if (!is_primary()) {
-    if (G1TraceConcRefinement) {
-      DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
-      gclog_or_tty->print_cr("G1-Refine-activated worker %d, on threshold %d, current %d",
-                             _worker_id, _threshold, (int)dcqs.completed_buffers_num());
-    }
+    log_debug(gc, refine)("G1-Refine-activated worker %d, on threshold %d, current %d",
+                          _worker_id, _threshold, JavaThread::dirty_card_queue_set().completed_buffers_num());
     set_active(true);
   } else {
     DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
@@ -104,11 +102,8 @@ void ConcurrentG1RefineThread::activate() {
 void ConcurrentG1RefineThread::deactivate() {
   MutexLockerEx x(_monitor, Mutex::_no_safepoint_check_flag);
   if (!is_primary()) {
-    if (G1TraceConcRefinement) {
-      DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
-      gclog_or_tty->print_cr("G1-Refine-deactivated worker %d, off threshold %d, current %d",
-                             _worker_id, _deactivation_threshold, (int)dcqs.completed_buffers_num());
-    }
+    log_debug(gc, refine)("G1-Refine-deactivated worker %d, off threshold %d, current %d",
+                          _worker_id, _deactivation_threshold, JavaThread::dirty_card_queue_set().completed_buffers_num());
     set_active(false);
   } else {
     DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
@@ -174,9 +169,7 @@ void ConcurrentG1RefineThread::run_service() {
     }
   }
 
-  if (G1TraceConcRefinement) {
-    gclog_or_tty->print_cr("G1-Refine-stop");
-  }
+  log_debug(gc, refine)("G1-Refine-stop");
 }
 
 void ConcurrentG1RefineThread::stop() {

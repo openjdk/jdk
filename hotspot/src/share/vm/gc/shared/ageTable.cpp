@@ -28,6 +28,7 @@
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/gcPolicyCounters.hpp"
 #include "memory/resourceArea.hpp"
+#include "logging/log.hpp"
 #include "utilities/copy.hpp"
 
 /* Copyright (c) 1992, 2015, Oracle and/or its affiliates, and Stanford University.
@@ -94,24 +95,18 @@ uint ageTable::compute_tenuring_threshold(size_t survivor_capacity, GCPolicyCoun
     result = age < MaxTenuringThreshold ? age : MaxTenuringThreshold;
   }
 
-  if (PrintTenuringDistribution || UsePerfData) {
 
-    if (PrintTenuringDistribution) {
-      gclog_or_tty->cr();
-      gclog_or_tty->print_cr("Desired survivor size " SIZE_FORMAT " bytes, new threshold "
-        UINTX_FORMAT " (max threshold " UINTX_FORMAT ")",
-        desired_survivor_size*oopSize, (uintx) result, MaxTenuringThreshold);
-    }
+  log_debug(gc, age)("Desired survivor size " SIZE_FORMAT " bytes, new threshold " UINTX_FORMAT " (max threshold " UINTX_FORMAT ")",
+                     desired_survivor_size*oopSize, (uintx) result, MaxTenuringThreshold);
 
+  if (log_is_enabled(Trace, gc, age) || UsePerfData) {
     size_t total = 0;
     uint age = 1;
     while (age < table_size) {
       total += sizes[age];
       if (sizes[age] > 0) {
-        if (PrintTenuringDistribution) {
-          gclog_or_tty->print_cr("- age %3u: " SIZE_FORMAT_W(10) " bytes, " SIZE_FORMAT_W(10) " total",
-                                        age,    sizes[age]*oopSize,          total*oopSize);
-        }
+        log_trace(gc, age)("- age %3u: " SIZE_FORMAT_W(10) " bytes, " SIZE_FORMAT_W(10) " total",
+                            age, sizes[age]*oopSize, total*oopSize);
       }
       if (UsePerfData) {
         _perf_sizes[age]->set_value(sizes[age]*oopSize);

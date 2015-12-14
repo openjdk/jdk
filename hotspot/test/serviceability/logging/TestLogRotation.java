@@ -22,13 +22,12 @@
  */
 
 /*
- * @test Test6941923.java
- * @bug 6941923
- * @summary test flags for gc log rotation
+ * @test TestLogRotation.java
+ * @summary test flags for log rotation
  * @library /testlibrary
  * @modules java.base/sun.misc
  *          java.management
- * @run main/othervm/timeout=600 Test6941923
+ * @run main/othervm/timeout=600 TestLogRotation
  *
  */
 import jdk.test.lib.*;
@@ -51,7 +50,7 @@ class GCLoggingGenerator {
     }
 }
 
-public class Test6941923 {
+public class TestLogRotation {
 
     static final File currentDirectory = new File(".");
     static final String logFileName = "test.log";
@@ -76,11 +75,9 @@ public class Test6941923 {
         ArrayList<String> args = new ArrayList();
         String[] logOpts = new String[]{
             "-cp", System.getProperty("java.class.path"),
-            "-Xloggc:" + logFileName,
-            "-XX:-DisableExplicitGC", // to sure that System.gc() works
-            "-XX:+PrintGC", "-XX:+PrintGCDetails", "-XX:+UseGCLogFileRotation",
-            "-XX:NumberOfGCLogFiles=" + numberOfFiles,
-            "-XX:GCLogFileSize=" + logFileSizeK + "K", "-Xmx128M"};
+            "-Xlog:gc=debug:" + logFileName + "::filesize=" + logFileSizeK + ",filecount=" + numberOfFiles,
+            "-XX:-DisableExplicitGC", // to ensure that System.gc() works
+            "-Xmx128M"};
         // System.getProperty("test.java.opts") is '' if no options is set
         // need to skip such empty
         String[] externalVMopts = System.getProperty("test.java.opts").length() == 0

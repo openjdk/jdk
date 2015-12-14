@@ -234,7 +234,7 @@ public:
 
   static void unlink_or_oops_do(G1StringDedupUnlinkOrOopsDoClosure* cl, uint worker_id);
 
-  static void print_statistics(outputStream* st);
+  static void print_statistics();
   static void verify();
 };
 

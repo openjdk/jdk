@@ -1140,6 +1140,19 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   // save result (push state before jvmti call and pop it afterwards) and notify jvmti
   notify_method_exit(false, state, NotifyJVMTI);
 
+  if (StackReservedPages > 0) {
+    // testing if Stack Reserved Area needs to be re-enabled
+    Label no_reserved_zone_enabling;
+    ld_ptr(G2_thread, JavaThread::reserved_stack_activation_offset(), G3_scratch);
+    cmp_and_brx_short(SP, G3_scratch, Assembler::lessUnsigned, Assembler::pt, no_reserved_zone_enabling);
+
+    call_VM_leaf(noreg, CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), G2_thread);
+    call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_delayed_StackOverflowError), G2_thread);
+    should_not_reach_here();
+
+    bind(no_reserved_zone_enabling);
+  }
+
   interp_verify_oop(Otos_i, state, __FILE__, __LINE__);
   verify_thread();
 

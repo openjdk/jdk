@@ -64,7 +64,7 @@ public class CompressedClassSpaceSize {
             // Make sure the minimum size is set correctly and printed
             pb = ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
                                                        "-XX:CompressedClassSpaceSize=1m",
-                                                       "-XX:+PrintCompressedOopsMode",
+                                                       "-Xlog:gc+metaspace=trace",
                                                        "-version");
             output = new OutputAnalyzer(pb.start());
             output.shouldContain("Compressed class space size: 1048576")
@@ -74,7 +74,7 @@ public class CompressedClassSpaceSize {
             // Make sure the maximum size is set correctly and printed
             pb = ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
                                                        "-XX:CompressedClassSpaceSize=3g",
-                                                       "-XX:+PrintCompressedOopsMode",
+                                                       "-Xlog:gc+metaspace=trace",
                                                        "-version");
             output = new OutputAnalyzer(pb.start());
             output.shouldContain("Compressed class space size: 3221225472")

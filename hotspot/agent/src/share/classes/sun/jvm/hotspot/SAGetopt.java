@@ -37,7 +37,7 @@ public class SAGetopt {
     private boolean _optreset; // special handling of first call
 
     public SAGetopt(String[] args) {
-        _argv  = args;
+        _argv  = args.clone();
         _optind   = 0;
         _optopt   = 1;
         _optarg   = null;

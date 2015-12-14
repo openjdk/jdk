@@ -29,6 +29,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "jvmtifiles/jvmtiEnv.hpp"
+#include "logging/logConfiguration.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
 #include "oops/instanceKlass.hpp"
@@ -628,7 +629,22 @@ JvmtiEnv::SetVerboseFlag(jvmtiVerboseFlag flag, jboolean value) {
     TraceClassUnloading = value != 0;
     break;
   case JVMTI_VERBOSE_GC:
-    PrintGC = value != 0;
+    {
+      // This is a temporary solution to work around initialization issues.
+      // JDK-8145083 will fix this.
+      Mutex* conf_mutex = LogConfiguration_lock;
+      if (Threads::number_of_threads() == 0) {
+        // We're too early in the initialization to use mutexes
+        LogConfiguration_lock = NULL;
+      }
+      MutexLockerEx ml(LogConfiguration_lock);
+      if (value == 0) {
+        LogConfiguration::parse_log_arguments("stdout", "gc=off", NULL, NULL, NULL);
+      } else {
+        LogConfiguration::parse_log_arguments("stdout", "gc", NULL, NULL, NULL);
+      }
+      LogConfiguration_lock = conf_mutex;
+    }
     break;
   case JVMTI_VERBOSE_JNI:
     PrintJNIResolving = value != 0;
