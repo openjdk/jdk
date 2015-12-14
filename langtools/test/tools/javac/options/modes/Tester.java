@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,8 +136,11 @@ public class Tester {
         } catch (IllegalArgumentException | IllegalStateException | IOException e) {
             tr.setThrown(e);
         } finally {
-            ((JavacFileManager) context.get(JavaFileManager.class)).close();
-            tr.setLogs(sw.toString(), sysOut.close(), sysErr.close());
+            try {
+                ((JavacFileManager) context.get(JavaFileManager.class)).close();
+                tr.setLogs(sw.toString(), sysOut.close(), sysErr.close());
+            } catch (IOException e) {
+            }
         }
         tr.setContext(context);
         tr.show();
@@ -149,6 +152,7 @@ public class Tester {
     class TestResult {
         final List<String> args;
         Throwable thrown;
+        List<Throwable> suppressed = new ArrayList<>();
         Object rc; // Number or Boolean
         Map<Log, String> logs;
         Context context;
@@ -170,6 +174,10 @@ public class Tester {
 
         void setResult(boolean ok) {
             this.rc = ok ? 0 : 1;
+        }
+
+        void setSuppressed(Throwable thrown) {
+            this.suppressed.add(thrown);
         }
 
         void setThrown(Throwable thrown) {
@@ -197,6 +205,11 @@ public class Tester {
             if (thrown != null) {
                 if (needSep) out.print("; ");
                 out.print("thrown:" + thrown);
+                needSep = true;
+            }
+            if (!suppressed.isEmpty()) {
+                if (needSep) out.print("; ");
+                out.print("suppressed:" + suppressed);
                 needSep = true;
             }
             if (needSep)

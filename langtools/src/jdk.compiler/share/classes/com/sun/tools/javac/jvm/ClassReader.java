@@ -29,15 +29,18 @@ import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.CharBuffer;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.NestingKind;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
+
 import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeCompleter;
 import com.sun.tools.javac.code.*;
@@ -47,7 +50,8 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Annotate.AnnotationTypeMetadata;
-import com.sun.tools.javac.file.BaseFileObject;
+import com.sun.tools.javac.file.BaseFileManager;
+import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.jvm.ClassFile.NameAndType;
 import com.sun.tools.javac.jvm.ClassFile.Version;
 import com.sun.tools.javac.util.*;
@@ -2465,15 +2469,14 @@ public class ClassReader {
      * to be valid as is, so operations other than those to access the name throw
      * UnsupportedOperationException
      */
-    private static class SourceFileObject extends BaseFileObject {
+    private static class SourceFileObject implements JavaFileObject {
 
         /** The file's name.
          */
-        private Name name;
-        private Name flatname;
+        private final Name name;
+        private final Name flatname;
 
         public SourceFileObject(Name name, Name flatname) {
-            super(null); // no file manager; never referenced for this file object
             this.name = name;
             this.flatname = flatname;
         }
@@ -2483,7 +2486,7 @@ public class ClassReader {
             try {
                 return new URI(null, name.toString(), null);
             } catch (URISyntaxException e) {
-                throw new CannotCreateUriError(name.toString(), e);
+                throw new PathFileObject.CannotCreateUriError(name.toString(), e);
             }
         }
 
@@ -2492,14 +2495,9 @@ public class ClassReader {
             return name.toString();
         }
 
-        @Override
-        public String getShortName() {
-            return getName();
-        }
-
         @Override @DefinedBy(Api.COMPILER)
         public JavaFileObject.Kind getKind() {
-            return getKind(getName());
+            return BaseFileManager.getKind(getName());
         }
 
         @Override @DefinedBy(Api.COMPILER)
@@ -2537,14 +2535,19 @@ public class ClassReader {
             throw new UnsupportedOperationException();
         }
 
-        @Override
-        protected String inferBinaryName(Iterable<? extends Path> path) {
-            return flatname.toString();
-        }
-
         @Override @DefinedBy(Api.COMPILER)
         public boolean isNameCompatible(String simpleName, JavaFileObject.Kind kind) {
             return true; // fail-safe mode
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public NestingKind getNestingKind() {
+            return null;
+        }
+
+        @Override @DefinedBy(Api.COMPILER)
+        public Modifier getAccessLevel() {
+            return null;
         }
 
         /**

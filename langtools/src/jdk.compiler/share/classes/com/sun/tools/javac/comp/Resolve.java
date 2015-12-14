@@ -2784,8 +2784,6 @@ public class Resolve {
                             .map(c -> StaticKind.from(c.sym))
                             .reduce(StaticKind::reduce)
                             .orElse(StaticKind.UNDEFINED);
-                case HIDDEN:
-                    return StaticKind.from(((AccessError)sym).sym);
                 default:
                     return StaticKind.UNDEFINED;
             }
@@ -3365,7 +3363,7 @@ public class Resolve {
         if (env1 != null) {
             while (env1 != null && env1.outer != null) {
                 if (isStatic(env1)) staticOnly = true;
-                if (env1.enclClass.sym.isSubClass(member.owner, types)) {
+                if (env1.enclClass.sym.isSubClass(member.owner.enclClass(), types)) {
                     Symbol sym = env1.info.scope.findFirst(name);
                     if (sym != null) {
                         if (staticOnly) sym = new StaticError(sym);

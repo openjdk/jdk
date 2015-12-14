@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -764,11 +764,12 @@ class UnixPath implements Path {
     // -- file operations --
 
     // package-private
-    int openForAttributeAccess(boolean followLinks) throws IOException {
+    int openForAttributeAccess(boolean followLinks) throws UnixException {
         int flags = O_RDONLY;
         if (!followLinks) {
             if (O_NOFOLLOW == 0)
-                throw new IOException("NOFOLLOW_LINKS is not supported on this platform");
+                throw new UnixException
+                    ("NOFOLLOW_LINKS is not supported on this platform");
             flags |= O_NOFOLLOW;
         }
         try {
@@ -778,12 +779,7 @@ class UnixPath implements Path {
             if (getFileSystem().isSolaris() && x.errno() == EINVAL)
                 x.setError(ELOOP);
 
-            if (x.errno() == ELOOP)
-                throw new FileSystemException(getPathForExceptionMessage(), null,
-                    x.getMessage() + " or unable to access attributes of symbolic link");
-
-            x.rethrowAsIOException(this);
-            return -1; // keep compile happy
+            throw x;
         }
     }
 

@@ -86,10 +86,11 @@ import jdk.jshell.JShell.Subscription;
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
-import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.Spliterators;
+import java.util.function.Supplier;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -600,6 +601,7 @@ public class JShellTool {
     }
 
     private static final CompletionProvider EMPTY_COMPLETION_PROVIDER = new FixedCompletionProvider();
+    private static final CompletionProvider KEYWORD_COMPLETION_PROVIDER = new FixedCompletionProvider("all ", "start ", "history ");
     private static final CompletionProvider FILE_COMPLETION_PROVIDER = fileCompletions(p -> true);
     private final Map<String, Command> commands = new LinkedHashMap<>();
     private void registerCommand(Command cmd) {
@@ -650,13 +652,21 @@ public class JShellTool {
         };
     }
 
+    private CompletionProvider editKeywordCompletion() {
+        return (code, cursor, anchor) -> {
+            List<Suggestion> result = new ArrayList<>();
+            result.addAll(KEYWORD_COMPLETION_PROVIDER.completionSuggestions(code, cursor, anchor));
+            result.addAll(editCompletion().completionSuggestions(code, cursor, anchor));
+            return result;
+        };
+    }
+
     private static CompletionProvider saveCompletion() {
-        CompletionProvider keyCompletion = new FixedCompletionProvider("all ", "history ", "start ");
         return (code, cursor, anchor) -> {
             List<Suggestion> result = new ArrayList<>();
             int space = code.indexOf(' ');
             if (space == (-1)) {
-                result.addAll(keyCompletion.completionSuggestions(code, cursor, anchor));
+                result.addAll(KEYWORD_COMPLETION_PROVIDER.completionSuggestions(code, cursor, anchor));
             }
             result.addAll(FILE_COMPLETION_PROVIDER.completionSuggestions(code.substring(space + 1), cursor - space - 1, anchor));
             anchor[0] += space + 1;
@@ -667,9 +677,9 @@ public class JShellTool {
     // Table of commands -- with command forms, argument kinds, help message, implementation, ...
 
     {
-        registerCommand(new Command("/list", "[all]", "list the source you have typed",
+        registerCommand(new Command("/list", "[all|start|history|<name or id>]", "list the source you have typed",
                                     arg -> cmdList(arg),
-                                    new FixedCompletionProvider("all")));
+                                    editKeywordCompletion()));
         registerCommand(new Command("/seteditor", "<executable>", "set the external editor command to use",
                                     arg -> cmdSetEditor(arg),
                                     EMPTY_COMPLETION_PROVIDER));
@@ -937,49 +947,67 @@ public class JShellTool {
     }
 
     /**
-     * Convert a user argument to a list of snippets referenced by that
-     * argument (or lack of argument).
-     * @param arg The user's argument to the command
-     * @return a list of referenced snippets
+     * Avoid parameterized varargs possible heap pollution warning.
      */
-    private List<Snippet> argToSnippets(String arg) {
-        List<Snippet> snippets = new ArrayList<>();
-        if (arg.isEmpty()) {
-            // Default is all user snippets
-            for (Snippet sn : state.snippets()) {
-                if (notInStartUp(sn)) {
-                    snippets.add(sn);
-                }
-            }
-        } else {
-            // Look for all declarations with matching names
-            for (Snippet key : state.snippets()) {
-                switch (key.kind()) {
-                    case METHOD:
-                    case VAR:
-                    case TYPE_DECL:
-                        if (((DeclarationSnippet) key).name().equals(arg)) {
-                            snippets.add(key);
-                        }
-                        break;
-                }
-            }
-            // If no declarations found, look for an id of this name
-            if (snippets.isEmpty()) {
-                for (Snippet sn : state.snippets()) {
-                    if (sn.id().equals(arg)) {
-                        snippets.add(sn);
-                        break;
-                    }
-                }
-            }
-            // If still no matches found, give an error
-            if (snippets.isEmpty()) {
-                hard("No definition or id named %s found.  See /classes /methods /vars or /list", arg);
-                return null;
+    private interface SnippetPredicate extends Predicate<Snippet> { }
+
+    /**
+     * Apply filters to a stream until one that is non-empty is found.
+     * Adapted from Stuart Marks
+     *
+     * @param supplier Supply the Snippet stream to filter
+     * @param filters Filters to attempt
+     * @return The non-empty filtered Stream, or null
+     */
+    private static Stream<Snippet> nonEmptyStream(Supplier<Stream<Snippet>> supplier,
+            SnippetPredicate... filters) {
+        for (SnippetPredicate filt : filters) {
+            Iterator<Snippet> iterator = supplier.get().filter(filt).iterator();
+            if (iterator.hasNext()) {
+                return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false);
             }
         }
-        return snippets;
+        return null;
+    }
+
+    private boolean mainActive(Snippet sn) {
+        return notInStartUp(sn) && state.status(sn).isActive;
+    }
+
+    private boolean matchingDeclaration(Snippet sn, String name) {
+        return sn instanceof DeclarationSnippet
+                && ((DeclarationSnippet) sn).name().equals(name);
+    }
+
+    /**
+     * Convert a user argument to a Stream of snippets referenced by that argument
+     * (or lack of argument).
+     *
+     * @param arg The user's argument to the command, maybe be the empty string
+     * @return a Stream of referenced snippets or null if no matches to specific arg
+     */
+    private Stream<Snippet> argToSnippets(String arg, boolean allowAll) {
+        List<Snippet> snippets = state.snippets();
+        if (allowAll && arg.equals("all")) {
+            // all snippets including start-up, failed, and overwritten
+            return snippets.stream();
+        } else if (arg.isEmpty()) {
+            // Default is all active user snippets
+            return snippets.stream()
+                    .filter(this::mainActive);
+        } else {
+            Stream<Snippet> result =
+                    nonEmptyStream(
+                            () -> snippets.stream(),
+                            // look for active user declarations matching the name
+                            sn -> mainActive(sn) && matchingDeclaration(sn, arg),
+                            // else, look for any declarations matching the name
+                            sn -> matchingDeclaration(sn, arg),
+                            // else, look for an id of this name
+                            sn -> sn.id().equals(arg)
+                    );
+            return result;
+        }
     }
 
     private void cmdDrop(String arg) {
@@ -988,39 +1016,40 @@ public class JShellTool {
             hard("Specify by id or name. Use /list to see ids. Use /reset to reset all state.");
             return;
         }
-        List<Snippet> snippetSet = argToSnippets(arg);
-        if (snippetSet == null) {
+        Stream<Snippet> stream = argToSnippets(arg, false);
+        if (stream == null) {
+            hard("No definition or id named %s found.  See /classes, /methods, /vars, or /list", arg);
             return;
         }
-        snippetSet = snippetSet.stream()
-                .filter(sn -> state.status(sn).isActive)
+        List<Snippet> snippets = stream
+                .filter(sn -> state.status(sn).isActive && sn instanceof PersistentSnippet)
                 .collect(toList());
-        snippetSet.removeIf(sn -> !(sn instanceof PersistentSnippet));
-        if (snippetSet.isEmpty()) {
-            hard("The argument did not specify an import, variable, method, or class to drop.");
+        if (snippets.isEmpty()) {
+            hard("The argument did not specify an active import, variable, method, or class to drop.");
             return;
         }
-        if (snippetSet.size() > 1) {
+        if (snippets.size() > 1) {
             hard("The argument references more than one import, variable, method, or class.");
             hard("Try again with one of the ids below:");
-            for (Snippet sn : snippetSet) {
+            for (Snippet sn : snippets) {
                 cmdout.printf("%4s : %s\n", sn.id(), sn.source().replace("\n", "\n       "));
             }
             return;
         }
-        PersistentSnippet psn = (PersistentSnippet) snippetSet.iterator().next();
+        PersistentSnippet psn = (PersistentSnippet) snippets.get(0);
         state.drop(psn).forEach(this::handleEvent);
     }
 
     private void cmdEdit(String arg) {
-        List<Snippet> snippetSet = argToSnippets(arg);
-        if (snippetSet == null) {
+        Stream<Snippet> stream = argToSnippets(arg, true);
+        if (stream == null) {
+            hard("No definition or id named %s found.  See /classes, /methods, /vars, or /list", arg);
             return;
         }
         Set<String> srcSet = new LinkedHashSet<>();
-        for (Snippet key : snippetSet) {
-            String src = key.source();
-            switch (key.subKind()) {
+        stream.forEachOrdered(sn -> {
+            String src = sn.source();
+            switch (sn.subKind()) {
                 case VAR_VALUE_SUBKIND:
                     break;
                 case ASSIGNMENT_SUBKIND:
@@ -1035,7 +1064,7 @@ public class JShellTool {
                     srcSet.add(src);
                     break;
             }
-        }
+        });
         StringBuilder sb = new StringBuilder();
         for (String s : srcSet) {
             sb.append(s);
@@ -1107,31 +1136,30 @@ public class JShellTool {
     }
 
     private void cmdList(String arg) {
-        boolean all = false;
-        switch (arg) {
-            case "all":
-                all = true;
-                break;
-            case "history":
-                cmdHistory();
-                return;
-            case "":
-                break;
-            default:
-                hard("Invalid /list argument: %s", arg);
-                return;
+        if (arg.equals("history")) {
+            cmdHistory();
+            return;
         }
-        boolean hasOutput = false;
-        for (Snippet sn : state.snippets()) {
-            if (all || (notInStartUp(sn) && state.status(sn).isActive)) {
-                if (!hasOutput) {
-                    cmdout.println();
-                    hasOutput = true;
-                }
-                cmdout.printf("%4s : %s\n", sn.id(), sn.source().replace("\n", "\n       "));
-
+        Stream<Snippet> stream = argToSnippets(arg, true);
+        if (stream == null) {
+            // Check if there are any definitions at all
+            if (argToSnippets("", false).iterator().hasNext()) {
+                hard("No definition or id named %s found.  Try /list without arguments.", arg);
+            } else {
+                hard("No definition or id named %s found.  There are no active definitions.", arg);
             }
+            return;
         }
+
+        // prevent double newline on empty list
+        boolean[] hasOutput = new boolean[1];
+        stream.forEachOrdered(sn -> {
+            if (!hasOutput[0]) {
+                cmdout.println();
+                hasOutput[0] = true;
+            }
+            cmdout.printf("%4s : %s\n", sn.id(), sn.source().replace("\n", "\n       "));
+        });
     }
 
     private void cmdOpen(String filename) {
@@ -1166,12 +1194,12 @@ public class JShellTool {
             return;
         }
         boolean useHistory = false;
-        boolean saveAll = false;
+        String saveAll = "";
         boolean saveStart = false;
         String cmd = mat.group("cmd");
         if (cmd != null) switch (cmd) {
             case "all":
-                saveAll = true;
+                saveAll = "all";
                 break;
             case "history":
                 useHistory = true;
@@ -1196,8 +1224,9 @@ public class JShellTool {
             } else if (saveStart) {
                 writer.append(DEFAULT_STARTUP);
             } else {
-                for (Snippet sn : state.snippets()) {
-                    if (saveAll || notInStartUp(sn)) {
+                Stream<Snippet> stream = argToSnippets(saveAll, true);
+                if (stream != null) {
+                    for (Snippet sn : stream.collect(toList())) {
                         writer.write(sn.source());
                         writer.write("\n");
                     }
