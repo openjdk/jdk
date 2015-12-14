@@ -379,11 +379,12 @@ bool DirectivesParser::set_option(JSON_TYPE t, JSON_VAL* v) {
 
       const char* error_msg = NULL;
       if (current_directiveset == NULL) {
-        if (!current_directive->_c1_store->parse_and_add_inline(s, error_msg)) {
-          assert (error_msg != NULL, "Must have valid error message");
-          error(VALUE_ERROR, "Method pattern error: %s", error_msg);
-        }
-        if (!current_directive->_c2_store->parse_and_add_inline(s, error_msg)) {
+        if (current_directive->_c1_store->parse_and_add_inline(s, error_msg)) {
+          if (!current_directive->_c2_store->parse_and_add_inline(s, error_msg)) {
+            assert (error_msg != NULL, "Must have valid error message");
+            error(VALUE_ERROR, "Method pattern error: %s", error_msg);
+          }
+        } else {
           assert (error_msg != NULL, "Must have valid error message");
           error(VALUE_ERROR, "Method pattern error: %s", error_msg);
         }

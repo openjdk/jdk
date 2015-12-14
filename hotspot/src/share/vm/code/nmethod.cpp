@@ -2332,11 +2332,22 @@ bool nmethod::detect_scavenge_root_oops() {
 void nmethod::preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) {
 #ifndef SHARK
   if (method() != NULL && !method()->is_native()) {
-    SimpleScopeDesc ssd(this, fr.pc());
+    address pc = fr.pc();
+    SimpleScopeDesc ssd(this, pc);
     Bytecode_invoke call(ssd.method(), ssd.bci());
     bool has_receiver = call.has_receiver();
     bool has_appendix = call.has_appendix();
     Symbol* signature = call.signature();
+
+    // The method attached by JIT-compilers should be used, if present.
+    // Bytecode can be inaccurate in such case.
+    Method* callee = attached_method_before_pc(pc);
+    if (callee != NULL) {
+      has_receiver = !(callee->access_flags().is_static());
+      has_appendix = false;
+      signature = callee->signature();
+    }
+
     fr.oops_compiled_arguments_do(signature, has_receiver, has_appendix, reg_map, f);
   }
 #endif // !SHARK
@@ -3524,5 +3535,13 @@ Method* nmethod::attached_method(address call_instr) {
     }
   }
   return NULL; // not found
+}
+
+Method* nmethod::attached_method_before_pc(address pc) {
+  if (NativeCall::is_call_before(pc)) {
+    NativeCall* ncall = nativeCall_before(pc);
+    return attached_method(ncall->instruction_address());
+  }
+  return NULL; // not a call
 }
 

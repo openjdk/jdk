@@ -512,6 +512,7 @@ class nmethod : public CodeBlob {
   void copy_values(GrowableArray<Metadata*>* metadata);
 
   Method* attached_method(address call_pc);
+  Method* attached_method_before_pc(address pc);
 
   // Relocation support
 private:

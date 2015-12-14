@@ -175,9 +175,6 @@ define_pd_global(bool, PreserveFramePointer, false);
           "Use RTM Xend instead of Xabort when lock busy")                  \
                                                                             \
   /* assembler */                                                           \
-  product(bool, Use486InstrsOnly, false,                                    \
-          "Use 80486 Compliant instruction subset")                         \
-                                                                            \
   product(bool, UseCountLeadingZerosInstruction, false,                     \
           "Use count leading zeros instruction")                            \
                                                                             \
