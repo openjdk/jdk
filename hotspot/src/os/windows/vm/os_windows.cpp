@@ -1028,7 +1028,7 @@ void os::check_dump_limit(char* buffer, size_t buffsz) {
   VMError::record_coredump_status(buffer, status);
 }
 
-void os::abort(bool dump_core, void* siginfo, void* context) {
+void os::abort(bool dump_core, void* siginfo, const void* context) {
   HINSTANCE dbghelp;
   EXCEPTION_POINTERS ep;
   MINIDUMP_EXCEPTION_INFORMATION mei;

@@ -121,7 +121,7 @@ char* os::non_memory_address_word() {
 // There are issues with libthread giving out uc_links for different threads
 // on the same uc_link chain and bad or circular links.
 //
-bool os::Solaris::valid_ucontext(Thread* thread, ucontext_t* valid, ucontext_t* suspect) {
+bool os::Solaris::valid_ucontext(Thread* thread, const ucontext_t* valid, const ucontext_t* suspect) {
   if (valid >= suspect ||
       valid->uc_stack.ss_flags != suspect->uc_stack.ss_flags ||
       valid->uc_stack.ss_sp    != suspect->uc_stack.ss_sp    ||
@@ -148,10 +148,10 @@ bool os::Solaris::valid_ucontext(Thread* thread, ucontext_t* valid, ucontext_t* 
 // We will only follow one level of uc_link since there are libthread
 // issues with ucontext linking and it is better to be safe and just
 // let caller retry later.
-ucontext_t* os::Solaris::get_valid_uc_in_signal_handler(Thread *thread,
-  ucontext_t *uc) {
+const ucontext_t* os::Solaris::get_valid_uc_in_signal_handler(Thread *thread,
+  const ucontext_t *uc) {
 
-  ucontext_t *retuc = NULL;
+  const ucontext_t *retuc = NULL;
 
   // Sometimes the topmost register windows are not properly flushed.
   // i.e., if the kernel would have needed to take a page fault
@@ -179,7 +179,7 @@ ucontext_t* os::Solaris::get_valid_uc_in_signal_handler(Thread *thread,
 }
 
 // Assumes ucontext is valid
-ExtendedPC os::Solaris::ucontext_get_ExtendedPC(ucontext_t *uc) {
+ExtendedPC os::Solaris::ucontext_get_ExtendedPC(const ucontext_t *uc) {
   address pc = (address)uc->uc_mcontext.gregs[REG_PC];
   // set npc to zero to avoid using it for safepoint, good for profiling only
   return ExtendedPC(pc);
@@ -191,17 +191,17 @@ void os::Solaris::ucontext_set_pc(ucontext_t* uc, address pc) {
 }
 
 // Assumes ucontext is valid
-intptr_t* os::Solaris::ucontext_get_sp(ucontext_t *uc) {
+intptr_t* os::Solaris::ucontext_get_sp(const ucontext_t *uc) {
   return (intptr_t*)((intptr_t)uc->uc_mcontext.gregs[REG_SP] + STACK_BIAS);
 }
 
 // Solaris X86 only
-intptr_t* os::Solaris::ucontext_get_fp(ucontext_t *uc) {
+intptr_t* os::Solaris::ucontext_get_fp(const ucontext_t *uc) {
   ShouldNotReachHere();
   return NULL;
 }
 
-address os::Solaris::ucontext_get_pc(ucontext_t *uc) {
+address os::Solaris::ucontext_get_pc(const ucontext_t *uc) {
   return (address) uc->uc_mcontext.gregs[REG_PC];
 }
 
@@ -215,24 +215,24 @@ address os::Solaris::ucontext_get_pc(ucontext_t *uc) {
 // here we try to skip nested signal frames.
 // This method is also used for stack overflow signal handling.
 ExtendedPC os::Solaris::fetch_frame_from_ucontext(Thread* thread,
-  ucontext_t* uc, intptr_t** ret_sp, intptr_t** ret_fp) {
+  const ucontext_t* uc, intptr_t** ret_sp, intptr_t** ret_fp) {
 
   assert(thread != NULL, "just checking");
   assert(ret_sp != NULL, "just checking");
   assert(ret_fp == NULL, "just checking");
 
-  ucontext_t *luc = os::Solaris::get_valid_uc_in_signal_handler(thread, uc);
+  const ucontext_t *luc = os::Solaris::get_valid_uc_in_signal_handler(thread, uc);
 
   return os::fetch_frame_from_context(luc, ret_sp, ret_fp);
 }
 
 
 // ret_fp parameter is only used by Solaris X86.
-ExtendedPC os::fetch_frame_from_context(void* ucVoid,
+ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
                     intptr_t** ret_sp, intptr_t** ret_fp) {
 
   ExtendedPC  epc;
-  ucontext_t *uc = (ucontext_t*)ucVoid;
+  const ucontext_t *uc = (const ucontext_t*)ucVoid;
 
   if (uc != NULL) {
     epc = os::Solaris::ucontext_get_ExtendedPC(uc);
@@ -246,7 +246,7 @@ ExtendedPC os::fetch_frame_from_context(void* ucVoid,
   return epc;
 }
 
-frame os::fetch_frame_from_context(void* ucVoid) {
+frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   intptr_t* fp;
   ExtendedPC epc = fetch_frame_from_context(ucVoid, &sp, &fp);
@@ -605,10 +605,10 @@ JVM_handle_solaris_signal(int sig, siginfo_t* info, void* ucVoid,
   return false;
 }
 
-void os::print_context(outputStream *st, void *context) {
+void os::print_context(outputStream *st, const void *context) {
   if (context == NULL) return;
 
-  ucontext_t *uc = (ucontext_t*)context;
+  const ucontext_t *uc = (const ucontext_t*)context;
   st->print_cr("Registers:");
 
   st->print_cr(" G1=" INTPTR_FORMAT " G2=" INTPTR_FORMAT
@@ -682,10 +682,10 @@ void os::print_context(outputStream *st, void *context) {
   print_hex_dump(st, pc - 32, pc + 32, sizeof(char));
 }
 
-void os::print_register_info(outputStream *st, void *context) {
+void os::print_register_info(outputStream *st, const void *context) {
   if (context == NULL) return;
 
-  ucontext_t *uc = (ucontext_t*)context;
+  const ucontext_t *uc = (const ucontext_t*)context;
   intptr_t *sp = (intptr_t *)os::Solaris::ucontext_get_sp(uc);
 
   st->print_cr("Register to memory mapping:");
