@@ -34,7 +34,7 @@ import javax.security.auth.Refreshable;
 import javax.security.auth.Destroyable;
 import javax.security.auth.RefreshFailedException;
 import javax.security.auth.DestroyFailedException;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 /**
  * This class encapsulates a Kerberos ticket and associated
