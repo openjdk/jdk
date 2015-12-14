@@ -279,7 +279,7 @@ class ClassFileVisitor extends Tester.Visitor {
                     userParam = param;
                 }
                 }
-                if (expect != null && !param.equals(expect)) {
+                if (check > 0 && expect != null && !param.equals(expect)) {
                     error(prefix + "param[" + x + "]='"
                           + param + "' expected '" + expect + "'");
                     return null;
@@ -343,6 +343,17 @@ class ClassFileVisitor extends Tester.Visitor {
                         }
                         if (isFinal) {
                             expect = "final this\\$[0-9]+";
+                        }
+                    }
+                }
+
+                if (synthetic && !mandated && !allowSynthetic) {
+                    //patch treatment for local captures
+                    if (isAnon || (isInner & !isStatic)) {
+                        expect = "val\\$.*";
+                        allowSynthetic = true;
+                        if (isFinal) {
+                            expect = "final val\\$.*";
                         }
                     }
                 }
@@ -411,7 +422,6 @@ class ClassFileVisitor extends Tester.Visitor {
             if (mSynthetic) {
                 return 0;
             }
-
             // Otherwise, do check test parameter naming convention.
             return 1;
         }
