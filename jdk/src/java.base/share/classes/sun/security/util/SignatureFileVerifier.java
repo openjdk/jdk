@@ -443,7 +443,7 @@ public class SignatureFileVerifier {
 
         if (sfAttr != null) {
 
-            //sun.misc.HexDumpEncoder hex = new sun.misc.HexDumpEncoder();
+            //sun.security.util.HexDumpEncoder hex = new sun.security.util.HexDumpEncoder();
             //hex.encodeBuffer(data, System.out);
 
             // go through all the attributes and process *-Digest entries

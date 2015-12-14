@@ -35,7 +35,7 @@ import java.util.*;
 import javax.security.auth.x500.X500Principal;
 
 import sun.security.util.*;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 /**
  * <p>Abstract class for a revoked certificate in a CRL.

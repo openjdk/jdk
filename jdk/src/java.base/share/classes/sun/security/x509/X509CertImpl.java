@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javax.security.auth.x500.X500Principal;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import java.util.Base64;
 import sun.security.util.*;
 import sun.security.provider.X509Factory;
