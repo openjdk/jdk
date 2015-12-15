@@ -1354,9 +1354,8 @@ void InterpreterMacroAssembler::notify_method_entry() {
   // the code to check if the event should be sent.
   if (JvmtiExport::can_post_interpreter_events()) {
     Label L;
-    ldr(r3, Address(rthread, JavaThread::interp_only_mode_offset()));
-    tst(r3, ~0);
-    br(Assembler::EQ, L);
+    ldrw(r3, Address(rthread, JavaThread::interp_only_mode_offset()));
+    cbzw(r3, L);
     call_VM(noreg, CAST_FROM_FN_PTR(address,
                                     InterpreterRuntime::post_method_entry));
     bind(L);
