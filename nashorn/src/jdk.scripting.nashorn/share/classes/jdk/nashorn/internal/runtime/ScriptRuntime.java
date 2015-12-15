@@ -45,8 +45,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-
-import jdk.internal.dynalink.beans.StaticClass;
+import jdk.dynalink.beans.StaticClass;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.ApplySpecialization;
@@ -756,7 +755,9 @@ public final class ScriptRuntime {
 
     /** ECMA 11.9.3 The Abstract Equality Comparison Algorithm */
     private static boolean equals(final Object x, final Object y) {
-        if (x == y) {
+        // We want to keep this method small so we skip reference equality check for numbers
+        // as NaN should return false when compared to itself (JDK-8043608).
+        if (x == y && !(x instanceof Number)) {
             return true;
         }
         if (x instanceof ScriptObject && y instanceof ScriptObject) {

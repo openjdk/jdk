@@ -963,6 +963,12 @@ void AwtComponent::Reshape(int x, int y, int w, int h)
     ::MapWindowPoints(HWND_DESKTOP, ::GetParent(GetHWnd()), (LPPOINT)&rc, 2);
     DTRACE_PRINTLN4("AwtComponent::Reshape from %d, %d, %d, %d", rc.left, rc.top, rc.right-rc.left, rc.bottom-rc.top);
 #endif
+
+    x = ScaleUpX(x);
+    y = ScaleUpY(y);
+    w = ScaleUpX(w);
+    h = ScaleUpY(h);
+
     AwtWindow* container = GetContainer();
     AwtComponent* parent = GetParent();
     if (container != NULL && container == parent) {
@@ -2212,8 +2218,11 @@ void AwtComponent::PaintUpdateRgn(const RECT *insets)
         }
         for(i = 0; i < 2; i++) {
             if (un[i] != 0) {
-                DoCallback("handleExpose", "(IIII)V", un[i]->left, un[i]->top,
-                    un[i]->right-un[i]->left, un[i]->bottom-un[i]->top);
+                DoCallback("handleExpose", "(IIII)V",
+                           ScaleDownX(un[i]->left),
+                           ScaleDownY(un[i]->top),
+                           ScaleDownX(un[i]->right - un[i]->left),
+                           ScaleDownY(un[i]->bottom - un[i]->top));
             }
         }
         delete [] buffer;
@@ -4608,6 +4617,34 @@ void AwtComponent::FillAlpha(void *bitmapBits, SIZE &size, BYTE alpha)
     }
 }
 
+int AwtComponent::ScaleUpX(int x) {
+    int screen = AwtWin32GraphicsDevice::DeviceIndexForWindow(GetHWnd());
+    Devices::InstanceAccess devices;
+    AwtWin32GraphicsDevice* device = devices->GetDevice(screen);
+    return device == NULL ? x : device->ScaleUpX(x);
+}
+
+int AwtComponent::ScaleUpY(int y) {
+    int screen = AwtWin32GraphicsDevice::DeviceIndexForWindow(GetHWnd());
+    Devices::InstanceAccess devices;
+    AwtWin32GraphicsDevice* device = devices->GetDevice(screen);
+    return device == NULL ? y : device->ScaleUpY(y);
+}
+
+int AwtComponent::ScaleDownX(int x) {
+    int screen = AwtWin32GraphicsDevice::DeviceIndexForWindow(GetHWnd());
+    Devices::InstanceAccess devices;
+    AwtWin32GraphicsDevice* device = devices->GetDevice(screen);
+    return device == NULL ? x : device->ScaleDownX(x);
+}
+
+int AwtComponent::ScaleDownY(int y) {
+    int screen = AwtWin32GraphicsDevice::DeviceIndexForWindow(GetHWnd());
+    Devices::InstanceAccess devices;
+    AwtWin32GraphicsDevice* device = devices->GetDevice(screen);
+    return device == NULL ? y : device->ScaleDownY(y);
+}
+
 jintArray AwtComponent::CreatePrintedPixels(SIZE &loc, SIZE &size, int alpha) {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
 
@@ -4901,8 +4938,9 @@ void AwtComponent::SendMouseEvent(jint id, jlong when, jint x, jint y,
     jobject mouseEvent = env->NewObject(mouseEventCls, mouseEventConst,
                                         target,
                                         id, when, modifiers,
-                                        x+insets.left, y+insets.top,
-                                        xAbs, yAbs,
+                                        ScaleDownX(x + insets.left),
+                                        ScaleDownY(y + insets.top),
+                                        ScaleDownX(xAbs), ScaleDownY(yAbs),
                                         clickCount, popupTrigger, button);
 
     if (safe_ExceptionOccurred(env)) {
@@ -4969,8 +5007,10 @@ AwtComponent::SendMouseWheelEvent(jint id, jlong when, jint x, jint y,
                                              mouseWheelEventConst,
                                              target,
                                              id, when, modifiers,
-                                             x+insets.left, y+insets.top,
-                                             xAbs, yAbs,
+                                             ScaleDownX(x + insets.left),
+                                             ScaleDownY(y + insets.top),
+                                             ScaleDownX(xAbs),
+                                             ScaleDownY(yAbs),
                                              clickCount, popupTrigger,
                                              scrollType, scrollAmount,
                                              roundedWheelRotation, preciseWheelRotation);
@@ -5476,7 +5516,8 @@ jobject AwtComponent::_GetLocationOnScreen(void *param)
         RECT rect;
         VERIFY(::GetWindowRect(p->GetHWnd(),&rect));
         result = JNU_NewObjectByName(env, "java/awt/Point", "(II)V",
-            rect.left, rect.top);
+                                     p->ScaleDownX(rect.left),
+                                     p->ScaleDownY(rect.top));
     }
 ret:
     env->DeleteGlobalRef(self);
@@ -7064,6 +7105,11 @@ void AwtComponent::VerifyState()
         target = parent;
     }
 
+    x = ScaleUpX(x);
+    y = ScaleUpY(y);
+    width = ScaleUpX(width);
+    height = ScaleUpY(height);
+
     // Test whether component's bounds match the native window's
     RECT rect;
     VERIFY(::GetWindowRect(GetHWnd(), &rect));
@@ -7257,4 +7303,3 @@ void ReleaseDCList(HWND hwnd, DCList &list) {
         delete tmpDCList;
     }
 }
-

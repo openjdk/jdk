@@ -182,7 +182,7 @@ public class XEmbedClientHelper extends XEmbedHelper implements XEventDispatcher
             embedded.notifyStopped();
             // check if newParent is a root window
             X11GraphicsConfig gc = (X11GraphicsConfig)embedded.getGraphicsConfiguration();
-            X11GraphicsDevice gd = (X11GraphicsDevice)gc.getDevice();
+            X11GraphicsDevice gd = gc.getDevice();
             if ((newParent == XlibUtil.getRootWindow(gd.getScreen())) ||
                 (newParent == XToolkit.getDefaultRootWindow()))
             {

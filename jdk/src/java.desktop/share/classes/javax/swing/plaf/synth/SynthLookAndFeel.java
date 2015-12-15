@@ -53,6 +53,10 @@ import sun.swing.plaf.synth.*;
  * an example of providing your own <code>SynthStyleFactory</code> to
  * <code>setStyleFactory</code>.
  * <p>
+ * {@link SynthIcon} interface provides
+ * {@code paintIcon(synthContext, graphics, x, y, width, height)} method that
+ * allows to draw the icon with the given {@code SynthContext}.
+ * <p>
  * <strong>Warning:</strong>
  * This class implements {@link Serializable} as a side effect of it
  * extending {@link BasicLookAndFeel}. It is not intended to be serialized.

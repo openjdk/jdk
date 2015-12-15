@@ -3194,17 +3194,20 @@ JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jbool
   if (isCopy != NULL) {
     *isCopy = is_latin1 ? JNI_TRUE : JNI_FALSE;
   }
-  const jchar* ret;
+  jchar* ret;
   if (!is_latin1) {
-    ret = s_value->char_at_addr(0);
+    ret = (jchar*) s_value->base(T_CHAR);
   } else {
     // Inflate latin1 encoded string to UTF16
     int s_len = java_lang_String::length(s);
-    jchar* buf = NEW_C_HEAP_ARRAY(jchar, s_len, mtInternal);
-    for (int i = 0; i < s_len; i++) {
-      buf[i] = ((jchar) s_value->byte_at(i)) & 0xff;
+    ret = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtInternal);  // add one for zero termination
+    /* JNI Specification states return NULL on OOM */
+    if (ret != NULL) {
+      for (int i = 0; i < s_len; i++) {
+        ret[i] = ((jchar) s_value->byte_at(i)) & 0xff;
+      }
+      ret[s_len] = 0;
     }
-    ret = &buf[0];
   }
  HOTSPOT_JNI_GETSTRINGCRITICAL_RETURN((uint16_t *) ret);
   return ret;

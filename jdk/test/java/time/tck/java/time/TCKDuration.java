@@ -2475,6 +2475,147 @@ public class TCKDuration extends AbstractTCKTest {
     }
 
     //-----------------------------------------------------------------------
+    // toSeconds()
+    //-----------------------------------------------------------------------
+    @DataProvider(name="toSeconds_provider")
+    Object[][] provider_toSeconds() {
+        return new Object[][] {
+            {Duration.ofSeconds(365 * 86400 + 5 * 3600 + 48 * 60 + 46, 123_456_789), 31556926L},
+            {Duration.ofSeconds(-365 * 86400 - 5 * 3600 - 48 * 60 - 46, -123_456_789), -31556927L},
+            {Duration.ofSeconds(-365 * 86400 - 5 * 3600 - 48 * 60 - 46, 123_456_789), -31556926L},
+            {Duration.ofSeconds(0), 0L},
+            {Duration.ofSeconds(0, 123_456_789), 0L},
+            {Duration.ofSeconds(0, -123_456_789), -1L},
+            {Duration.ofSeconds(Long.MAX_VALUE), 9223372036854775807L},
+            {Duration.ofSeconds(Long.MIN_VALUE), -9223372036854775808L},
+        };
+    }
+
+    @Test(dataProvider="toSeconds_provider")
+    public void test_toSeconds(Duration dur, long seconds) {
+        assertEquals(dur.toSeconds(), seconds);
+    }
+
+    //-----------------------------------------------------------------------
+    // toDaysPart()
+    //-----------------------------------------------------------------------
+    @DataProvider(name="toDaysPart_provider")
+    Object[][] provider_toDaysPart() {
+        return new Object[][] {
+            {Duration.ofSeconds(365 * 86400 + 5 * 3600 + 48 * 60 + 46, 123_456_789), 365L},
+            {Duration.ofSeconds(-365 * 86400 - 5 * 3600 - 48 * 60 - 46, -123_456_789), -365L},
+            {Duration.ofSeconds(5 * 3600 + 48 * 60 + 46, 123_456_789), 0L},
+            {Duration.ofDays(365), 365L},
+            {Duration.ofHours(2), 0L},
+            {Duration.ofHours(-2), 0L},
+        };
+    }
+
+    @Test(dataProvider="toDaysPart_provider")
+    public void test_toDaysPart(Duration dur, long days) {
+        assertEquals(dur.toDaysPart(), days);
+    }
+
+    //-----------------------------------------------------------------------
+    // toHoursPart()
+    //-----------------------------------------------------------------------
+    @DataProvider(name="toHoursPart_provider")
+    Object[][] provider_toHoursPart() {
+        return new Object[][] {
+            {Duration.ofSeconds(365 * 86400 + 5 * 3600 + 48 * 60 + 46, 123_456_789), 5},
+            {Duration.ofSeconds(-365 * 86400 - 5 * 3600 - 48 * 60 - 46, -123_456_789), -5},
+            {Duration.ofSeconds(48 * 60 + 46, 123_456_789), 0},
+            {Duration.ofHours(2), 2},
+            {Duration.ofHours(-2), -2},
+        };
+    }
+
+    @Test(dataProvider="toHoursPart_provider")
+    public void test_toHoursPart(Duration dur, int hours) {
+        assertEquals(dur.toHoursPart(), hours);
+    }
+
+    //-----------------------------------------------------------------------
+    // toMinutesPart()
+    //-----------------------------------------------------------------------
+    @DataProvider(name="toMinutesPart_provider")
+    Object[][] provider_toMinutesPart() {
+        return new Object[][] {
+            {Duration.ofSeconds(365 * 86400 + 5 * 3600 + 48 * 60 + 46, 123_456_789), 48},
+            {Duration.ofSeconds(-365 * 86400 - 5 * 3600 - 48 * 60 - 46, -123_456_789), -48},
+            {Duration.ofSeconds(46, 123_456_789),0},
+            {Duration.ofMinutes(48), 48},
+            {Duration.ofHours(2), 0},
+            {Duration.ofHours(-2),0},
+        };
+    }
+
+    @Test(dataProvider="toMinutesPart_provider")
+    public void test_toMinutesPart(Duration dur, int minutes) {
+        assertEquals(dur.toMinutesPart(), minutes);
+    }
+
+    //-----------------------------------------------------------------------
+    // toSecondsPart()
+    //-----------------------------------------------------------------------
+    @DataProvider(name="toSecondsPart_provider")
+    Object[][] provider_toSecondsPart() {
+        return new Object[][] {
+            {Duration.ofSeconds(365 * 86400 + 5 * 3600 + 48 * 60 + 46, 123_456_789), 46},
+            {Duration.ofSeconds(-365 * 86400 - 5 * 3600 - 48 * 60 - 46, -123_456_789), -47},
+            {Duration.ofSeconds(0, 123_456_789), 0},
+            {Duration.ofSeconds(46), 46},
+            {Duration.ofHours(2), 0},
+            {Duration.ofHours(-2), 0},
+        };
+    }
+
+    @Test(dataProvider="toSecondsPart_provider")
+    public void test_toSecondsPart(Duration dur, int seconds) {
+        assertEquals(dur.toSecondsPart(), seconds);
+    }
+
+    //-----------------------------------------------------------------------
+    // toMillisPart()
+    //-----------------------------------------------------------------------
+    @DataProvider(name="toMillisPart_provider")
+    Object[][] provider_toMillisPart() {
+        return new Object[][] {
+            {Duration.ofSeconds(365 * 86400 + 5 * 3600 + 48 * 60 + 46, 123_456_789), 123},
+            {Duration.ofSeconds(-365 * 86400 - 5 * 3600 - 48 * 60 - 46, -123_456_789), 876},
+            {Duration.ofSeconds(5 * 3600 + 48 * 60 + 46, 0), 0},
+            {Duration.ofMillis(123), 123},
+            {Duration.ofHours(2), 0},
+            {Duration.ofHours(-2), 0},
+        };
+    }
+
+    @Test(dataProvider="toMillisPart_provider")
+    public void test_toMillisPart(Duration dur, int millis) {
+        assertEquals(dur.toMillisPart(), millis);
+    }
+
+    //-----------------------------------------------------------------------
+    // toNanosPart()
+    //-----------------------------------------------------------------------
+    @DataProvider(name="toNanosPart_provider")
+    Object[][] provider_toNanosPart() {
+        return new Object[][] {
+            {Duration.ofSeconds(365 * 86400 + 5 * 3600 + 48 * 60 + 46, 123_456_789), 123_456_789},
+            {Duration.ofSeconds(-365 * 86400 - 5 * 3600 - 48 * 60 - 46, -123_456_789), 876_543_211},
+            {Duration.ofSeconds(5 * 3600 + 48 * 60 + 46, 0), 0},
+            {Duration.ofNanos(123_456_789), 123_456_789},
+            {Duration.ofHours(2), 0},
+            {Duration.ofHours(-2), 0},
+        };
+    }
+
+    @Test(dataProvider="toNanosPart_provider")
+    public void test_toNanosPart(Duration dur, int nanos) {
+        assertEquals(dur.toNanosPart(), nanos);
+    }
+
+    //-----------------------------------------------------------------------
     // compareTo()
     //-----------------------------------------------------------------------
     @Test

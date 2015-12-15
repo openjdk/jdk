@@ -158,5 +158,6 @@ for e in ${Src_Files}; do
         fi
 	Obj_Files="${Obj_Files}$o "
 done
+Obj_Files=`echo ${Obj_Files} | tr ' ' '\n' | sort`
 
 echo Obj_Files=${Obj_Files}

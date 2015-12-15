@@ -73,11 +73,11 @@ public abstract class EditorTestBase extends ReplToolTesting {
         for (String edit : new String[] {"/e", "/edit"}) {
             test(new String[]{"-nostartup"},
                     a -> assertCommand(a, edit + " 1",
-                            "|  No definition or id named 1 found.  See /classes /methods /vars or /list\n"),
+                            "|  No definition or id named 1 found.  See /classes, /methods, /vars, or /list\n"),
                     a -> assertCommand(a, edit + " -1",
-                            "|  No definition or id named -1 found.  See /classes /methods /vars or /list\n"),
+                            "|  No definition or id named -1 found.  See /classes, /methods, /vars, or /list\n"),
                     a -> assertCommand(a, edit + " unknown",
-                            "|  No definition or id named unknown found.  See /classes /methods /vars or /list\n")
+                            "|  No definition or id named unknown found.  See /classes, /methods, /vars, or /list\n")
             );
         }
     }

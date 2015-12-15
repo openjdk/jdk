@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package sun.java2d.pipe;
 
 import java.awt.BasicStroke;
 import java.awt.Rectangle;
 import java.awt.Shape;
 import java.awt.geom.Rectangle2D;
-import java.awt.geom.PathIterator;
 import sun.awt.SunHints;
 import sun.java2d.SunGraphics2D;
 
@@ -44,6 +42,15 @@ public class AAShapePipe
     implements ShapeDrawPipe, ParallelogramPipe
 {
     static RenderingEngine renderengine = RenderingEngine.getInstance();
+
+    // Per-thread TileState (~1K very small so do not use any Weak Reference)
+    private static final ThreadLocal<TileState> tileStateThreadLocal =
+            new ThreadLocal<TileState>() {
+        @Override
+        protected TileState initialValue() {
+            return new TileState();
+        }
+    };
 
     CompositePipe outpipe;
 
@@ -68,20 +75,6 @@ public class AAShapePipe
         renderPath(sg, s, null);
     }
 
-    private static Rectangle2D computeBBox(double ux1, double uy1,
-                                           double ux2, double uy2)
-    {
-        if ((ux2 -= ux1) < 0) {
-            ux1 += ux2;
-            ux2 = -ux2;
-        }
-        if ((uy2 -= uy1) < 0) {
-            uy1 += uy2;
-            uy2 = -uy2;
-        }
-        return new Rectangle2D.Double(ux1, uy1, ux2, uy2);
-    }
-
     public void fillParallelogram(SunGraphics2D sg,
                                   double ux1, double uy1,
                                   double ux2, double uy2,
@@ -90,7 +83,9 @@ public class AAShapePipe
                                   double dx2, double dy2)
     {
         Region clip = sg.getCompClip();
-        int abox[] = new int[4];
+        final TileState ts = tileStateThreadLocal.get();
+        final int[] abox = ts.abox;
+
         AATileGenerator aatg =
             renderengine.getAATileGenerator(x, y, dx1, dy1, dx2, dy2, 0, 0,
                                             clip, abox);
@@ -99,7 +94,7 @@ public class AAShapePipe
             return;
         }
 
-        renderTiles(sg, computeBBox(ux1, uy1, ux2, uy2), aatg, abox);
+        renderTiles(sg, ts.computeBBox(ux1, uy1, ux2, uy2), aatg, abox, ts);
     }
 
     public void drawParallelogram(SunGraphics2D sg,
@@ -111,7 +106,9 @@ public class AAShapePipe
                                   double lw1, double lw2)
     {
         Region clip = sg.getCompClip();
-        int abox[] = new int[4];
+        final TileState ts = tileStateThreadLocal.get();
+        final int[] abox = ts.abox;
+
         AATileGenerator aatg =
             renderengine.getAATileGenerator(x, y, dx1, dy1, dx2, dy2, lw1, lw2,
                                             clip, abox);
@@ -122,23 +119,7 @@ public class AAShapePipe
 
         // Note that bbox is of the original shape, not the wide path.
         // This is appropriate for handing to Paint methods...
-        renderTiles(sg, computeBBox(ux1, uy1, ux2, uy2), aatg, abox);
-    }
-
-    private static byte[] theTile;
-
-    private static synchronized byte[] getAlphaTile(int len) {
-        byte[] t = theTile;
-        if (t == null || t.length < len) {
-            t = new byte[len];
-        } else {
-            theTile = null;
-        }
-        return t;
-    }
-
-    private static synchronized void dropAlphaTile(byte[] t) {
-        theTile = t;
+        renderTiles(sg, ts.computeBBox(ux1, uy1, ux2, uy2), aatg, abox, ts);
     }
 
     public void renderPath(SunGraphics2D sg, Shape s, BasicStroke bs) {
@@ -147,7 +128,9 @@ public class AAShapePipe
         boolean thin = (sg.strokeState <= SunGraphics2D.STROKE_THINDASHED);
 
         Region clip = sg.getCompClip();
-        int abox[] = new int[4];
+        final TileState ts = tileStateThreadLocal.get();
+        final int[] abox = ts.abox;
+
         AATileGenerator aatg =
             renderengine.getAATileGenerator(s, sg.transform, clip,
                                             bs, thin, adjust, abox);
@@ -156,31 +139,30 @@ public class AAShapePipe
             return;
         }
 
-        renderTiles(sg, s, aatg, abox);
+        renderTiles(sg, s, aatg, abox, ts);
     }
 
     public void renderTiles(SunGraphics2D sg, Shape s,
-                            AATileGenerator aatg, int abox[])
+                            AATileGenerator aatg, int abox[], TileState ts)
     {
         Object context = null;
-        byte alpha[] = null;
         try {
             context = outpipe.startSequence(sg, s,
-                                            new Rectangle(abox[0], abox[1],
-                                                          abox[2] - abox[0],
-                                                          abox[3] - abox[1]),
+                                            ts.computeDevBox(abox),
                                             abox);
 
-            int tw = aatg.getTileWidth();
-            int th = aatg.getTileHeight();
-            alpha = getAlphaTile(tw * th);
+            final int tw = aatg.getTileWidth();
+            final int th = aatg.getTileHeight();
 
+            // get tile from thread local storage:
+            final byte[] alpha = ts.getAlphaTile(tw * th);
             byte[] atile;
 
             for (int y = abox[1]; y < abox[3]; y += th) {
+                int h = Math.min(th, abox[3] - y);
+
                 for (int x = abox[0]; x < abox[2]; x += tw) {
                     int w = Math.min(tw, abox[2] - x);
-                    int h = Math.min(th, abox[3] - y);
 
                     int a = aatg.getTypicalAlpha();
                     if (a == 0x00 ||
@@ -207,9 +189,56 @@ public class AAShapePipe
             if (context != null) {
                 outpipe.endSequence(context);
             }
-            if (alpha != null) {
-                dropAlphaTile(alpha);
-            }
         }
     }
+
+    // Tile state used by AAShapePipe
+    static final class TileState {
+        // cached tile (32 x 32 tile by default)
+        private byte[] theTile = new byte[32 * 32];
+        // dirty aabox array
+        final int[] abox = new int[4];
+        // dirty bbox rectangle
+        private final Rectangle dev = new Rectangle();
+        // dirty bbox rectangle2D.Double
+        private final Rectangle2D.Double bbox2D = new Rectangle2D.Double();
+
+        byte[] getAlphaTile(int len) {
+            byte[] t = theTile;
+            if (t.length < len) {
+                // create a larger tile and may free current theTile (too small)
+                theTile = t = new byte[len];
+            }
+            return t;
+        }
+
+        Rectangle computeDevBox(final int[] abox) {
+            final Rectangle box = this.dev;
+            box.x = abox[0];
+            box.y = abox[1];
+            box.width = abox[2] - abox[0];
+            box.height = abox[3] - abox[1];
+            return box;
+        }
+
+        Rectangle2D computeBBox(double ux1, double uy1,
+                                double ux2, double uy2)
+        {
+            if ((ux2 -= ux1) < 0.0) {
+                ux1 += ux2;
+                ux2 = -ux2;
+            }
+            if ((uy2 -= uy1) < 0.0) {
+                uy1 += uy2;
+                uy2 = -uy2;
+            }
+            final Rectangle2D.Double box = this.bbox2D;
+            box.x = ux1;
+            box.y = uy1;
+            box.width = ux2;
+            box.height = uy2;
+            return box;
+        }
+    }
+
 }
