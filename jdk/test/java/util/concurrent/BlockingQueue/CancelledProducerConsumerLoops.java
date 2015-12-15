@@ -34,150 +34,148 @@
 /*
  * @test
  * @bug 4486658
- * @run main/timeout=7000 CancelledProducerConsumerLoops
  * @summary Checks for responsiveness of blocking queues to cancellation.
- * Runs under the assumption that ITERS computations require more than
- * TIMEOUT msecs to complete.
  */
 
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.SplittableRandom;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.TimeUnit;
 
 public class CancelledProducerConsumerLoops {
-    static final int CAPACITY =      100;
-    static final long TIMEOUT = 100;
-
-    static final ExecutorService pool = Executors.newCachedThreadPool();
-    static boolean print = false;
+    static ExecutorService pool;
 
     public static void main(String[] args) throws Exception {
-        int maxPairs = 8;
-        int iters = 1000000;
+        final int maxPairs = (args.length > 0) ? Integer.parseInt(args[0]) : 5;
 
-        if (args.length > 0)
-            maxPairs = Integer.parseInt(args[0]);
-
-        print = true;
-
+        pool = Executors.newCachedThreadPool();
         for (int i = 1; i <= maxPairs; i += (i+1) >>> 1) {
-            System.out.println("Pairs:" + i);
-            try {
-                oneTest(i, iters);
-            }
-            catch (BrokenBarrierException bb) {
-                // OK, ignore
-            }
-            Thread.sleep(100);
+            final List<BlockingQueue<Integer>> queues = new ArrayList<>();
+            queues.add(new ArrayBlockingQueue<Integer>(100));
+            queues.add(new LinkedBlockingQueue<Integer>(100));
+            queues.add(new LinkedBlockingDeque<Integer>(100));
+            queues.add(new SynchronousQueue<Integer>());
+            // unbounded queue implementations are prone to OOME:
+            // PriorityBlockingQueue, LinkedTransferQueue
+            for (BlockingQueue<Integer> queue : queues)
+                new CancelledProducerConsumerLoops(i, queue).run();
         }
         pool.shutdown();
-        if (! pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS))
-            throw new Error();
-   }
+        if (! pool.awaitTermination(10L, TimeUnit.SECONDS))
+            throw new AssertionError("timed out");
+        pool = null;
+    }
 
-    static void oneRun(BlockingQueue<Integer> q, int npairs, int iters) throws Exception {
-        if (print)
-            System.out.printf("%-18s", q.getClass().getSimpleName());
-        LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();
-        CyclicBarrier barrier = new CyclicBarrier(npairs * 2 + 1, timer);
+    final int npairs;
+    final BlockingQueue<Integer> queue;
+    final CountDownLatch producersInterrupted;
+    final CountDownLatch consumersInterrupted;
+    final LoopHelpers.BarrierTimer timer = new LoopHelpers.BarrierTimer();
+    final CyclicBarrier barrier;
+    final SplittableRandom rnd = new SplittableRandom();
+    volatile boolean done = false;
+
+    CancelledProducerConsumerLoops(int npairs, BlockingQueue<Integer> queue) {
+        this.npairs = npairs;
+        this.queue = queue;
+        this.producersInterrupted = new CountDownLatch(npairs - 1);
+        this.consumersInterrupted = new CountDownLatch(npairs - 1);
+        this.barrier = new CyclicBarrier(npairs * 2 + 1, timer);
+    }
+
+    void run() throws Exception {
         Future<?>[] prods = new Future<?>[npairs];
         Future<?>[] cons  = new Future<?>[npairs];
 
-        for (int i = 0; i < npairs; ++i) {
-            prods[i] = pool.submit(new Producer(q, barrier, iters));
-            cons[i] = pool.submit(new Consumer(q, barrier, iters));
+        for (int i = 0; i < npairs; i++) {
+            prods[i] = pool.submit(new Producer());
+            cons[i] = pool.submit(new Consumer());
         }
         barrier.await();
-        Thread.sleep(TIMEOUT);
-        boolean tooLate = false;
+        Thread.sleep(rnd.nextInt(5));
 
-        for (int i = 1; i < npairs; ++i) {
-            if (!prods[i].cancel(true))
-                tooLate = true;
-            if (!cons[i].cancel(true))
-                tooLate = true;
+        for (int i = 1; i < npairs; i++) {
+            if (!prods[i].cancel(true) ||
+                !cons[i].cancel(true))
+                throw new AssertionError("completed before done");
         }
 
-        Object p0 = prods[0].get();
-        Object c0 = cons[0].get();
-
-        if (!tooLate) {
-            for (int i = 1; i < npairs; ++i) {
-                if (!prods[i].isDone() || !prods[i].isCancelled())
-                    throw new Error("Only one producer thread should complete");
-                if (!cons[i].isDone() || !cons[i].isCancelled())
-                    throw new Error("Only one consumer thread should complete");
-            }
+        for (int i = 1; i < npairs; i++) {
+            assertCancelled(prods[i]);
+            assertCancelled(cons[i]);
         }
-        else
-            System.out.print("(cancelled too late) ");
 
-        long endTime = System.nanoTime();
-        long time = endTime - timer.startTime;
-        if (print) {
-            double secs = (double)(time) / 1000000000.0;
-            System.out.println("\t " + secs + "s run time");
-        }
+        if (!producersInterrupted.await(10L, TimeUnit.SECONDS))
+            throw new AssertionError("timed out");
+        if (!consumersInterrupted.await(10L, TimeUnit.SECONDS))
+            throw new AssertionError("timed out");
+        if (prods[0].isDone() || prods[0].isCancelled())
+            throw new AssertionError("completed too early");
+
+        done = true;
+
+        if (! (prods[0].get(10L, TimeUnit.SECONDS) instanceof Integer))
+            throw new AssertionError("expected Integer");
+        if (! (cons[0].get(10L, TimeUnit.SECONDS) instanceof Integer))
+            throw new AssertionError("expected Integer");
     }
 
-    static void oneTest(int pairs, int iters) throws Exception {
-
-        oneRun(new ArrayBlockingQueue<Integer>(CAPACITY), pairs, iters);
-        oneRun(new LinkedBlockingQueue<Integer>(CAPACITY), pairs, iters);
-        oneRun(new LinkedBlockingDeque<Integer>(CAPACITY), pairs, iters);
-        oneRun(new SynchronousQueue<Integer>(), pairs, iters / 8);
-
-        /* unbounded queue implementations are prone to OOME
-        oneRun(new PriorityBlockingQueue<Integer>(iters / 2 * pairs), pairs, iters / 4);
-        oneRun(new LinkedTransferQueue<Integer>(), pairs, iters);
-        */
+    void assertCancelled(Future<?> future) throws Exception {
+        if (!future.isDone())
+            throw new AssertionError("not done");
+        if (!future.isCancelled())
+            throw new AssertionError("not cancelled");
+        try {
+            future.get(10L, TimeUnit.SECONDS);
+            throw new AssertionError("should throw CancellationException");
+        } catch (CancellationException success) {}
     }
 
-    abstract static class Stage implements Callable<Integer> {
-        final BlockingQueue<Integer> queue;
-        final CyclicBarrier barrier;
-        final int iters;
-        Stage(BlockingQueue<Integer> q, CyclicBarrier b, int iters) {
-            queue = q;
-            barrier = b;
-            this.iters = iters;
-        }
-    }
-
-    static class Producer extends Stage {
-        Producer(BlockingQueue<Integer> q, CyclicBarrier b, int iters) {
-            super(q, b, iters);
-        }
-
+    class Producer implements Callable<Integer> {
         public Integer call() throws Exception {
             barrier.await();
-            int s = 0;
-            int l = 4321;
-            for (int i = 0; i < iters; ++i) {
-                l = LoopHelpers.compute1(l);
-                s += LoopHelpers.compute2(l);
-                if (!queue.offer(new Integer(l), 1, TimeUnit.SECONDS))
-                    break;
+            int sum = 0;
+            try {
+                int x = 4321;
+                while (!done) {
+                    if (Thread.interrupted()) throw new InterruptedException();
+                    x = LoopHelpers.compute1(x);
+                    sum += LoopHelpers.compute2(x);
+                    queue.offer(new Integer(x), 1, TimeUnit.MILLISECONDS);
+                }
+            } catch (InterruptedException cancelled) {
+                producersInterrupted.countDown();
             }
-            return new Integer(s);
+            return sum;
         }
     }
 
-    static class Consumer extends Stage {
-        Consumer(BlockingQueue<Integer> q, CyclicBarrier b, int iters) {
-            super(q, b, iters);
-        }
-
+    class Consumer implements Callable<Integer> {
         public Integer call() throws Exception {
             barrier.await();
-            int l = 0;
-            int s = 0;
-            for (int i = 0; i < iters; ++i) {
-                Integer x = queue.poll(1, TimeUnit.SECONDS);
-                if (x == null)
-                    break;
-                l = LoopHelpers.compute1(x.intValue());
-                s += l;
+            int sum = 0;
+            try {
+                while (!done) {
+                    Integer x = queue.poll(1, TimeUnit.MILLISECONDS);
+                    if (x != null)
+                        sum += LoopHelpers.compute1(x.intValue());
+                }
+            } catch (InterruptedException cancelled) {
+                consumersInterrupted.countDown();
             }
-            return new Integer(s);
+            return sum;
         }
     }
 }

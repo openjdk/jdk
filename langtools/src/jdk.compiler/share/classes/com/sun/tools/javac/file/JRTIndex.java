@@ -200,7 +200,7 @@ public class JRTIndex {
             if (Files.exists(dir)) {
                 try (DirectoryStream<Path> modules = Files.newDirectoryStream(dir)) {
                     for (Path module: modules) {
-                        Path p = rd.getFile(module);
+                        Path p = rd.resolveAgainst(module);
                         if (!Files.exists(p))
                             continue;
                         try (DirectoryStream<Path> stream = Files.newDirectoryStream(p)) {

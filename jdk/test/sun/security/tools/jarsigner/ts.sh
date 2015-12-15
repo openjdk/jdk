@@ -73,6 +73,10 @@ $KT -alias ts -genkeypair -dname CN=ts
 $KT -alias tsbad1 -genkeypair -dname CN=tsbad1
 $KT -alias tsbad2 -genkeypair -dname CN=tsbad2
 $KT -alias tsbad3 -genkeypair -dname CN=tsbad3
+
+$KT -alias old -certreq | \
+        $KT -alias ca -gencert | \
+        $KT -alias old -importcert
 $KT -alias ts -certreq | \
         $KT -alias ca -gencert -ext eku:critical=ts | \
         $KT -alias ts -importcert

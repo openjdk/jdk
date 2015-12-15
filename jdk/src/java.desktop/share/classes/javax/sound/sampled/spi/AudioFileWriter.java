@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package javax.sound.sampled.spi;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Objects;
 
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -60,8 +61,10 @@ public abstract class AudioFileWriter {
      * @param  fileType the file type for which write capabilities are queried
      * @return {@code true} if the file type is supported, otherwise
      *         {@code false}
+     * @throws NullPointerException if {@code fileType} is {@code null}
      */
     public boolean isFileTypeSupported(Type fileType) {
+        Objects.requireNonNull(fileType);
 
         Type types[] = getAudioFileTypes();
 
@@ -81,6 +84,7 @@ public abstract class AudioFileWriter {
      *         is queried
      * @return array of file types. If no file types are supported, an array of
      *         length 0 is returned.
+     * @throws NullPointerException if {@code stream} is {@code null}
      */
     public abstract Type[] getAudioFileTypes(AudioInputStream stream);
 
@@ -92,9 +96,11 @@ public abstract class AudioFileWriter {
      * @param  stream for which file writing support is queried
      * @return {@code true} if the file type is supported for this audio input
      *         stream, otherwise {@code false}
+     * @throws NullPointerException if {@code fileType} or {@code stream} are
+     *         {@code null}
      */
     public boolean isFileTypeSupported(Type fileType, AudioInputStream stream) {
-
+        Objects.requireNonNull(fileType);
         Type types[] = getAudioFileTypes( stream );
 
         for(int i=0; i<types.length; i++) {
@@ -121,6 +127,8 @@ public abstract class AudioFileWriter {
      * @throws IOException if an I/O exception occurs
      * @throws IllegalArgumentException if the file type is not supported by the
      *         system
+     * @throws NullPointerException if {@code stream} or {@code fileType} or
+     *         {@code out} are {@code null}
      * @see #isFileTypeSupported(AudioFileFormat.Type, AudioInputStream)
      * @see #getAudioFileTypes
      */
@@ -139,6 +147,8 @@ public abstract class AudioFileWriter {
      * @throws IOException if an I/O exception occurs
      * @throws IllegalArgumentException if the file format is not supported by
      *         the system
+     * @throws NullPointerException if {@code stream} or {@code fileType} or
+     *         {@code out} are {@code null}
      * @see #isFileTypeSupported
      * @see #getAudioFileTypes
      */

@@ -71,13 +71,17 @@ public class Function {
                         " -keypass changeit -dname" +
                         " CN=RSA -alias r -genkeypair -keyalg rsa").split(" "));
 
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(new FileInputStream("ks"), "changeit".toCharArray());
-        PrivateKey key = (PrivateKey)ks.getKey("r", "changeit".toCharArray());
-        Certificate cert = ks.getCertificate("r");
-        JarSigner.Builder jsb = new JarSigner.Builder(key,
-                CertificateFactory.getInstance("X.509").generateCertPath(
-                        Collections.singletonList(cert)));
+        JarSigner.Builder jsb;
+
+        try (FileInputStream fis = new FileInputStream("ks")) {
+            KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(fis, "changeit".toCharArray());
+            PrivateKey key = (PrivateKey)ks.getKey("r", "changeit".toCharArray());
+            Certificate cert = ks.getCertificate("r");
+            jsb = new JarSigner.Builder(key,
+                    CertificateFactory.getInstance("X.509").generateCertPath(
+                            Collections.singletonList(cert)));
+        }
 
         jsb.digestAlgorithm("SHA1");
         jsb.signatureAlgorithm("SHA1withRSA");

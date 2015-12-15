@@ -49,6 +49,7 @@
 extern "C" {
 #endif
 
+    char *printError(char *msg);
     void PrintDebugString(char *msg, ...);
     void PrintJavaDebugString(char *msg, ...);
     void wPrintJavaDebugString(wchar_t *msg, ...);

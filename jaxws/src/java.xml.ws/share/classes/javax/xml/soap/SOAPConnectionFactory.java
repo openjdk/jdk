@@ -36,22 +36,20 @@ package javax.xml.soap;
  * @since 1.6
  */
 public abstract class SOAPConnectionFactory {
+
     /**
      * A constant representing the default value for a {@code SOAPConnection}
      * object. The default is the point-to-point SOAP connection.
      */
-    static final String DEFAULT_SOAP_CONNECTION_FACTORY
-        = "com.sun.xml.internal.messaging.saaj.client.p2p.HttpSOAPConnectionFactory";
-
-    /**
-     * A constant representing the {@code SOAPConnection} class.
-     */
-    static private final String SF_PROPERTY
-        = "javax.xml.soap.SOAPConnectionFactory";
+    private static final String DEFAULT_SOAP_CONNECTION_FACTORY
+            = "com.sun.xml.internal.messaging.saaj.client.p2p.HttpSOAPConnectionFactory";
 
     /**
      * Creates an instance of the default
      * {@code SOAPConnectionFactory} object.
+     *
+     * This method uses the lookup procedure specified in {@link javax.xml.soap} to locate and load the
+     * {@link javax.xml.soap.SOAPConnectionFactory} class.
      *
      * @return a new instance of a default
      *         {@code SOAPConnectionFactory} object
@@ -66,9 +64,10 @@ public abstract class SOAPConnectionFactory {
         throws SOAPException, UnsupportedOperationException
     {
         try {
-        return (SOAPConnectionFactory)
-                FactoryFinder.find(SF_PROPERTY,
-                                   DEFAULT_SOAP_CONNECTION_FACTORY);
+            return FactoryFinder.find(
+                    SOAPConnectionFactory.class,
+                    DEFAULT_SOAP_CONNECTION_FACTORY,
+                    true);
         } catch (Exception ex) {
             throw new SOAPException("Unable to create SOAP connection factory: "
                                     +ex.getMessage());

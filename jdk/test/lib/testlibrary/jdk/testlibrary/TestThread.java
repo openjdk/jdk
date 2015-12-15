@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +23,6 @@
 
 package jdk.testlibrary;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
 import java.util.concurrent.TimeoutException;
 
 /**
@@ -204,46 +201,4 @@ public class TestThread extends Thread {
         }
         return null;
     }
-
-    /**
-     * Waits until {@link TestThread} is in the certain {@link State}
-     * and blocking on {@code object}.
-     *
-     * @param state The thread state
-     * @param object The object to block on
-     */
-    public void waitUntilBlockingOnObject(Thread.State state, Object object) {
-        String want = object == null ? null : object.getClass().getName() + '@'
-                + Integer.toHexString(System.identityHashCode(object));
-        ThreadMXBean tmx = ManagementFactory.getThreadMXBean();
-        while (isAlive()) {
-            ThreadInfo ti = tmx.getThreadInfo(getId());
-            if (ti.getThreadState() == state
-                    && (want == null || want.equals(ti.getLockName()))) {
-                return;
-            }
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-            }
-        }
-    }
-
-    /**
-     * Waits until {@link TestThread} is in native.
-     */
-    public void waitUntilInNative() {
-        ThreadMXBean tmx = ManagementFactory.getThreadMXBean();
-        while (isAlive()) {
-            ThreadInfo ti = tmx.getThreadInfo(getId());
-            if (ti.isInNative()) {
-                return;
-            }
-            try {
-                Thread.sleep(1);
-            } catch (InterruptedException e) {
-            }
-        }
-    }
-
 }

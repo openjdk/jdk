@@ -785,7 +785,7 @@ public class XChoicePeer extends XComponentPeer implements ChoicePeer, ToplevelS
                 numItemsDisplayed = Math.min(MAX_UNFURLED_ITEMS, numItems);
             }
             Point global = XChoicePeer.this.toGlobal(0,0);
-            Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+            Rectangle screen = graphicsConfig.getBounds();
 
             if (alignUnder != null) {
                 Rectangle choiceRec = XChoicePeer.this.getBounds();

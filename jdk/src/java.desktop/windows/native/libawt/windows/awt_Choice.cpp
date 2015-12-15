@@ -206,9 +206,10 @@ int AwtChoice::GetDropDownHeight()
     int itemHeight =(int)::SendMessage(GetHWnd(), CB_GETITEMHEIGHT, (UINT)0,0);
     int numItemsToShow = (int)::SendMessage(GetHWnd(), CB_GETCOUNT, 0,0);
     numItemsToShow = min(MINIMUM_NUMBER_OF_VISIBLE_ITEMS, numItemsToShow);
+
     // drop-down height snaps to nearest line, so add a
     // fudge factor of 1/2 line to ensure last line shows
-    return itemHeight*numItemsToShow + itemHeight/2;
+    return ScaleDownY(itemHeight * numItemsToShow + itemHeight / 2);
 }
 
 // get the height of the field portion of the combobox
@@ -221,7 +222,7 @@ int AwtChoice::GetFieldHeight()
     // Win 4.x (3d edge) vs 3.x (1 pixel line)
     borderHeight = ::GetSystemMetrics(SM_CYEDGE);
     fieldHeight += borderHeight*2;
-    return fieldHeight;
+    return ScaleDownY(fieldHeight);
 }
 
 // gets the total height of the combobox, including drop down
@@ -325,8 +326,8 @@ void AwtChoice::Reshape(int x, int y, int w, int h)
      * Fix: Set the Choice to its actual size in the component.
      */
     ::GetClientRect(GetHWnd(), &rc);
-    env->SetIntField(target, AwtComponent::widthID,  (jint)rc.right);
-    env->SetIntField(target, AwtComponent::heightID, (jint)rc.bottom);
+    env->SetIntField(target, AwtComponent::widthID, ScaleDownX(rc.right));
+    env->SetIntField(target, AwtComponent::heightID, ScaleDownY(rc.bottom));
 
     env->DeleteLocalRef(target);
     env->DeleteLocalRef(parent);

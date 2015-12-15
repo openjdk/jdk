@@ -294,6 +294,12 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
 
     synchronized native void reshapeFrame(int x, int y, int width, int height);
 
+    native Dimension getNativeWindowSize();
+
+    public Dimension getScaledWindowSize() {
+        return getNativeWindowSize();
+    }
+
     public boolean requestWindowFocus(CausedFocusEvent.Cause cause) {
         if (!focusAllowedFor()) {
             return false;
@@ -490,8 +496,7 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
         }
 
         // get current GD
-        Win32GraphicsDevice oldDev = (Win32GraphicsDevice)winGraphicsConfig
-                                     .getDevice();
+        Win32GraphicsDevice oldDev = winGraphicsConfig.getDevice();
 
         Win32GraphicsDevice newDev;
         GraphicsDevice devs[] = GraphicsEnvironment

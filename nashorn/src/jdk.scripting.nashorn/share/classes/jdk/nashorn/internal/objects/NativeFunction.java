@@ -33,7 +33,7 @@ import static jdk.nashorn.internal.runtime.Source.sourceFor;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.List;
-import jdk.internal.dynalink.linker.support.Lookup;
+import jdk.dynalink.linker.support.Lookup;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;

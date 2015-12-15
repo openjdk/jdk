@@ -66,6 +66,14 @@ public:
     void                    Release();
     void                    DisableOffscreenAcceleration();
     void                    Invalidate(JNIEnv *env);
+    void                    InitDesktopScales();
+    void                    SetScale(float scaleX, float scaleY);
+    float                   GetScaleX();
+    float                   GetScaleY();
+    int                     ScaleUpX(int x);
+    int                     ScaleUpY(int y);
+    int                     ScaleDownX(int x);
+    int                     ScaleDownY(int y);
 
     static int              DeviceIndexForWindow(HWND hWnd);
     static jobject          GetColorModel(JNIEnv *env, jboolean dynamic,
@@ -107,6 +115,8 @@ private:
     LPMONITORINFO           pMonitorInfo;
     jobject                 javaDevice;
     Devices                 *devicesArray;
+    float                   scaleX;
+    float                   scaleY;
 
     static HDC              MakeDCFromMonitor(HMONITOR);
 };

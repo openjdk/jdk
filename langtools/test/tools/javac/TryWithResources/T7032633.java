@@ -33,7 +33,14 @@ import java.io.OutputStream;
 
 public class T7032633 {
     void test() throws IOException {
+        // declared resource
         try (OutputStream out = System.out) {
+            out.flush();
+        }
+
+        // resource as variable
+        OutputStream out = System.out;
+        try (out) {
             out.flush();
         }
     }

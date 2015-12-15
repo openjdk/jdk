@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,17 +197,6 @@ class LambdaForm {
             if (!type.isPrimitive())  return L_TYPE;
             return basicType(Wrapper.forPrimitiveType(type));
         }
-
-        static char basicTypeChar(Class<?> type) {
-            return basicType(type).btChar;
-        }
-        static BasicType[] basicTypes(List<Class<?>> types) {
-            BasicType[] btypes = new BasicType[types.size()];
-            for (int i = 0; i < btypes.length; i++) {
-                btypes[i] = basicType(types.get(i));
-            }
-            return btypes;
-        }
         static BasicType[] basicTypes(String types) {
             BasicType[] btypes = new BasicType[types.length()];
             for (int i = 0; i < btypes.length; i++) {
@@ -215,13 +204,19 @@ class LambdaForm {
             }
             return btypes;
         }
-        static byte[] basicTypesOrd(BasicType[] btypes) {
-            byte[] ords = new byte[btypes.length];
-            for (int i = 0; i < btypes.length; i++) {
-                ords[i] = (byte)btypes[i].ordinal();
+
+        static char basicTypeChar(Class<?> type) {
+            return basicType(type).btChar;
+        }
+
+        static byte[] basicTypesOrd(Class<?>[] types) {
+            byte[] ords = new byte[types.length];
+            for (int i = 0; i < ords.length; i++) {
+                ords[i] = (byte)basicType(types[i]).ordinal();
             }
             return ords;
         }
+
         static boolean isBasicTypeChar(char c) {
             return "LIJFDV".indexOf(c) >= 0;
         }
@@ -293,32 +288,28 @@ class LambdaForm {
         return names;
     }
 
-    private LambdaForm(String sig) {
+    private LambdaForm(MethodType mt) {
         // Make a blank lambda form, which returns a constant zero or null.
         // It is used as a template for managing the invocation of similar forms that are non-empty.
         // Called only from getPreparedForm.
-        assert(isValidSignature(sig));
-        this.arity = signatureArity(sig);
-        this.result = (signatureReturn(sig) == V_TYPE ? -1 : arity);
-        this.names = buildEmptyNames(arity, sig);
+        this.arity = mt.parameterCount();
+        this.result = (mt.returnType() == void.class || mt.returnType() == Void.class) ? -1 : arity;
+        this.names = buildEmptyNames(arity, mt, result == -1);
         this.debugName = "LF.zero";
         this.forceInline = true;
         this.customized = null;
         assert(nameRefsAreLegal());
         assert(isEmpty());
+        String sig = null;
+        assert(isValidSignature(sig = basicTypeSignature()));
         assert(sig.equals(basicTypeSignature())) : sig + " != " + basicTypeSignature();
     }
 
-    private static Name[] buildEmptyNames(int arity, String basicTypeSignature) {
-        assert(isValidSignature(basicTypeSignature));
-        int resultPos = arity + 1;  // skip '_'
-        if (arity < 0 || basicTypeSignature.length() != resultPos+1)
-            throw new IllegalArgumentException("bad arity for "+basicTypeSignature);
-        int numRes = (basicType(basicTypeSignature.charAt(resultPos)) == V_TYPE ? 0 : 1);
-        Name[] names = arguments(numRes, basicTypeSignature.substring(0, arity));
-        for (int i = 0; i < numRes; i++) {
-            Name zero = new Name(constantZero(basicType(basicTypeSignature.charAt(resultPos + i))));
-            names[arity + i] = zero.newIndex(arity + i);
+    private static Name[] buildEmptyNames(int arity, MethodType mt, boolean isVoid) {
+        Name[] names = arguments(isVoid ? 0 : 1, mt);
+        if (!isVoid) {
+            Name zero = new Name(constantZero(basicType(mt.returnType())));
+            names[arity] = zero.newIndex(arity);
         }
         return names;
     }
@@ -525,8 +516,13 @@ class LambdaForm {
 
     /** Return the method type corresponding to my basic type signature. */
     MethodType methodType() {
-        return signatureType(basicTypeSignature());
+        Class<?>[] ptypes = new Class<?>[arity];
+        for (int i = 0; i < arity; ++i) {
+            ptypes[i] = parameterType(i).btClass;
+        }
+        return MethodType.methodType(returnType().btClass, ptypes);
     }
+
     /** Return ABC_Z, where the ABC are parameter type characters, and Z is the return type character. */
     final String basicTypeSignature() {
         StringBuilder buf = new StringBuilder(arity() + 3);
@@ -638,7 +634,14 @@ class LambdaForm {
             // already prepared (e.g., a primitive DMH invoker form)
             return;
         }
-        LambdaForm prep = getPreparedForm(basicTypeSignature());
+        MethodType mtype = methodType();
+        LambdaForm prep = mtype.form().cachedLambdaForm(MethodTypeForm.LF_INTERPRET);
+        if (prep == null) {
+            assert (isValidSignature(basicTypeSignature()));
+            prep = new LambdaForm(mtype);
+            prep.vmentry = InvokerBytecodeGenerator.generateLambdaFormInterpreterEntryPoint(mtype);
+            prep = mtype.form().setCachedLambdaForm(MethodTypeForm.LF_INTERPRET, prep);
+        }
         this.vmentry = prep.vmentry;
         // TO DO: Maybe add invokeGeneric, invokeWithArguments
     }
@@ -669,9 +672,10 @@ class LambdaForm {
             if (mt.parameterCount() > 0 &&
                 mt.parameterType(0) == MethodHandle.class &&
                 m.getName().startsWith("interpret_")) {
-                String sig = basicTypeSignature(mt);
-                assert(m.getName().equals("interpret" + sig.substring(sig.indexOf('_'))));
-                LambdaForm form = new LambdaForm(sig);
+                String sig = null;
+                assert((sig = basicTypeSignature(mt)) != null &&
+                        m.getName().equals("interpret" + sig.substring(sig.indexOf('_'))));
+                LambdaForm form = new LambdaForm(mt);
                 form.vmentry = m;
                 form = mt.form().setCachedLambdaForm(MethodTypeForm.LF_INTERPRET, form);
             }
@@ -706,15 +710,6 @@ class LambdaForm {
         Object res = mh.form.interpretWithArguments(av);
         assert(returnTypesMatch(sig, av, res));
         return res;
-    }
-    private static LambdaForm getPreparedForm(String sig) {
-        MethodType mtype = signatureType(sig);
-        LambdaForm prep =  mtype.form().cachedLambdaForm(MethodTypeForm.LF_INTERPRET);
-        if (prep != null)  return prep;
-        assert(isValidSignature(sig));
-        prep = new LambdaForm(sig);
-        prep.vmentry = InvokerBytecodeGenerator.generateLambdaFormInterpreterEntryPoint(sig);
-        return mtype.form().setCachedLambdaForm(MethodTypeForm.LF_INTERPRET, prep);
     }
 
     // The next few routines are called only from assert expressions
@@ -929,99 +924,6 @@ class LambdaForm {
         return false;
     }
 
-    LambdaForm addArguments(int pos, BasicType... types) {
-        // names array has MH in slot 0; skip it.
-        int argpos = pos + 1;
-        assert(argpos <= arity);
-        int length = names.length;
-        int inTypes = types.length;
-        Name[] names2 = Arrays.copyOf(names, length + inTypes);
-        int arity2 = arity + inTypes;
-        int result2 = result;
-        if (result2 >= argpos)
-            result2 += inTypes;
-        // Note:  The LF constructor will rename names2[argpos...].
-        // Make space for new arguments (shift temporaries).
-        System.arraycopy(names, argpos, names2, argpos + inTypes, length - argpos);
-        for (int i = 0; i < inTypes; i++) {
-            names2[argpos + i] = new Name(types[i]);
-        }
-        return new LambdaForm(debugName, arity2, names2, result2);
-    }
-
-    LambdaForm addArguments(int pos, List<Class<?>> types) {
-        return addArguments(pos, basicTypes(types));
-    }
-
-    LambdaForm permuteArguments(int skip, int[] reorder, BasicType[] types) {
-        // Note:  When inArg = reorder[outArg], outArg is fed by a copy of inArg.
-        // The types are the types of the new (incoming) arguments.
-        int length = names.length;
-        int inTypes = types.length;
-        int outArgs = reorder.length;
-        assert(skip+outArgs == arity);
-        assert(permutedTypesMatch(reorder, types, names, skip));
-        int pos = 0;
-        // skip trivial first part of reordering:
-        while (pos < outArgs && reorder[pos] == pos)  pos += 1;
-        Name[] names2 = new Name[length - outArgs + inTypes];
-        System.arraycopy(names, 0, names2, 0, skip+pos);
-        // copy the body:
-        int bodyLength = length - arity;
-        System.arraycopy(names, skip+outArgs, names2, skip+inTypes, bodyLength);
-        int arity2 = names2.length - bodyLength;
-        int result2 = result;
-        if (result2 >= 0) {
-            if (result2 < skip+outArgs) {
-                // return the corresponding inArg
-                result2 = reorder[result2-skip];
-            } else {
-                result2 = result2 - outArgs + inTypes;
-            }
-        }
-        // rework names in the body:
-        for (int j = pos; j < outArgs; j++) {
-            Name n = names[skip+j];
-            int i = reorder[j];
-            // replace names[skip+j] by names2[skip+i]
-            Name n2 = names2[skip+i];
-            if (n2 == null)
-                names2[skip+i] = n2 = new Name(types[i]);
-            else
-                assert(n2.type == types[i]);
-            for (int k = arity2; k < names2.length; k++) {
-                names2[k] = names2[k].replaceName(n, n2);
-            }
-        }
-        // some names are unused, but must be filled in
-        for (int i = skip+pos; i < arity2; i++) {
-            if (names2[i] == null)
-                names2[i] = argument(i, types[i - skip]);
-        }
-        for (int j = arity; j < names.length; j++) {
-            int i = j - arity + arity2;
-            // replace names2[i] by names[j]
-            Name n = names[j];
-            Name n2 = names2[i];
-            if (n != n2) {
-                for (int k = i+1; k < names2.length; k++) {
-                    names2[k] = names2[k].replaceName(n, n2);
-                }
-            }
-        }
-        return new LambdaForm(debugName, arity2, names2, result2);
-    }
-
-    static boolean permutedTypesMatch(int[] reorder, BasicType[] types, Name[] names, int skip) {
-        int inTypes = types.length;
-        int outArgs = reorder.length;
-        for (int i = 0; i < outArgs; i++) {
-            assert(names[skip+i].isParam());
-            assert(names[skip+i].type == types[reorder[i]]);
-        }
-        return true;
-    }
-
     static class NamedFunction {
         final MemberName member;
         private @Stable MethodHandle resolvedHandle;
@@ -1054,19 +956,15 @@ class LambdaForm {
                    "invokeBasic".equals(member.getName());
         }
 
-        // The next 3 constructors are used to break circular dependencies on MH.invokeStatic, etc.
+        // The next 2 constructors are used to break circular dependencies on MH.invokeStatic, etc.
         // Any LambdaForm containing such a member is not interpretable.
         // This is OK, since all such LFs are prepared with special primitive vmentry points.
         // And even without the resolvedHandle, the name can still be compiled and optimized.
         NamedFunction(Method method) {
             this(new MemberName(method));
         }
-        NamedFunction(Field field) {
-            this(new MemberName(field));
-        }
         NamedFunction(MemberName member) {
-            this.member = member;
-            this.resolvedHandle = null;
+            this(member, null);
         }
 
         MethodHandle resolvedHandle() {
@@ -1408,9 +1306,7 @@ class LambdaForm {
         }
         Name(NamedFunction function, Object... arguments) {
             this(-1, function.returnType(), function, arguments = Arrays.copyOf(arguments, arguments.length, Object[].class));
-            assert(arguments.length == function.arity()) : "arity mismatch: arguments.length=" + arguments.length + " == function.arity()=" + function.arity() + " in " + debugString();
-            for (int i = 0; i < arguments.length; i++)
-                assert(typesMatch(function.parameterType(i), arguments[i])) : "types don't match: function.parameterType(" + i + ")=" + function.parameterType(i) + ", arguments[" + i + "]=" + arguments[i] + " in " + debugString();
+            assert(typesMatch(function, arguments));
         }
         /** Create a raw parameter of the given type, with an expected index. */
         Name(int index, BasicType type) {
@@ -1550,7 +1446,15 @@ class LambdaForm {
             return buf.toString();
         }
 
-        static boolean typesMatch(BasicType parameterType, Object object) {
+        private boolean typesMatch(NamedFunction function, Object ... arguments) {
+            assert(arguments.length == function.arity()) : "arity mismatch: arguments.length=" + arguments.length + " == function.arity()=" + function.arity() + " in " + debugString();
+            for (int i = 0; i < arguments.length; i++) {
+                assert (typesMatch(function.parameterType(i), arguments[i])) : "types don't match: function.parameterType(" + i + ")=" + function.parameterType(i) + ", arguments[" + i + "]=" + arguments[i] + " in " + debugString();
+            }
+            return true;
+        }
+
+        private static boolean typesMatch(BasicType parameterType, Object object) {
             if (object instanceof Name) {
                 return ((Name)object).type == parameterType;
             }
@@ -1630,7 +1534,7 @@ class LambdaForm {
 
     /** Return the number of times n is used as an argument or return value. */
     int useCount(Name n) {
-        int ni = n.index, nmax = names.length;
+        int nmax = names.length;
         int end = lastUseIndex(n);
         if (end < 0)  return 0;
         int count = 0;
@@ -1643,9 +1547,6 @@ class LambdaForm {
         return count;
     }
 
-    static Name argument(int which, char type) {
-        return argument(which, basicType(type));
-    }
     static Name argument(int which, BasicType type) {
         if (which >= INTERNED_ARGUMENT_LIMIT)
             return new Name(which, type);
@@ -1656,34 +1557,6 @@ class LambdaForm {
         assert(n.index < INTERNED_ARGUMENT_LIMIT);
         if (n.constraint != null)  return n;
         return argument(n.index, n.type);
-    }
-    static Name[] arguments(int extra, String types) {
-        int length = types.length();
-        Name[] names = new Name[length + extra];
-        for (int i = 0; i < length; i++)
-            names[i] = argument(i, types.charAt(i));
-        return names;
-    }
-    static Name[] arguments(int extra, char... types) {
-        int length = types.length;
-        Name[] names = new Name[length + extra];
-        for (int i = 0; i < length; i++)
-            names[i] = argument(i, types[i]);
-        return names;
-    }
-    static Name[] arguments(int extra, List<Class<?>> types) {
-        int length = types.size();
-        Name[] names = new Name[length + extra];
-        for (int i = 0; i < length; i++)
-            names[i] = argument(i, basicType(types.get(i)));
-        return names;
-    }
-    static Name[] arguments(int extra, Class<?>... types) {
-        int length = types.length;
-        Name[] names = new Name[length + extra];
-        for (int i = 0; i < length; i++)
-            names[i] = argument(i, basicType(types[i]));
-        return names;
     }
     static Name[] arguments(int extra, MethodType types) {
         int length = types.parameterCount();

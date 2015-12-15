@@ -48,9 +48,7 @@ public class CompileWithOverrideSources extends SJavacTester {
     // Compile gensrc and gensrc2. However do not compile broken beta.B in gensrc,
     // only compile ok beta.B in gensrc2
     void test() throws Exception {
-        clean(TEST_ROOT);
         Files.createDirectories(BIN);
-        clean(GENSRC, GENSRC2, GENSRC3, BIN);
 
         Map<String,Long> previous_bin_state = collectState(BIN);
         ToolBox tb = new ToolBox();
@@ -80,7 +78,7 @@ public class CompileWithOverrideSources extends SJavacTester {
                                      BIN + "/javac_state");
 
         System.out.println("----- Compile with exluded beta went well!");
-        clean(BIN);
+        tb.cleanDirectory(BIN);
         compileExpectFailure(GENSRC.toString(),
                              GENSRC2.toString(),
                              "-d", BIN.toString(),
@@ -90,6 +88,5 @@ public class CompileWithOverrideSources extends SJavacTester {
                              SERVER_ARG);
 
         System.out.println("----- Compile without exluded beta failed, as expected! Good!");
-        clean(GENSRC, GENSRC2, BIN);
     }
 }

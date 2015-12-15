@@ -44,7 +44,6 @@ import java.io.IOException;
  * Basic test to exercise the j.u.c.atomic classes that use serialization
  * proxies.
  */
-
 public class Serial {
 
     public static void main(String[] args) {

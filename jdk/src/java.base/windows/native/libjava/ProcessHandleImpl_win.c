@@ -184,7 +184,14 @@ Java_java_lang_ProcessHandleImpl_parent0(JNIEnv *env,
         // Now walk the snapshot of processes, and
         do {
             if (wpid == pe32.th32ProcessID) {
-                ppid = pe32.th32ParentProcessID;
+                // The parent PID may be stale if that process has exited
+                // and may have been reused.
+                // A valid parent's start time is the same or before the child's
+                jlong ppStartTime = Java_java_lang_ProcessHandleImpl_isAlive0(env,
+                        clazz, pe32.th32ParentProcessID);
+                if (ppStartTime > 0 && ppStartTime <= startTime) {
+                    ppid = pe32.th32ParentProcessID;
+                }
                 break;
             }
         } while (Process32Next(hProcessSnap, &pe32));

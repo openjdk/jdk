@@ -38,6 +38,7 @@ import java.net.URL;
 
 import java.security.KeyStore;
 
+import java.security.cert.X509Certificate;
 import java.text.Collator;
 
 import java.util.ArrayList;
@@ -66,6 +67,25 @@ public class KeyStoreUtil {
         // this is for case insensitive string comparisons
         collator.setStrength(Collator.PRIMARY);
     };
+
+    /**
+     * Returns true if the certificate is self-signed, false otherwise.
+     */
+    public static boolean isSelfSigned(X509Certificate cert) {
+        return signedBy(cert, cert);
+    }
+
+    public static boolean signedBy(X509Certificate end, X509Certificate ca) {
+        if (!ca.getSubjectX500Principal().equals(end.getIssuerX500Principal())) {
+            return false;
+        }
+        try {
+            end.verify(ca.getPublicKey());
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
     /**
      * Returns true if KeyStore has a password. This is true except for

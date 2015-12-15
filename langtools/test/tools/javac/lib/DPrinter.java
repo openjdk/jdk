@@ -1049,6 +1049,13 @@ public class DPrinter {
             return visitTree(node, null);
         }
 
+        public Void visitIndex(IndexTree node, Void p) {
+            printString("kind", node.getKind().name());
+            printDocTree("term", node.getSearchTerm());
+            printList("desc", node.getDescription());
+            return visitInlineTag(node, p);
+        }
+
         public Void visitInheritDoc(InheritDocTree node, Void p) {
             return visitInlineTag(node, null);
         }
@@ -1281,6 +1288,7 @@ public class DPrinter {
             printList("argtypes", type.argtypes);
             printType("restype", type.restype, Details.FULL);
             printList("thrown", type.thrown);
+            printType("recvtype", type.recvtype, Details.FULL);
             return visitType(type, null);
         }
 

@@ -270,6 +270,13 @@ typedef enum
   G_PARAM_PRIVATE             = 1 << 5
 } GParamFlags;
 
+typedef enum {
+    GDK_INTERP_NEAREST,
+    GDK_INTERP_TILES,
+    GDK_INTERP_BILINEAR,
+    GDK_INTERP_HYPER
+} GdkInterpType;
+
 /* We define all structure pointers to be void* */
 typedef void GError;
 typedef void GMainContext;
@@ -787,6 +794,8 @@ GdkColorspace (*fp_gdk_pixbuf_get_colorspace)(const GdkPixbuf *pixbuf);
 GdkPixbuf *(*fp_gdk_pixbuf_get_from_drawable)(GdkPixbuf *dest,
         GdkDrawable *src, GdkColormap *cmap, int src_x, int src_y,
         int dest_x, int dest_y, int width, int height);
+GdkPixbuf *(*fp_gdk_pixbuf_scale_simple)(GdkPixbuf *src,
+        int dest_width, int dest_heigh, GdkInterpType interp_type);
 
 
 void (*fp_gtk_widget_destroy)(GtkWidget *widget);
