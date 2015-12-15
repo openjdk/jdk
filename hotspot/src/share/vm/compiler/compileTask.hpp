@@ -38,6 +38,7 @@
 
 class CompileTask : public CHeapObj<mtCompiler> {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
 
  private:
   static CompileTask* _task_free_list;

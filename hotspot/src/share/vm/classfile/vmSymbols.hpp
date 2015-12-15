@@ -1328,6 +1328,7 @@
 class vmSymbols: AllStatic {
   friend class vmIntrinsics;
   friend class VMStructs;
+  friend class JVMCIVMStructs;
  public:
   // enum for figuring positions and size of array holding Symbol*s
   enum SID {
