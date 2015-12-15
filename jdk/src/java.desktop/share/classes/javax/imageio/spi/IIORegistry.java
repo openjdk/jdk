@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,8 @@ import com.sun.imageio.plugins.bmp.BMPImageReaderSpi;
 import com.sun.imageio.plugins.bmp.BMPImageWriterSpi;
 import com.sun.imageio.plugins.wbmp.WBMPImageReaderSpi;
 import com.sun.imageio.plugins.wbmp.WBMPImageWriterSpi;
+import com.sun.imageio.plugins.tiff.TIFFImageReaderSpi;
+import com.sun.imageio.plugins.tiff.TIFFImageWriterSpi;
 import sun.awt.AppContext;
 import java.util.ServiceLoader;
 import java.util.ServiceConfigurationError;
@@ -168,6 +170,8 @@ public final class IIORegistry extends ServiceRegistry {
         registerServiceProvider(new BMPImageWriterSpi());
         registerServiceProvider(new WBMPImageReaderSpi());
         registerServiceProvider(new WBMPImageWriterSpi());
+        registerServiceProvider(new TIFFImageReaderSpi());
+        registerServiceProvider(new TIFFImageWriterSpi());
         registerServiceProvider(new PNGImageReaderSpi());
         registerServiceProvider(new PNGImageWriterSpi());
         registerServiceProvider(new JPEGImageReaderSpi());

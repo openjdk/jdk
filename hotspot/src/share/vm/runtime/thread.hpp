@@ -272,7 +272,7 @@ class Thread: public ThreadShadow {
   jlong _allocated_bytes;                       // Cumulative number of bytes allocated on
                                                 // the Java heap
 
-  TRACE_DATA _trace_data;                       // Thread-local data for tracing
+  mutable TRACE_DATA _trace_data;               // Thread-local data for tracing
 
   ThreadExt _ext;
 
@@ -909,6 +909,7 @@ class JavaThread: public Thread {
   // State of the stack guard pages for this thread.
   enum StackGuardState {
     stack_guard_unused,         // not needed
+    stack_guard_reserved_disabled,
     stack_guard_yellow_disabled,// disabled (temporarily) after stack overflow
     stack_guard_enabled         // enabled
   };
@@ -957,6 +958,7 @@ class JavaThread: public Thread {
   // Precompute the limit of the stack as used in stack overflow checks.
   // We load it from here to simplify the stack overflow check in assembly.
   address          _stack_overflow_limit;
+  address          _reserved_stack_activation;
 
   // Compiler exception handling (NOTE: The _exception_oop is *NOT* the same as _pending_exception. It is
   // used to temp. parsing values into and out of the runtime system during exception handling for compiled
@@ -1343,18 +1345,25 @@ class JavaThread: public Thread {
 
   // Stack overflow support
   inline size_t stack_available(address cur_sp);
+  address stack_reserved_zone_base() {
+    return stack_yellow_zone_base(); }
+  size_t stack_reserved_zone_size() {
+    return StackReservedPages * os::vm_page_size(); }
   address stack_yellow_zone_base() {
     return (address)(stack_base() -
                      (stack_size() -
                      (stack_red_zone_size() + stack_yellow_zone_size())));
   }
   size_t  stack_yellow_zone_size() {
-    return StackYellowPages * os::vm_page_size();
+    return StackYellowPages * os::vm_page_size() + stack_reserved_zone_size();
   }
   address stack_red_zone_base() {
     return (address)(stack_base() - (stack_size() - stack_red_zone_size()));
   }
   size_t stack_red_zone_size() { return StackRedPages * os::vm_page_size(); }
+  bool in_stack_reserved_zone(address a) {
+    return (a <= stack_reserved_zone_base()) && (a >= (address)((intptr_t)stack_reserved_zone_base() - stack_reserved_zone_size()));
+  }
   bool in_stack_yellow_zone(address a) {
     return (a <= stack_yellow_zone_base()) && (a >= stack_red_zone_base());
   }
@@ -1366,6 +1375,8 @@ class JavaThread: public Thread {
   void create_stack_guard_pages();
   void remove_stack_guard_pages();
 
+  void enable_stack_reserved_zone();
+  void disable_stack_reserved_zone();
   void enable_stack_yellow_zone();
   void disable_stack_yellow_zone();
   void enable_stack_red_zone();
@@ -1373,7 +1384,16 @@ class JavaThread: public Thread {
 
   inline bool stack_guard_zone_unused();
   inline bool stack_yellow_zone_disabled();
-  inline bool stack_yellow_zone_enabled();
+  inline bool stack_reserved_zone_disabled();
+  inline bool stack_guards_enabled();
+
+  address reserved_stack_activation() const { return _reserved_stack_activation; }
+  void      set_reserved_stack_activation(address addr) {
+    assert(_reserved_stack_activation == stack_base()
+            || _reserved_stack_activation == NULL
+            || addr == stack_base(), "Must not be set twice");
+    _reserved_stack_activation = addr;
+  }
 
   // Attempt to reguard the stack after a stack overflow may have occurred.
   // Returns true if (a) guard pages are not needed on this thread, (b) the
@@ -1390,6 +1410,7 @@ class JavaThread: public Thread {
   void set_stack_overflow_limit() {
     _stack_overflow_limit = _stack_base - _stack_size +
                             ((StackShadowPages +
+                              StackReservedPages +
                               StackYellowPages +
                               StackRedPages) * os::vm_page_size());
   }
@@ -1439,6 +1460,7 @@ class JavaThread: public Thread {
   static ByteSize stack_overflow_limit_offset()  { return byte_offset_of(JavaThread, _stack_overflow_limit); }
   static ByteSize is_method_handle_return_offset() { return byte_offset_of(JavaThread, _is_method_handle_return); }
   static ByteSize stack_guard_state_offset()     { return byte_offset_of(JavaThread, _stack_guard_state); }
+  static ByteSize reserved_stack_activation_offset() { return byte_offset_of(JavaThread, _reserved_stack_activation); }
   static ByteSize suspend_flags_offset()         { return byte_offset_of(JavaThread, _suspend_flags); }
 
   static ByteSize do_not_unlock_if_synchronized_offset() { return byte_offset_of(JavaThread, _do_not_unlock_if_synchronized); }

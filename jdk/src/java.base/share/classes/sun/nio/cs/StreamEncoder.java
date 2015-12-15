@@ -135,6 +135,18 @@ public class StreamEncoder extends Writer
         write(cbuf, 0, len);
     }
 
+    public void write(CharBuffer cb) throws IOException {
+        int position = cb.position();
+        try {
+            synchronized (lock) {
+                ensureOpen();
+                implWrite(cb);
+            }
+        } finally {
+            cb.position(position);
+        }
+    }
+
     public void flush() throws IOException {
         synchronized (lock) {
             ensureOpen();
@@ -266,9 +278,15 @@ public class StreamEncoder extends Writer
         throws IOException
     {
         CharBuffer cb = CharBuffer.wrap(cbuf, off, len);
+        implWrite(cb);
+    }
 
-        if (haveLeftoverChar)
+    void implWrite(CharBuffer cb)
+        throws IOException
+    {
+        if (haveLeftoverChar) {
             flushLeftoverChar(cb, false);
+        }
 
         while (cb.hasRemaining()) {
             CoderResult cr = encoder.encode(cb, bb, false);

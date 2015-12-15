@@ -45,19 +45,32 @@ public class BufferedImageGraphicsConfig
     extends GraphicsConfiguration
 {
     private static final int numconfigs = BufferedImage.TYPE_BYTE_BINARY;
-    private static BufferedImageGraphicsConfig configs[] =
+    private static BufferedImageGraphicsConfig standardConfigs[] =
+        new BufferedImageGraphicsConfig[numconfigs];
+    private static BufferedImageGraphicsConfig scaledConfigs[] =
         new BufferedImageGraphicsConfig[numconfigs];
 
     public static BufferedImageGraphicsConfig getConfig(BufferedImage bImg) {
+        return getConfig(bImg, 1, 1);
+    }
+
+    public static BufferedImageGraphicsConfig getConfig(BufferedImage bImg,
+                                                        double scaleX,
+                                                        double scaleY)
+    {
         BufferedImageGraphicsConfig ret;
         int type = bImg.getType();
+
+        BufferedImageGraphicsConfig[] configs = (scaleX == 1 && scaleY == 1)
+                ? standardConfigs : scaledConfigs;
+
         if (type > 0 && type < numconfigs) {
             ret = configs[type];
-            if (ret != null) {
+            if (ret != null && ret.scaleX == scaleX && ret.scaleY == scaleY) {
                 return ret;
             }
         }
-        ret = new BufferedImageGraphicsConfig(bImg, null);
+        ret = new BufferedImageGraphicsConfig(bImg, null, scaleX, scaleY);
         if (type > 0 && type < numconfigs) {
             configs[type] = ret;
         }
@@ -67,8 +80,16 @@ public class BufferedImageGraphicsConfig
     GraphicsDevice gd;
     ColorModel model;
     Raster raster;
+    private final double scaleX;
+    private final double scaleY;
 
     public BufferedImageGraphicsConfig(BufferedImage bufImg, Component comp) {
+        this(bufImg, comp, 1, 1);
+    }
+
+    public BufferedImageGraphicsConfig(BufferedImage bufImg, Component comp,
+                                       double scaleX, double scaleY)
+    {
         if (comp == null) {
             this.gd = new BufferedImageDevice(this);
         } else {
@@ -77,6 +98,8 @@ public class BufferedImageGraphicsConfig
         }
         this.model = bufImg.getColorModel();
         this.raster = bufImg.getRaster().createCompatibleWritableRaster(1, 1);
+        this.scaleX = scaleX;
+        this.scaleY = scaleY;
     }
 
     /**
@@ -138,7 +161,7 @@ public class BufferedImageGraphicsConfig
      * For image buffers, this Transform will be the Identity transform.
      */
     public AffineTransform getDefaultTransform() {
-        return new AffineTransform();
+        return AffineTransform.getScaleInstance(scaleX, scaleY);
     }
 
     /**

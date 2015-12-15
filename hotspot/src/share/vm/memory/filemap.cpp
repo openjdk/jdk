@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/compactHashtable.inline.hpp"
 #include "classfile/sharedClassUtil.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -953,11 +954,11 @@ bool FileMapInfo::is_in_shared_space(const void* p) {
 }
 
 void FileMapInfo::print_shared_spaces() {
-  gclog_or_tty->print_cr("Shared Spaces:");
+  tty->print_cr("Shared Spaces:");
   for (int i = 0; i < MetaspaceShared::n_regions; i++) {
     struct FileMapInfo::FileMapHeader::space_info* si = &_header->_space[i];
     char *base = _header->region_addr(i);
-    gclog_or_tty->print("  %s " INTPTR_FORMAT "-" INTPTR_FORMAT,
+    tty->print("  %s " INTPTR_FORMAT "-" INTPTR_FORMAT,
                         shared_region_name[i],
                         p2i(base), p2i(base + si->_used));
   }

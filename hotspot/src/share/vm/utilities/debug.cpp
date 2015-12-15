@@ -305,6 +305,16 @@ void report_java_out_of_memory(const char* message) {
     if (OnOutOfMemoryError && OnOutOfMemoryError[0]) {
       VMError::report_java_out_of_memory(message);
     }
+
+    if (CrashOnOutOfMemoryError) {
+      tty->print_cr("Aborting due to java.lang.OutOfMemoryError: %s", message);
+      fatal("OutOfMemory encountered: %s", message);
+    }
+
+    if (ExitOnOutOfMemoryError) {
+      tty->print_cr("Terminating due to java.lang.OutOfMemoryError: %s", message);
+      os::exit(3);
+    }
   }
 }
 
@@ -495,7 +505,7 @@ extern "C" void printnm(intptr_t p) {
 
 extern "C" void universe() {
   Command c("universe");
-  Universe::print();
+  Universe::print_on(tty);
 }
 
 

@@ -28,6 +28,7 @@
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "memory/virtualspace.hpp"
+#include "logging/log.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
 
@@ -115,17 +116,10 @@ void CardTableModRefBS::initialize() {
                             !ExecMem, "card table last card");
   *guard_card = last_card;
 
-  if (TraceCardTableModRefBS) {
-    gclog_or_tty->print_cr("CardTableModRefBS::CardTableModRefBS: ");
-    gclog_or_tty->print_cr("  "
-                  "  &_byte_map[0]: " INTPTR_FORMAT
-                  "  &_byte_map[_last_valid_index]: " INTPTR_FORMAT,
-                  p2i(&_byte_map[0]),
-                  p2i(&_byte_map[_last_valid_index]));
-    gclog_or_tty->print_cr("  "
-                  "  byte_map_base: " INTPTR_FORMAT,
-                  p2i(byte_map_base));
-  }
+  log_trace(gc, barrier)("CardTableModRefBS::CardTableModRefBS: ");
+  log_trace(gc, barrier)("    &_byte_map[0]: " INTPTR_FORMAT "  &_byte_map[_last_valid_index]: " INTPTR_FORMAT,
+                  p2i(&_byte_map[0]), p2i(&_byte_map[_last_valid_index]));
+  log_trace(gc, barrier)("    byte_map_base: " INTPTR_FORMAT, p2i(byte_map_base));
 }
 
 CardTableModRefBS::~CardTableModRefBS() {
@@ -350,29 +344,17 @@ void CardTableModRefBS::resize_covered_region(MemRegion new_region) {
   }
   // In any case, the covered size changes.
   _covered[ind].set_word_size(new_region.word_size());
-  if (TraceCardTableModRefBS) {
-    gclog_or_tty->print_cr("CardTableModRefBS::resize_covered_region: ");
-    gclog_or_tty->print_cr("  "
-                  "  _covered[%d].start(): " INTPTR_FORMAT
-                  "  _covered[%d].last(): " INTPTR_FORMAT,
-                  ind, p2i(_covered[ind].start()),
-                  ind, p2i(_covered[ind].last()));
-    gclog_or_tty->print_cr("  "
-                  "  _committed[%d].start(): " INTPTR_FORMAT
-                  "  _committed[%d].last(): " INTPTR_FORMAT,
-                  ind, p2i(_committed[ind].start()),
-                  ind, p2i(_committed[ind].last()));
-    gclog_or_tty->print_cr("  "
-                  "  byte_for(start): " INTPTR_FORMAT
-                  "  byte_for(last): " INTPTR_FORMAT,
-                  p2i(byte_for(_covered[ind].start())),
-                  p2i(byte_for(_covered[ind].last())));
-    gclog_or_tty->print_cr("  "
-                  "  addr_for(start): " INTPTR_FORMAT
-                  "  addr_for(last): " INTPTR_FORMAT,
-                  p2i(addr_for((jbyte*) _committed[ind].start())),
-                  p2i(addr_for((jbyte*) _committed[ind].last())));
-  }
+
+  log_trace(gc, barrier)("CardTableModRefBS::resize_covered_region: ");
+  log_trace(gc, barrier)("    _covered[%d].start(): " INTPTR_FORMAT " _covered[%d].last(): " INTPTR_FORMAT,
+                         ind, p2i(_covered[ind].start()), ind, p2i(_covered[ind].last()));
+  log_trace(gc, barrier)("    _committed[%d].start(): " INTPTR_FORMAT "  _committed[%d].last(): " INTPTR_FORMAT,
+                         ind, p2i(_committed[ind].start()), ind, p2i(_committed[ind].last()));
+  log_trace(gc, barrier)("    byte_for(start): " INTPTR_FORMAT "  byte_for(last): " INTPTR_FORMAT,
+                         p2i(byte_for(_covered[ind].start())),  p2i(byte_for(_covered[ind].last())));
+  log_trace(gc, barrier)("    addr_for(start): " INTPTR_FORMAT "  addr_for(last): " INTPTR_FORMAT,
+                         p2i(addr_for((jbyte*) _committed[ind].start())),  p2i(addr_for((jbyte*) _committed[ind].last())));
+
   // Touch the last card of the covered region to show that it
   // is committed (or SEGV).
   debug_only((void) (*byte_for(_covered[ind].last()));)

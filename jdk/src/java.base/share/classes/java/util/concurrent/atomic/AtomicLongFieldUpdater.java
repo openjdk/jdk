@@ -365,11 +365,16 @@ public abstract class AtomicLongFieldUpdater<T> {
         return next;
     }
 
-    private static class CASUpdater<T> extends AtomicLongFieldUpdater<T> {
+    private static final class CASUpdater<T> extends AtomicLongFieldUpdater<T> {
         private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
         private final long offset;
-        private final Class<T> tclass;
+        /**
+         * if field is protected, the subclass constructing updater, else
+         * the same as tclass
+         */
         private final Class<?> cclass;
+        /** class holding the field */
+        private final Class<T> tclass;
 
         CASUpdater(final Class<T> tclass, final String fieldName,
                    final Class<?> caller) {
@@ -397,103 +402,110 @@ public abstract class AtomicLongFieldUpdater<T> {
                 throw new RuntimeException(ex);
             }
 
-            Class<?> fieldt = field.getType();
-            if (fieldt != long.class)
+            if (field.getType() != long.class)
                 throw new IllegalArgumentException("Must be long type");
 
             if (!Modifier.isVolatile(modifiers))
                 throw new IllegalArgumentException("Must be volatile type");
 
-            this.cclass = (Modifier.isProtected(modifiers) &&
-                           caller != tclass) ? caller : null;
+            this.cclass = (Modifier.isProtected(modifiers)) ? caller : tclass;
             this.tclass = tclass;
-            offset = U.objectFieldOffset(field);
+            this.offset = U.objectFieldOffset(field);
         }
 
-        private void fullCheck(T obj) {
-            if (!tclass.isInstance(obj))
+        /**
+         * Checks that target argument is instance of cclass.  On
+         * failure, throws cause.
+         */
+        private final void accessCheck(T obj) {
+            if (!cclass.isInstance(obj))
+                throwAccessCheckException(obj);
+        }
+
+        /**
+         * Throws access exception if accessCheck failed due to
+         * protected access, else ClassCastException.
+         */
+        private final void throwAccessCheckException(T obj) {
+            if (cclass == tclass)
                 throw new ClassCastException();
-            if (cclass != null)
-                ensureProtectedAccess(obj);
+            else
+                throw new RuntimeException(
+                    new IllegalAccessException(
+                        "Class " +
+                        cclass.getName() +
+                        " can not access a protected member of class " +
+                        tclass.getName() +
+                        " using an instance of " +
+                        obj.getClass().getName()));
         }
 
-        public boolean compareAndSet(T obj, long expect, long update) {
-            if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
+        public final boolean compareAndSet(T obj, long expect, long update) {
+            accessCheck(obj);
             return U.compareAndSwapLong(obj, offset, expect, update);
         }
 
-        public boolean weakCompareAndSet(T obj, long expect, long update) {
-            if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
+        public final boolean weakCompareAndSet(T obj, long expect, long update) {
+            accessCheck(obj);
             return U.compareAndSwapLong(obj, offset, expect, update);
         }
 
-        public void set(T obj, long newValue) {
-            if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
+        public final void set(T obj, long newValue) {
+            accessCheck(obj);
             U.putLongVolatile(obj, offset, newValue);
         }
 
-        public void lazySet(T obj, long newValue) {
-            if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
+        public final void lazySet(T obj, long newValue) {
+            accessCheck(obj);
             U.putOrderedLong(obj, offset, newValue);
         }
 
-        public long get(T obj) {
-            if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
+        public final long get(T obj) {
+            accessCheck(obj);
             return U.getLongVolatile(obj, offset);
         }
 
-        public long getAndSet(T obj, long newValue) {
-            if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
+        public final long getAndSet(T obj, long newValue) {
+            accessCheck(obj);
             return U.getAndSetLong(obj, offset, newValue);
         }
 
-        public long getAndIncrement(T obj) {
-            return getAndAdd(obj, 1);
-        }
-
-        public long getAndDecrement(T obj) {
-            return getAndAdd(obj, -1);
-        }
-
-        public long getAndAdd(T obj, long delta) {
-            if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
+        public final long getAndAdd(T obj, long delta) {
+            accessCheck(obj);
             return U.getAndAddLong(obj, offset, delta);
         }
 
-        public long incrementAndGet(T obj) {
+        public final long getAndIncrement(T obj) {
+            return getAndAdd(obj, 1);
+        }
+
+        public final long getAndDecrement(T obj) {
+            return getAndAdd(obj, -1);
+        }
+
+        public final long incrementAndGet(T obj) {
             return getAndAdd(obj, 1) + 1;
         }
 
-        public long decrementAndGet(T obj) {
+        public final long decrementAndGet(T obj) {
             return getAndAdd(obj, -1) - 1;
         }
 
-        public long addAndGet(T obj, long delta) {
+        public final long addAndGet(T obj, long delta) {
             return getAndAdd(obj, delta) + delta;
-        }
-
-        private void ensureProtectedAccess(T obj) {
-            if (cclass.isInstance(obj)) {
-                return;
-            }
-            throw new RuntimeException(
-                new IllegalAccessException("Class " +
-                    cclass.getName() +
-                    " can not access a protected member of class " +
-                    tclass.getName() +
-                    " using an instance of " +
-                    obj.getClass().getName()
-                )
-            );
         }
     }
 
-
-    private static class LockedUpdater<T> extends AtomicLongFieldUpdater<T> {
+    private static final class LockedUpdater<T> extends AtomicLongFieldUpdater<T> {
         private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
         private final long offset;
-        private final Class<T> tclass;
+        /**
+         * if field is protected, the subclass constructing updater, else
+         * the same as tclass
+         */
         private final Class<?> cclass;
+        /** class holding the field */
+        private final Class<T> tclass;
 
         LockedUpdater(final Class<T> tclass, final String fieldName,
                       final Class<?> caller) {
@@ -521,28 +533,46 @@ public abstract class AtomicLongFieldUpdater<T> {
                 throw new RuntimeException(ex);
             }
 
-            Class<?> fieldt = field.getType();
-            if (fieldt != long.class)
+            if (field.getType() != long.class)
                 throw new IllegalArgumentException("Must be long type");
 
             if (!Modifier.isVolatile(modifiers))
                 throw new IllegalArgumentException("Must be volatile type");
 
-            this.cclass = (Modifier.isProtected(modifiers) &&
-                           caller != tclass) ? caller : null;
+            this.cclass = (Modifier.isProtected(modifiers)) ? caller : tclass;
             this.tclass = tclass;
-            offset = U.objectFieldOffset(field);
+            this.offset = U.objectFieldOffset(field);
         }
 
-        private void fullCheck(T obj) {
-            if (!tclass.isInstance(obj))
-                throw new ClassCastException();
-            if (cclass != null)
-                ensureProtectedAccess(obj);
+        /**
+         * Checks that target argument is instance of cclass.  On
+         * failure, throws cause.
+         */
+        private final void accessCheck(T obj) {
+            if (!cclass.isInstance(obj))
+                throw accessCheckException(obj);
         }
 
-        public boolean compareAndSet(T obj, long expect, long update) {
-            if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
+        /**
+         * Returns access exception if accessCheck failed due to
+         * protected access, else ClassCastException.
+         */
+        private final RuntimeException accessCheckException(T obj) {
+            if (cclass == tclass)
+                return new ClassCastException();
+            else
+                return new RuntimeException(
+                    new IllegalAccessException(
+                        "Class " +
+                        cclass.getName() +
+                        " can not access a protected member of class " +
+                        tclass.getName() +
+                        " using an instance of " +
+                        obj.getClass().getName()));
+        }
+
+        public final boolean compareAndSet(T obj, long expect, long update) {
+            accessCheck(obj);
             synchronized (this) {
                 long v = U.getLong(obj, offset);
                 if (v != expect)
@@ -552,41 +582,26 @@ public abstract class AtomicLongFieldUpdater<T> {
             }
         }
 
-        public boolean weakCompareAndSet(T obj, long expect, long update) {
+        public final boolean weakCompareAndSet(T obj, long expect, long update) {
             return compareAndSet(obj, expect, update);
         }
 
-        public void set(T obj, long newValue) {
-            if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
+        public final void set(T obj, long newValue) {
+            accessCheck(obj);
             synchronized (this) {
                 U.putLong(obj, offset, newValue);
             }
         }
 
-        public void lazySet(T obj, long newValue) {
+        public final void lazySet(T obj, long newValue) {
             set(obj, newValue);
         }
 
-        public long get(T obj) {
-            if (obj == null || obj.getClass() != tclass || cclass != null) fullCheck(obj);
+        public final long get(T obj) {
+            accessCheck(obj);
             synchronized (this) {
                 return U.getLong(obj, offset);
             }
-        }
-
-        private void ensureProtectedAccess(T obj) {
-            if (cclass.isInstance(obj)) {
-                return;
-            }
-            throw new RuntimeException(
-                new IllegalAccessException("Class " +
-                    cclass.getName() +
-                    " can not access a protected member of class " +
-                    tclass.getName() +
-                    " using an instance of " +
-                    obj.getClass().getName()
-                )
-            );
         }
     }
 

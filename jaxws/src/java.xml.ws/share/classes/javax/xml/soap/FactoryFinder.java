@@ -26,94 +26,46 @@
 package javax.xml.soap;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 class FactoryFinder {
 
-    /**
-     * Creates an instance of the specified class using the specified
-     * {@code ClassLoader} object.
-     *
-     * @exception SOAPException if the given class could not be found
-     *            or could not be instantiated
-     */
-    private static Object newInstance(String className,
-                                      ClassLoader classLoader)
-            throws SOAPException
-    {
-        try {
-            Class spiClass = safeLoadClass(className, classLoader);
-            return spiClass.newInstance();
+    private static final Logger logger = Logger.getLogger("javax.xml.soap");
 
-        } catch (ClassNotFoundException x) {
-            throw new SOAPException("Provider " + className + " not found", x);
-        } catch (Exception x) {
-            throw new SOAPException("Provider " + className + " could not be instantiated: " + x, x);
-        }
-    }
+    private static final ServiceLoaderUtil.ExceptionHandler<SOAPException> EXCEPTION_HANDLER =
+            new ServiceLoaderUtil.ExceptionHandler<SOAPException>() {
+                @Override
+                public SOAPException createException(Throwable throwable, String message) {
+                    return new SOAPException(message, throwable);
+                }
+            };
 
     /**
      * Finds the implementation {@code Class} object for the given
-     * factory name, or null if that fails.
-     * <P>
-     * This method is package private so that this code can be shared.
-     *
-     * @return the {@code Class} object of the specified message factory;
-     *         or {@code null}
-     *
-     * @param factoryId             the name of the factory to find, which is
-     *                              a system property
-     * @exception SOAPException if there is a SOAP error
-     */
-    static Object find(String factoryId)
-            throws SOAPException
-    {
-        return find(factoryId, null, false);
-    }
-
-    /**
-     * Finds the implementation {@code Class} object for the given
-     * factory name, or if that fails, finds the {@code Class} object
-     * for the given fallback class name. The arguments supplied must be
-     * used in order. If using the first argument is successful, the second
-     * one will not be used.
-     * <P>
-     * This method is package private so that this code can be shared.
-     *
-     * @return the {@code Class} object of the specified message factory;
-     *         may be {@code null}
-     *
-     * @param factoryId             the name of the factory to find, which is
-     *                              a system property
-     * @param fallbackClassName     the implementation class name, which is
-     *                              to be used only if nothing else
-     *                              is found; {@code null} to indicate that
-     *                              there is no fallback class name
-     * @exception SOAPException if there is a SOAP error
-     */
-    static Object find(String factoryId, String fallbackClassName)
-            throws SOAPException
-    {
-        return find(factoryId, fallbackClassName, true);
-    }
-
-    /**
-     * Finds the implementation {@code Class} object for the given
-     * factory name, or if that fails, finds the {@code Class} object
-     * for the given default class name, but only if {@code tryFallback}
-     * is {@code true}.  The arguments supplied must be used in order
-     * If using the first argument is successful, the second one will not
-     * be used.  Note the default class name may be needed even if fallback
-     * is not to be attempted, so certain error conditions can be handled.
+     * factory type.  If it fails and {@code tryFallback} is {@code true}
+     * finds the {@code Class} object for the given default class name.
+     * The arguments supplied must be used in order
+     * Note the default class name may be needed even if fallback
+     * is not to be attempted in order to check if requested type is fallback.
      * <P>
      * This method is package private so that this code can be shared.
      *
      * @return the {@code Class} object of the specified message factory;
      *         may not be {@code null}
      *
-     * @param factoryId             the name of the factory to find, which is
-     *                              a system property
+     * @param factoryClass          factory abstract class or interface to be found
+     * @param deprecatedFactoryId   deprecated name of a factory; it is used for types
+     *                              where class name is different from a name
+     *                              being searched (in previous spec).
      * @param defaultClassName      the implementation class name, which is
      *                              to be used only if nothing else
      *                              is found; {@code null} to indicate
@@ -122,63 +74,52 @@ class FactoryFinder {
      *                              fallback
      * @exception SOAPException if there is a SOAP error
      */
-    static Object find(String factoryId, String defaultClassName,
-                       boolean tryFallback) throws SOAPException {
-        ClassLoader classLoader;
-        try {
-            classLoader = Thread.currentThread().getContextClassLoader();
-        } catch (Exception x) {
-            throw new SOAPException(x.toString(), x);
-        }
+    @SuppressWarnings("unchecked")
+    static <T> T find(Class<T> factoryClass,
+                      String defaultClassName,
+                      boolean tryFallback, String deprecatedFactoryId) throws SOAPException {
+
+        ClassLoader tccl = ServiceLoaderUtil.contextClassLoader(EXCEPTION_HANDLER);
+        String factoryId = factoryClass.getName();
 
         // Use the system property first
-        try {
-            String systemProp =
-                    System.getProperty( factoryId );
-            if( systemProp!=null) {
-                return newInstance(systemProp, classLoader);
+        String className = fromSystemProperty(factoryId, deprecatedFactoryId);
+        if (className != null) {
+            Object result = newInstance(className, defaultClassName, tccl);
+            if (result != null) {
+                return (T) result;
             }
-        } catch (SecurityException se) {
         }
 
         // try to read from $java.home/lib/jaxm.properties
-        try {
-            String javah=System.getProperty( "java.home" );
-            String configFile = javah + File.separator +
-                    "lib" + File.separator + "jaxm.properties";
-            File f=new File( configFile );
-            if( f.exists()) {
-                Properties props=new Properties();
-                props.load( new FileInputStream(f));
-                String factoryClassName = props.getProperty(factoryId);
-                return newInstance(factoryClassName, classLoader);
+        className = fromJDKProperties(factoryId, deprecatedFactoryId);
+        if (className != null) {
+            Object result = newInstance(className, defaultClassName, tccl);
+            if (result != null) {
+                return (T) result;
             }
-        } catch(Exception ex ) {
         }
 
-        String serviceId = "META-INF/services/" + factoryId;
+        // standard services: java.util.ServiceLoader
+        T factory = ServiceLoaderUtil.firstByServiceLoader(
+                factoryClass,
+                logger,
+                EXCEPTION_HANDLER);
+        if (factory != null) {
+            return factory;
+        }
+
         // try to find services in CLASSPATH
-        try {
-            InputStream is=null;
-            if (classLoader == null) {
-                is=ClassLoader.getSystemResourceAsStream(serviceId);
-            } else {
-                is=classLoader.getResourceAsStream(serviceId);
+        className = fromMetaInfServices(deprecatedFactoryId, tccl);
+        if (className != null) {
+            logger.log(Level.WARNING,
+                    "Using deprecated META-INF/services mechanism with non-standard property: {0}. " +
+                            "Property {1} should be used instead.",
+                    new Object[]{deprecatedFactoryId, factoryId});
+            Object result = newInstance(className, defaultClassName, tccl);
+            if (result != null) {
+                return (T) result;
             }
-
-            if( is!=null ) {
-                BufferedReader rd =
-                        new BufferedReader(new InputStreamReader(is, "UTF-8"));
-
-                String factoryClassName = rd.readLine();
-                rd.close();
-
-                if (factoryClassName != null &&
-                        ! "".equals(factoryClassName)) {
-                    return newInstance(factoryClassName, classLoader);
-                }
-            }
-        } catch( Exception ex ) {
         }
 
         // If not found and fallback should not be tried, return a null result.
@@ -191,46 +132,133 @@ class FactoryFinder {
             throw new SOAPException(
                     "Provider for " + factoryId + " cannot be found", null);
         }
-        return newInstance(defaultClassName, classLoader);
+        return (T) newInstance(defaultClassName, defaultClassName, tccl);
     }
 
-    /**
-     * Loads the class, provided that the calling thread has an access to the
-     * class being loaded. If this is the specified default factory class and it
-     * is restricted by package.access we get a SecurityException and can do a
-     * Class.forName() on it so it will be loaded by the bootstrap class loader.
-     */
-    private static Class safeLoadClass(String className,
-                                       ClassLoader classLoader)
-            throws ClassNotFoundException {
-        try {
-            // make sure that the current thread has an access to the package of the given name.
-            SecurityManager s = System.getSecurityManager();
-            if (s != null) {
-                int i = className.lastIndexOf('.');
-                if (i != -1) {
-                    s.checkPackageAccess(className.substring(0, i));
+    // in most cases there is no deprecated factory id
+    static <T> T find(Class<T> factoryClass,
+                      String defaultClassName,
+                      boolean tryFallback) throws SOAPException {
+        return find(factoryClass, defaultClassName, tryFallback, null);
+    }
+
+    private static Object newInstance(String className, String defaultClassName, ClassLoader tccl) throws SOAPException {
+        return ServiceLoaderUtil.newInstance(
+                className,
+                defaultClassName,
+                tccl,
+                EXCEPTION_HANDLER);
+    }
+
+    // used only for deprecatedFactoryId;
+    // proper factoryId searched by java.util.ServiceLoader
+    private static String fromMetaInfServices(String deprecatedFactoryId, ClassLoader tccl) {
+        String serviceId = "META-INF/services/" + deprecatedFactoryId;
+        logger.log(Level.FINE, "Checking deprecated {0} resource", serviceId);
+
+        try (InputStream is =
+                     tccl == null ?
+                             ClassLoader.getSystemResourceAsStream(serviceId)
+                             :
+                             tccl.getResourceAsStream(serviceId)) {
+
+            if (is != null) {
+                String factoryClassName;
+                try (InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
+                     BufferedReader rd = new BufferedReader(isr)) {
+                    factoryClassName = rd.readLine();
+                }
+
+                logFound(factoryClassName);
+                if (factoryClassName != null && !"".equals(factoryClassName)) {
+                    return factoryClassName;
                 }
             }
 
-            if (classLoader == null)
-                return Class.forName(className);
-            else
-                return classLoader.loadClass(className);
-        } catch (SecurityException se) {
-            // (only) default implementation can be loaded
-            // using bootstrap class loader:
-            if (isDefaultImplementation(className))
-                return Class.forName(className);
+        } catch (IOException e) {
+            // keep original behavior
+        }
+        return null;
+    }
 
-            throw se;
+    private static String fromJDKProperties(String factoryId, String deprecatedFactoryId) {
+        Path path = null;
+        try {
+            String JAVA_HOME = System.getProperty("java.home");
+            path = Paths.get(JAVA_HOME, "conf", "jaxm.properties");
+            logger.log(Level.FINE, "Checking configuration in {0}", path);
+
+            // to ensure backwards compatibility
+            if (!Files.exists(path)) {
+                path = Paths.get(JAVA_HOME, "lib", "jaxm.properties");
+            }
+
+            logger.log(Level.FINE, "Checking configuration in {0}", path);
+            if (Files.exists(path)) {
+                Properties props = new Properties();
+                try (InputStream inputStream = Files.newInputStream(path)) {
+                    props.load(inputStream);
+                }
+
+                // standard property
+                logger.log(Level.FINE, "Checking property {0}", factoryId);
+                String factoryClassName = props.getProperty(factoryId);
+                logFound(factoryClassName);
+                if (factoryClassName != null) {
+                    return factoryClassName;
+                }
+
+                // deprecated property
+                if (deprecatedFactoryId != null) {
+                    logger.log(Level.FINE, "Checking deprecated property {0}", deprecatedFactoryId);
+                    factoryClassName = props.getProperty(deprecatedFactoryId);
+                    logFound(factoryClassName);
+                    if (factoryClassName != null) {
+                        logger.log(Level.WARNING,
+                                "Using non-standard property: {0}. Property {1} should be used instead.",
+                                new Object[]{deprecatedFactoryId, factoryId});
+                        return factoryClassName;
+                    }
+                }
+            }
+        } catch (Exception ignored) {
+            logger.log(Level.SEVERE, "Error reading SAAJ configuration from ["  + path +
+                    "] file. Check it is accessible and has correct format.", ignored);
+        }
+        return null;
+    }
+
+    private static String fromSystemProperty(String factoryId, String deprecatedFactoryId) {
+        String systemProp = getSystemProperty(factoryId);
+        if (systemProp != null) {
+            return systemProp;
+        }
+        if (deprecatedFactoryId != null) {
+            systemProp = getSystemProperty(deprecatedFactoryId);
+            if (systemProp != null) {
+                logger.log(Level.WARNING,
+                        "Using non-standard property: {0}. Property {1} should be used instead.",
+                        new Object[] {deprecatedFactoryId, factoryId});
+                return systemProp;
+            }
+        }
+        return null;
+    }
+
+    private static String getSystemProperty(String property) {
+        logger.log(Level.FINE, "Checking system property {0}", property);
+        String value = AccessController.doPrivileged(
+                (PrivilegedAction<String>) () -> System.getProperty(property));
+        logFound(value);
+        return value;
+    }
+
+    private static void logFound(String value) {
+        if (value != null) {
+            logger.log(Level.FINE, "  found {0}", value);
+        } else {
+            logger.log(Level.FINE, "  not found");
         }
     }
 
-    private static boolean isDefaultImplementation(String className) {
-        return MessageFactory.DEFAULT_MESSAGE_FACTORY.equals(className) ||
-                SOAPFactory.DEFAULT_SOAP_FACTORY.equals(className) ||
-                SOAPConnectionFactory.DEFAULT_SOAP_CONNECTION_FACTORY.equals(className) ||
-                SAAJMetaFactory.DEFAULT_META_FACTORY_CLASS.equals(className);
-    }
 }

@@ -578,12 +578,49 @@ public class DocCommentParser {
     }
 
     /**
+     * Read a term ie. one word.
+     * It is an error if the beginning of the next tag is detected.
+     */
+    @SuppressWarnings("fallthrough")
+    protected DCText inlineWord() {
+        int pos = bp;
+        int depth = 0;
+        loop:
+        while (bp < buflen) {
+            switch (ch) {
+                case '\n':
+                    newline = true;
+                    // fallthrough
+
+                case '\r': case '\f': case ' ': case '\t':
+                    return m.at(pos).Text(newString(pos, bp));
+
+                case '@':
+                    if (newline)
+                        break loop;
+
+                case '{':
+                    depth++;
+                    break;
+
+                case '}':
+                    if (depth == 0 || --depth == 0)
+                        return m.at(pos).Text(newString(pos, bp));
+                    break;
+            }
+            newline = false;
+            nextChar();
+        }
+        return null;
+    }
+
+    /**
      * Read general text content of an inline tag, including HTML entities and elements.
      * Matching pairs of { } are skipped; the text is terminated by the first
      * unmatched }. It is an error if the beginning of the next tag is detected.
      */
     @SuppressWarnings("fallthrough")
-    protected List<DCTree> inlineContent() {
+    private List<DCTree> inlineContent() {
         ListBuffer<DCTree> trees = new ListBuffer<>();
 
         skipWhitespace();
@@ -614,6 +651,8 @@ public class DocCommentParser {
                     break;
 
                 case '{':
+                    if (textStart == -1)
+                        textStart = bp;
                     newline = false;
                     depth++;
                     nextChar();
@@ -1019,6 +1058,28 @@ public class DocCommentParser {
                     DCReference ref = reference(false);
                     List<DCTree> description = blockContent();
                     return m.at(pos).Exception(ref, description);
+                }
+            },
+
+            // @index search-term options-description
+            new TagParser(Kind.INLINE, DCTree.Kind.INDEX) {
+                public DCTree parse(int pos) throws ParseException {
+                    skipWhitespace();
+                    if (ch == '}') {
+                        throw new ParseException("dc.no.content");
+                    }
+                    DCTree term = ch == '"' ? quotedString() : inlineWord();
+                    if (term == null) {
+                        throw new ParseException("dc.no.content");
+                    }
+                    skipWhitespace();
+                    List<DCTree> description = List.nil();
+                    if (ch != '}') {
+                        description = inlineContent();
+                    } else {
+                        nextChar();
+                    }
+                    return m.at(pos).Index(term, description);
                 }
             },
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -414,6 +414,10 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
   _max_switch_depth = 0;
   _est_switch_depth = 0;
 #endif
+
+  if (parse_method->has_reserved_stack_access()) {
+    C->set_has_reserved_stack_access(true);
+  }
 
   _tf = TypeFunc::make(method());
   _iter.reset_to_method(method());

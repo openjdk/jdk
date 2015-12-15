@@ -40,7 +40,7 @@ import com.sun.tools.javac.code.Attribute.RetentionPolicy;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Types.UniqueType;
-import com.sun.tools.javac.file.BaseFileObject;
+import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.jvm.Pool.DynamicMethod;
 import com.sun.tools.javac.jvm.Pool.Method;
 import com.sun.tools.javac.jvm.Pool.MethodHandle;
@@ -52,6 +52,7 @@ import static com.sun.tools.javac.code.Kinds.Kind.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.main.Option.*;
+
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 /** This class provides operations to map an internal symbol table graph
@@ -1699,7 +1700,7 @@ public class ClassWriter extends ClassFile {
             // the last possible moment because the sourcefile may be used
             // elsewhere in error diagnostics. Fixes 4241573.
             //databuf.appendChar(c.pool.put(c.sourcefile));
-            String simpleName = BaseFileObject.getSimpleName(c.sourcefile);
+            String simpleName = PathFileObject.getSimpleName(c.sourcefile);
             databuf.appendChar(c.pool.put(names.fromString(simpleName)));
             endAttr(alenIdx);
             acount++;

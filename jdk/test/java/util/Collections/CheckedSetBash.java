@@ -146,25 +146,26 @@ public class CheckedSetBash {
         ArrayList<Object[]> iters = new ArrayList<>(makeCheckedSets());
         iters.ensureCapacity(numItr * iters.size());
         for (int each=1; each < numItr; each++) {
-            iters.addAll( makeCheckedSets());
+            iters.addAll(makeCheckedSets());
         }
         return iters.iterator();
     }
 
     public static Collection<Object[]> makeCheckedSets() {
-        return Arrays.asList(
-            new Object[]{"Collections.checkedSet(HashSet)",
-                (Supplier) () -> {return Collections.checkedSet(new HashSet(), Integer.class);}},
-            new Object[]{"Collections.checkedSet(TreeSet(reverseOrder)",
-                (Supplier) () -> {return Collections.checkedSet(new TreeSet(Collections.reverseOrder()), Integer.class);}},
-            new Object[]{"Collections.checkedSet(TreeSet).descendingSet()",
-                (Supplier) () -> {return Collections.checkedSet(new TreeSet().descendingSet(), Integer.class);}},
-            new Object[]{"Collections.checkedNavigableSet(TreeSet)",
-                (Supplier) () -> {return Collections.checkedNavigableSet(new TreeSet(), Integer.class);}},
-            new Object[]{"Collections.checkedNavigableSet(TreeSet(reverseOrder)",
-                (Supplier) () -> {return Collections.checkedNavigableSet(new TreeSet(Collections.reverseOrder()), Integer.class);}},
-            new Object[]{"Collections.checkedNavigableSet().descendingSet()",
-                (Supplier) () -> {return Collections.checkedNavigableSet(new TreeSet().descendingSet(), Integer.class);}}
-            );
+        Object[][] params = {
+            {"Collections.checkedSet(HashSet)",
+             (Supplier) () -> Collections.checkedSet(new HashSet(), Integer.class)},
+            {"Collections.checkedSet(TreeSet(reverseOrder))",
+             (Supplier) () -> Collections.checkedSet(new TreeSet(Collections.reverseOrder()), Integer.class)},
+            {"Collections.checkedSet(TreeSet.descendingSet())",
+             (Supplier) () -> Collections.checkedSet(new TreeSet().descendingSet(), Integer.class)},
+            {"Collections.checkedNavigableSet(TreeSet)",
+             (Supplier) () -> Collections.checkedNavigableSet(new TreeSet(), Integer.class)},
+            {"Collections.checkedNavigableSet(TreeSet(reverseOrder))",
+             (Supplier) () -> Collections.checkedNavigableSet(new TreeSet(Collections.reverseOrder()), Integer.class)},
+            {"Collections.checkedNavigableSet(TreeSet.descendingSet())",
+             (Supplier) () -> Collections.checkedNavigableSet(new TreeSet().descendingSet(), Integer.class)},
+        };
+        return Arrays.asList(params);
     }
 }

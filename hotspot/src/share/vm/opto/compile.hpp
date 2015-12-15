@@ -364,6 +364,7 @@ class Compile : public Phase {
   bool                  _has_unsafe_access;     // True if the method _may_ produce faults in unsafe loads or stores.
   bool                  _has_stringbuilder;     // True StringBuffers or StringBuilders are allocated
   bool                  _has_boxed_value;       // True if a boxed object is allocated
+  bool                  _has_reserved_stack_access; // True if the method or an inlined method is annotated with ReservedStackAccess
   int                   _max_vector_size;       // Maximum size of generated vectors
   uint                  _trap_hist[trapHistLength];  // Cumulative traps
   bool                  _trap_can_recompile;    // Have we emitted a recompiling trap?
@@ -637,6 +638,8 @@ class Compile : public Phase {
   void          set_has_stringbuilder(bool z)   { _has_stringbuilder = z; }
   bool              has_boxed_value() const     { return _has_boxed_value; }
   void          set_has_boxed_value(bool z)     { _has_boxed_value = z; }
+  bool              has_reserved_stack_access() const { return _has_reserved_stack_access; }
+  void          set_has_reserved_stack_access(bool z) { _has_reserved_stack_access = z; }
   int               max_vector_size() const     { return _max_vector_size; }
   void          set_max_vector_size(int s)      { _max_vector_size = s; }
   void          set_trap_count(uint r, uint c)  { assert(r < trapHistLength, "oob");        _trap_hist[r] = c; }

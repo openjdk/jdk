@@ -29,7 +29,7 @@
  *          java.management
  *          jdk.attach
  *          jdk.management/sun.tools.attach
- * @run main/othervm/timeout=780 TestOptionsWithRanges
+ * @run main/othervm/timeout=900 TestOptionsWithRanges
  */
 
 import java.util.ArrayList;
@@ -63,11 +63,25 @@ public class TestOptionsWithRanges {
         allOptionsAsMap.remove(optionName);
     }
 
+    private static void setAllowedExitCodes(String optionName, Integer... allowedExitCodes) {
+        JVMOption option = allOptionsAsMap.get(optionName);
+
+        if (option != null) {
+            option.setAllowedExitCodes(allowedExitCodes);
+        }
+    }
+
     public static void main(String[] args) throws Exception {
         int failedTests;
         List<JVMOption> allOptions;
 
         allOptionsAsMap = JVMOptionsUtils.getOptionsWithRangeAsMap();
+
+        /* Shared flags can cause JVM to exit with error code 2 */
+        setAllowedExitCodes("SharedReadWriteSize", 2);
+        setAllowedExitCodes("SharedReadOnlySize", 2);
+        setAllowedExitCodes("SharedMiscDataSize", 2);
+        setAllowedExitCodes("SharedMiscCodeSize", 2);
 
         /*
          * Remove CICompilerCount from testing because currently it can hang system
@@ -82,23 +96,13 @@ public class TestOptionsWithRanges {
         excludeTestRange("ThreadStackSize");
 
         /*
-         * JDK-8141650
-         * Temporarily exclude SharedMiscDataSize as it will exit the VM with exit code 2 and
-         * "The shared miscellaneous data space is not large enough to preload requested classes."
-         * message at min value.
+         * JDK-8143958
+         * Temporarily exclude testing of max range for Shared* flags
          */
-        excludeTestRange("SharedMiscDataSize");
-
-        /*
-         * JDK-8142874
-         * Temporarily exclude Shared* flagse as they will exit the VM with exit code 2 and
-         * "The shared miscellaneous data space is not large enough to preload requested classes."
-         * message at max values.
-         */
-        excludeTestRange("SharedReadWriteSize");
-        excludeTestRange("SharedReadOnlySize");
-        excludeTestRange("SharedMiscDataSize");
-        excludeTestRange("SharedMiscCodeSize");
+        excludeTestMaxRange("SharedReadWriteSize");
+        excludeTestMaxRange("SharedReadOnlySize");
+        excludeTestMaxRange("SharedMiscDataSize");
+        excludeTestMaxRange("SharedMiscCodeSize");
 
         /*
          * Remove the flag controlling the size of the stack because the
@@ -116,11 +120,26 @@ public class TestOptionsWithRanges {
          * Exclude below options as their maximum value would consume too much memory
          * and would affect other tests that run in parallel.
          */
+        excludeTestMaxRange("ConcGCThreads");
         excludeTestMaxRange("G1ConcRefinementThreads");
         excludeTestMaxRange("G1RSetRegionEntries");
         excludeTestMaxRange("G1RSetSparseRegionEntries");
         excludeTestMaxRange("G1UpdateBufferSize");
         excludeTestMaxRange("InitialBootClassLoaderMetaspaceSize");
+        excludeTestMaxRange("InitialHeapSize");
+        excludeTestMaxRange("MaxHeapSize");
+        excludeTestMaxRange("MaxRAM");
+        excludeTestMaxRange("NewSize");
+        excludeTestMaxRange("OldSize");
+        excludeTestMaxRange("ParallelGCThreads");
+
+        excludeTestMaxRange("VMThreadStackSize");
+
+        /*
+         * JDK-8145027
+         * Temporarily exclude as current range/constraint is not enough for some option combinations.
+         */
+        excludeTestRange("NUMAInterleaveGranularity");
 
         /*
          * Remove parameters controlling the code cache. As these

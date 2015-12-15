@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
@@ -512,11 +513,6 @@ void SafepointSynchronize::do_cleanup_tasks() {
   if (StringTable::needs_rehashing()) {
     TraceTime t6("rehashing string table", TraceSafepointCleanupTime);
     StringTable::rehash_table();
-  }
-
-  // rotate log files?
-  if (UseGCLogFileRotation) {
-    gclog_or_tty->rotate_log(false);
   }
 
   {

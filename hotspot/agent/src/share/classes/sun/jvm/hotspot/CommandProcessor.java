@@ -1446,7 +1446,7 @@ public class CommandProcessor {
                 if (type.equals("threads")) {
                     Threads threads = VM.getVM().getThreads();
                     for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
-                        Address base = thread.getBaseOfStackPointer();
+                        Address base = thread.getStackBase();
                         Address end = thread.getLastJavaSP();
                         if (end == null) continue;
                         if (end.lessThan(base)) {
@@ -1454,11 +1454,13 @@ public class CommandProcessor {
                             base = end;
                             end = tmp;
                         }
-                        out.println("Searching " + base + " " + end);
+                        //out.println("Searching " + base + " " + end);
                         while (base != null && base.lessThan(end)) {
                             Address val = base.getAddressAt(0);
                             if (AddressOps.equal(val, value)) {
-                                out.println(base);
+                                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                                thread.printThreadIDOn(new PrintStream(bos));
+                                out.println("found on the stack of thread " + bos.toString() + " at " + base);
                             }
                             base = base.addOffsetTo(stride);
                         }
@@ -1601,6 +1603,8 @@ public class CommandProcessor {
                         thread.printThreadIDOn(new PrintStream(bos));
                         if (all || bos.toString().equals(name)) {
                             out.println("Thread " + bos.toString() + " Address " + thread.getAddress());
+                            thread.printInfoOn(out);
+                            out.println(" ");
                             if (!all) return;
                         }
                     }
@@ -1618,6 +1622,8 @@ public class CommandProcessor {
                     for (JavaThread thread = threads.first(); thread != null; thread = thread.next()) {
                         thread.printThreadIDOn(out);
                         out.println(" " + thread.getThreadName());
+                        thread.printInfoOn(out);
+                        out.println("\n...");
                     }
                 }
             }

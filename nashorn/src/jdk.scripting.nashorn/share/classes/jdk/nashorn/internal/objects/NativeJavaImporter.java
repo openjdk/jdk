@@ -28,10 +28,10 @@ package jdk.nashorn.internal.objects;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 
-import jdk.internal.dynalink.CallSiteDescriptor;
-import jdk.internal.dynalink.beans.StaticClass;
-import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.dynalink.CallSiteDescriptor;
+import jdk.dynalink.beans.StaticClass;
+import jdk.dynalink.linker.GuardedInvocation;
+import jdk.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;

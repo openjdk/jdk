@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,22 +94,20 @@ class LinuxFileStore
     // returns true if extended attributes enabled on file system where given
     // file resides, returns false if disabled or unable to determine.
     private boolean isExtendedAttributesEnabled(UnixPath path) {
+        int fd = -1;
         try {
-            int fd = path.openForAttributeAccess(false);
-            try {
-                // fgetxattr returns size if called with size==0
-                byte[] name = Util.toBytes("user.java");
-                LinuxNativeDispatcher.fgetxattr(fd, name, 0L, 0);
+            fd = path.openForAttributeAccess(false);
+
+            // fgetxattr returns size if called with size==0
+            byte[] name = Util.toBytes("user.java");
+            LinuxNativeDispatcher.fgetxattr(fd, name, 0L, 0);
+            return true;
+        } catch (UnixException e) {
+            // attribute does not exist
+            if (e.errno() == UnixConstants.ENODATA)
                 return true;
-            } catch (UnixException e) {
-                // attribute does not exist
-                if (e.errno() == UnixConstants.ENODATA)
-                    return true;
-            } finally {
-                UnixNativeDispatcher.close(fd);
-            }
-        } catch (IOException ignore) {
-            // nothing we can do
+        } finally {
+            UnixNativeDispatcher.close(fd);
         }
         return false;
     }

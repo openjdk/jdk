@@ -26,6 +26,7 @@
 #include "precompiled.hpp"
 #include "ci/ciReplay.hpp"
 #include "classfile/altHashing.hpp"
+#include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
@@ -326,7 +327,7 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
     class_name = SymbolTable::new_symbol(name, CHECK_NULL);
   }
   ResourceMark rm(THREAD);
-  ClassFileStream st((u1*) buf, bufLen, NULL);
+  ClassFileStream st((u1*)buf, bufLen, NULL, ClassFileStream::verify);
   Handle class_loader (THREAD, JNIHandles::resolve(loaderRef));
 
   if (UsePerfData && !class_loader.is_null()) {
@@ -338,9 +339,11 @@ JNI_ENTRY(jclass, jni_DefineClass(JNIEnv *env, const char *name, jobject loaderR
       ClassLoader::sync_JNIDefineClassLockFreeCounter()->inc();
     }
   }
-  Klass* k = SystemDictionary::resolve_from_stream(class_name, class_loader,
-                                                     Handle(), &st, true,
-                                                     CHECK_NULL);
+  Klass* k = SystemDictionary::resolve_from_stream(class_name,
+                                                   class_loader,
+                                                   Handle(),
+                                                   &st,
+                                                   CHECK_NULL);
 
   if (TraceClassResolution && k != NULL) {
     trace_class_resolution(k);
@@ -3191,17 +3194,20 @@ JNI_ENTRY(const jchar*, jni_GetStringCritical(JNIEnv *env, jstring string, jbool
   if (isCopy != NULL) {
     *isCopy = is_latin1 ? JNI_TRUE : JNI_FALSE;
   }
-  const jchar* ret;
+  jchar* ret;
   if (!is_latin1) {
-    ret = s_value->char_at_addr(0);
+    ret = (jchar*) s_value->base(T_CHAR);
   } else {
     // Inflate latin1 encoded string to UTF16
     int s_len = java_lang_String::length(s);
-    jchar* buf = NEW_C_HEAP_ARRAY(jchar, s_len, mtInternal);
-    for (int i = 0; i < s_len; i++) {
-      buf[i] = ((jchar) s_value->byte_at(i)) & 0xff;
+    ret = NEW_C_HEAP_ARRAY_RETURN_NULL(jchar, s_len + 1, mtInternal);  // add one for zero termination
+    /* JNI Specification states return NULL on OOM */
+    if (ret != NULL) {
+      for (int i = 0; i < s_len; i++) {
+        ret[i] = ((jchar) s_value->byte_at(i)) & 0xff;
+      }
+      ret[s_len] = 0;
     }
-    ret = &buf[0];
   }
  HOTSPOT_JNI_GETSTRINGCRITICAL_RETURN((uint16_t *) ret);
   return ret;
@@ -3914,7 +3920,6 @@ void execute_internal_vm_tests() {
     run_unit_test(QuickSort::test_quick_sort());
     run_unit_test(GuardedMemory::test_guarded_memory());
     run_unit_test(AltHashing::test_alt_hash());
-    run_unit_test(test_loggc_filename());
     run_unit_test(TestNewSize_test());
     run_unit_test(TestOldSize_test());
     run_unit_test(TestKlass_test());

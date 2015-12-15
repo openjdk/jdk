@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2015 SAP AG. All rights reserved.
+ * Copyright (c) 2012, 2015 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,11 +38,7 @@
 #endif
 
 void InterpreterMacroAssembler::null_check_throw(Register a, int offset, Register temp_reg) {
-#ifdef CC_INTERP
-  address exception_entry = StubRoutines::throw_NullPointerException_at_call_entry();
-#else
   address exception_entry = Interpreter::throw_NullPointerException_entry();
-#endif
   MacroAssembler::null_check_throw(a, offset, temp_reg, exception_entry);
 }
 
@@ -56,8 +52,6 @@ void InterpreterMacroAssembler::jump_to_entry(address entry, Register Rscratch) 
     bctr();
   }
 }
-
-#ifndef CC_INTERP
 
 void InterpreterMacroAssembler::dispatch_next(TosState state, int bcp_incr) {
   Register bytecode = R12_scratch2;
@@ -207,7 +201,8 @@ void InterpreterMacroAssembler::load_dispatch_table(Register dst, address* table
   }
 }
 
-void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, Register bytecode, address* table, bool verify) {
+void InterpreterMacroAssembler::dispatch_Lbyte_code(TosState state, Register bytecode,
+                                                    address* table, bool verify) {
   if (verify) {
     unimplemented("dispatch_Lbyte_code: verify"); // See Sparc Implementation to implement this
   }
@@ -394,7 +389,8 @@ void InterpreterMacroAssembler::get_4_byte_integer_at_bcp(int         bcp_offset
 //
 // Kills / writes:
 //   - Rdst, Rscratch
-void InterpreterMacroAssembler::get_cache_index_at_bcp(Register Rdst, int bcp_offset, size_t index_size) {
+void InterpreterMacroAssembler::get_cache_index_at_bcp(Register Rdst, int bcp_offset,
+                                                       size_t index_size) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   // Cache index is always in the native format, courtesy of Rewriter.
   if (index_size == sizeof(u2)) {
@@ -416,7 +412,8 @@ void InterpreterMacroAssembler::get_cache_index_at_bcp(Register Rdst, int bcp_of
   // Rdst now contains cp cache index.
 }
 
-void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, int bcp_offset, size_t index_size) {
+void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache, int bcp_offset,
+                                                           size_t index_size) {
   get_cache_index_at_bcp(cache, bcp_offset, index_size);
   sldi(cache, cache, exact_log2(in_words(ConstantPoolCacheEntry::size()) * BytesPerWord));
   add(cache, R27_constPoolCache, cache);
@@ -514,7 +511,8 @@ void InterpreterMacroAssembler::generate_stack_overflow_check_with_compare_and_t
 // and put arrayOop + shifted_index into res.
 // Note: res is still shy of address by array offset into object.
 
-void InterpreterMacroAssembler::index_check_without_pop(Register Rarray, Register Rindex, int index_shift, Register Rtmp, Register Rres) {
+void InterpreterMacroAssembler::index_check_without_pop(Register Rarray, Register Rindex,
+                                                        int index_shift, Register Rtmp, Register Rres) {
   // Check that index is in range for array, then shift index by index_shift,
   // and put arrayOop + shifted_index into res.
   // Note: res is still shy of address by array offset into object.
@@ -566,7 +564,8 @@ void InterpreterMacroAssembler::index_check_without_pop(Register Rarray, Registe
   add(Rres, RsxtIndex, Rarray);
 }
 
-void InterpreterMacroAssembler::index_check(Register array, Register index, int index_shift, Register tmp, Register res) {
+void InterpreterMacroAssembler::index_check(Register array, Register index,
+                                            int index_shift, Register tmp, Register res) {
   // pop array
   pop_ptr(array);
 
@@ -637,7 +636,8 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
     Label Lunlock;
     // If it's still locked, everything is ok, unlock it.
     ld(Rmonitor_base, 0, R1_SP);
-    addi(Rmonitor_base, Rmonitor_base, - (frame::ijava_state_size + frame::interpreter_frame_monitor_size_in_bytes())); // Monitor base
+    addi(Rmonitor_base, Rmonitor_base,
+         -(frame::ijava_state_size + frame::interpreter_frame_monitor_size_in_bytes())); // Monitor base
 
     ld(R0, BasicObjectLock::obj_offset_in_bytes(), Rmonitor_base);
     cmpdi(CCR0, R0, 0);
@@ -677,7 +677,8 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
       subf_(Riterations, R26_monitor, Rmonitor_base);
       ble(CCR0, Lno_unlock);
 
-      addi(Rcurrent_obj_addr, Rmonitor_base, BasicObjectLock::obj_offset_in_bytes() - frame::interpreter_frame_monitor_size_in_bytes());
+      addi(Rcurrent_obj_addr, Rmonitor_base,
+           BasicObjectLock::obj_offset_in_bytes() - frame::interpreter_frame_monitor_size_in_bytes());
       // Check if any monitor is on stack, bail out if not
       srdi(Riterations, Riterations, exact_log2(delta));
       mtctr(Riterations);
@@ -727,7 +728,8 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
 }
 
 // Support function for remove_activation & Co.
-void InterpreterMacroAssembler::merge_frames(Register Rsender_sp, Register return_pc, Register Rscratch1, Register Rscratch2) {
+void InterpreterMacroAssembler::merge_frames(Register Rsender_sp, Register return_pc,
+                                             Register Rscratch1, Register Rscratch2) {
   // Pop interpreter frame.
   ld(Rscratch1, 0, R1_SP); // *SP
   ld(Rsender_sp, _ijava_state_neg(sender_sp), Rscratch1); // top_frame_sp
@@ -779,8 +781,6 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
   mtlr(R0);
 }
 
-#endif // !CC_INTERP
-
 // Lock object
 //
 // Registers alive
@@ -791,7 +791,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   if (UseHeavyMonitors) {
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            monitor, /*check_for_exceptions=*/true CC_INTERP_ONLY(&& false));
+            monitor, /*check_for_exceptions=*/true);
   } else {
     // template code:
     //
@@ -888,7 +888,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
     // slow case of monitor enter.
     bind(slow_case);
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            monitor, /*check_for_exceptions=*/true CC_INTERP_ONLY(&& false));
+            monitor, /*check_for_exceptions=*/true);
     // }
     align(32, 12);
     bind(done);
@@ -905,7 +905,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 void InterpreterMacroAssembler::unlock_object(Register monitor, bool check_for_exceptions) {
   if (UseHeavyMonitors) {
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit),
-            monitor, check_for_exceptions CC_INTERP_ONLY(&& false));
+            monitor, check_for_exceptions);
   } else {
 
     // template code:
@@ -978,7 +978,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, bool check_for_e
     // we need to get into the slow case.
     bind(slow_case);
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit),
-            monitor, check_for_exceptions CC_INTERP_ONLY(&& false));
+            monitor, check_for_exceptions);
     // }
 
     Label done;
@@ -993,8 +993,6 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, bool check_for_e
   }
 }
 
-#ifndef CC_INTERP
-
 // Load compiled (i2c) or interpreter entry when calling from interpreted and
 // do the call. Centralized so that all interpreter calls will do the same actions.
 // If jvmti single stepping is on for a thread we must not call compiled code.
@@ -1004,7 +1002,8 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, bool check_for_e
 //   - Rret_addr:      return address
 //   - 2 scratch regs
 //
-void InterpreterMacroAssembler::call_from_interpreter(Register Rtarget_method, Register Rret_addr, Register Rscratch1, Register Rscratch2) {
+void InterpreterMacroAssembler::call_from_interpreter(Register Rtarget_method, Register Rret_addr,
+                                                      Register Rscratch1, Register Rscratch2) {
   assert_different_registers(Rscratch1, Rscratch2, Rtarget_method, Rret_addr);
   // Assume we want to go compiled if available.
   const Register Rtarget_addr = Rscratch1;
@@ -1488,7 +1487,8 @@ void InterpreterMacroAssembler::profile_typecheck_failed(Register Rscratch1, Reg
 }
 
 // Count a ret in the bytecodes.
-void InterpreterMacroAssembler::profile_ret(TosState state, Register return_bci, Register scratch1, Register scratch2) {
+void InterpreterMacroAssembler::profile_ret(TosState state, Register return_bci,
+                                            Register scratch1, Register scratch2) {
   if (ProfileInterpreter) {
     Label profile_continue;
     uint row;
@@ -1684,7 +1684,8 @@ void InterpreterMacroAssembler::record_klass_in_profile_helper(
 // Argument and return type profilig.
 // kills: tmp, tmp2, R0, CR0, CR1
 void InterpreterMacroAssembler::profile_obj_type(Register obj, Register mdo_addr_base,
-                                                 RegisterOrConstant mdo_addr_offs, Register tmp, Register tmp2) {
+                                                 RegisterOrConstant mdo_addr_offs,
+                                                 Register tmp, Register tmp2) {
   Label do_nothing, do_update;
 
   // tmp2 = obj is allowed
@@ -1730,7 +1731,9 @@ void InterpreterMacroAssembler::profile_obj_type(Register obj, Register mdo_addr
   bind(do_nothing);
 }
 
-void InterpreterMacroAssembler::profile_arguments_type(Register callee, Register tmp1, Register tmp2, bool is_virtual) {
+void InterpreterMacroAssembler::profile_arguments_type(Register callee,
+                                                       Register tmp1, Register tmp2,
+                                                       bool is_virtual) {
   if (!ProfileInterpreter) {
     return;
   }
@@ -1742,7 +1745,8 @@ void InterpreterMacroAssembler::profile_arguments_type(Register callee, Register
 
     test_method_data_pointer(profile_continue);
 
-    int off_to_start = is_virtual ? in_bytes(VirtualCallData::virtual_call_data_size()) : in_bytes(CounterData::counter_data_size());
+    int off_to_start = is_virtual ?
+      in_bytes(VirtualCallData::virtual_call_data_size()) : in_bytes(CounterData::counter_data_size());
 
     lbz(tmp1, in_bytes(DataLayout::tag_offset()) - off_to_start, R28_mdx);
     cmpwi(CCR0, tmp1, is_virtual ? DataLayout::virtual_call_type_data_tag : DataLayout::call_type_data_tag);
@@ -1792,7 +1796,8 @@ void InterpreterMacroAssembler::profile_arguments_type(Register callee, Register
         // argument. tmp1 is the number of cells left in the
         // CallTypeData/VirtualCallTypeData to reach its end. Non null
         // if there's a return to profile.
-        assert(ReturnTypeEntry::static_cell_count() < TypeStackSlotEntries::per_arg_count(), "can't move past ret type");
+        assert(ReturnTypeEntry::static_cell_count() < TypeStackSlotEntries::per_arg_count(),
+               "can't move past ret type");
         sldi(tmp1, tmp1, exact_log2(DataLayout::cell_size));
         add(R28_mdx, tmp1, R28_mdx);
       }
@@ -1841,7 +1846,8 @@ void InterpreterMacroAssembler::profile_return_type(Register ret, Register tmp1,
   }
 }
 
-void InterpreterMacroAssembler::profile_parameters_type(Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
+void InterpreterMacroAssembler::profile_parameters_type(Register tmp1, Register tmp2,
+                                                        Register tmp3, Register tmp4) {
   if (ProfileInterpreter && MethodData::profile_parameters()) {
     Label profile_continue, done;
 
@@ -1984,7 +1990,9 @@ void InterpreterMacroAssembler::load_local_long(Register Rdst_value, Register Rd
 // Kills:
 //   - Rdst_value
 //   - Rdst_address
-void InterpreterMacroAssembler::load_local_ptr(Register Rdst_value, Register Rdst_address, Register Rindex) {
+void InterpreterMacroAssembler::load_local_ptr(Register Rdst_value,
+                                               Register Rdst_address,
+                                               Register Rindex) {
   sldi(Rdst_address, Rindex, Interpreter::logStackElementSize);
   subf(Rdst_address, Rdst_address, R18_locals);
   ld(Rdst_value, 0, Rdst_address);
@@ -1995,7 +2003,9 @@ void InterpreterMacroAssembler::load_local_ptr(Register Rdst_value, Register Rds
 // Kills:
 //   - Rdst_value
 //   - Rdst_address
-void InterpreterMacroAssembler::load_local_float(FloatRegister Rdst_value, Register Rdst_address, Register Rindex) {
+void InterpreterMacroAssembler::load_local_float(FloatRegister Rdst_value,
+                                                 Register Rdst_address,
+                                                 Register Rindex) {
   sldi(Rdst_address, Rindex, Interpreter::logStackElementSize);
   subf(Rdst_address, Rdst_address, R18_locals);
   lfs(Rdst_value, 0, Rdst_address);
@@ -2006,7 +2016,9 @@ void InterpreterMacroAssembler::load_local_float(FloatRegister Rdst_value, Regis
 // Kills:
 //   - Rdst_value
 //   - Rdst_address
-void InterpreterMacroAssembler::load_local_double(FloatRegister Rdst_value, Register Rdst_address, Register Rindex) {
+void InterpreterMacroAssembler::load_local_double(FloatRegister Rdst_value,
+                                                  Register Rdst_address,
+                                                  Register Rindex) {
   sldi(Rdst_address, Rindex, Interpreter::logStackElementSize);
   subf(Rdst_address, Rdst_address, R18_locals);
   lfd(Rdst_value, -8, Rdst_address);
@@ -2102,13 +2114,16 @@ void InterpreterMacroAssembler::call_VM(Register oop_result, address entry_point
   }
 }
 
-void InterpreterMacroAssembler::call_VM(Register oop_result, address entry_point, Register arg_1, bool check_exceptions) {
+void InterpreterMacroAssembler::call_VM(Register oop_result, address entry_point,
+                                        Register arg_1, bool check_exceptions) {
   // ARG1 is reserved for the thread.
   mr_if_needed(R4_ARG2, arg_1);
   call_VM(oop_result, entry_point, check_exceptions);
 }
 
-void InterpreterMacroAssembler::call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2, bool check_exceptions) {
+void InterpreterMacroAssembler::call_VM(Register oop_result, address entry_point,
+                                        Register arg_1, Register arg_2,
+                                        bool check_exceptions) {
   // ARG1 is reserved for the thread.
   mr_if_needed(R4_ARG2, arg_1);
   assert(arg_2 != R4_ARG2, "smashed argument");
@@ -2116,7 +2131,9 @@ void InterpreterMacroAssembler::call_VM(Register oop_result, address entry_point
   call_VM(oop_result, entry_point, check_exceptions);
 }
 
-void InterpreterMacroAssembler::call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2, Register arg_3, bool check_exceptions) {
+void InterpreterMacroAssembler::call_VM(Register oop_result, address entry_point,
+                                        Register arg_1, Register arg_2, Register arg_3,
+                                        bool check_exceptions) {
   // ARG1 is reserved for the thread.
   mr_if_needed(R4_ARG2, arg_1);
   assert(arg_2 != R4_ARG2, "smashed argument");
@@ -2168,8 +2185,6 @@ void InterpreterMacroAssembler::restore_interpreter_state(Register scratch, bool
 #endif
 }
 
-#endif // !CC_INTERP
-
 void InterpreterMacroAssembler::get_method_counters(Register method,
                                                     Register Rcounters,
                                                     Label& skip) {
@@ -2188,7 +2203,9 @@ void InterpreterMacroAssembler::get_method_counters(Register method,
   bind(has_counters);
 }
 
-void InterpreterMacroAssembler::increment_invocation_counter(Register Rcounters, Register iv_be_count, Register Rtmp_r0) {
+void InterpreterMacroAssembler::increment_invocation_counter(Register Rcounters,
+                                                             Register iv_be_count,
+                                                             Register Rtmp_r0) {
   assert(UseCompiler || LogTouchedMethods, "incrementing must be useful");
   Register invocation_count = iv_be_count;
   Register backedge_count   = Rtmp_r0;
@@ -2230,7 +2247,6 @@ void InterpreterMacroAssembler::verify_oop(Register reg, TosState state) {
   if (state == atos) { MacroAssembler::verify_oop(reg); }
 }
 
-#ifndef CC_INTERP
 // Local helper function for the verify_oop_or_return_address macro.
 static bool verify_return_address(Method* m, int bci) {
 #ifndef PRODUCT
@@ -2287,7 +2303,6 @@ void InterpreterMacroAssembler::verify_oop_or_return_address(Register reg, Regis
   verify_oop(reg);
   bind(skip);
 }
-#endif // !CC_INTERP
 
 // Inline assembly for:
 //
@@ -2311,7 +2326,7 @@ void InterpreterMacroAssembler::notify_method_entry() {
     cmpwi(CCR0, R0, 0);
     beq(CCR0, jvmti_post_done);
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_entry),
-            /*check_exceptions=*/true CC_INTERP_ONLY(&& false));
+            /*check_exceptions=*/true);
 
     bind(jvmti_post_done);
   }
@@ -2345,11 +2360,10 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method, TosSta
     lwz(R0, in_bytes(JavaThread::interp_only_mode_offset()), R16_thread);
     cmpwi(CCR0, R0, 0);
     beq(CCR0, jvmti_post_done);
-    CC_INTERP_ONLY(assert(is_native_method && !check_exceptions, "must not push state"));
-    if (!is_native_method) push(state); // Expose tos to GC.
+    if (!is_native_method) { push(state); } // Expose tos to GC.
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_method_exit),
             /*check_exceptions=*/check_exceptions);
-    if (!is_native_method) pop(state);
+    if (!is_native_method) { pop(state); }
 
     align(32, 12);
     bind(jvmti_post_done);
@@ -2358,124 +2372,3 @@ void InterpreterMacroAssembler::notify_method_exit(bool is_native_method, TosSta
   // Dtrace support not implemented.
 }
 
-#ifdef CC_INTERP
-// Convert the current TOP_IJAVA_FRAME into a PARENT_IJAVA_FRAME
-// (using parent_frame_resize) and push a new interpreter
-// TOP_IJAVA_FRAME (using frame_size).
-void InterpreterMacroAssembler::push_interpreter_frame(Register top_frame_size, Register parent_frame_resize,
-                                                       Register tmp1, Register tmp2, Register tmp3,
-                                                       Register tmp4, Register pc) {
-  assert_different_registers(top_frame_size, parent_frame_resize, tmp1, tmp2, tmp3, tmp4);
-  ld(tmp1, _top_ijava_frame_abi(frame_manager_lr), R1_SP);
-  mr(tmp2/*top_frame_sp*/, R1_SP);
-  // Move initial_caller_sp.
-  ld(tmp4, _top_ijava_frame_abi(initial_caller_sp), R1_SP);
-  neg(parent_frame_resize, parent_frame_resize);
-  resize_frame(parent_frame_resize/*-parent_frame_resize*/, tmp3);
-
-  // Set LR in new parent frame.
-  std(tmp1, _abi(lr), R1_SP);
-  // Set top_frame_sp info for new parent frame.
-  std(tmp2, _parent_ijava_frame_abi(top_frame_sp), R1_SP);
-  std(tmp4, _parent_ijava_frame_abi(initial_caller_sp), R1_SP);
-
-  // Push new TOP_IJAVA_FRAME.
-  push_frame(top_frame_size, tmp2);
-
-  get_PC_trash_LR(tmp3);
-  std(tmp3, _top_ijava_frame_abi(frame_manager_lr), R1_SP);
-  // Used for non-initial callers by unextended_sp().
-  std(R1_SP, _top_ijava_frame_abi(initial_caller_sp), R1_SP);
-}
-
-// Pop the topmost TOP_IJAVA_FRAME and convert the previous
-// PARENT_IJAVA_FRAME back into a TOP_IJAVA_FRAME.
-void InterpreterMacroAssembler::pop_interpreter_frame(Register tmp1, Register tmp2, Register tmp3, Register tmp4) {
-  assert_different_registers(tmp1, tmp2, tmp3, tmp4);
-
-  ld(tmp1/*caller's sp*/, _abi(callers_sp), R1_SP);
-  ld(tmp3, _abi(lr), tmp1);
-
-  ld(tmp4, _parent_ijava_frame_abi(initial_caller_sp), tmp1);
-
-  ld(tmp2/*caller's caller's sp*/, _abi(callers_sp), tmp1);
-  // Merge top frame.
-  std(tmp2, _abi(callers_sp), R1_SP);
-
-  ld(tmp2, _parent_ijava_frame_abi(top_frame_sp), tmp1);
-
-  // Update C stack pointer to caller's top_abi.
-  resize_frame_absolute(tmp2/*addr*/, tmp1/*tmp*/, tmp2/*tmp*/);
-
-  // Update LR in top_frame.
-  std(tmp3, _top_ijava_frame_abi(frame_manager_lr), R1_SP);
-
-  std(tmp4, _top_ijava_frame_abi(initial_caller_sp), R1_SP);
-
-  // Store the top-frame stack-pointer for c2i adapters.
-  std(R1_SP, _top_ijava_frame_abi(top_frame_sp), R1_SP);
-}
-
-// Turn state's interpreter frame into the current TOP_IJAVA_FRAME.
-void InterpreterMacroAssembler::pop_interpreter_frame_to_state(Register state, Register tmp1, Register tmp2, Register tmp3) {
-  assert_different_registers(R14_state, R15_prev_state, tmp1, tmp2, tmp3);
-
-  if (state == R14_state) {
-    ld(tmp1/*state's fp*/, state_(_last_Java_fp));
-    ld(tmp2/*state's sp*/, state_(_last_Java_sp));
-  } else if (state == R15_prev_state) {
-    ld(tmp1/*state's fp*/, prev_state_(_last_Java_fp));
-    ld(tmp2/*state's sp*/, prev_state_(_last_Java_sp));
-  } else {
-    ShouldNotReachHere();
-  }
-
-  // Merge top frames.
-  std(tmp1, _abi(callers_sp), R1_SP);
-
-  // Tmp2 is new SP.
-  // Tmp1 is parent's SP.
-  resize_frame_absolute(tmp2/*addr*/, tmp1/*tmp*/, tmp2/*tmp*/);
-
-  // Update LR in top_frame.
-  // Must be interpreter frame.
-  get_PC_trash_LR(tmp3);
-  std(tmp3, _top_ijava_frame_abi(frame_manager_lr), R1_SP);
-  // Used for non-initial callers by unextended_sp().
-  std(R1_SP, _top_ijava_frame_abi(initial_caller_sp), R1_SP);
-}
-
-// Set SP to initial caller's sp, but before fix the back chain.
-void InterpreterMacroAssembler::resize_frame_to_initial_caller(Register tmp1, Register tmp2) {
-  ld(tmp1, _parent_ijava_frame_abi(initial_caller_sp), R1_SP);
-  ld(tmp2, _parent_ijava_frame_abi(callers_sp), R1_SP);
-  std(tmp2, _parent_ijava_frame_abi(callers_sp), tmp1); // Fix back chain ...
-  mr(R1_SP, tmp1); // ... and resize to initial caller.
-}
-
-// Pop the current interpreter state (without popping the correspoding
-// frame) and restore R14_state and R15_prev_state accordingly.
-// Use prev_state_may_be_0 to indicate whether prev_state may be 0
-// in order to generate an extra check before retrieving prev_state_(_prev_link).
-void InterpreterMacroAssembler::pop_interpreter_state(bool prev_state_may_be_0)
-{
-  // Move prev_state to state and restore prev_state from state_(_prev_link).
-  Label prev_state_is_0;
-  mr(R14_state, R15_prev_state);
-
-  // Don't retrieve /*state==*/prev_state_(_prev_link)
-  // if /*state==*/prev_state is 0.
-  if (prev_state_may_be_0) {
-    cmpdi(CCR0, R15_prev_state, 0);
-    beq(CCR0, prev_state_is_0);
-  }
-
-  ld(R15_prev_state, /*state==*/prev_state_(_prev_link));
-  bind(prev_state_is_0);
-}
-
-void InterpreterMacroAssembler::restore_prev_state() {
-  // _prev_link is private, but cInterpreter is a friend.
-  ld(R15_prev_state, state_(_prev_link));
-}
-#endif // CC_INTERP

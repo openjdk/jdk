@@ -1059,12 +1059,22 @@ public abstract class SurfaceData
     public abstract Object getDestination();
 
     /**
-     * Returns default scale factor of the destination surface. Scale factor
-     * describes the mapping between virtual and physical coordinates of the
+     * Returns default horizontal scale factor of the destination surface. Scale
+     * factor describes the mapping between virtual and physical coordinates of the
      * SurfaceData. If the scale is 2 then virtual pixel coordinates need to be
      * doubled for physical pixels.
      */
-    public int getDefaultScale() {
+    public double getDefaultScaleX() {
+        return 1;
+    }
+
+    /**
+     * Returns default vertical scale factor of the destination surface. Scale
+     * factor describes the mapping between virtual and physical coordinates of the
+     * SurfaceData. If the scale is 2 then virtual pixel coordinates need to be
+     * doubled for physical pixels.
+     */
+    public double getDefaultScaleY() {
         return 1;
     }
 }

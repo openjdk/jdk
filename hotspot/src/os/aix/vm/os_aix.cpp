@@ -38,6 +38,7 @@
 #include "jvm_aix.h"
 #include "libo4.hpp"
 #include "libperfstat_aix.hpp"
+#include "libodm_aix.hpp"
 #include "loadlib_aix.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/filemap.hpp"
@@ -197,9 +198,13 @@ int       os::Aix::_page_size = -1;
 // -1 = uninitialized, 0 if AIX, 1 if OS/400 pase
 int       os::Aix::_on_pase = -1;
 
-// -1 = uninitialized, otherwise os version in the form 0xMMmm - MM:major, mm:minor
-//  E.g. 0x0601 for  AIX 6.1 or 0x0504 for OS/400 V5R4
-int       os::Aix::_os_version = -1;
+// 0 = uninitialized, otherwise 32 bit number:
+//  0xVVRRTTSS
+//  VV - major version
+//  RR - minor version
+//  TT - tech level, if known, 0 otherwise
+//  SS - service pack, if known, 0 otherwise
+uint32_t  os::Aix::_os_version = 0;
 
 int       os::Aix::_stack_page_size = -1;
 
@@ -358,7 +363,7 @@ static char cpu_arch[] = "ppc64";
 
 // Wrap the function "vmgetinfo" which is not available on older OS releases.
 static int checked_vmgetinfo(void *out, int command, int arg) {
-  if (os::Aix::on_pase() && os::Aix::os_version() < 0x0601) {
+  if (os::Aix::on_pase() && os::Aix::os_version_short() < 0x0601) {
     guarantee(false, "cannot call vmgetinfo on AS/400 older than V6R1");
   }
   return ::vmgetinfo(out, command, arg);
@@ -367,7 +372,7 @@ static int checked_vmgetinfo(void *out, int command, int arg) {
 // Given an address, returns the size of the page backing that address.
 size_t os::Aix::query_pagesize(void* addr) {
 
-  if (os::Aix::on_pase() && os::Aix::os_version() < 0x0601) {
+  if (os::Aix::on_pase() && os::Aix::os_version_short() < 0x0601) {
     // AS/400 older than V6R1: no vmgetinfo here, default to 4K
     return SIZE_4K;
   }
@@ -1211,7 +1216,7 @@ void os::shutdown() {
 // Note: os::abort() might be called very early during initialization, or
 // called from signal handler. Before adding something to os::abort(), make
 // sure it is async-safe and can handle partially initialized VM.
-void os::abort(bool dump_core, void* siginfo, void* context) {
+void os::abort(bool dump_core, void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
 #ifndef PRODUCT
@@ -1490,6 +1495,10 @@ void os::print_os_info(outputStream* st) {
   st->print(name.version); st->print(" ");
   st->print(name.machine);
   st->cr();
+
+  uint32_t ver = os::Aix::os_version();
+  st->print_cr("AIX kernel version %u.%u.%u.%u",
+               (ver >> 24) & 0xFF, (ver >> 16) & 0xFF, (ver >> 8) & 0xFF, ver & 0xFF);
 
   // rlimit
   st->print("rlimit:");
@@ -3431,8 +3440,12 @@ void os::Aix::check_signal_handler(int sig) {
     }
   } else if (os::Aix::get_our_sigflags(sig) != 0 && (int)act.sa_flags != os::Aix::get_our_sigflags(sig)) {
     tty->print("Warning: %s handler flags ", exception_name(sig, buf, O_BUFLEN));
-    tty->print("expected:" PTR32_FORMAT, os::Aix::get_our_sigflags(sig));
-    tty->print_cr("  found:" PTR32_FORMAT, act.sa_flags);
+    tty->print("expected:");
+    os::Posix::print_sa_flags(tty, os::Aix::get_our_sigflags(sig));
+    tty->cr();
+    tty->print("  found:");
+    os::Posix::print_sa_flags(tty, act.sa_flags);
+    tty->cr();
     // No need to check this sig any longer
     sigaddset(&check_signal_done, sig);
   }
@@ -3802,7 +3815,7 @@ void PcFetcher::do_task(const os::SuspendedThreadTaskContext& context) {
   Thread* thread = context.thread();
   OSThread* osthread = thread->osthread();
   if (osthread->ucontext() != NULL) {
-    _epc = os::Aix::ucontext_get_pc((ucontext_t *) context.ucontext());
+    _epc = os::Aix::ucontext_get_pc((const ucontext_t *) context.ucontext());
   } else {
     // NULL context is unexpected, double-check this is the VMThread.
     guarantee(thread->is_VM_thread(), "can only be called for VMThread");
@@ -4251,7 +4264,7 @@ bool os::Aix::is_primordial_thread() {
 // one of Aix::on_pase(), Aix::os_version() static
 void os::Aix::initialize_os_info() {
 
-  assert(_on_pase == -1 && _os_version == -1, "already called.");
+  assert(_on_pase == -1 && _os_version == 0, "already called.");
 
   struct utsname uts;
   memset(&uts, 0, sizeof(uts));
@@ -4267,28 +4280,34 @@ void os::Aix::initialize_os_info() {
     assert(major > 0, "invalid OS version");
     const int minor = atoi(uts.release);
     assert(minor > 0, "invalid OS release");
-    _os_version = (major << 8) | minor;
+    _os_version = (major << 24) | (minor << 16);
+    char ver_str[20] = {0};
+    char *name_str = "unknown OS";
     if (strcmp(uts.sysname, "OS400") == 0) {
       // We run on AS/400 PASE. We do not support versions older than V5R4M0.
       _on_pase = 1;
-      if (_os_version < 0x0504) {
+      if (os_version_short() < 0x0504) {
         trcVerbose("OS/400 releases older than V5R4M0 not supported.");
         assert(false, "OS/400 release too old.");
-      } else {
-        trcVerbose("We run on OS/400 (pase) V%dR%d", major, minor);
       }
+      name_str = "OS/400 (pase)";
+      jio_snprintf(ver_str, sizeof(ver_str), "%u.%u", major, minor);
     } else if (strcmp(uts.sysname, "AIX") == 0) {
       // We run on AIX. We do not support versions older than AIX 5.3.
       _on_pase = 0;
-      if (_os_version < 0x0503) {
+      // Determine detailed AIX version: Version, Release, Modification, Fix Level.
+      odmWrapper::determine_os_kernel_version(&_os_version);
+      if (os_version_short() < 0x0503) {
         trcVerbose("AIX release older than AIX 5.3 not supported.");
         assert(false, "AIX release too old.");
-      } else {
-        trcVerbose("We run on AIX %d.%d", major, minor);
       }
+      name_str = "AIX";
+      jio_snprintf(ver_str, sizeof(ver_str), "%u.%u.%u.%u",
+                   major, minor, (_os_version >> 8) & 0xFF, _os_version & 0xFF);
     } else {
-      assert(false, "unknown OS");
+      assert(false, name_str);
     }
+    trcVerbose("We run on %s %s", name_str, ver_str);
   }
 
   guarantee(_on_pase != -1 && _os_version, "Could not determine AIX/OS400 release");
@@ -4353,7 +4372,7 @@ void os::Aix::scan_environment() {
 
   p = ::getenv("LDR_CNTRL");
   trcVerbose("LDR_CNTRL=%s.", p ? p : "<unset>");
-  if (os::Aix::on_pase() && os::Aix::os_version() == 0x0701) {
+  if (os::Aix::on_pase() && os::Aix::os_version_short() == 0x0701) {
     if (p && ::strstr(p, "TEXTPSIZE")) {
       trcVerbose("*** WARNING - LDR_CNTRL contains TEXTPSIZE. "
         "you may experience hangs or crashes on OS/400 V7R1.");
@@ -5012,7 +5031,7 @@ void TestReserveMemorySpecial_test() {
 }
 #endif
 
-bool os::start_debugging(char *buf, int buflen) {
+bool os::start_debugging(char *buf, int buflen) {
   int len = (int)strlen(buf);
   char *p = &buf[len];
 

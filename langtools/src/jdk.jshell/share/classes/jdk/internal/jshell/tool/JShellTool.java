@@ -87,7 +87,10 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.TRUNCATE_EXISTING;
 import static java.nio.file.StandardOpenOption.WRITE;
 import java.util.MissingResourceException;
+import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.Spliterators;
+import java.util.function.Supplier;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -97,8 +100,8 @@ import static java.util.stream.Collectors.toList;
 public class JShellTool {
 
     private static final Pattern LINEBREAK = Pattern.compile("\\R");
-    private static final Pattern HISTORY_ALL_FILENAME = Pattern.compile(
-            "((?<cmd>(all|history))(\\z|\\p{javaWhitespace}+))?(?<filename>.*)");
+    private static final Pattern HISTORY_ALL_START_FILENAME = Pattern.compile(
+            "((?<cmd>(all|history|start))(\\z|\\p{javaWhitespace}+))?(?<filename>.*)");
 
     final InputStream cmdin;
     final PrintStream cmdout;
@@ -491,12 +494,14 @@ public class JShellTool {
     }
 
     private void processCommand(String cmd) {
-        try {
-            //handle "/[number]"
-            cmdUseHistoryEntry(Integer.parseInt(cmd.substring(1)));
-            return ;
-        } catch (NumberFormatException ex) {
-            //ignore
+        if (cmd.startsWith("/-")) {
+            try {
+                //handle "/-[number]"
+                cmdUseHistoryEntry(Integer.parseInt(cmd.substring(1)));
+                return ;
+            } catch (NumberFormatException ex) {
+                //ignore
+            }
         }
         String arg = "";
         int idx = cmd.indexOf(' ');
@@ -504,13 +509,30 @@ public class JShellTool {
             arg = cmd.substring(idx + 1).trim();
             cmd = cmd.substring(0, idx);
         }
-        Command command = commands.get(cmd);
-        if (command == null || command.kind == CommandKind.HELP_ONLY) {
-            hard("No such command: %s", cmd);
-            fluff("Type /help for help.");
+        Command[] candidates = findCommand(cmd, c -> c.kind != CommandKind.HELP_ONLY);
+        if (candidates.length == 0) {
+            if (!rerunHistoryEntryById(cmd.substring(1))) {
+                hard("No such command or snippet id: %s", cmd);
+                fluff("Type /help for help.");
+            }
+        } else if (candidates.length == 1) {
+            candidates[0].run.accept(arg);
         } else {
-            command.run.accept(arg);
+            hard("Command: %s is ambiguous: %s", cmd, Arrays.stream(candidates).map(c -> c.command).collect(Collectors.joining(", ")));
+            fluff("Type /help for help.");
         }
+    }
+
+    private Command[] findCommand(String cmd, Predicate<Command> filter) {
+        Command exact = commands.get(cmd);
+        if (exact != null)
+            return new Command[] {exact};
+
+        return commands.values()
+                       .stream()
+                       .filter(filter)
+                       .filter(command -> command.command.startsWith(cmd))
+                       .toArray(size -> new Command[size]);
     }
 
     private static Path toPathResolvingUserHome(String pathString) {
@@ -521,19 +543,19 @@ public class JShellTool {
     }
 
     static final class Command {
-        public final String[] aliases;
+        public final String command;
         public final String params;
         public final String description;
         public final Consumer<String> run;
         public final CompletionProvider completions;
         public final CommandKind kind;
 
-        public Command(String command, String alias, String params, String description, Consumer<String> run, CompletionProvider completions) {
-            this(command, alias, params, description, run, completions, CommandKind.NORMAL);
+        public Command(String command, String params, String description, Consumer<String> run, CompletionProvider completions) {
+            this(command, params, description, run, completions, CommandKind.NORMAL);
         }
 
-        public Command(String command, String alias, String params, String description, Consumer<String> run, CompletionProvider completions, CommandKind kind) {
-            this.aliases = alias != null ? new String[] {command, alias} : new String[] {command};
+        public Command(String command, String params, String description, Consumer<String> run, CompletionProvider completions, CommandKind kind) {
+            this.command = command;
             this.params = params;
             this.description = description;
             this.run = run;
@@ -579,12 +601,11 @@ public class JShellTool {
     }
 
     private static final CompletionProvider EMPTY_COMPLETION_PROVIDER = new FixedCompletionProvider();
+    private static final CompletionProvider KEYWORD_COMPLETION_PROVIDER = new FixedCompletionProvider("all ", "start ", "history ");
     private static final CompletionProvider FILE_COMPLETION_PROVIDER = fileCompletions(p -> true);
     private final Map<String, Command> commands = new LinkedHashMap<>();
     private void registerCommand(Command cmd) {
-        for (String str : cmd.aliases) {
-            commands.put(str, cmd);
-        }
+        commands.put(cmd.command, cmd);
     }
     private static CompletionProvider fileCompletions(Predicate<Path> accept) {
         return (code, cursor, anchor) -> {
@@ -631,13 +652,21 @@ public class JShellTool {
         };
     }
 
+    private CompletionProvider editKeywordCompletion() {
+        return (code, cursor, anchor) -> {
+            List<Suggestion> result = new ArrayList<>();
+            result.addAll(KEYWORD_COMPLETION_PROVIDER.completionSuggestions(code, cursor, anchor));
+            result.addAll(editCompletion().completionSuggestions(code, cursor, anchor));
+            return result;
+        };
+    }
+
     private static CompletionProvider saveCompletion() {
-        CompletionProvider keyCompletion = new FixedCompletionProvider("all ", "history ");
         return (code, cursor, anchor) -> {
             List<Suggestion> result = new ArrayList<>();
             int space = code.indexOf(' ');
             if (space == (-1)) {
-                result.addAll(keyCompletion.completionSuggestions(code, cursor, anchor));
+                result.addAll(KEYWORD_COMPLETION_PROVIDER.completionSuggestions(code, cursor, anchor));
             }
             result.addAll(FILE_COMPLETION_PROVIDER.completionSuggestions(code.substring(space + 1), cursor - space - 1, anchor));
             anchor[0] += space + 1;
@@ -648,75 +677,78 @@ public class JShellTool {
     // Table of commands -- with command forms, argument kinds, help message, implementation, ...
 
     {
-        registerCommand(new Command("/list", "/l", "[all]", "list the source you have typed",
+        registerCommand(new Command("/list", "[all|start|history|<name or id>]", "list the source you have typed",
                                     arg -> cmdList(arg),
-                                    new FixedCompletionProvider("all")));
-        registerCommand(new Command("/seteditor", null, "<executable>", "set the external editor command to use",
+                                    editKeywordCompletion()));
+        registerCommand(new Command("/seteditor", "<executable>", "set the external editor command to use",
                                     arg -> cmdSetEditor(arg),
                                     EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/edit", "/e", "<name or id>", "edit a source entry referenced by name or id",
+        registerCommand(new Command("/edit", "<name or id>", "edit a source entry referenced by name or id",
                                     arg -> cmdEdit(arg),
                                     editCompletion()));
-        registerCommand(new Command("/drop", "/d", "<name or id>", "delete a source entry referenced by name or id",
+        registerCommand(new Command("/drop", "<name or id>", "delete a source entry referenced by name or id",
                                     arg -> cmdDrop(arg),
                                     editCompletion()));
-        registerCommand(new Command("/save", "/s", "[all|history] <file>", "save the source you have typed",
+        registerCommand(new Command("/save", "[all|history|start] <file>", "save: <none> - current source;\n" +
+                                                                           "      all - source including overwritten, failed, and start-up code;\n" +
+                                                                           "      history - editing history;\n" +
+                                                                           "      start - default start-up definitions",
                                     arg -> cmdSave(arg),
                                     saveCompletion()));
-        registerCommand(new Command("/open", "/o", "<file>", "open a file as source input",
+        registerCommand(new Command("/open", "<file>", "open a file as source input",
                                     arg -> cmdOpen(arg),
                                     FILE_COMPLETION_PROVIDER));
-        registerCommand(new Command("/vars", "/v", null, "list the declared variables and their values",
+        registerCommand(new Command("/vars", null, "list the declared variables and their values",
                                     arg -> cmdVars(),
                                     EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/methods", "/m", null, "list the declared methods and their signatures",
+        registerCommand(new Command("/methods", null, "list the declared methods and their signatures",
                                     arg -> cmdMethods(),
                                     EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/classes", "/c", null, "list the declared classes",
+        registerCommand(new Command("/classes", null, "list the declared classes",
                                     arg -> cmdClasses(),
                                     EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/imports", "/i", null, "list the imported items",
+        registerCommand(new Command("/imports", null, "list the imported items",
                                     arg -> cmdImports(),
                                     EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/exit", "/x", null, "exit the REPL",
+        registerCommand(new Command("/exit", null, "exit the REPL",
                                     arg -> cmdExit(),
                                     EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/reset", "/r", null, "reset everything in the REPL",
+        registerCommand(new Command("/reset", null, "reset everything in the REPL",
                                     arg -> cmdReset(),
                                     EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/feedback", "/f", "<level>", "feedback information: off, concise, normal, verbose, default, or ?",
+        registerCommand(new Command("/feedback", "<level>", "feedback information: off, concise, normal, verbose, default, or ?",
                                     arg -> cmdFeedback(arg),
                                     new FixedCompletionProvider("off", "concise", "normal", "verbose", "default", "?")));
-        registerCommand(new Command("/prompt", "/p", null, "toggle display of a prompt",
+        registerCommand(new Command("/prompt", null, "toggle display of a prompt",
                                     arg -> cmdPrompt(),
                                     EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/classpath", "/cp", "<path>", "add a path to the classpath",
+        registerCommand(new Command("/classpath", "<path>", "add a path to the classpath",
                                     arg -> cmdClasspath(arg),
                                     classPathCompletion()));
-        registerCommand(new Command("/history", "/h", null, "history of what you have typed",
+        registerCommand(new Command("/history", null, "history of what you have typed",
                                     arg -> cmdHistory(),
                                     EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/setstart", null, "<file>", "read file and set as the new start-up definitions",
+        registerCommand(new Command("/setstart", "<file>", "read file and set as the new start-up definitions",
                                     arg -> cmdSetStart(arg),
                                     FILE_COMPLETION_PROVIDER));
-        registerCommand(new Command("/savestart", null, "<file>", "save the default start-up definitions to the file",
-                                    arg -> cmdSaveStart(arg),
-                                    FILE_COMPLETION_PROVIDER));
-        registerCommand(new Command("/debug", "/db", "", "toggle debugging of the REPL",
+        registerCommand(new Command("/debug", "", "toggle debugging of the REPL",
                                     arg -> cmdDebug(arg),
                                     EMPTY_COMPLETION_PROVIDER,
                                     CommandKind.HIDDEN));
-        registerCommand(new Command("/help", "/?", "", "this help message",
+        registerCommand(new Command("/help", "", "this help message",
                                     arg -> cmdHelp(),
                                     EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/!", null, "", "re-run last snippet",
+        registerCommand(new Command("/?", "", "this help message",
+                                    arg -> cmdHelp(),
+                                    EMPTY_COMPLETION_PROVIDER));
+        registerCommand(new Command("/!", "", "re-run last snippet",
                                     arg -> cmdUseHistoryEntry(-1),
                                     EMPTY_COMPLETION_PROVIDER));
-        registerCommand(new Command("/<n>", null, "", "re-run n-th snippet",
+        registerCommand(new Command("/<id>", "", "re-run snippet by id",
                                     arg -> { throw new IllegalStateException(); },
                                     EMPTY_COMPLETION_PROVIDER,
                                     CommandKind.HELP_ONLY));
-        registerCommand(new Command("/-<n>", null, "", "re-run n-th previous snippet",
+        registerCommand(new Command("/-<n>", "", "re-run n-th previous snippet",
                                     arg -> { throw new IllegalStateException(); },
                                     EMPTY_COMPLETION_PROVIDER,
                                     CommandKind.HELP_ONLY));
@@ -732,16 +764,16 @@ public class JShellTool {
                              .stream()
                              .distinct()
                              .filter(cmd -> cmd.kind != CommandKind.HIDDEN && cmd.kind != CommandKind.HELP_ONLY)
-                             .map(cmd -> cmd.aliases[0])
+                             .map(cmd -> cmd.command)
                              .filter(key -> key.startsWith(prefix))
                              .map(key -> new Suggestion(key + " ", false));
             anchor[0] = 0;
         } else {
             String arg = prefix.substring(space + 1);
             String cmd = prefix.substring(0, space);
-            Command command = commands.get(cmd);
-            if (command != null) {
-                result = command.completions.completionSuggestions(arg, cursor - space, anchor).stream();
+            Command[] candidates = findCommand(cmd, c -> true);
+            if (candidates.length == 1) {
+                result = candidates[0].completions.completionSuggestions(arg, cursor - space, anchor).stream();
                 anchor[0] += space + 1;
             } else {
                 result = Stream.empty();
@@ -885,12 +917,7 @@ public class JShellTool {
             if (cmd.kind == CommandKind.HIDDEN)
                 continue;
             StringBuilder synopsis = new StringBuilder();
-            if (cmd.aliases.length > 1) {
-                synopsis.append(String.format("%-3s or ", cmd.aliases[1]));
-            } else {
-                synopsis.append("       ");
-            }
-            synopsis.append(cmd.aliases[0]);
+            synopsis.append(cmd.command);
             if (cmd.params != null)
                 synopsis.append(" ").append(cmd.params);
             synopsis2Description.put(synopsis.toString(), cmd.description);
@@ -901,7 +928,9 @@ public class JShellTool {
         for (Entry<String, String> e : synopsis2Description.entrySet()) {
             cmdout.print(String.format("%-" + synopsisLen + "s", e.getKey()));
             cmdout.print(" -- ");
-            cmdout.println(e.getValue());
+            String indentedNewLine = System.getProperty("line.separator") +
+                                     String.format("%-" + (synopsisLen + 4) + "s", "");
+            cmdout.println(e.getValue().replace("\n", indentedNewLine));
         }
         cmdout.println();
         cmdout.println("Supported shortcuts include:");
@@ -918,49 +947,67 @@ public class JShellTool {
     }
 
     /**
-     * Convert a user argument to a list of snippets referenced by that
-     * argument (or lack of argument).
-     * @param arg The user's argument to the command
-     * @return a list of referenced snippets
+     * Avoid parameterized varargs possible heap pollution warning.
      */
-    private List<Snippet> argToSnippets(String arg) {
-        List<Snippet> snippets = new ArrayList<>();
-        if (arg.isEmpty()) {
-            // Default is all user snippets
-            for (Snippet sn : state.snippets()) {
-                if (notInStartUp(sn)) {
-                    snippets.add(sn);
-                }
-            }
-        } else {
-            // Look for all declarations with matching names
-            for (Snippet key : state.snippets()) {
-                switch (key.kind()) {
-                    case METHOD:
-                    case VAR:
-                    case TYPE_DECL:
-                        if (((DeclarationSnippet) key).name().equals(arg)) {
-                            snippets.add(key);
-                        }
-                        break;
-                }
-            }
-            // If no declarations found, look for an id of this name
-            if (snippets.isEmpty()) {
-                for (Snippet sn : state.snippets()) {
-                    if (sn.id().equals(arg)) {
-                        snippets.add(sn);
-                        break;
-                    }
-                }
-            }
-            // If still no matches found, give an error
-            if (snippets.isEmpty()) {
-                hard("No definition or id named %s found.  See /classes /methods /vars or /list", arg);
-                return null;
+    private interface SnippetPredicate extends Predicate<Snippet> { }
+
+    /**
+     * Apply filters to a stream until one that is non-empty is found.
+     * Adapted from Stuart Marks
+     *
+     * @param supplier Supply the Snippet stream to filter
+     * @param filters Filters to attempt
+     * @return The non-empty filtered Stream, or null
+     */
+    private static Stream<Snippet> nonEmptyStream(Supplier<Stream<Snippet>> supplier,
+            SnippetPredicate... filters) {
+        for (SnippetPredicate filt : filters) {
+            Iterator<Snippet> iterator = supplier.get().filter(filt).iterator();
+            if (iterator.hasNext()) {
+                return StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, 0), false);
             }
         }
-        return snippets;
+        return null;
+    }
+
+    private boolean mainActive(Snippet sn) {
+        return notInStartUp(sn) && state.status(sn).isActive;
+    }
+
+    private boolean matchingDeclaration(Snippet sn, String name) {
+        return sn instanceof DeclarationSnippet
+                && ((DeclarationSnippet) sn).name().equals(name);
+    }
+
+    /**
+     * Convert a user argument to a Stream of snippets referenced by that argument
+     * (or lack of argument).
+     *
+     * @param arg The user's argument to the command, maybe be the empty string
+     * @return a Stream of referenced snippets or null if no matches to specific arg
+     */
+    private Stream<Snippet> argToSnippets(String arg, boolean allowAll) {
+        List<Snippet> snippets = state.snippets();
+        if (allowAll && arg.equals("all")) {
+            // all snippets including start-up, failed, and overwritten
+            return snippets.stream();
+        } else if (arg.isEmpty()) {
+            // Default is all active user snippets
+            return snippets.stream()
+                    .filter(this::mainActive);
+        } else {
+            Stream<Snippet> result =
+                    nonEmptyStream(
+                            () -> snippets.stream(),
+                            // look for active user declarations matching the name
+                            sn -> mainActive(sn) && matchingDeclaration(sn, arg),
+                            // else, look for any declarations matching the name
+                            sn -> matchingDeclaration(sn, arg),
+                            // else, look for an id of this name
+                            sn -> sn.id().equals(arg)
+                    );
+            return result;
+        }
     }
 
     private void cmdDrop(String arg) {
@@ -969,39 +1016,40 @@ public class JShellTool {
             hard("Specify by id or name. Use /list to see ids. Use /reset to reset all state.");
             return;
         }
-        List<Snippet> snippetSet = argToSnippets(arg);
-        if (snippetSet == null) {
+        Stream<Snippet> stream = argToSnippets(arg, false);
+        if (stream == null) {
+            hard("No definition or id named %s found.  See /classes, /methods, /vars, or /list", arg);
             return;
         }
-        snippetSet = snippetSet.stream()
-                .filter(sn -> state.status(sn).isActive)
+        List<Snippet> snippets = stream
+                .filter(sn -> state.status(sn).isActive && sn instanceof PersistentSnippet)
                 .collect(toList());
-        snippetSet.removeIf(sn -> !(sn instanceof PersistentSnippet));
-        if (snippetSet.isEmpty()) {
-            hard("The argument did not specify an import, variable, method, or class to drop.");
+        if (snippets.isEmpty()) {
+            hard("The argument did not specify an active import, variable, method, or class to drop.");
             return;
         }
-        if (snippetSet.size() > 1) {
+        if (snippets.size() > 1) {
             hard("The argument references more than one import, variable, method, or class.");
             hard("Try again with one of the ids below:");
-            for (Snippet sn : snippetSet) {
+            for (Snippet sn : snippets) {
                 cmdout.printf("%4s : %s\n", sn.id(), sn.source().replace("\n", "\n       "));
             }
             return;
         }
-        PersistentSnippet psn = (PersistentSnippet) snippetSet.iterator().next();
+        PersistentSnippet psn = (PersistentSnippet) snippets.get(0);
         state.drop(psn).forEach(this::handleEvent);
     }
 
     private void cmdEdit(String arg) {
-        List<Snippet> snippetSet = argToSnippets(arg);
-        if (snippetSet == null) {
+        Stream<Snippet> stream = argToSnippets(arg, true);
+        if (stream == null) {
+            hard("No definition or id named %s found.  See /classes, /methods, /vars, or /list", arg);
             return;
         }
         Set<String> srcSet = new LinkedHashSet<>();
-        for (Snippet key : snippetSet) {
-            String src = key.source();
-            switch (key.subKind()) {
+        stream.forEachOrdered(sn -> {
+            String src = sn.source();
+            switch (sn.subKind()) {
                 case VAR_VALUE_SUBKIND:
                     break;
                 case ASSIGNMENT_SUBKIND:
@@ -1016,7 +1064,7 @@ public class JShellTool {
                     srcSet.add(src);
                     break;
             }
-        }
+        });
         StringBuilder sb = new StringBuilder();
         for (String s : srcSet) {
             sb.append(s);
@@ -1088,31 +1136,30 @@ public class JShellTool {
     }
 
     private void cmdList(String arg) {
-        boolean all = false;
-        switch (arg) {
-            case "all":
-                all = true;
-                break;
-            case "history":
-                cmdHistory();
-                return;
-            case "":
-                break;
-            default:
-                hard("Invalid /list argument: %s", arg);
-                return;
+        if (arg.equals("history")) {
+            cmdHistory();
+            return;
         }
-        boolean hasOutput = false;
-        for (Snippet sn : state.snippets()) {
-            if (all || (notInStartUp(sn) && state.status(sn).isActive)) {
-                if (!hasOutput) {
-                    cmdout.println();
-                    hasOutput = true;
-                }
-                cmdout.printf("%4s : %s\n", sn.id(), sn.source().replace("\n", "\n       "));
-
+        Stream<Snippet> stream = argToSnippets(arg, true);
+        if (stream == null) {
+            // Check if there are any definitions at all
+            if (argToSnippets("", false).iterator().hasNext()) {
+                hard("No definition or id named %s found.  Try /list without arguments.", arg);
+            } else {
+                hard("No definition or id named %s found.  There are no active definitions.", arg);
             }
+            return;
         }
+
+        // prevent double newline on empty list
+        boolean[] hasOutput = new boolean[1];
+        stream.forEachOrdered(sn -> {
+            if (!hasOutput[0]) {
+                cmdout.println();
+                hasOutput[0] = true;
+            }
+            cmdout.printf("%4s : %s\n", sn.id(), sn.source().replace("\n", "\n       "));
+        });
     }
 
     private void cmdOpen(String filename) {
@@ -1141,20 +1188,24 @@ public class JShellTool {
     }
 
     private void cmdSave(String arg_filename) {
-        Matcher mat = HISTORY_ALL_FILENAME.matcher(arg_filename);
+        Matcher mat = HISTORY_ALL_START_FILENAME.matcher(arg_filename);
         if (!mat.find()) {
             hard("Malformed argument to the /save command: %s", arg_filename);
             return;
         }
         boolean useHistory = false;
-        boolean saveAll = false;
+        String saveAll = "";
+        boolean saveStart = false;
         String cmd = mat.group("cmd");
         if (cmd != null) switch (cmd) {
             case "all":
-                saveAll = true;
+                saveAll = "all";
                 break;
             case "history":
                 useHistory = true;
+                break;
+            case "start":
+                saveStart = true;
                 break;
         }
         String filename = mat.group("filename");
@@ -1170,9 +1221,12 @@ public class JShellTool {
                     writer.write(s);
                     writer.write("\n");
                 }
+            } else if (saveStart) {
+                writer.append(DEFAULT_STARTUP);
             } else {
-                for (Snippet sn : state.snippets()) {
-                    if (saveAll || notInStartUp(sn)) {
+                Stream<Snippet> stream = argToSnippets(saveAll, true);
+                if (stream != null) {
+                    for (Snippet sn : stream.collect(toList())) {
                         writer.write(sn.source());
                         writer.write("\n");
                     }
@@ -1199,22 +1253,6 @@ public class JShellTool {
                 hard("File '%s' for /setstart is not found.", filename);
             } catch (Exception e) {
                 hard("Exception while reading start set file: %s", e);
-            }
-        }
-    }
-
-    private void cmdSaveStart(String filename) {
-        if (filename.isEmpty()) {
-            hard("The /savestart command requires a filename argument.");
-        } else {
-            try {
-                Files.write(toPathResolvingUserHome(filename), DEFAULT_STARTUP.getBytes());
-            } catch (AccessDeniedException e) {
-                hard("File '%s' for /savestart is not accessible.", filename);
-            } catch (NoSuchFileException e) {
-                hard("File '%s' for /savestart cannot be located.", filename);
-            } catch (Exception e) {
-                hard("Exception while saving default startup file: %s", e);
             }
         }
     }
@@ -1272,13 +1310,27 @@ public class JShellTool {
         else
             index--;
         if (index >= 0 && index < keys.size()) {
-            String source = keys.get(index).source();
-            cmdout.printf("%s\n", source);
-            input.replaceLastHistoryEntry(source);
-            processSourceCatchingReset(source);
+            rerunSnippet(keys.get(index));
         } else {
             hard("Cannot find snippet %d", index + 1);
         }
+    }
+
+    private boolean rerunHistoryEntryById(String id) {
+        Optional<Snippet> snippet = state.snippets().stream()
+            .filter(s -> s.id().equals(id))
+            .findFirst();
+        return snippet.map(s -> {
+            rerunSnippet(s);
+            return true;
+        }).orElse(false);
+    }
+
+    private void rerunSnippet(Snippet snippet) {
+        String source = snippet.source();
+        cmdout.printf("%s\n", source);
+        input.replaceLastHistoryEntry(source);
+        processSourceCatchingReset(source);
     }
 
     /**

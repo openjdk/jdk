@@ -63,7 +63,7 @@ public class FieldMonitor {
 
   public static final String CLASS_NAME = "TestPostFieldModification";
   public static final String FIELD_NAME = "value";
-  public static final String ARGUMENTS = "-Xshare:off -XX:+PrintGC";
+  public static final String ARGUMENTS = "-Xshare:off -Xlog:gc";
 
   public static void main(String[] args)
       throws IOException, InterruptedException {

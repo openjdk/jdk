@@ -459,7 +459,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
   # We can only compile native code after java has been compiled (since we
   # depend on generated .h files)
   $(SUPPORT_OUTPUTDIR)/demos/native/jni/Poller/Poller.o: \
-      $(BUILD_DEMO_JAVA_POLLER_COMPILE_TARGETS)
+      $(BUILD_DEMO_JAVA_Poller)
 
   # Copy to image
   $(SUPPORT_OUTPUTDIR)/demos/image/jni/Poller/README.txt: \

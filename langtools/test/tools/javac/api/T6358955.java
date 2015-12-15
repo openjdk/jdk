@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 6358955
- * @summary JavacFileManager.getFileForInput(dir) shuld throw IAE
+ * @summary JavacFileManager.getFileForInput(dir) should throw IAE
  * @modules java.compiler
  *          jdk.compiler
  */

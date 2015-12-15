@@ -73,7 +73,6 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<JVMTIDataDumpDCmd>(full_export, true, false));
 #endif // INCLUDE_JVMTI
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
-  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RotateGCLogDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompileQueueDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeListDCmd>(full_export, true, false));
@@ -824,15 +823,6 @@ VMDynamicLibrariesDCmd::VMDynamicLibrariesDCmd(outputStream *output, bool heap_a
 void VMDynamicLibrariesDCmd::execute(DCmdSource source, TRAPS) {
   os::print_dll_info(output());
   output()->cr();
-}
-
-void RotateGCLogDCmd::execute(DCmdSource source, TRAPS) {
-  if (UseGCLogFileRotation) {
-    VM_RotateGCLog rotateop(output());
-    VMThread::execute(&rotateop);
-  } else {
-    output()->print_cr("Target VM does not support GC log file rotation.");
-  }
 }
 
 void CompileQueueDCmd::execute(DCmdSource source, TRAPS) {

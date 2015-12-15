@@ -1380,7 +1380,7 @@ void os::shutdown() {
 // Note: os::abort() might be called very early during initialization, or
 // called from signal handler. Before adding something to os::abort(), make
 // sure it is async-safe and can handle partially initialized VM.
-void os::abort(bool dump_core, void* siginfo, void* context) {
+void os::abort(bool dump_core, void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
 #ifndef PRODUCT
@@ -3736,7 +3736,7 @@ void PcFetcher::do_task(const os::SuspendedThreadTaskContext& context) {
   Thread* thread = context.thread();
   OSThread* osthread = thread->osthread();
   if (osthread->ucontext() != NULL) {
-    _epc = os::Solaris::ucontext_get_pc((ucontext_t *) context.ucontext());
+    _epc = os::Solaris::ucontext_get_pc((const ucontext_t *) context.ucontext());
   } else {
     // NULL context is unexpected, double-check this is the VMThread
     guarantee(thread->is_VM_thread(), "can only be called for VMThread");
@@ -4058,8 +4058,12 @@ void os::Solaris::check_signal_handler(int sig) {
     }
   } else if(os::Solaris::get_our_sigflags(sig) != 0 && act.sa_flags != os::Solaris::get_our_sigflags(sig)) {
     tty->print("Warning: %s handler flags ", exception_name(sig, buf, O_BUFLEN));
-    tty->print("expected:" PTR32_FORMAT, os::Solaris::get_our_sigflags(sig));
-    tty->print_cr("  found:" PTR32_FORMAT, act.sa_flags);
+    tty->print("expected:");
+    os::Posix::print_sa_flags(tty, os::Solaris::get_our_sigflags(sig));
+    tty->cr();
+    tty->print("  found:");
+    os::Posix::print_sa_flags(tty, act.sa_flags);
+    tty->cr();
     // No need to check this sig any longer
     sigaddset(&check_signal_done, sig);
   }
@@ -4378,6 +4382,7 @@ void os::init(void) {
   if (vm_page_size() > 8*K) {
     StackYellowPages = 1;
     StackRedPages = 1;
+    StackReservedPages = 1;
     StackShadowPages = round_to((StackShadowPages*8*K), vm_page_size()) / vm_page_size();
   }
 }
@@ -4434,7 +4439,7 @@ jint os::init_2(void) {
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Solaris::min_stack_allowed = MAX2(os::Solaris::min_stack_allowed,
-                                        (size_t)(StackYellowPages+StackRedPages+StackShadowPages+
+                                        (size_t)(StackReservedPages+StackYellowPages+StackRedPages+StackShadowPages+
                                         2*BytesPerWord COMPILER2_PRESENT(+1)) * page_size);
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;

@@ -1028,7 +1028,7 @@ void os::check_dump_limit(char* buffer, size_t buffsz) {
   VMError::record_coredump_status(buffer, status);
 }
 
-void os::abort(bool dump_core, void* siginfo, void* context) {
+void os::abort(bool dump_core, void* siginfo, const void* context) {
   HINSTANCE dbghelp;
   EXCEPTION_POINTERS ep;
   MINIDUMP_EXCEPTION_INFORMATION mei;
@@ -2374,6 +2374,39 @@ static inline void report_error(Thread* t, DWORD exception_code,
   // somewhere where we can find it in the minidump.
 }
 
+bool os::win32::get_frame_at_stack_banging_point(JavaThread* thread,
+        struct _EXCEPTION_POINTERS* exceptionInfo, address pc, frame* fr) {
+  PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
+  address addr = (address) exceptionRecord->ExceptionInformation[1];
+  if (Interpreter::contains(pc)) {
+    *fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
+    if (!fr->is_first_java_frame()) {
+      assert(fr->safe_for_sender(thread), "Safety check");
+      *fr = fr->java_sender();
+    }
+  } else {
+    // more complex code with compiled code
+    assert(!Interpreter::contains(pc), "Interpreted methods should have been handled above");
+    CodeBlob* cb = CodeCache::find_blob(pc);
+    if (cb == NULL || !cb->is_nmethod() || cb->is_frame_complete_at(pc)) {
+      // Not sure where the pc points to, fallback to default
+      // stack overflow handling
+      return false;
+    } else {
+      *fr = os::fetch_frame_from_context((void*)exceptionInfo->ContextRecord);
+      // in compiled code, the stack banging is performed just after the return pc
+      // has been pushed on the stack
+      *fr = frame(fr->sp() + 1, fr->fp(), (address)*(fr->sp()));
+      if (!fr->is_java_frame()) {
+        assert(fr->safe_for_sender(thread), "Safety check");
+        *fr = fr->java_sender();
+      }
+    }
+  }
+  assert(fr->is_java_frame(), "Safety check");
+  return true;
+}
+
 //-----------------------------------------------------------------------------
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
   if (InterceptOSException) return EXCEPTION_CONTINUE_SEARCH;
@@ -2550,7 +2583,16 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
                                   SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW));
         }
 #endif
-        if (thread->stack_yellow_zone_enabled()) {
+        if (thread->stack_guards_enabled()) {
+          if (_thread_in_Java) {
+            frame fr;
+            PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
+            address addr = (address) exceptionRecord->ExceptionInformation[1];
+            if (os::win32::get_frame_at_stack_banging_point(thread, exceptionInfo, pc, &fr)) {
+              assert(fr.is_java_frame(), "Must be a Java frame");
+              SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
+            }
+          }
           // Yellow zone violation.  The o/s has unprotected the first yellow
           // zone page for us.  Note:  must call disable_stack_yellow_zone to
           // update the enabled status, even if the zone contains only one page.
@@ -5529,8 +5571,6 @@ bool os::start_debugging(char *buf, int buflen) {
   return yes;
 }
 
-#ifndef JDK6_OR_EARLIER
-
 void os::Kernel32Dll::initialize() {
   initializeCommon();
 }
@@ -5705,261 +5745,6 @@ char* os::build_agent_function_name(const char *sym_name, const char *lib_name,
   return agent_entry_name;
 }
 
-#else
-// Kernel32 API
-typedef BOOL (WINAPI* SwitchToThread_Fn)(void);
-typedef HANDLE (WINAPI* CreateToolhelp32Snapshot_Fn)(DWORD, DWORD);
-typedef BOOL (WINAPI* Module32First_Fn)(HANDLE, LPMODULEENTRY32);
-typedef BOOL (WINAPI* Module32Next_Fn)(HANDLE, LPMODULEENTRY32);
-typedef void (WINAPI* GetNativeSystemInfo_Fn)(LPSYSTEM_INFO);
-
-SwitchToThread_Fn           os::Kernel32Dll::_SwitchToThread = NULL;
-CreateToolhelp32Snapshot_Fn os::Kernel32Dll::_CreateToolhelp32Snapshot = NULL;
-Module32First_Fn            os::Kernel32Dll::_Module32First = NULL;
-Module32Next_Fn             os::Kernel32Dll::_Module32Next = NULL;
-GetNativeSystemInfo_Fn      os::Kernel32Dll::_GetNativeSystemInfo = NULL;
-
-void os::Kernel32Dll::initialize() {
-  if (!initialized) {
-    HMODULE handle = ::GetModuleHandle("Kernel32.dll");
-    assert(handle != NULL, "Just check");
-
-    _SwitchToThread = (SwitchToThread_Fn)::GetProcAddress(handle, "SwitchToThread");
-    _CreateToolhelp32Snapshot = (CreateToolhelp32Snapshot_Fn)
-      ::GetProcAddress(handle, "CreateToolhelp32Snapshot");
-    _Module32First = (Module32First_Fn)::GetProcAddress(handle, "Module32First");
-    _Module32Next = (Module32Next_Fn)::GetProcAddress(handle, "Module32Next");
-    _GetNativeSystemInfo = (GetNativeSystemInfo_Fn)::GetProcAddress(handle, "GetNativeSystemInfo");
-    initializeCommon();  // resolve the functions that always need resolving
-
-    initialized = TRUE;
-  }
-}
-
-BOOL os::Kernel32Dll::SwitchToThread() {
-  assert(initialized && _SwitchToThread != NULL,
-         "SwitchToThreadAvailable() not yet called");
-  return _SwitchToThread();
-}
-
-
-BOOL os::Kernel32Dll::SwitchToThreadAvailable() {
-  if (!initialized) {
-    initialize();
-  }
-  return _SwitchToThread != NULL;
-}
-
-// Help tools
-BOOL os::Kernel32Dll::HelpToolsAvailable() {
-  if (!initialized) {
-    initialize();
-  }
-  return _CreateToolhelp32Snapshot != NULL &&
-         _Module32First != NULL &&
-         _Module32Next != NULL;
-}
-
-HANDLE os::Kernel32Dll::CreateToolhelp32Snapshot(DWORD dwFlags,
-                                                 DWORD th32ProcessId) {
-  assert(initialized && _CreateToolhelp32Snapshot != NULL,
-         "HelpToolsAvailable() not yet called");
-
-  return _CreateToolhelp32Snapshot(dwFlags, th32ProcessId);
-}
-
-BOOL os::Kernel32Dll::Module32First(HANDLE hSnapshot,LPMODULEENTRY32 lpme) {
-  assert(initialized && _Module32First != NULL,
-         "HelpToolsAvailable() not yet called");
-
-  return _Module32First(hSnapshot, lpme);
-}
-
-inline BOOL os::Kernel32Dll::Module32Next(HANDLE hSnapshot,
-                                          LPMODULEENTRY32 lpme) {
-  assert(initialized && _Module32Next != NULL,
-         "HelpToolsAvailable() not yet called");
-
-  return _Module32Next(hSnapshot, lpme);
-}
-
-
-BOOL os::Kernel32Dll::GetNativeSystemInfoAvailable() {
-  if (!initialized) {
-    initialize();
-  }
-  return _GetNativeSystemInfo != NULL;
-}
-
-void os::Kernel32Dll::GetNativeSystemInfo(LPSYSTEM_INFO lpSystemInfo) {
-  assert(initialized && _GetNativeSystemInfo != NULL,
-         "GetNativeSystemInfoAvailable() not yet called");
-
-  _GetNativeSystemInfo(lpSystemInfo);
-}
-
-// PSAPI API
-
-
-typedef BOOL (WINAPI *EnumProcessModules_Fn)(HANDLE, HMODULE *, DWORD, LPDWORD);
-typedef BOOL (WINAPI *GetModuleFileNameEx_Fn)(HANDLE, HMODULE, LPTSTR, DWORD);
-typedef BOOL (WINAPI *GetModuleInformation_Fn)(HANDLE, HMODULE, LPMODULEINFO, DWORD);
-
-EnumProcessModules_Fn   os::PSApiDll::_EnumProcessModules = NULL;
-GetModuleFileNameEx_Fn  os::PSApiDll::_GetModuleFileNameEx = NULL;
-GetModuleInformation_Fn os::PSApiDll::_GetModuleInformation = NULL;
-BOOL                    os::PSApiDll::initialized = FALSE;
-
-void os::PSApiDll::initialize() {
-  if (!initialized) {
-    HMODULE handle = os::win32::load_Windows_dll("PSAPI.DLL", NULL, 0);
-    if (handle != NULL) {
-      _EnumProcessModules = (EnumProcessModules_Fn)::GetProcAddress(handle,
-                                                                    "EnumProcessModules");
-      _GetModuleFileNameEx = (GetModuleFileNameEx_Fn)::GetProcAddress(handle,
-                                                                      "GetModuleFileNameExA");
-      _GetModuleInformation = (GetModuleInformation_Fn)::GetProcAddress(handle,
-                                                                        "GetModuleInformation");
-    }
-    initialized = TRUE;
-  }
-}
-
-
-
-BOOL os::PSApiDll::EnumProcessModules(HANDLE hProcess, HMODULE *lpModule,
-                                      DWORD cb, LPDWORD lpcbNeeded) {
-  assert(initialized && _EnumProcessModules != NULL,
-         "PSApiAvailable() not yet called");
-  return _EnumProcessModules(hProcess, lpModule, cb, lpcbNeeded);
-}
-
-DWORD os::PSApiDll::GetModuleFileNameEx(HANDLE hProcess, HMODULE hModule,
-                                        LPTSTR lpFilename, DWORD nSize) {
-  assert(initialized && _GetModuleFileNameEx != NULL,
-         "PSApiAvailable() not yet called");
-  return _GetModuleFileNameEx(hProcess, hModule, lpFilename, nSize);
-}
-
-BOOL os::PSApiDll::GetModuleInformation(HANDLE hProcess, HMODULE hModule,
-                                        LPMODULEINFO lpmodinfo, DWORD cb) {
-  assert(initialized && _GetModuleInformation != NULL,
-         "PSApiAvailable() not yet called");
-  return _GetModuleInformation(hProcess, hModule, lpmodinfo, cb);
-}
-
-BOOL os::PSApiDll::PSApiAvailable() {
-  if (!initialized) {
-    initialize();
-  }
-  return _EnumProcessModules != NULL &&
-    _GetModuleFileNameEx != NULL &&
-    _GetModuleInformation != NULL;
-}
-
-
-// WinSock2 API
-typedef int (PASCAL FAR* WSAStartup_Fn)(WORD, LPWSADATA);
-typedef struct hostent *(PASCAL FAR *gethostbyname_Fn)(...);
-
-WSAStartup_Fn    os::WinSock2Dll::_WSAStartup = NULL;
-gethostbyname_Fn os::WinSock2Dll::_gethostbyname = NULL;
-BOOL             os::WinSock2Dll::initialized = FALSE;
-
-void os::WinSock2Dll::initialize() {
-  if (!initialized) {
-    HMODULE handle = os::win32::load_Windows_dll("ws2_32.dll", NULL, 0);
-    if (handle != NULL) {
-      _WSAStartup = (WSAStartup_Fn)::GetProcAddress(handle, "WSAStartup");
-      _gethostbyname = (gethostbyname_Fn)::GetProcAddress(handle, "gethostbyname");
-    }
-    initialized = TRUE;
-  }
-}
-
-
-BOOL os::WinSock2Dll::WSAStartup(WORD wVersionRequested, LPWSADATA lpWSAData) {
-  assert(initialized && _WSAStartup != NULL,
-         "WinSock2Available() not yet called");
-  return _WSAStartup(wVersionRequested, lpWSAData);
-}
-
-struct hostent* os::WinSock2Dll::gethostbyname(const char *name) {
-  assert(initialized && _gethostbyname != NULL,
-         "WinSock2Available() not yet called");
-  return _gethostbyname(name);
-}
-
-BOOL os::WinSock2Dll::WinSock2Available() {
-  if (!initialized) {
-    initialize();
-  }
-  return _WSAStartup != NULL &&
-    _gethostbyname != NULL;
-}
-
-typedef BOOL (WINAPI *AdjustTokenPrivileges_Fn)(HANDLE, BOOL, PTOKEN_PRIVILEGES, DWORD, PTOKEN_PRIVILEGES, PDWORD);
-typedef BOOL (WINAPI *OpenProcessToken_Fn)(HANDLE, DWORD, PHANDLE);
-typedef BOOL (WINAPI *LookupPrivilegeValue_Fn)(LPCTSTR, LPCTSTR, PLUID);
-
-AdjustTokenPrivileges_Fn os::Advapi32Dll::_AdjustTokenPrivileges = NULL;
-OpenProcessToken_Fn      os::Advapi32Dll::_OpenProcessToken = NULL;
-LookupPrivilegeValue_Fn  os::Advapi32Dll::_LookupPrivilegeValue = NULL;
-BOOL                     os::Advapi32Dll::initialized = FALSE;
-
-void os::Advapi32Dll::initialize() {
-  if (!initialized) {
-    HMODULE handle = os::win32::load_Windows_dll("advapi32.dll", NULL, 0);
-    if (handle != NULL) {
-      _AdjustTokenPrivileges = (AdjustTokenPrivileges_Fn)::GetProcAddress(handle,
-                                                                          "AdjustTokenPrivileges");
-      _OpenProcessToken = (OpenProcessToken_Fn)::GetProcAddress(handle,
-                                                                "OpenProcessToken");
-      _LookupPrivilegeValue = (LookupPrivilegeValue_Fn)::GetProcAddress(handle,
-                                                                        "LookupPrivilegeValueA");
-    }
-    initialized = TRUE;
-  }
-}
-
-BOOL os::Advapi32Dll::AdjustTokenPrivileges(HANDLE TokenHandle,
-                                            BOOL DisableAllPrivileges,
-                                            PTOKEN_PRIVILEGES NewState,
-                                            DWORD BufferLength,
-                                            PTOKEN_PRIVILEGES PreviousState,
-                                            PDWORD ReturnLength) {
-  assert(initialized && _AdjustTokenPrivileges != NULL,
-         "AdvapiAvailable() not yet called");
-  return _AdjustTokenPrivileges(TokenHandle, DisableAllPrivileges, NewState,
-                                BufferLength, PreviousState, ReturnLength);
-}
-
-BOOL os::Advapi32Dll::OpenProcessToken(HANDLE ProcessHandle,
-                                       DWORD DesiredAccess,
-                                       PHANDLE TokenHandle) {
-  assert(initialized && _OpenProcessToken != NULL,
-         "AdvapiAvailable() not yet called");
-  return _OpenProcessToken(ProcessHandle, DesiredAccess, TokenHandle);
-}
-
-BOOL os::Advapi32Dll::LookupPrivilegeValue(LPCTSTR lpSystemName,
-                                           LPCTSTR lpName, PLUID lpLuid) {
-  assert(initialized && _LookupPrivilegeValue != NULL,
-         "AdvapiAvailable() not yet called");
-  return _LookupPrivilegeValue(lpSystemName, lpName, lpLuid);
-}
-
-BOOL os::Advapi32Dll::AdvapiAvailable() {
-  if (!initialized) {
-    initialize();
-  }
-  return _AdjustTokenPrivileges != NULL &&
-    _OpenProcessToken != NULL &&
-    _LookupPrivilegeValue != NULL;
-}
-
-#endif
-
 #ifndef PRODUCT
 
 // test the code path in reserve_memory_special() that tries to allocate memory in a single
@@ -5976,7 +5761,7 @@ BOOL os::Advapi32Dll::AdvapiAvailable() {
 void TestReserveMemorySpecial_test() {
   if (!UseLargePages) {
     if (VerboseInternalVMTests) {
-      gclog_or_tty->print("Skipping test because large pages are disabled");
+      tty->print("Skipping test because large pages are disabled");
     }
     return;
   }
@@ -5992,7 +5777,7 @@ void TestReserveMemorySpecial_test() {
   char* result = os::reserve_memory_special(large_allocation_size, os::large_page_size(), NULL, false);
   if (result == NULL) {
     if (VerboseInternalVMTests) {
-      gclog_or_tty->print("Failed to allocate control block with size " SIZE_FORMAT ". Skipping remainder of test.",
+      tty->print("Failed to allocate control block with size " SIZE_FORMAT ". Skipping remainder of test.",
                           large_allocation_size);
     }
   } else {
@@ -6005,7 +5790,7 @@ void TestReserveMemorySpecial_test() {
     char* actual_location = os::reserve_memory_special(expected_allocation_size, os::large_page_size(), expected_location, false);
     if (actual_location == NULL) {
       if (VerboseInternalVMTests) {
-        gclog_or_tty->print("Failed to allocate any memory at " PTR_FORMAT " size " SIZE_FORMAT ". Skipping remainder of test.",
+        tty->print("Failed to allocate any memory at " PTR_FORMAT " size " SIZE_FORMAT ". Skipping remainder of test.",
                             expected_location, large_allocation_size);
       }
     } else {

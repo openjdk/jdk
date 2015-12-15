@@ -26,7 +26,8 @@
  * @summary Repeated timed tryAcquire shouldn't hang.
  */
 
-import java.util.concurrent.*;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 
 public class TimedAcquire {
     public static void main(String[] args) throws Exception {
