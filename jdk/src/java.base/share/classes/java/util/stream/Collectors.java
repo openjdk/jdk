@@ -434,7 +434,7 @@ public final class Collectors {
      * stream returned by mapper
      * @return a collector which applies the mapping function to the input
      * elements and provides the flat mapped results to the downstream collector
-     * @since 1.9
+     * @since 9
      */
     public static <T, U, A, R>
     Collector<T, ?, R> flatMapping(Function<? super T, ? extends Stream<? extends U>> mapper,
@@ -449,6 +449,53 @@ public final class Collectors {
                             },
                             downstream.combiner(), downstream.finisher(),
                             downstream.characteristics());
+    }
+
+    /**
+     * Adapts a {@code Collector} to one accepting elements of the same type
+     * {@code T} by applying the predicate to each input element and only
+     * accumulating if the predicate returns {@code true}.
+     *
+     * @apiNote
+     * The {@code filtering()} collectors are most useful when used in a
+     * multi-level reduction, such as downstream of a {@code groupingBy} or
+     * {@code partitioningBy}.  For example, given a stream of
+     * {@code Employee}, to accumulate the employees in each department that have a
+     * salary above a certain threshold:
+     * <pre>{@code
+     *     Map<Department, Set<Employee>> wellPaidEmployeesByDepartment
+     *         = employees.stream().collect(groupingBy(Employee::getDepartment,
+     *                                              filtering(e -> e.getSalary() > 2000, toSet())));
+     * }</pre>
+     * A filtering collector differs from a stream's {@code filter()} operation.
+     * In this example, suppose there are no employees whose salary is above the
+     * threshold in some department.  Using a filtering collector as shown above
+     * would result in a mapping from that department to an empty {@code Set}.
+     * If a stream {@code filter()} operation were done instead, there would be
+     * no mapping for that department at all.
+     *
+     * @param <T> the type of the input elements
+     * @param <A> intermediate accumulation type of the downstream collector
+     * @param <R> result type of collector
+     * @param predicate a predicate to be applied to the input elements
+     * @param downstream a collector which will accept values that match the
+     * predicate
+     * @return a collector which applies the predicate to the input elements
+     * and provides matching elements to the downstream collector
+     * @since 9
+     */
+    public static <T, A, R>
+    Collector<T, ?, R> filtering(Predicate<? super T> predicate,
+                               Collector<? super T, A, R> downstream) {
+        BiConsumer<A, ? super T> downstreamAccumulator = downstream.accumulator();
+        return new CollectorImpl<>(downstream.supplier(),
+                                   (r, t) -> {
+                                       if (predicate.test(t)) {
+                                           downstreamAccumulator.accept(r, t);
+                                       }
+                                   },
+                                   downstream.combiner(), downstream.finisher(),
+                                   downstream.characteristics());
     }
 
     /**
