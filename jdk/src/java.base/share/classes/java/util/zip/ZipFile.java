@@ -833,7 +833,8 @@ class ZipFile implements ZipConstants, Closeable {
             byte[] cen = zsrc.cen;
             for (int i = 0; i < names.length; i++) {
                 int pos = zsrc.metanames.get(i);
-                names[i] = zc.toStringUTF8(cen, pos + CENHDR,  CENNAM(cen, pos));
+                names[i] = new String(cen, pos + CENHDR,  CENNAM(cen, pos),
+                                      StandardCharsets.UTF_8);
             }
             return names;
         }
