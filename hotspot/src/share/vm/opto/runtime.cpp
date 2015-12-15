@@ -1103,6 +1103,26 @@ const TypeFunc* OptoRuntime::montgomerySquare_Type() {
   return TypeFunc::make(domain, range);
 }
 
+const TypeFunc* OptoRuntime::vectorizedMismatch_Type() {
+  // create input type (domain)
+  int num_args = 4;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // obja
+  fields[argp++] = TypePtr::NOTNULL;    // objb
+  fields[argp++] = TypeInt::INT;        // length, number of elements
+  fields[argp++] = TypeInt::INT;        // log2scale, element size
+  assert(argp == TypeFunc::Parms + argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + argcnt, fields);
+
+  //return mismatch index (int)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms + 0] = TypeInt::INT;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 1, fields);
+  return TypeFunc::make(domain, range);
+}
+
 // GHASH block processing
 const TypeFunc* OptoRuntime::ghash_processBlocks_Type() {
     int argcnt = 4;

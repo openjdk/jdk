@@ -7999,8 +7999,14 @@ void MacroAssembler::string_compare(Register str1, Register str2,
                                     XMMRegister vec1, int ae) {
   ShortBranchVerifier sbv(this);
   Label LENGTH_DIFF_LABEL, POP_LABEL, DONE_LABEL, WHILE_HEAD_LABEL;
+  Label COMPARE_WIDE_VECTORS_LOOP_FAILED;  // used only _LP64 && AVX3
   int stride, stride2, adr_stride, adr_stride1, adr_stride2;
+  int stride2x2 = 0x40;
   Address::ScaleFactor scale, scale1, scale2;
+
+  if (ae != StrIntrinsicNode::LL) {
+    stride2x2 = 0x20;
+  }
 
   if (ae == StrIntrinsicNode::LU || ae == StrIntrinsicNode::UL) {
     shrl(cnt2, 1);
@@ -8011,15 +8017,15 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   movl(result, cnt1);
   subl(cnt1, cnt2);
   push(cnt1);
-  cmov32(Assembler::lessEqual, cnt2, result);
+  cmov32(Assembler::lessEqual, cnt2, result);    // cnt2 = min(cnt1, cnt2)
 
   // Is the minimum length zero?
   testl(cnt2, cnt2);
   jcc(Assembler::zero, LENGTH_DIFF_LABEL);
   if (ae == StrIntrinsicNode::LL) {
     // Load first bytes
-    load_unsigned_byte(result, Address(str1, 0));
-    load_unsigned_byte(cnt1, Address(str2, 0));
+    load_unsigned_byte(result, Address(str1, 0));  // result = str1[0]
+    load_unsigned_byte(cnt1, Address(str2, 0));    // cnt1   = str2[0]
   } else if (ae == StrIntrinsicNode::UU) {
     // Load first characters
     load_unsigned_short(result, Address(str1, 0));
@@ -8060,7 +8066,10 @@ void MacroAssembler::string_compare(Register str1, Register str2,
     assert(UseSSE >= 4, "SSE4 must be enabled for SSE4.2 intrinsics to be available");
     Label COMPARE_WIDE_VECTORS, VECTOR_NOT_EQUAL, COMPARE_WIDE_TAIL, COMPARE_SMALL_STR;
     Label COMPARE_WIDE_VECTORS_LOOP, COMPARE_16_CHARS, COMPARE_INDEX_CHAR;
+    Label COMPARE_WIDE_VECTORS_LOOP_AVX2;
     Label COMPARE_TAIL_LONG;
+    Label COMPARE_WIDE_VECTORS_LOOP_AVX3;  // used only _LP64 && AVX3
+
     int pcmpmask = 0x19;
     if (ae == StrIntrinsicNode::LL) {
       pcmpmask &= ~0x01;
@@ -8123,11 +8132,40 @@ void MacroAssembler::string_compare(Register str1, Register str2,
     }
     subl(result, stride2);
     subl(cnt2, stride2);
-    jccb(Assembler::zero, COMPARE_WIDE_TAIL);
+    jcc(Assembler::zero, COMPARE_WIDE_TAIL);
     negptr(result);
 
     //  In a loop, compare 16-chars (32-bytes) at once using (vpxor+vptest)
     bind(COMPARE_WIDE_VECTORS_LOOP);
+
+#ifdef _LP64
+    if (VM_Version::supports_avx512vlbw()) { // trying 64 bytes fast loop
+      cmpl(cnt2, stride2x2);
+      jccb(Assembler::below, COMPARE_WIDE_VECTORS_LOOP_AVX2);
+      testl(cnt2, stride2x2-1);   // cnt2 holds the vector count
+      jccb(Assembler::notZero, COMPARE_WIDE_VECTORS_LOOP_AVX2);   // means we cannot subtract by 0x40
+
+      bind(COMPARE_WIDE_VECTORS_LOOP_AVX3); // the hottest loop
+      if (ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::UU) {
+        evmovdquq(vec1, Address(str1, result, scale), Assembler::AVX_512bit);
+        evpcmpeqb(k7, vec1, Address(str2, result, scale), Assembler::AVX_512bit); // k7 == 11..11, if operands equal, otherwise k7 has some 0
+      } else {
+        vpmovzxbw(vec1, Address(str1, result, scale1), Assembler::AVX_512bit);
+        evpcmpeqb(k7, vec1, Address(str2, result, scale2), Assembler::AVX_512bit); // k7 == 11..11, if operands equal, otherwise k7 has some 0
+      }
+      kortestql(k7, k7);
+      jcc(Assembler::aboveEqual, COMPARE_WIDE_VECTORS_LOOP_FAILED);     // miscompare
+      addptr(result, stride2x2);  // update since we already compared at this addr
+      subl(cnt2, stride2x2);      // and sub the size too
+      jccb(Assembler::notZero, COMPARE_WIDE_VECTORS_LOOP_AVX3);
+
+      vpxor(vec1, vec1);
+      jmpb(COMPARE_WIDE_TAIL);
+    }//if (VM_Version::supports_avx512vlbw())
+#endif // _LP64
+
+
+    bind(COMPARE_WIDE_VECTORS_LOOP_AVX2);
     if (ae == StrIntrinsicNode::LL || ae == StrIntrinsicNode::UU) {
       vmovdqu(vec1, Address(str1, result, scale));
       vpxor(vec1, Address(str2, result, scale));
@@ -8136,7 +8174,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
       vpxor(vec1, Address(str2, result, scale2));
     }
     vptest(vec1, vec1);
-    jccb(Assembler::notZero, VECTOR_NOT_EQUAL);
+    jcc(Assembler::notZero, VECTOR_NOT_EQUAL);
     addptr(result, stride2);
     subl(cnt2, stride2);
     jccb(Assembler::notZero, COMPARE_WIDE_VECTORS_LOOP);
@@ -8151,7 +8189,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
     movl(result, stride2);
     movl(cnt2, result);
     negptr(result);
-    jmpb(COMPARE_WIDE_VECTORS_LOOP);
+    jmp(COMPARE_WIDE_VECTORS_LOOP_AVX2);
 
     // Identifies the mismatching (higher or lower)16-bytes in the 32-byte vectors.
     bind(VECTOR_NOT_EQUAL);
@@ -8295,6 +8333,34 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   }
   jmpb(DONE_LABEL);
 
+#ifdef _LP64
+  if (VM_Version::supports_avx512vlbw()) {
+
+    bind(COMPARE_WIDE_VECTORS_LOOP_FAILED);
+
+    kmovql(cnt1, k7);
+    notq(cnt1);
+    bsfq(cnt2, cnt1);
+    if (ae != StrIntrinsicNode::LL) {
+      // Divide diff by 2 to get number of chars
+      sarl(cnt2, 1);
+    }
+    addq(result, cnt2);
+    if (ae == StrIntrinsicNode::LL) {
+      load_unsigned_byte(cnt1, Address(str2, result));
+      load_unsigned_byte(result, Address(str1, result));
+    } else if (ae == StrIntrinsicNode::UU) {
+      load_unsigned_short(cnt1, Address(str2, result, scale));
+      load_unsigned_short(result, Address(str1, result, scale));
+    } else {
+      load_unsigned_short(cnt1, Address(str2, result, scale2));
+      load_unsigned_byte(result, Address(str1, result, scale1));
+    }
+    subl(result, cnt1);
+    jmpb(POP_LABEL);
+  }//if (VM_Version::supports_avx512vlbw())
+#endif // _LP64
+
   // Discard the stored length difference
   bind(POP_LABEL);
   pop(cnt1);
@@ -8304,6 +8370,7 @@ void MacroAssembler::string_compare(Register str1, Register str2,
   if(ae == StrIntrinsicNode::UL) {
     negl(result);
   }
+
 }
 
 // Search for Non-ASCII character (Negative byte value) in a byte array,
@@ -9439,13 +9506,184 @@ void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Regi
   pop(tmp1);
 }
 
+void MacroAssembler::vectorized_mismatch(Register obja, Register objb, Register length, Register log2_array_indxscale,
+  Register result, Register tmp1, Register tmp2, XMMRegister rymm0, XMMRegister rymm1, XMMRegister rymm2){
+  assert(UseSSE42Intrinsics, "SSE4.2 must be enabled.");
+  Label VECTOR32_LOOP, VECTOR16_LOOP, VECTOR8_LOOP, VECTOR4_LOOP;
+  Label VECTOR16_TAIL, VECTOR8_TAIL, VECTOR4_TAIL;
+  Label VECTOR32_NOT_EQUAL, VECTOR16_NOT_EQUAL, VECTOR8_NOT_EQUAL, VECTOR4_NOT_EQUAL;
+  Label SAME_TILL_END, DONE;
+  Label BYTES_LOOP, BYTES_TAIL, BYTES_NOT_EQUAL;
+
+  //scale is in rcx in both Win64 and Unix
+  ShortBranchVerifier sbv(this);
+
+  shlq(length);
+  xorq(result, result);
+
+  cmpq(length, 8);
+  jcc(Assembler::equal, VECTOR8_LOOP);
+  jcc(Assembler::less, VECTOR4_TAIL);
+
+  if (UseAVX >= 2){
+
+    cmpq(length, 16);
+    jcc(Assembler::equal, VECTOR16_LOOP);
+    jcc(Assembler::less, VECTOR8_LOOP);
+
+    cmpq(length, 32);
+    jccb(Assembler::less, VECTOR16_TAIL);
+
+    subq(length, 32);
+    bind(VECTOR32_LOOP);
+    vmovdqu(rymm0, Address(obja, result));
+    vmovdqu(rymm1, Address(objb, result));
+    vpxor(rymm2, rymm0, rymm1, Assembler::AVX_256bit);
+    vptest(rymm2, rymm2);
+    jcc(Assembler::notZero, VECTOR32_NOT_EQUAL);//mismatch found
+    addq(result, 32);
+    subq(length, 32);
+    jccb(Assembler::greaterEqual, VECTOR32_LOOP);
+    addq(length, 32);
+    jcc(Assembler::equal, SAME_TILL_END);
+    //falling through if less than 32 bytes left //close the branch here.
+
+    bind(VECTOR16_TAIL);
+    cmpq(length, 16);
+    jccb(Assembler::less, VECTOR8_TAIL);
+    bind(VECTOR16_LOOP);
+    movdqu(rymm0, Address(obja, result));
+    movdqu(rymm1, Address(objb, result));
+    vpxor(rymm2, rymm0, rymm1, Assembler::AVX_128bit);
+    ptest(rymm2, rymm2);
+    jcc(Assembler::notZero, VECTOR16_NOT_EQUAL);//mismatch found
+    addq(result, 16);
+    subq(length, 16);
+    jcc(Assembler::equal, SAME_TILL_END);
+    //falling through if less than 16 bytes left
+  } else {//regular intrinsics
+
+    cmpq(length, 16);
+    jccb(Assembler::less, VECTOR8_TAIL);
+
+    subq(length, 16);
+    bind(VECTOR16_LOOP);
+    movdqu(rymm0, Address(obja, result));
+    movdqu(rymm1, Address(objb, result));
+    pxor(rymm0, rymm1);
+    ptest(rymm0, rymm0);
+    jcc(Assembler::notZero, VECTOR16_NOT_EQUAL);//mismatch found
+    addq(result, 16);
+    subq(length, 16);
+    jccb(Assembler::greaterEqual, VECTOR16_LOOP);
+    addq(length, 16);
+    jcc(Assembler::equal, SAME_TILL_END);
+    //falling through if less than 16 bytes left
+  }
+
+  bind(VECTOR8_TAIL);
+  cmpq(length, 8);
+  jccb(Assembler::less, VECTOR4_TAIL);
+  bind(VECTOR8_LOOP);
+  movq(tmp1, Address(obja, result));
+  movq(tmp2, Address(objb, result));
+  xorq(tmp1, tmp2);
+  testq(tmp1, tmp1);
+  jcc(Assembler::notZero, VECTOR8_NOT_EQUAL);//mismatch found
+  addq(result, 8);
+  subq(length, 8);
+  jcc(Assembler::equal, SAME_TILL_END);
+  //falling through if less than 8 bytes left
+
+  bind(VECTOR4_TAIL);
+  cmpq(length, 4);
+  jccb(Assembler::less, BYTES_TAIL);
+  bind(VECTOR4_LOOP);
+  movl(tmp1, Address(obja, result));
+  xorl(tmp1, Address(objb, result));
+  testl(tmp1, tmp1);
+  jcc(Assembler::notZero, VECTOR4_NOT_EQUAL);//mismatch found
+  addq(result, 4);
+  subq(length, 4);
+  jcc(Assembler::equal, SAME_TILL_END);
+  //falling through if less than 4 bytes left
+
+  bind(BYTES_TAIL);
+  bind(BYTES_LOOP);
+  load_unsigned_byte(tmp1, Address(obja, result));
+  load_unsigned_byte(tmp2, Address(objb, result));
+  xorl(tmp1, tmp2);
+  testl(tmp1, tmp1);
+  jccb(Assembler::notZero, BYTES_NOT_EQUAL);//mismatch found
+  decq(length);
+  jccb(Assembler::zero, SAME_TILL_END);
+  incq(result);
+  load_unsigned_byte(tmp1, Address(obja, result));
+  load_unsigned_byte(tmp2, Address(objb, result));
+  xorl(tmp1, tmp2);
+  testl(tmp1, tmp1);
+  jccb(Assembler::notZero, BYTES_NOT_EQUAL);//mismatch found
+  decq(length);
+  jccb(Assembler::zero, SAME_TILL_END);
+  incq(result);
+  load_unsigned_byte(tmp1, Address(obja, result));
+  load_unsigned_byte(tmp2, Address(objb, result));
+  xorl(tmp1, tmp2);
+  testl(tmp1, tmp1);
+  jccb(Assembler::notZero, BYTES_NOT_EQUAL);//mismatch found
+  jmpb(SAME_TILL_END);
+
+  if (UseAVX >= 2){
+    bind(VECTOR32_NOT_EQUAL);
+    vpcmpeqb(rymm2, rymm2, rymm2, Assembler::AVX_256bit);
+    vpcmpeqb(rymm0, rymm0, rymm1, Assembler::AVX_256bit);
+    vpxor(rymm0, rymm0, rymm2, Assembler::AVX_256bit);
+    vpmovmskb(tmp1, rymm0);
+    bsfq(tmp1, tmp1);
+    addq(result, tmp1);
+    shrq(result);
+    jmpb(DONE);
+  }
+
+  bind(VECTOR16_NOT_EQUAL);
+  if (UseAVX >= 2){
+    vpcmpeqb(rymm2, rymm2, rymm2, Assembler::AVX_128bit);
+    vpcmpeqb(rymm0, rymm0, rymm1, Assembler::AVX_128bit);
+    pxor(rymm0, rymm2);
+  } else {
+    pcmpeqb(rymm2, rymm2);
+    pxor(rymm0, rymm1);
+    pcmpeqb(rymm0, rymm1);
+    pxor(rymm0, rymm2);
+  }
+  pmovmskb(tmp1, rymm0);
+  bsfq(tmp1, tmp1);
+  addq(result, tmp1);
+  shrq(result);
+  jmpb(DONE);
+
+  bind(VECTOR8_NOT_EQUAL);
+  bind(VECTOR4_NOT_EQUAL);
+  bsfq(tmp1, tmp1);
+  shrq(tmp1, 3);
+  addq(result, tmp1);
+  bind(BYTES_NOT_EQUAL);
+  shrq(result);
+  jmpb(DONE);
+
+  bind(SAME_TILL_END);
+  mov64(result, -1);
+
+  bind(DONE);
+}
+
+
 //Helper functions for square_to_len()
 
 /**
  * Store the squares of x[], right shifted one bit (divided by 2) into z[]
  * Preserves x and z and modifies rest of the registers.
  */
-
 void MacroAssembler::square_rshift(Register x, Register xlen, Register z, Register tmp1, Register tmp3, Register tmp4, Register tmp5, Register rdxReg, Register raxReg) {
   // Perform square and right shift by 1
   // Handle odd xlen case first, then for even xlen do the following

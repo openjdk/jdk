@@ -223,6 +223,11 @@ void VM_Version::initialize() {
     UseMultiplyToLenIntrinsic = true;
   }
 
+  if (UseVectorizedMismatchIntrinsic) {
+    warning("UseVectorizedMismatchIntrinsic specified, but not available on this CPU.");
+    FLAG_SET_DEFAULT(UseVectorizedMismatchIntrinsic, false);
+  }
+
   // Adjust RTM (Restricted Transactional Memory) flags.
   if (!has_tcheck() && UseRTMLocking) {
     // Can't continue because UseRTMLocking affects UseBiasedLocking flag

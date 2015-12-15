@@ -170,7 +170,7 @@ class StubGenerator: public StubCodeGenerator {
     // provide initial value for required masks
     if (UseAVX > 2) {
       __ movl(rbx, 0xffff);
-      __ kmovdl(k1, rbx);
+      __ kmovwl(k1, rbx);
     }
 
     // save and initialize %mxcsr
@@ -798,7 +798,7 @@ class StubGenerator: public StubCodeGenerator {
     if (UseAVX > 2) {
       __ push(rbx);
       __ movl(rbx, 0xffff);
-      __ kmovdl(k1, rbx);
+      __ kmovwl(k1, rbx);
       __ pop(rbx);
     }
     // Copy 64-byte chunks
