@@ -113,6 +113,7 @@ class xmlStream;
 
 class nmethod : public CodeBlob {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
   friend class NMethodSweeper;
   friend class CodeCache;  // scavengable oops
  private:

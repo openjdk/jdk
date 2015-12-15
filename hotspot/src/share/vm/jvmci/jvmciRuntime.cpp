@@ -813,10 +813,6 @@ JVM_ENTRY(void, JVM_RegisterJVMCINatives(JNIEnv *env, jclass c2vmClass))
 
   {
     ThreadToNativeFromVM trans(thread);
-
-    // Ensure _non_oop_bits is initialized
-    Universe::non_oop_word();
-
     env->RegisterNatives(c2vmClass, CompilerToVM::methods, CompilerToVM::methods_count());
   }
 JVM_END
