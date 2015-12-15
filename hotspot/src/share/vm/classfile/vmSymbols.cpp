@@ -681,6 +681,9 @@ bool vmIntrinsics::is_disabled_by_flags(const methodHandle& method) {
   case vmIntrinsics::_montgomerySquare:
     if (!UseMontgomerySquareIntrinsic) return true;
     break;
+  case vmIntrinsics::_vectorizedMismatch:
+    if (!UseVectorizedMismatchIntrinsic) return true;
+    break;
   case vmIntrinsics::_addExactI:
   case vmIntrinsics::_addExactL:
   case vmIntrinsics::_decrementExactI:

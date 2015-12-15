@@ -31,6 +31,10 @@ const int BytesPerInstWord = 4;
 
 const int StackAlignmentInBytes = 16;
 
+// Indicates whether the C calling conventions require that
+// 32-bit integer argument values are extended to 64 bits.
+const bool CCallingConventionRequiresIntsAsLongs = true;
+
 #define SUPPORTS_NATIVE_CX8
 
 // The PPC CPUs are NOT multiple-copy-atomic.

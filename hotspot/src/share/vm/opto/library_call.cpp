@@ -312,6 +312,7 @@ class LibraryCallKit : public GraphKit {
   bool inline_mulAdd();
   bool inline_montgomeryMultiply();
   bool inline_montgomerySquare();
+  bool inline_vectorizedMismatch();
 
   bool inline_profileBoolean();
   bool inline_isCompileConstant();
@@ -719,6 +720,9 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_montgomeryMultiply();
   case vmIntrinsics::_montgomerySquare:
     return inline_montgomerySquare();
+
+  case vmIntrinsics::_vectorizedMismatch:
+    return inline_vectorizedMismatch();
 
   case vmIntrinsics::_ghash_processBlocks:
     return inline_ghash_processBlocks();
@@ -5581,6 +5585,50 @@ bool LibraryCallKit::inline_montgomerySquare() {
   return true;
 }
 
+//-------------inline_vectorizedMismatch------------------------------
+bool LibraryCallKit::inline_vectorizedMismatch() {
+  assert(UseVectorizedMismatchIntrinsic, "not implementated on this platform");
+
+  address stubAddr = StubRoutines::vectorizedMismatch();
+  if (stubAddr == NULL) {
+    return false; // Intrinsic's stub is not implemented on this platform
+  }
+  const char* stubName = "vectorizedMismatch";
+  int size_l = callee()->signature()->size();
+  assert(callee()->signature()->size() == 8, "vectorizedMismatch has 6 parameters");
+
+  Node* obja = argument(0);
+  Node* aoffset = argument(1);
+  Node* objb = argument(3);
+  Node* boffset = argument(4);
+  Node* length = argument(6);
+  Node* scale = argument(7);
+
+  const Type* a_type = obja->Value(&_gvn);
+  const Type* b_type = objb->Value(&_gvn);
+  const TypeAryPtr* top_a = a_type->isa_aryptr();
+  const TypeAryPtr* top_b = b_type->isa_aryptr();
+  if (top_a == NULL || top_a->klass() == NULL ||
+    top_b == NULL || top_b->klass() == NULL) {
+    // failed array check
+    return false;
+  }
+
+  Node* call;
+  jvms()->set_should_reexecute(true);
+
+  Node* obja_adr = make_unsafe_address(obja, aoffset);
+  Node* objb_adr = make_unsafe_address(objb, boffset);
+
+  call = make_runtime_call(RC_LEAF,
+    OptoRuntime::vectorizedMismatch_Type(),
+    stubAddr, stubName, TypePtr::BOTTOM,
+    obja_adr, objb_adr, length, scale);
+
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
+  return true;
+}
 
 /**
  * Calculate CRC32 for byte.
