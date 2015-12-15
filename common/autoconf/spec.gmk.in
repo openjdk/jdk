@@ -204,13 +204,12 @@ SUPPORT_HEADLESS:=@SUPPORT_HEADLESS@
 
 # These are the libjvms that we want to build.
 # The java launcher uses the default.
-# The others can be selected by specifying -client -server -minimal1 -kernel -zero or -zeroshark
+# The others can be selected by specifying -client -server -minimal1 -zero or -zeroshark
 # on the java launcher command line.
 JVM_VARIANTS:=@JVM_VARIANTS@
 JVM_VARIANT_SERVER:=@JVM_VARIANT_SERVER@
 JVM_VARIANT_CLIENT:=@JVM_VARIANT_CLIENT@
 JVM_VARIANT_MINIMAL1:=@JVM_VARIANT_MINIMAL1@
-JVM_VARIANT_KERNEL:=@JVM_VARIANT_KERNEL@
 JVM_VARIANT_ZERO:=@JVM_VARIANT_ZERO@
 JVM_VARIANT_ZEROSHARK:=@JVM_VARIANT_ZEROSHARK@
 JVM_VARIANT_CORE:=@JVM_VARIANT_CORE@
@@ -281,6 +280,8 @@ FREETYPE_BUNDLE_LIB_PATH=@FREETYPE_BUNDLE_LIB_PATH@
 CUPS_CFLAGS:=@CUPS_CFLAGS@
 ALSA_LIBS:=@ALSA_LIBS@
 ALSA_CFLAGS:=@ALSA_CFLAGS@
+LIBFFI_LIBS:=@LIBFFI_LIBS@
+LIBFFI_CFLAGS:=@LIBFFI_CFLAGS@
 
 PACKAGE_PATH=@PACKAGE_PATH@
 
@@ -301,10 +302,14 @@ MACOSX_VERSION_MIN=@MACOSX_VERSION_MIN@
 
 # Toolchain type: gcc, clang, solstudio, lxc, microsoft...
 TOOLCHAIN_TYPE:=@TOOLCHAIN_TYPE@
+TOOLCHAIN_VERSION := @TOOLCHAIN_VERSION@
 
 # Option used to tell the compiler whether to create 32- or 64-bit executables
 COMPILER_TARGET_BITS_FLAG:=@COMPILER_TARGET_BITS_FLAG@
 COMPILER_SUPPORTS_TARGET_BITS_FLAG=@COMPILER_SUPPORTS_TARGET_BITS_FLAG@
+
+# Option used to pass a command file to the compiler
+COMPILER_COMMAND_FILE_FLAG:=@COMPILER_COMMAND_FILE_FLAG@
 
 CC_OUT_OPTION:=@CC_OUT_OPTION@
 EXE_OUT_OPTION:=@EXE_OUT_OPTION@
@@ -389,6 +394,7 @@ LDFLAGS_TESTEXE:=@LDFLAGS_TESTEXE@
 BUILD_CC:=@FIXPATH@ @BUILD_ICECC@ @BUILD_CC@
 BUILD_CXX:=@FIXPATH@ @BUILD_ICECC@ @BUILD_CXX@
 BUILD_LD:=@FIXPATH@ @BUILD_LD@
+BUILD_LDCXX:=@FIXPATH@ @BUILD_LDCXX@
 BUILD_AS:=@FIXPATH@ @BUILD_AS@
 BUILD_AR:=@FIXPATH@ @BUILD_AR@
 BUILD_NM:=@FIXPATH@ @BUILD_NM@
@@ -433,6 +439,8 @@ COMPRESS_JARS=@COMPRESS_JARS@
 # Options to linker to specify the library name.
 # (Note absence of := assignment, because we do not want to evaluate the macro body here)
 SET_SHARED_LIBRARY_NAME=@SET_SHARED_LIBRARY_NAME@
+
+SHARED_LIBRARY_FLAGS=@SHARED_LIBRARY_FLAGS@
 
 # Set origin using the linker, ie use the relative path to the dependent library to find the dependees.
 # (Note absence of := assignment, because we do not want to evaluate the macro body here)
@@ -650,9 +658,6 @@ PNG_CFLAGS:=@PNG_CFLAGS@
 #
 # Misc
 #
-
-# Name of Service Agent library
-SALIB_NAME=@SALIB_NAME@
 
 INCLUDE_SA=@INCLUDE_SA@
 
