@@ -290,7 +290,7 @@ private:
   void verify_before_gc();
   void verify_after_gc();
 
-  void log_gc_footer(double pause_time_counter);
+  void log_gc_footer(jlong pause_time_counter);
 
   void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 

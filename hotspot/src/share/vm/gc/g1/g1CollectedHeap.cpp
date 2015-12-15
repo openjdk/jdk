@@ -3600,13 +3600,13 @@ void G1CollectedHeap::reset_taskqueue_stats() {
 }
 #endif // TASKQUEUE_STATS
 
-void G1CollectedHeap::log_gc_footer(double pause_time_counter) {
+void G1CollectedHeap::log_gc_footer(jlong pause_time_counter) {
   if (evacuation_failed()) {
     log_info(gc)("To-space exhausted");
   }
 
-  double pause_time_sec = TimeHelper::counter_to_seconds(pause_time_counter);
-  g1_policy()->print_phases(pause_time_sec);
+  double pause_time_ms = TimeHelper::counter_to_millis(pause_time_counter);
+  g1_policy()->print_phases(pause_time_ms);
 
   g1_policy()->print_detailed_heap_transition();
 }
@@ -3698,8 +3698,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     }
     GCTraceTime(Info, gc) tm(gc_string, NULL, gc_cause(), true);
 
-    double pause_start_sec = os::elapsedTime();
-    double pause_start_counter = os::elapsed_counter();
+    jlong pause_start_counter = os::elapsed_counter();
     g1_policy()->note_gc_start(active_workers);
 
     TraceCollectorStats tcs(g1mm()->incremental_collection_counters());

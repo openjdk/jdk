@@ -1299,8 +1299,8 @@ void G1CollectorPolicy::print_detailed_heap_transition() const {
   MetaspaceAux::print_metaspace_change(_metaspace_used_bytes_before_gc);
 }
 
-void G1CollectorPolicy::print_phases(double pause_time_sec) {
-  phase_times()->print(pause_time_sec);
+void G1CollectorPolicy::print_phases(double pause_time_ms) {
+  phase_times()->print(pause_time_ms);
 }
 
 void G1CollectorPolicy::adjust_concurrent_refinement(double update_rs_time,
