@@ -3484,10 +3484,14 @@ int Matcher::regnum_to_fpu_offset(int regnum)
   return 0;
 }
 
-bool Matcher::is_short_branch_offset(int rule, int br_size, int offset)
-{
-  Unimplemented();
-  return false;
+// Is this branch offset short enough that a short branch can be used?
+//
+// NOTE: If the platform does not provide any short branch variants, then
+//       this method should return false for offset 0.
+bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
+  // The passed offset is relative to address of the branch.
+
+  return (-32768 <= offset && offset < 32768);
 }
 
 const bool Matcher::isSimpleConstant64(jlong value) {
@@ -13845,7 +13849,8 @@ instruct cmpP_narrowOop_imm0_branch(cmpOp cmp, iRegN oop, immP0 zero, label labl
 
 // Test bit and Branch
 
-instruct cmpL_branch_sign(cmpOp cmp, iRegL op1, immL0 op2, label labl, rFlagsReg cr) %{
+// Patterns for short (< 32KiB) variants
+instruct cmpL_branch_sign(cmpOp cmp, iRegL op1, immL0 op2, label labl) %{
   match(If cmp (CmpL op1 op2));
   predicate(n->in(1)->as_Bool()->_test._test == BoolTest::lt
             || n->in(1)->as_Bool()->_test._test == BoolTest::ge);
@@ -13855,16 +13860,15 @@ instruct cmpL_branch_sign(cmpOp cmp, iRegL op1, immL0 op2, label labl, rFlagsReg
   format %{ "cb$cmp   $op1, $labl # long" %}
   ins_encode %{
     Label* L = $labl$$label;
-    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
-    if (cond == Assembler::LT)
-      __ tbnz($op1$$Register, 63, *L);
-    else
-      __ tbz($op1$$Register, 63, *L);
+    Assembler::Condition cond =
+      ((Assembler::Condition)$cmp$$cmpcode == Assembler::LT) ? Assembler::NE : Assembler::EQ;
+    __ tbr(cond, $op1$$Register, 63, *L);
   %}
   ins_pipe(pipe_cmp_branch);
+  ins_short_branch(1);
 %}
 
-instruct cmpI_branch_sign(cmpOp cmp, iRegIorL2I op1, immI0 op2, label labl, rFlagsReg cr) %{
+instruct cmpI_branch_sign(cmpOp cmp, iRegIorL2I op1, immI0 op2, label labl) %{
   match(If cmp (CmpI op1 op2));
   predicate(n->in(1)->as_Bool()->_test._test == BoolTest::lt
             || n->in(1)->as_Bool()->_test._test == BoolTest::ge);
@@ -13874,16 +13878,15 @@ instruct cmpI_branch_sign(cmpOp cmp, iRegIorL2I op1, immI0 op2, label labl, rFla
   format %{ "cb$cmp   $op1, $labl # int" %}
   ins_encode %{
     Label* L = $labl$$label;
-    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
-    if (cond == Assembler::LT)
-      __ tbnz($op1$$Register, 31, *L);
-    else
-      __ tbz($op1$$Register, 31, *L);
+    Assembler::Condition cond =
+      ((Assembler::Condition)$cmp$$cmpcode == Assembler::LT) ? Assembler::NE : Assembler::EQ;
+    __ tbr(cond, $op1$$Register, 31, *L);
   %}
   ins_pipe(pipe_cmp_branch);
+  ins_short_branch(1);
 %}
 
-instruct cmpL_branch_bit(cmpOp cmp, iRegL op1, immL op2, immL0 op3, label labl, rFlagsReg cr) %{
+instruct cmpL_branch_bit(cmpOp cmp, iRegL op1, immL op2, immL0 op3, label labl) %{
   match(If cmp (CmpL (AndL op1 op2) op3));
   predicate((n->in(1)->as_Bool()->_test._test == BoolTest::ne
             || n->in(1)->as_Bool()->_test._test == BoolTest::eq)
@@ -13896,15 +13899,13 @@ instruct cmpL_branch_bit(cmpOp cmp, iRegL op1, immL op2, immL0 op3, label labl, 
     Label* L = $labl$$label;
     Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
     int bit = exact_log2($op2$$constant);
-    if (cond == Assembler::EQ)
-      __ tbz($op1$$Register, bit, *L);
-    else
-      __ tbnz($op1$$Register, bit, *L);
+    __ tbr(cond, $op1$$Register, bit, *L);
   %}
   ins_pipe(pipe_cmp_branch);
+  ins_short_branch(1);
 %}
 
-instruct cmpI_branch_bit(cmpOp cmp, iRegIorL2I op1, immI op2, immI0 op3, label labl, rFlagsReg cr) %{
+instruct cmpI_branch_bit(cmpOp cmp, iRegIorL2I op1, immI op2, immI0 op3, label labl) %{
   match(If cmp (CmpI (AndI op1 op2) op3));
   predicate((n->in(1)->as_Bool()->_test._test == BoolTest::ne
             || n->in(1)->as_Bool()->_test._test == BoolTest::eq)
@@ -13917,10 +13918,79 @@ instruct cmpI_branch_bit(cmpOp cmp, iRegIorL2I op1, immI op2, immI0 op3, label l
     Label* L = $labl$$label;
     Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
     int bit = exact_log2($op2$$constant);
-    if (cond == Assembler::EQ)
-      __ tbz($op1$$Register, bit, *L);
-    else
-      __ tbnz($op1$$Register, bit, *L);
+    __ tbr(cond, $op1$$Register, bit, *L);
+  %}
+  ins_pipe(pipe_cmp_branch);
+  ins_short_branch(1);
+%}
+
+// And far variants
+instruct far_cmpL_branch_sign(cmpOp cmp, iRegL op1, immL0 op2, label labl) %{
+  match(If cmp (CmpL op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::lt
+            || n->in(1)->as_Bool()->_test._test == BoolTest::ge);
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "cb$cmp   $op1, $labl # long" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond =
+      ((Assembler::Condition)$cmp$$cmpcode == Assembler::LT) ? Assembler::NE : Assembler::EQ;
+    __ tbr(cond, $op1$$Register, 63, *L, /*far*/true);
+  %}
+  ins_pipe(pipe_cmp_branch);
+%}
+
+instruct far_cmpI_branch_sign(cmpOp cmp, iRegIorL2I op1, immI0 op2, label labl) %{
+  match(If cmp (CmpI op1 op2));
+  predicate(n->in(1)->as_Bool()->_test._test == BoolTest::lt
+            || n->in(1)->as_Bool()->_test._test == BoolTest::ge);
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "cb$cmp   $op1, $labl # int" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond =
+      ((Assembler::Condition)$cmp$$cmpcode == Assembler::LT) ? Assembler::NE : Assembler::EQ;
+    __ tbr(cond, $op1$$Register, 31, *L, /*far*/true);
+  %}
+  ins_pipe(pipe_cmp_branch);
+%}
+
+instruct far_cmpL_branch_bit(cmpOp cmp, iRegL op1, immL op2, immL0 op3, label labl) %{
+  match(If cmp (CmpL (AndL op1 op2) op3));
+  predicate((n->in(1)->as_Bool()->_test._test == BoolTest::ne
+            || n->in(1)->as_Bool()->_test._test == BoolTest::eq)
+            && is_power_of_2(n->in(2)->in(1)->in(2)->get_long()));
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "tb$cmp   $op1, $op2, $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
+    int bit = exact_log2($op2$$constant);
+    __ tbr(cond, $op1$$Register, bit, *L, /*far*/true);
+  %}
+  ins_pipe(pipe_cmp_branch);
+%}
+
+instruct far_cmpI_branch_bit(cmpOp cmp, iRegIorL2I op1, immI op2, immI0 op3, label labl) %{
+  match(If cmp (CmpI (AndI op1 op2) op3));
+  predicate((n->in(1)->as_Bool()->_test._test == BoolTest::ne
+            || n->in(1)->as_Bool()->_test._test == BoolTest::eq)
+            && is_power_of_2(n->in(2)->in(1)->in(2)->get_int()));
+  effect(USE labl);
+
+  ins_cost(BRANCH_COST);
+  format %{ "tb$cmp   $op1, $op2, $labl" %}
+  ins_encode %{
+    Label* L = $labl$$label;
+    Assembler::Condition cond = (Assembler::Condition)$cmp$$cmpcode;
+    int bit = exact_log2($op2$$constant);
+    __ tbr(cond, $op1$$Register, bit, *L, /*far*/true);
   %}
   ins_pipe(pipe_cmp_branch);
 %}
