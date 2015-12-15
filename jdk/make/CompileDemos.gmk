@@ -309,7 +309,7 @@ define SetupBuildJvmtiDemoBody
 
   ifeq ($$($1_TOOLCHAIN), TOOLCHAIN_LINK_CXX)
     # For C++, we also need some special treatment.
-    $1_LDFLAGS := $(LDFLAGS_CXX_JDK)
+    $1_LDFLAGS := $$(LDFLAGS_CXX_JDK)
     $1_LIBS := $(LIBCXX)
 
     ifeq ($(OPENJDK_TARGET_CPU_ARCH), sparc)
@@ -324,9 +324,9 @@ define SetupBuildJvmtiDemoBody
       OPTIMIZATION := LOW, \
       CFLAGS := $$($1_CFLAGS_INCLUDE) $$(CFLAGS_JDKLIB) $$(CFLAGS_DEBUG_SYMBOLS), \
       CXXFLAGS := $$($1_CXXFLAGS), \
-      LDFLAGS := $(filter-out -incremental:no -opt:ref, $(LDFLAGS_JDKLIB)) \
+      LDFLAGS := $(filter-out -incremental:no -opt:ref, $$(LDFLAGS_JDKLIB)) \
           $$($1_LDFLAGS), \
-      LDFLAGS_macosx := $(call SET_EXECUTABLE_ORIGIN), \
+      LDFLAGS_macosx := $$(call SET_EXECUTABLE_ORIGIN), \
       LIBS := $$($1_LIBS), \
       LIBS_solaris := -lc, \
       VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
