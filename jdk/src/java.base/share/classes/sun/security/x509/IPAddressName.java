@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.lang.Integer;
 import java.net.InetAddress;
 import java.util.Arrays;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import sun.security.util.BitArray;
 import sun.security.util.DerOutputStream;
 import sun.security.util.DerValue;

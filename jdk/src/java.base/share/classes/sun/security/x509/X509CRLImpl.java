@@ -49,7 +49,7 @@ import javax.security.auth.x500.X500Principal;
 
 import sun.security.provider.X509Factory;
 import sun.security.util.*;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 /**
  * <p>

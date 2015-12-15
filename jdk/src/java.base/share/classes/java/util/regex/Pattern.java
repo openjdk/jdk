@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -5814,7 +5814,7 @@ NEXT:       while (i <= last) {
      */
     public Stream<String> splitAsStream(final CharSequence input) {
         class MatcherIterator implements Iterator<String> {
-            private final Matcher matcher;
+            private Matcher matcher;
             // The start position of the next sub-sequence of input
             // when current == input.length there are no more elements
             private int current;
@@ -5822,14 +5822,6 @@ NEXT:       while (i <= last) {
             private String nextElement;
             // > 0 if there are N next empty elements
             private int emptyElementCount;
-
-            MatcherIterator() {
-                this.matcher = matcher(input);
-                // If the input is an empty string then the result can only be a
-                // stream of the input.  Induce that by setting the empty
-                // element count to 1
-                this.emptyElementCount = input.length() == 0 ? 1 : 0;
-            }
 
             public String next() {
                 if (!hasNext())
@@ -5846,6 +5838,13 @@ NEXT:       while (i <= last) {
             }
 
             public boolean hasNext() {
+                if (matcher == null) {
+                    matcher = matcher(input);
+                    // If the input is an empty string then the result can only be a
+                    // stream of the input.  Induce that by setting the empty
+                    // element count to 1
+                    emptyElementCount = input.length() == 0 ? 1 : 0;
+                }
                 if (nextElement != null || emptyElementCount > 0)
                     return true;
 

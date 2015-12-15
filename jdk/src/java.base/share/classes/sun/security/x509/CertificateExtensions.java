@@ -33,7 +33,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.cert.CertificateException;
 import java.util.*;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 import sun.security.util.*;
 
@@ -376,6 +376,6 @@ class UnparseableExtension extends Extension {
     @Override public String toString() {
         return super.toString() +
                 "Unparseable " + name + "extension due to\n" + why + "\n\n" +
-                new sun.misc.HexDumpEncoder().encodeBuffer(getExtensionValue());
+                new HexDumpEncoder().encodeBuffer(getExtensionValue());
     }
 }
