@@ -646,6 +646,7 @@ JAVA_FLAGS_SMALL
 JAVA_FLAGS_JAVAC
 JAVA_FLAGS_BIG
 JAVA_FLAGS
+TEST_JOBS
 JOBS
 MEMORY_SIZE
 NUM_CORES
@@ -1142,6 +1143,7 @@ with_dxsdk_include
 with_num_cores
 with_memory_size
 with_jobs
+with_test_jobs
 with_boot_jdk_jvmargs
 with_sjavac_server_java
 enable_sjavac
@@ -2061,6 +2063,8 @@ Optional Packages:
                           --with-memory-size=1024 [probed]
   --with-jobs             number of parallel jobs to let make run [calculated
                           based on cores and memory]
+  --with-test-jobs        number of parallel tests jobs to run [based on build
+                          jobs]
   --with-boot-jdk-jvmargs specify JVM arguments to be passed to all java
                           invocations of boot JDK, overriding the default
                           values, e.g --with-boot-jdk-jvmargs="-Xmx8G
@@ -3747,7 +3751,7 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 #
-# Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -3770,6 +3774,8 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
+
+
 
 
 
@@ -4728,7 +4734,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1449850507
+DATE_WHEN_GENERATED=1450172823
 
 ###############################################################################
 #
@@ -57249,6 +57255,21 @@ $as_echo_n "checking for appropriate number of jobs to run in parallel... " >&6;
 $as_echo "$JOBS" >&6; }
   else
     JOBS=$with_jobs
+  fi
+
+
+
+  # The number of test jobs will be chosen automatically if TEST_JOBS is 0
+
+# Check whether --with-test-jobs was given.
+if test "${with_test_jobs+set}" = set; then :
+  withval=$with_test_jobs;
+fi
+
+  if test "x$with_test_jobs" = x; then
+      TEST_JOBS=0
+  else
+      TEST_JOBS=$with_test_jobs
   fi
 
 

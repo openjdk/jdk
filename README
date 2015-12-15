@@ -6,7 +6,7 @@ README:
 
   The root repository can be obtained with something like:
     hg clone http://hg.openjdk.java.net/jdk9/jdk9 openjdk9
-  
+
   You can run the get_source.sh script located in the root repository to get
   the other needed repositories:
     cd openjdk9 && sh ./get_source.sh
@@ -17,7 +17,7 @@ README:
   See http://openjdk.java.net/ for more information about OpenJDK.
 
 Simple Build Instructions:
-  
+
   0. Get the necessary system software/packages installed on your system, see
      http://hg.openjdk.java.net/jdk9/jdk9/raw-file/tip/README-builds.html
 
@@ -28,10 +28,10 @@ Simple Build Instructions:
 
   2. Configure the build:
        bash ./configure
-  
+
   3. Build the OpenJDK:
        make all
-     The resulting JDK image should be found in build/*/images/j2sdk-image
+     The resulting JDK image should be found in build/*/images/jdk
 
 where make is GNU make 3.81 or newer, /usr/bin/make on Linux usually
 is 3.81 or newer. Note that on Solaris, GNU make is called "gmake".
