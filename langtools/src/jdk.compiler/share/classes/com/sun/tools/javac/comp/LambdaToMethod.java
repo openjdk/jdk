@@ -931,7 +931,7 @@ public class LambdaToMethod extends TreeTranslator {
         private JCExpression makeReceiver(VarSymbol rcvr) {
             if (rcvr == null) return null;
             JCExpression rcvrExpr = make.Ident(rcvr);
-            Type rcvrType = tree.sym.enclClass().type;
+            Type rcvrType = tree.ownerAccessible ? tree.sym.enclClass().type : tree.expr.type;
             if (rcvrType == syms.arrayClass.type) {
                 // Map the receiver type to the actually type, not just "array"
                 rcvrType = tree.getQualifierExpression().type;
@@ -2037,7 +2037,7 @@ public class LambdaToMethod extends TreeTranslator {
                         };
                         break;
                     case CAPTURED_OUTER_THIS:
-                        Name name = names.fromString(new String(sym.flatName().toString() + names.dollarThis));
+                        Name name = names.fromString(new String(sym.flatName().toString().replace('.', '$') + names.dollarThis));
                         ret = new VarSymbol(SYNTHETIC | FINAL | PARAMETER, name, types.erasure(sym.type), translatedSym) {
                             @Override
                             public Symbol baseSymbol() {

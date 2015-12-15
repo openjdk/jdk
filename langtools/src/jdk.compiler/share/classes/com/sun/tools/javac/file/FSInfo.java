@@ -48,7 +48,7 @@ public class FSInfo {
         try {
             return file.toRealPath();
         } catch (IOException e) {
-            return file.toAbsolutePath();
+            return file.toAbsolutePath().normalize();
         }
     }
 

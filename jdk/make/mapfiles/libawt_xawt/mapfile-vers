@@ -214,6 +214,7 @@ SUNWprivate_1.1 {
         Java_sun_awt_X11GraphicsDevice_enumDisplayModes;
         Java_sun_awt_X11GraphicsDevice_configDisplayMode;
         Java_sun_awt_X11GraphicsDevice_resetNativeData;
+        Java_sun_awt_X11GraphicsDevice_getNativeScaleFactor;
         Java_sun_awt_X11GraphicsConfig_initIDs;
         Java_sun_awt_X11GraphicsConfig_getXResolution;
         Java_sun_awt_X11GraphicsConfig_getYResolution;

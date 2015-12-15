@@ -159,6 +159,7 @@ public:
   uint max_desired_young_length() {
     return _max_desired_young_length;
   }
+
   bool adaptive_young_list_length() const {
     return _adaptive_size;
   }
@@ -201,6 +202,11 @@ class G1CollectorPolicy: public CollectorPolicy {
   TruncatedSeq* _concurrent_mark_remark_times_ms;
   TruncatedSeq* _concurrent_mark_cleanup_times_ms;
 
+  // Ratio check data for determining if heap growth is necessary.
+  uint _ratio_over_threshold_count;
+  double _ratio_over_threshold_sum;
+  uint _pauses_since_start;
+
   TraceYoungGenTimeData _trace_young_gen_time_data;
   TraceOldGenTimeData   _trace_old_gen_time_data;
 
@@ -224,7 +230,11 @@ class G1CollectorPolicy: public CollectorPolicy {
 
   enum PredictionConstants {
     TruncatedSeqLength = 10,
-    NumPrevPausesForHeuristics = 10
+    NumPrevPausesForHeuristics = 10,
+    // MinOverThresholdForGrowth must be less than NumPrevPausesForHeuristics,
+    // representing the minimum number of pause time ratios that exceed
+    // GCTimeRatio before a heap expansion will be triggered.
+    MinOverThresholdForGrowth = 4
   };
 
   TruncatedSeq* _alloc_rate_ms_seq;
@@ -483,8 +493,10 @@ private:
 
   G1GCPhaseTimes* _phase_times;
 
-  // The ratio of gc time to elapsed time, computed over recent pauses.
+  // The ratio of gc time to elapsed time, computed over recent pauses,
+  // and the ratio for just the last pause.
   double _recent_avg_pause_time_ratio;
+  double _last_pause_time_ratio;
 
   double recent_avg_pause_time_ratio() const {
     return _recent_avg_pause_time_ratio;
@@ -492,7 +504,6 @@ private:
 
   // This set of variables tracks the collector efficiency, in order to
   // determine whether we should initiate a new marking.
-  double _cur_mark_stop_world_time_ms;
   double _mark_remark_start_sec;
   double _mark_cleanup_start_sec;
 
@@ -648,11 +659,9 @@ public:
 
   // Print heap sizing transition (with less and more detail).
 
-  void print_heap_transition(size_t bytes_before) const;
-  void print_heap_transition() const;
-  void print_detailed_heap_transition(bool full = false) const;
+  void print_detailed_heap_transition() const;
 
-  virtual void print_phases(double pause_time_sec);
+  virtual void print_phases(double pause_time_ms);
 
   void record_stop_world_start();
   void record_concurrent_pause();
@@ -761,7 +770,10 @@ public:
 
   // If an expansion would be appropriate, because recent GC overhead had
   // exceeded the desired limit, return an amount to expand by.
-  virtual size_t expansion_amount() const;
+  virtual size_t expansion_amount();
+
+  // Clear ratio tracking data used by expansion_amount().
+  void clear_ratio_check_data();
 
   // Print tracing information.
   void print_tracing_info() const;
@@ -814,6 +826,8 @@ private:
 
   size_t _eden_used_bytes_before_gc;         // Eden occupancy before GC
   size_t _survivor_used_bytes_before_gc;     // Survivor occupancy before GC
+  size_t _old_used_bytes_before_gc;          // Old occupancy before GC
+  size_t _humongous_used_bytes_before_gc;    // Humongous occupancy before GC
   size_t _heap_used_bytes_before_gc;         // Heap occupancy before GC
   size_t _metaspace_used_bytes_before_gc;    // Metaspace occupancy before GC
 

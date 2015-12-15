@@ -26,6 +26,10 @@
 #ifndef CPU_PPC_VM_GLOBALDEFINITIONS_PPC_HPP
 #define CPU_PPC_VM_GLOBALDEFINITIONS_PPC_HPP
 
+#ifdef CC_INTERP
+#error "CC_INTERP no more supported. Removed in change 8145117."
+#endif
+
 // Size of PPC Instructions
 const int BytesPerInstWord = 4;
 
@@ -35,5 +39,10 @@ const int StackAlignmentInBytes = 16;
 
 // The PPC CPUs are NOT multiple-copy-atomic.
 #define CPU_NOT_MULTIPLE_COPY_ATOMIC
+
+#if defined(COMPILER2) && defined(AIX)
+// Include Transactional Memory lock eliding optimization
+#define INCLUDE_RTM_OPT 1
+#endif
 
 #endif // CPU_PPC_VM_GLOBALDEFINITIONS_PPC_HPP

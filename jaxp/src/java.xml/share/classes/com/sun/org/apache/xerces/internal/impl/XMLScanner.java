@@ -784,7 +784,7 @@ public abstract class XMLScanner
                 if (XMLChar.isHighSurrogate(c)) {
                     scanSurrogates(text);
                 }
-                if (isInvalidLiteral(c)) {
+                else if (isInvalidLiteral(c)) {
                     reportFatalError("InvalidCharInComment",
                             new Object[] { Integer.toHexString(c) });
                             fEntityScanner.scanChar();
@@ -1384,6 +1384,14 @@ public abstract class XMLScanner
     protected boolean isValidNameStartChar(int value) {
         return (XMLChar.isNameStart(value));
     } // isValidNameStartChar(int):  boolean
+
+    // returns true if the given character is
+    // a valid high surrogate for a nameStartChar
+    // with respect to the version of XML understood
+    // by this scanner.
+    protected boolean isValidNameStartHighSurrogate(int value) {
+        return false;
+    } // isValidNameStartHighSurrogate(int):  boolean
 
     protected boolean versionSupported(String version ) {
         return version.equals("1.0") || version.equals("1.1");

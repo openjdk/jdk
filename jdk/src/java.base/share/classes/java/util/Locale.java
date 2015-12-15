@@ -1248,7 +1248,7 @@ public final class Locale implements Cloneable, Serializable {
      * object, consisting of language, country, variant, script,
      * and extensions as below:
      * <blockquote>
-     * language + "_" + country + "_" + (variant + "_#" | "#") + script + "-" + extensions
+     * language + "_" + country + "_" + (variant + "_#" | "#") + script + "_" + extensions
      * </blockquote>
      *
      * Language is always lower case, country is always upper case, script is always title
@@ -1278,7 +1278,7 @@ public final class Locale implements Cloneable, Serializable {
      * <li>{@code en_US_WIN}</li>
      * <li>{@code de__POSIX}</li>
      * <li>{@code zh_CN_#Hans}</li>
-     * <li>{@code zh_TW_#Hant-x-java}</li>
+     * <li>{@code zh_TW_#Hant_x-java}</li>
      * <li>{@code th_TH_TH_#u-nu-thai}</li></ul>
      *
      * @return A string representation of the Locale, for debugging.

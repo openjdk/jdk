@@ -83,6 +83,8 @@ public final class XDragSourceContextPeer
     private long[] sourceFormats = null;
     /* The XID of the root subwindow that contains the current target. */
     private long targetRootSubwindow = 0;
+    /* window scale factor */
+    int windowScale = 1;
     /* The pointer location. */
     private int xRoot = 0;
     private int yRoot = 0;
@@ -130,8 +132,8 @@ public final class XDragSourceContextPeer
 
         long xcursor = 0;
         long rootWindow = 0;
-        long dragWindow = 0;
         long timeStamp = 0;
+        windowScale = wpeer.getScale();
 
         /* Retrieve the X cursor for the drag operation. */
         {
@@ -155,8 +157,6 @@ public final class XDragSourceContextPeer
                 long screen = XlibWrapper.XScreenNumberOfScreen(wpeer.getScreen());
                 rootWindow = XlibWrapper.RootWindow(XToolkit.getDisplay(), screen);
             }
-
-            dragWindow = XWindow.getXAWTRootWindow().getWindow();
 
             timeStamp = XToolkit.getCurrentServerTime();
 
@@ -441,8 +441,8 @@ public final class XDragSourceContextPeer
     private void updateTargetWindow(XMotionEvent xmotion) {
         assert XToolkit.isAWTLockHeldByCurrentThread();
 
-        int x = xmotion.get_x_root();
-        int y = xmotion.get_y_root();
+        int x = scaleDown(xmotion.get_x_root());
+        int y = scaleDown(xmotion.get_y_root());
         long time = xmotion.get_time();
         long subwindow = xmotion.get_subwindow();
 
@@ -498,9 +498,13 @@ public final class XDragSourceContextPeer
         if (!dragInProgress) {
             return;
         }
-        if (xRoot != xmotion.get_x_root() || yRoot != xmotion.get_y_root()) {
-            xRoot = xmotion.get_x_root();
-            yRoot = xmotion.get_y_root();
+
+        int motionXRoot = scaleDown(xmotion.get_x_root());
+        int motionYRoot = scaleDown(xmotion.get_y_root());
+
+        if (xRoot != motionXRoot || yRoot != motionYRoot) {
+            xRoot = motionXRoot;
+            yRoot = motionYRoot;
 
             postDragSourceDragEvent(targetAction,
                                     XWindow.getModifiers(xmotion.get_state(),0,0),
@@ -519,8 +523,8 @@ public final class XDragSourceContextPeer
         updateTargetWindow(xmotion);
 
         if (dragProtocol != null) {
-            dragProtocol.sendMoveMessage(xmotion.get_x_root(),
-                                         xmotion.get_y_root(),
+            dragProtocol.sendMoveMessage(scaleDown(xmotion.get_x_root()),
+                                         scaleDown(xmotion.get_y_root()),
                                          sourceAction, sourceActions,
                                          xmotion.get_time());
         }
@@ -528,8 +532,8 @@ public final class XDragSourceContextPeer
 
     private void processDrop(XButtonEvent xbutton) {
         try {
-            dragProtocol.initiateDrop(xbutton.get_x_root(),
-                                      xbutton.get_y_root(),
+            dragProtocol.initiateDrop(scaleDown(xbutton.get_x_root()),
+                                      scaleDown(xbutton.get_y_root()),
                                       sourceAction, sourceActions,
                                       xbutton.get_time());
         } catch (XException e) {
@@ -804,5 +808,13 @@ public final class XDragSourceContextPeer
 
         dndInProgress = false;
         cleanup(XConstants.CurrentTime);
+    }
+
+    public int scaleUp(int x) {
+        return x * windowScale;
+    }
+
+    public int scaleDown(int x) {
+        return x / windowScale;
     }
 }

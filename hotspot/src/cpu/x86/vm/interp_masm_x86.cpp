@@ -1023,6 +1023,25 @@ void InterpreterMacroAssembler::remove_activation(
   // get sender sp
   movptr(rbx,
          Address(rbp, frame::interpreter_frame_sender_sp_offset * wordSize));
+  if (StackReservedPages > 0) {
+    // testing if reserved zone needs to be re-enabled
+    Register rthread = LP64_ONLY(r15_thread) NOT_LP64(rcx);
+    Label no_reserved_zone_enabling;
+
+    NOT_LP64(get_thread(rthread);)
+
+    cmpptr(rbx, Address(rthread, JavaThread::reserved_stack_activation_offset()));
+    jcc(Assembler::lessEqual, no_reserved_zone_enabling);
+
+    call_VM_leaf(
+      CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), rthread);
+    push(rthread);
+    call_VM(noreg, CAST_FROM_FN_PTR(address,
+                   InterpreterRuntime::throw_delayed_StackOverflowError));
+    should_not_reach_here();
+
+    bind(no_reserved_zone_enabling);
+  }
   leave();                           // remove frame anchor
   pop(ret_addr);                     // get return address
   mov(rsp, rbx);                     // set sp to sender sp

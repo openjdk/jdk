@@ -141,8 +141,11 @@ public class Main {
         JavacFileManager.preRegister(context); // can't create it until Log has been set up
         Result result = compile(args, context);
         if (fileManager instanceof JavacFileManager) {
-            // A fresh context was created above, so jfm must be a JavacFileManager
-            ((JavacFileManager)fileManager).close();
+            try {
+                // A fresh context was created above, so jfm must be a JavacFileManager
+                ((JavacFileManager)fileManager).close();
+            } catch (IOException ignore) {
+            }
         }
         return result;
     }

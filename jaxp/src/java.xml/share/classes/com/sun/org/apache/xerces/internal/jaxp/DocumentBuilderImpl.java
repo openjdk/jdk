@@ -184,13 +184,11 @@ public class DocumentBuilderImpl extends DocumentBuilder
              */
             if (features != null) {
                 Boolean temp = features.get(XMLConstants.FEATURE_SECURE_PROCESSING);
-                if (temp != null) {
-                    if (temp && Constants.IS_JDK8_OR_ABOVE) {
-                        fSecurityPropertyMgr.setValue(Property.ACCESS_EXTERNAL_DTD,
-                                State.FSP, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
-                        fSecurityPropertyMgr.setValue(Property.ACCESS_EXTERNAL_SCHEMA,
-                                State.FSP, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
-                    }
+                if (temp != null && temp) {
+                    fSecurityPropertyMgr.setValue(Property.ACCESS_EXTERNAL_DTD,
+                            State.FSP, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
+                    fSecurityPropertyMgr.setValue(Property.ACCESS_EXTERNAL_SCHEMA,
+                            State.FSP, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
                 }
             }
         }

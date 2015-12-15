@@ -63,9 +63,12 @@ import static sun.java2d.d3d.D3DContext.D3DContextCaps.*;
 import static sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType.*;
 import sun.java2d.pipe.hw.ExtendedBufferCapabilities.VSyncType;
 import java.awt.BufferCapabilities.FlipContents;
+import java.awt.Dimension;
 import java.awt.Window;
+import java.awt.geom.AffineTransform;
 import sun.awt.SunToolkit;
 import sun.awt.image.SunVolatileImage;
+import sun.awt.windows.WWindowPeer;
 import sun.java2d.ScreenUpdateManager;
 import sun.java2d.StateTracker;
 import sun.java2d.SurfaceDataProxy;
@@ -162,6 +165,8 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
 
     private int type;
     private int width, height;
+    private final double scaleX;
+    private final double scaleY;
     // these fields are set from the native code when the surface is
     // initialized
     private int nativeWidth, nativeHeight;
@@ -218,16 +223,29 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
     {
         super(getCustomSurfaceType(type), cm);
         this.graphicsDevice = gc.getD3DDevice();
+        this.scaleX = type == TEXTURE ? 1 : graphicsDevice.getDefaultScaleX();
+        this.scaleY = type == TEXTURE ? 1 : graphicsDevice.getDefaultScaleY();
         this.peer = peer;
         this.type = type;
-        this.width = width;
-        this.height = height;
+
+        if (scaleX == 1 && scaleY == 1) {
+            this.width = width;
+            this.height = height;
+        } else if (peer instanceof WWindowPeer) {
+            Dimension scaledSize = ((WWindowPeer) peer).getScaledWindowSize();
+            this.width = scaledSize.width;
+            this.height = scaledSize.height;
+        } else {
+            this.width = (int) Math.ceil(width * scaleX);
+            this.height = (int) Math.ceil(height * scaleY);
+        }
+
         this.offscreenImage = image;
         this.backBuffersNum = numBackBuffers;
         this.swapEffect = swapEffect;
         this.syncType = vSyncType;
 
-        initOps(graphicsDevice.getScreen(), width, height);
+        initOps(graphicsDevice.getScreen(), this.width, this.height);
         if (type == WINDOW) {
             // we put the surface into the "lost"
             // state; it will be restored by the D3DScreenUpdateManager
@@ -238,6 +256,16 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
             initSurface();
         }
         setBlitProxyKey(gc.getProxyKey());
+    }
+
+    @Override
+    public double getDefaultScaleX() {
+        return scaleX;
+    }
+
+    @Override
+    public double getDefaultScaleY() {
+        return scaleY;
     }
 
     @Override
@@ -777,8 +805,12 @@ public class D3DSurfaceData extends SurfaceData implements AccelSurface {
 
     public Rectangle getBounds() {
         if (type == FLIP_BACKBUFFER || type == WINDOW) {
+            double scaleX = getDefaultScaleX();
+            double scaleY = getDefaultScaleY();
             Rectangle r = peer.getBounds();
             r.x = r.y = 0;
+            r.width = (int) Math.ceil(r.width * scaleX);
+            r.height = (int) Math.ceil(r.height * scaleY);
             return r;
         } else {
             return new Rectangle(width, height);

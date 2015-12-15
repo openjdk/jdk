@@ -1320,12 +1320,12 @@ methodHandle Method::clone_with_new_data(methodHandle m, u_char* new_code, int n
   return newm;
 }
 
-vmSymbols::SID Method::klass_id_for_intrinsics(Klass* holder) {
+vmSymbols::SID Method::klass_id_for_intrinsics(const Klass* holder) {
   // if loader is not the default loader (i.e., != NULL), we can't know the intrinsics
   // because we are not loading from core libraries
   // exception: the AES intrinsics come from lib/ext/sunjce_provider.jar
   // which does not use the class default class loader so we check for its loader here
-  InstanceKlass* ik = InstanceKlass::cast(holder);
+  const InstanceKlass* ik = InstanceKlass::cast(holder);
   if ((ik->class_loader() != NULL) && !SystemDictionary::is_ext_class_loader(ik->class_loader())) {
     return vmSymbols::NO_SID;   // regardless of name, no intrinsics here
   }

@@ -33,7 +33,7 @@ import jdk.testlibrary.ProcessTools;
 
 /**
  * @test
- * @bug 8023093 8138748
+ * @bug 8023093 8138748 8142398
  * @summary Performs a sanity test for the ManagementAgent.status diagnostic command.
  *          Management agent may be disabled, started (only local connections) and started.
  *          The test asserts that the expected text is being printed.
@@ -56,7 +56,8 @@ abstract public class JMXStatusTest {
         "Connection Type\\s*\\:\\s*local\\n+" +
         "Protocol\\s*\\:\\s*[a-z]+\\n+" +
         "Host\\s*\\:\\s*.+\\n+" +
-        "URL\\s*\\:\\s*service\\:jmx\\:.+",
+        "URL\\s*\\:\\s*service\\:jmx\\:.+\\n+" +
+        "Properties\\s*\\:\\n+(\\s*\\S+\\s*=\\s*\\S+(\\s+\\[default\\])?\\n*)+",
         Pattern.MULTILINE
     );
 
@@ -67,7 +68,7 @@ abstract public class JMXStatusTest {
         "Protocol\\s*\\: [a-z]+\\n+" +
         "Host\\s*\\: .+\\n+" +
         "URL\\s*\\: service\\:jmx\\:.+\\n+" +
-        "Properties\\s*\\:\\n+(\\s*\\S+\\s*=\\s*\\S+\\n*)+",
+        "Properties\\s*\\:\\n+(\\s*\\S+\\s*=\\s*\\S+(\\s+\\[default\\])?\\n*)+",
         Pattern.MULTILINE | Pattern.DOTALL
     );
 

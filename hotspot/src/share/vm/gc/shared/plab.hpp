@@ -141,8 +141,6 @@ public:
   // Fills in the unallocated portion of the buffer with a garbage object and updates
   // statistics. To be called during GC.
   virtual void retire();
-
-  void print() PRODUCT_RETURN;
 };
 
 // PLAB book-keeping.

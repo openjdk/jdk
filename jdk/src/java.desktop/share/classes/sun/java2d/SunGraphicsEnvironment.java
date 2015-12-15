@@ -66,6 +66,8 @@ import sun.font.FontManager;
 import sun.font.FontManagerFactory;
 import sun.font.FontManagerForSGE;
 import sun.font.NativeFont;
+import java.security.AccessController;
+import sun.security.action.GetPropertyAction;
 
 /**
  * This is an implementation of a GraphicsEnvironment object for the
@@ -79,6 +81,15 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
 
     public static boolean isOpenSolaris;
     private static Font defaultFont;
+
+    private static final boolean uiScaleEnabled;
+    private static final double debugScale;
+
+    static {
+        uiScaleEnabled = "true".equals(AccessController.doPrivileged(
+                new GetPropertyAction("sun.java2d.uiScale.enabled", "true")));
+        debugScale = uiScaleEnabled ? getScaleFactor("sun.java2d.uiScale") : -1;
+    }
 
     public SunGraphicsEnvironment() {
         java.security.AccessController.doPrivileged(
@@ -340,5 +351,42 @@ public abstract class SunGraphicsEnvironment extends GraphicsEnvironment
      */
     public boolean isFlipStrategyPreferred(ComponentPeer peer) {
         return false;
+    }
+
+    public static boolean isUIScaleEnabled() {
+        return uiScaleEnabled;
+    }
+
+    public static double getDebugScale() {
+        return debugScale;
+    }
+
+    public static double getScaleFactor(String propertyName) {
+
+        String scaleFactor = AccessController.doPrivileged(
+                new GetPropertyAction(propertyName, "-1"));
+
+        if (scaleFactor == null || scaleFactor.equals("-1")) {
+            return -1;
+        }
+
+        try {
+            double units = 1.0;
+
+            if (scaleFactor.endsWith("x")) {
+                scaleFactor = scaleFactor.substring(0, scaleFactor.length() - 1);
+            } else if (scaleFactor.endsWith("dpi")) {
+                units = 96;
+                scaleFactor = scaleFactor.substring(0, scaleFactor.length() - 3);
+            } else if (scaleFactor.endsWith("%")) {
+                units = 100;
+                scaleFactor = scaleFactor.substring(0, scaleFactor.length() - 1);
+            }
+
+            double scale = Double.parseDouble(scaleFactor);
+            return scale <= 0 ? -1 : scale / units;
+        } catch (NumberFormatException ignored) {
+            return -1;
+        }
     }
 }

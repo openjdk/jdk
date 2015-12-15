@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 package com.sun.java.swing.plaf.gtk;
 
+import javax.swing.plaf.synth.SynthIcon;
 import java.util.*;
 import javax.swing.plaf.synth.*;
 import java.awt.*;
@@ -149,8 +150,7 @@ class GTKIconFactory {
         }
     }
 
-    private static class DelegatingIcon extends SynthIcon implements
-                                   UIResource {
+    private static class DelegatingIcon implements UIResource, SynthIcon {
         private static final Class<?>[] PARAM_TYPES = new Class<?>[] {
             SynthContext.class, Graphics.class, int.class,
             int.class, int.class, int.class, int.class

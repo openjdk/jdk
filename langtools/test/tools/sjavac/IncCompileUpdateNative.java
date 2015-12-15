@@ -51,15 +51,12 @@ public class IncCompileUpdateNative extends SJavacTester {
     ToolBox tb = new ToolBox();
 
     void test() throws Exception {
-        clean(TEST_ROOT);
         Files.createDirectories(GENSRC);
         Files.createDirectories(BIN);
         Files.createDirectories(HEADERS);
 
         initialCompile();
         incrementalCompileChangeNative();
-
-        clean(GENSRC, BIN, HEADERS);
     }
 
     // Update B.java with a new value for the final static annotated with @Native

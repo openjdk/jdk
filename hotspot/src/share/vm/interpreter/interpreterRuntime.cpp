@@ -314,6 +314,27 @@ IRT_ENTRY(void, InterpreterRuntime::throw_StackOverflowError(JavaThread* thread)
   THROW_HANDLE(exception);
 IRT_END
 
+IRT_ENTRY(address, InterpreterRuntime::check_ReservedStackAccess_annotated_methods(JavaThread* thread))
+  frame fr = thread->last_frame();
+  assert(fr.is_java_frame(), "Must be a Java frame");
+  frame activation = SharedRuntime::look_for_reserved_stack_annotated_method(thread, fr);
+  if (activation.sp() != NULL) {
+    thread->disable_stack_reserved_zone();
+    thread->set_reserved_stack_activation((address)activation.unextended_sp());
+  }
+  return (address)activation.sp();
+IRT_END
+
+ IRT_ENTRY(void, InterpreterRuntime::throw_delayed_StackOverflowError(JavaThread* thread))
+  Handle exception = get_preinitialized_exception(
+                                 SystemDictionary::StackOverflowError_klass(),
+                                 CHECK);
+  java_lang_Throwable::set_message(exception(),
+          Universe::delayed_stack_overflow_error_message());
+  // Increment counter for hs_err file reporting
+  Atomic::inc(&Exceptions::_stack_overflow_errors);
+  THROW_HANDLE(exception);
+IRT_END
 
 IRT_ENTRY(void, InterpreterRuntime::create_exception(JavaThread* thread, char* name, char* message))
   // lookup exception klass

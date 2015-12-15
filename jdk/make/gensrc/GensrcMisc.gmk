@@ -90,7 +90,6 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       SRC := $(GENSRC_UC_SRC), \
       INCLUDE_FILES := $(GENSRC_UC_SRC_FILE), \
       TOOLCHAIN := TOOLCHAIN_BUILD, \
-      CFLAGS := $(filter -D%, $(CFLAGS_JDKEXE)), \
       OBJECT_DIR := $(GENSRC_UC_BIN), \
       OUTPUT_DIR := $(GENSRC_UC_BIN), \
       PROGRAM := genUnixConstants))

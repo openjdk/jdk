@@ -1329,11 +1329,9 @@ class Thread implements Runnable {
     /**
      * Prints a stack trace of the current thread to the standard error stream.
      * This method is used only for debugging.
-     *
-     * @see     Throwable#printStackTrace()
      */
     public static void dumpStack() {
-        new Exception("Stack trace").printStackTrace();
+        StackStreamFactory.makeStackTrace().printStackTrace(System.err);
     }
 
     /**
@@ -1556,7 +1554,7 @@ class Thread implements Runnable {
             return stackTrace;
         } else {
             // Don't need JVM help for current thread
-            return (new Exception()).getStackTrace();
+            return StackStreamFactory.makeStackTrace().getStackTraceElements();
         }
     }
 
@@ -2028,15 +2026,15 @@ class Thread implements Runnable {
     // Hence, the fields are isolated with @Contended.
 
     /** The current seed for a ThreadLocalRandom */
-    @sun.misc.Contended("tlr")
+    @jdk.internal.vm.annotation.Contended("tlr")
     long threadLocalRandomSeed;
 
     /** Probe hash value; nonzero if threadLocalRandomSeed initialized */
-    @sun.misc.Contended("tlr")
+    @jdk.internal.vm.annotation.Contended("tlr")
     int threadLocalRandomProbe;
 
     /** Secondary seed isolated from public ThreadLocalRandom sequence */
-    @sun.misc.Contended("tlr")
+    @jdk.internal.vm.annotation.Contended("tlr")
     int threadLocalRandomSecondarySeed;
 
     /* Some private helper methods */

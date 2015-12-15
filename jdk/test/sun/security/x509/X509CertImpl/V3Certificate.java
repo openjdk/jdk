@@ -42,10 +42,10 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
-import sun.misc.BASE64Encoder;
 import sun.security.util.BitArray;
 import sun.security.util.ObjectIdentifier;
 import sun.security.x509.*;
@@ -55,7 +55,6 @@ import sun.security.x509.*;
  * @bug 8049237
  * @modules java.base/sun.security.x509
  *          java.base/sun.security.util
- *          java.base/sun.misc
  * @summary This test generates V3 certificate with all the supported
  * extensions. Writes back the generated certificate in to a file and checks for
  * equality with the original certificate.
@@ -224,7 +223,7 @@ public class V3Certificate {
             // Certificate boundaries/
             pw.println("-----BEGIN CERTIFICATE-----");
             pw.flush();
-            new BASE64Encoder().encodeBuffer(crt.getEncoded(), fos_b64);
+            fos_b64.write(Base64.getMimeEncoder().encode(crt.getEncoded()));
             fos_b64.flush();
             pw.println("-----END CERTIFICATE-----");
         }

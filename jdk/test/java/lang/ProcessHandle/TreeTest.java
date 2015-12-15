@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
@@ -168,8 +169,16 @@ public class TreeTest extends ProcessUtil {
 
             // Wait for direct children to be created and save the list
             List<ProcessHandle> subprocesses = waitForAllChildren(p1Handle, spawnNew);
+            Optional<Instant> p1Start = p1Handle.info().startInstant();
             for (ProcessHandle ph : subprocesses) {
                 Assert.assertTrue(ph.isAlive(), "Child should be alive: " + ph);
+                // Verify each child was started after the parent
+                ph.info().startInstant()
+                        .ifPresent(childStart -> p1Start.ifPresent(parentStart -> {
+                            Assert.assertFalse(childStart.isBefore(parentStart),
+                                    String.format("Child process started before parent: child: %s, parent: %s",
+                                            childStart, parentStart));
+                        }));
             }
 
             // Each child spawns two processes and waits for commands
@@ -178,7 +187,7 @@ public class TreeTest extends ProcessUtil {
 
             // Poll until all 9 child processes exist or the timeout is reached
             int expected = 9;
-            long timeout = Utils.adjustTimeout(10L);
+            long timeout = Utils.adjustTimeout(60L);
             Instant endTimeout = Instant.now().plusSeconds(timeout);
             do {
                 Thread.sleep(200L);

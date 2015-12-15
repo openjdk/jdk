@@ -29,6 +29,7 @@ import java.awt.*;
 import java.awt.event.ComponentEvent;
 import java.awt.event.FocusEvent;
 import java.awt.event.WindowEvent;
+import java.awt.geom.AffineTransform;
 
 import java.awt.peer.ComponentPeer;
 import java.awt.peer.WindowPeer;
@@ -750,10 +751,10 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
     private Point queryXLocation()
     {
-        return XlibUtil.translateCoordinates(
-            getContentWindow(),
-            XlibWrapper.RootWindow(XToolkit.getDisplay(), getScreenNumber()),
-            new Point(0, 0));
+        return XlibUtil.translateCoordinates(getContentWindow(), XlibWrapper
+                                             .RootWindow(XToolkit.getDisplay(),
+                                             getScreenNumber()),
+                                             new Point(0, 0), getScale());
     }
 
     protected Point getNewLocation(XConfigureEvent xe, int leftInset, int topInset) {
@@ -764,7 +765,8 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         Point newLocation = targetBounds.getLocation();
         if (xe.get_send_event() || runningWM == XWM.NO_WM || XWM.isNonReparentingWM()) {
             // Location, Client size + insets
-            newLocation = new Point(xe.get_x() - leftInset, xe.get_y() - topInset);
+            newLocation = new Point(scaleDown(xe.get_x()) - leftInset,
+                                    scaleDown(xe.get_y()) - topInset);
         } else {
             // ICCCM 4.1.5 states that a real ConfigureNotify will be sent when
             // a window is resized but the client can not tell if the window was
@@ -807,12 +809,12 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
          * See getNewLocation() for the details.
          */
         Point newLocation = getNewLocation(xe, 0, 0);
-        xe.set_x(newLocation.x);
-        xe.set_y(newLocation.y);
-        checkIfOnNewScreen(new Rectangle(xe.get_x(),
-                                         xe.get_y(),
-                                         xe.get_width(),
-                                         xe.get_height()));
+        xe.set_x(scaleUp(newLocation.x));
+        xe.set_y(scaleUp(newLocation.y));
+        checkIfOnNewScreen(new Rectangle(newLocation.x,
+                                         newLocation.y,
+                                         scaleDown(xe.get_width()),
+                                         scaleDown(xe.get_height())));
 
         // Don't call super until we've handled a screen change.  Otherwise
         // there could be a race condition in which a ComponentListener could
@@ -2115,7 +2117,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         XCrossingEvent xce = xev.get_xcrossing();
         if (grabLog.isLoggable(PlatformLogger.Level.FINE)) {
             grabLog.fine("{0}, when grabbed {1}, contains {2}",
-                         xce, isGrabbed(), containsGlobal(xce.get_x_root(), xce.get_y_root()));
+                         xce, isGrabbed(),
+                         containsGlobal(scaleDown(xce.get_x_root()),
+                                        scaleDown(xce.get_y_root())));
         }
         if (isGrabbed()) {
             // When window is grabbed, all events are dispatched to
@@ -2141,7 +2145,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         XMotionEvent xme = xev.get_xmotion();
         if (grabLog.isLoggable(PlatformLogger.Level.FINER)) {
             grabLog.finer("{0}, when grabbed {1}, contains {2}",
-                          xme, isGrabbed(), containsGlobal(xme.get_x_root(), xme.get_y_root()));
+                          xme, isGrabbed(),
+                          containsGlobal(scaleDown(xme.get_x_root()),
+                                         scaleDown(xme.get_y_root())));
         }
         if (isGrabbed()) {
             boolean dragging = false;
@@ -2166,9 +2172,10 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                 // So, I do not want to implement complicated logic for better retargeting.
                 target = pressTarget.isVisible() ? pressTarget : this;
                 xme.set_window(target.getWindow());
-                Point localCoord = target.toLocal(xme.get_x_root(), xme.get_y_root());
-                xme.set_x(localCoord.x);
-                xme.set_y(localCoord.y);
+                Point localCoord = target.toLocal(scaleDown(xme.get_x_root()),
+                                                  scaleDown(xme.get_y_root()));
+                xme.set_x(scaleUp(localCoord.x));
+                xme.set_y(scaleUp(localCoord.y));
             }
             if (grabLog.isLoggable(PlatformLogger.Level.FINER)) {
                 grabLog.finer("  -  Grab event target {0}", target);
@@ -2182,7 +2189,9 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
             // note that we need to pass dragging events to the grabber (6390326)
             // see comment above for more inforamtion.
-            if (!containsGlobal(xme.get_x_root(), xme.get_y_root()) && !dragging) {
+            if (!containsGlobal(scaleDown(xme.get_x_root()),
+                                scaleDown(xme.get_y_root()))
+                    && !dragging) {
                 // Outside of Java
                 return;
             }
@@ -2195,7 +2204,6 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
 
     public void handleButtonPressRelease(XEvent xev) {
         XButtonEvent xbe = xev.get_xbutton();
-
         /*
          * Ignore the buttons above 20 due to the bit limit for
          * InputEvent.BUTTON_DOWN_MASK.
@@ -2206,7 +2214,11 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         }
         if (grabLog.isLoggable(PlatformLogger.Level.FINE)) {
             grabLog.fine("{0}, when grabbed {1}, contains {2} ({3}, {4}, {5}x{6})",
-                         xbe, isGrabbed(), containsGlobal(xbe.get_x_root(), xbe.get_y_root()), getAbsoluteX(), getAbsoluteY(), getWidth(), getHeight());
+                         xbe, isGrabbed(),
+                         containsGlobal(scaleDown(xbe.get_x_root()),
+                                        scaleDown(xbe.get_y_root())),
+                         getAbsoluteX(), getAbsoluteY(),
+                         getWidth(), getHeight());
         }
         if (isGrabbed()) {
             // When window is grabbed, all events are dispatched to
@@ -2232,9 +2244,10 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                     // see 6390326 for more information.
                     target = pressTarget.isVisible() ? pressTarget : this;
                     xbe.set_window(target.getWindow());
-                    Point localCoord = target.toLocal(xbe.get_x_root(), xbe.get_y_root());
-                    xbe.set_x(localCoord.x);
-                    xbe.set_y(localCoord.y);
+                    Point localCoord = target.toLocal(scaleDown(xbe.get_x_root()),
+                                                      scaleDown(xbe.get_y_root()));
+                    xbe.set_x(scaleUp(localCoord.x));
+                    xbe.set_y(scaleUp(localCoord.y));
                     pressTarget = this;
                 }
                 if (target != null && target != getContentXWindow() && target != this) {
@@ -2246,7 +2259,10 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
                     // Target is either us or our content window -
                     // check that event is inside.  'Us' in case of
                     // shell will mean that this will also filter out press on title
-                    if ((target == this || target == getContentXWindow()) && !containsGlobal(xbe.get_x_root(), xbe.get_y_root())) {
+                    if ((target == this || target == getContentXWindow())
+                            && !containsGlobal(scaleDown(xbe.get_x_root()),
+                                               scaleDown(xbe.get_y_root())))
+                    {
                         // Outside this toplevel hierarchy
                         // According to the specification of UngrabEvent, post it
                         // when press occurs outside of the window and not on its owned windows

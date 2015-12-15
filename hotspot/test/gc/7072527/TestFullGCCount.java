@@ -26,7 +26,7 @@
  * @bug 7072527
  * @summary CMS: JMM GC counters overcount in some cases
  * @modules java.management
- * @run main/othervm -XX:+PrintGC TestFullGCCount
+ * @run main/othervm -Xlog:gc TestFullGCCount
  */
 import java.util.*;
 import java.lang.management.*;

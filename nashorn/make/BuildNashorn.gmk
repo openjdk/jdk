@@ -34,7 +34,7 @@ include SetupJavaCompilers.gmk
 include TextFileProcessing.gmk
 
 JDK_CLASSES := $(call PathList, $(strip $(addprefix $(JDK_OUTPUTDIR)/modules/, \
-      java.base java.logging java.scripting)))
+      java.base java.logging java.scripting jdk.dynalink)))
 
 NASHORN_JAR := $(IMAGES_OUTPUTDIR)/nashorn.jar
 

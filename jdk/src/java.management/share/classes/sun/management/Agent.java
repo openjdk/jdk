@@ -37,9 +37,13 @@ import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.text.MessageFormat;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import javax.management.remote.JMXConnectorServer;
 import javax.management.remote.JMXServiceURL;
@@ -60,6 +64,30 @@ public class Agent {
      * Agent status collector strategy class
      */
     private static abstract class StatusCollector {
+        protected static final Map<String, String> DEFAULT_PROPS = new HashMap<>();
+
+        static {
+            DEFAULT_PROPS.put(ConnectorBootstrap.PropertyNames.PORT,
+                              ConnectorBootstrap.DefaultValues.PORT);
+            DEFAULT_PROPS.put(ConnectorBootstrap.PropertyNames.USE_LOCAL_ONLY,
+                              ConnectorBootstrap.DefaultValues.USE_LOCAL_ONLY);
+            DEFAULT_PROPS.put(ConnectorBootstrap.PropertyNames.USE_AUTHENTICATION,
+                              ConnectorBootstrap.DefaultValues.USE_AUTHENTICATION);
+            DEFAULT_PROPS.put(ConnectorBootstrap.PropertyNames.USE_SSL,
+                              ConnectorBootstrap.DefaultValues.USE_SSL);
+            DEFAULT_PROPS.put(ConnectorBootstrap.PropertyNames.USE_REGISTRY_SSL,
+                              ConnectorBootstrap.DefaultValues.USE_REGISTRY_SSL);
+            DEFAULT_PROPS.put(ConnectorBootstrap.PropertyNames.SSL_NEED_CLIENT_AUTH,
+                              ConnectorBootstrap.DefaultValues.SSL_NEED_CLIENT_AUTH);
+            DEFAULT_PROPS.put(ConnectorBootstrap.PropertyNames.CONFIG_FILE_NAME,
+                              ConnectorBootstrap.DefaultValues.CONFIG_FILE_NAME);
+            DEFAULT_PROPS.put(ConnectorBootstrap.PropertyNames.PASSWORD_FILE_NAME,
+                              ConnectorBootstrap.DefaultValues.PASSWORD_FILE_NAME);
+            DEFAULT_PROPS.put(ConnectorBootstrap.PropertyNames.ACCESS_FILE_NAME,
+                              ConnectorBootstrap.DefaultValues.ACCESS_FILE_NAME);
+
+        }
+
         final protected StringBuilder sb = new StringBuilder();
         final public String collect() {
             Properties agentProps = VMSupport.getAgentProperties();
@@ -93,26 +121,47 @@ public class Agent {
         private void addConnection(boolean remote, JMXServiceURL u) {
             appendConnectionHeader(remote);
             addConnectionDetails(u);
-            if (remote) {
-                addConfigProperties();
-            }
+            addConfigProperties();
             appendConnectionFooter(remote);
         }
 
         private void addConfigProperties() {
             appendConfigPropsHeader();
-            boolean[] first = new boolean[] {true};
-            Properties props = configProps != null ?
-                                   configProps : getManagementProperties();
 
-            props.entrySet().stream().forEach((e) -> {
-                String key = (String)e.getKey();
-                if (key.startsWith("com.sun.management.")) {
-                    addConfigProp(key, e.getValue(), first[0]);
-                    first[0] = false;
+            Properties remoteProps = configProps != null ?
+                                        configProps : getManagementProperties();
+            Map<Object, Object> props = new HashMap<>(DEFAULT_PROPS);
+
+            if (remoteProps == null) {
+                // local connector only
+                String loc_only = System.getProperty(
+                    ConnectorBootstrap.PropertyNames.USE_LOCAL_ONLY
+                );
+
+                if (loc_only != null &&
+                    !ConnectorBootstrap.DefaultValues.USE_LOCAL_ONLY.equals(loc_only)) {
+                    props.put(
+                        ConnectorBootstrap.PropertyNames.USE_LOCAL_ONLY,
+                        loc_only
+                    );
                 }
-            });
+            } else {
+                props.putAll(remoteProps);
+            }
+
+            props.entrySet().stream()
+                .filter(preprocess(Map.Entry::getKey, StatusCollector::isManagementProp))
+                .forEach(this::addConfigProp);
+
             appendConfigPropsFooter();
+        }
+
+        private static boolean isManagementProp(Object pName) {
+            return pName != null && pName.toString().startsWith("com.sun.management.");
+        }
+
+        private static <T, V> Predicate<T> preprocess(Function<T, V> f, Predicate<V> p) {
+            return (T t) -> p.test(f.apply(t));
         }
 
         abstract protected void addAgentStatus(boolean enabled);
@@ -123,7 +172,7 @@ public class Agent {
         abstract protected void appendConnectionFooter(boolean remote);
         abstract protected void appendConfigPropsHeader();
         abstract protected void appendConfigPropsFooter();
-        abstract protected void addConfigProp(String key, Object value, boolean first);
+        abstract protected void addConfigProp(Map.Entry<?, ?> prop);
     }
 
     /**
@@ -159,11 +208,14 @@ public class Agent {
         }
 
         @Override
-        protected void addConfigProp(String key, Object value, boolean first) {
-            if (!first) {
-                sb.append('\n');
+        protected void addConfigProp(Map.Entry<?, ?> prop) {
+            sb.append("  ").append(prop.getKey()).append(" = ")
+              .append(prop.getValue());
+            Object defVal = DEFAULT_PROPS.get(prop.getKey());
+            if (defVal != null && defVal.equals(prop.getValue())) {
+                sb.append(" [default]");
             }
-            sb.append("  ").append(key).append(" = ").append(value);
+            sb.append("\n");
         }
 
         @Override

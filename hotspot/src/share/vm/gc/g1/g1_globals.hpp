@@ -53,31 +53,13 @@
           "Overhead of concurrent marking")                                 \
           range(0, 100)                                                     \
                                                                             \
-  develop(intx, G1MarkingVerboseLevel, 0,                                   \
-          "Level (0-4) of verboseness of the marking code")                 \
-          range(0, 4)                                                       \
-                                                                            \
-  develop(bool, G1TraceMarkStackOverflow, false,                            \
-          "If true, extra debugging code for CM restart for ovflw.")        \
-                                                                            \
-  diagnostic(bool, G1SummarizeConcMark, false,                              \
-          "Summarize concurrent mark info")                                 \
-                                                                            \
-  diagnostic(bool, G1SummarizeRSetStats, false,                             \
-          "Summarize remembered set processing info")                       \
-                                                                            \
   diagnostic(intx, G1SummarizeRSetStatsPeriod, 0,                           \
           "The period (in number of GCs) at which we will generate "        \
           "update buffer processing info "                                  \
           "(0 means do not periodically generate this info); "              \
-          "it also requires -XX:+G1SummarizeRSetStats")                     \
+          "it also requires that logging is enabled on the trace"           \
+          "level for gc+remset")                                            \
           range(0, max_intx)                                                \
-                                                                            \
-  diagnostic(bool, G1TraceConcRefinement, false,                            \
-          "Trace G1 concurrent refinement")                                 \
-                                                                            \
-  experimental(bool, G1TraceStringSymbolTableScrubbing, false,              \
-          "Trace information string and symbol table scrubbing.")           \
                                                                             \
   product(double, G1ConcMarkStepDurationMillis, 10.0,                       \
           "Target duration of individual concurrent marking steps "         \
@@ -121,10 +103,6 @@
   develop(bool, G1RSBarrierRegionFilter, true,                              \
           "If true, generate region filtering code in RS barrier")          \
                                                                             \
-  diagnostic(bool, G1PrintRegionLivenessInfo, false,                        \
-            "Prints the liveness information for all regions in the heap "  \
-            "at the end of a marking cycle.")                               \
-                                                                            \
   product(size_t, G1UpdateBufferSize, 256,                                  \
           "Size of an update buffer")                                       \
           range(1, NOT_LP64(32*M) LP64_ONLY(1*G))                           \
@@ -157,6 +135,7 @@
           "Each time the rset update queue increases by this amount "       \
           "activate the next refinement thread if available. "              \
           "Will be selected ergonomically by default.")                     \
+          range(0, max_jint)                                                \
                                                                             \
   product(intx, G1RSetUpdatingPauseTimePercent, 10,                         \
           "A target percentage of time that is allowed to be spend on "     \
@@ -204,12 +183,6 @@
   develop(bool, G1ScrubRemSets, true,                                       \
           "When true, do RS scrubbing after cleanup.")                      \
                                                                             \
-  develop(bool, G1RSScrubVerbose, false,                                    \
-          "When true, do RS scrubbing with verbose output.")                \
-                                                                            \
-  develop(bool, G1YoungSurvRateVerbose, false,                              \
-          "print out the survival rate of young regions according to age.") \
-                                                                            \
   develop(intx, G1YoungSurvRateNumRegionsSummary, 0,                        \
           "the number of regions for which we'll print a surv rate "        \
           "summary.")                                                       \
@@ -220,10 +193,6 @@
           "It determines the minimum reserve we should have in the heap "   \
           "to minimize the probability of promotion failure.")              \
           range(0, 50)                                                      \
-                                                                            \
-  diagnostic(bool, G1PrintHeapRegions, false,                               \
-          "If set G1 will print information on which regions are being "    \
-          "allocated and which are reclaimed.")                             \
                                                                             \
   develop(bool, G1HRRSUseSparseTable, true,                                 \
           "When true, use sparse table to save space.")                     \
@@ -252,9 +221,6 @@
   develop(uintx, G1SecondaryFreeListAppendLength, 5,                        \
           "The number of regions we will add to the secondary free list "   \
           "at every append operation")                                      \
-                                                                            \
-  develop(bool, G1ConcRegionFreeingVerbose, false,                          \
-          "Enables verboseness during concurrent region freeing")           \
                                                                             \
   develop(bool, G1StressConcRegionFreeing, false,                           \
           "It stresses the concurrent region freeing operation")            \
@@ -300,6 +266,7 @@
                                                                             \
   product(uintx, G1MixedGCCountTarget, 8,                                   \
           "The target number of mixed GCs after a marking cycle.")          \
+          range(0, max_uintx)                                               \
                                                                             \
   experimental(bool, G1EagerReclaimHumongousObjects, true,                  \
           "Try to reclaim dead large objects at every young GC.")           \
@@ -308,17 +275,10 @@
           "Try to reclaim dead large objects that have a few stale "        \
           "references at every young GC.")                                  \
                                                                             \
-  experimental(bool, G1TraceEagerReclaimHumongousObjects, false,            \
-          "Print some information about large object liveness "             \
-          "at every young GC.")                                             \
-                                                                            \
   experimental(uintx, G1OldCSetRegionThresholdPercent, 10,                  \
           "An upper bound for the number of old CSet regions expressed "    \
           "as a percentage of the heap size.")                              \
           range(0, 100)                                                     \
-                                                                            \
-  experimental(ccstr, G1LogLevel, NULL,                                     \
-          "Log level for G1 logging: fine, finer, finest")                  \
                                                                             \
   notproduct(bool, G1EvacuationFailureALot, false,                          \
           "Force use of evacuation failure handling during certain "        \

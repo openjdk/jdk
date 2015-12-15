@@ -46,8 +46,6 @@ public class NoState extends SJavacTester {
     }
 
     public void run() throws Exception {
-        clean(TEST_ROOT);
-        ToolBox tb = new ToolBox();
         tb.writeFile(GENSRC.resolve("pkg/A.java"), "package pkg; class A {}");
         Files.createDirectory(BIN);
         compile("-d", BIN.toString(),

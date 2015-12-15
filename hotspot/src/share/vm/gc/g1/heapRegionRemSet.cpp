@@ -560,20 +560,13 @@ PerRegionTable* OtherRegionsTable::delete_region_table() {
 void OtherRegionsTable::scrub(CardTableModRefBS* ctbs,
                               BitMap* region_bm, BitMap* card_bm) {
   // First eliminated garbage regions from the coarse map.
-  if (G1RSScrubVerbose) {
-    gclog_or_tty->print_cr("Scrubbing region %u:", _hr->hrm_index());
-  }
+  log_develop_trace(gc, remset, scrub)("Scrubbing region %u:", _hr->hrm_index());
 
   assert(_coarse_map.size() == region_bm->size(), "Precondition");
-  if (G1RSScrubVerbose) {
-    gclog_or_tty->print("   Coarse map: before = " SIZE_FORMAT "...",
-                        _n_coarse_entries);
-  }
+  log_develop_trace(gc, remset, scrub)("   Coarse map: before = " SIZE_FORMAT "...", _n_coarse_entries);
   _coarse_map.set_intersection(*region_bm);
   _n_coarse_entries = _coarse_map.count_one_bits();
-  if (G1RSScrubVerbose) {
-    gclog_or_tty->print_cr("   after = " SIZE_FORMAT ".", _n_coarse_entries);
-  }
+  log_develop_trace(gc, remset, scrub)("   after = " SIZE_FORMAT ".", _n_coarse_entries);
 
   // Now do the fine-grained maps.
   for (size_t i = 0; i < _max_fine_entries; i++) {
@@ -582,28 +575,19 @@ void OtherRegionsTable::scrub(CardTableModRefBS* ctbs,
     while (cur != NULL) {
       PerRegionTable* nxt = cur->collision_list_next();
       // If the entire region is dead, eliminate.
-      if (G1RSScrubVerbose) {
-        gclog_or_tty->print_cr("     For other region %u:",
-                               cur->hr()->hrm_index());
-      }
+      log_develop_trace(gc, remset, scrub)("     For other region %u:", cur->hr()->hrm_index());
       if (!region_bm->at((size_t) cur->hr()->hrm_index())) {
         *prev = nxt;
         cur->set_collision_list_next(NULL);
         _n_fine_entries--;
-        if (G1RSScrubVerbose) {
-          gclog_or_tty->print_cr("          deleted via region map.");
-        }
+        log_develop_trace(gc, remset, scrub)("          deleted via region map.");
         unlink_from_all(cur);
         PerRegionTable::free(cur);
       } else {
         // Do fine-grain elimination.
-        if (G1RSScrubVerbose) {
-          gclog_or_tty->print("          occ: before = %4d.", cur->occupied());
-        }
+        log_develop_trace(gc, remset, scrub)("          occ: before = %4d.", cur->occupied());
         cur->scrub(ctbs, card_bm);
-        if (G1RSScrubVerbose) {
-          gclog_or_tty->print_cr("          after = %4d.", cur->occupied());
-        }
+        log_develop_trace(gc, remset, scrub)("          after = %4d.", cur->occupied());
         // Did that empty the table completely?
         if (cur->occupied() == 0) {
           *prev = nxt;
@@ -799,15 +783,15 @@ void HeapRegionRemSet::print() {
   while (iter.has_next(card_index)) {
     HeapWord* card_start =
       G1CollectedHeap::heap()->bot_shared()->address_for_index(card_index);
-    gclog_or_tty->print_cr("  Card " PTR_FORMAT, p2i(card_start));
+    tty->print_cr("  Card " PTR_FORMAT, p2i(card_start));
   }
   if (iter.n_yielded() != occupied()) {
-    gclog_or_tty->print_cr("Yielded disagrees with occupied:");
-    gclog_or_tty->print_cr("  " SIZE_FORMAT_W(6) " yielded (" SIZE_FORMAT_W(6)
+    tty->print_cr("Yielded disagrees with occupied:");
+    tty->print_cr("  " SIZE_FORMAT_W(6) " yielded (" SIZE_FORMAT_W(6)
                   " coarse, " SIZE_FORMAT_W(6) " fine).",
                   iter.n_yielded(),
                   iter.n_yielded_coarse(), iter.n_yielded_fine());
-    gclog_or_tty->print_cr("  " SIZE_FORMAT_W(6) " occ     (" SIZE_FORMAT_W(6)
+    tty->print_cr("  " SIZE_FORMAT_W(6) " occ     (" SIZE_FORMAT_W(6)
                            " coarse, " SIZE_FORMAT_W(6) " fine).",
                   occupied(), occ_coarse(), occ_fine());
   }
@@ -1071,7 +1055,7 @@ void HeapRegionRemSet::test() {
   while (iter.has_next(card_index)) {
     HeapWord* card_start =
       G1CollectedHeap::heap()->bot_shared()->address_for_index(card_index);
-    gclog_or_tty->print_cr("  Card " PTR_FORMAT ".", p2i(card_start));
+    tty->print_cr("  Card " PTR_FORMAT ".", p2i(card_start));
     sum++;
   }
   guarantee(sum == 11 - 3 + 2048, "Failure");

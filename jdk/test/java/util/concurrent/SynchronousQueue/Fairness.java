@@ -27,8 +27,10 @@
  * @summary Checks that fairness setting is respected.
  */
 
-import java.util.concurrent.*;
-import java.util.concurrent.locks.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Fairness {
     private static void testFairness(boolean fair,

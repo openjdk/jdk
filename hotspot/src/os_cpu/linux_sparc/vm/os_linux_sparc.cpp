@@ -27,6 +27,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
@@ -91,7 +92,7 @@ enum {
 // signal frames. Currently we don't do that on Linux, so it's the
 // same as os::fetch_frame_from_context().
 ExtendedPC os::Linux::fetch_frame_from_ucontext(Thread* thread,
-                                                ucontext_t* uc,
+                                                const ucontext_t* uc,
                                                 intptr_t** ret_sp,
                                                 intptr_t** ret_fp) {
   assert(thread != NULL, "just checking");
@@ -101,10 +102,10 @@ ExtendedPC os::Linux::fetch_frame_from_ucontext(Thread* thread,
   return os::fetch_frame_from_context(uc, ret_sp, ret_fp);
 }
 
-ExtendedPC os::fetch_frame_from_context(void* ucVoid,
+ExtendedPC os::fetch_frame_from_context(const void* ucVoid,
                                         intptr_t** ret_sp,
                                         intptr_t** ret_fp) {
-  ucontext_t* uc = (ucontext_t*) ucVoid;
+  const ucontext_t* uc = (const ucontext_t*) ucVoid;
   ExtendedPC  epc;
 
   if (uc != NULL) {
@@ -129,7 +130,7 @@ ExtendedPC os::fetch_frame_from_context(void* ucVoid,
   return epc;
 }
 
-frame os::fetch_frame_from_context(void* ucVoid) {
+frame os::fetch_frame_from_context(const void* ucVoid) {
   intptr_t* sp;
   ExtendedPC epc = fetch_frame_from_context(ucVoid, &sp, NULL);
   return frame(sp, frame::unpatchable, epc.pc());
@@ -212,10 +213,10 @@ char* os::non_memory_address_word() {
 
 void os::initialize_thread(Thread* thr) {}
 
-void os::print_context(outputStream *st, void *context) {
+void os::print_context(outputStream *st, const void *context) {
   if (context == NULL) return;
 
-  ucontext_t* uc = (ucontext_t*)context;
+  const ucontext_t* uc = (const ucontext_t*)context;
   sigcontext* sc = (sigcontext*)context;
   st->print_cr("Registers:");
 
@@ -290,11 +291,11 @@ void os::print_context(outputStream *st, void *context) {
 }
 
 
-void os::print_register_info(outputStream *st, void *context) {
+void os::print_register_info(outputStream *st, const void *context) {
   if (context == NULL) return;
 
-  ucontext_t *uc = (ucontext_t*)context;
-  sigcontext* sc = (sigcontext*)context;
+  const ucontext_t *uc = (const ucontext_t*)context;
+  const sigcontext* sc = (const sigcontext*)context;
   intptr_t *sp = (intptr_t *)os::Linux::ucontext_get_sp(uc);
 
   st->print_cr("Register to memory mapping:");
@@ -342,23 +343,23 @@ void os::print_register_info(outputStream *st, void *context) {
 }
 
 
-address os::Linux::ucontext_get_pc(ucontext_t* uc) {
+address os::Linux::ucontext_get_pc(const ucontext_t* uc) {
   return (address) SIG_PC((sigcontext*)uc);
 }
 
 void os::Linux::ucontext_set_pc(ucontext_t* uc, address pc) {
-  sigcontext_t* ctx = (sigcontext_t*) uc;
-  SIG_PC(ctx)  = (intptr_t)addr;
-  SIG_NPC(ctx) = (intptr_t)(addr+4);
+  sigcontext* ctx = (sigcontext*) uc;
+  SIG_PC(ctx)  = (intptr_t)pc;
+  SIG_NPC(ctx) = (intptr_t)(pc+4);
 }
 
-intptr_t* os::Linux::ucontext_get_sp(ucontext_t *uc) {
+intptr_t* os::Linux::ucontext_get_sp(const ucontext_t *uc) {
   return (intptr_t*)
     ((intptr_t)SIG_REGS((sigcontext*)uc).u_regs[CON_O6] + STACK_BIAS);
 }
 
 // not used on Sparc
-intptr_t* os::Linux::ucontext_get_fp(ucontext_t *uc) {
+intptr_t* os::Linux::ucontext_get_fp(const ucontext_t *uc) {
   ShouldNotReachHere();
   return NULL;
 }
@@ -683,7 +684,7 @@ JVM_handle_linux_signal(int sig,
   }
 
   if (pc == NULL && uc != NULL) {
-    pc = os::Linux::ucontext_get_pc((ucontext_t*)uc);
+    pc = os::Linux::ucontext_get_pc((const ucontext_t*)uc);
   }
 
   // unmask current signal
@@ -695,6 +696,7 @@ JVM_handle_linux_signal(int sig,
   VMError::report_and_die(t, sig, pc, info, ucVoid);
 
   ShouldNotReachHere();
+  return false;
 }
 
 void os::Linux::init_thread_fpu_state(void) {

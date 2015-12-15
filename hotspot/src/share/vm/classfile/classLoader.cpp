@@ -23,13 +23,13 @@
  */
 
 #include "precompiled.hpp"
-#include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderExt.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/jimage.hpp"
+#include "classfile/klassFactory.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
@@ -170,16 +170,12 @@ bool string_ends_with(const char* str, const char* str_to_find) {
 }
 
 
-ClassPathEntry::ClassPathEntry() {
-  set_next(NULL);
-}
-
-
 ClassPathDirEntry::ClassPathDirEntry(const char* dir) : ClassPathEntry() {
   char* copy = NEW_C_HEAP_ARRAY(char, strlen(dir)+1, mtClass);
   strcpy(copy, dir);
   _dir = copy;
 }
+
 
 ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
   // construct full path name
@@ -211,13 +207,16 @@ ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
         if (UsePerfData) {
           ClassLoader::perf_sys_classfile_bytes_read()->inc(num_read);
         }
-        return new ClassFileStream(buffer, st.st_size, _dir);    // Resource allocated
+        // Resource allocated
+        return new ClassFileStream(buffer,
+                                   st.st_size,
+                                   _dir,
+                                   ClassFileStream::verify);
       }
     }
   }
   return NULL;
 }
-
 
 ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name) : ClassPathEntry() {
   _zip = zip;
@@ -269,14 +268,18 @@ u1* ClassPathZipEntry::open_entry(const char* name, jint* filesize, bool nul_ter
 
 ClassFileStream* ClassPathZipEntry::open_stream(const char* name, TRAPS) {
   jint filesize;
-  u1* buffer = open_entry(name, &filesize, false, CHECK_NULL);
+  const u1* buffer = open_entry(name, &filesize, false, CHECK_NULL);
   if (buffer == NULL) {
     return NULL;
   }
   if (UsePerfData) {
     ClassLoader::perf_sys_classfile_bytes_read()->inc(filesize);
   }
-  return new ClassFileStream(buffer, filesize, _zip_name); // Resource allocated
+  // Resource allocated
+  return new ClassFileStream(buffer,
+                             filesize,
+                             _zip_name,
+                             ClassFileStream::verify);
 }
 
 // invoke function for each entry in the zip file
@@ -366,7 +369,11 @@ ClassFileStream* ClassPathImageEntry::open_stream(const char* name, TRAPS) {
     }
     char* data = NEW_RESOURCE_ARRAY(char, size);
     (*JImageGetResource)(_jimage, location, data, size);
-    return new ClassFileStream((u1*)data, (int)size, _name);  // Resource allocated
+    // Resource allocated
+    return new ClassFileStream((u1*)data,
+                               (int)size,
+                               _name,
+                               ClassFileStream::verify);
   }
 
   return NULL;
@@ -996,73 +1003,93 @@ objArrayOop ClassLoader::get_system_packages(TRAPS) {
   return result();
 }
 
+// caller needs ResourceMark
+const char* ClassLoader::file_name_for_class_name(const char* class_name,
+                                                  int class_name_len) {
+  assert(class_name != NULL, "invariant");
+  assert((int)strlen(class_name) == class_name_len, "invariant");
 
-instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
-  ResourceMark rm(THREAD);
-  const char* class_name = h_name->as_C_string();
+  static const char class_suffix[] = ".class";
+
+  char* const file_name = NEW_RESOURCE_ARRAY(char,
+                                             class_name_len +
+                                             sizeof(class_suffix)); // includes term NULL
+
+  strncpy(file_name, class_name, class_name_len);
+  strncpy(&file_name[class_name_len], class_suffix, sizeof(class_suffix));
+
+  return file_name;
+}
+
+instanceKlassHandle ClassLoader::load_class(Symbol* name, TRAPS) {
+
+  assert(name != NULL, "invariant");
+  assert(THREAD->is_Java_thread(), "must be a JavaThread");
+
+  ResourceMark rm;
+  HandleMark hm;
+
+  const char* const class_name = name->as_C_string();
+
   EventMark m("loading class %s", class_name);
   ThreadProfilerMark tpm(ThreadProfilerMark::classLoaderRegion);
 
-  stringStream st;
-  // st.print() uses too much stack space while handling a StackOverflowError
-  // st.print("%s.class", h_name->as_utf8());
-  st.print_raw(h_name->as_utf8());
-  st.print_raw(".class");
-  const char* file_name = st.as_string();
+  const char* const file_name = file_name_for_class_name(class_name,
+                                                         name->utf8_length());
+  assert(file_name != NULL, "invariant");
+
   ClassLoaderExt::Context context(class_name, file_name, THREAD);
 
-  // Lookup stream for parsing .class file
+  // Lookup stream
   ClassFileStream* stream = NULL;
   int classpath_index = 0;
-  ClassPathEntry* e = NULL;
-  instanceKlassHandle h;
+  ClassPathEntry* e = _first_entry;
   {
     PerfClassTraceTime vmtimer(perf_sys_class_lookup_time(),
-                               ((JavaThread*) THREAD)->get_thread_stat()->perf_timers_addr(),
-                               PerfClassTraceTime::CLASS_LOAD);
-    e = _first_entry;
-    while (e != NULL) {
+      ((JavaThread*)THREAD)->get_thread_stat()->perf_timers_addr(),
+      PerfClassTraceTime::CLASS_LOAD);
+
+    for (; e != NULL; e = e->next(), ++classpath_index) {
       stream = e->open_stream(file_name, CHECK_NULL);
+      if (NULL == stream) {
+        continue;
+      }
       if (!context.check(stream, classpath_index)) {
-        return h; // NULL
+        return NULL;
       }
-      if (stream != NULL) {
-        break;
-      }
-      e = e->next();
-      ++classpath_index;
+      break;
     }
   }
 
-  if (stream != NULL) {
-    // class file found, parse it
-    ClassFileParser parser(stream);
-    ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
-    Handle protection_domain;
-    TempNewSymbol parsed_name = NULL;
-    instanceKlassHandle result = parser.parseClassFile(h_name,
-                                                       loader_data,
-                                                       protection_domain,
-                                                       parsed_name,
-                                                       context.should_verify(classpath_index),
-                                                       THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      ResourceMark rm;
-      if (DumpSharedSpaces) {
-        tty->print_cr("Preload Error: Failed to load %s", class_name);
-      }
-      return h;
-    }
-    h = context.record_result(classpath_index, e, result, THREAD);
-  } else {
+  if (NULL == stream) {
     if (DumpSharedSpaces) {
       tty->print_cr("Preload Warning: Cannot find %s", class_name);
     }
+    return NULL;
   }
 
-  return h;
-}
+  stream->set_verify(context.should_verify(classpath_index));
 
+  ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
+  Handle protection_domain;
+
+  instanceKlassHandle result = KlassFactory::create_from_stream(stream,
+                                                                name,
+                                                                loader_data,
+                                                                protection_domain,
+                                                                NULL, // host_klass
+                                                                NULL, // cp_patches
+                                                                NULL, // parsed_name
+                                                                THREAD);
+  if (HAS_PENDING_EXCEPTION) {
+    if (DumpSharedSpaces) {
+      tty->print_cr("Preload Error: Failed to load %s", class_name);
+    }
+    return NULL;
+  }
+
+  return context.record_result(classpath_index, e, result, THREAD);
+}
 
 void ClassLoader::create_package_info_table(HashtableBucket<mtClass> *t, int length,
                                             int number_of_entries) {
