@@ -101,6 +101,7 @@ class WorkerThread;
 
 class Thread: public ThreadShadow {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
  private:
   // Exception handling
   // (Note: _pending_exception and friends are in ThreadShadow)
@@ -775,6 +776,7 @@ typedef void (*ThreadFunction)(JavaThread*, TRAPS);
 
 class JavaThread: public Thread {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
   friend class WhiteBox;
  private:
   JavaThread*    _next;                          // The next thread in the Threads list

@@ -240,6 +240,7 @@ class java_lang_String : AllStatic {
 
 class java_lang_Class : AllStatic {
   friend class VMStructs;
+  friend class JVMCIVMStructs;
 
  private:
   // The fake offsets are added by the class loader when java.lang.Class is loaded

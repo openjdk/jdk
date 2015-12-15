@@ -48,6 +48,7 @@ friend class StubGenerator;
 friend class JavaThread;
 friend class frame;
 friend class VMStructs;
+friend class JVMCIVMStructs;
 friend class BytecodeInterpreter;
 friend class JavaCallWrapper;
 
