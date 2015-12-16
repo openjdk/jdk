@@ -87,6 +87,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
     private int joinStyle;
 
     private float lineWidth2;
+    private float invHalfLineWidth2Sq;
 
     private final float[] offset0 = new float[2];
     private final float[] offset1 = new float[2];
@@ -158,6 +159,7 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         this.out = pc2d;
 
         this.lineWidth2 = lineWidth / 2f;
+        this.invHalfLineWidth2Sq = 1f / (2f * lineWidth2 * lineWidth2);
         this.capStyle = capStyle;
         this.joinStyle = joinStyle;
 
@@ -252,11 +254,11 @@ final class Stroker implements PathConsumer2D, MarlinConst {
         // The sign of the dot product of mx,my and omx,omy is equal to the
         // the sign of the cosine of ext
         // (ext is the angle between omx,omy and mx,my).
-        double cosext = omx * mx + omy * my;
+        final float cosext = omx * mx + omy * my;
         // If it is >=0, we know that abs(ext) is <= 90 degrees, so we only
         // need 1 curve to approximate the circle section that joins omx,omy
         // and mx,my.
-        final int numCurves = cosext >= 0 ? 1 : 2;
+        final int numCurves = (cosext >= 0f) ? 1 : 2;
 
         switch (numCurves) {
         case 1:
@@ -302,14 +304,22 @@ final class Stroker implements PathConsumer2D, MarlinConst {
                                      final float mx, final float my,
                                      boolean rev)
     {
-        float cosext2 = (omx * mx + omy * my) / (2f * lineWidth2 * lineWidth2);
+        final float cosext2 = (omx * mx + omy * my) * invHalfLineWidth2Sq;
+
+        // check round off errors producing cos(ext) > 1 and a NaN below
+        // cos(ext) == 1 implies colinear segments and an empty join anyway
+        if (cosext2 >= 0.5f) {
+            // just return to avoid generating a flat curve:
+            return;
+        }
+
         // cv is the length of P1-P0 and P2-P3 divided by the radius of the arc
         // (so, cv assumes the arc has radius 1). P0, P1, P2, P3 are the points that
         // define the bezier curve we're computing.
         // It is computed using the constraints that P1-P0 and P3-P2 are parallel
         // to the arc tangents at the endpoints, and that |P1-P0|=|P3-P2|.
-        float cv = (float) ((4.0 / 3.0) * sqrt(0.5-cosext2) /
-                            (1.0 + sqrt(cosext2+0.5)));
+        float cv = (float) ((4.0 / 3.0) * sqrt(0.5 - cosext2) /
+                            (1.0 + sqrt(cosext2 + 0.5)));
         // if clockwise, we need to negate cv.
         if (rev) { // rev is equivalent to isCW(omx, omy, mx, my)
             cv = -cv;
