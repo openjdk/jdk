@@ -70,6 +70,9 @@ public abstract class ScriptFunctionData implements Serializable {
     // value, the function might still be capable of receiving variable number of arguments, see isVariableArity.
     private int arity;
 
+    // this may be null, if not available
+    private String documentation;
+
     /**
      * A pair of method handles used for generic invoker and constructor. Field is volatile as it can be initialized by
      * multiple threads concurrently, but we still tolerate a race condition in it as all values stored into it are
@@ -118,6 +121,10 @@ public abstract class ScriptFunctionData implements Serializable {
         return arity;
     }
 
+    final String getDocumentation() {
+        return documentation != null? documentation : toSource();
+    }
+
     final boolean isVariableArity() {
         return (flags & IS_VARIABLE_ARITY) != 0;
     }
@@ -135,6 +142,15 @@ public abstract class ScriptFunctionData implements Serializable {
             throw new IllegalArgumentException(String.valueOf(arity));
         }
         this.arity = arity;
+    }
+
+    /**
+     * Used from nasgen generated code.
+     *
+     * @param doc documentation for this function
+     */
+    void setDocumentation(final String doc) {
+        this.documentation = doc;
     }
 
     CompiledFunction bind(final CompiledFunction originalInv, final ScriptFunction fn, final Object self, final Object[] args) {

@@ -646,6 +646,24 @@ public class ScriptFunction extends ScriptObject {
     }
 
     /**
+     * Get the documentation for this function
+     *
+     * @return the documentation
+     */
+    public final String getDocumentation() {
+        return data.getDocumentation();
+    }
+
+    /**
+     * Set the documentation for this function
+     *
+     * @param doc documentation String for this function
+     */
+    public final void setDocumentation(final String doc) {
+        data.setDocumentation(doc);
+    }
+
+    /**
      * Get the name for this function
      *
      * @return the name
