@@ -392,7 +392,7 @@ void InterpreterGenerator::generate_counter_incr(
       __ br(Assembler::LT, *profile_method_continue);
 
       // if no method data exists, go to profile_method
-      __ test_method_data_pointer(r0, *profile_method);
+      __ test_method_data_pointer(rscratch2, *profile_method);
     }
 
     {
