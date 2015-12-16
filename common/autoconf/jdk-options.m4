@@ -223,8 +223,21 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
   AC_ARG_WITH([native-debug-symbols],
       [AS_HELP_STRING([--with-native-debug-symbols],
       [set the native debug symbol configuration (none, internal, external, zipped) @<:@zipped@:>@])],
-      [],
-      [with_native_debug_symbols="zipped"])
+      [
+        if test "x$OPENJDK_TARGET_OS" = xaix; then
+          if test "x$withval" = xexternal || test "x$withval" = xzipped; then
+            AC_MSG_ERROR([AIX only supports the parameters 'none' and 'internal' for --with-native-debug-symbols])
+          fi
+        fi
+      ],
+      [
+        if test "x$OPENJDK_TARGET_OS" = xaix; then
+          # AIX doesn't support 'zipped' so use 'internal' as default
+          with_native_debug_symbols="internal"
+        else
+          with_native_debug_symbols="zipped"
+        fi
+      ])
   NATIVE_DEBUG_SYMBOLS=$with_native_debug_symbols
   AC_MSG_RESULT([$NATIVE_DEBUG_SYMBOLS])
 
