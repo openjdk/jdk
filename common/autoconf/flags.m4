@@ -475,7 +475,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
       C_O_FLAG_HI="-O3 -qstrict"
       C_O_FLAG_NORM="-O2"
       C_O_FLAG_DEBUG="-qnoopt"
-      C_O_FLAG_NONE="-qnoop"
+      C_O_FLAG_NONE="-qnoopt"
     elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
       C_O_FLAG_HIGHEST="-O2"
       C_O_FLAG_HI="-O1"
