@@ -4268,8 +4268,11 @@ public:
   diagnostic(bool, CompilerDirectivesIgnoreCompileCommands, false,          \
              "Disable backwards compatibility for compile commands.")       \
                                                                             \
-  diagnostic(bool, PrintCompilerDirectives, false,                          \
-             "Print compiler directives on installation.")
+  diagnostic(bool, CompilerDirectivesPrint, false,                          \
+             "Print compiler directives on installation.")                  \
+  diagnostic(int,  CompilerDirectivesLimit, 50,                             \
+             "Limit on number of compiler directives.")
+
 
 /*
  *  Macros for factoring of globals

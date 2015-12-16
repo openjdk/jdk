@@ -215,7 +215,7 @@ bool compileBroker_init() {
 
   if (DirectivesParser::has_file()) {
     return DirectivesParser::parse_from_flag();
-  } else if (PrintCompilerDirectives) {
+  } else if (CompilerDirectivesPrint) {
     // Print default directive even when no other was added
     DirectivesStack::print(tty);
   }

@@ -89,6 +89,7 @@ public:
   static DirectiveSet* getDefaultDirective(AbstractCompiler* comp);
   static void push(CompilerDirectives* directive);
   static void pop();
+  static bool check_capacity(int request_size, outputStream* st);
   static void clear();
   static void print(outputStream* st);
   static void release(DirectiveSet* set);
