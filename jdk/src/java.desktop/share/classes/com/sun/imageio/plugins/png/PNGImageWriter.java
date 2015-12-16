@@ -26,13 +26,16 @@
 package com.sun.imageio.plugins.png;
 
 import java.awt.Rectangle;
+import java.awt.image.ColorModel;
 import java.awt.image.IndexColorModel;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
 import java.awt.image.RenderedImage;
 import java.awt.image.SampleModel;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutput;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.zip.Deflater;
@@ -43,13 +46,14 @@ import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.spi.ImageWriterSpi;
 import javax.imageio.stream.ImageOutputStream;
 import javax.imageio.stream.ImageOutputStreamImpl;
 
-final class CRC {
+class CRC {
 
-    private static final int[] crcTable = new int[256];
+    private static int[] crcTable = new int[256];
     private int crc = 0xffffffff;
 
     static {
@@ -68,25 +72,23 @@ final class CRC {
         }
     }
 
-    CRC() {}
+    public CRC() {}
 
-    void reset() {
+    public void reset() {
         crc = 0xffffffff;
     }
 
-    void update(byte[] data, int off, int len) {
-        int c = crc;
+    public void update(byte[] data, int off, int len) {
         for (int n = 0; n < len; n++) {
-            c = crcTable[(c ^ data[off + n]) & 0xff] ^ (c >>> 8);
+            crc = crcTable[(crc ^ data[off + n]) & 0xff] ^ (crc >>> 8);
         }
-        crc = c;
     }
 
-    void update(int data) {
+    public void update(int data) {
         crc = crcTable[(crc ^ data) & 0xff] ^ (crc >>> 8);
     }
 
-    int getValue() {
+    public int getValue() {
         return crc ^ 0xffffffff;
     }
 }
@@ -94,11 +96,11 @@ final class CRC {
 
 final class ChunkStream extends ImageOutputStreamImpl {
 
-    private final ImageOutputStream stream;
-    private final long startPos;
-    private final CRC crc = new CRC();
+    private ImageOutputStream stream;
+    private long startPos;
+    private CRC crc = new CRC();
 
-    ChunkStream(int type, ImageOutputStream stream) throws IOException {
+    public ChunkStream(int type, ImageOutputStream stream) throws IOException {
         this.stream = stream;
         this.startPos = stream.getStreamPosition();
 
@@ -106,29 +108,25 @@ final class ChunkStream extends ImageOutputStreamImpl {
         writeInt(type);
     }
 
-    @Override
     public int read() throws IOException {
         throw new RuntimeException("Method not available");
     }
 
-    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         throw new RuntimeException("Method not available");
     }
 
-    @Override
     public void write(byte[] b, int off, int len) throws IOException {
         crc.update(b, off, len);
         stream.write(b, off, len);
     }
 
-    @Override
     public void write(int b) throws IOException {
         crc.update(b);
         stream.write(b);
     }
 
-    void finish() throws IOException {
+    public void finish() throws IOException {
         // Write CRC
         stream.writeInt(crc.getValue());
 
@@ -142,7 +140,6 @@ final class ChunkStream extends ImageOutputStreamImpl {
         stream.flushBefore(pos);
     }
 
-    @Override
     protected void finalize() throws Throwable {
         // Empty finalizer (for improved performance; no need to call
         // super.finalize() in this case)
@@ -153,29 +150,24 @@ final class ChunkStream extends ImageOutputStreamImpl {
 // fixed length.
 final class IDATOutputStream extends ImageOutputStreamImpl {
 
-    private static final byte[] chunkType = {
+    private static byte[] chunkType = {
         (byte)'I', (byte)'D', (byte)'A', (byte)'T'
     };
 
-    private final ImageOutputStream stream;
-    private final int chunkLength;
+    private ImageOutputStream stream;
+    private int chunkLength;
     private long startPos;
-    private final CRC crc = new CRC();
+    private CRC crc = new CRC();
 
-    private final Deflater def;
-    private final byte[] buf = new byte[512];
-    // reused 1 byte[] array:
-    private final byte[] wbuf1 = new byte[1];
+    Deflater def = new Deflater(Deflater.BEST_COMPRESSION);
+    byte[] buf = new byte[512];
 
     private int bytesRemaining;
 
-    IDATOutputStream(ImageOutputStream stream, int chunkLength,
-                            int deflaterLevel) throws IOException
-    {
+    public IDATOutputStream(ImageOutputStream stream, int chunkLength)
+        throws IOException {
         this.stream = stream;
         this.chunkLength = chunkLength;
-        this.def = new Deflater(deflaterLevel);
-
         startChunk();
     }
 
@@ -214,17 +206,14 @@ final class IDATOutputStream extends ImageOutputStreamImpl {
         }
     }
 
-    @Override
     public int read() throws IOException {
         throw new RuntimeException("Method not available");
     }
 
-    @Override
     public int read(byte[] b, int off, int len) throws IOException {
         throw new RuntimeException("Method not available");
     }
 
-    @Override
     public void write(byte[] b, int off, int len) throws IOException {
         if (len == 0) {
             return;
@@ -238,7 +227,7 @@ final class IDATOutputStream extends ImageOutputStreamImpl {
         }
     }
 
-    void deflate() throws IOException {
+    public void deflate() throws IOException {
         int len = def.deflate(buf, 0, buf.length);
         int off = 0;
 
@@ -258,13 +247,13 @@ final class IDATOutputStream extends ImageOutputStreamImpl {
         }
     }
 
-    @Override
     public void write(int b) throws IOException {
-        wbuf1[0] = (byte)b;
-        write(wbuf1, 0, 1);
+        byte[] wbuf = new byte[1];
+        wbuf[0] = (byte)b;
+        write(wbuf, 0, 1);
     }
 
-    void finish() throws IOException {
+    public void finish() throws IOException {
         try {
             if (!def.finished()) {
                 def.finish();
@@ -278,7 +267,6 @@ final class IDATOutputStream extends ImageOutputStreamImpl {
         }
     }
 
-    @Override
     protected void finalize() throws Throwable {
         // Empty finalizer (for improved performance; no need to call
         // super.finalize() in this case)
@@ -286,76 +274,18 @@ final class IDATOutputStream extends ImageOutputStreamImpl {
 }
 
 
-final class PNGImageWriteParam extends ImageWriteParam {
+class PNGImageWriteParam extends ImageWriteParam {
 
-    /** Default quality level = 0.5 ie medium compression */
-    private static final float DEFAULT_QUALITY = 0.5f;
-
-    private static final String[] compressionNames = {"Deflate"};
-    private static final float[] qualityVals = { 0.00F, 0.30F, 0.75F, 1.00F };
-    private static final String[] qualityDescs = {
-        "High compression",   // 0.00 -> 0.30
-        "Medium compression", // 0.30 -> 0.75
-        "Low compression"     // 0.75 -> 1.00
-    };
-
-    PNGImageWriteParam(Locale locale) {
+    public PNGImageWriteParam(Locale locale) {
         super();
         this.canWriteProgressive = true;
         this.locale = locale;
-        this.canWriteCompressed = true;
-        this.compressionTypes = compressionNames;
-        this.compressionType = compressionTypes[0];
-        this.compressionMode = MODE_DEFAULT;
-        this.compressionQuality = DEFAULT_QUALITY;
-    }
-
-    /**
-     * Removes any previous compression quality setting.
-     *
-     * <p> The default implementation resets the compression quality
-     * to <code>0.5F</code>.
-     *
-     * @exception IllegalStateException if the compression mode is not
-     * <code>MODE_EXPLICIT</code>.
-     */
-    @Override
-    public void unsetCompression() {
-        super.unsetCompression();
-        this.compressionType = compressionTypes[0];
-        this.compressionQuality = DEFAULT_QUALITY;
-    }
-
-    /**
-     * Returns <code>true</code> since the PNG plug-in only supports
-     * lossless compression.
-     *
-     * @return <code>true</code>.
-     */
-    @Override
-    public boolean isCompressionLossless() {
-        return true;
-    }
-
-    @Override
-    public String[] getCompressionQualityDescriptions() {
-        super.getCompressionQualityDescriptions();
-        return qualityDescs.clone();
-    }
-
-    @Override
-    public float[] getCompressionQualityValues() {
-        super.getCompressionQualityValues();
-        return qualityVals.clone();
     }
 }
 
 /**
  */
-public final class PNGImageWriter extends ImageWriter {
-
-    /** Default compression level = 4 ie medium compression */
-    private static final int DEFAULT_COMPRESSION_LEVEL = 4;
+public class PNGImageWriter extends ImageWriter {
 
     ImageOutputStream stream = null;
 
@@ -404,7 +334,6 @@ public final class PNGImageWriter extends ImageWriter {
         super(originatingProvider);
     }
 
-    @Override
     public void setOutput(Object output) {
         super.setOutput(output);
         if (output != null) {
@@ -417,17 +346,16 @@ public final class PNGImageWriter extends ImageWriter {
         }
     }
 
-    @Override
+    private static int[] allowedProgressivePasses = { 1, 7 };
+
     public ImageWriteParam getDefaultWriteParam() {
         return new PNGImageWriteParam(getLocale());
     }
 
-    @Override
     public IIOMetadata getDefaultStreamMetadata(ImageWriteParam param) {
         return null;
     }
 
-    @Override
     public IIOMetadata getDefaultImageMetadata(ImageTypeSpecifier imageType,
                                                ImageWriteParam param) {
         PNGMetadata m = new PNGMetadata();
@@ -435,13 +363,11 @@ public final class PNGImageWriter extends ImageWriter {
         return m;
     }
 
-    @Override
     public IIOMetadata convertStreamMetadata(IIOMetadata inData,
                                              ImageWriteParam param) {
         return null;
     }
 
-    @Override
     public IIOMetadata convertImageMetadata(IIOMetadata inData,
                                             ImageTypeSpecifier imageType,
                                             ImageWriteParam param) {
@@ -1008,11 +934,8 @@ public final class PNGImageWriter extends ImageWriter {
     }
 
     // Use sourceXOffset, etc.
-    private void write_IDAT(RenderedImage image, int deflaterLevel)
-        throws IOException
-    {
-        IDATOutputStream ios = new IDATOutputStream(stream, 32768,
-                                                    deflaterLevel);
+    private void write_IDAT(RenderedImage image) throws IOException {
+        IDATOutputStream ios = new IDATOutputStream(stream, 32768);
         try {
             if (metadata.IHDR_interlaceMethod == 1) {
                 for (int i = 0; i < 7; i++) {
@@ -1105,7 +1028,6 @@ public final class PNGImageWriter extends ImageWriter {
         }
     }
 
-    @Override
     public void write(IIOMetadata streamMetadata,
                       IIOImage image,
                       ImageWriteParam param) throws IIOException {
@@ -1188,23 +1110,7 @@ public final class PNGImageWriter extends ImageWriter {
             metadata = new PNGMetadata();
         }
 
-        // reset compression level to default:
-        int deflaterLevel = DEFAULT_COMPRESSION_LEVEL;
-
         if (param != null) {
-            switch(param.getCompressionMode()) {
-            case ImageWriteParam.MODE_DISABLED:
-                deflaterLevel = Deflater.NO_COMPRESSION;
-                break;
-            case ImageWriteParam.MODE_EXPLICIT:
-                float quality = param.getCompressionQuality();
-                if (quality >= 0f && quality <= 1f) {
-                    deflaterLevel = 9 - Math.round(9f * quality);
-                }
-                break;
-            default:
-            }
-
             // Use Adam7 interlacing if set in write param
             switch (param.getProgressiveMode()) {
             case ImageWriteParam.MODE_DEFAULT:
@@ -1213,9 +1119,8 @@ public final class PNGImageWriter extends ImageWriter {
             case ImageWriteParam.MODE_DISABLED:
                 metadata.IHDR_interlaceMethod = 0;
                 break;
-                // MODE_COPY_FROM_METADATA should already be taken care of
+                // MODE_COPY_FROM_METADATA should alreay be taken care of
                 // MODE_EXPLICIT is not allowed
-            default:
             }
         }
 
@@ -1260,7 +1165,7 @@ public final class PNGImageWriter extends ImageWriter {
 
             writeUnknownChunks();
 
-            write_IDAT(im, deflaterLevel);
+            write_IDAT(im);
 
             if (abortRequested()) {
                 processWriteAborted();
