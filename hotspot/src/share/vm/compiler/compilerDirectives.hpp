@@ -39,7 +39,7 @@
     cflags(Exclude,                 bool, false, X) \
     cflags(BreakAtExecute,          bool, false, X) \
     cflags(BreakAtCompile,          bool, false, X) \
-    cflags(Log,                     bool, false, X) \
+    cflags(Log,                     bool, LogCompilation, X) \
     cflags(PrintAssembly,           bool, PrintAssembly, PrintAssembly) \
     cflags(PrintInlining,           bool, PrintInlining, PrintInlining) \
     cflags(PrintNMethods,           bool, PrintNMethods, PrintNMethods) \
@@ -117,7 +117,7 @@ public:
   bool matches_inline(methodHandle method, int inline_action);
   static DirectiveSet* clone(DirectiveSet const* src);
   bool is_intrinsic_disabled(methodHandle method);
-  void finalize();
+  void finalize(outputStream* st);
 
   typedef enum {
 #define enum_of_flags(name, type, dvalue, cc_flag) name##Index,
@@ -177,7 +177,7 @@ public:
   DirectiveSet* get_for(AbstractCompiler *comp);
   void print(outputStream* st);
   bool is_default_directive() { return _next == NULL; }
-  void finalize();
+  void finalize(outputStream* st);
 
   void inc_refcount();
   void dec_refcount();

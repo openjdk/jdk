@@ -542,7 +542,7 @@ bool DirectivesParser::callback(JSON_TYPE t, JSON_VAL* v, uint rlimit) {
           error(INTERNAL_ERROR, "Directive missing required match.");
           return false;
         }
-        current_directive->finalize();
+        current_directive->finalize(_st);
         push_tmp(current_directive);
         current_directive = NULL;
         break;
