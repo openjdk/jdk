@@ -3946,7 +3946,11 @@ Then run configure with '--with-freetype-src=<freetype_src>'. This will
 automatically build the freetype library into '<freetype_src>/lib64' for 64-bit
 builds or into '<freetype_src>/lib32' for 32-bit builds.
 Afterwards you can always use '--with-freetype-include=<freetype_src>/include'
-and '--with-freetype-lib=<freetype_src>/lib32|64' for other builds."
+and '--with-freetype-lib=<freetype_src>/lib32|64' for other builds.
+
+Alternatively you can unpack the sources like this to use the default directory:
+
+tar --one-top-level=$HOME/freetype --strip-components=1 -xzf freetype-2.5.3.tar.gz"
       ;;
   esac
 }
@@ -4797,7 +4801,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1450206821
+DATE_WHEN_GENERATED=1450273627
 
 ###############################################################################
 #
@@ -53506,6 +53510,1485 @@ $as_echo_n "checking for freetype libraries... " >&6; }
 $as_echo "$FREETYPE_LIB_PATH" >&6; }
   fi
 
+          fi
+          if test "x$FOUND_FREETYPE" != xyes; then
+            FREETYPE_BASE_DIR="$HOME/freetype"
+
+  windows_path="$FREETYPE_BASE_DIR"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    FREETYPE_BASE_DIR="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    FREETYPE_BASE_DIR="$unix_path"
+  fi
+
+            if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+
+  POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_BASE_DIR/include"
+  POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib64"
+  METHOD="well-known location"
+
+  # Let's start with an optimistic view of the world :-)
+  FOUND_FREETYPE=yes
+
+  # First look for the canonical freetype main include file ft2build.h.
+  if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # Oh no! Let's try in the freetype2 directory. This is needed at least at Mac OS X Yosemite.
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH/freetype2"
+    if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+      # Fail.
+      FOUND_FREETYPE=no
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+    # Include file found, let's continue the sanity check.
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&5
+$as_echo "$as_me: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&6;}
+
+    # Reset to default value
+    FREETYPE_BASE_NAME=freetype
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+    if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
+      if test "x$OPENJDK_TARGET_OS" = xmacosx \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH/${LIBRARY_PREFIX}freetype.6${SHARED_LIBRARY_SUFFIX}"; then
+        # On Mac OS X Yosemite, the symlink from libfreetype.dylib to libfreetype.6.dylib disappeared. Check
+        # for the .6 version explicitly.
+        FREETYPE_BASE_NAME=freetype.6
+        FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compensating for missing symlink by using version 6 explicitly" >&5
+$as_echo "$as_me: Compensating for missing symlink by using version 6 explicitly" >&6;}
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&6;}
+        FOUND_FREETYPE=no
+      fi
+    else
+      if test "x$OPENJDK_TARGET_OS" = xwindows; then
+        # On Windows, we will need both .lib and .dll file.
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&6;}
+          FOUND_FREETYPE=no
+        fi
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
+        # Found lib in isa dir, use that instead.
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&5
+$as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
+      fi
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of POTENTIAL_FREETYPE_INCLUDE_PATH" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
+    fi
+  fi
+
+
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_LIB_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$POTENTIAL_FREETYPE_LIB_PATH"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of POTENTIAL_FREETYPE_LIB_PATH" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_LIB_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$POTENTIAL_FREETYPE_LIB_PATH"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_LIB_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_LIB_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
+    fi
+  fi
+
+
+    FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype includes" >&5
+$as_echo_n "checking for freetype includes... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FREETYPE_INCLUDE_PATH" >&5
+$as_echo "$FREETYPE_INCLUDE_PATH" >&6; }
+    FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype libraries" >&5
+$as_echo_n "checking for freetype libraries... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FREETYPE_LIB_PATH" >&5
+$as_echo "$FREETYPE_LIB_PATH" >&6; }
+  fi
+
+            else
+
+  POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_BASE_DIR/include"
+  POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib32"
+  METHOD="well-known location"
+
+  # Let's start with an optimistic view of the world :-)
+  FOUND_FREETYPE=yes
+
+  # First look for the canonical freetype main include file ft2build.h.
+  if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # Oh no! Let's try in the freetype2 directory. This is needed at least at Mac OS X Yosemite.
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH/freetype2"
+    if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+      # Fail.
+      FOUND_FREETYPE=no
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+    # Include file found, let's continue the sanity check.
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&5
+$as_echo "$as_me: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&6;}
+
+    # Reset to default value
+    FREETYPE_BASE_NAME=freetype
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+    if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
+      if test "x$OPENJDK_TARGET_OS" = xmacosx \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH/${LIBRARY_PREFIX}freetype.6${SHARED_LIBRARY_SUFFIX}"; then
+        # On Mac OS X Yosemite, the symlink from libfreetype.dylib to libfreetype.6.dylib disappeared. Check
+        # for the .6 version explicitly.
+        FREETYPE_BASE_NAME=freetype.6
+        FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compensating for missing symlink by using version 6 explicitly" >&5
+$as_echo "$as_me: Compensating for missing symlink by using version 6 explicitly" >&6;}
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&6;}
+        FOUND_FREETYPE=no
+      fi
+    else
+      if test "x$OPENJDK_TARGET_OS" = xwindows; then
+        # On Windows, we will need both .lib and .dll file.
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&6;}
+          FOUND_FREETYPE=no
+        fi
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
+        # Found lib in isa dir, use that instead.
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&5
+$as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
+      fi
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of POTENTIAL_FREETYPE_INCLUDE_PATH" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
+    fi
+  fi
+
+
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_LIB_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$POTENTIAL_FREETYPE_LIB_PATH"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of POTENTIAL_FREETYPE_LIB_PATH" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_LIB_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$POTENTIAL_FREETYPE_LIB_PATH"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_LIB_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_LIB_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
+    fi
+  fi
+
+
+    FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype includes" >&5
+$as_echo_n "checking for freetype includes... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FREETYPE_INCLUDE_PATH" >&5
+$as_echo "$FREETYPE_INCLUDE_PATH" >&6; }
+    FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype libraries" >&5
+$as_echo_n "checking for freetype libraries... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FREETYPE_LIB_PATH" >&5
+$as_echo "$FREETYPE_LIB_PATH" >&6; }
+  fi
+
+            fi
+            if test "x$FOUND_FREETYPE" != xyes && test -d $FREETYPE_BASE_DIR \
+                && test -s "$FREETYPE_BASE_DIR/builds/windows/vc2010/freetype.vcxproj" && test "x$MSBUILD" != x; then
+              # Source is available, as a last resort try to build freetype in default location
+
+  FREETYPE_SRC_PATH="$FREETYPE_BASE_DIR"
+  BUILD_FREETYPE=yes
+
+  # Check if the freetype sources are acessible..
+  if ! test -d $FREETYPE_SRC_PATH; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: --with-freetype-src specified, but can not find path \"$FREETYPE_SRC_PATH\" - ignoring --with-freetype-src" >&5
+$as_echo "$as_me: WARNING: --with-freetype-src specified, but can not find path \"$FREETYPE_SRC_PATH\" - ignoring --with-freetype-src" >&2;}
+    BUILD_FREETYPE=no
+  fi
+  # ..and contain a vc2010 project file
+  vcxproj_path="$FREETYPE_SRC_PATH/builds/windows/vc2010/freetype.vcxproj"
+  if test "x$BUILD_FREETYPE" = xyes && ! test -s $vcxproj_path; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Can not find project file $vcxproj_path (you may try a newer freetype version) - ignoring --with-freetype-src" >&5
+$as_echo "$as_me: WARNING: Can not find project file $vcxproj_path (you may try a newer freetype version) - ignoring --with-freetype-src" >&2;}
+    BUILD_FREETYPE=no
+  fi
+  # Now check if configure found a version of 'msbuild.exe'
+  if test "x$BUILD_FREETYPE" = xyes && test "x$MSBUILD" == x ; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Can not find an msbuild.exe executable (you may try to install .NET 4.0) - ignoring --with-freetype-src" >&5
+$as_echo "$as_me: WARNING: Can not find an msbuild.exe executable (you may try to install .NET 4.0) - ignoring --with-freetype-src" >&2;}
+    BUILD_FREETYPE=no
+  fi
+
+  # Ready to go..
+  if test "x$BUILD_FREETYPE" = xyes; then
+    # msbuild requires trailing slashes for output directories
+    freetype_lib_path="$FREETYPE_SRC_PATH/lib$OPENJDK_TARGET_CPU_BITS/"
+    freetype_lib_path_unix="$freetype_lib_path"
+    freetype_obj_path="$FREETYPE_SRC_PATH/obj$OPENJDK_TARGET_CPU_BITS/"
+
+  unix_path="$vcxproj_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    windows_path=`$CYGPATH -m "$unix_path"`
+    vcxproj_path="$windows_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    windows_path=`cmd //c echo $unix_path`
+    vcxproj_path="$windows_path"
+  fi
+
+
+  unix_path="$freetype_lib_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    windows_path=`$CYGPATH -m "$unix_path"`
+    freetype_lib_path="$windows_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    windows_path=`cmd //c echo $unix_path`
+    freetype_lib_path="$windows_path"
+  fi
+
+
+  unix_path="$freetype_obj_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    windows_path=`$CYGPATH -m "$unix_path"`
+    freetype_obj_path="$windows_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    windows_path=`cmd //c echo $unix_path`
+    freetype_obj_path="$windows_path"
+  fi
+
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+      freetype_platform=x64
+    else
+      freetype_platform=win32
+    fi
+
+    # The original freetype project file is for VS 2010 (i.e. 'v100'),
+    # so we have to adapt the toolset if building with any other toolsed (i.e. SDK).
+    # Currently 'PLATFORM_TOOLSET' is set in 'TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT'/
+    # 'TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT' in toolchain_windows.m4
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Trying to compile freetype sources with PlatformToolset=$PLATFORM_TOOLSET to $freetype_lib_path_unix ..." >&5
+$as_echo "$as_me: Trying to compile freetype sources with PlatformToolset=$PLATFORM_TOOLSET to $freetype_lib_path_unix ..." >&6;}
+
+    # First we try to build the freetype.dll
+    $ECHO -e "@echo off\n"\
+        "$MSBUILD $vcxproj_path "\
+        "/p:PlatformToolset=$PLATFORM_TOOLSET "\
+        "/p:Configuration=\"Release Multithreaded\" "\
+        "/p:Platform=$freetype_platform "\
+        "/p:ConfigurationType=DynamicLibrary "\
+        "/p:TargetName=freetype "\
+        "/p:OutDir=\"$freetype_lib_path\" "\
+        "/p:IntDir=\"$freetype_obj_path\" > freetype.log" > freetype.bat
+    cmd /c freetype.bat
+
+    if test -s "$freetype_lib_path_unix/freetype.dll"; then
+      # If that succeeds we also build freetype.lib
+      $ECHO -e "@echo off\n"\
+          "$MSBUILD $vcxproj_path "\
+          "/p:PlatformToolset=$PLATFORM_TOOLSET "\
+          "/p:Configuration=\"Release Multithreaded\" "\
+          "/p:Platform=$freetype_platform "\
+          "/p:ConfigurationType=StaticLibrary "\
+          "/p:TargetName=freetype "\
+          "/p:OutDir=\"$freetype_lib_path\" "\
+          "/p:IntDir=\"$freetype_obj_path\" >> freetype.log" > freetype.bat
+      cmd /c freetype.bat
+
+      if test -s "$freetype_lib_path_unix/freetype.lib"; then
+        # Once we build both, lib and dll, set freetype lib and include path appropriately
+        POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_SRC_PATH/include"
+        POTENTIAL_FREETYPE_LIB_PATH="$freetype_lib_path_unix"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compiling freetype sources succeeded! (see freetype.log for build results)" >&5
+$as_echo "$as_me: Compiling freetype sources succeeded! (see freetype.log for build results)" >&6;}
+      else
+        BUILD_FREETYPE=no
+      fi
+    else
+      BUILD_FREETYPE=no
+    fi
+  fi
+
+              if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+
+  POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_BASE_DIR/include"
+  POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib64"
+  METHOD="well-known location"
+
+  # Let's start with an optimistic view of the world :-)
+  FOUND_FREETYPE=yes
+
+  # First look for the canonical freetype main include file ft2build.h.
+  if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # Oh no! Let's try in the freetype2 directory. This is needed at least at Mac OS X Yosemite.
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH/freetype2"
+    if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+      # Fail.
+      FOUND_FREETYPE=no
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+    # Include file found, let's continue the sanity check.
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&5
+$as_echo "$as_me: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&6;}
+
+    # Reset to default value
+    FREETYPE_BASE_NAME=freetype
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+    if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
+      if test "x$OPENJDK_TARGET_OS" = xmacosx \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH/${LIBRARY_PREFIX}freetype.6${SHARED_LIBRARY_SUFFIX}"; then
+        # On Mac OS X Yosemite, the symlink from libfreetype.dylib to libfreetype.6.dylib disappeared. Check
+        # for the .6 version explicitly.
+        FREETYPE_BASE_NAME=freetype.6
+        FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compensating for missing symlink by using version 6 explicitly" >&5
+$as_echo "$as_me: Compensating for missing symlink by using version 6 explicitly" >&6;}
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&6;}
+        FOUND_FREETYPE=no
+      fi
+    else
+      if test "x$OPENJDK_TARGET_OS" = xwindows; then
+        # On Windows, we will need both .lib and .dll file.
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&6;}
+          FOUND_FREETYPE=no
+        fi
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
+        # Found lib in isa dir, use that instead.
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&5
+$as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
+      fi
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of POTENTIAL_FREETYPE_INCLUDE_PATH" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
+    fi
+  fi
+
+
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_LIB_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$POTENTIAL_FREETYPE_LIB_PATH"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of POTENTIAL_FREETYPE_LIB_PATH" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_LIB_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$POTENTIAL_FREETYPE_LIB_PATH"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_LIB_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_LIB_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
+    fi
+  fi
+
+
+    FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype includes" >&5
+$as_echo_n "checking for freetype includes... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FREETYPE_INCLUDE_PATH" >&5
+$as_echo "$FREETYPE_INCLUDE_PATH" >&6; }
+    FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype libraries" >&5
+$as_echo_n "checking for freetype libraries... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FREETYPE_LIB_PATH" >&5
+$as_echo "$FREETYPE_LIB_PATH" >&6; }
+  fi
+
+              else
+
+  POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_BASE_DIR/include"
+  POTENTIAL_FREETYPE_LIB_PATH="$FREETYPE_BASE_DIR/lib32"
+  METHOD="well-known location"
+
+  # Let's start with an optimistic view of the world :-)
+  FOUND_FREETYPE=yes
+
+  # First look for the canonical freetype main include file ft2build.h.
+  if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+    # Oh no! Let's try in the freetype2 directory. This is needed at least at Mac OS X Yosemite.
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH/freetype2"
+    if ! test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
+      # Fail.
+      FOUND_FREETYPE=no
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+    # Include file found, let's continue the sanity check.
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&5
+$as_echo "$as_me: Found freetype include files at $POTENTIAL_FREETYPE_INCLUDE_PATH using $METHOD" >&6;}
+
+    # Reset to default value
+    FREETYPE_BASE_NAME=freetype
+    FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+    if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME"; then
+      if test "x$OPENJDK_TARGET_OS" = xmacosx \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH/${LIBRARY_PREFIX}freetype.6${SHARED_LIBRARY_SUFFIX}"; then
+        # On Mac OS X Yosemite, the symlink from libfreetype.dylib to libfreetype.6.dylib disappeared. Check
+        # for the .6 version explicitly.
+        FREETYPE_BASE_NAME=freetype.6
+        FREETYPE_LIB_NAME="${LIBRARY_PREFIX}${FREETYPE_BASE_NAME}${SHARED_LIBRARY_SUFFIX}"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Compensating for missing symlink by using version 6 explicitly" >&5
+$as_echo "$as_me: Compensating for missing symlink by using version 6 explicitly" >&6;}
+      else
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/$FREETYPE_LIB_NAME. Ignoring location." >&6;}
+        FOUND_FREETYPE=no
+      fi
+    else
+      if test "x$OPENJDK_TARGET_OS" = xwindows; then
+        # On Windows, we will need both .lib and .dll file.
+        if ! test -s "$POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib"; then
+          { $as_echo "$as_me:${as_lineno-$LINENO}: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&5
+$as_echo "$as_me: Could not find $POTENTIAL_FREETYPE_LIB_PATH/${FREETYPE_BASE_NAME}.lib. Ignoring location." >&6;}
+          FOUND_FREETYPE=no
+        fi
+      elif test "x$OPENJDK_TARGET_OS" = xsolaris \
+          && test -s "$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR/$FREETYPE_LIB_NAME"; then
+        # Found lib in isa dir, use that instead.
+        POTENTIAL_FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH$OPENJDK_TARGET_CPU_ISADIR"
+        { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&5
+$as_echo "$as_me: Rewriting to use $POTENTIAL_FREETYPE_LIB_PATH instead" >&6;}
+      fi
+    fi
+  fi
+
+  if test "x$FOUND_FREETYPE" = xyes; then
+
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_INCLUDE_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of POTENTIAL_FREETYPE_INCLUDE_PATH" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_INCLUDE_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_INCLUDE_PATH to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_INCLUDE_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_INCLUDE_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
+    fi
+  fi
+
+
+  # Only process if variable expands to non-empty
+
+  if test "x$POTENTIAL_FREETYPE_LIB_PATH" != x; then
+    if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+
+  # Input might be given as Windows format, start by converting to
+  # unix format.
+  path="$POTENTIAL_FREETYPE_LIB_PATH"
+  new_path=`$CYGPATH -u "$path"`
+
+  # Cygwin tries to hide some aspects of the Windows file system, such that binaries are
+  # named .exe but called without that suffix. Therefore, "foo" and "foo.exe" are considered
+  # the same file, most of the time (as in "test -f"). But not when running cygpath -s, then
+  # "foo.exe" is OK but "foo" is an error.
+  #
+  # This test is therefore slightly more accurate than "test -f" to check for file precense.
+  # It is also a way to make sure we got the proper file name for the real test later on.
+  test_shortpath=`$CYGPATH -s -m "$new_path" 2> /dev/null`
+  if test "x$test_shortpath" = x; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
+    as_fn_error $? "Cannot locate the the path of POTENTIAL_FREETYPE_LIB_PATH" "$LINENO" 5
+  fi
+
+  # Call helper function which possibly converts this using DOS-style short mode.
+  # If so, the updated path is stored in $new_path.
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-._/a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    shortmode_path=`$CYGPATH -s -m -a "$input_path"`
+    path_after_shortmode=`$CYGPATH -u "$shortmode_path"`
+    if test "x$path_after_shortmode" != "x$input_to_shortpath"; then
+      # Going to short mode and back again did indeed matter. Since short mode is
+      # case insensitive, let's make it lowercase to improve readability.
+      shortmode_path=`$ECHO "$shortmode_path" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+      # Now convert it back to Unix-style (cygpath)
+      input_path=`$CYGPATH -u "$shortmode_path"`
+      new_path="$input_path"
+    fi
+  fi
+
+  test_cygdrive_prefix=`$ECHO $input_path | $GREP ^/cygdrive/`
+  if test "x$test_cygdrive_prefix" = x; then
+    # As a simple fix, exclude /usr/bin since it's not a real path.
+    if test "x`$ECHO $new_path | $GREP ^/usr/bin/`" = x; then
+      # The path is in a Cygwin special directory (e.g. /home). We need this converted to
+      # a path prefixed by /cygdrive for fixpath to work.
+      new_path="$CYGWIN_ROOT_PATH$input_path"
+    fi
+  fi
+
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_LIB_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
+  fi
+
+    elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+
+  path="$POTENTIAL_FREETYPE_LIB_PATH"
+  has_colon=`$ECHO $path | $GREP ^.:`
+  new_path="$path"
+  if test "x$has_colon" = x; then
+    # Not in mixed or Windows style, start by that.
+    new_path=`cmd //c echo $path`
+  fi
+
+
+  input_path="$new_path"
+  # Check if we need to convert this using DOS-style short mode. If the path
+  # contains just simple characters, use it. Otherwise (spaces, weird characters),
+  # take no chances and rewrite it.
+  # Note: m4 eats our [], so we need to use [ and ] instead.
+  has_forbidden_chars=`$ECHO "$input_path" | $GREP [^-_/:a-zA-Z0-9]`
+  if test "x$has_forbidden_chars" != x; then
+    # Now convert it to mixed DOS-style, short mode (no spaces, and / instead of \)
+    new_path=`cmd /c "for %A in (\"$input_path\") do @echo %~sA"|$TR \\\\\\\\ / | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
+  fi
+
+
+  windows_path="$new_path"
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
+    unix_path=`$CYGPATH -u "$windows_path"`
+    new_path="$unix_path"
+  elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.msys"; then
+    unix_path=`$ECHO "$windows_path" | $SED -e 's,^\\(.\\):,/\\1,g' -e 's,\\\\,/,g'`
+    new_path="$unix_path"
+  fi
+
+  if test "x$path" != "x$new_path"; then
+    POTENTIAL_FREETYPE_LIB_PATH="$new_path"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&5
+$as_echo "$as_me: Rewriting POTENTIAL_FREETYPE_LIB_PATH to \"$new_path\"" >&6;}
+  fi
+
+  # Save the first 10 bytes of this path to the storage, so fixpath can work.
+  all_fixpath_prefixes=("${all_fixpath_prefixes[@]}" "${new_path:0:10}")
+
+    else
+      # We're on a unix platform. Hooray! :)
+      path="$POTENTIAL_FREETYPE_LIB_PATH"
+      has_space=`$ECHO "$path" | $GREP " "`
+      if test "x$has_space" != x; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&5
+$as_echo "$as_me: The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is invalid." >&6;}
+        as_fn_error $? "Spaces are not allowed in this path." "$LINENO" 5
+      fi
+
+      # Use eval to expand a potential ~
+      eval path="$path"
+      if test ! -f "$path" && test ! -d "$path"; then
+        as_fn_error $? "The path of POTENTIAL_FREETYPE_LIB_PATH, which resolves as \"$path\", is not found." "$LINENO" 5
+      fi
+
+      if test -d "$path"; then
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$path"; $THEPWDCMD -L`"
+      else
+        dir="`$DIRNAME "$path"`"
+        base="`$BASENAME "$path"`"
+        POTENTIAL_FREETYPE_LIB_PATH="`cd "$dir"; $THEPWDCMD -L`/$base"
+      fi
+    fi
+  fi
+
+
+    FREETYPE_INCLUDE_PATH="$POTENTIAL_FREETYPE_INCLUDE_PATH"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype includes" >&5
+$as_echo_n "checking for freetype includes... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FREETYPE_INCLUDE_PATH" >&5
+$as_echo "$FREETYPE_INCLUDE_PATH" >&6; }
+    FREETYPE_LIB_PATH="$POTENTIAL_FREETYPE_LIB_PATH"
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for freetype libraries" >&5
+$as_echo_n "checking for freetype libraries... " >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $FREETYPE_LIB_PATH" >&5
+$as_echo "$FREETYPE_LIB_PATH" >&6; }
+  fi
+
+              fi
+            fi
           fi
         else
           FREETYPE_BASE_DIR="$SYSROOT/usr"
