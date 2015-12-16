@@ -126,6 +126,9 @@ java/beans/XMLDecoder/8028054/TestMethodFinder.java           generic-all
 java/beans/Introspector/8132566/OverridePropertyInfoTest.java generic-all
 java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java generic-all
 
+# 8145589
+java/beans/Introspector/Test6277246.java                      generic-all
+
 ############################################################################
 
 # jdk_lang
