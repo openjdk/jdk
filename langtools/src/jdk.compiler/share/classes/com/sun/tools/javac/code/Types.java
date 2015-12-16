@@ -1436,12 +1436,13 @@ public class Types {
     public boolean isCastable(Type t, Type s, Warner warn) {
         if (t == s)
             return true;
-
-        if (t.isPrimitive() != s.isPrimitive())
+        if (t.isPrimitive() != s.isPrimitive()) {
+            t = skipTypeVars(t, false);
             return (isConvertible(t, s, warn)
                     || (allowObjectToPrimitiveCast &&
                         s.isPrimitive() &&
                         isSubtype(boxedClass(s).type, t)));
+        }
         if (warn != warnStack.head) {
             try {
                 warnStack = warnStack.prepend(warn);
