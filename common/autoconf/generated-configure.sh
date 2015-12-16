@@ -4801,7 +4801,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1450273627
+DATE_WHEN_GENERATED=1450277321
 
 ###############################################################################
 #
@@ -47701,8 +47701,21 @@ $as_echo_n "checking what type of native debug symbols to use... " >&6; }
 # Check whether --with-native-debug-symbols was given.
 if test "${with_native_debug_symbols+set}" = set; then :
   withval=$with_native_debug_symbols;
+        if test "x$OPENJDK_TARGET_OS" = xaix; then
+          if test "x$withval" = xexternal || test "x$withval" = xzipped; then
+            as_fn_error $? "AIX only supports the parameters 'none' and 'internal' for --with-native-debug-symbols" "$LINENO" 5
+          fi
+        fi
+
 else
-  with_native_debug_symbols="zipped"
+
+        if test "x$OPENJDK_TARGET_OS" = xaix; then
+          # AIX doesn't support 'zipped' so use 'internal' as default
+          with_native_debug_symbols="internal"
+        else
+          with_native_debug_symbols="zipped"
+        fi
+
 fi
 
   NATIVE_DEBUG_SYMBOLS=$with_native_debug_symbols
