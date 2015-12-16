@@ -86,16 +86,21 @@ void CompilerDirectives::print(outputStream* st) {
   //---
 }
 
-void CompilerDirectives::finalize() {
+void CompilerDirectives::finalize(outputStream* st) {
   if (_c1_store != NULL) {
-    _c1_store->finalize();
+    _c1_store->finalize(st);
   }
   if (_c2_store != NULL) {
-    _c2_store->finalize();
+    _c2_store->finalize(st);
   }
 }
 
-void DirectiveSet::finalize() {
+void DirectiveSet::finalize(outputStream* st) {
+  // Check LogOption and warn
+  if (LogOption && !LogCompilation) {
+    st->print_cr("Warning:  +LogCompilation must be set to enable compilation logging from directives");
+  }
+
   // if any flag has been modified - set directive as enabled
   // unless it already has been explicitly set.
   if (!_modified[EnableIndex]) {
@@ -252,12 +257,14 @@ DirectiveSet* DirectiveSet::compilecommand_compatibility_init(methodHandle metho
         changed = true;
       }
     }
-    if (CompilerOracle::should_log(method)) {
-      if (!_modified[LogIndex]) {
-        set->LogOption = true;
+    if (!_modified[LogIndex]) {
+      bool log = CompilerOracle::should_log(method);
+      if (log != set->LogOption) {
+        set->LogOption = log;
         changed = true;
       }
     }
+
     if (CompilerOracle::should_print(method)) {
       if (!_modified[PrintAssemblyIndex]) {
         set->PrintAssemblyOption = true;
