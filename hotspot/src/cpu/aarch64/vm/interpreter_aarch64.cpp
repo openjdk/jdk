@@ -230,6 +230,7 @@ void InterpreterGenerator::generate_transcendental_entry(AbstractInterpreter::Me
     break;
   default:
     ShouldNotReachHere();
+    fn = NULL;  // unreachable
   }
   const int gpargs = 0, rtype = 3;
   __ mov(rscratch1, fn);
