@@ -487,6 +487,14 @@ void DirectivesStack::pop_inner() {
   DirectivesStack::release(tmp);
 }
 
+bool DirectivesStack::check_capacity(int request_size, outputStream* st) {
+  if ((request_size + _depth) > CompilerDirectivesLimit) {
+    st->print_cr("Could not add %i more directives. Currently %i/%i directives.", request_size, _depth, CompilerDirectivesLimit);
+    return false;
+  }
+  return true;
+}
+
 void DirectivesStack::clear() {
   // holding the lock during the whole operation ensuring consistent result
   MutexLockerEx locker(DirectivesStack_lock, Mutex::_no_safepoint_check_flag);
