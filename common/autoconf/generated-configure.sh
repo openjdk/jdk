@@ -651,7 +651,6 @@ JOBS
 MEMORY_SIZE
 NUM_CORES
 ENABLE_INTREE_EC
-SALIB_NAME
 HOTSPOT_MAKE_ARGS
 LIBZIP_CAN_USE_MMAP
 LIBDL
@@ -730,6 +729,7 @@ CXXFLAGS_DEBUG_SYMBOLS
 CFLAGS_DEBUG_SYMBOLS
 CXX_FLAG_DEPS
 C_FLAG_DEPS
+SHARED_LIBRARY_FLAGS
 SET_SHARED_LIBRARY_MAPFILE
 SET_SHARED_LIBRARY_NAME
 SET_SHARED_LIBRARY_ORIGIN
@@ -743,6 +743,7 @@ EXE_OUT_OPTION
 CC_OUT_OPTION
 STRIPFLAGS
 ARFLAGS
+COMPILER_COMMAND_FILE_FLAG
 COMPILER_TARGET_BITS_FLAG
 JT_HOME
 JTREGEXE
@@ -754,6 +755,7 @@ HOTSPOT_CXX
 HOTSPOT_RC
 HOTSPOT_MT
 BUILD_AS
+BUILD_LDCXX
 BUILD_LD
 BUILD_AR
 BUILD_NM
@@ -800,6 +802,7 @@ ac_ct_PROPER_COMPILER_CC
 PROPER_COMPILER_CC
 TOOLCHAIN_PATH_CC
 POTENTIAL_CC
+TOOLCHAIN_VERSION
 VS_LIB
 VS_INCLUDE
 VS_PATH
@@ -858,11 +861,11 @@ JDK_RC_PLATFORM_NAME
 PRODUCT_SUFFIX
 PRODUCT_NAME
 LAUNCHER_NAME
+TEST_IN_BUILD
 COPYRIGHT_YEAR
 COMPRESS_JARS
 UNLIMITED_CRYPTO
 CACERTS_FILE
-TEST_IN_BUILD
 BUILD_HEADLESS
 SUPPORT_HEADFUL
 SUPPORT_HEADLESS
@@ -911,7 +914,6 @@ INCLUDE_SA
 JVM_VARIANT_CORE
 JVM_VARIANT_ZEROSHARK
 JVM_VARIANT_ZERO
-JVM_VARIANT_KERNEL
 JVM_VARIANT_MINIMAL1
 JVM_VARIANT_CLIENT
 JVM_VARIANT_SERVER
@@ -1074,10 +1076,10 @@ with_conf_name
 with_output_sync
 with_default_make_target
 enable_headful
-enable_hotspot_test_in_build
 with_cacerts_file
 enable_unlimited_crypto
 with_copyright_year
+enable_hotspot_test_in_build
 with_milestone
 with_update_version
 with_user_release_suffix
@@ -1885,10 +1887,10 @@ Optional Features:
                           --with-debug-level=fastdebug) [disabled]
   --disable-headful       disable building headful support (graphical UI
                           support) [enabled]
-  --enable-hotspot-test-in-build
-                          run the Queens test after Hotspot build [disabled]
   --enable-unlimited-crypto
                           Enable unlimited crypto policy [disabled]
+  --enable-hotspot-test-in-build
+                          run the Queens test after Hotspot build [disabled]
   --enable-static-build   enable static library build [disabled]
   --disable-warnings-as-errors
                           do not consider native warnings to be an error
@@ -1925,8 +1927,7 @@ Optional Packages:
   --with-jdk-variant      JDK variant to build (normal) [normal]
   --with-jvm-interpreter  JVM interpreter to build (template, cpp) [template]
   --with-jvm-variants     JVM variants (separated by commas) to build (server,
-                          client, minimal1, kernel, zero, zeroshark, core)
-                          [server]
+                          client, minimal1, zero, zeroshark, core) [server]
   --with-debug-level      set the debug level (release, fastdebug, slowdebug,
                           optimized (HotSpot build only)) [release]
   --with-devkit           use this devkit for compilers, tools and resources
@@ -4043,13 +4044,80 @@ pkgadd_help() {
 # questions.
 #
 
+###############################################################################
+# Check which interpreter of the JVM we want to build.
+# Currently we have:
+#    template: Template interpreter (the default)
+#    cpp     : C++ interpreter
+
+
+###############################################################################
+# Check which variants of the JVM that we want to build.
+# Currently we have:
+#    server: normal interpreter and a C2 or tiered C1/C2 compiler
+#    client: normal interpreter and C1 (no C2 compiler) (only 32-bit platforms)
+#    minimal1: reduced form of client with optional VM services and features stripped out
+#    zero: no machine code interpreter, no compiler
+#    zeroshark: zero interpreter and shark/llvm compiler backend
+#    core: interpreter only, no compiler (only works on some platforms)
+
+
+
+###############################################################################
+# Setup legacy vars/targets and new vars to deal with different debug levels.
+#
+#    release: no debug information, all optimizations, no asserts.
+#    optimized: no debug information, all optimizations, no asserts, HotSpot target is 'optimized'.
+#    fastdebug: debug information (-g), all optimizations, all asserts
+#    slowdebug: debug information (-g), no optimizations, all asserts
+#
 
 
 
 
 
 
+#
+# Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
 
+###############################################################################
+# Check which variant of the JDK that we want to build.
+# Currently we have:
+#    normal:   standard edition
+# but the custom make system may add other variants
+#
+# Effectively the JDK variant gives a name to a specific set of
+# modules to compile into the JDK.
+
+
+###############################################################################
+# Set the debug level
+#    release: no debug information, all optimizations, no asserts.
+#    optimized: no debug information, all optimizations, no asserts, HotSpot target is 'optimized'.
+#    fastdebug: debug information (-g), all optimizations, all asserts
+#    slowdebug: debug information (-g), no optimizations, all asserts
 
 
 ###############################################################################
@@ -4060,13 +4128,10 @@ pkgadd_help() {
 
 
 
-
-
 ###############################################################################
 #
 # Enable or disable the elliptic curve crypto implementation
 #
-
 
 
 
@@ -4082,8 +4147,6 @@ pkgadd_help() {
 # Static build support.  When enabled will generate static
 # libraries instead of shared libraries for all JDK libs.
 #
-
-
 
 
 #
@@ -4734,7 +4797,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1450172823
+DATE_WHEN_GENERATED=1450206821
 
 ###############################################################################
 #
@@ -15613,17 +15676,6 @@ fi
 
 # These are needed to be able to create a configuration name (and thus the output directory)
 
-  ###############################################################################
-  #
-  # Check which variant of the JDK that we want to build.
-  # Currently we have:
-  #    normal:   standard edition
-  # but the custom make system may add other variants
-  #
-  # Effectively the JDK variant gives a name to a specific set of
-  # modules to compile into the JDK. In the future, these modules
-  # might even be Jigsaw modules.
-  #
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking which variant of the JDK to build" >&5
 $as_echo_n "checking which variant of the JDK to build... " >&6; }
 
@@ -15645,14 +15697,6 @@ fi
 $as_echo "$JDK_VARIANT" >&6; }
 
 
-###############################################################################
-#
-# Check which interpreter of the JVM we want to build.
-# Currently we have:
-#    template: Template interpreter (the default)
-#    cpp     : C++ interpreter
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking which interpreter of the JVM to build" >&5
-$as_echo_n "checking which interpreter of the JVM to build... " >&6; }
 
 # Check whether --with-jvm-interpreter was given.
 if test "${with_jvm_interpreter+set}" = set; then :
@@ -15660,35 +15704,23 @@ if test "${with_jvm_interpreter+set}" = set; then :
 fi
 
 
-if test "x$with_jvm_interpreter" = x; then
-     with_jvm_interpreter="template"
-fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking which interpreter of the JVM to build" >&5
+$as_echo_n "checking which interpreter of the JVM to build... " >&6; }
+  if test "x$with_jvm_interpreter" = x; then
+    JVM_INTERPRETER="template"
+  else
+    JVM_INTERPRETER="$with_jvm_interpreter"
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $JVM_INTERPRETER" >&5
+$as_echo "$JVM_INTERPRETER" >&6; }
 
-JVM_INTERPRETER="$with_jvm_interpreter"
-
-if test "x$JVM_INTERPRETER" != xtemplate && test "x$JVM_INTERPRETER" != xcpp; then
-   as_fn_error $? "The available JVM interpreters are: template, cpp" "$LINENO" 5
-fi
-
-
-
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_jvm_interpreter" >&5
-$as_echo "$with_jvm_interpreter" >&6; }
-
+  if test "x$JVM_INTERPRETER" != xtemplate && test "x$JVM_INTERPRETER" != xcpp; then
+    as_fn_error $? "The available JVM interpreters are: template, cpp" "$LINENO" 5
+  fi
 
 
-  ###############################################################################
-  #
-  # Check which variants of the JVM that we want to build.
-  # Currently we have:
-  #    server: normal interpreter and a tiered C1/C2 compiler
-  #    client: normal interpreter and C1 (no C2 compiler) (only 32-bit platforms)
-  #    minimal1: reduced form of client with optional VM services and features stripped out
-  #    kernel: kernel footprint JVM that passes the TCK without major performance problems,
-  #             ie normal interpreter and C1, only the serial GC, kernel jvmti etc
-  #    zero: no machine code interpreter, no compiler
-  #    zeroshark: zero interpreter and shark/llvm compiler backend
-#    core: interpreter only, no compiler (only works on some platforms)
+
+
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking which variants of the JVM to build" >&5
 $as_echo_n "checking which variants of the JVM to build... " >&6; }
 
@@ -15703,10 +15735,10 @@ fi
   fi
 
   JVM_VARIANTS=",$with_jvm_variants,"
-  TEST_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,//' -e 's/client,//'  -e 's/minimal1,//' -e 's/kernel,//' -e 's/zero,//' -e 's/zeroshark,//' -e 's/core,//'`
+  TEST_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,//' -e 's/client,//'  -e 's/minimal1,//' -e 's/zero,//' -e 's/zeroshark,//' -e 's/core,//'`
 
   if test "x$TEST_VARIANTS" != "x,"; then
-     as_fn_error $? "The available JVM variants are: server, client, minimal1, kernel, zero, zeroshark, core" "$LINENO" 5
+    as_fn_error $? "The available JVM variants are: server, client, minimal1, zero, zeroshark, core" "$LINENO" 5
   fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_jvm_variants" >&5
 $as_echo "$with_jvm_variants" >&6; }
@@ -15714,7 +15746,6 @@ $as_echo "$with_jvm_variants" >&6; }
   JVM_VARIANT_SERVER=`$ECHO "$JVM_VARIANTS" | $SED -e '/,server,/!s/.*/false/g' -e '/,server,/s/.*/true/g'`
   JVM_VARIANT_CLIENT=`$ECHO "$JVM_VARIANTS" | $SED -e '/,client,/!s/.*/false/g' -e '/,client,/s/.*/true/g'`
   JVM_VARIANT_MINIMAL1=`$ECHO "$JVM_VARIANTS" | $SED -e '/,minimal1,/!s/.*/false/g' -e '/,minimal1,/s/.*/true/g'`
-  JVM_VARIANT_KERNEL=`$ECHO "$JVM_VARIANTS" | $SED -e '/,kernel,/!s/.*/false/g' -e '/,kernel,/s/.*/true/g'`
   JVM_VARIANT_ZERO=`$ECHO "$JVM_VARIANTS" | $SED -e '/,zero,/!s/.*/false/g' -e '/,zero,/s/.*/true/g'`
   JVM_VARIANT_ZEROSHARK=`$ECHO "$JVM_VARIANTS" | $SED -e '/,zeroshark,/!s/.*/false/g' -e '/,zeroshark,/s/.*/true/g'`
   JVM_VARIANT_CORE=`$ECHO "$JVM_VARIANTS" | $SED -e '/,core,/!s/.*/false/g' -e '/,core,/s/.*/true/g'`
@@ -15722,11 +15753,6 @@ $as_echo "$with_jvm_variants" >&6; }
   if test "x$JVM_VARIANT_CLIENT" = xtrue; then
     if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
       as_fn_error $? "You cannot build a client JVM for a 64-bit machine." "$LINENO" 5
-    fi
-  fi
-  if test "x$JVM_VARIANT_KERNEL" = xtrue; then
-    if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
-      as_fn_error $? "You cannot build a kernel JVM for a 64-bit machine." "$LINENO" 5
     fi
   fi
   if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
@@ -15737,13 +15763,16 @@ $as_echo "$with_jvm_variants" >&6; }
 
   # Replace the commas with AND for use in the build directory name.
   ANDED_JVM_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/^,//' -e 's/,$//' -e 's/,/AND/g'`
-  COUNT_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,/1/' -e 's/client,/1/' -e 's/minimal1,/1/' -e 's/kernel,/1/' -e 's/zero,/1/' -e 's/zeroshark,/1/' -e 's/core,/1/'`
+  COUNT_VARIANTS=`$ECHO "$JVM_VARIANTS" | $SED -e 's/server,/1/' -e 's/client,/1/' -e 's/minimal1,/1/' -e 's/zero,/1/' -e 's/zeroshark,/1/' -e 's/core,/1/'`
   if test "x$COUNT_VARIANTS" != "x,1"; then
     BUILDING_MULTIPLE_JVM_VARIANTS=yes
   else
     BUILDING_MULTIPLE_JVM_VARIANTS=no
   fi
 
+  if test "x$JVM_VARIANT_ZERO" = xtrue && test "x$BUILDING_MULTIPLE_JVM_VARIANTS" = xyes; then
+    as_fn_error $? "You cannot build multiple variants with zero." "$LINENO" 5
+  fi
 
 
 
@@ -15775,14 +15804,6 @@ $as_echo "$with_jvm_variants" >&6; }
 
 
 
-  ###############################################################################
-  #
-  # Set the debug level
-  #    release: no debug information, all optimizations, no asserts.
-  #    optimized: no debug information, all optimizations, no asserts, HotSpot target is 'optimized'.
-  #    fastdebug: debug information (-g), all optimizations, all asserts
-  #    slowdebug: debug information (-g), no optimizations, all asserts
-  #
   DEBUG_LEVEL="release"
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking which debug level to use" >&5
 $as_echo_n "checking which debug level to use... " >&6; }
@@ -15818,11 +15839,6 @@ $as_echo "$DEBUG_LEVEL" >&6; }
     as_fn_error $? "Allowed debug levels are: release, fastdebug and slowdebug" "$LINENO" 5
   fi
 
-
-  ###############################################################################
-  #
-  # Setup legacy vars/targets and new vars to deal with different debug levels.
-  #
 
   case $DEBUG_LEVEL in
     release )
@@ -15891,10 +15907,6 @@ $as_echo "$DEBUG_LEVEL" >&6; }
 
   if test "x$JVM_VARIANT_MINIMAL1" = xtrue; then
     HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}minimal1 "
-  fi
-
-  if test "x$JVM_VARIANT_KERNEL" = xtrue; then
-    HOTSPOT_TARGET="$HOTSPOT_TARGET${HOTSPOT_DEBUG_LEVEL}kernel "
   fi
 
   if test "x$JVM_VARIANT_ZERO" = xtrue; then
@@ -23128,12 +23140,8 @@ fi
 
 # We need build & target for this.
 
-
-  ###############################################################################
-  #
   # Should we build a JDK/JVM with headful support (ie a graphical ui)?
   # We always build headless support.
-  #
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking headful support" >&5
 $as_echo_n "checking headful support... " >&6; }
   # Check whether --enable-headful was given.
@@ -23165,25 +23173,7 @@ $as_echo "$headful_msg" >&6; }
 
 
 
-  # Control wether Hotspot runs Queens test after build.
-  # Check whether --enable-hotspot-test-in-build was given.
-if test "${enable_hotspot_test_in_build+set}" = set; then :
-  enableval=$enable_hotspot_test_in_build;
-else
-  enable_hotspot_test_in_build=no
-fi
-
-  if test "x$enable_hotspot_test_in_build" = "xyes"; then
-    TEST_IN_BUILD=true
-  else
-    TEST_IN_BUILD=false
-  fi
-
-
-  ###############################################################################
-  #
   # Choose cacerts source file
-  #
 
 # Check whether --with-cacerts-file was given.
 if test "${with_cacerts_file+set}" = set; then :
@@ -23195,10 +23185,7 @@ fi
   fi
 
 
-  ###############################################################################
-  #
   # Enable or disable unlimited crypto
-  #
   # Check whether --enable-unlimited-crypto was given.
 if test "${enable_unlimited_crypto+set}" = set; then :
   enableval=$enable_unlimited_crypto;
@@ -23213,10 +23200,7 @@ fi
   fi
 
 
-  ###############################################################################
-  #
   # Compress jars
-  #
   COMPRESS_JARS=false
 
 
@@ -23234,6 +23218,22 @@ fi
     COPYRIGHT_YEAR="$with_copyright_year"
   else
     COPYRIGHT_YEAR=`date +'%Y'`
+  fi
+
+
+
+  # Control wether Hotspot runs Queens test after build.
+  # Check whether --enable-hotspot-test-in-build was given.
+if test "${enable_hotspot_test_in_build+set}" = set; then :
+  enableval=$enable_hotspot_test_in_build;
+else
+  enable_hotspot_test_in_build=no
+fi
+
+  if test "x$enable_hotspot_test_in_build" = "xyes"; then
+    TEST_IN_BUILD=true
+  else
+    TEST_IN_BUILD=false
   fi
 
 
@@ -31438,7 +31438,11 @@ $as_echo "$as_me: or run \"bash.exe -l\" from a VS command prompt and then run c
     # The microsoft toolchain also requires INCLUDE and LIB to be set.
     export INCLUDE="$VS_INCLUDE"
     export LIB="$VS_LIB"
+  else
+    # Currently we do not define this for other toolchains. This might change as the need arise.
+    TOOLCHAIN_VERSION=
   fi
+
 
   # For solaris we really need solaris tools, and not the GNU equivalent.
   # The build tools on Solaris reside in /usr/ccs (C Compilation System),
@@ -45220,6 +45224,7 @@ $as_echo "$as_me: Rewriting BUILD_AR to \"$new_complete\"" >&6;}
     BUILD_AS="$BUILD_CC -c"
     # Just like for the target compiler, use the compiler as linker
     BUILD_LD="$BUILD_CC"
+    BUILD_LDCXX="$BUILD_CXX"
 
     PATH="$OLDPATH"
   else
@@ -45228,12 +45233,14 @@ $as_echo "$as_me: Rewriting BUILD_AR to \"$new_complete\"" >&6;}
     BUILD_CC="$CC"
     BUILD_CXX="$CXX"
     BUILD_LD="$LD"
+    BUILD_LDCXX="$LDCXX"
     BUILD_NM="$NM"
     BUILD_AS="$AS"
     BUILD_SYSROOT_CFLAGS="$SYSROOT_CFLAGS"
     BUILD_SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS"
     BUILD_AR="$AR"
   fi
+
 
 
 
@@ -45404,7 +45411,7 @@ $as_echo "$supports" >&6; }
 
 
     # "-z relro" supported in GNU binutils 2.17 and later
-    LINKER_RELRO_FLAG="-Xlinker -z -Xlinker relro"
+    LINKER_RELRO_FLAG="-Wl,-z,relro"
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if linker supports \"$LINKER_RELRO_FLAG\"" >&5
 $as_echo_n "checking if linker supports \"$LINKER_RELRO_FLAG\"... " >&6; }
@@ -45454,7 +45461,7 @@ $as_echo "$supports" >&6; }
 
 
     # "-z now" supported in GNU binutils 2.11 and later
-    LINKER_NOW_FLAG="-Xlinker -z -Xlinker now"
+    LINKER_NOW_FLAG="-Wl,-z,now"
 
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if linker supports \"$LINKER_NOW_FLAG\"" >&5
 $as_echo_n "checking if linker supports \"$LINKER_NOW_FLAG\"... " >&6; }
@@ -45512,7 +45519,7 @@ $as_echo "$supports" >&6; }
 $as_echo_n "checking for broken SuSE 'ld' which only understands anonymous version tags in executables... " >&6; }
     $ECHO "SUNWprivate_1.1 { local: *; };" > version-script.map
     $ECHO "int main() { }" > main.c
-    if $CXX -Xlinker -version-script=version-script.map main.c 2>&5 >&5; then
+    if $CXX -Wl,-version-script=version-script.map main.c 2>&5 >&5; then
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
       USING_BROKEN_SUSE_LD=no
@@ -45911,12 +45918,16 @@ $as_echo "$tool_specified" >&6; }
 
 
 
-  # Option used to tell the compiler whether to create 32- or 64-bit executables
+  # COMPILER_TARGET_BITS_FLAG  : option for selecting 32- or 64-bit output
+  # COMPILER_COMMAND_FILE_FLAG : option for passing a command file to the compiler
   if test "x$TOOLCHAIN_TYPE" = xxlc; then
     COMPILER_TARGET_BITS_FLAG="-q"
+    COMPILER_COMMAND_FILE_FLAG="-f"
   else
     COMPILER_TARGET_BITS_FLAG="-m"
+    COMPILER_COMMAND_FILE_FLAG="@"
   fi
+
 
 
   # FIXME: figure out if we should select AR flags depending on OS or toolchain.
@@ -46652,37 +46663,38 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       else
         SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
       fi
-      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker @loader_path/.'
+      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path/.'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
-      SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/$1'
+      SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/$1'
       SET_SHARED_LIBRARY_MAPFILE=''
     else
       # Default works for linux, might work on other platforms as well.
       SHARED_LIBRARY_FLAGS='-shared'
-      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker \$$$$ORIGIN$1'
-      SET_SHARED_LIBRARY_ORIGIN="-Xlinker -z -Xlinker origin $SET_EXECUTABLE_ORIGIN"
-      SET_SHARED_LIBRARY_NAME='-Xlinker -soname=$1'
-      SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=$1'
+      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$$$ORIGIN$1'
+      SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
+      SET_SHARED_LIBRARY_NAME='-Wl,-soname=$1'
+      SET_SHARED_LIBRARY_MAPFILE='-Wl,-version-script=$1'
     fi
   elif test "x$TOOLCHAIN_TYPE" = xclang; then
-    PICFLAG=''
     C_FLAG_REORDER=''
     CXX_FLAG_REORDER=''
 
     if test "x$OPENJDK_TARGET_OS" = xmacosx; then
       # Linking is different on MacOSX
+      PICFLAG=''
       SHARED_LIBRARY_FLAGS="-dynamiclib -compatibility_version 1.0.0 -current_version 1.0.0 $PICFLAG"
-      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker @loader_path/.'
+      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,@loader_path/.'
       SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
-      SET_SHARED_LIBRARY_NAME='-Xlinker -install_name -Xlinker @rpath/$1'
+      SET_SHARED_LIBRARY_NAME='-Wl,-install_name,@rpath/$1'
       SET_SHARED_LIBRARY_MAPFILE=''
     else
       # Default works for linux, might work on other platforms as well.
+      PICFLAG='-fPIC'
       SHARED_LIBRARY_FLAGS='-shared'
-      SET_EXECUTABLE_ORIGIN='-Xlinker -rpath -Xlinker \$$$$ORIGIN$1'
-      SET_SHARED_LIBRARY_ORIGIN="-Xlinker -z -Xlinker origin $SET_EXECUTABLE_ORIGIN"
-      SET_SHARED_LIBRARY_NAME='-Xlinker -soname=$1'
-      SET_SHARED_LIBRARY_MAPFILE='-Xlinker -version-script=$1'
+      SET_EXECUTABLE_ORIGIN='-Wl,-rpath,\$$$$ORIGIN$1'
+      SET_SHARED_LIBRARY_ORIGIN="-Wl,-z,origin $SET_EXECUTABLE_ORIGIN"
+      SET_SHARED_LIBRARY_NAME='-Wl,-soname=$1'
+      SET_SHARED_LIBRARY_MAPFILE='-Wl,-version-script=$1'
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     PICFLAG="-KPIC"
@@ -46691,7 +46703,7 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
     SHARED_LIBRARY_FLAGS="-G"
     SET_EXECUTABLE_ORIGIN='-R\$$$$ORIGIN$1'
     SET_SHARED_LIBRARY_ORIGIN="$SET_EXECUTABLE_ORIGIN"
-    SET_SHARED_LIBRARY_NAME=''
+    SET_SHARED_LIBRARY_NAME='-h $1'
     SET_SHARED_LIBRARY_MAPFILE='-M$1'
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     PICFLAG="-qpic=large"
@@ -46706,12 +46718,13 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
     PICFLAG=""
     C_FLAG_REORDER=''
     CXX_FLAG_REORDER=''
-    SHARED_LIBRARY_FLAGS="-LD"
+    SHARED_LIBRARY_FLAGS="-dll"
     SET_EXECUTABLE_ORIGIN=''
     SET_SHARED_LIBRARY_ORIGIN=''
     SET_SHARED_LIBRARY_NAME=''
     SET_SHARED_LIBRARY_MAPFILE=''
   fi
+
 
 
 
@@ -47028,6 +47041,25 @@ $as_echo "$supports" >&6; }
         CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
         ;;
     esac
+  elif test "x$TOOLCHAIN_TYPE" = xclang; then
+    if test "x$OPENJDK_TARGET_OS" = xlinux; then
+	    if test "x$OPENJDK_TARGET_CPU" = xx86; then
+	      # Force compatibility with i586 on 32 bit intel platforms.
+	      COMMON_CCXXFLAGS="${COMMON_CCXXFLAGS} -march=i586"
+	    fi
+	    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
+	        -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
+	    case $OPENJDK_TARGET_CPU_ARCH in
+	      ppc )
+	        # on ppc we don't prevent gcc to omit frame pointer but do prevent strict aliasing
+	        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
+	        ;;
+	      * )
+	        COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
+	        CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
+	        ;;
+	    esac
+    fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -DTRACING -DMACRO_MEMSYS_OPS -DBREAKPTS"
     if test "x$OPENJDK_TARGET_CPU_ARCH" = xx86; then
@@ -47203,17 +47235,17 @@ $as_echo "$supports" >&6; }
     # If this is a --hash-style=gnu system, use --hash-style=both, why?
     # We have previously set HAS_GNU_HASH if this is the case
     if test -n "$HAS_GNU_HASH"; then
-      LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker --hash-style=both"
+      LDFLAGS_JDK="${LDFLAGS_JDK} -Wl,--hash-style=both"
     fi
     if test "x$OPENJDK_TARGET_OS" = xlinux; then
       # And since we now know that the linker is gnu, then add -z defs, to forbid
       # undefined symbols in object files.
-      LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker -z -Xlinker defs"
+      LDFLAGS_JDK="${LDFLAGS_JDK} -Wl,-z,defs"
       case $DEBUG_LEVEL in
         release )
           # tell linker to optimize libraries.
           # Should this be supplied to the OSS linker as well?
-          LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker -O1"
+          LDFLAGS_JDK="${LDFLAGS_JDK} -Wl,-O1"
           ;;
         slowdebug )
           if test "x$HAS_LINKER_NOW" = "xtrue"; then
@@ -47240,7 +47272,7 @@ $as_echo "$supports" >&6; }
         esac
     fi
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    LDFLAGS_JDK="$LDFLAGS_JDK -z defs -xildoff -ztext"
+    LDFLAGS_JDK="$LDFLAGS_JDK -Wl,-z,defs -xildoff -ztext"
     LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     LDFLAGS_JDK="${LDFLAGS_JDK} -brtl -bnolibpath -bexpall -bernotok"
@@ -47258,17 +47290,19 @@ $as_echo "$supports" >&6; }
     fi
     LDFLAGS_JDKEXE="${LDFLAGS_JDKEXE} /STACK:$LDFLAGS_STACK_SIZE"
   elif test "x$OPENJDK_TARGET_OS" = xlinux; then
-    LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE -Xlinker --allow-shlib-undefined"
+    LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE -Wl,--allow-shlib-undefined"
   fi
 
   # Customize LDFLAGS for libs
   LDFLAGS_JDKLIB="${LDFLAGS_JDK}"
 
+  LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} ${SHARED_LIBRARY_FLAGS}"
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -dll -libpath:${OUTPUT_ROOT}/support/modules_libs/java.base"
+    LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} \
+        -libpath:${OUTPUT_ROOT}/support/modules_libs/java.base"
     JDKLIB_LIBS=""
   else
-    LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB}  ${SHARED_LIBRARY_FLAGS} \
+    LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} \
         -L${OUTPUT_ROOT}/support/modules_libs/java.base${OPENJDK_TARGET_CPU_LIBDIR}"
 
     # On some platforms (mac) the linker warns about non existing -L dirs.
@@ -57089,13 +57123,6 @@ fi
 
 
   HOTSPOT_MAKE_ARGS="$HOTSPOT_TARGET"
-
-
-  # The name of the Service Agent jar.
-  SALIB_NAME="${LIBRARY_PREFIX}saproc${SHARED_LIBRARY_SUFFIX}"
-  if test "x$OPENJDK_TARGET_OS" = "xwindows"; then
-    SALIB_NAME="${LIBRARY_PREFIX}sawindbg${SHARED_LIBRARY_SUFFIX}"
-  fi
 
 
 
