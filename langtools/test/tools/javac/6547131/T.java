@@ -2,7 +2,7 @@
  * @test
  * @bug     6547131
  * @summary java.lang.ClassFormatError when using old collection API
- * @compile T.java
+ * @compile p/Outer.jasm p/Outer$I.jasm T.java
  * @run main T
  */
 
