@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.misc;
+package java.lang.reflect;
 
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -53,7 +53,7 @@ import sun.security.action.GetBooleanAction;
  * @author      Peter Jones
  * @since       1.3
  */
-public class ProxyGenerator {
+class ProxyGenerator {
     /*
      * In the comments below, "JVMS" refers to The Java Virtual Machine
      * Specification Second Edition and "JLS" refers to the original
@@ -314,13 +314,13 @@ public class ProxyGenerator {
     private static final boolean saveGeneratedFiles =
         java.security.AccessController.doPrivileged(
             new GetBooleanAction(
-                "sun.misc.ProxyGenerator.saveGeneratedFiles")).booleanValue();
+                "jdk.proxy.ProxyGenerator.saveGeneratedFiles")).booleanValue();
 
     /**
      * Generate a public proxy class given a name and a list of proxy interfaces.
      */
-    public static byte[] generateProxyClass(final String name,
-                                            Class<?>[] interfaces) {
+    static byte[] generateProxyClass(final String name,
+                                     Class<?>[] interfaces) {
         return generateProxyClass(name, interfaces, (ACC_PUBLIC | ACC_FINAL | ACC_SUPER));
     }
 
@@ -331,9 +331,9 @@ public class ProxyGenerator {
      * @param interfaces  proxy interfaces
      * @param accessFlags access flags of the proxy class
     */
-    public static byte[] generateProxyClass(final String name,
-                                            Class<?>[] interfaces,
-                                            int accessFlags)
+    static byte[] generateProxyClass(final String name,
+                                     Class<?>[] interfaces,
+                                     int accessFlags)
     {
         ProxyGenerator gen = new ProxyGenerator(name, interfaces, accessFlags);
         final byte[] classFile = gen.generateClassFile();
