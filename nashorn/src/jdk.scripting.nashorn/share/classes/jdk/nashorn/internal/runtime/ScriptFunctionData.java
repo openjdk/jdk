@@ -373,9 +373,23 @@ public abstract class ScriptFunctionData implements Serializable {
      * @param runtimeScope the runtime scope. It can be used to evaluate types of scoped variables to guide the
      * optimistic compilation, should the call to this method trigger code compilation. Can be null if current runtime
      * scope is not known, but that might cause compilation of code that will need more deoptimization passes.
+     * @param linkLogicOkay is a CompiledFunction with a LinkLogic acceptable?
      * @return the best function for the specified call site type.
      */
-    abstract CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden);
+    abstract CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden, final boolean linkLogicOkay);
+
+    /**
+     * Returns the best function for the specified call site type.
+     * @param callSiteType The call site type. Call site types are expected to have the form
+     * {@code (callee, this[, args...])}.
+     * @param runtimeScope the runtime scope. It can be used to evaluate types of scoped variables to guide the
+     * optimistic compilation, should the call to this method trigger code compilation. Can be null if current runtime
+     * scope is not known, but that might cause compilation of code that will need more deoptimization passes.
+     * @return the best function for the specified call site type.
+     */
+    final CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden) {
+        return getBest(callSiteType, runtimeScope, forbidden, true);
+    }
 
     boolean isValidCallSite(final MethodType callSiteType) {
         return callSiteType.parameterCount() >= 2  && // Must have at least (callee, this)
@@ -383,7 +397,7 @@ public abstract class ScriptFunctionData implements Serializable {
     }
 
     CompiledFunction getGeneric(final ScriptObject runtimeScope) {
-        return getBest(getGenericType(), runtimeScope, CompiledFunction.NO_FUNCTIONS);
+        return getBest(getGenericType(), runtimeScope, CompiledFunction.NO_FUNCTIONS, false);
     }
 
     /**
