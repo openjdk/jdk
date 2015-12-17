@@ -688,8 +688,7 @@ public:
                                                                             \
   product(size_t, NUMAInterleaveGranularity, 2*M,                           \
           "Granularity to use for NUMA interleaving on Windows OS")         \
-          range(os::vm_allocation_granularity(), max_uintx)                 \
-          constraint(NUMAInterleaveGranularityConstraintFunc,AfterErgo)     \
+          range(os::vm_allocation_granularity(), NOT_LP64(2*G) LP64_ONLY(8192*G)) \
                                                                             \
   product(bool, ForceNUMA, false,                                           \
           "Force NUMA optimizations on single-node/UMA systems")            \
