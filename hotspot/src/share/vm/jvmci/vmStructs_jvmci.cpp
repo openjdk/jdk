@@ -635,6 +635,43 @@
 #endif // TARGET_ARCH_x86
 
 
+#ifdef TARGET_ARCH_sparc
+
+#define VM_STRUCTS_CPU(nonstatic_field, static_field, unchecked_nonstatic_field, volatile_nonstatic_field, nonproduct_nonstatic_field, c2_nonstatic_field, unchecked_c1_static_field, unchecked_c2_static_field) \
+  volatile_nonstatic_field(JavaFrameAnchor, _flags, int) \
+  static_field(VM_Version, _features, int)
+
+#define VM_TYPES_CPU(declare_type, declare_toplevel_type, declare_oop_type, declare_integer_type, declare_unsigned_integer_type, declare_c1_toplevel_type, declare_c2_type, declare_c2_toplevel_type) \
+  declare_toplevel_type(VM_Version)
+
+#define VM_INT_CONSTANTS_CPU(declare_constant, declare_preprocessor_constant, declare_c1_constant, declare_c2_constant, declare_c2_preprocessor_constant) \
+  declare_constant(VM_Version::vis1_instructions_m)                       \
+  declare_constant(VM_Version::vis2_instructions_m)                       \
+  declare_constant(VM_Version::vis3_instructions_m)                       \
+  declare_constant(VM_Version::cbcond_instructions_m)                     \
+  declare_constant(VM_Version::v8_instructions_m)                         \
+  declare_constant(VM_Version::hardware_mul32_m)                          \
+  declare_constant(VM_Version::hardware_div32_m)                          \
+  declare_constant(VM_Version::hardware_fsmuld_m)                         \
+  declare_constant(VM_Version::hardware_popc_m)                           \
+  declare_constant(VM_Version::v9_instructions_m)                         \
+  declare_constant(VM_Version::sun4v_m)                                   \
+  declare_constant(VM_Version::blk_init_instructions_m)                   \
+  declare_constant(VM_Version::fmaf_instructions_m)                       \
+  declare_constant(VM_Version::fmau_instructions_m)                       \
+  declare_constant(VM_Version::sparc64_family_m)                          \
+  declare_constant(VM_Version::M_family_m)                                \
+  declare_constant(VM_Version::T_family_m)                                \
+  declare_constant(VM_Version::T1_model_m)                                \
+  declare_constant(VM_Version::sparc5_instructions_m)                     \
+  declare_constant(VM_Version::aes_instructions_m)                        \
+  declare_constant(VM_Version::sha1_instruction_m)                        \
+  declare_constant(VM_Version::sha256_instruction_m)                      \
+  declare_constant(VM_Version::sha512_instruction_m)
+
+#endif // TARGET_ARCH_sparc
+
+
 /*
  * Dummy defines for architectures that don't use these.
  */
