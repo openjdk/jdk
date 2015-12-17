@@ -597,36 +597,42 @@ public class Types {
     }
 
     public Type removeWildcards(Type site) {
-        Type capturedSite = capture(site);
-        if (capturedSite != site) {
-            Type formalInterface = site.tsym.type;
-            ListBuffer<Type> typeargs = new ListBuffer<>();
-            List<Type> actualTypeargs = site.getTypeArguments();
-            List<Type> capturedTypeargs = capturedSite.getTypeArguments();
-            //simply replace the wildcards with its bound
-            for (Type t : formalInterface.getTypeArguments()) {
-                if (actualTypeargs.head.hasTag(WILDCARD)) {
-                    WildcardType wt = (WildcardType)actualTypeargs.head;
-                    Type bound;
-                    switch (wt.kind) {
-                        case EXTENDS:
-                        case UNBOUND:
-                            CapturedType capVar = (CapturedType)capturedTypeargs.head;
-                            //use declared bound if it doesn't depend on formal type-args
-                            bound = capVar.bound.containsAny(capturedSite.getTypeArguments()) ?
-                                    wt.type : capVar.bound;
-                            break;
-                        default:
-                            bound = wt.type;
+        if (site.getTypeArguments().stream().anyMatch(t -> t.hasTag(WILDCARD))) {
+            //compute non-wildcard parameterization - JLS 9.9
+            List<Type> actuals = site.getTypeArguments();
+            List<Type> formals = site.tsym.type.getTypeArguments();
+            ListBuffer<Type> targs = new ListBuffer<>();
+            for (Type formal : formals) {
+                Type actual = actuals.head;
+                Type bound = formal.getUpperBound();
+                if (actuals.head.hasTag(WILDCARD)) {
+                    WildcardType wt = (WildcardType)actual;
+                    //check that bound does not contain other formals
+                    if (bound.containsAny(formals)) {
+                        targs.add(wt.type);
+                    } else {
+                        //compute new type-argument based on declared bound and wildcard bound
+                        switch (wt.kind) {
+                            case UNBOUND:
+                                targs.add(bound);
+                                break;
+                            case EXTENDS:
+                                targs.add(glb(bound, wt.type));
+                                break;
+                            case SUPER:
+                                targs.add(wt.type);
+                                break;
+                            default:
+                                Assert.error("Cannot get here!");
+                        }
                     }
-                    typeargs.append(bound);
                 } else {
-                    typeargs.append(actualTypeargs.head);
+                    //not a wildcard - the new type argument remains unchanged
+                    targs.add(actual);
                 }
-                actualTypeargs = actualTypeargs.tail;
-                capturedTypeargs = capturedTypeargs.tail;
+                actuals = actuals.tail;
             }
-            return subst(formalInterface, formalInterface.getTypeArguments(), typeargs.toList());
+            return subst(site.tsym.type, formals, targs.toList());
         } else {
             return site;
         }
