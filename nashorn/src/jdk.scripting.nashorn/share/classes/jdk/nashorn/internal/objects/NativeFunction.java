@@ -98,6 +98,10 @@ public final class NativeFunction {
     public static Object apply(final Object self, final Object thiz, final Object array) {
         checkCallable(self);
 
+        System.out.println("self " + self);
+        System.out.println("thiz " + thiz);
+        System.out.println("array " + array);
+
         final Object[] args = toApplyArgs(array);
 
         if (self instanceof ScriptFunction) {
