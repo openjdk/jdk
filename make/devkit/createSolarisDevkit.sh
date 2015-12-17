@@ -96,12 +96,13 @@ if [ ! -d $SYSROOT ]; then
   echo "Copying from $INSTALL_ROOT to $SYSROOT"
   mkdir -p $SYSROOT
   cp -rH $INSTALL_ROOT/lib $SYSROOT/
-  mkdir $SYSROOT/usr
+  mkdir $SYSROOT/usr $DEVKIT_ROOT/gnu
   # Some of the tools in sysroot are needed in the OpenJDK build but cannot be
   # run from their current location due to relative runtime paths in the
   # binaries. Move the sysroot/usr/bin directory to the outer bin and have them
   # be runnable from there to force them to link to the system libraries
   cp -rH $INSTALL_ROOT/usr/bin $DEVKIT_ROOT
+  cp -rH $INSTALL_ROOT/usr/gnu/bin $DEVKIT_ROOT/gnu/
   cp -rH $INSTALL_ROOT/usr/lib $SYSROOT/usr/
   cp -rH $INSTALL_ROOT/usr/include $SYSROOT/usr/
   pkg -R $INSTALL_ROOT list > $SYSROOT/pkg-list.txt
