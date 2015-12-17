@@ -515,7 +515,10 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
 
     ENABLE_DEBUG_SYMBOLS=true
     ZIP_DEBUGINFO_FILES=true
-    DEBUG_BINARIES=true
+    # -g is already added by ENABLE_DEBUG_SYMBOLS and the hotspot makefiles
+    # will basically do slowdebug builds when DEBUG_BINARIES is set for
+    # fastdebug builds
+    DEBUG_BINARIES=false
     STRIP_POLICY=min_strip
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xnone; then
     ENABLE_DEBUG_SYMBOLS=false
@@ -525,6 +528,8 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xinternal; then
     ENABLE_DEBUG_SYMBOLS=false  # -g option only
     ZIP_DEBUGINFO_FILES=false
+    # Fastdebug builds with this setting will essentially be slowdebug
+    # in hotspot.
     DEBUG_BINARIES=true
     STRIP_POLICY=no_strip
     STRIP=""
@@ -540,7 +545,10 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_SYMBOLS],
 
     ENABLE_DEBUG_SYMBOLS=true
     ZIP_DEBUGINFO_FILES=false
-    DEBUG_BINARIES=true
+    # -g is already added by ENABLE_DEBUG_SYMBOLS and the hotspot makefiles
+    # will basically do slowdebug builds when DEBUG_BINARIES is set for
+    # fastdebug builds
+    DEBUG_BINARIES=false
     STRIP_POLICY=min_strip
   else
     AC_MSG_ERROR([Allowed native debug symbols are: none, internal, external, zipped])
