@@ -3042,7 +3042,11 @@ void nmethod::print_recorded_oops() {
   for (int i = 0; i < oops_count(); i++) {
     oop o = oop_at(i);
     tty->print("#%3d: " INTPTR_FORMAT " ", i, p2i(o));
-    o->print_value();
+    if (o == (oop)Universe::non_oop_word()) {
+      tty->print("non-oop word");
+    } else {
+      o->print_value();
+    }
     tty->cr();
   }
 }
@@ -3052,7 +3056,11 @@ void nmethod::print_recorded_metadata() {
   for (int i = 0; i < metadata_count(); i++) {
     Metadata* m = metadata_at(i);
     tty->print("#%3d: " INTPTR_FORMAT " ", i, p2i(m));
-    m->print_value_on_maybe_null(tty);
+    if (m == (Metadata*)Universe::non_oop_word()) {
+      tty->print("non-metadata word");
+    } else {
+      m->print_value_on_maybe_null(tty);
+    }
     tty->cr();
   }
 }
