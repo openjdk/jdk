@@ -26,6 +26,7 @@
  * @bug 8133885
  * @summary monitorinflation=debug should have logging from each of the statements in the code
  * @library /testlibrary
+ * @ignore 8145587
  * @modules java.base/sun.misc
  *          java.management
  * @build MonitorInflationTest
