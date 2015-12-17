@@ -414,6 +414,13 @@ grant codeBase "file:/${basedir}/test/script/basic/*" {
     permission java.util.PropertyPermission "nashorn.test.*", "read";
 };
 
+grant codeBase "file:/${basedir}/test/script/basic/apply_to_call/*" {
+    permission java.io.FilePermission "${basedir}/test/script/-", "read";
+    permission java.io.FilePermission "$${user.dir}", "read";
+    permission java.util.PropertyPermission "user.dir", "read";
+    permission java.util.PropertyPermission "nashorn.test.*", "read";
+};
+
 grant codeBase "file:/${basedir}/test/script/basic/parser/*" {
     permission java.io.FilePermission "${basedir}/test/script/-", "read";
     permission java.io.FilePermission "$${user.dir}", "read";

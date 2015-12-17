@@ -972,6 +972,13 @@ public class ScriptFunction extends ScriptObject {
             }
         }
 
+        // Is this an unstable callsite which was earlier apply-to-call optimized?
+        // If so, earlier apply2call would have exploded arguments. We have to convert
+        // that as an array again!
+        if (isUnstable && NashornCallSiteDescriptor.isApplyToCall(desc)) {
+            boundHandle = MH.asCollector(boundHandle, Object[].class, type.parameterCount() - 2);
+        }
+
         boundHandle = pairArguments(boundHandle, type);
 
         if (bestInvoker.getSwitchPoints() != null) {
