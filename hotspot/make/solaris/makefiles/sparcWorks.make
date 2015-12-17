@@ -145,7 +145,8 @@ endif
 CFLAGS += -DDONT_USE_PRECOMPILED_HEADER
 
 # Compiler warnings are treated as errors
-CFLAGS_WARN = -xwe
+WARNINGS_ARE_ERRORS ?= -xwe
+CFLAGS_WARN = $(WARNINGS_ARE_ERRORS)
 
 ################################################
 # Begin current (>=5.9) Forte compiler options #
