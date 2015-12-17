@@ -13,6 +13,7 @@ database/berkeleydb-5@5.1.25-0.175.1.0.0.24.0
 database/mysql-51/library@5.1.37-0.175.1.10.0.5.0
 database/sqlite-3@3.7.14.1-0.175.1.10.0.4.0
 developer/base-developer-utilities@0.5.11-0.175.1.11.0.1.2
+developer/gnu-binutils@2.21.1-0.175.1.0.0.24.0
 developer/macro/cpp@0.5.11-0.175.1.19.0.4.0
 driver/management/bmc@0.5.11-0.175.1.0.0.24.2
 driver/management/ipmi@0.5.11-0.175.1.6.0.3.2
