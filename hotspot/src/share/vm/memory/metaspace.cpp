@@ -25,6 +25,7 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/collectorPolicy.hpp"
 #include "gc/shared/gcLocker.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/binaryTreeDictionary.hpp"
 #include "memory/filemap.hpp"
@@ -811,8 +812,10 @@ void VirtualSpaceNode::verify_container_count() {
 BlockFreelist::BlockFreelist() : _dictionary(new BlockTreeDictionary()) {}
 
 BlockFreelist::~BlockFreelist() {
-  if (Verbose && TraceMetadataChunkAllocation) {
-    dictionary()->print_free_lists(gclog_or_tty);
+  LogHandle(gc, metaspace, freelist) log;
+  if (log.is_trace()) {
+    ResourceMark rm;
+    dictionary()->print_free_lists(log.trace_stream());
   }
   delete _dictionary;
 }
@@ -892,11 +895,11 @@ Metachunk* VirtualSpaceNode::take_from_committed(size_t chunk_word_size) {
       "The committed memory doesn't match the expanded memory.");
 
   if (!is_available(chunk_word_size)) {
-    if (TraceMetadataChunkAllocation) {
-      gclog_or_tty->print("VirtualSpaceNode::take_from_committed() not available " SIZE_FORMAT " words ", chunk_word_size);
-      // Dump some information about the virtual space that is nearly full
-      print_on(gclog_or_tty);
-    }
+    LogHandle(gc, metaspace, freelist) log;
+    log.debug("VirtualSpaceNode::take_from_committed() not available " SIZE_FORMAT " words ", chunk_word_size);
+    // Dump some information about the virtual space that is nearly full
+    ResourceMark rm;
+    print_on(log.debug_stream());
     return NULL;
   }
 
@@ -1231,9 +1234,11 @@ void VirtualSpaceList::link_vs(VirtualSpaceNode* new_entry) {
 #ifdef ASSERT
   new_entry->mangle();
 #endif
-  if (TraceMetavirtualspaceAllocation && Verbose) {
+  if (develop_log_is_enabled(Trace, gc, metaspace)) {
+    LogHandle(gc, metaspace) log;
     VirtualSpaceNode* vsl = current_virtual_space();
-    vsl->print_on(gclog_or_tty);
+    ResourceMark rm;
+    vsl->print_on(log.trace_stream());
   }
 }
 
@@ -1330,12 +1335,10 @@ Metachunk* VirtualSpaceList::get_new_chunk(size_t word_size,
 }
 
 void VirtualSpaceList::print_on(outputStream* st) const {
-  if (TraceMetadataChunkAllocation && Verbose) {
-    VirtualSpaceListIterator iter(virtual_space_list());
-    while (iter.repeat()) {
-      VirtualSpaceNode* node = iter.get_next();
-      node->print_on(st);
-    }
+  VirtualSpaceListIterator iter(virtual_space_list());
+  while (iter.repeat()) {
+    VirtualSpaceNode* node = iter.get_next();
+    node->print_on(st);
   }
 }
 
@@ -1497,17 +1500,10 @@ void MetaspaceGC::compute_new_size() {
   minimum_desired_capacity = MAX2(minimum_desired_capacity,
                                   MetaspaceSize);
 
-  if (PrintGCDetails && Verbose) {
-    gclog_or_tty->print_cr("\nMetaspaceGC::compute_new_size: ");
-    gclog_or_tty->print_cr("  "
-                  "  minimum_free_percentage: %6.2f"
-                  "  maximum_used_percentage: %6.2f",
-                  minimum_free_percentage,
-                  maximum_used_percentage);
-    gclog_or_tty->print_cr("  "
-                  "   used_after_gc       : %6.1fKB",
-                  used_after_gc / (double) K);
-  }
+  log_trace(gc, metaspace)("MetaspaceGC::compute_new_size: ");
+  log_trace(gc, metaspace)("    minimum_free_percentage: %6.2f  maximum_used_percentage: %6.2f",
+                           minimum_free_percentage, maximum_used_percentage);
+  log_trace(gc, metaspace)("     used_after_gc       : %6.1fKB", used_after_gc / (double) K);
 
 
   size_t shrink_bytes = 0;
@@ -1525,17 +1521,11 @@ void MetaspaceGC::compute_new_size() {
       Metaspace::tracer()->report_gc_threshold(capacity_until_GC,
                                                new_capacity_until_GC,
                                                MetaspaceGCThresholdUpdater::ComputeNewSize);
-      if (PrintGCDetails && Verbose) {
-        gclog_or_tty->print_cr("    expanding:"
-                      "  minimum_desired_capacity: %6.1fKB"
-                      "  expand_bytes: %6.1fKB"
-                      "  MinMetaspaceExpansion: %6.1fKB"
-                      "  new metaspace HWM:  %6.1fKB",
-                      minimum_desired_capacity / (double) K,
-                      expand_bytes / (double) K,
-                      MinMetaspaceExpansion / (double) K,
-                      new_capacity_until_GC / (double) K);
-      }
+      log_trace(gc, metaspace)("    expanding:  minimum_desired_capacity: %6.1fKB  expand_bytes: %6.1fKB  MinMetaspaceExpansion: %6.1fKB  new metaspace HWM:  %6.1fKB",
+                               minimum_desired_capacity / (double) K,
+                               expand_bytes / (double) K,
+                               MinMetaspaceExpansion / (double) K,
+                               new_capacity_until_GC / (double) K);
     }
     return;
   }
@@ -1555,18 +1545,10 @@ void MetaspaceGC::compute_new_size() {
     size_t maximum_desired_capacity = (size_t)MIN2(max_tmp, double(max_uintx));
     maximum_desired_capacity = MAX2(maximum_desired_capacity,
                                     MetaspaceSize);
-    if (PrintGCDetails && Verbose) {
-      gclog_or_tty->print_cr("  "
-                             "  maximum_free_percentage: %6.2f"
-                             "  minimum_used_percentage: %6.2f",
-                             maximum_free_percentage,
-                             minimum_used_percentage);
-      gclog_or_tty->print_cr("  "
-                             "  minimum_desired_capacity: %6.1fKB"
-                             "  maximum_desired_capacity: %6.1fKB",
-                             minimum_desired_capacity / (double) K,
-                             maximum_desired_capacity / (double) K);
-    }
+    log_trace(gc, metaspace)("    maximum_free_percentage: %6.2f  minimum_used_percentage: %6.2f",
+                             maximum_free_percentage, minimum_used_percentage);
+    log_trace(gc, metaspace)("    minimum_desired_capacity: %6.1fKB  maximum_desired_capacity: %6.1fKB",
+                             minimum_desired_capacity / (double) K, maximum_desired_capacity / (double) K);
 
     assert(minimum_desired_capacity <= maximum_desired_capacity,
            "sanity check");
@@ -1592,23 +1574,10 @@ void MetaspaceGC::compute_new_size() {
       } else {
         _shrink_factor = MIN2(current_shrink_factor * 4, (uint) 100);
       }
-      if (PrintGCDetails && Verbose) {
-        gclog_or_tty->print_cr("  "
-                      "  shrinking:"
-                      "  initSize: %.1fK"
-                      "  maximum_desired_capacity: %.1fK",
-                      MetaspaceSize / (double) K,
-                      maximum_desired_capacity / (double) K);
-        gclog_or_tty->print_cr("  "
-                      "  shrink_bytes: %.1fK"
-                      "  current_shrink_factor: %d"
-                      "  new shrink factor: %d"
-                      "  MinMetaspaceExpansion: %.1fK",
-                      shrink_bytes / (double) K,
-                      current_shrink_factor,
-                      _shrink_factor,
-                      MinMetaspaceExpansion / (double) K);
-      }
+      log_trace(gc, metaspace)("    shrinking:  initSize: %.1fK  maximum_desired_capacity: %.1fK",
+                               MetaspaceSize / (double) K, maximum_desired_capacity / (double) K);
+      log_trace(gc, metaspace)("    shrink_bytes: %.1fK  current_shrink_factor: %d  new shrink factor: %d  MinMetaspaceExpansion: %.1fK",
+                               shrink_bytes / (double) K, current_shrink_factor, _shrink_factor, MinMetaspaceExpansion / (double) K);
     }
   }
 
@@ -1638,10 +1607,7 @@ bool Metadebug::test_metadata_failure() {
     if (_allocation_fail_alot_count > 0) {
       _allocation_fail_alot_count--;
     } else {
-      if (TraceMetadataChunkAllocation && Verbose) {
-        gclog_or_tty->print_cr("Metadata allocation failing for "
-                               "MetadataAllocationFailALot");
-      }
+      log_trace(gc, metaspace, freelist)("Metadata allocation failing for MetadataAllocationFailALot");
       init_allocation_fail_alot_count();
       return true;
     }
@@ -1786,11 +1752,8 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
     // Remove the chunk as the head of the list.
     free_list->remove_chunk(chunk);
 
-    if (TraceMetadataChunkAllocation && Verbose) {
-      gclog_or_tty->print_cr("ChunkManager::free_chunks_get: free_list "
-                             PTR_FORMAT " head " PTR_FORMAT " size " SIZE_FORMAT,
-                             p2i(free_list), p2i(chunk), chunk->word_size());
-    }
+    log_trace(gc, metaspace, freelist)("ChunkManager::free_chunks_get: free_list " PTR_FORMAT " head " PTR_FORMAT " size " SIZE_FORMAT,
+                                       p2i(free_list), p2i(chunk), chunk->word_size());
   } else {
     chunk = humongous_dictionary()->get_chunk(
       word_size,
@@ -1800,13 +1763,8 @@ Metachunk* ChunkManager::free_chunks_get(size_t word_size) {
       return NULL;
     }
 
-    if (TraceMetadataHumongousAllocation) {
-      size_t waste = chunk->word_size() - word_size;
-      gclog_or_tty->print_cr("Free list allocate humongous chunk size "
-                             SIZE_FORMAT " for requested size " SIZE_FORMAT
-                             " waste " SIZE_FORMAT,
-                             chunk->word_size(), word_size, waste);
-    }
+    log_debug(gc, metaspace, alloc)("Free list allocate humongous chunk size " SIZE_FORMAT " for requested size " SIZE_FORMAT " waste " SIZE_FORMAT,
+                                    chunk->word_size(), word_size, chunk->word_size() - word_size);
   }
 
   // Chunk is being removed from the chunks free list.
@@ -1839,7 +1797,8 @@ Metachunk* ChunkManager::chunk_freelist_allocate(size_t word_size) {
   assert((word_size <= chunk->word_size()) ||
          list_index(chunk->word_size() == HumongousIndex),
          "Non-humongous variable sized chunk");
-  if (TraceMetadataChunkAllocation) {
+  LogHandle(gc, metaspace, freelist) log;
+  if (log.is_debug()) {
     size_t list_count;
     if (list_index(word_size) < HumongousIndex) {
       ChunkList* list = find_free_chunks_list(word_size);
@@ -1847,19 +1806,17 @@ Metachunk* ChunkManager::chunk_freelist_allocate(size_t word_size) {
     } else {
       list_count = humongous_dictionary()->total_count();
     }
-    gclog_or_tty->print("ChunkManager::chunk_freelist_allocate: " PTR_FORMAT " chunk "
-                        PTR_FORMAT "  size " SIZE_FORMAT " count " SIZE_FORMAT " ",
-                        p2i(this), p2i(chunk), chunk->word_size(), list_count);
-    locked_print_free_chunks(gclog_or_tty);
+    log.debug("ChunkManager::chunk_freelist_allocate: " PTR_FORMAT " chunk " PTR_FORMAT "  size " SIZE_FORMAT " count " SIZE_FORMAT " ",
+               p2i(this), p2i(chunk), chunk->word_size(), list_count);
+    ResourceMark rm;
+    locked_print_free_chunks(log.debug_stream());
   }
 
   return chunk;
 }
 
 void ChunkManager::print_on(outputStream* out) const {
-  if (PrintFLSStatistics != 0) {
-    const_cast<ChunkManager *>(this)->humongous_dictionary()->report_statistics();
-  }
+  const_cast<ChunkManager *>(this)->humongous_dictionary()->report_statistics(out);
 }
 
 // SpaceManager methods
@@ -2039,14 +1996,12 @@ size_t SpaceManager::calc_chunk_size(size_t word_size) {
          "Size calculation is wrong, word_size " SIZE_FORMAT
          " chunk_word_size " SIZE_FORMAT,
          word_size, chunk_word_size);
-  if (TraceMetadataHumongousAllocation &&
-      SpaceManager::is_humongous(word_size)) {
-    gclog_or_tty->print_cr("Metadata humongous allocation:");
-    gclog_or_tty->print_cr("  word_size " PTR_FORMAT, word_size);
-    gclog_or_tty->print_cr("  chunk_word_size " PTR_FORMAT,
-                           chunk_word_size);
-    gclog_or_tty->print_cr("    chunk overhead " PTR_FORMAT,
-                           Metachunk::overhead());
+  LogHandle(gc, metaspace, alloc) log;
+  if (log.is_debug() && SpaceManager::is_humongous(word_size)) {
+    log.debug("Metadata humongous allocation:");
+    log.debug("  word_size " PTR_FORMAT, word_size);
+    log.debug("  chunk_word_size " PTR_FORMAT, chunk_word_size);
+    log.debug("    chunk overhead " PTR_FORMAT, Metachunk::overhead());
   }
   return chunk_word_size;
 }
@@ -2068,17 +2023,15 @@ MetaWord* SpaceManager::grow_and_allocate(size_t word_size) {
          "Don't need to expand");
   MutexLockerEx cl(SpaceManager::expand_lock(), Mutex::_no_safepoint_check_flag);
 
-  if (TraceMetadataChunkAllocation && Verbose) {
+  if (log_is_enabled(Trace, gc, metaspace, freelist)) {
     size_t words_left = 0;
     size_t words_used = 0;
     if (current_chunk() != NULL) {
       words_left = current_chunk()->free_word_size();
       words_used = current_chunk()->used_word_size();
     }
-    gclog_or_tty->print_cr("SpaceManager::grow_and_allocate for " SIZE_FORMAT
-                           " words " SIZE_FORMAT " words used " SIZE_FORMAT
-                           " words left",
-                            word_size, words_used, words_left);
+    log_trace(gc, metaspace, freelist)("SpaceManager::grow_and_allocate for " SIZE_FORMAT " words " SIZE_FORMAT " words used " SIZE_FORMAT " words left",
+                                       word_size, words_used, words_left);
   }
 
   // Get another chunk
@@ -2169,9 +2122,7 @@ void SpaceManager::initialize() {
     _chunks_in_use[i] = NULL;
   }
   _current_chunk = NULL;
-  if (TraceMetadataChunkAllocation && Verbose) {
-    gclog_or_tty->print_cr("SpaceManager(): " PTR_FORMAT, p2i(this));
-  }
+  log_trace(gc, metaspace, freelist)("SpaceManager(): " PTR_FORMAT, p2i(this));
 }
 
 void ChunkManager::return_chunks(ChunkIndex index, Metachunk* chunks) {
@@ -2213,9 +2164,11 @@ SpaceManager::~SpaceManager() {
 
   dec_total_from_size_metrics();
 
-  if (TraceMetadataChunkAllocation && Verbose) {
-    gclog_or_tty->print_cr("~SpaceManager(): " PTR_FORMAT, p2i(this));
-    locked_print_chunks_in_use_on(gclog_or_tty);
+  LogHandle(gc, metaspace, freelist) log;
+  if (log.is_trace()) {
+    log.trace("~SpaceManager(): " PTR_FORMAT, p2i(this));
+    ResourceMark rm;
+    locked_print_chunks_in_use_on(log.trace_stream());
   }
 
   // Do not mangle freed Metachunks.  The chunk size inside Metachunks
@@ -2233,19 +2186,11 @@ SpaceManager::~SpaceManager() {
   // free lists.  Each list is NULL terminated.
 
   for (ChunkIndex i = ZeroIndex; i < HumongousIndex; i = next_chunk_index(i)) {
-    if (TraceMetadataChunkAllocation && Verbose) {
-      gclog_or_tty->print_cr("returned " SIZE_FORMAT " %s chunks to freelist",
-                             sum_count_in_chunks_in_use(i),
-                             chunk_size_name(i));
-    }
+    log.trace("returned " SIZE_FORMAT " %s chunks to freelist", sum_count_in_chunks_in_use(i), chunk_size_name(i));
     Metachunk* chunks = chunks_in_use(i);
     chunk_manager()->return_chunks(i, chunks);
     set_chunks_in_use(i, NULL);
-    if (TraceMetadataChunkAllocation && Verbose) {
-      gclog_or_tty->print_cr("updated freelist count " SSIZE_FORMAT " %s",
-                             chunk_manager()->free_chunks(i)->count(),
-                             chunk_size_name(i));
-    }
+    log.trace("updated freelist count " SSIZE_FORMAT " %s", chunk_manager()->free_chunks(i)->count(), chunk_size_name(i));
     assert(i != HumongousIndex, "Humongous chunks are handled explicitly later");
   }
 
@@ -2254,12 +2199,9 @@ SpaceManager::~SpaceManager() {
   // the current chunk but there are probably exceptions.
 
   // Humongous chunks
-  if (TraceMetadataChunkAllocation && Verbose) {
-    gclog_or_tty->print_cr("returned " SIZE_FORMAT " %s humongous chunks to dictionary",
-                            sum_count_in_chunks_in_use(HumongousIndex),
-                            chunk_size_name(HumongousIndex));
-    gclog_or_tty->print("Humongous chunk dictionary: ");
-  }
+  log.trace("returned " SIZE_FORMAT " %s humongous chunks to dictionary",
+            sum_count_in_chunks_in_use(HumongousIndex), chunk_size_name(HumongousIndex));
+  log.trace("Humongous chunk dictionary: ");
   // Humongous chunks are never the current chunk.
   Metachunk* humongous_chunks = chunks_in_use(HumongousIndex);
 
@@ -2267,11 +2209,7 @@ SpaceManager::~SpaceManager() {
 #ifdef ASSERT
     humongous_chunks->set_is_tagged_free(true);
 #endif
-    if (TraceMetadataChunkAllocation && Verbose) {
-      gclog_or_tty->print(PTR_FORMAT " (" SIZE_FORMAT ") ",
-                          p2i(humongous_chunks),
-                          humongous_chunks->word_size());
-    }
+    log.trace(PTR_FORMAT " (" SIZE_FORMAT ") ", p2i(humongous_chunks), humongous_chunks->word_size());
     assert(humongous_chunks->word_size() == (size_t)
            align_size_up(humongous_chunks->word_size(),
                              smallest_chunk_size()),
@@ -2283,12 +2221,7 @@ SpaceManager::~SpaceManager() {
     chunk_manager()->humongous_dictionary()->return_chunk(humongous_chunks);
     humongous_chunks = next_humongous_chunks;
   }
-  if (TraceMetadataChunkAllocation && Verbose) {
-    gclog_or_tty->cr();
-    gclog_or_tty->print_cr("updated dictionary count " SIZE_FORMAT " %s",
-                     chunk_manager()->humongous_dictionary()->total_count(),
-                     chunk_size_name(HumongousIndex));
-  }
+  log.trace("updated dictionary count " SIZE_FORMAT " %s", chunk_manager()->humongous_dictionary()->total_count(), chunk_size_name(HumongousIndex));
   chunk_manager()->slow_locked_verify();
 }
 
@@ -2374,11 +2307,13 @@ void SpaceManager::add_chunk(Metachunk* new_chunk, bool make_current) {
   inc_size_metrics(new_chunk->word_size());
 
   assert(new_chunk->is_empty(), "Not ready for reuse");
-  if (TraceMetadataChunkAllocation && Verbose) {
-    gclog_or_tty->print("SpaceManager::add_chunk: " SIZE_FORMAT ") ",
-                        sum_count_in_chunks_in_use());
-    new_chunk->print_on(gclog_or_tty);
-    chunk_manager()->locked_print_free_chunks(gclog_or_tty);
+  LogHandle(gc, metaspace, freelist) log;
+  if (log.is_trace()) {
+    log.trace("SpaceManager::add_chunk: " SIZE_FORMAT ") ", sum_count_in_chunks_in_use());
+    ResourceMark rm;
+    outputStream* out = log.trace_stream();
+    new_chunk->print_on(out);
+    chunk_manager()->locked_print_free_chunks(out);
   }
 }
 
@@ -2403,10 +2338,10 @@ Metachunk* SpaceManager::get_new_chunk(size_t word_size,
                                     medium_chunk_bunch());
   }
 
-  if (TraceMetadataHumongousAllocation && next != NULL &&
+  LogHandle(gc, metaspace, alloc) log;
+  if (log.is_debug() && next != NULL &&
       SpaceManager::is_humongous(next->word_size())) {
-    gclog_or_tty->print_cr("  new humongous chunk word size "
-                           PTR_FORMAT, next->word_size());
+    log.debug("  new humongous chunk word size " PTR_FORMAT, next->word_size());
   }
 
   return next;
@@ -2571,7 +2506,7 @@ void SpaceManager::dump(outputStream* const out) const {
     }
   }
 
-  if (TraceMetadataChunkAllocation && Verbose) {
+  if (log_is_enabled(Trace, gc, metaspace, freelist)) {
     block_freelists()->print_on(out);
   }
 
@@ -2756,27 +2691,10 @@ MetaspaceChunkFreeListSummary MetaspaceAux::chunk_free_list_summary(Metaspace::M
 }
 
 void MetaspaceAux::print_metaspace_change(size_t prev_metadata_used) {
-  gclog_or_tty->print(", [Metaspace:");
-  if (PrintGCDetails && Verbose) {
-    gclog_or_tty->print(" "  SIZE_FORMAT
-                        "->" SIZE_FORMAT
-                        "("  SIZE_FORMAT ")",
-                        prev_metadata_used,
-                        used_bytes(),
-                        reserved_bytes());
-  } else {
-    gclog_or_tty->print(" "  SIZE_FORMAT "K"
-                        "->" SIZE_FORMAT "K"
-                        "("  SIZE_FORMAT "K)",
-                        prev_metadata_used/K,
-                        used_bytes()/K,
-                        reserved_bytes()/K);
-  }
-
-  gclog_or_tty->print("]");
+  log_info(gc, metaspace)("Metaspace: "  SIZE_FORMAT "K->" SIZE_FORMAT "K("  SIZE_FORMAT "K)",
+                          prev_metadata_used/K, used_bytes()/K, reserved_bytes()/K);
 }
 
-// This is printed when PrintGCDetails
 void MetaspaceAux::print_on(outputStream* out) {
   Metaspace::MetadataType nct = Metaspace::NonClassType;
 
@@ -3133,8 +3051,10 @@ void Metaspace::allocate_metaspace_compressed_klass_ptrs(char* requested_addr, a
 
   initialize_class_space(metaspace_rs);
 
-  if (PrintCompressedOopsMode || (PrintMiscellaneous && Verbose)) {
-    print_compressed_class_space(gclog_or_tty, requested_addr);
+  if (develop_log_is_enabled(Trace, gc, metaspace)) {
+    LogHandle(gc, metaspace) log;
+    ResourceMark rm;
+    print_compressed_class_space(log.trace_stream(), requested_addr);
   }
 }
 
@@ -3256,10 +3176,8 @@ void Metaspace::global_initialize() {
     assert(UseCompressedOops && UseCompressedClassPointers,
       "UseCompressedOops and UseCompressedClassPointers must be set");
     Universe::set_narrow_klass_base((address)_space_list->current_virtual_space()->bottom());
-    if (TraceMetavirtualspaceAllocation && Verbose) {
-      gclog_or_tty->print_cr("Setting_narrow_klass_base to Address: " PTR_FORMAT,
-                             p2i(_space_list->current_virtual_space()->bottom()));
-    }
+    log_develop_trace(gc, metaspace)("Setting_narrow_klass_base to Address: " PTR_FORMAT,
+                                     p2i(_space_list->current_virtual_space()->bottom()));
 
     Universe::set_narrow_klass_shift(0);
 #endif // _LP64
@@ -3446,10 +3364,7 @@ MetaWord* Metaspace::expand_and_allocate(size_t word_size, MetadataType mdtype) 
   if (incremented) {
     tracer()->report_gc_threshold(before, after,
                                   MetaspaceGCThresholdUpdater::ExpandAndAllocate);
-    if (PrintGCDetails && Verbose) {
-      gclog_or_tty->print_cr("Increase capacity to GC from " SIZE_FORMAT
-          " to " SIZE_FORMAT, before, after);
-    }
+    log_trace(gc, metaspace)("Increase capacity to GC from " SIZE_FORMAT " to " SIZE_FORMAT, before, after);
   }
 
   return res;
@@ -3612,13 +3527,15 @@ void Metaspace::report_metadata_oome(ClassLoaderData* loader_data, size_t word_s
   tracer()->report_metadata_oom(loader_data, word_size, type, mdtype);
 
   // If result is still null, we are out of memory.
-  if (Verbose && TraceMetadataChunkAllocation) {
-    gclog_or_tty->print_cr("Metaspace allocation failed for size "
-        SIZE_FORMAT, word_size);
+  LogHandle(gc, metaspace, freelist) log;
+  if (log.is_trace()) {
+    log.trace("Metaspace allocation failed for size " SIZE_FORMAT, word_size);
+    ResourceMark rm;
+    outputStream* out = log.trace_stream();
     if (loader_data->metaspace_or_null() != NULL) {
-      loader_data->dump(gclog_or_tty);
+      loader_data->dump(out);
     }
-    MetaspaceAux::dump(gclog_or_tty);
+    MetaspaceAux::dump(out);
   }
 
   bool out_of_compressed_class_space = false;

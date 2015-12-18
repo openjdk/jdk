@@ -632,7 +632,7 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 
   // stack frames shouldn't be much larger than max_stack elements
 
-  if (fp() - sp() > 1024 + m->max_stack()*Interpreter::stackElementSize) {
+  if (fp() - unextended_sp() > 1024 + m->max_stack()*Interpreter::stackElementSize) {
     return false;
   }
 

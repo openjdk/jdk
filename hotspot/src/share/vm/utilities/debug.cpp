@@ -505,7 +505,7 @@ extern "C" void printnm(intptr_t p) {
 
 extern "C" void universe() {
   Command c("universe");
-  Universe::print();
+  Universe::print_on(tty);
 }
 
 

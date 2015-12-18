@@ -32,6 +32,7 @@
 #include "gc/parallel/psOldGen.hpp"
 #include "gc/parallel/psParallelCompact.inline.hpp"
 #include "gc/shared/taskqueue.inline.hpp"
+#include "logging/log.hpp"
 #include "memory/iterator.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.inline.hpp"
@@ -229,30 +230,18 @@ template <class T>
 static void oop_pc_follow_contents_specialized(InstanceRefKlass* klass, oop obj, ParCompactionManager* cm) {
   T* referent_addr = (T*)java_lang_ref_Reference::referent_addr(obj);
   T heap_oop = oopDesc::load_heap_oop(referent_addr);
-  debug_only(
-    if(TraceReferenceGC && PrintGCDetails) {
-      gclog_or_tty->print_cr("InstanceRefKlass::oop_pc_follow_contents " PTR_FORMAT, p2i(obj));
-    }
-  )
+  log_develop_trace(gc, ref)("InstanceRefKlass::oop_pc_follow_contents " PTR_FORMAT, p2i(obj));
   if (!oopDesc::is_null(heap_oop)) {
     oop referent = oopDesc::decode_heap_oop_not_null(heap_oop);
     if (PSParallelCompact::mark_bitmap()->is_unmarked(referent) &&
         PSParallelCompact::ref_processor()->discover_reference(obj, klass->reference_type())) {
       // reference already enqueued, referent will be traversed later
       klass->InstanceKlass::oop_pc_follow_contents(obj, cm);
-      debug_only(
-        if(TraceReferenceGC && PrintGCDetails) {
-          gclog_or_tty->print_cr("       Non NULL enqueued " PTR_FORMAT, p2i(obj));
-        }
-      )
+      log_develop_trace(gc, ref)("       Non NULL enqueued " PTR_FORMAT, p2i(obj));
       return;
     } else {
       // treat referent as normal oop
-      debug_only(
-        if(TraceReferenceGC && PrintGCDetails) {
-          gclog_or_tty->print_cr("       Non NULL normal " PTR_FORMAT, p2i(obj));
-        }
-      )
+      log_develop_trace(gc, ref)("       Non NULL normal " PTR_FORMAT, p2i(obj));
       cm->mark_and_push(referent_addr);
     }
   }
@@ -262,12 +251,7 @@ static void oop_pc_follow_contents_specialized(InstanceRefKlass* klass, oop obj,
   T  next_oop = oopDesc::load_heap_oop(next_addr);
   if (!oopDesc::is_null(next_oop)) { // i.e. ref is not "active"
     T* discovered_addr = (T*)java_lang_ref_Reference::discovered_addr(obj);
-    debug_only(
-      if(TraceReferenceGC && PrintGCDetails) {
-        gclog_or_tty->print_cr("   Process discovered as normal "
-                               PTR_FORMAT, p2i(discovered_addr));
-      }
-    )
+    log_develop_trace(gc, ref)("   Process discovered as normal " PTR_FORMAT, p2i(discovered_addr));
     cm->mark_and_push(discovered_addr);
   }
   cm->mark_and_push(next_addr);

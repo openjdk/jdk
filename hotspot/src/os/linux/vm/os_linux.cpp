@@ -1341,7 +1341,7 @@ void os::shutdown() {
 // Note: os::abort() might be called very early during initialization, or
 // called from signal handler. Before adding something to os::abort(), make
 // sure it is async-safe and can handle partially initialized VM.
-void os::abort(bool dump_core, void* siginfo, void* context) {
+void os::abort(bool dump_core, void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
 #ifndef PRODUCT
@@ -1733,7 +1733,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
 #if defined(VM_LITTLE_ENDIAN)
     {EM_PPC64,       EM_PPC64,   ELFCLASS64, ELFDATA2LSB, (char*)"Power PC 64"},
 #else
-    {EM_PPC64,       EM_PPC64,   ELFCLASS64, ELFDATA2MSB, (char*)"Power PC 64"},
+    {EM_PPC64,       EM_PPC64,   ELFCLASS64, ELFDATA2MSB, (char*)"Power PC 64 LE"},
 #endif
     {EM_ARM,         EM_ARM,     ELFCLASS32,   ELFDATA2LSB, (char*)"ARM"},
     {EM_S390,        EM_S390,    ELFCLASSNONE, ELFDATA2MSB, (char*)"IBM System/390"},
@@ -1861,8 +1861,8 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
     JavaThread *jt = Threads::first();
 
     while (jt) {
-      if (!jt->stack_guard_zone_unused() &&        // Stack not yet fully initialized
-          jt->stack_yellow_zone_enabled()) {       // No pending stack overflow exceptions
+      if (!jt->stack_guard_zone_unused() &&     // Stack not yet fully initialized
+          jt->stack_guards_enabled()) {         // No pending stack overflow exceptions
         if (!os::guard_memory((char *) jt->stack_red_zone_base() - jt->stack_red_zone_size(),
                               jt->stack_yellow_zone_size() + jt->stack_red_zone_size())) {
           warning("Attempt to reguard stack yellow zone failed.");
@@ -2176,6 +2176,8 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
 #if defined(AMD64) || defined(IA32) || defined(X32)
 const char* search_string = "model name";
 #elif defined(SPARC)
+const char* search_string = "cpu";
+#elif defined(PPC64)
 const char* search_string = "cpu";
 #else
 const char* search_string = "Processor";
@@ -4603,6 +4605,11 @@ void os::init(void) {
   if (vm_page_size() > (int)Linux::vm_default_page_size()) {
     StackYellowPages = 1;
     StackRedPages = 1;
+#if defined(IA32) || defined(IA64)
+    StackReservedPages = 1;
+#else
+    StackReservedPages = 0;
+#endif
     StackShadowPages = round_to((StackShadowPages*Linux::vm_default_page_size()), vm_page_size()) / vm_page_size();
   }
 
@@ -4664,7 +4671,7 @@ jint os::init_2(void) {
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Linux::min_stack_allowed = MAX2(os::Linux::min_stack_allowed,
-                                      (size_t)(StackYellowPages+StackRedPages+StackShadowPages) * Linux::page_size() +
+                                      (size_t)(StackReservedPages+StackYellowPages+StackRedPages+StackShadowPages) * Linux::page_size() +
                                       (2*BytesPerWord COMPILER2_PRESENT(+1)) * Linux::vm_default_page_size());
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
@@ -4846,7 +4853,7 @@ void PcFetcher::do_task(const os::SuspendedThreadTaskContext& context) {
   Thread* thread = context.thread();
   OSThread* osthread = thread->osthread();
   if (osthread->ucontext() != NULL) {
-    _epc = os::Linux::ucontext_get_pc((ucontext_t *) context.ucontext());
+    _epc = os::Linux::ucontext_get_pc((const ucontext_t *) context.ucontext());
   } else {
     // NULL context is unexpected, double-check this is the VMThread
     guarantee(thread->is_VM_thread(), "can only be called for VMThread");

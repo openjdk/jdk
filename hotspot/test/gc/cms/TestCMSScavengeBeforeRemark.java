@@ -27,7 +27,7 @@
  * @bug 8139868
  * @requires vm.gc=="ConcMarkSweep" | vm.gc=="null"
  * @summary Run CMS with CMSScavengeBeforeRemark
- * @run main/othervm -XX:+UseConcMarkSweepGC -XX:+CMSScavengeBeforeRemark -XX:+ExplicitGCInvokesConcurrent -Xmx256m -XX:+PrintGCDetails TestCMSScavengeBeforeRemark
+ * @run main/othervm -XX:+UseConcMarkSweepGC -XX:+CMSScavengeBeforeRemark -XX:+ExplicitGCInvokesConcurrent -Xmx256m -Xlog:gc=debug TestCMSScavengeBeforeRemark
  */
 
 public class TestCMSScavengeBeforeRemark {

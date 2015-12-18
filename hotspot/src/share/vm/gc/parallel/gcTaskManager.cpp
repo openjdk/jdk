@@ -27,6 +27,7 @@
 #include "gc/parallel/gcTaskThread.hpp"
 #include "gc/shared/adaptiveSizePolicy.hpp"
 #include "gc/shared/gcId.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "runtime/mutex.hpp"
@@ -465,13 +466,11 @@ void GCTaskManager::set_active_gang() {
          "all_workers_active() is  incorrect: "
          "active %d  ParallelGCThreads %u", active_workers(),
          ParallelGCThreads);
-  if (TraceDynamicGCThreads) {
-    gclog_or_tty->print_cr("GCTaskManager::set_active_gang(): "
-                           "all_workers_active()  %d  workers %d  "
-                           "active  %d  ParallelGCThreads %u",
-                           all_workers_active(), workers(),  active_workers(),
-                           ParallelGCThreads);
-  }
+  log_trace(gc, task)("GCTaskManager::set_active_gang(): "
+                      "all_workers_active()  %d  workers %d  "
+                      "active  %d  ParallelGCThreads %u",
+                      all_workers_active(), workers(),  active_workers(),
+                      ParallelGCThreads);
 }
 
 // Create IdleGCTasks for inactive workers.
@@ -502,15 +501,12 @@ void GCTaskManager::task_idle_workers() {
         set_active_workers(reduced_active_workers);
         more_inactive_workers = 0;
       }
-      if (TraceDynamicGCThreads) {
-        gclog_or_tty->print_cr("JT: %d  workers %d  active  %d  "
-                                "idle %d  more %d",
-                                Threads::number_of_non_daemon_threads(),
-                                workers(),
-                                active_workers(),
-                                idle_workers(),
-                                more_inactive_workers);
-      }
+      log_trace(gc, task)("JT: %d  workers %d  active  %d  idle %d  more %d",
+                          Threads::number_of_non_daemon_threads(),
+                          workers(),
+                          active_workers(),
+                          idle_workers(),
+                          more_inactive_workers);
     }
     GCTaskQueue* q = GCTaskQueue::create();
     for(uint i = 0; i < (uint) more_inactive_workers; i++) {
@@ -536,6 +532,9 @@ void  GCTaskManager::release_idle_workers() {
 }
 
 void GCTaskManager::print_task_time_stamps() {
+  if (!log_is_enabled(Debug, gc, task, time)) {
+    return;
+  }
   for(uint i=0; i<ParallelGCThreads; i++) {
     GCTaskThread* t = thread(i);
     t->print_task_time_stamps();
@@ -828,38 +827,24 @@ IdleGCTask* IdleGCTask::create_on_c_heap() {
 
 void IdleGCTask::do_it(GCTaskManager* manager, uint which) {
   WaitHelper* wait_helper = manager->wait_helper();
-  if (TraceGCTaskManager) {
-    tty->print_cr("[" INTPTR_FORMAT "]"
-                  " IdleGCTask:::do_it()"
-      "  should_wait: %s",
+  log_trace(gc, task)("[" INTPTR_FORMAT "] IdleGCTask:::do_it() should_wait: %s",
       p2i(this), wait_helper->should_wait() ? "true" : "false");
-  }
+
   MutexLockerEx ml(manager->monitor(), Mutex::_no_safepoint_check_flag);
-  if (TraceDynamicGCThreads) {
-    gclog_or_tty->print_cr("--- idle %d", which);
-  }
+  log_trace(gc, task)("--- idle %d", which);
   // Increment has to be done when the idle tasks are created.
   // manager->increment_idle_workers();
   manager->monitor()->notify_all();
   while (wait_helper->should_wait()) {
-    if (TraceGCTaskManager) {
-      tty->print_cr("[" INTPTR_FORMAT "]"
-                    " IdleGCTask::do_it()"
-        "  [" INTPTR_FORMAT "] (%s)->wait()",
-        p2i(this), p2i(manager->monitor()), manager->monitor()->name());
-    }
+    log_trace(gc, task)("[" INTPTR_FORMAT "] IdleGCTask::do_it()  [" INTPTR_FORMAT "] (%s)->wait()",
+      p2i(this), p2i(manager->monitor()), manager->monitor()->name());
     manager->monitor()->wait(Mutex::_no_safepoint_check_flag, 0);
   }
   manager->decrement_idle_workers();
-  if (TraceDynamicGCThreads) {
-    gclog_or_tty->print_cr("--- release %d", which);
-  }
-  if (TraceGCTaskManager) {
-    tty->print_cr("[" INTPTR_FORMAT "]"
-                  " IdleGCTask::do_it() returns"
-      "  should_wait: %s",
-      p2i(this), wait_helper->should_wait() ? "true" : "false");
-  }
+
+  log_trace(gc, task)("--- release %d", which);
+  log_trace(gc, task)("[" INTPTR_FORMAT "] IdleGCTask::do_it() returns should_wait: %s",
+    p2i(this), wait_helper->should_wait() ? "true" : "false");
   // Release monitor().
 }
 

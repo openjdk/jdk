@@ -549,23 +549,6 @@ public:
 
 };
 
-class RotateGCLogDCmd : public DCmd {
-public:
-  RotateGCLogDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
-  static const char* name() { return "GC.rotate_log"; }
-  static const char* description() {
-    return "Force the GC log file to be rotated.";
-  }
-  static const char* impact() { return "Low"; }
-  virtual void execute(DCmdSource source, TRAPS);
-  static int num_arguments() { return 0; }
-  static const JavaPermission permission() {
-    JavaPermission p = {"java.lang.management.ManagementPermission",
-                        "control", NULL};
-    return p;
-  }
-};
-
 class CompileQueueDCmd : public DCmd {
 public:
   CompileQueueDCmd(outputStream* output, bool heap) : DCmd(output, heap) {}
