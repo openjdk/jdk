@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 /**
  * This is an {@underline underline}.
  * @todo Finish this class.

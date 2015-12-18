@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 class TestNoDuplicateBridges01 {
     interface A1 { Object m(); }
     interface A2 { Object m(); }

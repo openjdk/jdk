@@ -25,6 +25,8 @@
 
 package jdk.jshell;
 
+import java.util.Map;
+
 import com.sun.jdi.*;
 import static jdk.internal.jshell.debug.InternalDebugControl.DBG_GEN;
 
@@ -41,8 +43,8 @@ class JDIEnv {
         this.state = state;
     }
 
-    void init(String connectSpec, boolean openNow, int flags) {
-        connection = new JDIConnection(this, connectSpec, flags, state);
+    void init(String connectorName, Map<String, String> argumentName2Value, boolean openNow, int flags) {
+        connection = new JDIConnection(this, connectorName, argumentName2Value, flags, state);
         if (!connection.isLaunch() || openNow) {
             connection.open();
         }

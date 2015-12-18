@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.tools.javac.tree;
 
 import com.sun.source.doctree.ErroneousTree;
