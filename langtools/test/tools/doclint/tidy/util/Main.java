@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 package tidystats;
 
 import java.io.IOException;
