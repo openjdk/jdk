@@ -71,7 +71,7 @@ public class JInfoSanityTest {
         String unknownHost = "Oja781nh2ev7vcvbajdg-Sda1-C";
         OutputAnalyzer output = JInfoHelper.jinfoNoPid("med@" + unknownHost);
         assertNotEquals(output.getExitValue(), 0, "A non-zero exit code should be returned for invalid operation");
-        output.shouldContain("UnknownHostException: " + unknownHost);
+        output.shouldMatch(".*(Connection refused to host\\:|UnknownHostException\\:) " + unknownHost + ".*");
     }
 
 }
