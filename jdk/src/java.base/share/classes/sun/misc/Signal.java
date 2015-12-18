@@ -213,7 +213,7 @@ public final class Signal {
             }
         };
         if (handler != null) {
-            new ManagedLocalsThread(runnable, sig + " handler").start();
+            new Thread(null, runnable, sig + " handler", 0, false).start();
         }
     }
 
