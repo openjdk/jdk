@@ -436,6 +436,7 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev
   _has_aborted(false),
   _restart_for_overflow(false),
   _concurrent_marking_in_progress(false),
+  _concurrent_phase_started(false),
 
   // _verbose_level set below
 
@@ -1000,6 +1001,19 @@ void ConcurrentMark::scanRootRegions() {
     // aborting the survivor scan earlier. This is OK as it's
     // mainly used for sanity checking.
     root_regions()->scan_finished();
+  }
+}
+
+void ConcurrentMark::register_concurrent_phase_start(const char* title) {
+  assert(!_concurrent_phase_started, "Sanity");
+  _concurrent_phase_started = true;
+  _g1h->gc_timer_cm()->register_gc_concurrent_start(title);
+}
+
+void ConcurrentMark::register_concurrent_phase_end() {
+  if (_concurrent_phase_started) {
+    _concurrent_phase_started = false;
+    _g1h->gc_timer_cm()->register_gc_concurrent_end();
   }
 }
 
@@ -2609,6 +2623,10 @@ void ConcurrentMark::abort() {
                                  satb_mq_set.is_active() /* expected_active */);
 
   _g1h->trace_heap_after_concurrent_cycle();
+
+  // Close any open concurrent phase timing
+  register_concurrent_phase_end();
+
   _g1h->register_concurrent_cycle_end();
 }
 

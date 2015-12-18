@@ -460,6 +460,11 @@ Declares a structure type that can be used in other events.
       <value type="UTF8" field="name" label="Name" />
     </event>
 
+    <event id="GCPhaseConcurrent" path="vm/gc/phases/concurrent" label="GC Phase Concurrent">
+      <value type="UINT" field="gcId" label="GC ID" relation="GC_ID"/>
+      <value type="UTF8" field="name" label="Name" />
+    </event>
+
     <!-- Compiler events -->
 
     <event id="Compilation" path="vm/compiler/compilation" label="Compilation"
