@@ -8579,13 +8579,53 @@ void MacroAssembler::arrays_equals(bool is_array_equ, Register ary1, Register ar
     // Compare 32-byte vectors
     andl(result, 0x0000001f);  //   tail count (in bytes)
     andl(limit, 0xffffffe0);   // vector count (in bytes)
-    jccb(Assembler::zero, COMPARE_TAIL);
+    jcc(Assembler::zero, COMPARE_TAIL);
 
     lea(ary1, Address(ary1, limit, Address::times_1));
     lea(ary2, Address(ary2, limit, Address::times_1));
     negptr(limit);
 
     bind(COMPARE_WIDE_VECTORS);
+
+#ifdef _LP64
+    if (VM_Version::supports_avx512vlbw()) { // trying 64 bytes fast loop
+      Label COMPARE_WIDE_VECTORS_LOOP_AVX2, COMPARE_WIDE_VECTORS_LOOP_AVX3;
+
+      cmpl(limit, -64);
+      jccb(Assembler::greater, COMPARE_WIDE_VECTORS_LOOP_AVX2);
+
+      bind(COMPARE_WIDE_VECTORS_LOOP_AVX3); // the hottest loop
+
+      evmovdquq(vec1, Address(ary1, limit, Address::times_1), Assembler::AVX_512bit);
+      evpcmpeqb(k7, vec1, Address(ary2, limit, Address::times_1), Assembler::AVX_512bit);
+      kortestql(k7, k7);
+      jcc(Assembler::aboveEqual, FALSE_LABEL);     // miscompare
+      addptr(limit, 64);  // update since we already compared at this addr
+      cmpl(limit, -64);
+      jccb(Assembler::lessEqual, COMPARE_WIDE_VECTORS_LOOP_AVX3);
+
+      // At this point we may still need to compare -limit+result bytes.
+      // We could execute the next two instruction and just continue via non-wide path:
+      //  cmpl(limit, 0);
+      //  jcc(Assembler::equal, COMPARE_TAIL);  // true
+      // But since we stopped at the points ary{1,2}+limit which are
+      // not farther than 64 bytes from the ends of arrays ary{1,2}+result
+      // (|limit| <= 32 and result < 32),
+      // we may just compare the last 64 bytes.
+      //
+      addptr(result, -64);   // it is safe, bc we just came from this area
+      evmovdquq(vec1, Address(ary1, result, Address::times_1), Assembler::AVX_512bit);
+      evpcmpeqb(k7, vec1, Address(ary2, result, Address::times_1), Assembler::AVX_512bit);
+      kortestql(k7, k7);
+      jcc(Assembler::aboveEqual, FALSE_LABEL);     // miscompare
+
+      jmp(TRUE_LABEL);
+
+      bind(COMPARE_WIDE_VECTORS_LOOP_AVX2);
+
+    }//if (VM_Version::supports_avx512vlbw())
+#endif //_LP64
+
     vmovdqu(vec1, Address(ary1, limit, Address::times_1));
     vmovdqu(vec2, Address(ary2, limit, Address::times_1));
     vpxor(vec1, vec2);
