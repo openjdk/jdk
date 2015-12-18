@@ -2336,7 +2336,7 @@ void G1CollectedHeap::register_concurrent_cycle_end() {
     _gc_tracer_cm->report_gc_end(_gc_timer_cm->gc_end(), _gc_timer_cm->time_partitions());
 
     // Clear state variables to prepare for the next concurrent cycle.
-     collector_state()->set_concurrent_cycle_started(false);
+    collector_state()->set_concurrent_cycle_started(false);
     _heap_summary_sent = false;
   }
 }

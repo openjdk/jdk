@@ -418,30 +418,46 @@ void GCTracer::send_meta_space_summary_event(GCWhen::Type when, const MetaspaceS
 }
 
 class PhaseSender : public PhaseVisitor {
+  void visit_pause(GCPhase* phase) {
+    assert(phase->level() < PhasesStack::PHASE_LEVELS, "Need more event types for PausePhase");
+
+    switch (phase->level()) {
+      case 0: send_phase<EventGCPhasePause>(phase); break;
+      case 1: send_phase<EventGCPhasePauseLevel1>(phase); break;
+      case 2: send_phase<EventGCPhasePauseLevel2>(phase); break;
+      case 3: send_phase<EventGCPhasePauseLevel3>(phase); break;
+      default: /* Ignore sending this phase */ break;
+    }
+  }
+
+  void visit_concurrent(GCPhase* phase) {
+    assert(phase->level() < 1, "There is only one level for ConcurrentPhase");
+
+    switch (phase->level()) {
+      case 0: send_phase<EventGCPhaseConcurrent>(phase); break;
+      default: /* Ignore sending this phase */ break;
+    }
+  }
+
  public:
   template<typename T>
-  void send_phase(PausePhase* pause) {
+  void send_phase(GCPhase* phase) {
     T event(UNTIMED);
     if (event.should_commit()) {
       event.set_gcId(GCId::current());
-      event.set_name(pause->name());
-      event.set_starttime(pause->start());
-      event.set_endtime(pause->end());
+      event.set_name(phase->name());
+      event.set_starttime(phase->start());
+      event.set_endtime(phase->end());
       event.commit();
     }
   }
 
-  void visit(GCPhase* pause) { ShouldNotReachHere(); }
-  void visit(ConcurrentPhase* pause) { Unimplemented(); }
-  void visit(PausePhase* pause) {
-    assert(PhasesStack::PHASE_LEVELS == 5, "Need more event types");
-
-    switch (pause->level()) {
-      case 0: send_phase<EventGCPhasePause>(pause); break;
-      case 1: send_phase<EventGCPhasePauseLevel1>(pause); break;
-      case 2: send_phase<EventGCPhasePauseLevel2>(pause); break;
-      case 3: send_phase<EventGCPhasePauseLevel3>(pause); break;
-      default: /* Ignore sending this phase */ break;
+  void visit(GCPhase* phase) {
+    if (phase->type() == GCPhase::PausePhaseType) {
+      visit_pause(phase);
+    } else {
+      assert(phase->type() == GCPhase::ConcurrentPhaseType, "Should be ConcurrentPhaseType");
+      visit_concurrent(phase);
     }
   }
 };
