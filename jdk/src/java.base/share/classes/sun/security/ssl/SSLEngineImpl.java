@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,6 +197,14 @@ public final class SSLEngineImpl extends SSLEngine {
                                     Collections.<SNIServerName>emptyList();
     Collection<SNIMatcher>      sniMatchers =
                                     Collections.<SNIMatcher>emptyList();
+
+    // Configured application protocol values
+    String[] applicationProtocols = new String[0];
+
+    // Negotiated application protocol value.
+    //
+    // The value under negotiation will be obtained from handshaker.
+    String applicationProtocol = null;
 
     // Have we been told whether we're client or server?
     private boolean                     serverModeSet = false;
@@ -413,6 +421,7 @@ public final class SSLEngineImpl extends SSLEngine {
         } else { // cs_DATA
             connectionState = cs_RENEGOTIATE;
         }
+
         if (roleIsServer) {
             handshaker = new ServerHandshaker(this, sslContext,
                     enabledProtocols, doClientAuth,
@@ -432,6 +441,7 @@ public final class SSLEngineImpl extends SSLEngine {
         handshaker.setMaximumPacketSize(maximumPacketSize);
         handshaker.setEnabledCipherSuites(enabledCipherSuites);
         handshaker.setEnableSessionCreation(enableSessionCreation);
+        handshaker.setApplicationProtocols(applicationProtocols);
 
         outputRecord.initHandshaker();
     }
@@ -1055,6 +1065,9 @@ public final class SSLEngineImpl extends SSLEngine {
                                 handshaker.isSecureRenegotiation();
                     clientVerifyData = handshaker.getClientVerifyData();
                     serverVerifyData = handshaker.getServerVerifyData();
+                    // set connection ALPN value
+                    applicationProtocol =
+                        handshaker.getHandshakeApplicationProtocol();
 
                     sess = handshaker.getSession();
                     handshakeSession = null;
@@ -2140,6 +2153,7 @@ public final class SSLEngineImpl extends SSLEngine {
         params.setUseCipherSuitesOrder(preferLocalCipherSuites);
         params.setEnableRetransmissions(enableRetransmissions);
         params.setMaximumPacketSize(maximumPacketSize);
+        params.setApplicationProtocols(applicationProtocols);
 
         return params;
     }
@@ -2174,11 +2188,13 @@ public final class SSLEngineImpl extends SSLEngine {
         if (matchers != null) {
             sniMatchers = matchers;
         }
+        applicationProtocols = params.getApplicationProtocols();
 
         if ((handshaker != null) && !handshaker.started()) {
             handshaker.setIdentificationProtocol(identificationProtocol);
             handshaker.setAlgorithmConstraints(algorithmConstraints);
             handshaker.setMaximumPacketSize(maximumPacketSize);
+            handshaker.setApplicationProtocols(applicationProtocols);
             if (roleIsServer) {
                 handshaker.setSNIMatchers(sniMatchers);
                 handshaker.setUseCipherSuitesOrder(preferLocalCipherSuites);
@@ -2186,6 +2202,19 @@ public final class SSLEngineImpl extends SSLEngine {
                 handshaker.setSNIServerNames(serverNames);
             }
         }
+    }
+
+    @Override
+    public synchronized String getApplicationProtocol() {
+        return applicationProtocol;
+    }
+
+    @Override
+    public synchronized String getHandshakeApplicationProtocol() {
+        if ((handshaker != null) && !handshaker.started()) {
+            return handshaker.getHandshakeApplicationProtocol();
+        }
+        return null;
     }
 
     /**

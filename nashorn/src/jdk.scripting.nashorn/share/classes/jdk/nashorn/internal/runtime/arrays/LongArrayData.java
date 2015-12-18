@@ -241,7 +241,7 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
 
     @Override
     public int getInt(final int index) {
-        return (int)array[index];
+        return JSType.toInt32(array[index]);
     }
 
     @Override

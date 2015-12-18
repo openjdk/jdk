@@ -978,8 +978,6 @@ public:
 // after we sort the old regions at the end of the cleanup operation.
 class G1PrintRegionLivenessInfoClosure: public HeapRegionClosure {
 private:
-  outputStream* _out;
-
   // Accumulators for these values.
   size_t _total_used_bytes;
   size_t _total_capacity_bytes;
@@ -1024,7 +1022,7 @@ private:
 public:
   // The header and footer are printed in the constructor and
   // destructor respectively.
-  G1PrintRegionLivenessInfoClosure(outputStream* out, const char* phase_name);
+  G1PrintRegionLivenessInfoClosure(const char* phase_name);
   virtual bool doHeapRegion(HeapRegion* r);
   ~G1PrintRegionLivenessInfoClosure();
 };

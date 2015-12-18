@@ -347,10 +347,10 @@ void MacroAssembler::leave() {
 #ifdef ASSERT
 // a hook for debugging
 static Thread* reinitialize_thread() {
-  return ThreadLocalStorage::thread();
+  return Thread::current();
 }
 #else
-#define reinitialize_thread ThreadLocalStorage::thread
+#define reinitialize_thread Thread::current
 #endif
 
 #ifdef ASSERT
@@ -380,7 +380,7 @@ void MacroAssembler::get_thread() {
 }
 
 static Thread* verify_thread_subroutine(Thread* gthread_value) {
-  Thread* correct_value = ThreadLocalStorage::thread();
+  Thread* correct_value = Thread::current();
   guarantee(gthread_value == correct_value, "G2_thread value must be the thread");
   return correct_value;
 }
@@ -3585,6 +3585,24 @@ void MacroAssembler::bang_stack_size(Register Rsize, Register Rtsp,
     set((-i*offset)+STACK_BIAS, Rscratch);
     st(G0, Rtsp, Rscratch);
   }
+}
+
+void MacroAssembler::reserved_stack_check() {
+  // testing if reserved zone needs to be enabled
+  Label no_reserved_zone_enabling;
+
+  ld_ptr(G2_thread, JavaThread::reserved_stack_activation_offset(), G4_scratch);
+  cmp_and_brx_short(SP, G4_scratch, Assembler::lessUnsigned, Assembler::pt, no_reserved_zone_enabling);
+
+  call_VM_leaf(L0, CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), G2_thread);
+
+  AddressLiteral stub(StubRoutines::throw_delayed_StackOverflowError_entry());
+  jump_to(stub, G4_scratch);
+  delayed()->restore();
+
+  should_not_reach_here();
+
+  bind(no_reserved_zone_enabling);
 }
 
 ///////////////////////////////////////////////////////////////////////////////////

@@ -400,17 +400,16 @@ void CompactibleFreeListSpace::print_on(outputStream* st) const {
 
 void CompactibleFreeListSpace::print_indexed_free_lists(outputStream* st)
 const {
-  reportIndexedFreeListStatistics();
-  gclog_or_tty->print_cr("Layout of Indexed Freelists");
-  gclog_or_tty->print_cr("---------------------------");
+  reportIndexedFreeListStatistics(st);
+  st->print_cr("Layout of Indexed Freelists");
+  st->print_cr("---------------------------");
   AdaptiveFreeList<FreeChunk>::print_labels_on(st, "size");
   for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
-    _indexedFreeList[i].print_on(gclog_or_tty);
-    for (FreeChunk* fc = _indexedFreeList[i].head(); fc != NULL;
-         fc = fc->next()) {
-      gclog_or_tty->print_cr("\t[" PTR_FORMAT "," PTR_FORMAT ")  %s",
-                          p2i(fc), p2i((HeapWord*)fc + i),
-                          fc->cantCoalesce() ? "\t CC" : "");
+    _indexedFreeList[i].print_on(st);
+    for (FreeChunk* fc = _indexedFreeList[i].head(); fc != NULL; fc = fc->next()) {
+      st->print_cr("\t[" PTR_FORMAT "," PTR_FORMAT ")  %s",
+                   p2i(fc), p2i((HeapWord*)fc + i),
+                   fc->cantCoalesce() ? "\t CC" : "");
     }
   }
 }
@@ -422,7 +421,7 @@ const {
 
 void CompactibleFreeListSpace::print_dictionary_free_lists(outputStream* st)
 const {
-  _dictionary->report_statistics();
+  _dictionary->report_statistics(st);
   st->print_cr("Layout of Freelists in Tree");
   st->print_cr("---------------------------");
   _dictionary->print_free_lists(st);
@@ -472,54 +471,58 @@ size_t BlkPrintingClosure::do_blk(HeapWord* addr) {
   return sz;
 }
 
-void CompactibleFreeListSpace::dump_at_safepoint_with_locks(CMSCollector* c,
-  outputStream* st) {
-  st->print_cr("\n=========================");
+void CompactibleFreeListSpace::dump_at_safepoint_with_locks(CMSCollector* c, outputStream* st) {
+  st->print_cr("=========================");
   st->print_cr("Block layout in CMS Heap:");
   st->print_cr("=========================");
   BlkPrintingClosure  bpcl(c, this, c->markBitMap(), st);
   blk_iterate(&bpcl);
 
-  st->print_cr("\n=======================================");
+  st->print_cr("=======================================");
   st->print_cr("Order & Layout of Promotion Info Blocks");
   st->print_cr("=======================================");
   print_promo_info_blocks(st);
 
-  st->print_cr("\n===========================");
+  st->print_cr("===========================");
   st->print_cr("Order of Indexed Free Lists");
   st->print_cr("=========================");
   print_indexed_free_lists(st);
 
-  st->print_cr("\n=================================");
+  st->print_cr("=================================");
   st->print_cr("Order of Free Lists in Dictionary");
   st->print_cr("=================================");
   print_dictionary_free_lists(st);
 }
 
 
-void CompactibleFreeListSpace::reportFreeListStatistics() const {
+void CompactibleFreeListSpace::reportFreeListStatistics(const char* title) const {
   assert_lock_strong(&_freelistLock);
-  assert(PrintFLSStatistics != 0, "Reporting error");
-  _dictionary->report_statistics();
-  if (PrintFLSStatistics > 1) {
-    reportIndexedFreeListStatistics();
+  LogHandle(gc, freelist, stats) log;
+  if (!log.is_debug()) {
+    return;
+  }
+  log.debug("%s", title);
+  _dictionary->report_statistics(log.debug_stream());
+  if (log.is_trace()) {
+    ResourceMark rm;
+    reportIndexedFreeListStatistics(log.trace_stream());
     size_t total_size = totalSizeInIndexedFreeLists() +
                        _dictionary->total_chunk_size(DEBUG_ONLY(freelistLock()));
-    gclog_or_tty->print(" free=" SIZE_FORMAT " frag=%1.4f\n", total_size, flsFrag());
+    log.trace(" free=" SIZE_FORMAT " frag=%1.4f", total_size, flsFrag());
   }
 }
 
-void CompactibleFreeListSpace::reportIndexedFreeListStatistics() const {
+void CompactibleFreeListSpace::reportIndexedFreeListStatistics(outputStream* st) const {
   assert_lock_strong(&_freelistLock);
-  gclog_or_tty->print("Statistics for IndexedFreeLists:\n"
-                      "--------------------------------\n");
+  st->print_cr("Statistics for IndexedFreeLists:");
+  st->print_cr("--------------------------------");
   size_t total_size = totalSizeInIndexedFreeLists();
-  size_t   free_blocks = numFreeBlocksInIndexedFreeLists();
-  gclog_or_tty->print("Total Free Space: " SIZE_FORMAT "\n", total_size);
-  gclog_or_tty->print("Max   Chunk Size: " SIZE_FORMAT "\n", maxChunkSizeInIndexedFreeLists());
-  gclog_or_tty->print("Number of Blocks: " SIZE_FORMAT "\n", free_blocks);
+  size_t free_blocks = numFreeBlocksInIndexedFreeLists();
+  st->print_cr("Total Free Space: " SIZE_FORMAT, total_size);
+  st->print_cr("Max   Chunk Size: " SIZE_FORMAT, maxChunkSizeInIndexedFreeLists());
+  st->print_cr("Number of Blocks: " SIZE_FORMAT, free_blocks);
   if (free_blocks != 0) {
-    gclog_or_tty->print("Av.  Block  Size: " SIZE_FORMAT "\n", total_size/free_blocks);
+    st->print_cr("Av.  Block  Size: " SIZE_FORMAT, total_size/free_blocks);
   }
 }
 
@@ -1824,10 +1827,7 @@ CompactibleFreeListSpace::sweep_completed() {
 void
 CompactibleFreeListSpace::gc_prologue() {
   assert_locked();
-  if (PrintFLSStatistics != 0) {
-    gclog_or_tty->print("Before GC:\n");
-    reportFreeListStatistics();
-  }
+  reportFreeListStatistics("Before GC:");
   refillLinearAllocBlocksIfNeeded();
 }
 
@@ -1837,11 +1837,7 @@ CompactibleFreeListSpace::gc_epilogue() {
   assert(_promoInfo.noPromotions(), "_promoInfo inconsistency");
   _promoInfo.stopTrackingPromotions();
   repairLinearAllocationBlocks();
-  // Print Space's stats
-  if (PrintFLSStatistics != 0) {
-    gclog_or_tty->print("After GC:\n");
-    reportFreeListStatistics();
-  }
+  reportFreeListStatistics("After GC:");
 }
 
 // Iteration support, mostly delegated from a CMS generation
@@ -2014,9 +2010,7 @@ void CompactibleFreeListSpace::beginSweepFLCensus(
   size_t i;
   for (i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
     AdaptiveFreeList<FreeChunk>* fl    = &_indexedFreeList[i];
-    if (PrintFLSStatistics > 1) {
-      gclog_or_tty->print("size[" SIZE_FORMAT "] : ", i);
-    }
+    log_trace(gc, freelist)("size[" SIZE_FORMAT "] : ", i);
     fl->compute_desired(inter_sweep_current, inter_sweep_estimate, intra_sweep_estimate);
     fl->set_coal_desired((ssize_t)((double)fl->desired() * CMSSmallCoalSurplusPercent));
     fl->set_before_sweep(fl->count());
@@ -2065,16 +2059,10 @@ void CompactibleFreeListSpace::clearFLCensus() {
 }
 
 void CompactibleFreeListSpace::endSweepFLCensus(size_t sweep_count) {
-  if (PrintFLSStatistics > 0) {
-    HeapWord* largestAddr = (HeapWord*) dictionary()->find_largest_dict();
-    gclog_or_tty->print_cr("CMS: Large block " PTR_FORMAT,
-                           p2i(largestAddr));
-  }
+  log_debug(gc, freelist)("CMS: Large block " PTR_FORMAT, p2i(dictionary()->find_largest_dict()));
   setFLSurplus();
   setFLHints();
-  if (PrintGC && PrintFLSCensus > 0) {
-    printFLCensus(sweep_count);
-  }
+  printFLCensus(sweep_count);
   clearFLCensus();
   assert_locked();
   _dictionary->end_sweep_dict_census(CMSLargeSplitSurplusPercent);
@@ -2213,14 +2201,15 @@ class VerifyAllBlksClosure: public BlkClosure {
       }
     }
     if (res == 0) {
-      gclog_or_tty->print_cr("Livelock: no rank reduction!");
-      gclog_or_tty->print_cr(
-        " Current:  addr = " PTR_FORMAT ", size = " SIZE_FORMAT ", obj = %s, live = %s \n"
-        " Previous: addr = " PTR_FORMAT ", size = " SIZE_FORMAT ", obj = %s, live = %s \n",
+      LogHandle(gc, verify) log;
+      log.info("Livelock: no rank reduction!");
+      log.info(" Current:  addr = " PTR_FORMAT ", size = " SIZE_FORMAT ", obj = %s, live = %s \n"
+               " Previous: addr = " PTR_FORMAT ", size = " SIZE_FORMAT ", obj = %s, live = %s \n",
         p2i(addr),       res,        was_obj      ?"true":"false", was_live      ?"true":"false",
         p2i(_last_addr), _last_size, _last_was_obj?"true":"false", _last_was_live?"true":"false");
-      _sp->print_on(gclog_or_tty);
-      guarantee(false, "Seppuku!");
+      ResourceMark rm;
+      _sp->print_on(log.info_stream());
+      guarantee(false, "Verification failed.");
     }
     _last_addr = addr;
     _last_size = res;
@@ -2386,17 +2375,23 @@ void CompactibleFreeListSpace::check_free_list_consistency() const {
 
 void CompactibleFreeListSpace::printFLCensus(size_t sweep_count) const {
   assert_lock_strong(&_freelistLock);
+  LogHandle(gc, freelist, census) log;
+  if (!log.is_debug()) {
+    return;
+  }
   AdaptiveFreeList<FreeChunk> total;
-  gclog_or_tty->print("end sweep# " SIZE_FORMAT "\n", sweep_count);
-  AdaptiveFreeList<FreeChunk>::print_labels_on(gclog_or_tty, "size");
+  log.debug("end sweep# " SIZE_FORMAT, sweep_count);
+  ResourceMark rm;
+  outputStream* out = log.debug_stream();
+  AdaptiveFreeList<FreeChunk>::print_labels_on(out, "size");
   size_t total_free = 0;
   for (size_t i = IndexSetStart; i < IndexSetSize; i += IndexSetStride) {
     const AdaptiveFreeList<FreeChunk> *fl = &_indexedFreeList[i];
     total_free += fl->count() * fl->size();
     if (i % (40*IndexSetStride) == 0) {
-      AdaptiveFreeList<FreeChunk>::print_labels_on(gclog_or_tty, "size");
+      AdaptiveFreeList<FreeChunk>::print_labels_on(out, "size");
     }
-    fl->print_on(gclog_or_tty);
+    fl->print_on(out);
     total.set_bfr_surp(    total.bfr_surp()     + fl->bfr_surp()    );
     total.set_surplus(    total.surplus()     + fl->surplus()    );
     total.set_desired(    total.desired()     + fl->desired()    );
@@ -2408,14 +2403,13 @@ void CompactibleFreeListSpace::printFLCensus(size_t sweep_count) const {
     total.set_split_births(total.split_births() + fl->split_births());
     total.set_split_deaths(total.split_deaths() + fl->split_deaths());
   }
-  total.print_on(gclog_or_tty, "TOTAL");
-  gclog_or_tty->print_cr("Total free in indexed lists "
-                         SIZE_FORMAT " words", total_free);
-  gclog_or_tty->print("growth: %8.5f  deficit: %8.5f\n",
-    (double)(total.split_births()+total.coal_births()-total.split_deaths()-total.coal_deaths())/
-            (total.prev_sweep() != 0 ? (double)total.prev_sweep() : 1.0),
-    (double)(total.desired() - total.count())/(total.desired() != 0 ? (double)total.desired() : 1.0));
-  _dictionary->print_dict_census();
+  total.print_on(out, "TOTAL");
+  log.debug("Total free in indexed lists " SIZE_FORMAT " words", total_free);
+  log.debug("growth: %8.5f  deficit: %8.5f",
+            (double)(total.split_births()+total.coal_births()-total.split_deaths()-total.coal_deaths())/
+                    (total.prev_sweep() != 0 ? (double)total.prev_sweep() : 1.0),
+            (double)(total.desired() - total.count())/(total.desired() != 0 ? (double)total.desired() : 1.0));
+  _dictionary->print_dict_census(out);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -2544,10 +2538,7 @@ void CFLS_LAB::compute_desired_plab_size() {
       // Reset counters for next round
       _global_num_workers[i] = 0;
       _global_num_blocks[i] = 0;
-      if (PrintOldPLAB) {
-        gclog_or_tty->print_cr("[" SIZE_FORMAT "]: " SIZE_FORMAT,
-                               i, (size_t)_blocks_to_claim[i].average());
-      }
+      log_trace(gc, plab)("[" SIZE_FORMAT "]: " SIZE_FORMAT, i, (size_t)_blocks_to_claim[i].average());
     }
   }
 }
@@ -2584,10 +2575,8 @@ void CFLS_LAB::retire(int tid) {
           _indexedFreeList[i].set_size(i);
         }
       }
-      if (PrintOldPLAB) {
-        gclog_or_tty->print_cr("%d[" SIZE_FORMAT "]: " SIZE_FORMAT "/" SIZE_FORMAT "/" SIZE_FORMAT,
-                               tid, i, num_retire, _num_blocks[i], (size_t)_blocks_to_claim[i].average());
-      }
+      log_trace(gc, plab)("%d[" SIZE_FORMAT "]: " SIZE_FORMAT "/" SIZE_FORMAT "/" SIZE_FORMAT,
+                          tid, i, num_retire, _num_blocks[i], (size_t)_blocks_to_claim[i].average());
       // Reset stats for next round
       _num_blocks[i]         = 0;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.Transparency;
 import java.awt.color.ColorSpace;
+import java.awt.color.ICC_ColorSpace;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
@@ -47,64 +48,15 @@ import java.awt.image.SampleModel;
 import java.awt.image.SinglePixelPackedSampleModel;
 import java.awt.image.WritableRaster;
 import java.util.Arrays;
-
-//import javax.imageio.ImageTypeSpecifier;
-
+import java.util.Iterator;
 import javax.imageio.IIOException;
 import javax.imageio.IIOImage;
+import javax.imageio.ImageReadParam;
 import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriter;
 import javax.imageio.spi.ImageWriterSpi;
 
 public class ImageUtil {
-    /* XXX testing only
-    public static void main(String[] args) {
-        ImageTypeSpecifier bilevel =
-            ImageTypeSpecifier.createIndexed(new byte[] {(byte)0, (byte)255},
-                                             new byte[] {(byte)0, (byte)255},
-                                             new byte[] {(byte)0, (byte)255},
-                                             null, 1,
-                                             DataBuffer.TYPE_BYTE);
-        ImageTypeSpecifier gray =
-            ImageTypeSpecifier.createGrayscale(8, DataBuffer.TYPE_BYTE, false);
-        ImageTypeSpecifier grayAlpha =
-            ImageTypeSpecifier.createGrayscale(8, DataBuffer.TYPE_BYTE, false,
-                                               false);
-        ImageTypeSpecifier rgb =
-            ImageTypeSpecifier.createInterleaved(ColorSpace.getInstance(ColorSpace.CS_sRGB),
-                                                 new int[] {0, 1, 2},
-                                                 DataBuffer.TYPE_BYTE,
-                                                 false,
-                                                 false);
-        ImageTypeSpecifier rgba =
-            ImageTypeSpecifier.createInterleaved(ColorSpace.getInstance(ColorSpace.CS_sRGB),
-                                                 new int[] {0, 1, 2, 3},
-                                                 DataBuffer.TYPE_BYTE,
-                                                 true,
-                                                 false);
-        ImageTypeSpecifier packed =
-            ImageTypeSpecifier.createPacked(ColorSpace.getInstance(ColorSpace.CS_sRGB),
-                                            0xff000000,
-                                            0x00ff0000,
-                                            0x0000ff00,
-                                            0x000000ff,
-                                            DataBuffer.TYPE_BYTE,
-                                            false);
-
-        SampleModel bandedSM =
-            new java.awt.image.BandedSampleModel(DataBuffer.TYPE_BYTE,
-                                                 1, 1, 15);
-
-        System.out.println(createColorModel(bilevel.getSampleModel()));
-        System.out.println(createColorModel(gray.getSampleModel()));
-        System.out.println(createColorModel(grayAlpha.getSampleModel()));
-        System.out.println(createColorModel(rgb.getSampleModel()));
-        System.out.println(createColorModel(rgba.getSampleModel()));
-        System.out.println(createColorModel(packed.getSampleModel()));
-        System.out.println(createColorModel(bandedSM));
-    }
-    */
-
     /**
      * Creates a <code>ColorModel</code> that may be used with the
      * specified <code>SampleModel</code>.  If a suitable
@@ -1161,5 +1113,79 @@ public class ImageUtil {
         // a MultiPixelPackedSampleModel, 1 bit per pixel, and 1 bit
         // pixel stride.
         return ImageUtil.isBinary(sm);
+    }
+
+    /**
+     * Gets the destination image type.
+     */
+    public static final ImageTypeSpecifier
+        getDestinationType(ImageReadParam param,
+                           Iterator<ImageTypeSpecifier> imageTypes) throws IIOException {
+
+        if (imageTypes == null || !imageTypes.hasNext()) {
+            throw new IllegalArgumentException("imageTypes null or empty!");
+        }
+
+        ImageTypeSpecifier imageType = null;
+
+        // If param is non-null, use it
+        if (param != null) {
+            imageType = param.getDestinationType();
+        }
+
+        // No info from param, use fallback image type
+        if (imageType == null) {
+            Object o = imageTypes.next();
+            if (!(o instanceof ImageTypeSpecifier)) {
+                throw new IllegalArgumentException
+                    ("Non-ImageTypeSpecifier retrieved from imageTypes!");
+            }
+            imageType = (ImageTypeSpecifier)o;
+        } else {
+            boolean foundIt = false;
+            while (imageTypes.hasNext()) {
+                ImageTypeSpecifier type =
+                    imageTypes.next();
+                if (type.equals(imageType)) {
+                    foundIt = true;
+                    break;
+                }
+            }
+
+            if (!foundIt) {
+                throw new IIOException
+                    ("Destination type from ImageReadParam does not match!");
+            }
+        }
+
+        return imageType;
+    }
+
+    /**
+     * Returns <code>true</code> if the given <code>ColorSpace</code> object is
+     * an instance of <code>ICC_ColorSpace</code> but is not one of the standard
+     * <code>ColorSpace</code>s returned by <code>ColorSpace.getInstance()</code>.
+     *
+     * @param cs The <code>ColorSpace</code> to test.
+     */
+    public static boolean isNonStandardICCColorSpace(ColorSpace cs) {
+        boolean retval = false;
+
+        try {
+            // Check the standard ColorSpaces in decreasing order of
+            // likelihood except check CS_PYCC last as in some JREs
+            // PYCC.pf used not to be installed.
+            retval =
+                (cs instanceof ICC_ColorSpace) &&
+                !(cs.isCS_sRGB() ||
+                  cs.equals(ColorSpace.getInstance(ColorSpace.CS_LINEAR_RGB)) ||
+                  cs.equals(ColorSpace.getInstance(ColorSpace.CS_GRAY)) ||
+                  cs.equals(ColorSpace.getInstance(ColorSpace.CS_CIEXYZ)) ||
+                  cs.equals(ColorSpace.getInstance(ColorSpace.CS_PYCC)));
+        } catch(IllegalArgumentException e) {
+            // PYCC.pf not installed: ignore it - 'retval' is still 'false'.
+        }
+
+        return retval;
     }
 }

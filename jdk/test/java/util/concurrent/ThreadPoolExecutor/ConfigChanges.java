@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,32 @@
  * @test
  * @bug 6450200
  * @summary Test proper handling of pool state changes
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.RandomFactory
  * @run main/othervm ConfigChanges
+ * @key randomness intermittent
  * @author Martin Buchholz
  */
 
-import java.security.*;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.security.Permission;
+import java.util.Random;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicInteger;
+import jdk.testlibrary.RandomFactory;
 
 public class ConfigChanges {
     static final ThreadGroup tg = new ThreadGroup("pool");
 
-    static final Random rnd = new Random();
+    static final Random rnd = RandomFactory.getRandom();
 
     static void report(ThreadPoolExecutor tpe) {
         try {
@@ -86,7 +98,7 @@ public class ConfigChanges {
             equal(tpe.getActiveCount(), 0);
             equal(tpe.getPoolSize(), 0);
             equal(tpe.getTaskCount(), tpe.getCompletedTaskCount());
-            check(tpe.awaitTermination(0, SECONDS));
+            check(tpe.awaitTermination(0L, SECONDS));
         } catch (Throwable t) { unexpected(t); }
     }
 

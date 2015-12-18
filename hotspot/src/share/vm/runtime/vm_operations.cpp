@@ -189,7 +189,7 @@ void VM_UnlinkSymbols::doit() {
 
 void VM_Verify::doit() {
   Universe::heap()->prepare_for_verify();
-  Universe::verify(_silent);
+  Universe::verify();
 }
 
 bool VM_PrintThreads::doit_prologue() {
@@ -378,7 +378,7 @@ Thread * VM_Exit::_shutdown_thread = NULL;
 int VM_Exit::set_vm_exited() {
   CodeCacheExtensions::complete_step(CodeCacheExtensionsSteps::LastStep);
 
-  Thread * thr_cur = ThreadLocalStorage::get_thread_slow();
+  Thread * thr_cur = Thread::current();
 
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint already");
 
@@ -400,7 +400,7 @@ int VM_Exit::wait_for_threads_in_native_to_block() {
   // to wait for threads in _thread_in_native state to be quiescent.
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint already");
 
-  Thread * thr_cur = ThreadLocalStorage::get_thread_slow();
+  Thread * thr_cur = Thread::current();
   Monitor timer(Mutex::leaf, "VM_Exit timer", true,
                 Monitor::_safepoint_check_never);
 
@@ -477,7 +477,7 @@ void VM_Exit::doit() {
 
 void VM_Exit::wait_if_vm_exited() {
   if (_vm_exited &&
-      ThreadLocalStorage::get_thread_slow() != _shutdown_thread) {
+      Thread::current_or_null() != _shutdown_thread) {
     // _vm_exited is set at safepoint, and the Threads_lock is never released
     // we will block here until the process dies
     Threads_lock->lock_without_safepoint_check();

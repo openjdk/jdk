@@ -43,7 +43,7 @@ import jdk.test.lib.dcmd.JMXExecutor;
  *          jdk.jvmstat/sun.jvmstat.monitor
  * @build jdk.test.lib.*
  * @build jdk.test.lib.dcmd.*
- * @run testng/othervm -XX:+PrintGCDetails -Xloggc:RunGC.gclog -XX:-ExplicitGCInvokesConcurrent RunGCTest
+ * @run testng/othervm -Xlog:gc=debug:RunGC.gclog -XX:-ExplicitGCInvokesConcurrent RunGCTest
  */
 public class RunGCTest {
     public void run(CommandExecutor executor) {
@@ -59,7 +59,7 @@ public class RunGCTest {
         }
 
         OutputAnalyzer output = new OutputAnalyzer(gcLog, "");
-        output.shouldContain("[Full GC (Diagnostic Command)");
+        output.shouldContain("Pause Full (Diagnostic Command)");
     }
 
     @Test

@@ -53,8 +53,7 @@ ALL_TARGETS :=
 $(eval $(call IncludeCustomExtension, , Main.gmk))
 
 # All modules for the current target platform.
-# Manually add jdk.hotspot.agent for now.
-ALL_MODULES := $(call FindAllModules) jdk.hotspot.agent
+ALL_MODULES := $(call FindAllModules)
 
 ################################################################################
 ################################################################################
@@ -144,8 +143,8 @@ JAVA_TARGETS := $(addsuffix -java, $(JAVA_MODULES))
 
 define DeclareCompileJavaRecipe
   $1-java:
-	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f CompileJavaModules.gmk \
-	    $1 JAVA_MODULES=$1 MODULE=$1)
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) \
+	    -f CompileJavaModules.gmk MODULE=$1)
 endef
 
 $(foreach m, $(filter-out jdk.scripting.nashorn, $(JAVA_MODULES)), \
@@ -154,7 +153,8 @@ $(foreach m, $(filter-out jdk.scripting.nashorn, $(JAVA_MODULES)), \
 # Build nashorn. Needs to be compiled separately from the rest of the modules
 # due to nasgen.
 jdk.scripting.nashorn-java:
-	+($(CD) $(NASHORN_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f BuildNashorn.gmk compile)
+	+($(CD) $(NASHORN_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) \
+	    -f BuildNashorn.gmk compile)
 
 ALL_TARGETS += $(JAVA_TARGETS)
 
@@ -195,7 +195,7 @@ ALL_TARGETS += $(LAUNCHER_TARGETS)
 
 ifeq ($(BUILD_HOTSPOT),true)
   hotspot:
-	($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f HotspotWrapper.gmk)
+	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f HotspotWrapper.gmk)
 endif
 
 ALL_TARGETS += hotspot
@@ -225,8 +225,8 @@ $(SUPPORT_OUTPUTDIR)/source_tips: FRC
 BOOTCYCLE_TARGET := product-images
 bootcycle-images:
 	@$(ECHO) Boot cycle build step 2: Building a new JDK image using previously built image
-	+$(MAKE) $(MAKE_ARGS) -f $(SRC_ROOT)/make/Main.gmk \
-	    SPEC=$(dir $(SPEC))bootcycle-spec.gmk $(BOOTCYCLE_TARGET)
+	+$(MAKE) -f $(SRC_ROOT)/make/Init.gmk PARALLEL_TARGETS=$(BOOTCYCLE_TARGET) \
+	    JOBS= SPEC=$(dir $(SPEC))bootcycle-spec.gmk main
 
 zip-security:
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f ZipSecurity.gmk)
@@ -423,11 +423,6 @@ else
   # virtual target.
   jdk.jdwp.agent-libs: jdk.jdwp.agent-gensrc
 
-  # Until the module system is in place, jdk.jdi-gensrc needs to combine service
-  # loader configuration with jdk.hotspot.agent so is dependent on importing
-  # hotspot.
-  jdk.jdi-gensrc-jdk: import-hotspot
-
   # The swing beans need to have java base properly generated to avoid errors
   # in javadoc.
   java.desktop-gensrc-jdk: java.base-gensrc
@@ -511,7 +506,7 @@ launchers: $(LAUNCHER_TARGETS)
 jdk.jdwp.agent-gensrc: jdk.jdi-gensrc
 
 # Declare dependencies from <module> to all the individual targets specific
-# to that module <module>-*.
+# to that module <module>-*, that are needed for the exploded image.
 $(foreach m, $(GENSRC_MODULES), $(eval $m: $m-gensrc))
 $(foreach m, $(JAVA_MODULES), $(eval $m: $m-java))
 $(foreach m, $(GENDATA_MODULES), $(eval $m: $m-gendata))
@@ -520,15 +515,12 @@ $(foreach m, $(LIBS_MODULES), $(eval $m: $m-libs))
 $(foreach m, $(LAUNCHER_MODULES), $(eval $m: $m-launchers))
 $(foreach m, $(COPY_MODULES), $(eval $m: $m-copy))
 
-ALL_MODULE_TARGETS := $(sort $(GENSRC_MODULES) $(JAVA_MODULES) \
-    $(GENDATA_MODULES) $(LIBS_MODULES) $(LAUNCHER_MODULES) $(COPY_MODULES))
-
 demos: demos-jdk
 
 samples: samples-jdk
 
 # The "exploded image" is a locally runnable JDK in $(BUILD_OUTPUT)/jdk.
-exploded-image: $(ALL_MODULE_TARGETS)
+exploded-image: $(ALL_MODULES)
 
 mac-bundles: mac-bundles-jdk
 
@@ -554,7 +546,7 @@ test-image: prepare-test-image test-image-hotspot-jtreg-native \
 all-images: product-images test-image docs-image
 
 ALL_TARGETS += buildtools gensrc gendata copy java rmic libs launchers \
-    jdk.jdwp.agent-gensrc $(ALL_MODULE_TARGETS) demos samples exploded-image \
+    jdk.jdwp.agent-gensrc $(ALL_MODULES) demos samples exploded-image \
     mac-bundles product-images docs-image test-image all-images
 
 ################################################################################
@@ -562,7 +554,7 @@ ALL_TARGETS += buildtools gensrc gendata copy java rmic libs launchers \
 # Traditional targets typically run by users.
 # These can be considered aliases for the targets now named by a more
 # "modern" naming scheme.
-default: exploded-image
+default: $(DEFAULT_MAKE_TARGET)
 jdk: exploded-image
 images: product-images
 docs: docs-image

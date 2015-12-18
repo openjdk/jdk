@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -434,7 +434,7 @@ void NativeMovConstReg32::verify() {
 
 
 void NativeMovConstReg32::print() {
-  tty->print_cr(INTPTR_FORMAT ": mov reg, " INTPTR_FORMAT, instruction_address(), data());
+  tty->print_cr(INTPTR_FORMAT ": mov reg, " INTPTR_FORMAT, p2i(instruction_address()), data());
 }
 
 

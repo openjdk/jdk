@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,7 +170,7 @@ final class HotSpotResolvedJavaMethodImpl extends HotSpotMethod implements HotSp
      * @return flags of this method
      */
     private int getFlags() {
-        return UNSAFE.getByte(metaspaceMethod + config().methodFlagsOffset);
+        return UNSAFE.getShort(metaspaceMethod + config().methodFlagsOffset);
     }
 
     /**

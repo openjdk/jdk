@@ -354,6 +354,7 @@ public final class LocalTime
      * @param instant  the instant to create the time from, not null
      * @param zone  the time-zone, which may be an offset, not null
      * @return the local time, not null
+     * @since 9
      */
      public static LocalTime ofInstant(Instant instant, ZoneId zone) {
          Objects.requireNonNull(instant, "instant");

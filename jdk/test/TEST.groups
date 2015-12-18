@@ -30,7 +30,9 @@ tier1 = \
     -java/lang/ProcessHandle/TreeTest.java \
     -java/util/zip/TestLocalTime.java \
     :jdk_util \
+    -java/util/WeakHashMap/GCDuringIteration.java \
     -java/util/concurrent/Phaser/Basic.java \
+    -java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java
     sun/nio/cs/ISO8859x.java \
     java/nio/Buffer \
     com/sun/crypto/provider/Cipher \
@@ -40,6 +42,8 @@ tier2 = \
     java/lang/ProcessHandle/TreeTest.java \
     java/util/zip/TestLocalTime.java \
     java/util/concurrent/Phaser/Basic.java \
+    java/util/WeakHashMap/GCDuringIteration.java \
+    java/util/concurrent/ThreadPoolExecutor/ConfigChanges.java \
     :jdk_io \
     :jdk_nio \
     -sun/nio/cs/ISO8859x.java \
@@ -173,6 +177,7 @@ jdk_security3 = \
     com/sun/security \
     -com/sun/security/jgss \
     com/sun/org/apache/xml/internal/security \
+    jdk/security \
     sun/security \
     -sun/security/krb5 \
     -sun/security/jgss \
@@ -453,6 +458,7 @@ needs_jdk = \
   :jdk_jdi \
   com/sun/tools \
   demo \
+  jdk/security/jarsigner \
   sun/security/tools/jarsigner \
   sun/security/tools/policytool \
   sun/rmi/rmic \

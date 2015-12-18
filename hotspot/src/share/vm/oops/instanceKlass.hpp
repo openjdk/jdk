@@ -54,6 +54,7 @@
 
 // forward declaration for class -- see below for definition
 class BreakpointInfo;
+class ClassFileParser;
 class DepChange;
 class DependencyContext;
 class fieldDescriptor;
@@ -113,29 +114,9 @@ class InstanceKlass: public Klass {
   friend class CompileReplay;
 
  protected:
-  // Constructor
-  InstanceKlass(int vtable_len,
-                int itable_len,
-                int static_field_size,
-                int nonstatic_oop_map_size,
-                unsigned kind,
-                ReferenceType rt,
-                AccessFlags access_flags,
-                bool is_anonymous);
- public:
-  static InstanceKlass* allocate_instance_klass(
-                                          ClassLoaderData* loader_data,
-                                          int vtable_len,
-                                          int itable_len,
-                                          int static_field_size,
-                                          int nonstatic_oop_map_size,
-                                          ReferenceType rt,
-                                          AccessFlags access_flags,
-                                          Symbol* name,
-                                          Klass* super_klass,
-                                          bool is_anonymous,
-                                          TRAPS);
+  InstanceKlass(const ClassFileParser& parser, unsigned kind);
 
+ public:
   InstanceKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
 
   // See "The Java Virtual Machine Specification" section 2.16.2-5 for a detailed description
@@ -153,6 +134,7 @@ class InstanceKlass: public Klass {
 
  private:
   static volatile int _total_instanceKlass_count;
+  static InstanceKlass* allocate_instance_klass(const ClassFileParser& parser, TRAPS);
 
  protected:
   // Annotations for this class
@@ -177,7 +159,7 @@ class InstanceKlass: public Klass {
   // the source debug extension for this klass, NULL if not specified.
   // Specified as UTF-8 string without terminating zero byte in the classfile,
   // it is stored in the instanceklass as a NULL-terminated UTF-8 string
-  char*           _source_debug_extension;
+  const char*     _source_debug_extension;
   // Array name derived from this class which needs unreferencing
   // if this class is unloaded.
   Symbol*         _array_name;
@@ -351,7 +333,7 @@ class InstanceKlass: public Klass {
   // method ordering
   Array<int>* method_ordering() const     { return _method_ordering; }
   void set_method_ordering(Array<int>* m) { _method_ordering = m; }
-  void copy_method_ordering(intArray* m, TRAPS);
+  void copy_method_ordering(const intArray* m, TRAPS);
 
   // default_methods
   Array<Method*>* default_methods() const  { return _default_methods; }
@@ -417,29 +399,32 @@ class InstanceKlass: public Klass {
   bool is_override(const methodHandle& super_method, Handle targetclassloader, Symbol* targetclassname, TRAPS);
 
   // package
-  bool is_same_class_package(Klass* class2);
-  bool is_same_class_package(oop classloader2, Symbol* classname2);
-  static bool is_same_class_package(oop class_loader1, Symbol* class_name1, oop class_loader2, Symbol* class_name2);
+  bool is_same_class_package(const Klass* class2) const;
+  bool is_same_class_package(oop classloader2, const Symbol* classname2) const;
+  static bool is_same_class_package(oop class_loader1,
+                                    const Symbol* class_name1,
+                                    oop class_loader2,
+                                    const Symbol* class_name2);
 
   // find an enclosing class
-  Klass* compute_enclosing_class(bool* inner_is_member, TRAPS) {
-    instanceKlassHandle self(THREAD, this);
-    return compute_enclosing_class_impl(self, inner_is_member, THREAD);
+  InstanceKlass* compute_enclosing_class(bool* inner_is_member, TRAPS) const {
+    return compute_enclosing_class_impl(this, inner_is_member, THREAD);
   }
-  static Klass* compute_enclosing_class_impl(instanceKlassHandle self,
-                                             bool* inner_is_member, TRAPS);
+  static InstanceKlass* compute_enclosing_class_impl(const InstanceKlass* self,
+                                                     bool* inner_is_member,
+                                                     TRAPS);
 
   // Find InnerClasses attribute for k and return outer_class_info_index & inner_name_index.
   static bool find_inner_classes_attr(instanceKlassHandle k,
                                       int* ooff, int* noff, TRAPS);
 
   // tell if two classes have the same enclosing class (at package level)
-  bool is_same_package_member(Klass* class2, TRAPS) {
-    instanceKlassHandle self(THREAD, this);
-    return is_same_package_member_impl(self, class2, THREAD);
+  bool is_same_package_member(const Klass* class2, TRAPS) const {
+    return is_same_package_member_impl(this, class2, THREAD);
   }
-  static bool is_same_package_member_impl(instanceKlassHandle self,
-                                          Klass* class2, TRAPS);
+  static bool is_same_package_member_impl(const InstanceKlass* self,
+                                          const Klass* class2,
+                                          TRAPS);
 
   // initialization state
   bool is_loaded() const                   { return _init_state >= loaded; }
@@ -508,38 +493,44 @@ class InstanceKlass: public Klass {
   bool find_field_from_offset(int offset, bool is_static, fieldDescriptor* fd) const;
 
   // find a local method (returns NULL if not found)
-  Method* find_method(Symbol* name, Symbol* signature) const;
-  static Method* find_method(Array<Method*>* methods, Symbol* name, Symbol* signature);
+  Method* find_method(const Symbol* name, const Symbol* signature) const;
+  static Method* find_method(const Array<Method*>* methods,
+                             const Symbol* name,
+                             const Symbol* signature);
 
   // find a local method, but skip static methods
-  Method* find_instance_method(Symbol* name, Symbol* signature);
-  static Method* find_instance_method(Array<Method*>* methods, Symbol* name, Symbol* signature);
+  Method* find_instance_method(const Symbol* name, const Symbol* signature) const;
+  static Method* find_instance_method(const Array<Method*>* methods,
+                                      const Symbol* name,
+                                      const Symbol* signature);
 
   // find a local method (returns NULL if not found)
-  Method* find_local_method(Symbol* name, Symbol* signature,
-                           OverpassLookupMode overpass_mode,
-                           StaticLookupMode static_mode,
-                           PrivateLookupMode private_mode) const;
+  Method* find_local_method(const Symbol* name,
+                            const Symbol* signature,
+                            OverpassLookupMode overpass_mode,
+                            StaticLookupMode static_mode,
+                            PrivateLookupMode private_mode) const;
 
   // find a local method from given methods array (returns NULL if not found)
-  static Method* find_local_method(Array<Method*>* methods,
-                           Symbol* name, Symbol* signature,
-                           OverpassLookupMode overpass_mode,
-                           StaticLookupMode static_mode,
-                           PrivateLookupMode private_mode);
-
-  // true if method matches signature and conforms to skipping_X conditions.
-  static bool method_matches(Method* m, Symbol* signature, bool skipping_overpass, bool skipping_static, bool skipping_private);
+  static Method* find_local_method(const Array<Method*>* methods,
+                                   const Symbol* name,
+                                   const Symbol* signature,
+                                   OverpassLookupMode overpass_mode,
+                                   StaticLookupMode static_mode,
+                                   PrivateLookupMode private_mode);
 
   // find a local method index in methods or default_methods (returns -1 if not found)
-  static int find_method_index(Array<Method*>* methods,
-                               Symbol* name, Symbol* signature,
+  static int find_method_index(const Array<Method*>* methods,
+                               const Symbol* name,
+                               const Symbol* signature,
                                OverpassLookupMode overpass_mode,
                                StaticLookupMode static_mode,
                                PrivateLookupMode private_mode);
 
   // lookup operation (returns NULL if not found)
-  Method* uncached_lookup_method(Symbol* name, Symbol* signature, OverpassLookupMode overpass_mode) const;
+  Method* uncached_lookup_method(const Symbol* name,
+                                 const Symbol* signature,
+                                 OverpassLookupMode overpass_mode) const;
 
   // lookup a method in all the interfaces that this class implements
   // (returns NULL if not found)
@@ -553,8 +544,9 @@ class InstanceKlass: public Klass {
   // found the index to the first method is returned, and 'end' is filled in
   // with the index of first non-name-matching method.  If no method is found
   // -1 is returned.
-  int find_method_by_name(Symbol* name, int* end);
-  static int find_method_by_name(Array<Method*>* methods, Symbol* name, int* end);
+  int find_method_by_name(const Symbol* name, int* end) const;
+  static int find_method_by_name(const Array<Method*>* methods,
+                                 const Symbol* name, int* end);
 
   // constant pool
   ConstantPool* constants() const        { return _constants; }
@@ -576,9 +568,9 @@ class InstanceKlass: public Klass {
       return *hk;
     }
   }
-  void set_host_klass(Klass* host)            {
+  void set_host_klass(const Klass* host) {
     assert(is_anonymous(), "not anonymous");
-    Klass** addr = (Klass**)adr_host_klass();
+    const Klass** addr = (const Klass**)adr_host_klass();
     assert(addr != NULL, "no reversed space");
     if (addr != NULL) {
       *addr = host;
@@ -631,8 +623,8 @@ class InstanceKlass: public Klass {
   void set_major_version(u2 major_version) { _major_version = major_version; }
 
   // source debug extension
-  char* source_debug_extension() const     { return _source_debug_extension; }
-  void set_source_debug_extension(char* array, int length);
+  const char* source_debug_extension() const { return _source_debug_extension; }
+  void set_source_debug_extension(const char* array, int length);
 
   // symbol unloading support (refcount already added)
   Symbol* array_name()                     { return _array_name; }
@@ -765,8 +757,8 @@ public:
     _generic_signature_index = sig_index;
   }
 
-  u2 enclosing_method_data(int offset);
-  u2 enclosing_method_class_index() {
+  u2 enclosing_method_data(int offset) const;
+  u2 enclosing_method_class_index() const {
     return enclosing_method_data(enclosing_method_class_index_offset);
   }
   u2 enclosing_method_method_index() {
@@ -860,7 +852,7 @@ public:
 
 #ifdef ASSERT
   // check whether this class or one of its superclasses was redefined
-  bool has_redefined_this_or_super();
+  bool has_redefined_this_or_super() const;
 #endif
 
   // Access to the implementor of an interface.
@@ -920,11 +912,14 @@ public:
   void array_klasses_do(void f(Klass* k, TRAPS), TRAPS);
   bool super_types_do(SuperTypeClosure* blk);
 
-  // Casting from Klass*
   static InstanceKlass* cast(Klass* k) {
+    return const_cast<InstanceKlass*>(cast(const_cast<const Klass*>(k)));
+  }
+
+  static const InstanceKlass* cast(const Klass* k) {
     assert(k != NULL, "k should not be null");
     assert(k->is_instance_klass(), "cast to InstanceKlass");
-    return static_cast<InstanceKlass*>(k);
+    return static_cast<const InstanceKlass*>(k);
   }
 
   InstanceKlass* java_super() const {
@@ -1033,7 +1028,7 @@ public:
   static void deallocate_methods(ClassLoaderData* loader_data,
                                  Array<Method*>* methods);
   void static deallocate_interfaces(ClassLoaderData* loader_data,
-                                    Klass* super_klass,
+                                    const Klass* super_klass,
                                     Array<Klass*>* local_interfaces,
                                     Array<Klass*>* transitive_interfaces);
 
@@ -1204,12 +1199,15 @@ private:
   Klass* array_klass_impl(bool or_null, TRAPS);
 
   // find a local method (returns NULL if not found)
-  Method* find_method_impl(Symbol* name, Symbol* signature,
+  Method* find_method_impl(const Symbol* name,
+                           const Symbol* signature,
                            OverpassLookupMode overpass_mode,
                            StaticLookupMode static_mode,
                            PrivateLookupMode private_mode) const;
-  static Method* find_method_impl(Array<Method*>* methods,
-                                  Symbol* name, Symbol* signature,
+
+  static Method* find_method_impl(const Array<Method*>* methods,
+                                  const Symbol* name,
+                                  const Symbol* signature,
                                   OverpassLookupMode overpass_mode,
                                   StaticLookupMode static_mode,
                                   PrivateLookupMode private_mode);

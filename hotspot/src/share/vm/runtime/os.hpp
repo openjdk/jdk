@@ -472,8 +472,9 @@ class os: AllStatic {
 
   static int pd_self_suspend_thread(Thread* thread);
 
-  static ExtendedPC fetch_frame_from_context(void* ucVoid, intptr_t** sp, intptr_t** fp);
-  static frame      fetch_frame_from_context(void* ucVoid);
+  static ExtendedPC fetch_frame_from_context(const void* ucVoid, intptr_t** sp, intptr_t** fp);
+  static frame      fetch_frame_from_context(const void* ucVoid);
+  static frame      fetch_frame_from_ucontext(Thread* thread, void* ucVoid);
 
   static ExtendedPC get_thread_pc(Thread *thread);
   static void breakpoint();
@@ -499,7 +500,7 @@ class os: AllStatic {
 
   // Terminate with an error.  Default is to generate a core file on platforms
   // that support such things.  This calls shutdown() and then aborts.
-  static void abort(bool dump_core, void *siginfo, void *context);
+  static void abort(bool dump_core, void *siginfo, const void *context);
   static void abort(bool dump_core = true);
 
   // Die immediately, no exit hook, no abort hook, no cleanup.
@@ -604,8 +605,8 @@ class os: AllStatic {
   static void print_memory_info(outputStream* st);
   static void print_dll_info(outputStream* st);
   static void print_environment_variables(outputStream* st, const char** env_list);
-  static void print_context(outputStream* st, void* context);
-  static void print_register_info(outputStream* st, void* context);
+  static void print_context(outputStream* st, const void* context);
+  static void print_register_info(outputStream* st, const void* context);
   static void print_siginfo(outputStream* st, void* siginfo);
   static void print_signal_handlers(outputStream* st, char* buf, size_t buflen);
   static void print_date_and_time(outputStream* st, char* buf, size_t buflen);
@@ -643,6 +644,9 @@ class os: AllStatic {
   // returns NULL if exception_code is not an OS exception/signal.
   static const char* exception_name(int exception_code, char* buf, size_t buflen);
 
+  // Returns the signal number (e.g. 11) for a given signal name (SIGSEGV).
+  static int get_signal_number(const char* signal_name);
+
   // Returns native Java library, loads if necessary
   static void*    native_java_library();
 
@@ -667,12 +671,6 @@ class os: AllStatic {
   static int create_binary_file(const char* path, bool rewrite_existing);
   static jlong current_file_offset(int fd);
   static jlong seek_to_file_offset(int fd, jlong offset);
-
-  // Thread Local Storage
-  static int   allocate_thread_local_storage();
-  static void  thread_local_storage_at_put(int index, void* value);
-  static void* thread_local_storage_at(int index);
-  static void  free_thread_local_storage(int index);
 
   // Retrieve native stack frames.
   // Parameter:
@@ -851,7 +849,7 @@ class os: AllStatic {
  public:
 #ifndef PLATFORM_PRINT_NATIVE_STACK
   // No platform-specific code for printing the native stack.
-  static bool platform_print_native_stack(outputStream* st, void* context,
+  static bool platform_print_native_stack(outputStream* st, const void* context,
                                           char *buf, int buf_size) {
     return false;
   }

@@ -674,7 +674,7 @@ static void *java_start(Thread *thread) {
   int pid = os::current_process_id();
   alloca(((pid ^ counter++) & 7) * 128);
 
-  ThreadLocalStorage::set_thread(thread);
+  thread->initialize_thread_current();
 
   OSThread* osthread = thread->osthread();
   Monitor* sync = osthread->startThread_lock();
@@ -882,44 +882,6 @@ void os::free_thread(OSThread* osthread) {
   delete osthread;
 }
 
-//////////////////////////////////////////////////////////////////////////////
-// thread local storage
-
-// Restore the thread pointer if the destructor is called. This is in case
-// someone from JNI code sets up a destructor with pthread_key_create to run
-// detachCurrentThread on thread death. Unless we restore the thread pointer we
-// will hang or crash. When detachCurrentThread is called the key will be set
-// to null and we will not be called again. If detachCurrentThread is never
-// called we could loop forever depending on the pthread implementation.
-static void restore_thread_pointer(void* p) {
-  Thread* thread = (Thread*) p;
-  os::thread_local_storage_at_put(ThreadLocalStorage::thread_index(), thread);
-}
-
-int os::allocate_thread_local_storage() {
-  pthread_key_t key;
-  int rslt = pthread_key_create(&key, restore_thread_pointer);
-  assert(rslt == 0, "cannot allocate thread local storage");
-  return (int)key;
-}
-
-// Note: This is currently not used by VM, as we don't destroy TLS key
-// on VM exit.
-void os::free_thread_local_storage(int index) {
-  int rslt = pthread_key_delete((pthread_key_t)index);
-  assert(rslt == 0, "invalid index");
-}
-
-void os::thread_local_storage_at_put(int index, void* value) {
-  int rslt = pthread_setspecific((pthread_key_t)index, value);
-  assert(rslt == 0, "pthread_setspecific failed");
-}
-
-extern "C" Thread* get_thread() {
-  return ThreadLocalStorage::thread();
-}
-
-
 ////////////////////////////////////////////////////////////////////////////////
 // time support
 
@@ -1115,7 +1077,7 @@ void os::shutdown() {
 // Note: os::abort() might be called very early during initialization, or
 // called from signal handler. Before adding something to os::abort(), make
 // sure it is async-safe and can handle partially initialized VM.
-void os::abort(bool dump_core, void* siginfo, void* context) {
+void os::abort(bool dump_core, void* siginfo, const void* context) {
   os::shutdown();
   if (dump_core) {
 #ifndef PRODUCT
@@ -3420,8 +3382,12 @@ void os::Bsd::check_signal_handler(int sig) {
     }
   } else if(os::Bsd::get_our_sigflags(sig) != 0 && (int)act.sa_flags != os::Bsd::get_our_sigflags(sig)) {
     tty->print("Warning: %s handler flags ", exception_name(sig, buf, O_BUFLEN));
-    tty->print("expected:" PTR32_FORMAT, os::Bsd::get_our_sigflags(sig));
-    tty->print_cr("  found:" PTR32_FORMAT, act.sa_flags);
+    tty->print("expected:");
+    os::Posix::print_sa_flags(tty, os::Bsd::get_our_sigflags(sig));
+    tty->cr();
+    tty->print("  found:");
+    os::Posix::print_sa_flags(tty, act.sa_flags);
+    tty->cr();
     // No need to check this sig any longer
     sigaddset(&check_signal_done, sig);
   }
@@ -3434,20 +3400,6 @@ void os::Bsd::check_signal_handler(int sig) {
 
 extern void report_error(char* file_name, int line_no, char* title,
                          char* format, ...);
-
-extern bool signal_name(int signo, char* buf, size_t len);
-
-const char* os::exception_name(int exception_code, char* buf, size_t size) {
-  if (0 < exception_code && exception_code <= SIGRTMAX) {
-    // signal
-    if (!signal_name(exception_code, buf, size)) {
-      jio_snprintf(buf, size, "SIG%d", exception_code);
-    }
-    return buf;
-  } else {
-    return NULL;
-  }
-}
 
 // this is called _before_ the most of global arguments have been parsed
 void os::init(void) {
@@ -3545,7 +3497,7 @@ jint os::init_2(void) {
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Bsd::min_stack_allowed = MAX2(os::Bsd::min_stack_allowed,
-                                    (size_t)(StackYellowPages+StackRedPages+StackShadowPages+
+                                    (size_t)(StackReservedPages+StackYellowPages+StackRedPages+StackShadowPages+
                                     2*BytesPerWord COMPILER2_PRESENT(+1)) * Bsd::page_size());
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
@@ -3691,7 +3643,7 @@ void PcFetcher::do_task(const os::SuspendedThreadTaskContext& context) {
   Thread* thread = context.thread();
   OSThread* osthread = thread->osthread();
   if (osthread->ucontext() != NULL) {
-    _epc = os::Bsd::ucontext_get_pc((ucontext_t *) context.ucontext());
+    _epc = os::Bsd::ucontext_get_pc((const ucontext_t *) context.ucontext());
   } else {
     // NULL context is unexpected, double-check this is the VMThread
     guarantee(thread->is_VM_thread(), "can only be called for VMThread");

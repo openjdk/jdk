@@ -1227,7 +1227,7 @@ public class HotSpotVMConfig {
     @HotSpotVMField(name = "Method::_access_flags", type = "AccessFlags", get = HotSpotVMField.Type.OFFSET) @Stable public int methodAccessFlagsOffset;
     @HotSpotVMField(name = "Method::_constMethod", type = "ConstMethod*", get = HotSpotVMField.Type.OFFSET) @Stable public int methodConstMethodOffset;
     @HotSpotVMField(name = "Method::_intrinsic_id", type = "u2", get = HotSpotVMField.Type.OFFSET) @Stable public int methodIntrinsicIdOffset;
-    @HotSpotVMField(name = "Method::_flags", type = "u1", get = HotSpotVMField.Type.OFFSET) @Stable public int methodFlagsOffset;
+    @HotSpotVMField(name = "Method::_flags", type = "u2", get = HotSpotVMField.Type.OFFSET) @Stable public int methodFlagsOffset;
     @HotSpotVMField(name = "Method::_vtable_index", type = "int", get = HotSpotVMField.Type.OFFSET) @Stable public int methodVtableIndexOffset;
 
     @HotSpotVMField(name = "Method::_method_counters", type = "MethodCounters*", get = HotSpotVMField.Type.OFFSET) @Stable public int methodCountersOffset;

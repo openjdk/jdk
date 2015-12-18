@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
@@ -34,7 +35,7 @@
 #include "gc/shared/gcHeapSummary.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/gcTraceTime.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/generation.hpp"
 #include "gc/shared/genOopClosures.inline.hpp"
@@ -70,8 +71,6 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
   set_ref_processor(rp);
   rp->setup_policy(clear_all_softrefs);
 
-  GCTraceTime t1(GCCauseString("Full GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, NULL);
-
   gch->trace_heap_before_gc(_gc_tracer);
 
   // When collecting the permanent generation Method*s may be moving,
@@ -80,9 +79,6 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
 
   // Increment the invocation count
   _total_invocations++;
-
-  // Capture heap size before collection for printing.
-  size_t gch_prev_used = gch->used();
 
   // Capture used regions for each generation that will be
   // subject to collection, so that card table adjustments can
@@ -132,10 +128,6 @@ void GenMarkSweep::invoke_at_safepoint(ReferenceProcessor* rp, bool clear_all_so
 
   CodeCache::gc_epilogue();
   JvmtiExport::gc_epilogue();
-
-  if (PrintGC && !PrintGCDetails) {
-    gch->print_heap_change(gch_prev_used);
-  }
 
   // refs processing: clean slate
   set_ref_processor(NULL);
@@ -188,7 +180,7 @@ void GenMarkSweep::deallocate_stacks() {
 
 void GenMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
-  GCTraceTime tm("phase 1", PrintGC && Verbose, true, _gc_timer);
+  GCTraceTime(Trace, gc) tm("Phase 1: Mark live objects", _gc_timer);
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
@@ -261,7 +253,7 @@ void GenMarkSweep::mark_sweep_phase2() {
 
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
-  GCTraceTime tm("phase 2", PrintGC && Verbose, true, _gc_timer);
+  GCTraceTime(Trace, gc) tm("Phase 2: Compute new object addresses", _gc_timer);
 
   gch->prepare_for_compaction();
 }
@@ -277,7 +269,7 @@ void GenMarkSweep::mark_sweep_phase3() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
   // Adjust the pointers to reflect the new locations
-  GCTraceTime tm("phase 3", PrintGC && Verbose, true, _gc_timer);
+  GCTraceTime(Trace, gc) tm("Phase 3: Adjust pointers", _gc_timer);
 
   // Need new claim bits for the pointer adjustment tracing.
   ClassLoaderDataGraph::clear_claimed_marks();
@@ -329,7 +321,7 @@ void GenMarkSweep::mark_sweep_phase4() {
   // to use a higher index (saved from phase2) when verifying perm_gen.
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
-  GCTraceTime tm("phase 4", PrintGC && Verbose, true, _gc_timer);
+  GCTraceTime(Trace, gc) tm("Phase 4: Move objects", _gc_timer);
 
   GenCompactClosure blk;
   gch->generation_iterate(&blk, true);

@@ -95,19 +95,31 @@ JNIEXPORT jobject JNICALL
     mid = env->GetMethodID(clazz, "<init>", "(IIII)V");
     if (mid != 0) {
         RECT rRW = {0, 0, 0, 0};
+        Devices::InstanceAccess devices;
+        AwtWin32GraphicsDevice *device = devices->GetDevice(screen);
+
         if (TRUE == MonitorBounds(AwtWin32GraphicsDevice::GetMonitor(screen), &rRW)) {
-            bounds = env->NewObject(clazz, mid,
-                                    rRW.left, rRW.top,
-                                    rRW.right - rRW.left,
-                                    rRW.bottom - rRW.top);
+
+            int x = (device == NULL) ? rRW.left : device->ScaleDownX(rRW.left);
+            int y = (device == NULL) ? rRW.top  : device->ScaleDownY(rRW.top);
+            int w = (device == NULL) ? rRW.right - rRW.left
+                                     : device->ScaleDownX(rRW.right - rRW.left);
+            int h = (device == NULL) ? rRW.bottom - rRW.top
+                                     : device->ScaleDownY(rRW.bottom - rRW.top);
+
+            bounds = env->NewObject(clazz, mid, x, y, w, h);
+
         }
         else {
             // 4910760 - don't return a null bounds, return the bounds of the
             // primary screen
+            int w = ::GetSystemMetrics(SM_CXSCREEN);
+            int h = ::GetSystemMetrics(SM_CYSCREEN);
+
             bounds = env->NewObject(clazz, mid,
                                     0, 0,
-                                    ::GetSystemMetrics(SM_CXSCREEN),
-                                    ::GetSystemMetrics(SM_CYSCREEN));
+                                    device == NULL ? w : device->ScaleDownX(w),
+                                    device == NULL ? h : device->ScaleDownY(h));
         }
         if (safe_ExceptionOccurred(env)) {
            return 0;

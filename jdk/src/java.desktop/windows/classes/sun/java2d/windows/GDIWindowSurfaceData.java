@@ -28,6 +28,7 @@ package sun.java2d.windows;
 import java.awt.Rectangle;
 import java.awt.GraphicsConfiguration;
 import java.awt.color.ColorSpace;
+import java.awt.geom.AffineTransform;
 import java.awt.image.ColorModel;
 import java.awt.image.ComponentColorModel;
 import java.awt.image.DirectColorModel;
@@ -76,6 +77,9 @@ public class GDIWindowSurfaceData extends SurfaceData {
         SurfaceType.ThreeByteBgr.deriveSubType(DESC_GDI);
 
     private static native void initIDs(Class<?> xorComp);
+
+    private final double scaleX;
+    private final double scaleY;
 
     static {
         initIDs(XORComposite.class);
@@ -265,11 +269,21 @@ public class GDIWindowSurfaceData extends SurfaceData {
         this.graphicsConfig =
             (Win32GraphicsConfig) peer.getGraphicsConfiguration();
         this.solidloops = graphicsConfig.getSolidLoops(sType);
-
-        Win32GraphicsDevice gd =
-            (Win32GraphicsDevice)graphicsConfig.getDevice();
+        Win32GraphicsDevice gd = graphicsConfig.getDevice();
+        scaleX = gd.getDefaultScaleX();
+        scaleY = gd.getDefaultScaleY();
         initOps(peer, depth, rMask, gMask, bMask, gd.getScreen());
         setBlitProxyKey(graphicsConfig.getProxyKey());
+    }
+
+    @Override
+    public double getDefaultScaleX() {
+        return scaleX;
+    }
+
+    @Override
+    public double getDefaultScaleY() {
+        return scaleY;
     }
 
     /**
@@ -288,6 +302,8 @@ public class GDIWindowSurfaceData extends SurfaceData {
     public Rectangle getBounds() {
         Rectangle r = peer.getBounds();
         r.x = r.y = 0;
+        r.width = (int) Math.ceil(r.width * scaleX);
+        r.height = (int) Math.ceil(r.height * scaleY);
         return r;
     }
 

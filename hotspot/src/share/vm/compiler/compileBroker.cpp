@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"

@@ -68,7 +68,8 @@ combination of ptrace and /proc calls.
 *************************************************************************************/
 
 
-#if defined(sparc) || defined(sparcv9) || defined(ppc64)
+#if defined(sparc) || defined(sparcv9) || defined(ppc64) || defined(ppc64le)
+#include <asm/ptrace.h>
 #define user_regs_struct  pt_regs
 #endif
 #if defined(aarch64)
@@ -86,7 +87,7 @@ typedef int bool;
 struct ps_prochandle;
 
 // attach to a process
-struct ps_prochandle* Pgrab(pid_t pid);
+struct ps_prochandle* Pgrab(pid_t pid, char* err_buf, size_t err_buf_len);
 
 // attach to a core dump
 struct ps_prochandle* Pgrab_core(const char* execfile, const char* corefile);

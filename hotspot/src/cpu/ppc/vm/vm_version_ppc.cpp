@@ -229,12 +229,27 @@ void VM_Version::initialize() {
   }
 
   // Adjust RTM (Restricted Transactional Memory) flags.
-  if (!has_tcheck() && UseRTMLocking) {
+  if (UseRTMLocking) {
+    // If CPU or OS are too old:
     // Can't continue because UseRTMLocking affects UseBiasedLocking flag
     // setting during arguments processing. See use_biased_locking().
     // VM_Version_init() is executed after UseBiasedLocking is used
     // in Thread::allocate().
-    vm_exit_during_initialization("RTM instructions are not available on this CPU");
+    if (!has_tcheck()) {
+      vm_exit_during_initialization("RTM instructions are not available on this CPU");
+    }
+    bool os_too_old = true;
+#ifdef AIX
+    if (os::Aix::os_version() >= 0x0701031e) { // at least AIX 7.1.3.30
+      os_too_old = false;
+    }
+#endif
+#ifdef linux
+    // TODO: check kernel version (we currently have too old versions only)
+#endif
+    if (os_too_old) {
+      vm_exit_during_initialization("RTM is not supported on this OS version.");
+    }
   }
 
   if (UseRTMLocking) {

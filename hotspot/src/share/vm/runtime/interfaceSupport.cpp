@@ -32,7 +32,6 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.inline.hpp"
-#include "runtime/threadLocalStorage.hpp"
 #include "runtime/vframe.hpp"
 #include "utilities/preserveException.hpp"
 
@@ -102,15 +101,13 @@ void InterfaceSupport::gc_alot() {
       // Compute new interval
       if (FullGCALotInterval > 1) {
         _fullgc_alot_counter = 1+(long)((double)FullGCALotInterval*os::random()/(max_jint+1.0));
-        if (PrintGCDetails && Verbose) {
-          tty->print_cr("Full gc no: %u\tInterval: %ld", invocations, _fullgc_alot_counter);
-        }
+        log_trace(gc)("Full gc no: %u\tInterval: %ld", invocations, _fullgc_alot_counter);
       } else {
         _fullgc_alot_counter = 1;
       }
       // Print progress message
       if (invocations % 100 == 0) {
-        if (PrintGCDetails && Verbose) tty->print_cr("Full gc no: %u", invocations);
+        log_trace(gc)("Full gc no: %u", invocations);
       }
     } else {
       if (ScavengeALot) _scavenge_alot_counter--;
@@ -122,15 +119,13 @@ void InterfaceSupport::gc_alot() {
         // Compute new interval
         if (ScavengeALotInterval > 1) {
           _scavenge_alot_counter = 1+(long)((double)ScavengeALotInterval*os::random()/(max_jint+1.0));
-          if (PrintGCDetails && Verbose) {
-            tty->print_cr("Scavenge no: %u\tInterval: %ld", invocations, _scavenge_alot_counter);
-          }
+          log_trace(gc)("Scavenge no: %u\tInterval: %ld", invocations, _scavenge_alot_counter);
         } else {
           _scavenge_alot_counter = 1;
         }
         // Print progress message
         if (invocations % 1000 == 0) {
-          if (PrintGCDetails && Verbose) tty->print_cr("Scavenge no: %u", invocations);
+          log_trace(gc)("Scavenge no: %u", invocations);
         }
       }
     }

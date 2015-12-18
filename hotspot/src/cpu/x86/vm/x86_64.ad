@@ -953,10 +953,11 @@ void MachEpilogNode::format(PhaseRegAlloc* ra_, outputStream* st) const
 void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 {
   Compile* C = ra_->C;
+  MacroAssembler _masm(&cbuf);
+
   if (C->max_vector_size() > 16) {
     // Clear upper bits of YMM registers when current compiled code uses
     // wide vectors to avoid AVX <-> SSE transition penalty during call.
-    MacroAssembler _masm(&cbuf);
     __ vzeroupper();
   }
 
@@ -983,6 +984,10 @@ void MachEpilogNode::emit(CodeBuffer& cbuf, PhaseRegAlloc* ra_) const
 
   // popq rbp
   emit_opcode(cbuf, 0x58 | RBP_enc);
+
+  if (StackReservedPages > 0 && C->has_reserved_stack_access()) {
+    __ reserved_stack_check(); 
+  }
 
   if (do_polling() && C->is_method_compilation()) {
     MacroAssembler _masm(&cbuf);

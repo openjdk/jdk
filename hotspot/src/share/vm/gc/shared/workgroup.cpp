@@ -275,7 +275,6 @@ void AbstractGangWorker::run() {
 }
 
 void AbstractGangWorker::initialize() {
-  this->initialize_thread_local_storage();
   this->record_stack_base_and_size();
   this->initialize_named_thread();
   assert(_gang != NULL, "No gang to run in");
@@ -501,122 +500,42 @@ bool SequentialSubTasksDone::all_tasks_completed() {
   return false;
 }
 
-bool FreeIdSet::_stat_init = false;
-FreeIdSet* FreeIdSet::_sets[NSets];
-bool FreeIdSet::_safepoint;
-
-FreeIdSet::FreeIdSet(int sz, Monitor* mon) :
-  _sz(sz), _mon(mon), _hd(0), _waiters(0), _index(-1), _claimed(0)
+FreeIdSet::FreeIdSet(uint size, Monitor* mon) :
+  _size(size), _mon(mon), _hd(0), _waiters(0), _claimed(0)
 {
-  _ids = NEW_C_HEAP_ARRAY(int, sz, mtInternal);
-  for (int i = 0; i < sz; i++) _ids[i] = i+1;
-  _ids[sz-1] = end_of_list; // end of list.
-  if (_stat_init) {
-    for (int j = 0; j < NSets; j++) _sets[j] = NULL;
-    _stat_init = true;
+  guarantee(size != 0, "must be");
+  _ids = NEW_C_HEAP_ARRAY(uint, size, mtGC);
+  for (uint i = 0; i < size - 1; i++) {
+    _ids[i] = i+1;
   }
-  // Add to sets.  (This should happen while the system is still single-threaded.)
-  for (int j = 0; j < NSets; j++) {
-    if (_sets[j] == NULL) {
-      _sets[j] = this;
-      _index = j;
-      break;
-    }
-  }
-  guarantee(_index != -1, "Too many FreeIdSets in use!");
+  _ids[size-1] = end_of_list; // end of list.
 }
 
 FreeIdSet::~FreeIdSet() {
-  _sets[_index] = NULL;
-  FREE_C_HEAP_ARRAY(int, _ids);
+  FREE_C_HEAP_ARRAY(uint, _ids);
 }
 
-void FreeIdSet::set_safepoint(bool b) {
-  _safepoint = b;
-  if (b) {
-    for (int j = 0; j < NSets; j++) {
-      if (_sets[j] != NULL && _sets[j]->_waiters > 0) {
-        Monitor* mon = _sets[j]->_mon;
-        mon->lock_without_safepoint_check();
-        mon->notify_all();
-        mon->unlock();
-      }
-    }
-  }
-}
-
-#define FID_STATS 0
-
-int FreeIdSet::claim_par_id() {
-#if FID_STATS
-  thread_t tslf = thr_self();
-  tty->print("claim_par_id[%d]: sz = %d, claimed = %d\n", tslf, _sz, _claimed);
-#endif
+uint FreeIdSet::claim_par_id() {
   MutexLockerEx x(_mon, Mutex::_no_safepoint_check_flag);
-  while (!_safepoint && _hd == end_of_list) {
+  while (_hd == end_of_list) {
     _waiters++;
-#if FID_STATS
-    if (_waiters > 5) {
-      tty->print("claim_par_id waiting[%d]: %d waiters, %d claimed.\n",
-                 tslf, _waiters, _claimed);
-    }
-#endif
     _mon->wait(Mutex::_no_safepoint_check_flag);
     _waiters--;
   }
-  if (_hd == end_of_list) {
-#if FID_STATS
-    tty->print("claim_par_id[%d]: returning EOL.\n", tslf);
-#endif
-    return -1;
-  } else {
-    int res = _hd;
-    _hd = _ids[res];
-    _ids[res] = claimed;  // For debugging.
-    _claimed++;
-#if FID_STATS
-    tty->print("claim_par_id[%d]: returning %d, claimed = %d.\n",
-               tslf, res, _claimed);
-#endif
-    return res;
-  }
+  uint res = _hd;
+  _hd = _ids[res];
+  _ids[res] = claimed;  // For debugging.
+  _claimed++;
+  return res;
 }
 
-bool FreeIdSet::claim_perm_id(int i) {
-  assert(0 <= i && i < _sz, "Out of range.");
-  MutexLockerEx x(_mon, Mutex::_no_safepoint_check_flag);
-  int prev = end_of_list;
-  int cur = _hd;
-  while (cur != end_of_list) {
-    if (cur == i) {
-      if (prev == end_of_list) {
-        _hd = _ids[cur];
-      } else {
-        _ids[prev] = _ids[cur];
-      }
-      _ids[cur] = claimed;
-      _claimed++;
-      return true;
-    } else {
-      prev = cur;
-      cur = _ids[cur];
-    }
-  }
-  return false;
-
-}
-
-void FreeIdSet::release_par_id(int id) {
+void FreeIdSet::release_par_id(uint id) {
   MutexLockerEx x(_mon, Mutex::_no_safepoint_check_flag);
   assert(_ids[id] == claimed, "Precondition.");
   _ids[id] = _hd;
   _hd = id;
   _claimed--;
-#if FID_STATS
-  tty->print("[%d] release_par_id(%d), waiters =%d,  claimed = %d.\n",
-             thr_self(), id, _waiters, _claimed);
-#endif
-  if (_waiters > 0)
-    // Notify all would be safer, but this is OK, right?
+  if (_waiters > 0) {
     _mon->notify_all();
+  }
 }

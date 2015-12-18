@@ -262,7 +262,7 @@ static void signal_thread_entry(JavaThread* thread, TRAPS) {
         VMThread::execute(&op1);
         Universe::print_heap_at_SIGBREAK();
         if (PrintClassHistogram) {
-          VM_GC_HeapInspection op1(gclog_or_tty, true /* force full GC before heap inspection */);
+          VM_GC_HeapInspection op1(tty, true /* force full GC before heap inspection */);
           VMThread::execute(&op1);
         }
         if (JvmtiExport::should_post_data_dump()) {
@@ -315,6 +315,10 @@ void os::init_before_ergo() {
   // We need to initialize large page support here because ergonomics takes some
   // decisions depending on large page support and the calculated large page size.
   large_page_init();
+
+  // VM version initialization identifies some characteristics of the
+  // the platform that are used during ergonomic decisions.
+  VM_Version::init_before_ergo();
 }
 
 void os::signal_init() {
@@ -419,28 +423,6 @@ void* os::native_java_library() {
       dll_load(buffer, ebuf, sizeof(ebuf));
     }
 #endif
-  }
-  static jboolean onLoaded = JNI_FALSE;
-  if (onLoaded) {
-    // We may have to wait to fire OnLoad until TLS is initialized.
-    if (ThreadLocalStorage::is_initialized()) {
-      // The JNI_OnLoad handling is normally done by method load in
-      // java.lang.ClassLoader$NativeLibrary, but the VM loads the base library
-      // explicitly so we have to check for JNI_OnLoad as well
-      const char *onLoadSymbols[] = JNI_ONLOAD_SYMBOLS;
-      JNI_OnLoad_t JNI_OnLoad = CAST_TO_FN_PTR(
-          JNI_OnLoad_t, dll_lookup(_native_java_library, onLoadSymbols[0]));
-      if (JNI_OnLoad != NULL) {
-        JavaThread* thread = JavaThread::current();
-        ThreadToNativeFromVM ttn(thread);
-        HandleMark hm(thread);
-        jint ver = (*JNI_OnLoad)(&main_vm, NULL);
-        onLoaded = JNI_TRUE;
-        if (!Threads::is_supported_jni_version_including_1_1(ver)) {
-          vm_exit_during_initialization("Unsupported JNI version");
-        }
-      }
-    }
   }
   return _native_java_library;
 }
@@ -574,7 +556,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   // exists and has crash protection.
   WatcherThread *wt = WatcherThread::watcher_thread();
   if (wt != NULL && wt->has_crash_protection()) {
-    Thread* thread = ThreadLocalStorage::get_thread_slow();
+    Thread* thread = Thread::current_or_null();
     if (thread == wt) {
       assert(!wt->has_crash_protection(),
           "Can't malloc with crash protection from WatcherThread");
@@ -1404,8 +1386,9 @@ bool os::stack_shadow_pages_available(Thread *thread, const methodHandle& method
   // respectively.
   const int framesize_in_bytes =
     Interpreter::size_top_interpreter_activation(method()) * wordSize;
-  int reserved_area = ((StackShadowPages + StackRedPages + StackYellowPages)
-                      * vm_page_size()) + framesize_in_bytes;
+  int reserved_area = ((StackShadowPages + StackRedPages + StackYellowPages
+                      + StackReservedPages) * vm_page_size())
+                      + framesize_in_bytes;
   // The very lower end of the stack
   address stack_limit = thread->stack_base() - thread->stack_size();
   return (sp > (stack_limit + reserved_area));

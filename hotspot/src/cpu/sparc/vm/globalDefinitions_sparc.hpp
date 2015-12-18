@@ -58,4 +58,8 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
   #endif
 #endif
 
+#if defined(SOLARIS)
+#define SUPPORT_RESERVED_STACK_AREA
+#endif
+
 #endif // CPU_SPARC_VM_GLOBALDEFINITIONS_SPARC_HPP

@@ -32,6 +32,7 @@
 #include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/generationSpec.hpp"
 #include "gc/shared/space.hpp"
+#include "logging/log.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
@@ -81,42 +82,28 @@ bool TenuredGeneration::should_collect(bool  full,
   // why it returns what it returns (without re-evaluating the conditionals
   // in case they aren't idempotent), so I'm doing it this way.
   // DeMorgan says it's okay.
-  bool result = false;
-  if (!result && full) {
-    result = true;
-    if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("TenuredGeneration::should_collect: because"
-                    " full");
-    }
+  if (full) {
+    log_trace(gc)("TenuredGeneration::should_collect: because full");
+    return true;
   }
-  if (!result && should_allocate(size, is_tlab)) {
-    result = true;
-    if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("TenuredGeneration::should_collect: because"
-                    " should_allocate(" SIZE_FORMAT ")",
-                    size);
-    }
+  if (should_allocate(size, is_tlab)) {
+    log_trace(gc)("TenuredGeneration::should_collect: because should_allocate(" SIZE_FORMAT ")", size);
+    return true;
   }
   // If we don't have very much free space.
   // XXX: 10000 should be a percentage of the capacity!!!
-  if (!result && free() < 10000) {
-    result = true;
-    if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("TenuredGeneration::should_collect: because"
-                    " free(): " SIZE_FORMAT,
-                    free());
-    }
+  if (free() < 10000) {
+    log_trace(gc)("TenuredGeneration::should_collect: because free(): " SIZE_FORMAT, free());
+    return true;
   }
   // If we had to expand to accommodate promotions from the young generation
-  if (!result && _capacity_at_prologue < capacity()) {
-    result = true;
-    if (PrintGC && Verbose) {
-      gclog_or_tty->print_cr("TenuredGeneration::should_collect: because"
-                    "_capacity_at_prologue: " SIZE_FORMAT " < capacity(): " SIZE_FORMAT,
-                    _capacity_at_prologue, capacity());
-    }
+  if (_capacity_at_prologue < capacity()) {
+    log_trace(gc)("TenuredGeneration::should_collect: because_capacity_at_prologue: " SIZE_FORMAT " < capacity(): " SIZE_FORMAT,
+        _capacity_at_prologue, capacity());
+    return true;
   }
-  return result;
+
+  return false;
 }
 
 void TenuredGeneration::compute_new_size() {
@@ -165,13 +152,10 @@ bool TenuredGeneration::promotion_attempt_is_safe(size_t max_promotion_in_bytes)
   size_t available = max_contiguous_available();
   size_t av_promo  = (size_t)gc_stats()->avg_promoted()->padded_average();
   bool   res = (available >= av_promo) || (available >= max_promotion_in_bytes);
-  if (PrintGC && Verbose) {
-    gclog_or_tty->print_cr(
-      "Tenured: promo attempt is%s safe: available(" SIZE_FORMAT ") %s av_promo(" SIZE_FORMAT "),"
-      "max_promo(" SIZE_FORMAT ")",
-      res? "":" not", available, res? ">=":"<",
-      av_promo, max_promotion_in_bytes);
-  }
+
+  log_trace(gc)("Tenured: promo attempt is%s safe: available(" SIZE_FORMAT ") %s av_promo(" SIZE_FORMAT "), max_promo(" SIZE_FORMAT ")",
+    res? "":" not", available, res? ">=":"<", av_promo, max_promotion_in_bytes);
+
   return res;
 }
 

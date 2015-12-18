@@ -240,7 +240,6 @@ void VMThread::destroy() {
 void VMThread::run() {
   assert(this == vm_thread(), "check");
 
-  this->initialize_thread_local_storage();
   this->initialize_named_thread();
   this->record_stack_base_and_size();
   // Notify_lock wait checks on active_handles() to rewait in
@@ -286,7 +285,7 @@ void VMThread::run() {
     os::check_heap();
     // Silent verification so as not to pollute normal output,
     // unless we really asked for it.
-    Universe::verify(!(PrintGCDetails || Verbose) || VerifySilently);
+    Universe::verify();
   }
 
   CompileBroker::set_should_block();
@@ -307,9 +306,6 @@ void VMThread::run() {
     _terminated = true;
     _terminate_lock->notify();
   }
-
-  // Thread destructor usually does this.
-  ThreadLocalStorage::set_thread(NULL);
 
   // Deletion must be done synchronously by the JNI DestroyJavaVM thread
   // so that the VMThread deletion completes before the main thread frees

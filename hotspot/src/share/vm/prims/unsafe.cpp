@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classFileStream.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
@@ -997,7 +998,9 @@ Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
     cp_patches_h = objArrayHandle(THREAD, (objArrayOop)p);
   }
 
-  KlassHandle host_klass(THREAD, java_lang_Class::as_Klass(JNIHandles::resolve_non_null(host_class)));
+  const Klass* host_klass = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(host_class));
+  assert(host_klass != NULL, "invariant");
+
   const char* host_source = host_klass->external_name();
   Handle      host_loader(THREAD, host_klass->class_loader());
   Handle      host_domain(THREAD, host_klass->protection_domain());
@@ -1016,15 +1019,21 @@ Unsafe_DefineAnonymousClass_impl(JNIEnv *env,
     }
   }
 
-  ClassFileStream st(class_bytes, class_bytes_length, (char*) host_source);
+  ClassFileStream st(class_bytes,
+                     class_bytes_length,
+                     host_source,
+                     ClassFileStream::verify);
 
   instanceKlassHandle anon_klass;
   {
     Symbol* no_class_name = NULL;
     Klass* anonk = SystemDictionary::parse_stream(no_class_name,
-                                                    host_loader, host_domain,
-                                                    &st, host_klass, cp_patches,
-                                                    CHECK_NULL);
+                                                  host_loader,
+                                                  host_domain,
+                                                  &st,
+                                                  host_klass,
+                                                  cp_patches,
+                                                  CHECK_NULL);
     if (anonk == NULL)  return NULL;
     anon_klass = instanceKlassHandle(THREAD, anonk);
   }

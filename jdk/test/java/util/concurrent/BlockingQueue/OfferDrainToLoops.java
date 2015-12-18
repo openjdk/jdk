@@ -34,13 +34,20 @@
 /*
  * @test
  * @bug 6805775 6815766
- * @run main OfferDrainToLoops 300
+ * @run main OfferDrainToLoops 100
  * @summary Test concurrent offer vs. drainTo
  */
 
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.SplittableRandom;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedTransferQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 @SuppressWarnings({"unchecked", "rawtypes", "deprecation"})
 public class OfferDrainToLoops {
@@ -66,22 +73,22 @@ public class OfferDrainToLoops {
         test(new LinkedTransferQueue());
     }
 
-    Random getRandom() {
-        return ThreadLocalRandom.current();
-    }
-
     void test(final BlockingQueue q) throws Throwable {
         System.out.println(q.getClass().getSimpleName());
         final long testDurationNanos = testDurationMillis * 1000L * 1000L;
         final long quittingTimeNanos = System.nanoTime() + testDurationNanos;
         final long timeoutMillis = 10L * 1000L;
+        final SplittableRandom rnd = new SplittableRandom();
 
         /** Poor man's bounded buffer. */
         final AtomicLong approximateCount = new AtomicLong(0L);
 
         abstract class CheckedThread extends Thread {
-            CheckedThread(String name) {
+            final SplittableRandom rnd;
+
+            CheckedThread(String name, SplittableRandom rnd) {
                 super(name);
+                this.rnd = rnd;
                 setDaemon(true);
                 start();
             }
@@ -99,7 +106,7 @@ public class OfferDrainToLoops {
             }
         }
 
-        Thread offerer = new CheckedThread("offerer") {
+        Thread offerer = new CheckedThread("offerer", rnd.split()) {
             protected void realRun() {
                 long c = 0;
                 for (long i = 0; ! quittingTime(i); i++) {
@@ -113,9 +120,8 @@ public class OfferDrainToLoops {
                         Thread.yield();
                     }}}};
 
-        Thread drainer = new CheckedThread("drainer") {
+        Thread drainer = new CheckedThread("drainer", rnd.split()) {
             protected void realRun() {
-                final Random rnd = getRandom();
                 while (! quittingTime()) {
                     List list = new ArrayList();
                     int n = rnd.nextBoolean() ?
@@ -131,9 +137,8 @@ public class OfferDrainToLoops {
                 approximateCount.set(0); // Releases waiting offerer thread
             }};
 
-        Thread scanner = new CheckedThread("scanner") {
+        Thread scanner = new CheckedThread("scanner", rnd.split()) {
             protected void realRun() {
-                final Random rnd = getRandom();
                 while (! quittingTime()) {
                     switch (rnd.nextInt(3)) {
                     case 0: checkNotContainsNull(q); break;
@@ -157,8 +162,6 @@ public class OfferDrainToLoops {
                 failed++;
                 for (StackTraceElement e : thread.getStackTrace())
                     System.err.println(e);
-                // Kludge alert
-                thread.stop();
                 thread.join(timeoutMillis);
             }
         }

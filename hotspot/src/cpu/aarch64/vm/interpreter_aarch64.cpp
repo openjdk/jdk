@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,7 +39,6 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
-#include "runtime/deoptimization.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -259,21 +258,4 @@ address InterpreterGenerator::generate_abstract_entry(void) {
   __ should_not_reach_here();
 
   return entry_point;
-}
-
-
-void Deoptimization::unwind_callee_save_values(frame* f, vframeArray* vframe_array) {
-
-  // This code is sort of the equivalent of C2IAdapter::setup_stack_frame back in
-  // the days we had adapter frames. When we deoptimize a situation where a
-  // compiled caller calls a compiled caller will have registers it expects
-  // to survive the call to the callee. If we deoptimize the callee the only
-  // way we can restore these registers is to have the oldest interpreter
-  // frame that we create restore these values. That is what this routine
-  // will accomplish.
-
-  // At the moment we have modified c2 to not have any callee save registers
-  // so this problem does not exist and this routine is just a place holder.
-
-  assert(f->is_interpreted_frame(), "must be interpreted");
 }

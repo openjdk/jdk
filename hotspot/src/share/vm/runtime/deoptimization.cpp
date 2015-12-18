@@ -571,6 +571,23 @@ void Deoptimization::cleanup_deopt_info(JavaThread *thread,
   thread->dec_in_deopt_handler();
 }
 
+// Moved from cpu directories because none of the cpus has callee save values.
+// If a cpu implements callee save values, move this to deoptimization_<cpu>.cpp.
+void Deoptimization::unwind_callee_save_values(frame* f, vframeArray* vframe_array) {
+
+  // This code is sort of the equivalent of C2IAdapter::setup_stack_frame back in
+  // the days we had adapter frames. When we deoptimize a situation where a
+  // compiled caller calls a compiled caller will have registers it expects
+  // to survive the call to the callee. If we deoptimize the callee the only
+  // way we can restore these registers is to have the oldest interpreter
+  // frame that we create restore these values. That is what this routine
+  // will accomplish.
+
+  // At the moment we have modified c2 to not have any callee save registers
+  // so this problem does not exist and this routine is just a place holder.
+
+  assert(f->is_interpreted_frame(), "must be interpreted");
+}
 
 // Return BasicType of value being returned
 JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_mode))
@@ -1414,7 +1431,7 @@ void Deoptimization::load_class_by_index(const constantPoolHandle& constant_pool
     // stack bang causes a stack overflow we crash.
     assert(THREAD->is_Java_thread(), "only a java thread can be here");
     JavaThread* thread = (JavaThread*)THREAD;
-    bool guard_pages_enabled = thread->stack_yellow_zone_enabled();
+    bool guard_pages_enabled = thread->stack_guards_enabled();
     if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
     assert(guard_pages_enabled, "stack banging in uncommon trap blob may cause crash");
   }

@@ -86,7 +86,7 @@ class FromCardCache : public AllStatic {
 
   static void invalidate(uint start_idx, size_t num_regions);
 
-  static void print(outputStream* out = gclog_or_tty) PRODUCT_RETURN;
+  static void print(outputStream* out = tty) PRODUCT_RETURN;
 
   static size_t static_mem_size() {
     return _static_mem_size;
@@ -392,7 +392,6 @@ public:
 
   // Run unit tests.
 #ifndef PRODUCT
-  static void test_prt();
   static void test();
 #endif
 };

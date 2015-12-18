@@ -24,6 +24,7 @@ package test.sql;
 
 import java.sql.SQLException;
 import static org.testng.Assert.assertEquals;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
@@ -33,18 +34,29 @@ import util.StubStatement;
 public class StatementTests extends BaseTest {
 
     protected StubStatement stmt;
+    protected static String maxIdentifier;
 
     @BeforeMethod
     public void setUpMethod() throws Exception {
         stmt = new StubStatement();
     }
 
+    @BeforeClass
+    public static void setUpClass() throws Exception {
+        int maxLen = 128;
+        StringBuilder s = new StringBuilder(maxLen);
+        for (int i = 0; i < maxLen; i++) {
+            s.append('a');
+        }
+        maxIdentifier = s.toString();
+    }
     /*
      * Verify that enquoteLiteral creates a  valid literal and converts every
      * single quote to two single quotes
      */
+
     @Test(dataProvider = "validEnquotedLiteralValues")
-    public void test00(String s, String expected) {
+    public void test00(String s, String expected) throws SQLException {
         assertEquals(stmt.enquoteLiteral(s), expected);
     }
 
@@ -53,7 +65,7 @@ public class StatementTests extends BaseTest {
      * enquoteLiteral is null
      */
     @Test(expectedExceptions = NullPointerException.class)
-    public void test01() {
+    public void test01()  throws SQLException {
         stmt.enquoteLiteral(null);
 
     }
@@ -90,6 +102,24 @@ public class StatementTests extends BaseTest {
     }
 
     /*
+     * Validate that isSimpleIdentifier returns the expected value
+     */
+    @Test(dataProvider = "simpleIdentifierValues")
+    public void test05(String s, boolean expected) throws SQLException {
+        assertEquals(stmt.isSimpleIdentifier(s), expected);
+    }
+
+    /*
+     * Validate a NullPointerException is thrown is the string passed to
+     * isSimpleIdentifier is null
+     */
+    @Test(expectedExceptions = NullPointerException.class)
+    public void test06() throws SQLException {
+        stmt.isSimpleIdentifier(null);
+
+    }
+
+    /*
      * DataProvider used to provide strings that will be used to validate
      * that enquoteLiteral converts a string to a literal and every instance of
      * a single quote will be converted into two single quotes in the literal.
@@ -114,6 +144,10 @@ public class StatementTests extends BaseTest {
     @DataProvider(name = "validIdentifierValues")
     protected Object[][] validEnquotedIdentifierValues() {
         return new Object[][]{
+            {"b", false, "b"},
+            {"b", true, "\"b\""},
+            {maxIdentifier, false, maxIdentifier},
+            {maxIdentifier, true, "\"" + maxIdentifier + "\""},
             {"Hello", false, "Hello"},
             {"Hello", true, "\"Hello\""},
             {"G'Day", false, "\"G'Day\""},
@@ -130,16 +164,34 @@ public class StatementTests extends BaseTest {
      */
     @DataProvider(name = "invalidIdentifierValues")
     protected Object[][] invalidEnquotedIdentifierValues() {
-        int invalidLen = 129;
-        StringBuilder s = new StringBuilder(invalidLen);
-        for (int i = 0; i < invalidLen; i++) {
-            s.append('a');
-        }
         return new Object[][]{
             {"Hel\"lo", false},
             {"\"Hel\"lo\"", true},
             {"Hello" + '\0', false},
             {"", false},
-            {s.toString(), false},};
+            {maxIdentifier + 'a', false},
+            };
     }
+
+    /*
+     * DataProvider used to provide strings that will be used to validate
+     * that isSimpleIdentifier returns the correct value based on the
+     * identifier specified.
+     */
+    @DataProvider(name = "simpleIdentifierValues")
+    protected Object[][] simpleIdentifierValues() {
+        return new Object[][]{
+            {"b", true},
+            {"Hello", true},
+            {"\"Gotham\"", false},
+            {"G'Day", false},
+            {"Bruce Wayne", false},
+            {"GoodDay$", false},
+            {"Dick_Grayson", true},
+            {"Batmobile1966", true},
+            {maxIdentifier, true},
+            {maxIdentifier + 'a', false},
+            {"", false},};
+    }
+
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,7 @@ class ciMethod : public ciMetadata {
   bool _is_c1_compilable;
   bool _is_c2_compilable;
   bool _can_be_statically_bound;
+  bool _has_reserved_stack_access;
 
   // Lazy fields, filled in on demand
   address              _code;
@@ -322,6 +323,7 @@ class ciMethod : public ciMetadata {
   bool is_accessor    () const;
   bool is_initializer () const;
   bool can_be_statically_bound() const           { return _can_be_statically_bound; }
+  bool has_reserved_stack_access() const         { return _has_reserved_stack_access; }
   bool is_boxing_method() const;
   bool is_unboxing_method() const;
 

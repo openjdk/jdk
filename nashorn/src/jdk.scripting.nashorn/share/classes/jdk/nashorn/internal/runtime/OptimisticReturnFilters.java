@@ -32,9 +32,9 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import jdk.internal.dynalink.CallSiteDescriptor;
-import jdk.internal.dynalink.linker.GuardedInvocation;
-import jdk.internal.dynalink.linker.support.TypeUtilities;
+import jdk.dynalink.CallSiteDescriptor;
+import jdk.dynalink.linker.GuardedInvocation;
+import jdk.dynalink.linker.support.TypeUtilities;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 
