@@ -25,7 +25,7 @@
  * @test
  * @bug 6277246
  * @summary Tests problem with java.beans use of reflection
- * @modules java.base/sun.misc
+ * @modules java.base/sun.security.x509
  *          java.desktop
  * @run main/othervm Test6277246
  * @author Jeff Nisewanger
@@ -36,11 +36,10 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.MethodDescriptor;
 import java.lang.reflect.Method;
-import sun.misc.BASE64Encoder;
 
 public class Test6277246 {
     public static void main(String[] args) throws IntrospectionException {
-        Class type = BASE64Encoder.class;
+        Class type = sun.security.x509.X509CertInfo.class;
         System.setSecurityManager(new SecurityManager());
         BeanInfo info = Introspector.getBeanInfo(type);
         for (MethodDescriptor md : info.getMethodDescriptors()) {
@@ -48,7 +47,7 @@ public class Test6277246 {
             System.out.println(method);
 
             String name = method.getDeclaringClass().getName();
-            if (name.startsWith("sun.misc.")) {
+            if (name.startsWith("sun.")) {
                 throw new Error("found inaccessible method");
             }
         }

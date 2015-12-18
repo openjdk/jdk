@@ -377,4 +377,13 @@ public class MapFactories {
         assertEquals(sie.toString(), kvh1.toString());
     }
 
+    // compile-time test of wildcards
+    @Test
+    public void entryWildcardTests() {
+        Map.Entry<Integer,Double> e1 = Map.entry(1, 2.0);
+        Map.Entry<Float,Long> e2 = Map.entry(3.0f, 4L);
+        Map<Number,Number> map = Map.ofEntries(e1, e2);
+        assertEquals(map.size(), 2);
+    }
+
 }
