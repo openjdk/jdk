@@ -89,11 +89,16 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
     }
 
     @Override
-    CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden) {
+    CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden, boolean linkLogicOkay) {
         assert isValidCallSite(callSiteType) : callSiteType;
 
         CompiledFunction best = null;
         for (final CompiledFunction candidate: code) {
+            if (!linkLogicOkay && candidate.hasLinkLogic()) {
+                // Skip! Version with no link logic is desired, but this one has link logic!
+                continue;
+            }
+
             if (!forbidden.contains(candidate) && candidate.betterThanFinal(best, callSiteType)) {
                 best = candidate;
             }

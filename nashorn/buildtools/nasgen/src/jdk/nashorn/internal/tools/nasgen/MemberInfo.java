@@ -85,6 +85,8 @@ public final class MemberInfo implements Cloneable {
     private MemberInfo.Kind kind;
     // script property name
     private String name;
+    // documentation for this member
+    private String documentation;
     // script property attributes
     private int attributes;
     // name of the java member
@@ -134,6 +136,20 @@ public final class MemberInfo implements Cloneable {
      */
     public void setName(final String name) {
         this.name = name;
+    }
+
+    /**
+     * @return the documentation
+     */
+    public String getDocumentation() {
+        return documentation;
+    }
+
+    /**
+     * @param doc the documentation to set
+     */
+    public void setDocumentation(final String doc) {
+        this.documentation = doc;
     }
 
     /**

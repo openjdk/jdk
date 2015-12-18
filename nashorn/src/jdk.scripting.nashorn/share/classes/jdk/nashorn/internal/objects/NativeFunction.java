@@ -97,7 +97,6 @@ public final class NativeFunction {
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object apply(final Object self, final Object thiz, final Object array) {
         checkCallable(self);
-
         final Object[] args = toApplyArgs(array);
 
         if (self instanceof ScriptFunction) {
