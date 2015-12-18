@@ -86,7 +86,11 @@ Then run configure with '--with-freetype-src=<freetype_src>'. This will
 automatically build the freetype library into '<freetype_src>/lib64' for 64-bit
 builds or into '<freetype_src>/lib32' for 32-bit builds.
 Afterwards you can always use '--with-freetype-include=<freetype_src>/include'
-and '--with-freetype-lib=<freetype_src>/lib[32|64]' for other builds."
+and '--with-freetype-lib=<freetype_src>/lib[32|64]' for other builds.
+
+Alternatively you can unpack the sources like this to use the default directory:
+
+tar --one-top-level=$HOME/freetype --strip-components=1 -xzf freetype-2.5.3.tar.gz"
       ;;
   esac
 }
