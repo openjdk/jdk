@@ -202,6 +202,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
     assert(m_klass->verify_itable_index(vmindex), "");
     flags |= IS_METHOD | (JVM_REF_invokeInterface << REFERENCE_KIND_SHIFT);
     if (TraceInvokeDynamic) {
+      ttyLocker ttyl;
       ResourceMark rm;
       tty->print_cr("memberName: invokeinterface method_holder::method: %s, itableindex: %d, access_flags:",
             Method::name_and_sig_as_C_string(m->method_holder(), m->name(), m->signature()),
@@ -242,6 +243,7 @@ oop MethodHandles::init_method_MemberName(Handle mname, CallInfo& info) {
       m_klass = m_klass_non_interface;
     }
     if (TraceInvokeDynamic) {
+      ttyLocker ttyl;
       ResourceMark rm;
       tty->print_cr("memberName: invokevirtual method_holder::method: %s, receiver: %s, vtableindex: %d, access_flags:",
             Method::name_and_sig_as_C_string(m->method_holder(), m->name(), m->signature()),
