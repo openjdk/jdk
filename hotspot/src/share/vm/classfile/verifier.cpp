@@ -1745,7 +1745,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
 
 #undef bad_type_message
 
-char* ClassVerifier::generate_code_data(methodHandle m, u4 code_length, TRAPS) {
+char* ClassVerifier::generate_code_data(const methodHandle& m, u4 code_length, TRAPS) {
   char* code_data = NEW_RESOURCE_ARRAY(char, code_length);
   memset(code_data, 0, sizeof(char) * code_length);
   RawBytecodeStream bcs(m);
@@ -1814,9 +1814,9 @@ void ClassVerifier::verify_exception_handler_table(u4 code_length, char* code_da
 }
 
 void ClassVerifier::verify_local_variable_table(u4 code_length, char* code_data, TRAPS) {
-  int localvariable_table_length = _method()->localvariable_table_length();
+  int localvariable_table_length = _method->localvariable_table_length();
   if (localvariable_table_length > 0) {
-    LocalVariableTableElement* table = _method()->localvariable_table_start();
+    LocalVariableTableElement* table = _method->localvariable_table_start();
     for (int i = 0; i < localvariable_table_length; i++) {
       u2 start_bci = table[i].start_bci;
       u2 length = table[i].length;
