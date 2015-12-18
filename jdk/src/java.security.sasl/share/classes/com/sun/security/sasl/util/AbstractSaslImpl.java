@@ -33,7 +33,7 @@ import java.util.StringTokenizer;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 /**
  * The base class used by client and server implementations of SASL

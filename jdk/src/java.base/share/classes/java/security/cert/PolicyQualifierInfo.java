@@ -27,7 +27,7 @@ package java.security.cert;
 
 import java.io.IOException;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import sun.security.util.DerValue;
 
 /**

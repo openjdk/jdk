@@ -41,7 +41,7 @@ import sun.security.util.*;
 import sun.security.x509.AlgorithmId;
 import sun.security.x509.X500Name;
 import sun.security.x509.KeyUsageExtension;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 /**
  * A SignerInfo, as defined in PKCS#7's signedData type.
