@@ -27,6 +27,7 @@
 
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/systemDictionary_ext.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/java.hpp"
@@ -179,10 +180,16 @@ class Ticks;
   do_klass(sun_misc_Launcher_klass,                     sun_misc_Launcher,                         Pre                 ) \
   do_klass(CodeSource_klass,                            java_security_CodeSource,                  Pre                 ) \
                                                                                                                          \
-  /* It's NULL in non-1.4 JDKs. */                                                                                       \
   do_klass(StackTraceElement_klass,                     java_lang_StackTraceElement,               Opt                 ) \
+                                                                                                                         \
   /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                          \
   do_klass(nio_Buffer_klass,                            java_nio_Buffer,                           Opt                 ) \
+                                                                                                                         \
+  /* Stack Walking */                                                                                                    \
+  do_klass(StackWalker_klass,                           java_lang_StackWalker,                     Opt                 ) \
+  do_klass(AbstractStackWalker_klass,                   java_lang_StackStreamFactory_AbstractStackWalker, Opt          ) \
+  do_klass(StackFrameInfo_klass,                        java_lang_StackFrameInfo,                  Opt                 ) \
+  do_klass(LiveStackFrameInfo_klass,                    java_lang_LiveStackFrameInfo,              Opt                 ) \
                                                                                                                          \
   /* Preload boxing klasses */                                                                                           \
   do_klass(Boolean_klass,                               java_lang_Boolean,                         Pre                 ) \
@@ -194,15 +201,18 @@ class Ticks;
   do_klass(Integer_klass,                               java_lang_Integer,                         Pre                 ) \
   do_klass(Long_klass,                                  java_lang_Long,                            Pre                 ) \
                                                                                                                          \
+  /* Extensions */                                                                                                       \
+  WK_KLASSES_DO_EXT(do_klass)                                                                                            \
   /* JVMCI classes. These are loaded on-demand. */                                                                       \
-  JVMCI_WK_KLASSES_DO(do_klass) \
-
+  JVMCI_WK_KLASSES_DO(do_klass)                                                                                          \
+                                                                                                                         \
   /*end*/
 
 
 class SystemDictionary : AllStatic {
   friend class VMStructs;
   friend class SystemDictionaryHandles;
+  friend class SharedClassUtil;
 
  public:
   enum WKID {
@@ -666,11 +676,6 @@ protected:
 
   // Basic find on classes in the midst of being loaded
   static Symbol* find_placeholder(Symbol* name, ClassLoaderData* loader_data);
-
-  // Updating entry in dictionary
-  // Add a completely loaded class
-  static void add_klass(int index, Symbol* class_name,
-                        ClassLoaderData* loader_data, KlassHandle obj);
 
   // Add a placeholder for a class being loaded
   static void add_placeholder(int index,

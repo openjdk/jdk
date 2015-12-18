@@ -279,7 +279,7 @@ void emit_range_double(const char* name, double min, double max) {
 // Generate func argument to pass into emit_range_xxx functions
 #define EMIT_RANGE_CHECK(a, b)                               , a, b
 
-#define INITIAL_RANGES_SIZE 204
+#define INITIAL_RANGES_SIZE 320
 GrowableArray<CommandLineFlagRange*>* CommandLineFlagRangeList::_ranges = NULL;
 
 // Check the ranges of all flags that have them

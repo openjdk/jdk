@@ -189,10 +189,11 @@ void InterpreterMacroAssembler::get_cache_and_index_and_bytecode_at_bcp(Register
   get_cache_and_index_at_bcp(cache, index, bcp_offset, index_size);
   // We use a 32-bit load here since the layout of 64-bit words on
   // little-endian machines allow us that.
-  // n.b. unlike x86 cache alreeady includes the index offset
-  ldrw(bytecode, Address(cache,
+  // n.b. unlike x86 cache already includes the index offset
+  lea(bytecode, Address(cache,
                          ConstantPoolCache::base_offset()
                          + ConstantPoolCacheEntry::indices_offset()));
+  ldarw(bytecode, bytecode);
   const int shift_count = (1 + byte_no) * BitsPerByte;
   ubfx(bytecode, bytecode, shift_count, BitsPerByte);
 }

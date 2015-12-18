@@ -25,7 +25,7 @@
 package javax.swing.plaf.nimbus;
 
 import javax.swing.Painter;
-import sun.swing.plaf.synth.SynthIcon;
+import javax.swing.plaf.synth.SynthIcon;
 
 import javax.swing.plaf.synth.SynthContext;
 import javax.swing.*;
@@ -37,7 +37,7 @@ import javax.swing.plaf.UIResource;
  * An icon that delegates to a painter.
  * @author rbair
  */
-class NimbusIcon extends SynthIcon {
+class NimbusIcon implements SynthIcon {
     private int width;
     private int height;
     private String prefix;

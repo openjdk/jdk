@@ -378,6 +378,7 @@ jdk/src/java.base/unix/conf/arm/jvm.cfg : jdk/src/solaris/bin/arm/jvm.cfg
 jdk/src/java.base/unix/conf/i586/jvm.cfg : jdk/src/solaris/bin/i586/jvm.cfg
 jdk/src/java.base/unix/conf/ia64/jvm.cfg : jdk/src/solaris/bin/ia64/jvm.cfg
 jdk/src/java.base/unix/conf/ppc64/jvm.cfg : jdk/src/solaris/bin/ppc64/jvm.cfg
+jdk/src/java.base/unix/conf/ppc64le/jvm.cfg : jdk/src/solaris/bin/ppc64le/jvm.cfg
 jdk/src/java.base/unix/conf/ppc/jvm.cfg : jdk/src/solaris/bin/ppc/jvm.cfg
 jdk/src/java.base/unix/conf/sdp/sdp.conf.template : jdk/src/solaris/lib/sdp/sdp.conf.template
 jdk/src/java.base/unix/conf/sparc/jvm.cfg : jdk/src/solaris/bin/sparc/jvm.cfg
@@ -1293,10 +1294,7 @@ jdk/src/jdk.crypto.pkcs11/windows/native/libj2pkcs11/j2secmod_md.h : jdk/src/win
 jdk/src/jdk.crypto.pkcs11/windows/native/libj2pkcs11/p11_md.c : jdk/src/windows/native/sun/security/pkcs11/wrapper/p11_md.c
 jdk/src/jdk.crypto.pkcs11/windows/native/libj2pkcs11/p11_md.h : jdk/src/windows/native/sun/security/pkcs11/wrapper/p11_md.h
 jdk/src/jdk.deploy.osx/macosx/classes/com/apple/concurrent/package.html : jdk/src/macosx/classes/com/apple/concurrent/package.html
-jdk/src/jdk.deploy.osx/macosx/classes/apple/applescript : jdk/src/macosx/classes/apple/applescript
-jdk/src/jdk.deploy.osx/macosx/classes/apple/security : jdk/src/macosx/classes/apple/security
 jdk/src/jdk.deploy.osx/macosx/classes/com/apple/concurrent : jdk/src/macosx/classes/com/apple/concurrent
-jdk/src/jdk.deploy.osx/macosx/native/libapplescriptengine : jdk/src/macosx/native/apple/applescript
 jdk/src/jdk.deploy.osx/macosx/native/libosx/CFileManager.m : jdk/src/macosx/native/com/apple/eio/CFileManager.m
 jdk/src/jdk.deploy.osx/macosx/native/libosx/Dispatch.m : jdk/src/macosx/native/com/apple/concurrent/Dispatch.m
 jdk/src/jdk.deploy.osx/macosx/native/libosx/JavaAppLauncher.m : jdk/src/macosx/native/apple/launcher/JavaAppLauncher.m

@@ -554,7 +554,7 @@ ALL_TARGETS += buildtools gensrc gendata copy java rmic libs launchers \
 # Traditional targets typically run by users.
 # These can be considered aliases for the targets now named by a more
 # "modern" naming scheme.
-default: exploded-image
+default: $(DEFAULT_MAKE_TARGET)
 jdk: exploded-image
 images: product-images
 docs: docs-image

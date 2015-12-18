@@ -26,7 +26,7 @@
  * @library /lib/testlibrary/
  * @build jdk.testlibrary.*
  * @run main BigIntegerTest
- * @bug 4181191 4161971 4227146 4194389 4823171 4624738 4812225 4837946 4026465 8074460 8078672
+ * @bug 4181191 4161971 4227146 4194389 4823171 4624738 4812225 4837946 4026465 8074460 8078672 8032027
  * @summary tests methods in BigInteger (use -Dseed=X to set PRNG seed)
  * @run main/timeout=400 BigIntegerTest
  * @author madbot
@@ -38,8 +38,15 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Random;
+import java.util.function.ToIntFunction;
+import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
+import java.util.stream.Stream;
 import jdk.testlibrary.RandomFactory;
 
 /**
@@ -241,6 +248,146 @@ public class BigIntegerTest {
                 failCount1++;
         }
         report("square for " + order + " bits", failCount1);
+    }
+
+    private static void printErr(String msg) {
+        System.err.println(msg);
+    }
+
+    private static int checkResult(BigInteger expected, BigInteger actual,
+        String failureMessage) {
+        if (expected.compareTo(actual) != 0) {
+            printErr(failureMessage + " - expected: " + expected
+                + ", actual: " + actual);
+            return 1;
+        }
+        return 0;
+    }
+
+    private static void squareRootSmall() {
+        int failCount = 0;
+
+        // A negative value should cause an exception.
+        BigInteger n = BigInteger.ONE.negate();
+        BigInteger s;
+        try {
+            s = n.sqrt();
+            // If sqrt() does not throw an exception that is a failure.
+            failCount++;
+            printErr("sqrt() of negative number did not throw an exception");
+        } catch (ArithmeticException expected) {
+            // A negative value should cause an exception and is not a failure.
+        }
+
+        // A zero value should return BigInteger.ZERO.
+        failCount += checkResult(BigInteger.ZERO, BigInteger.ZERO.sqrt(),
+            "sqrt(0) != BigInteger.ZERO");
+
+        // 1 <= value < 4 should return BigInteger.ONE.
+        long[] smalls = new long[] {1, 2, 3};
+        for (long small : smalls) {
+            failCount += checkResult(BigInteger.ONE,
+                BigInteger.valueOf(small).sqrt(), "sqrt("+small+") != 1");
+        }
+
+        report("squareRootSmall", failCount);
+    }
+
+    public static void squareRoot() {
+        squareRootSmall();
+
+        ToIntFunction<BigInteger> f = (n) -> {
+            int failCount = 0;
+
+            // square root of n^2 -> n
+            BigInteger n2 = n.pow(2);
+            failCount += checkResult(n, n2.sqrt(), "sqrt() n^2 -> n");
+
+            // square root of n^2 + 1 -> n
+            BigInteger n2up = n2.add(BigInteger.ONE);
+            failCount += checkResult(n, n2up.sqrt(), "sqrt() n^2 + 1 -> n");
+
+            // square root of (n + 1)^2 - 1 -> n
+            BigInteger up =
+                n.add(BigInteger.ONE).pow(2).subtract(BigInteger.ONE);
+            failCount += checkResult(n, up.sqrt(), "sqrt() (n + 1)^2 - 1 -> n");
+
+            // sqrt(n)^2 <= n
+            BigInteger s = n.sqrt();
+            if (s.multiply(s).compareTo(n) > 0) {
+                failCount++;
+                printErr("sqrt(n)^2 > n for n = " + n);
+            }
+
+            // (sqrt(n) + 1)^2 > n
+            if (s.add(BigInteger.ONE).pow(2).compareTo(n) <= 0) {
+                failCount++;
+                printErr("(sqrt(n) + 1)^2 <= n for n = " + n);
+            }
+
+            return failCount;
+        };
+
+        Stream.Builder<BigInteger> sb = Stream.builder();
+        int maxExponent = Double.MAX_EXPONENT + 1;
+        for (int i = 1; i <= maxExponent; i++) {
+            BigInteger p2 = BigInteger.ONE.shiftLeft(i);
+            sb.add(p2.subtract(BigInteger.ONE));
+            sb.add(p2);
+            sb.add(p2.add(BigInteger.ONE));
+        }
+        sb.add((new BigDecimal(Double.MAX_VALUE)).toBigInteger());
+        sb.add((new BigDecimal(Double.MAX_VALUE)).toBigInteger().add(BigInteger.ONE));
+        report("squareRoot for 2^N and 2^N - 1, 1 <= N <= Double.MAX_EXPONENT",
+            sb.build().collect(Collectors.summingInt(f)));
+
+        IntStream ints = random.ints(SIZE, 4, Integer.MAX_VALUE);
+        report("squareRoot for int", ints.mapToObj(x ->
+            BigInteger.valueOf(x)).collect(Collectors.summingInt(f)));
+
+        LongStream longs = random.longs(SIZE, (long)Integer.MAX_VALUE + 1L,
+            Long.MAX_VALUE);
+        report("squareRoot for long", longs.mapToObj(x ->
+            BigInteger.valueOf(x)).collect(Collectors.summingInt(f)));
+
+        DoubleStream doubles = random.doubles(SIZE,
+            (double) Long.MAX_VALUE + 1.0, Math.sqrt(Double.MAX_VALUE));
+        report("squareRoot for double", doubles.mapToObj(x ->
+            BigDecimal.valueOf(x).toBigInteger()).collect(Collectors.summingInt(f)));
+    }
+
+    public static void squareRootAndRemainder() {
+        ToIntFunction<BigInteger> g = (n) -> {
+            int failCount = 0;
+            BigInteger n2 = n.pow(2);
+
+            // square root of n^2 -> n
+            BigInteger[] actual = n2.sqrtAndRemainder();
+            failCount += checkResult(n, actual[0], "sqrtAndRemainder()[0]");
+            failCount += checkResult(BigInteger.ZERO, actual[1],
+                "sqrtAndRemainder()[1]");
+
+            // square root of n^2 + 1 -> n
+            BigInteger n2up = n2.add(BigInteger.ONE);
+            actual = n2up.sqrtAndRemainder();
+            failCount += checkResult(n, actual[0], "sqrtAndRemainder()[0]");
+            failCount += checkResult(BigInteger.ONE, actual[1],
+                "sqrtAndRemainder()[1]");
+
+            // square root of (n + 1)^2 - 1 -> n
+            BigInteger up =
+                n.add(BigInteger.ONE).pow(2).subtract(BigInteger.ONE);
+            actual = up.sqrtAndRemainder();
+            failCount += checkResult(n, actual[0], "sqrtAndRemainder()[0]");
+            BigInteger r = up.subtract(n2);
+            failCount += checkResult(r, actual[1], "sqrtAndRemainder()[1]");
+
+            return failCount;
+        };
+
+        IntStream bits = random.ints(SIZE, 3, Short.MAX_VALUE);
+        report("sqrtAndRemainder", bits.mapToObj(x ->
+            BigInteger.valueOf(x)).collect(Collectors.summingInt(g)));
     }
 
     public static void arithmetic(int order) {
@@ -1100,6 +1247,9 @@ public class BigIntegerTest {
         square(ORDER_MEDIUM);
         square(ORDER_KARATSUBA_SQUARE);
         square(ORDER_TOOM_COOK_SQUARE);
+
+        squareRoot();
+        squareRootAndRemainder();
 
         bitCount();
         bitLength();

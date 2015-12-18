@@ -552,6 +552,19 @@ protected:
           break;
         }
       }
+      // zmm_save will be set on a EVEX enabled machine even if we choose AVX code gen
+      if (retVal == false) {
+        // Verify that OS save/restore all bits of EVEX registers
+        // during signal processing.
+        int nreg = 2 LP64_ONLY(+2);
+        retVal = true;
+        for (int i = 0; i < 16 * nreg; i++) { // 64 bytes per zmm register
+          if (_cpuid_info.zmm_save[i] != ymm_test_value()) {
+            retVal = false;
+            break;
+          }
+        }
+      }
     }
     return retVal;
   }
@@ -706,6 +719,9 @@ public:
   static bool supports_avx512vl() { return (_cpuFeatures & CPU_AVX512VL) != 0; }
   static bool supports_avx512vlbw() { return (supports_avx512bw() && supports_avx512vl()); }
   static bool supports_avx512novl() { return (supports_evex() && !supports_avx512vl()); }
+  static bool supports_avx512nobw() { return (supports_evex() && !supports_avx512bw()); }
+  static bool supports_avx256only() { return (supports_avx2() && !supports_evex()); }
+  static bool supports_avxonly()    { return ((supports_avx2() || supports_avx()) && !supports_evex()); }
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
                                        extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }

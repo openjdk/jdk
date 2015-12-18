@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ void LIR_Assembler::patching_epilog(PatchingStub* patch, LIR_PatchCode patch_cod
   // We must have enough patching space so that call can be inserted.
   // We cannot use fat nops here, since the concurrent code rewrite may transiently
   // create the illegal instruction sequence.
-  while ((intx) _masm->pc() - (intx) patch->pc_start() < NativeCall::instruction_size) {
+  while ((intx) _masm->pc() - (intx) patch->pc_start() < NativeGeneralJump::instruction_size) {
     _masm->nop();
   }
   patch->install(_masm, patch_code, obj, info);
@@ -413,13 +413,14 @@ void LIR_Assembler::record_non_safepoint_debug_info() {
 }
 
 
-void LIR_Assembler::add_debug_info_for_null_check_here(CodeEmitInfo* cinfo) {
-  add_debug_info_for_null_check(code_offset(), cinfo);
+ImplicitNullCheckStub* LIR_Assembler::add_debug_info_for_null_check_here(CodeEmitInfo* cinfo) {
+  return add_debug_info_for_null_check(code_offset(), cinfo);
 }
 
-void LIR_Assembler::add_debug_info_for_null_check(int pc_offset, CodeEmitInfo* cinfo) {
+ImplicitNullCheckStub* LIR_Assembler::add_debug_info_for_null_check(int pc_offset, CodeEmitInfo* cinfo) {
   ImplicitNullCheckStub* stub = new ImplicitNullCheckStub(pc_offset, cinfo);
   append_code_stub(stub);
+  return stub;
 }
 
 void LIR_Assembler::add_debug_info_for_div0_here(CodeEmitInfo* info) {
@@ -557,10 +558,10 @@ void LIR_Assembler::emit_op1(LIR_Op1* op) {
 
     case lir_null_check:
       if (GenerateCompilerNullChecks) {
-        add_debug_info_for_null_check_here(op->info());
+        ImplicitNullCheckStub* stub = add_debug_info_for_null_check_here(op->info());
 
         if (op->in_opr()->is_single_cpu()) {
-          _masm->null_check(op->in_opr()->as_register());
+          _masm->null_check(op->in_opr()->as_register(), stub->entry());
         } else {
           Unimplemented();
         }

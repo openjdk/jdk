@@ -54,7 +54,7 @@ public class T6358166 extends AbstractProcessor {
         String testSrc = System.getProperty("test.src");
 
         JavacFileManager fm = new JavacFileManager(new Context(), false, null);
-        JavaFileObject f = fm.getFileForInput(testSrc + File.separatorChar + self + ".java");
+        JavaFileObject f = fm.getJavaFileObject(testSrc + File.separatorChar + self + ".java");
 
         test(fm, f, "-verbose", "-d", ".");
 

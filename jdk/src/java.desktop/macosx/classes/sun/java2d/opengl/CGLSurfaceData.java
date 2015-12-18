@@ -166,7 +166,12 @@ public abstract class CGLSurfaceData extends OGLSurfaceData {
     }
 
     @Override
-    public int getDefaultScale() {
+    public double getDefaultScaleX() {
+        return scale;
+    }
+
+    @Override
+    public double getDefaultScaleY() {
         return scale;
     }
 

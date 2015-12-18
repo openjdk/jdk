@@ -22,7 +22,6 @@
  */
 /*
     @test
-    @ignore 6876961
     @summary test that ResourceBundle.getBundle can be called recursively
     @build  Test4300693RB
     @run main Test4300693

@@ -455,9 +455,9 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // the first region in a series of one or more contiguous regions
   // that will contain a single "humongous" object.
   //
-  // obj_top : points to the end of the humongous object that's being
-  // allocated.
-  void set_starts_humongous(HeapWord* obj_top);
+  // obj_top : points to the top of the humongous object.
+  // fill_size : size of the filler object at the end of the region series.
+  void set_starts_humongous(HeapWord* obj_top, size_t fill_size);
 
   // Makes the current region be a "continues humongous'
   // region. first_hr is the "start humongous" region of the series

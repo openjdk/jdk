@@ -186,9 +186,9 @@
           "Maximum number of unrolls for main loop")                        \
           range(0, max_jint)                                                \
                                                                             \
-  product(bool,  SuperWordLoopUnrollAnalysis, false,                        \
-          "Map number of unrolls for main loop via "                        \
-          "Superword Level Parallelism analysis")                           \
+  product_pd(bool,  SuperWordLoopUnrollAnalysis,                            \
+           "Map number of unrolls for main loop via "                       \
+           "Superword Level Parallelism analysis")                          \
                                                                             \
   notproduct(bool, TraceSuperWordLoopUnrollAnalysis, false,                 \
           "Trace what Superword Level Parallelism analysis applies")        \
@@ -744,7 +744,10 @@
           range(0, max_intx)                                                \
                                                                             \
   develop(bool, StressArrayCopyMacroNode, false,                            \
-          "Perform ArrayCopy load/store replacement during IGVN only")
+          "Perform ArrayCopy load/store replacement during IGVN only")      \
+                                                                            \
+  develop(bool, RenumberLiveNodes, true,                                    \
+          "Renumber live nodes")                                            \
 
 C2_FLAGS(DECLARE_DEVELOPER_FLAG, \
          DECLARE_PD_DEVELOPER_FLAG, \
