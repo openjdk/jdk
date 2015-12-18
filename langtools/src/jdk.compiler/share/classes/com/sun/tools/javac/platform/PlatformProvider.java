@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.tools.javac.platform;
 
 /** A collection of platform descriptions that can be selected using {@code -release name}
