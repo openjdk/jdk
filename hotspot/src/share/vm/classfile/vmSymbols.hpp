@@ -212,6 +212,7 @@
   template(java_util_concurrent_atomic_AtomicLongFieldUpdater_LockedUpdater, "java/util/concurrent/atomic/AtomicLongFieldUpdater$LockedUpdater") \
   template(java_util_concurrent_atomic_AtomicReferenceFieldUpdater_Impl,     "java/util/concurrent/atomic/AtomicReferenceFieldUpdater$AtomicReferenceFieldUpdaterImpl") \
   template(jdk_internal_vm_annotation_Contended_signature,                   "Ljdk/internal/vm/annotation/Contended;")    \
+  template(jdk_internal_vm_annotation_ReservedStackAccess_signature,         "Ljdk/internal/vm/annotation/ReservedStackAccess;") \
                                                                                                   \
   /* class symbols needed by intrinsics */                                                        \
   VM_INTRINSICS_DO(VM_INTRINSIC_IGNORE, template, VM_SYMBOL_IGNORE, VM_SYMBOL_IGNORE, VM_ALIAS_IGNORE) \
@@ -1378,7 +1379,7 @@ class vmSymbols: AllStatic {
     return _type_signatures[t];
   }
   // inverse of type_signature; returns T_OBJECT if s is not recognized
-  static BasicType signature_type(Symbol* s);
+  static BasicType signature_type(const Symbol* s);
 
   static Symbol* symbol_at(SID id) {
     assert(id >= FIRST_SID && id < SID_LIMIT, "oob");
@@ -1387,7 +1388,7 @@ class vmSymbols: AllStatic {
   }
 
   // Returns symbol's SID if one is assigned, else NO_SID.
-  static SID find_sid(Symbol* symbol);
+  static SID find_sid(const Symbol* symbol);
   static SID find_sid(const char* symbol_name);
 
 #ifndef PRODUCT

@@ -125,10 +125,14 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
     }
   }
 
-  // close this tool without calling System.exit
-  protected void closeUI() {
-      workerThread.shutdown();
-      frame.dispose();
+  private class CloseUI extends WindowAdapter {
+
+      @Override
+      public void windowClosing(WindowEvent e) {
+          workerThread.shutdown();
+          frame.dispose();
+      }
+
   }
 
   public void run() {
@@ -144,7 +148,8 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
 
     frame = new JFrame("HSDB - HotSpot Debugger");
     frame.setSize(800, 600);
-    frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+    frame.setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+    frame.addWindowListener(new CloseUI());
 
     JMenuBar menuBar = new JMenuBar();
 
@@ -207,7 +212,8 @@ public class HSDB implements ObjectHistogramPanel.Listener, SAListener {
     item = createMenuItem("Exit",
                             new ActionListener() {
                                 public void actionPerformed(ActionEvent e) {
-                                  closeUI();
+                                  workerThread.shutdown();
+                                  frame.dispose();
                                 }
                               });
     item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, ActionEvent.ALT_MASK));

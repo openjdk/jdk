@@ -1407,19 +1407,19 @@ BOOL AwtWindow::UpdateInsets(jobject insets)
     /* Get insets into our peer directly */
     jobject peerInsets = (env)->GetObjectField(peer, AwtPanel::insets_ID);
     DASSERT(!safe_ExceptionOccurred(env));
+
     if (peerInsets != NULL) { // may have been called during creation
-        (env)->SetIntField(peerInsets, AwtInsets::topID, m_insets.top);
-        (env)->SetIntField(peerInsets, AwtInsets::bottomID,
-                           m_insets.bottom);
-        (env)->SetIntField(peerInsets, AwtInsets::leftID, m_insets.left);
-        (env)->SetIntField(peerInsets, AwtInsets::rightID, m_insets.right);
+        (env)->SetIntField(peerInsets, AwtInsets::topID, ScaleDownY(m_insets.top));
+        (env)->SetIntField(peerInsets, AwtInsets::bottomID, ScaleDownY(m_insets.bottom));
+        (env)->SetIntField(peerInsets, AwtInsets::leftID, ScaleDownX(m_insets.left));
+        (env)->SetIntField(peerInsets, AwtInsets::rightID, ScaleDownX(m_insets.right));
     }
     /* Get insets into the Inset object (if any) that was passed */
     if (insets != NULL) {
-        (env)->SetIntField(insets, AwtInsets::topID, m_insets.top);
-        (env)->SetIntField(insets, AwtInsets::bottomID, m_insets.bottom);
-        (env)->SetIntField(insets, AwtInsets::leftID, m_insets.left);
-        (env)->SetIntField(insets, AwtInsets::rightID, m_insets.right);
+        (env)->SetIntField(insets, AwtInsets::topID, ScaleDownY(m_insets.top));
+        (env)->SetIntField(insets, AwtInsets::bottomID, ScaleDownY(m_insets.bottom));
+        (env)->SetIntField(insets, AwtInsets::leftID, ScaleDownX(m_insets.left));
+        (env)->SetIntField(insets, AwtInsets::rightID, ScaleDownX(m_insets.right));
     }
     env->DeleteLocalRef(peerInsets);
 
@@ -1735,10 +1735,10 @@ MsgRouting AwtWindow::WmMove(int x, int y)
     RECT rect;
     ::GetWindowRect(GetHWnd(), &rect);
 
-    (env)->SetIntField(target, AwtComponent::xID, rect.left);
-    (env)->SetIntField(target, AwtComponent::yID, rect.top);
-    (env)->SetIntField(peer, AwtWindow::sysXID, rect.left);
-    (env)->SetIntField(peer, AwtWindow::sysYID, rect.top);
+    (env)->SetIntField(target, AwtComponent::xID, ScaleDownX(rect.left));
+    (env)->SetIntField(target, AwtComponent::yID, ScaleDownY(rect.top));
+    (env)->SetIntField(peer, AwtWindow::sysXID, ScaleDownX(rect.left));
+    (env)->SetIntField(peer, AwtWindow::sysYID, ScaleDownY(rect.top));
     SendComponentEvent(java_awt_event_ComponentEvent_COMPONENT_MOVED);
 
     env->DeleteLocalRef(target);
@@ -1803,12 +1803,12 @@ MsgRouting AwtWindow::WmSize(UINT type, int w, int h)
     int newWidth = w + m_insets.left + m_insets.right;
     int newHeight = h + m_insets.top + m_insets.bottom;
 
-    (env)->SetIntField(target, AwtComponent::widthID, newWidth);
-    (env)->SetIntField(target, AwtComponent::heightID, newHeight);
+    (env)->SetIntField(target, AwtComponent::widthID, ScaleDownX(newWidth));
+    (env)->SetIntField(target, AwtComponent::heightID, ScaleDownY(newHeight));
 
     jobject peer = GetPeer(env);
-    (env)->SetIntField(peer, AwtWindow::sysWID, newWidth);
-    (env)->SetIntField(peer, AwtWindow::sysHID, newHeight);
+    (env)->SetIntField(peer, AwtWindow::sysWID, ScaleDownX(newWidth));
+    (env)->SetIntField(peer, AwtWindow::sysHID, ScaleDownY(newHeight));
 
     if (!AwtWindow::IsResizing()) {
         WindowResized();
@@ -3072,6 +3072,25 @@ void AwtWindow::_SetFullScreenExclusiveModeState(void *param)
     delete data;
 }
 
+void AwtWindow::_GetNativeWindowSize(void* param) {
+
+    JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+
+    SizeStruct *ss = (SizeStruct *)param;
+    jobject self = ss->window;
+    AwtWindow *window = NULL;
+    PDATA pData;
+    JNI_CHECK_PEER_RETURN(self);
+    window = (AwtWindow *)pData;
+
+    RECT rc;
+    ::GetWindowRect(window->GetHWnd(), &rc);
+    ss->w = rc.right - rc.left;
+    ss->h = rc.bottom - rc.top;
+
+    env->DeleteGlobalRef(self);
+}
+
 extern "C" {
 
 /*
@@ -3299,6 +3318,46 @@ Java_sun_awt_windows_WWindowPeer_reshapeFrame(JNIEnv *env, jobject self,
     // global ref and rfs are deleted in _ReshapeFrame()
 
     CATCH_BAD_ALLOC;
+}
+
+/*
+ * Class:     sun_awt_windows_WWindowPeer
+* Method:    getNativeWindowSize
+* Signature: ()Ljava/awt/Dimension;
+*/
+JNIEXPORT jobject JNICALL Java_sun_awt_windows_WWindowPeer_getNativeWindowSize
+(JNIEnv *env, jobject self) {
+
+    jobject res = NULL;
+    TRY;
+    SizeStruct *ss = new SizeStruct;
+    ss->window = env->NewGlobalRef(self);
+
+    AwtToolkit::GetInstance().SyncCall(AwtWindow::_GetNativeWindowSize, ss);
+
+    int w = ss->w;
+    int h = ss->h;
+
+    delete ss;
+    // global ref is deleted in _GetNativeWindowSize()
+
+    static jmethodID dimMID = NULL;
+    static jclass dimClassID = NULL;
+    if (dimClassID == NULL) {
+        jclass dimClassIDLocal = env->FindClass("java/awt/Dimension");
+        CHECK_NULL_RETURN(dimClassIDLocal, NULL);
+        dimClassID = (jclass)env->NewGlobalRef(dimClassIDLocal);
+        env->DeleteLocalRef(dimClassIDLocal);
+    }
+
+    if (dimMID == NULL) {
+        dimMID = env->GetMethodID(dimClassID, "<init>", "(II)V");
+        CHECK_NULL_RETURN(dimMID, NULL);
+    }
+
+    return env->NewObject(dimClassID, dimMID, w, h);
+
+    CATCH_BAD_ALLOC_RET(NULL);
 }
 
 /*

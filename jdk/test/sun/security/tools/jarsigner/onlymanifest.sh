@@ -57,12 +57,14 @@ rm $KS $JFILE 2> /dev/null
 echo "Key: Value" > manifest
 $JAR cvfm $JFILE manifest
 
-$KT -alias a -dname CN=a -genkey -validity 300 || exit 1
-$JARSIGNER -keystore $KS -storepass changeit $JFILE a -debug -strict || exit 2
+$KT -alias ca -dname CN=ca -genkey -validity 300 || exit 1
+$KT -alias a -dname CN=a -genkey -validity 300 || exit 2
+$KT -alias a -certreq | $KT -gencert -alias ca -validity 300 | $KT -import -alias a || exit 3
+$JARSIGNER -keystore $KS -storepass changeit $JFILE a -debug -strict || exit 4
 $JARSIGNER -keystore $KS -storepass changeit -verify $JFILE a -debug -strict \
-        > onlymanifest.out || exit 3
+        > onlymanifest.out || exit 5
 
-grep unsigned onlymanifest.out && exit 4
+grep unsigned onlymanifest.out && exit 6
 
 exit 0
 

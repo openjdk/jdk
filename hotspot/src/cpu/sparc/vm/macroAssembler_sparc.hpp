@@ -1392,6 +1392,9 @@ public:
   // stack overflow + shadow pages.  Clobbers tsp and scratch registers.
   void bang_stack_size(Register Rsize, Register Rtsp, Register Rscratch);
 
+  // Check for reserved stack access in method being exited (for JIT)
+  void reserved_stack_check();
+
   virtual RegisterOrConstant delayed_value_impl(intptr_t* delayed_value_addr, Register tmp, int offset);
 
   void verify_tlab();

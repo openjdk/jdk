@@ -28,9 +28,19 @@
  * @author Martin Buchholz
  */
 
-import java.util.*;
-import java.util.concurrent.*;
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 
 public class Interrupt {
 
@@ -61,7 +71,7 @@ public class Interrupt {
         checkInterrupted0(fs, immediateExecutor);
         checkInterrupted0(fs, delayedExecutor);
         stpe.shutdown();
-        check(stpe.awaitTermination(10, SECONDS));
+        check(stpe.awaitTermination(10L, SECONDS));
     }
 
     static void testQueue(final BlockingQueue<Object> q) {

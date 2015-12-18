@@ -59,10 +59,7 @@
   nonstatic_field(G1MonitoringSupport, _old_committed,      size_t)           \
   nonstatic_field(G1MonitoringSupport, _old_used,           size_t)           \
                                                                               \
-  nonstatic_field(HeapRegionSetBase,   _count,          HeapRegionSetCount)   \
-                                                                              \
-  nonstatic_field(HeapRegionSetCount,  _length,         uint)                 \
-  nonstatic_field(HeapRegionSetCount,  _capacity,       size_t)               \
+  nonstatic_field(HeapRegionSetBase,   _length,         uint)                 \
                                                                               \
   nonstatic_field(PtrQueue,            _active,         bool)                 \
   nonstatic_field(PtrQueue,            _buf,            void**)               \
@@ -82,7 +79,6 @@
   declare_type(HeapRegion, G1OffsetTableContigSpace)                          \
   declare_toplevel_type(HeapRegionManager)                                    \
   declare_toplevel_type(HeapRegionSetBase)                                    \
-  declare_toplevel_type(HeapRegionSetCount)                                   \
   declare_toplevel_type(G1MonitoringSupport)                                  \
   declare_toplevel_type(PtrQueue)                                             \
                                                                               \

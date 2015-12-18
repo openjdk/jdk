@@ -444,6 +444,18 @@ public class DocCommentTester {
                 return null;
             }
 
+            @Override
+            public Void visitIndex(IndexTree node, Void p) {
+                header(node);
+                indent(+1);
+                print("term", node.getSearchTerm());
+                print("description", node.getDescription());
+                indent(-1);
+                indent();
+                out.println("]");
+                return null;
+            }
+
             public Void visitInheritDoc(InheritDocTree node, Void p) {
                 header(node, "");
                 return null;
@@ -619,11 +631,19 @@ public class DocCommentTester {
                 throw new UnsupportedOperationException("Not supported yet.");
             }
 
+            /*
+             * Use this method to start printing a multi-line representation of a
+             * DocTree node. The representation should be termintated by calling
+             * out.println("]").
+             */
             void header(DocTree node) {
                 indent();
                 out.println(simpleClassName(node) + "[" + node.getKind() + ", pos:" + ((DCTree) node).pos);
             }
 
+            /*
+             * Use this method to print a single-line representation of a DocTree node.
+             */
             void header(DocTree node, String rest) {
                 indent();
                 out.println(simpleClassName(node) + "[" + node.getKind() + ", pos:" + ((DCTree) node).pos

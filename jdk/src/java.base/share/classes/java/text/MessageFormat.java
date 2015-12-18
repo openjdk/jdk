@@ -1068,7 +1068,7 @@ public class MessageFormat extends Format {
      *            index information as described above.
      * @return An <code>Object</code> array parsed from the string. In case of
      *         error, returns null.
-     * @exception NullPointerException if <code>pos</code> is null.
+     * @throws NullPointerException if {@code source} or {@code pos} is null.
      */
     public Object parseObject(String source, ParsePosition pos) {
         return parse(source, pos);

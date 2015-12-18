@@ -307,6 +307,7 @@ public final class LocalDate
      * @param zone  the time-zone, which may be an offset, not null
      * @return the local date, not null
      * @throws DateTimeException if the result exceeds the supported range
+     * @since 9
      */
     public static LocalDate ofInstant(Instant instant, ZoneId zone) {
         Objects.requireNonNull(instant, "instant");

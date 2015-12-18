@@ -39,6 +39,7 @@
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubRoutines.hpp"
+#include "runtime/thread.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc/g1/g1CollectedHeap.inline.hpp"
@@ -1064,6 +1065,22 @@ void MacroAssembler::bang_stack_size(Register size, Register tmp) {
     // so the bigger the better.
     movptr(Address(tmp, (-i*os::vm_page_size())), size );
   }
+}
+
+void MacroAssembler::reserved_stack_check() {
+    // testing if reserved zone needs to be enabled
+    Label no_reserved_zone_enabling;
+    Register thread = NOT_LP64(rsi) LP64_ONLY(r15_thread);
+    NOT_LP64(get_thread(rsi);)
+
+    cmpptr(rsp, Address(thread, JavaThread::reserved_stack_activation_offset()));
+    jcc(Assembler::below, no_reserved_zone_enabling);
+
+    call_VM_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::enable_stack_reserved_zone), thread);
+    jump(RuntimeAddress(StubRoutines::throw_delayed_StackOverflowError_entry()));
+    should_not_reach_here();
+
+    bind(no_reserved_zone_enabling);
 }
 
 int MacroAssembler::biased_locking_enter(Register lock_reg,
@@ -11072,3 +11089,43 @@ SkipIfEqual::SkipIfEqual(
 SkipIfEqual::~SkipIfEqual() {
   _masm->bind(_label);
 }
+
+// 32-bit Windows has its own fast-path implementation
+// of get_thread
+#if !defined(WIN32) || defined(_LP64)
+
+// This is simply a call to Thread::current()
+void MacroAssembler::get_thread(Register thread) {
+  if (thread != rax) {
+    push(rax);
+  }
+  LP64_ONLY(push(rdi);)
+  LP64_ONLY(push(rsi);)
+  push(rdx);
+  push(rcx);
+#ifdef _LP64
+  push(r8);
+  push(r9);
+  push(r10);
+  push(r11);
+#endif
+
+  MacroAssembler::call_VM_leaf_base(CAST_FROM_FN_PTR(address, Thread::current), 0);
+
+#ifdef _LP64
+  pop(r11);
+  pop(r10);
+  pop(r9);
+  pop(r8);
+#endif
+  pop(rcx);
+  pop(rdx);
+  LP64_ONLY(pop(rsi);)
+  LP64_ONLY(pop(rdi);)
+  if (thread != rax) {
+    mov(thread, rax);
+    pop(rax);
+  }
+}
+
+#endif

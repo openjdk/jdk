@@ -746,6 +746,11 @@ protected:
     virtual void FillBackground(HDC hMemoryDC, SIZE &size);
     virtual void FillAlpha(void *bitmapBits, SIZE &size, BYTE alpha);
 
+    int ScaleUpX(int x);
+    int ScaleUpY(int y);
+    int ScaleDownX(int x);
+    int ScaleDownY(int y);
+
 private:
     /* A bitmask keeps the button's numbers as MK_LBUTTON, MK_MBUTTON, MK_RBUTTON
      * which are allowed to

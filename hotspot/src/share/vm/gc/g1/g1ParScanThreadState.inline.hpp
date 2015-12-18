@@ -40,23 +40,22 @@ template <class T> void G1ParScanThreadState::do_oop_evac(T* p, HeapRegion* from
   // processed multiple times. So redo this check.
   const InCSetState in_cset_state = _g1h->in_cset_state(obj);
   if (in_cset_state.is_in_cset()) {
-    oop forwardee;
     markOop m = obj->mark();
     if (m->is_marked()) {
-      forwardee = (oop) m->decode_pointer();
+      obj = (oop) m->decode_pointer();
     } else {
-      forwardee = copy_to_survivor_space(in_cset_state, obj, m);
+      obj = copy_to_survivor_space(in_cset_state, obj, m);
     }
-    oopDesc::encode_store_heap_oop(p, forwardee);
+    oopDesc::encode_store_heap_oop(p, obj);
   } else if (in_cset_state.is_humongous()) {
     _g1h->set_humongous_is_live(obj);
   } else {
-    assert(!in_cset_state.is_in_cset_or_humongous(),
-           "In_cset_state must be NotInCSet here, but is " CSETSTATE_FORMAT, in_cset_state.value());
+    assert(in_cset_state.is_default() || in_cset_state.is_ext(),
+           "In_cset_state must be NotInCSet or Ext here, but is " CSETSTATE_FORMAT, in_cset_state.value());
   }
 
   assert(obj != NULL, "Must be");
-  update_rs(from, p);
+  update_rs(from, p, obj);
 }
 
 template <class T> inline void G1ParScanThreadState::push_on_queue(T* ref) {

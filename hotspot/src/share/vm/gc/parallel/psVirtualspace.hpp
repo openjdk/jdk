@@ -96,7 +96,6 @@ class PSVirtualSpace : public CHeapObj<mtGC> {
           bool is_aligned(size_t val) const;
           bool is_aligned(char* val) const;
           void verify() const;
-          void print() const;
   virtual bool grows_up() const   { return true; }
           bool grows_down() const { return !grows_up(); }
 

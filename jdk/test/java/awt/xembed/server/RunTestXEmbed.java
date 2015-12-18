@@ -23,9 +23,12 @@
 
 /**
  * @test
- * @bug 4931668
+ * @bug 4931668 7146533
  * @summary Tests XEmbed server/client functionality
  * @author Denis Mikhalkin: area=awt.xembed
+ * @requires (!(os.family=="mac") & !(os.family=="windows"))
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.Platform
  * @modules java.desktop/sun.awt
  * @compile JavaClient.java TesterClient.java TestXEmbedServer.java
  * @run main/timeout=6000 RunTestXEmbed
@@ -93,7 +96,7 @@ public class RunTestXEmbed extends TestXEmbedServer {
     }
 
     public static void main(String[] args) throws Throwable {
-        if (System.getProperty("os.name").toLowerCase().startsWith("win")) {
+        if (Platform.isWindows() || Platform.isOSX()) {
             return;
         }
 

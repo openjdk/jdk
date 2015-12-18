@@ -35,7 +35,10 @@ const char* VM_Version::_features_str = "";
 unsigned int VM_Version::_L2_data_cache_line_size = 0;
 
 void VM_Version::initialize() {
-  _features = determine_features();
+
+  assert(_features != VM_Version::unknown_m, "System pre-initialization is not complete.");
+  guarantee(VM_Version::has_v9(), "only SPARC v9 is supported");
+
   PrefetchCopyIntervalInBytes = prefetch_copy_interval_in_bytes();
   PrefetchScanIntervalInBytes = prefetch_scan_interval_in_bytes();
   PrefetchFieldsAhead         = prefetch_fields_ahead();
@@ -59,8 +62,6 @@ void VM_Version::initialize() {
     warning("BIS instructions are not available on this CPU");
     FLAG_SET_DEFAULT(AllocatePrefetchStyle, 1);
   }
-
-  guarantee(VM_Version::has_v9(), "only SPARC v9 is supported");
 
   UseSSE = 0; // Only on x86 and x64
 

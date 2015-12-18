@@ -1394,7 +1394,12 @@ public class XMLDocumentFragmentScannerImpl
             fEmptyElement = true;
             return true;
         } else if (!isValidNameStartChar(c) || !sawSpace) {
-            reportFatalError("ElementUnterminated", new Object[]{fElementQName.rawname});
+            // Second chance. Check if this character is a high
+            // surrogate of a valid name start character.
+            if (!isValidNameStartHighSurrogate(c) || !sawSpace) {
+                reportFatalError("ElementUnterminated",
+                        new Object[]{fElementQName.rawname});
+            }
         }
 
         return false;
@@ -2606,40 +2611,38 @@ public class XMLDocumentFragmentScannerImpl
         private void startOfMarkup() throws IOException {
             fMarkupDepth++;
             final int ch = fEntityScanner.peekChar();
-
-            switch(ch){
-                case '?' :{
-                    setScannerState(SCANNER_STATE_PI);
-                    fEntityScanner.skipChar(ch);
-                    break;
-                }
-                case '!' :{
-                    fEntityScanner.skipChar(ch);
-                    if (fEntityScanner.skipChar('-')) {
-                        if (!fEntityScanner.skipChar('-')) {
-                            reportFatalError("InvalidCommentStart",
+            if (isValidNameStartChar(ch) || isValidNameStartHighSurrogate(ch)) {
+                setScannerState(SCANNER_STATE_START_ELEMENT_TAG);
+            } else {
+                switch(ch){
+                    case '?' :{
+                        setScannerState(SCANNER_STATE_PI);
+                        fEntityScanner.skipChar(ch);
+                        break;
+                    }
+                    case '!' :{
+                        fEntityScanner.skipChar(ch);
+                        if (fEntityScanner.skipChar('-')) {
+                            if (!fEntityScanner.skipChar('-')) {
+                                reportFatalError("InvalidCommentStart",
+                                        null);
+                            }
+                            setScannerState(SCANNER_STATE_COMMENT);
+                        } else if (fEntityScanner.skipString(cdata)) {
+                            setScannerState(SCANNER_STATE_CDATA );
+                        } else if (!scanForDoctypeHook()) {
+                            reportFatalError("MarkupNotRecognizedInContent",
                                     null);
                         }
-                        setScannerState(SCANNER_STATE_COMMENT);
-                    } else if (fEntityScanner.skipString(cdata)) {
-                        setScannerState(SCANNER_STATE_CDATA );
-                    } else if (!scanForDoctypeHook()) {
-                        reportFatalError("MarkupNotRecognizedInContent",
-                                null);
+                        break;
                     }
-                    break;
-                }
-                case '/' :{
-                    setScannerState(SCANNER_STATE_END_ELEMENT_TAG);
-                    fEntityScanner.skipChar(ch);
-                    break;
-                }
-                default :{
-                    if (isValidNameStartChar(ch)) {
-                        setScannerState(SCANNER_STATE_START_ELEMENT_TAG);
-                    } else {
-                        reportFatalError("MarkupNotRecognizedInContent",
-                                null);
+                    case '/' :{
+                        setScannerState(SCANNER_STATE_END_ELEMENT_TAG);
+                        fEntityScanner.skipChar(ch);
+                        break;
+                    }
+                    default :{
+                        reportFatalError("MarkupNotRecognizedInContent", null);
                     }
                 }
             }

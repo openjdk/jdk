@@ -26,6 +26,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,7 @@ import java.util.stream.Stream;
 import jdk.internal.jshell.tool.JShellTool;
 import jdk.jshell.SourceCodeAnalysis.Suggestion;
 
+import static java.util.stream.Collectors.toList;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
@@ -48,6 +50,24 @@ import static org.testng.Assert.fail;
 public class ReplToolTesting {
 
     private final static String DEFAULT_STARTUP_MESSAGE = "|  Welcome to";
+    final static List<ImportInfo> START_UP_IMPORTS = Stream.of(
+                    "java.util.*",
+                    "java.io.*",
+                    "java.math.*",
+                    "java.net.*",
+                    "java.util.concurrent.*",
+                    "java.util.prefs.*",
+                    "java.util.regex.*")
+                    .map(s -> new ImportInfo("import " + s + ";", "", s))
+                    .collect(toList());
+    final static List<MethodInfo> START_UP_METHODS = Stream.of(
+                    new MethodInfo("void printf(String format, Object... args) { System.out.printf(format, args); }",
+                            "(String,Object...)void", "printf"))
+                    .collect(toList());
+    final static List<String> START_UP = Collections.unmodifiableList(
+            Stream.concat(START_UP_IMPORTS.stream(), START_UP_METHODS.stream())
+            .map(s -> s.getSource())
+            .collect(toList()));
 
     private WaitingTestingInputStream cmdin = null;
     private ByteArrayOutputStream cmdout = null;
@@ -190,18 +210,11 @@ public class ReplToolTesting {
         classes = new HashMap<>();
         imports = new HashMap<>();
         if (isDefaultStartUp) {
-            methods.put("printf (String,Object...)void",
-                    new MethodInfo("", "(String,Object...)void", "printf"));
+            methods.putAll(
+                START_UP_METHODS.stream()
+                    .collect(Collectors.toMap(Object::toString, Function.identity())));
             imports.putAll(
-                Stream.of(
-                    "java.util.*",
-                    "java.io.*",
-                    "java.math.*",
-                    "java.net.*",
-                    "java.util.concurrent.*",
-                    "java.util.prefs.*",
-                    "java.util.regex.*")
-                    .map(s -> new ImportInfo("", "", s))
+                START_UP_IMPORTS.stream()
                     .collect(Collectors.toMap(Object::toString, Function.identity())));
         }
     }

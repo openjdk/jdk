@@ -161,11 +161,8 @@ public class JVMOptionsUtils {
             option.addPrepend("-XX:+UseConcMarkSweepGC");
         }
 
-        if (name.startsWith("Shared")) {
-            option.addPrepend("-XX:+UnlockDiagnosticVMOptions");
-            String fileName = "Test" + name + ".jsa";
-            option.addPrepend("-XX:SharedArchiveFile=" + fileName);
-            option.addPrepend("-Xshare:dump");
+        if (name.startsWith("NUMA")) {
+            option.addPrepend("-XX:+UseNUMA");
         }
 
         switch (name) {
@@ -195,6 +192,29 @@ public class JVMOptionsUtils {
                 break;
             case "InitialTenuringThreshold":
                 option.addPrepend("-XX:MaxTenuringThreshold=" + option.getMax());
+                break;
+            case "NUMAInterleaveGranularity":
+                option.addPrepend("-XX:+UseNUMAInterleaving");
+                break;
+            case "CPUForCMSThread":
+                option.addPrepend("-XX:+BindCMSThreadToCPU");
+                break;
+            case "VerifyGCStartAt":
+                option.addPrepend("-XX:+VerifyBeforeGC");
+                option.addPrepend("-XX:+VerifyAfterGC");
+                break;
+            case "NewSizeThreadIncrease":
+                option.addPrepend("-XX:+UseSerialGC");
+                break;
+            case "SharedReadWriteSize":
+            case "SharedReadOnlySize":
+            case "SharedMiscDataSize":
+            case "SharedMiscCodeSize":
+            case "SharedBaseAddress":
+            case "SharedSymbolTableBucketSize":
+                option.addPrepend("-XX:+UnlockDiagnosticVMOptions");
+                option.addPrepend("-XX:SharedArchiveFile=TestOptionsWithRanges.jsa");
+                option.addPrepend("-Xshare:dump");
                 break;
             default:
                 /* Do nothing */

@@ -670,17 +670,16 @@ void MachEpilogNode::format( PhaseRegAlloc *ra_, outputStream* st ) const {
 
 void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   Compile *C = ra_->C;
+  MacroAssembler _masm(&cbuf);
 
   if (C->max_vector_size() > 16) {
     // Clear upper bits of YMM registers when current compiled code uses
     // wide vectors to avoid AVX <-> SSE transition penalty during call.
-    MacroAssembler masm(&cbuf);
-    masm.vzeroupper();
+    _masm.vzeroupper();
   }
   // If method set FPU control word, restore to standard control word
   if (C->in_24_bit_fp_mode()) {
-    MacroAssembler masm(&cbuf);
-    masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
+    _masm.fldcw(ExternalAddress(StubRoutines::addr_fpu_cntrl_wrd_std()));
   }
 
   int framesize = C->frame_size_in_bytes();
@@ -701,6 +700,10 @@ void MachEpilogNode::emit(CodeBuffer &cbuf, PhaseRegAlloc *ra_) const {
   }
 
   emit_opcode(cbuf, 0x58 | EBP_enc);
+
+  if (StackReservedPages > 0 && C->has_reserved_stack_access()) {
+    __ reserved_stack_check();
+  }
 
   if (do_polling() && C->is_method_compilation()) {
     cbuf.relocate(cbuf.insts_end(), relocInfo::poll_return_type, 0);
@@ -729,6 +732,7 @@ uint MachEpilogNode::size(PhaseRegAlloc *ra_) const {
   } else {
     size += framesize ? 3 : 0;
   }
+  size += 64; // added to support ReservedStackAccess
   return size;
 }
 

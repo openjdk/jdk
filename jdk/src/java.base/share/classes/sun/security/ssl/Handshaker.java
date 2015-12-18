@@ -116,6 +116,12 @@ abstract class Handshaker {
     List<SNIServerName> serverNames = Collections.<SNIServerName>emptyList();
     Collection<SNIMatcher> sniMatchers = Collections.<SNIMatcher>emptyList();
 
+    // List of local ApplicationProtocols
+    String[] localApl = null;
+
+    // Negotiated ALPN value
+    String applicationProtocol = null;
+
     // The maximum expected network packet size for SSL/TLS/DTLS records.
     int                         maximumPacketSize = 0;
 
@@ -478,6 +484,20 @@ abstract class Handshaker {
      */
     void setMaximumPacketSize(int maximumPacketSize) {
         this.maximumPacketSize = maximumPacketSize;
+    }
+
+    /**
+     * Sets the Application Protocol list.
+     */
+    void setApplicationProtocols(String[] apl) {
+        this.localApl = apl;
+    }
+
+    /**
+     * Gets the "negotiated" ALPN value.
+     */
+    String getHandshakeApplicationProtocol() {
+        return applicationProtocol;
     }
 
     /**

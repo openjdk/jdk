@@ -40,17 +40,19 @@
  * @author Chris Hegarty
  */
 
+import static java.util.concurrent.CompletableFuture.runAsync;
+import static java.util.concurrent.CompletableFuture.supplyAsync;
+import static java.util.concurrent.ForkJoinPool.commonPool;
+import static java.util.concurrent.TimeUnit.SECONDS;
+
 import java.lang.reflect.Array;
 import java.util.concurrent.Phaser;
-import static java.util.concurrent.TimeUnit.*;
 import java.util.concurrent.CompletableFuture;
-import static java.util.concurrent.CompletableFuture.*;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import static java.util.concurrent.ForkJoinPool.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Basic {
@@ -112,7 +114,7 @@ public class Basic {
             test(executor);
         } finally {
             executor.shutdown();
-            executor.awaitTermination(30, SECONDS);
+            executor.awaitTermination(30L, SECONDS);
         }
     }
 

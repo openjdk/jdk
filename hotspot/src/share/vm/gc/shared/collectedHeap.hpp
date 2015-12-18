@@ -58,18 +58,20 @@ class GCMessage : public FormatBuffer<1024> {
   GCMessage() {}
 };
 
+class CollectedHeap;
+
 class GCHeapLog : public EventLogBase<GCMessage> {
  private:
-  void log_heap(bool before);
+  void log_heap(CollectedHeap* heap, bool before);
 
  public:
   GCHeapLog() : EventLogBase<GCMessage>("GC Heap History") {}
 
-  void log_heap_before() {
-    log_heap(true);
+  void log_heap_before(CollectedHeap* heap) {
+    log_heap(heap, true);
   }
-  void log_heap_after() {
-    log_heap(false);
+  void log_heap_after(CollectedHeap* heap) {
+    log_heap(heap, false);
   }
 };
 
@@ -195,6 +197,8 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   }
 
   virtual Name kind() const = 0;
+
+  virtual const char* name() const = 0;
 
   /**
    * Returns JNI error code JNI_ENOMEM if memory could not be allocated,
@@ -520,6 +524,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   virtual void prepare_for_verify() = 0;
 
   // Generate any dumps preceding or following a full gc
+ private:
+  void full_gc_dump(GCTimer* timer, const char* when);
+ public:
   void pre_full_gc_dump(GCTimer* timer);
   void post_full_gc_dump(GCTimer* timer);
 
@@ -570,7 +577,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   void trace_heap_after_gc(const GCTracer* gc_tracer);
 
   // Heap verification
-  virtual void verify(bool silent, VerifyOption option) = 0;
+  virtual void verify(VerifyOption option) = 0;
 
   // Non product verification and debugging.
 #ifndef PRODUCT

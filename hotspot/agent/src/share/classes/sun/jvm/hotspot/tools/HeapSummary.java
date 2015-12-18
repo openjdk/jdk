@@ -112,8 +112,7 @@ public class HeapSummary extends Tool {
           long survivorRegionNum = g1mm.survivorRegionNum();
           HeapRegionSetBase oldSet = g1h.oldSet();
           HeapRegionSetBase humongousSet = g1h.humongousSet();
-          long oldRegionNum = oldSet.count().length()
-                       + humongousSet.count().capacity() / HeapRegion.grainBytes();
+          long oldRegionNum = oldSet.length() + humongousSet.length();
           printG1Space("G1 Heap:", g1h.n_regions(),
                        g1h.used(), g1h.capacity());
           System.out.println("G1 Young Generation:");

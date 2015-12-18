@@ -398,6 +398,38 @@ static void strip_tail(wchar_t* text, wchar_t* tail) { // strips tail and any po
 
 }
 
+static int ScaleUpX(float x) {
+    int deviceIndex = AwtWin32GraphicsDevice::DeviceIndexForWindow(
+        ::GetDesktopWindow());
+    Devices::InstanceAccess devices;
+    AwtWin32GraphicsDevice *device = devices->GetDevice(deviceIndex);
+    return device == NULL ? x : device->ScaleUpX(x);
+}
+
+static int ScaleUpY(int y) {
+    int deviceIndex = AwtWin32GraphicsDevice::DeviceIndexForWindow(
+        ::GetDesktopWindow());
+    Devices::InstanceAccess devices;
+    AwtWin32GraphicsDevice *device = devices->GetDevice(deviceIndex);
+    return device == NULL ? y : device->ScaleUpY(y);
+}
+
+static int ScaleDownX(int x) {
+    int deviceIndex = AwtWin32GraphicsDevice::DeviceIndexForWindow(
+        ::GetDesktopWindow());
+    Devices::InstanceAccess devices;
+    AwtWin32GraphicsDevice *device = devices->GetDevice(deviceIndex);
+    return device == NULL ? x : device->ScaleDownX(x);
+}
+
+static int ScaleDownY(int y) {
+    int deviceIndex = AwtWin32GraphicsDevice::DeviceIndexForWindow(
+        ::GetDesktopWindow());
+    Devices::InstanceAccess devices;
+    AwtWin32GraphicsDevice *device = devices->GetDevice(deviceIndex);
+    return device == NULL ? y : device->ScaleDownY(y);
+}
+
 static HFONT CreateHFont_sub(LPCWSTR name, int style, int height,
                              int angle=0, float awScale=1.0f)
 {
@@ -424,7 +456,7 @@ static HFONT CreateHFont_sub(LPCWSTR name, int style, int height,
     logFont.lfUnderline = 0;//(style & java_awt_Font_UNDERLINE) != 0;
 
     // Get point size
-    logFont.lfHeight = -height;
+    logFont.lfHeight = ScaleUpY(-height);
 
     // Set font name
     WCHAR tmpname[80];
@@ -451,7 +483,7 @@ static HFONT CreateHFont_sub(LPCWSTR name, int style, int height,
             VERIFY(::DeleteObject(oldFont));
         }
         avgWidth = tm.tmAveCharWidth;
-        logFont.lfWidth = (LONG)((fabs)(avgWidth*awScale));
+        logFont.lfWidth = (LONG) ScaleUpX((fabs) (avgWidth * awScale));
         hFont = ::CreateFontIndirect(&logFont);
         DASSERT(hFont != NULL);
         VERIFY(::ReleaseDC(0, hDC));
@@ -535,19 +567,20 @@ void AwtFont::LoadMetrics(JNIEnv *env, jobject fontMetrics)
     int ascent = metrics.tmAscent;
     int descent = metrics.tmDescent;
     int leading = metrics.tmExternalLeading;
-    env->SetIntField(fontMetrics, AwtFont::ascentID, ascent);
-    env->SetIntField(fontMetrics, AwtFont::descentID, descent);
-    env->SetIntField(fontMetrics, AwtFont::leadingID, leading);
-    env->SetIntField(fontMetrics, AwtFont::heightID, metrics.tmAscent +
-                     metrics.tmDescent + leading);
-    env->SetIntField(fontMetrics, AwtFont::maxAscentID, ascent);
-    env->SetIntField(fontMetrics, AwtFont::maxDescentID, descent);
+
+    env->SetIntField(fontMetrics, AwtFont::ascentID, ScaleDownY(ascent));
+    env->SetIntField(fontMetrics, AwtFont::descentID, ScaleDownY(descent));
+    env->SetIntField(fontMetrics, AwtFont::leadingID, ScaleDownX(leading));
+    env->SetIntField(fontMetrics, AwtFont::heightID,
+        ScaleDownY(metrics.tmAscent + metrics.tmDescent + leading));
+    env->SetIntField(fontMetrics, AwtFont::maxAscentID, ScaleDownY(ascent));
+    env->SetIntField(fontMetrics, AwtFont::maxDescentID, ScaleDownY(descent));
 
     int maxHeight =  ascent + descent + leading;
-    env->SetIntField(fontMetrics, AwtFont::maxHeightID, maxHeight);
+    env->SetIntField(fontMetrics, AwtFont::maxHeightID, ScaleDownY(maxHeight));
 
     int maxAdvance = metrics.tmMaxCharWidth;
-    env->SetIntField(fontMetrics, AwtFont::maxAdvanceID, maxAdvance);
+    env->SetIntField(fontMetrics, AwtFont::maxAdvanceID, ScaleDownX(maxAdvance));
 
     awtFont->m_overhang = metrics.tmOverhang;
 
@@ -818,6 +851,7 @@ Java_sun_awt_windows_WFontMetrics_stringWidth(JNIEnv *env, jobject self,
     jobject font = env->GetObjectField(self, AwtFont::fontID);
 
     long ret = AwtFont::getMFStringWidth(hDC, font, str);
+    ret = ScaleDownX(ret);
     VERIFY(::ReleaseDC(0, hDC));
     return ret;
 
@@ -924,7 +958,7 @@ Java_sun_awt_windows_WFontMetrics_bytesWidth(JNIEnv *env, jobject self,
     }
 
     env->ReleasePrimitiveArrayCritical(str, pStrBody, 0);
-    return result;
+    return ScaleDownX(result);
 
     CATCH_BAD_ALLOC_RET(0);
 }

@@ -35,7 +35,7 @@ import java.security.cert.CertificateException;
  *
  * @since 1.5
  * @author Vincent Ryan
- * @deprecated This package has been deprecated.
+ * @deprecated This class has been deprecated.
  */
 
 @jdk.Exported

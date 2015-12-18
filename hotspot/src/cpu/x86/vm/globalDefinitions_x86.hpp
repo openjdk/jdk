@@ -61,4 +61,8 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 #define INCLUDE_RTM_OPT 1
 #endif
 
+#if defined(LINUX) || defined(SOLARIS) || defined(__APPLE__)
+#define SUPPORT_RESERVED_STACK_AREA
+#endif
+
 #endif // CPU_X86_VM_GLOBALDEFINITIONS_X86_HPP

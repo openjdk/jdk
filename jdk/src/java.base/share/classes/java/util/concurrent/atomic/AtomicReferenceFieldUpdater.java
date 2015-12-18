@@ -286,9 +286,15 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
         extends AtomicReferenceFieldUpdater<T,V> {
         private static final jdk.internal.misc.Unsafe U = jdk.internal.misc.Unsafe.getUnsafe();
         private final long offset;
-        private final Class<T> tclass;
-        private final Class<V> vclass;
+        /**
+         * if field is protected, the subclass constructing updater, else
+         * the same as tclass
+         */
         private final Class<?> cclass;
+        /** class holding the field */
+        private final Class<T> tclass;
+        /** field value type */
+        private final Class<V> vclass;
 
         /*
          * Internal type checks within all update methods contain
@@ -340,14 +346,10 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
             if (!Modifier.isVolatile(modifiers))
                 throw new IllegalArgumentException("Must be volatile type");
 
-            this.cclass = (Modifier.isProtected(modifiers) &&
-                           caller != tclass) ? caller : null;
+            this.cclass = (Modifier.isProtected(modifiers)) ? caller : tclass;
             this.tclass = tclass;
-            if (vclass == Object.class)
-                this.vclass = null;
-            else
-                this.vclass = vclass;
-            offset = U.objectFieldOffset(field);
+            this.vclass = vclass;
+            this.offset = U.objectFieldOffset(field);
         }
 
         /**
@@ -366,83 +368,78 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
             return false;
         }
 
-        void targetCheck(T obj) {
-            if (!tclass.isInstance(obj))
-                throw new ClassCastException();
-            if (cclass != null)
-                ensureProtectedAccess(obj);
+        /**
+         * Checks that target argument is instance of cclass.  On
+         * failure, throws cause.
+         */
+        private final void accessCheck(T obj) {
+            if (!cclass.isInstance(obj))
+                throwAccessCheckException(obj);
         }
 
-        void updateCheck(T obj, V update) {
-            if (!tclass.isInstance(obj) ||
-                (update != null && vclass != null && !vclass.isInstance(update)))
+        /**
+         * Throws access exception if accessCheck failed due to
+         * protected access, else ClassCastException.
+         */
+        private final void throwAccessCheckException(T obj) {
+            if (cclass == tclass)
                 throw new ClassCastException();
-            if (cclass != null)
-                ensureProtectedAccess(obj);
+            else
+                throw new RuntimeException(
+                    new IllegalAccessException(
+                        "Class " +
+                        cclass.getName() +
+                        " can not access a protected member of class " +
+                        tclass.getName() +
+                        " using an instance of " +
+                        obj.getClass().getName()));
         }
 
-        public boolean compareAndSet(T obj, V expect, V update) {
-            if (obj == null || obj.getClass() != tclass || cclass != null ||
-                (update != null && vclass != null &&
-                 vclass != update.getClass()))
-                updateCheck(obj, update);
+        private final void valueCheck(V v) {
+            if (v != null && !(vclass.isInstance(v)))
+                throwCCE();
+        }
+
+        static void throwCCE() {
+            throw new ClassCastException();
+        }
+
+        public final boolean compareAndSet(T obj, V expect, V update) {
+            accessCheck(obj);
+            valueCheck(update);
             return U.compareAndSwapObject(obj, offset, expect, update);
         }
 
-        public boolean weakCompareAndSet(T obj, V expect, V update) {
+        public final boolean weakCompareAndSet(T obj, V expect, V update) {
             // same implementation as strong form for now
-            if (obj == null || obj.getClass() != tclass || cclass != null ||
-                (update != null && vclass != null &&
-                 vclass != update.getClass()))
-                updateCheck(obj, update);
+            accessCheck(obj);
+            valueCheck(update);
             return U.compareAndSwapObject(obj, offset, expect, update);
         }
 
-        public void set(T obj, V newValue) {
-            if (obj == null || obj.getClass() != tclass || cclass != null ||
-                (newValue != null && vclass != null &&
-                 vclass != newValue.getClass()))
-                updateCheck(obj, newValue);
+        public final void set(T obj, V newValue) {
+            accessCheck(obj);
+            valueCheck(newValue);
             U.putObjectVolatile(obj, offset, newValue);
         }
 
-        public void lazySet(T obj, V newValue) {
-            if (obj == null || obj.getClass() != tclass || cclass != null ||
-                (newValue != null && vclass != null &&
-                 vclass != newValue.getClass()))
-                updateCheck(obj, newValue);
+        public final void lazySet(T obj, V newValue) {
+            accessCheck(obj);
+            valueCheck(newValue);
             U.putOrderedObject(obj, offset, newValue);
         }
 
         @SuppressWarnings("unchecked")
-        public V get(T obj) {
-            if (obj == null || obj.getClass() != tclass || cclass != null)
-                targetCheck(obj);
+        public final V get(T obj) {
+            accessCheck(obj);
             return (V)U.getObjectVolatile(obj, offset);
         }
 
         @SuppressWarnings("unchecked")
-        public V getAndSet(T obj, V newValue) {
-            if (obj == null || obj.getClass() != tclass || cclass != null ||
-                (newValue != null && vclass != null &&
-                 vclass != newValue.getClass()))
-                updateCheck(obj, newValue);
+        public final V getAndSet(T obj, V newValue) {
+            accessCheck(obj);
+            valueCheck(newValue);
             return (V)U.getAndSetObject(obj, offset, newValue);
-        }
-
-        private void ensureProtectedAccess(T obj) {
-            if (cclass.isInstance(obj)) {
-                return;
-            }
-            throw new RuntimeException(
-                new IllegalAccessException("Class " +
-                    cclass.getName() +
-                    " can not access a protected member of class " +
-                    tclass.getName() +
-                    " using an instance of " +
-                    obj.getClass().getName()
-                )
-            );
         }
     }
 }

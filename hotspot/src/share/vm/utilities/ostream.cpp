@@ -239,14 +239,6 @@ void outputStream::date_stamp(bool guard,
   return;
 }
 
-void outputStream::gclog_stamp() {
-  date_stamp(PrintGCDateStamps);
-  stamp(PrintGCTimeStamps);
-  if (PrintGCID) {
-    print("#%u: ", GCId::current());
-  }
-}
-
 outputStream& outputStream::indent() {
   while (_position < _indentation) sp();
   return *this;
@@ -366,7 +358,6 @@ stringStream::~stringStream() {}
 
 xmlStream*   xtty;
 outputStream* tty;
-outputStream* gclog_or_tty;
 CDS_ONLY(fileStream* classlist_file;) // Only dump the classes that can be stored into the CDS archive
 extern Mutex* tty_lock;
 
@@ -482,7 +473,7 @@ static const char* make_log_name_internal(const char* log_name, const char* forc
   return buf;
 }
 
-// log_name comes from -XX:LogFile=log_name, -Xloggc:log_name or
+// log_name comes from -XX:LogFile=log_name or
 // -XX:DumpLoadedClassList=<file_name>
 // in log_name, %p => pid1234 and
 //              %t => YYYY-MM-DD_HH-MM-SS
@@ -492,95 +483,6 @@ static const char* make_log_name(const char* log_name, const char* force_directo
   return make_log_name_internal(log_name, force_directory, os::current_process_id(),
                                 timestr);
 }
-
-#ifndef PRODUCT
-void test_loggc_filename() {
-  int pid;
-  char  tms[32];
-  char  i_result[JVM_MAXPATHLEN];
-  const char* o_result;
-  get_datetime_string(tms, sizeof(tms));
-  pid = os::current_process_id();
-
-  // test.log
-  jio_snprintf(i_result, JVM_MAXPATHLEN, "test.log", tms);
-  o_result = make_log_name_internal("test.log", NULL, pid, tms);
-  assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"test.log\", NULL)");
-  FREE_C_HEAP_ARRAY(char, o_result);
-
-  // test-%t-%p.log
-  jio_snprintf(i_result, JVM_MAXPATHLEN, "test-%s-pid%u.log", tms, pid);
-  o_result = make_log_name_internal("test-%t-%p.log", NULL, pid, tms);
-  assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"test-%%t-%%p.log\", NULL)");
-  FREE_C_HEAP_ARRAY(char, o_result);
-
-  // test-%t%p.log
-  jio_snprintf(i_result, JVM_MAXPATHLEN, "test-%spid%u.log", tms, pid);
-  o_result = make_log_name_internal("test-%t%p.log", NULL, pid, tms);
-  assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"test-%%t%%p.log\", NULL)");
-  FREE_C_HEAP_ARRAY(char, o_result);
-
-  // %p%t.log
-  jio_snprintf(i_result, JVM_MAXPATHLEN, "pid%u%s.log", pid, tms);
-  o_result = make_log_name_internal("%p%t.log", NULL, pid, tms);
-  assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"%%p%%t.log\", NULL)");
-  FREE_C_HEAP_ARRAY(char, o_result);
-
-  // %p-test.log
-  jio_snprintf(i_result, JVM_MAXPATHLEN, "pid%u-test.log", pid);
-  o_result = make_log_name_internal("%p-test.log", NULL, pid, tms);
-  assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"%%p-test.log\", NULL)");
-  FREE_C_HEAP_ARRAY(char, o_result);
-
-  // %t.log
-  jio_snprintf(i_result, JVM_MAXPATHLEN, "%s.log", tms);
-  o_result = make_log_name_internal("%t.log", NULL, pid, tms);
-  assert(strcmp(i_result, o_result) == 0, "failed on testing make_log_name(\"%%t.log\", NULL)");
-  FREE_C_HEAP_ARRAY(char, o_result);
-
-  {
-    // longest filename
-    char longest_name[JVM_MAXPATHLEN];
-    memset(longest_name, 'a', sizeof(longest_name));
-    longest_name[JVM_MAXPATHLEN - 1] = '\0';
-    o_result = make_log_name_internal((const char*)&longest_name, NULL, pid, tms);
-    assert(strcmp(longest_name, o_result) == 0, "longest name does not match. expected '%s' but got '%s'", longest_name, o_result);
-    FREE_C_HEAP_ARRAY(char, o_result);
-  }
-
-  {
-    // too long file name
-    char too_long_name[JVM_MAXPATHLEN + 100];
-    int too_long_length = sizeof(too_long_name);
-    memset(too_long_name, 'a', too_long_length);
-    too_long_name[too_long_length - 1] = '\0';
-    o_result = make_log_name_internal((const char*)&too_long_name, NULL, pid, tms);
-    assert(o_result == NULL, "Too long file name should return NULL, but got '%s'", o_result);
-  }
-
-  {
-    // too long with timestamp
-    char longest_name[JVM_MAXPATHLEN];
-    memset(longest_name, 'a', JVM_MAXPATHLEN);
-    longest_name[JVM_MAXPATHLEN - 3] = '%';
-    longest_name[JVM_MAXPATHLEN - 2] = 't';
-    longest_name[JVM_MAXPATHLEN - 1] = '\0';
-    o_result = make_log_name_internal((const char*)&longest_name, NULL, pid, tms);
-    assert(o_result == NULL, "Too long file name after timestamp expansion should return NULL, but got '%s'", o_result);
-  }
-
-  {
-    // too long with pid
-    char longest_name[JVM_MAXPATHLEN];
-    memset(longest_name, 'a', JVM_MAXPATHLEN);
-    longest_name[JVM_MAXPATHLEN - 3] = '%';
-    longest_name[JVM_MAXPATHLEN - 2] = 'p';
-    longest_name[JVM_MAXPATHLEN - 1] = '\0';
-    o_result = make_log_name_internal((const char*)&longest_name, NULL, pid, tms);
-    assert(o_result == NULL, "Too long file name after pid expansion should return NULL, but got '%s'", o_result);
-  }
-}
-#endif // PRODUCT
 
 fileStream::fileStream(const char* file_name) {
   _file = fopen(file_name, "w");
@@ -658,202 +560,6 @@ void fdStream::write(const char* s, size_t len) {
     size_t count = ::write(_fd, s, (int)len);
   }
   update_position(s, len);
-}
-
-// dump vm version, os version, platform info, build id,
-// memory usage and command line flags into header
-void gcLogFileStream::dump_loggc_header() {
-  if (is_open()) {
-    print_cr("%s", Abstract_VM_Version::internal_vm_info_string());
-    os::print_memory_info(this);
-    print("CommandLine flags: ");
-    CommandLineFlags::printSetFlags(this);
-  }
-}
-
-gcLogFileStream::~gcLogFileStream() {
-  if (_file != NULL) {
-    if (_need_close) fclose(_file);
-    _file = NULL;
-  }
-  if (_file_name != NULL) {
-    FREE_C_HEAP_ARRAY(char, _file_name);
-    _file_name = NULL;
-  }
-}
-
-gcLogFileStream::gcLogFileStream(const char* file_name) {
-  _cur_file_num = 0;
-  _bytes_written = 0L;
-  _file_name = make_log_name(file_name, NULL);
-
-  if (_file_name == NULL) {
-    warning("Cannot open file %s: file name is too long.\n", file_name);
-    _need_close = false;
-    UseGCLogFileRotation = false;
-    return;
-  }
-
-  // gc log file rotation
-  if (UseGCLogFileRotation && NumberOfGCLogFiles > 1) {
-    char tempbuf[JVM_MAXPATHLEN];
-    jio_snprintf(tempbuf, sizeof(tempbuf), "%s.%d" CURRENTAPPX, _file_name, _cur_file_num);
-    _file = fopen(tempbuf, "w");
-  } else {
-    _file = fopen(_file_name, "w");
-  }
-  if (_file != NULL) {
-    _need_close = true;
-    dump_loggc_header();
-  } else {
-    warning("Cannot open file %s due to %s\n", _file_name, strerror(errno));
-    _need_close = false;
-  }
-}
-
-void gcLogFileStream::write(const char* s, size_t len) {
-  if (_file != NULL) {
-    size_t count = fwrite(s, 1, len, _file);
-    _bytes_written += count;
-  }
-  update_position(s, len);
-}
-
-// rotate_log must be called from VMThread at safepoint. In case need change parameters
-// for gc log rotation from thread other than VMThread, a sub type of VM_Operation
-// should be created and be submitted to VMThread's operation queue. DO NOT call this
-// function directly. Currently, it is safe to rotate log at safepoint through VMThread.
-// That is, no mutator threads and concurrent GC threads run parallel with VMThread to
-// write to gc log file at safepoint. If in future, changes made for mutator threads or
-// concurrent GC threads to run parallel with VMThread at safepoint, write and rotate_log
-// must be synchronized.
-void gcLogFileStream::rotate_log(bool force, outputStream* out) {
-  char time_msg[O_BUFLEN];
-  char time_str[EXTRACHARLEN];
-  char current_file_name[JVM_MAXPATHLEN];
-  char renamed_file_name[JVM_MAXPATHLEN];
-
-  if (!should_rotate(force)) {
-    return;
-  }
-
-#ifdef ASSERT
-  Thread *thread = Thread::current();
-  assert(thread == NULL ||
-         (thread->is_VM_thread() && SafepointSynchronize::is_at_safepoint()),
-         "Must be VMThread at safepoint");
-#endif
-  if (NumberOfGCLogFiles == 1) {
-    // rotate in same file
-    rewind();
-    _bytes_written = 0L;
-    jio_snprintf(time_msg, sizeof(time_msg), "File  %s rotated at %s\n",
-                 _file_name, os::local_time_string((char *)time_str, sizeof(time_str)));
-    write(time_msg, strlen(time_msg));
-
-    if (out != NULL) {
-      out->print("%s", time_msg);
-    }
-
-    dump_loggc_header();
-    return;
-  }
-
-#if defined(_WINDOWS)
-#ifndef F_OK
-#define F_OK 0
-#endif
-#endif // _WINDOWS
-
-  // rotate file in names extended_filename.0, extended_filename.1, ...,
-  // extended_filename.<NumberOfGCLogFiles - 1>. Current rotation file name will
-  // have a form of extended_filename.<i>.current where i is the current rotation
-  // file number. After it reaches max file size, the file will be saved and renamed
-  // with .current removed from its tail.
-  if (_file != NULL) {
-    jio_snprintf(renamed_file_name, JVM_MAXPATHLEN, "%s.%d",
-                 _file_name, _cur_file_num);
-    int result = jio_snprintf(current_file_name, JVM_MAXPATHLEN,
-                              "%s.%d" CURRENTAPPX, _file_name, _cur_file_num);
-    if (result >= JVM_MAXPATHLEN) {
-      warning("Cannot create new log file name: %s: file name is too long.\n", current_file_name);
-      return;
-    }
-
-    const char* msg = force ? "GC log rotation request has been received."
-                            : "GC log file has reached the maximum size.";
-    jio_snprintf(time_msg, sizeof(time_msg), "%s %s Saved as %s\n",
-                     os::local_time_string((char *)time_str, sizeof(time_str)),
-                                                         msg, renamed_file_name);
-    write(time_msg, strlen(time_msg));
-
-    if (out != NULL) {
-      out->print("%s", time_msg);
-    }
-
-    fclose(_file);
-    _file = NULL;
-
-    bool can_rename = true;
-    if (access(current_file_name, F_OK) != 0) {
-      // current file does not exist?
-      warning("No source file exists, cannot rename\n");
-      can_rename = false;
-    }
-    if (can_rename) {
-      if (access(renamed_file_name, F_OK) == 0) {
-        if (remove(renamed_file_name) != 0) {
-          warning("Could not delete existing file %s\n", renamed_file_name);
-          can_rename = false;
-        }
-      } else {
-        // file does not exist, ok to rename
-      }
-    }
-    if (can_rename && rename(current_file_name, renamed_file_name) != 0) {
-      warning("Could not rename %s to %s\n", _file_name, renamed_file_name);
-    }
-  }
-
-  _cur_file_num++;
-  if (_cur_file_num > NumberOfGCLogFiles - 1) _cur_file_num = 0;
-  int result = jio_snprintf(current_file_name,  JVM_MAXPATHLEN, "%s.%d" CURRENTAPPX,
-               _file_name, _cur_file_num);
-  if (result >= JVM_MAXPATHLEN) {
-    warning("Cannot create new log file name: %s: file name is too long.\n", current_file_name);
-    return;
-  }
-
-  _file = fopen(current_file_name, "w");
-
-  if (_file != NULL) {
-    _bytes_written = 0L;
-    _need_close = true;
-    // reuse current_file_name for time_msg
-    jio_snprintf(current_file_name, JVM_MAXPATHLEN,
-                 "%s.%d", _file_name, _cur_file_num);
-    jio_snprintf(time_msg, sizeof(time_msg), "%s GC log file created %s\n",
-                 os::local_time_string((char *)time_str, sizeof(time_str)), current_file_name);
-    write(time_msg, strlen(time_msg));
-
-    if (out != NULL) {
-      out->print("%s", time_msg);
-    }
-
-    dump_loggc_header();
-    // remove the existing file
-    if (access(current_file_name, F_OK) == 0) {
-      if (remove(current_file_name) != 0) {
-        warning("Could not delete existing file %s\n", current_file_name);
-      }
-    }
-  } else {
-    warning("failed to open rotation log file %s due to %s\n"
-            "Turned off GC log file rotation\n",
-                  _file_name, strerror(errno));
-    _need_close = false;
-    FLAG_SET_DEFAULT(UseGCLogFileRotation, false);
-  }
 }
 
 defaultStream* defaultStream::instance = NULL;
@@ -1058,8 +764,8 @@ intx defaultStream::hold(intx writer_id) {
       // bootstrap problem
       tty_lock == NULL ||
 
-      // can't grab a lock or call Thread::current() if TLS isn't initialized
-      ThreadLocalStorage::thread() == NULL ||
+      // can't grab a lock if current Thread isn't set
+      Thread::current_or_null() == NULL ||
 
       // developer hook
       !SerializeVMOutput ||
@@ -1194,20 +900,7 @@ void ostream_init() {
 }
 
 void ostream_init_log() {
-  // For -Xloggc:<file> option - called in runtime/thread.cpp
   // Note : this must be called AFTER ostream_init()
-
-  gclog_or_tty = tty; // default to tty
-  if (Arguments::gc_log_filename() != NULL) {
-    fileStream * gclog  = new(ResourceObj::C_HEAP, mtInternal)
-                             gcLogFileStream(Arguments::gc_log_filename());
-    if (gclog->is_open()) {
-      // now we update the time stamp of the GC log to be synced up
-      // with tty.
-      gclog->time_stamp().update_to(tty->time_stamp().ticks());
-    }
-    gclog_or_tty = gclog;
-  }
 
 #if INCLUDE_CDS
   // For -XX:DumpLoadedClassList=<file> option
@@ -1236,9 +929,6 @@ void ostream_exit() {
     delete classlist_file;
   }
 #endif
-  if (gclog_or_tty != tty) {
-      delete gclog_or_tty;
-  }
   {
       // we temporaly disable PrintMallocFree here
       // as otherwise it'll lead to using of almost deleted
@@ -1254,14 +944,12 @@ void ostream_exit() {
   }
   tty = NULL;
   xtty = NULL;
-  gclog_or_tty = NULL;
   defaultStream::instance = NULL;
 }
 
 // ostream_abort() is called by os::abort() when VM is about to die.
 void ostream_abort() {
-  // Here we can't delete gclog_or_tty and tty, just flush their output
-  if (gclog_or_tty) gclog_or_tty->flush();
+  // Here we can't delete tty, just flush its output
   if (tty) tty->flush();
 
   if (defaultStream::instance != NULL) {

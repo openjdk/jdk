@@ -296,7 +296,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
      */
     protected Rectangle getSubmenuBounds(Rectangle itemBounds, Dimension windowSize) {
         Rectangle globalBounds = toGlobal(itemBounds);
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        Dimension screenSize = graphicsConfig.getBounds().getSize();
         Rectangle res;
         res = fitWindowBelow(globalBounds, windowSize, screenSize);
         if (res != null) {

@@ -30,7 +30,6 @@
 #include "interpreter/linkResolver.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/threadLocalStorage.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
 
@@ -100,6 +99,12 @@ class SharedRuntime: AllStatic {
   // float and double remainder
   static jfloat  frem(jfloat  x, jfloat  y);
   static jdouble drem(jdouble x, jdouble y);
+
+
+#ifdef _WIN64
+  // Workaround for fmod issue in the Windows x64 CRT
+  static double fmod_winx64(double x, double y);
+#endif
 
 #ifdef __SOFTFP__
   static jfloat  fadd(jfloat x, jfloat y);
@@ -196,12 +201,17 @@ class SharedRuntime: AllStatic {
   static void    throw_NullPointerException(JavaThread* thread);
   static void    throw_NullPointerException_at_call(JavaThread* thread);
   static void    throw_StackOverflowError(JavaThread* thread);
+  static void    throw_delayed_StackOverflowError(JavaThread* thread);
+  static void    throw_StackOverflowError_common(JavaThread* thread, bool delayed);
   static address continuation_for_implicit_exception(JavaThread* thread,
                                                      address faulting_pc,
                                                      ImplicitExceptionKind exception_kind);
 #if INCLUDE_JVMCI
   static address deoptimize_for_implicit_exception(JavaThread* thread, address pc, nmethod* nm, int deopt_reason);
 #endif
+
+  static void enable_stack_reserved_zone(JavaThread* thread);
+  static frame look_for_reserved_stack_annotated_method(JavaThread* thread, frame fr);
 
   // Shared stub locations
   static address get_poll_stub(address pc);

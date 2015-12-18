@@ -85,6 +85,7 @@ public:
 
   // initialize and get the first sampling
   void initialize(G1RemSet* remset);
+  bool const initialized() { return _rs_threads_vtimes != NULL; }
 
   void print_on(outputStream* out);
 

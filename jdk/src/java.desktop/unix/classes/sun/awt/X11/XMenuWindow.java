@@ -278,7 +278,7 @@ public class XMenuWindow extends XBaseMenuWindow {
      */
     protected Rectangle getSubmenuBounds(Rectangle itemBounds, Dimension windowSize) {
         Rectangle globalBounds = toGlobal(itemBounds);
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        Dimension screenSize = graphicsConfig.getBounds().getSize();
         Rectangle res;
         res = fitWindowRight(globalBounds, windowSize, screenSize);
         if (res != null) {
