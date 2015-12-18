@@ -21,7 +21,6 @@
  * questions.
  */
 
-
 import java.util.*;
 import javax.annotation.*;
 import javax.annotation.processing.*;
