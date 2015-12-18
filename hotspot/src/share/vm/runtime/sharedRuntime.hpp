@@ -30,7 +30,6 @@
 #include "interpreter/linkResolver.hpp"
 #include "memory/allocation.hpp"
 #include "memory/resourceArea.hpp"
-#include "runtime/threadLocalStorage.hpp"
 #include "utilities/hashtable.hpp"
 #include "utilities/macros.hpp"
 

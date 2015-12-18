@@ -52,7 +52,7 @@
 
 inline void fill_subword(void* start, void* end, int value) {
   STATIC_ASSERT(BytesPerWord == 8);
-  assert(pointer_delta(end, start, 1) < BytesPerWord, "precondition");
+  assert(pointer_delta(end, start, 1) < (size_t)BytesPerWord, "precondition");
   // Dispatch on (end - start).
   void* pc;
   __asm__ volatile(
@@ -73,10 +73,10 @@ inline void fill_subword(void* start, void* end, int value) {
     " stb %[value], [%[end]-3]\n\t"
     " stb %[value], [%[end]-2]\n\t"
     " stb %[value], [%[end]-1]\n\t" // end[-1] = value
-    : /* no outputs */
-      [pc] "&=r" (pc)               // temp
-    : [offset] "&+r" (start),
-      [end] "r" (end),
+    : /* only temporaries/overwritten outputs */
+      [pc] "=&r" (pc),               // temp
+      [offset] "+&r" (start)
+    : [end] "r" (end),
       [value] "r" (value)
     : "memory");
 }
@@ -84,7 +84,7 @@ inline void fill_subword(void* start, void* end, int value) {
 void memset_with_concurrent_readers(void* to, int value, size_t size) {
   Prefetch::write(to, 0);
   void* end = static_cast<char*>(to) + size;
-  if (size >= BytesPerWord) {
+  if (size >= (size_t)BytesPerWord) {
     // Fill any partial word prefix.
     uintx* aligned_to = static_cast<uintx*>(align_ptr_up(to, BytesPerWord));
     fill_subword(to, aligned_to, value);
@@ -144,10 +144,10 @@ void memset_with_concurrent_readers(void* to, int value, size_t size) {
       " stx %[xvalue], [%[aend]-24]\n\t"
       " stx %[xvalue], [%[aend]-16]\n\t"
       " stx %[xvalue], [%[aend]-8]\n\t"  // aligned_end[-1] = xvalue
-      : /* no outputs */
-        [temp] "&=r" (temp)
-      : [ato] "&+r" (aligned_to),
-        [aend] "r" (aligned_end),
+      : /* only temporaries/overwritten outputs */
+        [temp] "=&r" (temp),
+        [ato] "+&r" (aligned_to)
+      : [aend] "r" (aligned_end),
         [xvalue] "r" (xvalue)
       : "cc", "memory");
     to = aligned_end;           // setup for suffix

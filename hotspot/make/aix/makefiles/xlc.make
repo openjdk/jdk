@@ -74,6 +74,9 @@ CFLAGS += $(VM_PICFLAG)
 CFLAGS += -qnortti
 CFLAGS += -qnoeh
 
+# for compiler-level tls
+CFLAGS += -qtls=default
+
 CFLAGS += -D_REENTRANT
 # no xlc counterpart for -fcheck-new
 # CFLAGS += -fcheck-new

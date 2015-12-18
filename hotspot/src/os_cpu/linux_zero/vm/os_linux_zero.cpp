@@ -125,7 +125,7 @@ JVM_handle_linux_signal(int sig,
                         int abort_if_unrecognized) {
   ucontext_t* uc = (ucontext_t*) ucVoid;
 
-  Thread* t = ThreadLocalStorage::get_thread_slow();
+  Thread* t = Thread::current_or_null_safe();
 
   SignalHandlerMark shm(t);
 

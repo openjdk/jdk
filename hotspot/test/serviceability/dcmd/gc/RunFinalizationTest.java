@@ -23,20 +23,22 @@
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import jdk.test.lib.OutputAnalyzer;
-import jdk.test.lib.ProcessTools;
+import jdk.test.lib.process.ProcessTools;
 
 /*
  * @test
  * @summary Test of diagnostic command GC.run_finalization
  * @library /testlibrary
+ * @library /test/lib/share/classes
  * @modules java.base/sun.misc
  *          java.compiler
  *          java.management
  *          jdk.jvmstat/sun.jvmstat.monitor
  * @build jdk.test.lib.*
  * @build jdk.test.lib.dcmd.*
+ * @build jdk.test.lib.process.*
  * @build RunFinalizationTest FinalizationRunner
  * @run main RunFinalizationTest
  */
@@ -50,8 +52,21 @@ public class RunFinalizationTest {
         javaArgs.add(TEST_APP_NAME);
         ProcessBuilder testAppPb = ProcessTools.createJavaProcessBuilder(javaArgs.toArray(new String[javaArgs.size()]));
 
-        OutputAnalyzer out = ProcessTools.executeProcess(testAppPb);
-        out.stderrShouldNotMatch("^" + FinalizationRunner.FAILED + ".*")
-           .stdoutShouldMatch("^" + FinalizationRunner.PASSED + ".*");
+        final AtomicBoolean failed = new AtomicBoolean();
+        final AtomicBoolean passed = new AtomicBoolean();
+
+        Process runner = ProcessTools.startProcess(
+            "FinalizationRunner",
+            testAppPb,
+            l -> {
+                failed.compareAndSet(false, l.contains(FinalizationRunner.FAILED));
+                passed.compareAndSet(false, l.contains(FinalizationRunner.PASSED));
+            }
+        );
+        runner.waitFor();
+
+        if (failed.get() || !passed.get()) {
+            throw new Error("RunFinalizationTest failed");
+        }
     }
 }
