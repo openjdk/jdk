@@ -897,10 +897,8 @@ C2V_VMENTRY(jobject, disassembleCodeBlob, (JNIEnv *jniEnv, jobject, jobject inst
     if (!nm->is_alive()) {
       return NULL;
     }
-    Disassembler::decode(nm, &st);
-  } else {
-    Disassembler::decode(cb, &st);
   }
+  Disassembler::decode(cb, &st);
   if (st.size() <= 0) {
     return NULL;
   }

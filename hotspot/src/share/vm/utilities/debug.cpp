@@ -480,12 +480,13 @@ extern "C" void nm(intptr_t p) {
 extern "C" void disnm(intptr_t p) {
   Command c("disnm");
   CodeBlob* cb = CodeCache::find_blob((address) p);
-  nmethod* nm = cb->as_nmethod_or_null();
-  if (nm) {
-    nm->print();
-    Disassembler::decode(nm);
-  } else {
-    cb->print();
+  if (cb != NULL) {
+    nmethod* nm = cb->as_nmethod_or_null();
+    if (nm != NULL) {
+      nm->print();
+    } else {
+      cb->print();
+    }
     Disassembler::decode(cb);
   }
 }
