@@ -61,7 +61,7 @@ Src_Dirs_I += $(GENERATED)
 # The order is important for the precompiled headers to work.
 INCLUDES += $(PRECOMPILED_HEADER_DIR:%=-I%) $(Src_Dirs_I:%=-I%)
 
-# SYMFLAG is used by {jsig,saproc}.make
+# SYMFLAG is used by jsig.make
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   # always build with debug info when we can create .debuginfo files
   SYMFLAG = -g
@@ -361,13 +361,10 @@ install_jvm: $(LIBJVM)
 # Signal interposition library
 include $(MAKEFILES_DIR)/jsig.make
 
-# Serviceability agent
-include $(MAKEFILES_DIR)/saproc.make
-
 #----------------------------------------------------------------------
 
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(BUILDLIBSAPROC)
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB)
 
-install: install_jvm install_jsig install_saproc
+install: install_jvm install_jsig
 
 .PHONY: default build install install_jvm

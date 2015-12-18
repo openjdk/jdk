@@ -2240,7 +2240,6 @@ bool CMSCollector::have_cms_token() {
   }
   return false;
 }
-#endif
 
 // Check reachability of the given heap address in CMS generation,
 // treating all other generations as roots.
@@ -2260,21 +2259,21 @@ bool CMSCollector::is_cms_reachable(HeapWord* addr) {
 
   // Clear the marking bit map array before starting, but, just
   // for kicks, first report if the given address is already marked
-  gclog_or_tty->print_cr("Start: Address " PTR_FORMAT " is%s marked", p2i(addr),
+  tty->print_cr("Start: Address " PTR_FORMAT " is%s marked", p2i(addr),
                 _markBitMap.isMarked(addr) ? "" : " not");
 
   if (verify_after_remark()) {
     MutexLockerEx x(verification_mark_bm()->lock(), Mutex::_no_safepoint_check_flag);
     bool result = verification_mark_bm()->isMarked(addr);
-    gclog_or_tty->print_cr("TransitiveMark: Address " PTR_FORMAT " %s marked", p2i(addr),
-                           result ? "IS" : "is NOT");
+    tty->print_cr("TransitiveMark: Address " PTR_FORMAT " %s marked", p2i(addr),
+                  result ? "IS" : "is NOT");
     return result;
   } else {
-    gclog_or_tty->print_cr("Could not compute result");
+    tty->print_cr("Could not compute result");
     return false;
   }
 }
-
+#endif
 
 void
 CMSCollector::print_on_error(outputStream* st) {

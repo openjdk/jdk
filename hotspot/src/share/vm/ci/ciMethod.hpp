@@ -311,6 +311,8 @@ class ciMethod : public ciMetadata {
   bool is_final_method() const                   { return is_final() || holder()->is_final(); }
   bool has_loops      () const;
   bool has_jsrs       () const;
+  bool is_getter      () const;
+  bool is_setter      () const;
   bool is_accessor    () const;
   bool is_initializer () const;
   bool can_be_statically_bound() const           { return _can_be_statically_bound; }

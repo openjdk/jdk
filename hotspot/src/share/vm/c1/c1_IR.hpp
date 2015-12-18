@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,6 +151,7 @@ class IRScope: public CompilationResourceObj {
   bool          _monitor_pairing_ok;             // the monitor pairing info
   bool          _wrote_final;                    // has written final field
   bool          _wrote_fields;                   // has written fields
+  bool          _wrote_volatile;                 // has written volatile field
   BlockBegin*   _start;                          // the start block, successsors are method entries
 
   BitMap        _requires_phi_function;          // bit is set if phi functions at loop headers are necessary for a local variable
@@ -187,7 +188,8 @@ class IRScope: public CompilationResourceObj {
   bool          wrote_final    () const          { return _wrote_final; }
   void          set_wrote_fields()               { _wrote_fields = true; }
   bool          wrote_fields    () const         { return _wrote_fields; }
-
+  void          set_wrote_volatile()             { _wrote_volatile = true; }
+  bool          wrote_volatile    () const       { return _wrote_volatile; }
 };
 
 

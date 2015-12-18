@@ -71,7 +71,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import javax.script.ScriptEngine;
-import jdk.internal.dynalink.DynamicLinker;
+import jdk.dynalink.DynamicLinker;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
@@ -1300,7 +1300,16 @@ public final class Context {
      * @return context
      */
     static Context fromClass(final Class<?> clazz) {
-        final ClassLoader loader = clazz.getClassLoader();
+        ClassLoader loader = null;
+        try {
+            loader = clazz.getClassLoader();
+        } catch (SecurityException ignored) {
+            // This could fail because of anonymous classes being used.
+            // Accessing loader of anonymous class fails (for extension
+            // loader class too?). In any case, for us fetching Context
+            // from class loader is just an optimization. We can always
+            // get Context from thread local storage (below).
+        }
 
         if (loader instanceof ScriptLoader) {
             return ((ScriptLoader)loader).getContext();

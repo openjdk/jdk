@@ -423,7 +423,10 @@ AC_DEFUN_ONCE([BASIC_COMPILE_FIXPATH],
       AC_MSG_ERROR([fixpath did not work!])
     fi
     AC_MSG_RESULT([yes])
+
+    FIXPATH_DETACH_FLAG="--detach"
   fi
 
   AC_SUBST(FIXPATH)
+  AC_SUBST(FIXPATH_DETACH_FLAG)
 ])

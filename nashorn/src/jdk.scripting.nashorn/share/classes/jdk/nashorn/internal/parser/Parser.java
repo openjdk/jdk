@@ -3068,7 +3068,7 @@ loop:
         if (k < stream.last() && start < parserState.position && parserState.position <= Token.descPosition(stream.get(stream.last()))) {
             // RBRACE is already in the token stream, so fast forward to it
             for (; k < stream.last(); k++) {
-                long nextToken = stream.get(k + 1);
+                final long nextToken = stream.get(k + 1);
                 if (Token.descPosition(nextToken) == parserState.position && Token.descType(nextToken) == RBRACE) {
                     token = stream.get(k);
                     type = Token.descType(token);
@@ -3484,7 +3484,7 @@ loop:
         Expression concat = literal;
         TokenType lastLiteralType;
         do {
-            Expression expression = expression();
+            final Expression expression = expression();
             if (type != TEMPLATE_MIDDLE && type != TEMPLATE_TAIL) {
                 throw error(AbstractParser.message("unterminated.template.expression"), token);
             }
@@ -3515,7 +3515,7 @@ loop:
         if (hasSubstitutions) {
             TokenType lastLiteralType;
             do {
-                Expression expression = expression();
+                final Expression expression = expression();
                 if (type != TEMPLATE_MIDDLE && type != TEMPLATE_TAIL) {
                     throw error(AbstractParser.message("unterminated.template.expression"), token);
                 }

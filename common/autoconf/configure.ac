@@ -121,6 +121,9 @@ PKG_PROG_PKG_CONFIG
 # After basic tools have been setup, we can check build os specific details.
 PLATFORM_SETUP_OPENJDK_BUILD_OS_VERSION
 
+# Misc basic settings
+BASIC_SETUP_DEFAULT_MAKE_TARGET
+
 ###############################################################################
 #
 # Determine OpenJDK variants, options and version numbers.
@@ -236,6 +239,9 @@ BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS
 
 # Setup smart javac (after cores and memory have been setup)
 BPERF_SETUP_SMART_JAVAC
+
+# Setup use of icecc if requested
+BPERF_SETUP_ICECC
 
 # Can the C/C++ compiler use precompiled headers?
 BPERF_SETUP_PRECOMPILED_HEADERS

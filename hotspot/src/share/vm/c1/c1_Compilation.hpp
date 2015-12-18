@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -192,7 +192,7 @@ class Compilation: public StackObj {
   const char* bailout_msg() const                { return _bailout_msg; }
 
   static int desired_max_code_buffer_size() {
-#ifndef PPC
+#ifndef PPC32
     return (int) NMethodSizeLimit;  // default 256K or 512K
 #else
     // conditional branches on PPC are restricted to 16 bit signed

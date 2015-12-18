@@ -50,6 +50,7 @@ import com.sun.tools.javac.tree.DCTree.DCEndElement;
 import com.sun.tools.javac.tree.DCTree.DCEntity;
 import com.sun.tools.javac.tree.DCTree.DCErroneous;
 import com.sun.tools.javac.tree.DCTree.DCIdentifier;
+import com.sun.tools.javac.tree.DCTree.DCIndex;
 import com.sun.tools.javac.tree.DCTree.DCInheritDoc;
 import com.sun.tools.javac.tree.DCTree.DCLink;
 import com.sun.tools.javac.tree.DCTree.DCLiteral;
@@ -220,6 +221,12 @@ public class DocTreeMaker {
 
     public DCIdentifier Identifier(Name name) {
         DCIdentifier tree = new DCIdentifier(name);
+        tree.pos = pos;
+        return tree;
+    }
+
+    public DCIndex Index(DCTree term, List<DCTree> description) {
+        DCIndex tree = new DCIndex(term, description);
         tree.pos = pos;
         return tree;
     }

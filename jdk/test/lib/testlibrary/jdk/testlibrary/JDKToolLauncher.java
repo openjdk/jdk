@@ -38,15 +38,17 @@ import java.util.List;
  * <pre>
  * {@code
  * JDKToolLauncher jmap = JDKToolLauncher.create("jmap")
- *                                       .addVMArg("-XX:+PrintGC");
- *                                       .addVMArg("-XX:+PrintGCDetails")
+ *                                       .addVMArg("-Xlog:gc*=debug")
  *                                       .addToolArg("-heap")
  *                                       .addToolArg(pid);
  * ProcessBuilder pb = new ProcessBuilder(jmap.getCommand());
  * Process p = pb.start();
  * }
  * </pre>
+ * @deprecated This class is deprecated. Use the one from
+ *             {@code <root>/test/lib/share/classes/jdk/test/lib}
  */
+@Deprecated
 public class JDKToolLauncher {
     private final String executable;
     private final List<String> vmArgs = new ArrayList<String>();

@@ -77,17 +77,21 @@ class LogTagSet VALUE_OBJ_CLASS_SPEC {
     return false;
   }
 
+  LogLevelType level_for(const LogOutput* output) const {
+    return _output_list.level_for(output);
+  }
+
   void set_output_level(LogOutput* output, LogLevelType level) {
     _output_list.set_output_level(output, level);
   }
 
   // Refresh the decorators for this tagset to contain the decorators for all
   // of its current outputs combined with the given decorators.
-  void update_decorators(const LogDecorators& decorator);
+  void update_decorators(const LogDecorators& decorator = LogDecorators::None);
 
-  int label(char *buf, size_t len);
+  int label(char *buf, size_t len, const char* separator = ",") const;
   bool has_output(const LogOutput* output);
-  bool is_level(LogLevelType level);
+  bool is_level(LogLevelType level) const;
   void log(LogLevelType level, const char* msg);
 };
 

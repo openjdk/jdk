@@ -632,12 +632,36 @@ void VM_Version::get_processor_features() {
   // Use AES instructions if available.
   if (supports_aes()) {
     if (FLAG_IS_DEFAULT(UseAES)) {
-      UseAES = true;
+      FLAG_SET_DEFAULT(UseAES, true);
     }
-  } else if (UseAES) {
-    if (!FLAG_IS_DEFAULT(UseAES))
+    if (!UseAES) {
+      if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+        warning("AES intrinsics require UseAES flag to be enabled. Intrinsics will be disabled.");
+      }
+      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+    } else {
+      if (UseSSE > 2) {
+        if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+          FLAG_SET_DEFAULT(UseAESIntrinsics, true);
+        }
+      } else {
+        // The AES intrinsic stubs require AES instruction support (of course)
+        // but also require sse3 mode or higher for instructions it use.
+        if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+          warning("X86 AES intrinsics require SSE3 instructions or higher. Intrinsics will be disabled.");
+        }
+        FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+      }
+    }
+  } else if (UseAES || UseAESIntrinsics) {
+    if (UseAES && !FLAG_IS_DEFAULT(UseAES)) {
       warning("AES instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAES, false);
+      FLAG_SET_DEFAULT(UseAES, false);
+    }
+    if (UseAESIntrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+      warning("AES intrinsics are not available on this CPU");
+      FLAG_SET_DEFAULT(UseAESIntrinsics, false);
+    }
   }
 
   // Use CLMUL instructions if available.
@@ -671,18 +695,6 @@ void VM_Version::get_processor_features() {
       warning("CRC32C intrinsics are not available on this CPU");
     }
     FLAG_SET_DEFAULT(UseCRC32CIntrinsics, false);
-  }
-
-  // The AES intrinsic stubs require AES instruction support (of course)
-  // but also require sse3 mode for instructions it use.
-  if (UseAES && (UseSSE > 2)) {
-    if (FLAG_IS_DEFAULT(UseAESIntrinsics)) {
-      UseAESIntrinsics = true;
-    }
-  } else if (UseAESIntrinsics) {
-    if (!FLAG_IS_DEFAULT(UseAESIntrinsics))
-      warning("AES intrinsics are not available on this CPU");
-    FLAG_SET_DEFAULT(UseAESIntrinsics, false);
   }
 
   // GHASH/GCM intrinsics
@@ -891,7 +903,7 @@ void VM_Version::get_processor_features() {
       UseNewLongLShift = true;
     }
     if( FLAG_IS_DEFAULT(UseXmmLoadAndClearUpper) ) {
-      if( supports_sse4a() ) {
+      if (supports_sse4a()) {
         UseXmmLoadAndClearUpper = true; // use movsd only on '10h' Opteron
       } else {
         UseXmmLoadAndClearUpper = false;
@@ -918,10 +930,15 @@ void VM_Version::get_processor_features() {
         UseXmmI2D = false;
       }
     }
-    if( FLAG_IS_DEFAULT(UseSSE42Intrinsics) ) {
-      if( supports_sse4_2() && UseSSE >= 4 ) {
-        UseSSE42Intrinsics = true;
+    if (supports_sse4_2() && UseSSE >= 4) {
+      if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
+        FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
       }
+    } else {
+      if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+        warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
+      }
+      FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
     }
 
     // some defaults for AMD family 15h
@@ -995,8 +1012,13 @@ void VM_Version::get_processor_features() {
       }
       if (supports_sse4_2() && UseSSE >= 4) {
         if (FLAG_IS_DEFAULT(UseSSE42Intrinsics)) {
-          UseSSE42Intrinsics = true;
+          FLAG_SET_DEFAULT(UseSSE42Intrinsics, true);
         }
+      } else {
+        if (UseSSE42Intrinsics && !FLAG_IS_DEFAULT(UseAESIntrinsics)) {
+          warning("SSE4.2 intrinsics require SSE4.2 instructions or higher. Intrinsics will be disabled.");
+        }
+        FLAG_SET_DEFAULT(UseSSE42Intrinsics, false);
       }
     }
     if ((cpu_family() == 0x06) &&

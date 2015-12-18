@@ -25,18 +25,24 @@
 #define SHARE_VM_LOGGING_LOGOUTPUT_HPP
 
 #include "logging/logDecorators.hpp"
+#include "logging/logLevel.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
 
 class LogDecorations;
+class LogTagSet;
 
 // The base class/interface for log outputs.
 // Keeps track of the latest configuration string,
 // and its selected decorators.
 class LogOutput : public CHeapObj<mtLogging> {
+ private:
+  static const size_t InitialConfigBufferSize = 256;
+  char* _config_string;
+  size_t _config_string_buffer_size;
+
  protected:
   LogDecorators _decorators;
-  char* _config_string;
 
  public:
   static LogOutput* const Stdout;
@@ -54,10 +60,16 @@ class LogOutput : public CHeapObj<mtLogging> {
     return _config_string;
   }
 
-  LogOutput() : _config_string(NULL) {
+  LogOutput() : _config_string(NULL), _config_string_buffer_size(0) {
   }
 
   virtual ~LogOutput();
+
+  // Clears any previous config description in preparation of reconfiguration.
+  void clear_config_string();
+  // Adds the tagset on the given level to the config description (e.g. "tag1+tag2=level").
+  void add_to_config_string(const LogTagSet* ts, LogLevelType level);
+  // Replaces the current config description with the given string.
   void set_config_string(const char* string);
 
   virtual const char* name() const = 0;
