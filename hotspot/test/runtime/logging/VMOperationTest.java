@@ -28,11 +28,13 @@
  * @library /testlibrary
  * @modules java.base/sun.misc
  *          java.management
+ * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
  * @run driver VMOperationTest
  */
 
-import jdk.test.lib.*;
 import java.lang.ref.WeakReference;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 
 public class VMOperationTest {
     public static void main(String[] args) throws Exception {
