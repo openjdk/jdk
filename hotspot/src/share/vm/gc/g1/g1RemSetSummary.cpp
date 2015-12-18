@@ -30,6 +30,7 @@
 #include "gc/g1/g1RemSetSummary.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
+#include "memory/allocation.inline.hpp"
 #include "runtime/thread.inline.hpp"
 
 class GetRSThreadVTimeClosure : public ThreadClosure {
@@ -87,6 +88,23 @@ void G1RemSetSummary::initialize(G1RemSet* remset) {
   memset(_rs_threads_vtimes, 0, sizeof(double) * _num_vtimes);
 
   update();
+}
+
+G1RemSetSummary::G1RemSetSummary() :
+  _remset(NULL),
+  _num_refined_cards(0),
+  _num_processed_buf_mutator(0),
+  _num_processed_buf_rs_threads(0),
+  _num_coarsenings(0),
+  _rs_threads_vtimes(NULL),
+  _num_vtimes(0),
+  _sampling_thread_vtime(0.0f) {
+}
+
+G1RemSetSummary::~G1RemSetSummary() {
+  if (_rs_threads_vtimes) {
+    FREE_C_HEAP_ARRAY(double, _rs_threads_vtimes);
+  }
 }
 
 void G1RemSetSummary::set(G1RemSetSummary* other) {
