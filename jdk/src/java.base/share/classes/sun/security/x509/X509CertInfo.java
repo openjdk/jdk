@@ -32,7 +32,7 @@ import java.security.cert.*;
 import java.util.*;
 
 import sun.security.util.*;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 
 /**

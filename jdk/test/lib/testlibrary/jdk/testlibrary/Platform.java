@@ -27,6 +27,11 @@ import java.io.RandomAccessFile;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+/**
+ * @deprecated This class is deprecated. Use the one from
+ *             {@code <root>/test/lib/share/classes/jdk/test/lib}
+ */
+@Deprecated
 public class Platform {
     private static final String osName      = System.getProperty("os.name");
     private static final String dataModel   = System.getProperty("sun.arch.data.model");
