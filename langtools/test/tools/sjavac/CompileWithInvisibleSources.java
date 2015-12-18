@@ -49,9 +49,7 @@ public class CompileWithInvisibleSources extends SJavacTester {
     // gensrc2 contains broken code in beta.B, thus exclude that package
     // gensrc3 contains a proper beta.B
     void test() throws Exception {
-        clean(TEST_ROOT);
         Files.createDirectories(BIN);
-        clean(GENSRC, GENSRC2, GENSRC3, BIN);
 
         Map<String,Long> previous_bin_state = collectState(BIN);
 
@@ -82,7 +80,7 @@ public class CompileWithInvisibleSources extends SJavacTester {
                                      BIN + "/javac_state");
 
         System.out.println("----- Compile with exluded beta went well!");
-        clean(BIN);
+        tb.cleanDirectory(BIN);
         compileExpectFailure(GENSRC.toString(),
                              "-sourcepath", GENSRC2.toString(),
                              "-sourcepath", GENSRC3.toString(),
@@ -93,6 +91,5 @@ public class CompileWithInvisibleSources extends SJavacTester {
                              SERVER_ARG);
 
         System.out.println("----- Compile without exluded beta failed, as expected! Good!");
-        clean(GENSRC, BIN);
     }
 }

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "memory/allocation.inline.hpp"
 #include "gc/g1/g1EvacStats.hpp"
 #include "gc/shared/gcId.hpp"
 #include "trace/tracing.hpp"
@@ -114,3 +115,4 @@ void G1EvacStats::adjust_desired_plab_sz() {
   reset();
 }
 
+G1EvacStats::~G1EvacStats() { }

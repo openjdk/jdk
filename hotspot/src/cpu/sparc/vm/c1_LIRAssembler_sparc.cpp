@@ -2812,7 +2812,23 @@ void LIR_Assembler::monitor_address(int monitor_no, LIR_Opr dst_opr) {
 }
 
 void LIR_Assembler::emit_updatecrc32(LIR_OpUpdateCRC32* op) {
-  fatal("CRC32 intrinsic is not implemented on this platform");
+  assert(op->crc()->is_single_cpu(),  "crc must be register");
+  assert(op->val()->is_single_cpu(),  "byte value must be register");
+  assert(op->result_opr()->is_single_cpu(), "result must be register");
+  Register crc = op->crc()->as_register();
+  Register val = op->val()->as_register();
+  Register table = op->result_opr()->as_register();
+  Register res   = op->result_opr()->as_register();
+
+  assert_different_registers(val, crc, table);
+
+  __ set(ExternalAddress(StubRoutines::crc_table_addr()), table);
+  __ not1(crc);
+  __ clruwu(crc);
+  __ update_byte_crc32(crc, val, table);
+  __ not1(crc);
+
+  __ mov(crc, res);
 }
 
 void LIR_Assembler::emit_lock(LIR_OpLock* op) {

@@ -365,6 +365,7 @@ template class RehashableHashtable<Symbol*, mtSymbol>;
 template class RehashableHashtable<oopDesc*, mtSymbol>;
 template class Hashtable<Symbol*, mtSymbol>;
 template class Hashtable<Klass*, mtClass>;
+template class Hashtable<InstanceKlass*, mtClass>;
 template class Hashtable<oop, mtClass>;
 #if defined(SOLARIS) || defined(CHECK_UNHANDLED_OOPS)
 template class Hashtable<oop, mtSymbol>;
@@ -378,6 +379,7 @@ template class HashtableEntry<oop, mtSymbol>;
 template class BasicHashtableEntry<mtSymbol>;
 template class BasicHashtableEntry<mtCode>;
 template class BasicHashtable<mtClass>;
+template class BasicHashtable<mtClassShared>;
 template class BasicHashtable<mtSymbol>;
 template class BasicHashtable<mtCode>;
 template class BasicHashtable<mtInternal>;

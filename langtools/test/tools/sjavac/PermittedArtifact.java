@@ -47,9 +47,7 @@ public class PermittedArtifact extends SJavacTester {
 
     //Verify that --permit-artifact=bin works
     void test() throws Exception {
-        clean(TEST_ROOT);
         Files.createDirectories(BIN);
-        clean(GENSRC, BIN);
 
         Map<String,Long> previous_bin_state = collectState(BIN);
 
@@ -73,6 +71,5 @@ public class PermittedArtifact extends SJavacTester {
                                      BIN + "/alfa/omega/A.class",
                                      BIN + "/alfa/omega/AA.class",
                                      BIN + "/javac_state");
-        clean(GENSRC, BIN);
     }
 }

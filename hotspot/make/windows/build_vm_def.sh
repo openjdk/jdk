@@ -54,20 +54,6 @@ RM="$MKS_HOME/rm.exe"
 DUMPBIN="link.exe /dump"
 export VS_UNICODE_OUTPUT= 
 
-if [ "$1" = "-nosa" ]; then
-    echo EXPORTS > vm.def
-    echo ""
-    echo "***"
-    echo "*** Not building SA: BUILD_WIN_SA != 1"
-    echo "*** C++ Vtables NOT included in vm.def"
-    echo "*** This jvm.dll will NOT work properly with SA."
-    echo "***"
-    echo "*** When in doubt, set BUILD_WIN_SA=1, clean and rebuild."
-    echo "***"
-    echo ""
-    exit
-fi
-
 echo "EXPORTS" > vm1.def
 
 # When called from IDE the first param should contain the link version, otherwise may be nill

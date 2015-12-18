@@ -9,7 +9,17 @@ import java.io.*;
 
 class T7022711 {
     public static void main (String args[]) throws Exception {
+        // declared resource
         try (DataInputStream is = new DataInputStream(new FileInputStream("x"))) {
+            while (true) {
+                is.getChar();  // method not found
+            }
+        } catch (EOFException e) {
+        }
+
+        // resource as variable
+        DataInputStream is = new DataInputStream(new FileInputStream("x"));
+        try (is) {
             while (true) {
                 is.getChar();  // method not found
             }

@@ -40,7 +40,7 @@ ifeq ($(HAS_SPEC),)
   ##############################################################################
 
   # Make control variables, handled by Init.gmk
-  INIT_CONTROL_VARIABLES := LOG CONF SPEC JOBS CONF_CHECK COMPARE_BUILD
+  INIT_CONTROL_VARIABLES := LOG CONF CONF_NAME SPEC JOBS CONF_CHECK COMPARE_BUILD
 
   # All known make control variables
   MAKE_CONTROL_VARIABLES := $(INIT_CONTROL_VARIABLES) TEST JDK_FILTER
@@ -169,6 +169,11 @@ ifeq ($(HAS_SPEC),)
         $$(info Error: Cannot use CONF=$$(CONF) and SPEC=$$(SPEC) at the same time. Choose one.)
         $$(error Cannot continue)
       endif
+      ifneq ($$(origin CONF_NAME), undefined)
+        # We also have a CONF_NAME argument. We can't have both.
+        $$(info Error: Cannot use CONF_NAME=$$(CONF_NAME) and SPEC=$$(SPEC) at the same time. Choose one.)
+        $$(error Cannot continue)
+      endif
       ifeq ($$(wildcard $$(SPEC)),)
         $$(info Error: Cannot locate spec.gmk, given by SPEC=$$(SPEC).)
         $$(error Cannot continue)
@@ -191,7 +196,29 @@ ifeq ($(HAS_SPEC),)
         $$(error Cannot continue)
       endif
 
-      ifneq ($$(origin CONF), undefined)
+      ifneq ($$(origin CONF_NAME), undefined)
+        ifneq ($$(origin CONF), undefined)
+          # We also have a CONF argument. We can't have both.
+          $$(info Error: Cannot use CONF=$$(CONF) and CONF_NAME=$$(CONF_NAME) at the same time. Choose one.)
+          $$(error Cannot continue)
+        endif
+        matching_conf := $$(strip $$(filter $$(CONF_NAME), $$(all_confs)))
+        ifeq ($$(matching_conf),)
+          $$(info Error: No configurations found matching CONF_NAME=$$(CONF_NAME).)
+          $$(info Available configurations in $$(build_dir):)
+          $$(foreach var, $$(all_confs), $$(info * $$(var)))
+          $$(error Cannot continue)
+        else ifneq ($$(words $$(matching_conf)), 1)
+          $$(info Error: Matching more than one configuration CONF_NAME=$$(CONF_NAME).)
+          $$(info Available configurations in $$(build_dir):)
+          $$(foreach var, $$(all_confs), $$(info * $$(var)))
+          $$(error Cannot continue)
+        else
+          $$(info Building configuration '$$(matching_conf)' (matching CONF_NAME=$$(CONF_NAME)))
+        endif
+        # Create a SPEC definition. This will contain the path to exactly one spec file.
+        SPECS := $$(build_dir)/$$(matching_conf)/spec.gmk
+      else ifneq ($$(origin CONF), undefined)
         # User have given a CONF= argument.
         ifeq ($$(CONF),)
           # If given CONF=, match all configurations
@@ -286,13 +313,6 @@ else # $(HAS_SPEC)=true
   BUILD_TRACE_LOG := $(OUTPUT_ROOT)/build-trace-time.log
 
   BUILD_LOG_WRAPPER := $(BASH) $(SRC_ROOT)/common/bin/logger.sh $(BUILD_LOG)
-
-  # Disable the build log wrapper on sjavac+windows until
-  # we have solved how to prevent the log wrapper to wait
-  # for the background sjavac server process.
-  ifeq ($(ENABLE_SJAVAC)X$(OPENJDK_BUILD_OS),yesXwindows)
-    LOG_NOFILE := true
-  endif
 
   # Sanity check the spec file, so it matches this source code
   define CheckSpecSanity

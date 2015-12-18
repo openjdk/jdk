@@ -53,6 +53,9 @@ class Sparc {
   static address _flush_callers_register_windows_entry;
 
   static address _partial_subtype_check;
+  // masks and table for CRC32
+  static uint64_t _crc_by128_masks[];
+  static juint    _crc_table[];
 
  public:
   // test assembler stop routine by setting registers
@@ -65,6 +68,8 @@ class Sparc {
   static intptr_t* (*flush_callers_register_windows_func())() { return CAST_TO_FN_PTR(intptr_t* (*)(void), _flush_callers_register_windows_entry); }
 
   static address partial_subtype_check()                  { return _partial_subtype_check; }
+
+  static address crc_by128_masks_addr()  { return (address)_crc_by128_masks; }
 };
 
 #endif // CPU_SPARC_VM_STUBROUTINES_SPARC_HPP

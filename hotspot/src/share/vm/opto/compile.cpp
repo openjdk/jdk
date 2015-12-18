@@ -707,7 +707,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
     _replay_inline_data = ciReplay::load_inline_data(method(), entry_bci(), ci_env->comp_level());
   }
 #endif
-  set_print_inlining(directive->PrintInliningOption NOT_PRODUCT( || PrintOptoInlining));
+  set_print_inlining(directive->PrintInliningOption || PrintOptoInlining);
   set_print_intrinsics(directive->PrintIntrinsicsOption);
   set_has_irreducible_loop(true); // conservative until build_loop_tree() reset it
 
@@ -2156,6 +2156,20 @@ void Compile::Optimize() {
   // so keep only the actual candidates for optimizations.
   cleanup_expensive_nodes(igvn);
 
+  if (!failing() && RenumberLiveNodes && live_nodes() + NodeLimitFudgeFactor < unique()) {
+    Compile::TracePhase tp("", &timers[_t_renumberLive]);
+    initial_gvn()->replace_with(&igvn);
+    for_igvn()->clear();
+    Unique_Node_List new_worklist(C->comp_arena());
+    {
+      ResourceMark rm;
+      PhaseRenumberLive prl = PhaseRenumberLive(initial_gvn(), for_igvn(), &new_worklist);
+    }
+    set_for_igvn(&new_worklist);
+    igvn = PhaseIterGVN(initial_gvn());
+    igvn.optimize();
+  }
+
   // Perform escape analysis
   if (_do_escape_analysis && ConnectionGraph::has_candidates(this)) {
     if (has_loops()) {
@@ -3181,6 +3195,13 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       n->set_req(MemBarNode::Precedent, top());
     }
     break;
+  case Op_RangeCheck: {
+    RangeCheckNode* rc = n->as_RangeCheck();
+    Node* iff = new IfNode(rc->in(0), rc->in(1), rc->_prob, rc->_fcnt);
+    n->subsume_by(iff, this);
+    frc._tests.push(iff);
+    break;
+  }
   default:
     assert( !n->is_Call(), "" );
     assert( !n->is_Mem(), "" );
@@ -3189,8 +3210,9 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
   }
 
   // Collect CFG split points
-  if (n->is_MultiBranch())
+  if (n->is_MultiBranch() && !n->is_RangeCheck()) {
     frc._tests.push(n);
+  }
 }
 
 //------------------------------final_graph_reshaping_walk---------------------
@@ -3549,7 +3571,7 @@ void Compile::verify_graph_edges(bool no_dead_code) {
 void Compile::verify_barriers() {
   if (UseG1GC) {
     // Verify G1 pre-barriers
-    const int marking_offset = in_bytes(JavaThread::satb_mark_queue_offset() + PtrQueue::byte_offset_of_active());
+    const int marking_offset = in_bytes(JavaThread::satb_mark_queue_offset() + SATBMarkQueue::byte_offset_of_active());
 
     ResourceArea *area = Thread::current()->resource_area();
     Unique_Node_List visited(area);

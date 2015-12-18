@@ -55,17 +55,11 @@ public class T6440528 extends ToolTester {
                                              "package-info.class",
                                              src);
         File expect = new File(test_src, "package-info.class");
-        File got = getUnderlyingFile(cls);
+        File got = fm.asPath(cls).toFile();
         if (!got.equals(expect))
             throw new AssertionError(String.format("Expected: %s; got: %s", expect, got));
         System.err.println("Expected: " + expect);
         System.err.println("Got:      " + got);
-    }
-
-    private File getUnderlyingFile(FileObject o) throws Exception {
-        Field file = o.getClass().getDeclaredField("file"); // assumes RegularFileObject
-        file.setAccessible(true);
-        return ((Path)file.get(o)).toFile();
     }
 
     public static void main(String... args) throws Exception {

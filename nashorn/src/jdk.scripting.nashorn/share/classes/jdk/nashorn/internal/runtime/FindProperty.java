@@ -29,7 +29,7 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 
 import java.lang.invoke.MethodHandle;
-import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.objects.Global;
 

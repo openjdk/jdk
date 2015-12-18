@@ -199,14 +199,11 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
 // IGVN worklist for later cleanup.  Move control-dependent data Nodes on the
 // live path up to the dominating control.
 void PhaseIdealLoop::dominated_by( Node *prevdom, Node *iff, bool flip, bool exclude_loop_predicate ) {
-#ifndef PRODUCT
-  if (VerifyLoopOptimizations && PrintOpto) tty->print_cr("dominating test");
-#endif
-
+  if (VerifyLoopOptimizations && PrintOpto) { tty->print_cr("dominating test"); }
 
   // prevdom is the dominating projection of the dominating test.
   assert( iff->is_If(), "" );
-  assert( iff->Opcode() == Op_If || iff->Opcode() == Op_CountedLoopEnd, "Check this code when new subtype is added");
+  assert(iff->Opcode() == Op_If || iff->Opcode() == Op_CountedLoopEnd || iff->Opcode() == Op_RangeCheck, "Check this code when new subtype is added");
   int pop = prevdom->Opcode();
   assert( pop == Op_IfFalse || pop == Op_IfTrue, "" );
   if (flip) {
@@ -617,9 +614,7 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
       }
     }
     if (phi == NULL)  break;
-#ifndef PRODUCT
-    if (PrintOpto && VerifyLoopOptimizations) tty->print_cr("CMOV");
-#endif
+    if (PrintOpto && VerifyLoopOptimizations) { tty->print_cr("CMOV"); }
     // Move speculative ops
     for (uint j = 1; j < region->req(); j++) {
       Node *proj = region->in(j);
@@ -963,10 +958,9 @@ static bool merge_point_too_heavy(Compile* C, Node* region) {
   }
   int nodes_left = C->max_node_limit() - C->live_nodes();
   if (weight * 8 > nodes_left) {
-#ifndef PRODUCT
-    if (PrintOpto)
+    if (PrintOpto) {
       tty->print_cr("*** Split-if bails out:  %d nodes, region weight %d", C->unique(), weight);
-#endif
+    }
     return true;
   } else {
     return false;
@@ -1123,7 +1117,8 @@ void PhaseIdealLoop::split_if_with_blocks_post( Node *n ) {
   int n_op = n->Opcode();
 
   // Check for an IF being dominated by another IF same test
-  if (n_op == Op_If) {
+  if (n_op == Op_If ||
+      n_op == Op_RangeCheck) {
     Node *bol = n->in(1);
     uint max = bol->outcnt();
     // Check for same test used more than once?
@@ -1489,14 +1484,12 @@ void PhaseIdealLoop::sink_use( Node *use, Node *post_loop ) {
 void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd,
                                  Node* side_by_side_idom) {
 
-#ifndef PRODUCT
   if (C->do_vector_loop() && PrintOpto) {
     const char* mname = C->method()->name()->as_quoted_ascii();
     if (mname != NULL) {
       tty->print("PhaseIdealLoop::clone_loop: for vectorize method %s\n", mname);
     }
   }
-#endif
 
   CloneMap& cm = C->clone_map();
   Dict* dict = cm.dict();
@@ -1945,7 +1938,10 @@ ProjNode* PhaseIdealLoop::insert_if_before_proj(Node* left, bool Signed, BoolTes
   BoolNode* bol = new BoolNode(cmp, relop);
   register_node(bol, loop, proj2, ddepth);
 
-  IfNode* new_if = new IfNode(proj2, bol, iff->_prob, iff->_fcnt);
+  int opcode = iff->Opcode();
+  assert(opcode == Op_If || opcode == Op_RangeCheck, "unexpected opcode");
+  IfNode* new_if = (opcode == Op_If) ? new IfNode(proj2, bol, iff->_prob, iff->_fcnt):
+    new RangeCheckNode(proj2, bol, iff->_prob, iff->_fcnt);
   register_node(new_if, loop, proj2, ddepth);
 
   proj->set_req(0, new_if); // reattach

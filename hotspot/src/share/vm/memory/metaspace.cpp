@@ -3230,36 +3230,6 @@ void Metaspace::global_initialize() {
     SharedMiscDataSize  = align_size_up(SharedMiscDataSize,  max_alignment);
     SharedMiscCodeSize  = align_size_up(SharedMiscCodeSize,  max_alignment);
 
-    // make sure SharedReadOnlySize and SharedReadWriteSize are not less than
-    // the minimum values.
-    if (SharedReadOnlySize < MetaspaceShared::min_ro_size){
-      report_out_of_shared_space(SharedReadOnly);
-    }
-
-    if (SharedReadWriteSize < MetaspaceShared::min_rw_size){
-      report_out_of_shared_space(SharedReadWrite);
-    }
-
-    // the min_misc_data_size and min_misc_code_size estimates are based on
-    // MetaspaceShared::generate_vtable_methods().
-    // The minimum size only accounts for the vtable methods. Any size less than the
-    // minimum required size would cause vm crash when allocating the vtable methods.
-    uint min_misc_data_size = align_size_up(
-      MetaspaceShared::num_virtuals * MetaspaceShared::vtbl_list_size * sizeof(void*), max_alignment);
-
-    if (SharedMiscDataSize < min_misc_data_size) {
-      report_out_of_shared_space(SharedMiscData);
-    }
-
-    uintx min_misc_code_size = align_size_up(
-      (MetaspaceShared::num_virtuals * MetaspaceShared::vtbl_list_size) *
-        (sizeof(void*) + MetaspaceShared::vtbl_method_size) + MetaspaceShared::vtbl_common_code_size,
-          max_alignment);
-
-    if (SharedMiscCodeSize < min_misc_code_size) {
-      report_out_of_shared_space(SharedMiscCode);
-    }
-
     // Initialize with the sum of the shared space sizes.  The read-only
     // and read write metaspace chunks will be allocated out of this and the
     // remainder is the misc code and data chunks.

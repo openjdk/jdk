@@ -59,3 +59,8 @@ JAVAH_CMD:=$(BOOT_JDK)/bin/javah
 JAR_CMD:=$(BOOT_JDK)/bin/jar
 JARSIGNER_CMD:=$(BOOT_JDK)/bin/jarsigner
 SJAVAC_SERVER_JAVA_CMD:=$(JAVA_CMD)
+# When building a 32bit target, make sure the sjavac server flags are compatible
+# with a 32bit JVM.
+ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
+  SJAVAC_SERVER_JAVA_FLAGS:= -Xms256M -Xmx1500M
+endif

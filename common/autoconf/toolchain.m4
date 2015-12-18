@@ -539,6 +539,8 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     # The corresponding ar tool is lib.exe (used to create static libraries)
     AC_CHECK_PROG([AR], [lib],[lib],,,)
+  elif test "x$TOOLCHAIN_TYPE" = xgcc; then
+    BASIC_CHECK_TOOLS(AR, ar gcc-ar)
   else
     BASIC_CHECK_TOOLS(AR, ar)
   fi
@@ -584,7 +586,11 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     # FIXME: we should unify this with the solaris case above.
     BASIC_CHECK_TOOLS(STRIP, strip)
     BASIC_FIXUP_EXECUTABLE(STRIP)
-    BASIC_CHECK_TOOLS(NM, nm)
+    if test "x$TOOLCHAIN_TYPE" = xgcc; then
+      BASIC_CHECK_TOOLS(NM, nm gcc-nm)
+    else
+      BASIC_CHECK_TOOLS(NM, nm)
+    fi
     BASIC_FIXUP_EXECUTABLE(NM)
     GNM="$NM"
     AC_SUBST(GNM)
@@ -717,6 +723,13 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     BASIC_FIXUP_EXECUTABLE(BUILD_CC)
     BASIC_REQUIRE_PROGS(BUILD_CXX, [cl CC g++])
     BASIC_FIXUP_EXECUTABLE(BUILD_CXX)
+    BASIC_PATH_PROGS(BUILD_NM, nm gcc-nm)
+    BASIC_FIXUP_EXECUTABLE(BUILD_NM)
+    BASIC_PATH_PROGS(BUILD_AR, ar gcc-ar)
+    BASIC_FIXUP_EXECUTABLE(BUILD_AR)
+    # Assume the C compiler is the assembler
+    BUILD_AS="$BUILD_CC -c"
+    # Just like for the target compiler, use the compiler as linker
     BUILD_LD="$BUILD_CC"
 
     PATH="$OLDPATH"
@@ -726,15 +739,21 @@ AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
     BUILD_CC="$CC"
     BUILD_CXX="$CXX"
     BUILD_LD="$LD"
+    BUILD_NM="$NM"
+    BUILD_AS="$AS"
     BUILD_SYSROOT_CFLAGS="$SYSROOT_CFLAGS"
     BUILD_SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS"
+    BUILD_AR="$AR"
   fi
 
   AC_SUBST(BUILD_CC)
   AC_SUBST(BUILD_CXX)
   AC_SUBST(BUILD_LD)
+  AC_SUBST(BUILD_NM)
+  AC_SUBST(BUILD_AS)
   AC_SUBST(BUILD_SYSROOT_CFLAGS)
   AC_SUBST(BUILD_SYSROOT_LDFLAGS)
+  AC_SUBST(BUILD_AR)
 ])
 
 # Setup legacy variables that are still needed as alternative ways to refer to

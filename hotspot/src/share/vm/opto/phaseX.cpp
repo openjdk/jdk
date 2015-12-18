@@ -406,7 +406,7 @@ void NodeHash::operator=(const NodeHash& nh) {
 //=============================================================================
 //------------------------------PhaseRemoveUseless-----------------------------
 // 1) Use a breadthfirst walk to collect useful nodes reachable from root.
-PhaseRemoveUseless::PhaseRemoveUseless( PhaseGVN *gvn, Unique_Node_List *worklist ) : Phase(Remove_Useless),
+PhaseRemoveUseless::PhaseRemoveUseless(PhaseGVN *gvn, Unique_Node_List *worklist, PhaseNumber phase_num) : Phase(phase_num),
   _useful(Thread::current()->resource_area()) {
 
   // Implementation requires 'UseLoopSafepoints == true' and an edge from root
@@ -441,6 +441,82 @@ PhaseRemoveUseless::PhaseRemoveUseless( PhaseGVN *gvn, Unique_Node_List *worklis
       }
     }
   }
+}
+
+//=============================================================================
+//------------------------------PhaseRenumberLive------------------------------
+// First, remove useless nodes (equivalent to identifying live nodes).
+// Then, renumber live nodes.
+//
+// The set of live nodes is returned by PhaseRemoveUseless in the _useful structure.
+// If the number of live nodes is 'x' (where 'x' == _useful.size()), then the
+// PhaseRenumberLive updates the node ID of each node (the _idx field) with a unique
+// value in the range [0, x).
+//
+// At the end of the PhaseRenumberLive phase, the compiler's count of unique nodes is
+// updated to 'x' and the list of dead nodes is reset (as there are no dead nodes).
+//
+// The PhaseRenumberLive phase updates two data structures with the new node IDs.
+// (1) The worklist is used by the PhaseIterGVN phase to identify nodes that must be
+// processed. A new worklist (with the updated node IDs) is returned in 'new_worklist'.
+// (2) Type information (the field PhaseGVN::_types) maps type information to each
+// node ID. The mapping is updated to use the new node IDs as well. Updated type
+// information is returned in PhaseGVN::_types.
+//
+// The PhaseRenumberLive phase does not preserve the order of elements in the worklist.
+//
+// Other data structures used by the compiler are not updated. The hash table for value
+// numbering (the field PhaseGVN::_table) is not updated because computing the hash
+// values is not based on node IDs. The field PhaseGVN::_nodes is not updated either
+// because it is empty wherever PhaseRenumberLive is used.
+PhaseRenumberLive::PhaseRenumberLive(PhaseGVN* gvn,
+                                     Unique_Node_List* worklist, Unique_Node_List* new_worklist,
+                                     PhaseNumber phase_num) :
+  PhaseRemoveUseless(gvn, worklist, Remove_Useless_And_Renumber_Live) {
+
+  assert(RenumberLiveNodes, "RenumberLiveNodes must be set to true for node renumbering to take place");
+  assert(C->live_nodes() == _useful.size(), "the number of live nodes must match the number of useful nodes");
+  assert(gvn->nodes_size() == 0, "GVN must not contain any nodes at this point");
+
+  uint old_unique_count = C->unique();
+  uint live_node_count = C->live_nodes();
+  uint worklist_size = worklist->size();
+
+  // Storage for the updated type information.
+  Type_Array new_type_array(C->comp_arena());
+
+  // Iterate over the set of live nodes.
+  uint current_idx = 0; // The current new node ID. Incremented after every assignment.
+  for (uint i = 0; i < _useful.size(); i++) {
+    Node* n = _useful.at(i);
+    const Type* type = gvn->type_or_null(n);
+    new_type_array.map(current_idx, type);
+
+    bool in_worklist = false;
+    if (worklist->member(n)) {
+      in_worklist = true;
+    }
+
+    n->set_idx(current_idx); // Update node ID.
+
+    if (in_worklist) {
+      new_worklist->push(n);
+    }
+
+    current_idx++;
+  }
+
+  assert(worklist_size == new_worklist->size(), "the new worklist must have the same size as the original worklist");
+  assert(live_node_count == current_idx, "all live nodes must be processed");
+
+  // Replace the compiler's type information with the updated type information.
+  gvn->replace_types(new_type_array);
+
+  // Update the unique node count of the compilation to the number of currently live nodes.
+  C->set_unique(live_node_count);
+
+  // Set the dead node count to 0 and reset dead node list.
+  C->reset_dead_node_list();
 }
 
 

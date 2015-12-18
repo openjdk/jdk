@@ -61,15 +61,27 @@ public class TestAndnI {
         }
 
         public int intExpr(int src1, Expr.MemI src2) {
-            return ~src1 & src2.value;
+            if (src2 != null) {
+                return ~src1 & src2.value;
+            } else {
+                return 0;
+            }
         }
 
         public int intExpr(Expr.MemI src1, int src2) {
-            return ~src1.value & src2;
+            if (src1 != null) {
+                return ~src1.value & src2;
+            } else {
+                return 0;
+            }
         }
 
         public int intExpr(Expr.MemI src1, Expr.MemI src2) {
-            return ~src1.value & src2.value;
+            if (src1 != null && src2 != null) {
+                return ~src1.value & src2.value;
+            } else {
+                return 0;
+            }
         }
     }
 
@@ -80,15 +92,27 @@ public class TestAndnI {
         }
 
         public int intExpr(int src1, Expr.MemI src2) {
-            return src1 & ~src2.value;
+            if (src2 != null) {
+                return src1 & ~src2.value;
+            } else {
+                return 0;
+            }
         }
 
         public int intExpr(Expr.MemI src1, int src2) {
-            return src1.value & ~src2;
+            if (src1 != null) {
+                return src1.value & ~src2;
+            } else {
+                return 0;
+            }
         }
 
         public int intExpr(Expr.MemI src1, Expr.MemI src2) {
-            return src1.value & ~src2.value;
+            if (src1 != null && src2 != null) {
+                return src1.value & ~src2.value;
+            } else {
+                return 0;
+            }
         }
     }
 }

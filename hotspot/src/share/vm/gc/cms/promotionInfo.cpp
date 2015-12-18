@@ -233,41 +233,11 @@ void PromotionInfo::startTrackingPromotions() {
   _tracking = true;
 }
 
-#define CMSPrintPromoBlockInfo 1
-
 void PromotionInfo::stopTrackingPromotions(uint worker_id) {
   assert(_spoolHead == _spoolTail && _firstIndex == _nextIndex,
          "spooling inconsistency?");
   _firstIndex = _nextIndex = 1;
   _tracking = false;
-  if (CMSPrintPromoBlockInfo > 1) {
-    print_statistics(worker_id);
-  }
-}
-
-void PromotionInfo::print_statistics(uint worker_id) const {
-  assert(_spoolHead == _spoolTail && _firstIndex == _nextIndex,
-         "Else will undercount");
-  assert(CMSPrintPromoBlockInfo > 0, "Else unnecessary call");
-  // Count the number of blocks and slots in the free pool
-  size_t slots  = 0;
-  size_t blocks = 0;
-  for (SpoolBlock* cur_spool = _spareSpool;
-       cur_spool != NULL;
-       cur_spool = cur_spool->nextSpoolBlock) {
-    // the first entry is just a self-pointer; indices 1 through
-    // bufferSize - 1 are occupied (thus, bufferSize - 1 slots).
-    assert((void*)cur_spool->displacedHdr == (void*)&cur_spool->displacedHdr,
-           "first entry of displacedHdr should be self-referential");
-    slots += cur_spool->bufferSize - 1;
-    blocks++;
-  }
-  if (_spoolHead != NULL) {
-    slots += _spoolHead->bufferSize - 1;
-    blocks++;
-  }
-  gclog_or_tty->print_cr(" [worker %d] promo_blocks = " SIZE_FORMAT ", promo_slots = " SIZE_FORMAT,
-                         worker_id, blocks, slots);
 }
 
 // When _spoolTail is not NULL, then the slot <_spoolTail, _nextIndex>
