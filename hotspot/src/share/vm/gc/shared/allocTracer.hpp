@@ -34,4 +34,4 @@ class AllocTracer : AllStatic {
     static void send_allocation_in_new_tlab_event(KlassHandle klass, size_t tlab_size, size_t alloc_size);
 };
 
-#endif /* SHARE_VM_GC_SHARED_ALLOCTRACER_HPP */
+#endif // SHARE_VM_GC_SHARED_ALLOCTRACER_HPP
