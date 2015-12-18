@@ -28,7 +28,7 @@
  * @library /testlibrary
  * @modules java.base/sun.misc
  *          java.management
- * @run main DefaultMethodsTest
+ * @run driver DefaultMethodsTest
  */
 
 import jdk.test.lib.*;

@@ -31,6 +31,8 @@
 #include "runtime/handles.hpp"
 #include "utilities/macros.hpp"
 
+class ClassFileParser;
+
 // An InstanceMirrorKlass is a specialized InstanceKlass for
 // java.lang.Class instances.  These instances are special because
 // they contain the static fields of the class in addition to the
@@ -46,10 +48,7 @@ class InstanceMirrorKlass: public InstanceKlass {
  private:
   static int _offset_of_static_fields;
 
-  // Constructor
-  InstanceMirrorKlass(int vtable_len, int itable_len, int static_field_size, int nonstatic_oop_map_size, ReferenceType rt, AccessFlags access_flags,  bool is_anonymous)
-    : InstanceKlass(vtable_len, itable_len, static_field_size, nonstatic_oop_map_size,
-                    InstanceKlass::_misc_kind_mirror, rt, access_flags, is_anonymous) {}
+  InstanceMirrorKlass(const ClassFileParser& parser) : InstanceKlass(parser, InstanceKlass::_misc_kind_mirror) {}
 
  public:
   InstanceMirrorKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for CDS"); }
