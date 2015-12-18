@@ -27,7 +27,7 @@ package sun.security.x509;
 import java.io.IOException;
 import java.math.BigInteger;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import sun.security.util.*;
 
 /**

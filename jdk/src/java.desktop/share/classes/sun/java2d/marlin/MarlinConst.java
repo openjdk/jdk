@@ -40,6 +40,8 @@ interface MarlinConst {
     // log misc.Unsafe alloc/realloc/free
     static final boolean logUnsafeMalloc = enableLogs
         && MarlinProperties.isLogUnsafeMalloc();
+    // do check unsafe alignment:
+    static final boolean doCheckUnsafe = false;
 
     // do statistics
     static final boolean doStats = enableLogs && MarlinProperties.isDoStats();

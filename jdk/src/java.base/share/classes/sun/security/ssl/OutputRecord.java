@@ -30,7 +30,7 @@ import java.nio.*;
 import java.util.Arrays;
 
 import javax.net.ssl.SSLException;
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 
 
 /**

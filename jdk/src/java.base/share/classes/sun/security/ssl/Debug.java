@@ -29,7 +29,7 @@ import java.io.PrintStream;
 import java.security.AccessController;
 import java.util.Locale;
 
-import sun.misc.HexDumpEncoder;
+import sun.security.util.HexDumpEncoder;
 import java.nio.ByteBuffer;
 
 import sun.security.action.GetPropertyAction;
