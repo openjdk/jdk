@@ -35,7 +35,7 @@
 void OSThread::pd_initialize() {
   assert(this != NULL, "check");
   _thread_id        = 0;
-  _pthread_id       = 0;
+  _kernel_thread_id = 0;
   _siginfo = NULL;
   _ucontext = NULL;
   _expanding_stack = 0;

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/compactHashtable.inline.hpp"
 #include "classfile/sharedClassUtil.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
