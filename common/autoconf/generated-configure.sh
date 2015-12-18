@@ -4728,7 +4728,7 @@ VS_SDK_PLATFORM_NAME_2013=
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1450246539
+DATE_WHEN_GENERATED=1450400041
 
 ###############################################################################
 #
@@ -47677,7 +47677,10 @@ $as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
 
     ENABLE_DEBUG_SYMBOLS=true
     ZIP_DEBUGINFO_FILES=true
-    DEBUG_BINARIES=true
+    # -g is already added by ENABLE_DEBUG_SYMBOLS and the hotspot makefiles
+    # will basically do slowdebug builds when DEBUG_BINARIES is set for
+    # fastdebug builds
+    DEBUG_BINARIES=false
     STRIP_POLICY=min_strip
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xnone; then
     ENABLE_DEBUG_SYMBOLS=false
@@ -47687,6 +47690,8 @@ $as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
   elif test "x$NATIVE_DEBUG_SYMBOLS" = xinternal; then
     ENABLE_DEBUG_SYMBOLS=false  # -g option only
     ZIP_DEBUGINFO_FILES=false
+    # Fastdebug builds with this setting will essentially be slowdebug
+    # in hotspot.
     DEBUG_BINARIES=true
     STRIP_POLICY=no_strip
     STRIP=""
@@ -47702,7 +47707,10 @@ $as_echo "$NATIVE_DEBUG_SYMBOLS" >&6; }
 
     ENABLE_DEBUG_SYMBOLS=true
     ZIP_DEBUGINFO_FILES=false
-    DEBUG_BINARIES=true
+    # -g is already added by ENABLE_DEBUG_SYMBOLS and the hotspot makefiles
+    # will basically do slowdebug builds when DEBUG_BINARIES is set for
+    # fastdebug builds
+    DEBUG_BINARIES=false
     STRIP_POLICY=min_strip
   else
     as_fn_error $? "Allowed native debug symbols are: none, internal, external, zipped" "$LINENO" 5
