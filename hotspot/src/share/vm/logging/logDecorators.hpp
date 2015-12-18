@@ -73,7 +73,12 @@ class LogDecorators VALUE_OBJ_CLASS_SPEC {
     return 1 << decorator;
   }
 
+  LogDecorators(uint mask) : _decorators(mask) {
+  }
+
  public:
+  static const LogDecorators None;
+
   LogDecorators() : _decorators(DefaultDecoratorsMask) {
   };
 

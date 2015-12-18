@@ -60,6 +60,7 @@ public abstract class AudioFileReader {
      * @throws UnsupportedAudioFileException if the stream does not point to
      *         valid audio file data recognized by the system
      * @throws IOException if an I/O exception occurs
+     * @throws NullPointerException if {@code stream} is {@code null}
      * @see InputStream#markSupported
      * @see InputStream#mark
      */
@@ -77,6 +78,7 @@ public abstract class AudioFileReader {
      * @throws UnsupportedAudioFileException if the URL does not point to valid
      *         audio file data recognized by the system
      * @throws IOException if an I/O exception occurs
+     * @throws NullPointerException if {@code url} is {@code null}
      */
     public abstract AudioFileFormat getAudioFileFormat(URL url)
             throws UnsupportedAudioFileException, IOException;
@@ -92,6 +94,7 @@ public abstract class AudioFileReader {
      * @throws UnsupportedAudioFileException if the {@code File} does not point
      *         to valid audio file data recognized by the system
      * @throws IOException if an I/O exception occurs
+     * @throws NullPointerException if {@code file} is {@code null}
      */
     public abstract AudioFileFormat getAudioFileFormat(File file)
             throws UnsupportedAudioFileException, IOException;
@@ -112,6 +115,7 @@ public abstract class AudioFileReader {
      * @throws UnsupportedAudioFileException if the stream does not point to
      *         valid audio file data recognized by the system
      * @throws IOException if an I/O exception occurs
+     * @throws NullPointerException if {@code stream} is {@code null}
      * @see InputStream#markSupported
      * @see InputStream#mark
      */
@@ -129,6 +133,7 @@ public abstract class AudioFileReader {
      * @throws UnsupportedAudioFileException if the URL does not point to valid
      *         audio file data recognized by the system
      * @throws IOException if an I/O exception occurs
+     * @throws NullPointerException if {@code url} is {@code null}
      */
     public abstract AudioInputStream getAudioInputStream(URL url)
             throws UnsupportedAudioFileException, IOException;
@@ -144,6 +149,7 @@ public abstract class AudioFileReader {
      * @throws UnsupportedAudioFileException if the {@code File} does not point
      *         to valid audio file data recognized by the system
      * @throws IOException if an I/O exception occurs
+     * @throws NullPointerException if {@code file} is {@code null}
      */
     public abstract AudioInputStream getAudioInputStream(File file)
             throws UnsupportedAudioFileException, IOException;

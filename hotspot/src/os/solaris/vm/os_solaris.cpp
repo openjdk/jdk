@@ -997,9 +997,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
 }
 
 // defined for >= Solaris 10. This allows builds on earlier versions
-// of Solaris to take advantage of the newly reserved Solaris JVM signals
-// With SIGJVM1, SIGJVM2, ASYNC_SIGNAL is SIGJVM2 and -XX:+UseAltSigs does
-// nothing since these should have no conflict. Previously INTERRUPT_SIGNAL
+// of Solaris to take advantage of the newly reserved Solaris JVM signals.
+// With SIGJVM1, SIGJVM2, ASYNC_SIGNAL is SIGJVM2. Previously INTERRUPT_SIGNAL
 // was SIGJVM1.
 //
 #if !defined(SIGJVM1)
@@ -1053,13 +1052,9 @@ void os::Solaris::signal_sets_init() {
   sigaddset(&unblocked_sigs, SIGBUS);
   sigaddset(&unblocked_sigs, SIGFPE);
 
-  if (isJVM1available) {
-    os::Solaris::set_SIGasync(SIGJVM2);
-  } else if (UseAltSigs) {
-    os::Solaris::set_SIGasync(ALT_ASYNC_SIGNAL);
-  } else {
-    os::Solaris::set_SIGasync(ASYNC_SIGNAL);
-  }
+  // Always true on Solaris 10+
+  guarantee(isJVM1available(), "SIGJVM1/2 missing!");
+  os::Solaris::set_SIGasync(SIGJVM2);
 
   sigaddset(&unblocked_sigs, os::Solaris::SIGasync());
 
@@ -3616,7 +3611,7 @@ void os::Solaris::SR_handler(Thread* thread, ucontext_t* uc) {
 void os::print_statistics() {
 }
 
-int os::message_box(const char* title, const char* message) {
+bool os::message_box(const char* title, const char* message) {
   int i;
   fdStream err(defaultStream::error_fd());
   for (i = 0; i < 78; i++) err.print_raw("=");
@@ -3922,7 +3917,7 @@ void os::Solaris::set_signal_handler(int sig, bool set_installed,
         // save the old handler in jvm
         save_preinstalled_handler(sig, oldAct);
       } else {
-        vm_exit_during_initialization("Signal chaining not allowed for VM interrupt signal, try -XX:+UseAltSigs.");
+        vm_exit_during_initialization("Signal chaining not allowed for VM interrupt signal.");
       }
       // libjsig also interposes the sigaction() call below and saves the
       // old sigaction on it own.
@@ -3991,7 +3986,7 @@ void os::run_periodic_checks() {
     DO_SIGNAL_CHECK(BREAK_SIGNAL);
   }
 
-  // See comments above for using JVM1/JVM2 and UseAltSigs
+  // See comments above for using JVM1/JVM2
   DO_SIGNAL_CHECK(os::Solaris::SIGasync());
 
 }
@@ -5809,3 +5804,27 @@ void TestReserveMemorySpecial_test() {
   // No tests available for this platform
 }
 #endif
+
+bool os::start_debugging(char *buf, int buflen) {
+  int len = (int)strlen(buf);
+  char *p = &buf[len];
+
+  jio_snprintf(p, buflen-len,
+               "\n\n"
+               "Do you want to debug the problem?\n\n"
+               "To debug, run 'dbx - %d'; then switch to thread " INTX_FORMAT "\n"
+               "Enter 'yes' to launch dbx automatically (PATH must include dbx)\n"
+               "Otherwise, press RETURN to abort...",
+               os::current_process_id(), os::current_thread_id());
+
+  bool yes = os::message_box("Unexpected Error", buf);
+
+  if (yes) {
+    // yes, user asked VM to launch debugger
+    jio_snprintf(buf, sizeof(buf), "dbx - %d", os::current_process_id());
+
+    os::fork_and_exec(buf);
+    yes = false;
+  }
+  return yes;
+}

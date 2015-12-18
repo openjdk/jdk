@@ -316,6 +316,9 @@ inline int Node::Init(int req) {
 // Create a Node, with a given number of required edges.
 Node::Node(uint req)
   : _idx(Init(req))
+#ifdef ASSERT
+  , _parse_idx(_idx)
+#endif
 {
   assert( req < Compile::current()->max_node_limit() - NodeLimitFudgeFactor, "Input limit exceeded" );
   debug_only( verify_construction() );
@@ -335,6 +338,9 @@ Node::Node(uint req)
 //------------------------------Node-------------------------------------------
 Node::Node(Node *n0)
   : _idx(Init(1))
+#ifdef ASSERT
+  , _parse_idx(_idx)
+#endif
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
@@ -347,6 +353,9 @@ Node::Node(Node *n0)
 //------------------------------Node-------------------------------------------
 Node::Node(Node *n0, Node *n1)
   : _idx(Init(2))
+#ifdef ASSERT
+  , _parse_idx(_idx)
+#endif
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
@@ -361,6 +370,9 @@ Node::Node(Node *n0, Node *n1)
 //------------------------------Node-------------------------------------------
 Node::Node(Node *n0, Node *n1, Node *n2)
   : _idx(Init(3))
+#ifdef ASSERT
+  , _parse_idx(_idx)
+#endif
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
@@ -377,6 +389,9 @@ Node::Node(Node *n0, Node *n1, Node *n2)
 //------------------------------Node-------------------------------------------
 Node::Node(Node *n0, Node *n1, Node *n2, Node *n3)
   : _idx(Init(4))
+#ifdef ASSERT
+  , _parse_idx(_idx)
+#endif
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
@@ -395,6 +410,9 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3)
 //------------------------------Node-------------------------------------------
 Node::Node(Node *n0, Node *n1, Node *n2, Node *n3, Node *n4)
   : _idx(Init(5))
+#ifdef ASSERT
+  , _parse_idx(_idx)
+#endif
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
@@ -416,6 +434,9 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3, Node *n4)
 Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
                      Node *n4, Node *n5)
   : _idx(Init(6))
+#ifdef ASSERT
+  , _parse_idx(_idx)
+#endif
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
@@ -439,6 +460,9 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
 Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
                      Node *n4, Node *n5, Node *n6)
   : _idx(Init(7))
+#ifdef ASSERT
+  , _parse_idx(_idx)
+#endif
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);

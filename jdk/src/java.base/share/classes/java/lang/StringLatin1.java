@@ -36,6 +36,7 @@ import jdk.internal.HotSpotIntrinsicCandidate;
 import static java.lang.String.LATIN1;
 import static java.lang.String.UTF16;
 import static java.lang.String.checkOffset;
+import static java.lang.String.checkBoundsOffCount;
 
 final class StringLatin1 {
 
@@ -523,6 +524,8 @@ final class StringLatin1 {
     // inflatedCopy byte[] -> byte[]
     @HotSpotIntrinsicCandidate
     public static void inflate(byte[] src, int srcOff, byte[] dst, int dstOff, int len) {
+        // We need a range check here because 'putChar' has no checks
+        checkBoundsOffCount(dstOff, len, dst.length);
         for (int i = 0; i < len; i++) {
             StringUTF16.putChar(dst, dstOff++, src[srcOff++] & 0xff);
         }
@@ -583,18 +586,5 @@ final class StringLatin1 {
         public int characteristics() {
             return cs;
         }
-    }
-
-    ////////////////////////////////////////////////////////////////
-
-    public static void getCharsSB(byte[] val, int srcBegin, int srcEnd, char dst[], int dstBegin) {
-        checkOffset(srcEnd, val.length);
-        getChars(val, srcBegin, srcEnd, dst, dstBegin);
-    }
-
-    public static void inflateSB(byte[] val, byte[] dst, int dstOff, int count) {
-        checkOffset(count, val.length);
-        checkOffset(dstOff + count, dst.length >> 1);  // dst is utf16
-        inflate(val, 0, dst, dstOff, count);
     }
 }

@@ -81,7 +81,8 @@ void ConversionStub::emit_code(LIR_Assembler* ce) {
 
 void CounterOverflowStub::emit_code(LIR_Assembler* ce) {
   __ bind(_entry);
-  ce->store_parameter(_method->as_register(), 1);
+  Metadata *m = _method->as_constant_ptr()->as_metadata();
+  ce->store_parameter(m, 1);
   ce->store_parameter(_bci, 0);
   __ call(RuntimeAddress(Runtime1::entry_for(Runtime1::counter_overflow_id)));
   ce->add_call_info_here(_info);

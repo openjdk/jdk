@@ -31,13 +31,13 @@
 var overloadedSetter = new (Java.type("jdk.nashorn.test.models.OverloadedSetter"));
 
 Assert.assertEquals(String(overloadedSetter.foo),
-  "[jdk.internal.dynalink.beans.OverloadedDynamicMethod\n" +
+  "[jdk.dynalink.beans.OverloadedDynamicMethod\n" +
   " String jdk.nashorn.test.models.OverloadedSetter.foo(String)\n" +
   " void jdk.nashorn.test.models.OverloadedSetter.foo(int)\n" +
   "]");
 
 Assert.assertEquals(String(overloadedSetter.setColor),
-  "[jdk.internal.dynalink.beans.OverloadedDynamicMethod\n" +
+  "[jdk.dynalink.beans.OverloadedDynamicMethod\n" +
   " void jdk.nashorn.test.models.OverloadedSetter.setColor(int)\n" +
   " void jdk.nashorn.test.models.OverloadedSetter.setColor(String)\n" +
   "]");

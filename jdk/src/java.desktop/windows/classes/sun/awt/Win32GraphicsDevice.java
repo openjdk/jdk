@@ -37,13 +37,19 @@ import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.geom.Point2D;
 import java.awt.image.ColorModel;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.awt.peer.WindowPeer;
+import java.security.AccessController;
 import sun.awt.windows.WWindowPeer;
+import sun.java2d.SunGraphicsEnvironment;
 import sun.java2d.opengl.WGLGraphicsConfig;
 import sun.java2d.windows.WindowsFlags;
+import sun.security.action.GetPropertyAction;
+import static sun.awt.Win32GraphicsEnvironment.debugScaleX;
+import static sun.awt.Win32GraphicsEnvironment.debugScaleY;
 
 /**
  * This is an implementation of a GraphicsDevice object for a single
@@ -81,6 +87,9 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     // activation/deactivation listener for the full-screen window
     private WindowListener fsWindowListener;
 
+    private float scaleX;
+    private float scaleY;
+
     static {
 
         // 4455041 - Even when ddraw is disabled, ddraw.dll is loaded when
@@ -97,6 +106,10 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     private static native void initIDs();
 
     native void initDevice(int screen);
+    native void initNativeScale(int screen);
+    native void setNativeScale(int screen, float scaleX, float scaleY);
+    native float getNativeScaleX(int screen);
+    native float getNativeScaleY(int screen);
 
     public Win32GraphicsDevice(int screennum) {
         this.screen = screennum;
@@ -109,6 +122,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
         valid = true;
 
         initDevice(screennum);
+        initScaleFactors();
     }
 
     /**
@@ -126,6 +140,31 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
      */
     public int getScreen() {
         return screen;
+    }
+
+    public float getDefaultScaleX() {
+        return scaleX;
+    }
+
+    public float getDefaultScaleY() {
+        return scaleY;
+    }
+
+    private void initScaleFactors() {
+        if (SunGraphicsEnvironment.isUIScaleEnabled()) {
+            if (debugScaleX > 0 && debugScaleY > 0) {
+                scaleX = debugScaleX;
+                scaleY = debugScaleY;
+                setNativeScale(screen, scaleX, scaleY);
+            } else {
+                initNativeScale(screen);
+                scaleX = getNativeScaleX(screen);
+                scaleY = getNativeScaleY(screen);
+            }
+        } else {
+            scaleX = 1;
+            scaleY = 1;
+        }
     }
 
     /**
@@ -486,6 +525,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
         configs = null;
         // pass on to all top-level windows on this display
         topLevels.notifyListeners();
+        initScaleFactors();
     }
 
     /**

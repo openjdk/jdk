@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,7 @@ import com.sun.tools.javac.code.Printer;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Type.CapturedType;
-import com.sun.tools.javac.file.BaseFileObject;
+import com.sun.tools.javac.file.PathFileObject;
 import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.Pretty;
@@ -144,10 +144,10 @@ public abstract class AbstractDiagnosticFormatter implements DiagnosticFormatter
             throw new IllegalArgumentException(); // d should have source set
         if (fullname)
             return fo.getName();
-        else if (fo instanceof BaseFileObject)
-            return ((BaseFileObject) fo).getShortName();
+        else if (fo instanceof PathFileObject)
+            return ((PathFileObject) fo).getShortName();
         else
-            return BaseFileObject.getSimpleName(fo);
+            return PathFileObject.getSimpleName(fo);
     }
 
     /**

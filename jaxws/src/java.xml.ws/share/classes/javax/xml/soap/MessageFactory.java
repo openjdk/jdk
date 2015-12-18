@@ -68,27 +68,15 @@ import java.io.InputStream;
  */
 public abstract class MessageFactory {
 
-    static final String DEFAULT_MESSAGE_FACTORY
+    private static final String DEFAULT_MESSAGE_FACTORY
         = "com.sun.xml.internal.messaging.saaj.soap.ver1_1.SOAPMessageFactory1_1Impl";
-
-    static private final String MESSAGE_FACTORY_PROPERTY
-        = "javax.xml.soap.MessageFactory";
 
     /**
      * Creates a new {@code MessageFactory} object that is an instance
-     * of the default implementation (SOAP 1.1),
+     * of the default implementation (SOAP 1.1).
      *
-     * This method uses the following ordered lookup procedure to determine the MessageFactory implementation class to load:
-     * <UL>
-     *  <LI> Use the javax.xml.soap.MessageFactory system property.
-     *  <LI> Use the properties file "lib/jaxm.properties" in the JRE directory. This configuration file is in standard
-     * java.util.Properties format and contains the fully qualified name of the implementation class with the key being the
-     * system property defined above.
-     *  <LI> Use the Services API (as detailed in the JAR specification), if available, to determine the classname. The Services API
-     * will look for a classname in the file META-INF/services/javax.xml.soap.MessageFactory in jars available to the runtime.
-     *  <LI> Use the SAAJMetaFactory instance to locate the MessageFactory implementation class.
-     * </UL>
-
+     * This method uses the lookup procedure specified in {@link javax.xml.soap} to locate and load the
+     * {@link javax.xml.soap.MessageFactory} class.
      *
      * @return a new instance of a {@code MessageFactory}
      *
@@ -103,7 +91,7 @@ public abstract class MessageFactory {
 
         try {
             MessageFactory factory = (MessageFactory) FactoryFinder.find(
-                    MESSAGE_FACTORY_PROPERTY,
+                    MessageFactory.class,
                     DEFAULT_MESSAGE_FACTORY,
                     false);
 

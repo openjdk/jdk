@@ -55,7 +55,7 @@ VPATH += $(Src_Dirs_V:%=%:)
 Src_Dirs_I += $(GENERATED)
 INCLUDES += $(Src_Dirs_I:%=-I%)
 
-# SYMFLAG is used by {dtrace,jsig,saproc}.make.
+# SYMFLAG is used by {dtrace,jsig}.make.
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
   # always build with debug info when we can create .debuginfo files
   # and disable 'lazy debug info' so the .so has everything.
@@ -343,13 +343,10 @@ install_jvm: $(LIBJVM)
 # Signal interposition library
 include $(MAKEFILES_DIR)/jsig.make
 
-# Serviceability agent
-include $(MAKEFILES_DIR)/saproc.make
-
 #----------------------------------------------------------------------
 
-build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(LIBJVM_DTRACE) $(BUILDLIBSAPROC) dtraceCheck
+build: $(LIBJVM) $(LAUNCHER) $(LIBJSIG) $(LIBJVM_DB) $(LIBJVM_DTRACE) dtraceCheck
 
-install: install_jvm install_jsig install_saproc
+install: install_jvm install_jsig
 
 .PHONY: default build install install_jvm

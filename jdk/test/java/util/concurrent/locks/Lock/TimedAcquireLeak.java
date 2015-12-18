@@ -40,7 +40,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Reader;
 import java.lang.ref.WeakReference;
-import java.util.Random;
+import java.util.SplittableRandom;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -187,7 +187,7 @@ public class TimedAcquireLeak {
         final String childClassName = Job.class.getName();
         final String classToCheckForLeaks = Job.classToCheckForLeaks();
         final String uniqueID =
-            String.valueOf(new Random().nextInt(Integer.MAX_VALUE));
+            String.valueOf(new SplittableRandom().nextInt(Integer.MAX_VALUE));
 
         final String[] jobCmd = {
             java, "-Xmx8m", "-XX:+UsePerfData",
@@ -270,7 +270,7 @@ public class TimedAcquireLeak {
             for (int i = 0; i < threads; i++)
                 new Thread() { public void run() {
                     try {
-                        final Random rnd = new Random();
+                        final SplittableRandom rnd = new SplittableRandom();
                         for (int j = 0; j < iterations; j++) {
                             if (j == iterations/10 || j == iterations - 1) {
                                 cb.await(); // Quiesce

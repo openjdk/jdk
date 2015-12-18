@@ -32,7 +32,7 @@
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
  * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
  * 7067045 7014640 7189363 8007395 8013252 8013254 8012646 8023647 6559590
- * 8027645 8035076 8039124 8035975 8074678 6854417
+ * 8027645 8035076 8039124 8035975 8074678 6854417 8143854
  * @library /lib/testlibrary
  * @build jdk.testlibrary.*
  * @run main RegExTest
@@ -3568,7 +3568,7 @@ public class RegExTest {
 
                 // Avoid patterns that start and end with the same substring
                 // See JDK-6854417
-                for (int x=1; x <patternLength; x++) {
+                for (int x=1; x < pattern.length(); x++) {
                     if (pattern.startsWith(pattern.substring(x)))
                         continue retry;
                 }

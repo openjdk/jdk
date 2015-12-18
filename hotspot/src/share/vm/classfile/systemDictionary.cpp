@@ -322,6 +322,17 @@ Klass* SystemDictionary::resolve_super_or_fail(Symbol* child_name,
                                                  Handle protection_domain,
                                                  bool is_superclass,
                                                  TRAPS) {
+#if INCLUDE_CDS
+  if (DumpSharedSpaces) {
+    // Special processing for CDS dump time.
+    Klass* k = SystemDictionaryShared::dump_time_resolve_super_or_fail(child_name,
+        class_name, class_loader, protection_domain, is_superclass, CHECK_NULL);
+    if (k) {
+      return k;
+    }
+  }
+#endif // INCLUDE_CDS
+
   // Double-check, if child class is already loaded, just return super-class,interface
   // Don't add a placedholder if already loaded, i.e. already in system dictionary
   // Make sure there's a placeholder for the *child* before resolving.
@@ -1079,12 +1090,30 @@ Klass* SystemDictionary::resolve_from_stream(Symbol* class_name,
   //
   // Note: "name" is updated.
 
-  instanceKlassHandle k = ClassFileParser(st).parseClassFile(class_name,
-                                                             loader_data,
-                                                             protection_domain,
-                                                             parsed_name,
-                                                             verify,
-                                                             THREAD);
+  instanceKlassHandle k;
+
+#if INCLUDE_CDS
+  k = SystemDictionaryShared::lookup_from_stream(class_name,
+                                                 class_loader,
+                                                 protection_domain,
+                                                 st,
+                                                 verify,
+                                                 CHECK_NULL);
+#endif
+
+  if (k.not_null()) {
+    parsed_name = k->name();
+  } else {
+    if (st->buffer() == NULL) {
+      return NULL;
+    }
+    k = ClassFileParser(st).parseClassFile(class_name,
+                                           loader_data,
+                                           protection_domain,
+                                           parsed_name,
+                                           verify,
+                                           THREAD);
+  }
 
   const char* pkg = "java/";
   if (!HAS_PENDING_EXCEPTION &&
@@ -1201,8 +1230,13 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
 
     if (ik->super() != NULL) {
       Symbol*  cn = ik->super()->name();
-      resolve_super_or_fail(class_name, cn,
-                            class_loader, protection_domain, true, CHECK_(nh));
+      Klass *s = resolve_super_or_fail(class_name, cn,
+                                       class_loader, protection_domain, true, CHECK_(nh));
+      if (s != ik->super()) {
+        // The dynamically resolved super class is not the same as the one we used during dump time,
+        // so we cannot use ik.
+        return nh;
+      }
     }
 
     Array<Klass*>* interfaces = ik->local_interfaces();
@@ -1215,7 +1249,12 @@ instanceKlassHandle SystemDictionary::load_shared_class(instanceKlassHandle ik,
       // reinitialized yet (they will be once the interface classes
       // are loaded)
       Symbol*  name  = k->name();
-      resolve_super_or_fail(class_name, name, class_loader, protection_domain, false, CHECK_(nh));
+      Klass* i = resolve_super_or_fail(class_name, name, class_loader, protection_domain, false, CHECK_(nh));
+      if (k != i) {
+        // The dynamically resolved interface class is not the same as the one we used during dump time,
+        // so we cannot use ik.
+        return nh;
+      }
     }
 
     // Adjust methods to recover missing data.  They need addresses for
@@ -2285,7 +2324,7 @@ methodHandle SystemDictionary::find_method_handle_intrinsic(vmIntrinsics::ID iid
       // Check if have the compiled code.
       if (!m->has_compiled_code()) {
         THROW_MSG_(vmSymbols::java_lang_VirtualMachineError(),
-                   "out of space in CodeCache for method handle intrinsic", empty);
+                   "Out of space in CodeCache for method handle intrinsic", empty);
       }
     }
     // Now grab the lock.  We might have to throw away the new method,

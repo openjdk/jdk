@@ -51,15 +51,12 @@ public class IncCompileDropClasses extends SJavacTester {
     ToolBox tb = new ToolBox();
 
     void test() throws Exception {
-        clean(TEST_ROOT);
         Files.createDirectories(GENSRC);
         Files.createDirectories(BIN);
         Files.createDirectories(HEADERS);
 
         initialCompile();
         incrementalCompileDroppingClasses();
-
-        clean(GENSRC, BIN, HEADERS);
     }
 
     // Testing that deleting AA.java deletes all generated inner class including AA.class

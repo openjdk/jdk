@@ -59,7 +59,7 @@ void LogOutputList::set_output_level(LogOutput* output, LogLevelType level) {
   }
 }
 
-LogOutputList::LogOutputNode* LogOutputList::find(LogOutput* output) {
+LogOutputList::LogOutputNode* LogOutputList::find(const LogOutput* output) const {
   for (LogOutputNode* node = _level_start[LogLevel::Last]; node != NULL; node = node->_next) {
     if (output == node->_value) {
       return node;

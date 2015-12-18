@@ -106,7 +106,7 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
     /**
      * Return the graphics device associated with this configuration.
      */
-    public GraphicsDevice getDevice() {
+    public Win32GraphicsDevice getDevice() {
         return screen;
     }
 
@@ -182,7 +182,9 @@ public class Win32GraphicsConfig extends GraphicsConfiguration
      * For image buffers, this Transform will be the Identity transform.
      */
     public AffineTransform getDefaultTransform() {
-        return new AffineTransform();
+        double scaleX = screen.getDefaultScaleX();
+        double scaleY = screen.getDefaultScaleY();
+        return AffineTransform.getScaleInstance(scaleX, scaleY);
     }
 
     /**

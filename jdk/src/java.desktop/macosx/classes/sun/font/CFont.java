@@ -31,12 +31,13 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
 
 // Right now this class is final to avoid a problem with native code.
 // For some reason the JNI IsInstanceOf was not working correctly
 // so we are checking the class specifically. If we subclass this
 // we need to modify the native code in CFontWrapper.m
-public final class CFont extends PhysicalFont {
+public final class CFont extends PhysicalFont implements FontSubstitution {
 
     /* CFontStrike doesn't call these methods so they are unimplemented.
      * They are here to meet the requirements of PhysicalFont, needed
@@ -75,6 +76,20 @@ public final class CFont extends PhysicalFont {
                                                float x, float y) {
        throw new InternalError("Not implemented");
     }
+
+    @Override
+    protected long getLayoutTableCache() {
+        return getLayoutTableCacheNative(getNativeFontPtr());
+    }
+
+    @Override
+    protected byte[] getTableBytes(int tag) {
+        return getTableBytesNative(getNativeFontPtr(), tag);
+    }
+
+    private native synchronized long getLayoutTableCacheNative(long nativeFontPtr);
+
+    private native byte[] getTableBytesNative(long nativeFontPtr, int tag);
 
     private static native long createNativeFont(final String nativeFontName,
                                                 final int style);
@@ -179,8 +194,56 @@ public final class CFont extends PhysicalFont {
     protected synchronized long getNativeFontPtr() {
         if (nativeFontPtr == 0L) {
             nativeFontPtr = createNativeFont(nativeFontName, style);
-}
+        }
         return nativeFontPtr;
+    }
+
+    private native long getCGFontPtrNative(long ptr);
+
+    // This digs the CGFont out of the AWTFont.
+    protected synchronized long getPlatformNativeFontPtr() {
+        return getCGFontPtrNative(getNativeFontPtr());
+    }
+
+    static native void getCascadeList(long nativeFontPtr, ArrayList<String> listOfString);
+
+    private CompositeFont createCompositeFont() {
+        ArrayList<String> listOfString = new ArrayList<String>();
+        getCascadeList(nativeFontPtr, listOfString);
+
+        FontManager fm = FontManagerFactory.getInstance();
+        int numFonts = 1 + listOfString.size();
+        PhysicalFont[] fonts = new PhysicalFont[numFonts];
+        fonts[0] = this;
+        int idx = 1;
+        for (String s : listOfString) {
+            if (s.equals(".AppleSymbolsFB"))  {
+                // Don't know why we get the weird name above .. replace.
+                s = "AppleSymbols";
+            }
+            Font2D f2d = fm.findFont2D(s, Font.PLAIN, FontManager.NO_FALLBACK);
+            if (f2d == null || f2d == this) {
+                continue;
+            }
+            fonts[idx++] = (PhysicalFont)f2d;
+        }
+        if (idx < fonts.length) {
+            PhysicalFont[] orig = fonts;
+            fonts = new PhysicalFont[idx];
+            System.arraycopy(orig, 0, fonts, 0, idx);
+        }
+        CompositeFont compFont = new CompositeFont(fonts);
+        compFont.mapper = new CCompositeGlyphMapper(compFont);
+        return compFont;
+    }
+
+    private CompositeFont compFont;
+
+    public CompositeFont getCompositeFont2D() {
+        if (compFont == null) {
+           compFont = createCompositeFont();
+        }
+        return compFont;
     }
 
     protected synchronized void finalize() {

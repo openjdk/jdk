@@ -45,10 +45,16 @@ CXX_FLAGS=$(CXX_FLAGS) /D "COMPILER1" /D INCLUDE_JVMCI=0
 
 !if "$(Variant)" == "compiler2"
 CXX_FLAGS=$(CXX_FLAGS) /D "COMPILER2"
+!if "$(BUILDARCH)" == "i486"
+CXX_FLAGS=$(CXX_FLAGS) /D INCLUDE_JVMCI=0
+!endif
 !endif
 
 !if "$(Variant)" == "tiered"
 CXX_FLAGS=$(CXX_FLAGS) /D "COMPILER1" /D "COMPILER2"
+!if "$(BUILDARCH)" == "i486"
+CXX_FLAGS=$(CXX_FLAGS) /D INCLUDE_JVMCI=0
+!endif
 !endif
 
 !if "$(BUILDARCH)" == "i486"
@@ -410,9 +416,5 @@ _build_pch_file.obj:
         @echo #include "precompiled.hpp" > ../generated/_build_pch_file.cpp
         $(CXX) $(CXX_FLAGS) /Fp"vm.pch" /Yc"precompiled.hpp" /c ../generated/_build_pch_file.cpp
 
-!if "$(BUILD_WIN_SA)" != "1"
-BUILD_VM_DEF_FLAG=-nosa
-!endif
-
 vm.def: $(Obj_Files)
-	sh $(WorkSpace)/make/windows/build_vm_def.sh $(BUILD_VM_DEF_FLAG)
+	sh $(WorkSpace)/make/windows/build_vm_def.sh

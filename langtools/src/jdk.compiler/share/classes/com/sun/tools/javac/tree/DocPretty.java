@@ -270,6 +270,24 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     }
 
     @DefinedBy(Api.COMPILER_TREE)
+    public Void visitIndex(IndexTree node, Void p) {
+        try {
+            print("{");
+            printTagName(node);
+            print(" ");
+            print(node.getSearchTerm());
+            if (!node.getDescription().isEmpty()) {
+                print(" ");
+                print(node.getDescription());
+            }
+            print("}");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return null;
+    }
+
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitInheritDoc(InheritDocTree node, Void p) {
         try {
             print("{");

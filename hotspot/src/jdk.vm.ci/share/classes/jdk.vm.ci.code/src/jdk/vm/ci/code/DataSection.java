@@ -141,7 +141,7 @@ public final class DataSection implements Iterable<Data> {
 
     private final ArrayList<Data> dataItems = new ArrayList<>();
 
-    private boolean finalLayout;
+    private boolean closed;
     private int sectionAlignment;
     private int sectionSize;
 
@@ -163,7 +163,7 @@ public final class DataSection implements Iterable<Data> {
         }
         if (obj instanceof DataSection) {
             DataSection that = (DataSection) obj;
-            if (this.finalLayout == that.finalLayout && this.sectionAlignment == that.sectionAlignment && this.sectionSize == that.sectionSize && Objects.equals(this.dataItems, that.dataItems)) {
+            if (this.closed == that.closed && this.sectionAlignment == that.sectionAlignment && this.sectionSize == that.sectionSize && Objects.equals(this.dataItems, that.dataItems)) {
                 return true;
             }
         }
@@ -171,14 +171,14 @@ public final class DataSection implements Iterable<Data> {
     }
 
     /**
-     * Insert a {@link Data} item into the data section. If the item is already in the data section,
-     * the same {@link DataSectionReference} is returned.
+     * Inserts a {@link Data} item into the data section. If the item is already in the data
+     * section, the same {@link DataSectionReference} is returned.
      *
      * @param data the {@link Data} item to be inserted
      * @return a unique {@link DataSectionReference} identifying the {@link Data} item
      */
     public DataSectionReference insertData(Data data) {
-        assert !finalLayout;
+        checkOpen();
         synchronized (data) {
             if (data.ref == null) {
                 data.ref = new DataSectionReference();
@@ -193,7 +193,8 @@ public final class DataSection implements Iterable<Data> {
      * {@link DataSection}, and empties the other section.
      */
     public void addAll(DataSection other) {
-        assert !finalLayout && !other.finalLayout;
+        checkOpen();
+        other.checkOpen();
 
         for (Data data : other.dataItems) {
             assert data.ref != null;
@@ -203,12 +204,20 @@ public final class DataSection implements Iterable<Data> {
     }
 
     /**
-     * Compute the layout of the data section. This can be called only once, and after it has been
-     * called, the data section can no longer be modified.
+     * Determines if this object has been {@link #close() closed}.
      */
-    public void finalizeLayout() {
-        assert !finalLayout;
-        finalLayout = true;
+    public boolean closed() {
+        return closed;
+    }
+
+    /**
+     * Computes the layout of the data section and closes this object to further updates.
+     *
+     * This must be called exactly once.
+     */
+    void close() {
+        checkOpen();
+        closed = true;
 
         // simple heuristic: put items with larger alignment requirement first
         dataItems.sort((a, b) -> a.alignment - b.alignment);
@@ -227,37 +236,38 @@ public final class DataSection implements Iterable<Data> {
         sectionSize = position;
     }
 
-    public boolean isFinalized() {
-        return finalLayout;
-    }
-
     /**
-     * Get the size of the data section. Can only be called after {@link #finalizeLayout}.
+     * Gets the size of the data section.
+     *
+     * This must only be called once this object has been {@linkplain #closed() closed}.
      */
     public int getSectionSize() {
-        assert finalLayout;
+        checkClosed();
         return sectionSize;
     }
 
     /**
-     * Get the minimum alignment requirement of the data section. Can only be called after
-     * {@link #finalizeLayout}.
+     * Gets the minimum alignment requirement of the data section.
+     *
+     * This must only be called once this object has been {@linkplain #closed() closed}.
      */
     public int getSectionAlignment() {
-        assert finalLayout;
+        checkClosed();
         return sectionAlignment;
     }
 
     /**
-     * Build the data section. Can only be called after {@link #finalizeLayout}.
+     * Builds the data section into a given buffer.
      *
-     * @param buffer The {@link ByteBuffer} where the data section should be built. The buffer must
+     * This must only be called once this object has been {@linkplain #closed() closed}.
+     *
+     * @param buffer the {@link ByteBuffer} where the data section should be built. The buffer must
      *            hold at least {@link #getSectionSize()} bytes.
-     * @param patch A {@link Consumer} to receive {@link DataPatch data patches} for relocations in
-     *            the data section.
+     * @param patch a {@link Consumer} to receive {@link DataPatch data patches} for relocations in
+     *            the data section
      */
     public void buildDataSection(ByteBuffer buffer, Consumer<DataPatch> patch) {
-        assert finalLayout;
+        checkClosed();
         for (Data d : dataItems) {
             buffer.position(d.ref.getOffset());
             d.builder.emit(buffer, patch);
@@ -300,8 +310,20 @@ public final class DataSection implements Iterable<Data> {
         return ((position + alignment - 1) / alignment) * alignment;
     }
 
+    private void checkClosed() {
+        if (!closed) {
+            throw new IllegalStateException();
+        }
+    }
+
+    private void checkOpen() {
+        if (closed) {
+            throw new IllegalStateException();
+        }
+    }
+
     public void clear() {
-        assert !finalLayout;
+        checkOpen();
         this.dataItems.clear();
         this.sectionAlignment = 0;
         this.sectionSize = 0;

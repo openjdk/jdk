@@ -31,7 +31,6 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.plaf.basic.BasicHTML;
 import javax.swing.text.*;
-import sun.swing.plaf.synth.*;
 
 /**
  * Wrapper for primitive graphics calls.
@@ -287,8 +286,8 @@ public class SynthGraphicsUtils {
             return new Dimension(dx, dy);
         }
         else if ((text == null) || ((icon != null) && (font == null))) {
-            return new Dimension(SynthIcon.getIconWidth(icon, ss) + dx,
-                                 SynthIcon.getIconHeight(icon, ss) + dy);
+            return new Dimension(getIconWidth(icon, ss) + dx,
+                                 getIconHeight(icon, ss) + dy);
         }
         else {
             FontMetrics fm = c.getFontMetrics(font);
@@ -404,7 +403,7 @@ public class SynthGraphicsUtils {
                 paintIconR.x += textOffset;
             }
             paintIconR.y += textOffset;
-            SynthIcon.paintIcon(icon, ss, g, paintIconR.x, paintIconR.y,
+            paintIcon(icon, ss, g, paintIconR.x, paintIconR.y,
                                 paintIconR.width, paintIconR.height);
             g.setColor(color);
         }
@@ -423,6 +422,62 @@ public class SynthGraphicsUtils {
         }
     }
 
+    /**
+     * Returns the icon's width.
+     * The {@code getIconWidth(context)} method is called for {@code SynthIcon}.
+     *
+     * @param icon the icon
+     * @param context {@code SynthContext} requesting the icon, may be null.
+     * @return an int specifying the width of the icon.
+     */
+    public static int getIconWidth(Icon icon, SynthContext context) {
+        if (icon == null) {
+            return 0;
+        }
+        if (icon instanceof SynthIcon) {
+            return ((SynthIcon) icon).getIconWidth(context);
+        }
+        return icon.getIconWidth();
+    }
+
+    /**
+     * Returns the icon's height.
+     * The {@code getIconHeight(context)} method is called for {@code SynthIcon}.
+     *
+     * @param icon the icon
+     * @param context {@code SynthContext} requesting the icon, may be null.
+     * @return an int specifying the height of the icon.
+     */
+    public static int getIconHeight(Icon icon, SynthContext context) {
+        if (icon == null) {
+            return 0;
+        }
+        if (icon instanceof SynthIcon) {
+            return ((SynthIcon) icon).getIconHeight(context);
+        }
+        return icon.getIconHeight();
+    }
+
+    /**
+     * Paints the icon. The {@code paintIcon(context, g, x, y, width, height)}
+     * method is called for {@code SynthIcon}.
+     *
+     * @param icon the icon
+     * @param context identifies hosting region, may be null.
+     * @param g the graphics context
+     * @param x the x location to paint to
+     * @param y the y location to paint to
+     * @param width the width of the region to paint to, may be 0
+     * @param height the height of the region to paint to, may be 0
+     */
+    public static void paintIcon(Icon icon, SynthContext context, Graphics g,
+            int x, int y, int width, int height) {
+        if (icon instanceof SynthIcon) {
+            ((SynthIcon) icon).paintIcon(context, g, x, y, width, height);
+        } else if (icon != null) {
+            icon.paintIcon(context.getComponent(), g, x, y);
+        }
+    }
 
      /**
       * A quick note about how preferred sizes are calculated... Generally
@@ -561,7 +616,7 @@ public class SynthGraphicsUtils {
 
             if (icon != null) {
                 Rectangle iconRect = lr.getIconRect();
-                SynthIcon.paintIcon(icon, lh.getContext(), g, iconRect.x,
+                paintIcon(icon, lh.getContext(), g, iconRect.x,
                         iconRect.y, iconRect.width, iconRect.height);
             }
         }
@@ -571,7 +626,7 @@ public class SynthGraphicsUtils {
                                MenuItemLayoutHelper.LayoutResult lr) {
         if (lh.getCheckIcon() != null) {
             Rectangle checkRect = lr.getCheckRect();
-            SynthIcon.paintIcon(lh.getCheckIcon(), lh.getContext(), g,
+            paintIcon(lh.getCheckIcon(), lh.getContext(), g,
                     checkRect.x, checkRect.y, checkRect.width, checkRect.height);
         }
     }
@@ -610,7 +665,7 @@ public class SynthGraphicsUtils {
                                MenuItemLayoutHelper.LayoutResult lr) {
         if (lh.getArrowIcon() != null) {
             Rectangle arrowRect = lr.getArrowRect();
-            SynthIcon.paintIcon(lh.getArrowIcon(), lh.getContext(), g,
+            paintIcon(lh.getArrowIcon(), lh.getContext(), g,
                     arrowRect.x, arrowRect.y, arrowRect.width, arrowRect.height);
         }
     }

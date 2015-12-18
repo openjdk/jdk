@@ -49,6 +49,7 @@ public:
 };
 
 class G1EvacuationRootClosures : public G1RootClosures {
+  static G1EvacuationRootClosures* create_root_closures_ext(G1ParScanThreadState* pss, G1CollectedHeap* g1h);
 public:
   // Flush any buffered state and deferred processing
   virtual void flush() = 0;

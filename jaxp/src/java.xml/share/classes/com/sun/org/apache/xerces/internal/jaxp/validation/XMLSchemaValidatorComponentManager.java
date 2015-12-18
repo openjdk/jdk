@@ -364,7 +364,7 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
             fInitSecurityManager.setSecureProcessing(value);
             setProperty(SECURITY_MANAGER, fInitSecurityManager);
 
-            if (value && Constants.IS_JDK8_OR_ABOVE) {
+            if (value) {
                 fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_DTD,
                         XMLSecurityPropertyManager.State.FSP, Constants.EXTERNAL_ACCESS_DEFAULT_FSP);
                 fSecurityPropertyMgr.setValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA,

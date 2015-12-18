@@ -67,8 +67,6 @@ public class Basic {
         } catch (ProviderNotFoundException pnfe) {
             System.out.println("Expected ProviderNotFoundException caught: "
                 + "\"" + pnfe.getMessage() + "\"");
-        } finally {
-            FileUtils.deleteFileWithRetry(path);
         }
     }
 

@@ -53,6 +53,9 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         _is_complete;
   bool         _is_success;
   bool         _is_blocking;
+#if INCLUDE_JVMCI
+  bool         _has_waiter;
+#endif
   int          _comp_level;
   int          _num_inlined_bytecodes;
   nmethodLocker* _code_handle;  // holder of eventual result
@@ -85,6 +88,10 @@ class CompileTask : public CHeapObj<mtCompiler> {
   bool         is_complete() const               { return _is_complete; }
   bool         is_blocking() const               { return _is_blocking; }
   bool         is_success() const                { return _is_success; }
+#if INCLUDE_JVMCI
+  bool         has_waiter() const                { return _has_waiter; }
+  void         clear_waiter()                    { _has_waiter = false; }
+#endif
 
   nmethodLocker* code_handle() const             { return _code_handle; }
   void         set_code_handle(nmethodLocker* l) { _code_handle = l; }

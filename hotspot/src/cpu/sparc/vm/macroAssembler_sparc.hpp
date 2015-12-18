@@ -904,7 +904,9 @@ public:
   inline void ldf(FloatRegisterImpl::Width w, const Address& a, FloatRegister d, int offset = 0);
 
   // little-endian
-  inline void ldxl(Register s1, Register s2, Register d) { ldxa(s1, s2, ASI_PRIMARY_LITTLE, d); }
+  inline void lduwl(Register s1, Register s2, Register d) { lduwa(s1, s2, ASI_PRIMARY_LITTLE, d); }
+  inline void ldswl(Register s1, Register s2, Register d) { ldswa(s1, s2, ASI_PRIMARY_LITTLE, d);}
+  inline void ldxl( Register s1, Register s2, Register d) { ldxa(s1, s2, ASI_PRIMARY_LITTLE, d); }
   inline void ldfl(FloatRegisterImpl::Width w, Register s1, Register s2, FloatRegister d) { ldfa(w, s1, s2, ASI_PRIMARY_LITTLE, d); }
 
   // membar psuedo instruction.  takes into account target memory model.
@@ -1468,6 +1470,15 @@ public:
   void reverse_bytes_32(Register src, Register dst, Register tmp);
   void movitof_revbytes(Register src, FloatRegister dst, Register tmp1, Register tmp2);
   void movftoi_revbytes(FloatRegister src, Register dst, Register tmp1, Register tmp2);
+
+  // CRC32 code for java.util.zip.CRC32::updateBytes0() instrinsic.
+  void kernel_crc32(Register crc, Register buf, Register len, Register table);
+  // Fold 128-bit data chunk
+  void fold_128bit_crc32(Register xcrc_hi, Register xcrc_lo, Register xK_hi, Register xK_lo, Register xtmp_hi, Register xtmp_lo, Register buf, int offset);
+  void fold_128bit_crc32(Register xcrc_hi, Register xcrc_lo, Register xK_hi, Register xK_lo, Register xtmp_hi, Register xtmp_lo, Register xbuf_hi, Register xbuf_lo);
+  // Fold 8-bit data
+  void fold_8bit_crc32(Register xcrc, Register table, Register xtmp, Register tmp);
+  void fold_8bit_crc32(Register crc, Register table, Register tmp);
 
 #undef VIRTUAL
 };
