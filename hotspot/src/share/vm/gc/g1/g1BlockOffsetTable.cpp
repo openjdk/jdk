@@ -27,6 +27,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/shared/space.hpp"
+#include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "services/memTracker.hpp"
@@ -50,14 +51,9 @@ G1BlockOffsetSharedArray::G1BlockOffsetSharedArray(MemRegion heap, G1RegionToSpa
 
   storage->set_mapping_changed_listener(&_listener);
 
-  if (TraceBlockOffsetTable) {
-    gclog_or_tty->print_cr("G1BlockOffsetSharedArray::G1BlockOffsetSharedArray: ");
-    gclog_or_tty->print_cr("  "
-                  "  rs.base(): " PTR_FORMAT
-                  "  rs.size(): " SIZE_FORMAT
-                  "  rs end(): " PTR_FORMAT,
-                  p2i(bot_reserved.start()), bot_reserved.byte_size(), p2i(bot_reserved.end()));
-  }
+  log_trace(gc, bot)("G1BlockOffsetSharedArray::G1BlockOffsetSharedArray: ");
+  log_trace(gc, bot)("    rs.base(): " PTR_FORMAT "  rs.size(): " SIZE_FORMAT "  rs end(): " PTR_FORMAT,
+                     p2i(bot_reserved.start()), bot_reserved.byte_size(), p2i(bot_reserved.end()));
 }
 
 bool G1BlockOffsetSharedArray::is_card_boundary(HeapWord* p) const {

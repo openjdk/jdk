@@ -28,6 +28,7 @@
 #include "gc/shared/space.inline.hpp"
 #include "memory/iterator.hpp"
 #include "memory/universe.hpp"
+#include "logging/log.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
 #include "services/memTracker.hpp"
@@ -53,19 +54,11 @@ BlockOffsetSharedArray::BlockOffsetSharedArray(MemRegion reserved,
   }
   _offset_array = (u_char*)_vs.low_boundary();
   resize(init_word_size);
-  if (TraceBlockOffsetTable) {
-    gclog_or_tty->print_cr("BlockOffsetSharedArray::BlockOffsetSharedArray: ");
-    gclog_or_tty->print_cr("  "
-                  "  rs.base(): " INTPTR_FORMAT
-                  "  rs.size(): " INTPTR_FORMAT
-                  "  rs end(): " INTPTR_FORMAT,
-                  p2i(rs.base()), rs.size(), p2i(rs.base() + rs.size()));
-    gclog_or_tty->print_cr("  "
-                  "  _vs.low_boundary(): " INTPTR_FORMAT
-                  "  _vs.high_boundary(): " INTPTR_FORMAT,
-                  p2i(_vs.low_boundary()),
-                  p2i(_vs.high_boundary()));
-  }
+  log_trace(gc, bot)("BlockOffsetSharedArray::BlockOffsetSharedArray: ");
+  log_trace(gc, bot)("   rs.base(): " INTPTR_FORMAT " rs.size(): " INTPTR_FORMAT " rs end(): " INTPTR_FORMAT,
+                     p2i(rs.base()), rs.size(), p2i(rs.base() + rs.size()));
+  log_trace(gc, bot)("   _vs.low_boundary(): " INTPTR_FORMAT "  _vs.high_boundary(): " INTPTR_FORMAT,
+                     p2i(_vs.low_boundary()), p2i(_vs.high_boundary()));
 }
 
 void BlockOffsetSharedArray::resize(size_t new_word_size) {

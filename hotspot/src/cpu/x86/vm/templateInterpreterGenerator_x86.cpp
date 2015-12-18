@@ -541,8 +541,8 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   __ subptr(rax, stack_size);
 
   // Use the maximum number of pages we might bang.
-  const int max_pages = StackShadowPages > (StackRedPages+StackYellowPages) ? StackShadowPages :
-                                                                              (StackRedPages+StackYellowPages);
+  const int max_pages = StackShadowPages > (StackRedPages+StackYellowPages+StackReservedPages) ? StackShadowPages :
+                        (StackRedPages+StackYellowPages+StackReservedPages);
 
   // add in the red and yellow zone sizes
   __ addptr(rax, max_pages * page_size);

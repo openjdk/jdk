@@ -29,7 +29,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
-#include "gc/g1/g1Log.hpp"
 #include "gc/g1/g1MarkSweep.hpp"
 #include "gc/g1/g1RootProcessor.hpp"
 #include "gc/g1/g1StringDedup.hpp"
@@ -38,7 +37,7 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
-#include "gc/shared/gcTraceTime.hpp"
+#include "gc/shared/gcTraceTime.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
 #include "gc/shared/modRefBarrierSet.hpp"
 #include "gc/shared/referencePolicy.hpp"
@@ -123,7 +122,7 @@ void G1MarkSweep::allocate_stacks() {
 void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
                                     bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
-  GCTraceTime tm("phase 1", G1Log::fine() && Verbose, true, gc_timer());
+  GCTraceTime(Trace, gc) tm("Phase 1: Mark live objects", gc_timer());
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
@@ -183,13 +182,8 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
     // fail. At the end of the GC, the original mark word values
     // (including hash values) are restored to the appropriate
     // objects.
-    if (!VerifySilently) {
-      gclog_or_tty->print(" VerifyDuringGC:(full)[Verifying ");
-    }
-    g1h->verify(VerifySilently, VerifyOption_G1UseMarkWord);
-    if (!VerifySilently) {
-      gclog_or_tty->print_cr("]");
-    }
+    GCTraceTime(Info, gc, verify)("During GC (full)");
+    g1h->verify(VerifyOption_G1UseMarkWord);
   }
 
   gc_tracer()->report_object_count_after_gc(&GenMarkSweep::is_alive);
@@ -203,7 +197,7 @@ void G1MarkSweep::mark_sweep_phase2() {
   // phase2, phase3 and phase4, but the ValidateMarkSweep live oops
   // tracking expects us to do so. See comment under phase4.
 
-  GCTraceTime tm("phase 2", G1Log::fine() && Verbose, true, gc_timer());
+  GCTraceTime(Trace, gc) tm("Phase 2: Compute new object addresses", gc_timer());
 
   prepare_compaction();
 }
@@ -236,7 +230,7 @@ void G1MarkSweep::mark_sweep_phase3() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   // Adjust the pointers to reflect the new locations
-  GCTraceTime tm("phase 3", G1Log::fine() && Verbose, true, gc_timer());
+  GCTraceTime(Trace, gc) tm("Phase 3: Adjust pointers", gc_timer());
 
   // Need cleared claim bits for the roots processing
   ClassLoaderDataGraph::clear_claimed_marks();
@@ -297,7 +291,7 @@ void G1MarkSweep::mark_sweep_phase4() {
   // to use a higher index (saved from phase2) when verifying perm_gen.
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  GCTraceTime tm("phase 4", G1Log::fine() && Verbose, true, gc_timer());
+  GCTraceTime(Trace, gc) tm("Phase 4: Move objects", gc_timer());
 
   G1SpaceCompactClosure blk;
   g1h->heap_region_iterate(&blk);
@@ -335,7 +329,7 @@ void G1PrepareCompactClosure::free_humongous_region(HeapRegion* hr) {
   FreeRegionList dummy_free_list("Dummy Free List for G1MarkSweep");
 
   hr->set_containing_set(NULL);
-  _humongous_regions_removed.increment(1u, hr->capacity());
+  _humongous_regions_removed++;
 
   _g1h->free_humongous_region(hr, &dummy_free_list, false /* par */);
   prepare_for_compaction(hr, end);
@@ -364,8 +358,7 @@ void G1PrepareCompactClosure::prepare_for_compaction_work(CompactPoint* cp,
 void G1PrepareCompactClosure::update_sets() {
   // We'll recalculate total used bytes and recreate the free list
   // at the end of the GC, so no point in updating those values here.
-  HeapRegionSetCount empty_set;
-  _g1h->remove_from_old_sets(empty_set, _humongous_regions_removed);
+  _g1h->remove_from_old_sets(0, _humongous_regions_removed);
 }
 
 bool G1PrepareCompactClosure::doHeapRegion(HeapRegion* hr) {

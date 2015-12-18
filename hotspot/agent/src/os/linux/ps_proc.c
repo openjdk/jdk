@@ -215,9 +215,12 @@ static bool ptrace_waitpid(pid_t pid) {
 }
 
 // attach to a process/thread specified by "pid"
-static bool ptrace_attach(pid_t pid) {
+static bool ptrace_attach(pid_t pid, char* err_buf, size_t err_buf_len) {
   if (ptrace(PTRACE_ATTACH, pid, NULL, NULL) < 0) {
-    print_debug("ptrace(PTRACE_ATTACH, ..) failed for %d\n", pid);
+    char buf[200];
+    char* msg = strerror_r(errno, buf, sizeof(buf));
+    snprintf(err_buf, err_buf_len, "ptrace(PTRACE_ATTACH, ..) failed for %d: %s", pid, msg);
+    print_debug("%s\n", err_buf);
     return false;
   } else {
     return ptrace_waitpid(pid);
@@ -370,16 +373,17 @@ static ps_prochandle_ops process_ops = {
 };
 
 // attach to the process. One and only one exposed stuff
-struct ps_prochandle* Pgrab(pid_t pid) {
+struct ps_prochandle* Pgrab(pid_t pid, char* err_buf, size_t err_buf_len) {
   struct ps_prochandle* ph = NULL;
   thread_info* thr = NULL;
 
   if ( (ph = (struct ps_prochandle*) calloc(1, sizeof(struct ps_prochandle))) == NULL) {
-     print_debug("can't allocate memory for ps_prochandle\n");
+     snprintf(err_buf, err_buf_len, "can't allocate memory for ps_prochandle");
+     print_debug("%s\n", err_buf);
      return NULL;
   }
 
-  if (ptrace_attach(pid) != true) {
+  if (ptrace_attach(pid, err_buf, err_buf_len) != true) {
      free(ph);
      return NULL;
   }
@@ -402,7 +406,7 @@ struct ps_prochandle* Pgrab(pid_t pid) {
   thr = ph->threads;
   while (thr) {
      // don't attach to the main thread again
-     if (ph->pid != thr->lwp_id && ptrace_attach(thr->lwp_id) != true) {
+    if (ph->pid != thr->lwp_id && ptrace_attach(thr->lwp_id, err_buf, err_buf_len) != true) {
         // even if one attach fails, we get return NULL
         Prelease(ph);
         return NULL;

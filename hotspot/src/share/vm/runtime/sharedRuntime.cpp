@@ -57,6 +57,7 @@
 #include "runtime/stubRoutines.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
+#include "trace/tracing.hpp"
 #include "utilities/copy.hpp"
 #include "utilities/dtrace.hpp"
 #include "utilities/events.hpp"
@@ -254,8 +255,10 @@ JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
        ((ybits.i & float_sign_mask) == float_infinity) ) {
     return x;
   }
-#endif
+  return ((jfloat)fmod_winx64((double)x, (double)y));
+#else
   return ((jfloat)fmod((double)x,(double)y));
+#endif
 JRT_END
 
 
@@ -269,8 +272,10 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
        ((ybits.l & double_sign_mask) == double_infinity) ) {
     return x;
   }
-#endif
+  return ((jdouble)fmod_winx64((double)x, (double)y));
+#else
   return ((jdouble)fmod((double)x,(double)y));
+#endif
 JRT_END
 
 #ifdef __SOFTFP__
@@ -483,8 +488,11 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* thre
       // unguarded. Reguard the stack otherwise if we return to the
       // deopt blob and the stack bang causes a stack overflow we
       // crash.
-      bool guard_pages_enabled = thread->stack_yellow_zone_enabled();
+      bool guard_pages_enabled = thread->stack_guards_enabled();
       if (!guard_pages_enabled) guard_pages_enabled = thread->reguard_stack();
+      if (thread->reserved_stack_activation() != thread->stack_base()) {
+        thread->set_reserved_stack_activation(thread->stack_base());
+      }
       assert(guard_pages_enabled, "stack banging in deopt blob may cause crash");
       return SharedRuntime::deopt_blob()->unpack_with_exception();
     } else {
@@ -757,10 +765,23 @@ JRT_ENTRY(void, SharedRuntime::throw_NullPointerException_at_call(JavaThread* th
 JRT_END
 
 JRT_ENTRY(void, SharedRuntime::throw_StackOverflowError(JavaThread* thread))
+  throw_StackOverflowError_common(thread, false);
+JRT_END
+
+JRT_ENTRY(void, SharedRuntime::throw_delayed_StackOverflowError(JavaThread* thread))
+  throw_StackOverflowError_common(thread, true);
+JRT_END
+
+void SharedRuntime::throw_StackOverflowError_common(JavaThread* thread, bool delayed) {
   // We avoid using the normal exception construction in this case because
   // it performs an upcall to Java, and we're already out of stack space.
+  Thread* THREAD = thread;
   Klass* k = SystemDictionary::StackOverflowError_klass();
   oop exception_oop = InstanceKlass::cast(k)->allocate_instance(CHECK);
+  if (delayed) {
+    java_lang_Throwable::set_message(exception_oop,
+                                     Universe::delayed_stack_overflow_error_message());
+  }
   Handle exception (thread, exception_oop);
   if (StackTraceInThrowable) {
     java_lang_Throwable::fill_in_stack_trace(exception);
@@ -768,7 +789,7 @@ JRT_ENTRY(void, SharedRuntime::throw_StackOverflowError(JavaThread* thread))
   // Increment counter for hs_err file reporting
   Atomic::inc(&Exceptions::_stack_overflow_errors);
   throw_and_post_jvmti_exception(thread, exception);
-JRT_END
+}
 
 #if INCLUDE_JVMCI
 address SharedRuntime::deoptimize_for_implicit_exception(JavaThread* thread, address pc, nmethod* nm, int deopt_reason) {
@@ -2930,3 +2951,68 @@ void AdapterHandlerLibrary::print_statistics() {
 }
 
 #endif /* PRODUCT */
+
+JRT_LEAF(void, SharedRuntime::enable_stack_reserved_zone(JavaThread* thread))
+  assert(thread->is_Java_thread(), "Only Java threads have a stack reserved zone");
+  thread->enable_stack_reserved_zone();
+  thread->set_reserved_stack_activation(thread->stack_base());
+JRT_END
+
+frame SharedRuntime::look_for_reserved_stack_annotated_method(JavaThread* thread, frame fr) {
+  frame activation;
+  int decode_offset = 0;
+  nmethod* nm = NULL;
+  frame prv_fr = fr;
+  int count = 1;
+
+  assert(fr.is_java_frame(), "Must start on Java frame");
+
+  while (!fr.is_first_frame()) {
+    Method* method = NULL;
+    // Compiled java method case.
+    if (decode_offset != 0) {
+      DebugInfoReadStream stream(nm, decode_offset);
+      decode_offset = stream.read_int();
+      method = (Method*)nm->metadata_at(stream.read_int());
+    } else {
+      if (fr.is_first_java_frame()) break;
+      address pc = fr.pc();
+      prv_fr = fr;
+      if (fr.is_interpreted_frame()) {
+        method = fr.interpreter_frame_method();
+        fr = fr.java_sender();
+      } else {
+        CodeBlob* cb = fr.cb();
+        fr = fr.java_sender();
+        if (cb == NULL || !cb->is_nmethod()) {
+          continue;
+        }
+        nm = (nmethod*)cb;
+        if (nm->method()->is_native()) {
+          method = nm->method();
+        } else {
+          PcDesc* pd = nm->pc_desc_at(pc);
+          assert(pd != NULL, "PcDesc must not be NULL");
+          decode_offset = pd->scope_decode_offset();
+          // if decode_offset is not equal to 0, it will execute the
+          // "compiled java method case" at the beginning of the loop.
+          continue;
+        }
+      }
+    }
+    if (method->has_reserved_stack_access()) {
+      ResourceMark rm(thread);
+      activation = prv_fr;
+      warning("Potentially dangerous stack overflow in "
+              "ReservedStackAccess annotated method %s [%d]",
+              method->name_and_sig_as_C_string(), count++);
+      EventReservedStackActivation event;
+      if (event.should_commit()) {
+        event.set_method(method);
+        event.commit();
+      }
+    }
+  }
+  return activation;
+}
+

@@ -324,7 +324,7 @@ class BinaryTreeDictionary: public FreeBlockDictionary<Chunk_t> {
   void       clear_tree_census(void);
   // Print the statistics for all the lists in the tree.  Also may
   // print out summaries.
-  void       print_dict_census(void) const;
+  void       print_dict_census(outputStream* st) const;
   void       print_free_lists(outputStream* st) const;
 
   // For debugging.  Returns the sum of the _returned_bytes for
@@ -335,7 +335,7 @@ class BinaryTreeDictionary: public FreeBlockDictionary<Chunk_t> {
   // For debugging.  Return the total number of chunks in the dictionary.
   size_t     total_count()       PRODUCT_RETURN0;
 
-  void       report_statistics() const;
+  void       report_statistics(outputStream* st) const;
 
   void       verify() const;
 };
