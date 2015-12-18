@@ -148,8 +148,8 @@ class Symbol : public MetaspaceObj {
   int size()                { return size(utf8_length()); }
 
   // Returns the largest size symbol we can safely hold.
-  static int max_length()   { return max_symbol_length; }
-  unsigned identity_hash() {
+  static int max_length() { return max_symbol_length; }
+  unsigned identity_hash() const {
     unsigned addr_bits = (unsigned)((uintptr_t)this >> (LogMinObjAlignmentInBytes + 3));
     return ((unsigned)_identity_hash & 0xffff) |
            ((addr_bits ^ (_length << 8) ^ (( _body[0] << 8) | _body[1])) << 16);
@@ -197,7 +197,7 @@ class Symbol : public MetaspaceObj {
 
   // Three-way compare for sorting; returns -1/0/1 if receiver is </==/> than arg
   // note that the ordering is not alfabetical
-  inline int fast_compare(Symbol* other) const;
+  inline int fast_compare(const Symbol* other) const;
 
   // Returns receiver converted to null-terminated UTF-8 string; string is
   // allocated in resource area, or in the char buffer provided by caller.
@@ -246,7 +246,7 @@ class Symbol : public MetaspaceObj {
 // what order it defines, as long as it is a total, time-invariant order
 // Since Symbol*s are in C_HEAP, their relative order in memory never changes,
 // so use address comparison for speed
-int Symbol::fast_compare(Symbol* other) const {
+int Symbol::fast_compare(const Symbol* other) const {
  return (((uintptr_t)this < (uintptr_t)other) ? -1
    : ((uintptr_t)this == (uintptr_t) other) ? 0 : 1);
 }

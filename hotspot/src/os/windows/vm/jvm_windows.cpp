@@ -89,39 +89,3 @@ JVM_ENTRY_NO_ENV(jboolean, JVM_RaiseSignal(jint sig))
 JVM_END
 
 
-/*
-  All the defined signal names for Windows.
-
-  NOTE that not all of these names are accepted by FindSignal!
-
-  For various reasons some of these may be rejected at runtime.
-
-  Here are the names currently accepted by a user of sun.misc.Signal with
-  1.4.1 (ignoring potential interaction with use of chaining, etc):
-
-     (LIST TBD)
-
-*/
-struct siglabel {
-  char *name;
-  int   number;
-};
-
-struct siglabel siglabels[] =
-  /* derived from version 6.0 VC98/include/signal.h */
-  {"ABRT",      SIGABRT,        /* abnormal termination triggered by abort cl */
-  "FPE",        SIGFPE,         /* floating point exception */
-  "SEGV",       SIGSEGV,        /* segment violation */
-  "INT",        SIGINT,         /* interrupt */
-  "TERM",       SIGTERM,        /* software term signal from kill */
-  "BREAK",      SIGBREAK,       /* Ctrl-Break sequence */
-  "ILL",        SIGILL};        /* illegal instruction */
-
-JVM_ENTRY_NO_ENV(jint, JVM_FindSignal(const char *name))
-  /* find and return the named signal's number */
-
-  for(int i=0;i<sizeof(siglabels)/sizeof(struct siglabel);i++)
-    if(!strcmp(name, siglabels[i].name))
-      return siglabels[i].number;
-  return -1;
-JVM_END

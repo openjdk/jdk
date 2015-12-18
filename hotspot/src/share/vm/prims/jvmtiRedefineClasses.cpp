@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classFileStream.hpp"
 #include "classfile/metadataOnStackMark.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/verifier.hpp"
@@ -977,8 +978,10 @@ jvmtiError VM_RedefineClasses::load_new_class_versions(TRAPS) {
       the_class->external_name(), _class_load_kind,
       os::available_memory() >> 10));
 
-    ClassFileStream st((u1*) _class_defs[i].class_bytes,
-      _class_defs[i].class_byte_count, (char *)"__VM_RedefineClasses__");
+    ClassFileStream st((u1*)_class_defs[i].class_bytes,
+                       _class_defs[i].class_byte_count,
+                       "__VM_RedefineClasses__",
+                       ClassFileStream::verify);
 
     // Parse the stream.
     Handle the_class_loader(THREAD, the_class->class_loader());
