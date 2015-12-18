@@ -131,7 +131,6 @@ final class LocalVariableTypesCalculator extends SimpleNodeVisitor {
         UNDEFINED(Type.UNDEFINED),
         BOOLEAN(Type.BOOLEAN),
         INT(Type.INT),
-        LONG(Type.LONG),
         DOUBLE(Type.NUMBER),
         OBJECT(Type.OBJECT);
 
@@ -272,12 +271,9 @@ final class LocalVariableTypesCalculator extends SimpleNodeVisitor {
     }
 
     private static class SymbolConversions {
-        private static final byte I2L = 1 << 0;
-        private static final byte I2D = 1 << 1;
-        private static final byte I2O = 1 << 2;
-        private static final byte L2D = 1 << 3;
-        private static final byte L2O = 1 << 4;
-        private static final byte D2O = 1 << 5;
+        private static final byte I2D = 1 << 0;
+        private static final byte I2O = 1 << 1;
+        private static final byte D2O = 1 << 2;
 
         private byte conversions;
 
@@ -288,26 +284,11 @@ final class LocalVariableTypesCalculator extends SimpleNodeVisitor {
             case INT:
             case BOOLEAN:
                 switch (to) {
-                case LONG:
-                    recordConversion(I2L);
-                    return;
                 case DOUBLE:
                     recordConversion(I2D);
                     return;
                 case OBJECT:
                     recordConversion(I2O);
-                    return;
-                default:
-                    illegalConversion(from, to);
-                    return;
-                }
-            case LONG:
-                switch (to) {
-                case DOUBLE:
-                    recordConversion(L2D);
-                    return;
-                case OBJECT:
-                    recordConversion(L2O);
                     return;
                 default:
                     illegalConversion(from, to);
@@ -340,23 +321,12 @@ final class LocalVariableTypesCalculator extends SimpleNodeVisitor {
                 if(hasConversion(D2O)) {
                     symbol.setHasSlotFor(Type.NUMBER);
                 }
-                if(hasConversion(L2O)) {
-                    symbol.setHasSlotFor(Type.LONG);
-                }
                 if(hasConversion(I2O)) {
                     symbol.setHasSlotFor(Type.INT);
                 }
             }
             if(symbol.hasSlotFor(Type.NUMBER)) {
-                if(hasConversion(L2D)) {
-                    symbol.setHasSlotFor(Type.LONG);
-                }
                 if(hasConversion(I2D)) {
-                    symbol.setHasSlotFor(Type.INT);
-                }
-            }
-            if(symbol.hasSlotFor(Type.LONG)) {
-                if(hasConversion(I2L)) {
                     symbol.setHasSlotFor(Type.INT);
                 }
             }
@@ -378,7 +348,7 @@ final class LocalVariableTypesCalculator extends SimpleNodeVisitor {
         if(lvarType != null) {
             return lvarType;
         }
-        assert type.isObject();
+        assert type.isObject() : "Unsupported primitive type: " + type;
         return LvarType.OBJECT;
     }
     private static LvarType widestLvarType(final LvarType t1, final LvarType t2) {

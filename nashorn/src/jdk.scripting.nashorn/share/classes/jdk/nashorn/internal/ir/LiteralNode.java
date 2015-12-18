@@ -386,8 +386,6 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         private static Type numberGetType(final Number number) {
             if (number instanceof Integer) {
                 return Type.INT;
-            } else if (number instanceof Long) {
-                return Type.LONG;
             } else if (number instanceof Double) {
                 return Type.NUMBER;
             } else {
@@ -418,6 +416,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<Number> newInstance(final long token, final int finish, final Number value) {
+        assert !(value instanceof Long);
         return new NumberLiteralNode(token, finish, value);
     }
 
@@ -776,8 +775,6 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
                 assert !elementType.isUnknown();
                 if (elementType.isInteger()) {
                     return presetIntArray(value, postsets);
-                } else if (elementType.isLong()) {
-                    return presetLongArray(value, postsets);
                 } else if (elementType.isNumeric()) {
                     return presetDoubleArray(value, postsets);
                 } else {
@@ -847,8 +844,6 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         private static ArrayType getArrayType(final Type elementType) {
             if (elementType.isInteger()) {
                 return Type.INT_ARRAY;
-            } else if (elementType.isLong()) {
-                return Type.LONG_ARRAY;
             } else if (elementType.isNumeric()) {
                 return Type.NUMBER_ARRAY;
             } else {
@@ -883,8 +878,6 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         private boolean presetsMatchElementType() {
             if (elementType == Type.INT) {
                 return presets instanceof int[];
-            } else if (elementType == Type.LONG) {
-                return presets instanceof long[];
             } else if (elementType == Type.NUMBER) {
                 return presets instanceof double[];
             } else {
