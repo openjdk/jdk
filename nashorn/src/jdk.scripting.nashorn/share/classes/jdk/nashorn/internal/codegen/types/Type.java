@@ -914,7 +914,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps, Serializabl
     /**
      * This is the long singleton, used for all long types
      */
-    public static final BitwiseType LONG = putInCache(new LongType());
+    public static final Type LONG = putInCache(new LongType());
 
     /**
      * A string singleton

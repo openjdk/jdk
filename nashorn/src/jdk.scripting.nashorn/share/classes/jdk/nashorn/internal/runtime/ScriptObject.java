@@ -33,7 +33,6 @@ import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.JSType.UNDEFINED_DOUBLE;
 import static jdk.nashorn.internal.runtime.JSType.UNDEFINED_INT;
-import static jdk.nashorn.internal.runtime.JSType.UNDEFINED_LONG;
 import static jdk.nashorn.internal.runtime.PropertyDescriptor.CONFIGURABLE;
 import static jdk.nashorn.internal.runtime.PropertyDescriptor.ENUMERABLE;
 import static jdk.nashorn.internal.runtime.PropertyDescriptor.GET;
@@ -188,7 +187,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
     static final MethodHandle[] SET_SLOW = new MethodHandle[] {
         findOwnMH_V("set", void.class, Object.class, int.class, int.class),
-        findOwnMH_V("set", void.class, Object.class, long.class, int.class),
         findOwnMH_V("set", void.class, Object.class, double.class, int.class),
         findOwnMH_V("set", void.class, Object.class, Object.class, int.class)
     };
@@ -1085,21 +1083,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         }
 
         return UNDEFINED_INT;
-    }
-
-    private static long getLongValue(final FindProperty find, final int programPoint) {
-        final MethodHandle getter = find.getGetter(long.class, programPoint, null);
-        if (getter != null) {
-            try {
-                return (long)getter.invokeExact((Object)find.getGetterReceiver());
-            } catch (final Error|RuntimeException e) {
-                throw e;
-            } catch (final Throwable e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        return UNDEFINED_LONG;
     }
 
     private static double getDoubleValue(final FindProperty find, final int programPoint) {
@@ -2804,18 +2787,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     @Override
-    public int getInt(final long key, final int programPoint) {
-        final int       index = getArrayIndex(key);
-        final ArrayData array = getArray();
-
-        if (array.has(index)) {
-            return isValid(programPoint) ? array.getIntOptimistic(index, programPoint) : array.getInt(index);
-        }
-
-        return getInt(index, JSType.toString(key), programPoint);
-    }
-
-    @Override
     public int getInt(final int key, final int programPoint) {
         final int       index = getArrayIndex(key);
         final ArrayData array = getArray();
@@ -2825,88 +2796,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
         }
 
         return getInt(index, JSType.toString(key), programPoint);
-    }
-
-    private long getLong(final int index, final Object key, final int programPoint) {
-        if (isValidArrayIndex(index)) {
-            for (ScriptObject object = this; ; ) {
-                if (object.getMap().containsArrayKeys()) {
-                    final FindProperty find = object.findProperty(key, false, this);
-                    if (find != null) {
-                        return getLongValue(find, programPoint);
-                    }
-                }
-
-                if ((object = object.getProto()) == null) {
-                    break;
-                }
-
-                final ArrayData array = object.getArray();
-
-                if (array.has(index)) {
-                    return isValid(programPoint) ?
-                        array.getLongOptimistic(index, programPoint) :
-                        array.getLong(index);
-                }
-            }
-        } else {
-            final FindProperty find = findProperty(key, true);
-
-            if (find != null) {
-                return getLongValue(find, programPoint);
-            }
-        }
-
-        return JSType.toLong(invokeNoSuchProperty(key, false, programPoint));
-    }
-
-    @Override
-    public long getLong(final Object key, final int programPoint) {
-        final Object    primitiveKey = JSType.toPrimitive(key, String.class);
-        final int       index        = getArrayIndex(primitiveKey);
-        final ArrayData array        = getArray();
-
-        if (array.has(index)) {
-            return isValid(programPoint) ? array.getLongOptimistic(index, programPoint) : array.getLong(index);
-        }
-
-        return getLong(index, JSType.toPropertyKey(primitiveKey), programPoint);
-    }
-
-    @Override
-    public long getLong(final double key, final int programPoint) {
-        final int       index = getArrayIndex(key);
-        final ArrayData array = getArray();
-
-        if (array.has(index)) {
-            return isValid(programPoint) ? array.getLongOptimistic(index, programPoint) : array.getLong(index);
-        }
-
-        return getLong(index, JSType.toString(key), programPoint);
-    }
-
-    @Override
-    public long getLong(final long key, final int programPoint) {
-        final int       index = getArrayIndex(key);
-        final ArrayData array = getArray();
-
-        if (array.has(index)) {
-            return isValid(programPoint) ? array.getLongOptimistic(index, programPoint) : array.getLong(index);
-        }
-
-        return getLong(index, JSType.toString(key), programPoint);
-    }
-
-    @Override
-    public long getLong(final int key, final int programPoint) {
-        final int       index = getArrayIndex(key);
-        final ArrayData array = getArray();
-
-        if (array.has(index)) {
-            return isValid(programPoint) ? array.getLongOptimistic(key, programPoint) : array.getLong(key);
-        }
-
-        return getLong(index, JSType.toString(key), programPoint);
     }
 
     private double getDouble(final int index, final Object key, final int programPoint) {
@@ -2957,18 +2846,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
     @Override
     public double getDouble(final double key, final int programPoint) {
-        final int       index = getArrayIndex(key);
-        final ArrayData array = getArray();
-
-        if (array.has(index)) {
-            return isValid(programPoint) ? array.getDoubleOptimistic(index, programPoint) : array.getDouble(index);
-        }
-
-        return getDouble(index, JSType.toString(key), programPoint);
-    }
-
-    @Override
-    public double getDouble(final long key, final int programPoint) {
         final int       index = getArrayIndex(key);
         final ArrayData array = getArray();
 
@@ -3038,18 +2915,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
 
     @Override
     public Object get(final double key) {
-        final int index = getArrayIndex(key);
-        final ArrayData array = getArray();
-
-        if (array.has(index)) {
-            return array.getObject(index);
-        }
-
-        return get(index, JSType.toString(key));
-    }
-
-    @Override
-    public Object get(final long key) {
         final int index = getArrayIndex(key);
         final ArrayData array = getArray();
 
@@ -3135,15 +3000,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     private void doesNotHave(final int index, final int value, final int callSiteFlags) {
-        final long oldLength = getArray().length();
-        final long longIndex = ArrayIndex.toLongIndex(index);
-        if (!doesNotHaveCheckArrayKeys(longIndex, value, callSiteFlags) && !doesNotHaveEnsureLength(longIndex, oldLength, callSiteFlags)) {
-            final boolean strict = isStrictFlag(callSiteFlags);
-            setArray(getArray().set(index, value, strict).safeDelete(oldLength, longIndex - 1, strict));
-        }
-    }
-
-    private void doesNotHave(final int index, final long value, final int callSiteFlags) {
         final long oldLength = getArray().length();
         final long longIndex = ArrayIndex.toLongIndex(index);
         if (!doesNotHaveCheckArrayKeys(longIndex, value, callSiteFlags) && !doesNotHaveEnsureLength(longIndex, oldLength, callSiteFlags)) {
@@ -3258,26 +3114,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     @Override
-    public void set(final Object key, final long value, final int callSiteFlags) {
-        final Object primitiveKey = JSType.toPrimitive(key, String.class);
-        final int    index        = getArrayIndex(primitiveKey);
-
-        if (isValidArrayIndex(index)) {
-            final ArrayData data = getArray();
-            if (data.has(index)) {
-                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
-            } else {
-                doesNotHave(index, value, callSiteFlags);
-            }
-
-            return;
-        }
-
-        final Object propName = JSType.toPropertyKey(primitiveKey);
-        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
-    }
-
-    @Override
     public void set(final Object key, final double value, final int callSiteFlags) {
         final Object primitiveKey = JSType.toPrimitive(key, String.class);
         final int    index        = getArrayIndex(primitiveKey);
@@ -3337,25 +3173,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     @Override
-    public void set(final double key, final long value, final int callSiteFlags) {
-        final int index = getArrayIndex(key);
-
-        if (isValidArrayIndex(index)) {
-            final ArrayData data = getArray();
-            if (data.has(index)) {
-                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
-            } else {
-                doesNotHave(index, value, callSiteFlags);
-            }
-
-            return;
-        }
-
-        final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
-    }
-
-    @Override
     public void set(final double key, final double value, final int callSiteFlags) {
         final int index = getArrayIndex(key);
 
@@ -3394,82 +3211,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     @Override
-    public void set(final long key, final int value, final int callSiteFlags) {
-        final int index = getArrayIndex(key);
-
-        if (isValidArrayIndex(index)) {
-            final ArrayData data = getArray();
-            if (data.has(index)) {
-                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
-            } else {
-                doesNotHave(index, value, callSiteFlags);
-            }
-
-            return;
-        }
-
-        final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
-    }
-
-    @Override
-    public void set(final long key, final long value, final int callSiteFlags) {
-        final int index = getArrayIndex(key);
-
-        if (isValidArrayIndex(index)) {
-            final ArrayData data = getArray();
-            if (data.has(index)) {
-                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
-            } else {
-                doesNotHave(index, value, callSiteFlags);
-            }
-
-            return;
-        }
-
-        final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
-    }
-
-    @Override
-    public void set(final long key, final double value, final int callSiteFlags) {
-        final int index = getArrayIndex(key);
-
-        if (isValidArrayIndex(index)) {
-            final ArrayData data = getArray();
-            if (data.has(index)) {
-                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
-            } else {
-                doesNotHave(index, value, callSiteFlags);
-            }
-
-            return;
-        }
-
-        final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
-    }
-
-    @Override
-    public void set(final long key, final Object value, final int callSiteFlags) {
-        final int index = getArrayIndex(key);
-
-        if (isValidArrayIndex(index)) {
-            final ArrayData data = getArray();
-            if (data.has(index)) {
-                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
-            } else {
-                doesNotHave(index, value, callSiteFlags);
-            }
-
-            return;
-        }
-
-        final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), callSiteFlags, propName, value);
-    }
-
-    @Override
     public void set(final int key, final int value, final int callSiteFlags) {
         final int index = getArrayIndex(key);
         if (isValidArrayIndex(index)) {
@@ -3479,25 +3220,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             } else {
                 doesNotHave(index, value, callSiteFlags);
             }
-            return;
-        }
-
-        final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
-    }
-
-    @Override
-    public void set(final int key, final long value, final int callSiteFlags) {
-        final int index = getArrayIndex(key);
-
-        if (isValidArrayIndex(index)) {
-            final ArrayData data = getArray();
-            if (data.has(index)) {
-                setArray(data.set(index, value, isStrictFlag(callSiteFlags)));
-            } else {
-                doesNotHave(index, value, callSiteFlags);
-            }
-
             return;
         }
 
@@ -3557,12 +3279,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     @Override
-    public boolean has(final long key) {
-        final int index = getArrayIndex(key);
-        return isValidArrayIndex(index) ? hasArrayProperty(index) : hasProperty(JSType.toString(key), true);
-    }
-
-    @Override
     public boolean has(final int key) {
         final int index = getArrayIndex(key);
         return isValidArrayIndex(index) ? hasArrayProperty(index) : hasProperty(JSType.toString(key), true);
@@ -3595,12 +3311,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
     }
 
     @Override
-    public boolean hasOwnProperty(final long key) {
-        final int index = getArrayIndex(key);
-        return isValidArrayIndex(index) ? hasOwnArrayProperty(index) : hasProperty(JSType.toString(key), false);
-    }
-
-    @Override
     public boolean hasOwnProperty(final double key) {
         final int index = getArrayIndex(key);
         return isValidArrayIndex(index) ? hasOwnArrayProperty(index) : hasProperty(JSType.toString(key), false);
@@ -3622,22 +3332,6 @@ public abstract class ScriptObject implements PropertyAccess, Cloneable {
             }
             return false;
         }
-        return deleteObject(JSType.toObject(key), strict);
-    }
-
-    @Override
-    public boolean delete(final long key, final boolean strict) {
-        final int index = getArrayIndex(key);
-        final ArrayData array = getArray();
-
-        if (array.has(index)) {
-            if (array.canDelete(index, strict)) {
-                setArray(array.delete(index));
-                return true;
-            }
-            return false;
-        }
-
         return deleteObject(JSType.toObject(key), strict);
     }
 

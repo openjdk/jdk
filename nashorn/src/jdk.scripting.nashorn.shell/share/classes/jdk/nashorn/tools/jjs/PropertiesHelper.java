@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.WeakHashMap;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
@@ -136,6 +137,42 @@ final class PropertiesHelper {
         return props;
     }
 
+    // This method creates a regex Pattern to use to do CamelCase
+    // matching. The pattern is derived from user supplied string
+    // containing one or more upper case characters in it.
+    private static Pattern makeCamelCasePattern(final String str) {
+        assert !str.isEmpty();
+
+        final char[] chars = str.toCharArray();
+        final StringBuilder buf = new StringBuilder();
+        boolean seenUpperCase = false;
+
+        // Skip first char for case check. Even if it is upper case,
+        // we do not want to put lower case matching pattern before
+        // the first letter!
+        buf.append(chars[0]);
+
+        for (int idx = 1; idx < chars.length; idx++) {
+            final char ch = chars[idx];
+            if (ch >= 'A' && ch <= 'Z') {
+                seenUpperCase = true;
+                buf.append("[^A-Z]*");
+            }
+            buf.append(ch);
+        }
+
+        if (seenUpperCase) {
+            // match anything at the end!
+            buf.append(".*");
+            try {
+                return Pattern.compile(buf.toString());
+            } catch (Exception exp) {
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Returns the list of properties of the given object that start with the given prefix.
      *
@@ -145,8 +182,21 @@ final class PropertiesHelper {
      */
     List<String> getProperties(final Object obj, final String prefix) {
         assert prefix != null && !prefix.isEmpty();
-        return getProperties(obj).stream()
+        List<String> allProps = getProperties(obj);
+        List<String> props = allProps.stream()
                    .filter(s -> s.startsWith(prefix))
                    .collect(Collectors.toList());
+
+        // If no match, try CamelCase completion..
+        if (props.isEmpty()) {
+            final Pattern pat = makeCamelCasePattern(prefix);
+            if (pat != null) {
+                return allProps.stream()
+                    .filter(s -> pat.matcher(s).matches())
+                    .collect(Collectors.toList());
+            }
+        }
+
+        return props;
     }
 }
