@@ -148,7 +148,8 @@ public final class NativeObject {
      * @param buf external buffer - should be a nio ByteBuffer
      * @return the 'obj' object
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "sets ByteBuffer to hold indexed data (nashorn extension)")
     public static ScriptObject setIndexedPropertiesToExternalArrayData(final Object self, final Object obj, final Object buf) {
         Global.checkObject(obj);
         final ScriptObject sobj = (ScriptObject)obj;
@@ -168,7 +169,8 @@ public final class NativeObject {
      * @param  obj object to get prototype from
      * @return the prototype of an object
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "returns the prototype of the specified object")
     public static Object getPrototypeOf(final Object self, final Object obj) {
         if (obj instanceof ScriptObject) {
             return ((ScriptObject)obj).getProto();
@@ -195,7 +197,8 @@ public final class NativeObject {
      * @param  proto prototype object to be used
      * @return object whose prototype is set
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "sets the prototype of the given object (ES6)")
     public static Object setPrototypeOf(final Object self, final Object obj, final Object proto) {
         if (obj instanceof ScriptObject) {
             ((ScriptObject)obj).setPrototypeOf(proto);
@@ -216,7 +219,8 @@ public final class NativeObject {
      * @param prop  property descriptor
      * @return property descriptor
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "returns a property descriptor for an own property (not inherited property)")
     public static Object getOwnPropertyDescriptor(final Object self, final Object obj, final Object prop) {
         if (obj instanceof ScriptObject) {
             final String       key  = JSType.toString(prop);
@@ -240,7 +244,8 @@ public final class NativeObject {
      * @param obj  object to query for property names
      * @return array of property names
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "returns an array of all properties (enumerable or not) found directly on the given object")
     public static ScriptObject getOwnPropertyNames(final Object self, final Object obj) {
         if (obj instanceof ScriptObject) {
             return new NativeArray(((ScriptObject)obj).getOwnKeys(true));
@@ -258,7 +263,8 @@ public final class NativeObject {
      * @param obj  object to query for property names
      * @return array of property names
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "returns an array of all symbol properties found directly on the given object (ES6)")
     public static ScriptObject getOwnPropertySymbols(final Object self, final Object obj) {
         if (obj instanceof ScriptObject) {
             return new NativeArray(((ScriptObject)obj).getOwnSymbols(true));
@@ -276,7 +282,8 @@ public final class NativeObject {
      * @param props properties to define
      * @return object created
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "creates a new object with the specified prototype object and properties")
     public static ScriptObject create(final Object self, final Object proto, final Object props) {
         if (proto != null) {
             Global.checkObject(proto);
@@ -302,7 +309,8 @@ public final class NativeObject {
      * @param attr attributes for property descriptor
      * @return object
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "adds an own property and/or update the attributes of an existing own property of an object")
     public static ScriptObject defineProperty(final Object self, final Object obj, final Object prop, final Object attr) {
         final ScriptObject sobj = Global.checkObject(obj);
         sobj.defineOwnProperty(JSType.toPropertyKey(prop), attr, true);
@@ -317,7 +325,8 @@ public final class NativeObject {
      * @param props properties
      * @return object
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "defines new or modifies existing properties directly on the given object")
     public static ScriptObject defineProperties(final Object self, final Object obj, final Object props) {
         final ScriptObject sobj     = Global.checkObject(obj);
         final Object       propsObj = Global.toObject(props);
@@ -339,7 +348,8 @@ public final class NativeObject {
      * @param obj  object to seal
      * @return sealed object
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "prevents new properties from being added to the given object and marks existing properties as non-configurable")
     public static Object seal(final Object self, final Object obj) {
         if (obj instanceof ScriptObject) {
             return ((ScriptObject)obj).seal();
@@ -358,7 +368,8 @@ public final class NativeObject {
      * @param obj object to freeze
      * @return frozen object
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "prevents new properties from being added to the given object and prevents existing properties from being removed or re-configured")
     public static Object freeze(final Object self, final Object obj) {
         if (obj instanceof ScriptObject) {
             return ((ScriptObject)obj).freeze();
@@ -376,7 +387,8 @@ public final class NativeObject {
      * @param obj  object, for which to set the internal extensible property to false
      * @return object
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "prevents new properties from ever being added to the given object")
     public static Object preventExtensions(final Object self, final Object obj) {
         if (obj instanceof ScriptObject) {
             return ((ScriptObject)obj).preventExtensions();
@@ -394,7 +406,8 @@ public final class NativeObject {
      * @param obj check whether an object is sealed
      * @return true if sealed, false otherwise
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "tells if an object is sealed or not")
     public static boolean isSealed(final Object self, final Object obj) {
         if (obj instanceof ScriptObject) {
             return ((ScriptObject)obj).isSealed();
@@ -412,7 +425,8 @@ public final class NativeObject {
      * @param obj check whether an object
      * @return true if object is frozen, false otherwise
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "tells if an object is fronzen or not")
     public static boolean isFrozen(final Object self, final Object obj) {
         if (obj instanceof ScriptObject) {
             return ((ScriptObject)obj).isFrozen();
@@ -430,7 +444,8 @@ public final class NativeObject {
      * @param obj check whether an object is extensible
      * @return true if object is extensible, false otherwise
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "tells if an object is extensible or not")
     public static boolean isExtensible(final Object self, final Object obj) {
         if (obj instanceof ScriptObject) {
             return ((ScriptObject)obj).isExtensible();
@@ -448,7 +463,8 @@ public final class NativeObject {
      * @param obj  object from which to extract keys
      * @return array of keys in object
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "returns an array of the given object's own enumerable properties")
     public static ScriptObject keys(final Object self, final Object obj) {
         if (obj instanceof ScriptObject) {
             final ScriptObject sobj = (ScriptObject)obj;
@@ -471,7 +487,7 @@ public final class NativeObject {
      * @param value  value of object to be instantiated
      * @return the new NativeObject
      */
-    @Constructor
+    @Constructor(documentation = "creates a new script object or converts given value as a script object")
     public static Object construct(final boolean newObj, final Object self, final Object value) {
         final JSType type = JSType.ofNoFunction(value);
 
@@ -505,7 +521,8 @@ public final class NativeObject {
      * @param self self reference
      * @return ToString of object
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE)
+    @Function(attributes = Attribute.NOT_ENUMERABLE,
+        documentation = "returns a string representing of this object")
     public static String toString(final Object self) {
         return ScriptRuntime.builtinObjectToString(self);
     }
@@ -558,7 +575,8 @@ public final class NativeObject {
      * @param v property to check for
      * @return true if property exists in object
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE)
+    @Function(attributes = Attribute.NOT_ENUMERABLE,
+        documentation = "tells whether this object has the specified property or not")
     public static boolean hasOwnProperty(final Object self, final Object v) {
         // Convert ScriptObjects to primitive with String.class hint
         // but no need to convert other primitives to string.
@@ -575,7 +593,8 @@ public final class NativeObject {
      * @param v v prototype object to check against
      * @return true if object is prototype of v
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE)
+    @Function(attributes = Attribute.NOT_ENUMERABLE,
+        documentation = "tests for this object in another object's prototype chain")
     public static boolean isPrototypeOf(final Object self, final Object v) {
         if (!(v instanceof ScriptObject)) {
             return false;
@@ -601,7 +620,8 @@ public final class NativeObject {
      * @param v property to check if enumerable
      * @return true if property is enumerable
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE)
+    @Function(attributes = Attribute.NOT_ENUMERABLE,
+        documentation = "tells whether the given property is enumerable or not")
     public static boolean propertyIsEnumerable(final Object self, final Object v) {
         final String str = JSType.toString(v);
         final Object obj = Global.toObject(self);
@@ -676,7 +696,8 @@ public final class NativeObject {
      * @param source the source object whose properties are bound to the target
      * @return the target object after property binding
      */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR,
+        documentation = "binds the source object's properties to the target object (nashorn extension)")
     public static Object bindProperties(final Object self, final Object target, final Object source) {
         // target object has to be a ScriptObject
         final ScriptObject targetObj = Global.checkObject(target);

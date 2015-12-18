@@ -1,0 +1,68 @@
+<<<  >>>
+* noargs via shebang
+S:
+
+* noargs via jjs
+S:
+
+* withargs via shebang
+S:a.js,hello world
+
+* withargs via jjs
+S:a.js,hello world
+
+<<< --language=es6 >>>
+* noargs via shebang
+S:
+
+* noargs via jjs
+S:
+
+* withargs via shebang
+S:a.js,hello world
+
+* withargs via jjs
+S:a.js,hello world
+
+<<< --language=es6 -scripting >>>
+* noargs via shebang
+S:
+
+* noargs via jjs
+S:
+
+* withargs via shebang
+S:a.js,hello world
+
+* withargs via jjs
+S:a.js,hello world
+
+<<< -scripting a.js >>>
+* noargs via shebang
+A:
+S:
+
+* noargs via jjs
+S:
+
+* withargs via shebang
+A:
+S:
+A:
+java.io.IOException: hello world is not a file
+* withargs via jjs
+S:a.js,hello world
+
+<<< -scripting b.js >>>
+* noargs via shebang
+B:./shebang.js
+
+* noargs via jjs
+S:
+
+* withargs via shebang
+B:./shebang.js,a.js,hello world
+
+* withargs via jjs
+S:a.js,hello world
+

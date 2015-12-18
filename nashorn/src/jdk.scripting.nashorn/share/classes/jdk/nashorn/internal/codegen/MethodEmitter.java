@@ -544,7 +544,6 @@ public class MethodEmitter {
         } else {
             assert false : type + " cannot be packed!";
         }
-        //all others are nops, objects aren't packed
     }
 
     /**
