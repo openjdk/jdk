@@ -845,7 +845,7 @@ static void *java_start(Thread *thread) {
   trcVerbose("newborn Thread : pthread-id %u, ktid " UINT64_FORMAT
     ", stack %p ... %p, stacksize 0x%IX (%IB)",
     pthread_id, kernel_thread_id,
-    thread->stack_base() - thread->stack_size(),
+    thread->stack_end(),
     thread->stack_base(),
     thread->stack_size(),
     thread->stack_size());
@@ -1014,7 +1014,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 
   trcVerbose("attaching Thread : pthread-id %u, ktid " UINT64_FORMAT ", stack %p ... %p, stacksize 0x%IX (%IB)",
     pthread_id, kernel_thread_id,
-    thread->stack_base() - thread->stack_size(),
+    thread->stack_end(),
     thread->stack_base(),
     thread->stack_size(),
     thread->stack_size());
@@ -3570,15 +3570,6 @@ void os::init(void) {
   Aix::_main_thread = pthread_self();
 
   initial_time_count = os::elapsed_counter();
-
-  // If the pagesize of the VM is greater than 8K determine the appropriate
-  // number of initial guard pages. The user can change this with the
-  // command line arguments, if needed.
-  if (vm_page_size() > (int)Aix::vm_default_page_size()) {
-    StackYellowPages = 1;
-    StackRedPages = 1;
-    StackShadowPages = round_to((StackShadowPages*Aix::vm_default_page_size()), vm_page_size()) / vm_page_size();
-  }
 }
 
 // This is called _after_ the global arguments have been parsed.
@@ -3684,8 +3675,9 @@ jint os::init_2(void) {
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Aix::min_stack_allowed = MAX2(os::Aix::min_stack_allowed,
-            (size_t)(StackYellowPages+StackRedPages+StackShadowPages) * Aix::page_size() +
-                     (2*BytesPerWord COMPILER2_PRESENT(+1)) * Aix::vm_default_page_size());
+                                    JavaThread::stack_guard_zone_size() +
+                                    JavaThread::stack_shadow_zone_size() +
+                                    (2*BytesPerWord COMPILER2_PRESENT(+1)) * Aix::vm_default_page_size());
 
   os::Aix::min_stack_allowed = align_size_up(os::Aix::min_stack_allowed, os::Aix::page_size());
 

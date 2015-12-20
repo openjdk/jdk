@@ -2551,8 +2551,8 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
         } else if(thread->addr_inside_register_stack(addr)) {
           // Disable the yellow zone which sets the state that
           // we've got a stack overflow problem.
-          if (thread->stack_yellow_zone_enabled()) {
-            thread->disable_stack_yellow_zone();
+          if (thread->stack_yellow_reserved_zone_enabled()) {
+            thread->disable_stack_yellow_reserved_zone();
           }
           // Give us some room to process the exception.
           thread->disable_register_stack_guard();
@@ -2587,7 +2587,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
           // Yellow zone violation.  The o/s has unprotected the first yellow
           // zone page for us.  Note:  must call disable_stack_yellow_zone to
           // update the enabled status, even if the zone contains only one page.
-          thread->disable_stack_yellow_zone();
+          thread->disable_stack_yellow_reserved_zone();
           // If not in java code, return and hope for the best.
           return in_java
               ? Handle_Exception(exceptionInfo, SharedRuntime::continuation_for_implicit_exception(thread, pc, SharedRuntime::STACK_OVERFLOW))
@@ -2616,7 +2616,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
       if (in_java) {
         PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
         address addr = (address) exceptionRecord->ExceptionInformation[1];
-        address stack_end = thread->stack_base() - thread->stack_size();
+        address stack_end = thread->stack_end();
         if (addr < stack_end && addr >= stack_end - os::vm_page_size()) {
           // Stack overflow.
           assert(!os::uses_stack_guard_pages(),
@@ -2640,7 +2640,7 @@ LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo) {
           //
           PEXCEPTION_RECORD exceptionRecord = exceptionInfo->ExceptionRecord;
           address addr = (address) exceptionRecord->ExceptionInformation[1];
-          if (addr > thread->stack_yellow_zone_base() && addr < thread->stack_base()) {
+          if (addr > thread->stack_reserved_zone_base() && addr < thread->stack_base()) {
             addr = (address)((uintptr_t)addr &
                              (~((uintptr_t)os::vm_page_size() - (uintptr_t)1)));
             os::commit_memory((char *)addr, thread->stack_base() - addr,
@@ -4080,7 +4080,7 @@ void nx_check_protection() {
 #endif // _WIN64
 #endif // PRODUCT
 
-// this is called _before_ the global arguments have been parsed
+// This is called _before_ the global arguments have been parsed
 void os::init(void) {
   _initial_pid = _getpid();
 
@@ -4185,8 +4185,9 @@ jint os::init_2(void) {
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   size_t min_stack_allowed =
-            (size_t)(StackYellowPages+StackRedPages+StackShadowPages+
-                     2*BytesPerWord COMPILER2_PRESENT(+1)) * os::vm_page_size();
+            (size_t)(JavaThread::stack_yellow_zone_size() + JavaThread::stack_red_zone_size() +
+                     JavaThread::stack_shadow_zone_size() +
+                     (2*BytesPerWord COMPILER2_PRESENT(+1)) * os::vm_page_size());
   if (actual_reserve_size < min_stack_allowed) {
     tty->print_cr("\nThe stack size specified is too small, "
                   "Specify at least %dk",

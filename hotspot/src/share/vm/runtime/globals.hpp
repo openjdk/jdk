@@ -3428,15 +3428,18 @@ public:
                                                                             \
   /* stack parameters */                                                    \
   product_pd(intx, StackYellowPages,                                        \
-          "Number of yellow zone (recoverable overflows) pages")            \
+          "Number of yellow zone (recoverable overflows) pages of size "    \
+          "4KB. If pages are bigger yellow zone is aligned up.")            \
           range(MIN_STACK_YELLOW_PAGES, (DEFAULT_STACK_YELLOW_PAGES+5))     \
                                                                             \
   product_pd(intx, StackRedPages,                                           \
-          "Number of red zone (unrecoverable overflows) pages")             \
+          "Number of red zone (unrecoverable overflows) pages of size "     \
+          "4KB. If pages are bigger red zone is aligned up.")               \
           range(MIN_STACK_RED_PAGES, (DEFAULT_STACK_RED_PAGES+2))           \
                                                                             \
   product_pd(intx, StackReservedPages,                                      \
-          "Number of reserved zone (reserved to annotated methods) pages")  \
+          "Number of reserved zone (reserved to annotated methods) pages"   \
+          " of size 4KB. If pages are bigger reserved zone is aligned up.") \
           range(MIN_STACK_RESERVED_PAGES, (DEFAULT_STACK_RESERVED_PAGES+10))\
                                                                             \
   product(bool, RestrictReservedStack, true,                                \
@@ -3444,13 +3447,14 @@ public:
                                                                             \
   /* greater stack shadow pages can't generate instruction to bang stack */ \
   product_pd(intx, StackShadowPages,                                        \
-          "Number of shadow zone (for overflow checking) pages "            \
-          "this should exceed the depth of the VM and native call stack")   \
+          "Number of shadow zone (for overflow checking) pages of size "    \
+          "4KB. If pages are bigger shadow zone is aligned up. "            \
+          "This should exceed the depth of the VM and native call stack.")  \
           range(MIN_STACK_SHADOW_PAGES, (DEFAULT_STACK_SHADOW_PAGES+30))    \
                                                                             \
   product_pd(intx, ThreadStackSize,                                         \
           "Thread Stack Size (in Kbytes)")                                  \
-          range(0, max_intx-os::vm_page_size())                             \
+          range(0, (max_intx-os::vm_page_size())/(1 * K))                   \
                                                                             \
   product_pd(intx, VMThreadStackSize,                                       \
           "Non-Java Thread Stack Size (in Kbytes)")                         \
@@ -3458,7 +3462,7 @@ public:
                                                                             \
   product_pd(intx, CompilerThreadStackSize,                                 \
           "Compiler Thread Stack Size (in Kbytes)")                         \
-          range(0, max_intx /(1 * K))                                       \
+          range(0, max_intx/(1 * K))                                        \
                                                                             \
   develop_pd(size_t, JVMInvokeMethodSlack,                                  \
           "Stack space (bytes) required for JVM_InvokeMethod to complete")  \

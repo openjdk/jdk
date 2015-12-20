@@ -58,7 +58,8 @@ bool frame::safe_for_sender(JavaThread *thread) {
   address   unextended_sp = (address)_unextended_sp;
 
   // consider stack guards when trying to determine "safe" stack pointers
-  static size_t stack_guard_size = os::uses_stack_guard_pages() ? (StackYellowPages + StackRedPages) * os::vm_page_size() : 0;
+  static size_t stack_guard_size = os::uses_stack_guard_pages() ?
+    (JavaThread::stack_red_zone_size() + JavaThread::stack_yellow_zone_size()) : 0;
   size_t usable_stack_size = thread->stack_size() - stack_guard_size;
 
   // sp must be within the usable part of the stack (not in guards)

@@ -437,7 +437,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe
 
   // compute the beginning of the protected zone minus the requested frame size
   __ sub( Rscratch, Rscratch2,   Rscratch );
-  __ set( (StackRedPages+StackYellowPages) * page_size, Rscratch2 );
+  __ set( JavaThread::stack_red_zone_size() + JavaThread::stack_yellow_zone_size(), Rscratch2 );
   __ add( Rscratch, Rscratch2,   Rscratch );
 
   // Add in the size of the frame (which is the same as subtracting it from the

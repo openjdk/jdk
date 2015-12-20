@@ -4359,15 +4359,6 @@ void os::init(void) {
   // the minimum of what the OS supports (thr_min_stack()), and
   // enough to allow the thread to get to user bytecode execution.
   Solaris::min_stack_allowed = MAX2(thr_min_stack(), Solaris::min_stack_allowed);
-  // If the pagesize of the VM is greater than 8K determine the appropriate
-  // number of initial guard pages.  The user can change this with the
-  // command line arguments, if needed.
-  if (vm_page_size() > 8*K) {
-    StackYellowPages = 1;
-    StackRedPages = 1;
-    StackReservedPages = 1;
-    StackShadowPages = round_to((StackShadowPages*8*K), vm_page_size()) / vm_page_size();
-  }
 }
 
 // To install functions for atexit system call
@@ -4422,8 +4413,9 @@ jint os::init_2(void) {
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Solaris::min_stack_allowed = MAX2(os::Solaris::min_stack_allowed,
-                                        (size_t)(StackReservedPages+StackYellowPages+StackRedPages+StackShadowPages+
-                                        2*BytesPerWord COMPILER2_PRESENT(+1)) * page_size);
+                                        JavaThread::stack_guard_zone_size() +
+                                        JavaThread::stack_shadow_zone_size() +
+                                        2*BytesPerWord COMPILER2_PRESENT(+1) * page_size);
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
   if (threadStackSizeInBytes != 0 &&
@@ -4443,7 +4435,8 @@ jint os::init_2(void) {
   if (vm_page_size() > 8*K) {
     threadStackSizeInBytes = (threadStackSizeInBytes != 0)
        ? threadStackSizeInBytes +
-         ((StackYellowPages + StackRedPages) * vm_page_size())
+         JavaThread::stack_red_zone_size() +
+         JavaThread::stack_yellow_zone_size()
        : 0;
     ThreadStackSize = threadStackSizeInBytes/K;
   }
