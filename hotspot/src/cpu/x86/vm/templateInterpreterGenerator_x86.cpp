@@ -540,12 +540,12 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   __ addptr(rax, stack_base);
   __ subptr(rax, stack_size);
 
-  // Use the maximum number of pages we might bang.
-  const int max_pages = StackShadowPages > (StackRedPages+StackYellowPages+StackReservedPages) ? StackShadowPages :
-                        (StackRedPages+StackYellowPages+StackReservedPages);
+  // Use the bigger size for banging.
+  const int max_bang_size = (int)MAX2(JavaThread::stack_shadow_zone_size(),
+                                      JavaThread::stack_guard_zone_size());
 
   // add in the red and yellow zone sizes
-  __ addptr(rax, max_pages * page_size);
+  __ addptr(rax, max_bang_size);
 
   // check against the current stack bottom
   __ cmpptr(rsp, rax);
@@ -1187,7 +1187,7 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
   {
     Label no_reguard;
     __ cmpl(Address(thread, JavaThread::stack_guard_state_offset()),
-            JavaThread::stack_guard_yellow_disabled);
+            JavaThread::stack_guard_yellow_reserved_disabled);
     __ jcc(Assembler::notEqual, no_reguard);
 
     __ pusha(); // XXX only save smashed registers

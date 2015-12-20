@@ -26,6 +26,7 @@
 #define OS_WINDOWS_VM_OS_WINDOWS_INLINE_HPP
 
 #include "runtime/os.hpp"
+#include "runtime/thread.hpp"
 
 inline const char* os::dll_file_extension()            { return ".dll"; }
 
@@ -72,7 +73,7 @@ inline void os::bang_stack_shadow_pages() {
   // the OS may not map an intervening page into our space
   // and may fault on a memory access to interior of our frame.
   address sp = current_stack_pointer();
-  for (int pages = 1; pages <= StackShadowPages; pages++) {
+  for (size_t pages = 1; pages <= (JavaThread::stack_shadow_zone_size() / os::vm_page_size()); pages++) {
     *((int *)(sp - (pages * vm_page_size()))) = 0;
   }
 }

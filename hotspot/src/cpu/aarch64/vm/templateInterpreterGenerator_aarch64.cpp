@@ -474,12 +474,12 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   __ sub(rscratch1, rscratch1, rscratch2); // Stack limit
   __ add(r0, r0, rscratch1);
 
-  // Use the maximum number of pages we might bang.
-  const int max_pages = StackShadowPages > (StackRedPages+StackYellowPages) ? StackShadowPages :
-                                                                              (StackRedPages+StackYellowPages);
+  // Use the bigger size for banging.
+  const int max_bang_size = MAX2(JavaThread::stack_shadow_zone_size(),
+                                 JavaThread::stack_red_zone_size() + JavaThread::stack_yellow_zone_size());
 
   // add in the red and yellow zone sizes
-  __ add(r0, r0, max_pages * page_size * 2);
+  __ add(r0, r0, max_bang_size * 2);
 
   // check against the current stack bottom
   __ cmp(sp, r0);
@@ -826,9 +826,10 @@ void InterpreterGenerator::bang_stack_shadow_pages(bool native_call) {
   // an interpreter frame with greater than a page of locals, so each page
   // needs to be checked.  Only true for non-native.
   if (UseStackBanging) {
-    const int start_page = native_call ? StackShadowPages : 1;
+    const int size_t n_shadow_pages = JavaThread::stack_shadow_zone_size() / os::vm_page_size();
+    const int start_page = native_call ? n_shadow_pages : 1;
     const int page_size = os::vm_page_size();
-    for (int pages = start_page; pages <= StackShadowPages ; pages++) {
+    for (int pages = start_page; pages <= n_shadow_pages ; pages++) {
       __ sub(rscratch2, sp, pages*page_size);
       __ str(zr, Address(rscratch2));
     }

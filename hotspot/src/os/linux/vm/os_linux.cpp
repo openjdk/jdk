@@ -621,7 +621,7 @@ bool os::Linux::manually_expand_stack(JavaThread * t, address addr) {
   assert(t->osthread()->expanding_stack(), "expand should be set");
   assert(t->stack_base() != NULL, "stack_base was not initialized");
 
-  if (addr <  t->stack_base() && addr >= t->stack_yellow_zone_base()) {
+  if (addr <  t->stack_base() && addr >= t->stack_reserved_zone_base()) {
     sigset_t mask_all, old_sigset;
     sigfillset(&mask_all);
     pthread_sigmask(SIG_SETMASK, &mask_all, &old_sigset);
@@ -836,7 +836,7 @@ bool os::create_attached_thread(JavaThread* thread) {
     // is no gap between the last two virtual memory regions.
 
     JavaThread *jt = (JavaThread *)thread;
-    address addr = jt->stack_yellow_zone_base();
+    address addr = jt->stack_reserved_zone_base();
     assert(addr != NULL, "initialization problem?");
     assert(jt->stack_available(addr) > 0, "stack guard should not be enabled");
 
@@ -1863,8 +1863,7 @@ void * os::Linux::dll_load_in_vmthread(const char *filename, char *ebuf,
     while (jt) {
       if (!jt->stack_guard_zone_unused() &&     // Stack not yet fully initialized
           jt->stack_guards_enabled()) {         // No pending stack overflow exceptions
-        if (!os::guard_memory((char *) jt->stack_red_zone_base() - jt->stack_red_zone_size(),
-                              jt->stack_yellow_zone_size() + jt->stack_red_zone_size())) {
+        if (!os::guard_memory((char *)jt->stack_end(), jt->stack_guard_zone_size())) {
           warning("Attempt to reguard stack yellow zone failed.");
         }
       }
@@ -4580,20 +4579,6 @@ void os::init(void) {
   }
   // else it defaults to CLOCK_REALTIME
 
-  // If the pagesize of the VM is greater than 8K determine the appropriate
-  // number of initial guard pages.  The user can change this with the
-  // command line arguments, if needed.
-  if (vm_page_size() > (int)Linux::vm_default_page_size()) {
-    StackYellowPages = 1;
-    StackRedPages = 1;
-#if defined(IA32) || defined(IA64)
-    StackReservedPages = 1;
-#else
-    StackReservedPages = 0;
-#endif
-    StackShadowPages = round_to((StackShadowPages*Linux::vm_default_page_size()), vm_page_size()) / vm_page_size();
-  }
-
   // retrieve entry point for pthread_setname_np
   Linux::_pthread_setname_np =
     (int(*)(pthread_t, const char*))dlsym(RTLD_DEFAULT, "pthread_setname_np");
@@ -4652,7 +4637,8 @@ jint os::init_2(void) {
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Linux::min_stack_allowed = MAX2(os::Linux::min_stack_allowed,
-                                      (size_t)(StackReservedPages+StackYellowPages+StackRedPages+StackShadowPages) * Linux::page_size() +
+                                      JavaThread::stack_guard_zone_size() +
+                                      JavaThread::stack_shadow_zone_size() +
                                       (2*BytesPerWord COMPILER2_PRESENT(+1)) * Linux::vm_default_page_size());
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
