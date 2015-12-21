@@ -25,15 +25,25 @@
 #ifndef SHARE_VM_GC_G1_G1REMSET_HPP
 #define SHARE_VM_GC_G1_G1REMSET_HPP
 
+#include "gc/g1/dirtyCardQueue.hpp"
 #include "gc/g1/g1RemSetSummary.hpp"
+#include "gc/g1/heapRegion.hpp"
+#include "memory/allocation.hpp"
+#include "memory/iterator.hpp"
 
 // A G1RemSet provides ways of iterating over pointers into a selected
 // collection set.
 
-class G1CollectedHeap;
+class BitMap;
+class CardTableModRefBS;
+class G1BlockOffsetSharedArray;
 class ConcurrentG1Refine;
+class CodeBlobClosure;
+class G1CollectedHeap;
+class G1CollectorPolicy;
 class G1ParPushHeapRSClosure;
-class outputStream;
+class G1SATBCardTableModRefBS;
+class HeapRegionClaimer;
 
 // A G1RemSet in which each heap region has a rem set that records the
 // external heap references into it.  Uses a mod ref bs to track updates,
