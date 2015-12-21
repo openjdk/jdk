@@ -85,11 +85,6 @@ bool G1SATBCardTableModRefBS::mark_card_deferred(size_t card_index) {
     return false;
   }
 
-  if  (val == g1_young_gen) {
-    // the card is for a young gen region. We don't need to keep track of all pointers into young
-    return false;
-  }
-
   // Cached bit can be installed either on a clean card or on a claimed card.
   jbyte new_val = val;
   if (val == clean_card_val()) {

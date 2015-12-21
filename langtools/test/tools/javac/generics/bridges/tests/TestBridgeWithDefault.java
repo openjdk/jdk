@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 class TestBridgeWithDefault {
     interface A { Object m(int x); }
 

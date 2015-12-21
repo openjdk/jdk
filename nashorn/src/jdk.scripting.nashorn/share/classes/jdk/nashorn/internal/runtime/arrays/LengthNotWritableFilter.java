@@ -91,22 +91,6 @@ final class LengthNotWritableFilter extends ArrayFilter {
     }
 
     @Override
-    public long getLong(final int index) {
-        if (index >= length()) {
-            return JSType.toLong(get(index));
-        }
-        return underlying.getLong(index);
-    }
-
-    @Override
-    public long getLongOptimistic(final int index, final int programPoint) {
-        if (index >= length()) {
-            return JSType.toLongOptimistic(get(index), programPoint);
-        }
-        return underlying.getLongOptimistic(index, programPoint);
-    }
-
-    @Override
     public double getDouble(final int index) {
         if (index >= length()) {
             return JSType.toNumber(get(index));
@@ -141,15 +125,6 @@ final class LengthNotWritableFilter extends ArrayFilter {
 
     @Override
     public ArrayData set(final int index, final int value, final boolean strict) {
-        if (checkAdd(index, value)) {
-            return this;
-        }
-        underlying = underlying.set(index, value, strict);
-        return this;
-    }
-
-    @Override
-    public ArrayData set(final int index, final long value, final boolean strict) {
         if (checkAdd(index, value)) {
             return this;
         }

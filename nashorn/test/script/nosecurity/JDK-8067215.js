@@ -32,7 +32,6 @@
 
 var intType    = Java.type("int");
 var doubleType = Java.type("double");
-var longType   = Java.type("long");
 var objectType = Java.type("java.lang.Object");
 
 var Context = Java.type("jdk.nashorn.internal.runtime.Context");
@@ -58,7 +57,6 @@ function testMap(obj) {
         }
         if (prop.getType() != getExpectedType(obj[key])) {
             throw new Error("Wrong property type: " + prop.getType() + " // " + getExpectedType(obj[key]));
-
         }
     }
 }
@@ -67,14 +65,8 @@ function getExpectedType(value) {
     if (!dualFields) {
         return objectType.class;
     }
-    if (JSType.isRepresentableAsInt(value)) {
-        return intType.class;
-    }
-    if (JSType.isRepresentableAsLong(value)) {
-        return longType.class;
-    }
-    if (JSType.isNumber(value)) {
-        return doubleType.class;
+    if (typeof value === "number") {
+        return JSType.isRepresentableAsInt(value) ? intType.class : doubleType.class;
     }
     return objectType.class;
 }

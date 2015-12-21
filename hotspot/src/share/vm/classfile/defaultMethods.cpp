@@ -30,6 +30,7 @@
 #include "memory/allocation.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
+#include "runtime/handles.inline.hpp"
 #include "runtime/signature.hpp"
 #include "runtime/thread.hpp"
 #include "oops/instanceKlass.hpp"
@@ -606,7 +607,7 @@ static bool already_in_vtable_slots(GrowableArray<EmptyVtableSlot*>* slots, Meth
 }
 
 static GrowableArray<EmptyVtableSlot*>* find_empty_vtable_slots(
-    InstanceKlass* klass, GrowableArray<Method*>* mirandas, TRAPS) {
+    InstanceKlass* klass, const GrowableArray<Method*>* mirandas, TRAPS) {
 
   assert(klass != NULL, "Must be valid class");
 
@@ -777,7 +778,8 @@ static void create_default_methods( InstanceKlass* klass,
 // candidate).  These methods are then added to the class's method list.
 // The JVM does not create bridges nor handle generic signatures here.
 void DefaultMethods::generate_default_methods(
-    InstanceKlass* klass, GrowableArray<Method*>* mirandas, TRAPS) {
+    InstanceKlass* klass, const GrowableArray<Method*>* mirandas, TRAPS) {
+  assert(klass != NULL, "invariant");
 
   // This resource mark is the bound for all memory allocation that takes
   // place during default method processing.  After this goes out of scope,
@@ -787,6 +789,7 @@ void DefaultMethods::generate_default_methods(
   ResourceMark rm(THREAD);
 
   // Keep entire hierarchy alive for the duration of the computation
+  constantPoolHandle cp(THREAD, klass->constants());
   KeepAliveRegistrar keepAlive(THREAD);
   KeepAliveVisitor loadKeepAlive(&keepAlive);
   loadKeepAlive.run(klass);

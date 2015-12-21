@@ -51,6 +51,12 @@ public:
   // Returned string is a constant. For unknown signals "UNKNOWN" is returned.
   static const char* get_signal_name(int sig, char* out, size_t outlen);
 
+  // Helper function, returns a signal number for a given signal name, e.g. 11
+  // for "SIGSEGV". Name can be given with or without "SIG" prefix, so both
+  // "SEGV" or "SIGSEGV" work. Name must be uppercase.
+  // Returns -1 for an unknown signal name.
+  static int get_signal_number(const char* signal_name);
+
   // Returns one-line short description of a signal set in a user provided buffer.
   static const char* describe_signal_set_short(const sigset_t* set, char* buffer, size_t size);
 

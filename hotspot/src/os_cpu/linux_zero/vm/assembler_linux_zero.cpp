@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2015, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2009 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -22,11 +22,5 @@
  * questions.
  *
  */
-
-#include "precompiled.hpp"
-#include "asm/assembler.hpp"
-#include "assembler_zero.inline.hpp"
-#include "runtime/os.hpp"
-#include "runtime/threadLocalStorage.hpp"
 
 // This file is intentionally empty

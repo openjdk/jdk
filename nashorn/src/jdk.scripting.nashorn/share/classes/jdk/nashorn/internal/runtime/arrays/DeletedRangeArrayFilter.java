@@ -163,24 +163,6 @@ final class DeletedRangeArrayFilter extends ArrayFilter {
     }
 
     @Override
-    public ArrayData set(final int index, final long value, final boolean strict) {
-        final long longIndex = ArrayIndex.toLongIndex(index);
-        if (longIndex < lo || longIndex > hi) {
-            return super.set(index, value, strict);
-        } else if (longIndex > lo && longIndex < hi) {
-            return getDeletedArrayFilter().set(index, value, strict);
-        }
-        if (longIndex == lo) {
-            lo++;
-        } else {
-            assert longIndex == hi;
-            hi--;
-        }
-
-        return isEmpty() ? getUnderlying().set(index, value, strict) : super.set(index, value, strict);
-    }
-
-    @Override
     public ArrayData set(final int index, final double value, final boolean strict) {
         final long longIndex = ArrayIndex.toLongIndex(index);
         if (longIndex < lo || longIndex > hi) {
