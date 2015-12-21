@@ -29,11 +29,12 @@
  * @ignore 8145587
  * @modules java.base/sun.misc
  *          java.management
- * @build MonitorInflationTest
+ * @build jdk.test.lib.OutputAnalyzer jdk.test.lib.ProcessTools
  * @run driver MonitorInflationTest
  */
 
-import jdk.test.lib.*;
+import jdk.test.lib.OutputAnalyzer;
+import jdk.test.lib.ProcessTools;
 
 public class MonitorInflationTest {
     static void analyzeOutputOn(ProcessBuilder pb) throws Exception {

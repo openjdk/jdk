@@ -179,6 +179,7 @@ class G1CollectorPolicy: public CollectorPolicy {
   G1Predictions _predictor;
 
   double get_new_prediction(TruncatedSeq const* seq) const;
+  size_t get_new_size_prediction(TruncatedSeq const* seq) const;
 
   // either equal to the number of parallel threads, if ParallelGCThreads
   // has been set, or 1 otherwise
