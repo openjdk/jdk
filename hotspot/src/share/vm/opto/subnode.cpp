@@ -252,8 +252,8 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
 const Type *SubINode::sub( const Type *t1, const Type *t2 ) const {
   const TypeInt *r0 = t1->is_int(); // Handy access
   const TypeInt *r1 = t2->is_int();
-  int32_t lo = r0->_lo - r1->_hi;
-  int32_t hi = r0->_hi - r1->_lo;
+  int32_t lo = java_subtract(r0->_lo, r1->_hi);
+  int32_t hi = java_subtract(r0->_hi, r1->_lo);
 
   // We next check for 32-bit overflow.
   // If that happens, we just assume all integers are possible.
@@ -361,8 +361,8 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 const Type *SubLNode::sub( const Type *t1, const Type *t2 ) const {
   const TypeLong *r0 = t1->is_long(); // Handy access
   const TypeLong *r1 = t2->is_long();
-  jlong lo = r0->_lo - r1->_hi;
-  jlong hi = r0->_hi - r1->_lo;
+  jlong lo = java_subtract(r0->_lo, r1->_hi);
+  jlong hi = java_subtract(r0->_hi, r1->_lo);
 
   // We next check for 32-bit overflow.
   // If that happens, we just assume all integers are possible.

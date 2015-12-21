@@ -792,7 +792,11 @@ const char* os::Posix::describe_sa_flags(int flags, char* buffer, size_t size) {
   strncpy(buffer, "none", size);
 
   const struct {
-    int i;
+    // NB: i is an unsigned int here because SA_RESETHAND is on some
+    // systems 0x80000000, which is implicitly unsigned.  Assignining
+    // it to an int field would be an overflow in unsigned-to-signed
+    // conversion.
+    unsigned int i;
     const char* s;
   } flaginfo [] = {
     { SA_NOCLDSTOP, "SA_NOCLDSTOP" },
