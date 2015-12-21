@@ -138,7 +138,7 @@ size_t G1AdaptiveIHOPControl::actual_target_threshold() const {
 
   double safe_total_heap_percentage = MIN2((double)(_heap_reserve_percent + _heap_waste_percent), 100.0);
 
-  return MIN2(
+  return (size_t)MIN2(
     G1CollectedHeap::heap()->max_capacity() * (100.0 - safe_total_heap_percentage) / 100.0,
     _target_occupancy * (100.0 - _heap_waste_percent) / 100.0
     );
@@ -153,10 +153,13 @@ size_t G1AdaptiveIHOPControl::get_conc_mark_start_threshold() {
   if (have_enough_data_for_prediction()) {
     double pred_marking_time = _predictor->get_new_prediction(&_marking_times_s);
     double pred_promotion_rate = _predictor->get_new_prediction(&_allocation_rate_s);
+    size_t pred_promotion_size = (size_t)(pred_marking_time * pred_promotion_rate);
 
     size_t predicted_needed_bytes_during_marking =
-      (pred_marking_time * pred_promotion_rate +
-      _last_unrestrained_young_size); // In reality we would need the maximum size of the young gen during marking. This is a conservative estimate.
+      pred_promotion_size +
+      // In reality we would need the maximum size of the young gen during
+      // marking. This is a conservative estimate.
+      _last_unrestrained_young_size;
 
     size_t internal_threshold = actual_target_threshold();
     size_t predicted_initiating_threshold = predicted_needed_bytes_during_marking < internal_threshold ?
@@ -165,11 +168,13 @@ size_t G1AdaptiveIHOPControl::get_conc_mark_start_threshold() {
     return predicted_initiating_threshold;
   } else {
     // Use the initial value.
-    return _initial_ihop_percent * _target_occupancy / 100.0;
+    return (size_t)(_initial_ihop_percent * _target_occupancy / 100.0);
   }
 }
 
-void G1AdaptiveIHOPControl::update_allocation_info(double allocation_time_s, size_t allocated_bytes, size_t additional_buffer_size) {
+void G1AdaptiveIHOPControl::update_allocation_info(double allocation_time_s,
+                                                   size_t allocated_bytes,
+                                                   size_t additional_buffer_size) {
   G1IHOPControl::update_allocation_info(allocation_time_s, allocated_bytes, additional_buffer_size);
 
   double allocation_rate = (double) allocated_bytes / allocation_time_s;
