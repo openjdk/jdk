@@ -28,6 +28,7 @@ package jdk.internal.logger;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.StackWalker.StackFrame;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.time.ZonedDateTime;
@@ -180,7 +181,16 @@ public class SimpleConsoleLogger extends LoggerConfiguration
      * CallerFinder is a stateful predicate.
      */
     static final class CallerFinder implements Predicate<StackWalker.StackFrame> {
-        static final StackWalker WALKER = StackWalker.getInstance();
+        private static final StackWalker WALKER;
+        static {
+            final PrivilegedAction<StackWalker> action = new PrivilegedAction<>() {
+                @Override
+                public StackWalker run() {
+                    return StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+                }
+            };
+            WALKER = AccessController.doPrivileged(action);
+        }
 
         /**
          * Returns StackFrame of the caller's frame.
@@ -210,8 +220,9 @@ public class SimpleConsoleLogger extends LoggerConfiguration
                 lookingForLogger = !isLoggerImplFrame(cname);
                 return false;
             }
-            // We've found the relevant frame.
-            return !skipLoggingFrame(cname) && !isLoggerImplFrame(cname);
+            // Continue walking until we've found the relevant calling frame.
+            // Skips logging/logger infrastructure.
+            return !isFilteredFrame(t);
         }
 
         private boolean isLoggerImplFrame(String cname) {
@@ -281,8 +292,8 @@ public class SimpleConsoleLogger extends LoggerConfiguration
         return Formatting.getSimpleFormat(defaultPropertyGetter);
     }
 
-    public static boolean skipLoggingFrame(String cname) {
-        return Formatting.skipLoggingFrame(cname);
+    public static boolean isFilteredFrame(StackFrame st) {
+        return Formatting.isFilteredFrame(st);
     }
 
     @Override
@@ -393,16 +404,19 @@ public class SimpleConsoleLogger extends LoggerConfiguration
 
         }
 
-        static boolean skipLoggingFrame(String cname) {
+        static boolean isFilteredFrame(StackFrame st) {
             // skip logging/logger infrastructure
+            if (System.Logger.class.isAssignableFrom(st.getDeclaringClass())) {
+                return true;
+            }
 
             // fast escape path: all the prefixes below start with 's' or 'j' and
             // have more than 12 characters.
+            final String cname = st.getClassName();
             char c = cname.length() < 12 ? 0 : cname.charAt(0);
             if (c == 's') {
                 // skip internal machinery classes
                 if (cname.startsWith("sun.util.logging."))   return true;
-                if (cname.startsWith("sun.reflect."))        return true;
                 if (cname.startsWith("sun.rmi.runtime.Log")) return true;
             } else if (c == 'j') {
                 // Message delayed at Bootstrap: no need to go further up.
@@ -410,10 +424,7 @@ public class SimpleConsoleLogger extends LoggerConfiguration
                 // skip public machinery classes
                 if (cname.startsWith("jdk.internal.logger."))          return true;
                 if (cname.startsWith("java.util.logging."))            return true;
-                if (cname.startsWith("java.lang.System$Logger"))       return true;
-                if (cname.startsWith("java.lang.reflect."))            return true;
                 if (cname.startsWith("java.lang.invoke.MethodHandle")) return true;
-                if (cname.startsWith("java.lang.invoke.LambdaForm"))    return true;
                 if (cname.startsWith("java.security.AccessController")) return true;
             }
 
