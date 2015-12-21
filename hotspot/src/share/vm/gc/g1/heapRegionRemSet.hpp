@@ -324,16 +324,16 @@ public:
   // Declare the heap size (in # of regions) to the HeapRegionRemSet(s).
   // (Uses it to initialize from_card_cache).
   static void init_heap(uint max_regions) {
-    FromCardCache::initialize(num_par_rem_sets(), max_regions);
+    G1FromCardCache::initialize(num_par_rem_sets(), max_regions);
   }
 
   static void invalidate_from_card_cache(uint start_idx, size_t num_regions) {
-    FromCardCache::invalidate(start_idx, num_regions);
+    G1FromCardCache::invalidate(start_idx, num_regions);
   }
 
 #ifndef PRODUCT
   static void print_from_card_cache() {
-    FromCardCache::print();
+    G1FromCardCache::print();
   }
 #endif
 

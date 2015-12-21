@@ -28,9 +28,9 @@
 #include "memory/allocation.hpp"
 #include "utilities/ostream.hpp"
 
-// The FromCardCache remembers the most recently processed card on the heap on
+// G1FromCardCache remembers the most recently processed card on the heap on
 // a per-region and per-thread basis.
-class FromCardCache : public AllStatic {
+class G1FromCardCache : public AllStatic {
  private:
   // Array of card indices. Indexed by thread X and heap region to minimize
   // thread contention.
