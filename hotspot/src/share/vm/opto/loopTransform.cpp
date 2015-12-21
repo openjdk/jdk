@@ -1911,6 +1911,12 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale,
       }
       return true;
     }
+    if (is_scaled_iv(exp->in(2), iv, p_scale)) {
+      if (p_offset != NULL) {
+        *p_offset = exp->in(1);
+      }
+      return true;
+    }
     if (exp->in(2)->is_Con()) {
       Node* offset2 = NULL;
       if (depth < 2 &&
