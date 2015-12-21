@@ -351,52 +351,6 @@ void OtherRegionsTable::unlink_from_all(PerRegionTable* prt) {
          "just checking");
 }
 
-int**  FromCardCache::_cache = NULL;
-uint   FromCardCache::_max_regions = 0;
-size_t FromCardCache::_static_mem_size = 0;
-
-void FromCardCache::initialize(uint n_par_rs, uint max_num_regions) {
-  guarantee(_cache == NULL, "Should not call this multiple times");
-
-  _max_regions = max_num_regions;
-  _cache = Padded2DArray<int, mtGC>::create_unfreeable(n_par_rs,
-                                                       _max_regions,
-                                                       &_static_mem_size);
-
-  invalidate(0, _max_regions);
-}
-
-void FromCardCache::invalidate(uint start_idx, size_t new_num_regions) {
-  guarantee((size_t)start_idx + new_num_regions <= max_uintx,
-            "Trying to invalidate beyond maximum region, from %u size " SIZE_FORMAT,
-            start_idx, new_num_regions);
-  for (uint i = 0; i < HeapRegionRemSet::num_par_rem_sets(); i++) {
-    uint end_idx = (start_idx + (uint)new_num_regions);
-    assert(end_idx <= _max_regions, "Must be within max.");
-    for (uint j = start_idx; j < end_idx; j++) {
-      set(i, j, InvalidCard);
-    }
-  }
-}
-
-#ifndef PRODUCT
-void FromCardCache::print(outputStream* out) {
-  for (uint i = 0; i < HeapRegionRemSet::num_par_rem_sets(); i++) {
-    for (uint j = 0; j < _max_regions; j++) {
-      out->print_cr("_from_card_cache[%u][%u] = %d.",
-                    i, j, at(i, j));
-    }
-  }
-}
-#endif
-
-void FromCardCache::clear(uint region_idx) {
-  uint num_par_remsets = HeapRegionRemSet::num_par_rem_sets();
-  for (uint i = 0; i < num_par_remsets; i++) {
-    set(i, region_idx, InvalidCard);
-  }
-}
-
 void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   uint cur_hrm_ind = _hr->hrm_index();
 
