@@ -2335,6 +2335,11 @@ void PhaseIdealLoop::build_and_optimize(bool do_split_ifs, bool skip_loop_opts) 
 #endif
 
   if (skip_loop_opts) {
+    // restore major progress flag
+    for (int i = 0; i < old_progress; i++) {
+      C->set_major_progress();
+    }
+
     // Cleanup any modified bits
     _igvn.optimize();
 
