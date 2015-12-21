@@ -28,11 +28,11 @@
 #include "memory/padded.inline.hpp"
 #include "utilities/debug.hpp"
 
-int**  FromCardCache::_cache = NULL;
-uint   FromCardCache::_max_regions = 0;
-size_t FromCardCache::_static_mem_size = 0;
+int**  G1FromCardCache::_cache = NULL;
+uint   G1FromCardCache::_max_regions = 0;
+size_t G1FromCardCache::_static_mem_size = 0;
 
-void FromCardCache::initialize(uint n_par_rs, uint max_num_regions) {
+void G1FromCardCache::initialize(uint n_par_rs, uint max_num_regions) {
   guarantee(_cache == NULL, "Should not call this multiple times");
 
   _max_regions = max_num_regions;
@@ -43,7 +43,7 @@ void FromCardCache::initialize(uint n_par_rs, uint max_num_regions) {
   invalidate(0, _max_regions);
 }
 
-void FromCardCache::invalidate(uint start_idx, size_t new_num_regions) {
+void G1FromCardCache::invalidate(uint start_idx, size_t new_num_regions) {
   guarantee((size_t)start_idx + new_num_regions <= max_uintx,
             "Trying to invalidate beyond maximum region, from %u size " SIZE_FORMAT,
             start_idx, new_num_regions);
@@ -57,7 +57,7 @@ void FromCardCache::invalidate(uint start_idx, size_t new_num_regions) {
 }
 
 #ifndef PRODUCT
-void FromCardCache::print(outputStream* out) {
+void G1FromCardCache::print(outputStream* out) {
   for (uint i = 0; i < HeapRegionRemSet::num_par_rem_sets(); i++) {
     for (uint j = 0; j < _max_regions; j++) {
       out->print_cr("_from_card_cache[%u][%u] = %d.",
@@ -67,7 +67,7 @@ void FromCardCache::print(outputStream* out) {
 }
 #endif
 
-void FromCardCache::clear(uint region_idx) {
+void G1FromCardCache::clear(uint region_idx) {
   uint num_par_remsets = HeapRegionRemSet::num_par_rem_sets();
   for (uint i = 0; i < num_par_remsets; i++) {
     set(i, region_idx, InvalidCard);

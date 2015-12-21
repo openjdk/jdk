@@ -356,7 +356,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
 
   int from_card = (int)(uintptr_t(from) >> CardTableModRefBS::card_shift);
 
-  if (FromCardCache::contains_or_replace(tid, cur_hrm_ind, from_card)) {
+  if (G1FromCardCache::contains_or_replace(tid, cur_hrm_ind, from_card)) {
     assert(contains_reference(from), "We just added it!");
     return;
   }
@@ -622,7 +622,7 @@ size_t OtherRegionsTable::mem_size() const {
 }
 
 size_t OtherRegionsTable::static_mem_size() {
-  return FromCardCache::static_mem_size();
+  return G1FromCardCache::static_mem_size();
 }
 
 size_t OtherRegionsTable::fl_mem_size() {
@@ -630,7 +630,7 @@ size_t OtherRegionsTable::fl_mem_size() {
 }
 
 void OtherRegionsTable::clear_fcc() {
-  FromCardCache::clear(_hr->hrm_index());
+  G1FromCardCache::clear(_hr->hrm_index());
 }
 
 void OtherRegionsTable::clear() {
