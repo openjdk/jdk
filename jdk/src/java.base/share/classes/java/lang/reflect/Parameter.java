@@ -205,7 +205,7 @@ public final class Parameter implements AnnotatedElement {
         return tmp;
     }
 
-    private transient volatile Type parameterTypeCache = null;
+    private transient volatile Type parameterTypeCache;
 
     /**
      * Returns a {@code Class} object that identifies the
@@ -237,7 +237,7 @@ public final class Parameter implements AnnotatedElement {
         return executable.getAnnotatedParameterTypes()[index];
     }
 
-    private transient volatile Class<?> parameterClassCache = null;
+    private transient volatile Class<?> parameterClassCache;
 
     /**
      * Returns {@code true} if this parameter is implicitly declared
