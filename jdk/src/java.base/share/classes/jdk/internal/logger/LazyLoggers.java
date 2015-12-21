@@ -326,20 +326,22 @@ public final class LazyLoggers {
     }
 
     // Do not expose this outside of this package.
-    private static volatile LoggerFinder provider = null;
+    private static volatile LoggerFinder provider;
     private static LoggerFinder accessLoggerFinder() {
-        if (provider == null) {
+        LoggerFinder prov = provider;
+        if (prov == null) {
             // no need to lock: it doesn't matter if we call
             // getLoggerFinder() twice - since LoggerFinder already caches
             // the result.
             // This is just an optimization to avoid the cost of calling
             // doPrivileged every time.
             final SecurityManager sm = System.getSecurityManager();
-            provider = sm == null ? LoggerFinder.getLoggerFinder() :
+            prov = sm == null ? LoggerFinder.getLoggerFinder() :
                 AccessController.doPrivileged(
                         (PrivilegedAction<LoggerFinder>)LoggerFinder::getLoggerFinder);
+            provider = prov;
         }
-        return provider;
+        return prov;
     }
 
     // Avoid using lambda here as lazy loggers could be created early

@@ -51,14 +51,14 @@ abstract class AsynchronousServerSocketChannelImpl
     protected final FileDescriptor fd;
 
     // the local address to which the channel's socket is bound
-    protected volatile InetSocketAddress localAddress = null;
+    protected volatile InetSocketAddress localAddress;
 
     // need this lock to set local address
     private final Object stateLock = new Object();
 
     // close support
     private ReadWriteLock closeLock = new ReentrantReadWriteLock();
-    private volatile boolean open = true;
+    private volatile boolean closed;
 
     // set true when accept operation is cancelled
     private volatile boolean acceptKilled;
@@ -73,7 +73,7 @@ abstract class AsynchronousServerSocketChannelImpl
 
     @Override
     public final boolean isOpen() {
-        return open;
+        return !closed;
     }
 
     /**
@@ -102,9 +102,9 @@ abstract class AsynchronousServerSocketChannelImpl
         // synchronize with any threads using file descriptor/handle
         closeLock.writeLock().lock();
         try {
-            if (!open)
+            if (closed)
                 return;     // already closed
-            open = false;
+            closed = true;
         } finally {
             closeLock.writeLock().unlock();
         }
