@@ -561,10 +561,11 @@ DirectiveSet* DirectivesStack::getMatchingDirective(methodHandle method, Abstrac
             match = dir->_c1_store;
             break;
           }
-        }
-        if (match->EnableOption) {
-          // The directiveSet for this compile is also enabled -> success
-          break;
+        } else {
+          if (match->EnableOption) {
+            // The directiveSet for this compile is also enabled -> success
+            break;
+          }
         }
       }
       dir = dir->next();
