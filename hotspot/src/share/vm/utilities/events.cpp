@@ -29,7 +29,6 @@
 #include "runtime/osThread.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
-#include "runtime/threadLocalStorage.hpp"
 #include "runtime/timer.hpp"
 #include "utilities/events.hpp"
 

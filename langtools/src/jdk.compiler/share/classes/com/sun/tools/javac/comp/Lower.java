@@ -2707,11 +2707,11 @@ public class Lower extends TreeTranslator {
             if (fvs.nonEmpty()) {
                 List<Type> addedargtypes = List.nil();
                 for (List<VarSymbol> l = fvs; l.nonEmpty(); l = l.tail) {
+                    final Name pName = proxyName(l.head.name);
+                    m.capturedLocals =
+                        m.capturedLocals.prepend((VarSymbol)
+                                                (proxies.findFirst(pName)));
                     if (TreeInfo.isInitialConstructor(tree)) {
-                        final Name pName = proxyName(l.head.name);
-                        m.capturedLocals =
-                            m.capturedLocals.append((VarSymbol)
-                                                    (proxies.findFirst(pName)));
                         added = added.prepend(
                           initField(tree.body.pos, pName));
                     }

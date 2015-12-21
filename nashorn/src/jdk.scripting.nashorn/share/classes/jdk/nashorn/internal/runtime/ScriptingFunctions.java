@@ -278,9 +278,8 @@ public final class ScriptingFunctions {
      * @param str a {@link String} to tokenize.
      * @return a {@link List} of {@link String}s representing the tokens that
      * constitute the string.
-     * @throws IOException in case {@link StreamTokenizer#nextToken()} raises it.
      */
-    public static List<String> tokenizeString(final String str) throws IOException {
+    public static List<String> tokenizeString(final String str) {
         final StreamTokenizer tokenizer = new StreamTokenizer(new StringReader(str));
         tokenizer.resetSyntax();
         tokenizer.wordChars(0, 255);
@@ -290,7 +289,7 @@ public final class ScriptingFunctions {
         tokenizer.quoteChar('\'');
         final List<String> tokenList = new ArrayList<>();
         final StringBuilder toAppend = new StringBuilder();
-        while (tokenizer.nextToken() != StreamTokenizer.TT_EOF) {
+        while (nextToken(tokenizer) != StreamTokenizer.TT_EOF) {
             final String s = tokenizer.sval;
             // The tokenizer understands about honoring quoted strings and recognizes
             // them as one token that possibly contains multiple space-separated words.
@@ -308,5 +307,13 @@ public final class ScriptingFunctions {
             tokenList.add(toAppend.toString());
         }
         return tokenList;
+    }
+
+    private static int nextToken(final StreamTokenizer tokenizer) {
+        try {
+            return tokenizer.nextToken();
+        } catch (final IOException ioe) {
+            return StreamTokenizer.TT_EOF;
+        }
     }
 }

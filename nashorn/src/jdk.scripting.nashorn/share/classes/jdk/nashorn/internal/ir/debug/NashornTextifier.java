@@ -25,9 +25,6 @@
 
 package jdk.nashorn.internal.ir.debug;
 
-import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_PROGRAM_POINT_SHIFT;
-import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.FLAGS_MASK;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -502,6 +499,7 @@ public final class NashornTextifier extends Printer {
 
         appendOpcode(sb, Opcodes.INVOKEDYNAMIC).append(' ');
         final boolean isNashornBootstrap = isNashornBootstrap(bsm);
+        final boolean isNashornMathBootstrap = isNashornMathBootstrap(bsm);
         if (isNashornBootstrap) {
             sb.append(NashornCallSiteDescriptor.getOperationName((Integer)bsmArgs[0]));
             final String decodedName = NameCodec.decode(name);
@@ -529,12 +527,9 @@ public final class NashornTextifier extends Printer {
                 } else if (cst instanceof Handle) {
                     appendHandle(sb, (Handle)cst);
                 } else if (cst instanceof Integer && isNashornBootstrap) {
-                    final int c = (Integer)cst;
-                    final int pp = c >> CALLSITE_PROGRAM_POINT_SHIFT;
-                    if (pp != 0) {
-                        sb.append(" pp=").append(pp);
-                    }
-                    sb.append(NashornCallSiteDescriptor.toString(c & FLAGS_MASK));
+                    NashornCallSiteDescriptor.appendFlags((Integer) cst, sb);
+                } else if (cst instanceof Integer && isNashornMathBootstrap) {
+                    sb.append(" pp=").append(cst);
                 } else {
                     sb.append(cst);
                 }
@@ -549,6 +544,10 @@ public final class NashornTextifier extends Printer {
 
     private static boolean isNashornBootstrap(final Handle bsm) {
         return "bootstrap".equals(bsm.getName()) && BOOTSTRAP_CLASS_NAME.equals(bsm.getOwner());
+    }
+
+    private static boolean isNashornMathBootstrap(final Handle bsm) {
+        return "mathBootstrap".equals(bsm.getName()) && BOOTSTRAP_CLASS_NAME.equals(bsm.getOwner());
     }
 
     private static boolean noFallThru(final int opcode) {

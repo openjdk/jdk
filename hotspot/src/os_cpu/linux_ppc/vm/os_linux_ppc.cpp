@@ -28,6 +28,7 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
@@ -182,7 +183,7 @@ JVM_handle_linux_signal(int sig,
                         int abort_if_unrecognized) {
   ucontext_t* uc = (ucontext_t*) ucVoid;
 
-  Thread* t = ThreadLocalStorage::get_thread_slow();
+  Thread* t = Thread::current_or_null_safe();
 
   SignalHandlerMark shm(t);
 

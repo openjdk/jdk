@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package mypackage;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Retention;

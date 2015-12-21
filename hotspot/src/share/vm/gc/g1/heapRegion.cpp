@@ -592,17 +592,20 @@ void HeapRegion::verify_strong_code_roots(VerifyOption vo, bool* failures) const
 
 void HeapRegion::print() const { print_on(gclog_or_tty); }
 void HeapRegion::print_on(outputStream* st) const {
-  st->print("AC%4u", allocation_context());
-
-  st->print(" %2s", get_short_type_str());
-  if (in_collection_set())
-    st->print(" CS");
-  else
-    st->print("   ");
-  st->print(" TS %5d", _gc_time_stamp);
-  st->print(" PTAMS " PTR_FORMAT " NTAMS " PTR_FORMAT,
-            p2i(prev_top_at_mark_start()), p2i(next_top_at_mark_start()));
-  G1OffsetTableContigSpace::print_on(st);
+  st->print("|%4u", this->_hrm_index);
+  st->print("|" PTR_FORMAT ", " PTR_FORMAT ", " PTR_FORMAT,
+            p2i(bottom()), p2i(top()), p2i(end()));
+  st->print("|%3d%%", (int) ((double) used() * 100 / capacity()));
+  st->print("|%2s", get_short_type_str());
+  if (in_collection_set()) {
+    st->print("|CS");
+  } else {
+    st->print("|  ");
+  }
+  st->print("|TS%3u", _gc_time_stamp);
+  st->print("|AC%3u", allocation_context());
+  st->print_cr("|TAMS " PTR_FORMAT ", " PTR_FORMAT "|",
+               p2i(prev_top_at_mark_start()), p2i(next_top_at_mark_start()));
 }
 
 class VerifyLiveClosure: public OopClosure {

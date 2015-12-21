@@ -71,7 +71,7 @@ else ifeq ($(OPENJDK_TARGET_OS), solaris)
       -DSOLARIS_11_B159_OR_LATER
   SA_CFLAGS := $(CFLAGS_JDKLIB) $(COMMON_CFLAGS)
   SA_CXXFLAGS := $(CXXFLAGS_JDKLIB) $(COMMON_CFLAGS)
-  SA_LDFLAGS := $(subst -z defs,, $(LDFLAGS_JDKLIB)) \
+  SA_LDFLAGS := $(subst -Wl$(COMMA)-z$(COMMA)defs,, $(LDFLAGS_JDKLIB)) \
       -mt $(LDFLAGS_CXX_JDK)
   SA_LIBS := -ldl -ldemangle -lthread -lc
 
