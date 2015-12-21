@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_G1_HEAPREGIONREMSET_HPP
 
 #include "gc/g1/g1CodeCacheRemSet.hpp"
+#include "gc/g1/g1FromCardCache.hpp"
 #include "gc/g1/sparsePRT.hpp"
 
 // Remembered set for a heap region.  Represent a set of "cards" that
@@ -43,54 +44,6 @@ class nmethod;
 // Essentially a wrapper around SparsePRTCleanupTask. See
 // sparsePRT.hpp for more details.
 class HRRSCleanupTask : public SparsePRTCleanupTask {
-};
-
-// The FromCardCache remembers the most recently processed card on the heap on
-// a per-region and per-thread basis.
-class FromCardCache : public AllStatic {
- private:
-  // Array of card indices. Indexed by thread X and heap region to minimize
-  // thread contention.
-  static int** _cache;
-  static uint _max_regions;
-  static size_t _static_mem_size;
-
- public:
-  enum {
-    InvalidCard = -1 // Card value of an invalid card, i.e. a card index not otherwise used.
-  };
-
-  static void clear(uint region_idx);
-
-  // Returns true if the given card is in the cache at the given location, or
-  // replaces the card at that location and returns false.
-  static bool contains_or_replace(uint worker_id, uint region_idx, int card) {
-    int card_in_cache = at(worker_id, region_idx);
-    if (card_in_cache == card) {
-      return true;
-    } else {
-      set(worker_id, region_idx, card);
-      return false;
-    }
-  }
-
-  static int at(uint worker_id, uint region_idx) {
-    return _cache[worker_id][region_idx];
-  }
-
-  static void set(uint worker_id, uint region_idx, int val) {
-    _cache[worker_id][region_idx] = val;
-  }
-
-  static void initialize(uint n_par_rs, uint max_num_regions);
-
-  static void invalidate(uint start_idx, size_t num_regions);
-
-  static void print(outputStream* out = tty) PRODUCT_RETURN;
-
-  static size_t static_mem_size() {
-    return _static_mem_size;
-  }
 };
 
 // The "_coarse_map" is a bitmap with one bit for each region, where set
