@@ -512,11 +512,17 @@ final class GaloisCounterMode extends FeedbackCipher {
         byte[] sOut = new byte[s.length];
         GCTR gctrForSToTag = new GCTR(embeddedCipher, this.preCounterBlock);
         gctrForSToTag.doFinal(s, 0, s.length, sOut, 0);
+
+        // check entire authentication tag for time-consistency
+        int mismatch = 0;
         for (int i = 0; i < tagLenBytes; i++) {
-            if (tag[i] != sOut[i]) {
-                throw new AEADBadTagException("Tag mismatch!");
-            }
+            mismatch |= tag[i] ^ sOut[i];
         }
+
+        if (mismatch != 0) {
+            throw new AEADBadTagException("Tag mismatch!");
+        }
+
         return len;
     }
 
