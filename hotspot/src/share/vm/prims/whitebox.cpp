@@ -309,6 +309,18 @@ WB_ENTRY(jboolean, WB_G1IsHumongous(JNIEnv* env, jobject o, jobject obj))
   return hr->is_humongous();
 WB_END
 
+WB_ENTRY(jboolean, WB_G1BelongsToHumongousRegion(JNIEnv* env, jobject o, jlong addr))
+  G1CollectedHeap* g1 = G1CollectedHeap::heap();
+  const HeapRegion* hr = g1->heap_region_containing((void*) addr);
+  return hr->is_humongous();
+WB_END
+
+WB_ENTRY(jboolean, WB_G1BelongsToFreeRegion(JNIEnv* env, jobject o, jlong addr))
+  G1CollectedHeap* g1 = G1CollectedHeap::heap();
+  const HeapRegion* hr = g1->heap_region_containing((void*) addr);
+  return hr->is_free();
+WB_END
+
 WB_ENTRY(jlong, WB_G1NumMaxRegions(JNIEnv* env, jobject o))
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
   size_t nr = g1->max_regions();
@@ -1478,7 +1490,9 @@ static JNINativeMethod methods[] = {
   {CC"isSharedClass", CC"(Ljava/lang/Class;)Z",       (void*)&WB_IsSharedClass },
 #if INCLUDE_ALL_GCS
   {CC"g1InConcurrentMark", CC"()Z",                   (void*)&WB_G1InConcurrentMark},
-  {CC"g1IsHumongous0",      CC"(Ljava/lang/Object;)Z", (void*)&WB_G1IsHumongous     },
+  {CC"g1IsHumongous0",      CC"(Ljava/lang/Object;)Z",(void*)&WB_G1IsHumongous     },
+  {CC"g1BelongsToHumongousRegion0", CC"(J)Z",         (void*)&WB_G1BelongsToHumongousRegion},
+  {CC"g1BelongsToFreeRegion0", CC"(J)Z",              (void*)&WB_G1BelongsToFreeRegion},
   {CC"g1NumMaxRegions",    CC"()J",                   (void*)&WB_G1NumMaxRegions  },
   {CC"g1NumFreeRegions",   CC"()J",                   (void*)&WB_G1NumFreeRegions  },
   {CC"g1RegionSize",       CC"()I",                   (void*)&WB_G1RegionSize      },
