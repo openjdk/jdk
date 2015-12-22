@@ -23,13 +23,13 @@
 
 import java.math.BigInteger;
 import java.util.Random;
-import sun.misc.FDBigInteger;
+import jdk.internal.math.FDBigInteger;
 
 /**
  * @test
  * @bug 7032154
- * @summary unit testys of sun.misc.FDBigInteger
- * @modules java.base/sun.misc
+ * @summary unit testys of FDBigInteger
+ * @modules java.base/jdk.internal.math
  * @author Dmitry Nadezhin
  */
 public class TestFDBigInteger {

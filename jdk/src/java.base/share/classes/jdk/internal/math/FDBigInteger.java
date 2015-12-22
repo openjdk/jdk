@@ -22,7 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package sun.misc;
+package jdk.internal.math;
 
 import java.math.BigInteger;
 import java.util.Arrays;

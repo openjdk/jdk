@@ -23,7 +23,7 @@
  * questions.
  */
 
-package sun.misc;
+package jdk.internal.math;
 
 /**
  * This class contains additional constants documenting limits of the
